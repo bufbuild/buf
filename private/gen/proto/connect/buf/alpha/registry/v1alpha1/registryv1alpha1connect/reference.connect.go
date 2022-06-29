@@ -42,7 +42,7 @@ const (
 // ReferenceServiceClient is a client for the buf.alpha.registry.v1alpha1.ReferenceService service.
 type ReferenceServiceClient interface {
 	// GetReferenceByName takes a reference name and returns the
-	// reference either as 'main', a tag, branch, track or commit.
+	// reference either as 'main', a tag, or commit.
 	GetReferenceByName(context.Context, *connect_go.Request[v1alpha1.GetReferenceByNameRequest]) (*connect_go.Response[v1alpha1.GetReferenceByNameResponse], error)
 }
 
@@ -79,7 +79,7 @@ func (c *referenceServiceClient) GetReferenceByName(ctx context.Context, req *co
 // service.
 type ReferenceServiceHandler interface {
 	// GetReferenceByName takes a reference name and returns the
-	// reference either as 'main', a tag, branch, track or commit.
+	// reference either as 'main', a tag, or commit.
 	GetReferenceByName(context.Context, *connect_go.Request[v1alpha1.GetReferenceByNameRequest]) (*connect_go.Response[v1alpha1.GetReferenceByNameResponse], error)
 }
 

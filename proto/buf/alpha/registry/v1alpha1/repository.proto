@@ -49,8 +49,10 @@ message Repository {
 }
 
 message RepositoryCounts {
+  reserved 2;
+  reserved "tracks_count";
+
   uint32 tags_count = 1;
-  uint32 tracks_count = 2;
 }
 
 message RepositoryContributor {

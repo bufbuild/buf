@@ -42,12 +42,9 @@ type Provider interface {
 	PushServiceProvider
 	RecommendationServiceProvider
 	ReferenceServiceProvider
-	RepositoryBranchServiceProvider
 	RepositoryCommitServiceProvider
 	RepositoryServiceProvider
 	RepositoryTagServiceProvider
-	RepositoryTrackCommitServiceProvider
-	RepositoryTrackServiceProvider
 	ResolveServiceProvider
 	SearchServiceProvider
 	StudioServiceProvider
@@ -151,11 +148,6 @@ type ReferenceServiceProvider interface {
 	NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error)
 }
 
-// RepositoryBranchServiceProvider provides a client-side RepositoryBranchService for an address.
-type RepositoryBranchServiceProvider interface {
-	NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error)
-}
-
 // RepositoryCommitServiceProvider provides a client-side RepositoryCommitService for an address.
 type RepositoryCommitServiceProvider interface {
 	NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error)
@@ -169,16 +161,6 @@ type RepositoryServiceProvider interface {
 // RepositoryTagServiceProvider provides a client-side RepositoryTagService for an address.
 type RepositoryTagServiceProvider interface {
 	NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error)
-}
-
-// RepositoryTrackCommitServiceProvider provides a client-side RepositoryTrackCommitService for an address.
-type RepositoryTrackCommitServiceProvider interface {
-	NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error)
-}
-
-// RepositoryTrackServiceProvider provides a client-side RepositoryTrackService for an address.
-type RepositoryTrackServiceProvider interface {
-	NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error)
 }
 
 // ResolveServiceProvider provides a client-side ResolveService for an address.
