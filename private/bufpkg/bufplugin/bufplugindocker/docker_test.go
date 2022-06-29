@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufplugindocker_test
+package bufplugindocker
 
 import (
 	"context"
@@ -30,7 +30,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -46,7 +45,6 @@ import (
 const (
 	examplePluginIdentity = "buf.build/library/go"
 	dockerVersion         = "1.41"
-	pluginsImagePrefix    = "plugins."
 )
 
 var (
@@ -94,13 +92,13 @@ func TestPushSuccess(t *testing.T) {
 	listenerAddr := server.httpServer.Listener.Addr().String()
 	dockerClient := createClient(
 		t,
-		bufplugindocker.WithHost("tcp://"+listenerAddr),
-		bufplugindocker.WithVersion(dockerVersion),
+		WithHost("tcp://"+listenerAddr),
+		WithVersion(dockerVersion),
 	)
 	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotNil(t, response)
-	pushResponse, err := dockerClient.Push(context.Background(), response.Image, &bufplugindocker.RegistryAuthConfig{})
+	pushResponse, err := dockerClient.Push(context.Background(), response.Image, &RegistryAuthConfig{})
 	require.Nilf(t, err, "failed to push docker plugin")
 	require.NotNil(t, pushResponse)
 }
@@ -113,13 +111,13 @@ func TestPushError(t *testing.T) {
 	listenerAddr := server.httpServer.Listener.Addr().String()
 	dockerClient := createClient(
 		t,
-		bufplugindocker.WithHost("tcp://"+listenerAddr),
-		bufplugindocker.WithVersion(dockerVersion),
+		WithHost("tcp://"+listenerAddr),
+		WithVersion(dockerVersion),
 	)
 	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotNil(t, response)
-	_, err = dockerClient.Push(context.Background(), response.Image, &bufplugindocker.RegistryAuthConfig{})
+	_, err = dockerClient.Push(context.Background(), response.Image, &RegistryAuthConfig{})
 	require.NotNil(t, err, "expected error")
 	assert.Equal(t, server.pushErr.Error(), err.Error())
 }
@@ -132,8 +130,8 @@ func TestBuildError(t *testing.T) {
 	listenerAddr := server.httpServer.Listener.Addr().String()
 	dockerClient := createClient(
 		t,
-		bufplugindocker.WithHost("tcp://"+listenerAddr),
-		bufplugindocker.WithVersion(dockerVersion),
+		WithHost("tcp://"+listenerAddr),
+		WithVersion(dockerVersion),
 	)
 	_, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.NotNilf(t, err, "expected error during build")
@@ -159,11 +157,11 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func createClient(t testing.TB, options ...bufplugindocker.ClientOption) bufplugindocker.Client {
+func createClient(t testing.TB, options ...ClientOption) Client {
 	t.Helper()
 	logger, err := zap.NewDevelopment()
 	require.Nilf(t, err, "failed to create zap logger")
-	dockerClient, err := bufplugindocker.NewClient(logger, options...)
+	dockerClient, err := NewClient(logger, options...)
 	require.Nilf(t, err, "failed to create client")
 	t.Cleanup(func() {
 		if err := dockerClient.Close(); err != nil {
@@ -173,7 +171,7 @@ func createClient(t testing.TB, options ...bufplugindocker.ClientOption) bufplug
 	return dockerClient
 }
 
-func buildDockerPlugin(t testing.TB, dockerClient bufplugindocker.Client, dockerfilePath string, pluginIdentity string) (*bufplugindocker.BuildResponse, error) {
+func buildDockerPlugin(t testing.TB, dockerClient Client, dockerfilePath string, pluginIdentity string) (*BuildResponse, error) {
 	t.Helper()
 	dockerfile, err := os.Open(dockerfilePath)
 	require.Nilf(t, err, "failed to open dockerfile")
