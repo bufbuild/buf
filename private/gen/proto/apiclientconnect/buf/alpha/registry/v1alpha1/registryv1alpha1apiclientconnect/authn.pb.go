@@ -25,18 +25,14 @@ import (
 )
 
 type authnServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.AuthnServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.AuthnServiceClient
 }
 
 // GetCurrentUser gets information associated with the current user.
 //
 // The user's ID is retrieved from the request's authentication header.
 func (s *authnServiceClient) GetCurrentUser(ctx context.Context) (user *v1alpha1.User, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetCurrentUser(
 		ctx,
 		connect_go.NewRequest(
@@ -52,9 +48,6 @@ func (s *authnServiceClient) GetCurrentUser(ctx context.Context) (user *v1alpha1
 //
 // The user's ID is retrieved from the request's authentication header.
 func (s *authnServiceClient) GetCurrentUserSubject(ctx context.Context) (subject string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetCurrentUserSubject(
 		ctx,
 		connect_go.NewRequest(

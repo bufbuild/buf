@@ -25,9 +25,8 @@ import (
 )
 
 type adminServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.AdminServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.AdminServiceClient
 }
 
 // ForceDeleteUser forces to delete a user. Resources and organizations that are
@@ -36,9 +35,6 @@ func (s *adminServiceClient) ForceDeleteUser(
 	ctx context.Context,
 	userId string,
 ) (user *v1alpha1.User, organizations []*v1alpha1.Organization, repositories []*v1alpha1.Repository, plugins []*v1alpha1.Plugin, templates []*v1alpha1.Template, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ForceDeleteUser(
 		ctx,
 		connect_go.NewRequest(
