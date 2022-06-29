@@ -90,7 +90,6 @@ func NewAuthorizationInterceptorProviderWithToken(token string) func(string) con
 				req connect.AnyRequest,
 			) (connect.AnyResponse, error) {
 				if token != "" {
-					fmt.Println("Setting tokey", token)
 					req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
 				}
 				return next(ctx, req)
