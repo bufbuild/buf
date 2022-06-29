@@ -188,7 +188,6 @@ func inner(
 	}
 	user, err := authnService.GetCurrentUser(ctx)
 	if err != nil {
-		fmt.Println(err)
 		// We don't want to use the default error from wrapError here if the error
 		// an unauthenticated error.
 		return errors.New("invalid token provided")
