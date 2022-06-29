@@ -46,6 +46,7 @@ import (
 const (
 	examplePluginIdentity = "buf.build/library/go"
 	dockerVersion         = "1.41"
+	pluginsImagePrefix    = "plugins."
 )
 
 var (
@@ -66,7 +67,7 @@ func TestBuildSuccess(t *testing.T) {
 	require.Nilf(t, err, "failed to build docker plugin")
 	assert.Truef(
 		t,
-		strings.HasPrefix(response.Image, examplePluginIdentity+":"),
+		strings.HasPrefix(response.Image, pluginsImagePrefix+examplePluginIdentity+":"),
 		"image name should begin with: %q, found: %q",
 		examplePluginIdentity,
 		response.Image,
