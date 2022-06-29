@@ -167,7 +167,7 @@ func ValidateRemoteNotEmpty(remote string) error {
 // we do not think will change in the future.
 func ValidateRemoteHasNoPaths(remote string) error {
 	_, path, ok := strings.Cut(remote, "/")
-	if ok {
+	if ok && path != "" {
 		return appcmd.NewInvalidArgumentError(fmt.Sprintf(`invalid remote address, must not contain any paths. Try removing "/%s" from the address.`, path))
 	}
 	return nil
