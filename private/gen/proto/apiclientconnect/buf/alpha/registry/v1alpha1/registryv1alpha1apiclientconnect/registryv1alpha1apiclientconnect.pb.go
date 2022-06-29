@@ -484,28 +484,6 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 	}, nil
 }
 
-func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	return &repositoryBranchServiceClient{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryBranchServiceClient(
-			p.httpClient,
-			address,
-		),
-		contextModifier: contextModifier,
-	}, nil
-}
-
 func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -565,50 +543,6 @@ func (p *provider) NewRepositoryTagService(ctx context.Context, address string) 
 	return &repositoryTagServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryTagServiceClient(
-			p.httpClient,
-			address,
-		),
-		contextModifier: contextModifier,
-	}, nil
-}
-
-func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	return &repositoryTrackCommitServiceClient{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryTrackCommitServiceClient(
-			p.httpClient,
-			address,
-		),
-		contextModifier: contextModifier,
-	}, nil
-}
-
-func (p *provider) NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	return &repositoryTrackServiceClient{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryTrackServiceClient(
 			p.httpClient,
 			address,
 		),

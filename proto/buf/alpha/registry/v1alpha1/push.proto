@@ -28,7 +28,7 @@ service PushService {
 message PushRequest {
   string owner = 1;
   string repository = 2;
-  string branch = 3;
+  string branch = 3 [deprecated = true];
   buf.alpha.module.v1alpha1.Module module = 4;
   // Optional; if provided, the provided tags
   // are created for the pushed commit.
@@ -36,7 +36,7 @@ message PushRequest {
   // Optional; if provided, the pushed commit
   // will be appended to these tracks. If the
   // tracks do not exist, they will be created.
-  repeated string tracks = 6;
+  repeated string tracks = 6 [deprecated = true];
 }
 
 message PushResponse {
