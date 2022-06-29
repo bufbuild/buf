@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/docker/docker/api/types"
@@ -32,6 +33,9 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
+
+// pluginsImagePrefix is used to prefix all image names with the correct path for pushing to the OCI registry.
+const pluginsImagePrefix = "plugins."
 
 // Client is a small abstraction over a Docker API client, providing the basic APIs we need to build plugins.
 // It ensures that we pass the appropriate parameters to build images (i.e. platform 'linux/amd64').
@@ -111,6 +115,9 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 
 	buildID := stringid.GenerateRandomID()
 	imageName := pluginConfig.Name.IdentityString() + ":" + buildID
+	if !strings.HasPrefix(imageName, pluginsImagePrefix) {
+		imageName = pluginsImagePrefix + imageName
+	}
 	eg.Go(func() (retErr error) {
 		defer func() {
 			if err := buildkitSession.Close(); err != nil {
