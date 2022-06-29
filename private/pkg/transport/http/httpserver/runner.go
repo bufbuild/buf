@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bufbuild/buf/private/pkg/rpc/rpchttp"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
@@ -75,7 +76,7 @@ func (s *runner) Run(
 			return http.MaxBytesHandler(next, s.maxBodySize)
 		})
 	}
-	mux.Use(newServerInterceptor())
+	mux.Use(rpchttp.NewServerInterceptor())
 	mux.Use(s.middlewares...)
 	for _, mapper := range mappers {
 		if err := mapper.Map(mux); err != nil {
@@ -148,23 +149,4 @@ func httpServe(httpServer *http.Server, listener net.Listener) error {
 		return httpServer.ServeTLS(listener, "", "")
 	}
 	return httpServer.Serve(listener)
-}
-
-// This should be the last interceptor installed.
-func newServerInterceptor() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-			if len(request.Header) > 0 {
-				request = request.WithContext(
-					withIncomingHeaders(
-						request.Context(),
-						fromHTTPHeader(
-							request.Header,
-						),
-					),
-				)
-			}
-			next.ServeHTTP(writer, request)
-		})
-	}
 }

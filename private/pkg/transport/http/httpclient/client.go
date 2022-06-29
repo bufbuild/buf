@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/observability"
+	"github.com/bufbuild/buf/private/pkg/rpc/rpchttp"
 )
 
 type client struct {
@@ -34,9 +35,11 @@ func newClient(options ...ClientOption) *client {
 	for _, option := range options {
 		option(client)
 	}
-	var roundTripper http.RoundTripper = &http.Transport{
-		TLSClientConfig: client.tlsConfig,
-	}
+	roundTripper := rpchttp.NewClientInterceptor(
+		&http.Transport{
+			TLSClientConfig: client.tlsConfig,
+		},
+	)
 	if client.observability {
 		roundTripper = observability.NewHTTPTransport(roundTripper)
 	}
