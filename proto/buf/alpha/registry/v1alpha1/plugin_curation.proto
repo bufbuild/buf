@@ -89,8 +89,6 @@ message CuratedPlugin {
   RuntimeConfig runtime_config = 11;
   // TODOC
   uint32 revision = 12;
-  // TODOC
-  string owner = 13;
 }
 
 // PluginCurationService manages curated plugins.
