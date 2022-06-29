@@ -43,5 +43,6 @@ type PluginCurationService interface {
 		sourceUrl string,
 		description string,
 		runtimeConfig *v1alpha1.RuntimeConfig,
+		revision uint32,
 	) (configuration *v1alpha1.CuratedPlugin, err error)
 }
