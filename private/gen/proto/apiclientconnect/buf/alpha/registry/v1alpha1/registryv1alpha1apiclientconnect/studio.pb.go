@@ -25,12 +25,16 @@ import (
 )
 
 type studioServiceClient struct {
-	logger *zap.Logger
-	client registryv1alpha1connect.StudioServiceClient
+	logger          *zap.Logger
+	client          registryv1alpha1connect.StudioServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // ListStudioAgentPresets returns a list of agent presets in the server.
 func (s *studioServiceClient) ListStudioAgentPresets(ctx context.Context) (agents []*v1alpha1.StudioAgentPreset, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListStudioAgentPresets(
 		ctx,
 		connect_go.NewRequest(
@@ -44,6 +48,9 @@ func (s *studioServiceClient) ListStudioAgentPresets(ctx context.Context) (agent
 
 // SetStudioAgentPresets sets the list of agent presets in the server.
 func (s *studioServiceClient) SetStudioAgentPresets(ctx context.Context, agents []*v1alpha1.StudioAgentPreset) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.SetStudioAgentPresets(
 		ctx,
 		connect_go.NewRequest(

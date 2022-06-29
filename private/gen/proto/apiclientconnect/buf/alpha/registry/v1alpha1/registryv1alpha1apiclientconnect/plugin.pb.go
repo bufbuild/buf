@@ -25,8 +25,9 @@ import (
 )
 
 type pluginServiceClient struct {
-	logger *zap.Logger
-	client registryv1alpha1connect.PluginServiceClient
+	logger          *zap.Logger
+	client          registryv1alpha1connect.PluginServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // ListPlugins returns all the plugins available to the user. This includes
@@ -38,6 +39,9 @@ func (s *pluginServiceClient) ListPlugins(
 	pageToken string,
 	reverse bool,
 ) (plugins []*v1alpha1.Plugin, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListPlugins(
 		ctx,
 		connect_go.NewRequest(
@@ -61,6 +65,9 @@ func (s *pluginServiceClient) ListUserPlugins(
 	pageToken string,
 	reverse bool,
 ) (plugins []*v1alpha1.Plugin, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListUserPlugins(
 		ctx,
 		connect_go.NewRequest(
@@ -85,6 +92,9 @@ func (s *pluginServiceClient) ListOrganizationPlugins(
 	pageToken string,
 	reverse bool,
 ) (plugins []*v1alpha1.Plugin, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListOrganizationPlugins(
 		ctx,
 		connect_go.NewRequest(
@@ -108,6 +118,9 @@ func (s *pluginServiceClient) GetPluginVersion(
 	name string,
 	version string,
 ) (pluginVersion *v1alpha1.PluginVersion, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetPluginVersion(
 		ctx,
 		connect_go.NewRequest(
@@ -132,6 +145,9 @@ func (s *pluginServiceClient) ListPluginVersions(
 	pageToken string,
 	reverse bool,
 ) (pluginVersions []*v1alpha1.PluginVersion, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListPluginVersions(
 		ctx,
 		connect_go.NewRequest(
@@ -156,6 +172,9 @@ func (s *pluginServiceClient) CreatePlugin(
 	name string,
 	visibility v1alpha1.PluginVisibility,
 ) (plugin *v1alpha1.Plugin, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.CreatePlugin(
 		ctx,
 		connect_go.NewRequest(
@@ -177,6 +196,9 @@ func (s *pluginServiceClient) GetPlugin(
 	owner string,
 	name string,
 ) (plugin *v1alpha1.Plugin, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetPlugin(
 		ctx,
 		connect_go.NewRequest(
@@ -199,6 +221,9 @@ func (s *pluginServiceClient) DeletePlugin(
 	owner string,
 	name string,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.DeletePlugin(
 		ctx,
 		connect_go.NewRequest(
@@ -220,6 +245,9 @@ func (s *pluginServiceClient) SetPluginContributor(
 	userId string,
 	pluginRole v1alpha1.PluginRole,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.SetPluginContributor(
 		ctx,
 		connect_go.NewRequest(
@@ -245,6 +273,9 @@ func (s *pluginServiceClient) ListPluginContributors(
 	pageToken string,
 	reverse bool,
 ) (users []*v1alpha1.PluginContributor, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListPluginContributors(
 		ctx,
 		connect_go.NewRequest(
@@ -268,6 +299,9 @@ func (s *pluginServiceClient) DeprecatePlugin(
 	name string,
 	message string,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.DeprecatePlugin(
 		ctx,
 		connect_go.NewRequest(
@@ -289,6 +323,9 @@ func (s *pluginServiceClient) UndeprecatePlugin(
 	owner string,
 	name string,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.UndeprecatePlugin(
 		ctx,
 		connect_go.NewRequest(
@@ -309,6 +346,9 @@ func (s *pluginServiceClient) GetTemplate(
 	owner string,
 	name string,
 ) (template *v1alpha1.Template, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetTemplate(
 		ctx,
 		connect_go.NewRequest(
@@ -332,6 +372,9 @@ func (s *pluginServiceClient) ListTemplates(
 	pageToken string,
 	reverse bool,
 ) (templates []*v1alpha1.Template, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListTemplates(
 		ctx,
 		connect_go.NewRequest(
@@ -355,6 +398,9 @@ func (s *pluginServiceClient) ListTemplatesUserCanAccess(
 	pageToken string,
 	reverse bool,
 ) (templates []*v1alpha1.Template, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListTemplatesUserCanAccess(
 		ctx,
 		connect_go.NewRequest(
@@ -378,6 +424,9 @@ func (s *pluginServiceClient) ListUserTemplates(
 	pageToken string,
 	reverse bool,
 ) (templates []*v1alpha1.Template, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListUserTemplates(
 		ctx,
 		connect_go.NewRequest(
@@ -402,6 +451,9 @@ func (s *pluginServiceClient) ListOrganizationTemplates(
 	pageToken string,
 	reverse bool,
 ) (templates []*v1alpha1.Template, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListOrganizationTemplates(
 		ctx,
 		connect_go.NewRequest(
@@ -425,6 +477,9 @@ func (s *pluginServiceClient) GetTemplateVersion(
 	name string,
 	version string,
 ) (templateVersion *v1alpha1.TemplateVersion, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetTemplateVersion(
 		ctx,
 		connect_go.NewRequest(
@@ -449,6 +504,9 @@ func (s *pluginServiceClient) ListTemplateVersions(
 	pageToken string,
 	reverse bool,
 ) (templateVersions []*v1alpha1.TemplateVersion, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListTemplateVersions(
 		ctx,
 		connect_go.NewRequest(
@@ -474,6 +532,9 @@ func (s *pluginServiceClient) CreateTemplate(
 	visibility v1alpha1.PluginVisibility,
 	pluginConfigs []*v1alpha1.PluginConfig,
 ) (template *v1alpha1.Template, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.CreateTemplate(
 		ctx,
 		connect_go.NewRequest(
@@ -496,6 +557,9 @@ func (s *pluginServiceClient) DeleteTemplate(
 	owner string,
 	name string,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.DeleteTemplate(
 		ctx,
 		connect_go.NewRequest(
@@ -518,6 +582,9 @@ func (s *pluginServiceClient) CreateTemplateVersion(
 	templateName string,
 	pluginVersions []*v1alpha1.PluginVersionMapping,
 ) (templateVersion *v1alpha1.TemplateVersion, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.CreateTemplateVersion(
 		ctx,
 		connect_go.NewRequest(
@@ -541,6 +608,9 @@ func (s *pluginServiceClient) SetTemplateContributor(
 	userId string,
 	templateRole v1alpha1.TemplateRole,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.SetTemplateContributor(
 		ctx,
 		connect_go.NewRequest(
@@ -566,6 +636,9 @@ func (s *pluginServiceClient) ListTemplateContributors(
 	pageToken string,
 	reverse bool,
 ) (users []*v1alpha1.TemplateContributor, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListTemplateContributors(
 		ctx,
 		connect_go.NewRequest(
@@ -589,6 +662,9 @@ func (s *pluginServiceClient) DeprecateTemplate(
 	name string,
 	message string,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.DeprecateTemplate(
 		ctx,
 		connect_go.NewRequest(
@@ -610,6 +686,9 @@ func (s *pluginServiceClient) UndeprecateTemplate(
 	owner string,
 	name string,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.UndeprecateTemplate(
 		ctx,
 		connect_go.NewRequest(

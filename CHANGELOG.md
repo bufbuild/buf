@@ -2,8 +2,7 @@
 
 ## [Unreleased]
 
-- Fix issue where `ENUM_ZERO_VALUE_SUFFIX` permitted enum values
-  that did not match the surrounding enum name.
+- No changes yet.
 
 ## [v1.6.0] - 2022-06-21
 

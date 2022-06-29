@@ -26,8 +26,9 @@ import (
 )
 
 type convertServiceClient struct {
-	logger *zap.Logger
-	client registryv1alpha1connect.ConvertServiceClient
+	logger          *zap.Logger
+	client          registryv1alpha1connect.ConvertServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // Convert converts a serialized message according to
@@ -40,6 +41,9 @@ func (s *convertServiceClient) Convert(
 	requestFormat v1alpha1.ConvertFormat,
 	responseFormat v1alpha1.ConvertFormat,
 ) (payloadResponse []byte, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.Convert(
 		ctx,
 		connect_go.NewRequest(

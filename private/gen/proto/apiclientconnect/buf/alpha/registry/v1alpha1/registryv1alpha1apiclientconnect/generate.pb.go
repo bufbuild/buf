@@ -27,8 +27,9 @@ import (
 )
 
 type generateServiceClient struct {
-	logger *zap.Logger
-	client registryv1alpha1connect.GenerateServiceClient
+	logger          *zap.Logger
+	client          registryv1alpha1connect.GenerateServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // GeneratePlugins generates an array of files given the provided
@@ -41,6 +42,9 @@ func (s *generateServiceClient) GeneratePlugins(
 	includeImports bool,
 	includeWellKnownTypes bool,
 ) (responses []*pluginpb.CodeGeneratorResponse, runtimeLibraries []*v1alpha1.RuntimeLibrary, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GeneratePlugins(
 		ctx,
 		connect_go.NewRequest(
@@ -68,6 +72,9 @@ func (s *generateServiceClient) GenerateTemplate(
 	includeImports bool,
 	includeWellKnownTypes bool,
 ) (files []*v1alpha1.File, runtimeLibraries []*v1alpha1.RuntimeLibrary, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GenerateTemplate(
 		ctx,
 		connect_go.NewRequest(

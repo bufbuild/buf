@@ -94,16 +94,6 @@ func NewRepositoryPrinter(
 	return newRepositoryPrinter(apiProvider, address, writer)
 }
 
-// RepositoryBranchPrinter is a repository branch printer.
-type RepositoryBranchPrinter interface {
-	PrintRepositoryBranch(ctx context.Context, format Format, repositoryBranch *registryv1alpha1.RepositoryBranch) error
-}
-
-// NewRepositoryBranchPrinter returns a new RepositoryBranchPrinter.
-func NewRepositoryBranchPrinter(writer io.Writer) RepositoryBranchPrinter {
-	return newRepositoryBranchPrinter(writer)
-}
-
 // RepositoryTagPrinter is a repository tag printer.
 type RepositoryTagPrinter interface {
 	PrintRepositoryTag(ctx context.Context, format Format, repositoryTag *registryv1alpha1.RepositoryTag) error

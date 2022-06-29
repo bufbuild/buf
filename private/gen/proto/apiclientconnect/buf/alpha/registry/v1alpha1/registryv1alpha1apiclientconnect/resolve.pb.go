@@ -26,8 +26,9 @@ import (
 )
 
 type resolveServiceClient struct {
-	logger *zap.Logger
-	client registryv1alpha1connect.ResolveServiceClient
+	logger          *zap.Logger
+	client          registryv1alpha1connect.ResolveServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // GetModulePins finds all the latest digests and respective dependencies of
@@ -42,6 +43,9 @@ func (s *resolveServiceClient) GetModulePins(
 	moduleReferences []*v1alpha1.ModuleReference,
 	currentModulePins []*v1alpha1.ModulePin,
 ) (modulePins []*v1alpha1.ModulePin, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetModulePins(
 		ctx,
 		connect_go.NewRequest(
@@ -57,8 +61,9 @@ func (s *resolveServiceClient) GetModulePins(
 }
 
 type localResolveServiceClient struct {
-	logger *zap.Logger
-	client registryv1alpha1connect.LocalResolveServiceClient
+	logger          *zap.Logger
+	client          registryv1alpha1connect.LocalResolveServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // GetLocalModulePins gets the latest pins for the specified local module references.
@@ -77,6 +82,9 @@ func (s *localResolveServiceClient) GetLocalModulePins(
 	ctx context.Context,
 	localModuleReferences []*v1alpha11.LocalModuleReference,
 ) (localModuleResolveResults []*v1alpha11.LocalModuleResolveResult, dependencies []*v1alpha1.ModulePin, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetLocalModulePins(
 		ctx,
 		connect_go.NewRequest(

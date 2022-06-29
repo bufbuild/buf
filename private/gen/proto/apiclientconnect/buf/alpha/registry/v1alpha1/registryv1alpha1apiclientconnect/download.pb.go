@@ -26,8 +26,9 @@ import (
 )
 
 type downloadServiceClient struct {
-	logger *zap.Logger
-	client registryv1alpha1connect.DownloadServiceClient
+	logger          *zap.Logger
+	client          registryv1alpha1connect.DownloadServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // Download downloads.
@@ -37,6 +38,9 @@ func (s *downloadServiceClient) Download(
 	repository string,
 	reference string,
 ) (module *v1alpha1.Module, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.Download(
 		ctx,
 		connect_go.NewRequest(

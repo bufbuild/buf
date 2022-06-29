@@ -25,8 +25,9 @@ import (
 )
 
 type repositoryCommitServiceClient struct {
-	logger *zap.Logger
-	client registryv1alpha1connect.RepositoryCommitServiceClient
+	logger          *zap.Logger
+	client          registryv1alpha1connect.RepositoryCommitServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // ListRepositoryCommitsByBranch lists the repository commits associated
@@ -40,6 +41,9 @@ func (s *repositoryCommitServiceClient) ListRepositoryCommitsByBranch(
 	pageToken string,
 	reverse bool,
 ) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListRepositoryCommitsByBranch(
 		ctx,
 		connect_go.NewRequest(
@@ -69,6 +73,9 @@ func (s *repositoryCommitServiceClient) ListRepositoryCommitsByReference(
 	pageToken string,
 	reverse bool,
 ) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListRepositoryCommitsByReference(
 		ctx,
 		connect_go.NewRequest(
@@ -87,37 +94,6 @@ func (s *repositoryCommitServiceClient) ListRepositoryCommitsByReference(
 	return response.Msg.RepositoryCommits, response.Msg.NextPageToken, nil
 }
 
-// ListRepositoryCommitsOnTrack returns repository commits up-to and including
-// the provided reference.
-func (s *repositoryCommitServiceClient) ListRepositoryCommitsOnTrack(
-	ctx context.Context,
-	repositoryOwner string,
-	repositoryName string,
-	repositoryTrackName string,
-	reference string,
-	pageSize uint32,
-	pageToken string,
-	reverse bool,
-) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
-	response, err := s.client.ListRepositoryCommitsOnTrack(
-		ctx,
-		connect_go.NewRequest(
-			&v1alpha1.ListRepositoryCommitsOnTrackRequest{
-				RepositoryOwner:     repositoryOwner,
-				RepositoryName:      repositoryName,
-				RepositoryTrackName: repositoryTrackName,
-				Reference:           reference,
-				PageSize:            pageSize,
-				PageToken:           pageToken,
-				Reverse:             reverse,
-			}),
-	)
-	if err != nil {
-		return nil, "", err
-	}
-	return response.Msg.RepositoryCommits, response.Msg.NextPageToken, nil
-}
-
 // GetRepositoryCommitByReference returns the repository commit matching
 // the provided reference, if it exists.
 func (s *repositoryCommitServiceClient) GetRepositoryCommitByReference(
@@ -126,6 +102,9 @@ func (s *repositoryCommitServiceClient) GetRepositoryCommitByReference(
 	repositoryName string,
 	reference string,
 ) (repositoryCommit *v1alpha1.RepositoryCommit, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetRepositoryCommitByReference(
 		ctx,
 		connect_go.NewRequest(
@@ -150,6 +129,9 @@ func (s *repositoryCommitServiceClient) GetRepositoryCommitBySequenceId(
 	repositoryBranchName string,
 	commitSequenceId int64,
 ) (repositoryCommit *v1alpha1.RepositoryCommit, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetRepositoryCommitBySequenceId(
 		ctx,
 		connect_go.NewRequest(

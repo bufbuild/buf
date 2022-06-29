@@ -25,8 +25,9 @@ import (
 )
 
 type jSONSchemaServiceClient struct {
-	logger *zap.Logger
-	client registryv1alpha1connect.JSONSchemaServiceClient
+	logger          *zap.Logger
+	client          registryv1alpha1connect.JSONSchemaServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // GetJSONSchema allows users to get an (approximate) json schema for a
@@ -38,6 +39,9 @@ func (s *jSONSchemaServiceClient) GetJSONSchema(
 	reference string,
 	typeName string,
 ) (jsonSchema []byte, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetJSONSchema(
 		ctx,
 		connect_go.NewRequest(
