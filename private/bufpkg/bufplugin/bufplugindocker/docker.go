@@ -17,6 +17,7 @@ package bufplugindocker
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -25,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -135,12 +137,13 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 				retErr = multierr.Append(retErr, err)
 			}
 		}()
-		// TODO: We're just logging the messages from the image build.
-		// In a future PR, we might want to add support for parsing well known messages (i.e. the image id).
-		// This would allow us to potentially skip the ImageInspectWithRaw client call below.
 		scanner := bufio.NewScanner(response.Body)
 		for scanner.Scan() {
 			d.logger.Debug(scanner.Text())
+			var message jsonmessage.JSONMessage
+			if err := json.Unmarshal([]byte(scanner.Text()), &message); err == nil && message.Error != nil {
+				return message.Error
+			}
 		}
 		if err := scanner.Err(); err != nil {
 			return err
@@ -176,11 +179,13 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 	defer func() {
 		retErr = multierr.Append(retErr, pushReader.Close())
 	}()
-	// TODO: Only logging the messages from push at the moment.
-	// We may wish to parse these to return additional status to the user (or additional details on error messages/failures).
 	pushScanner := bufio.NewScanner(pushReader)
 	for pushScanner.Scan() {
 		d.logger.Debug(pushScanner.Text())
+		var message jsonmessage.JSONMessage
+		if err := json.Unmarshal([]byte(pushScanner.Text()), &message); err == nil && message.Error != nil {
+			return nil, message.Error
+		}
 	}
 	if err := pushScanner.Err(); err != nil {
 		return nil, err
@@ -201,11 +206,22 @@ func (d *dockerAPIClient) Close() error {
 }
 
 // NewClient creates a new Client to use to build Docker plugins.
-func NewClient(logger *zap.Logger) (Client, error) {
+func NewClient(logger *zap.Logger, options ...ClientOption) (Client, error) {
 	if logger == nil {
 		return nil, errors.New("logger required")
 	}
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	opts := &clientOptions{}
+	for _, option := range options {
+		option(opts)
+	}
+	dockerClientOpts := []client.Opt{client.FromEnv}
+	if len(opts.host) > 0 {
+		dockerClientOpts = append(dockerClientOpts, client.WithHost(opts.host))
+	}
+	if len(opts.version) > 0 {
+		dockerClientOpts = append(dockerClientOpts, client.WithVersion(opts.version))
+	}
+	cli, err := client.NewClientWithOpts(dockerClientOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -213,6 +229,30 @@ func NewClient(logger *zap.Logger) (Client, error) {
 		cli:    cli,
 		logger: logger,
 	}, nil
+}
+
+type clientOptions struct {
+	host    string
+	version string
+}
+
+// ClientOption defines options for the NewClient call to customize the underlying Docker client.
+type ClientOption func(options *clientOptions)
+
+// WithHost allows specifying a Docker engine host to connect to (instead of the default lookup using DOCKER_HOST env var).
+// This makes it suitable for use by parallel tests.
+func WithHost(host string) ClientOption {
+	return func(options *clientOptions) {
+		options.host = host
+	}
+}
+
+// WithVersion allows specifying a Docker API client version instead of using the default version negotiation algorithm.
+// This allows tests to implement the Docker engine API using stable URLs.
+func WithVersion(version string) ClientOption {
+	return func(options *clientOptions) {
+		options.version = version
+	}
 }
 
 type buildOptions struct {
