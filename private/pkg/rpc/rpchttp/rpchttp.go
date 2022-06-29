@@ -15,6 +15,7 @@
 package rpchttp
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -63,9 +64,11 @@ func newHTTPRoundTripper(next http.RoundTripper) *httpRoundTripper {
 func (h *httpRoundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
 	if headers := rpc.GetOutgoingHeaders(request.Context()); len(headers) > 0 {
 		for key, value := range headers {
+			fmt.Println("addingggggggg ", key)
 			request.Header.Add(rpcheader.KeyPrefix+key, value)
 		}
 	}
+	fmt.Printf("req %+v", request)
 	return h.next.RoundTrip(request)
 }
 
