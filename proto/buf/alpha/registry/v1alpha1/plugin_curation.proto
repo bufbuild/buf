@@ -87,7 +87,7 @@ message CuratedPlugin {
   string description = 10;
   // The configuration for the runtime of the plugin.
   RuntimeConfig runtime_config = 11;
-  // TODOC
+  // The revision for this plugin version.
   uint32 revision = 12;
 }
 
@@ -122,7 +122,7 @@ message CreateCuratedPluginRequest {
   string description = 9;
   // The configuration for the runtime of the plugin.
   RuntimeConfig runtime_config = 10;
-  // TODOC
+  // The revision for this plugin version.
   uint32 revision = 11;
 }
 

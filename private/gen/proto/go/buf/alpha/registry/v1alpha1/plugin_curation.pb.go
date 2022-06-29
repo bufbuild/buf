@@ -303,7 +303,7 @@ type CuratedPlugin struct {
 	Description string `protobuf:"bytes,10,opt,name=description,proto3" json:"description,omitempty"`
 	// The configuration for the runtime of the plugin.
 	RuntimeConfig *RuntimeConfig `protobuf:"bytes,11,opt,name=runtime_config,json=runtimeConfig,proto3" json:"runtime_config,omitempty"`
-	// TODOC
+	// The revision for this plugin version.
 	Revision uint32 `protobuf:"varint,12,opt,name=revision,proto3" json:"revision,omitempty"`
 }
 
@@ -450,7 +450,7 @@ type CreateCuratedPluginRequest struct {
 	Description string `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
 	// The configuration for the runtime of the plugin.
 	RuntimeConfig *RuntimeConfig `protobuf:"bytes,10,opt,name=runtime_config,json=runtimeConfig,proto3" json:"runtime_config,omitempty"`
-	// TODOC
+	// The revision for this plugin version.
 	Revision uint32 `protobuf:"varint,11,opt,name=revision,proto3" json:"revision,omitempty"`
 }
 
