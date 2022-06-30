@@ -88,3 +88,28 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 	}
 	return response.Msg.Configuration, nil
 }
+
+// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
+func (s *pluginCurationServiceClient) GetLatestCuratedPlugin(
+	ctx context.Context,
+	owner string,
+	name string,
+	version string,
+) (plugin *v1alpha1.CuratedPlugin, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetLatestCuratedPlugin(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.GetLatestCuratedPluginRequest{
+				Owner:   owner,
+				Name:    name,
+				Version: version,
+			}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Msg.Plugin, nil
+}
