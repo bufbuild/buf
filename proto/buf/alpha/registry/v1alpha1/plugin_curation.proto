@@ -97,6 +97,8 @@ service PluginCurationService {
   rpc ListCuratedPlugins(ListCuratedPluginsRequest) returns (ListCuratedPluginsResponse);
   // CreateCuratedPlugin creates a new curated plugin.
   rpc CreateCuratedPlugin(CreateCuratedPluginRequest) returns (CreateCuratedPluginResponse);
+  // GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
+  rpc GetLatestCuratedPlugin(GetLatestCuratedPluginRequest) returns (GetLatestCuratedPluginResponse);
 }
 
 message CreateCuratedPluginRequest {
@@ -142,4 +144,18 @@ message ListCuratedPluginsResponse {
   repeated CuratedPlugin plugins = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+}
+
+message GetLatestCuratedPluginRequest {
+  // The owner of the plugin, i.e. "library".
+  string owner = 1;
+  // The name of the plugin, i.e. "connect-go".
+  string name = 2;
+  // Semver-formatted plugin version.
+  string version = 3;
+}
+
+message GetLatestCuratedPluginResponse {
+  // The latest plugin.
+  CuratedPlugin plugin = 1;
 }
