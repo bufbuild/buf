@@ -68,7 +68,7 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 	sourceUrl string,
 	description string,
 	runtimeConfig *v1alpha1.RuntimeConfig,
-	revision uint32,
+	revision int32,
 ) (configuration *v1alpha1.CuratedPlugin, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
