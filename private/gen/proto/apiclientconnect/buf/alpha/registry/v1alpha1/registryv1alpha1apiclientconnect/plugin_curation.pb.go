@@ -96,9 +96,6 @@ func (s *pluginCurationServiceClient) GetLatestCuratedPlugin(
 	name string,
 	version string,
 ) (plugin *v1alpha1.CuratedPlugin, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetLatestCuratedPlugin(
 		ctx,
 		connect_go.NewRequest(
