@@ -87,6 +87,8 @@ message CuratedPlugin {
   string description = 10;
   // The configuration for the runtime of the plugin.
   RuntimeConfig runtime_config = 11;
+  // The revision for this plugin version.
+  uint32 revision = 12;
 }
 
 // PluginCurationService manages curated plugins.
@@ -95,6 +97,8 @@ service PluginCurationService {
   rpc ListCuratedPlugins(ListCuratedPluginsRequest) returns (ListCuratedPluginsResponse);
   // CreateCuratedPlugin creates a new curated plugin.
   rpc CreateCuratedPlugin(CreateCuratedPluginRequest) returns (CreateCuratedPluginResponse);
+  // GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
+  rpc GetLatestCuratedPlugin(GetLatestCuratedPluginRequest) returns (GetLatestCuratedPluginResponse);
 }
 
 message CreateCuratedPluginRequest {
@@ -120,6 +124,8 @@ message CreateCuratedPluginRequest {
   string description = 9;
   // The configuration for the runtime of the plugin.
   RuntimeConfig runtime_config = 10;
+  // The revision for this plugin version.
+  uint32 revision = 11;
 }
 
 message CreateCuratedPluginResponse {
@@ -138,4 +144,18 @@ message ListCuratedPluginsResponse {
   repeated CuratedPlugin plugins = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+}
+
+message GetLatestCuratedPluginRequest {
+  // The owner of the plugin, i.e. "library".
+  string owner = 1;
+  // The name of the plugin, i.e. "connect-go".
+  string name = 2;
+  // Semver-formatted plugin version.
+  string version = 3;
+}
+
+message GetLatestCuratedPluginResponse {
+  // The latest plugin.
+  CuratedPlugin plugin = 1;
 }

@@ -43,5 +43,13 @@ type PluginCurationService interface {
 		sourceUrl string,
 		description string,
 		runtimeConfig *v1alpha1.RuntimeConfig,
+		revision uint32,
 	) (configuration *v1alpha1.CuratedPlugin, err error)
+	// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
+	GetLatestCuratedPlugin(
+		ctx context.Context,
+		owner string,
+		name string,
+		version string,
+	) (plugin *v1alpha1.CuratedPlugin, err error)
 }

@@ -46,6 +46,8 @@ type PluginCurationServiceClient interface {
 	ListCuratedPlugins(context.Context, *connect_go.Request[v1alpha1.ListCuratedPluginsRequest]) (*connect_go.Response[v1alpha1.ListCuratedPluginsResponse], error)
 	// CreateCuratedPlugin creates a new curated plugin.
 	CreateCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect_go.Response[v1alpha1.CreateCuratedPluginResponse], error)
+	// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
+	GetLatestCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error)
 }
 
 // NewPluginCurationServiceClient constructs a client for the
@@ -69,13 +71,19 @@ func NewPluginCurationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 			baseURL+"/buf.alpha.registry.v1alpha1.PluginCurationService/CreateCuratedPlugin",
 			opts...,
 		),
+		getLatestCuratedPlugin: connect_go.NewClient[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.PluginCurationService/GetLatestCuratedPlugin",
+			opts...,
+		),
 	}
 }
 
 // pluginCurationServiceClient implements PluginCurationServiceClient.
 type pluginCurationServiceClient struct {
-	listCuratedPlugins  *connect_go.Client[v1alpha1.ListCuratedPluginsRequest, v1alpha1.ListCuratedPluginsResponse]
-	createCuratedPlugin *connect_go.Client[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse]
+	listCuratedPlugins     *connect_go.Client[v1alpha1.ListCuratedPluginsRequest, v1alpha1.ListCuratedPluginsResponse]
+	createCuratedPlugin    *connect_go.Client[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse]
+	getLatestCuratedPlugin *connect_go.Client[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse]
 }
 
 // ListCuratedPlugins calls buf.alpha.registry.v1alpha1.PluginCurationService.ListCuratedPlugins.
@@ -88,6 +96,12 @@ func (c *pluginCurationServiceClient) CreateCuratedPlugin(ctx context.Context, r
 	return c.createCuratedPlugin.CallUnary(ctx, req)
 }
 
+// GetLatestCuratedPlugin calls
+// buf.alpha.registry.v1alpha1.PluginCurationService.GetLatestCuratedPlugin.
+func (c *pluginCurationServiceClient) GetLatestCuratedPlugin(ctx context.Context, req *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error) {
+	return c.getLatestCuratedPlugin.CallUnary(ctx, req)
+}
+
 // PluginCurationServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.PluginCurationService service.
 type PluginCurationServiceHandler interface {
@@ -95,6 +109,8 @@ type PluginCurationServiceHandler interface {
 	ListCuratedPlugins(context.Context, *connect_go.Request[v1alpha1.ListCuratedPluginsRequest]) (*connect_go.Response[v1alpha1.ListCuratedPluginsResponse], error)
 	// CreateCuratedPlugin creates a new curated plugin.
 	CreateCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect_go.Response[v1alpha1.CreateCuratedPluginResponse], error)
+	// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
+	GetLatestCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error)
 }
 
 // NewPluginCurationServiceHandler builds an HTTP handler from the service implementation. It
@@ -114,6 +130,11 @@ func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...c
 		svc.CreateCuratedPlugin,
 		opts...,
 	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.PluginCurationService/GetLatestCuratedPlugin", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.PluginCurationService/GetLatestCuratedPlugin",
+		svc.GetLatestCuratedPlugin,
+		opts...,
+	))
 	return "/buf.alpha.registry.v1alpha1.PluginCurationService/", mux
 }
 
@@ -126,4 +147,8 @@ func (UnimplementedPluginCurationServiceHandler) ListCuratedPlugins(context.Cont
 
 func (UnimplementedPluginCurationServiceHandler) CreateCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect_go.Response[v1alpha1.CreateCuratedPluginResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.CreateCuratedPlugin is not implemented"))
+}
+
+func (UnimplementedPluginCurationServiceHandler) GetLatestCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.GetLatestCuratedPlugin is not implemented"))
 }

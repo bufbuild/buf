@@ -23,6 +23,7 @@ import (
 )
 
 func TestRegistryAuthMarshalJSON(t *testing.T) {
+	t.Parallel()
 	auth := RegistryAuthConfig{
 		Username:      "someuser",
 		Password:      "somepass",
@@ -38,6 +39,7 @@ func TestRegistryAuthMarshalJSON(t *testing.T) {
 }
 
 func TestRegistryAuthToFromHeader(t *testing.T) {
+	t.Parallel()
 	auth := RegistryAuthConfig{
 		Username:      "someuser",
 		Password:      "somepass",

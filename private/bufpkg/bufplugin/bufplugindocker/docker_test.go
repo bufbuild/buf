@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufplugindocker_test
+package bufplugindocker
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -30,7 +33,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -66,7 +68,7 @@ func TestBuildSuccess(t *testing.T) {
 	require.Nilf(t, err, "failed to build docker plugin")
 	assert.Truef(
 		t,
-		strings.HasPrefix(response.Image, examplePluginIdentity+":"),
+		strings.HasPrefix(response.Image, pluginsImagePrefix+examplePluginIdentity+":"),
 		"image name should begin with: %q, found: %q",
 		examplePluginIdentity,
 		response.Image,
@@ -93,13 +95,13 @@ func TestPushSuccess(t *testing.T) {
 	listenerAddr := server.httpServer.Listener.Addr().String()
 	dockerClient := createClient(
 		t,
-		bufplugindocker.WithHost("tcp://"+listenerAddr),
-		bufplugindocker.WithVersion(dockerVersion),
+		WithHost("tcp://"+listenerAddr),
+		WithVersion(dockerVersion),
 	)
 	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotNil(t, response)
-	pushResponse, err := dockerClient.Push(context.Background(), response.Image, &bufplugindocker.RegistryAuthConfig{})
+	pushResponse, err := dockerClient.Push(context.Background(), response.Image, &RegistryAuthConfig{})
 	require.Nilf(t, err, "failed to push docker plugin")
 	require.NotNil(t, pushResponse)
 }
@@ -112,13 +114,13 @@ func TestPushError(t *testing.T) {
 	listenerAddr := server.httpServer.Listener.Addr().String()
 	dockerClient := createClient(
 		t,
-		bufplugindocker.WithHost("tcp://"+listenerAddr),
-		bufplugindocker.WithVersion(dockerVersion),
+		WithHost("tcp://"+listenerAddr),
+		WithVersion(dockerVersion),
 	)
 	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotNil(t, response)
-	_, err = dockerClient.Push(context.Background(), response.Image, &bufplugindocker.RegistryAuthConfig{})
+	_, err = dockerClient.Push(context.Background(), response.Image, &RegistryAuthConfig{})
 	require.NotNil(t, err, "expected error")
 	assert.Equal(t, server.pushErr.Error(), err.Error())
 }
@@ -131,8 +133,8 @@ func TestBuildError(t *testing.T) {
 	listenerAddr := server.httpServer.Listener.Addr().String()
 	dockerClient := createClient(
 		t,
-		bufplugindocker.WithHost("tcp://"+listenerAddr),
-		bufplugindocker.WithVersion(dockerVersion),
+		WithHost("tcp://"+listenerAddr),
+		WithVersion(dockerVersion),
 	)
 	_, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.NotNilf(t, err, "expected error during build")
@@ -158,11 +160,11 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func createClient(t testing.TB, options ...bufplugindocker.ClientOption) bufplugindocker.Client {
+func createClient(t testing.TB, options ...ClientOption) Client {
 	t.Helper()
 	logger, err := zap.NewDevelopment()
 	require.Nilf(t, err, "failed to create zap logger")
-	dockerClient, err := bufplugindocker.NewClient(logger, options...)
+	dockerClient, err := NewClient(logger, options...)
 	require.Nilf(t, err, "failed to create client")
 	t.Cleanup(func() {
 		if err := dockerClient.Close(); err != nil {
@@ -172,7 +174,7 @@ func createClient(t testing.TB, options ...bufplugindocker.ClientOption) bufplug
 	return dockerClient
 }
 
-func buildDockerPlugin(t testing.TB, dockerClient bufplugindocker.Client, dockerfilePath string, pluginIdentity string) (*bufplugindocker.BuildResponse, error) {
+func buildDockerPlugin(t testing.TB, dockerClient Client, dockerfilePath string, pluginIdentity string) (*BuildResponse, error) {
 	t.Helper()
 	dockerfile, err := os.Open(dockerfilePath)
 	require.Nilf(t, err, "failed to open dockerfile")
@@ -193,6 +195,8 @@ func buildDockerPlugin(t testing.TB, dockerClient bufplugindocker.Client, docker
 // dockerServer allows testing some failure flows by simulating the responses to Docker CLI commands.
 type dockerServer struct {
 	httpServer    *httptest.Server
+	h2Server      *http2.Server
+	h2Handler     http.Handler
 	t             testing.TB
 	versionPrefix string
 	buildErr      error
@@ -207,6 +211,7 @@ type builtImage struct {
 }
 
 func newDockerServer(t testing.TB, version string) *dockerServer {
+	t.Helper()
 	versionPrefix := "/v" + version
 	dockerServer := &dockerServer{
 		t:             t,
@@ -217,25 +222,91 @@ func newDockerServer(t testing.TB, version string) *dockerServer {
 	mux.HandleFunc("/session", dockerServer.sessionHandler)
 	mux.HandleFunc(versionPrefix+"/build", dockerServer.buildHandler)
 	mux.HandleFunc(versionPrefix+"/images/", dockerServer.imagesHandler)
-	dockerServer.httpServer = httptest.NewServer(h2c.NewHandler(mux, &http2.Server{}))
+	dockerServer.h2Server = &http2.Server{}
+	dockerServer.h2Handler = h2c.NewHandler(mux, dockerServer.h2Server)
+	dockerServer.httpServer = httptest.NewUnstartedServer(dockerServer.h2Handler)
+	dockerServer.httpServer.Start()
 	t.Cleanup(dockerServer.httpServer.Close)
 	return dockerServer
 }
 
 func (d *dockerServer) sessionHandler(w http.ResponseWriter, r *http.Request) {
-	if _, err := io.Copy(io.Discard, r.Body); err != nil {
-		d.t.Error("failed to discard body:", err)
-	}
 	if r.Method != http.MethodPost {
 		http.NotFound(w, r)
 		return
 	}
 	if strings.EqualFold(r.Header.Get("Connection"), "upgrade") && r.ProtoMajor < 2 {
-		// Needed to allow h2c upgrade to proceed on the /session endpoint.
-		w.WriteHeader(http.StatusSwitchingProtocols)
+		conn, err := h2cUpgrade(w, r)
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		d.h2Server.ServeConn(conn, &http2.ServeConnOpts{
+			Context:        r.Context(),
+			Handler:        d.h2Handler,
+			UpgradeRequest: r,
+		})
 		return
 	}
 	w.WriteHeader(http.StatusNotFound)
+}
+
+// h2cUpgrade taken from x/net/http2/h2c/h2c.go implementation
+// Docker client doesn't send HTTP2-Settings header so upgrade doesn't work out of the box.
+func h2cUpgrade(w http.ResponseWriter, r *http.Request) (net.Conn, error) {
+	hijacker, ok := w.(http.Hijacker)
+	if !ok {
+		return nil, errors.New("h2c: connection does not support Hijack")
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	r.Body = io.NopCloser(bytes.NewBuffer(body))
+
+	conn, rw, err := hijacker.Hijack()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := rw.Write([]byte("HTTP/1.1 101 Switching Protocols\r\n" +
+		"Connection: Upgrade\r\n" +
+		"Upgrade: h2c\r\n\r\n")); err != nil {
+		return nil, err
+	}
+	return newBufConn(conn, rw), nil
+}
+
+func newBufConn(conn net.Conn, rw *bufio.ReadWriter) net.Conn {
+	rw.Flush()
+	if rw.Reader.Buffered() == 0 {
+		// If there's no buffered data to be read,
+		// we can just discard the bufio.ReadWriter.
+		return conn
+	}
+	return &bufConn{conn, rw.Reader}
+}
+
+// bufConn wraps a net.Conn, but reads drain the bufio.Reader first.
+type bufConn struct {
+	net.Conn
+	*bufio.Reader
+}
+
+func (c *bufConn) Read(p []byte) (int, error) {
+	if c.Reader == nil {
+		return c.Conn.Read(p)
+	}
+	n := c.Reader.Buffered()
+	if n == 0 {
+		c.Reader = nil
+		return c.Conn.Read(p)
+	}
+	if n < len(p) {
+		p = p[:n]
+	}
+	return c.Reader.Read(p)
 }
 
 func (d *dockerServer) buildHandler(w http.ResponseWriter, r *http.Request) {
