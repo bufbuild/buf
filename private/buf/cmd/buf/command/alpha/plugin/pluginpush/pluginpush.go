@@ -22,13 +22,14 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	connect_go "github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
@@ -160,57 +161,52 @@ func run(
 	if err != nil {
 		return err
 	}
-
-	// TODO: Now that the imageDigest is resolved, create a bufplugin.Plugin,
-	// then map it into a *registryv1alpha1.RemotePlugin
-	// (or *registryv1alpha1.CreateRemotePluginRequest) so that it can be pushed
-	// to the BSR.
-	//
-	//  plugin, err := bufplugin.NewPlugin(
-	//    pluginConfig.PluginVersion(),
-	//    pluginConfig.Options(),
-	//    pluginConfig.Runtime(),
-	//    imageDigest,
-	//  )
-	//  if err != nil {
-	//    return err
-	//  }
-	//  protoPlugin, err := bufplugin.PluginToProtoPlugin(plugin)
-	//  if err != nil {
-	//    return err
-	//  }
-	//  // Use the RemotePluginService (shown below) ...
-	//
-	// ---
-	//
-	// TODO: At this point, it's possible that an OCI registry entry was created
-	// without successfully creating the metadata in the BSR. If the user tries
-	// to push again, the OCI registry entry might already exist. We need to explore
-	// the OCI registry API to see what we can do to prevent such cases. This might
-	// involve some combination of a cleanup process, a two-phase commit flow (i.e.
-	// first create the metadata in the BSR, then push to the OCI registry, etc), or
-	// something else entirely. This might not actually be an issue depending on the
-	// OCI registry API.
-	//
-	//
+	plugin, err := bufplugin.NewPlugin(
+		pluginConfig.PluginVersion,
+		pluginConfig.Options,
+		pluginConfig.Runtime,
+		buildResponse.Digest,
+	)
+	if err != nil {
+		return err
+	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewPluginService(ctx, pluginConfig.Name.Remote())
+	service, err := apiProvider.NewPluginCurationService(ctx, pluginConfig.Name.Remote())
 	if err != nil {
 		return err
 	}
-	// TODO: Refactor this to be a new endpoint that uses the protoPlugin
-	// object. This is simply left as a placeholder.
-	if _, err := service.CreatePlugin(
+	var nextRevision int32
+	currentRevision, err := service.GetLatestCuratedPlugin(ctx, pluginConfig.Name.Owner(), pluginConfig.Name.Plugin(), pluginConfig.PluginVersion)
+	if err != nil {
+		if connect_go.CodeOf(err) != connect_go.CodeNotFound {
+			return err
+		}
+		nextRevision = 0
+	} else {
+		nextRevision = currentRevision.Revision + 1
+		if nextRevision < 0 {
+			return fmt.Errorf("next plugin revision out of range")
+		}
+	}
+	if _, err := service.CreateCuratedPlugin(
 		ctx,
 		pluginConfig.Name.Owner(),
 		pluginConfig.Name.Plugin(),
-		registryv1alpha1.PluginVisibility_PLUGIN_VISIBILITY_PUBLIC,
+		bufplugin.PluginToProtoPluginLanguage(plugin),
+		plugin.Version(),
+		plugin.ContainerImageDigest(),
+		bufplugin.PluginOptionsToOptionsSlice(plugin.Options()),
+		nil, // dependencies
+		"",  // sourceUrl
+		"",  // description
+		bufplugin.PluginRuntimeToProtoRuntimeConfig(plugin.Runtime()),
+		nextRevision,
 	); err != nil {
 		return err
 	}
-	// TODO: Print out the plugin that was just created.
+	// TODO: Determine how to print curated plugin - see bufprint
 	return nil
 }
