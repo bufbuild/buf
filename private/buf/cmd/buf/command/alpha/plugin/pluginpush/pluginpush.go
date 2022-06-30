@@ -29,7 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	connect_go "github.com/bufbuild/connect-go"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
@@ -179,9 +179,10 @@ func run(
 		return err
 	}
 	var nextRevision int32
+	// TODO: Revisit if we decide to make revision part of plugin_version
 	currentRevision, err := service.GetLatestCuratedPlugin(ctx, pluginConfig.Name.Owner(), pluginConfig.Name.Plugin(), pluginConfig.PluginVersion)
 	if err != nil {
-		if connect_go.CodeOf(err) != connect_go.CodeNotFound {
+		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err
 		}
 		nextRevision = 0

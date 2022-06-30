@@ -64,6 +64,7 @@ func NewPlugin(
 	return newPlugin(version, options, runtimeConfig, imageDigest)
 }
 
+// PluginToProtoPluginLanguage determines the appropriate registryv1alpha1.PluginLanguage for the plugin.
 func PluginToProtoPluginLanguage(plugin Plugin) registryv1alpha1.PluginLanguage {
 	language := registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_UNSPECIFIED
 	if plugin.Runtime() != nil {
@@ -76,6 +77,7 @@ func PluginToProtoPluginLanguage(plugin Plugin) registryv1alpha1.PluginLanguage 
 	return language
 }
 
+// PluginRuntimeToProtoRuntimeConfig converts a bufpluginconfig.RuntimeConfig to a registryv1alpha1.RuntimeConfig.
 func PluginRuntimeToProtoRuntimeConfig(pluginRuntime *bufpluginconfig.RuntimeConfig) *registryv1alpha1.RuntimeConfig {
 	if pluginRuntime == nil {
 		return nil
@@ -86,20 +88,21 @@ func PluginRuntimeToProtoRuntimeConfig(pluginRuntime *bufpluginconfig.RuntimeCon
 		goConfig.MinimumVersion = pluginRuntime.Go.MinVersion
 		goConfig.RuntimeLibraries = make([]*registryv1alpha1.GoConfig_RuntimeLibrary, 0, len(pluginRuntime.Go.Deps))
 		for _, dependency := range pluginRuntime.Go.Deps {
-			goConfig.RuntimeLibraries = append(goConfig.RuntimeLibraries, GoRuntimeDependencyToProtoGoRuntimeLibrary(dependency))
+			goConfig.RuntimeLibraries = append(goConfig.RuntimeLibraries, goRuntimeDependencyToProtoGoRuntimeLibrary(dependency))
 		}
 		runtimeConfig.RuntimeConfig = &registryv1alpha1.RuntimeConfig_GoConfig{GoConfig: goConfig}
 	} else if pluginRuntime.NPM != nil {
 		npmConfig := &registryv1alpha1.NPMConfig{}
 		npmConfig.RuntimeLibraries = make([]*registryv1alpha1.NPMConfig_RuntimeLibrary, 0, len(pluginRuntime.NPM.Deps))
 		for _, dependency := range pluginRuntime.NPM.Deps {
-			npmConfig.RuntimeLibraries = append(npmConfig.RuntimeLibraries, NPMRuntimeDependencyToProtoNPMRuntimeLibrary(dependency))
+			npmConfig.RuntimeLibraries = append(npmConfig.RuntimeLibraries, npmRuntimeDependencyToProtoNPMRuntimeLibrary(dependency))
 		}
 		runtimeConfig.RuntimeConfig = &registryv1alpha1.RuntimeConfig_NpmConfig{NpmConfig: npmConfig}
 	}
 	return runtimeConfig
 }
 
+// ProtoRuntimeConfigToPluginRuntime converts a registryv1alpha1.RuntimeConfig to a bufpluginconfig.RuntimeConfig .
 func ProtoRuntimeConfigToPluginRuntime(config *registryv1alpha1.RuntimeConfig) *bufpluginconfig.RuntimeConfig {
 	if config == nil {
 		return nil
@@ -107,51 +110,56 @@ func ProtoRuntimeConfigToPluginRuntime(config *registryv1alpha1.RuntimeConfig) *
 	runtimeConfig := &bufpluginconfig.RuntimeConfig{}
 	if config.GetGoConfig() != nil {
 		goConfig := &bufpluginconfig.GoRuntimeConfig{}
-		goConfig.MinVersion = config.GetGoConfig().MinimumVersion
-		goConfig.Deps = make([]*bufpluginconfig.GoRuntimeDependencyConfig, 0, len(config.GetGoConfig().RuntimeLibraries))
-		for _, library := range config.GetGoConfig().RuntimeLibraries {
-			goConfig.Deps = append(goConfig.Deps, ProtoGoRuntimeLibraryToGoRuntimeDependency(library))
+		goConfig.MinVersion = config.GetGoConfig().GetMinimumVersion()
+		goConfig.Deps = make([]*bufpluginconfig.GoRuntimeDependencyConfig, 0, len(config.GetGoConfig().GetRuntimeLibraries()))
+		for _, library := range config.GetGoConfig().GetRuntimeLibraries() {
+			goConfig.Deps = append(goConfig.Deps, protoGoRuntimeLibraryToGoRuntimeDependency(library))
 		}
 		runtimeConfig.Go = goConfig
 	} else if config.GetNpmConfig() != nil {
 		npmConfig := &bufpluginconfig.NPMRuntimeConfig{}
-		npmConfig.Deps = make([]*bufpluginconfig.NPMRuntimeDependencyConfig, 0, len(config.GetNpmConfig().RuntimeLibraries))
-		for _, library := range config.GetNpmConfig().RuntimeLibraries {
-			npmConfig.Deps = append(npmConfig.Deps, ProtoNPMRuntimeLibraryToNPMRuntimeDependency(library))
+		npmConfig.Deps = make([]*bufpluginconfig.NPMRuntimeDependencyConfig, 0, len(config.GetNpmConfig().GetRuntimeLibraries()))
+		for _, library := range config.GetNpmConfig().GetRuntimeLibraries() {
+			npmConfig.Deps = append(npmConfig.Deps, protoNPMRuntimeLibraryToNPMRuntimeDependency(library))
 		}
 		runtimeConfig.NPM = npmConfig
 	}
 	return runtimeConfig
 }
 
-func GoRuntimeDependencyToProtoGoRuntimeLibrary(config *bufpluginconfig.GoRuntimeDependencyConfig) *registryv1alpha1.GoConfig_RuntimeLibrary {
+// goRuntimeDependencyToProtoGoRuntimeLibrary converts a bufpluginconfig.GoRuntimeDependencyConfig to a registryv1alpha1.GoConfig_RuntimeLibrary.
+func goRuntimeDependencyToProtoGoRuntimeLibrary(config *bufpluginconfig.GoRuntimeDependencyConfig) *registryv1alpha1.GoConfig_RuntimeLibrary {
 	return &registryv1alpha1.GoConfig_RuntimeLibrary{
 		Module:  config.Module,
 		Version: config.Version,
 	}
 }
 
-func ProtoGoRuntimeLibraryToGoRuntimeDependency(config *registryv1alpha1.GoConfig_RuntimeLibrary) *bufpluginconfig.GoRuntimeDependencyConfig {
+// protoGoRuntimeLibraryToGoRuntimeDependency converts a registryv1alpha1.GoConfig_RuntimeLibrary to a bufpluginconfig.GoRuntimeDependencyConfig.
+func protoGoRuntimeLibraryToGoRuntimeDependency(config *registryv1alpha1.GoConfig_RuntimeLibrary) *bufpluginconfig.GoRuntimeDependencyConfig {
 	return &bufpluginconfig.GoRuntimeDependencyConfig{
 		Module:  config.Module,
 		Version: config.Version,
 	}
 }
 
-func NPMRuntimeDependencyToProtoNPMRuntimeLibrary(config *bufpluginconfig.NPMRuntimeDependencyConfig) *registryv1alpha1.NPMConfig_RuntimeLibrary {
+// npmRuntimeDependencyToProtoNPMRuntimeLibrary converts a bufpluginconfig.NPMRuntimeConfig to a registryv1alpha1.NPMConfig_RuntimeLibrary.
+func npmRuntimeDependencyToProtoNPMRuntimeLibrary(config *bufpluginconfig.NPMRuntimeDependencyConfig) *registryv1alpha1.NPMConfig_RuntimeLibrary {
 	return &registryv1alpha1.NPMConfig_RuntimeLibrary{
 		Package: config.Package,
 		Version: config.Version,
 	}
 }
 
-func ProtoNPMRuntimeLibraryToNPMRuntimeDependency(config *registryv1alpha1.NPMConfig_RuntimeLibrary) *bufpluginconfig.NPMRuntimeDependencyConfig {
+// protoNPMRuntimeLibraryToNPMRuntimeDependency converts a registryv1alpha1.NPMConfig_RuntimeLibrary to a bufpluginconfig.NPMRuntimeDependencyConfig.
+func protoNPMRuntimeLibraryToNPMRuntimeDependency(config *registryv1alpha1.NPMConfig_RuntimeLibrary) *bufpluginconfig.NPMRuntimeDependencyConfig {
 	return &bufpluginconfig.NPMRuntimeDependencyConfig{
 		Package: config.Package,
 		Version: config.Version,
 	}
 }
 
+// PluginOptionsToOptionsSlice converts a map representation of plugin options to a slice of the form '<key>=<value>' or '<key>' for empty values.
 func PluginOptionsToOptionsSlice(pluginOptions map[string]string) []string {
 	if pluginOptions == nil {
 		return nil
@@ -167,6 +175,8 @@ func PluginOptionsToOptionsSlice(pluginOptions map[string]string) []string {
 	return options
 }
 
+// OptionsSliceToPluginOptions converts a slice of plugin options to a map (using the first '=' as a delimiter between key and value).
+// If no '=' is found, the option will be stored in the map with an empty string value.
 func OptionsSliceToPluginOptions(options []string) map[string]string {
 	if options == nil {
 		return nil
