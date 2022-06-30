@@ -660,28 +660,6 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 	}, nil
 }
 
-func (p *provider) NewWebhookListenerService(ctx context.Context, address string) (registryv1alpha1api.WebhookListenerService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	return &webhookListenerServiceClient{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewWebhookListenerServiceClient(
-			p.httpClient,
-			address,
-		),
-		contextModifier: contextModifier,
-	}, nil
-}
-
 func (p *provider) NewWebhookService(ctx context.Context, address string) (registryv1alpha1api.WebhookService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error

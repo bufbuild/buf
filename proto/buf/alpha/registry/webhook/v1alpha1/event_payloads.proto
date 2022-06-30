@@ -1,0 +1,45 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.webhook.v1alpha1;
+
+import "buf/alpha/registry/v1alpha1/repository.proto";
+import "buf/alpha/registry/v1alpha1/repository_commit.proto";
+import "buf/alpha/registry/v1alpha1/webhook.proto";
+import "google/protobuf/timestamp.proto";
+
+// EventRequest is the request payload that will be sent to the customer that is
+// subscribed to webhook events in the BSR. This request message serves both as
+// (1) documentation of the payload that will be sent in a JSON blob, or (2)
+// using this in an rpc signature in your own proto file.
+message EventRequest {
+  // The event that was triggered.
+  buf.alpha.registry.v1alpha1.WebhookEvent event = 1;
+  // The event payload depending on which event was triggered.
+  oneof payload {
+    RepositoryPushEvent repository_push = 2;
+  }
+}
+
+// Payload for the event WEBHOOK_EVENT_REPOSITORY_PUSH.
+message RepositoryPushEvent {
+  // The timestamp of the commit push.
+  google.protobuf.Timestamp event_time = 1;
+  // The repository commit that was pushed.
+  buf.alpha.registry.v1alpha1.RepositoryCommit repository_commit = 2;
+  // The repository that was pushed.
+  buf.alpha.registry.v1alpha1.Repository repository = 3;
+}
