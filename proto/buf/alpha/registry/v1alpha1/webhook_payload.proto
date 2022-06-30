@@ -16,37 +16,31 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/repository_commit.proto";
+import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/webhook.proto";
 import "google/protobuf/timestamp.proto";
 
 // WebhookListenerService represents a service implemented by a customer, to
-// receive webhook events invocations from the BSR.
+// receive webhook events invocations from the BSR, if subscribed.
 service WebhookListenerService {
-  // ListenWebhook listens events from a registered webhook, triggered in the
-  // BSR and forwared to the customer's backend.
-  rpc ListenWebhook(ListenWebhookRequest) returns (ListenWebhookResponse) {}
+  // ListenRepositoryPush listens when there is a repository push event.
+  rpc ListenRepositoryPush(ListenRepositoryPushRequest) returns (ListenRepositoryPushResponse) {}
 }
 
-// ListenWebhookRequest is the request sent to the customer's webhook listener
-// service on each webhook invocation.
-message ListenWebhookRequest {
-  // payload is the actual webhook payload.
-  WebhookPayload payload = 1;
-}
-
-// ListenWebhookResponse empty response for successful invocations receipts.
-message ListenWebhookResponse {}
-
-// WebhookPayload defines the structure of an actual webhook invocation.
-message WebhookPayload {
+// ListenRepositoryPushRequest is the request sent to the customer's webhook
+// listener service on a repository push event.
+message ListenRepositoryPushRequest {
   // The timestamp of when the event happened.
   google.protobuf.Timestamp event_time = 1;
-  // The event that happened.
+  // Te repository commit tied to the event.
   buf.alpha.registry.v1alpha1.WebhookEvent event = 2;
-  // The repository id tied to the event.
-  string repository_id = 3;
-  // Te repository commit id tied to the event.
-  string repository_commit_id = 4;
-  // The user id of the author who triggered the event.
-  string author_user_id = 5;
+  // Te repository commit tied to the event.
+  buf.alpha.registry.v1alpha1.RepositoryCommit repository_commit = 3;
+  // Te repository that was pushed.
+  buf.alpha.registry.v1alpha1.Repository repository = 4;
 }
+
+// ListenRepositoryPushResponse empty response for successful invocations
+// receipts.
+message ListenRepositoryPushResponse {}
