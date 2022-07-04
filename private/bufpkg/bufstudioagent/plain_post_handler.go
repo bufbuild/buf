@@ -210,7 +210,7 @@ func connectClientOptionsFromContentType(contentType string, requestMsgSize int)
 			connect.WithGRPC(),
 			connect.WithCodec(&bufferCodec{name: "proto"}),
 		}, nil
-	case "application/grpc-json":
+	case "application/grpc+json":
 		return []connect.ClientOption{
 			connect.WithGRPC(),
 			connect.WithCodec(&bufferCodec{name: "json"}),
