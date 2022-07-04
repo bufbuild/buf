@@ -156,7 +156,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("must specify http or https url scheme, got %q", targetURL.Scheme), http.StatusBadRequest)
 		return
 	}
-	clientOptions, err := connectClientOptionsFromContentType(request.Header().Get("Content-Type"), len(request.Msg.Bytes()))
+	clientOptions, err := connectClientOptionsFromContentType(request.Header().Get("Content-Type"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -203,7 +203,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func connectClientOptionsFromContentType(contentType string, requestMsgSize int) ([]connect.ClientOption, error) {
+func connectClientOptionsFromContentType(contentType string) ([]connect.ClientOption, error) {
 	switch contentType {
 	case "application/grpc", "application/grpc+proto":
 		return []connect.ClientOption{

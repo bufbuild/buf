@@ -125,7 +125,9 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 		upstreamResponseHeaders := make(http.Header)
 		addProtoHeadersToGoHeader(invokeResponse.Headers, upstreamResponseHeaders)
 		addProtoHeadersToGoHeader(invokeResponse.Trailers, upstreamResponseHeaders)
+		assert.Equal(t, "", upstreamResponseHeaders.Get("grpc-status"))
 		assert.Equal(t, []byte("echo: echothis"), invokeResponse.Body)
+		assert.Equal(t, "foo-value", upstreamResponseHeaders.Get("Echo-Bar"))
 	})
 }
 
