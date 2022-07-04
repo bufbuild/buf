@@ -195,6 +195,9 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 
 		requestProto := &studiov1alpha1.InvokeRequest{
 			Target: "http://" + listener.Addr().String(),
+			Headers: goHeadersToProtoHeaders(http.Header{
+				"Content-Type": []string{"application/grpc"},
+			}),
 		}
 		requestBytes := protoMarshalBase64(t, requestProto)
 		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
