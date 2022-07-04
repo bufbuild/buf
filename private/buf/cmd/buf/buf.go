@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
@@ -236,6 +237,13 @@ func NewRootCommand(name string) *appcmd.Command {
 									tokendelete.NewCommand("delete", builder),
 								},
 							},
+						},
+					},
+					{
+						Use:   "plugin",
+						Short: "Manage plugins on the Buf Schema Registry.",
+						SubCommands: []*appcmd.Command{
+							pluginpush.NewCommand("push", builder),
 						},
 					},
 				},
