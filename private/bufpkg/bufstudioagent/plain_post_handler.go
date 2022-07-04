@@ -223,18 +223,6 @@ func connectClientOptionsFromContentType(contentType string, requestMsgSize int)
 		return []connect.ClientOption{
 			connect.WithCodec(&bufferCodec{name: "proto"}),
 		}, nil
-	case "":
-		if requestMsgSize == 0 {
-			// For zero-length outgoing requests where the content
-			// type has not been specified, we default to gRPC + proto
-			// so any incoming response just goes into the buffer while
-			// we also allow parsing the proto error details from trailers.
-			return []connect.ClientOption{
-				connect.WithGRPC(),
-				connect.WithCodec(&bufferCodec{name: "proto"}),
-			}, nil
-		}
-		return nil, fmt.Errorf("missing Content-Type while body size is %d", requestMsgSize)
 	default:
 		return nil, fmt.Errorf("unknown Content-Type: %q", contentType)
 	}
