@@ -37,6 +37,7 @@ type Provider interface {
 	LocalResolveServiceProvider
 	OrganizationServiceProvider
 	OwnerServiceProvider
+	PluginCurationServiceProvider
 	PluginServiceProvider
 	PushServiceProvider
 	RecommendationServiceProvider
@@ -120,6 +121,11 @@ type OrganizationServiceProvider interface {
 // OwnerServiceProvider provides a client-side OwnerService for an address.
 type OwnerServiceProvider interface {
 	NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error)
+}
+
+// PluginCurationServiceProvider provides a client-side PluginCurationService for an address.
+type PluginCurationServiceProvider interface {
+	NewPluginCurationService(ctx context.Context, address string) (registryv1alpha1api.PluginCurationService, error)
 }
 
 // PluginServiceProvider provides a client-side PluginService for an address.
