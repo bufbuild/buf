@@ -451,10 +451,7 @@ type Webhook struct {
 	// The subscriber's callback URL where notifications are delivered.
 	// Currently we only support Connect-powered backends with application/protobuf as the content type.
 	// Make sure that your URL ends with `/buf.alpha.webhook.v1alpha1.EventService/Event`.
-	// For more information about connect see `https://connect.build`.
-	//
-	// Other delivery mechanisms (like JSON or other protos) may be added in the
-	// future.
+	// For more information about Connect see `https://connect.build`.
 	CallbackUrl string `protobuf:"bytes,7,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
 }
 
