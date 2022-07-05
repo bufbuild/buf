@@ -104,6 +104,6 @@ message Webhook {
   string repository_name = 5;
   // The webhook repository owner name.
   string owner_name = 6;
-  // The subscriber's callback URL where notifications are delivered.
-  string callback_url = 7;
+  // The subscriber's callback host where notifications are delivered.
+  string callback_host = 7;
 }
