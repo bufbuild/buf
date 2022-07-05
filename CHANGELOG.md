@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Support protocol and encoding client options based on content-type in Studio Agent
 
 ## [v1.6.0] - 2022-06-21
 
