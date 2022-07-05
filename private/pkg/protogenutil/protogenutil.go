@@ -388,25 +388,33 @@ func GetRequestAndResponseParameterStrings(
 	requestFields []*protogen.Field,
 	responseFields []*protogen.Field,
 ) (requestParameterStrings []string, responseParameterStrings []string, _ error) {
-	requestParameterStrings = make([]string, len(requestFields))
-	responseParameterStrings = make([]string, len(responseFields))
+	requestParameterStrings = make([]string, 0, len(requestFields))
+	responseParameterStrings = make([]string, 0, len(responseFields))
 	fieldNames := make(map[string]struct{})
-	for i, field := range requestFields {
-		if err := ValidateFieldNotOneof(field); err != nil {
-			return nil, nil, err
+	seenOneOfs := make(map[string]struct{})
+	for _, field := range requestFields {
+		// if err := ValidateFieldNotOneof(field); err != nil {
+		// 	return nil, nil, err
+		// }
+		fieldName := GetUnexportGoName(field.GoName)
+		if field.Desc.ContainingOneof() != nil {
+			if _, ok := seenOneOfs[string(field.Desc.ContainingOneof().FullName())]; ok {
+				continue
+			}
+			seenOneOfs[string(field.Desc.ContainingOneof().FullName())] = struct{}{}
+			fieldName = GetUnexportGoName(field.Oneof.GoName)
 		}
 		fieldGoType, err := GetFieldGoType(generatedFile, field)
 		if err != nil {
 			return nil, nil, err
 		}
-		fieldName := GetUnexportGoName(field.GoName)
 		fieldNames[fieldName] = struct{}{}
-		requestParameterStrings[i] = fieldName + ` ` + fieldGoType
+		requestParameterStrings = append(requestParameterStrings, fieldName+` `+fieldGoType)
 	}
-	for i, field := range responseFields {
-		if err := ValidateFieldNotOneof(field); err != nil {
-			return nil, nil, err
-		}
+	for _, field := range responseFields {
+		// if err := ValidateFieldNotOneof(field); err != nil {
+		// 	return nil, nil, err
+		// }
 		fieldGoType, err := GetFieldGoType(generatedFile, field)
 		if err != nil {
 			return nil, nil, err
@@ -419,7 +427,7 @@ func GetRequestAndResponseParameterStrings(
 			fieldName = fieldName + "Response"
 		}
 		fieldNames[fieldName] = struct{}{}
-		responseParameterStrings[i] = fieldName + ` ` + fieldGoType
+		responseParameterStrings = append(responseParameterStrings, fieldName+` `+fieldGoType)
 	}
 	return requestParameterStrings, responseParameterStrings, nil
 }
@@ -432,9 +440,9 @@ func GetParameterErrorReturnString(
 ) (string, error) {
 	varStrings := make([]string, len(fields)+1)
 	for i, field := range fields {
-		if err := ValidateFieldNotOneof(field); err != nil {
-			return "", err
-		}
+		// if err := ValidateFieldNotOneof(field); err != nil {
+		// 	return "", err
+		// }
 		fieldGoZeroValue, err := GetFieldGoZeroValue(generatedFile, field)
 		if err != nil {
 			return "", err
@@ -453,6 +461,9 @@ func GetFieldGoType(
 	generatedFile *protogen.GeneratedFile,
 	field *protogen.Field,
 ) (string, error) {
+	if field.Desc.ContainingOneof() != nil {
+		return "any", nil
+	}
 	if field.Desc.IsWeak() {
 		return "struct{}", nil
 	}
