@@ -104,6 +104,8 @@ message Webhook {
   string repository_name = 5;
   // The webhook repository owner name.
   string owner_name = 6;
-  // The subscriber's callback host where notifications are delivered.
-  string callback_host = 7;
+  // The subscriber's callback url prefix (e.g. `https://example.com/route/here`). 
+  // The input will be prefixed by the webhook event RPC 
+  // (e.g. the result will be `https://example/route/here/buf.alpha.webhook.v1alpha1.EventService/Event`).
+  string callback_url = 7;
 }
