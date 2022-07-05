@@ -21,18 +21,31 @@ import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/webhook.proto";
 import "google/protobuf/timestamp.proto";
 
+// WebhookEventService is the service which receives webhooks from Buf.
+service WebhookEventService {
+  // WebhookEvent is the rpc which receives webhook events.
+  rpc WebhookEvent(WebhookEventRequest) returns (WebhookEventResponse);
+}
+
 // WebhookEventRequest is the request payload that will be sent to the customer
-// that is subscribed to webhook events in the BSR. This request message serves
-// both as (1) documentation of the payload that will be sent in a JSON blob, or
-// (2) using this in an rpc signature in the customer own proto file.
+// that is subscribed to webhook events in the BSR.
 message WebhookEventRequest {
   // The event that was triggered.
   buf.alpha.registry.v1alpha1.WebhookEvent event = 1;
-  // The event payload depending on which event was triggered.
+  // The event payload of the event was triggered.
+  WebhookEventPayload payload = 2;
+}
+
+// WebhookEventPayload contains the actual event payload for all possible
+// webhook event types.
+message WebhookEventPayload {
   oneof payload {
-    RepositoryPushEvent repository_push = 2;
+    RepositoryPushEvent repository_push = 1;
   }
 }
+
+// WebhookEventResponse is the empty response payload from the customer to Buf.
+message WebhookEventResponse {}
 
 // Payload for the event WEBHOOK_EVENT_REPOSITORY_PUSH.
 message RepositoryPushEvent {
