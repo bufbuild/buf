@@ -14,18 +14,18 @@
 
 syntax = "proto3";
 
-package buf.alpha.registry.webhook.v1alpha1;
+package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/webhook.proto";
 import "google/protobuf/timestamp.proto";
 
-// EventRequest is the request payload that will be sent to the customer that is
-// subscribed to webhook events in the BSR. This request message serves both as
-// (1) documentation of the payload that will be sent in a JSON blob, or (2)
-// using this in an rpc signature in your own proto file.
-message EventRequest {
+// WebhookEventRequest is the request payload that will be sent to the customer
+// that is subscribed to webhook events in the BSR. This request message serves
+// both as (1) documentation of the payload that will be sent in a JSON blob, or
+// (2) using this in an rpc signature in the customer own proto file.
+message WebhookEventRequest {
   // The event that was triggered.
   buf.alpha.registry.v1alpha1.WebhookEvent event = 1;
   // The event payload depending on which event was triggered.
