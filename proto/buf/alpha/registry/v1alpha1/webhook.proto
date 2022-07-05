@@ -105,8 +105,9 @@ message Webhook {
   // The webhook repository owner name.
   string owner_name = 6;
   // The subscriber's callback URL where notifications are delivered.
-  // Currently we only support Connect-powered backends (https://connect.build/),
-  // so make sure that your URL ends with `/buf.alpha.webhook.v1alpha1.EventService/Event`.
+  // Currently we only support Connect-powered backends with application/protobuf as the content type.
+  // Make sure that your URL ends with `/buf.alpha.webhook.v1alpha1.EventService/Event`.
+  // For more information about connect see `https://connect.build`.
   //
   // Other delivery mechanisms (like JSON or other protos) may be added in the
   // future.
