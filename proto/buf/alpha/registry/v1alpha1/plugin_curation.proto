@@ -88,7 +88,7 @@ message CuratedPlugin {
   // The configuration for the runtime of the plugin.
   RuntimeConfig runtime_config = 11;
   // The revision for this plugin version.
-  int32 revision = 12;
+  uint32 revision = 12;
 }
 
 // PluginCurationService manages curated plugins.
@@ -125,7 +125,7 @@ message CreateCuratedPluginRequest {
   // The configuration for the runtime of the plugin.
   RuntimeConfig runtime_config = 10;
   // The revision for this plugin version.
-  int32 revision = 11;
+  uint32 revision = 11;
 }
 
 message CreateCuratedPluginResponse {

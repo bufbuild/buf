@@ -178,7 +178,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	var nextRevision int32
+	var nextRevision uint32
 	// TODO: Revisit if we decide to make revision part of plugin_version
 	currentRevision, err := service.GetLatestCuratedPlugin(ctx, pluginConfig.Name.Owner(), pluginConfig.Name.Plugin(), pluginConfig.PluginVersion)
 	if err != nil {
@@ -188,9 +188,6 @@ func run(
 		nextRevision = 0
 	} else {
 		nextRevision = currentRevision.Revision + 1
-		if nextRevision < 0 {
-			return fmt.Errorf("next plugin revision out of range")
-		}
 	}
 	if _, err := service.CreateCuratedPlugin(
 		ctx,
