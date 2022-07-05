@@ -39,7 +39,7 @@ func NewClient(clientOptions ...ClientOption) *http.Client {
 	if option.useH2C {
 		baseTransport.AllowHTTP = true
 		baseTransport.DialTLS = func(netw, addr string, cfg *tls.Config) (net.Conn, error) {
-			return net.Dial(netw, addr)
+			return proxyDial(netw, addr)
 		}
 	}
 	roundTripper := rpchttp.NewClientInterceptor(baseTransport)
