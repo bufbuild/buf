@@ -47,6 +47,7 @@ import (
 
 const (
 	examplePluginIdentity = "buf.build/library/go"
+	examplePluginVersion  = "v1.0.0"
 	dockerVersion         = "1.41"
 )
 
@@ -64,7 +65,7 @@ func TestBuildSuccess(t *testing.T) {
 		t.Skip("docker tests disabled in short mode")
 	}
 	dockerClient := createClient(t)
-	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", examplePluginIdentity)
+	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", examplePluginIdentity, examplePluginVersion)
 	require.Nilf(t, err, "failed to build docker plugin")
 	assert.Truef(
 		t,
@@ -85,7 +86,7 @@ func TestBuildFailure(t *testing.T) {
 		t.Skip("docker tests disabled in short mode")
 	}
 	dockerClient := createClient(t)
-	_, err := buildDockerPlugin(t, dockerClient, "testdata/failure/Dockerfile", examplePluginIdentity)
+	_, err := buildDockerPlugin(t, dockerClient, "testdata/failure/Dockerfile", examplePluginIdentity, examplePluginVersion)
 	assert.NotNil(t, err)
 }
 
@@ -98,7 +99,7 @@ func TestPushSuccess(t *testing.T) {
 		WithHost("tcp://"+listenerAddr),
 		WithVersion(dockerVersion),
 	)
-	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go")
+	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go", examplePluginVersion)
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotNil(t, response)
 	pushResponse, err := dockerClient.Push(context.Background(), response.Image, &RegistryAuthConfig{})
@@ -117,7 +118,7 @@ func TestPushError(t *testing.T) {
 		WithHost("tcp://"+listenerAddr),
 		WithVersion(dockerVersion),
 	)
-	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go")
+	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go", examplePluginVersion)
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotNil(t, response)
 	_, err = dockerClient.Push(context.Background(), response.Image, &RegistryAuthConfig{})
@@ -136,7 +137,7 @@ func TestBuildError(t *testing.T) {
 		WithHost("tcp://"+listenerAddr),
 		WithVersion(dockerVersion),
 	)
-	_, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go")
+	_, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go", examplePluginVersion)
 	require.NotNilf(t, err, "expected error during build")
 	assert.Equal(t, server.buildErr.Error(), err.Error())
 }
@@ -150,11 +151,11 @@ func TestBuildArgs(t *testing.T) {
 		WithHost("tcp://"+listenerAddr),
 		WithVersion(dockerVersion),
 	)
-	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go")
+	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go", examplePluginVersion)
 	require.Nil(t, err)
 	assert.Len(t, server.builtImages, 1)
 	assert.Equal(t, server.builtImages[strings.TrimPrefix(response.Digest, "sha256:")].args, map[string]string{
-		"PLUGIN_VERSION": "v1.0.0",
+		"PLUGIN_VERSION": examplePluginVersion,
 	})
 }
 
@@ -191,13 +192,13 @@ func createClient(t testing.TB, options ...ClientOption) Client {
 	return dockerClient
 }
 
-func buildDockerPlugin(t testing.TB, dockerClient Client, dockerfilePath string, pluginIdentity string) (*BuildResponse, error) {
+func buildDockerPlugin(t testing.TB, dockerClient Client, dockerfilePath string, pluginIdentity string, pluginVersion string) (*BuildResponse, error) {
 	t.Helper()
 	dockerfile, err := os.Open(dockerfilePath)
 	require.Nilf(t, err, "failed to open dockerfile")
 	pluginName, err := bufpluginref.PluginIdentityForString(pluginIdentity)
 	require.Nilf(t, err, "failed to create plugin identity")
-	pluginConfig := &bufpluginconfig.Config{Name: pluginName, PluginVersion: "v1.0.0"}
+	pluginConfig := &bufpluginconfig.Config{Name: pluginName, PluginVersion: pluginVersion}
 	response, err := dockerClient.Build(context.Background(), dockerfile, pluginConfig)
 	if err == nil {
 		t.Cleanup(func() {
