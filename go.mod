@@ -12,7 +12,7 @@ require (
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
 	github.com/jhump/protocompile v0.0.0-20220216033700-d705409f108f
 	github.com/jhump/protoreflect v1.12.1-0.20220417024638-438db461d753
-	github.com/klauspost/compress v1.15.6
+	github.com/klauspost/compress v1.15.7
 	github.com/klauspost/pgzip v1.2.5
 	github.com/moby/buildkit v0.10.3
 	github.com/oklog/ulid/v2 v2.0.2
@@ -21,7 +21,7 @@ require (
 	github.com/rs/cors v1.8.2
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.7.5
+	github.com/stretchr/testify v1.8.0
 	go.opencensus.io v0.23.0
 	go.uber.org/atomic v1.9.0
 	go.uber.org/multierr v1.8.0
