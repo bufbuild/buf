@@ -15,23 +15,20 @@
 package rpchttp
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/rpc"
 	"github.com/bufbuild/buf/private/pkg/rpc/rpcheader"
-	"go.uber.org/zap"
 )
 
 // NewServerInterceptor returns a new server interceptor for http.
 //
 // This should be the last interceptor installed.
-func NewServerInterceptor(logger *zap.Logger) func(http.Handler) http.Handler {
+func NewServerInterceptor() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			if len(request.Header) > 0 {
-				logger.Info(fmt.Sprintf("Server Interceptor: %+v", request.Header))
 				request = request.WithContext(
 					rpc.WithIncomingHeaders(
 						request.Context(),
