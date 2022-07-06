@@ -35,13 +35,16 @@ func NewClient(clientOptions ...ClientOption) *http.Client {
 	for _, opt := range clientOptions {
 		opt(option)
 	}
-	baseTransport := &http2.Transport{
+	var baseTransport http.RoundTripper = &http.Transport{
 		TLSClientConfig: option.tlsConfig,
+		Proxy:           option.proxy,
 	}
 	if option.useH2C {
-		baseTransport.AllowHTTP = true
-		baseTransport.DialTLS = func(netw, addr string, cfg *tls.Config) (net.Conn, error) {
-			return proxyDial(netw, addr, option.proxy)
+		baseTransport = &http2.Transport{
+			AllowHTTP: true,
+			DialTLS: func(netw, addr string, cfg *tls.Config) (net.Conn, error) {
+				return proxyDial(netw, addr, option.proxy)
+			},
 		}
 	}
 	roundTripper := rpchttp.NewClientInterceptor(baseTransport)
