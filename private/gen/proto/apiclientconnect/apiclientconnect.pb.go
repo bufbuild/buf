@@ -19,7 +19,9 @@ package apiclientconnect
 import (
 	apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	webhookv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/webhook/v1alpha1/webhookv1alpha1apiclient"
 	registryv1alpha1apiclientconnect "github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
+	webhookv1alpha1apiclientconnect "github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/webhook/v1alpha1/webhookv1alpha1apiclientconnect"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
 )
@@ -40,11 +42,17 @@ func NewProvider(
 			httpClient,
 			providerOptions.bufAlphaRegistryV1alpha1ProviderOptions...,
 		),
+		bufAlphaWebhookV1alpha1Provider: webhookv1alpha1apiclientconnect.NewProvider(
+			logger,
+			httpClient,
+			providerOptions.bufAlphaWebhookV1alpha1ProviderOptions...,
+		),
 	}
 }
 
 type provider struct {
 	bufAlphaRegistryV1alpha1Provider registryv1alpha1apiclient.Provider
+	bufAlphaWebhookV1alpha1Provider  webhookv1alpha1apiclient.Provider
 }
 
 // ProviderOption is an option for a new Provider.
@@ -54,6 +62,11 @@ func (p *provider) BufAlphaRegistryV1alpha1() registryv1alpha1apiclient.Provider
 	return p.bufAlphaRegistryV1alpha1Provider
 }
 
+func (p *provider) BufAlphaWebhookV1alpha1() webhookv1alpha1apiclient.Provider {
+	return p.bufAlphaWebhookV1alpha1Provider
+}
+
 type providerOptions struct {
 	bufAlphaRegistryV1alpha1ProviderOptions []registryv1alpha1apiclientconnect.ProviderOption
+	bufAlphaWebhookV1alpha1ProviderOptions  []webhookv1alpha1apiclientconnect.ProviderOption
 }
