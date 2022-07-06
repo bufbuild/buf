@@ -25,16 +25,12 @@ import (
 )
 
 type organizationServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.OrganizationServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.OrganizationServiceClient
 }
 
 // GetOrganization gets a organization by ID.
 func (s *organizationServiceClient) GetOrganization(ctx context.Context, id string) (organization *v1alpha1.Organization, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetOrganization(
 		ctx,
 		connect_go.NewRequest(
@@ -50,9 +46,6 @@ func (s *organizationServiceClient) GetOrganization(ctx context.Context, id stri
 
 // GetOrganizationByName gets a organization by name.
 func (s *organizationServiceClient) GetOrganizationByName(ctx context.Context, name string) (organization *v1alpha1.Organization, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetOrganizationByName(
 		ctx,
 		connect_go.NewRequest(
@@ -73,9 +66,6 @@ func (s *organizationServiceClient) ListOrganizations(
 	pageToken string,
 	reverse bool,
 ) (organizations []*v1alpha1.Organization, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListOrganizations(
 		ctx,
 		connect_go.NewRequest(
@@ -99,9 +89,6 @@ func (s *organizationServiceClient) ListUserOrganizations(
 	pageToken string,
 	reverse bool,
 ) (organizations []*v1alpha1.OrganizationMembership, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListUserOrganizations(
 		ctx,
 		connect_go.NewRequest(
@@ -120,9 +107,6 @@ func (s *organizationServiceClient) ListUserOrganizations(
 
 // CreateOrganization creates a new organization.
 func (s *organizationServiceClient) CreateOrganization(ctx context.Context, name string) (organization *v1alpha1.Organization, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.CreateOrganization(
 		ctx,
 		connect_go.NewRequest(
@@ -138,9 +122,6 @@ func (s *organizationServiceClient) CreateOrganization(ctx context.Context, name
 
 // DeleteOrganization deletes a organization.
 func (s *organizationServiceClient) DeleteOrganization(ctx context.Context, id string) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.DeleteOrganization(
 		ctx,
 		connect_go.NewRequest(
@@ -156,9 +137,6 @@ func (s *organizationServiceClient) DeleteOrganization(ctx context.Context, id s
 
 // DeleteOrganizationByName deletes a organization by name.
 func (s *organizationServiceClient) DeleteOrganizationByName(ctx context.Context, name string) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.DeleteOrganizationByName(
 		ctx,
 		connect_go.NewRequest(
@@ -179,9 +157,6 @@ func (s *organizationServiceClient) AddOrganizationMember(
 	userId string,
 	organizationRole v1alpha1.OrganizationRole,
 ) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.AddOrganizationMember(
 		ctx,
 		connect_go.NewRequest(
@@ -204,9 +179,6 @@ func (s *organizationServiceClient) UpdateOrganizationMember(
 	userId string,
 	organizationRole v1alpha1.OrganizationRole,
 ) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.UpdateOrganizationMember(
 		ctx,
 		connect_go.NewRequest(
@@ -228,9 +200,6 @@ func (s *organizationServiceClient) RemoveOrganizationMember(
 	organizationId string,
 	userId string,
 ) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.RemoveOrganizationMember(
 		ctx,
 		connect_go.NewRequest(
@@ -252,9 +221,6 @@ func (s *organizationServiceClient) SetOrganizationMember(
 	userId string,
 	organizationRole v1alpha1.OrganizationRole,
 ) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.SetOrganizationMember(
 		ctx,
 		connect_go.NewRequest(
@@ -275,9 +241,6 @@ func (s *organizationServiceClient) GetOrganizationSettings(
 	ctx context.Context,
 	organizationId string,
 ) (repositoryBaseRole v1alpha1.RepositoryRole, pluginBaseRole v1alpha1.PluginRole, templateBaseRole v1alpha1.TemplateRole, membersCount uint32, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetOrganizationSettings(
 		ctx,
 		connect_go.NewRequest(
@@ -299,9 +262,6 @@ func (s *organizationServiceClient) UpdateOrganizationSettings(
 	pluginBaseRole v1alpha1.PluginRole,
 	templateBaseRole v1alpha1.TemplateRole,
 ) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.UpdateOrganizationSettings(
 		ctx,
 		connect_go.NewRequest(

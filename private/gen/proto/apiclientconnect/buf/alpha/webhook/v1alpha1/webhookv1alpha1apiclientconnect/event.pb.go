@@ -26,9 +26,8 @@ import (
 )
 
 type eventServiceClient struct {
-	logger          *zap.Logger
-	client          webhookv1alpha1connect.EventServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client webhookv1alpha1connect.EventServiceClient
 }
 
 // Event is the rpc which receives webhook events.
@@ -37,9 +36,6 @@ func (s *eventServiceClient) Event(
 	event v1alpha1.WebhookEvent,
 	payload *v1alpha11.EventPayload,
 ) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.Event(
 		ctx,
 		connect_go.NewRequest(

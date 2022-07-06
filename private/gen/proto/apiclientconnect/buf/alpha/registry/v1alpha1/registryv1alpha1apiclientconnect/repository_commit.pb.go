@@ -25,9 +25,8 @@ import (
 )
 
 type repositoryCommitServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.RepositoryCommitServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.RepositoryCommitServiceClient
 }
 
 // ListRepositoryCommitsByBranch lists the repository commits associated
@@ -41,9 +40,6 @@ func (s *repositoryCommitServiceClient) ListRepositoryCommitsByBranch(
 	pageToken string,
 	reverse bool,
 ) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListRepositoryCommitsByBranch(
 		ctx,
 		connect_go.NewRequest(
@@ -73,9 +69,6 @@ func (s *repositoryCommitServiceClient) ListRepositoryCommitsByReference(
 	pageToken string,
 	reverse bool,
 ) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListRepositoryCommitsByReference(
 		ctx,
 		connect_go.NewRequest(
@@ -102,9 +95,6 @@ func (s *repositoryCommitServiceClient) GetRepositoryCommitByReference(
 	repositoryName string,
 	reference string,
 ) (repositoryCommit *v1alpha1.RepositoryCommit, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetRepositoryCommitByReference(
 		ctx,
 		connect_go.NewRequest(
@@ -129,9 +119,6 @@ func (s *repositoryCommitServiceClient) GetRepositoryCommitBySequenceId(
 	repositoryBranchName string,
 	commitSequenceId int64,
 ) (repositoryCommit *v1alpha1.RepositoryCommit, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetRepositoryCommitBySequenceId(
 		ctx,
 		connect_go.NewRequest(

@@ -25,9 +25,8 @@ import (
 )
 
 type displayServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.DisplayServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.DisplayServiceClient
 }
 
 // DisplayOrganizationElements returns which organization elements should be displayed to the user.
@@ -35,9 +34,6 @@ func (s *displayServiceClient) DisplayOrganizationElements(
 	ctx context.Context,
 	organizationId string,
 ) (createRepository bool, createPlugin bool, createTemplate bool, settings bool, updateSettings bool, delete bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.DisplayOrganizationElements(
 		ctx,
 		connect_go.NewRequest(
@@ -56,9 +52,6 @@ func (s *displayServiceClient) DisplayRepositoryElements(
 	ctx context.Context,
 	repositoryId string,
 ) (settings bool, delete bool, write bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.DisplayRepositoryElements(
 		ctx,
 		connect_go.NewRequest(
@@ -77,9 +70,6 @@ func (s *displayServiceClient) DisplayPluginElements(
 	ctx context.Context,
 	pluginId string,
 ) (createVersion bool, settings bool, delete bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.DisplayPluginElements(
 		ctx,
 		connect_go.NewRequest(
@@ -98,9 +88,6 @@ func (s *displayServiceClient) DisplayTemplateElements(
 	ctx context.Context,
 	templateId string,
 ) (createVersion bool, settings bool, delete bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.DisplayTemplateElements(
 		ctx,
 		connect_go.NewRequest(
@@ -116,9 +103,6 @@ func (s *displayServiceClient) DisplayTemplateElements(
 
 // DisplayUserElements returns which user elements should be displayed to the user.
 func (s *displayServiceClient) DisplayUserElements(ctx context.Context) (delete bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.DisplayUserElements(
 		ctx,
 		connect_go.NewRequest(
@@ -132,9 +116,6 @@ func (s *displayServiceClient) DisplayUserElements(ctx context.Context) (delete 
 
 // DisplayServerElements returns which server elements should be displayed to the user.
 func (s *displayServiceClient) DisplayServerElements(ctx context.Context) (adminPanel bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.DisplayServerElements(
 		ctx,
 		connect_go.NewRequest(
@@ -149,9 +130,6 @@ func (s *displayServiceClient) DisplayServerElements(ctx context.Context) (admin
 // ListManageableRepositoryRoles returns which roles should be displayed
 // to the user when they are managing contributors on the repository.
 func (s *displayServiceClient) ListManageableRepositoryRoles(ctx context.Context, repositoryId string) (roles []v1alpha1.RepositoryRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListManageableRepositoryRoles(
 		ctx,
 		connect_go.NewRequest(
@@ -172,9 +150,6 @@ func (s *displayServiceClient) ListManageableUserRepositoryRoles(
 	repositoryId string,
 	userId string,
 ) (roles []v1alpha1.RepositoryRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListManageableUserRepositoryRoles(
 		ctx,
 		connect_go.NewRequest(
@@ -192,9 +167,6 @@ func (s *displayServiceClient) ListManageableUserRepositoryRoles(
 // ListManageablePluginRoles returns which roles should be displayed
 // to the user when they are managing contributors on the plugin.
 func (s *displayServiceClient) ListManageablePluginRoles(ctx context.Context, pluginId string) (roles []v1alpha1.PluginRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListManageablePluginRoles(
 		ctx,
 		connect_go.NewRequest(
@@ -215,9 +187,6 @@ func (s *displayServiceClient) ListManageableUserPluginRoles(
 	pluginId string,
 	userId string,
 ) (roles []v1alpha1.PluginRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListManageableUserPluginRoles(
 		ctx,
 		connect_go.NewRequest(
@@ -235,9 +204,6 @@ func (s *displayServiceClient) ListManageableUserPluginRoles(
 // ListManageableTemplateRoles returns which roles should be displayed
 // to the user when they are managing contributors on the template.
 func (s *displayServiceClient) ListManageableTemplateRoles(ctx context.Context, templateId string) (roles []v1alpha1.TemplateRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListManageableTemplateRoles(
 		ctx,
 		connect_go.NewRequest(
@@ -258,9 +224,6 @@ func (s *displayServiceClient) ListManageableUserTemplateRoles(
 	templateId string,
 	userId string,
 ) (roles []v1alpha1.TemplateRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListManageableUserTemplateRoles(
 		ctx,
 		connect_go.NewRequest(
