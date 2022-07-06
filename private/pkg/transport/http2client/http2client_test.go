@@ -17,7 +17,6 @@ package http2client
 import (
 	"net"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"testing"
 
@@ -27,31 +26,18 @@ import (
 )
 
 func TestH2CProxy(t *testing.T) {
-	upstreamLis, err := net.Listen("tcp", "localhost:0")
-	require.NoError(t, err)
-	defer upstreamLis.Close()
-
-	server := &http.Server{
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-		}),
-	}
-	go func() {
-		err := server.Serve(upstreamLis)
-		require.NoError(t, err)
-	}()
-	defer server.Close()
-
 	proxyLis, err := net.Listen("tcp", "localhost:0")
 	require.NoError(t, err)
 	defer proxyLis.Close()
 
+	// setup a proxy server, it doesn't actually have to proxy anywhere
 	h2s := &http2.Server{}
-	upstreamURL, err := url.Parse("http://" + upstreamLis.Addr().String())
-	require.NoError(t, err)
-	proxyHandler := httputil.NewSingleHostReverseProxy(upstreamURL)
+	proxyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	proxy := &http.Server{
-		Addr:    proxyLis.Addr().String(),
+		Addr: proxyLis.Addr().String(),
+		// enable the http2 server to handle h2c requests
 		Handler: h2c.NewHandler(proxyHandler, h2s),
 	}
 	go func() {
@@ -60,12 +46,13 @@ func TestH2CProxy(t *testing.T) {
 	}()
 	defer proxy.Close()
 
+	// setup the client to proxy all requests to the proxy server
 	proxyURL, err := url.Parse("https://" + proxyLis.Addr().String())
 	require.NoError(t, err)
+	client := NewClient(WithH2C(), WithProxy(http.ProxyURL(proxyURL)))
 
 	req, err := http.NewRequest("GET", "https://www.example.com", nil)
 	require.NoError(t, err)
-	client := NewClient(WithH2C(), WithProxy(http.ProxyURL(proxyURL)))
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
