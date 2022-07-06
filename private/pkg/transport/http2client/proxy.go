@@ -35,19 +35,19 @@ import (
 
 const proxyAuthHeaderKey = "Proxy-Authorization"
 
-var (
-	// The following variable will be overwritten in the tests.
-	httpProxyFromEnvironment = http.ProxyFromEnvironment
-)
+// Proxy specifies a function to return a proxy for a given
+// Request. If the function returns a non-nil error, the
+// request is aborted with the provided error.
+type Proxy = func(*http.Request) (*url.URL, error)
 
-func mapAddress(address string) (*url.URL, error) {
+func mapAddress(address string, proxyFunc Proxy) (*url.URL, error) {
 	req := &http.Request{
 		URL: &url.URL{
 			Scheme: "https",
 			Host:   address,
 		},
 	}
-	return httpProxyFromEnvironment(req)
+	return proxyFunc(req)
 }
 
 // To read a response from a net.Conn, http.ReadResponse() takes a bufio.Reader.
@@ -57,6 +57,7 @@ func mapAddress(address string) (*url.URL, error) {
 // bytes in the buffer.
 type bufConn struct {
 	net.Conn
+
 	r io.Reader
 }
 
@@ -110,9 +111,9 @@ func doHTTPConnectHandshake(conn net.Conn, backendAddr string, proxyURL *url.URL
 // proxyDial dials, connecting to a proxy first if necessary. Checks if a proxy
 // is necessary, dials, does the HTTP CONNECT handshake, and returns the
 // connection.
-func proxyDial(netw, addr string) (net.Conn, error) {
+func proxyDial(netw, addr string, proxyFunc Proxy) (net.Conn, error) {
 	newAddr := addr
-	proxyURL, err := mapAddress(addr)
+	proxyURL, err := mapAddress(addr, proxyFunc)
 	if err != nil {
 		return nil, err
 	}

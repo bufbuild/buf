@@ -62,11 +62,10 @@ func TestH2CProxy(t *testing.T) {
 
 	proxyURL, err := url.Parse("https://" + proxyLis.Addr().String())
 	require.NoError(t, err)
-	httpProxyFromEnvironment = http.ProxyURL(proxyURL)
 
 	req, err := http.NewRequest("GET", "https://www.example.com", nil)
 	require.NoError(t, err)
-	client := NewClient(WithH2C())
+	client := NewClient(WithH2C(), WithProxy(http.ProxyURL(proxyURL)))
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)

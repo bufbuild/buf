@@ -29,7 +29,9 @@ import (
 // To enable connections to h2c (cleartext) servers pass the allow insecure
 // client option.
 func NewClient(clientOptions ...ClientOption) *http.Client {
-	option := &clientOption{}
+	option := &clientOption{
+		proxy: http.ProxyFromEnvironment,
+	}
 	for _, opt := range clientOptions {
 		opt(option)
 	}
@@ -39,7 +41,7 @@ func NewClient(clientOptions ...ClientOption) *http.Client {
 	if option.useH2C {
 		baseTransport.AllowHTTP = true
 		baseTransport.DialTLS = func(netw, addr string, cfg *tls.Config) (net.Conn, error) {
-			return proxyDial(netw, addr)
+			return proxyDial(netw, addr, option.proxy)
 		}
 	}
 	roundTripper := rpchttp.NewClientInterceptor(baseTransport)

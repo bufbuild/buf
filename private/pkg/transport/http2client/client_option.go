@@ -23,6 +23,7 @@ type clientOption struct {
 	tlsConfig     *tls.Config
 	useH2C        bool
 	observability bool
+	proxy         Proxy
 }
 
 // WithTLSConfig returns a new ClientOption to use the tls.Config.
@@ -49,5 +50,15 @@ func WithH2C() ClientOption {
 func WithObservability() ClientOption {
 	return func(option *clientOption) {
 		option.observability = true
+	}
+}
+
+// WithProxy returns a new ClientOption to use
+// a proxy.
+//
+// The default is to use http.ProxyFromEnvironment
+func WithProxy(proxyFunc Proxy) ClientOption {
+	return func(option *clientOption) {
+		option.proxy = proxyFunc
 	}
 }
