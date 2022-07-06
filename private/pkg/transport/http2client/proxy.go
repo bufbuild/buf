@@ -97,9 +97,9 @@ func doHTTPConnectHandshake(conn net.Conn, backendAddr string, proxyURL *url.URL
 	if resp.StatusCode != http.StatusOK {
 		dump, err := httputil.DumpResponse(resp, true)
 		if err != nil {
-			return nil, fmt.Errorf("failed to do connect handshake, status code: %s", resp.Status)
+			return nil, fmt.Errorf("failed to do HTTP CONNECT handshake, status code: %s", resp.Status)
 		}
-		return nil, fmt.Errorf("failed to do connect handshake, response: %q", dump)
+		return nil, fmt.Errorf("failed to do HTTP CONNECT handshake, response: %q", dump)
 	}
 
 	return &bufConn{Conn: conn, r: r}, nil
@@ -112,7 +112,7 @@ func proxyDial(netw, addr string, proxyFunc Proxy) (net.Conn, error) {
 	newAddr := addr
 	proxyURL, err := mapAddress(addr, proxyFunc)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("HTTP proxy: %w", err)
 	}
 	if proxyURL != nil {
 		newAddr = proxyURL.Host
