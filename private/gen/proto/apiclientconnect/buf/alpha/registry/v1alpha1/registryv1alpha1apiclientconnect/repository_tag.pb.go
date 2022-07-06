@@ -25,9 +25,8 @@ import (
 )
 
 type repositoryTagServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.RepositoryTagServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.RepositoryTagServiceClient
 }
 
 // CreateRepositoryTag creates a new repository tag.
@@ -37,9 +36,6 @@ func (s *repositoryTagServiceClient) CreateRepositoryTag(
 	name string,
 	commitName string,
 ) (repositoryTag *v1alpha1.RepositoryTag, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.CreateRepositoryTag(
 		ctx,
 		connect_go.NewRequest(
@@ -63,9 +59,6 @@ func (s *repositoryTagServiceClient) ListRepositoryTags(
 	pageToken string,
 	reverse bool,
 ) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListRepositoryTags(
 		ctx,
 		connect_go.NewRequest(

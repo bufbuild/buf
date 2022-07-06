@@ -69,6 +69,17 @@ func (f Format) String() string {
 	}
 }
 
+// CuratedPluginPrinter is a printer for curated plugins.
+type CuratedPluginPrinter interface {
+	PrintCuratedPlugin(ctx context.Context, format Format, plugin *registryv1alpha1.CuratedPlugin) error
+	PrintCuratedPlugins(ctx context.Context, format Format, nextPageToken string, plugins ...*registryv1alpha1.CuratedPlugin) error
+}
+
+// NewCuratedPluginPrinter returns a new CuratedPluginPrinter.
+func NewCuratedPluginPrinter(writer io.Writer) CuratedPluginPrinter {
+	return newCuratedPluginPrinter(writer)
+}
+
 // OrganizationPrinter is an organization printer.
 type OrganizationPrinter interface {
 	PrintOrganization(ctx context.Context, format Format, organization *registryv1alpha1.Organization) error
