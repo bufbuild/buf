@@ -135,6 +135,9 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 			},
 			Version:   types.BuilderBuildKit, // DOCKER_BUILDKIT=1
 			SessionID: buildkitSession.ID(),
+			BuildArgs: map[string]*string{
+				"PLUGIN_VERSION": &pluginConfig.PluginVersion,
+			},
 		})
 		if err != nil {
 			return err

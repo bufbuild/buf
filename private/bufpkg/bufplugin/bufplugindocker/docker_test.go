@@ -141,6 +141,23 @@ func TestBuildError(t *testing.T) {
 	assert.Equal(t, server.buildErr.Error(), err.Error())
 }
 
+func TestBuildArgs(t *testing.T) {
+	t.Parallel()
+	server := newDockerServer(t, dockerVersion)
+	listenerAddr := server.httpServer.Listener.Addr().String()
+	dockerClient := createClient(
+		t,
+		WithHost("tcp://"+listenerAddr),
+		WithVersion(dockerVersion),
+	)
+	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go")
+	require.Nil(t, err)
+	assert.Len(t, server.builtImages, 1)
+	assert.Equal(t, server.builtImages[strings.TrimPrefix(response.Digest, "sha256:")].args, map[string]string{
+		"PLUGIN_VERSION": "v1.0.0",
+	})
+}
+
 func TestMain(m *testing.M) {
 	// TODO: We may wish to indicate we want to run Docker tests even if the CLI ping command fails.
 	// This would force CI builds to run these tests, but still allow users without Docker installed to run tests.
@@ -180,7 +197,7 @@ func buildDockerPlugin(t testing.TB, dockerClient Client, dockerfilePath string,
 	require.Nilf(t, err, "failed to open dockerfile")
 	pluginName, err := bufpluginref.PluginIdentityForString(pluginIdentity)
 	require.Nilf(t, err, "failed to create plugin identity")
-	pluginConfig := &bufpluginconfig.Config{Name: pluginName}
+	pluginConfig := &bufpluginconfig.Config{Name: pluginName, PluginVersion: "v1.0.0"}
 	response, err := dockerClient.Build(context.Background(), dockerfile, pluginConfig)
 	if err == nil {
 		t.Cleanup(func() {
@@ -208,6 +225,7 @@ type dockerServer struct {
 
 type builtImage struct {
 	tags []string
+	args map[string]string
 }
 
 func newDockerServer(t testing.TB, version string) *dockerServer {
@@ -321,7 +339,13 @@ func (d *dockerServer) buildHandler(w http.ResponseWriter, r *http.Request) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	imageID := stringid.GenerateRandomID()
-	d.builtImages[imageID] = &builtImage{tags: r.URL.Query()["t"]}
+	buildArgs := make(map[string]string)
+	if buildArgsJSON := r.URL.Query().Get("buildargs"); len(buildArgsJSON) > 0 {
+		if err := json.Unmarshal([]byte(buildArgsJSON), &buildArgs); err != nil {
+			d.t.Error("failed to read build args:", err)
+		}
+	}
+	d.builtImages[imageID] = &builtImage{tags: r.URL.Query()["t"], args: buildArgs}
 }
 
 func (d *dockerServer) imagesHandler(w http.ResponseWriter, r *http.Request) {
