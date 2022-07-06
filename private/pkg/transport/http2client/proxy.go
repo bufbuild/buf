@@ -26,6 +26,12 @@ import (
 )
 
 // This file was adapted from https://github.com/grpc/grpc-go/blob/master/internal/transport/proxy.go
+//
+// Copyright 2017 gRPC authors. All rights reserved.
+// Use of this source code is governed by an Apache 2.0
+// license that can be found in the LICENSE file.
+//
+// https://github.com/grpc/grpc-go/blob/master/LICENSE
 
 const proxyAuthHeaderKey = "Proxy-Authorization"
 
