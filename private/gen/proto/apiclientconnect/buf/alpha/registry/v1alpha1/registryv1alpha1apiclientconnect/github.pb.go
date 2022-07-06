@@ -25,16 +25,12 @@ import (
 )
 
 type githubServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.GithubServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.GithubServiceClient
 }
 
 // GetGithubAppConfig returns a Github Application Configuration.
 func (s *githubServiceClient) GetGithubAppConfig(ctx context.Context) (appConfig *v1alpha1.GithubAppConfig, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetGithubAppConfig(
 		ctx,
 		connect_go.NewRequest(

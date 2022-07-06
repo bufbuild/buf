@@ -25,9 +25,8 @@ import (
 )
 
 type pluginCurationServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.PluginCurationServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.PluginCurationServiceClient
 }
 
 // ListCuratedPlugins returns all the curated plugins available.
@@ -37,9 +36,6 @@ func (s *pluginCurationServiceClient) ListCuratedPlugins(
 	pageToken string,
 	reverse bool,
 ) (plugins []*v1alpha1.CuratedPlugin, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListCuratedPlugins(
 		ctx,
 		connect_go.NewRequest(
@@ -70,9 +66,6 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 	runtimeConfig *v1alpha1.RuntimeConfig,
 	revision uint32,
 ) (configuration *v1alpha1.CuratedPlugin, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.CreateCuratedPlugin(
 		ctx,
 		connect_go.NewRequest(
@@ -103,9 +96,6 @@ func (s *pluginCurationServiceClient) GetLatestCuratedPlugin(
 	name string,
 	version string,
 ) (plugin *v1alpha1.CuratedPlugin, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetLatestCuratedPlugin(
 		ctx,
 		connect_go.NewRequest(

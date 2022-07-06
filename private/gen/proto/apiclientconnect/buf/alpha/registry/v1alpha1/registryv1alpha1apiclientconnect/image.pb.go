@@ -26,9 +26,8 @@ import (
 )
 
 type imageServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.ImageServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.ImageServiceClient
 }
 
 // GetImage serves a compiled image for the local module. It automatically
@@ -43,9 +42,6 @@ func (s *imageServiceClient) GetImage(
 	types []string,
 	includeMask []v1alpha1.ImageMask,
 ) (image *v1.Image, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetImage(
 		ctx,
 		connect_go.NewRequest(

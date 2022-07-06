@@ -45,7 +45,8 @@ type provider struct {
 	logger                  *zap.Logger
 	httpClient              connect_go.HTTPClient
 	addressMapper           func(string) string
-	contextModifierProvider func(string) (func(context.Context) context.Context, error)
+	interceptors            []connect_go.Interceptor
+	authInterceptorProvider func(string) connect_go.UnaryInterceptorFunc
 }
 
 // ProviderOption is an option for a new Provider.
@@ -58,22 +59,27 @@ func WithAddressMapper(addressMapper func(string) string) ProviderOption {
 	}
 }
 
-// WithContextModifierProvider provides a function that  modifies the context before every RPC invocation.
-// Applied before the address mapper.
-func WithContextModifierProvider(contextModifierProvider func(address string) (func(context.Context) context.Context, error)) ProviderOption {
+// WithInterceptors adds the slice of interceptors to all clients returned from this provider.
+func WithInterceptors(interceptors []connect_go.Interceptor) ProviderOption {
 	return func(provider *provider) {
-		provider.contextModifierProvider = contextModifierProvider
+		provider.interceptors = interceptors
 	}
 }
 
+// WithAuthInterceptorProvider configures a provider that, when invoked, returns an interceptor that can be added
+// to a client for setting the auth token
+func WithAuthInterceptorProvider(authInterceptorProvider func(string) connect_go.UnaryInterceptorFunc) ProviderOption {
+	return func(provider *provider) {
+		provider.authInterceptorProvider = authInterceptorProvider
+	}
+}
+
+// NewEventService creates a new EventService
 func (p *provider) NewEventService(ctx context.Context, address string) (webhookv1alpha1api.EventService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
+	interceptors := p.interceptors
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -83,7 +89,7 @@ func (p *provider) NewEventService(ctx context.Context, address string) (webhook
 		client: webhookv1alpha1connect.NewEventServiceClient(
 			p.httpClient,
 			address,
+			connect_go.WithInterceptors(interceptors...),
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
