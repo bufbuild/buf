@@ -109,6 +109,11 @@ func doHTTPConnectHandshake(conn net.Conn, backendAddr string, proxyURL *url.URL
 // is necessary, dials, does the HTTP CONNECT handshake, and returns the
 // connection.
 func proxyDial(netw, addr string, proxyFunc Proxy) (net.Conn, error) {
+	// proxy behavior is undefined for unix sockets and HTTP/3 (QUIC/UDP)
+	if netw != "tcp" {
+		return net.Dial(netw, addr)
+	}
+
 	newAddr := addr
 	proxyURL, err := mapAddress(addr, proxyFunc)
 	if err != nil {
