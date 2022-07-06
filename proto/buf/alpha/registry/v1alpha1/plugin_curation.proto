@@ -65,30 +65,32 @@ message RuntimeConfig {
 message CuratedPlugin {
   // The ID of the plugin, which uniquely identifies the plugin.
   string id = 1;
+  // The owner of the plugin, i.e. "library".
+  string owner = 2;
   // The name of the plugin, i.e. "connect-go".
-  string name = 2;
+  string name = 3;
   // The target language of the plugin.
-  PluginLanguage language = 3;
+  PluginLanguage language = 4;
   // Semver-formatted plugin version.
-  string version = 4;
+  string version = 5;
   // The full container image digest associated with this plugin version including
   // the algorithm.
   // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
-  string container_image_digest = 5;
+  string container_image_digest = 6;
   // List of default plugin options in the form "{option}={defaultOption}"
-  repeated string options = 6;
+  repeated string options = 7;
   // The creation time of the plugin.
-  google.protobuf.Timestamp create_time = 7;
+  google.protobuf.Timestamp create_time = 8;
   // List of plugin dependencies in the form "{owner}/{name}:{version}"
-  repeated string dependencies = 8;
+  repeated string dependencies = 9;
   // Optionally specify the URL leading to the source code of the plugin, if available.
-  string source_url = 9;
+  string source_url = 10;
   // Optionally specify a brief description of the plugin functionality.
-  string description = 10;
+  string description = 11;
   // The configuration for the runtime of the plugin.
-  RuntimeConfig runtime_config = 11;
+  RuntimeConfig runtime_config = 12;
   // The revision for this plugin version.
-  uint32 revision = 12;
+  uint32 revision = 13;
 }
 
 // PluginCurationService manages curated plugins.
