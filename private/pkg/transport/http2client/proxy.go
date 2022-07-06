@@ -65,9 +65,8 @@ func (c *bufConn) Read(b []byte) (int, error) {
 	return c.r.Read(b)
 }
 
-func basicAuth(username, password string) string {
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
+func basicAuth(info *url.Userinfo) string {
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(info.String()))
 }
 
 func doHTTPConnectHandshake(conn net.Conn, backendAddr string, proxyURL *url.URL) (_ net.Conn, err error) {
@@ -82,9 +81,7 @@ func doHTTPConnectHandshake(conn net.Conn, backendAddr string, proxyURL *url.URL
 		URL:    &url.URL{Host: backendAddr},
 	}
 	if t := proxyURL.User; t != nil {
-		u := t.Username()
-		p, _ := t.Password()
-		req.Header.Add(proxyAuthHeaderKey, "Basic "+basicAuth(u, p))
+		req.Header.Add(proxyAuthHeaderKey, basicAuth(proxyURL.User))
 	}
 
 	if err := req.Write(conn); err != nil {
