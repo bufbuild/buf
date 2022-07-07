@@ -76,7 +76,7 @@ func run(
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 	if moduleReference.Reference() == bufmoduleref.Main {
-		return appcmd.NewInvalidArgumentError("you must specify a valid branch")
+		return appcmd.NewInvalidArgumentError("you must specify a valid draft")
 	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
@@ -89,7 +89,7 @@ func run(
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(
 			container,
-			"repository draft",
+			"draft",
 			moduleReference.Reference(),
 		); err != nil {
 			return err
@@ -104,7 +104,7 @@ func run(
 		// not explicitly handling error with connect.CodeNotFound as it can be repository not found or draft not found.
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository draft deleted."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Draft deleted."); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil
