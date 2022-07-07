@@ -53,6 +53,21 @@ type Config struct {
 	// or plugin source (e.g. Dockerfile) that would otherwise influence
 	// the plugin's behavior.
 	PluginVersion string
+	// Dependencies are the dependencies this plugin has on other plugins.
+	//
+	// Each dependency should be listed in the following format:
+	//
+	//   <name>:<version>-<revision>
+	//
+	// Where '<name>' is the bufpluginref.PluginIdentity of the dependency.
+	// It is required that the Remote() matches the remote of the plugin.
+	// The '<version>' is the semantic version of the dependency, and the
+	// '<revision>' is the specific numeric revision used to uniquely
+	// identify the dependency along with the version.
+	//
+	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
+	// which depends on the 'protoc-gen-go' generated code.
+	Dependencies []string
 	// Options is the default set of options passed into the plugin.
 	//
 	// For now, all options are string values. This could eventually
@@ -168,6 +183,7 @@ type ExternalConfig struct {
 	Version       string                `json:"version,omitempty" yaml:"version,omitempty"`
 	Name          string                `json:"name,omitempty" yaml:"name,omitempty"`
 	PluginVersion string                `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
+	Deps          []string              `json:"deps,omitempty" yaml:"deps,omitempty"`
 	Opts          []string              `json:"opts,omitempty" yaml:"opts,omitempty"`
 	Runtime       ExternalRuntimeConfig `json:"runtime,omitempty" yaml:"runtime,omitempty"`
 }

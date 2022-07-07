@@ -1,6 +1,8 @@
 version: v1
-name: buf.build/grpc/go
-plugin_version: v1.5.0
+name: buf.build/library/go-grpc
+plugin_version: v1.2.0
+deps:
+  - buf.build/library/go:v1.28.0-0
 opts:
   - paths=source_relative
 runtime:

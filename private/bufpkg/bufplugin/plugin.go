@@ -24,6 +24,7 @@ import (
 
 type plugin struct {
 	version              string
+	dependencies         []string
 	options              map[string]string
 	runtime              *bufpluginconfig.RuntimeConfig
 	containerImageDigest string
@@ -31,6 +32,7 @@ type plugin struct {
 
 func newPlugin(
 	version string,
+	dependencies []string,
 	options map[string]string,
 	runtimeConfig *bufpluginconfig.RuntimeConfig,
 	containerImageDigest string,
@@ -50,6 +52,7 @@ func newPlugin(
 	}
 	return &plugin{
 		version:              version,
+		dependencies:         dependencies,
 		options:              options,
 		runtime:              runtimeConfig,
 		containerImageDigest: containerImageDigest,
@@ -59,6 +62,11 @@ func newPlugin(
 // Version returns the plugin's version.
 func (p *plugin) Version() string {
 	return p.version
+}
+
+// Dependencies returns the plugin's dependencies on other plugins.
+func (p *plugin) Dependencies() []string {
+	return p.dependencies
 }
 
 // Options returns the plugin's options.

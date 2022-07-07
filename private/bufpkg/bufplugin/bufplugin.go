@@ -26,6 +26,21 @@ type Plugin interface {
 	// Version is the version of the plugin's implementation
 	// (e.g the protoc-gen-connect-go implementation is v0.2.0).
 	Version() string
+	// Dependencies are the dependencies this plugin has on other plugins.
+	//
+	// Each dependency should be listed in the following format:
+	//
+	//   <name>:<version>-<revision>
+	//
+	// Where '<name>' is the bufpluginref.PluginIdentity of the dependency.
+	// It is required that the Remote() matches the remote of the plugin.
+	// The '<version>' is the semantic version of the dependency, and the
+	// '<revision>' is the specific numeric revision used to uniquely
+	// identify the dependency along with the version.
+	//
+	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
+	// which depends on the 'protoc-gen-go' generated code.
+	Dependencies() []string
 	// Options is the set of options available to the plugin.
 	//
 	// For now, all options are string values. This could eventually
@@ -57,11 +72,12 @@ type Plugin interface {
 // NewPlugin creates a new plugin from the given configuration and image digest.
 func NewPlugin(
 	version string,
+	dependencies []string,
 	options map[string]string,
 	runtimeConfig *bufpluginconfig.RuntimeConfig,
 	imageDigest string,
 ) (Plugin, error) {
-	return newPlugin(version, options, runtimeConfig, imageDigest)
+	return newPlugin(version, dependencies, options, runtimeConfig, imageDigest)
 }
 
 // PluginToProtoPluginLanguage determines the appropriate registryv1alpha1.PluginLanguage for the plugin.

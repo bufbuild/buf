@@ -17,6 +17,8 @@ package bufpluginconfig
 import (
 	"errors"
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
@@ -69,6 +71,21 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 		}
 		options[key] = value
 	}
+	var dependencies []string
+	if len(externalConfig.Deps) > 0 {
+		existingDeps := make(map[string]struct{})
+		for _, dependency := range externalConfig.Deps {
+			dependencyName, err := parsePluginDependency(dependency, pluginIdentity)
+			if err != nil {
+				return nil, err
+			}
+			if _, ok := existingDeps[dependencyName.IdentityString()]; ok {
+				return nil, fmt.Errorf("plugin dependency %q was specified more than once", dependency)
+			}
+			existingDeps[dependencyName.IdentityString()] = struct{}{}
+			dependencies = append(dependencies, dependency)
+		}
+	}
 	runtimeConfig, err := newRuntimeConfig(externalConfig.Runtime)
 	if err != nil {
 		return nil, err
@@ -77,6 +94,7 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 		Name:          pluginIdentity,
 		PluginVersion: pluginVersion,
 		Options:       options,
+		Dependencies:  dependencies,
 		Runtime:       runtimeConfig,
 	}, nil
 }
@@ -182,4 +200,33 @@ func newGoRuntimeConfig(externalGoRuntimeConfig ExternalGoRuntimeConfig) (*GoRun
 		MinVersion: externalGoRuntimeConfig.MinVersion,
 		Deps:       dependencies,
 	}, nil
+}
+
+func parsePluginDependency(dependency string, pluginIdentity bufpluginref.PluginIdentity) (bufpluginref.PluginIdentity, error) {
+	name, versionRevision, ok := strings.Cut(dependency, ":")
+	if !ok {
+		return nil, fmt.Errorf("plugin dependencies must be specified as \"<name>:<version>-<revision>\" strings")
+	}
+	identity, err := bufpluginref.PluginIdentityForString(name)
+	if err != nil {
+		return nil, err
+	}
+	if identity.Remote() != pluginIdentity.Remote() {
+		return nil, fmt.Errorf("plugin dependency %q must use same remote as plugin %q", dependency, pluginIdentity.Remote())
+	}
+	version, revisionStr, ok := strings.Cut(versionRevision, "-")
+	if !ok {
+		return nil, fmt.Errorf("plugin dependencies must be specified as \"<name>:<version>-<revision>\" strings")
+	}
+	if !semver.IsValid(version) {
+		return nil, fmt.Errorf("plugin dependency %q must be specified with a semantic version", dependency)
+	}
+	revision, err := strconv.Atoi(revisionStr)
+	if err != nil {
+		return nil, fmt.Errorf("plugin dependency %q must be specified with a numeric version", dependency)
+	}
+	if revision < 0 || revision > math.MaxInt32 {
+		return nil, fmt.Errorf("plugin dependency %q revision out of range", dependency)
+	}
+	return identity, nil
 }
