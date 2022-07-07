@@ -29,16 +29,6 @@ type Plugin interface {
 	Version() string
 	// Dependencies are the dependencies this plugin has on other plugins.
 	//
-	// Each dependency should be listed in the following format:
-	//
-	//   <name>:<version>:<revision>
-	//
-	// Where '<name>' is the bufpluginref.PluginIdentity of the dependency.
-	// It is required that the Remote() matches the remote of the plugin.
-	// The '<version>' is the semantic version of the dependency, and the
-	// '<revision>' is the specific numeric revision used to uniquely
-	// identify the dependency along with the version.
-	//
 	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
 	// which depends on the 'protoc-gen-go' generated code.
 	Dependencies() []bufpluginref.PluginReference
