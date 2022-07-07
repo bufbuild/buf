@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `--draft` flag to `buf push`
+- Add `buf beta registry draft {list,delete}` commands.
 
 ## [v1.6.0] - 2022-06-21
 
