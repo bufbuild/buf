@@ -57,7 +57,7 @@ type Config struct {
 	//
 	// Each dependency should be listed in the following format:
 	//
-	//   <name>:<version>-<revision>
+	//   <name>:<version>:<revision>
 	//
 	// Where '<name>' is the bufpluginref.PluginIdentity of the dependency.
 	// It is required that the Remote() matches the remote of the plugin.

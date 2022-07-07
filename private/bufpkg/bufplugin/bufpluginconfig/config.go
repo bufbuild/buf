@@ -205,7 +205,7 @@ func newGoRuntimeConfig(externalGoRuntimeConfig ExternalGoRuntimeConfig) (*GoRun
 func parsePluginDependency(dependency string, pluginIdentity bufpluginref.PluginIdentity) (bufpluginref.PluginIdentity, error) {
 	name, versionRevision, ok := strings.Cut(dependency, ":")
 	if !ok {
-		return nil, fmt.Errorf("plugin dependencies must be specified as \"<name>:<version>-<revision>\" strings")
+		return nil, fmt.Errorf("plugin dependencies must be specified as \"<name>:<version>:<revision>\" strings")
 	}
 	identity, err := bufpluginref.PluginIdentityForString(name)
 	if err != nil {
@@ -214,9 +214,9 @@ func parsePluginDependency(dependency string, pluginIdentity bufpluginref.Plugin
 	if identity.Remote() != pluginIdentity.Remote() {
 		return nil, fmt.Errorf("plugin dependency %q must use same remote as plugin %q", dependency, pluginIdentity.Remote())
 	}
-	version, revisionStr, ok := strings.Cut(versionRevision, "-")
+	version, revisionStr, ok := strings.Cut(versionRevision, ":")
 	if !ok {
-		return nil, fmt.Errorf("plugin dependencies must be specified as \"<name>:<version>-<revision>\" strings")
+		return nil, fmt.Errorf("plugin dependencies must be specified as \"<name>:<version>:<revision>\" strings")
 	}
 	if !semver.IsValid(version) {
 		return nil, fmt.Errorf("plugin dependency %q must be specified with a semantic version", dependency)
