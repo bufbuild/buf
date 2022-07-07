@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
@@ -40,7 +41,7 @@ type Plugin interface {
 	//
 	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
 	// which depends on the 'protoc-gen-go' generated code.
-	Dependencies() []string
+	Dependencies() []bufpluginref.PluginReference
 	// Options is the set of options available to the plugin.
 	//
 	// For now, all options are string values. This could eventually
@@ -72,7 +73,7 @@ type Plugin interface {
 // NewPlugin creates a new plugin from the given configuration and image digest.
 func NewPlugin(
 	version string,
-	dependencies []string,
+	dependencies []bufpluginref.PluginReference,
 	options map[string]string,
 	runtimeConfig *bufpluginconfig.RuntimeConfig,
 	imageDigest string,
@@ -172,6 +173,31 @@ func protoNPMRuntimeLibraryToNPMRuntimeDependency(config *registryv1alpha1.NPMCo
 	return &bufpluginconfig.NPMRuntimeDependencyConfig{
 		Package: config.Package,
 		Version: config.Version,
+	}
+}
+
+// PluginReferencesToCuratedProtoPluginReferences converts a slice of bufpluginref.PluginReference to a slice of registryv1alpha1.CuratedPluginReference.
+func PluginReferencesToCuratedProtoPluginReferences(references []bufpluginref.PluginReference) []*registryv1alpha1.CuratedPluginReference {
+	if references == nil {
+		return nil
+	}
+	protoReferences := make([]*registryv1alpha1.CuratedPluginReference, 0, len(references))
+	for _, reference := range references {
+		protoReferences = append(protoReferences, PluginReferenceToProtoCuratedPluginReference(reference))
+	}
+	return protoReferences
+}
+
+// PluginReferenceToProtoCuratedPluginReference converts a bufpluginref.PluginReference to a registryv1alpha1.CuratedPluginReference.
+func PluginReferenceToProtoCuratedPluginReference(reference bufpluginref.PluginReference) *registryv1alpha1.CuratedPluginReference {
+	if reference == nil {
+		return nil
+	}
+	return &registryv1alpha1.CuratedPluginReference{
+		Owner:    reference.Owner(),
+		Name:     reference.Plugin(),
+		Version:  reference.Version(),
+		Revision: uint32(reference.Revision()),
 	}
 }
 

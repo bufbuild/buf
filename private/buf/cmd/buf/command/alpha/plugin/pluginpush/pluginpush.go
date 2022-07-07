@@ -211,7 +211,7 @@ func run(
 		plugin.Version(),
 		plugin.ContainerImageDigest(),
 		bufplugin.PluginOptionsToOptionsSlice(plugin.Options()),
-		plugin.Dependencies(),
+		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
 		"", // sourceUrl
 		"", // description
 		bufplugin.PluginRuntimeToProtoRuntimeConfig(plugin.Runtime()),

@@ -60,7 +60,7 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 	version string,
 	containerImageDigest string,
 	options []string,
-	dependencies []string,
+	dependencies []*v1alpha1.CuratedPluginReference,
 	sourceUrl string,
 	description string,
 	runtimeConfig *v1alpha1.RuntimeConfig,
