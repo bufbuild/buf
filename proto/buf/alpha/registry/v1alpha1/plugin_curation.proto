@@ -61,6 +61,17 @@ message RuntimeConfig {
   }
 }
 
+message CuratedPluginReference {
+  // The owner of the plugin, i.e. "library".
+  string owner = 1;
+  // The name of the plugin, i.e. "connect-go".
+  string name = 2;
+  // Semver-formatted plugin version.
+  string version = 3;
+  // The revision for this plugin version.
+  uint32 revision = 4;
+}
+
 // CuratedPlugin represents a protoc plugin curated by Buf, such as protoc-gen-go.
 message CuratedPlugin {
   // The ID of the plugin, which uniquely identifies the plugin.
@@ -81,8 +92,8 @@ message CuratedPlugin {
   repeated string options = 7;
   // The creation time of the plugin.
   google.protobuf.Timestamp create_time = 8;
-  // List of plugin dependencies in the form "{owner}/{name}:{version}"
-  repeated string dependencies = 9;
+  // List of plugin dependencies.
+  repeated CuratedPluginReference dependencies = 9;
   // Optionally specify the URL leading to the source code of the plugin, if available.
   string source_url = 10;
   // Optionally specify a brief description of the plugin functionality.
@@ -118,8 +129,8 @@ message CreateCuratedPluginRequest {
   string container_image_digest = 5;
   // List of default plugin options in the form "{option}={defaultOption}"
   repeated string options = 6;
-  // List of plugin dependencies in the form "{owner}/{name}:{version}"
-  repeated string dependencies = 7;
+  // List of plugin dependencies.
+  repeated CuratedPluginReference dependencies = 7;
   // The URL leading to the source code of the plugin, if available.
   string source_url = 8;
   // A brief description of the plugin functionality.
