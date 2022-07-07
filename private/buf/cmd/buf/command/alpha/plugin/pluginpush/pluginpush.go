@@ -34,6 +34,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 const (
@@ -217,7 +218,16 @@ func run(
 		nextRevision,
 	)
 	if err != nil {
-		return err
+		if connect.CodeOf(err) != connect.CodeAlreadyExists {
+			return err
+		}
+		// Plugin with the same image digest and metadata already exists
+		container.Logger().Info(
+			"plugin already exists",
+			zap.String("name", pluginConfig.Name.IdentityString()),
+			zap.String("digest", buildResponse.Digest),
+		)
+		curatedPlugin = currentRevision
 	}
 	return bufprint.NewCuratedPluginPrinter(container.Stdout()).PrintCuratedPlugin(ctx, format, curatedPlugin)
 }
