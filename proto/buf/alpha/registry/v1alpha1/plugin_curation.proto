@@ -69,7 +69,7 @@ message CuratedPluginReference {
   // Semver-formatted plugin version.
   string version = 3;
   // The revision for this plugin version.
-  uint32 revision = 13;
+  uint32 revision = 4;
 }
 
 // CuratedPlugin represents a protoc plugin curated by Buf, such as protoc-gen-go.
