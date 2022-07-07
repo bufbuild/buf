@@ -19,11 +19,13 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"golang.org/x/mod/semver"
 )
 
 type plugin struct {
 	version              string
+	dependencies         []bufpluginref.PluginReference
 	options              map[string]string
 	runtime              *bufpluginconfig.RuntimeConfig
 	containerImageDigest string
@@ -31,6 +33,7 @@ type plugin struct {
 
 func newPlugin(
 	version string,
+	dependencies []bufpluginref.PluginReference,
 	options map[string]string,
 	runtimeConfig *bufpluginconfig.RuntimeConfig,
 	containerImageDigest string,
@@ -50,6 +53,7 @@ func newPlugin(
 	}
 	return &plugin{
 		version:              version,
+		dependencies:         dependencies,
 		options:              options,
 		runtime:              runtimeConfig,
 		containerImageDigest: containerImageDigest,
@@ -59,6 +63,11 @@ func newPlugin(
 // Version returns the plugin's version.
 func (p *plugin) Version() string {
 	return p.version
+}
+
+// Dependencies returns the plugin's dependencies on other plugins.
+func (p *plugin) Dependencies() []bufpluginref.PluginReference {
+	return p.dependencies
 }
 
 // Options returns the plugin's options.

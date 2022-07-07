@@ -177,6 +177,7 @@ func run(
 	}
 	plugin, err := bufplugin.NewPlugin(
 		pluginConfig.PluginVersion,
+		pluginConfig.Dependencies,
 		pluginConfig.Options,
 		pluginConfig.Runtime,
 		buildResponse.Digest,
@@ -211,9 +212,9 @@ func run(
 		plugin.Version(),
 		plugin.ContainerImageDigest(),
 		bufplugin.PluginOptionsToOptionsSlice(plugin.Options()),
-		nil, // dependencies
-		"",  // sourceUrl
-		"",  // description
+		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
+		"", // sourceUrl
+		"", // description
 		bufplugin.PluginRuntimeToProtoRuntimeConfig(plugin.Runtime()),
 		nextRevision,
 	)
