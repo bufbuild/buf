@@ -43,7 +43,7 @@ func NewClient(clientOptions ...ClientOption) *http.Client {
 		baseTransport = &http2.Transport{
 			AllowHTTP: true,
 			DialTLS: func(netw, addr string, cfg *tls.Config) (net.Conn, error) {
-				return proxyDial(netw, addr, option.proxy)
+				return net.Dial(netw, addr)
 			},
 		}
 	}

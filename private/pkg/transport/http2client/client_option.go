@@ -14,10 +14,19 @@
 
 package http2client
 
-import "crypto/tls"
+import (
+	"crypto/tls"
+	"net/http"
+	"net/url"
+)
 
 // ClientOption is an option to modify the *http.Client.
 type ClientOption func(*clientOption)
+
+// Proxy specifies a function to return a proxy for a given
+// Request. If the function returns a non-nil error, the
+// request is aborted with the provided error.
+type Proxy func(req *http.Request) (*url.URL, error)
 
 type clientOption struct {
 	tlsConfig     *tls.Config
