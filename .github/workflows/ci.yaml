@@ -7,7 +7,10 @@ env:
   MAKEFLAGS: '-j 2'
 jobs:
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.18.x,1.19.0-rc.1]
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -15,7 +18,7 @@ jobs:
         if: success()
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18.3
+          go-version: ${{matrix.go-version}}
       - name: cache
         if: success()
         uses: actions/cache@v3
@@ -36,7 +39,10 @@ jobs:
           BUF_INPUT_HTTPS_USERNAME: ${{ github.actor }}
           BUF_INPUT_HTTPS_PASSWORD: ${{ github.token }}
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.18.x,1.19.0-rc.1]
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -44,7 +50,7 @@ jobs:
         if: success()
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18.3
+          go-version: ${{matrix.go-version}}
       - name: cache
         if: success()
         uses: actions/cache@v3
@@ -61,14 +67,14 @@ jobs:
         if: success()
         run: make test
   docker:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs:
       - lint
       - test
     # This job only runs when
     # 1. The previous lint and test jobs have completed successfully
     # 2. The repository is not a fork, i.e. it will only run on the official bufbuild/buf
-    # 3. The workflow run is trigged by main branch OR a tag with v prefix
+    # 3. The workflow run is triggered by main branch OR a tag with v prefix
     # See https://github.com/bufbuild/buf/pull/289/files#r596207623 for the discussion
     if:  ${{ success() && github.repository == 'bufbuild/buf' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v')) }}
     steps:

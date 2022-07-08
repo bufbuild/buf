@@ -14,7 +14,7 @@ on:
       - main
 jobs:
   codeql:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v3
