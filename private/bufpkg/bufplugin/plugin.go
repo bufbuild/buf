@@ -29,7 +29,11 @@ type plugin struct {
 	options              map[string]string
 	runtime              *bufpluginconfig.RuntimeConfig
 	containerImageDigest string
+	sourceURL            string
+	description          string
 }
+
+var _ Plugin = (*plugin)(nil)
 
 func newPlugin(
 	version string,
@@ -37,6 +41,8 @@ func newPlugin(
 	options map[string]string,
 	runtimeConfig *bufpluginconfig.RuntimeConfig,
 	containerImageDigest string,
+	sourceURL string,
+	description string,
 ) (*plugin, error) {
 	if version == "" {
 		return nil, errors.New("plugin version is required")
@@ -57,6 +63,8 @@ func newPlugin(
 		options:              options,
 		runtime:              runtimeConfig,
 		containerImageDigest: containerImageDigest,
+		sourceURL:            sourceURL,
+		description:          description,
 	}, nil
 }
 
@@ -83,4 +91,12 @@ func (p *plugin) Runtime() *bufpluginconfig.RuntimeConfig {
 // ContainerImageDigest returns the plugin's image digest.
 func (p *plugin) ContainerImageDigest() string {
 	return p.containerImageDigest
+}
+
+func (p *plugin) SourceURL() string {
+	return p.sourceURL
+}
+
+func (p *plugin) Description() string {
+	return p.description
 }
