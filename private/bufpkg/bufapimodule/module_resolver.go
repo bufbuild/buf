@@ -16,39 +16,39 @@ package bufapimodule
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
-	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/connect-go"
 	"go.uber.org/zap"
 )
 
 type moduleResolver struct {
-	logger                 *zap.Logger
-	resolveServiceProvider registryv1alpha1apiclient.ResolveServiceProvider
+	logger                          *zap.Logger
+	repositoryCommitServiceProvider registryv1alpha1apiclient.RepositoryCommitServiceProvider
 }
 
-func newModuleResolver(logger *zap.Logger, resolveServiceProvider registryv1alpha1apiclient.ResolveServiceProvider) *moduleResolver {
+func newModuleResolver(
+	logger *zap.Logger,
+	repositoryCommitServiceProvider registryv1alpha1apiclient.RepositoryCommitServiceProvider,
+) *moduleResolver {
 	return &moduleResolver{
-		logger:                 logger,
-		resolveServiceProvider: resolveServiceProvider,
+		logger:                          logger,
+		repositoryCommitServiceProvider: repositoryCommitServiceProvider,
 	}
 }
 
 func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmoduleref.ModuleReference) (bufmoduleref.ModulePin, error) {
-	resolveService, err := m.resolveServiceProvider.NewResolveService(ctx, moduleReference.Remote())
+	repositoryCommitService, err := m.repositoryCommitServiceProvider.NewRepositoryCommitService(ctx, moduleReference.Remote())
 	if err != nil {
 		return nil, err
 	}
-	protoModulePins, err := resolveService.GetModulePins(
+	repositoryCommit, err := repositoryCommitService.GetRepositoryCommitByReference(
 		ctx,
-		[]*modulev1alpha1.ModuleReference{
-			bufmoduleref.NewProtoModuleReferenceForModuleReference(moduleReference),
-		},
-		nil,
+		moduleReference.Owner(),
+		moduleReference.Repository(),
+		moduleReference.Reference(),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -57,26 +57,12 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 		}
 		return nil, err
 	}
-	var targetModulePin bufmoduleref.ModulePin
-	moduleIdentity := getModuleIdentity(moduleReference)
-	for _, protoModulePin := range protoModulePins {
-		modulePin, err := bufmoduleref.NewModulePinForProto(protoModulePin)
-		if err != nil {
-			return nil, err
-		}
-		if getModuleIdentity(modulePin) == moduleIdentity {
-			if targetModulePin != nil {
-				return nil, fmt.Errorf("resolved multiple module pins for %q", moduleIdentity)
-			}
-			targetModulePin = modulePin
-		}
-	}
-	if targetModulePin == nil {
-		return nil, fmt.Errorf("resolved module pins did not contain module %q", moduleIdentity)
-	}
-	return targetModulePin, nil
-}
-
-func getModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) string {
-	return moduleIdentity.Remote() + "/" + moduleIdentity.Owner() + "/" + moduleIdentity.Repository()
+	return bufmoduleref.NewModulePin(
+		moduleReference.Remote(),
+		moduleReference.Owner(),
+		moduleReference.Repository(),
+		bufmoduleref.Main,
+		repositoryCommit.Name,
+		repositoryCommit.CreateTime.AsTime(),
+	)
 }
