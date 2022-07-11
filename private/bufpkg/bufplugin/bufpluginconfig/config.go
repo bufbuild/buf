@@ -97,6 +97,8 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 		Options:       options,
 		Dependencies:  dependencies,
 		Runtime:       runtimeConfig,
+		SourceURL:     externalConfig.SourceURL,
+		Description:   externalConfig.Description,
 	}, nil
 }
 

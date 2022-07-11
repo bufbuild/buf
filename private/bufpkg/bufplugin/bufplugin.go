@@ -27,6 +27,12 @@ type Plugin interface {
 	// Version is the version of the plugin's implementation
 	// (e.g the protoc-gen-connect-go implementation is v0.2.0).
 	Version() string
+	// SourceURL is an optional attribute used to specify where the source
+	// for the plugin can be found.
+	SourceURL() string
+	// Description is an optional attribute to provide a more detailed
+	// description for the plugin.
+	Description() string
 	// Dependencies are the dependencies this plugin has on other plugins.
 	//
 	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
@@ -67,8 +73,10 @@ func NewPlugin(
 	options map[string]string,
 	runtimeConfig *bufpluginconfig.RuntimeConfig,
 	imageDigest string,
+	sourceURL string,
+	description string,
 ) (Plugin, error) {
-	return newPlugin(version, dependencies, options, runtimeConfig, imageDigest)
+	return newPlugin(version, dependencies, options, runtimeConfig, imageDigest, sourceURL, description)
 }
 
 // PluginToProtoPluginLanguage determines the appropriate registryv1alpha1.PluginLanguage for the plugin.
