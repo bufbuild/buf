@@ -45,6 +45,8 @@ func TestGetConfigForBucket(t *testing.T) {
 		&Config{
 			Name:          pluginIdentity,
 			PluginVersion: "v1.2.0",
+			SourceURL:     "https://github.com/grpc/grpc-go",
+			Description:   "Generates Go language bindings of services in protobuf definition files for gRPC.",
 			Dependencies: []bufpluginref.PluginReference{
 				pluginDependency,
 			},
@@ -80,6 +82,8 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 		&Config{
 			Name:          pluginIdentity,
 			PluginVersion: "v1.2.0",
+			SourceURL:     "https://github.com/grpc/grpc-go",
+			Description:   "Generates Go language bindings of services in protobuf definition files for gRPC.",
 			Dependencies: []bufpluginref.PluginReference{
 				pluginDependency,
 			},
