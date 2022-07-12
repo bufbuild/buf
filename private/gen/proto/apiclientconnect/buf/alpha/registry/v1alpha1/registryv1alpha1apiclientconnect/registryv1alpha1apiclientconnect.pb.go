@@ -134,6 +134,26 @@ func (p *provider) NewAuthzService(ctx context.Context, address string) (registr
 	}, nil
 }
 
+// NewCodeGenerationService creates a new CodeGenerationService
+func (p *provider) NewCodeGenerationService(ctx context.Context, address string) (registryv1alpha1api.CodeGenerationService, error) {
+	interceptors := p.interceptors
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	return &codeGenerationServiceClient{
+		logger: p.logger,
+		client: registryv1alpha1connect.NewCodeGenerationServiceClient(
+			p.httpClient,
+			address,
+			connect_go.WithInterceptors(interceptors...),
+		),
+	}, nil
+}
+
 // NewConvertService creates a new ConvertService
 func (p *provider) NewConvertService(ctx context.Context, address string) (registryv1alpha1api.ConvertService, error) {
 	interceptors := p.interceptors
