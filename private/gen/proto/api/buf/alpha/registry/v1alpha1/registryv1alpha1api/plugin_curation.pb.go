@@ -18,6 +18,7 @@ package registryv1alpha1api
 
 import (
 	context "context"
+	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
@@ -52,4 +53,16 @@ type PluginCurationService interface {
 		name string,
 		version string,
 	) (plugin *v1alpha1.CuratedPlugin, err error)
+}
+
+// PluginCodeGenerationService generates code using remote plugins.
+type PluginCodeGenerationService interface {
+	// GenerateCode generates code using the specified remote plugins.
+	GenerateCode(
+		ctx context.Context,
+		image *v1.Image,
+		requests []*v1alpha1.PluginGenerationRequest,
+		includeImports bool,
+		includeWellKnownTypes bool,
+	) (responses []*v1alpha1.PluginGenerationResponse, err error)
 }

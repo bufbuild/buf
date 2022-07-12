@@ -37,6 +37,9 @@ const _ = connect_go.IsAtLeastVersion0_1_0
 const (
 	// PluginCurationServiceName is the fully-qualified name of the PluginCurationService service.
 	PluginCurationServiceName = "buf.alpha.registry.v1alpha1.PluginCurationService"
+	// PluginCodeGenerationServiceName is the fully-qualified name of the PluginCodeGenerationService
+	// service.
+	PluginCodeGenerationServiceName = "buf.alpha.registry.v1alpha1.PluginCodeGenerationService"
 )
 
 // PluginCurationServiceClient is a client for the buf.alpha.registry.v1alpha1.PluginCurationService
@@ -151,4 +154,69 @@ func (UnimplementedPluginCurationServiceHandler) CreateCuratedPlugin(context.Con
 
 func (UnimplementedPluginCurationServiceHandler) GetLatestCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.GetLatestCuratedPlugin is not implemented"))
+}
+
+// PluginCodeGenerationServiceClient is a client for the
+// buf.alpha.registry.v1alpha1.PluginCodeGenerationService service.
+type PluginCodeGenerationServiceClient interface {
+	// GenerateCode generates code using the specified remote plugins.
+	GenerateCode(context.Context, *connect_go.Request[v1alpha1.GenerateCodeRequest]) (*connect_go.Response[v1alpha1.GenerateCodeResponse], error)
+}
+
+// NewPluginCodeGenerationServiceClient constructs a client for the
+// buf.alpha.registry.v1alpha1.PluginCodeGenerationService service. By default, it uses the Connect
+// protocol with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed
+// requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
+// connect.WithGRPCWeb() options.
+//
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
+// http://api.acme.com or https://acme.com/grpc).
+func NewPluginCodeGenerationServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) PluginCodeGenerationServiceClient {
+	baseURL = strings.TrimRight(baseURL, "/")
+	return &pluginCodeGenerationServiceClient{
+		generateCode: connect_go.NewClient[v1alpha1.GenerateCodeRequest, v1alpha1.GenerateCodeResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.PluginCodeGenerationService/GenerateCode",
+			opts...,
+		),
+	}
+}
+
+// pluginCodeGenerationServiceClient implements PluginCodeGenerationServiceClient.
+type pluginCodeGenerationServiceClient struct {
+	generateCode *connect_go.Client[v1alpha1.GenerateCodeRequest, v1alpha1.GenerateCodeResponse]
+}
+
+// GenerateCode calls buf.alpha.registry.v1alpha1.PluginCodeGenerationService.GenerateCode.
+func (c *pluginCodeGenerationServiceClient) GenerateCode(ctx context.Context, req *connect_go.Request[v1alpha1.GenerateCodeRequest]) (*connect_go.Response[v1alpha1.GenerateCodeResponse], error) {
+	return c.generateCode.CallUnary(ctx, req)
+}
+
+// PluginCodeGenerationServiceHandler is an implementation of the
+// buf.alpha.registry.v1alpha1.PluginCodeGenerationService service.
+type PluginCodeGenerationServiceHandler interface {
+	// GenerateCode generates code using the specified remote plugins.
+	GenerateCode(context.Context, *connect_go.Request[v1alpha1.GenerateCodeRequest]) (*connect_go.Response[v1alpha1.GenerateCodeResponse], error)
+}
+
+// NewPluginCodeGenerationServiceHandler builds an HTTP handler from the service implementation. It
+// returns the path on which to mount the handler and the handler itself.
+//
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
+func NewPluginCodeGenerationServiceHandler(svc PluginCodeGenerationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
+	mux := http.NewServeMux()
+	mux.Handle("/buf.alpha.registry.v1alpha1.PluginCodeGenerationService/GenerateCode", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.PluginCodeGenerationService/GenerateCode",
+		svc.GenerateCode,
+		opts...,
+	))
+	return "/buf.alpha.registry.v1alpha1.PluginCodeGenerationService/", mux
+}
+
+// UnimplementedPluginCodeGenerationServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedPluginCodeGenerationServiceHandler struct{}
+
+func (UnimplementedPluginCodeGenerationServiceHandler) GenerateCode(context.Context, *connect_go.Request[v1alpha1.GenerateCodeRequest]) (*connect_go.Response[v1alpha1.GenerateCodeResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCodeGenerationService.GenerateCode is not implemented"))
 }

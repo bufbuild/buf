@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/image/v1/image.proto";
+import "google/protobuf/compiler/plugin.proto";
 import "google/protobuf/timestamp.proto";
 
 // The supported languages for curated plugins.
@@ -112,6 +114,49 @@ service PluginCurationService {
   rpc CreateCuratedPlugin(CreateCuratedPluginRequest) returns (CreateCuratedPluginResponse);
   // GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
   rpc GetLatestCuratedPlugin(GetLatestCuratedPluginRequest) returns (GetLatestCuratedPluginResponse);
+}
+
+// PluginCodeGenerationService generates code using remote plugins.
+service PluginCodeGenerationService {
+  // GenerateCode generates code using the specified remote plugins.
+  rpc GenerateCode(GenerateCodeRequest) returns (GenerateCodeResponse);
+}
+
+message GenerateCodeRequest {
+  // The image to run plugins against to generate the desired file outputs.
+  //
+  // All image files that are not imports and not well-known types will be generated.
+  // If you want to filter what files are generated, modify the image.
+  // If you want to include imports, set include_imports.
+  buf.alpha.image.v1.Image image = 1;
+  repeated PluginGenerationRequest requests = 2;
+  // Include imports from the Image in generation.
+  bool include_imports = 3;
+  // Include Well-Known Types from the Image in generation.
+  //
+  // include_imports must be set if include_well_known_types is set.
+  bool include_well_known_types = 4;
+}
+
+message GenerateCodeResponse {
+  // Responses from each plugin execution.
+  // The order of each response matches the order in the GenerateCodeRequest.
+  repeated PluginGenerationResponse responses = 1;
+}
+
+// Request for performing code generation using the specified plugin.
+message PluginGenerationRequest {
+  // The plugin to execute.
+  CuratedPluginReference plugin = 1;
+  // The options to pass to the plugin. These will
+  // be merged into a single, comma-separated string.
+  repeated string options = 2;
+}
+
+// Response from code generation for a given plugin.
+message PluginGenerationResponse {
+  // Generated code from the plugin.
+  google.protobuf.compiler.CodeGeneratorResponse response = 1;
 }
 
 message CreateCuratedPluginRequest {

@@ -354,6 +354,26 @@ func (p *provider) NewOwnerService(ctx context.Context, address string) (registr
 	}, nil
 }
 
+// NewPluginCodeGenerationService creates a new PluginCodeGenerationService
+func (p *provider) NewPluginCodeGenerationService(ctx context.Context, address string) (registryv1alpha1api.PluginCodeGenerationService, error) {
+	interceptors := p.interceptors
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	return &pluginCodeGenerationServiceClient{
+		logger: p.logger,
+		client: registryv1alpha1connect.NewPluginCodeGenerationServiceClient(
+			p.httpClient,
+			address,
+			connect_go.WithInterceptors(interceptors...),
+		),
+	}, nil
+}
+
 // NewPluginCurationService creates a new PluginCurationService
 func (p *provider) NewPluginCurationService(ctx context.Context, address string) (registryv1alpha1api.PluginCurationService, error) {
 	interceptors := p.interceptors
