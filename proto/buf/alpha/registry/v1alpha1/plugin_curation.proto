@@ -147,9 +147,12 @@ message GenerateCodeResponse {
 // Request for performing code generation using the specified plugin.
 message PluginGenerationRequest {
   // The plugin to execute.
-  CuratedPluginReference plugin = 1;
+  CuratedPluginReference plugin_reference = 1;
   // The options to pass to the plugin. These will
   // be merged into a single, comma-separated string.
+  // If options is non-empty, it will override any
+  // default options specified in the plugin's
+  // metadata (the opts key in buf.plugin.yaml).
   repeated string options = 2;
 }
 
