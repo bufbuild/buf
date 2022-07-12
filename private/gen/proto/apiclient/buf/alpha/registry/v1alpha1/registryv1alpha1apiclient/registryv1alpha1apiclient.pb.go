@@ -26,6 +26,7 @@ type Provider interface {
 	AdminServiceProvider
 	AuthnServiceProvider
 	AuthzServiceProvider
+	CodeGenerationServiceProvider
 	ConvertServiceProvider
 	DisplayServiceProvider
 	DocServiceProvider
@@ -37,7 +38,6 @@ type Provider interface {
 	LocalResolveServiceProvider
 	OrganizationServiceProvider
 	OwnerServiceProvider
-	PluginCodeGenerationServiceProvider
 	PluginCurationServiceProvider
 	PluginServiceProvider
 	PushServiceProvider
@@ -67,6 +67,11 @@ type AuthnServiceProvider interface {
 // AuthzServiceProvider provides a client-side AuthzService for an address.
 type AuthzServiceProvider interface {
 	NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error)
+}
+
+// CodeGenerationServiceProvider provides a client-side CodeGenerationService for an address.
+type CodeGenerationServiceProvider interface {
+	NewCodeGenerationService(ctx context.Context, address string) (registryv1alpha1api.CodeGenerationService, error)
 }
 
 // ConvertServiceProvider provides a client-side ConvertService for an address.
@@ -122,11 +127,6 @@ type OrganizationServiceProvider interface {
 // OwnerServiceProvider provides a client-side OwnerService for an address.
 type OwnerServiceProvider interface {
 	NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error)
-}
-
-// PluginCodeGenerationServiceProvider provides a client-side PluginCodeGenerationService for an address.
-type PluginCodeGenerationServiceProvider interface {
-	NewPluginCodeGenerationService(ctx context.Context, address string) (registryv1alpha1api.PluginCodeGenerationService, error)
 }
 
 // PluginCurationServiceProvider provides a client-side PluginCurationService for an address.

@@ -112,13 +112,13 @@ func (s *pluginCurationServiceClient) GetLatestCuratedPlugin(
 	return response.Msg.Plugin, nil
 }
 
-type pluginCodeGenerationServiceClient struct {
+type codeGenerationServiceClient struct {
 	logger *zap.Logger
-	client registryv1alpha1connect.PluginCodeGenerationServiceClient
+	client registryv1alpha1connect.CodeGenerationServiceClient
 }
 
 // GenerateCode generates code using the specified remote plugins.
-func (s *pluginCodeGenerationServiceClient) GenerateCode(
+func (s *codeGenerationServiceClient) GenerateCode(
 	ctx context.Context,
 	image *v1.Image,
 	requests []*v1alpha1.PluginGenerationRequest,

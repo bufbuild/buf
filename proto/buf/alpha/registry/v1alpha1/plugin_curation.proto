@@ -116,8 +116,8 @@ service PluginCurationService {
   rpc GetLatestCuratedPlugin(GetLatestCuratedPluginRequest) returns (GetLatestCuratedPluginResponse);
 }
 
-// PluginCodeGenerationService generates code using remote plugins.
-service PluginCodeGenerationService {
+// CodeGenerationService generates code using remote plugins.
+service CodeGenerationService {
   // GenerateCode generates code using the specified remote plugins.
   rpc GenerateCode(GenerateCodeRequest) returns (GenerateCodeResponse);
 }

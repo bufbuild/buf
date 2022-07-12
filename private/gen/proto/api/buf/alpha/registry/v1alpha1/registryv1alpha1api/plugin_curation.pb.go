@@ -55,8 +55,8 @@ type PluginCurationService interface {
 	) (plugin *v1alpha1.CuratedPlugin, err error)
 }
 
-// PluginCodeGenerationService generates code using remote plugins.
-type PluginCodeGenerationService interface {
+// CodeGenerationService generates code using remote plugins.
+type CodeGenerationService interface {
 	// GenerateCode generates code using the specified remote plugins.
 	GenerateCode(
 		ctx context.Context,
