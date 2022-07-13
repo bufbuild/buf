@@ -163,7 +163,7 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 		return fmt.Errorf("%s: no plugins set", id)
 	}
 	for _, plugin := range externalConfig.Plugins {
-		numPluginIdentifiers := 0
+		var numPluginIdentifiers int
 		var pluginIdentifier string
 		for _, possibleIdentifier := range []string{plugin.Plugin, plugin.Name, plugin.Remote} {
 			if possibleIdentifier != "" {
