@@ -181,6 +181,8 @@ func run(
 		pluginConfig.Options,
 		pluginConfig.Runtime,
 		buildResponse.Digest,
+		pluginConfig.SourceURL,
+		pluginConfig.Description,
 	)
 	if err != nil {
 		return err
@@ -213,8 +215,8 @@ func run(
 		plugin.ContainerImageDigest(),
 		bufplugin.PluginOptionsToOptionsSlice(plugin.Options()),
 		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
-		"", // sourceUrl
-		"", // description
+		plugin.SourceURL(),
+		plugin.Description(),
 		bufplugin.PluginRuntimeToProtoRuntimeConfig(plugin.Runtime()),
 		nextRevision,
 	)

@@ -19,6 +19,7 @@ package registryv1alpha1apiclientconnect
 import (
 	context "context"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
@@ -109,4 +110,33 @@ func (s *pluginCurationServiceClient) GetLatestCuratedPlugin(
 		return nil, err
 	}
 	return response.Msg.Plugin, nil
+}
+
+type codeGenerationServiceClient struct {
+	logger *zap.Logger
+	client registryv1alpha1connect.CodeGenerationServiceClient
+}
+
+// GenerateCode generates code using the specified remote plugins.
+func (s *codeGenerationServiceClient) GenerateCode(
+	ctx context.Context,
+	image *v1.Image,
+	requests []*v1alpha1.PluginGenerationRequest,
+	includeImports bool,
+	includeWellKnownTypes bool,
+) (responses []*v1alpha1.PluginGenerationResponse, _ error) {
+	response, err := s.client.GenerateCode(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.GenerateCodeRequest{
+				Image:                 image,
+				Requests:              requests,
+				IncludeImports:        includeImports,
+				IncludeWellKnownTypes: includeWellKnownTypes,
+			}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Msg.Responses, nil
 }
