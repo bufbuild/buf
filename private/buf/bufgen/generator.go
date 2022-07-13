@@ -16,11 +16,14 @@ package bufgen
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -165,7 +168,7 @@ func (g *generator) execPlugins(
 	for i, pluginConfig := range config.PluginConfigs {
 		index := i
 		currentPluginConfig := pluginConfig
-		if pluginConfig.Remote != "" {
+		if pluginConfig.IsRemote() {
 			jobs = append(jobs, func(ctx context.Context) error {
 				response, err := g.execRemotePlugin(
 					ctx,
@@ -181,8 +184,7 @@ func (g *generator) execPlugins(
 				responses[index] = response
 				return nil
 			})
-		}
-		if pluginConfig.Name != "" {
+		} else {
 			jobs = append(jobs, func(ctx context.Context) error {
 				response, err := g.execLocalPlugin(
 					ctx,
@@ -271,6 +273,9 @@ func (g *generator) execRemotePlugin(
 	includeImports bool,
 	includeWellKnownTypes bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
+	if len(pluginConfig.Plugin) > 0 {
+		return g.execRemotePluginV2(ctx, container, image, pluginConfig, includeImports, includeWellKnownTypes)
+	}
 	remote, owner, name, version, err := bufremoteplugin.ParsePluginVersionPath(pluginConfig.Remote)
 	if err != nil {
 		return nil, fmt.Errorf("invalid plugin path: %w", err)
@@ -320,6 +325,52 @@ func (g *generator) execRemotePlugin(
 		g.logger.Sugar().Warn(warnMsg)
 	}
 	return responses[0], nil
+}
+
+func (g *generator) execRemotePluginV2(
+	ctx context.Context,
+	container app.EnvStdioContainer,
+	image bufimage.Image,
+	pluginConfig *PluginConfig,
+	includeImports bool,
+	includeWellKnownTypes bool,
+) (*pluginpb.CodeGeneratorResponse, error) {
+	reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Plugin)
+	if err != nil {
+		return nil, fmt.Errorf("invalid plugin path: %w", err)
+	}
+	codeGenerationService, err := g.registryProvider.NewCodeGenerationService(ctx, reference.Remote())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create generate service for remote %q: %w", reference.Remote(), err)
+	}
+	var options []string
+	if len(pluginConfig.Opt) > 0 {
+		// Only include parameters if they're not empty.
+		options = []string{pluginConfig.Opt}
+	}
+	responses, err := codeGenerationService.GenerateCode(
+		ctx,
+		bufimage.ImageToProtoImage(image),
+		[]*registryv1alpha1.PluginGenerationRequest{
+			{
+				PluginReference: bufplugin.PluginReferenceToProtoCuratedPluginReference(reference),
+				Options:         options,
+			},
+		},
+		includeImports,
+		includeWellKnownTypes,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(responses) != 1 {
+		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), 1)
+	}
+	codeGeneratorResponse := responses[0].GetResponse()
+	if codeGeneratorResponse == nil {
+		return nil, errors.New("expected code generator response")
+	}
+	return codeGeneratorResponse, nil
 }
 
 // modifyImage modifies the image according to the given configuration (i.e. managed mode).

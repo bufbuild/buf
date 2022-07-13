@@ -25,6 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -166,7 +167,8 @@ type Config struct {
 
 // PluginConfig is a plugin configuration.
 type PluginConfig struct {
-	// One of Name and Remote is required
+	// One of Plugin, Name or Remote is required
+	Plugin string
 	Name   string
 	Remote string
 	// Required
@@ -180,10 +182,13 @@ type PluginConfig struct {
 }
 
 // PluginName returns this PluginConfig's plugin name.
-// Only one of Name or Remote will be set.
+// Only one of Plugin, Name or Remote will be set.
 func (p *PluginConfig) PluginName() string {
 	if p == nil {
 		return ""
+	}
+	if p.Plugin != "" {
+		return p.Plugin
 	}
 	if p.Name != "" {
 		return p.Name
@@ -192,6 +197,17 @@ func (p *PluginConfig) PluginName() string {
 		return p.Remote
 	}
 	return ""
+}
+
+// IsRemote returns true if the PluginConfig uses a remotely executed plugin.
+func (p *PluginConfig) IsRemote() bool {
+	if p == nil {
+		return false
+	}
+	if _, err := bufpluginref.PluginReferenceForString(p.Plugin); err == nil {
+		return true
+	}
+	return p.Remote != ""
 }
 
 // ManagedConfig is the managed mode configuration.
@@ -268,6 +284,7 @@ type ExternalConfigV1 struct {
 
 // ExternalPluginConfigV1 is an external plugin configuration.
 type ExternalPluginConfigV1 struct {
+	Plugin   string      `json:"plugin,omitempty" yaml:"plugin,omitempty"`
 	Name     string      `json:"name,omitempty" yaml:"name,omitempty"`
 	Remote   string      `json:"remote,omitempty" yaml:"remote,omitempty"`
 	Out      string      `json:"out,omitempty" yaml:"out,omitempty"`
