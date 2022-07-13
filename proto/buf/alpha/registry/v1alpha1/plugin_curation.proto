@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/image/v1/image.proto";
+import "google/protobuf/compiler/plugin.proto";
 import "google/protobuf/timestamp.proto";
 
 // The supported languages for curated plugins.
@@ -61,34 +63,47 @@ message RuntimeConfig {
   }
 }
 
+message CuratedPluginReference {
+  // The owner of the plugin, i.e. "library".
+  string owner = 1;
+  // The name of the plugin, i.e. "connect-go".
+  string name = 2;
+  // Semver-formatted plugin version.
+  string version = 3;
+  // The revision for this plugin version.
+  uint32 revision = 4;
+}
+
 // CuratedPlugin represents a protoc plugin curated by Buf, such as protoc-gen-go.
 message CuratedPlugin {
   // The ID of the plugin, which uniquely identifies the plugin.
   string id = 1;
+  // The owner of the plugin, i.e. "library".
+  string owner = 2;
   // The name of the plugin, i.e. "connect-go".
-  string name = 2;
+  string name = 3;
   // The target language of the plugin.
-  PluginLanguage language = 3;
+  PluginLanguage language = 4;
   // Semver-formatted plugin version.
-  string version = 4;
+  string version = 5;
   // The full container image digest associated with this plugin version including
   // the algorithm.
   // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
-  string container_image_digest = 5;
+  string container_image_digest = 6;
   // List of default plugin options in the form "{option}={defaultOption}"
-  repeated string options = 6;
+  repeated string options = 7;
   // The creation time of the plugin.
-  google.protobuf.Timestamp create_time = 7;
-  // List of plugin dependencies in the form "{owner}/{name}:{version}"
-  repeated string dependencies = 8;
+  google.protobuf.Timestamp create_time = 8;
+  // List of plugin dependencies.
+  repeated CuratedPluginReference dependencies = 9;
   // Optionally specify the URL leading to the source code of the plugin, if available.
-  string source_url = 9;
+  string source_url = 10;
   // Optionally specify a brief description of the plugin functionality.
-  string description = 10;
+  string description = 11;
   // The configuration for the runtime of the plugin.
-  RuntimeConfig runtime_config = 11;
+  RuntimeConfig runtime_config = 12;
   // The revision for this plugin version.
-  int32 revision = 12;
+  uint32 revision = 13;
 }
 
 // PluginCurationService manages curated plugins.
@@ -99,6 +114,52 @@ service PluginCurationService {
   rpc CreateCuratedPlugin(CreateCuratedPluginRequest) returns (CreateCuratedPluginResponse);
   // GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
   rpc GetLatestCuratedPlugin(GetLatestCuratedPluginRequest) returns (GetLatestCuratedPluginResponse);
+}
+
+// CodeGenerationService generates code using remote plugins.
+service CodeGenerationService {
+  // GenerateCode generates code using the specified remote plugins.
+  rpc GenerateCode(GenerateCodeRequest) returns (GenerateCodeResponse);
+}
+
+message GenerateCodeRequest {
+  // The image to run plugins against to generate the desired file outputs.
+  //
+  // All image files that are not imports and not well-known types will be generated.
+  // If you want to filter what files are generated, modify the image.
+  // If you want to include imports, set include_imports.
+  buf.alpha.image.v1.Image image = 1;
+  repeated PluginGenerationRequest requests = 2;
+  // Include imports from the Image in generation.
+  bool include_imports = 3;
+  // Include Well-Known Types from the Image in generation.
+  //
+  // include_imports must be set if include_well_known_types is set.
+  bool include_well_known_types = 4;
+}
+
+message GenerateCodeResponse {
+  // Responses from each plugin execution.
+  // The order of each response matches the order in the GenerateCodeRequest.
+  repeated PluginGenerationResponse responses = 1;
+}
+
+// Request for performing code generation using the specified plugin.
+message PluginGenerationRequest {
+  // The plugin to execute.
+  CuratedPluginReference plugin_reference = 1;
+  // The options to pass to the plugin. These will
+  // be merged into a single, comma-separated string.
+  // If options is non-empty, it will override any
+  // default options specified in the plugin's
+  // metadata (the opts key in buf.plugin.yaml).
+  repeated string options = 2;
+}
+
+// Response from code generation for a given plugin.
+message PluginGenerationResponse {
+  // Generated code from the plugin.
+  google.protobuf.compiler.CodeGeneratorResponse response = 1;
 }
 
 message CreateCuratedPluginRequest {
@@ -116,8 +177,8 @@ message CreateCuratedPluginRequest {
   string container_image_digest = 5;
   // List of default plugin options in the form "{option}={defaultOption}"
   repeated string options = 6;
-  // List of plugin dependencies in the form "{owner}/{name}:{version}"
-  repeated string dependencies = 7;
+  // List of plugin dependencies.
+  repeated CuratedPluginReference dependencies = 7;
   // The URL leading to the source code of the plugin, if available.
   string source_url = 8;
   // A brief description of the plugin functionality.
@@ -125,7 +186,7 @@ message CreateCuratedPluginRequest {
   // The configuration for the runtime of the plugin.
   RuntimeConfig runtime_config = 10;
   // The revision for this plugin version.
-  int32 revision = 11;
+  uint32 revision = 11;
 }
 
 message CreateCuratedPluginResponse {

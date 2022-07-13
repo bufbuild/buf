@@ -141,29 +141,6 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	// Pick codec name based on outgoing headers so connect uses those.
-	var codec connect.Codec
-	switch request.Header().Get("Content-Type") {
-	case "application/grpc", "application/grpc+proto":
-		codec = &bufferCodec{name: "proto"}
-	case "application/grpc+json":
-		codec = &bufferCodec{name: "json"}
-	case "":
-		if len(request.Msg.Bytes()) == 0 {
-			// For zero-length outgoing requests where the content
-			// type has not been specified default to proto so any
-			// incoming response just goes into the buffer while we
-			// also allow parsing the proto error details from
-			// trailers.
-			codec = &bufferCodec{name: "proto"}
-			break
-		}
-		http.Error(w, fmt.Sprintf("missing Content-Type while body size is %d", len(request.Msg.Bytes())), http.StatusBadRequest)
-		return
-	default:
-		http.Error(w, fmt.Sprintf("unknown Content-Type: %q", request.Header().Get("Content-Type")), http.StatusBadRequest)
-		return
-	}
 	targetURL, err := url.Parse(envelopeRequest.GetTarget())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -179,11 +156,15 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("must specify http or https url scheme, got %q", targetURL.Scheme), http.StatusBadRequest)
 		return
 	}
+	clientOptions, err := connectClientOptionsFromContentType(request.Header().Get("Content-Type"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	client := connect.NewClient[bytes.Buffer, bytes.Buffer](
 		httpClient,
 		targetURL.String(),
-		connect.WithGRPC(),
-		connect.WithCodec(codec),
+		clientOptions...,
 	)
 	// TODO: should this context be cloned to remove attached values (but keep timeout)?``
 	response, err := client.CallUnary(r.Context(), request)
@@ -220,6 +201,31 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Body:     response.Msg.Bytes(),
 		Trailers: goHeadersToProtoHeaders(response.Trailer()),
 	})
+}
+
+func connectClientOptionsFromContentType(contentType string) ([]connect.ClientOption, error) {
+	switch contentType {
+	case "application/grpc", "application/grpc+proto":
+		return []connect.ClientOption{
+			connect.WithGRPC(),
+			connect.WithCodec(&bufferCodec{name: "proto"}),
+		}, nil
+	case "application/grpc+json":
+		return []connect.ClientOption{
+			connect.WithGRPC(),
+			connect.WithCodec(&bufferCodec{name: "json"}),
+		}, nil
+	case "application/json":
+		return []connect.ClientOption{
+			connect.WithCodec(&bufferCodec{name: "json"}),
+		}, nil
+	case "application/proto":
+		return []connect.ClientOption{
+			connect.WithCodec(&bufferCodec{name: "proto"}),
+		}, nil
+	default:
+		return nil, fmt.Errorf("unknown Content-Type: %q", contentType)
+	}
 }
 
 func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message proto.Message) {

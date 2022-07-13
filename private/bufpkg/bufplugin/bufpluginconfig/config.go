@@ -69,6 +69,24 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 		}
 		options[key] = value
 	}
+	var dependencies []bufpluginref.PluginReference
+	if len(externalConfig.Deps) > 0 {
+		existingDeps := make(map[string]struct{})
+		for _, dependency := range externalConfig.Deps {
+			reference, err := bufpluginref.PluginReferenceForString(dependency)
+			if err != nil {
+				return nil, err
+			}
+			if reference.Remote() != pluginIdentity.Remote() {
+				return nil, fmt.Errorf("plugin dependency %q must use same remote as plugin %q", dependency, pluginIdentity.Remote())
+			}
+			if _, ok := existingDeps[reference.IdentityString()]; ok {
+				return nil, fmt.Errorf("plugin dependency %q was specified more than once", dependency)
+			}
+			existingDeps[reference.IdentityString()] = struct{}{}
+			dependencies = append(dependencies, reference)
+		}
+	}
 	runtimeConfig, err := newRuntimeConfig(externalConfig.Runtime)
 	if err != nil {
 		return nil, err
@@ -77,7 +95,10 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 		Name:          pluginIdentity,
 		PluginVersion: pluginVersion,
 		Options:       options,
+		Dependencies:  dependencies,
 		Runtime:       runtimeConfig,
+		SourceURL:     externalConfig.SourceURL,
+		Description:   externalConfig.Description,
 	}, nil
 }
 

@@ -25,9 +25,8 @@ import (
 )
 
 type docServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.DocServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.DocServiceClient
 }
 
 // GetSourceDirectoryInfo retrieves the directory and file structure for the
@@ -41,9 +40,6 @@ func (s *docServiceClient) GetSourceDirectoryInfo(
 	repository string,
 	reference string,
 ) (root *v1alpha1.FileInfo, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetSourceDirectoryInfo(
 		ctx,
 		connect_go.NewRequest(
@@ -68,9 +64,6 @@ func (s *docServiceClient) GetSourceFile(
 	reference string,
 	path string,
 ) (content []byte, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetSourceFile(
 		ctx,
 		connect_go.NewRequest(
@@ -95,9 +88,6 @@ func (s *docServiceClient) GetModulePackages(
 	repository string,
 	reference string,
 ) (name string, modulePackages []*v1alpha1.ModulePackage, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetModulePackages(
 		ctx,
 		connect_go.NewRequest(
@@ -121,9 +111,6 @@ func (s *docServiceClient) GetModuleDocumentation(
 	repository string,
 	reference string,
 ) (moduleDocumentation *v1alpha1.ModuleDocumentation, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetModuleDocumentation(
 		ctx,
 		connect_go.NewRequest(
@@ -148,9 +135,6 @@ func (s *docServiceClient) GetPackageDocumentation(
 	reference string,
 	packageName string,
 ) (packageDocumentation *v1alpha1.PackageDocumentation, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetPackageDocumentation(
 		ctx,
 		connect_go.NewRequest(

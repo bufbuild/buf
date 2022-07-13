@@ -26,6 +26,7 @@ type Provider interface {
 	AdminServiceProvider
 	AuthnServiceProvider
 	AuthzServiceProvider
+	CodeGenerationServiceProvider
 	ConvertServiceProvider
 	DisplayServiceProvider
 	DocServiceProvider
@@ -66,6 +67,11 @@ type AuthnServiceProvider interface {
 // AuthzServiceProvider provides a client-side AuthzService for an address.
 type AuthzServiceProvider interface {
 	NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error)
+}
+
+// CodeGenerationServiceProvider provides a client-side CodeGenerationService for an address.
+type CodeGenerationServiceProvider interface {
+	NewCodeGenerationService(ctx context.Context, address string) (registryv1alpha1api.CodeGenerationService, error)
 }
 
 // ConvertServiceProvider provides a client-side ConvertService for an address.

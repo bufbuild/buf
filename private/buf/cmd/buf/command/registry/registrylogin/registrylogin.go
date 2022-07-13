@@ -22,11 +22,10 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/netrc"
-	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -130,7 +129,7 @@ func inner(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	remote := bufrpc.DefaultRemote
+	remote := bufconnect.DefaultRemote
 	if container.NumArgs() == 1 {
 		remote = container.Arg(0)
 	}
@@ -172,14 +171,6 @@ func inner(
 			return err
 		}
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
-	if err != nil {
-		return err
-	}
-	authnService, err := registryProvider.NewAuthnService(ctx, remote)
-	if err != nil {
-		return err
-	}
 	// Remove leading and trailing spaces from user-supplied token to avoid
 	// common input errors such as trailing new lines, as-is the case of using
 	// echo vs echo -n.
@@ -187,7 +178,15 @@ func inner(
 	if token == "" {
 		return errors.New("token cannot be empty string")
 	}
-	user, err := authnService.GetCurrentUser(rpcauth.WithToken(ctx, token))
+	registryProvider, err := bufcli.NewRegistryProviderWithToken(container, token)
+	if err != nil {
+		return err
+	}
+	authnService, err := registryProvider.NewAuthnService(ctx, remote)
+	if err != nil {
+		return err
+	}
+	user, err := authnService.GetCurrentUser(ctx)
 	if err != nil {
 		// We don't want to use the default error from wrapError here if the error
 		// an unauthenticated error.

@@ -25,16 +25,12 @@ import (
 )
 
 type userServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.UserServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.UserServiceClient
 }
 
 // CreateUser creates a new user with the given username.
 func (s *userServiceClient) CreateUser(ctx context.Context, username string) (user *v1alpha1.User, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.CreateUser(
 		ctx,
 		connect_go.NewRequest(
@@ -50,9 +46,6 @@ func (s *userServiceClient) CreateUser(ctx context.Context, username string) (us
 
 // GetUser gets a user by ID.
 func (s *userServiceClient) GetUser(ctx context.Context, id string) (user *v1alpha1.User, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetUser(
 		ctx,
 		connect_go.NewRequest(
@@ -68,9 +61,6 @@ func (s *userServiceClient) GetUser(ctx context.Context, id string) (user *v1alp
 
 // GetUserByUsername gets a user by username.
 func (s *userServiceClient) GetUserByUsername(ctx context.Context, username string) (user *v1alpha1.User, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetUserByUsername(
 		ctx,
 		connect_go.NewRequest(
@@ -92,9 +82,6 @@ func (s *userServiceClient) ListUsers(
 	reverse bool,
 	userStateFilter v1alpha1.UserState,
 ) (users []*v1alpha1.User, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListUsers(
 		ctx,
 		connect_go.NewRequest(
@@ -120,9 +107,6 @@ func (s *userServiceClient) ListOrganizationUsers(
 	pageToken string,
 	reverse bool,
 ) (users []*v1alpha1.OrganizationUser, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListOrganizationUsers(
 		ctx,
 		connect_go.NewRequest(
@@ -141,9 +125,6 @@ func (s *userServiceClient) ListOrganizationUsers(
 
 // DeleteUser deletes a user.
 func (s *userServiceClient) DeleteUser(ctx context.Context) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.DeleteUser(
 		ctx,
 		connect_go.NewRequest(
@@ -157,9 +138,6 @@ func (s *userServiceClient) DeleteUser(ctx context.Context) (_ error) {
 
 // Deactivate user deactivates a user.
 func (s *userServiceClient) DeactivateUser(ctx context.Context, id string) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.DeactivateUser(
 		ctx,
 		connect_go.NewRequest(
@@ -179,9 +157,6 @@ func (s *userServiceClient) UpdateUserServerRole(
 	userId string,
 	serverRole v1alpha1.ServerRole,
 ) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.UpdateUserServerRole(
 		ctx,
 		connect_go.NewRequest(
@@ -198,9 +173,6 @@ func (s *userServiceClient) UpdateUserServerRole(
 
 // CountUsers returns the number of users in the server by the user state provided.
 func (s *userServiceClient) CountUsers(ctx context.Context, userStateFilter v1alpha1.UserState) (totalCount uint32, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.CountUsers(
 		ctx,
 		connect_go.NewRequest(

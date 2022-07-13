@@ -14,15 +14,25 @@
 
 package http2client
 
-import "crypto/tls"
+import (
+	"crypto/tls"
+	"net/http"
+	"net/url"
+)
 
 // ClientOption is an option to modify the *http.Client.
 type ClientOption func(*clientOption)
+
+// Proxy specifies a function to return a proxy for a given
+// Request. If the function returns a non-nil error, the
+// request is aborted with the provided error.
+type Proxy func(req *http.Request) (*url.URL, error)
 
 type clientOption struct {
 	tlsConfig     *tls.Config
 	useH2C        bool
 	observability bool
+	proxy         Proxy
 }
 
 // WithTLSConfig returns a new ClientOption to use the tls.Config.
@@ -49,5 +59,15 @@ func WithH2C() ClientOption {
 func WithObservability() ClientOption {
 	return func(option *clientOption) {
 		option.observability = true
+	}
+}
+
+// WithProxy returns a new ClientOption to use
+// a proxy.
+//
+// The default is to use http.ProxyFromEnvironment
+func WithProxy(proxyFunc Proxy) ClientOption {
+	return func(option *clientOption) {
+		option.proxy = proxyFunc
 	}
 }
