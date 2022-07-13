@@ -30,6 +30,8 @@ message Reference {
     RepositoryCommit commit = 3;
     // The requested reference is the default reference.
     RepositoryMainReference main = 5;
+    // The requested reference is a draft commit.
+    RepositoryDraft draft = 6;
   }
 }
 
@@ -38,6 +40,13 @@ message RepositoryMainReference {
   string name = 1;
   // The latest commit in this repository. If the repository has no commits,
   // this will be empty.
+  RepositoryCommit commit = 2;
+}
+
+message RepositoryDraft {
+  // The name of the draft
+  string name = 1;
+  // The commit this draft points to.
   RepositoryCommit commit = 2;
 }
 

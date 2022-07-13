@@ -62,4 +62,20 @@ type RepositoryCommitService interface {
 		repositoryBranchName string,
 		commitSequenceId int64,
 	) (repositoryCommit *v1alpha1.RepositoryCommit, err error)
+	// ListRepositoryDraftCommits lists draft commits in a repository.
+	ListRepositoryDraftCommits(
+		ctx context.Context,
+		repositoryOwner string,
+		repositoryName string,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
+	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
+	// DeleteRepositoryDraftCommit deletes a draft.
+	DeleteRepositoryDraftCommit(
+		ctx context.Context,
+		repositoryOwner string,
+		repositoryName string,
+		draftName string,
+	) (err error)
 }

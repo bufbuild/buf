@@ -53,6 +53,7 @@ message RepositoryCounts {
   reserved "tracks_count";
 
   uint32 tags_count = 1;
+  uint32 drafts_count = 3;
 }
 
 message RepositoryContributor {
