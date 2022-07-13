@@ -341,7 +341,7 @@ func (g *generator) execRemotePluginV2(
 	}
 	codeGenerationService, err := g.registryProvider.NewCodeGenerationService(ctx, reference.Remote())
 	if err != nil {
-		return nil, fmt.Errorf("failed to create generate service for remote %q: %w", reference.Remote(), err)
+		return nil, fmt.Errorf("failed to create code generation service for remote %q: %w", reference.Remote(), err)
 	}
 	var options []string
 	if len(pluginConfig.Opt) > 0 {
