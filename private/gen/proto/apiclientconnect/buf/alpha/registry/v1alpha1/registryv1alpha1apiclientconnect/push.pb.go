@@ -39,6 +39,7 @@ func (s *pushServiceClient) Push(
 	module *v1alpha1.Module,
 	tags []string,
 	tracks []string,
+	draftName string,
 ) (localModulePin *v1alpha11.LocalModulePin, _ error) {
 	response, err := s.client.Push(
 		ctx,
@@ -50,6 +51,7 @@ func (s *pushServiceClient) Push(
 				Module:     module,
 				Tags:       tags,
 				Tracks:     tracks,
+				DraftName:  draftName,
 			}),
 	)
 	if err != nil {
