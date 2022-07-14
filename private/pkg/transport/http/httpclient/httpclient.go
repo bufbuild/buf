@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"go.uber.org/multierr"
 )
@@ -66,6 +67,21 @@ func ClientWithObservability() ClientOption {
 		client.observability = true
 	}
 }
+
+// WithProxy returns a new ClientOption to use
+// a proxy.
+//
+// The default is to use http.ProxyFromEnvironment
+func ClientWithProxy(proxyFunc Proxy) ClientOption {
+	return func(client *client) {
+		client.proxy = proxyFunc
+	}
+}
+
+// Proxy specifies a function to return a proxy for a given
+// Request. If the function returns a non-nil error, the
+// request is aborted with the provided error.
+type Proxy func(req *http.Request) (*url.URL, error)
 
 // NewClientWithTransport returns a new Client with the
 // given transport. This is a separate constructor so
