@@ -41,6 +41,7 @@ const (
 	formatFlagName          = "format"
 	errorFormatFlagName     = "error-format"
 	disableSymlinksFlagName = "disable-symlinks"
+	targetFlagName          = "target"
 )
 
 // NewCommand returns a new Command.
@@ -68,6 +69,7 @@ type flags struct {
 	Format          string
 	ErrorFormat     string
 	DisableSymlinks bool
+	Target          string
 }
 
 func newFlags() *flags {
@@ -91,6 +93,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
+	flagSet.StringVar(
+		&f.Target,
+		targetFlagName,
+		"text",
+		"The target architecture for plugins.",
+	)
+	_ = flagSet.MarkHidden(targetFlagName)
 }
 
 func run(
@@ -147,7 +156,13 @@ func run(
 		retErr = multierr.Append(retErr, client.Close())
 	}()
 
-	buildResponse, err := client.Build(ctx, dockerfile, pluginConfig, bufplugindocker.WithConfigDirPath(container.ConfigDirPath()))
+	buildResponse, err := client.Build(
+		ctx,
+		dockerfile,
+		pluginConfig,
+		bufplugindocker.WithConfigDirPath(container.ConfigDirPath()),
+		bufplugindocker.WithTarget(flags.Target),
+	)
 	if err != nil {
 		return err
 	}

@@ -61,6 +61,13 @@ func WithConfigDirPath(path string) BuildOption {
 	}
 }
 
+// WithTarget is a BuildOption which sets the target architecture (used for local testing on arm64).
+func WithTarget(target string) BuildOption {
+	return func(options *buildOptions) {
+		options.target = target
+	}
+}
+
 // BuildResponse returns details of a successful image build call.
 type BuildResponse struct {
 	// Image contains the Docker image name in the local Docker engine including the tag (i.e. plugins.buf.build/library/some-plugin:<id>, where <id> is a random id).
@@ -125,9 +132,13 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 			}
 		}()
 
+		target := params.target
+		if len(target) == 0 {
+			target = "linux/amd64"
+		}
 		response, err := d.cli.ImageBuild(ctx, dockerContext, types.ImageBuildOptions{
 			Tags:     []string{imageName},
-			Platform: "linux/amd64",
+			Platform: target,
 			Labels: map[string]string{
 				"build.buf.plugins.config.remote": pluginConfig.Name.Remote(),
 				"build.buf.plugins.config.owner":  pluginConfig.Name.Owner(),
@@ -267,4 +278,5 @@ func WithVersion(version string) ClientOption {
 
 type buildOptions struct {
 	configDirPath string
+	target        string
 }
