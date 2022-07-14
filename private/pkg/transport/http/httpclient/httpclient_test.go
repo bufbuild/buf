@@ -28,7 +28,8 @@ func TestProxy(t *testing.T) {
 	proxyResponse := []byte("hello")
 	// setup a proxy server, it doesn't actually have to proxy anywhere
 	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write(proxyResponse)
+		_, err := w.Write(proxyResponse)
+		require.NoError(t, err)
 	}))
 	defer proxy.Close()
 
@@ -46,5 +47,5 @@ func TestProxy(t *testing.T) {
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	respBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
-	require.Equal(t, proxyResponse, respBody)
+	require.Equal(t, string(proxyResponse), string(respBody))
 }
