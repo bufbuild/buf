@@ -336,8 +336,9 @@ func (g *generator) execRemotePluginV2(
 	includeWellKnownTypes bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	var curatedPluginReference *registryv1alpha1.CuratedPluginReference
-	reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Plugin)
-	if err == nil {
+	var remote string
+	if reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Plugin); err == nil {
+		remote = reference.Remote()
 		curatedPluginReference = bufplugin.PluginReferenceToProtoCuratedPluginReference(reference)
 	} else {
 		// Try parsing as a plugin identity (no version information)
@@ -345,11 +346,12 @@ func (g *generator) execRemotePluginV2(
 		if err != nil {
 			return nil, fmt.Errorf("invalid remote plugin %q", pluginConfig.Plugin)
 		}
+		remote = identity.Remote()
 		curatedPluginReference = bufplugin.PluginIdentityToProtoCuratedPluginReference(identity)
 	}
-	codeGenerationService, err := g.registryProvider.NewCodeGenerationService(ctx, reference.Remote())
+	codeGenerationService, err := g.registryProvider.NewCodeGenerationService(ctx, remote)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create code generation service for remote %q: %w", reference.Remote(), err)
+		return nil, fmt.Errorf("failed to create code generation service for remote %q: %w", remote, err)
 	}
 	var options []string
 	if len(pluginConfig.Opt) > 0 {
