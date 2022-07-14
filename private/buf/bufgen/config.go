@@ -181,7 +181,8 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 		if plugin.Out == "" {
 			return fmt.Errorf("%s: plugin %s out is required", id, pluginIdentifier)
 		}
-		if plugin.Plugin != "" {
+		switch {
+		case plugin.Plugin != "":
 			if _, err := bufpluginref.PluginReferenceForString(pluginIdentifier); err == nil {
 				// plugin.Plugin is a remote plugin
 				if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
@@ -193,14 +194,14 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 					return fmt.Errorf("%s: invalid local plugin", id)
 				}
 			}
-		} else if plugin.Remote != "" {
+		case plugin.Remote != "":
 			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err != nil {
 				return fmt.Errorf("%s: invalid remote plugin name: %w", id, err)
 			}
 			if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
 				return err
 			}
-		} else {
+		case plugin.Name != "":
 			// Check that the plugin name doesn't look like a plugin reference
 			if _, err := bufpluginref.PluginReferenceForString(pluginIdentifier); err == nil {
 				return fmt.Errorf("%s: invalid local plugin name: %s", id, pluginIdentifier)
@@ -209,6 +210,9 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
 				return fmt.Errorf("%s: invalid plugin name %s, did you mean to use a remote plugin?", id, pluginIdentifier)
 			}
+		default:
+			// unreachable - validated above
+			return errors.New("one of plugin, name, or remote is required")
 		}
 	}
 	return nil
