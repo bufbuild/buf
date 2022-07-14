@@ -335,9 +335,17 @@ func (g *generator) execRemotePluginV2(
 	includeImports bool,
 	includeWellKnownTypes bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
+	var curatedPluginReference *registryv1alpha1.CuratedPluginReference
 	reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Plugin)
-	if err != nil {
-		return nil, fmt.Errorf("invalid plugin path: %w", err)
+	if err == nil {
+		curatedPluginReference = bufplugin.PluginReferenceToProtoCuratedPluginReference(reference)
+	} else {
+		// Try parsing as a plugin identity (no version information)
+		identity, err := bufpluginref.PluginIdentityForString(pluginConfig.Plugin)
+		if err != nil {
+			return nil, fmt.Errorf("invalid remote plugin %q", pluginConfig.Plugin)
+		}
+		curatedPluginReference = bufplugin.PluginIdentityToProtoCuratedPluginReference(identity)
 	}
 	codeGenerationService, err := g.registryProvider.NewCodeGenerationService(ctx, reference.Remote())
 	if err != nil {
@@ -353,7 +361,7 @@ func (g *generator) execRemotePluginV2(
 		bufimage.ImageToProtoImage(image),
 		[]*registryv1alpha1.PluginGenerationRequest{
 			{
-				PluginReference: bufplugin.PluginReferenceToProtoCuratedPluginReference(reference),
+				PluginReference: curatedPluginReference,
 				Options:         options,
 			},
 		},

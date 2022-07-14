@@ -199,6 +199,19 @@ func PluginReferenceToProtoCuratedPluginReference(reference bufpluginref.PluginR
 	}
 }
 
+// PluginIdentityToProtoCuratedPluginReference converts a bufpluginref.PluginIdentity to a registryv1alpha1.CuratedPluginReference.
+//
+// The returned CuratedPluginReference contains no Version/Revision information.
+func PluginIdentityToProtoCuratedPluginReference(identity bufpluginref.PluginIdentity) *registryv1alpha1.CuratedPluginReference {
+	if identity == nil {
+		return nil
+	}
+	return &registryv1alpha1.CuratedPluginReference{
+		Owner: identity.Owner(),
+		Name:  identity.Plugin(),
+	}
+}
+
 // PluginOptionsToOptionsSlice converts a map representation of plugin options to a slice of the form '<key>=<value>' or '<key>' for empty values.
 func PluginOptionsToOptionsSlice(pluginOptions map[string]string) []string {
 	if pluginOptions == nil {

@@ -183,7 +183,7 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 		}
 		switch {
 		case plugin.Plugin != "":
-			if _, err := bufpluginref.PluginReferenceForString(pluginIdentifier); err == nil {
+			if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
 				// plugin.Plugin is a remote plugin
 				if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
 					return err
@@ -203,7 +203,7 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 			}
 		case plugin.Name != "":
 			// Check that the plugin name doesn't look like a plugin reference
-			if _, err := bufpluginref.PluginReferenceForString(pluginIdentifier); err == nil {
+			if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
 				return fmt.Errorf("%s: invalid local plugin name: %s", id, pluginIdentifier)
 			}
 			// Check that the plugin name doesn't look like an alpha remote plugin

@@ -204,7 +204,7 @@ func (p *PluginConfig) IsRemote() bool {
 	if p == nil {
 		return false
 	}
-	if _, err := bufpluginref.PluginReferenceForString(p.Plugin); err == nil {
+	if bufpluginref.IsPluginReferenceOrIdentity(p.Plugin) {
 		return true
 	}
 	return p.Remote != ""
