@@ -28,16 +28,20 @@ type client struct {
 
 	tlsConfig     *tls.Config
 	observability bool
+	proxy         Proxy
 }
 
 func newClient(options ...ClientOption) *client {
-	client := &client{}
-	for _, option := range options {
-		option(client)
+	client := &client{
+		proxy: http.ProxyFromEnvironment,
+	}
+	for _, opt := range options {
+		opt(client)
 	}
 	roundTripper := rpchttp.NewClientInterceptor(
 		&http.Transport{
 			TLSClientConfig: client.tlsConfig,
+			Proxy:           client.proxy,
 		},
 	)
 	if client.observability {
