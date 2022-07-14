@@ -79,7 +79,10 @@ type BuildResponse struct {
 }
 
 // PushResponse is a placeholder for data to be returned from a successful image push call.
-type PushResponse struct{}
+type PushResponse struct {
+	// Digest specifies the Docker image digest in the format <hash_algorithm>:<hash>.
+	Digest string
+}
 
 // DeleteResponse is a placeholder for data to be returned from a successful image delete call.
 type DeleteResponse struct{}
@@ -200,18 +203,30 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 	defer func() {
 		retErr = multierr.Append(retErr, pushReader.Close())
 	}()
+	var imageDigest string
 	pushScanner := bufio.NewScanner(pushReader)
 	for pushScanner.Scan() {
 		d.logger.Debug(pushScanner.Text())
 		var message jsonmessage.JSONMessage
-		if err := json.Unmarshal([]byte(pushScanner.Text()), &message); err == nil && message.Error != nil {
-			return nil, message.Error
+		if err := json.Unmarshal([]byte(pushScanner.Text()), &message); err == nil {
+			if message.Error != nil {
+				return nil, message.Error
+			}
+			if message.Aux != nil {
+				var pushResult types.PushResult
+				if err := json.Unmarshal(*message.Aux, &pushResult); err == nil {
+					imageDigest = pushResult.Digest
+				}
+			}
 		}
 	}
 	if err := pushScanner.Err(); err != nil {
 		return nil, err
 	}
-	return &PushResponse{}, nil
+	if len(imageDigest) == 0 {
+		return nil, fmt.Errorf("failed to determine image digest after push")
+	}
+	return &PushResponse{Digest: imageDigest}, nil
 }
 
 func (d *dockerAPIClient) Delete(ctx context.Context, image string) (*DeleteResponse, error) {
