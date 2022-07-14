@@ -184,6 +184,7 @@ func run(
 	var nextRevision uint32
 	// TODO: Revisit if we decide to make revision part of plugin_version
 	currentRevision, err := service.GetLatestCuratedPlugin(ctx, pluginConfig.Name.Owner(), pluginConfig.Name.Plugin(), pluginConfig.PluginVersion)
+	var currentImageDigest string
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err
@@ -191,21 +192,22 @@ func run(
 		nextRevision = 0
 	} else {
 		nextRevision = currentRevision.Revision + 1
+		currentImageDigest = currentRevision.ContainerImageDigest
+	}
+	if currentImageDigest != plugin.ContainerImageDigest() {
 		// Push container if digest changed from current revision
-		if currentRevision.ContainerImageDigest != plugin.ContainerImageDigest() {
-			machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
-			if err != nil {
-				return err
-			}
-			authConfig := &bufplugindocker.RegistryAuthConfig{}
-			if machine != nil {
-				authConfig.ServerAddress = machine.Name()
-				authConfig.Username = machine.Login()
-				authConfig.Password = machine.Password()
-			}
-			if _, err := client.Push(ctx, buildResponse.Image, authConfig); err != nil {
-				return err
-			}
+		machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
+		if err != nil {
+			return err
+		}
+		authConfig := &bufplugindocker.RegistryAuthConfig{}
+		if machine != nil {
+			authConfig.ServerAddress = machine.Name()
+			authConfig.Username = machine.Login()
+			authConfig.Password = machine.Password()
+		}
+		if _, err := client.Push(ctx, buildResponse.Image, authConfig); err != nil {
+			return err
 		}
 	}
 	curatedPlugin, err := service.CreateCuratedPlugin(
