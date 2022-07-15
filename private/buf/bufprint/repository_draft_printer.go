@@ -96,12 +96,8 @@ func (p *repositoryDraftPrinter) printRepositoryDraftsText(outputRepositoryDraft
 }
 
 func registryDraftToOutputDraft(repositoryCommit *registryv1alpha1.RepositoryCommit) outputRepositoryDraft {
-	var name string
-	if repositoryCommit.DraftName != nil {
-		name = *repositoryCommit.DraftName
-	}
 	return outputRepositoryDraft{
-		Name:   name,
+		Name:   repositoryCommit.DraftName,
 		Commit: repositoryCommit.Name,
 	}
 }

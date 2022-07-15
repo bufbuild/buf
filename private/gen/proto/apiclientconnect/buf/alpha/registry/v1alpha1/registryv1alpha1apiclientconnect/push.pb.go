@@ -26,9 +26,8 @@ import (
 )
 
 type pushServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.PushServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.PushServiceClient
 }
 
 // Push pushes.
@@ -42,9 +41,6 @@ func (s *pushServiceClient) Push(
 	tracks []string,
 	draftName string,
 ) (localModulePin *v1alpha11.LocalModulePin, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.Push(
 		ctx,
 		connect_go.NewRequest(

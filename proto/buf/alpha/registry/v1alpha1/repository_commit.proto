@@ -41,7 +41,7 @@ message RepositoryCommit {
   // The tags associated with this commit
   repeated buf.alpha.registry.v1alpha1.RepositoryTag tags = 8;
   // The commit's draft name, if it is a draft commit.
-  optional string draft_name = 9;
+  string draft_name = 9;
 }
 
 // RepositoryCommitService is the Repository commit service.

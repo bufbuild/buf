@@ -53,6 +53,17 @@ type Config struct {
 	// or plugin source (e.g. Dockerfile) that would otherwise influence
 	// the plugin's behavior.
 	PluginVersion string
+	// SourceURL is an optional attribute used to specify where the source
+	// for the plugin can be found.
+	SourceURL string
+	// Description is an optional attribute to provide a more detailed
+	// description for the plugin.
+	Description string
+	// Dependencies are the dependencies this plugin has on other plugins.
+	//
+	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
+	// which depends on the 'protoc-gen-go' generated code.
+	Dependencies []bufpluginref.PluginReference
 	// Options is the default set of options passed into the plugin.
 	//
 	// For now, all options are string values. This could eventually
@@ -168,6 +179,9 @@ type ExternalConfig struct {
 	Version       string                `json:"version,omitempty" yaml:"version,omitempty"`
 	Name          string                `json:"name,omitempty" yaml:"name,omitempty"`
 	PluginVersion string                `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
+	SourceURL     string                `json:"source_url,omitempty" yaml:"source_url,omitempty"`
+	Description   string                `json:"description,omitempty" yaml:"description,omitempty"`
+	Deps          []string              `json:"deps,omitempty" yaml:"deps,omitempty"`
 	Opts          []string              `json:"opts,omitempty" yaml:"opts,omitempty"`
 	Runtime       ExternalRuntimeConfig `json:"runtime,omitempty" yaml:"runtime,omitempty"`
 }

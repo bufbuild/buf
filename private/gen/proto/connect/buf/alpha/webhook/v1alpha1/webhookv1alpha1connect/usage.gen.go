@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package bufrpc
+package webhookv1alpha1connect
 
 import _ "github.com/bufbuild/buf/private/usage"

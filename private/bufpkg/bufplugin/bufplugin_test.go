@@ -30,7 +30,7 @@ func TestPluginToProtoPluginLanguage(t *testing.T) {
 }
 
 func assertPluginToPluginLanguage(t testing.TB, config *bufpluginconfig.RuntimeConfig, language registryv1alpha1.PluginLanguage) {
-	plugin, err := NewPlugin("v1.0.0", nil, config, "sha256:digest")
+	plugin, err := NewPlugin("v1.0.0", nil, nil, config, "sha256:digest", "", "")
 	require.Nil(t, err)
 	assert.Equal(t, language, PluginToProtoPluginLanguage(plugin))
 }

@@ -25,17 +25,13 @@ import (
 )
 
 type ownerServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.OwnerServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.OwnerServiceClient
 }
 
 // GetOwnerByName takes an owner name and returns the owner as
 // either a user or organization.
 func (s *ownerServiceClient) GetOwnerByName(ctx context.Context, name string) (owner *v1alpha1.Owner, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetOwnerByName(
 		ctx,
 		connect_go.NewRequest(

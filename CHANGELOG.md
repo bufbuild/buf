@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Support protocol and encoding client options based on content-type in Studio Agent
 - Add `--draft` flag to `buf push`
 - Add `buf beta registry draft {list,delete}` commands.
 

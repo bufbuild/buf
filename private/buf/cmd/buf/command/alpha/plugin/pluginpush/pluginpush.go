@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
@@ -33,9 +34,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 const (
+	formatFlagName          = "format"
 	errorFormatFlagName     = "error-format"
 	disableSymlinksFlagName = "disable-symlinks"
 )
@@ -62,6 +65,7 @@ func NewCommand(
 }
 
 type flags struct {
+	Format          string
 	ErrorFormat     string
 	DisableSymlinks bool
 }
@@ -72,6 +76,12 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
+	flagSet.StringVar(
+		&f.Format,
+		formatFlagName,
+		bufprint.FormatText.String(),
+		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -91,6 +101,10 @@ func run(
 	bufcli.WarnAlphaCommand(ctx, container)
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
+	}
+	format, err := bufprint.ParseFormat(flags.Format)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 	source, err := bufcli.GetInputValue(container, "" /* The input hashtag is not supported here */, ".")
 	if err != nil {
@@ -147,25 +161,14 @@ func run(
 		}
 	}()
 
-	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
-	if err != nil {
-		return err
-	}
-	authConfig := &bufplugindocker.RegistryAuthConfig{}
-	if machine != nil {
-		authConfig.ServerAddress = machine.Name()
-		authConfig.Username = machine.Login()
-		authConfig.Password = machine.Password()
-	}
-	_, err = client.Push(ctx, buildResponse.Image, authConfig)
-	if err != nil {
-		return err
-	}
 	plugin, err := bufplugin.NewPlugin(
 		pluginConfig.PluginVersion,
+		pluginConfig.Dependencies,
 		pluginConfig.Options,
 		pluginConfig.Runtime,
 		buildResponse.Digest,
+		pluginConfig.SourceURL,
+		pluginConfig.Description,
 	)
 	if err != nil {
 		return err
@@ -178,9 +181,10 @@ func run(
 	if err != nil {
 		return err
 	}
-	var nextRevision int32
+	var nextRevision uint32
 	// TODO: Revisit if we decide to make revision part of plugin_version
 	currentRevision, err := service.GetLatestCuratedPlugin(ctx, pluginConfig.Name.Owner(), pluginConfig.Name.Plugin(), pluginConfig.PluginVersion)
+	var currentImageDigest string
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err
@@ -188,11 +192,25 @@ func run(
 		nextRevision = 0
 	} else {
 		nextRevision = currentRevision.Revision + 1
-		if nextRevision < 0 {
-			return fmt.Errorf("next plugin revision out of range")
+		currentImageDigest = currentRevision.ContainerImageDigest
+	}
+	if currentImageDigest != plugin.ContainerImageDigest() {
+		// Push container if digest changed from current revision
+		machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
+		if err != nil {
+			return err
+		}
+		authConfig := &bufplugindocker.RegistryAuthConfig{}
+		if machine != nil {
+			authConfig.ServerAddress = machine.Name()
+			authConfig.Username = machine.Login()
+			authConfig.Password = machine.Password()
+		}
+		if _, err := client.Push(ctx, buildResponse.Image, authConfig); err != nil {
+			return err
 		}
 	}
-	if _, err := service.CreateCuratedPlugin(
+	curatedPlugin, err := service.CreateCuratedPlugin(
 		ctx,
 		pluginConfig.Name.Owner(),
 		pluginConfig.Name.Plugin(),
@@ -200,14 +218,23 @@ func run(
 		plugin.Version(),
 		plugin.ContainerImageDigest(),
 		bufplugin.PluginOptionsToOptionsSlice(plugin.Options()),
-		nil, // dependencies
-		"",  // sourceUrl
-		"",  // description
+		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
+		plugin.SourceURL(),
+		plugin.Description(),
 		bufplugin.PluginRuntimeToProtoRuntimeConfig(plugin.Runtime()),
 		nextRevision,
-	); err != nil {
-		return err
+	)
+	if err != nil {
+		if connect.CodeOf(err) != connect.CodeAlreadyExists {
+			return err
+		}
+		// Plugin with the same image digest and metadata already exists
+		container.Logger().Info(
+			"plugin already exists",
+			zap.String("name", pluginConfig.Name.IdentityString()),
+			zap.String("digest", buildResponse.Digest),
+		)
+		curatedPlugin = currentRevision
 	}
-	// TODO: Determine how to print curated plugin - see bufprint
-	return nil
+	return bufprint.NewCuratedPluginPrinter(container.Stdout()).PrintCuratedPlugin(ctx, format, curatedPlugin)
 }

@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
@@ -26,6 +27,17 @@ type Plugin interface {
 	// Version is the version of the plugin's implementation
 	// (e.g the protoc-gen-connect-go implementation is v0.2.0).
 	Version() string
+	// SourceURL is an optional attribute used to specify where the source
+	// for the plugin can be found.
+	SourceURL() string
+	// Description is an optional attribute to provide a more detailed
+	// description for the plugin.
+	Description() string
+	// Dependencies are the dependencies this plugin has on other plugins.
+	//
+	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
+	// which depends on the 'protoc-gen-go' generated code.
+	Dependencies() []bufpluginref.PluginReference
 	// Options is the set of options available to the plugin.
 	//
 	// For now, all options are string values. This could eventually
@@ -57,11 +69,14 @@ type Plugin interface {
 // NewPlugin creates a new plugin from the given configuration and image digest.
 func NewPlugin(
 	version string,
+	dependencies []bufpluginref.PluginReference,
 	options map[string]string,
 	runtimeConfig *bufpluginconfig.RuntimeConfig,
 	imageDigest string,
+	sourceURL string,
+	description string,
 ) (Plugin, error) {
-	return newPlugin(version, options, runtimeConfig, imageDigest)
+	return newPlugin(version, dependencies, options, runtimeConfig, imageDigest, sourceURL, description)
 }
 
 // PluginToProtoPluginLanguage determines the appropriate registryv1alpha1.PluginLanguage for the plugin.
@@ -156,6 +171,31 @@ func protoNPMRuntimeLibraryToNPMRuntimeDependency(config *registryv1alpha1.NPMCo
 	return &bufpluginconfig.NPMRuntimeDependencyConfig{
 		Package: config.Package,
 		Version: config.Version,
+	}
+}
+
+// PluginReferencesToCuratedProtoPluginReferences converts a slice of bufpluginref.PluginReference to a slice of registryv1alpha1.CuratedPluginReference.
+func PluginReferencesToCuratedProtoPluginReferences(references []bufpluginref.PluginReference) []*registryv1alpha1.CuratedPluginReference {
+	if references == nil {
+		return nil
+	}
+	protoReferences := make([]*registryv1alpha1.CuratedPluginReference, 0, len(references))
+	for _, reference := range references {
+		protoReferences = append(protoReferences, PluginReferenceToProtoCuratedPluginReference(reference))
+	}
+	return protoReferences
+}
+
+// PluginReferenceToProtoCuratedPluginReference converts a bufpluginref.PluginReference to a registryv1alpha1.CuratedPluginReference.
+func PluginReferenceToProtoCuratedPluginReference(reference bufpluginref.PluginReference) *registryv1alpha1.CuratedPluginReference {
+	if reference == nil {
+		return nil
+	}
+	return &registryv1alpha1.CuratedPluginReference{
+		Owner:    reference.Owner(),
+		Name:     reference.Plugin(),
+		Version:  reference.Version(),
+		Revision: uint32(reference.Revision()),
 	}
 }
 

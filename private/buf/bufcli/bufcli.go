@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -40,7 +41,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
-	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -52,9 +52,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
-	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http2client"
@@ -71,8 +69,6 @@ const (
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
 	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
-
-	tokenEnvKey = "BUF_TOKEN"
 
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
@@ -602,8 +598,31 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 	return bufapp.NewConfig(container, externalConfig)
 }
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider which uses a token reader to look
+// up the token in the container or in netrc based on the address of each individual client from the provider.
+// It is then set in the header of all outgoing requests from this provider
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
+	return newRegistryProviderWithOptions(
+		container,
+		bufapiclient.RegistryProviderWithAuthInterceptorProvider(
+			bufconnect.NewAuthorizationInterceptorProvider(container),
+		),
+	)
+}
+
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
+// set in the header of all outgoing requests from this provider
+func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
+	return newRegistryProviderWithOptions(
+		container,
+		bufapiclient.RegistryProviderWithAuthInterceptorProvider(
+			bufconnect.NewAuthorizationInterceptorProviderWithToken(token),
+		),
+	)
+}
+
+// Returns a registry provider with the given options applied in addition to default ones for all providers
+func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {
 	config, err := NewConfig(container)
 	if err != nil {
 		return nil, err
@@ -613,39 +632,19 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 		http2client.WithTLSConfig(config.TLS),
 	)
 	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
 		bufapiclient.RegistryProviderWithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {
 				address = buftransport.PrependAPISubdomain(address)
 			}
 			return buftransport.PrependHTTPS(address)
 		}),
+		bufapiclient.RegistryProviderWithInterceptors(
+			bufconnect.NewSetCLIVersionInterceptor(Version),
+		),
 	}
-	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
-}
+	options = append(options, opts...)
 
-// NewContextModifierProvider returns a new context modifier provider for API providers.
-//
-// Public for use in other packages that provide API provider constructors.
-func NewContextModifierProvider(
-	container appflag.Container,
-) func(string) (func(context.Context) context.Context, error) {
-	return func(address string) (func(context.Context) context.Context, error) {
-		token := container.Env(tokenEnvKey)
-		if token == "" {
-			machine, err := netrc.GetMachineForName(container, address)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
-			}
-			if machine != nil {
-				token = machine.Password()
-			}
-		}
-		return func(ctx context.Context) context.Context {
-			ctx = bufrpc.WithOutgoingCLIVersionHeader(ctx, Version)
-			return rpcauth.WithTokenIfNoneSet(ctx, token)
-		}, nil
-	}
+	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
 }
 
 // PromptUserForDelete is used to receieve user confirmation that a specific

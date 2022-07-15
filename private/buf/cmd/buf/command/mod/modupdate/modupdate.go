@@ -21,9 +21,9 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -112,16 +112,16 @@ func run(
 		return err
 	}
 
-	remote := bufrpc.DefaultRemote
+	remote := bufconnect.DefaultRemote
 	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
 		remote = moduleConfig.ModuleIdentity.Remote()
 	} else {
 		for _, moduleReference := range moduleConfig.Build.DependencyModuleReferences {
-			if strings.HasSuffix(moduleReference.Remote(), bufTeamsRemote) && !strings.HasSuffix(bufrpc.DefaultRemote, bufTeamsRemote) {
+			if strings.HasSuffix(moduleReference.Remote(), bufTeamsRemote) && !strings.HasSuffix(bufconnect.DefaultRemote, bufTeamsRemote) {
 				warnMsg := fmt.Sprintf(
 					`%q does not specify a "name", so Buf is defaulting to using remote %q for dependency resolution. This remote may be unable to resolve %q if it's an enterprise BSR module. Did you mean to specify a "name: %s/..." on this module?`,
 					existingConfigFilePath,
-					bufrpc.DefaultRemote,
+					bufconnect.DefaultRemote,
 					moduleReference.IdentityString(),
 					moduleReference.Remote(),
 				)
@@ -218,7 +218,7 @@ func getDependencies(
 		currentProtoModulePins,
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeUnimplemented && remote != bufrpc.DefaultRemote {
+		if connect.CodeOf(err) == connect.CodeUnimplemented && remote != bufconnect.DefaultRemote {
 			return nil, bufcli.NewUnimplementedRemoteError(err, remote, moduleConfig.ModuleIdentity.IdentityString())
 		}
 		return nil, err
