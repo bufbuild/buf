@@ -49,6 +49,9 @@ func NewClient(options ...ClientOption) Client {
 // ClientOption is an option for a new Client.
 type ClientOption func(*client)
 
+// ClientInterceptorFunc is a function that wraps a RoundTripper with any interceptors
+type ClientInterceptorFunc func(http.RoundTripper) http.RoundTripper
+
 // ClientWithTLSConfig returns a new ClientOption to use the tls.Config.
 //
 // The default is to use no TLS.
@@ -75,6 +78,13 @@ func ClientWithObservability() ClientOption {
 func ClientWithProxy(proxyFunc Proxy) ClientOption {
 	return func(client *client) {
 		client.proxy = proxyFunc
+	}
+}
+
+// ClientWithInterceptorFunc returns a new ClientOption to use a given interceptor.
+func ClientWithInterceptorFunc(interceptorFunc ClientInterceptorFunc) ClientOption {
+	return func(client *client) {
+		client.interceptorFunc = interceptorFunc
 	}
 }
 
