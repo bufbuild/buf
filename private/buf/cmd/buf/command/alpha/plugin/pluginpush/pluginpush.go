@@ -96,7 +96,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
 		&f.Target,
 		targetFlagName,
-		"text",
+		"",
 		"The target architecture for plugins.",
 	)
 	_ = flagSet.MarkHidden(targetFlagName)
