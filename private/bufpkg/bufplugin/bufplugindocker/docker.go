@@ -73,14 +73,15 @@ type BuildResponse struct {
 	// Image contains the Docker image name in the local Docker engine including the tag (i.e. plugins.buf.build/library/some-plugin:<id>, where <id> is a random id).
 	// It is created from the bufpluginconfig.Config's Name.IdentityString() and a unique id.
 	Image string
-	// Digest specifies the Docker image digest in the format <hash_algorithm>:<hash>.
+	// ImageID specifies the Docker image id in the format <hash_algorithm>:<hash>.
 	// Example: sha256:65001659f150f085e0b37b697a465a95cbfd885d9315b61960883b9ac588744e
-	Digest string
+	ImageID string
 }
 
 // PushResponse is a placeholder for data to be returned from a successful image push call.
 type PushResponse struct {
 	// Digest specifies the Docker image digest in the format <hash_algorithm>:<hash>.
+	// The digest returned from Client.Push differs from the image id returned in Client.Build.
 	Digest string
 }
 
@@ -184,8 +185,8 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 		return nil, err
 	}
 	return &BuildResponse{
-		Image:  imageName,
-		Digest: imageInfo.ID,
+		Image:   imageName,
+		ImageID: imageInfo.ID,
 	}, nil
 }
 
