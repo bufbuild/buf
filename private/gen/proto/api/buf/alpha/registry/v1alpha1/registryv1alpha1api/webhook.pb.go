@@ -24,7 +24,8 @@ import (
 // WebhookService exposes the functionality for a caller to
 // create/delete/list Webhooks for a given repository event.
 type WebhookService interface {
-	// Create a webhook, subscribes to a given repository event for a callback URL invocation.
+	// Create a webhook, subscribes to a given repository event for a callback URL
+	// invocation.
 	CreateWebhook(
 		ctx context.Context,
 		webhookEvent v1alpha1.WebhookEvent,
