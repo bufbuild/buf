@@ -74,7 +74,7 @@ func TestBuildSuccess(t *testing.T) {
 		examplePluginIdentity,
 		response.Image,
 	)
-	assert.NotEmptyf(t, response.Digest, "expected non-empty image digest")
+	assert.NotEmptyf(t, response.ImageID, "expected non-empty image id")
 }
 
 func TestBuildFailure(t *testing.T) {
@@ -105,6 +105,7 @@ func TestPushSuccess(t *testing.T) {
 	pushResponse, err := dockerClient.Push(context.Background(), response.Image, &RegistryAuthConfig{})
 	require.Nilf(t, err, "failed to push docker plugin")
 	require.NotNil(t, pushResponse)
+	assert.NotEmpty(t, pushResponse.Digest)
 }
 
 func TestPushError(t *testing.T) {
@@ -154,7 +155,7 @@ func TestBuildArgs(t *testing.T) {
 	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile", listenerAddr+"/library/go", examplePluginVersion)
 	require.Nil(t, err)
 	assert.Len(t, server.builtImages, 1)
-	assert.Equal(t, server.builtImages[strings.TrimPrefix(response.Digest, "sha256:")].args, map[string]string{
+	assert.Equal(t, server.builtImages[strings.TrimPrefix(response.ImageID, "sha256:")].args, map[string]string{
 		"PLUGIN_VERSION": examplePluginVersion,
 	})
 }
@@ -400,6 +401,24 @@ func (d *dockerServer) imagesHandler(w http.ResponseWriter, r *http.Request) {
 	if d.pushErr != nil {
 		d.writeError(w, d.pushErr)
 		return
+	}
+	auxJSON, err := json.Marshal(map[string]any{
+		"Tag":    r.URL.Query()["tag"][0],
+		"Digest": "sha256:" + stringid.GenerateRandomID(),
+		"Size":   123,
+	})
+	if err != nil {
+		d.writeError(w, err)
+		return
+	}
+	if err := json.NewEncoder(w).Encode(&jsonmessage.JSONMessage{
+		Progress: &jsonmessage.JSONProgress{},
+		Aux:      (*json.RawMessage)(&auxJSON),
+	}); err != nil {
+		d.t.Error("failed to write JSON:", err)
+	}
+	if _, err := w.Write([]byte("\r\n")); err != nil {
+		d.t.Error("failed to write CRLF:", err)
 	}
 }
 

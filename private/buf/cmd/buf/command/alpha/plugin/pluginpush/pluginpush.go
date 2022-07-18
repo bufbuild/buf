@@ -96,7 +96,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
 		&f.Target,
 		targetFlagName,
-		"text",
+		"",
 		"The target architecture for plugins.",
 	)
 	_ = flagSet.MarkHidden(targetFlagName)
@@ -243,7 +243,7 @@ func run(
 		container.Logger().Info(
 			"plugin already exists",
 			zap.String("name", pluginConfig.Name.IdentityString()),
-			zap.String("digest", buildResponse.Digest),
+			zap.String("digest", plugin.ContainerImageDigest()),
 		)
 		curatedPlugin = currentRevision
 	}
