@@ -16,12 +16,8 @@ package httpclient
 
 import (
 	"crypto/tls"
-	"fmt"
-	"io"
 	"net/http"
 	"net/url"
-
-	"go.uber.org/multierr"
 )
 
 // NewClient returns a new Client.
@@ -90,23 +86,4 @@ type Proxy func(req *http.Request) (*url.URL, error)
 // with other ClientOptions.
 func NewClientWithTransport(transport http.RoundTripper) *http.Client {
 	return newClientWithTransport(transport)
-}
-
-// GetResponseBody reads and closes the response body.
-func GetResponseBody(client *http.Client, request *http.Request) (_ []byte, retErr error) {
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, response.Body.Close())
-	}()
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("got HTTP status code %d", response.StatusCode)
-	}
-	data, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, fmt.Errorf("could not read HTTP response: %v", err)
-	}
-	return data, nil
 }
