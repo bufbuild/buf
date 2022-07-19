@@ -71,6 +71,12 @@ func ClientWithObservability() ClientOption {
 	}
 }
 
+func ClientWithH2C() ClientOption {
+	return func(client *client) {
+		client.h2c = true
+	}
+}
+
 // WithProxy returns a new ClientOption to use
 // a proxy.
 //

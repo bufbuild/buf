@@ -16,10 +16,12 @@ package httpclient
 
 import (
 	"crypto/tls"
+	"net"
 	"net/http"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/observability"
+	"golang.org/x/net/http2"
 )
 
 type client struct {
@@ -29,6 +31,7 @@ type client struct {
 	observability   bool
 	proxy           Proxy
 	interceptorFunc ClientInterceptorFunc
+	h2c             bool
 }
 
 func newClient(options ...ClientOption) *client {
@@ -38,9 +41,20 @@ func newClient(options ...ClientOption) *client {
 	for _, opt := range options {
 		opt(client)
 	}
-	var roundTripper http.RoundTripper = &http.Transport{
-		TLSClientConfig: client.tlsConfig,
-		Proxy:           client.proxy,
+	var roundTripper http.RoundTripper
+	if client.h2c {
+		roundTripper = &http2.Transport{
+			AllowHTTP:       true,
+			TLSClientConfig: client.tlsConfig,
+			DialTLS: func(netw, addr string, cfg *tls.Config) (net.Conn, error) {
+				return net.Dial(netw, addr)
+			},
+		}
+	} else {
+		roundTripper = &http.Transport{
+			TLSClientConfig: client.tlsConfig,
+			Proxy:           client.proxy,
+		}
 	}
 	if client.interceptorFunc != nil {
 		roundTripper = client.interceptorFunc(roundTripper)
