@@ -24,58 +24,38 @@ import (
 	"go.uber.org/multierr"
 )
 
-// Client is a client.
-type Client interface {
-	// Do matches http.Client.
-	//
-	// This allows Client to be dropped in for http.Client.
-	Do(request *http.Request) (*http.Response, error)
-	// ParseAddress parses the given address.
-	//
-	// If the address has a scheme, this is a no-op.
-	// If the address does not have a scheme, this adds https:// if TLS was configured,
-	// and http:// if TLS was not configured.
-	ParseAddress(address string) string
-	// Transport returns the http.RoundTripper configured on
-	// this client.
-	Transport() http.RoundTripper
-}
-
 // NewClient returns a new Client.
-func NewClient(options ...ClientOption) Client {
+func NewClient(options ...ClientOption) *http.Client {
 	return newClient(options...)
 }
 
 // ClientOption is an option for a new Client.
-type ClientOption func(*client)
+type ClientOption func(*clientOptions)
 
-// ClientInterceptorFunc is a function that wraps a RoundTripper with any interceptors
-type ClientInterceptorFunc func(http.RoundTripper) http.RoundTripper
-
-// ClientWithTLSConfig returns a new ClientOption to use the tls.Config.
+// WithTLSConfig returns a new ClientOption to use the tls.Config.
 //
 // The default is to use no TLS.
-func ClientWithTLSConfig(tlsConfig *tls.Config) ClientOption {
-	return func(client *client) {
-		client.tlsConfig = tlsConfig
+func WithTLSConfig(tlsConfig *tls.Config) ClientOption {
+	return func(opts *clientOptions) {
+		opts.tlsConfig = tlsConfig
 	}
 }
 
-// ClientWithObservability returns a new ClientOption to use
+// WithObservability returns a new ClientOption to use
 // OpenCensus tracing and metrics.
 //
 // The default is to use no observability.
-func ClientWithObservability() ClientOption {
-	return func(client *client) {
-		client.observability = true
+func WithObservability() ClientOption {
+	return func(opts *clientOptions) {
+		opts.observability = true
 	}
 }
 
-// ClientWithH2C returns a new ClientOption that allows dialing
+// WithH2C returns a new ClientOption that allows dialing
 // h2c (cleartext) servers.
-func ClientWithH2C() ClientOption {
-	return func(client *client) {
-		client.h2c = true
+func WithH2C() ClientOption {
+	return func(opts *clientOptions) {
+		opts.h2c = true
 	}
 }
 
@@ -83,16 +63,9 @@ func ClientWithH2C() ClientOption {
 // a proxy.
 //
 // The default is to use http.ProxyFromEnvironment
-func ClientWithProxy(proxyFunc Proxy) ClientOption {
-	return func(client *client) {
-		client.proxy = proxyFunc
-	}
-}
-
-// ClientWithInterceptorFunc returns a new ClientOption to use a given interceptor.
-func ClientWithInterceptorFunc(interceptorFunc ClientInterceptorFunc) ClientOption {
-	return func(client *client) {
-		client.interceptorFunc = interceptorFunc
+func WithProxy(proxyFunc Proxy) ClientOption {
+	return func(opts *clientOptions) {
+		opts.proxy = proxyFunc
 	}
 }
 
@@ -105,12 +78,12 @@ type Proxy func(req *http.Request) (*url.URL, error)
 // given transport. This is a separate constructor so
 // that it's clear it cannot be used in combination
 // with other ClientOptions.
-func NewClientWithTransport(transport http.RoundTripper) Client {
+func NewClientWithTransport(transport http.RoundTripper) *http.Client {
 	return newClientWithTransport(transport)
 }
 
 // GetResponseBody reads and closes the response body.
-func GetResponseBody(client Client, request *http.Request) (_ []byte, retErr error) {
+func GetResponseBody(client *http.Client, request *http.Request) (_ []byte, retErr error) {
 	response, err := client.Do(request)
 	if err != nil {
 		return nil, err
