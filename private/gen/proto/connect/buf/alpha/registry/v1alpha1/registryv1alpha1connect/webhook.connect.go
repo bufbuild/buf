@@ -41,7 +41,8 @@ const (
 
 // WebhookServiceClient is a client for the buf.alpha.registry.v1alpha1.WebhookService service.
 type WebhookServiceClient interface {
-	// Create a webhook, subscribes to a given repository event for a callback URL invocation.
+	// Create a webhook, subscribes to a given repository event for a callback URL
+	// invocation.
 	CreateWebhook(context.Context, *connect_go.Request[v1alpha1.CreateWebhookRequest]) (*connect_go.Response[v1alpha1.CreateWebhookResponse], error)
 	// Delete a webhook removes the event subscription.
 	DeleteWebhook(context.Context, *connect_go.Request[v1alpha1.DeleteWebhookRequest]) (*connect_go.Response[v1alpha1.DeleteWebhookResponse], error)
@@ -102,7 +103,8 @@ func (c *webhookServiceClient) ListWebhooks(ctx context.Context, req *connect_go
 // WebhookServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.WebhookService
 // service.
 type WebhookServiceHandler interface {
-	// Create a webhook, subscribes to a given repository event for a callback URL invocation.
+	// Create a webhook, subscribes to a given repository event for a callback URL
+	// invocation.
 	CreateWebhook(context.Context, *connect_go.Request[v1alpha1.CreateWebhookRequest]) (*connect_go.Response[v1alpha1.CreateWebhookResponse], error)
 	// Delete a webhook removes the event subscription.
 	DeleteWebhook(context.Context, *connect_go.Request[v1alpha1.DeleteWebhookRequest]) (*connect_go.Response[v1alpha1.DeleteWebhookResponse], error)

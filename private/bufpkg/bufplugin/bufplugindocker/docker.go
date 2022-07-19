@@ -61,18 +61,29 @@ func WithConfigDirPath(path string) BuildOption {
 	}
 }
 
+// WithTarget is a BuildOption which sets the target architecture (used for local testing on arm64).
+func WithTarget(target string) BuildOption {
+	return func(options *buildOptions) {
+		options.target = target
+	}
+}
+
 // BuildResponse returns details of a successful image build call.
 type BuildResponse struct {
 	// Image contains the Docker image name in the local Docker engine including the tag (i.e. plugins.buf.build/library/some-plugin:<id>, where <id> is a random id).
 	// It is created from the bufpluginconfig.Config's Name.IdentityString() and a unique id.
 	Image string
-	// Digest specifies the Docker image digest in the format <hash_algorithm>:<hash>.
+	// ImageID specifies the Docker image id in the format <hash_algorithm>:<hash>.
 	// Example: sha256:65001659f150f085e0b37b697a465a95cbfd885d9315b61960883b9ac588744e
-	Digest string
+	ImageID string
 }
 
 // PushResponse is a placeholder for data to be returned from a successful image push call.
-type PushResponse struct{}
+type PushResponse struct {
+	// Digest specifies the Docker image digest in the format <hash_algorithm>:<hash>.
+	// The digest returned from Client.Push differs from the image id returned in Client.Build.
+	Digest string
+}
 
 // DeleteResponse is a placeholder for data to be returned from a successful image delete call.
 type DeleteResponse struct{}
@@ -125,9 +136,13 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 			}
 		}()
 
+		target := params.target
+		if len(target) == 0 {
+			target = "linux/amd64"
+		}
 		response, err := d.cli.ImageBuild(ctx, dockerContext, types.ImageBuildOptions{
 			Tags:     []string{imageName},
-			Platform: "linux/amd64",
+			Platform: target,
 			Labels: map[string]string{
 				"build.buf.plugins.config.remote": pluginConfig.Name.Remote(),
 				"build.buf.plugins.config.owner":  pluginConfig.Name.Owner(),
@@ -170,8 +185,8 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 		return nil, err
 	}
 	return &BuildResponse{
-		Image:  imageName,
-		Digest: imageInfo.ID,
+		Image:   imageName,
+		ImageID: imageInfo.ID,
 	}, nil
 }
 
@@ -189,18 +204,30 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 	defer func() {
 		retErr = multierr.Append(retErr, pushReader.Close())
 	}()
+	var imageDigest string
 	pushScanner := bufio.NewScanner(pushReader)
 	for pushScanner.Scan() {
 		d.logger.Debug(pushScanner.Text())
 		var message jsonmessage.JSONMessage
-		if err := json.Unmarshal([]byte(pushScanner.Text()), &message); err == nil && message.Error != nil {
-			return nil, message.Error
+		if err := json.Unmarshal([]byte(pushScanner.Text()), &message); err == nil {
+			if message.Error != nil {
+				return nil, message.Error
+			}
+			if message.Aux != nil {
+				var pushResult types.PushResult
+				if err := json.Unmarshal(*message.Aux, &pushResult); err == nil {
+					imageDigest = pushResult.Digest
+				}
+			}
 		}
 	}
 	if err := pushScanner.Err(); err != nil {
 		return nil, err
 	}
-	return &PushResponse{}, nil
+	if len(imageDigest) == 0 {
+		return nil, fmt.Errorf("failed to determine image digest after push")
+	}
+	return &PushResponse{Digest: imageDigest}, nil
 }
 
 func (d *dockerAPIClient) Delete(ctx context.Context, image string) (*DeleteResponse, error) {
@@ -267,4 +294,5 @@ func WithVersion(version string) ClientOption {
 
 type buildOptions struct {
 	configDirPath string
+	target        string
 }

@@ -29,7 +29,8 @@ type webhookServiceClient struct {
 	client registryv1alpha1connect.WebhookServiceClient
 }
 
-// Create a webhook, subscribes to a given repository event for a callback URL invocation.
+// Create a webhook, subscribes to a given repository event for a callback URL
+// invocation.
 func (s *webhookServiceClient) CreateWebhook(
 	ctx context.Context,
 	webhookEvent v1alpha1.WebhookEvent,

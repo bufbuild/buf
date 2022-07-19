@@ -41,6 +41,7 @@ const (
 	formatFlagName          = "format"
 	errorFormatFlagName     = "error-format"
 	disableSymlinksFlagName = "disable-symlinks"
+	targetFlagName          = "target"
 )
 
 // NewCommand returns a new Command.
@@ -68,6 +69,7 @@ type flags struct {
 	Format          string
 	ErrorFormat     string
 	DisableSymlinks bool
+	Target          string
 }
 
 func newFlags() *flags {
@@ -91,6 +93,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
+	flagSet.StringVar(
+		&f.Target,
+		targetFlagName,
+		"",
+		"The target architecture for plugins.",
+	)
+	_ = flagSet.MarkHidden(targetFlagName)
 }
 
 func run(
@@ -147,7 +156,13 @@ func run(
 		retErr = multierr.Append(retErr, client.Close())
 	}()
 
-	buildResponse, err := client.Build(ctx, dockerfile, pluginConfig, bufplugindocker.WithConfigDirPath(container.ConfigDirPath()))
+	buildResponse, err := client.Build(
+		ctx,
+		dockerfile,
+		pluginConfig,
+		bufplugindocker.WithConfigDirPath(container.ConfigDirPath()),
+		bufplugindocker.WithTarget(flags.Target),
+	)
 	if err != nil {
 		return err
 	}
@@ -160,13 +175,27 @@ func run(
 			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", buildResponse.Image))
 		}
 	}()
+	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
+	if err != nil {
+		return err
+	}
+	authConfig := &bufplugindocker.RegistryAuthConfig{}
+	if machine != nil {
+		authConfig.ServerAddress = machine.Name()
+		authConfig.Username = machine.Login()
+		authConfig.Password = machine.Password()
+	}
+	pushResponse, err := client.Push(ctx, buildResponse.Image, authConfig)
+	if err != nil {
+		return err
+	}
 
 	plugin, err := bufplugin.NewPlugin(
 		pluginConfig.PluginVersion,
 		pluginConfig.Dependencies,
 		pluginConfig.Options,
 		pluginConfig.Runtime,
-		buildResponse.Digest,
+		pushResponse.Digest,
 		pluginConfig.SourceURL,
 		pluginConfig.Description,
 	)
@@ -184,7 +213,6 @@ func run(
 	var nextRevision uint32
 	// TODO: Revisit if we decide to make revision part of plugin_version
 	currentRevision, err := service.GetLatestCuratedPlugin(ctx, pluginConfig.Name.Owner(), pluginConfig.Name.Plugin(), pluginConfig.PluginVersion)
-	var currentImageDigest string
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err
@@ -192,23 +220,6 @@ func run(
 		nextRevision = 0
 	} else {
 		nextRevision = currentRevision.Revision + 1
-		currentImageDigest = currentRevision.ContainerImageDigest
-	}
-	if currentImageDigest != plugin.ContainerImageDigest() {
-		// Push container if digest changed from current revision
-		machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
-		if err != nil {
-			return err
-		}
-		authConfig := &bufplugindocker.RegistryAuthConfig{}
-		if machine != nil {
-			authConfig.ServerAddress = machine.Name()
-			authConfig.Username = machine.Login()
-			authConfig.Password = machine.Password()
-		}
-		if _, err := client.Push(ctx, buildResponse.Image, authConfig); err != nil {
-			return err
-		}
 	}
 	curatedPlugin, err := service.CreateCuratedPlugin(
 		ctx,
@@ -232,7 +243,7 @@ func run(
 		container.Logger().Info(
 			"plugin already exists",
 			zap.String("name", pluginConfig.Name.IdentityString()),
-			zap.String("digest", buildResponse.Digest),
+			zap.String("digest", plugin.ContainerImageDigest()),
 		)
 		curatedPlugin = currentRevision
 	}
