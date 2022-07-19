@@ -33,7 +33,7 @@ func NewModuleReader(
 // NewModuleResolver returns a new ModuleResolver backed by the resolve service.
 func NewModuleResolver(
 	logger *zap.Logger,
-	resolveServiceProvider registryv1alpha1apiclient.ResolveServiceProvider,
+	repositoryCommitServiceProvider registryv1alpha1apiclient.RepositoryCommitServiceProvider,
 ) bufmodule.ModuleResolver {
-	return newModuleResolver(logger, resolveServiceProvider)
+	return newModuleResolver(logger, repositoryCommitServiceProvider)
 }
