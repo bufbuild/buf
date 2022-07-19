@@ -24,10 +24,11 @@ import (
 )
 
 type clientOptions struct {
-	tlsConfig     *tls.Config
-	observability bool
-	proxy         Proxy
-	h2c           bool
+	tlsConfig       *tls.Config
+	observability   bool
+	proxy           Proxy
+	interceptorFunc ClientInterceptorFunc
+	h2c             bool
 }
 
 func newClient(options ...ClientOption) *http.Client {
@@ -51,6 +52,9 @@ func newClient(options ...ClientOption) *http.Client {
 			TLSClientConfig: opts.tlsConfig,
 			Proxy:           opts.proxy,
 		}
+	}
+	if opts.interceptorFunc != nil {
+		roundTripper = opts.interceptorFunc(roundTripper)
 	}
 	if opts.observability {
 		roundTripper = observability.NewHTTPTransport(roundTripper)
