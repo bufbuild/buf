@@ -71,6 +71,8 @@ func ClientWithObservability() ClientOption {
 	}
 }
 
+// ClientWithH2C returns a new ClientOption that allows dialing
+// h2c (cleartext) servers.
 func ClientWithH2C() ClientOption {
 	return func(client *client) {
 		client.h2c = true
