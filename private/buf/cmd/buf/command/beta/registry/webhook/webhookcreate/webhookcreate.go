@@ -42,7 +42,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " [flags]",
+		Use:   name,
 		Short: "Create a repository webhook.",
 		Args:  cobra.ExactArgs(0),
 		Run: builder.NewRunFunc(
