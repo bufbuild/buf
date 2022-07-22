@@ -55,10 +55,10 @@ func NewCommand(
 }
 
 type flags struct {
+	WebhookEvent   string
 	OwnerName      string
 	RepositoryName string
 	CallbackURL    string
-	WebhookEvent   string
 }
 
 func newFlags() *flags {
