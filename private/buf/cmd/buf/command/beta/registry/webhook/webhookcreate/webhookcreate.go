@@ -128,14 +128,13 @@ func run(
 	if err != nil {
 		return err
 	}
-	value, ok := registryv1alpha1.WebhookEvent_value[flags.WebhookEvent]
-	if !ok || value == int32(registryv1alpha1.WebhookEvent_WEBHOOK_EVENT_UNSPECIFIED) {
+	event, ok := registryv1alpha1.WebhookEvent_value[flags.WebhookEvent]
+	if !ok || event == int32(registryv1alpha1.WebhookEvent_WEBHOOK_EVENT_UNSPECIFIED) {
 		return fmt.Errorf("webhook event must be specified")
 	}
-	event := registryv1alpha1.WebhookEvent(value)
 	createWebhook, err := service.CreateWebhook(
 		ctx,
-		event,
+		registryv1alpha1.WebhookEvent(event),
 		flags.OwnerName,
 		flags.RepositoryName,
 		flags.CallbackURL,
