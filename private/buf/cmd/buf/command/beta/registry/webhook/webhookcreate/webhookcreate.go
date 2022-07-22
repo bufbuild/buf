@@ -127,12 +127,10 @@ func run(
 	if err != nil {
 		return err
 	}
-
 	var result = registryv1alpha1.WebhookEvent_WEBHOOK_EVENT_UNSPECIFIED
 	if value, ok := registryv1alpha1.WebhookEvent_value[flags.WebhookEvent]; ok {
 		result = registryv1alpha1.WebhookEvent(value)
 	}
-
 	createWebhook, err := service.CreateWebhook(
 		ctx,
 		result,
