@@ -112,10 +112,16 @@ func run(
 	}
 	results, _, err := service.ListWebhooks(ctx, flags.RepositoryName, flags.OwnerName, "")
 	if err != nil {
-		if connectErr := new(connect.Error); errors.As(err, connectErr) {
-
+		if connectErr := new(connect.Error); errors.As(err, &connectErr) {
+			_, _ = container.Stdout().Write([]byte("[]"))
+			return nil
 		}
 		return err
+	}
+	if len(results) == 0 {
+		// Ignore errors for writing to stdout.
+		_, _ = container.Stdout().Write([]byte("[]"))
+		return nil
 	}
 	response, err := json.MarshalIndent(results, "", "\t")
 	if err != nil {
