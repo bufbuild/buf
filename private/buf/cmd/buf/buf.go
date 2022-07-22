@@ -16,6 +16,7 @@ package buf
 
 import (
 	"context"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -211,6 +212,13 @@ func NewRootCommand(name string) *appcmd.Command {
 											templateversionlist.NewCommand("list", builder),
 										},
 									},
+								},
+							},
+							{
+								Use:   "webhook",
+								Short: "Manage webhooks for a repository on the Buf Schema Registry.",
+								SubCommands: []*appcmd.Command{
+									webhookcreate.NewCommand("create", builder),
 								},
 							},
 						},
