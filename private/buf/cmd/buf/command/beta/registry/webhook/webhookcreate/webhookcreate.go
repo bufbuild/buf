@@ -17,6 +17,7 @@ package webhookcreate
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -127,13 +128,14 @@ func run(
 	if err != nil {
 		return err
 	}
-	var result = registryv1alpha1.WebhookEvent_WEBHOOK_EVENT_UNSPECIFIED
-	if value, ok := registryv1alpha1.WebhookEvent_value[flags.WebhookEvent]; ok {
-		result = registryv1alpha1.WebhookEvent(value)
+	value, ok := registryv1alpha1.WebhookEvent_value[flags.WebhookEvent]
+	if !ok || value == int32(registryv1alpha1.WebhookEvent_WEBHOOK_EVENT_UNSPECIFIED) {
+		return fmt.Errorf("webhook event must be specified")
 	}
+	event := registryv1alpha1.WebhookEvent(value)
 	createWebhook, err := service.CreateWebhook(
 		ctx,
-		result,
+		event,
 		flags.OwnerName,
 		flags.RepositoryName,
 		flags.CallbackURL,
@@ -145,8 +147,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	if _, err := container.Stdout().Write(createWebhookResponse); err != nil {
-		return err
-	}
+	// Ignore errors for writing to stdout.
+	_, _ = container.Stdout().Write(createWebhookResponse)
 	return nil
 }
