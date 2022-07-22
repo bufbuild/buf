@@ -121,8 +121,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	if _, err := container.Stdout().Write(response); err != nil {
-		return err
-	}
+	// Ignore errors for writing to stdout.
+	_, _ = container.Stdout().Write(response)
 	return nil
 }
