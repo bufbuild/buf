@@ -217,7 +217,7 @@ func run(
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err
 		}
-		nextRevision = 0
+		nextRevision = 1
 	} else {
 		nextRevision = currentRevision.Revision + 1
 	}
