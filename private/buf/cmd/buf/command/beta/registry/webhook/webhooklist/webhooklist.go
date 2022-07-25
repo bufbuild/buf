@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package webhookcreate
+package webhooklist
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/spf13/cobra"
@@ -28,11 +26,9 @@ import (
 )
 
 const (
-	ownerFlagName        = "owner"
-	repositoryFlagName   = "repository"
-	callbackURLFlagName  = "callback-url"
-	webhookEventFlagName = "event"
-	remoteFlagName       = "remote"
+	ownerFlagName      = "owner"
+	repositoryFlagName = "repository"
+	remoteFlagName     = "remote"
 )
 
 // NewCommand returns a new Command
@@ -43,7 +39,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: "Create a repository webhook.",
+		Short: "List repository webhooks.",
 		Args:  cobra.ExactArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -56,10 +52,8 @@ func NewCommand(
 }
 
 type flags struct {
-	WebhookEvent   string
 	OwnerName      string
 	RepositoryName string
-	CallbackURL    string
 	Remote         string
 }
 
@@ -69,38 +63,24 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
-		&f.WebhookEvent,
-		webhookEventFlagName,
-		"",
-		"The event type to create a webhook for. The proto enum string value is used for this input (e.g. 'WEBHOOK_EVENT_REPOSITORY_PUSH').",
-	)
-	_ = cobra.MarkFlagRequired(flagSet, webhookEventFlagName)
-	flagSet.StringVar(
 		&f.OwnerName,
 		ownerFlagName,
 		"",
-		`The owner name of the repository to create a webhook for.`,
+		`The owner name of the repository to list webhooks for.`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, ownerFlagName)
 	flagSet.StringVar(
 		&f.RepositoryName,
 		repositoryFlagName,
 		"",
-		"The repository name to create a webhook for.",
+		"The repository name to list webhooks for.",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, repositoryFlagName)
-	flagSet.StringVar(
-		&f.CallbackURL,
-		callbackURLFlagName,
-		"",
-		"The url for the webhook to callback to on a given event.",
-	)
-	_ = cobra.MarkFlagRequired(flagSet, callbackURLFlagName)
 	flagSet.StringVar(
 		&f.Remote,
 		remoteFlagName,
 		"",
-		"The remote of the repository the created webhook will belong to.",
+		"The remote of the owner and repository to list webhooks for.",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
 }
@@ -119,25 +99,19 @@ func run(
 	if err != nil {
 		return err
 	}
-	event, ok := registryv1alpha1.WebhookEvent_value[flags.WebhookEvent]
-	if !ok || event == int32(registryv1alpha1.WebhookEvent_WEBHOOK_EVENT_UNSPECIFIED) {
-		return fmt.Errorf("webhook event must be specified")
-	}
-	createWebhook, err := service.CreateWebhook(
-		ctx,
-		registryv1alpha1.WebhookEvent(event),
-		flags.OwnerName,
-		flags.RepositoryName,
-		flags.CallbackURL,
-	)
+	results, _, err := service.ListWebhooks(ctx, flags.RepositoryName, flags.OwnerName, "")
 	if err != nil {
 		return err
 	}
-	createWebhookResponse, err := json.MarshalIndent(createWebhook, "", "\t")
+	if results == nil {
+		// Ignore errors for writing to stdout.
+		_, _ = container.Stdout().Write([]byte("[]"))
+	}
+	response, err := json.MarshalIndent(results, "", "\t")
 	if err != nil {
 		return err
 	}
 	// Ignore errors for writing to stdout.
-	_, _ = container.Stdout().Write(createWebhookResponse)
+	_, _ = container.Stdout().Write(response)
 	return nil
 }
