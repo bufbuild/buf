@@ -20,7 +20,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -82,24 +81,11 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	storageosProvider := bufcli.NewStorageosProvider(false)
-	runner := command.NewRunner()
-	_, moduleIdentity, err := bufcli.ReadModuleWithWorkspacesDisabled(
-		ctx,
-		container,
-		storageosProvider,
-		runner,
-		flags.Remote,
-	)
-	if err != nil {
-		return err
-	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
 	}
-	remote := moduleIdentity.Remote()
-	service, err := apiProvider.NewWebhookService(ctx, remote)
+	service, err := apiProvider.NewWebhookService(ctx, flags.Remote)
 	if err != nil {
 		return err
 	}
