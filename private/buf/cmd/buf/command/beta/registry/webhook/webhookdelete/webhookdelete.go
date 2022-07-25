@@ -71,7 +71,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Remote,
 		remoteFlagName,
 		"",
-		"The remote where the repository lives.",
+		"The remote of the repository the webhook ID belongs to.",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
 }
