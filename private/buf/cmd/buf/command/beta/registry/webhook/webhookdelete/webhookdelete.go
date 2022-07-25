@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	webhookIDFlagName = "webhook_id"
+	webhookIDFlagName = "id"
 )
 
 // NewCommand returns a new Command
@@ -37,7 +37,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: "Delete a repository webhook with a webhook id.",
+		Short: "Delete a repository webhook.",
 		Args:  cobra.ExactArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

@@ -31,7 +31,7 @@ import (
 const (
 	ownerFlagName        = "owner"
 	repositoryFlagName   = "repository"
-	callbackURLFlagName  = "callback_url"
+	callbackURLFlagName  = "callback-url"
 	webhookEventFlagName = "event"
 )
 
