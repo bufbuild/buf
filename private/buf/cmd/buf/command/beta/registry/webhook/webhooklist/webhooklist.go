@@ -17,13 +17,10 @@ package webhooklist
 import (
 	"context"
 	"encoding/json"
-	"errors"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -31,6 +28,7 @@ import (
 const (
 	ownerFlagName      = "owner"
 	repositoryFlagName = "repository"
+	remoteFlagName     = "remote"
 )
 
 // NewCommand returns a new Command
@@ -56,6 +54,7 @@ func NewCommand(
 type flags struct {
 	OwnerName      string
 	RepositoryName string
+	Remote         string
 }
 
 func newFlags() *flags {
@@ -77,6 +76,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"The repository name to list webhooks for.",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, repositoryFlagName)
+	flagSet.StringVar(
+		&f.Remote,
+		remoteFlagName,
+		"",
+		"The remote where the repository lives.",
+	)
+	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
 }
 
 func run(
@@ -85,43 +91,17 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	input, err := bufcli.GetInputValue(container, "", ".")
-	if err != nil {
-		return err
-	}
-	storageosProvider := bufcli.NewStorageosProvider(false)
-	runner := command.NewRunner()
-	_, moduleIdentity, err := bufcli.ReadModuleWithWorkspacesDisabled(
-		ctx,
-		container,
-		storageosProvider,
-		runner,
-		input,
-	)
-	if err != nil {
-		return err
-	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
 	}
-	remote := moduleIdentity.Remote()
-	service, err := apiProvider.NewWebhookService(ctx, remote)
+	service, err := apiProvider.NewWebhookService(ctx, flags.Remote)
 	if err != nil {
 		return err
 	}
 	results, _, err := service.ListWebhooks(ctx, flags.RepositoryName, flags.OwnerName, "")
 	if err != nil {
-		if connectErr := new(connect.Error); errors.As(err, &connectErr) {
-			_, _ = container.Stdout().Write([]byte("[]"))
-			return nil
-		}
 		return err
-	}
-	if len(results) == 0 {
-		// Ignore errors for writing to stdout.
-		_, _ = container.Stdout().Write([]byte("[]"))
-		return nil
 	}
 	response, err := json.MarshalIndent(results, "", "\t")
 	if err != nil {

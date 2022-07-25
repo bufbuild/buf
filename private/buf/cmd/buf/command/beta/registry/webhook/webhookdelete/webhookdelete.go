@@ -27,6 +27,7 @@ import (
 
 const (
 	webhookIDFlagName = "id"
+	remoteFlagName    = "remote"
 )
 
 // NewCommand returns a new Command
@@ -51,6 +52,7 @@ func NewCommand(
 
 type flags struct {
 	WebhookID string
+	Remote    string
 }
 
 func newFlags() *flags {
@@ -65,6 +67,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"The webhook ID to delete.",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, webhookIDFlagName)
+	flagSet.StringVar(
+		&f.Remote,
+		remoteFlagName,
+		"",
+		"The remote where the repository lives.",
+	)
+	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
 }
 
 func run(
@@ -73,10 +82,6 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	input, err := bufcli.GetInputValue(container, "", ".")
-	if err != nil {
-		return err
-	}
 	storageosProvider := bufcli.NewStorageosProvider(false)
 	runner := command.NewRunner()
 	_, moduleIdentity, err := bufcli.ReadModuleWithWorkspacesDisabled(
@@ -84,7 +89,7 @@ func run(
 		container,
 		storageosProvider,
 		runner,
-		input,
+		flags.Remote,
 	)
 	if err != nil {
 		return err

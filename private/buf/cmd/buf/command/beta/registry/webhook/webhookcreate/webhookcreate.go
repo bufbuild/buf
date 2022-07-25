@@ -23,7 +23,6 @@ import (
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -33,6 +32,7 @@ const (
 	repositoryFlagName   = "repository"
 	callbackURLFlagName  = "callback-url"
 	webhookEventFlagName = "event"
+	remoteFlagName       = "remote"
 )
 
 // NewCommand returns a new Command
@@ -60,6 +60,7 @@ type flags struct {
 	OwnerName      string
 	RepositoryName string
 	CallbackURL    string
+	Remote         string
 }
 
 func newFlags() *flags {
@@ -95,6 +96,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"The url for the webhook to callback to on a given event.",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, callbackURLFlagName)
+	flagSet.StringVar(
+		&f.Remote,
+		remoteFlagName,
+		"",
+		"The remote where the repository lives.",
+	)
+	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
 }
 
 func run(
@@ -103,28 +111,11 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	input, err := bufcli.GetInputValue(container, "", ".")
-	if err != nil {
-		return err
-	}
-	storageosProvider := bufcli.NewStorageosProvider(false)
-	runner := command.NewRunner()
-	_, moduleIdentity, err := bufcli.ReadModuleWithWorkspacesDisabled(
-		ctx,
-		container,
-		storageosProvider,
-		runner,
-		input,
-	)
-	if err != nil {
-		return err
-	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
 	}
-	remote := moduleIdentity.Remote()
-	service, err := apiProvider.NewWebhookService(ctx, remote)
+	service, err := apiProvider.NewWebhookService(ctx, flags.Remote)
 	if err != nil {
 		return err
 	}
