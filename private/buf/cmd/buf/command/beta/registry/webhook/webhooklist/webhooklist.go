@@ -103,6 +103,10 @@ func run(
 	if err != nil {
 		return err
 	}
+	if results == nil {
+		// Ignore errors for writing to stdout.
+		_, _ = container.Stdout().Write([]byte("[]"))
+	}
 	response, err := json.MarshalIndent(results, "", "\t")
 	if err != nil {
 		return err
