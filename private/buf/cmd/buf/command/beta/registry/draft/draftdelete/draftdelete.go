@@ -76,7 +76,7 @@ func run(
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 	if moduleReference.Reference() == bufmoduleref.Main {
-		return appcmd.NewInvalidArgumentError("you must specify a valid draft")
+		return appcmd.NewInvalidArgumentErrorf("%q is not a valid draft name", bufmoduleref.Main)
 	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {

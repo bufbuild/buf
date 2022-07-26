@@ -26,7 +26,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufapp"
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufapiclient"
@@ -265,46 +264,6 @@ func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string) {
 		flagName,
 		"",
 		fmt.Sprintf(`The repository's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
-	)
-}
-
-// BindPageSize binds the page size flag.
-func BindPageSize(flagSet *pflag.FlagSet, addr *uint32, flagName string) {
-	flagSet.Uint32Var(
-		addr,
-		flagName,
-		10,
-		`The page size.`,
-	)
-}
-
-// BindPageToken binds the page token flag.
-func BindPageToken(flagSet *pflag.FlagSet, addr *string, flagName string) {
-	flagSet.StringVar(
-		addr,
-		flagName,
-		"",
-		`The page token. If more results are available, a "next_page" key is present in the --format=json output.`,
-	)
-}
-
-// BindReverse binds the reverse flag.
-func BindReverse(flagSet *pflag.FlagSet, addr *bool, flagName string) {
-	flagSet.BoolVar(
-		addr,
-		flagName,
-		false,
-		`Reverse the results.`,
-	)
-}
-
-// BindFormat binds the format flag.
-func BindFormat(flagSet *pflag.FlagSet, addr *string, flagName string) {
-	flagSet.StringVar(
-		addr,
-		flagName,
-		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
 	)
 }
 

@@ -16,6 +16,7 @@ package draftlist
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
@@ -63,10 +64,27 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindPageSize(flagSet, &f.PageSize, pageSizeFlagName)
-	bufcli.BindPageToken(flagSet, &f.PageToken, pageTokenFlagName)
-	bufcli.BindReverse(flagSet, &f.Reverse, reverseFlagName)
-	bufcli.BindFormat(flagSet, &f.Format, formatFlagName)
+	flagSet.Uint32Var(&f.PageSize,
+		pageSizeFlagName,
+		10,
+		`The page size.`,
+	)
+	flagSet.StringVar(&f.PageToken,
+		pageTokenFlagName,
+		"",
+		`The page token. If more results are available, a "next_page" key is present in the --format=json output.`,
+	)
+	flagSet.BoolVar(&f.Reverse,
+		reverseFlagName,
+		false,
+		`Reverse the results.`,
+	)
+	flagSet.StringVar(
+		&f.Format,
+		formatFlagName,
+		bufprint.FormatText.String(),
+		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+	)
 }
 
 func run(
