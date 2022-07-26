@@ -119,7 +119,7 @@ func parsePluginIdentityComponents(path string) (remote string, owner string, pl
 		return "", "", "", newInvalidPluginIdentityStringError(path)
 	}
 	plugin = strings.TrimSpace(slashSplit[2])
-	if plugin == "" {
+	if plugin == "" || strings.ContainsRune(plugin, ':') {
 		return "", "", "", newInvalidPluginIdentityStringError(path)
 	}
 	return remote, owner, plugin, nil
