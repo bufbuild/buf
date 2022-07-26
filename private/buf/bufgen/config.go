@@ -139,6 +139,7 @@ func newConfigV1(externalConfig ExternalConfigV1, id string) (*Config, error) {
 		}
 		pluginConfig := &PluginConfig{
 			Plugin:   plugin.Plugin,
+			Revision: plugin.Revision,
 			Name:     plugin.Name,
 			Remote:   plugin.Remote,
 			Out:      plugin.Out,

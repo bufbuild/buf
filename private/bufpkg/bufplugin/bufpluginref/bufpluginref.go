@@ -96,7 +96,7 @@ func PluginReferenceForString(reference string, revision int) (PluginReference, 
 // IsPluginReferenceOrIdentity returns true if the argument matches a plugin
 // reference (with version) or a plugin identity (without version).
 func IsPluginReferenceOrIdentity(plugin string) bool {
-	if _, err := PluginReferenceForString(plugin); err == nil {
+	if _, err := PluginReferenceForString(plugin, 0); err == nil {
 		return true
 	}
 	if _, err := PluginIdentityForString(plugin); err == nil {

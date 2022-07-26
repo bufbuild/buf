@@ -171,6 +171,8 @@ type PluginConfig struct {
 	Plugin string
 	Name   string
 	Remote string
+	// Optional, used with Plugin to pin a specific revision
+	Revision int
 	// Required
 	Out string
 	// Optional
@@ -285,6 +287,7 @@ type ExternalConfigV1 struct {
 // ExternalPluginConfigV1 is an external plugin configuration.
 type ExternalPluginConfigV1 struct {
 	Plugin   string      `json:"plugin,omitempty" yaml:"plugin,omitempty"`
+	Revision int         `json:"revision,omitempty" yaml:"revision,omitempty"`
 	Name     string      `json:"name,omitempty" yaml:"name,omitempty"`
 	Remote   string      `json:"remote,omitempty" yaml:"remote,omitempty"`
 	Out      string      `json:"out,omitempty" yaml:"out,omitempty"`

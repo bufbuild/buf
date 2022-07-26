@@ -337,7 +337,7 @@ func (g *generator) execRemotePluginV2(
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	var curatedPluginReference *registryv1alpha1.CuratedPluginReference
 	var remote string
-	if reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Plugin); err == nil {
+	if reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Plugin, pluginConfig.Revision); err == nil {
 		remote = reference.Remote()
 		curatedPluginReference = bufplugin.PluginReferenceToProtoCuratedPluginReference(reference)
 	} else {
