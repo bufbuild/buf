@@ -20,7 +20,7 @@ import (
 )
 
 // parseModuleReferenceComponents parses and returns the remote, owner, repository,
-// and ref (branch, commit, or draft) from the given path.
+// and ref (branch, commit, draft, or tag) from the given path.
 func parseModuleReferenceComponents(path string) (remote string, owner string, repository string, ref string, err error) {
 	split := strings.Split(path, ":")
 	switch len(split) {
