@@ -73,7 +73,7 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 	if len(externalConfig.Deps) > 0 {
 		existingDeps := make(map[string]struct{})
 		for _, dependency := range externalConfig.Deps {
-			reference, err := bufpluginref.PluginReferenceForString(dependency)
+			reference, err := bufpluginref.PluginReferenceForString(dependency.Plugin, dependency.Revision)
 			if err != nil {
 				return nil, err
 			}
