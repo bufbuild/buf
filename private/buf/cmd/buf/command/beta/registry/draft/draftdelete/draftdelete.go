@@ -17,6 +17,7 @@ package draftdelete
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -76,7 +77,12 @@ func run(
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 	if moduleReference.Reference() == bufmoduleref.Main {
-		return appcmd.NewInvalidArgumentErrorf("%q is not a valid draft name", bufmoduleref.Main)
+		// bufmoduleref.ModuleReferenceForString will give a default reference when user did not specify one
+		// we need to check the origin input and return different errors for different cases.
+		if strings.HasSuffix(container.Arg(0), ":"+bufmoduleref.Main) {
+			return appcmd.NewInvalidArgumentErrorf("%q is not a valid draft name", bufmoduleref.Main)
+		}
+		return appcmd.NewInvalidArgumentError("a valid draft name need to be specified")
 	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
