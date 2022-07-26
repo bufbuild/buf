@@ -37,7 +37,7 @@ func TestGetConfigForBucket(t *testing.T) {
 	require.NoError(t, err)
 	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/library/go-grpc")
 	require.NoError(t, err)
-	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 0)
+	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 1)
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -74,7 +74,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 	require.NoError(t, err)
 	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/library/go-grpc")
 	require.NoError(t, err)
-	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 0)
+	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 1)
 	require.NoError(t, err)
 	require.Equal(
 		t,
