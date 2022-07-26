@@ -19,7 +19,6 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
@@ -38,7 +37,7 @@ func TestGetConfigForBucket(t *testing.T) {
 	require.NoError(t, err)
 	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/library/go-grpc")
 	require.NoError(t, err)
-	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.build/library/go:v1.28.0:0")
+	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 0)
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -75,7 +74,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 	require.NoError(t, err)
 	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/library/go-grpc")
 	require.NoError(t, err)
-	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.build/library/go:v1.28.0:0")
+	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 0)
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -175,28 +174,26 @@ func TestGetConfigForDataInvalidDependency(t *testing.T) {
 	validConfig, err := os.ReadFile(filepath.Join("testdata", "success", "go", "buf.plugin.yaml"))
 	require.NoError(t, err)
 	// Valid dependencies
-	verifyDependencies(t, validConfig, false, "buf.build/library/go:v1.27.1:0")
-	verifyDependencies(t, validConfig, false, "buf.build/library/go:v1.27.1-rc.1:0")
+	verifyDependencies(t, validConfig, false, ExternalDependency{Plugin: "buf.build/library/go:v1.27.1"})
+	verifyDependencies(t, validConfig, false, ExternalDependency{Plugin: "buf.build/library/go:v1.27.1-rc.1"})
 	// Invalid dependencies
-	verifyDependencies(t, validConfig, true, "library/go:v1.28.0:0")
-	verifyDependencies(t, validConfig, true, "buf.build/library/go")
-	verifyDependencies(t, validConfig, true, "other.buf.build/library/go:v1.28.0:0")
-	verifyDependencies(t, validConfig, true, "buf.build/library/go:v1.28.0")
-	verifyDependencies(t, validConfig, true, "buf.build/library/go:1.28.0:0")
-	verifyDependencies(t, validConfig, true, "buf.build/library/go:v1.28.0:abc")
-	verifyDependencies(t, validConfig, true, "buf.build/library/go:v1.28.0:-1")
-	verifyDependencies(t, validConfig, true, "buf.build/library/go:v1.28.0:"+strconv.FormatInt(int64(math.MaxInt32)+1, 10))
+	verifyDependencies(t, validConfig, true, ExternalDependency{Plugin: "library/go:v1.28.0"})
+	verifyDependencies(t, validConfig, true, ExternalDependency{Plugin: "buf.build/library/go"})
+	verifyDependencies(t, validConfig, true, ExternalDependency{Plugin: "other.buf.build/library/go:v1.28.0"})
+	verifyDependencies(t, validConfig, true, ExternalDependency{Plugin: "buf.build/library/go:1.28.0"})
+	verifyDependencies(t, validConfig, true, ExternalDependency{Plugin: "buf.build/library/go:v1.28.0", Revision: -1})
+	verifyDependencies(t, validConfig, true, ExternalDependency{Plugin: "buf.build/library/go:v1.28.0", Revision: math.MaxInt32 + 1})
 	// duplicate dependencies (doesn't matter if version differs)
-	verifyDependencies(t, validConfig, true, "buf.build/library/go:v1.28.0:0", "buf.build/library/go:v1.27.0:1")
+	verifyDependencies(t, validConfig, true, ExternalDependency{Plugin: "buf.build/library/go:v1.28.0"}, ExternalDependency{Plugin: "buf.build/library/go:v1.27.0", Revision: 1})
 }
 
-func verifyDependencies(t testing.TB, validConfigBytes []byte, fail bool, invalidDependencies ...string) {
+func verifyDependencies(t testing.TB, validConfigBytes []byte, fail bool, invalidDependencies ...ExternalDependency) {
 	t.Helper()
 	// make a defensive copy of a valid parsed config
 	var cloned *ExternalConfig
 	err := yaml.Unmarshal(validConfigBytes, &cloned)
 	require.NoError(t, err)
-	cloned.Deps = append([]string{}, invalidDependencies...)
+	cloned.Deps = append([]ExternalDependency{}, invalidDependencies...)
 	yamlBytes, err := yaml.Marshal(cloned)
 	require.NoError(t, err)
 	_, err = GetConfigForData(context.Background(), yamlBytes)
