@@ -1066,7 +1066,8 @@ type GetLatestCuratedPluginRequest struct {
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the plugin, i.e. "connect-go".
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Semver-formatted plugin version.
+	// Optional: Semver-formatted plugin version.
+	// If not specified, the latest version will be retrieved.
 	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
 }
 
