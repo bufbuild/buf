@@ -212,7 +212,8 @@ message GetLatestCuratedPluginRequest {
   string owner = 1;
   // The name of the plugin, i.e. "connect-go".
   string name = 2;
-  // Semver-formatted plugin version.
+  // Optional: Semver-formatted plugin version.
+  // If not specified, the latest version will be retrieved.
   string version = 3;
 }
 
