@@ -181,9 +181,15 @@ type ExternalConfig struct {
 	PluginVersion string                `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
 	SourceURL     string                `json:"source_url,omitempty" yaml:"source_url,omitempty"`
 	Description   string                `json:"description,omitempty" yaml:"description,omitempty"`
-	Deps          []string              `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Deps          []ExternalDependency  `json:"deps,omitempty" yaml:"deps,omitempty"`
 	Opts          []string              `json:"opts,omitempty" yaml:"opts,omitempty"`
 	Runtime       ExternalRuntimeConfig `json:"runtime,omitempty" yaml:"runtime,omitempty"`
+}
+
+// ExternalDependency represents a dependency on another plugin.
+type ExternalDependency struct {
+	Plugin   string `json:"plugin,omitempty" yaml:"plugin,omitempty"`
+	Revision int    `json:"revision,omitempty" yaml:"revision,omitempty"`
 }
 
 // ExternalRuntimeConfig is the external configuration for the runtime
