@@ -234,9 +234,9 @@ func NewProtoModuleReferencesForModuleReferences(moduleReferences ...ModuleRefer
 }
 
 // ModuleReferenceForString returns a new ModuleReference for the given string.
-// If a branch or commit is not provided, the "main" branch is used.
+// If a branch, commit, draft, or tag is not provided, the "main" branch is used.
 //
-// This parses the path in the form remote/owner/repository{:branch,:commit}.
+// This parses the path in the form remote/owner/repository{:branch,:commit,:draft,:tag}.
 func ModuleReferenceForString(path string) (ModuleReference, error) {
 	remote, owner, repository, reference, err := parseModuleReferenceComponents(path)
 	if err != nil {
