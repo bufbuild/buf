@@ -39,7 +39,7 @@ type PluginCurationService interface {
 		language v1alpha1.PluginLanguage,
 		version string,
 		containerImageDigest string,
-		options []string,
+		defaultOptions []string,
 		dependencies []*v1alpha1.CuratedPluginReference,
 		sourceUrl string,
 		description string,
