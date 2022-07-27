@@ -193,7 +193,7 @@ func run(
 	plugin, err := bufplugin.NewPlugin(
 		pluginConfig.PluginVersion,
 		pluginConfig.Dependencies,
-		pluginConfig.Options,
+		pluginConfig.DefaultOptions,
 		pluginConfig.Runtime,
 		pushResponse.Digest,
 		pluginConfig.SourceURL,
@@ -217,7 +217,7 @@ func run(
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err
 		}
-		nextRevision = 0
+		nextRevision = 1
 	} else {
 		nextRevision = currentRevision.Revision + 1
 	}
@@ -228,7 +228,7 @@ func run(
 		bufplugin.PluginToProtoPluginLanguage(plugin),
 		plugin.Version(),
 		plugin.ContainerImageDigest(),
-		bufplugin.PluginOptionsToOptionsSlice(plugin.Options()),
+		bufplugin.PluginOptionsToOptionsSlice(plugin.DefaultOptions()),
 		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
 		plugin.SourceURL(),
 		plugin.Description(),

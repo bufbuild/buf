@@ -16,7 +16,6 @@ package bufpluginref
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -89,9 +88,9 @@ func NewPluginReference(
 
 // PluginReferenceForString returns a new PluginReference for the given string.
 //
-// This parses the path in the form remote/owner/plugin:version:revision.
-func PluginReferenceForString(reference string) (PluginReference, error) {
-	return parsePluginReference(reference)
+// This parses the path in the form remote/owner/plugin:version.
+func PluginReferenceForString(reference string, revision int) (PluginReference, error) {
+	return parsePluginReference(reference, revision)
 }
 
 func parsePluginIdentityComponents(path string) (remote string, owner string, plugin string, err error) {
@@ -118,22 +117,14 @@ func newInvalidPluginIdentityStringError(s string) error {
 	return fmt.Errorf("plugin identity %q is invalid: must be in the form remote/owner/plugin", s)
 }
 
-func parsePluginReference(reference string) (PluginReference, error) {
-	name, versionRevision, ok := strings.Cut(reference, ":")
+func parsePluginReference(reference string, revision int) (PluginReference, error) {
+	name, version, ok := strings.Cut(reference, ":")
 	if !ok {
-		return nil, fmt.Errorf("plugin references must be specified as \"<name>:<version>:<revision>\" strings")
+		return nil, fmt.Errorf("plugin references must be specified as \"<name>:<version>\" strings")
 	}
 	identity, err := PluginIdentityForString(name)
 	if err != nil {
 		return nil, err
-	}
-	version, revisionStr, ok := strings.Cut(versionRevision, ":")
-	if !ok {
-		return nil, fmt.Errorf("plugin references must be specified as \"<name>:<version>:<revision>\" strings")
-	}
-	revision, err := strconv.Atoi(revisionStr)
-	if err != nil {
-		return nil, fmt.Errorf("plugin reference %q must be specified with a numeric version", reference)
 	}
 	return NewPluginReference(identity, version, revision)
 }

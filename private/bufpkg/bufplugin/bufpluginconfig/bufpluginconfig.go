@@ -64,7 +64,7 @@ type Config struct {
 	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
 	// which depends on the 'protoc-gen-go' generated code.
 	Dependencies []bufpluginref.PluginReference
-	// Options is the default set of options passed into the plugin.
+	// DefaultOptions is the default set of options passed into the plugin.
 	//
 	// For now, all options are string values. This could eventually
 	// support other types (like JSON Schema and Terraform variables),
@@ -79,7 +79,7 @@ type Config struct {
 	// In those cases, the option value in this map will be set to
 	// the empty string, and the option will be propagated to the
 	// compiler without the '=' delimiter.
-	Options map[string]string
+	DefaultOptions map[string]string
 	// Runtime is the runtime configuration, which lets the user specify
 	// runtime dependencies, and other metadata that applies to a specific
 	// remote generation registry (e.g. the Go module proxy, NPM registry,
@@ -181,9 +181,15 @@ type ExternalConfig struct {
 	PluginVersion string                `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
 	SourceURL     string                `json:"source_url,omitempty" yaml:"source_url,omitempty"`
 	Description   string                `json:"description,omitempty" yaml:"description,omitempty"`
-	Deps          []string              `json:"deps,omitempty" yaml:"deps,omitempty"`
-	Opts          []string              `json:"opts,omitempty" yaml:"opts,omitempty"`
+	Deps          []ExternalDependency  `json:"deps,omitempty" yaml:"deps,omitempty"`
+	DefaultOpts   []string              `json:"default_opts,omitempty" yaml:"default_opts,omitempty"`
 	Runtime       ExternalRuntimeConfig `json:"runtime,omitempty" yaml:"runtime,omitempty"`
+}
+
+// ExternalDependency represents a dependency on another plugin.
+type ExternalDependency struct {
+	Plugin   string `json:"plugin,omitempty" yaml:"plugin,omitempty"`
+	Revision int    `json:"revision,omitempty" yaml:"revision,omitempty"`
 }
 
 // ExternalRuntimeConfig is the external configuration for the runtime

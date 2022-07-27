@@ -59,6 +59,14 @@ func TestModuleReferenceForString(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleReference, commitModuleReference)
 	require.True(t, IsCommitModuleReference(commitModuleReference))
+
+	expectedModuleReference, err = NewModuleReference("foo.com", "barr", "baz", "some/draft")
+	require.NoError(t, err)
+	require.Equal(t, "foo.com/barr/baz:some/draft", expectedModuleReference.String())
+	moduleReference, err = ModuleReferenceForString("foo.com/barr/baz:some/draft")
+	require.NoError(t, err)
+	require.Equal(t, expectedModuleReference, moduleReference)
+	require.False(t, IsCommitModuleReference(moduleReference))
 }
 
 func TestModuleReferenceForStringError(t *testing.T) {
