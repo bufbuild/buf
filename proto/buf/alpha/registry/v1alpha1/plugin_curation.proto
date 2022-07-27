@@ -91,7 +91,7 @@ message CuratedPlugin {
   // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
   string container_image_digest = 6;
   // List of default plugin options in the form "{option}={defaultOption}"
-  repeated string options = 7;
+  repeated string default_options = 7;
   // The creation time of the plugin.
   google.protobuf.Timestamp create_time = 8;
   // List of plugin dependencies.
