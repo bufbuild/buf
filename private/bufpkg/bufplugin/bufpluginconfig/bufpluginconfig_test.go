@@ -49,7 +49,7 @@ func TestGetConfigForBucket(t *testing.T) {
 			Dependencies: []bufpluginref.PluginReference{
 				pluginDependency,
 			},
-			Options: map[string]string{
+			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
 			Runtime: &RuntimeConfig{
@@ -86,7 +86,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			Dependencies: []bufpluginref.PluginReference{
 				pluginDependency,
 			},
-			Options: map[string]string{
+			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
 			Runtime: &RuntimeConfig{
@@ -116,7 +116,7 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 		&Config{
 			Name:          pluginIdentity,
 			PluginVersion: "v1.0.0",
-			Options: map[string]string{
+			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
 			Runtime: &RuntimeConfig{
@@ -149,7 +149,7 @@ func TestParsePluginConfigOptionsYAML(t *testing.T) {
 		&Config{
 			Name:          pluginIdentity,
 			PluginVersion: "v2.0.0",
-			Options: map[string]string{
+			DefaultOptions: map[string]string{
 				"annotate_code": "",
 			},
 		},
