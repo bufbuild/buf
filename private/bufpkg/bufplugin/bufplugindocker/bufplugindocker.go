@@ -18,3 +18,6 @@ package bufplugindocker
 // SourceFilePath is the default source file path
 // for the DockerSource.
 const SourceFilePath = "Dockerfile.plugin"
+
+// SourceFileAlternatePath is the alternate path for the DockerSource.
+const SourceFileAlternatePath = "Dockerfile"
