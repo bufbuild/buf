@@ -36,16 +36,16 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 	if !semver.IsValid(pluginVersion) {
 		return nil, fmt.Errorf("plugin_version %q must be a valid semantic version", externalConfig.PluginVersion)
 	}
-	var options map[string]string
-	if len(externalConfig.Opts) > 0 {
+	var defaultOptions map[string]string
+	if len(externalConfig.DefaultOpts) > 0 {
 		// We only want to create a non-nil map if the user
 		// actually specified any options.
-		options = make(map[string]string)
+		defaultOptions = make(map[string]string)
 	}
-	for _, option := range externalConfig.Opts {
+	for _, option := range externalConfig.DefaultOpts {
 		split := strings.Split(option, "=")
 		if len(split) > 2 {
-			return nil, errors.New(`plugin options must be specified as "<key>=<value>" strings`)
+			return nil, errors.New(`plugin default_options must be specified as "<key>=<value>" strings`)
 		}
 		if len(split) == 1 {
 			// Some plugins don't actually specify the '=' delimiter
@@ -64,10 +64,10 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 			split = append(split, "")
 		}
 		key, value := split[0], split[1]
-		if _, ok := options[key]; ok {
-			return nil, fmt.Errorf("plugin option %q was specified more than once", key)
+		if _, ok := defaultOptions[key]; ok {
+			return nil, fmt.Errorf("plugin default option %q was specified more than once", key)
 		}
-		options[key] = value
+		defaultOptions[key] = value
 	}
 	var dependencies []bufpluginref.PluginReference
 	if len(externalConfig.Deps) > 0 {
@@ -92,13 +92,13 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 		return nil, err
 	}
 	return &Config{
-		Name:          pluginIdentity,
-		PluginVersion: pluginVersion,
-		Options:       options,
-		Dependencies:  dependencies,
-		Runtime:       runtimeConfig,
-		SourceURL:     externalConfig.SourceURL,
-		Description:   externalConfig.Description,
+		Name:           pluginIdentity,
+		PluginVersion:  pluginVersion,
+		DefaultOptions: defaultOptions,
+		Dependencies:   dependencies,
+		Runtime:        runtimeConfig,
+		SourceURL:      externalConfig.SourceURL,
+		Description:    externalConfig.Description,
 	}, nil
 }
 
