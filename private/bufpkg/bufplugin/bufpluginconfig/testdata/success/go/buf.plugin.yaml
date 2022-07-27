@@ -6,7 +6,7 @@ description: Generates Go language bindings of services in protobuf definition f
 deps:
   - plugin: buf.build/library/go:v1.28.0
     revision: 1
-opts:
+default_opts:
   - paths=source_relative
 runtime:
   go:

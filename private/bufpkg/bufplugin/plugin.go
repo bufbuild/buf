@@ -26,7 +26,7 @@ import (
 type plugin struct {
 	version              string
 	dependencies         []bufpluginref.PluginReference
-	options              map[string]string
+	defaultOptions       map[string]string
 	runtime              *bufpluginconfig.RuntimeConfig
 	containerImageDigest string
 	sourceURL            string
@@ -38,7 +38,7 @@ var _ Plugin = (*plugin)(nil)
 func newPlugin(
 	version string,
 	dependencies []bufpluginref.PluginReference,
-	options map[string]string,
+	defaultOptions map[string]string,
 	runtimeConfig *bufpluginconfig.RuntimeConfig,
 	containerImageDigest string,
 	sourceURL string,
@@ -60,7 +60,7 @@ func newPlugin(
 	return &plugin{
 		version:              version,
 		dependencies:         dependencies,
-		options:              options,
+		defaultOptions:       defaultOptions,
 		runtime:              runtimeConfig,
 		containerImageDigest: containerImageDigest,
 		sourceURL:            sourceURL,
@@ -78,9 +78,9 @@ func (p *plugin) Dependencies() []bufpluginref.PluginReference {
 	return p.dependencies
 }
 
-// Options returns the plugin's options.
-func (p *plugin) Options() map[string]string {
-	return p.options
+// DefaultOptions returns the plugin's options.
+func (p *plugin) DefaultOptions() map[string]string {
+	return p.defaultOptions
 }
 
 // Runtime returns the plugin's runtime configuration.

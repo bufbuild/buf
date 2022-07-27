@@ -176,7 +176,7 @@ message CreateCuratedPluginRequest {
   // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
   string container_image_digest = 5;
   // List of default plugin options in the form "{option}={defaultOption}"
-  repeated string options = 6;
+  repeated string default_options = 6;
   // List of plugin dependencies.
   repeated CuratedPluginReference dependencies = 7;
   // The URL leading to the source code of the plugin, if available.
