@@ -127,6 +127,17 @@ func NewRepositoryCommitPrinter(writer io.Writer) RepositoryCommitPrinter {
 	return newRepositoryCommitPrinter(writer)
 }
 
+// RepositoryDraftPrinter is a repository draft printer.
+type RepositoryDraftPrinter interface {
+	PrintRepositoryDraft(ctx context.Context, format Format, repositoryCommit *registryv1alpha1.RepositoryCommit) error
+	PrintRepositoryDrafts(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*registryv1alpha1.RepositoryCommit) error
+}
+
+// NewRepositoryDraftPrinter returns a new RepositoryDraftPrinter.
+func NewRepositoryDraftPrinter(writer io.Writer) RepositoryDraftPrinter {
+	return newRepositoryDraftPrinter(writer)
+}
+
 // PluginPrinter is a printer for plugins.
 type PluginPrinter interface {
 	PrintPlugin(ctx context.Context, format Format, plugin *registryv1alpha1.Plugin) error

@@ -20,25 +20,25 @@ import (
 )
 
 // parseModuleReferenceComponents parses and returns the remote, owner, repository,
-// and ref (branch or commit) from the given path.
+// and ref (branch, commit, draft, or tag) from the given path.
 func parseModuleReferenceComponents(path string) (remote string, owner string, repository string, ref string, err error) {
-	remote, owner, rest, err := parseModuleIdentityComponents(path)
-	if err != nil {
-		return "", "", "", "", newInvalidModuleReferenceStringError(path)
-	}
-	restSplit := strings.Split(rest, ":")
-	repository = strings.TrimSpace(restSplit[0])
-	if len(restSplit) == 1 {
-		return remote, owner, repository, "", nil
-	}
-	if len(restSplit) == 2 {
-		ref := strings.TrimSpace(restSplit[1])
+	split := strings.Split(path, ":")
+	switch len(split) {
+	case 1:
+		// path has no colon, no need to handle its ref
+	case 2:
+		ref = strings.TrimSpace(split[1])
 		if ref == "" {
 			return "", "", "", "", newInvalidModuleReferenceStringError(path)
 		}
-		return remote, owner, repository, ref, nil
+	default:
+		return "", "", "", "", newInvalidModuleReferenceStringError(path)
 	}
-	return "", "", "", "", newInvalidModuleReferenceStringError(path)
+	remote, owner, repository, err = parseModuleIdentityComponents(split[0])
+	if err != nil {
+		return "", "", "", "", newInvalidModuleReferenceStringError(path)
+	}
+	return remote, owner, repository, ref, nil
 }
 
 func parseModuleIdentityComponents(path string) (remote string, owner string, repository string, err error) {
@@ -126,5 +126,5 @@ func newInvalidModuleIdentityStringError(s string) error {
 }
 
 func newInvalidModuleReferenceStringError(s string) error {
-	return fmt.Errorf("module reference %q is invalid: must be in the form remote/owner/repository:branch or remote/owner/repository:commit", s)
+	return fmt.Errorf("module reference %q is invalid: must be in the form remote/owner/repository:reference", s)
 }
