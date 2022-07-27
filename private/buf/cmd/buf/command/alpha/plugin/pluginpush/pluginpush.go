@@ -251,7 +251,7 @@ func loadDockerfile(ctx context.Context, bucket storage.ReadBucket) (storage.Rea
 	for _, path := range []string{bufplugindocker.SourceFilePath, bufplugindocker.SourceFileAlternatePath} {
 		var dockerfile storage.ReadObjectCloser
 		if dockerfile, err = bucket.Get(ctx, path); err == nil {
-			return dockerfile, err
+			return dockerfile, nil
 		}
 	}
 	if storage.IsNotExist(err) {
