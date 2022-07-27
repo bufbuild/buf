@@ -16,9 +16,7 @@ package pluginpush
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
@@ -29,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/netrc"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
@@ -137,11 +136,8 @@ func run(
 	}
 	// TODO: Once we support multiple plugin source types, this could be abstracted away
 	// in the bufpluginsource package. This is much simpler for now though.
-	dockerfile, err := sourceBucket.Get(ctx, bufplugindocker.SourceFilePath)
+	dockerfile, err := loadDockerfile(ctx, sourceBucket)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("please define a %s plugin source file in the target directory", bufplugindocker.SourceFilePath)
-		}
 		return err
 	}
 	defer func() {
@@ -248,4 +244,22 @@ func run(
 		curatedPlugin = currentRevision
 	}
 	return bufprint.NewCuratedPluginPrinter(container.Stdout()).PrintCuratedPlugin(ctx, format, curatedPlugin)
+}
+
+func loadDockerfile(ctx context.Context, bucket storage.ReadBucket) (storage.ReadObjectCloser, error) {
+	var err error
+	for _, path := range []string{bufplugindocker.SourceFilePath, bufplugindocker.SourceFileAlternatePath} {
+		var dockerfile storage.ReadObjectCloser
+		if dockerfile, err = bucket.Get(ctx, path); err == nil {
+			return dockerfile, err
+		}
+	}
+	if storage.IsNotExist(err) {
+		return nil, fmt.Errorf(
+			"please define a %s or %s plugin source file in the target directory",
+			bufplugindocker.SourceFilePath,
+			bufplugindocker.SourceFileAlternatePath,
+		)
+	}
+	return nil, err
 }
