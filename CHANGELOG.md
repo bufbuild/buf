@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.7.0] - 2022-06-27
 
 - Support protocol and encoding client options based on content-type in Studio Agent.
 - Add `--draft` flag to `buf push`.
@@ -716,7 +716,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.6.0...HEAD
+[v1.7.0]: https://github.com/bufbuild/buf/compare/v1.6.0...v1.7.0
 [v1.6.0]: https://github.com/bufbuild/buf/compare/v1.5.0...v1.6.0
 [v1.5.0]: https://github.com/bufbuild/buf/compare/v1.4.0...v1.5.0
 [v1.4.0]: https://github.com/bufbuild/buf/compare/v1.3.1...v1.4.0
