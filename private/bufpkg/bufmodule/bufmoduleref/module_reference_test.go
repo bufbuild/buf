@@ -67,6 +67,30 @@ func TestModuleReferenceForString(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleReference, moduleReference)
 	require.False(t, IsCommitModuleReference(moduleReference))
+
+	expectedModuleReference, err = NewModuleReference("localhost:8080", "barr", "baz", "some/draft")
+	require.NoError(t, err)
+	require.Equal(t, "localhost:8080/barr/baz:some/draft", expectedModuleReference.String())
+	moduleReference, err = ModuleReferenceForString("localhost:8080/barr/baz:some/draft")
+	require.NoError(t, err)
+	require.Equal(t, expectedModuleReference, moduleReference)
+	require.False(t, IsCommitModuleReference(moduleReference))
+
+	expectedModuleReference, err = NewModuleReference("localhost:8080", "barr", "baz", "ref")
+	require.NoError(t, err)
+	require.Equal(t, "localhost:8080/barr/baz:ref", expectedModuleReference.String())
+	moduleReference, err = ModuleReferenceForString("localhost:8080/barr/baz:ref")
+	require.NoError(t, err)
+	require.Equal(t, expectedModuleReference, moduleReference)
+	require.False(t, IsCommitModuleReference(moduleReference))
+
+	expectedModuleReference, err = NewModuleReference("localhost:8080", "barr", "baz", "main")
+	require.NoError(t, err)
+	require.Equal(t, "localhost:8080/barr/baz", expectedModuleReference.String())
+	moduleReference, err = ModuleReferenceForString("localhost:8080/barr/baz")
+	require.NoError(t, err)
+	require.Equal(t, expectedModuleReference, moduleReference)
+	require.False(t, IsCommitModuleReference(moduleReference))
 }
 
 func TestModuleReferenceForStringError(t *testing.T) {
