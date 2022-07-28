@@ -54,7 +54,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
+	"github.com/bufbuild/buf/private/pkg/transport/http2client"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -586,9 +586,9 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 	if err != nil {
 		return nil, err
 	}
-	client := httpclient.NewClient(
-		httpclient.WithObservability(),
-		httpclient.WithTLSConfig(config.TLS),
+	client := http2client.NewClient(
+		http2client.WithObservability(),
+		http2client.WithTLSConfig(config.TLS),
 	)
 	options := []bufapiclient.RegistryProviderOption{
 		bufapiclient.RegistryProviderWithAddressMapper(func(address string) string {

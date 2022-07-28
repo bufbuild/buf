@@ -37,7 +37,7 @@ func TestProxy(t *testing.T) {
 	require.NoError(t, err)
 	client := NewClient(
 		// setup the client to proxy all requests to the proxy server
-		WithProxy(http.ProxyURL(proxyURL)),
+		ClientWithProxy(http.ProxyURL(proxyURL)),
 	)
 
 	req, err := http.NewRequest("GET", "http://www.example.com", nil)
