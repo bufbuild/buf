@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package qux.v1;
+
+message Qux {
+  message Nested {
+    message Nested {}
+    string name = 1;
+  }
+  enum NestedEnum {
+    QUX_NESTED_ENUM_UNSPECIFIED = 0;
+  }
+}

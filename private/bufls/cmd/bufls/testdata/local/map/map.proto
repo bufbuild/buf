@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package mapv1;
+
+message Object {
+  map<string, Value> items = 1;
+  map<string, Value.Nested> nested_items = 2;
+
+  message NestedObject {
+    message FurtherNestedObject {
+      map<string, NestedObject> nested_items = 1;
+      map<string, Object> objects = 2;
+    }
+    map<string, .mapv1.Object.NestedObject.FurtherNestedObject> further_nested_objects = 1;
+  }
+}
+
+message Value {
+  message Nested {}
+}

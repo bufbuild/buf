@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package with.cache.dependency.v1;
+
+import "bar.proto";
+
+message Baz {
+  bar.v1.Bar bar = 1;
+  bar.v1.Bar.Nested nested = 2;
+  bar.v1.Bar.NestedEnum nested_enum = 3;
+}
+
+message Qux {
+  .bar.v1.Bar bar = 1;
+  .bar.v1.Bar.Nested nested = 2;
+  .bar.v1.Bar.NestedEnum nested_enum = 3;
+}

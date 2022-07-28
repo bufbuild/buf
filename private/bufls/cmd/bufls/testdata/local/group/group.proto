@@ -1,0 +1,37 @@
+syntax = "proto2";
+
+package mapv1;
+
+message Foo {
+  optional group One = 1 {
+    optional string name = 2;
+  }
+
+  message Nested {
+    optional One one = 1;
+    optional group Two = 2 {
+      optional string name = 3;
+    }
+  }
+
+  message AnotherNested {
+    optional Foo.One one = 1;
+  }
+
+  message LastNested {
+    optional .mapv1.Foo.One one = 1;
+  }
+
+  optional Nested.Two two = 2;
+  optional One something = 3;
+}
+
+message Bar {
+  optional Foo.One one = 1;
+  optional Foo.Nested.Two two = 2;
+}
+
+message Baz {
+  optional .mapv1.Foo.One one = 1;
+  optional .mapv1.Foo.Nested.Two two = 2;
+}

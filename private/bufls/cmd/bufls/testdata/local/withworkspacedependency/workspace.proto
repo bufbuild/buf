@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package with.workspace.dependency.v1;
+
+import "baz.proto";
+
+message Foo {
+  with.cache.dependency.v1.Baz baz = 1;
+  with.cache.dependency.v1.Qux qux = 2;
+}
+
+message Bar {
+  .with.cache.dependency.v1.Baz baz = 1;
+  .with.cache.dependency.v1.Qux qux = 2;
+}

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package mapentryv1;
+
+message Foo {
+  map<string, string> names = 1;
+
+  message Nested {
+    map<string, string> more_names = 2;
+    NamesEntry names_entry = 3;
+    MoreNamesEntry more_names_entry = 4;
+  }
+
+  NamesEntry names_entry = 2;
+  Foo.NamesEntry another_names_entry = 3;
+  Nested.MoreNamesEntry more_names_entry = 4;
+}

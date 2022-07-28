@@ -1,0 +1,4 @@
+version: v1
+name: buf.build/test-owner/test-repository
+deps:
+  - buf.build/test-owner/another-test-repository

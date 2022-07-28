@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package extendv1;
+
+import "google/protobuf/descriptor.proto";
+
+message Option {}
+
+message Object {
+  extend google.protobuf.MessageOptions {
+    Option opt = 10000;
+    Object object = 10001;
+    Nested nested = 10002;
+    Object.Nested object_nested = 10003;
+  }
+
+  message Nested {
+    extend google.protobuf.MessageOptions {
+      .extendv1.Option opt_full = 10004;
+      .extendv1.Object object_full = 10005;
+      .extendv1.Object.Nested object_nested_full = 10006;
+    }
+    Option opt = 1;
+  }
+}

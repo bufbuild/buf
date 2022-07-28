@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+message Foo {}
+
+message Bar {
+  message Baz {}
+
+  message Qux {
+    Baz baz = 1;
+  }
+
+  message Quux {
+    Bar.Baz baz = 1;
+  }
+
+  .Bar.Baz baz = 1;
+}
+
+message Quuz {
+  .Foo foo = 1;
+  .Bar.Qux qux = 2;
+}

@@ -1,0 +1,14 @@
+# We define a single workspace that captures all of the testdata
+# to override the buf.work.yaml defined at the base of the repository.
+#
+# We can remove this file once https://github.com/bufbuild/buf/issues/1056
+# is resolved.
+version: v1
+directories:
+  - extend
+  - group
+  - map
+  - namespace
+  - nopackage
+  - withcachedependency 
+  - withworkspacedependency 

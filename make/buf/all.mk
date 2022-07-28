@@ -6,6 +6,7 @@ GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
+	private/bufls/cmd/bufls \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientconnect \

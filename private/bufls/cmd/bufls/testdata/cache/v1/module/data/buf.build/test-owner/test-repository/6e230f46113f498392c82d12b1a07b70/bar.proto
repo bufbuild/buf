@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package bar.v1;
+
+import "qux.proto";
+
+message Bar {
+  message Nested {
+    string name = 1;
+  }
+  enum NestedEnum {
+    BAR_NESTED_ENUM_UNSPECIFIED = 0;
+  }
+
+  .qux.v1.Qux qux = 1;
+  .qux.v1.Qux.Nested qux_nested = 2;
+  .qux.v1.Qux.Nested.Nested qux_nested_nested = 3;
+  .qux.v1.Qux.NestedEnum qux_nested_enum = 4;
+}
