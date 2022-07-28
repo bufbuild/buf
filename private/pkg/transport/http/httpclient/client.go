@@ -16,56 +16,65 @@ package httpclient
 
 import (
 	"crypto/tls"
-	"net"
 	"net/http"
+	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/observability"
-	"golang.org/x/net/http2"
+	"github.com/bufbuild/buf/private/pkg/rpc/rpchttp"
 )
 
-type clientOptions struct {
-	tlsConfig       *tls.Config
-	observability   bool
-	proxy           Proxy
-	interceptorFunc ClientInterceptorFunc
-	h2c             bool
+type client struct {
+	httpClient *http.Client
+
+	tlsConfig     *tls.Config
+	observability bool
+	proxy         Proxy
 }
 
-func newClient(options ...ClientOption) *http.Client {
-	opts := &clientOptions{
+func newClient(options ...ClientOption) *client {
+	client := &client{
 		proxy: http.ProxyFromEnvironment,
 	}
 	for _, opt := range options {
-		opt(opts)
+		opt(client)
 	}
-	var roundTripper http.RoundTripper
-	if opts.h2c {
-		roundTripper = &http2.Transport{
-			AllowHTTP:       true,
-			TLSClientConfig: opts.tlsConfig,
-			DialTLS: func(netw, addr string, cfg *tls.Config) (net.Conn, error) {
-				return net.Dial(netw, addr)
-			},
-		}
-	} else {
-		roundTripper = &http.Transport{
-			TLSClientConfig: opts.tlsConfig,
-			Proxy:           opts.proxy,
-		}
-	}
-	if opts.interceptorFunc != nil {
-		roundTripper = opts.interceptorFunc(roundTripper)
-	}
-	if opts.observability {
+	roundTripper := rpchttp.NewClientInterceptor(
+		&http.Transport{
+			TLSClientConfig: client.tlsConfig,
+			Proxy:           client.proxy,
+		},
+	)
+	if client.observability {
 		roundTripper = observability.NewHTTPTransport(roundTripper)
 	}
-	return &http.Client{
+	client.httpClient = &http.Client{
 		Transport: roundTripper,
+	}
+	return client
+}
+
+func newClientWithTransport(transport http.RoundTripper) *client {
+	return &client{
+		httpClient: &http.Client{
+			Transport: transport,
+		},
 	}
 }
 
-func newClientWithTransport(transport http.RoundTripper) *http.Client {
-	return &http.Client{
-		Transport: transport,
+func (c *client) Do(request *http.Request) (*http.Response, error) {
+	return c.httpClient.Do(request)
+}
+
+func (c *client) ParseAddress(address string) string {
+	if len(strings.SplitN(address, "://", 2)) == 1 {
+		if c.tlsConfig != nil {
+			return "https://" + address
+		}
+		return "http://" + address
 	}
+	return address
+}
+
+func (c *client) Transport() http.RoundTripper {
+	return c.httpClient.Transport
 }
