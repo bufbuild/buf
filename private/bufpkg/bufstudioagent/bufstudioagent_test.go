@@ -20,6 +20,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -191,7 +192,9 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		listening := make(chan struct{}, 1)
 		go func(listening chan<- struct{}) {
 			listening <- struct{}{}
+			fmt.Println("signal sent")
 			conn, err := listener.Accept()
+			fmt.Println("connection arrived")
 			require.NoError(t, err)
 			require.NoError(t, conn.Close())
 		}(listening)
@@ -207,7 +210,9 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
 		require.NoError(t, err)
 		request.Header.Set("Content-Type", "text/plain")
+		fmt.Println("waiting before doing the request")
 		<-listening
+		fmt.Println("unblocked")
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusBadGateway, response.StatusCode)
