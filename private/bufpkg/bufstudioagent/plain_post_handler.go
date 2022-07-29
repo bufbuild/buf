@@ -183,6 +183,8 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		if connectErr := new(connect.Error); errors.As(err, &connectErr) {
 			switch connectErr.Code() {
+			// The server is in some kind of bad and/or unreachable state, forward
+			// CodeUnavailable information as well.
 			case connect.CodeUnknown, connect.CodeUnavailable:
 				http.Error(w, err.Error(), http.StatusBadGateway)
 				return

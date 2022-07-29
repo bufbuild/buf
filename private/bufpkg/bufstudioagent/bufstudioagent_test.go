@@ -188,11 +188,13 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 	t.Run("invalid_upstream", func(t *testing.T) {
 		listener, err := net.Listen("tcp", "127.0.0.1:")
 		require.NoError(t, err)
-		go func() {
+		listening := make(chan struct{}, 1)
+		go func(listening chan<- struct{}) {
+			listening <- struct{}{}
 			conn, err := listener.Accept()
 			require.NoError(t, err)
 			require.NoError(t, conn.Close())
-		}()
+		}(listening)
 		defer listener.Close()
 
 		requestProto := &studiov1alpha1.InvokeRequest{
@@ -205,6 +207,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
 		require.NoError(t, err)
 		request.Header.Set("Content-Type", "text/plain")
+		<-listening
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusBadGateway, response.StatusCode)
