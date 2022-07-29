@@ -22,19 +22,26 @@ import (
 // parseModuleReferenceComponents parses and returns the remote, owner, repository,
 // and ref (branch, commit, draft, or tag) from the given path.
 func parseModuleReferenceComponents(path string) (remote string, owner string, repository string, ref string, err error) {
-	split := strings.Split(path, ":")
-	switch len(split) {
+	// split by the first "/" to separate the remote and remaining part
+	slashSplit := strings.SplitN(path, "/", 2)
+	if len(slashSplit) != 2 {
+		return "", "", "", "", newInvalidModuleReferenceStringError(path)
+	}
+	remote, rest := slashSplit[0], slashSplit[1]
+	// split the remaining part by ":" to separate the reference
+	colonSplit := strings.Split(rest, ":")
+	switch len(colonSplit) {
 	case 1:
-		// path has no colon, no need to handle its ref
+		// path excluding remote has no colon, no need to handle its ref
 	case 2:
-		ref = strings.TrimSpace(split[1])
+		ref = strings.TrimSpace(colonSplit[1])
 		if ref == "" {
 			return "", "", "", "", newInvalidModuleReferenceStringError(path)
 		}
 	default:
 		return "", "", "", "", newInvalidModuleReferenceStringError(path)
 	}
-	remote, owner, repository, err = parseModuleIdentityComponents(split[0])
+	remote, owner, repository, err = parseModuleIdentityComponents(remote + "/" + colonSplit[0])
 	if err != nil {
 		return "", "", "", "", newInvalidModuleReferenceStringError(path)
 	}
