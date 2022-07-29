@@ -169,7 +169,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// TODO: should this context be cloned to remove attached values (but keep timeout)?``
 	response, err := client.CallUnary(r.Context(), request)
 	if err != nil {
-		// Connect marks any issues connecting with the Unavailable
+		// Any issue connecting is mapped by Connect to the Unavailable
 		// status code. We need to differentiate between server sent
 		// errors with the Unavailable code and client connection
 		// errors.
@@ -182,7 +182,8 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if connectErr := new(connect.Error); errors.As(err, &connectErr) {
-			if connectErr.Code() == connect.CodeUnknown {
+			switch connectErr.Code() {
+			case connect.CodeUnknown, connect.CodeUnavailable:
 				http.Error(w, err.Error(), http.StatusBadGateway)
 				return
 			}
