@@ -91,7 +91,7 @@ message CuratedPlugin {
   // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
   string container_image_digest = 6;
   // List of default plugin options in the form "{option}={defaultOption}"
-  repeated string options = 7;
+  repeated string default_options = 7;
   // The creation time of the plugin.
   google.protobuf.Timestamp create_time = 8;
   // List of plugin dependencies.
@@ -176,7 +176,7 @@ message CreateCuratedPluginRequest {
   // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
   string container_image_digest = 5;
   // List of default plugin options in the form "{option}={defaultOption}"
-  repeated string options = 6;
+  repeated string default_options = 6;
   // List of plugin dependencies.
   repeated CuratedPluginReference dependencies = 7;
   // The URL leading to the source code of the plugin, if available.
@@ -212,7 +212,8 @@ message GetLatestCuratedPluginRequest {
   string owner = 1;
   // The name of the plugin, i.e. "connect-go".
   string name = 2;
-  // Semver-formatted plugin version.
+  // Optional: Semver-formatted plugin version.
+  // If not specified, the latest version will be retrieved.
   string version = 3;
 }
 

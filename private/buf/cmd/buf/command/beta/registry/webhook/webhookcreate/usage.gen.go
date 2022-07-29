@@ -12,12 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufplugindocker contains utilities for building Buf plugins using the Docker API.
-package bufplugindocker
+// Generated. DO NOT EDIT.
 
-// SourceFilePath is the default source file path
-// for the DockerSource.
-const SourceFilePath = "Dockerfile.plugin"
+package webhookcreate
 
-// SourceFileAlternatePath is the alternate path for the DockerSource.
-const SourceFileAlternatePath = "Dockerfile"
+import _ "github.com/bufbuild/buf/private/usage"
