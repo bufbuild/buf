@@ -27,6 +27,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/connect-go"
@@ -142,6 +143,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 			nil,
 		),
 	)
+	agentServer.Client().Timeout = time.Second
 	defer agentServer.Close()
 
 	t.Run("forbidden_header", func(t *testing.T) {
@@ -197,6 +199,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 			fmt.Println("connection arrived")
 			require.NoError(t, err)
 			require.NoError(t, conn.Close())
+			fmt.Println("connection closed")
 		}(listening)
 		defer listener.Close()
 
@@ -212,8 +215,9 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request.Header.Set("Content-Type", "text/plain")
 		fmt.Println("waiting before doing the request")
 		<-listening
-		fmt.Println("unblocked")
+		fmt.Println("unblocked, starting request")
 		response, err := agentServer.Client().Do(request)
+		fmt.Println("request completed")
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusBadGateway, response.StatusCode)
 	})
