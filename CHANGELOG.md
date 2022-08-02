@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Change default for `--origin` flag of `buf beta studio-agent` to `https://studio.buf.build`
 
 ## [v1.7.0] - 2022-06-27
 
