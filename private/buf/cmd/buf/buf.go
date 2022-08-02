@@ -95,6 +95,10 @@ func NewRootCommand(name string) *appcmd.Command {
 		appflag.BuilderWithTimeout(120*time.Second),
 		appflag.BuilderWithTracing(),
 	)
+	noTimeoutBuilder := appflag.NewBuilder(
+		name,
+		appflag.BuilderWithTracing(),
+	)
 	globalFlags := bufcli.NewGlobalFlags()
 	return &appcmd.Command{
 		Use:                 name,
@@ -138,7 +142,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					convert.NewCommand("convert", builder),
 					migratev1beta1.NewCommand("migrate-v1beta1", builder),
-					studioagent.NewCommand("studio-agent", builder),
+					studioagent.NewCommand("studio-agent", noTimeoutBuilder),
 					{
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry.",
