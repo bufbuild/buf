@@ -166,36 +166,23 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		targetURL.String(),
 		clientOptions...,
 	)
-	// TODO: should this context be cloned to remove attached values (but keep timeout)?``
+	// TODO(rvanginkel) should this context be cloned to remove attached values (but keep timeout)?
 	response, err := client.CallUnary(r.Context(), request)
 	if err != nil {
-		// Any issue connecting is mapped by Connect to the Unavailable
-		// status code. We need to differentiate between server sent
-		// errors with the Unavailable code and client connection
-		// errors.
-		if netErr := new(net.OpError); errors.As(err, &netErr) {
-			http.Error(w, err.Error(), http.StatusBadGateway)
-			return
-		}
-		if urlErr := new(url.Error); errors.As(err, &urlErr) {
-			http.Error(w, err.Error(), http.StatusBadGateway)
-			return
-		}
 		if connectErr := new(connect.Error); errors.As(err, &connectErr) {
-			switch connectErr.Code() {
-			// The server is in some kind of bad and/or unreachable state, forward
-			// CodeUnavailable information as well.
-			case connect.CodeUnknown, connect.CodeUnavailable:
-				http.Error(w, err.Error(), http.StatusBadGateway)
+			// Any Connect error except these codes can be wrapped in the headers.
+			if connectErr.Code() != connect.CodeUnknown &&
+				connectErr.Code() != connect.CodeUnavailable {
+				i.writeProtoMessage(w, &studiov1alpha1.InvokeResponse{
+					// connectErr.Meta contains the trailers for the
+					// caller to find out the error details.
+					Headers: goHeadersToProtoHeaders(connectErr.Meta()),
+				})
 				return
 			}
-			i.writeProtoMessage(w, &studiov1alpha1.InvokeResponse{
-				// connectErr.Meta contains the trailers for the
-				// caller to find out the error details.
-				Headers: goHeadersToProtoHeaders(connectErr.Meta()),
-			})
-			return
 		}
+		// Any issue connecting that is not a Connect error is assumed to be because
+		// the server is in some kind of bad and/or unreachable state.
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
