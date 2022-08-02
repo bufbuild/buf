@@ -221,7 +221,6 @@ func run(
 		ctx,
 		pluginConfig.Name.Owner(),
 		pluginConfig.Name.Plugin(),
-		bufplugin.PluginToProtoPluginLanguage(plugin),
 		plugin.Version(),
 		plugin.ContainerImageDigest(),
 		bufplugin.PluginOptionsToOptionsSlice(plugin.DefaultOptions()),

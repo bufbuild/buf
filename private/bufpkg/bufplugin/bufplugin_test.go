@@ -18,22 +18,8 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
-
-func TestPluginToProtoPluginLanguage(t *testing.T) {
-	assertPluginToPluginLanguage(t, nil, registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_UNSPECIFIED)
-	assertPluginToPluginLanguage(t, &bufpluginconfig.RuntimeConfig{Go: &bufpluginconfig.GoRuntimeConfig{}}, registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_GO)
-	assertPluginToPluginLanguage(t, &bufpluginconfig.RuntimeConfig{NPM: &bufpluginconfig.NPMRuntimeConfig{}}, registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_NPM)
-}
-
-func assertPluginToPluginLanguage(t testing.TB, config *bufpluginconfig.RuntimeConfig, language registryv1alpha1.PluginLanguage) {
-	plugin, err := NewPlugin("v1.0.0", nil, nil, config, "sha256:digest", "", "")
-	require.Nil(t, err)
-	assert.Equal(t, language, PluginToProtoPluginLanguage(plugin))
-}
 
 func TestPluginRuntimeRoundTrip(t *testing.T) {
 	assertPluginRuntimeRoundTrip(t, nil)

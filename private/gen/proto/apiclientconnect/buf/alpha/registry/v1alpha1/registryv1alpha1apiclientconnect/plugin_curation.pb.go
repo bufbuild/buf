@@ -57,7 +57,6 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 	ctx context.Context,
 	owner string,
 	name string,
-	language v1alpha1.PluginLanguage,
 	version string,
 	containerImageDigest string,
 	defaultOptions []string,
@@ -73,7 +72,6 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 			&v1alpha1.CreateCuratedPluginRequest{
 				Owner:                owner,
 				Name:                 name,
-				Language:             language,
 				Version:              version,
 				ContainerImageDigest: containerImageDigest,
 				DefaultOptions:       defaultOptions,

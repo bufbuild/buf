@@ -36,7 +36,6 @@ type PluginCurationService interface {
 		ctx context.Context,
 		owner string,
 		name string,
-		language v1alpha1.PluginLanguage,
 		version string,
 		containerImageDigest string,
 		defaultOptions []string,

@@ -79,19 +79,6 @@ func NewPlugin(
 	return newPlugin(version, dependencies, defaultOptions, runtimeConfig, imageDigest, sourceURL, description)
 }
 
-// PluginToProtoPluginLanguage determines the appropriate registryv1alpha1.PluginLanguage for the plugin.
-func PluginToProtoPluginLanguage(plugin Plugin) registryv1alpha1.PluginLanguage {
-	language := registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_UNSPECIFIED
-	if plugin.Runtime() != nil {
-		if plugin.Runtime().Go != nil {
-			language = registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_GO
-		} else if plugin.Runtime().NPM != nil {
-			language = registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_NPM
-		}
-	}
-	return language
-}
-
 // PluginRuntimeToProtoRuntimeConfig converts a bufpluginconfig.RuntimeConfig to a registryv1alpha1.RuntimeConfig.
 func PluginRuntimeToProtoRuntimeConfig(pluginRuntime *bufpluginconfig.RuntimeConfig) *registryv1alpha1.RuntimeConfig {
 	if pluginRuntime == nil {
