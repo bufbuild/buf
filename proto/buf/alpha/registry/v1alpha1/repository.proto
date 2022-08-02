@@ -18,6 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
+import "buf/alpha/validate/v1alpha1/validate.proto";
 import "google/protobuf/timestamp.proto";
 
 enum Visibility {
@@ -119,6 +120,9 @@ message GetRepositoriesByFullNameResponse {
 }
 
 message GetRepositoryRequest {
+  option (buf.alpha.validate.v1alpha1.expr) = {
+    expression: "has(this.id) ? 'true' : 'GetRepositoryRequest must have a non-empty id'"
+  };
   string id = 1;
 }
 
@@ -215,6 +219,12 @@ message DeleteRepositoryByFullNameRequest {
 message DeleteRepositoryByFullNameResponse {}
 
 message DeprecateRepositoryByNameRequest {
+  option (buf.alpha.validate.v1alpha1.expr) = {
+    expression:
+      "has(this.owner_name) && "
+      "has(this.repository_name) && "
+      "has(this.deprecation_message)"
+  };
   string owner_name = 1;
   string repository_name = 2;
   // A message shown along with the deprecation warning for this repository.

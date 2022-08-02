@@ -8,3 +8,6 @@ plugins:
   - name: go
     out: private/gen/proto/go
     opt: paths=source_relative
+  - name: validate-go
+    out: private/gen/proto/go
+    opt: paths=source_relative

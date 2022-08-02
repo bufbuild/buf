@@ -10,6 +10,7 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientconnect \
 	private/bufpkg/bufstyle/cmd/bufstyle \
+	private/bufvalidate/cmd/protoc-gen-validate-go \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
@@ -101,6 +102,7 @@ bufgeneratedeps:: \
 	installprotoc-gen-go-api \
 	installprotoc-gen-go-apiclient \
 	installprotoc-gen-go-apiclientconnect \
+	installprotoc-gen-validate-go \
 	$(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO)
 
 .PHONY: bufgeneratecleango

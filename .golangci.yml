@@ -132,3 +132,12 @@ issues:
         - forbidigo
       path: private/bufpkg/bufplugin/bufplugindocker/docker.go
       text: "use of `errgroup"
+    # TODO: Temporarily excluded generated protoc-gen-validate-go file.
+    - linters:
+        - gochecknoinits
+        - goimports
+      path: private/gen/proto/go/buf/alpha/registry/v1alpha1/repository.deprecate_repository_by_name_request.validate.pb.go
+    - linters:
+        - gochecknoinits
+        - goimports
+      path: private/gen/proto/go/buf/alpha/registry/v1alpha1/repository.get_repository_request.validate.pb.go

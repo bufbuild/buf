@@ -1,0 +1,38 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto2";
+
+package buf.alpha.validate.v1alpha1;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.MessageOptions {
+  // expr is a CEL expression.
+  //
+  // The expression is validated against the
+  // set of fields defined in the message.
+  optional Expr expr = 8556;
+}
+
+// Expr is a a textual expression in the Common Expression Language (CEL) syntax.
+// This type is inspired by and compatible with the type hosted in GoogleAPIs.
+//
+// Ref: https://github.com/googleapis/googleapis/blob/072a9467b63dc46db4a24cfaad1c2f33e3c508d2/google/type/expr.proto#L56
+message Expr {
+  optional string expression = 1;
+  optional string title = 2;
+  optional string description = 3;
+  optional string location = 4;
+}
