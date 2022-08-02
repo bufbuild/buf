@@ -25,7 +25,6 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
-	"time"
 
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
 	"github.com/bufbuild/connect-go"
@@ -142,7 +141,6 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 			nil,
 		),
 	)
-	agentServer.Client().Timeout = time.Second
 	defer agentServer.Close()
 
 	t.Run("forbidden_header", func(t *testing.T) {
