@@ -190,10 +190,11 @@ func run(
 		pluginConfig.PluginVersion,
 		pluginConfig.Dependencies,
 		pluginConfig.DefaultOptions,
-		pluginConfig.Runtime,
+		pluginConfig.Registry,
 		pushResponse.Digest,
 		pluginConfig.SourceURL,
 		pluginConfig.Description,
+		pluginConfig.Languages,
 	)
 	if err != nil {
 		return err
@@ -221,15 +222,16 @@ func run(
 		ctx,
 		pluginConfig.Name.Owner(),
 		pluginConfig.Name.Plugin(),
-		bufplugin.PluginToProtoPluginLanguage(plugin),
+		bufplugin.PluginToProtoPluginRegistryType(plugin),
 		plugin.Version(),
 		plugin.ContainerImageDigest(),
 		bufplugin.PluginOptionsToOptionsSlice(plugin.DefaultOptions()),
 		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
 		plugin.SourceURL(),
 		plugin.Description(),
-		bufplugin.PluginRuntimeToProtoRuntimeConfig(plugin.Runtime()),
+		bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry()),
 		nextRevision,
+		plugin.Languages(),
 	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {

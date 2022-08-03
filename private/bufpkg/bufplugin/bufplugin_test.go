@@ -23,25 +23,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPluginToProtoPluginLanguage(t *testing.T) {
-	assertPluginToPluginLanguage(t, nil, registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_UNSPECIFIED)
-	assertPluginToPluginLanguage(t, &bufpluginconfig.RuntimeConfig{Go: &bufpluginconfig.GoRuntimeConfig{}}, registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_GO)
-	assertPluginToPluginLanguage(t, &bufpluginconfig.RuntimeConfig{NPM: &bufpluginconfig.NPMRuntimeConfig{}}, registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_NPM)
+func TestPluginToProtoPluginRegistryType(t *testing.T) {
+	assertPluginToPluginRegistryType(t, nil, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_UNSPECIFIED)
+	assertPluginToPluginRegistryType(t, &bufpluginconfig.RegistryConfig{Go: &bufpluginconfig.GoRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_GO)
+	assertPluginToPluginRegistryType(t, &bufpluginconfig.RegistryConfig{NPM: &bufpluginconfig.NPMRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM)
 }
 
-func assertPluginToPluginLanguage(t testing.TB, config *bufpluginconfig.RuntimeConfig, language registryv1alpha1.PluginLanguage) {
-	plugin, err := NewPlugin("v1.0.0", nil, nil, config, "sha256:digest", "", "")
+func assertPluginToPluginRegistryType(t testing.TB, config *bufpluginconfig.RegistryConfig, registryType registryv1alpha1.PluginRegistryType) {
+	plugin, err := NewPlugin("v1.0.0", nil, nil, config, "sha256:digest", "", "", nil)
 	require.Nil(t, err)
-	assert.Equal(t, language, PluginToProtoPluginLanguage(plugin))
+	assert.Equal(t, registryType, PluginToProtoPluginRegistryType(plugin))
 }
 
-func TestPluginRuntimeRoundTrip(t *testing.T) {
-	assertPluginRuntimeRoundTrip(t, nil)
-	assertPluginRuntimeRoundTrip(t, &bufpluginconfig.RuntimeConfig{})
-	assertPluginRuntimeRoundTrip(t, &bufpluginconfig.RuntimeConfig{
-		Go: &bufpluginconfig.GoRuntimeConfig{
+func TestPluginRegistryRoundTrip(t *testing.T) {
+	assertPluginRegistryRoundTrip(t, nil)
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{})
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		Go: &bufpluginconfig.GoRegistryConfig{
 			MinVersion: "1.18",
-			Deps: []*bufpluginconfig.GoRuntimeDependencyConfig{
+			Deps: []*bufpluginconfig.GoRegistryDependencyConfig{
 				{
 					Module:  "github.com/bufbuild/connect-go",
 					Version: "v0.1.1",
@@ -49,9 +49,9 @@ func TestPluginRuntimeRoundTrip(t *testing.T) {
 			},
 		},
 	})
-	assertPluginRuntimeRoundTrip(t, &bufpluginconfig.RuntimeConfig{
-		NPM: &bufpluginconfig.NPMRuntimeConfig{
-			Deps: []*bufpluginconfig.NPMRuntimeDependencyConfig{
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		NPM: &bufpluginconfig.NPMRegistryConfig{
+			Deps: []*bufpluginconfig.NPMRegistryDependencyConfig{
 				{
 					Package: "@bufbuild/protobuf",
 					Version: "^0.0.4",
@@ -61,8 +61,8 @@ func TestPluginRuntimeRoundTrip(t *testing.T) {
 	})
 }
 
-func assertPluginRuntimeRoundTrip(t testing.TB, config *bufpluginconfig.RuntimeConfig) {
-	assert.Equal(t, config, ProtoRuntimeConfigToPluginRuntime(PluginRuntimeToProtoRuntimeConfig(config)))
+func assertPluginRegistryRoundTrip(t testing.TB, config *bufpluginconfig.RegistryConfig) {
+	assert.Equal(t, config, ProtoRegistryConfigToPluginRegistry(PluginRegistryToProtoRegistryConfig(config)))
 }
 
 func TestPluginOptionsRoundTrip(t *testing.T) {

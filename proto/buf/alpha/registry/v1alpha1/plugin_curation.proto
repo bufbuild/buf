@@ -20,11 +20,11 @@ import "buf/alpha/image/v1/image.proto";
 import "google/protobuf/compiler/plugin.proto";
 import "google/protobuf/timestamp.proto";
 
-// The supported languages for curated plugins.
-enum PluginLanguage {
-  PLUGIN_LANGUAGE_UNSPECIFIED = 0;
-  PLUGIN_LANGUAGE_GO = 1;
-  PLUGIN_LANGUAGE_NPM = 2;
+// The supported plugin registries for curated plugins.
+enum PluginRegistryType {
+  PLUGIN_REGISTRY_TYPE_UNSPECIFIED = 0;
+  PLUGIN_REGISTRY_TYPE_GO = 1;
+  PLUGIN_REGISTRY_TYPE_NPM = 2;
 }
 
 // GoConfig is the configuration for a Go plugin.
@@ -55,9 +55,9 @@ message NPMConfig {
   repeated RuntimeLibrary runtime_libraries = 1;
 }
 
-// RuntimeConfig is the configuration for the runtime of a plugin.
-message RuntimeConfig {
-  oneof runtime_config {
+// RegistryConfig is the configuration for the remote registry of a plugin.
+message RegistryConfig {
+  oneof registry_config {
     GoConfig go_config = 1;
     NPMConfig npm_config = 2;
   }
@@ -82,8 +82,8 @@ message CuratedPlugin {
   string owner = 2;
   // The name of the plugin, i.e. "connect-go".
   string name = 3;
-  // The target language of the plugin.
-  PluginLanguage language = 4;
+  // The optional registry type of the plugin.
+  PluginRegistryType registry_type = 4;
   // Semver-formatted plugin version.
   string version = 5;
   // The full container image digest associated with this plugin version including
@@ -100,10 +100,13 @@ message CuratedPlugin {
   string source_url = 10;
   // Optionally specify a brief description of the plugin functionality.
   string description = 11;
-  // The configuration for the runtime of the plugin.
-  RuntimeConfig runtime_config = 12;
+  // The configuration for the remote registry of the plugin.
+  RegistryConfig registry_config = 12;
   // The revision for this plugin version.
   uint32 revision = 13;
+  // The languages emitted by the plugin.
+  // Typically this will only contain a single language.
+  repeated string languages = 14;
 }
 
 // PluginCurationService manages curated plugins.
@@ -167,8 +170,8 @@ message CreateCuratedPluginRequest {
   string owner = 1;
   // The name of the plugin, i.e. "connect-go".
   string name = 2;
-  // The target language of the plugin.
-  PluginLanguage language = 3;
+  // The optional registry type of the plugin.
+  PluginRegistryType registry_type = 3;
   // Semver-formatted plugin version.
   string version = 4;
   // The full container image digest associated with this plugin version including
@@ -183,10 +186,13 @@ message CreateCuratedPluginRequest {
   string source_url = 8;
   // A brief description of the plugin functionality.
   string description = 9;
-  // The configuration for the runtime of the plugin.
-  RuntimeConfig runtime_config = 10;
+  // The configuration for the remote registry of the plugin.
+  RegistryConfig registry_config = 12;
   // The revision for this plugin version.
-  uint32 revision = 11;
+  uint32 revision = 13;
+  // The languages emitted by the plugin.
+  // Typically this will only contain a single language.
+  repeated string languages = 14;
 }
 
 message CreateCuratedPluginResponse {

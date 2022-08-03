@@ -36,15 +36,16 @@ type PluginCurationService interface {
 		ctx context.Context,
 		owner string,
 		name string,
-		language v1alpha1.PluginLanguage,
+		registryType v1alpha1.PluginRegistryType,
 		version string,
 		containerImageDigest string,
 		defaultOptions []string,
 		dependencies []*v1alpha1.CuratedPluginReference,
 		sourceUrl string,
 		description string,
-		runtimeConfig *v1alpha1.RuntimeConfig,
+		registryConfig *v1alpha1.RegistryConfig,
 		revision uint32,
+		languages []string,
 	) (configuration *v1alpha1.CuratedPlugin, err error)
 	// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
 	GetLatestCuratedPlugin(

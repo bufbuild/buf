@@ -8,7 +8,9 @@ deps:
     revision: 1
 default_opts:
   - paths=source_relative
-runtime:
+languages:
+  - go
+registry:
   go:
     min_version: 1.18
     deps:
