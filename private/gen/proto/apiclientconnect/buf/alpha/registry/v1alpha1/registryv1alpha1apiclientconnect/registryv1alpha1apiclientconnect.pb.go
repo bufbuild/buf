@@ -574,6 +574,26 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 	}, nil
 }
 
+// NewStudioRequestService creates a new StudioRequestService
+func (p *provider) NewStudioRequestService(ctx context.Context, address string) (registryv1alpha1api.StudioRequestService, error) {
+	interceptors := p.interceptors
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	return &studioRequestServiceClient{
+		logger: p.logger,
+		client: registryv1alpha1connect.NewStudioRequestServiceClient(
+			p.httpClient,
+			address,
+			connect_go.WithInterceptors(interceptors...),
+		),
+	}, nil
+}
+
 // NewStudioService creates a new StudioService
 func (p *provider) NewStudioService(ctx context.Context, address string) (registryv1alpha1api.StudioService, error) {
 	interceptors := p.interceptors

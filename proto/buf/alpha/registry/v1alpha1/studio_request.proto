@@ -1,0 +1,119 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "google/protobuf/timestamp.proto";
+
+// StudioRequestService exposes the functionality to manage favorited Requests
+// from Studio.
+service StudioRequestService {
+  // Create registers a favorite Studio requests to the caller's BSR profile.
+  rpc Create(CreateRequest) returns (CreateResponse) {}
+  // Delete removes a favorite Studio request from the caller's BSR profile.
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {}
+  // List shows the caller's favorited requests.
+  rpc List(ListRequest) returns (ListResponse) {}
+}
+
+// CreateRequest is the proto request representation of the Create method. IDs
+// and timestamps are automatically generated, BSR Repository information is
+// taken from the `repository_id`, and the `author` is taken from the request
+// authentication.
+message CreateRequest {
+  // BSR repository ID this request is linked to.
+  string repository_id = 1;
+  // The friendly name of this request.
+  string name = 2;
+  // The target base URL of this request.
+  string target_base_url = 3;
+  // The target service name as defined in the BSR repository.
+  string service = 6;
+  // The target RPC method name as defined in the BSR repository.
+  string method = 7;
+  // The request body as defined in Studio.
+  string request_body = 8;
+  // The request headers as defined in Studio.
+  map<string, string> request_headers = 9;
+  // The response body as seen in Studio.
+  string response_body = 10;
+  // The response headers as seen in Studio.
+  map<string, string> response_headers = 11;
+}
+
+// CreateResponse is the proto response representation of the Create method.
+message CreateResponse {
+  // Created Studio Request.
+  StudioRequest request = 1;
+}
+
+// DeleteRequest is the proto request representation of the Delete method.
+message DeleteRequest {
+  // The Studio Request ID that will be deleted.
+  string id = 1;
+}
+
+// DeleteResponse is the proto response representation of the Delete method.
+message DeleteResponse {}
+
+// ListRequest is the proto request representation of the List method.
+message ListRequest {
+  // The page token for paginating.
+  string page_token = 1;
+}
+
+// ListResponse is the proto response representation of the List method.
+message ListResponse {
+  // The list of requests in the current page.
+  repeated StudioRequest requests = 1;
+  // The requests' next page token.
+  string next_page_token = 2;
+}
+
+// StudioRequest represents a saved request in Studio, that is synced to a BSR
+// user's profile.
+message StudioRequest {
+  // The ID of this Studio request.
+  string id = 1;
+  // The request creation timestamp.
+  google.protobuf.Timestamp create_time = 2;
+  // The request last updated timestamp.
+  google.protobuf.Timestamp update_time = 3;
+  // User ID who created and saved this request.
+  string author = 4;
+  // BSR repository ID this request is linked to.
+  string repository_id = 5;
+  // The friendly name of this request.
+  string name = 6;
+  // The target base URL of this request.
+  string target_base_url = 7;
+  // The BSR repository owner name (user or oganization).
+  string repository_owner = 8;
+  // The BSR repository name.
+  string repository_name = 9;
+  // The target service name as defined in the BSR repository.
+  string service = 10;
+  // The target RPC method name as defined in the BSR repository.
+  string method = 11;
+  // The request body as defined in Studio.
+  string request_body = 12;
+  // The request headers as defined in Studio.
+  map<string, string> request_headers = 13;
+  // The response body as seen in Studio.
+  string response_body = 14;
+  // The response headers as seen in Studio.
+  map<string, string> response_headers = 15;
+}

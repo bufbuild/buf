@@ -48,6 +48,7 @@ type Provider interface {
 	RepositoryTagServiceProvider
 	ResolveServiceProvider
 	SearchServiceProvider
+	StudioRequestServiceProvider
 	StudioServiceProvider
 	TokenServiceProvider
 	UserServiceProvider
@@ -177,6 +178,11 @@ type ResolveServiceProvider interface {
 // SearchServiceProvider provides a client-side SearchService for an address.
 type SearchServiceProvider interface {
 	NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error)
+}
+
+// StudioRequestServiceProvider provides a client-side StudioRequestService for an address.
+type StudioRequestServiceProvider interface {
+	NewStudioRequestService(ctx context.Context, address string) (registryv1alpha1api.StudioRequestService, error)
 }
 
 // StudioServiceProvider provides a client-side StudioService for an address.
