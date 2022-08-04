@@ -1130,8 +1130,7 @@ type GetLatestCuratedPluginResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	Plugin *CuratedPlugin `protobuf:"bytes,1,opt,name=plugin,proto3" json:"plugin,omitempty"`
-	// versions is a semver-sorted list in ascending order of
-	// all versions for the given plugin.
+	// versions is a semver-sorted list in ascending order.
 	Versions []*CuratedPluginVersionRevisions `protobuf:"bytes,2,rep,name=versions,proto3" json:"versions,omitempty"`
 }
 
@@ -1187,8 +1186,7 @@ type CuratedPluginVersionRevisions struct {
 	unknownFields protoimpl.UnknownFields
 
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	// revisions is a sorted list in ascending order
-	// for the given version.
+	// revisions is a sorted list in ascending order.
 	Revisions []uint32 `protobuf:"varint,2,rep,packed,name=revisions,proto3" json:"revisions,omitempty"`
 }
 
