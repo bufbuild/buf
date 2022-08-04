@@ -29,8 +29,9 @@ type studioRequestServiceClient struct {
 	client registryv1alpha1connect.StudioRequestServiceClient
 }
 
-// Create registers a favorite Studio requests to the caller's BSR profile.
-func (s *studioRequestServiceClient) Create(
+// CreateStudioRequest registers a favorite Studio requests to the caller's
+// BSR profile.
+func (s *studioRequestServiceClient) CreateStudioRequest(
 	ctx context.Context,
 	repositoryId string,
 	name string,
@@ -42,10 +43,10 @@ func (s *studioRequestServiceClient) Create(
 	responseBody string,
 	responseHeaders map[string]string,
 ) (request *v1alpha1.StudioRequest, _ error) {
-	response, err := s.client.Create(
+	response, err := s.client.CreateStudioRequest(
 		ctx,
 		connect_go.NewRequest(
-			&v1alpha1.CreateRequest{
+			&v1alpha1.CreateStudioRequestRequest{
 				RepositoryId:    repositoryId,
 				Name:            name,
 				TargetBaseUrl:   targetBaseUrl,
@@ -63,12 +64,13 @@ func (s *studioRequestServiceClient) Create(
 	return response.Msg.Request, nil
 }
 
-// Delete removes a favorite Studio request from the caller's BSR profile.
-func (s *studioRequestServiceClient) Delete(ctx context.Context, id string) (_ error) {
-	_, err := s.client.Delete(
+// DeleteStudioRequest removes a favorite Studio request from the caller's BSR
+// profile.
+func (s *studioRequestServiceClient) DeleteStudioRequest(ctx context.Context, id string) (_ error) {
+	_, err := s.client.DeleteStudioRequest(
 		ctx,
 		connect_go.NewRequest(
-			&v1alpha1.DeleteRequest{
+			&v1alpha1.DeleteStudioRequestRequest{
 				Id: id,
 			}),
 	)
@@ -78,15 +80,15 @@ func (s *studioRequestServiceClient) Delete(ctx context.Context, id string) (_ e
 	return nil
 }
 
-// List shows the caller's favorited requests.
-func (s *studioRequestServiceClient) List(
+// ListStudioRequests shows the caller's favorited requests.
+func (s *studioRequestServiceClient) ListStudioRequests(
 	ctx context.Context,
 	pageToken string,
 ) (requests []*v1alpha1.StudioRequest, nextPageToken string, _ error) {
-	response, err := s.client.List(
+	response, err := s.client.ListStudioRequests(
 		ctx,
 		connect_go.NewRequest(
-			&v1alpha1.ListRequest{
+			&v1alpha1.ListStudioRequestsRequest{
 				PageToken: pageToken,
 			}),
 	)

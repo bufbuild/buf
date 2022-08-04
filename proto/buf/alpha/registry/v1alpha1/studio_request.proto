@@ -21,19 +21,21 @@ import "google/protobuf/timestamp.proto";
 // StudioRequestService exposes the functionality to manage favorited Requests
 // from Studio.
 service StudioRequestService {
-  // Create registers a favorite Studio requests to the caller's BSR profile.
-  rpc Create(CreateRequest) returns (CreateResponse) {}
-  // Delete removes a favorite Studio request from the caller's BSR profile.
-  rpc Delete(DeleteRequest) returns (DeleteResponse) {}
-  // List shows the caller's favorited requests.
-  rpc List(ListRequest) returns (ListResponse) {}
+  // CreateStudioRequest registers a favorite Studio requests to the caller's
+  // BSR profile.
+  rpc CreateStudioRequest(CreateStudioRequestRequest) returns (CreateStudioRequestResponse) {}
+  // DeleteStudioRequest removes a favorite Studio request from the caller's BSR
+  // profile.
+  rpc DeleteStudioRequest(DeleteStudioRequestRequest) returns (DeleteStudioRequestResponse) {}
+  // ListStudioRequests shows the caller's favorited requests.
+  rpc ListStudioRequests(ListStudioRequestsRequest) returns (ListStudioRequestsResponse) {}
 }
 
-// CreateRequest is the proto request representation of the Create method. IDs
-// and timestamps are automatically generated, BSR Repository information is
-// taken from the `repository_id`, and the `author` is taken from the request
-// authentication.
-message CreateRequest {
+// CreateStudioRequestRequest is the proto request representation of the
+// CreateStudioRequest method. IDs and timestamps are automatically generated,
+// BSR Repository information is taken from the `repository_id`, and the
+// `author` is taken from the request authentication.
+message CreateStudioRequestRequest {
   // BSR repository ID this request is linked to.
   string repository_id = 1;
   // The friendly name of this request.
@@ -41,42 +43,47 @@ message CreateRequest {
   // The target base URL of this request.
   string target_base_url = 3;
   // The target service name as defined in the BSR repository.
-  string service = 6;
+  string service = 4;
   // The target RPC method name as defined in the BSR repository.
-  string method = 7;
+  string method = 5;
   // The request body as defined in Studio.
-  string request_body = 8;
+  string request_body = 6;
   // The request headers as defined in Studio.
-  map<string, string> request_headers = 9;
+  map<string, string> request_headers = 7;
   // The response body as seen in Studio.
-  string response_body = 10;
+  string response_body = 8;
   // The response headers as seen in Studio.
-  map<string, string> response_headers = 11;
+  map<string, string> response_headers = 9;
 }
 
-// CreateResponse is the proto response representation of the Create method.
-message CreateResponse {
+// CreateStudioRequestResponse is the proto response representation of the
+// CreateStudioRequest method.
+message CreateStudioRequestResponse {
   // Created Studio Request.
   StudioRequest request = 1;
 }
 
-// DeleteRequest is the proto request representation of the Delete method.
-message DeleteRequest {
+// DeleteStudioRequestRequest is the proto request representation of the
+// DeleteStudioRequest method.
+message DeleteStudioRequestRequest {
   // The Studio Request ID that will be deleted.
   string id = 1;
 }
 
-// DeleteResponse is the proto response representation of the Delete method.
-message DeleteResponse {}
+// DeleteStudioRequestResponse is the proto response representation of the
+// DeleteStudioRequest method.
+message DeleteStudioRequestResponse {}
 
-// ListRequest is the proto request representation of the List method.
-message ListRequest {
+// ListStudioRequestsRequest is the proto request representation of the
+// ListStudioRequests method.
+message ListStudioRequestsRequest {
   // The page token for paginating.
   string page_token = 1;
 }
 
-// ListResponse is the proto response representation of the List method.
-message ListResponse {
+// ListStudioRequestsResponse is the proto response representation of the
+// ListStudioRequests method.
+message ListStudioRequestsResponse {
   // The list of requests in the current page.
   repeated StudioRequest requests = 1;
   // The requests' next page token.

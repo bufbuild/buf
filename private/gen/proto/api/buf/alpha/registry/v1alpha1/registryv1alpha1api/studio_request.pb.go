@@ -24,8 +24,9 @@ import (
 // StudioRequestService exposes the functionality to manage favorited Requests
 // from Studio.
 type StudioRequestService interface {
-	// Create registers a favorite Studio requests to the caller's BSR profile.
-	Create(
+	// CreateStudioRequest registers a favorite Studio requests to the caller's
+	// BSR profile.
+	CreateStudioRequest(
 		ctx context.Context,
 		repositoryId string,
 		name string,
@@ -37,10 +38,11 @@ type StudioRequestService interface {
 		responseBody string,
 		responseHeaders map[string]string,
 	) (request *v1alpha1.StudioRequest, err error)
-	// Delete removes a favorite Studio request from the caller's BSR profile.
-	Delete(ctx context.Context, id string) (err error)
-	// List shows the caller's favorited requests.
-	List(
+	// DeleteStudioRequest removes a favorite Studio request from the caller's BSR
+	// profile.
+	DeleteStudioRequest(ctx context.Context, id string) (err error)
+	// ListStudioRequests shows the caller's favorited requests.
+	ListStudioRequests(
 		ctx context.Context,
 		pageToken string,
 	) (requests []*v1alpha1.StudioRequest, nextPageToken string, err error)
