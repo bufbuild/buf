@@ -218,6 +218,15 @@ message GetLatestCuratedPluginRequest {
 }
 
 message GetLatestCuratedPluginResponse {
-  // The latest plugin.
   CuratedPlugin plugin = 1;
+  // versions is a semver-sorted list in ascending order of
+  // all versions for the given plugin.
+  repeated CuratedPluginVersionRevisions versions = 2;
+}
+
+message CuratedPluginVersionRevisions {
+  string version = 1;
+  // revisions is a sorted list in ascending order
+  // for the given version.
+  repeated uint32 revisions = 2;
 }

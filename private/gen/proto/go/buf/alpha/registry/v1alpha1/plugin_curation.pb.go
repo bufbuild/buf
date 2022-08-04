@@ -1129,8 +1129,10 @@ type GetLatestCuratedPluginResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The latest plugin.
 	Plugin *CuratedPlugin `protobuf:"bytes,1,opt,name=plugin,proto3" json:"plugin,omitempty"`
+	// versions is a semver-sorted list in ascending order of
+	// all versions for the given plugin.
+	Versions []*CuratedPluginVersionRevision `protobuf:"bytes,2,rep,name=versions,proto3" json:"versions,omitempty"`
 }
 
 func (x *GetLatestCuratedPluginResponse) Reset() {
@@ -1172,6 +1174,70 @@ func (x *GetLatestCuratedPluginResponse) GetPlugin() *CuratedPlugin {
 	return nil
 }
 
+func (x *GetLatestCuratedPluginResponse) GetVersions() []*CuratedPluginVersionRevision {
+	if x != nil {
+		return x.Versions
+	}
+	return nil
+}
+
+type CuratedPluginVersionRevision struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	// revisions is a sorted list in ascending order
+	// for the given version.
+	Revisions []uint32 `protobuf:"varint,2,rep,packed,name=revisions,proto3" json:"revisions,omitempty"`
+}
+
+func (x *CuratedPluginVersionRevision) Reset() {
+	*x = CuratedPluginVersionRevision{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CuratedPluginVersionRevision) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CuratedPluginVersionRevision) ProtoMessage() {}
+
+func (x *CuratedPluginVersionRevision) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CuratedPluginVersionRevision.ProtoReflect.Descriptor instead.
+func (*CuratedPluginVersionRevision) Descriptor() ([]byte, []int) {
+	return file_buf_alpha_registry_v1alpha1_plugin_curation_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CuratedPluginVersionRevision) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *CuratedPluginVersionRevision) GetRevisions() []uint32 {
+	if x != nil {
+		return x.Revisions
+	}
+	return nil
+}
+
 // RuntimeLibrary describes the runtime library dependency of the generated code.
 type GoConfig_RuntimeLibrary struct {
 	state         protoimpl.MessageState
@@ -1187,7 +1253,7 @@ type GoConfig_RuntimeLibrary struct {
 func (x *GoConfig_RuntimeLibrary) Reset() {
 	*x = GoConfig_RuntimeLibrary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[15]
+		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1200,7 +1266,7 @@ func (x *GoConfig_RuntimeLibrary) String() string {
 func (*GoConfig_RuntimeLibrary) ProtoMessage() {}
 
 func (x *GoConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[15]
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1245,7 +1311,7 @@ type NPMConfig_RuntimeLibrary struct {
 func (x *NPMConfig_RuntimeLibrary) Reset() {
 	*x = NPMConfig_RuntimeLibrary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[16]
+		mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1258,7 +1324,7 @@ func (x *NPMConfig_RuntimeLibrary) String() string {
 func (*NPMConfig_RuntimeLibrary) ProtoMessage() {}
 
 func (x *NPMConfig_RuntimeLibrary) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[16]
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1485,13 +1551,24 @@ var file_buf_alpha_registry_v1alpha1_plugin_curation_proto_rawDesc = []byte{
 	0x6e, 0x65, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69,
 	0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
-	0x6e, 0x22, 0x64, 0x0a, 0x1e, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x43, 0x75,
-	0x72, 0x61, 0x74, 0x65, 0x64, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x12, 0x42, 0x0a, 0x06, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e,
-	0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61,
-	0x31, 0x2e, 0x43, 0x75, 0x72, 0x61, 0x74, 0x65, 0x64, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x52,
-	0x06, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x2a, 0x62, 0x0a, 0x0e, 0x50, 0x6c, 0x75, 0x67, 0x69,
+	0x6e, 0x22, 0xbb, 0x01, 0x0a, 0x1e, 0x47, 0x65, 0x74, 0x4c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x43,
+	0x75, 0x72, 0x61, 0x74, 0x65, 0x64, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x42, 0x0a, 0x06, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61,
+	0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68,
+	0x61, 0x31, 0x2e, 0x43, 0x75, 0x72, 0x61, 0x74, 0x65, 0x64, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e,
+	0x52, 0x06, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x12, 0x55, 0x0a, 0x08, 0x76, 0x65, 0x72, 0x73,
+	0x69, 0x6f, 0x6e, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x39, 0x2e, 0x62, 0x75, 0x66,
+	0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e,
+	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x43, 0x75, 0x72, 0x61, 0x74, 0x65, 0x64,
+	0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x76,
+	0x69, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x08, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x22,
+	0x56, 0x0a, 0x1c, 0x43, 0x75, 0x72, 0x61, 0x74, 0x65, 0x64, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e,
+	0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x76, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x12,
+	0x18, 0x0a, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1c, 0x0a, 0x09, 0x72, 0x65, 0x76,
+	0x69, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0d, 0x52, 0x09, 0x72, 0x65,
+	0x76, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x2a, 0x62, 0x0a, 0x0e, 0x50, 0x6c, 0x75, 0x67, 0x69,
 	0x6e, 0x4c, 0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65, 0x12, 0x1f, 0x0a, 0x1b, 0x50, 0x4c, 0x55,
 	0x47, 0x49, 0x4e, 0x5f, 0x4c, 0x41, 0x4e, 0x47, 0x55, 0x41, 0x47, 0x45, 0x5f, 0x55, 0x4e, 0x53,
 	0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x16, 0x0a, 0x12, 0x50, 0x4c,
@@ -1569,7 +1646,7 @@ func file_buf_alpha_registry_v1alpha1_plugin_curation_proto_rawDescGZIP() []byte
 }
 
 var file_buf_alpha_registry_v1alpha1_plugin_curation_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_buf_alpha_registry_v1alpha1_plugin_curation_proto_goTypes = []interface{}{
 	(PluginLanguage)(0),                    // 0: buf.alpha.registry.v1alpha1.PluginLanguage
 	(*GoConfig)(nil),                       // 1: buf.alpha.registry.v1alpha1.GoConfig
@@ -1587,45 +1664,47 @@ var file_buf_alpha_registry_v1alpha1_plugin_curation_proto_goTypes = []interface
 	(*ListCuratedPluginsResponse)(nil),     // 13: buf.alpha.registry.v1alpha1.ListCuratedPluginsResponse
 	(*GetLatestCuratedPluginRequest)(nil),  // 14: buf.alpha.registry.v1alpha1.GetLatestCuratedPluginRequest
 	(*GetLatestCuratedPluginResponse)(nil), // 15: buf.alpha.registry.v1alpha1.GetLatestCuratedPluginResponse
-	(*GoConfig_RuntimeLibrary)(nil),        // 16: buf.alpha.registry.v1alpha1.GoConfig.RuntimeLibrary
-	(*NPMConfig_RuntimeLibrary)(nil),       // 17: buf.alpha.registry.v1alpha1.NPMConfig.RuntimeLibrary
-	(*timestamppb.Timestamp)(nil),          // 18: google.protobuf.Timestamp
-	(*v1.Image)(nil),                       // 19: buf.alpha.image.v1.Image
-	(*pluginpb.CodeGeneratorResponse)(nil), // 20: google.protobuf.compiler.CodeGeneratorResponse
+	(*CuratedPluginVersionRevision)(nil),   // 16: buf.alpha.registry.v1alpha1.CuratedPluginVersionRevision
+	(*GoConfig_RuntimeLibrary)(nil),        // 17: buf.alpha.registry.v1alpha1.GoConfig.RuntimeLibrary
+	(*NPMConfig_RuntimeLibrary)(nil),       // 18: buf.alpha.registry.v1alpha1.NPMConfig.RuntimeLibrary
+	(*timestamppb.Timestamp)(nil),          // 19: google.protobuf.Timestamp
+	(*v1.Image)(nil),                       // 20: buf.alpha.image.v1.Image
+	(*pluginpb.CodeGeneratorResponse)(nil), // 21: google.protobuf.compiler.CodeGeneratorResponse
 }
 var file_buf_alpha_registry_v1alpha1_plugin_curation_proto_depIdxs = []int32{
-	16, // 0: buf.alpha.registry.v1alpha1.GoConfig.runtime_libraries:type_name -> buf.alpha.registry.v1alpha1.GoConfig.RuntimeLibrary
-	17, // 1: buf.alpha.registry.v1alpha1.NPMConfig.runtime_libraries:type_name -> buf.alpha.registry.v1alpha1.NPMConfig.RuntimeLibrary
+	17, // 0: buf.alpha.registry.v1alpha1.GoConfig.runtime_libraries:type_name -> buf.alpha.registry.v1alpha1.GoConfig.RuntimeLibrary
+	18, // 1: buf.alpha.registry.v1alpha1.NPMConfig.runtime_libraries:type_name -> buf.alpha.registry.v1alpha1.NPMConfig.RuntimeLibrary
 	1,  // 2: buf.alpha.registry.v1alpha1.RuntimeConfig.go_config:type_name -> buf.alpha.registry.v1alpha1.GoConfig
 	2,  // 3: buf.alpha.registry.v1alpha1.RuntimeConfig.npm_config:type_name -> buf.alpha.registry.v1alpha1.NPMConfig
 	0,  // 4: buf.alpha.registry.v1alpha1.CuratedPlugin.language:type_name -> buf.alpha.registry.v1alpha1.PluginLanguage
-	18, // 5: buf.alpha.registry.v1alpha1.CuratedPlugin.create_time:type_name -> google.protobuf.Timestamp
+	19, // 5: buf.alpha.registry.v1alpha1.CuratedPlugin.create_time:type_name -> google.protobuf.Timestamp
 	4,  // 6: buf.alpha.registry.v1alpha1.CuratedPlugin.dependencies:type_name -> buf.alpha.registry.v1alpha1.CuratedPluginReference
 	3,  // 7: buf.alpha.registry.v1alpha1.CuratedPlugin.runtime_config:type_name -> buf.alpha.registry.v1alpha1.RuntimeConfig
-	19, // 8: buf.alpha.registry.v1alpha1.GenerateCodeRequest.image:type_name -> buf.alpha.image.v1.Image
+	20, // 8: buf.alpha.registry.v1alpha1.GenerateCodeRequest.image:type_name -> buf.alpha.image.v1.Image
 	8,  // 9: buf.alpha.registry.v1alpha1.GenerateCodeRequest.requests:type_name -> buf.alpha.registry.v1alpha1.PluginGenerationRequest
 	9,  // 10: buf.alpha.registry.v1alpha1.GenerateCodeResponse.responses:type_name -> buf.alpha.registry.v1alpha1.PluginGenerationResponse
 	4,  // 11: buf.alpha.registry.v1alpha1.PluginGenerationRequest.plugin_reference:type_name -> buf.alpha.registry.v1alpha1.CuratedPluginReference
-	20, // 12: buf.alpha.registry.v1alpha1.PluginGenerationResponse.response:type_name -> google.protobuf.compiler.CodeGeneratorResponse
+	21, // 12: buf.alpha.registry.v1alpha1.PluginGenerationResponse.response:type_name -> google.protobuf.compiler.CodeGeneratorResponse
 	0,  // 13: buf.alpha.registry.v1alpha1.CreateCuratedPluginRequest.language:type_name -> buf.alpha.registry.v1alpha1.PluginLanguage
 	4,  // 14: buf.alpha.registry.v1alpha1.CreateCuratedPluginRequest.dependencies:type_name -> buf.alpha.registry.v1alpha1.CuratedPluginReference
 	3,  // 15: buf.alpha.registry.v1alpha1.CreateCuratedPluginRequest.runtime_config:type_name -> buf.alpha.registry.v1alpha1.RuntimeConfig
 	5,  // 16: buf.alpha.registry.v1alpha1.CreateCuratedPluginResponse.configuration:type_name -> buf.alpha.registry.v1alpha1.CuratedPlugin
 	5,  // 17: buf.alpha.registry.v1alpha1.ListCuratedPluginsResponse.plugins:type_name -> buf.alpha.registry.v1alpha1.CuratedPlugin
 	5,  // 18: buf.alpha.registry.v1alpha1.GetLatestCuratedPluginResponse.plugin:type_name -> buf.alpha.registry.v1alpha1.CuratedPlugin
-	12, // 19: buf.alpha.registry.v1alpha1.PluginCurationService.ListCuratedPlugins:input_type -> buf.alpha.registry.v1alpha1.ListCuratedPluginsRequest
-	10, // 20: buf.alpha.registry.v1alpha1.PluginCurationService.CreateCuratedPlugin:input_type -> buf.alpha.registry.v1alpha1.CreateCuratedPluginRequest
-	14, // 21: buf.alpha.registry.v1alpha1.PluginCurationService.GetLatestCuratedPlugin:input_type -> buf.alpha.registry.v1alpha1.GetLatestCuratedPluginRequest
-	6,  // 22: buf.alpha.registry.v1alpha1.CodeGenerationService.GenerateCode:input_type -> buf.alpha.registry.v1alpha1.GenerateCodeRequest
-	13, // 23: buf.alpha.registry.v1alpha1.PluginCurationService.ListCuratedPlugins:output_type -> buf.alpha.registry.v1alpha1.ListCuratedPluginsResponse
-	11, // 24: buf.alpha.registry.v1alpha1.PluginCurationService.CreateCuratedPlugin:output_type -> buf.alpha.registry.v1alpha1.CreateCuratedPluginResponse
-	15, // 25: buf.alpha.registry.v1alpha1.PluginCurationService.GetLatestCuratedPlugin:output_type -> buf.alpha.registry.v1alpha1.GetLatestCuratedPluginResponse
-	7,  // 26: buf.alpha.registry.v1alpha1.CodeGenerationService.GenerateCode:output_type -> buf.alpha.registry.v1alpha1.GenerateCodeResponse
-	23, // [23:27] is the sub-list for method output_type
-	19, // [19:23] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	16, // 19: buf.alpha.registry.v1alpha1.GetLatestCuratedPluginResponse.versions:type_name -> buf.alpha.registry.v1alpha1.CuratedPluginVersionRevision
+	12, // 20: buf.alpha.registry.v1alpha1.PluginCurationService.ListCuratedPlugins:input_type -> buf.alpha.registry.v1alpha1.ListCuratedPluginsRequest
+	10, // 21: buf.alpha.registry.v1alpha1.PluginCurationService.CreateCuratedPlugin:input_type -> buf.alpha.registry.v1alpha1.CreateCuratedPluginRequest
+	14, // 22: buf.alpha.registry.v1alpha1.PluginCurationService.GetLatestCuratedPlugin:input_type -> buf.alpha.registry.v1alpha1.GetLatestCuratedPluginRequest
+	6,  // 23: buf.alpha.registry.v1alpha1.CodeGenerationService.GenerateCode:input_type -> buf.alpha.registry.v1alpha1.GenerateCodeRequest
+	13, // 24: buf.alpha.registry.v1alpha1.PluginCurationService.ListCuratedPlugins:output_type -> buf.alpha.registry.v1alpha1.ListCuratedPluginsResponse
+	11, // 25: buf.alpha.registry.v1alpha1.PluginCurationService.CreateCuratedPlugin:output_type -> buf.alpha.registry.v1alpha1.CreateCuratedPluginResponse
+	15, // 26: buf.alpha.registry.v1alpha1.PluginCurationService.GetLatestCuratedPlugin:output_type -> buf.alpha.registry.v1alpha1.GetLatestCuratedPluginResponse
+	7,  // 27: buf.alpha.registry.v1alpha1.CodeGenerationService.GenerateCode:output_type -> buf.alpha.registry.v1alpha1.GenerateCodeResponse
+	24, // [24:28] is the sub-list for method output_type
+	20, // [20:24] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_registry_v1alpha1_plugin_curation_proto_init() }
@@ -1815,7 +1894,7 @@ func file_buf_alpha_registry_v1alpha1_plugin_curation_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GoConfig_RuntimeLibrary); i {
+			switch v := v.(*CuratedPluginVersionRevision); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1827,6 +1906,18 @@ func file_buf_alpha_registry_v1alpha1_plugin_curation_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GoConfig_RuntimeLibrary); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_buf_alpha_registry_v1alpha1_plugin_curation_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*NPMConfig_RuntimeLibrary); i {
 			case 0:
 				return &v.state
@@ -1849,7 +1940,7 @@ func file_buf_alpha_registry_v1alpha1_plugin_curation_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_buf_alpha_registry_v1alpha1_plugin_curation_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   17,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
