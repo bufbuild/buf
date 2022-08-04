@@ -96,7 +96,7 @@ func (s *pluginCurationServiceClient) GetLatestCuratedPlugin(
 	owner string,
 	name string,
 	version string,
-) (plugin *v1alpha1.CuratedPlugin, versions []*v1alpha1.CuratedPluginVersionRevision, _ error) {
+) (plugin *v1alpha1.CuratedPlugin, versions []*v1alpha1.CuratedPluginVersionRevisions, _ error) {
 	response, err := s.client.GetLatestCuratedPlugin(
 		ctx,
 		connect_go.NewRequest(
