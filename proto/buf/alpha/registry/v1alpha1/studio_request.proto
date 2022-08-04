@@ -34,7 +34,7 @@ service StudioRequestService {
 // CreateStudioRequestRequest is the proto request representation of the
 // CreateStudioRequest method. IDs and timestamps are automatically generated,
 // BSR Repository information is taken from the `repository_id`, and the
-// `author` is taken from the request authentication.
+// author is taken from the request authentication.
 message CreateStudioRequestRequest {
   // BSR repository ID this request is linked to.
   string repository_id = 1;
@@ -100,7 +100,7 @@ message StudioRequest {
   // The request last updated timestamp.
   google.protobuf.Timestamp update_time = 3;
   // User ID who created and saved this request.
-  string author = 4;
+  string author_user_id = 4;
   // BSR repository ID this request is linked to.
   string repository_id = 5;
   // The friendly name of this request.
