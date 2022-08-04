@@ -29,7 +29,7 @@ type studioRequestServiceClient struct {
 	client registryv1alpha1connect.StudioRequestServiceClient
 }
 
-// CreateStudioRequest registers a favorite Studio requests to the caller's
+// CreateStudioRequest registers a favorite Studio Requests to the caller's
 // BSR profile.
 func (s *studioRequestServiceClient) CreateStudioRequest(
 	ctx context.Context,
@@ -64,7 +64,27 @@ func (s *studioRequestServiceClient) CreateStudioRequest(
 	return response.Msg.Request, nil
 }
 
-// DeleteStudioRequest removes a favorite Studio request from the caller's BSR
+// RenameStudioRequest renames an existing Studio Request.
+func (s *studioRequestServiceClient) RenameStudioRequest(
+	ctx context.Context,
+	id string,
+	newName string,
+) (request *v1alpha1.StudioRequest, _ error) {
+	response, err := s.client.RenameStudioRequest(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.RenameStudioRequestRequest{
+				Id:      id,
+				NewName: newName,
+			}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Msg.Request, nil
+}
+
+// DeleteStudioRequest removes a favorite Studio Request from the caller's BSR
 // profile.
 func (s *studioRequestServiceClient) DeleteStudioRequest(ctx context.Context, id string) (_ error) {
 	_, err := s.client.DeleteStudioRequest(
@@ -80,7 +100,7 @@ func (s *studioRequestServiceClient) DeleteStudioRequest(ctx context.Context, id
 	return nil
 }
 
-// ListStudioRequests shows the caller's favorited requests.
+// ListStudioRequests shows the caller's favorited Studio Requests.
 func (s *studioRequestServiceClient) ListStudioRequests(
 	ctx context.Context,
 	pageToken string,

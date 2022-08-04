@@ -21,13 +21,15 @@ import "google/protobuf/timestamp.proto";
 // StudioRequestService exposes the functionality to manage favorited Requests
 // from Studio.
 service StudioRequestService {
-  // CreateStudioRequest registers a favorite Studio requests to the caller's
+  // CreateStudioRequest registers a favorite Studio Requests to the caller's
   // BSR profile.
   rpc CreateStudioRequest(CreateStudioRequestRequest) returns (CreateStudioRequestResponse) {}
-  // DeleteStudioRequest removes a favorite Studio request from the caller's BSR
+  // RenameStudioRequest renames an existing Studio Request.
+  rpc RenameStudioRequest(RenameStudioRequestRequest) returns (RenameStudioRequestResponse) {}
+  // DeleteStudioRequest removes a favorite Studio Request from the caller's BSR
   // profile.
   rpc DeleteStudioRequest(DeleteStudioRequestRequest) returns (DeleteStudioRequestResponse) {}
-  // ListStudioRequests shows the caller's favorited requests.
+  // ListStudioRequests shows the caller's favorited Studio Requests.
   rpc ListStudioRequests(ListStudioRequestsRequest) returns (ListStudioRequestsResponse) {}
 }
 
@@ -56,10 +58,24 @@ message CreateStudioRequestRequest {
   map<string, string> response_headers = 9;
 }
 
-// CreateStudioRequestResponse is the proto response representation of the
-// CreateStudioRequest method.
+// CreateStudioRequestResponse returns the created StudioRequest.
 message CreateStudioRequestResponse {
   // Created Studio Request.
+  StudioRequest request = 1;
+}
+
+// RenameStudioRequestRequest is the proto request representation of the
+// RenameStudioRequest method.
+message RenameStudioRequestRequest {
+  // The Studio Request ID that will be renamed.
+  string id = 1;
+  // The new name for the request.
+  string new_name = 2;
+}
+
+// RenameStudioRequestResponse returns the renamed StudioRequest.
+message RenameStudioRequestResponse {
+  // Renamed Studio Request.
   StudioRequest request = 1;
 }
 
@@ -70,14 +86,13 @@ message DeleteStudioRequestRequest {
   string id = 1;
 }
 
-// DeleteStudioRequestResponse is the proto response representation of the
-// DeleteStudioRequest method.
+// DeleteStudioRequestResponse returns empty on successful deletions.
 message DeleteStudioRequestResponse {}
 
 // ListStudioRequestsRequest is the proto request representation of the
 // ListStudioRequests method.
 message ListStudioRequestsRequest {
-  // The page token for paginating.
+  // The page token for paginating. The first page is returned if this is empty.
   string page_token = 1;
 }
 
@@ -86,14 +101,14 @@ message ListStudioRequestsRequest {
 message ListStudioRequestsResponse {
   // The list of requests in the current page.
   repeated StudioRequest requests = 1;
-  // The requests' next page token.
+  // The requests' next page token. There are no more pages if this is empty.
   string next_page_token = 2;
 }
 
 // StudioRequest represents a saved request in Studio, that is synced to a BSR
 // user's profile.
 message StudioRequest {
-  // The ID of this Studio request.
+  // The ID of this Studio Request.
   string id = 1;
   // The request creation timestamp.
   google.protobuf.Timestamp create_time = 2;
@@ -107,7 +122,7 @@ message StudioRequest {
   string name = 6;
   // The target base URL of this request.
   string target_base_url = 7;
-  // The BSR repository owner name (user or oganization).
+  // The BSR repository owner name (user or organization).
   string repository_owner = 8;
   // The BSR repository name.
   string repository_name = 9;

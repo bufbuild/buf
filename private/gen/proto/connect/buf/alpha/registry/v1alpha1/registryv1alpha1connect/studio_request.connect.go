@@ -42,13 +42,15 @@ const (
 // StudioRequestServiceClient is a client for the buf.alpha.registry.v1alpha1.StudioRequestService
 // service.
 type StudioRequestServiceClient interface {
-	// CreateStudioRequest registers a favorite Studio requests to the caller's
+	// CreateStudioRequest registers a favorite Studio Requests to the caller's
 	// BSR profile.
 	CreateStudioRequest(context.Context, *connect_go.Request[v1alpha1.CreateStudioRequestRequest]) (*connect_go.Response[v1alpha1.CreateStudioRequestResponse], error)
-	// DeleteStudioRequest removes a favorite Studio request from the caller's BSR
+	// RenameStudioRequest renames an existing Studio Request.
+	RenameStudioRequest(context.Context, *connect_go.Request[v1alpha1.RenameStudioRequestRequest]) (*connect_go.Response[v1alpha1.RenameStudioRequestResponse], error)
+	// DeleteStudioRequest removes a favorite Studio Request from the caller's BSR
 	// profile.
 	DeleteStudioRequest(context.Context, *connect_go.Request[v1alpha1.DeleteStudioRequestRequest]) (*connect_go.Response[v1alpha1.DeleteStudioRequestResponse], error)
-	// ListStudioRequests shows the caller's favorited requests.
+	// ListStudioRequests shows the caller's favorited Studio Requests.
 	ListStudioRequests(context.Context, *connect_go.Request[v1alpha1.ListStudioRequestsRequest]) (*connect_go.Response[v1alpha1.ListStudioRequestsResponse], error)
 }
 
@@ -68,6 +70,11 @@ func NewStudioRequestServiceClient(httpClient connect_go.HTTPClient, baseURL str
 			baseURL+"/buf.alpha.registry.v1alpha1.StudioRequestService/CreateStudioRequest",
 			opts...,
 		),
+		renameStudioRequest: connect_go.NewClient[v1alpha1.RenameStudioRequestRequest, v1alpha1.RenameStudioRequestResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.StudioRequestService/RenameStudioRequest",
+			opts...,
+		),
 		deleteStudioRequest: connect_go.NewClient[v1alpha1.DeleteStudioRequestRequest, v1alpha1.DeleteStudioRequestResponse](
 			httpClient,
 			baseURL+"/buf.alpha.registry.v1alpha1.StudioRequestService/DeleteStudioRequest",
@@ -84,6 +91,7 @@ func NewStudioRequestServiceClient(httpClient connect_go.HTTPClient, baseURL str
 // studioRequestServiceClient implements StudioRequestServiceClient.
 type studioRequestServiceClient struct {
 	createStudioRequest *connect_go.Client[v1alpha1.CreateStudioRequestRequest, v1alpha1.CreateStudioRequestResponse]
+	renameStudioRequest *connect_go.Client[v1alpha1.RenameStudioRequestRequest, v1alpha1.RenameStudioRequestResponse]
 	deleteStudioRequest *connect_go.Client[v1alpha1.DeleteStudioRequestRequest, v1alpha1.DeleteStudioRequestResponse]
 	listStudioRequests  *connect_go.Client[v1alpha1.ListStudioRequestsRequest, v1alpha1.ListStudioRequestsResponse]
 }
@@ -91,6 +99,11 @@ type studioRequestServiceClient struct {
 // CreateStudioRequest calls buf.alpha.registry.v1alpha1.StudioRequestService.CreateStudioRequest.
 func (c *studioRequestServiceClient) CreateStudioRequest(ctx context.Context, req *connect_go.Request[v1alpha1.CreateStudioRequestRequest]) (*connect_go.Response[v1alpha1.CreateStudioRequestResponse], error) {
 	return c.createStudioRequest.CallUnary(ctx, req)
+}
+
+// RenameStudioRequest calls buf.alpha.registry.v1alpha1.StudioRequestService.RenameStudioRequest.
+func (c *studioRequestServiceClient) RenameStudioRequest(ctx context.Context, req *connect_go.Request[v1alpha1.RenameStudioRequestRequest]) (*connect_go.Response[v1alpha1.RenameStudioRequestResponse], error) {
+	return c.renameStudioRequest.CallUnary(ctx, req)
 }
 
 // DeleteStudioRequest calls buf.alpha.registry.v1alpha1.StudioRequestService.DeleteStudioRequest.
@@ -106,13 +119,15 @@ func (c *studioRequestServiceClient) ListStudioRequests(ctx context.Context, req
 // StudioRequestServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.StudioRequestService service.
 type StudioRequestServiceHandler interface {
-	// CreateStudioRequest registers a favorite Studio requests to the caller's
+	// CreateStudioRequest registers a favorite Studio Requests to the caller's
 	// BSR profile.
 	CreateStudioRequest(context.Context, *connect_go.Request[v1alpha1.CreateStudioRequestRequest]) (*connect_go.Response[v1alpha1.CreateStudioRequestResponse], error)
-	// DeleteStudioRequest removes a favorite Studio request from the caller's BSR
+	// RenameStudioRequest renames an existing Studio Request.
+	RenameStudioRequest(context.Context, *connect_go.Request[v1alpha1.RenameStudioRequestRequest]) (*connect_go.Response[v1alpha1.RenameStudioRequestResponse], error)
+	// DeleteStudioRequest removes a favorite Studio Request from the caller's BSR
 	// profile.
 	DeleteStudioRequest(context.Context, *connect_go.Request[v1alpha1.DeleteStudioRequestRequest]) (*connect_go.Response[v1alpha1.DeleteStudioRequestResponse], error)
-	// ListStudioRequests shows the caller's favorited requests.
+	// ListStudioRequests shows the caller's favorited Studio Requests.
 	ListStudioRequests(context.Context, *connect_go.Request[v1alpha1.ListStudioRequestsRequest]) (*connect_go.Response[v1alpha1.ListStudioRequestsResponse], error)
 }
 
@@ -126,6 +141,11 @@ func NewStudioRequestServiceHandler(svc StudioRequestServiceHandler, opts ...con
 	mux.Handle("/buf.alpha.registry.v1alpha1.StudioRequestService/CreateStudioRequest", connect_go.NewUnaryHandler(
 		"/buf.alpha.registry.v1alpha1.StudioRequestService/CreateStudioRequest",
 		svc.CreateStudioRequest,
+		opts...,
+	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.StudioRequestService/RenameStudioRequest", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.StudioRequestService/RenameStudioRequest",
+		svc.RenameStudioRequest,
 		opts...,
 	))
 	mux.Handle("/buf.alpha.registry.v1alpha1.StudioRequestService/DeleteStudioRequest", connect_go.NewUnaryHandler(
@@ -146,6 +166,10 @@ type UnimplementedStudioRequestServiceHandler struct{}
 
 func (UnimplementedStudioRequestServiceHandler) CreateStudioRequest(context.Context, *connect_go.Request[v1alpha1.CreateStudioRequestRequest]) (*connect_go.Response[v1alpha1.CreateStudioRequestResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.StudioRequestService.CreateStudioRequest is not implemented"))
+}
+
+func (UnimplementedStudioRequestServiceHandler) RenameStudioRequest(context.Context, *connect_go.Request[v1alpha1.RenameStudioRequestRequest]) (*connect_go.Response[v1alpha1.RenameStudioRequestResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.StudioRequestService.RenameStudioRequest is not implemented"))
 }
 
 func (UnimplementedStudioRequestServiceHandler) DeleteStudioRequest(context.Context, *connect_go.Request[v1alpha1.DeleteStudioRequestRequest]) (*connect_go.Response[v1alpha1.DeleteStudioRequestResponse], error) {
