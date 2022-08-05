@@ -169,20 +169,48 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// TODO(rvanginkel) should this context be cloned to remove attached values (but keep timeout)?
 	response, err := client.CallUnary(r.Context(), request)
 	if err != nil {
+		// TODO deal with this error handling using `connect.IsFromServer(err)`
+		// instead of these heuristics, once it's available. See
+		// https://github.com/bufbuild/connect-go/issues/222
+		//
+		// We need to differentiate client errors from server errors. In the former,
+		// trigger a `StatusBadGateway` result, and in the latter surface whatever
+		// error information came back from the server.
+		//
+		// Any error here is expected to be wrapped in a `connect.Error` struct. We
+		// need to check *first* if within it also wraps a low level network issue,
+		// so we can assume the request never left the client, or a response never
+		// arrived from the server. In those scenarios we trigger a
+		// `StatusBadGateway` to signal that the upstream server is unreachable or
+		// in a bad status...
+		if netErr := new(net.OpError); errors.As(err, &netErr) {
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+		if urlErr := new(url.Error); errors.As(err, &urlErr) {
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+		// ... but if a response was received from the server, we assume there's
+		// error information from the server we can surface to the user by including
+		// it in the headers response, unless it is a `CodeUnknown` error. Connect
+		// marks any issues connecting with the `CodeUnknown` error.
 		if connectErr := new(connect.Error); errors.As(err, &connectErr) {
-			// Any Connect error except these codes can be wrapped in the headers.
-			if connectErr.Code() != connect.CodeUnknown &&
-				connectErr.Code() != connect.CodeUnavailable {
-				i.writeProtoMessage(w, &studiov1alpha1.InvokeResponse{
-					// connectErr.Meta contains the trailers for the
-					// caller to find out the error details.
-					Headers: goHeadersToProtoHeaders(connectErr.Meta()),
-				})
+			if connectErr.Code() == connect.CodeUnknown {
+				http.Error(w, err.Error(), http.StatusBadGateway)
 				return
 			}
+			i.writeProtoMessage(w, &studiov1alpha1.InvokeResponse{
+				// connectErr.Meta contains the trailers for the
+				// caller to find out the error details.
+				Headers: goHeadersToProtoHeaders(connectErr.Meta()),
+			})
+			return
 		}
-		// Any issue connecting that is not a Connect error is assumed to be because
-		// the server is in some kind of bad and/or unreachable state.
+		i.Logger.Warn(
+			"non_connect_unary_error",
+			zap.Error(err),
+		)
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}

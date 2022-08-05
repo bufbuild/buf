@@ -5,9 +5,6 @@
 - Change default for `--origin` flag of `buf beta studio-agent` to `https://studio.buf.build`
 - Change default for `--timeout` flag of `buf beta studio-agent` to `0` (no timeout). Before it was
   `2m` (the default for all the other `buf` commands).
-- Add `connect.CodeUnavailable` as an unhandled Connect error code for `buf beta studio-agent`,
-  which will trigger an `http.StatusBadGateway` response in case of a bad or unreachable upstream
-  server. Before the only unhandled Connect error code was `connect.CodeUnknown`.
 
 ## [v1.7.0] - 2022-06-27
 
