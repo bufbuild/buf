@@ -52,7 +52,7 @@ type PluginCurationService interface {
 		owner string,
 		name string,
 		version string,
-	) (plugin *v1alpha1.CuratedPlugin, err error)
+	) (plugin *v1alpha1.CuratedPlugin, versions []*v1alpha1.CuratedPluginVersionRevisions, err error)
 }
 
 // CodeGenerationService generates code using remote plugins.

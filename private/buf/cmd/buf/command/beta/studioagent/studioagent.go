@@ -97,7 +97,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
 		&f.Origin,
 		originFlagName,
-		"studio.buf.build",
+		"https://studio.buf.build",
 		"The allowed origin for CORS options.",
 	)
 	flagSet.StringSliceVar(
