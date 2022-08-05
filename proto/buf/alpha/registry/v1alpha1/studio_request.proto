@@ -62,20 +62,16 @@ message CreateStudioRequestRequest {
   // The target RPC method name as defined in the BSR repository.
   string method = 5;
   // The request body as defined in Studio.
-  string request_body = 6;
+  string body = 6;
   // The request headers as defined in Studio.
-  map<string, string> request_headers = 7;
-  // The response body as seen in Studio.
-  string response_body = 8;
-  // The response headers as seen in Studio.
-  map<string, string> response_headers = 9;
+  map<string, string> headers = 7;
   // Should this request include cookies from the Studio current session?
-  bool include_cookies = 10;
+  bool include_cookies = 8;
   // The protocol that Studio uses to send this request.
-  StudioProtocol protocol = 11;
+  StudioProtocol protocol = 9;
   // The agent url (if any) used by Studio to send the request. See
   // https://docs.buf.build/bsr/studio#via-buf-studio-agent for details.
-  string agent_url = 12;
+  string agent_url = 10;
 }
 
 // CreateStudioRequestResponse returns the created StudioRequest.
@@ -151,18 +147,14 @@ message StudioRequest {
   // The target RPC method name as defined in the BSR repository.
   string method = 11;
   // The request body as defined in Studio.
-  string request_body = 12;
+  string body = 12;
   // The request headers as defined in Studio.
-  map<string, string> request_headers = 13;
-  // The response body as seen in Studio.
-  string response_body = 14;
-  // The response headers as seen in Studio.
-  map<string, string> response_headers = 15;
+  map<string, string> headers = 13;
   // Should this request include cookies from the Studio current session?
-  bool include_cookies = 16;
+  bool include_cookies = 14;
   // The protocol that Studio uses to send this request.
-  StudioProtocol protocol = 17;
+  StudioProtocol protocol = 15;
   // The agent url (if any) used by Studio to send the request. See
   // https://docs.buf.build/bsr/studio#via-buf-studio-agent for details.
-  string agent_url = 18;
+  string agent_url = 16;
 }
