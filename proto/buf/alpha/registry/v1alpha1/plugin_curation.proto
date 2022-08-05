@@ -104,9 +104,6 @@ message CuratedPlugin {
   RegistryConfig registry_config = 12;
   // The revision for this plugin version.
   uint32 revision = 13;
-  // The languages emitted by the plugin.
-  // Typically this will only contain a single language.
-  repeated string languages = 14;
 }
 
 // PluginCurationService manages curated plugins.
@@ -190,9 +187,6 @@ message CreateCuratedPluginRequest {
   RegistryConfig registry_config = 12;
   // The revision for this plugin version.
   uint32 revision = 13;
-  // The languages emitted by the plugin.
-  // Typically this will only contain a single language.
-  repeated string languages = 14;
 }
 
 message CreateCuratedPluginResponse {

@@ -194,7 +194,6 @@ func run(
 		pushResponse.Digest,
 		pluginConfig.SourceURL,
 		pluginConfig.Description,
-		pluginConfig.Languages,
 	)
 	if err != nil {
 		return err
@@ -231,7 +230,6 @@ func run(
 		plugin.Description(),
 		bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry()),
 		nextRevision,
-		plugin.Languages(),
 	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {
