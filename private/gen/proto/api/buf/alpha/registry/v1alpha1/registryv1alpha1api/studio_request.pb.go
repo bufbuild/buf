@@ -37,6 +37,9 @@ type StudioRequestService interface {
 		requestHeaders map[string]string,
 		responseBody string,
 		responseHeaders map[string]string,
+		includeCookies bool,
+		protocol v1alpha1.StudioProtocol,
+		agentUrl string,
 	) (request *v1alpha1.StudioRequest, err error)
 	// RenameStudioRequest renames an existing Studio Request.
 	RenameStudioRequest(

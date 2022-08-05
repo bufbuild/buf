@@ -42,6 +42,9 @@ func (s *studioRequestServiceClient) CreateStudioRequest(
 	requestHeaders map[string]string,
 	responseBody string,
 	responseHeaders map[string]string,
+	includeCookies bool,
+	protocol v1alpha1.StudioProtocol,
+	agentUrl string,
 ) (request *v1alpha1.StudioRequest, _ error) {
 	response, err := s.client.CreateStudioRequest(
 		ctx,
@@ -56,6 +59,9 @@ func (s *studioRequestServiceClient) CreateStudioRequest(
 				RequestHeaders:  requestHeaders,
 				ResponseBody:    responseBody,
 				ResponseHeaders: responseHeaders,
+				IncludeCookies:  includeCookies,
+				Protocol:        protocol,
+				AgentUrl:        agentUrl,
 			}),
 	)
 	if err != nil {
