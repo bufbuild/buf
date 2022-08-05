@@ -227,8 +227,10 @@ func newTestConnectServer(t *testing.T, tls bool) *httptest.Server {
 		},
 		connect.WithCodec(&bufferCodec{name: "proto"}),
 	))
+	// unknownPath returns the body as error message with code unknown, to test
+	// studio agent behavior on potential server closed connections.
 	mux.Handle(unknownPath, connect.NewUnaryHandler(
-		errorPath,
+		unknownPath,
 		func(ctx context.Context, r *connect.Request[bytes.Buffer]) (*connect.Response[bytes.Buffer], error) {
 			return nil, connect.NewError(connect.CodeUnknown, errors.New(r.Msg.String()))
 		},
