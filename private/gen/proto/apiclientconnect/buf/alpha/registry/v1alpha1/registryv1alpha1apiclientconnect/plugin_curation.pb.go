@@ -98,7 +98,7 @@ func (s *pluginCurationServiceClient) GetLatestCuratedPlugin(
 	owner string,
 	name string,
 	version string,
-) (plugin *v1alpha1.CuratedPlugin, _ error) {
+) (plugin *v1alpha1.CuratedPlugin, versions []*v1alpha1.CuratedPluginVersionRevisions, _ error) {
 	response, err := s.client.GetLatestCuratedPlugin(
 		ctx,
 		connect_go.NewRequest(
@@ -109,9 +109,9 @@ func (s *pluginCurationServiceClient) GetLatestCuratedPlugin(
 			}),
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return response.Msg.Plugin, nil
+	return response.Msg.Plugin, response.Msg.Versions, nil
 }
 
 type codeGenerationServiceClient struct {
