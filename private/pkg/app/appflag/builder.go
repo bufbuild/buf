@@ -113,6 +113,9 @@ func (b *builder) run(
 	if err != nil {
 		return err
 	}
+	defer func() {
+		retErr = multierr.Append(retErr, logger.Sync())
+	}()
 	verbosePrinter := appverbose.NewVerbosePrinter(appContainer.Stderr(), b.appName, b.verbose)
 	container, err := newContainer(appContainer, b.appName, logger, verbosePrinter)
 	if err != nil {
