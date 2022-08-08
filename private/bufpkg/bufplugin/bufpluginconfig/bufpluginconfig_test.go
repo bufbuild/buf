@@ -52,10 +52,10 @@ func TestGetConfigForBucket(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
-			Runtime: &RuntimeConfig{
-				Go: &GoRuntimeConfig{
+			Registry: &RegistryConfig{
+				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
-					Deps: []*GoRuntimeDependencyConfig{
+					Deps: []*GoRegistryDependencyConfig{
 						{
 							Module:  "google.golang.org/grpc",
 							Version: "v1.32.0",
@@ -89,10 +89,10 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
-			Runtime: &RuntimeConfig{
-				Go: &GoRuntimeConfig{
+			Registry: &RegistryConfig{
+				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
-					Deps: []*GoRuntimeDependencyConfig{
+					Deps: []*GoRegistryDependencyConfig{
 						{
 							Module:  "google.golang.org/grpc",
 							Version: "v1.32.0",
@@ -119,9 +119,9 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
-			Runtime: &RuntimeConfig{
-				NPM: &NPMRuntimeConfig{
-					Deps: []*NPMRuntimeDependencyConfig{
+			Registry: &RegistryConfig{
+				NPM: &NPMRegistryConfig{
+					Deps: []*NPMRegistryDependencyConfig{
 						{
 							Package: "grpc-web",
 							Version: "^1.3.1",
@@ -157,9 +157,9 @@ func TestParsePluginConfigOptionsYAML(t *testing.T) {
 	)
 }
 
-func TestParsePluginConfigMultipleRuntimeLangYAML(t *testing.T) {
+func TestParsePluginConfigMultipleRegistryConfigsYAML(t *testing.T) {
 	t.Parallel()
-	_, err := ParseConfig(filepath.Join("testdata", "failure", "invalid-multiple-languages.yaml"))
+	_, err := ParseConfig(filepath.Join("testdata", "failure", "invalid-multiple-registries.yaml"))
 	require.Error(t, err)
 }
 

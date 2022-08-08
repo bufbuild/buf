@@ -27,7 +27,7 @@ type plugin struct {
 	version              string
 	dependencies         []bufpluginref.PluginReference
 	defaultOptions       map[string]string
-	runtime              *bufpluginconfig.RuntimeConfig
+	registry             *bufpluginconfig.RegistryConfig
 	containerImageDigest string
 	sourceURL            string
 	description          string
@@ -39,7 +39,7 @@ func newPlugin(
 	version string,
 	dependencies []bufpluginref.PluginReference,
 	defaultOptions map[string]string,
-	runtimeConfig *bufpluginconfig.RuntimeConfig,
+	registryConfig *bufpluginconfig.RegistryConfig,
 	containerImageDigest string,
 	sourceURL string,
 	description string,
@@ -61,7 +61,7 @@ func newPlugin(
 		version:              version,
 		dependencies:         dependencies,
 		defaultOptions:       defaultOptions,
-		runtime:              runtimeConfig,
+		registry:             registryConfig,
 		containerImageDigest: containerImageDigest,
 		sourceURL:            sourceURL,
 		description:          description,
@@ -83,9 +83,9 @@ func (p *plugin) DefaultOptions() map[string]string {
 	return p.defaultOptions
 }
 
-// Runtime returns the plugin's runtime configuration.
-func (p *plugin) Runtime() *bufpluginconfig.RuntimeConfig {
-	return p.runtime
+// Registry returns the plugin's registry configuration.
+func (p *plugin) Registry() *bufpluginconfig.RegistryConfig {
+	return p.registry
 }
 
 // ContainerImageDigest returns the plugin's image digest.

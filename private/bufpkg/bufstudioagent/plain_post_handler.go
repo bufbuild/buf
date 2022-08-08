@@ -166,13 +166,23 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		targetURL.String(),
 		clientOptions...,
 	)
-	// TODO: should this context be cloned to remove attached values (but keep timeout)?``
+	// TODO(rvanginkel) should this context be cloned to remove attached values (but keep timeout)?
 	response, err := client.CallUnary(r.Context(), request)
 	if err != nil {
-		// Connect marks any issues connecting with the Unavailable
-		// status code. We need to differentiate between server sent
-		// errors with the Unavailable code and client connection
-		// errors.
+		// TODO deal with this error handling using `connect.IsFromServer(err)`
+		// instead of these heuristics, once it's available. See
+		// https://github.com/bufbuild/connect-go/issues/222
+		//
+		// We need to differentiate client errors from server errors. In the former,
+		// trigger a `StatusBadGateway` result, and in the latter surface whatever
+		// error information came back from the server.
+		//
+		// Any error here is expected to be wrapped in a `connect.Error` struct. We
+		// need to check *first* if within it also wraps a low level network issue,
+		// so we can assume the request never left the client, or a response never
+		// arrived from the server. In those scenarios we trigger a
+		// `StatusBadGateway` to signal that the upstream server is unreachable or
+		// in a bad status...
 		if netErr := new(net.OpError); errors.As(err, &netErr) {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return
@@ -181,6 +191,10 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return
 		}
+		// ... but if a response was received from the server, we assume there's
+		// error information from the server we can surface to the user by including
+		// it in the headers response, unless it is a `CodeUnknown` error. Connect
+		// marks any issues connecting with the `CodeUnknown` error.
 		if connectErr := new(connect.Error); errors.As(err, &connectErr) {
 			if connectErr.Code() == connect.CodeUnknown {
 				http.Error(w, err.Error(), http.StatusBadGateway)
@@ -193,6 +207,10 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
+		i.Logger.Warn(
+			"non_connect_unary_error",
+			zap.Error(err),
+		)
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
