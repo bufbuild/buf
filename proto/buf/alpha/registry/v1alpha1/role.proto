@@ -38,7 +38,7 @@ enum RepositoryRole {
   REPOSITORY_ROLE_ADMIN = 2;
   REPOSITORY_ROLE_WRITE = 3;
   REPOSITORY_ROLE_READ = 4;
-  REPOSITORY_ROLE_WRITE_DRAFTS = 5;
+  REPOSITORY_ROLE_LIMITED_WRITE = 5;
 }
 
 // The roles that users can have for a Template.
