@@ -80,40 +80,40 @@ type Config struct {
 	// the empty string, and the option will be propagated to the
 	// compiler without the '=' delimiter.
 	DefaultOptions map[string]string
-	// Runtime is the runtime configuration, which lets the user specify
-	// runtime dependencies, and other metadata that applies to a specific
+	// Registry is the registry configuration, which lets the user specify
+	// dependencies and other metadata that applies to a specific
 	// remote generation registry (e.g. the Go module proxy, NPM registry,
 	// etc).
-	Runtime *RuntimeConfig
+	Registry *RegistryConfig
 }
 
-// RuntimeConfig is the configuration for the runtime of a plugin.
+// RegistryConfig is the configuration for the registry of a plugin.
 //
 // Only one field will be set.
-type RuntimeConfig struct {
-	Go  *GoRuntimeConfig
-	NPM *NPMRuntimeConfig
+type RegistryConfig struct {
+	Go  *GoRegistryConfig
+	NPM *NPMRegistryConfig
 }
 
-// GoRuntimeConfig is the runtime configuration for a Go plugin.
-type GoRuntimeConfig struct {
+// GoRegistryConfig is the registry configuration for a Go plugin.
+type GoRegistryConfig struct {
 	MinVersion string
-	Deps       []*GoRuntimeDependencyConfig
+	Deps       []*GoRegistryDependencyConfig
 }
 
-// GoRuntimeDependencyConfig is the go runtime dependency configuration.
-type GoRuntimeDependencyConfig struct {
+// GoRegistryDependencyConfig is the go registry dependency configuration.
+type GoRegistryDependencyConfig struct {
 	Module  string
 	Version string
 }
 
-// NPMRuntimeConfig is the runtime configuration for a JavaScript NPM plugin.
-type NPMRuntimeConfig struct {
-	Deps []*NPMRuntimeDependencyConfig
+// NPMRegistryConfig is the registry configuration for a JavaScript NPM plugin.
+type NPMRegistryConfig struct {
+	Deps []*NPMRegistryDependencyConfig
 }
 
-// NPMRuntimeDependencyConfig is the npm runtime dependency configuration.
-type NPMRuntimeDependencyConfig struct {
+// NPMRegistryDependencyConfig is the npm registry dependency configuration.
+type NPMRegistryDependencyConfig struct {
 	Package string
 	Version string
 }
@@ -176,14 +176,14 @@ func ParseConfig(config string) (*Config, error) {
 // ExternalConfig represents the on-disk representation
 // of the plugin configuration at version v1.
 type ExternalConfig struct {
-	Version       string                `json:"version,omitempty" yaml:"version,omitempty"`
-	Name          string                `json:"name,omitempty" yaml:"name,omitempty"`
-	PluginVersion string                `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
-	SourceURL     string                `json:"source_url,omitempty" yaml:"source_url,omitempty"`
-	Description   string                `json:"description,omitempty" yaml:"description,omitempty"`
-	Deps          []ExternalDependency  `json:"deps,omitempty" yaml:"deps,omitempty"`
-	DefaultOpts   []string              `json:"default_opts,omitempty" yaml:"default_opts,omitempty"`
-	Runtime       ExternalRuntimeConfig `json:"runtime,omitempty" yaml:"runtime,omitempty"`
+	Version       string                 `json:"version,omitempty" yaml:"version,omitempty"`
+	Name          string                 `json:"name,omitempty" yaml:"name,omitempty"`
+	PluginVersion string                 `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
+	SourceURL     string                 `json:"source_url,omitempty" yaml:"source_url,omitempty"`
+	Description   string                 `json:"description,omitempty" yaml:"description,omitempty"`
+	Deps          []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
+	DefaultOpts   []string               `json:"default_opts,omitempty" yaml:"default_opts,omitempty"`
+	Registry      ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
 }
 
 // ExternalDependency represents a dependency on another plugin.
@@ -192,15 +192,15 @@ type ExternalDependency struct {
 	Revision int    `json:"revision,omitempty" yaml:"revision,omitempty"`
 }
 
-// ExternalRuntimeConfig is the external configuration for the runtime
+// ExternalRegistryConfig is the external configuration for the registry
 // of a plugin.
-type ExternalRuntimeConfig struct {
-	Go  ExternalGoRuntimeConfig  `json:"go,omitempty" yaml:"go,omitempty"`
-	NPM ExternalNPMRuntimeConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
+type ExternalRegistryConfig struct {
+	Go  ExternalGoRegistryConfig  `json:"go,omitempty" yaml:"go,omitempty"`
+	NPM ExternalNPMRegistryConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
 }
 
-// ExternalGoRuntimeConfig is the external runtime configuration for a Go plugin.
-type ExternalGoRuntimeConfig struct {
+// ExternalGoRegistryConfig is the external registry configuration for a Go plugin.
+type ExternalGoRegistryConfig struct {
 	// The minimum Go version required by the plugin.
 	MinVersion string `json:"min_version,omitempty" yaml:"min_version,omitempty"`
 	Deps       []struct {
@@ -210,12 +210,12 @@ type ExternalGoRuntimeConfig struct {
 }
 
 // IsEmpty returns true if the configuration is empty.
-func (e ExternalGoRuntimeConfig) IsEmpty() bool {
+func (e ExternalGoRegistryConfig) IsEmpty() bool {
 	return e.MinVersion == "" && len(e.Deps) == 0
 }
 
-// ExternalNPMRuntimeConfig is the external runtime configuration for a JavaScript NPM plugin.
-type ExternalNPMRuntimeConfig struct {
+// ExternalNPMRegistryConfig is the external registry configuration for a JavaScript NPM plugin.
+type ExternalNPMRegistryConfig struct {
 	Deps []struct {
 		Package string `json:"package,omitempty" yaml:"package,omitempty"`
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
@@ -223,7 +223,7 @@ type ExternalNPMRuntimeConfig struct {
 }
 
 // IsEmpty returns true if the configuration is empty.
-func (e ExternalNPMRuntimeConfig) IsEmpty() bool {
+func (e ExternalNPMRegistryConfig) IsEmpty() bool {
 	return len(e.Deps) == 0
 }
 

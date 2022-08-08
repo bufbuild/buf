@@ -57,14 +57,14 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 	ctx context.Context,
 	owner string,
 	name string,
-	language v1alpha1.PluginLanguage,
+	registryType v1alpha1.PluginRegistryType,
 	version string,
 	containerImageDigest string,
 	defaultOptions []string,
 	dependencies []*v1alpha1.CuratedPluginReference,
 	sourceUrl string,
 	description string,
-	runtimeConfig *v1alpha1.RuntimeConfig,
+	registryConfig *v1alpha1.RegistryConfig,
 	revision uint32,
 ) (configuration *v1alpha1.CuratedPlugin, _ error) {
 	response, err := s.client.CreateCuratedPlugin(
@@ -73,14 +73,14 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 			&v1alpha1.CreateCuratedPluginRequest{
 				Owner:                owner,
 				Name:                 name,
-				Language:             language,
+				RegistryType:         registryType,
 				Version:              version,
 				ContainerImageDigest: containerImageDigest,
 				DefaultOptions:       defaultOptions,
 				Dependencies:         dependencies,
 				SourceUrl:            sourceUrl,
 				Description:          description,
-				RuntimeConfig:        runtimeConfig,
+				RegistryConfig:       registryConfig,
 				Revision:             revision,
 			}),
 	)
