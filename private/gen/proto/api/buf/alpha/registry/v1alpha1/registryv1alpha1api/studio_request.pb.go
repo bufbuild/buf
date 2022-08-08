@@ -38,13 +38,13 @@ type StudioRequestService interface {
 		includeCookies bool,
 		protocol v1alpha1.StudioProtocol,
 		agentUrl string,
-	) (request *v1alpha1.StudioRequest, err error)
+	) (createdRequest *v1alpha1.StudioRequest, err error)
 	// RenameStudioRequest renames an existing Studio Request.
 	RenameStudioRequest(
 		ctx context.Context,
 		id string,
 		newName string,
-	) (request *v1alpha1.StudioRequest, err error)
+	) (renamedRequest *v1alpha1.StudioRequest, err error)
 	// DeleteStudioRequest removes a favorite Studio Request from the caller's BSR
 	// profile.
 	DeleteStudioRequest(ctx context.Context, id string) (err error)

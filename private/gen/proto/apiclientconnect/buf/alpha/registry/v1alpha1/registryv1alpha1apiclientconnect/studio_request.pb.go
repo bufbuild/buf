@@ -43,7 +43,7 @@ func (s *studioRequestServiceClient) CreateStudioRequest(
 	includeCookies bool,
 	protocol v1alpha1.StudioProtocol,
 	agentUrl string,
-) (request *v1alpha1.StudioRequest, _ error) {
+) (createdRequest *v1alpha1.StudioRequest, _ error) {
 	response, err := s.client.CreateStudioRequest(
 		ctx,
 		connect_go.NewRequest(
@@ -63,7 +63,7 @@ func (s *studioRequestServiceClient) CreateStudioRequest(
 	if err != nil {
 		return nil, err
 	}
-	return response.Msg.Request, nil
+	return response.Msg.CreatedRequest, nil
 }
 
 // RenameStudioRequest renames an existing Studio Request.
@@ -71,7 +71,7 @@ func (s *studioRequestServiceClient) RenameStudioRequest(
 	ctx context.Context,
 	id string,
 	newName string,
-) (request *v1alpha1.StudioRequest, _ error) {
+) (renamedRequest *v1alpha1.StudioRequest, _ error) {
 	response, err := s.client.RenameStudioRequest(
 		ctx,
 		connect_go.NewRequest(
@@ -83,7 +83,7 @@ func (s *studioRequestServiceClient) RenameStudioRequest(
 	if err != nil {
 		return nil, err
 	}
-	return response.Msg.Request, nil
+	return response.Msg.RenamedRequest, nil
 }
 
 // DeleteStudioRequest removes a favorite Studio Request from the caller's BSR
