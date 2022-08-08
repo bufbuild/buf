@@ -77,7 +77,7 @@ message CreateStudioRequestRequest {
 // CreateStudioRequestResponse returns the created StudioRequest.
 message CreateStudioRequestResponse {
   // Created Studio Request.
-  StudioRequest request = 1;
+  StudioRequest created_request = 1;
 }
 
 // RenameStudioRequestRequest is the proto request representation of the
@@ -92,7 +92,7 @@ message RenameStudioRequestRequest {
 // RenameStudioRequestResponse returns the renamed StudioRequest.
 message RenameStudioRequestResponse {
   // Renamed Studio Request.
-  StudioRequest request = 1;
+  StudioRequest renamed_request = 1;
 }
 
 // DeleteStudioRequestRequest is the proto request representation of the
