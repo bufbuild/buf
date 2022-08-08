@@ -87,7 +87,7 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 			dependencies = append(dependencies, reference)
 		}
 	}
-	runtimeConfig, err := newRuntimeConfig(externalConfig.Runtime)
+	registryConfig, err := newRegistryConfig(externalConfig.Registry)
 	if err != nil {
 		return nil, err
 	}
@@ -96,58 +96,58 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 		PluginVersion:  pluginVersion,
 		DefaultOptions: defaultOptions,
 		Dependencies:   dependencies,
-		Runtime:        runtimeConfig,
+		Registry:       registryConfig,
 		SourceURL:      externalConfig.SourceURL,
 		Description:    externalConfig.Description,
 	}, nil
 }
 
-func newRuntimeConfig(externalRuntimeConfig ExternalRuntimeConfig) (*RuntimeConfig, error) {
+func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*RegistryConfig, error) {
 	var (
-		isGoEmpty  = externalRuntimeConfig.Go.IsEmpty()
-		isNPMEmpty = externalRuntimeConfig.NPM.IsEmpty()
+		isGoEmpty  = externalRegistryConfig.Go.IsEmpty()
+		isNPMEmpty = externalRegistryConfig.NPM.IsEmpty()
 	)
-	var runtimeCount int
+	var registryCount int
 	for _, isEmpty := range []bool{
 		isGoEmpty,
 		isNPMEmpty,
 	} {
 		if !isEmpty {
-			runtimeCount++
+			registryCount++
 		}
-		if runtimeCount > 1 {
+		if registryCount > 1 {
 			// We might eventually want to support multiple runtime configuration,
 			// but it's safe to start with an error for now.
-			return nil, fmt.Errorf("%s configuration contains multiple runtime languages", ExternalConfigFilePath)
+			return nil, fmt.Errorf("%s configuration contains multiple registry configurations", ExternalConfigFilePath)
 		}
 	}
-	if runtimeCount == 0 {
+	if registryCount == 0 {
 		// It's possible that the plugin doesn't have any runtime dependencies.
 		return nil, nil
 	}
 	if !isNPMEmpty {
-		npmRuntimeConfig, err := newNPMRuntimeConfig(externalRuntimeConfig.NPM)
+		npmRegistryConfig, err := newNPMRegistryConfig(externalRegistryConfig.NPM)
 		if err != nil {
 			return nil, err
 		}
-		return &RuntimeConfig{
-			NPM: npmRuntimeConfig,
+		return &RegistryConfig{
+			NPM: npmRegistryConfig,
 		}, nil
 	}
 	// At this point, the Go runtime is guaranteed to be specified. Note
 	// that this will change if/when there are more runtime languages supported.
-	goRuntimeConfig, err := newGoRuntimeConfig(externalRuntimeConfig.Go)
+	goRegistryConfig, err := newGoRegistryConfig(externalRegistryConfig.Go)
 	if err != nil {
 		return nil, err
 	}
-	return &RuntimeConfig{
-		Go: goRuntimeConfig,
+	return &RegistryConfig{
+		Go: goRegistryConfig,
 	}, nil
 }
 
-func newNPMRuntimeConfig(externalNPMRuntimeConfig ExternalNPMRuntimeConfig) (*NPMRuntimeConfig, error) {
-	var dependencies []*NPMRuntimeDependencyConfig
-	for _, dep := range externalNPMRuntimeConfig.Deps {
+func newNPMRegistryConfig(externalNPMRegistryConfig ExternalNPMRegistryConfig) (*NPMRegistryConfig, error) {
+	var dependencies []*NPMRegistryDependencyConfig
+	for _, dep := range externalNPMRegistryConfig.Deps {
 		if dep.Package == "" {
 			return nil, errors.New("npm runtime dependency requires a non-empty package name")
 		}
@@ -165,23 +165,23 @@ func newNPMRuntimeConfig(externalNPMRuntimeConfig ExternalNPMRuntimeConfig) (*NP
 		// by NPM.
 		dependencies = append(
 			dependencies,
-			&NPMRuntimeDependencyConfig{
+			&NPMRegistryDependencyConfig{
 				Package: dep.Package,
 				Version: dep.Version,
 			},
 		)
 	}
-	return &NPMRuntimeConfig{
+	return &NPMRegistryConfig{
 		Deps: dependencies,
 	}, nil
 }
 
-func newGoRuntimeConfig(externalGoRuntimeConfig ExternalGoRuntimeConfig) (*GoRuntimeConfig, error) {
-	if externalGoRuntimeConfig.MinVersion != "" && !modfile.GoVersionRE.MatchString(externalGoRuntimeConfig.MinVersion) {
-		return nil, fmt.Errorf("the go minimum version %q must be a valid semantic version in the form of <major>.<minor>", externalGoRuntimeConfig.MinVersion)
+func newGoRegistryConfig(externalGoRegistryConfig ExternalGoRegistryConfig) (*GoRegistryConfig, error) {
+	if externalGoRegistryConfig.MinVersion != "" && !modfile.GoVersionRE.MatchString(externalGoRegistryConfig.MinVersion) {
+		return nil, fmt.Errorf("the go minimum version %q must be a valid semantic version in the form of <major>.<minor>", externalGoRegistryConfig.MinVersion)
 	}
-	var dependencies []*GoRuntimeDependencyConfig
-	for _, dep := range externalGoRuntimeConfig.Deps {
+	var dependencies []*GoRegistryDependencyConfig
+	for _, dep := range externalGoRegistryConfig.Deps {
 		if dep.Module == "" {
 			return nil, errors.New("go runtime dependency requires a non-empty module name")
 		}
@@ -193,14 +193,14 @@ func newGoRuntimeConfig(externalGoRuntimeConfig ExternalGoRuntimeConfig) (*GoRun
 		}
 		dependencies = append(
 			dependencies,
-			&GoRuntimeDependencyConfig{
+			&GoRegistryDependencyConfig{
 				Module:  dep.Module,
 				Version: dep.Version,
 			},
 		)
 	}
-	return &GoRuntimeConfig{
-		MinVersion: externalGoRuntimeConfig.MinVersion,
+	return &GoRegistryConfig{
+		MinVersion: externalGoRegistryConfig.MinVersion,
 		Deps:       dependencies,
 	}, nil
 }
