@@ -34,8 +34,13 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// pluginsImagePrefix is used to prefix all image names with the correct path for pushing to the OCI registry.
-const pluginsImagePrefix = "plugins."
+const (
+	// DefaultTarget is the default target architecture for Docker images.
+	DefaultTarget = "linux/amd64"
+
+	// pluginsImagePrefix is used to prefix all image names with the correct path for pushing to the OCI registry.
+	pluginsImagePrefix = "plugins."
+)
 
 // Client is a small abstraction over a Docker API client, providing the basic APIs we need to build plugins.
 // It ensures that we pass the appropriate parameters to build images (i.e. platform 'linux/amd64').
@@ -138,7 +143,7 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 
 		target := params.target
 		if len(target) == 0 {
-			target = "linux/amd64"
+			target = DefaultTarget
 		}
 		response, err := d.cli.ImageBuild(ctx, dockerContext, types.ImageBuildOptions{
 			Tags:     []string{imageName},
