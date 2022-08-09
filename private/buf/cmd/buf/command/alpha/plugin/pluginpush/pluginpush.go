@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/netextended"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -41,6 +42,7 @@ const (
 	errorFormatFlagName     = "error-format"
 	disableSymlinksFlagName = "disable-symlinks"
 	targetFlagName          = "target"
+	overrideRemoteFlagName  = "override-remote"
 )
 
 // NewCommand returns a new Command.
@@ -53,7 +55,7 @@ func NewCommand(
 		Use:   name + " <source>",
 		Short: "Push a plugin to a registry.",
 		Long:  bufcli.GetSourceDirLong(`the source to push`),
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -69,6 +71,7 @@ type flags struct {
 	ErrorFormat     string
 	DisableSymlinks bool
 	Target          string
+	OverrideRemote  string
 }
 
 func newFlags() *flags {
@@ -93,12 +96,17 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		),
 	)
 	flagSet.StringVar(
+		&f.OverrideRemote,
+		overrideRemoteFlagName,
+		"",
+		"Override the default remote found in buf.plugin.yaml name and dependencies.",
+	)
+	flagSet.StringVar(
 		&f.Target,
 		targetFlagName,
 		"",
-		"The target architecture for plugins.",
+		fmt.Sprintf("The target architecture for plugins (default %q).", bufplugindocker.DefaultTarget),
 	)
-	_ = flagSet.MarkHidden(targetFlagName)
 }
 
 func run(
@@ -109,6 +117,11 @@ func run(
 	bufcli.WarnAlphaCommand(ctx, container)
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
+	}
+	if len(flags.OverrideRemote) > 0 {
+		if _, err := netextended.ValidateHostname(flags.OverrideRemote); err != nil {
+			return fmt.Errorf("%s: %w", overrideRemoteFlagName, err)
+		}
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {

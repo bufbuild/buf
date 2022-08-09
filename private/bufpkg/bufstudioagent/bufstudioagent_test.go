@@ -84,6 +84,7 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 		request.Header.Set("Foo", "foo-value")
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
+		defer response.Body.Close()
 
 		assert.Equal(t, http.StatusOK, response.StatusCode)
 		assert.Equal(t, "https://example.buf.build", response.Header.Get("Access-Control-Allow-Origin"))
@@ -115,6 +116,7 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 		request.Header.Set("Foo", "foo-value")
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
+		defer response.Body.Close()
 
 		assert.Equal(t, http.StatusOK, response.StatusCode)
 		assert.Equal(t, "https://example.buf.build", response.Header.Get("Access-Control-Allow-Origin"))
@@ -156,6 +158,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request.Header.Set("Content-Type", "text/plain")
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
+		defer response.Body.Close()
 		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
 	})
 
@@ -173,6 +176,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request.Header.Set("Content-Type", "text/plain")
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
+		defer response.Body.Close()
 		assert.Equal(t, http.StatusOK, response.StatusCode)
 		responseBytes, err := io.ReadAll(response.Body)
 		assert.NoError(t, err)
@@ -220,6 +224,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request.Header.Set("Content-Type", "text/plain")
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
+		defer response.Body.Close()
 		assert.Equal(t, http.StatusBadGateway, response.StatusCode)
 	})
 }
