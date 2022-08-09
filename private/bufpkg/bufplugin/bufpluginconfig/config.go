@@ -24,8 +24,12 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-func newConfig(externalConfig ExternalConfig) (*Config, error) {
-	pluginIdentity, err := bufpluginref.PluginIdentityForString(externalConfig.Name)
+func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, error) {
+	opts := &configOptions{}
+	for _, option := range options {
+		option(opts)
+	}
+	pluginIdentity, err := pluginIdentityForStringWithOverrideRemote(externalConfig.Name, opts.overrideRemote)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +64,7 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 			// This behavior might need to change depending on if
 			// there are valid use cases here, but we eventually
 			// want to support structured options as key, value
-			// pairs so we enforce this implicit behavior for now.
+			// pairs, so we enforce this implicit behavior for now.
 			split = append(split, "")
 		}
 		key, value := split[0], split[1]
@@ -73,7 +77,7 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 	if len(externalConfig.Deps) > 0 {
 		existingDeps := make(map[string]struct{})
 		for _, dependency := range externalConfig.Deps {
-			reference, err := bufpluginref.PluginReferenceForString(dependency.Plugin, dependency.Revision)
+			reference, err := pluginReferenceForStringWithOverrideRemote(dependency.Plugin, dependency.Revision, opts.overrideRemote)
 			if err != nil {
 				return nil, err
 			}
@@ -203,4 +207,34 @@ func newGoRegistryConfig(externalGoRegistryConfig ExternalGoRegistryConfig) (*Go
 		MinVersion: externalGoRegistryConfig.MinVersion,
 		Deps:       dependencies,
 	}, nil
+}
+
+func pluginIdentityForStringWithOverrideRemote(identityStr string, overrideRemote string) (bufpluginref.PluginIdentity, error) {
+	identity, err := bufpluginref.PluginIdentityForString(identityStr)
+	if err != nil {
+		return nil, err
+	}
+	if len(overrideRemote) == 0 {
+		return identity, nil
+	}
+	return bufpluginref.NewPluginIdentity(overrideRemote, identity.Owner(), identity.Plugin())
+}
+
+func pluginReferenceForStringWithOverrideRemote(
+	referenceStr string,
+	revision int,
+	overrideRemote string,
+) (bufpluginref.PluginReference, error) {
+	reference, err := bufpluginref.PluginReferenceForString(referenceStr, revision)
+	if err != nil {
+		return nil, err
+	}
+	if len(overrideRemote) == 0 {
+		return reference, nil
+	}
+	overrideIdentity, err := pluginIdentityForStringWithOverrideRemote(reference.IdentityString(), overrideRemote)
+	if err != nil {
+		return nil, err
+	}
+	return bufpluginref.NewPluginReference(overrideIdentity, reference.Version(), reference.Revision())
 }
