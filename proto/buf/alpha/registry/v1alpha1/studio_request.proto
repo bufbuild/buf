@@ -47,31 +47,31 @@ enum StudioProtocol {
 }
 
 // CreateStudioRequestRequest is the proto request representation of the
-// CreateStudioRequest method. IDs and timestamps are automatically generated,
-// BSR Repository information is taken from the `repository_id`, and the
-// author is taken from the request authentication.
+// CreateStudioRequest method.
 message CreateStudioRequestRequest {
-  // BSR repository ID this request is linked to.
-  string repository_id = 1;
+  // The linked BSR repository owner name (user or organization).
+  string repository_owner = 1;
+  // The linked BSR repository name.
+  string repository_name = 2;
   // The friendly name of this request.
-  string name = 2;
+  string name = 3;
   // The target base URL of this request.
-  string target_base_url = 3;
+  string target_base_url = 4;
   // The target service name as defined in the BSR repository.
-  string service = 4;
+  string service = 5;
   // The target RPC method name as defined in the BSR repository.
-  string method = 5;
+  string method = 6;
   // The request body as defined in Studio.
-  string body = 6;
+  string body = 7;
   // The request headers as defined in Studio.
-  map<string, string> headers = 7;
+  map<string, string> headers = 8;
   // Should this request include cookies from the Studio current session?
-  bool include_cookies = 8;
+  bool include_cookies = 9;
   // The protocol that Studio uses to send this request.
-  StudioProtocol protocol = 9;
+  StudioProtocol protocol = 10;
   // The agent url (if any) used by Studio to send the request. See
   // https://docs.buf.build/bsr/studio#via-buf-studio-agent for details.
-  string agent_url = 10;
+  string agent_url = 11;
 }
 
 // CreateStudioRequestResponse returns the created StudioRequest.

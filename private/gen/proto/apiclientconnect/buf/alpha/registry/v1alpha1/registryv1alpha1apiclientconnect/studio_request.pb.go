@@ -33,7 +33,8 @@ type studioRequestServiceClient struct {
 // BSR profile.
 func (s *studioRequestServiceClient) CreateStudioRequest(
 	ctx context.Context,
-	repositoryId string,
+	repositoryOwner string,
+	repositoryName string,
 	name string,
 	targetBaseUrl string,
 	service string,
@@ -48,16 +49,17 @@ func (s *studioRequestServiceClient) CreateStudioRequest(
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.CreateStudioRequestRequest{
-				RepositoryId:   repositoryId,
-				Name:           name,
-				TargetBaseUrl:  targetBaseUrl,
-				Service:        service,
-				Method:         method,
-				Body:           body,
-				Headers:        headers,
-				IncludeCookies: includeCookies,
-				Protocol:       protocol,
-				AgentUrl:       agentUrl,
+				RepositoryOwner: repositoryOwner,
+				RepositoryName:  repositoryName,
+				Name:            name,
+				TargetBaseUrl:   targetBaseUrl,
+				Service:         service,
+				Method:          method,
+				Body:            body,
+				Headers:         headers,
+				IncludeCookies:  includeCookies,
+				Protocol:        protocol,
+				AgentUrl:        agentUrl,
 			}),
 	)
 	if err != nil {
