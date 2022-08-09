@@ -24,10 +24,20 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-func newConfig(externalConfig ExternalConfig) (*Config, error) {
+func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, error) {
+	opts := &configOptions{}
+	for _, option := range options {
+		option(opts)
+	}
 	pluginIdentity, err := bufpluginref.PluginIdentityForString(externalConfig.Name)
 	if err != nil {
 		return nil, err
+	}
+	if len(opts.overrideRemote) > 0 {
+		pluginIdentity, err = bufpluginref.NewPluginIdentity(opts.overrideRemote, pluginIdentity.Owner(), pluginIdentity.Plugin())
+		if err != nil {
+			return nil, err
+		}
 	}
 	pluginVersion := externalConfig.PluginVersion
 	if pluginVersion == "" {
@@ -60,7 +70,7 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 			// This behavior might need to change depending on if
 			// there are valid use cases here, but we eventually
 			// want to support structured options as key, value
-			// pairs so we enforce this implicit behavior for now.
+			// pairs, so we enforce this implicit behavior for now.
 			split = append(split, "")
 		}
 		key, value := split[0], split[1]
@@ -76,6 +86,16 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 			reference, err := bufpluginref.PluginReferenceForString(dependency.Plugin, dependency.Revision)
 			if err != nil {
 				return nil, err
+			}
+			if len(opts.overrideRemote) > 0 {
+				referenceIdentity, err := bufpluginref.NewPluginIdentity(opts.overrideRemote, reference.Owner(), reference.Plugin())
+				if err != nil {
+					return nil, err
+				}
+				reference, err = bufpluginref.NewPluginReference(referenceIdentity, reference.Version(), reference.Revision())
+				if err != nil {
+					return nil, err
+				}
 			}
 			if reference.Remote() != pluginIdentity.Remote() {
 				return nil, fmt.Errorf("plugin dependency %q must use same remote as plugin %q", dependency, pluginIdentity.Remote())

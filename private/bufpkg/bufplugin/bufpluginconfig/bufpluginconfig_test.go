@@ -105,6 +105,19 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 	)
 }
 
+func TestParsePluginConfigGoYAMLOverrideRemote(t *testing.T) {
+	t.Parallel()
+	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "go", "buf.plugin.yaml"), WithOverrideRemote("buf.mydomain.com"))
+	require.NoError(t, err)
+	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.mydomain.com/library/go-grpc")
+	require.NoError(t, err)
+	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.mydomain.com/library/go:v1.28.0", 1)
+	require.NoError(t, err)
+	assert.Equal(t, pluginIdentity, pluginConfig.Name)
+	require.Len(t, pluginConfig.Dependencies, 1)
+	assert.Equal(t, pluginDependency, pluginConfig.Dependencies[0])
+}
+
 func TestParsePluginConfigNPMYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "npm", "buf.plugin.yaml"))

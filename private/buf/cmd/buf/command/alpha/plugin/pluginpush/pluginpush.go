@@ -55,7 +55,7 @@ func NewCommand(
 		Use:   name + " <source>",
 		Short: "Push a plugin to a registry.",
 		Long:  bufcli.GetSourceDirLong(`the source to push`),
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -143,7 +143,11 @@ func run(
 	if existingConfigFilePath == "" {
 		return fmt.Errorf("please define a %s configuration file in the target directory", bufpluginconfig.ExternalConfigFilePath)
 	}
-	pluginConfig, err := bufpluginconfig.GetConfigForBucket(ctx, sourceBucket)
+	var options []bufpluginconfig.ConfigOption
+	if len(flags.OverrideRemote) > 0 {
+		options = append(options, bufpluginconfig.WithOverrideRemote(flags.OverrideRemote))
+	}
+	pluginConfig, err := bufpluginconfig.GetConfigForBucket(ctx, sourceBucket, options...)
 	if err != nil {
 		return err
 	}
