@@ -3,7 +3,7 @@ module github.com/bufbuild/buf
 go 1.18
 
 require (
-	github.com/bufbuild/connect-go v0.2.0
+	github.com/bufbuild/connect-go v0.3.0
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/gofrs/flock v0.8.1
