@@ -118,18 +118,28 @@ type NPMRegistryDependencyConfig struct {
 	Version string
 }
 
+// ConfigOption is an optional option used when loading a Config.
+type ConfigOption func(*configOptions)
+
+// WithOverrideRemote will update the remote found in the plugin name and dependencies.
+func WithOverrideRemote(remote string) ConfigOption {
+	return func(options *configOptions) {
+		options.overrideRemote = remote
+	}
+}
+
 // GetConfigForBucket gets the Config for the YAML data at ConfigFilePath.
 //
 // If the data is of length 0, returns the default config.
-func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket) (*Config, error) {
-	return getConfigForBucket(ctx, readBucket)
+func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, options ...ConfigOption) (*Config, error) {
+	return getConfigForBucket(ctx, readBucket, options)
 }
 
 // GetConfigForData gets the Config for the given JSON or YAML data.
 //
 // If the data is of length 0, returns the default config.
-func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
-	return getConfigForData(ctx, data)
+func GetConfigForData(ctx context.Context, data []byte, options ...ConfigOption) (*Config, error) {
+	return getConfigForData(ctx, data, options)
 }
 
 // ExistingConfigFilePath checks if a configuration file exists, and if so, returns the path
@@ -150,7 +160,7 @@ func ExistingConfigFilePath(ctx context.Context, readBucket storage.ReadBucket) 
 }
 
 // ParseConfig parses the file at the given path as a Config.
-func ParseConfig(config string) (*Config, error) {
+func ParseConfig(config string, options ...ConfigOption) (*Config, error) {
 	var data []byte
 	var err error
 	switch filepath.Ext(config) {
@@ -168,7 +178,7 @@ func ParseConfig(config string) (*Config, error) {
 	}
 	switch externalConfig.Version {
 	case V1Version:
-		return newConfig(externalConfig)
+		return newConfig(externalConfig, options)
 	}
 	return nil, fmt.Errorf("invalid plugin configuration version: must be one of %v", AllConfigFilePaths)
 }
@@ -229,4 +239,8 @@ func (e ExternalNPMRegistryConfig) IsEmpty() bool {
 
 type externalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+type configOptions struct {
+	overrideRemote string
 }

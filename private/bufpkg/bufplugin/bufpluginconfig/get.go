@@ -26,7 +26,7 @@ import (
 	"go.uber.org/multierr"
 )
 
-func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
+func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, options []ConfigOption) (_ *Config, retErr error) {
 	ctx, span := trace.StartSpan(ctx, "get_plugin_config")
 	defer span.End()
 	// This will be in the order of precedence.
@@ -46,7 +46,7 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket) (_ *
 	switch len(foundConfigFilePaths) {
 	case 0:
 		// Did not find anything, return the default.
-		return newConfig(ExternalConfig{})
+		return newConfig(ExternalConfig{}, options)
 	case 1:
 		readObjectCloser, err := readBucket.Get(ctx, foundConfigFilePaths[0])
 		if err != nil {
@@ -65,13 +65,14 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket) (_ *
 			encoding.UnmarshalYAMLStrict,
 			data,
 			readObjectCloser.ExternalPath(),
+			options,
 		)
 	default:
 		return nil, fmt.Errorf("only one plugin file can exist but found multiple plugin files: %s", stringutil.SliceToString(foundConfigFilePaths))
 	}
 }
 
-func getConfigForData(ctx context.Context, data []byte) (*Config, error) {
+func getConfigForData(ctx context.Context, data []byte, options []ConfigOption) (*Config, error) {
 	_, span := trace.StartSpan(ctx, "get_plugin_config_for_data")
 	defer span.End()
 	return getConfigForDataInternal(
@@ -80,6 +81,7 @@ func getConfigForData(ctx context.Context, data []byte) (*Config, error) {
 		encoding.UnmarshalJSONOrYAMLStrict,
 		data,
 		"Plugin configuration data",
+		options,
 	)
 }
 
@@ -89,6 +91,7 @@ func getConfigForDataInternal(
 	unmarshalStrict func([]byte, interface{}) error,
 	data []byte,
 	id string,
+	options []ConfigOption,
 ) (*Config, error) {
 	var externalConfigVersion externalConfigVersion
 	if err := unmarshalNonStrict(data, &externalConfigVersion); err != nil {
@@ -101,7 +104,7 @@ func getConfigForDataInternal(
 	if err := unmarshalStrict(data, &externalConfig); err != nil {
 		return nil, err
 	}
-	return newConfig(externalConfig)
+	return newConfig(externalConfig, options)
 }
 
 func validateExternalConfigVersion(externalConfigVersion externalConfigVersion, id string) error {
