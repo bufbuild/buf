@@ -65,6 +65,19 @@ func HTTPHandlerMapperWithPrefix(prefix string) HTTPHandlerMapperOption {
 	}
 }
 
+// MapperWithMiddlewares rewrites the Map function of the Mapper to call the provided middlewares
+// inside a chi Group before mapping
+func MapperWithMiddlewares(mapper Mapper, middlewares chi.Middlewares) Mapper {
+	return MapperFunc(func(parent chi.Router) error {
+		var err error
+		parent.Group(func(r chi.Router) {
+			r.Use(middlewares...)
+			err = mapper.Map(r)
+		})
+		return err
+	})
+}
+
 // Runner is a runner.
 type Runner interface {
 	// Run runs the router.
