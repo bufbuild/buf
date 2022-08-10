@@ -28,7 +28,8 @@ type StudioRequestService interface {
 	// BSR profile.
 	CreateStudioRequest(
 		ctx context.Context,
-		repositoryId string,
+		repositoryOwner string,
+		repositoryName string,
 		name string,
 		targetBaseUrl string,
 		service string,
