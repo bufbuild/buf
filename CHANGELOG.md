@@ -5,6 +5,7 @@
 - Change default for `--origin` flag of `buf beta studio-agent` to `https://studio.buf.build`
 - Change default for `--timeout` flag of `buf beta studio-agent` to `0` (no timeout). Before it was
   `2m` (the default for all the other `buf` commands).
+- Add support for experimental code generation with the `plugin:` key in `buf.gen.yaml`.
 
 ## [v1.7.0] - 2022-06-27
 
