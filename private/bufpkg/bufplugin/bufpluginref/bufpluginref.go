@@ -93,6 +93,18 @@ func PluginReferenceForString(reference string, revision int) (PluginReference, 
 	return parsePluginReference(reference, revision)
 }
 
+// IsPluginReferenceOrIdentity returns true if the argument matches a plugin
+// reference (with version) or a plugin identity (without version).
+func IsPluginReferenceOrIdentity(plugin string) bool {
+	if _, err := PluginReferenceForString(plugin, 0); err == nil {
+		return true
+	}
+	if _, err := PluginIdentityForString(plugin); err == nil {
+		return true
+	}
+	return false
+}
+
 func parsePluginIdentityComponents(path string) (remote string, owner string, plugin string, err error) {
 	slashSplit := strings.Split(path, "/")
 	if len(slashSplit) != 3 {
@@ -107,7 +119,7 @@ func parsePluginIdentityComponents(path string) (remote string, owner string, pl
 		return "", "", "", newInvalidPluginIdentityStringError(path)
 	}
 	plugin = strings.TrimSpace(slashSplit[2])
-	if plugin == "" {
+	if plugin == "" || strings.ContainsRune(plugin, ':') {
 		return "", "", "", newInvalidPluginIdentityStringError(path)
 	}
 	return remote, owner, plugin, nil
