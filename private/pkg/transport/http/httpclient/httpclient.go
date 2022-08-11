@@ -18,6 +18,8 @@ import (
 	"crypto/tls"
 	"net/http"
 	"net/url"
+
+	"go.opencensus.io/tag"
 )
 
 // NewClient returns a new Client.
@@ -44,9 +46,10 @@ func WithTLSConfig(tlsConfig *tls.Config) ClientOption {
 // OpenCensus tracing and metrics.
 //
 // The default is to use no observability.
-func WithObservability() ClientOption {
+func WithObservability(tags ...tag.Mutator) ClientOption {
 	return func(opts *clientOptions) {
 		opts.observability = true
+		opts.observabilityTags = tags
 	}
 }
 
