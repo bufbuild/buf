@@ -92,8 +92,7 @@ const (
 	OrganizationRole_ORGANIZATION_ROLE_OWNER       OrganizationRole = 1
 	OrganizationRole_ORGANIZATION_ROLE_ADMIN       OrganizationRole = 2
 	OrganizationRole_ORGANIZATION_ROLE_MEMBER      OrganizationRole = 3
-	// ORGANIZATION_ROLE_WRITER is not supported in certain environments.
-	OrganizationRole_ORGANIZATION_ROLE_WRITER OrganizationRole = 4
+	OrganizationRole_ORGANIZATION_ROLE_WRITER      OrganizationRole = 4
 )
 
 // Enum value maps for OrganizationRole.
