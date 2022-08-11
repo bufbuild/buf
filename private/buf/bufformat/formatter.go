@@ -1443,12 +1443,44 @@ func (f *formatter) writeSpecialFloatLiteral(specialFloatLiteralNode *ast.Specia
 
 // writeStringLiteral writes a string literal value (e.g. "foo").
 func (f *formatter) writeStringLiteral(stringLiteralNode *ast.StringLiteralNode) {
-	f.WriteString(fmt.Sprintf("%q", stringLiteralNode.Val))
+	f.writeStringWithStyle(stringLiteralNode.Val)
 }
 
 // writeStringValue writes a string value (e.g. "foo").
 func (f *formatter) writeStringValue(stringValueNode ast.StringValueNode) {
-	f.WriteString(fmt.Sprintf("%q", stringValueNode.AsString()))
+	f.writeStringWithStyle(stringValueNode.AsString())
+}
+
+// writeStringWithStyle writes a string value with surrounding single quotes or double quotes
+// based on the string value's content. The formatter prefers double quotes, but uses single
+// quotes if the content contains any (") or (\") literals and not any (') or (\') literals.
+//
+// For example,
+//
+//  1. f"o"'o' -> "f\"o\"'o'"      (") and (') are used - surround with (")
+//  2. f"oo" -> 'f"oo"'            (") is used - surround with (')
+//  3. f'oo' -> "f'oo'"            (') is used - surround with (")
+//  4. f\"o\"\'o\' -> "f\"o\"'o'"  (\") and (\') are used - surround with (")
+//  5. f\"o\"o -> 'f"o"o'          (\") is used - surround with (')
+//  6. f\'o\'o -> "f'o'o"          (\') is used - surround with (")
+//  7. foo -> "foo"                By default, use double quotes
+//
+func (f *formatter) writeStringWithStyle(value string) {
+	var (
+		singleQuote        = strings.ContainsRune(value, '\'')
+		doubleQuote        = strings.ContainsRune(value, '"')
+		escapedSingleQuote = strings.Contains(value, "\\'")
+		escapedDoubleQuote = strings.Contains(value, `\\"`)
+	)
+	var formattedString string
+	if (doubleQuote || escapedDoubleQuote) && (!singleQuote && !escapedSingleQuote) {
+		// Use a single quote if the content contains any (") or (\")
+		// literals, and not any (') or (\') literals.
+		formattedString = fmt.Sprintf("'%s'", value)
+	} else {
+		formattedString = fmt.Sprintf("%q", value)
+	}
+	f.WriteString(formattedString)
 }
 
 // writeUintLiteral writes a uint literal (e.g. '42').
