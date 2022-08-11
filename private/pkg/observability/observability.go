@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats/view"
+	"go.opencensus.io/tag"
 	"go.opencensus.io/trace"
 )
 
@@ -106,10 +107,13 @@ func StartWithTraceViewExportCloser(traceViewExportCloser TraceViewExportCloser)
 }
 
 // NewHTTPTransport returns a HTTP transport instrumented with OpenCensus traces and metrics.
-func NewHTTPTransport(base http.RoundTripper) http.RoundTripper {
-	return &ochttp.Transport{
-		NewClientTrace: ochttp.NewSpanAnnotatingClientTrace,
-		Base:           base,
+func NewHTTPTransport(base http.RoundTripper, tags ...tag.Mutator) http.RoundTripper {
+	return &wrappedRoundTripper{
+		Base: &ochttp.Transport{
+			NewClientTrace: ochttp.NewSpanAnnotatingClientTrace,
+			Base:           base,
+		},
+		Tags: tags,
 	}
 }
 
