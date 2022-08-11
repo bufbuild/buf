@@ -1453,27 +1453,22 @@ func (f *formatter) writeStringValue(stringValueNode ast.StringValueNode) {
 
 // writeStringWithStyle writes a string value with surrounding single quotes or double quotes
 // based on the string value's content. The formatter prefers double quotes, but uses single
-// quotes if the content contains any (") or (\") literals and not any (') or (\') literals.
+// quotes if the content contains any (") literals and not any (') literals.
 //
 // For example,
 //
-//  1. f"o"'o' -> "f\"o\"'o'"      (") and (') are used - surround with (")
-//  2. f"oo" -> 'f"oo"'            (") is used - surround with (')
-//  3. f'oo' -> "f'oo'"            (') is used - surround with (")
-//  4. f\"o\"\'o\' -> "f\"o\"'o'"  (\") and (\') are used - surround with (")
-//  5. f\"o\"o -> 'f"o"o'          (\") is used - surround with (')
-//  6. f\'o\'o -> "f'o'o"          (\') is used - surround with (")
-//  7. foo -> "foo"                By default, use double quotes
+//  1. f"o"'o' -> "f\"o\"'o'"  (") and (') are used - surround with (")
+//  2. f"oo" -> 'f"oo"'        (") is used - surround with (')
+//  3. f'oo' -> "f'oo'"        (') is used - surround with (")
+//  4. foo -> "foo"            By default, use double quotes
 //
 func (f *formatter) writeStringWithStyle(value string) {
 	var (
-		singleQuote        = strings.ContainsRune(value, '\'')
-		doubleQuote        = strings.ContainsRune(value, '"')
-		escapedSingleQuote = strings.Contains(value, "\\'")
-		escapedDoubleQuote = strings.Contains(value, `\\"`)
+		singleQuote = strings.ContainsRune(value, '\'')
+		doubleQuote = strings.ContainsRune(value, '"')
 	)
 	var formattedString string
-	if (doubleQuote || escapedDoubleQuote) && (!singleQuote && !escapedSingleQuote) {
+	if doubleQuote && !singleQuote {
 		// Use a single quote if the content contains any (") or (\")
 		// literals, and not any (') or (\') literals.
 		formattedString = fmt.Sprintf("'%s'", value)
