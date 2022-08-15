@@ -502,6 +502,33 @@ func NewModuleReaderAndCreateCacheDirs(
 	container appflag.Container,
 	registryProvider registryv1alpha1apiclient.Provider,
 ) (bufmodule.ModuleReader, error) {
+	return newModuleReaderAndCreateCacheDirs(
+		container,
+		registryProvider,
+	)
+}
+
+// NewModuleReaderAndCreateCacheDirsWithExternalPaths returns a new ModuleReader while creating the
+// required cache directories, and configures the cache to preserve external paths.
+//
+// WARNING - this should only be used by systems like the LSP - leaking external paths from the module
+// cache is otherwise dangerous and NOT recommended.
+func NewModuleReaderAndCreateCacheDirsWithExternalPaths(
+	container appflag.Container,
+	registryProvider registryv1alpha1apiclient.Provider,
+) (bufmodule.ModuleReader, error) {
+	return newModuleReaderAndCreateCacheDirs(
+		container,
+		registryProvider,
+		bufmodulecache.ModuleReaderWithExternalPaths(),
+	)
+}
+
+func newModuleReaderAndCreateCacheDirs(
+	container appflag.Container,
+	registryProvider registryv1alpha1apiclient.Provider,
+	moduleReaderOptions ...bufmodulecache.ModuleReaderOption,
+) (bufmodule.ModuleReader, error) {
 	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
 	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
 	cacheModuleSumDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleSumRelDirPath)
@@ -544,6 +571,7 @@ func NewModuleReaderAndCreateCacheDirs(
 		sumReadWriteBucket,
 		bufapimodule.NewModuleReader(registryProvider),
 		registryProvider,
+		moduleReaderOptions...,
 	)
 	return moduleReader, nil
 }

@@ -23,6 +23,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// ModuleReaderOption is an option for creating a ModuleReader.
+type ModuleReaderOption func(*moduleReaderOptions)
+
 // NewModuleReader returns a new ModuleReader that uses cache as a caching layer, and
 // delegate as the source of truth.
 func NewModuleReader(
@@ -33,6 +36,7 @@ func NewModuleReader(
 	sumReadWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
 	repositoryServiceProvider registryv1alpha1apiclient.RepositoryServiceProvider,
+	options ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
 		logger,
@@ -42,5 +46,18 @@ func NewModuleReader(
 		sumReadWriteBucket,
 		delegate,
 		repositoryServiceProvider,
+		options...,
 	)
+}
+
+// ModuleReaderWithExternalPaths is used to preserve the external paths
+// to the files resolved from the module cache.
+func ModuleReaderWithExternalPaths() ModuleReaderOption {
+	return func(moduleReaderOptions *moduleReaderOptions) {
+		moduleReaderOptions.allowCacheExternalPaths = true
+	}
+}
+
+type moduleReaderOptions struct {
+	allowCacheExternalPaths bool
 }
