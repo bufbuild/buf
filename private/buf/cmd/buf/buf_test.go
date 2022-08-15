@@ -1987,6 +1987,95 @@ func TestFormatExitCode(t *testing.T) {
 	assert.NotEmpty(t, stdout.String())
 }
 
+func TestFormatStdin(t *testing.T) {
+	stdin := bytes.NewBuffer(
+		[]byte(`
+syntax = "proto3";
+
+
+package foo;
+`),
+	)
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		stdin,
+		stdout,
+		"format",
+		"--stdin",
+	)
+	assert.Equal(
+		t,
+		`syntax = "proto3";
+
+package foo;
+`,
+		stdout.String(),
+	)
+
+	stdin = bytes.NewBuffer(
+		[]byte(`
+syntax = "proto3";
+
+
+package foo;
+`),
+	)
+	stdout = bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		stdin,
+		stdout,
+		"format",
+		"--stdin",
+		"--diff",
+	)
+	assert.NotEmpty(t, stdout.String())
+
+	stdin = bytes.NewBuffer(
+		[]byte(`
+syntax = "proto3";
+
+
+package foo;
+`),
+	)
+	stdout = bytes.NewBuffer(nil)
+	testRun(
+		t,
+		bufcli.ExitCodeFileAnnotation,
+		stdin,
+		stdout,
+		"format",
+		"--stdin",
+		"--exit-code",
+	)
+	assert.NotEmpty(t, stdout.String())
+
+	stdin = bytes.NewBuffer(
+		[]byte(`
+syntax = "proto3";
+
+
+package foo;
+`),
+	)
+	stdout = bytes.NewBuffer(nil)
+	testRun(
+		t,
+		bufcli.ExitCodeFileAnnotation,
+		stdin,
+		stdout,
+		"format",
+		"--stdin",
+		"--diff",
+		"--exit-code",
+	)
+	assert.NotEmpty(t, stdout.String())
+}
+
 // Tests if the image produced by the formatted result is
 // equivalent to the original result.
 func TestFormatEquivalence(t *testing.T) {
@@ -2042,6 +2131,28 @@ func TestFormatInvalidFlagCombination(t *testing.T) {
 		filepath.Join("testdata", "format", "diff"),
 		"-w",
 		"-o",
+		filepath.Join(tempDir, "formatted"),
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: --stdin cannot be used with --write`,
+		"format",
+		"--stdin",
+		"--write",
+		filepath.Join(tempDir, "formatted"),
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: --stdin cannot be used with --output`,
+		"format",
+		"--stdin",
+		"--output",
 		filepath.Join(tempDir, "formatted"),
 	)
 }

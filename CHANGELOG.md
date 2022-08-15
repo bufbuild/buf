@@ -7,6 +7,7 @@
   `2m` (the default for all the other `buf` commands).
 - Add support for experimental code generation with the `plugin:` key in `buf.gen.yaml`.
 - Preserve single quotes with `buf format`.
+- Add `--stdin` flag to `buf format` to format the content read from stdin.
 
 ## [v1.7.0] - 2022-06-27
 

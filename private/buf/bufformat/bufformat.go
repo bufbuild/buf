@@ -15,6 +15,7 @@
 package bufformat
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -65,4 +66,17 @@ func Format(ctx context.Context, module bufmodule.Module) (_ storage.ReadBucket,
 		return nil, err
 	}
 	return readWriteBucket, nil
+}
+
+// FormatRaw formats the given raw bytes and returns the result.
+func FormatRaw(ctx context.Context, raw []byte) ([]byte, error) {
+	fileNode, err := parser.Parse("<proto>", bytes.NewReader(raw), reporter.NewHandler(nil))
+	if err != nil {
+		return nil, err
+	}
+	buffer := bytes.NewBuffer(nil)
+	if err := newFormatter(buffer, fileNode).Run(); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }

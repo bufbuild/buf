@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/diff"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -52,6 +53,7 @@ const (
 	outputFlagName          = "output"
 	outputFlagShortName     = "o"
 	pathsFlagName           = "path"
+	stdinFlagName           = "stdin"
 	writeFlagName           = "write"
 	writeFlagShortName      = "w"
 )
@@ -168,8 +170,9 @@ type flags struct {
 	ErrorFormat     string
 	ExcludePaths    []string
 	ExitCode        bool
-	Paths           []string
 	Output          string
+	Paths           []string
+	Stdin           bool
 	Write           bool
 	// special
 	InputHashtag string
@@ -184,25 +187,18 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
+	flagSet.StringVar(
+		&f.Config,
+		configFlagName,
+		"",
+		`The file or data to use for configuration.`,
+	)
 	flagSet.BoolVarP(
 		&f.Diff,
 		diffFlagName,
 		diffFlagShortName,
 		false,
 		"Display diffs instead of rewriting files.",
-	)
-	flagSet.BoolVar(
-		&f.ExitCode,
-		exitCodeFlagName,
-		false,
-		"Exit with a non-zero exit code if files were not already formatted.",
-	)
-	flagSet.BoolVarP(
-		&f.Write,
-		writeFlagName,
-		writeFlagShortName,
-		false,
-		"Rewrite files in-place.",
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
@@ -212,6 +208,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			"The format for build errors printed to stderr. Must be one of %s.",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
+	)
+	flagSet.BoolVar(
+		&f.ExitCode,
+		exitCodeFlagName,
+		false,
+		"Exit with a non-zero exit code if files were not already formatted.",
 	)
 	flagSet.StringVarP(
 		&f.Output,
@@ -223,11 +225,19 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			buffetch.SourceFormatsString,
 		),
 	)
-	flagSet.StringVar(
-		&f.Config,
-		configFlagName,
+	flagSet.BoolVarP(
+		&f.Stdin,
+		stdinFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		false,
+		"Read and format the input .proto file content from stdin.",
+	)
+	flagSet.BoolVarP(
+		&f.Write,
+		writeFlagName,
+		writeFlagShortName,
+		false,
+		"Rewrite files in-place.",
 	)
 }
 
@@ -242,9 +252,61 @@ func run(
 	if flags.Output != "-" && flags.Write {
 		return fmt.Errorf("--%s cannot be used with --%s", outputFlagName, writeFlagName)
 	}
+	if flags.Stdin && flags.Output != "-" {
+		return fmt.Errorf("--%s cannot be used with --%s", stdinFlagName, outputFlagName)
+	}
+	if flags.Stdin && flags.Write {
+		return fmt.Errorf("--%s cannot be used with --%s", stdinFlagName, writeFlagName)
+	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
+	}
+	if flags.Stdin && container.NumArgs() > 0 {
+		return fmt.Errorf("--%s cannot be used with a non-empty input %s", stdinFlagName, input)
+	}
+	runner := command.NewRunner()
+	if flags.Stdin {
+		// We need to read the raw bytes from the io.Reader upfront so that
+		// the content can be referenced more than once: once by the formatter,
+		// and again during the diff.
+		rawBytes, err := io.ReadAll(container.Stdin())
+		if err != nil {
+			return err
+		}
+		formattedBytes, err := bufformat.FormatRaw(ctx, rawBytes)
+		if err != nil {
+			return err
+		}
+		diffBytes, err := diff.Diff(
+			ctx,
+			runner,
+			rawBytes,
+			formattedBytes,
+			"<original>",
+			"<formatted>",
+		)
+		if err != nil {
+			return err
+		}
+		if flags.Diff {
+			if len(diffBytes) > 0 {
+				if _, err := container.Stdout().Write(diffBytes); err != nil {
+					return err
+				}
+				if flags.ExitCode {
+					return bufcli.ErrFileAnnotation
+				}
+			}
+			return nil
+		}
+		if _, err := container.Stdout().Write(formattedBytes); err != nil {
+			return err
+		}
+		if len(diffBytes) > 0 && flags.ExitCode {
+			return bufcli.ErrFileAnnotation
+		}
+		return nil
 	}
 	refParser := buffetch.NewRefParser(
 		container.Logger(),
@@ -265,7 +327,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	runner := command.NewRunner()
 	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	moduleConfigReader, err := bufcli.NewWireModuleConfigReaderForModuleReader(
 		container,
