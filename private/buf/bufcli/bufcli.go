@@ -512,7 +512,7 @@ func NewModuleReaderAndCreateCacheDirs(
 // required cache directories, and configures the cache to preserve external paths.
 //
 // WARNING - this should only be used by systems like the LSP - leaking external paths from the module
-// cache is otherwise dangerous and NOT recommended.
+// cache is otherwise dangerous and requires manager approval.
 func NewModuleReaderAndCreateCacheDirsWithExternalPaths(
 	container appflag.Container,
 	registryProvider registryv1alpha1apiclient.Provider,
