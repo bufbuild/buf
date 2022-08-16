@@ -108,8 +108,7 @@ message DeleteStudioRequestResponse {}
 // ListStudioRequestsRequest is the proto request representation of the
 // ListStudioRequests method.
 message ListStudioRequestsRequest {
-  // The default page size for studio requests is 20. You can set a custom value
-  // between 1-250.
+  // The page size for listing studio requests, values between 1-250.
   uint32 page_size = 1;
   // The page token for paginating. The first page is returned if this is empty.
   string page_token = 2;

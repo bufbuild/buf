@@ -487,8 +487,7 @@ type ListStudioRequestsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The default page size for studio requests is 20. You can set a custom value
-	// between 1-250.
+	// The page size for listing studio requests, values between 1-250.
 	PageSize uint32 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The page token for paginating. The first page is returned if this is empty.
 	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
