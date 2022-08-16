@@ -53,6 +53,10 @@ message NPMConfig {
   }
   // Optionally define the runtime libraries for the plugin.
   repeated RuntimeLibrary runtime_libraries = 1;
+  // Optionally define a redirect import suffix for the plugin, i.e. "connectweb.js" or "pb.js"
+  // Typically set for plugins, such as those built with @bufbuild/protoplugin, that
+  // support import path rewriting.
+  string redirect_import_suffix = 2;
 }
 
 // RegistryConfig is the configuration for the remote registry of a plugin.
