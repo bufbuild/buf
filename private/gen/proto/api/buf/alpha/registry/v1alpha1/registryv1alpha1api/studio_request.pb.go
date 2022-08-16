@@ -52,6 +52,8 @@ type StudioRequestService interface {
 	// ListStudioRequests shows the caller's favorited Studio Requests.
 	ListStudioRequests(
 		ctx context.Context,
+		pageSize uint32,
 		pageToken string,
+		reverse bool,
 	) (requests []*v1alpha1.StudioRequest, nextPageToken string, err error)
 }
