@@ -107,13 +107,17 @@ func (s *studioRequestServiceClient) DeleteStudioRequest(ctx context.Context, id
 // ListStudioRequests shows the caller's favorited Studio Requests.
 func (s *studioRequestServiceClient) ListStudioRequests(
 	ctx context.Context,
+	pageSize uint32,
 	pageToken string,
+	reverse bool,
 ) (requests []*v1alpha1.StudioRequest, nextPageToken string, _ error) {
 	response, err := s.client.ListStudioRequests(
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.ListStudioRequestsRequest{
+				PageSize:  pageSize,
 				PageToken: pageToken,
+				Reverse:   reverse,
 			}),
 	)
 	if err != nil {

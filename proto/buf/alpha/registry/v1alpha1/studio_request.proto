@@ -108,8 +108,13 @@ message DeleteStudioRequestResponse {}
 // ListStudioRequestsRequest is the proto request representation of the
 // ListStudioRequests method.
 message ListStudioRequestsRequest {
+  // The page size for listing studio requests, values between 1-250.
+  uint32 page_size = 1;
   // The page token for paginating. The first page is returned if this is empty.
-  string page_token = 1;
+  string page_token = 2;
+  // The listed studio requests are order by created time in ascending order.
+  // You can reverse that order setting this value to true.
+  bool reverse = 3;
 }
 
 // ListStudioRequestsResponse is the proto response representation of the
