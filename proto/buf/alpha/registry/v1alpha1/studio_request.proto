@@ -89,11 +89,8 @@ message RenameStudioRequestRequest {
   string new_name = 2;
 }
 
-// RenameStudioRequestResponse returns the renamed StudioRequest.
-message RenameStudioRequestResponse {
-  // Renamed Studio Request.
-  StudioRequest renamed_request = 1;
-}
+// RenameStudioRequestResponse returns empty on successful renaming.
+message RenameStudioRequestResponse {}
 
 // DeleteStudioRequestRequest is the proto request representation of the
 // DeleteStudioRequest method.
