@@ -45,7 +45,7 @@ type StudioRequestService interface {
 		ctx context.Context,
 		id string,
 		newName string,
-	) (renamedRequest *v1alpha1.StudioRequest, err error)
+	) (err error)
 	// DeleteStudioRequest removes a favorite Studio Request from the caller's BSR
 	// profile.
 	DeleteStudioRequest(ctx context.Context, id string) (err error)

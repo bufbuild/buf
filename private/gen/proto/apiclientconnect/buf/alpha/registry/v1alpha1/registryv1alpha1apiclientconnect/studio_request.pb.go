@@ -73,8 +73,8 @@ func (s *studioRequestServiceClient) RenameStudioRequest(
 	ctx context.Context,
 	id string,
 	newName string,
-) (renamedRequest *v1alpha1.StudioRequest, _ error) {
-	response, err := s.client.RenameStudioRequest(
+) (_ error) {
+	_, err := s.client.RenameStudioRequest(
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.RenameStudioRequestRequest{
@@ -83,9 +83,9 @@ func (s *studioRequestServiceClient) RenameStudioRequest(
 			}),
 	)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return response.Msg.RenamedRequest, nil
+	return nil
 }
 
 // DeleteStudioRequest removes a favorite Studio Request from the caller's BSR
