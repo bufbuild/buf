@@ -1461,7 +1461,6 @@ func (f *formatter) writeStringValue(stringValueNode ast.StringValueNode) {
 //  2. f"oo" -> 'f"oo"'        (") is used - surround with (')
 //  3. f'oo' -> "f'oo'"        (') is used - surround with (")
 //  4. foo -> "foo"            By default, use double quotes
-//
 func (f *formatter) writeStringWithStyle(value string) {
 	var (
 		singleQuote = strings.ContainsRune(value, '\'')

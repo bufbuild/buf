@@ -1,4 +1,3 @@
-# Disabled due to needing generics from 1.18, re-enable when 1.19 comes out
 name: previous
 on: push
 # Prevent writing to the repository using the CI token.
@@ -16,7 +15,7 @@ jobs:
         if: success()
         uses: actions/setup-go@v2
         with:
-          go-version: 1.17.8
+          go-version: 1.18.5
       - name: cache
         if: success()
         uses: actions/cache@v2
