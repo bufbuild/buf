@@ -43,6 +43,9 @@ const (
 	disableSymlinksFlagName = "disable-symlinks"
 	targetFlagName          = "target"
 	overrideRemoteFlagName  = "override-remote"
+	cacheFromFlagName       = "cache-from"
+	dryRunFlagName          = "dry-run"
+	pullFlagName            = "pull"
 )
 
 // NewCommand returns a new Command.
@@ -72,6 +75,9 @@ type flags struct {
 	DisableSymlinks bool
 	Target          string
 	OverrideRemote  string
+	CacheFrom       []string
+	DryRun          bool
+	PullParent      bool
 }
 
 func newFlags() *flags {
@@ -106,6 +112,24 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		targetFlagName,
 		"",
 		fmt.Sprintf("The target architecture for plugins (default %q).", bufplugindocker.DefaultTarget),
+	)
+	flagSet.StringArrayVar(
+		&f.CacheFrom,
+		cacheFromFlagName,
+		nil,
+		"Cache sources used to optimize build time.",
+	)
+	flagSet.BoolVar(
+		&f.DryRun,
+		dryRunFlagName,
+		false,
+		"Build the plugin but skip pushing it to the BSR.",
+	)
+	flagSet.BoolVar(
+		&f.PullParent,
+		pullFlagName,
+		false,
+		"Pull latest base images prior to build.",
 	)
 }
 
@@ -175,6 +199,8 @@ func run(
 		pluginConfig,
 		bufplugindocker.WithConfigDirPath(container.ConfigDirPath()),
 		bufplugindocker.WithTarget(flags.Target),
+		bufplugindocker.WithCacheFrom(flags.CacheFrom),
+		bufplugindocker.WithPullParent(flags.PullParent),
 	)
 	if err != nil {
 		return err
@@ -188,6 +214,12 @@ func run(
 			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", buildResponse.Image))
 		}
 	}()
+
+	if flags.DryRun {
+		container.Logger().Info("Skipping push in dry-run mode.")
+		return nil
+	}
+
 	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
 	if err != nil {
 		return err
