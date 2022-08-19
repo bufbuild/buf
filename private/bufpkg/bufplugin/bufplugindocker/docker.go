@@ -17,6 +17,7 @@ package bufplugindocker
 import (
 	"bufio"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,6 +30,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
+	controlapi "github.com/moby/buildkit/api/services/control"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -70,6 +72,20 @@ func WithConfigDirPath(path string) BuildOption {
 func WithTarget(target string) BuildOption {
 	return func(options *buildOptions) {
 		options.target = target
+	}
+}
+
+// WithCacheFrom is a BuildOption which allows using images published to an OCI registry to be used as cached state during build.
+func WithCacheFrom(cacheFrom []string) BuildOption {
+	return func(options *buildOptions) {
+		options.cacheFrom = cacheFrom
+	}
+}
+
+// WithPullParent configures whether the build will attempt to pull the latest parent images (FROM ...) prior to build.
+func WithPullParent(pullParent bool) BuildOption {
+	return func(options *buildOptions) {
+		options.pullParent = pullParent
 	}
 }
 
@@ -158,6 +174,8 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 			BuildArgs: map[string]*string{
 				"PLUGIN_VERSION": &pluginConfig.PluginVersion,
 			},
+			CacheFrom:  params.cacheFrom,
+			PullParent: params.pullParent,
 		})
 		if err != nil {
 			return err
@@ -169,10 +187,31 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 		}()
 		scanner := bufio.NewScanner(response.Body)
 		for scanner.Scan() {
-			d.logger.Debug(scanner.Text())
 			var message jsonmessage.JSONMessage
-			if err := json.Unmarshal([]byte(scanner.Text()), &message); err == nil && message.Error != nil {
+			if err := json.Unmarshal([]byte(scanner.Text()), &message); err != nil {
+				d.logger.Debug(scanner.Text())
+				continue
+			}
+			if message.Error != nil {
 				return message.Error
+			}
+			handled := false
+			if message.ID == "moby.buildkit.trace" && message.Aux != nil {
+				b64Aux := string(*message.Aux)
+				b64Aux = strings.TrimPrefix(b64Aux, `"`)
+				b64Aux = strings.TrimSuffix(b64Aux, `"`)
+				bdec := base64.NewDecoder(base64.StdEncoding, strings.NewReader(b64Aux))
+				if protoBytes, err := io.ReadAll(bdec); err == nil {
+					var status controlapi.StatusResponse
+					if err := status.Unmarshal(protoBytes); err == nil {
+						d.logger.Debug("trace", zap.Any("status", status))
+						handled = true
+					}
+				}
+			}
+			// If we fail to interpret a line of output, log the raw format
+			if !handled {
+				d.logger.Debug(scanner.Text())
 			}
 		}
 		if err := scanner.Err(); err != nil {
@@ -300,4 +339,6 @@ func WithVersion(version string) ClientOption {
 type buildOptions struct {
 	configDirPath string
 	target        string
+	cacheFrom     []string
+	pullParent    bool
 }
