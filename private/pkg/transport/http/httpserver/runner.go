@@ -46,6 +46,7 @@ func newRunner(logger *zap.Logger, options ...RunnerOption) *runner {
 		logger:            logger.Named("httpserver"),
 		shutdownTimeout:   DefaultShutdownTimeout,
 		readHeaderTimeout: DefaultReadHeaderTimeout,
+		silentEndpoints:   make(map[string]struct{}),
 	}
 	for _, option := range options {
 		option(runner)
