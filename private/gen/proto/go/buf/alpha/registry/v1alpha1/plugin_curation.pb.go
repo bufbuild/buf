@@ -158,7 +158,7 @@ type NPMConfig struct {
 	// to serve the output of a BSR module and a plugin in an individual package.
 	//
 	// All plugins based on @bufbuild/protoplugin support the option "rewrite_imports".
-	// Setting this value, e.g., "connectweb.js" or "pb.js", informs the BSR npm registry
+	// Setting this value, i.e. "connectweb.js" or "pb.js", informs the BSR npm registry
 	// that the plugin supports import rewrites with the given import suffix.
 	RewriteImportPathSuffix string `protobuf:"bytes,2,opt,name=rewrite_import_path_suffix,json=rewriteImportPathSuffix,proto3" json:"rewrite_import_path_suffix,omitempty"`
 }
