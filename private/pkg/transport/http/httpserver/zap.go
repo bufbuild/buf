@@ -27,7 +27,7 @@ func newZapMiddleware(logger *zap.Logger, silentEndpoints map[string]struct{}) f
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			logEntry := newLogEntry(logger, request)
 			wrapResponseWriter := middleware.NewWrapResponseWriter(newCheckedResponseWriter(logger, writer, request), request.ProtoMajor)
-			if _, ok := silentEndpoints[request.URL.Path]; ok {
+			if _, ok := silentEndpoints[request.URL.Path]; !ok {
 				defer logRequest(logEntry, wrapResponseWriter, time.Now())
 			}
 			next.ServeHTTP(wrapResponseWriter, middleware.WithLogEntry(request, logEntry))
