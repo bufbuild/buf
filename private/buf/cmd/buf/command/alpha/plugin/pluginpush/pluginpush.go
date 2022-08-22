@@ -46,6 +46,7 @@ const (
 	cacheFromFlagName       = "cache-from"
 	dryRunFlagName          = "dry-run"
 	pullFlagName            = "pull"
+	buildArgFlagName        = "build-arg"
 )
 
 // NewCommand returns a new Command.
@@ -78,6 +79,7 @@ type flags struct {
 	CacheFrom       []string
 	DryRun          bool
 	PullParent      bool
+	BuildArgs       []string
 }
 
 func newFlags() *flags {
@@ -130,6 +132,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		pullFlagName,
 		false,
 		"Pull latest base images prior to build.",
+	)
+	flagSet.StringArrayVar(
+		&f.BuildArgs,
+		buildArgFlagName,
+		nil,
+		"Build arguments.",
 	)
 }
 
@@ -201,6 +209,7 @@ func run(
 		bufplugindocker.WithTarget(flags.Target),
 		bufplugindocker.WithCacheFrom(flags.CacheFrom),
 		bufplugindocker.WithPullParent(flags.PullParent),
+		bufplugindocker.WithBuildArgs(flags.BuildArgs),
 	)
 	if err != nil {
 		return err
