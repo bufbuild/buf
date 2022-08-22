@@ -169,6 +169,8 @@ func RunnerWithHealth() RunnerOption {
 // The default is to not silence any endpoints.
 func RunnerWithSilentEndpoints(silentEndpoints ...string) RunnerOption {
 	return func(runner *runner) {
-		runner.silentEndpoints = append(runner.silentEndpoints, silentEndpoints...)
+		for _, endpoint := range silentEndpoints {
+			runner.silentEndpoints[endpoint] = struct{}{}
+		}
 	}
 }

@@ -38,7 +38,7 @@ type runner struct {
 	health            bool
 	maxBodySize       int64
 	walkFunc          chi.WalkFunc
-	silentEndpoints   []string
+	silentEndpoints   map[string]struct{}
 }
 
 func newRunner(logger *zap.Logger, options ...RunnerOption) *runner {
