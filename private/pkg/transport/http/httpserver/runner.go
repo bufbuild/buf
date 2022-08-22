@@ -38,6 +38,7 @@ type runner struct {
 	health            bool
 	maxBodySize       int64
 	walkFunc          chi.WalkFunc
+	silentEndpoints   []string
 }
 
 func newRunner(logger *zap.Logger, options ...RunnerOption) *runner {
@@ -69,7 +70,7 @@ func (s *runner) Run(
 	mux := chi.NewMux()
 	mux.Use(middleware.Recoverer)
 	mux.Use(middleware.StripSlashes)
-	mux.Use(newZapMiddleware(s.logger))
+	mux.Use(newZapMiddleware(s.logger, s.silentEndpoints))
 	if s.maxBodySize > 0 {
 		mux.Use(func(next http.Handler) http.Handler {
 			return http.MaxBytesHandler(next, s.maxBodySize)
