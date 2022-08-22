@@ -89,6 +89,13 @@ func WithPullParent(pullParent bool) BuildOption {
 	}
 }
 
+// WithBuildArgs allows specifying additional Docker build args.
+func WithBuildArgs(args []string) BuildOption {
+	return func(options *buildOptions) {
+		options.buildArgs = args
+	}
+}
+
 // BuildResponse returns details of a successful image build call.
 type BuildResponse struct {
 	// Image contains the Docker image name in the local Docker engine including the tag (i.e. plugins.buf.build/library/some-plugin:<id>, where <id> is a random id).
@@ -161,6 +168,13 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 		if len(target) == 0 {
 			target = DefaultTarget
 		}
+		buildArgs := map[string]*string{
+			"PLUGIN_VERSION": &pluginConfig.PluginVersion,
+		}
+		for _, arg := range params.buildArgs {
+			name, val, _ := strings.Cut(arg, "=")
+			buildArgs[name] = &val
+		}
 		response, err := d.cli.ImageBuild(ctx, dockerContext, types.ImageBuildOptions{
 			Tags:     []string{imageName},
 			Platform: target,
@@ -169,11 +183,9 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 				"build.buf.plugins.config.owner":  pluginConfig.Name.Owner(),
 				"build.buf.plugins.config.name":   pluginConfig.Name.Plugin(),
 			},
-			Version:   types.BuilderBuildKit, // DOCKER_BUILDKIT=1
-			SessionID: buildkitSession.ID(),
-			BuildArgs: map[string]*string{
-				"PLUGIN_VERSION": &pluginConfig.PluginVersion,
-			},
+			Version:    types.BuilderBuildKit, // DOCKER_BUILDKIT=1
+			SessionID:  buildkitSession.ID(),
+			BuildArgs:  buildArgs,
 			CacheFrom:  params.cacheFrom,
 			PullParent: params.pullParent,
 		})
@@ -341,4 +353,5 @@ type buildOptions struct {
 	target        string
 	cacheFrom     []string
 	pullParent    bool
+	buildArgs     []string
 }
