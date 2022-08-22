@@ -162,3 +162,15 @@ func RunnerWithHealth() RunnerOption {
 		runner.health = true
 	}
 }
+
+// RunnerWithSilentEndpoints returns a new RunnerOption that disables logging from the
+// provided endpoints.
+//
+// The default is to not silence any endpoints.
+func RunnerWithSilentEndpoints(silentEndpoints ...string) RunnerOption {
+	return func(runner *runner) {
+		for _, endpoint := range silentEndpoints {
+			runner.silentEndpoints[endpoint] = struct{}{}
+		}
+	}
+}

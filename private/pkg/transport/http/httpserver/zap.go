@@ -22,12 +22,14 @@ import (
 	"go.uber.org/zap"
 )
 
-func newZapMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
+func newZapMiddleware(logger *zap.Logger, silentEndpoints map[string]struct{}) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			logEntry := newLogEntry(logger, request)
 			wrapResponseWriter := middleware.NewWrapResponseWriter(newCheckedResponseWriter(logger, writer, request), request.ProtoMajor)
-			defer logRequest(logEntry, wrapResponseWriter, time.Now())
+			if _, ok := silentEndpoints[request.URL.Path]; !ok {
+				defer logRequest(logEntry, wrapResponseWriter, time.Now())
+			}
 			next.ServeHTTP(wrapResponseWriter, middleware.WithLogEntry(request, logEntry))
 		})
 	}
