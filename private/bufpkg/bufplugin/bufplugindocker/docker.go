@@ -168,13 +168,12 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 		if len(target) == 0 {
 			target = DefaultTarget
 		}
-		buildArgs := map[string]*string{
-			"PLUGIN_VERSION": &pluginConfig.PluginVersion,
-		}
+		buildArgs := make(map[string]*string)
 		for _, arg := range params.buildArgs {
 			name, val, _ := strings.Cut(arg, "=")
 			buildArgs[name] = &val
 		}
+		buildArgs["PLUGIN_VERSION"] = &pluginConfig.PluginVersion
 		response, err := d.cli.ImageBuild(ctx, dockerContext, types.ImageBuildOptions{
 			Tags:     []string{imageName},
 			Platform: target,
