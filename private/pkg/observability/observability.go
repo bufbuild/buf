@@ -24,6 +24,7 @@ import (
 	"go.opencensus.io/tag"
 	"go.opencensus.io/trace"
 	"go.opentelemetry.io/otel"
+	otelsdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
@@ -146,7 +147,7 @@ type startOptions struct {
 	traceExportClosers     []TraceExportCloser
 	viewExportClosers      []ViewExportCloser
 	traceViewExportClosers []TraceViewExportCloser
-	tracerProviderClosers  []TracerProviderCloser
+	tracerProviderClosers  []otelsdktrace.TracerProvider
 }
 
 func newStartOptions() *startOptions {

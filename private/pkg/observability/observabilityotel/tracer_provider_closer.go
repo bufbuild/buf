@@ -32,7 +32,8 @@ func newTracerProviderCloser(tracerProvider *sdktrace.TracerProvider) *tracerPro
 }
 
 func (t *tracerProviderCloser) Close() error {
-	// TODO: this should probably be passed down from the application entrypoint
+	// Note: the application layer above does not pass down a context required for
+	// otelsdktrace.TracerProvider.Shutdown
 	return t.tracerProvider.Shutdown(context.Background())
 }
 
