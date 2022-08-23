@@ -23,6 +23,8 @@ import (
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
 	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 // TraceExportCloser describes the interface used to export OpenCensus traces
@@ -43,6 +45,11 @@ type ViewExportCloser interface {
 type TraceViewExportCloser interface {
 	ViewExportCloser
 	TraceExportCloser
+}
+
+type TracerProviderCloser interface {
+	oteltrace.TracerProvider
+	io.Closer
 }
 
 // Start initializes tracing.
@@ -79,6 +86,11 @@ func Start(options ...StartOption) io.Closer {
 		view.RegisterExporter(traceViewExportCloser)
 		closers = append(closers, traceViewExportCloser)
 	}
+	for _, tracerProviderCloser := range startOptions.tracerProviderClosers {
+		tracerProviderCloser := tracerProviderCloser
+		otel.SetTracerProvider(tracerProviderCloser)
+		closers = append(closers, tracerProviderCloser)
+	}
 	return ioextended.ChainCloser(closers...)
 }
 
@@ -106,6 +118,12 @@ func StartWithTraceViewExportCloser(traceViewExportCloser TraceViewExportCloser)
 	}
 }
 
+func StartWithTracerProviderCloser(tracerProviderCloser TracerProviderCloser) StartOption {
+	return func(startOptions *startOptions) {
+		startOptions.tracerProviderClosers = append(startOptions.tracerProviderClosers, tracerProviderCloser)
+	}
+}
+
 // NewHTTPTransport returns a HTTP transport instrumented with OpenCensus traces and metrics.
 func NewHTTPTransport(base http.RoundTripper, tags ...tag.Mutator) http.RoundTripper {
 	return &wrappedRoundTripper{
@@ -128,6 +146,7 @@ type startOptions struct {
 	traceExportClosers     []TraceExportCloser
 	viewExportClosers      []ViewExportCloser
 	traceViewExportClosers []TraceViewExportCloser
+	tracerProviderClosers  []TracerProviderCloser
 }
 
 func newStartOptions() *startOptions {
