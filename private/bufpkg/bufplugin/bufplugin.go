@@ -107,7 +107,9 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_GoConfig{GoConfig: goConfig}
 	} else if pluginRegistry.NPM != nil {
-		npmConfig := &registryv1alpha1.NPMConfig{}
+		npmConfig := &registryv1alpha1.NPMConfig{
+			RewriteImportPathSuffix: pluginRegistry.NPM.RewriteImportPathSuffix,
+		}
 		npmConfig.RuntimeLibraries = make([]*registryv1alpha1.NPMConfig_RuntimeLibrary, 0, len(pluginRegistry.NPM.Deps))
 		for _, dependency := range pluginRegistry.NPM.Deps {
 			npmConfig.RuntimeLibraries = append(npmConfig.RuntimeLibraries, npmRuntimeDependencyToProtoNPMRuntimeLibrary(dependency))
@@ -132,7 +134,9 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 		}
 		registryConfig.Go = goConfig
 	} else if config.GetNpmConfig() != nil {
-		npmConfig := &bufpluginconfig.NPMRegistryConfig{}
+		npmConfig := &bufpluginconfig.NPMRegistryConfig{
+			RewriteImportPathSuffix: config.GetNpmConfig().GetRewriteImportPathSuffix(),
+		}
 		npmConfig.Deps = make([]*bufpluginconfig.NPMRegistryDependencyConfig, 0, len(config.GetNpmConfig().GetRuntimeLibraries()))
 		for _, library := range config.GetNpmConfig().GetRuntimeLibraries() {
 			npmConfig.Deps = append(npmConfig.Deps, protoNPMRuntimeLibraryToNPMRuntimeDependency(library))

@@ -109,7 +109,8 @@ type GoRegistryDependencyConfig struct {
 
 // NPMRegistryConfig is the registry configuration for a JavaScript NPM plugin.
 type NPMRegistryConfig struct {
-	Deps []*NPMRegistryDependencyConfig
+	RewriteImportPathSuffix string
+	Deps                    []*NPMRegistryDependencyConfig
 }
 
 // NPMRegistryDependencyConfig is the npm registry dependency configuration.
@@ -226,7 +227,8 @@ func (e ExternalGoRegistryConfig) IsEmpty() bool {
 
 // ExternalNPMRegistryConfig is the external registry configuration for a JavaScript NPM plugin.
 type ExternalNPMRegistryConfig struct {
-	Deps []struct {
+	RewriteImportPathSuffix string `json:"rewrite_import_path_suffix,omitempty" yaml:"rewrite_import_path_suffix,omitempty"`
+	Deps                    []struct {
 		Package string `json:"package,omitempty" yaml:"package,omitempty"`
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
