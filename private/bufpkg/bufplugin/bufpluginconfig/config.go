@@ -176,7 +176,8 @@ func newNPMRegistryConfig(externalNPMRegistryConfig ExternalNPMRegistryConfig) (
 		)
 	}
 	return &NPMRegistryConfig{
-		Deps: dependencies,
+		RewriteImportPathSuffix: externalNPMRegistryConfig.RewriteImportPathSuffix,
+		Deps:                    dependencies,
 	}, nil
 }
 
