@@ -53,6 +53,14 @@ message NPMConfig {
   }
   // Optionally define the runtime libraries for the plugin.
   repeated RuntimeLibrary runtime_libraries = 1;
+  // Optionally define a configuration for rewriting import paths, a feature mainly
+  // used for remote code generation in the BSR npm registry, which makes it possible
+  // to serve the output of a BSR module and a plugin in an individual package.
+  //
+  // All plugins based on @bufbuild/protoplugin support the option "rewrite_imports".
+  // Setting this value, i.e. "connectweb.js" or "pb.js", informs the BSR npm registry
+  // that the plugin supports import rewrites with the given import suffix.
+  string rewrite_import_path_suffix = 2;
 }
 
 // RegistryConfig is the configuration for the remote registry of a plugin.
