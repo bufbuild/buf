@@ -165,6 +165,7 @@ func (g *generator) execPlugins(
 	// Collect all of the plugin jobs so that they can be executed in parallel.
 	jobs := make([]func(context.Context) error, 0, len(config.PluginConfigs))
 	responses := make([]*pluginpb.CodeGeneratorResponse, len(config.PluginConfigs))
+	requiredFeatures := computeRequiredFeatures(image)
 	for i, pluginConfig := range config.PluginConfigs {
 		index := i
 		currentPluginConfig := pluginConfig
@@ -227,6 +228,7 @@ func (g *generator) execPlugins(
 		}
 		return nil, err
 	}
+	checkRequiredFeatures(requiredFeatures, responses)
 	if err := validateResponses(responses, config.PluginConfigs); err != nil {
 		return nil, err
 	}
