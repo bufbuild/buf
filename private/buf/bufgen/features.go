@@ -27,18 +27,20 @@ import (
 )
 
 // requiredFeatures maps a feature to the set of files in an image that
-// depend on that make use of that feature.
+// make use of that feature.
 type requiredFeatures map[pluginpb.CodeGeneratorResponse_Feature][]string
 
 type featureChecker func(options *descriptorpb.FileDescriptorProto) bool
 
+// Map of all known features to functions that can check whether a given file
+// uses said feature.
 var allFeatures = map[pluginpb.CodeGeneratorResponse_Feature]featureChecker{
 	pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL: fileHasProto3Optional,
 }
 
-// computeRequiredFeatures returns a map of required features to files in the
-// image that require that feature. After plugins are invoked, the plugins'
-// response is checked to make sure that any required features were supported.
+// computeRequiredFeatures returns a map of required features to the files in
+// the image that require that feature. After plugins are invoked, the plugins'
+// responses are checked to make sure any required features were supported.
 func computeRequiredFeatures(img bufimage.Image) requiredFeatures {
 	features := requiredFeatures{}
 	for feature, checker := range allFeatures {
