@@ -187,9 +187,8 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 			Tags:     []string{imageName},
 			Platform: target,
 			Labels: map[string]string{
-				"build.buf.plugins.config.remote": pluginConfig.Name.Remote(),
-				"build.buf.plugins.config.owner":  pluginConfig.Name.Owner(),
-				"build.buf.plugins.config.name":   pluginConfig.Name.Plugin(),
+				"build.buf.plugins.config.owner": pluginConfig.Name.Owner(),
+				"build.buf.plugins.config.name":  pluginConfig.Name.Plugin(),
 			},
 			Version:    types.BuilderBuildKit, // DOCKER_BUILDKIT=1
 			SessionID:  buildkitSession.ID(),
