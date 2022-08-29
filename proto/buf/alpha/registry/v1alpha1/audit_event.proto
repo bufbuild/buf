@@ -18,48 +18,30 @@ package buf.alpha.registry.v1alpha1;
 
 import "google/protobuf/timestamp.proto";
 
-// AuditActorType is the type of actor that triggered certain audited event.
+// AuditActorType is the type of actor that caused certain audited event.
 enum AuditActorType {
-  // AUDIT_ACTOR_TYPE_UNSPECIFIED is the default actor type for audited events.
   AUDIT_ACTOR_TYPE_UNSPECIFIED = 0;
-  // AUDIT_ACTOR_TYPE_USER is the actor type for when the audited event is
-  // triggered by a user. This is the most common case.
   AUDIT_ACTOR_TYPE_USER = 1;
 }
 
-// AuditActor is the actor who triggered or executed the audited event.
+// AuditActor is the actor who caused the audited event.
 message AuditActor {
   // Type of actor who caused the audited event.
   AuditActorType type = 1;
-  // Id of the actor who eecuted the action.
+  // Id of the actor who caused the action.
   string id = 2;
 }
 
 // AuditResourceType is the type of the resource that was affected by the
 // audited event.
 enum AuditResourceType {
-  // AUDIT_RESOURCE_TYPE_UNSPECIFIED is the default type for audited events.
   AUDIT_RESOURCE_TYPE_UNSPECIFIED = 0;
-  // AUDIT_RESOURCE_TYPE_USER is the type for when the audited event affected a
-  // user.
   AUDIT_RESOURCE_TYPE_USER = 1;
-  // AUDIT_RESOURCE_TYPE_ORGANIZATION is the type for when the audited event
-  // affected an organization.
   AUDIT_RESOURCE_TYPE_ORGANIZATION = 2;
-  // AUDIT_RESOURCE_TYPE_ORGANIZATION_MEMBER is the type for when the audited
-  // event affected an organization member.
   AUDIT_RESOURCE_TYPE_ORGANIZATION_MEMBER = 3;
-  // AUDIT_RESOURCE_TYPE_REPOSITORY is the type for when the audited event
-  // affected a repository.
   AUDIT_RESOURCE_TYPE_REPOSITORY = 4;
-  // AUDIT_RESOURCE_TYPE_REPOSITORY_MEMBER is the type for when the audited
-  // event affected a repository member.
   AUDIT_RESOURCE_TYPE_REPOSITORY_MEMBER = 5;
-  // AUDIT_RESOURCE_TYPE_REPOSITORY_COMMIT is the type for when the audited
-  // event affected a repository commit.
   AUDIT_RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
-  // AUDIT_RESOURCE_TYPE_PLUGIN is the type for when the audited event affected
-  // a plugin.
   AUDIT_RESOURCE_TYPE_PLUGIN = 7;
 }
 
@@ -73,7 +55,6 @@ message AuditResource {
 
 // AuditEventType is the type of audited event.
 enum AuditEventType {
-  // AUDIT_EVENT_TYPE_UNSPECIFIED is the default type for audited events.
   AUDIT_EVENT_TYPE_UNSPECIFIED = 0;
 }
 

@@ -35,15 +35,12 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// AuditActorType is the type of actor that triggered certain audited event.
+// AuditActorType is the type of actor that caused certain audited event.
 type AuditActorType int32
 
 const (
-	// AUDIT_ACTOR_TYPE_UNSPECIFIED is the default actor type for audited events.
 	AuditActorType_AUDIT_ACTOR_TYPE_UNSPECIFIED AuditActorType = 0
-	// AUDIT_ACTOR_TYPE_USER is the actor type for when the audited event is
-	// triggered by a user. This is the most common case.
-	AuditActorType_AUDIT_ACTOR_TYPE_USER AuditActorType = 1
+	AuditActorType_AUDIT_ACTOR_TYPE_USER        AuditActorType = 1
 )
 
 // Enum value maps for AuditActorType.
@@ -90,29 +87,14 @@ func (AuditActorType) EnumDescriptor() ([]byte, []int) {
 type AuditResourceType int32
 
 const (
-	// AUDIT_RESOURCE_TYPE_UNSPECIFIED is the default type for audited events.
-	AuditResourceType_AUDIT_RESOURCE_TYPE_UNSPECIFIED AuditResourceType = 0
-	// AUDIT_RESOURCE_TYPE_USER is the type for when the audited event affected a
-	// user.
-	AuditResourceType_AUDIT_RESOURCE_TYPE_USER AuditResourceType = 1
-	// AUDIT_RESOURCE_TYPE_ORGANIZATION is the type for when the audited event
-	// affected an organization.
-	AuditResourceType_AUDIT_RESOURCE_TYPE_ORGANIZATION AuditResourceType = 2
-	// AUDIT_RESOURCE_TYPE_ORGANIZATION_MEMBER is the type for when the audited
-	// event affected an organization member.
+	AuditResourceType_AUDIT_RESOURCE_TYPE_UNSPECIFIED         AuditResourceType = 0
+	AuditResourceType_AUDIT_RESOURCE_TYPE_USER                AuditResourceType = 1
+	AuditResourceType_AUDIT_RESOURCE_TYPE_ORGANIZATION        AuditResourceType = 2
 	AuditResourceType_AUDIT_RESOURCE_TYPE_ORGANIZATION_MEMBER AuditResourceType = 3
-	// AUDIT_RESOURCE_TYPE_REPOSITORY is the type for when the audited event
-	// affected a repository.
-	AuditResourceType_AUDIT_RESOURCE_TYPE_REPOSITORY AuditResourceType = 4
-	// AUDIT_RESOURCE_TYPE_REPOSITORY_MEMBER is the type for when the audited
-	// event affected a repository member.
-	AuditResourceType_AUDIT_RESOURCE_TYPE_REPOSITORY_MEMBER AuditResourceType = 5
-	// AUDIT_RESOURCE_TYPE_REPOSITORY_COMMIT is the type for when the audited
-	// event affected a repository commit.
-	AuditResourceType_AUDIT_RESOURCE_TYPE_REPOSITORY_COMMIT AuditResourceType = 6
-	// AUDIT_RESOURCE_TYPE_PLUGIN is the type for when the audited event affected
-	// a plugin.
-	AuditResourceType_AUDIT_RESOURCE_TYPE_PLUGIN AuditResourceType = 7
+	AuditResourceType_AUDIT_RESOURCE_TYPE_REPOSITORY          AuditResourceType = 4
+	AuditResourceType_AUDIT_RESOURCE_TYPE_REPOSITORY_MEMBER   AuditResourceType = 5
+	AuditResourceType_AUDIT_RESOURCE_TYPE_REPOSITORY_COMMIT   AuditResourceType = 6
+	AuditResourceType_AUDIT_RESOURCE_TYPE_PLUGIN              AuditResourceType = 7
 )
 
 // Enum value maps for AuditResourceType.
@@ -170,7 +152,6 @@ func (AuditResourceType) EnumDescriptor() ([]byte, []int) {
 type AuditEventType int32
 
 const (
-	// AUDIT_EVENT_TYPE_UNSPECIFIED is the default type for audited events.
 	AuditEventType_AUDIT_EVENT_TYPE_UNSPECIFIED AuditEventType = 0
 )
 
@@ -211,7 +192,7 @@ func (AuditEventType) EnumDescriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_audit_event_proto_rawDescGZIP(), []int{2}
 }
 
-// AuditActor is the actor who triggered or executed the audited event.
+// AuditActor is the actor who caused the audited event.
 type AuditActor struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -219,7 +200,7 @@ type AuditActor struct {
 
 	// Type of actor who caused the audited event.
 	Type AuditActorType `protobuf:"varint,1,opt,name=type,proto3,enum=buf.alpha.registry.v1alpha1.AuditActorType" json:"type,omitempty"`
-	// Id of the actor who eecuted the action.
+	// Id of the actor who caused the action.
 	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 }
 
