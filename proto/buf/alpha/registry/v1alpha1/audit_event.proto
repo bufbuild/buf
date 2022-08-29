@@ -18,7 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "google/protobuf/timestamp.proto";
 
-// AuditActorType is the type of actor that caused certain audited event.
+// AuditActorType is the type of actor that caused the audited event.
 enum AuditActorType {
   AUDIT_ACTOR_TYPE_UNSPECIFIED = 0;
   AUDIT_ACTOR_TYPE_USER = 1;
@@ -28,7 +28,7 @@ enum AuditActorType {
 message AuditActor {
   // Type of actor who caused the audited event.
   AuditActorType type = 1;
-  // Id of the actor who caused the action.
+  // Id of the actor who caused the audited event.
   string id = 2;
 }
 

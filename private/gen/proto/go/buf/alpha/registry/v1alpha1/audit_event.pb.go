@@ -35,7 +35,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// AuditActorType is the type of actor that caused certain audited event.
+// AuditActorType is the type of actor that caused the audited event.
 type AuditActorType int32
 
 const (
@@ -200,7 +200,7 @@ type AuditActor struct {
 
 	// Type of actor who caused the audited event.
 	Type AuditActorType `protobuf:"varint,1,opt,name=type,proto3,enum=buf.alpha.registry.v1alpha1.AuditActorType" json:"type,omitempty"`
-	// Id of the actor who caused the action.
+	// Id of the actor who caused the audited event.
 	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 }
 
