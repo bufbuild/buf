@@ -1,0 +1,96 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "google/protobuf/timestamp.proto";
+
+// AuditActorType is the type of actor that triggered certain audited event.
+enum AuditActorType {
+  // AUDIT_ACTOR_TYPE_UNSPECIFIED is the default actor type for audited events.
+  AUDIT_ACTOR_TYPE_UNSPECIFIED = 0;
+  // AUDIT_ACTOR_TYPE_USER is the actor type for when the audited event is
+  // triggered by a user. This is the most common case.
+  AUDIT_ACTOR_TYPE_USER = 1;
+}
+
+// AuditActor is the actor who triggered or executed the audited event.
+message AuditActor {
+  // Type of actor who caused the audited event.
+  AuditActorType type = 1;
+  // Id of the actor who eecuted the action.
+  string id = 2;
+}
+
+// AuditResourceType is the type of the resource that was affected by the
+// audited event.
+enum AuditResourceType {
+  // AUDIT_RESOURCE_TYPE_UNSPECIFIED is the default type for audited events.
+  AUDIT_RESOURCE_TYPE_UNSPECIFIED = 0;
+  // AUDIT_RESOURCE_TYPE_USER is the type for when the audited event affected a
+  // user.
+  AUDIT_RESOURCE_TYPE_USER = 1;
+  // AUDIT_RESOURCE_TYPE_ORGANIZATION is the type for when the audited event
+  // affected an organization.
+  AUDIT_RESOURCE_TYPE_ORGANIZATION = 2;
+  // AUDIT_RESOURCE_TYPE_ORGANIZATION_MEMBER is the type for when the audited
+  // event affected an organization member.
+  AUDIT_RESOURCE_TYPE_ORGANIZATION_MEMBER = 3;
+  // AUDIT_RESOURCE_TYPE_REPOSITORY is the type for when the audited event
+  // affected a repository.
+  AUDIT_RESOURCE_TYPE_REPOSITORY = 4;
+  // AUDIT_RESOURCE_TYPE_REPOSITORY_MEMBER is the type for when the audited
+  // event affected a repository member.
+  AUDIT_RESOURCE_TYPE_REPOSITORY_MEMBER = 5;
+  // AUDIT_RESOURCE_TYPE_REPOSITORY_COMMIT is the type for when the audited
+  // event affected a repository commit.
+  AUDIT_RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
+  // AUDIT_RESOURCE_TYPE_PLUGIN is the type for when the audited event affected
+  // a plugin.
+  AUDIT_RESOURCE_TYPE_PLUGIN = 7;
+}
+
+// AuditResource is the affected resource by the audited event.
+message AuditResource {
+  // Type of resource that was affected by the audited event.
+  AuditResourceType type = 1;
+  // Id of the affected resource by the audited event.
+  string id = 2;
+}
+
+// AuditEventType is the type of audited event.
+enum AuditEventType {
+  // AUDIT_EVENT_TYPE_UNSPECIFIED is the default type for audited events.
+  AUDIT_EVENT_TYPE_UNSPECIFIED = 0;
+}
+
+// AuditEvent is an action that happened in the BSR, with the information of
+// what happened, when it happened, who did it, which resource was affected, and
+// more contextual information on the event.
+message AuditEvent {
+  // Unique id of the audited event.
+  string id = 1;
+  // Type of the audited event. It specifies "what" happened.
+  AuditEventType type = 2;
+  // Actor of the audited event. It specifies "who" did it.
+  AuditActor actor = 3;
+  // Resource of the audited event. It specifies "which resouce" was affected.
+  AuditResource resource = 4;
+  // Timestamp of the audited event. It specifies "when" it happened.
+  google.protobuf.Timestamp timestamp = 5;
+  // Payload of the audited event. It specifies additional context on the event.
+  // TODO add oneof payload events.
+}
