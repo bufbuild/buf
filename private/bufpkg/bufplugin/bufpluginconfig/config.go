@@ -129,13 +129,15 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		// It's possible that the plugin doesn't have any runtime dependencies.
 		return nil, nil
 	}
+	options := OptionsSliceToPluginOptions(externalRegistryConfig.Opts)
 	if !isNPMEmpty {
 		npmRegistryConfig, err := newNPMRegistryConfig(externalRegistryConfig.NPM)
 		if err != nil {
 			return nil, err
 		}
 		return &RegistryConfig{
-			NPM: npmRegistryConfig,
+			NPM:     npmRegistryConfig,
+			Options: options,
 		}, nil
 	}
 	// At this point, the Go runtime is guaranteed to be specified. Note
@@ -145,7 +147,8 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		return nil, err
 	}
 	return &RegistryConfig{
-		Go: goRegistryConfig,
+		Go:      goRegistryConfig,
+		Options: options,
 	}, nil
 }
 

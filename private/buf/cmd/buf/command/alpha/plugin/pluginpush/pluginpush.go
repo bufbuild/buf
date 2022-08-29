@@ -300,7 +300,7 @@ func run(
 		bufplugin.PluginToProtoPluginRegistryType(plugin),
 		plugin.Version(),
 		plugin.ContainerImageDigest(),
-		bufplugin.PluginOptionsToOptionsSlice(plugin.DefaultOptions()),
+		bufpluginconfig.PluginOptionsToOptionsSlice(plugin.DefaultOptions()),
 		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
 		plugin.SourceURL(),
 		plugin.Description(),

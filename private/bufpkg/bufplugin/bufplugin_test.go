@@ -65,17 +65,3 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 func assertPluginRegistryRoundTrip(t testing.TB, config *bufpluginconfig.RegistryConfig) {
 	assert.Equal(t, config, ProtoRegistryConfigToPluginRegistry(PluginRegistryToProtoRegistryConfig(config)))
 }
-
-func TestPluginOptionsRoundTrip(t *testing.T) {
-	assertPluginOptionsRoundTrip(t, nil)
-	assertPluginOptionsRoundTrip(t, map[string]string{})
-	assertPluginOptionsRoundTrip(t, map[string]string{
-		"option-1":          "value-1",
-		"option-2":          "value-2",
-		"option-no-value-3": "",
-	})
-}
-
-func assertPluginOptionsRoundTrip(t testing.TB, options map[string]string) {
-	assert.Equal(t, options, OptionsSliceToPluginOptions(PluginOptionsToOptionsSlice(options)))
-}

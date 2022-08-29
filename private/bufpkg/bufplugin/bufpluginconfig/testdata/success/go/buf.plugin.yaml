@@ -14,3 +14,5 @@ registry:
     deps:
       - module: google.golang.org/grpc
         version: v1.32.0
+  opts:
+    - separate_package=true

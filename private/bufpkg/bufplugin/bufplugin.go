@@ -15,8 +15,6 @@
 package bufplugin
 
 import (
-	"strings"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -214,38 +212,4 @@ func PluginIdentityToProtoCuratedPluginReference(identity bufpluginref.PluginIde
 		Owner: identity.Owner(),
 		Name:  identity.Plugin(),
 	}
-}
-
-// PluginOptionsToOptionsSlice converts a map representation of plugin options to a slice of the form '<key>=<value>' or '<key>' for empty values.
-func PluginOptionsToOptionsSlice(pluginOptions map[string]string) []string {
-	if pluginOptions == nil {
-		return nil
-	}
-	options := make([]string, 0, len(pluginOptions))
-	for key, value := range pluginOptions {
-		if len(value) > 0 {
-			options = append(options, key+"="+value)
-		} else {
-			options = append(options, key)
-		}
-	}
-	return options
-}
-
-// OptionsSliceToPluginOptions converts a slice of plugin options to a map (using the first '=' as a delimiter between key and value).
-// If no '=' is found, the option will be stored in the map with an empty string value.
-func OptionsSliceToPluginOptions(options []string) map[string]string {
-	if options == nil {
-		return nil
-	}
-	pluginOptions := make(map[string]string, len(options))
-	for _, option := range options {
-		fields := strings.SplitN(option, "=", 2)
-		if len(fields) == 2 {
-			pluginOptions[fields[0]] = fields[1]
-		} else {
-			pluginOptions[option] = ""
-		}
-	}
-	return pluginOptions
 }
