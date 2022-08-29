@@ -58,20 +58,23 @@ func printAsJUnit(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	}
 	annotationsByPath := groupAnnotationsByPath(fileAnnotations)
 	for _, annotations := range annotationsByPath {
-		testsuite := xml.StartElement{Name: xml.Name{Local: "testsuite"}}
 		path := "<input>"
 		if fileInfo := annotations[0].FileInfo(); fileInfo != nil {
 			path = fileInfo.ExternalPath()
 		}
 		path = strings.TrimSuffix(path, ".proto")
-		testsuite.Attr = append(testsuite.Attr, xml.Attr{Name: xml.Name{Local: "name"}, Value: path})
-		testsuite.Attr = append(testsuite.Attr, xml.Attr{Name: xml.Name{Local: "tests"}, Value: strconv.Itoa(len(annotations))})
-		testsuite.Attr = append(testsuite.Attr, xml.Attr{Name: xml.Name{Local: "failures"}, Value: strconv.Itoa(len(annotations))})
-		testsuite.Attr = append(testsuite.Attr, xml.Attr{Name: xml.Name{Local: "errors"}, Value: "0"})
+		testsuite := xml.StartElement{
+			Name: xml.Name{Local: "testsuite"},
+			Attr: []xml.Attr{
+				{Name: xml.Name{Local: "name"}, Value: path},
+				{Name: xml.Name{Local: "tests"}, Value: strconv.Itoa(len(annotations))},
+				{Name: xml.Name{Local: "failures"}, Value: strconv.Itoa(len(annotations))},
+				{Name: xml.Name{Local: "errors"}, Value: "0"},
+			},
+		}
 		if err := encoder.EncodeToken(testsuite); err != nil {
 			return err
 		}
-
 		for _, annotation := range annotations {
 			if err := printFileAnnotationAsJUnit(encoder, annotation); err != nil {
 				return err
@@ -105,9 +108,13 @@ func printFileAnnotationAsJUnit(encoder *xml.Encoder, annotation FileAnnotation)
 	if err := encoder.EncodeToken(testcase); err != nil {
 		return err
 	}
-	failure := xml.StartElement{Name: xml.Name{Local: "failure"}}
-	failure.Attr = append(failure.Attr, xml.Attr{Name: xml.Name{Local: "message"}, Value: annotation.String()})
-	failure.Attr = append(failure.Attr, xml.Attr{Name: xml.Name{Local: "type"}, Value: annotation.Type()})
+	failure := xml.StartElement{
+		Name: xml.Name{Local: "failure"},
+		Attr: []xml.Attr{
+			{Name: xml.Name{Local: "message"}, Value: annotation.String()},
+			{Name: xml.Name{Local: "type"}, Value: annotation.Type()},
+		},
+	}
 	if err := encoder.EncodeToken(failure); err != nil {
 		return err
 	}

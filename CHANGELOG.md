@@ -7,6 +7,7 @@
   `2m` (the default for all the other `buf` commands).
 - Add support for experimental code generation with the `plugin:` key in `buf.gen.yaml`.
 - Preserve single quotes with `buf format`.
+- Support `junit` format errors with `--error-format`.
 
 ## [v1.7.0] - 2022-06-27
 
