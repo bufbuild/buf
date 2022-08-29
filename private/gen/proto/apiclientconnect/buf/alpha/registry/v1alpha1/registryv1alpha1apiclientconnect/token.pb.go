@@ -26,9 +26,8 @@ import (
 )
 
 type tokenServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.TokenServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.TokenServiceClient
 }
 
 // CreateToken creates a new token suitable for machine-to-machine authentication.
@@ -37,9 +36,6 @@ func (s *tokenServiceClient) CreateToken(
 	note string,
 	expireTime *timestamppb.Timestamp,
 ) (token string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.CreateToken(
 		ctx,
 		connect_go.NewRequest(
@@ -58,9 +54,6 @@ func (s *tokenServiceClient) CreateToken(
 //
 // This method requires authentication.
 func (s *tokenServiceClient) GetToken(ctx context.Context, tokenId string) (token *v1alpha1.Token, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetToken(
 		ctx,
 		connect_go.NewRequest(
@@ -83,9 +76,6 @@ func (s *tokenServiceClient) ListTokens(
 	pageToken string,
 	reverse bool,
 ) (tokens []*v1alpha1.Token, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListTokens(
 		ctx,
 		connect_go.NewRequest(
@@ -105,9 +95,6 @@ func (s *tokenServiceClient) ListTokens(
 //
 // This method requires authentication.
 func (s *tokenServiceClient) DeleteToken(ctx context.Context, tokenId string) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.DeleteToken(
 		ctx,
 		connect_go.NewRequest(

@@ -63,7 +63,7 @@ func TestReaderBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	delegateDataReadWriteBucket, delegateSumReadWriteBucket, delegateFileLocker := newTestDataSumBucketsAndLocker(t)
-	moduleCacher := newModuleCacher(zap.NewNop(), delegateDataReadWriteBucket, delegateSumReadWriteBucket)
+	moduleCacher := newModuleCacher(zap.NewNop(), delegateDataReadWriteBucket, delegateSumReadWriteBucket, false)
 	err = moduleCacher.PutModule(
 		context.Background(),
 		modulePin,
@@ -207,7 +207,7 @@ func TestCacherBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	dataReadWriteBucket, sumReadWriteBucket, _ := newTestDataSumBucketsAndLocker(t)
-	moduleCacher := newModuleCacher(zap.NewNop(), dataReadWriteBucket, sumReadWriteBucket)
+	moduleCacher := newModuleCacher(zap.NewNop(), dataReadWriteBucket, sumReadWriteBucket, false)
 	_, err = moduleCacher.GetModule(ctx, modulePin)
 	require.True(t, storage.IsNotExist(err))
 
@@ -248,7 +248,7 @@ func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 	require.NoError(t, err)
 
 	dataReadWriteBucket, sumReadWriteBucket, _ := newTestDataSumBucketsAndLocker(t)
-	moduleCacher := newModuleCacher(zap.NewNop(), dataReadWriteBucket, sumReadWriteBucket)
+	moduleCacher := newModuleCacher(zap.NewNop(), dataReadWriteBucket, sumReadWriteBucket, false)
 	err = moduleCacher.PutModule(
 		context.Background(),
 		modulePin,
@@ -283,7 +283,7 @@ func TestModuleReaderCacherWithConfiguration(t *testing.T) {
 	require.NoError(t, err)
 
 	dataReadWriteBucket, sumReadWriteBucket, _ := newTestDataSumBucketsAndLocker(t)
-	moduleCacher := newModuleCacher(zap.NewNop(), dataReadWriteBucket, sumReadWriteBucket)
+	moduleCacher := newModuleCacher(zap.NewNop(), dataReadWriteBucket, sumReadWriteBucket, false)
 	err = moduleCacher.PutModule(
 		context.Background(),
 		modulePin,

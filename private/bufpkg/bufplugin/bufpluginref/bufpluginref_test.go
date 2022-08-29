@@ -59,6 +59,14 @@ func TestPluginIdentityForStringError(t *testing.T) {
 			Name:  "empty plugin",
 			Input: "foo.com/bar/",
 		},
+		{
+			Name:  "version separator",
+			Input: "foo.com/bar/baz:",
+		},
+		{
+			Name:  "version separator with version",
+			Input: "foo.com/bar/baz:v1.0.0",
+		},
 	}
 	for _, testCase := range testCases {
 		testCase := testCase

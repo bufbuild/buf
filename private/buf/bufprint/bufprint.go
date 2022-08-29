@@ -69,6 +69,17 @@ func (f Format) String() string {
 	}
 }
 
+// CuratedPluginPrinter is a printer for curated plugins.
+type CuratedPluginPrinter interface {
+	PrintCuratedPlugin(ctx context.Context, format Format, plugin *registryv1alpha1.CuratedPlugin) error
+	PrintCuratedPlugins(ctx context.Context, format Format, nextPageToken string, plugins ...*registryv1alpha1.CuratedPlugin) error
+}
+
+// NewCuratedPluginPrinter returns a new CuratedPluginPrinter.
+func NewCuratedPluginPrinter(writer io.Writer) CuratedPluginPrinter {
+	return newCuratedPluginPrinter(writer)
+}
+
 // OrganizationPrinter is an organization printer.
 type OrganizationPrinter interface {
 	PrintOrganization(ctx context.Context, format Format, organization *registryv1alpha1.Organization) error
@@ -94,16 +105,6 @@ func NewRepositoryPrinter(
 	return newRepositoryPrinter(apiProvider, address, writer)
 }
 
-// RepositoryBranchPrinter is a repository branch printer.
-type RepositoryBranchPrinter interface {
-	PrintRepositoryBranch(ctx context.Context, format Format, repositoryBranch *registryv1alpha1.RepositoryBranch) error
-}
-
-// NewRepositoryBranchPrinter returns a new RepositoryBranchPrinter.
-func NewRepositoryBranchPrinter(writer io.Writer) RepositoryBranchPrinter {
-	return newRepositoryBranchPrinter(writer)
-}
-
 // RepositoryTagPrinter is a repository tag printer.
 type RepositoryTagPrinter interface {
 	PrintRepositoryTag(ctx context.Context, format Format, repositoryTag *registryv1alpha1.RepositoryTag) error
@@ -124,6 +125,17 @@ type RepositoryCommitPrinter interface {
 // NewRepositoryCommitPrinter returns a new RepositoryCommitPrinter.
 func NewRepositoryCommitPrinter(writer io.Writer) RepositoryCommitPrinter {
 	return newRepositoryCommitPrinter(writer)
+}
+
+// RepositoryDraftPrinter is a repository draft printer.
+type RepositoryDraftPrinter interface {
+	PrintRepositoryDraft(ctx context.Context, format Format, repositoryCommit *registryv1alpha1.RepositoryCommit) error
+	PrintRepositoryDrafts(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*registryv1alpha1.RepositoryCommit) error
+}
+
+// NewRepositoryDraftPrinter returns a new RepositoryDraftPrinter.
+func NewRepositoryDraftPrinter(writer io.Writer) RepositoryDraftPrinter {
+	return newRepositoryDraftPrinter(writer)
 }
 
 // PluginPrinter is a printer for plugins.

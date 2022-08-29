@@ -18,6 +18,7 @@ package registryv1alpha1api
 
 import (
 	context "context"
+	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
@@ -35,13 +36,33 @@ type PluginCurationService interface {
 		ctx context.Context,
 		owner string,
 		name string,
-		language v1alpha1.PluginLanguage,
+		registryType v1alpha1.PluginRegistryType,
 		version string,
 		containerImageDigest string,
-		options []string,
-		dependencies []string,
+		defaultOptions []string,
+		dependencies []*v1alpha1.CuratedPluginReference,
 		sourceUrl string,
 		description string,
-		runtimeConfig *v1alpha1.RuntimeConfig,
+		registryConfig *v1alpha1.RegistryConfig,
+		revision uint32,
 	) (configuration *v1alpha1.CuratedPlugin, err error)
+	// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
+	GetLatestCuratedPlugin(
+		ctx context.Context,
+		owner string,
+		name string,
+		version string,
+	) (plugin *v1alpha1.CuratedPlugin, versions []*v1alpha1.CuratedPluginVersionRevisions, err error)
+}
+
+// CodeGenerationService generates code using remote plugins.
+type CodeGenerationService interface {
+	// GenerateCode generates code using the specified remote plugins.
+	GenerateCode(
+		ctx context.Context,
+		image *v1.Image,
+		requests []*v1alpha1.PluginGenerationRequest,
+		includeImports bool,
+		includeWellKnownTypes bool,
+	) (responses []*v1alpha1.PluginGenerationResponse, err error)
 }

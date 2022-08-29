@@ -25,12 +25,12 @@ import (
 )
 
 type webhookServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.WebhookServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.WebhookServiceClient
 }
 
-// Create a webhook, subscribes to a given repository event for a callback URL invocation.
+// Create a webhook, subscribes to a given repository event for a callback URL
+// invocation.
 func (s *webhookServiceClient) CreateWebhook(
 	ctx context.Context,
 	webhookEvent v1alpha1.WebhookEvent,
@@ -38,9 +38,6 @@ func (s *webhookServiceClient) CreateWebhook(
 	repositoryName string,
 	callbackUrl string,
 ) (webhook *v1alpha1.Webhook, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.CreateWebhook(
 		ctx,
 		connect_go.NewRequest(
@@ -59,9 +56,6 @@ func (s *webhookServiceClient) CreateWebhook(
 
 // Delete a webhook removes the event subscription.
 func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookId string) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.DeleteWebhook(
 		ctx,
 		connect_go.NewRequest(
@@ -82,9 +76,6 @@ func (s *webhookServiceClient) ListWebhooks(
 	ownerName string,
 	pageToken string,
 ) (webhooks []*v1alpha1.Webhook, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListWebhooks(
 		ctx,
 		connect_go.NewRequest(

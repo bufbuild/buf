@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bufbuild/buf/private/pkg/rpc/rpchttp"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
@@ -39,6 +38,7 @@ type runner struct {
 	health            bool
 	maxBodySize       int64
 	walkFunc          chi.WalkFunc
+	silentEndpoints   map[string]struct{}
 }
 
 func newRunner(logger *zap.Logger, options ...RunnerOption) *runner {
@@ -46,6 +46,7 @@ func newRunner(logger *zap.Logger, options ...RunnerOption) *runner {
 		logger:            logger.Named("httpserver"),
 		shutdownTimeout:   DefaultShutdownTimeout,
 		readHeaderTimeout: DefaultReadHeaderTimeout,
+		silentEndpoints:   make(map[string]struct{}),
 	}
 	for _, option := range options {
 		option(runner)
@@ -70,13 +71,12 @@ func (s *runner) Run(
 	mux := chi.NewMux()
 	mux.Use(middleware.Recoverer)
 	mux.Use(middleware.StripSlashes)
-	mux.Use(newZapMiddleware(s.logger))
+	mux.Use(newZapMiddleware(s.logger, s.silentEndpoints))
 	if s.maxBodySize > 0 {
 		mux.Use(func(next http.Handler) http.Handler {
 			return http.MaxBytesHandler(next, s.maxBodySize)
 		})
 	}
-	mux.Use(rpchttp.NewServerInterceptor())
 	mux.Use(s.middlewares...)
 	for _, mapper := range mappers {
 		if err := mapper.Map(mux); err != nil {

@@ -53,7 +53,18 @@ type Config struct {
 	// or plugin source (e.g. Dockerfile) that would otherwise influence
 	// the plugin's behavior.
 	PluginVersion string
-	// Options is the default set of options passed into the plugin.
+	// SourceURL is an optional attribute used to specify where the source
+	// for the plugin can be found.
+	SourceURL string
+	// Description is an optional attribute to provide a more detailed
+	// description for the plugin.
+	Description string
+	// Dependencies are the dependencies this plugin has on other plugins.
+	//
+	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
+	// which depends on the 'protoc-gen-go' generated code.
+	Dependencies []bufpluginref.PluginReference
+	// DefaultOptions is the default set of options passed into the plugin.
 	//
 	// For now, all options are string values. This could eventually
 	// support other types (like JSON Schema and Terraform variables),
@@ -68,57 +79,68 @@ type Config struct {
 	// In those cases, the option value in this map will be set to
 	// the empty string, and the option will be propagated to the
 	// compiler without the '=' delimiter.
-	Options map[string]string
-	// Runtime is the runtime configuration, which lets the user specify
-	// runtime dependencies, and other metadata that applies to a specific
+	DefaultOptions map[string]string
+	// Registry is the registry configuration, which lets the user specify
+	// dependencies and other metadata that applies to a specific
 	// remote generation registry (e.g. the Go module proxy, NPM registry,
 	// etc).
-	Runtime *RuntimeConfig
+	Registry *RegistryConfig
 }
 
-// RuntimeConfig is the configuration for the runtime of a plugin.
+// RegistryConfig is the configuration for the registry of a plugin.
 //
 // Only one field will be set.
-type RuntimeConfig struct {
-	Go  *GoRuntimeConfig
-	NPM *NPMRuntimeConfig
+type RegistryConfig struct {
+	Go  *GoRegistryConfig
+	NPM *NPMRegistryConfig
 }
 
-// GoRuntimeConfig is the runtime configuration for a Go plugin.
-type GoRuntimeConfig struct {
+// GoRegistryConfig is the registry configuration for a Go plugin.
+type GoRegistryConfig struct {
 	MinVersion string
-	Deps       []*GoRuntimeDependencyConfig
+	Deps       []*GoRegistryDependencyConfig
 }
 
-// GoRuntimeDependencyConfig is the go runtime dependency configuration.
-type GoRuntimeDependencyConfig struct {
+// GoRegistryDependencyConfig is the go registry dependency configuration.
+type GoRegistryDependencyConfig struct {
 	Module  string
 	Version string
 }
 
-// NPMRuntimeConfig is the runtime configuration for a JavaScript NPM plugin.
-type NPMRuntimeConfig struct {
-	Deps []*NPMRuntimeDependencyConfig
+// NPMRegistryConfig is the registry configuration for a JavaScript NPM plugin.
+type NPMRegistryConfig struct {
+	RewriteImportPathSuffix string
+	Deps                    []*NPMRegistryDependencyConfig
 }
 
-// NPMRuntimeDependencyConfig is the npm runtime dependency configuration.
-type NPMRuntimeDependencyConfig struct {
+// NPMRegistryDependencyConfig is the npm registry dependency configuration.
+type NPMRegistryDependencyConfig struct {
 	Package string
 	Version string
+}
+
+// ConfigOption is an optional option used when loading a Config.
+type ConfigOption func(*configOptions)
+
+// WithOverrideRemote will update the remote found in the plugin name and dependencies.
+func WithOverrideRemote(remote string) ConfigOption {
+	return func(options *configOptions) {
+		options.overrideRemote = remote
+	}
 }
 
 // GetConfigForBucket gets the Config for the YAML data at ConfigFilePath.
 //
 // If the data is of length 0, returns the default config.
-func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket) (*Config, error) {
-	return getConfigForBucket(ctx, readBucket)
+func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, options ...ConfigOption) (*Config, error) {
+	return getConfigForBucket(ctx, readBucket, options)
 }
 
 // GetConfigForData gets the Config for the given JSON or YAML data.
 //
 // If the data is of length 0, returns the default config.
-func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
-	return getConfigForData(ctx, data)
+func GetConfigForData(ctx context.Context, data []byte, options ...ConfigOption) (*Config, error) {
+	return getConfigForData(ctx, data, options)
 }
 
 // ExistingConfigFilePath checks if a configuration file exists, and if so, returns the path
@@ -139,7 +161,7 @@ func ExistingConfigFilePath(ctx context.Context, readBucket storage.ReadBucket) 
 }
 
 // ParseConfig parses the file at the given path as a Config.
-func ParseConfig(config string) (*Config, error) {
+func ParseConfig(config string, options ...ConfigOption) (*Config, error) {
 	var data []byte
 	var err error
 	switch filepath.Ext(config) {
@@ -157,7 +179,7 @@ func ParseConfig(config string) (*Config, error) {
 	}
 	switch externalConfig.Version {
 	case V1Version:
-		return newConfig(externalConfig)
+		return newConfig(externalConfig, options)
 	}
 	return nil, fmt.Errorf("invalid plugin configuration version: must be one of %v", AllConfigFilePaths)
 }
@@ -165,22 +187,31 @@ func ParseConfig(config string) (*Config, error) {
 // ExternalConfig represents the on-disk representation
 // of the plugin configuration at version v1.
 type ExternalConfig struct {
-	Version       string                `json:"version,omitempty" yaml:"version,omitempty"`
-	Name          string                `json:"name,omitempty" yaml:"name,omitempty"`
-	PluginVersion string                `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
-	Opts          []string              `json:"opts,omitempty" yaml:"opts,omitempty"`
-	Runtime       ExternalRuntimeConfig `json:"runtime,omitempty" yaml:"runtime,omitempty"`
+	Version       string                 `json:"version,omitempty" yaml:"version,omitempty"`
+	Name          string                 `json:"name,omitempty" yaml:"name,omitempty"`
+	PluginVersion string                 `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
+	SourceURL     string                 `json:"source_url,omitempty" yaml:"source_url,omitempty"`
+	Description   string                 `json:"description,omitempty" yaml:"description,omitempty"`
+	Deps          []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
+	DefaultOpts   []string               `json:"default_opts,omitempty" yaml:"default_opts,omitempty"`
+	Registry      ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
 }
 
-// ExternalRuntimeConfig is the external configuration for the runtime
+// ExternalDependency represents a dependency on another plugin.
+type ExternalDependency struct {
+	Plugin   string `json:"plugin,omitempty" yaml:"plugin,omitempty"`
+	Revision int    `json:"revision,omitempty" yaml:"revision,omitempty"`
+}
+
+// ExternalRegistryConfig is the external configuration for the registry
 // of a plugin.
-type ExternalRuntimeConfig struct {
-	Go  ExternalGoRuntimeConfig  `json:"go,omitempty" yaml:"go,omitempty"`
-	NPM ExternalNPMRuntimeConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
+type ExternalRegistryConfig struct {
+	Go  ExternalGoRegistryConfig  `json:"go,omitempty" yaml:"go,omitempty"`
+	NPM ExternalNPMRegistryConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
 }
 
-// ExternalGoRuntimeConfig is the external runtime configuration for a Go plugin.
-type ExternalGoRuntimeConfig struct {
+// ExternalGoRegistryConfig is the external registry configuration for a Go plugin.
+type ExternalGoRegistryConfig struct {
 	// The minimum Go version required by the plugin.
 	MinVersion string `json:"min_version,omitempty" yaml:"min_version,omitempty"`
 	Deps       []struct {
@@ -190,23 +221,28 @@ type ExternalGoRuntimeConfig struct {
 }
 
 // IsEmpty returns true if the configuration is empty.
-func (e ExternalGoRuntimeConfig) IsEmpty() bool {
+func (e ExternalGoRegistryConfig) IsEmpty() bool {
 	return e.MinVersion == "" && len(e.Deps) == 0
 }
 
-// ExternalNPMRuntimeConfig is the external runtime configuration for a JavaScript NPM plugin.
-type ExternalNPMRuntimeConfig struct {
-	Deps []struct {
+// ExternalNPMRegistryConfig is the external registry configuration for a JavaScript NPM plugin.
+type ExternalNPMRegistryConfig struct {
+	RewriteImportPathSuffix string `json:"rewrite_import_path_suffix,omitempty" yaml:"rewrite_import_path_suffix,omitempty"`
+	Deps                    []struct {
 		Package string `json:"package,omitempty" yaml:"package,omitempty"`
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 
 // IsEmpty returns true if the configuration is empty.
-func (e ExternalNPMRuntimeConfig) IsEmpty() bool {
+func (e ExternalNPMRegistryConfig) IsEmpty() bool {
 	return len(e.Deps) == 0
 }
 
 type externalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+type configOptions struct {
+	overrideRemote string
 }

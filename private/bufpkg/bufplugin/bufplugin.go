@@ -15,7 +15,11 @@
 package bufplugin
 
 import (
+	"strings"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 // Plugin represents a plugin defined by a buf.plugin.yaml.
@@ -23,7 +27,18 @@ type Plugin interface {
 	// Version is the version of the plugin's implementation
 	// (e.g the protoc-gen-connect-go implementation is v0.2.0).
 	Version() string
-	// Options is the set of options available to the plugin.
+	// SourceURL is an optional attribute used to specify where the source
+	// for the plugin can be found.
+	SourceURL() string
+	// Description is an optional attribute to provide a more detailed
+	// description for the plugin.
+	Description() string
+	// Dependencies are the dependencies this plugin has on other plugins.
+	//
+	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
+	// which depends on the 'protoc-gen-go' generated code.
+	Dependencies() []bufpluginref.PluginReference
+	// DefaultOptions is the set of default options passed to the plugin.
 	//
 	// For now, all options are string values. This could eventually
 	// support other types (like JSON Schema and Terraform variables),
@@ -38,12 +53,12 @@ type Plugin interface {
 	// In those cases, the option value in this map will be set to
 	// the empty string, and the option will be propagated to the
 	// compiler without the '=' delimiter.
-	Options() map[string]string
-	// Runtime is the runtime configuration, which lets the user specify
-	// runtime dependencies, and other metadata that applies to a specific
+	DefaultOptions() map[string]string
+	// Registry is the registry configuration, which lets the user specify
+	// registry dependencies, and other metadata that applies to a specific
 	// remote generation registry (e.g. the Go module proxy, NPM registry,
 	// etc).
-	Runtime() *bufpluginconfig.RuntimeConfig
+	Registry() *bufpluginconfig.RegistryConfig
 	// ContainerImageDigest returns the plugin's source image digest.
 	//
 	// For now we only support docker image sources, but this
@@ -54,9 +69,183 @@ type Plugin interface {
 // NewPlugin creates a new plugin from the given configuration and image digest.
 func NewPlugin(
 	version string,
-	options map[string]string,
-	runtimeConfig *bufpluginconfig.RuntimeConfig,
+	dependencies []bufpluginref.PluginReference,
+	defaultOptions map[string]string,
+	registryConfig *bufpluginconfig.RegistryConfig,
 	imageDigest string,
+	sourceURL string,
+	description string,
 ) (Plugin, error) {
-	return newPlugin(version, options, runtimeConfig, imageDigest)
+	return newPlugin(version, dependencies, defaultOptions, registryConfig, imageDigest, sourceURL, description)
+}
+
+// PluginToProtoPluginRegistryType determines the appropriate registryv1alpha1.PluginRegistryType for the plugin.
+func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegistryType {
+	registryType := registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_UNSPECIFIED
+	if plugin.Registry() != nil {
+		if plugin.Registry().Go != nil {
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_GO
+		} else if plugin.Registry().NPM != nil {
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM
+		}
+	}
+	return registryType
+}
+
+// PluginRegistryToProtoRegistryConfig converts a bufpluginconfig.RegistryConfig to a registryv1alpha1.RegistryConfig.
+func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.RegistryConfig) *registryv1alpha1.RegistryConfig {
+	if pluginRegistry == nil {
+		return nil
+	}
+	registryConfig := &registryv1alpha1.RegistryConfig{}
+	if pluginRegistry.Go != nil {
+		goConfig := &registryv1alpha1.GoConfig{}
+		goConfig.MinimumVersion = pluginRegistry.Go.MinVersion
+		goConfig.RuntimeLibraries = make([]*registryv1alpha1.GoConfig_RuntimeLibrary, 0, len(pluginRegistry.Go.Deps))
+		for _, dependency := range pluginRegistry.Go.Deps {
+			goConfig.RuntimeLibraries = append(goConfig.RuntimeLibraries, goRuntimeDependencyToProtoGoRuntimeLibrary(dependency))
+		}
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_GoConfig{GoConfig: goConfig}
+	} else if pluginRegistry.NPM != nil {
+		npmConfig := &registryv1alpha1.NPMConfig{
+			RewriteImportPathSuffix: pluginRegistry.NPM.RewriteImportPathSuffix,
+		}
+		npmConfig.RuntimeLibraries = make([]*registryv1alpha1.NPMConfig_RuntimeLibrary, 0, len(pluginRegistry.NPM.Deps))
+		for _, dependency := range pluginRegistry.NPM.Deps {
+			npmConfig.RuntimeLibraries = append(npmConfig.RuntimeLibraries, npmRuntimeDependencyToProtoNPMRuntimeLibrary(dependency))
+		}
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_NpmConfig{NpmConfig: npmConfig}
+	}
+	return registryConfig
+}
+
+// ProtoRegistryConfigToPluginRegistry converts a registryv1alpha1.RegistryConfig to a bufpluginconfig.RegistryConfig .
+func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig) *bufpluginconfig.RegistryConfig {
+	if config == nil {
+		return nil
+	}
+	registryConfig := &bufpluginconfig.RegistryConfig{}
+	if config.GetGoConfig() != nil {
+		goConfig := &bufpluginconfig.GoRegistryConfig{}
+		goConfig.MinVersion = config.GetGoConfig().GetMinimumVersion()
+		goConfig.Deps = make([]*bufpluginconfig.GoRegistryDependencyConfig, 0, len(config.GetGoConfig().GetRuntimeLibraries()))
+		for _, library := range config.GetGoConfig().GetRuntimeLibraries() {
+			goConfig.Deps = append(goConfig.Deps, protoGoRuntimeLibraryToGoRuntimeDependency(library))
+		}
+		registryConfig.Go = goConfig
+	} else if config.GetNpmConfig() != nil {
+		npmConfig := &bufpluginconfig.NPMRegistryConfig{
+			RewriteImportPathSuffix: config.GetNpmConfig().GetRewriteImportPathSuffix(),
+		}
+		npmConfig.Deps = make([]*bufpluginconfig.NPMRegistryDependencyConfig, 0, len(config.GetNpmConfig().GetRuntimeLibraries()))
+		for _, library := range config.GetNpmConfig().GetRuntimeLibraries() {
+			npmConfig.Deps = append(npmConfig.Deps, protoNPMRuntimeLibraryToNPMRuntimeDependency(library))
+		}
+		registryConfig.NPM = npmConfig
+	}
+	return registryConfig
+}
+
+// goRuntimeDependencyToProtoGoRuntimeLibrary converts a bufpluginconfig.GoRegistryDependencyConfig to a registryv1alpha1.GoConfig_RuntimeLibrary.
+func goRuntimeDependencyToProtoGoRuntimeLibrary(config *bufpluginconfig.GoRegistryDependencyConfig) *registryv1alpha1.GoConfig_RuntimeLibrary {
+	return &registryv1alpha1.GoConfig_RuntimeLibrary{
+		Module:  config.Module,
+		Version: config.Version,
+	}
+}
+
+// protoGoRuntimeLibraryToGoRuntimeDependency converts a registryv1alpha1.GoConfig_RuntimeLibrary to a bufpluginconfig.GoRegistryDependencyConfig.
+func protoGoRuntimeLibraryToGoRuntimeDependency(config *registryv1alpha1.GoConfig_RuntimeLibrary) *bufpluginconfig.GoRegistryDependencyConfig {
+	return &bufpluginconfig.GoRegistryDependencyConfig{
+		Module:  config.Module,
+		Version: config.Version,
+	}
+}
+
+// npmRuntimeDependencyToProtoNPMRuntimeLibrary converts a bufpluginconfig.NPMRegistryConfig to a registryv1alpha1.NPMConfig_RuntimeLibrary.
+func npmRuntimeDependencyToProtoNPMRuntimeLibrary(config *bufpluginconfig.NPMRegistryDependencyConfig) *registryv1alpha1.NPMConfig_RuntimeLibrary {
+	return &registryv1alpha1.NPMConfig_RuntimeLibrary{
+		Package: config.Package,
+		Version: config.Version,
+	}
+}
+
+// protoNPMRuntimeLibraryToNPMRuntimeDependency converts a registryv1alpha1.NPMConfig_RuntimeLibrary to a bufpluginconfig.NPMRegistryDependencyConfig.
+func protoNPMRuntimeLibraryToNPMRuntimeDependency(config *registryv1alpha1.NPMConfig_RuntimeLibrary) *bufpluginconfig.NPMRegistryDependencyConfig {
+	return &bufpluginconfig.NPMRegistryDependencyConfig{
+		Package: config.Package,
+		Version: config.Version,
+	}
+}
+
+// PluginReferencesToCuratedProtoPluginReferences converts a slice of bufpluginref.PluginReference to a slice of registryv1alpha1.CuratedPluginReference.
+func PluginReferencesToCuratedProtoPluginReferences(references []bufpluginref.PluginReference) []*registryv1alpha1.CuratedPluginReference {
+	if references == nil {
+		return nil
+	}
+	protoReferences := make([]*registryv1alpha1.CuratedPluginReference, 0, len(references))
+	for _, reference := range references {
+		protoReferences = append(protoReferences, PluginReferenceToProtoCuratedPluginReference(reference))
+	}
+	return protoReferences
+}
+
+// PluginReferenceToProtoCuratedPluginReference converts a bufpluginref.PluginReference to a registryv1alpha1.CuratedPluginReference.
+func PluginReferenceToProtoCuratedPluginReference(reference bufpluginref.PluginReference) *registryv1alpha1.CuratedPluginReference {
+	if reference == nil {
+		return nil
+	}
+	return &registryv1alpha1.CuratedPluginReference{
+		Owner:    reference.Owner(),
+		Name:     reference.Plugin(),
+		Version:  reference.Version(),
+		Revision: uint32(reference.Revision()),
+	}
+}
+
+// PluginIdentityToProtoCuratedPluginReference converts a bufpluginref.PluginIdentity to a registryv1alpha1.CuratedPluginReference.
+//
+// The returned CuratedPluginReference contains no Version/Revision information.
+func PluginIdentityToProtoCuratedPluginReference(identity bufpluginref.PluginIdentity) *registryv1alpha1.CuratedPluginReference {
+	if identity == nil {
+		return nil
+	}
+	return &registryv1alpha1.CuratedPluginReference{
+		Owner: identity.Owner(),
+		Name:  identity.Plugin(),
+	}
+}
+
+// PluginOptionsToOptionsSlice converts a map representation of plugin options to a slice of the form '<key>=<value>' or '<key>' for empty values.
+func PluginOptionsToOptionsSlice(pluginOptions map[string]string) []string {
+	if pluginOptions == nil {
+		return nil
+	}
+	options := make([]string, 0, len(pluginOptions))
+	for key, value := range pluginOptions {
+		if len(value) > 0 {
+			options = append(options, key+"="+value)
+		} else {
+			options = append(options, key)
+		}
+	}
+	return options
+}
+
+// OptionsSliceToPluginOptions converts a slice of plugin options to a map (using the first '=' as a delimiter between key and value).
+// If no '=' is found, the option will be stored in the map with an empty string value.
+func OptionsSliceToPluginOptions(options []string) map[string]string {
+	if options == nil {
+		return nil
+	}
+	pluginOptions := make(map[string]string, len(options))
+	for _, option := range options {
+		fields := strings.SplitN(option, "=", 2)
+		if len(fields) == 2 {
+			pluginOptions[fields[0]] = fields[1]
+		} else {
+			pluginOptions[option] = ""
+		}
+	}
+	return pluginOptions
 }

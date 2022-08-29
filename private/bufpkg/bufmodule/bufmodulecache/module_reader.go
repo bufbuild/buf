@@ -50,7 +50,12 @@ func newModuleReader(
 	sumReadWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
 	repositoryServiceProvider registryv1alpha1apiclient.RepositoryServiceProvider,
+	options ...ModuleReaderOption,
 ) *moduleReader {
+	moduleReaderOptions := &moduleReaderOptions{}
+	for _, option := range options {
+		option(moduleReaderOptions)
+	}
 	return &moduleReader{
 		logger:         logger,
 		verbosePrinter: verbosePrinter,
@@ -59,6 +64,7 @@ func newModuleReader(
 			logger,
 			dataReadWriteBucket,
 			sumReadWriteBucket,
+			moduleReaderOptions.allowCacheExternalPaths,
 		),
 		delegate:                  delegate,
 		repositoryServiceProvider: repositoryServiceProvider,

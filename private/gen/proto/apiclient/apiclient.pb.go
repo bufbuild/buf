@@ -18,9 +18,11 @@ package apiclient
 
 import (
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	webhookv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/webhook/v1alpha1/webhookv1alpha1apiclient"
 )
 
 // Provider provides all Providers.
 type Provider interface {
 	BufAlphaRegistryV1alpha1() registryv1alpha1apiclient.Provider
+	BufAlphaWebhookV1alpha1() webhookv1alpha1apiclient.Provider
 }

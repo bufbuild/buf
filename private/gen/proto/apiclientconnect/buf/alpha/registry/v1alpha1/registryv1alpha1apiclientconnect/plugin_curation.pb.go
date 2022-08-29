@@ -19,15 +19,15 @@ package registryv1alpha1apiclientconnect
 import (
 	context "context"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
 )
 
 type pluginCurationServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.PluginCurationServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.PluginCurationServiceClient
 }
 
 // ListCuratedPlugins returns all the curated plugins available.
@@ -37,9 +37,6 @@ func (s *pluginCurationServiceClient) ListCuratedPlugins(
 	pageToken string,
 	reverse bool,
 ) (plugins []*v1alpha1.CuratedPlugin, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListCuratedPlugins(
 		ctx,
 		connect_go.NewRequest(
@@ -60,36 +57,86 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 	ctx context.Context,
 	owner string,
 	name string,
-	language v1alpha1.PluginLanguage,
+	registryType v1alpha1.PluginRegistryType,
 	version string,
 	containerImageDigest string,
-	options []string,
-	dependencies []string,
+	defaultOptions []string,
+	dependencies []*v1alpha1.CuratedPluginReference,
 	sourceUrl string,
 	description string,
-	runtimeConfig *v1alpha1.RuntimeConfig,
+	registryConfig *v1alpha1.RegistryConfig,
+	revision uint32,
 ) (configuration *v1alpha1.CuratedPlugin, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.CreateCuratedPlugin(
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.CreateCuratedPluginRequest{
 				Owner:                owner,
 				Name:                 name,
-				Language:             language,
+				RegistryType:         registryType,
 				Version:              version,
 				ContainerImageDigest: containerImageDigest,
-				Options:              options,
+				DefaultOptions:       defaultOptions,
 				Dependencies:         dependencies,
 				SourceUrl:            sourceUrl,
 				Description:          description,
-				RuntimeConfig:        runtimeConfig,
+				RegistryConfig:       registryConfig,
+				Revision:             revision,
 			}),
 	)
 	if err != nil {
 		return nil, err
 	}
 	return response.Msg.Configuration, nil
+}
+
+// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
+func (s *pluginCurationServiceClient) GetLatestCuratedPlugin(
+	ctx context.Context,
+	owner string,
+	name string,
+	version string,
+) (plugin *v1alpha1.CuratedPlugin, versions []*v1alpha1.CuratedPluginVersionRevisions, _ error) {
+	response, err := s.client.GetLatestCuratedPlugin(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.GetLatestCuratedPluginRequest{
+				Owner:   owner,
+				Name:    name,
+				Version: version,
+			}),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	return response.Msg.Plugin, response.Msg.Versions, nil
+}
+
+type codeGenerationServiceClient struct {
+	logger *zap.Logger
+	client registryv1alpha1connect.CodeGenerationServiceClient
+}
+
+// GenerateCode generates code using the specified remote plugins.
+func (s *codeGenerationServiceClient) GenerateCode(
+	ctx context.Context,
+	image *v1.Image,
+	requests []*v1alpha1.PluginGenerationRequest,
+	includeImports bool,
+	includeWellKnownTypes bool,
+) (responses []*v1alpha1.PluginGenerationResponse, _ error) {
+	response, err := s.client.GenerateCode(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.GenerateCodeRequest{
+				Image:                 image,
+				Requests:              requests,
+				IncludeImports:        includeImports,
+				IncludeWellKnownTypes: includeWellKnownTypes,
+			}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Msg.Responses, nil
 }

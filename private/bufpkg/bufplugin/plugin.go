@@ -19,21 +19,30 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"golang.org/x/mod/semver"
 )
 
 type plugin struct {
 	version              string
-	options              map[string]string
-	runtime              *bufpluginconfig.RuntimeConfig
+	dependencies         []bufpluginref.PluginReference
+	defaultOptions       map[string]string
+	registry             *bufpluginconfig.RegistryConfig
 	containerImageDigest string
+	sourceURL            string
+	description          string
 }
+
+var _ Plugin = (*plugin)(nil)
 
 func newPlugin(
 	version string,
-	options map[string]string,
-	runtimeConfig *bufpluginconfig.RuntimeConfig,
+	dependencies []bufpluginref.PluginReference,
+	defaultOptions map[string]string,
+	registryConfig *bufpluginconfig.RegistryConfig,
 	containerImageDigest string,
+	sourceURL string,
+	description string,
 ) (*plugin, error) {
 	if version == "" {
 		return nil, errors.New("plugin version is required")
@@ -50,9 +59,12 @@ func newPlugin(
 	}
 	return &plugin{
 		version:              version,
-		options:              options,
-		runtime:              runtimeConfig,
+		dependencies:         dependencies,
+		defaultOptions:       defaultOptions,
+		registry:             registryConfig,
 		containerImageDigest: containerImageDigest,
+		sourceURL:            sourceURL,
+		description:          description,
 	}, nil
 }
 
@@ -61,17 +73,32 @@ func (p *plugin) Version() string {
 	return p.version
 }
 
-// Options returns the plugin's options.
-func (p *plugin) Options() map[string]string {
-	return p.options
+// Dependencies returns the plugin's dependencies on other plugins.
+func (p *plugin) Dependencies() []bufpluginref.PluginReference {
+	return p.dependencies
 }
 
-// Runtime returns the plugin's runtime configuration.
-func (p *plugin) Runtime() *bufpluginconfig.RuntimeConfig {
-	return p.runtime
+// DefaultOptions returns the plugin's options.
+func (p *plugin) DefaultOptions() map[string]string {
+	return p.defaultOptions
+}
+
+// Registry returns the plugin's registry configuration.
+func (p *plugin) Registry() *bufpluginconfig.RegistryConfig {
+	return p.registry
 }
 
 // ContainerImageDigest returns the plugin's image digest.
 func (p *plugin) ContainerImageDigest() string {
 	return p.containerImageDigest
+}
+
+// SourceURL is an optional attribute used to specify where the source for the plugin can be found.
+func (p *plugin) SourceURL() string {
+	return p.sourceURL
+}
+
+// Description is an optional attribute to provide a more detailed description for the plugin.
+func (p *plugin) Description() string {
+	return p.description
 }

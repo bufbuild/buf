@@ -33,6 +33,7 @@ import (
 const (
 	tagFlagName             = "tag"
 	tagFlagShortName        = "t"
+	draftFlagName           = "draft"
 	errorFormatFlagName     = "error-format"
 	disableSymlinksFlagName = "disable-symlinks"
 	// deprecated
@@ -62,6 +63,7 @@ func NewCommand(
 
 type flags struct {
 	Tags            []string
+	Draft           string
 	ErrorFormat     string
 	DisableSymlinks bool
 	// Deprecated
@@ -82,7 +84,20 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		tagFlagName,
 		tagFlagShortName,
 		nil,
-		"Create a tag for the pushed commit. Multiple tags are created if specified multiple times.",
+		fmt.Sprintf(
+			"Create a tag for the pushed commit. Multiple tags are created if specified multiple times. Cannot be used together with --%s.",
+			draftFlagName,
+		),
+	)
+	flagSet.StringVar(
+		&f.Draft,
+		draftFlagName,
+		"",
+		fmt.Sprintf(
+			"Make the pushed commit a draft with the specified name. Cannot be used together with --%s (-%s).",
+			tagFlagName,
+			tagFlagShortName,
+		),
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
@@ -112,6 +127,9 @@ func run(
 	}
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
+	}
+	if len(flags.Tags) > 0 && flags.Draft != "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, draftFlagName)
 	}
 	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
@@ -151,6 +169,7 @@ func run(
 		protoModule,
 		flags.Tags,
 		nil,
+		flags.Draft,
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {

@@ -116,7 +116,7 @@ func run(
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
-			return bufcli.NewBranchOrTagNameAlreadyExistsError(tag)
+			return bufcli.NewTagOrDraftNameAlreadyExistsError(tag)
 		}
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewModuleReferenceNotFoundError(moduleReference)

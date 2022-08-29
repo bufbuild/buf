@@ -45,18 +45,6 @@ type RepositoryCommitService interface {
 		pageToken string,
 		reverse bool,
 	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
-	// ListRepositoryCommitsOnTrack returns repository commits up-to and including
-	// the provided reference.
-	ListRepositoryCommitsOnTrack(
-		ctx context.Context,
-		repositoryOwner string,
-		repositoryName string,
-		repositoryTrackName string,
-		reference string,
-		pageSize uint32,
-		pageToken string,
-		reverse bool,
-	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
 	// GetRepositoryCommitByReference returns the repository commit matching
 	// the provided reference, if it exists.
 	GetRepositoryCommitByReference(
@@ -74,4 +62,20 @@ type RepositoryCommitService interface {
 		repositoryBranchName string,
 		commitSequenceId int64,
 	) (repositoryCommit *v1alpha1.RepositoryCommit, err error)
+	// ListRepositoryDraftCommits lists draft commits in a repository.
+	ListRepositoryDraftCommits(
+		ctx context.Context,
+		repositoryOwner string,
+		repositoryName string,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
+	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
+	// DeleteRepositoryDraftCommit deletes a draft.
+	DeleteRepositoryDraftCommit(
+		ctx context.Context,
+		repositoryOwner string,
+		repositoryName string,
+		draftName string,
+	) (err error)
 }

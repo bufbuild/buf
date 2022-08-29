@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -132,25 +133,25 @@ func newConfigV1(externalConfig ExternalConfigV1, id string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		if plugin.Remote != "" {
-			// Always use StrategyAll for remote plugins
-			strategy = StrategyAll
-		}
 		opt, err := encoding.InterfaceSliceOrStringToCommaSepString(plugin.Opt)
 		if err != nil {
 			return nil, err
 		}
-		pluginConfigs = append(
-			pluginConfigs,
-			&PluginConfig{
-				Name:     plugin.Name,
-				Remote:   plugin.Remote,
-				Out:      plugin.Out,
-				Opt:      opt,
-				Path:     plugin.Path,
-				Strategy: strategy,
-			},
-		)
+		pluginConfig := &PluginConfig{
+			Plugin:   plugin.Plugin,
+			Revision: plugin.Revision,
+			Name:     plugin.Name,
+			Remote:   plugin.Remote,
+			Out:      plugin.Out,
+			Opt:      opt,
+			Path:     plugin.Path,
+			Strategy: strategy,
+		}
+		if pluginConfig.IsRemote() {
+			// Always use StrategyAll for remote plugins
+			pluginConfig.Strategy = StrategyAll
+		}
+		pluginConfigs = append(pluginConfigs, pluginConfig)
 	}
 	return &Config{
 		PluginConfigs: pluginConfigs,
@@ -163,32 +164,67 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 		return fmt.Errorf("%s: no plugins set", id)
 	}
 	for _, plugin := range externalConfig.Plugins {
-		if plugin.Name == "" && plugin.Remote == "" {
-			return fmt.Errorf("%s: plugin name or remote plugin name is required", id)
+		var numPluginIdentifiers int
+		var pluginIdentifier string
+		for _, possibleIdentifier := range []string{plugin.Plugin, plugin.Name, plugin.Remote} {
+			if possibleIdentifier != "" {
+				numPluginIdentifiers++
+				// Doesn't matter if we reassign here - we only allow one to be set below
+				pluginIdentifier = possibleIdentifier
+			}
 		}
-		if plugin.Name != "" && plugin.Remote != "" {
-			return fmt.Errorf("%s: only one of plugin name and remote plugin name can be set", id)
+		if numPluginIdentifiers == 0 {
+			return fmt.Errorf("%s: one of plugin, name or remote is required", id)
+		}
+		if numPluginIdentifiers > 1 {
+			return fmt.Errorf("%s: only one of plugin, name, or remote can be set", id)
 		}
 		if plugin.Out == "" {
-			return fmt.Errorf("%s: plugin %s out is required", id, plugin.Name)
+			return fmt.Errorf("%s: plugin %s out is required", id, pluginIdentifier)
 		}
-		if plugin.Remote != "" {
-			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(plugin.Remote); err != nil {
+		switch {
+		case plugin.Plugin != "":
+			if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
+				// plugin.Plugin is a remote plugin
+				if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
+					return err
+				}
+			} else {
+				// plugin.Plugin is a local plugin - verify it isn't using an alpha remote plugin path
+				if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
+					return fmt.Errorf("%s: invalid local plugin", id)
+				}
+			}
+		case plugin.Remote != "":
+			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err != nil {
 				return fmt.Errorf("%s: invalid remote plugin name: %w", id, err)
 			}
-			// We limit the amount of validation done on the client side intentionally
-			if plugin.Path != "" {
-				return fmt.Errorf("%s: remote plugin %s cannot specify a path", id, plugin.Remote)
+			if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
+				return err
 			}
-			if plugin.Strategy != "" {
-				return fmt.Errorf("%s: remote plugin %s cannot specify a strategy", id, plugin.Remote)
+		case plugin.Name != "":
+			// Check that the plugin name doesn't look like a plugin reference
+			if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
+				return fmt.Errorf("%s: invalid local plugin name: %s", id, pluginIdentifier)
 			}
-			continue
+			// Check that the plugin name doesn't look like an alpha remote plugin
+			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
+				return fmt.Errorf("%s: invalid plugin name %s, did you mean to use a remote plugin?", id, pluginIdentifier)
+			}
+		default:
+			// unreachable - validated above
+			return errors.New("one of plugin, name, or remote is required")
 		}
-		// Check that the plugin name doesn't look like a remote plugin
-		if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(plugin.Name); err == nil {
-			return fmt.Errorf("%s: invalid plugin name, did you mean to use a remote plugin?", id)
-		}
+	}
+	return nil
+}
+
+func checkPathAndStrategyUnset(id string, plugin ExternalPluginConfigV1, pluginIdentifier string) error {
+	if plugin.Path != "" {
+		return fmt.Errorf("%s: remote plugin %s cannot specify a path", id, pluginIdentifier)
+	}
+	if plugin.Strategy != "" {
+		return fmt.Errorf("%s: remote plugin %s cannot specify a strategy", id, pluginIdentifier)
 	}
 	return nil
 }

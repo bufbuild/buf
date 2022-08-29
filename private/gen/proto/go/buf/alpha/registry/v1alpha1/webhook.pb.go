@@ -448,7 +448,11 @@ type Webhook struct {
 	RepositoryName string `protobuf:"bytes,5,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
 	// The webhook repository owner name.
 	OwnerName string `protobuf:"bytes,6,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	// The subscriber's callback URL where notifications are delivered.
+	// The subscriber's callback URL where notifications are delivered. Currently
+	// we only support Connect-powered backends with application/proto as the
+	// content type. Make sure that your URL ends with
+	// "/buf.alpha.webhook.v1alpha1.EventService/Event". For more information
+	// about Connect, see https://connect.build.
 	CallbackUrl string `protobuf:"bytes,7,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
 }
 

@@ -2,8 +2,17 @@
 
 ## [Unreleased]
 
-- Fix issue where `ENUM_ZERO_VALUE_SUFFIX` permitted enum values
-  that did not match the surrounding enum name.
+- Change default for `--origin` flag of `buf beta studio-agent` to `https://studio.buf.build`
+- Change default for `--timeout` flag of `buf beta studio-agent` to `0` (no timeout). Before it was
+  `2m` (the default for all the other `buf` commands).
+- Add support for experimental code generation with the `plugin:` key in `buf.gen.yaml`.
+- Preserve single quotes with `buf format`.
+
+## [v1.7.0] - 2022-06-27
+
+- Support protocol and encoding client options based on content-type in Studio Agent.
+- Add `--draft` flag to `buf push`.
+- Add `buf beta registry draft {list,delete}` commands.
 
 ## [v1.6.0] - 2022-06-21
 
@@ -715,7 +724,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.7.0...HEAD
+[v1.7.0]: https://github.com/bufbuild/buf/compare/v1.6.0...v1.7.0
 [v1.6.0]: https://github.com/bufbuild/buf/compare/v1.5.0...v1.6.0
 [v1.5.0]: https://github.com/bufbuild/buf/compare/v1.4.0...v1.5.0
 [v1.4.0]: https://github.com/bufbuild/buf/compare/v1.3.1...v1.4.0

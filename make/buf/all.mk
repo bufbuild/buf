@@ -1,6 +1,6 @@
 # https://github.com/jhump/protoreflect/commits/master 20220416 checked 20220417
 GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/jhump/protoreflect@438db461d753097fc3243323d1b0d80292dfdb53
+	github.com/jhump/protoreflect@060cc04fc18bbaff608f8c02a537f62f56a8ebd0
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
@@ -123,7 +123,7 @@ bufgeneratesteps:: \
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
-	DOCKER_IMAGE=golang:1.18.3-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.19.0-buster bash make/buf/scripts/release.bash
 
 # We have to manually set the Homebrew version on the Homebrew badge as there
 # is no badge on shields.io for Homebrew packages outside of homebrew-core
@@ -148,7 +148,7 @@ endif
 	# make sure both of these docker images exist
 	# the release of these images will lag the actual release
 	docker pull golang:$(GOVERSION)-buster
-	docker pull golang:$(GOVERSION)-alpine3.15
+	docker pull golang:$(GOVERSION)-alpine3.16
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: 1\.[0-9][0-9]*\.[0-9][0-9]*/go-version: $(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)

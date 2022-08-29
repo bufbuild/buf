@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/bufbuild/buf?include_prereleases)][badges_release]
 [![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)][badges_ci]
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)][badges_docker]
-[![Homebrew](https://img.shields.io/badge/homebrew-v1.6.0-blue)][badges_homebrew]
+[![Homebrew](https://img.shields.io/badge/homebrew-v1.7.0-blue)][badges_homebrew]
 [![AUR](https://img.shields.io/aur/version/buf)][badges_aur]
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges_slack]
 
@@ -91,7 +91,7 @@ While `buf`'s [core features][features] should cover most use cases, we've inclu
 * **Configurable error formats** for CLI output. `buf` outputs information in `file:line:column:message` form by default for each lint error and breaking change it encounters, but you can also select JSON and, in the near future, JUnit output.
 * **Editor integration** driven by `buf`'s granular error output. We currently provide linting integrations for both [Vim and Visual Studio Code][ide] but we plan to support other editors, such as Emacs and [JetBrains IDEs][jetbrains] like IntelliJ and GoLand, in the future.
 * **Universal Input targeting**. Buf enables you to perform actions like linting and breaking change detection not just against local `.proto` files but also against a broad range of other [Inputs], such as tarballs and ZIP files, remote Git repositories, and pre-built [image][images] files.
-* **Speed**. Buf's internal Protobuf compiler compiles your Protobuf sources using all available cores without compromising deterministic output, which is considerably faster than `protoc`. This allows for near-instantaneous feedback, which is of special importance for features like [editor integration][id].
+* **Speed**. Buf's internal Protobuf compiler compiles your Protobuf sources using all available cores without compromising deterministic output, which is considerably faster than `protoc`. This allows for near-instantaneous feedback, which is of special importance for features like [editor integration][ide].
 
 ## Next steps
 
