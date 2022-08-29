@@ -228,10 +228,10 @@ func (g *generator) execPlugins(
 		}
 		return nil, err
 	}
-	checkRequiredFeatures(requiredFeatures, responses)
 	if err := validateResponses(responses, config.PluginConfigs); err != nil {
 		return nil, err
 	}
+	checkRequiredFeatures(container, requiredFeatures, responses, config.PluginConfigs)
 	return responses, nil
 }
 
