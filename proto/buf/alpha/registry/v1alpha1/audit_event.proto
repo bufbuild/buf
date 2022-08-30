@@ -70,8 +70,8 @@ message AuditEvent {
   AuditActor actor = 3;
   // Resource of the audited event. It specifies "which resouce" was affected.
   AuditResource resource = 4;
-  // Timestamp of the audited event. It specifies "when" it happened.
-  google.protobuf.Timestamp timestamp = 5;
+  // Create time of the audited event. It specifies "when" it happened.
+  google.protobuf.Timestamp create_time = 5;
   // Payload of the audited event. It specifies additional context on the event.
   // TODO add oneof payload events.
 }
