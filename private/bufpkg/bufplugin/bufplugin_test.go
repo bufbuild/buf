@@ -60,6 +60,20 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			},
 		},
 	})
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		Go: &bufpluginconfig.GoRegistryConfig{
+			MinVersion: "1.18",
+			Deps: []*bufpluginconfig.GoRegistryDependencyConfig{
+				{
+					Module:  "github.com/bufbuild/connect-go",
+					Version: "v0.4.0",
+				},
+			},
+		},
+		Options: map[string]string{
+			"separate_package": "true",
+		},
+	})
 }
 
 func assertPluginRegistryRoundTrip(t testing.TB, config *bufpluginconfig.RegistryConfig) {

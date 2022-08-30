@@ -95,7 +95,9 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 	if pluginRegistry == nil {
 		return nil
 	}
-	registryConfig := &registryv1alpha1.RegistryConfig{}
+	registryConfig := &registryv1alpha1.RegistryConfig{
+		Options: bufpluginconfig.PluginOptionsToOptionsSlice(pluginRegistry.Options),
+	}
 	if pluginRegistry.Go != nil {
 		goConfig := &registryv1alpha1.GoConfig{}
 		goConfig.MinimumVersion = pluginRegistry.Go.MinVersion
@@ -122,7 +124,9 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 	if config == nil {
 		return nil
 	}
-	registryConfig := &bufpluginconfig.RegistryConfig{}
+	registryConfig := &bufpluginconfig.RegistryConfig{
+		Options: bufpluginconfig.OptionsSliceToPluginOptions(config.Options),
+	}
 	if config.GetGoConfig() != nil {
 		goConfig := &bufpluginconfig.GoRegistryConfig{}
 		goConfig.MinVersion = config.GetGoConfig().GetMinimumVersion()
