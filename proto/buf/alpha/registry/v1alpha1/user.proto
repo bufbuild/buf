@@ -33,7 +33,8 @@ message User {
   bool deactivated = 5;
   // description is the user configurable description of the user.
   string description = 6;
-  // url is the user configurable URL in the description of the user.
+  // url is the user configurable URL in the description of the user,
+  // always included the scheme and will not have a #fragment suffix.
   string url = 7;
   // veracity of the user, configurable by server admin.
   Veracity veracity = 8;

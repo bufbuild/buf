@@ -101,7 +101,8 @@ type User struct {
 	Deactivated bool `protobuf:"varint,5,opt,name=deactivated,proto3" json:"deactivated,omitempty"`
 	// description is the user configurable description of the user.
 	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
-	// url is the user configurable URL in the description of the user.
+	// url is the user configurable URL in the description of the user,
+	// always included the scheme and will not have a #fragment suffix.
 	Url string `protobuf:"bytes,7,opt,name=url,proto3" json:"url,omitempty"`
 	// veracity of the user, configurable by server admin.
 	Veracity Veracity `protobuf:"varint,8,opt,name=veracity,proto3,enum=buf.alpha.registry.v1alpha1.Veracity" json:"veracity,omitempty"`

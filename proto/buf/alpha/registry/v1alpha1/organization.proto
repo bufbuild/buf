@@ -31,7 +31,8 @@ message Organization {
   string name = 4;
   // description is the user configurable description of the organization.
   string description = 5;
-  // url is the user configurable URL in the description of the organization.
+  // url is the user configurable URL in the description of the organization,
+  // always included the scheme and will not have a #fragment suffix.
   string url = 6;
   // veracity of the organization, configurable by server admin.
   Veracity veracity = 7;

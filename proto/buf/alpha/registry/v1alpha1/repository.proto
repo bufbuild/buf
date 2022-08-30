@@ -53,7 +53,8 @@ message Repository {
   string owner_name = 10;
   // description is the user configurable description of the repository.
   string description = 11;
-  // url is the user configurable URL in the description of the repository.
+  // url is the user configurable URL in the description of the repository,
+  // always included the scheme and will not have a #fragment suffix.
   string url = 12;
   // license is the user configurable license of the repository.
   License license = 13;

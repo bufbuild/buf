@@ -111,7 +111,8 @@ type Repository struct {
 	OwnerName string `protobuf:"bytes,10,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
 	// description is the user configurable description of the repository.
 	Description string `protobuf:"bytes,11,opt,name=description,proto3" json:"description,omitempty"`
-	// url is the user configurable URL in the description of the repository.
+	// url is the user configurable URL in the description of the repository,
+	// always included the scheme and will not have a #fragment suffix.
 	Url string `protobuf:"bytes,12,opt,name=url,proto3" json:"url,omitempty"`
 	// license is the user configurable license of the repository.
 	License License `protobuf:"varint,13,opt,name=license,proto3,enum=buf.alpha.registry.v1alpha1.License" json:"license,omitempty"`
