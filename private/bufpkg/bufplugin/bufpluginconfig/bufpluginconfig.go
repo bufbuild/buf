@@ -95,8 +95,7 @@ type RegistryConfig struct {
 	Go  *GoRegistryConfig
 	NPM *NPMRegistryConfig
 	// Options is the set of options passed into the plugin for the
-	// remote registry. It overrides any DefaultOptions setting in
-	// Config.
+	// remote registry.
 	//
 	// For now, all options are string values. This could eventually
 	// support other types (like JSON Schema and Terraform variables),
