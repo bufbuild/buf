@@ -17,6 +17,7 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
+import "buf/alpha/registry/v1alpha1/veracity.proto";
 import "google/protobuf/timestamp.proto";
 
 message Organization {
@@ -28,6 +29,12 @@ message Organization {
   google.protobuf.Timestamp update_time = 3;
   // unique, mutable
   string name = 4;
+  // description is the user configurable description of the organization.
+  string description = 5;
+  // url is the user configurable URL in the description of the organization.
+  string url = 6;
+  // veracity of the organization, configurable by server admin.
+  Veracity veracity = 7;
 }
 
 // OrganizationMembership is a nested structure that contains

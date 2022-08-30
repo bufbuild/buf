@@ -17,6 +17,7 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
+import "buf/alpha/registry/v1alpha1/veracity.proto";
 import "google/protobuf/timestamp.proto";
 
 message User {
@@ -30,6 +31,12 @@ message User {
   string username = 4;
   // mutable
   bool deactivated = 5;
+  // description is the user configurable description of the user.
+  string description = 6;
+  // url is the user configurable URL in the description of the user.
+  string url = 7;
+  // veracity of the user, configurable by server admin.
+  Veracity veracity = 8;
 }
 
 // TODO: #663 move this to organization service

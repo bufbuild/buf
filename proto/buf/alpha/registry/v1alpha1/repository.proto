@@ -16,8 +16,10 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/license.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
+import "buf/alpha/registry/v1alpha1/veracity.proto";
 import "google/protobuf/timestamp.proto";
 
 enum Visibility {
@@ -46,6 +48,19 @@ message Repository {
   bool deprecated = 8;
   // deprecation_message is the message shown if the repository is deprecated.
   string deprecation_message = 9;
+  // owner_name is the name of the owner of the repository,
+  // either a username or organization name.
+  string owner_name = 10;
+  // description is the user configurable description of the repository.
+  string description = 11;
+  // url is the user configurable URL in the description of the repository.
+  string url = 12;
+  // license is the user configurable license of the repository.
+  License license = 13;
+  // veracity of the owner of the repository, configurable by server admin.
+  Veracity veracity = 14;
+  // last commit time in main branch of the repository.
+  google.protobuf.Timestamp last_commit_time = 15;
 }
 
 message RepositoryCounts {
