@@ -283,8 +283,13 @@ func run(
 		return err
 	}
 	var nextRevision uint32
-	// TODO: Revisit if we decide to make revision part of plugin_version
-	currentRevision, _, err := service.GetLatestCuratedPlugin(ctx, pluginConfig.Name.Owner(), pluginConfig.Name.Plugin(), pluginConfig.PluginVersion)
+	currentRevision, _, err := service.GetLatestCuratedPlugin(
+		ctx,
+		pluginConfig.Name.Owner(),
+		pluginConfig.Name.Plugin(),
+		pluginConfig.PluginVersion,
+		0, // get latest revision for the plugin version.
+	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err

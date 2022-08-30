@@ -228,9 +228,14 @@ message GetLatestCuratedPluginRequest {
   string owner = 1;
   // The name of the plugin, i.e. "connect-go".
   string name = 2;
-  // Optional: Semver-formatted plugin version.
-  // If not specified, the latest version will be retrieved.
+  // Both version (semver-formatted) and revision are optional, which means
+  // return the latest plugin.
+  // If version is set, but revision is omitted, then return the latest
+  // revision for that version.
+  // If version and revision are both set, return specific plugin.
+  // It is an error to set a revision without a corresponding version.
   string version = 3;
+  uint32 revision = 4;
 }
 
 message GetLatestCuratedPluginResponse {
