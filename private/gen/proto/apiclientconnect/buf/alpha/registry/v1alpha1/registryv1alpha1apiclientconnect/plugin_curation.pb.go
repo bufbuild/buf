@@ -96,14 +96,16 @@ func (s *pluginCurationServiceClient) GetLatestCuratedPlugin(
 	owner string,
 	name string,
 	version string,
+	revision uint32,
 ) (plugin *v1alpha1.CuratedPlugin, versions []*v1alpha1.CuratedPluginVersionRevisions, _ error) {
 	response, err := s.client.GetLatestCuratedPlugin(
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.GetLatestCuratedPluginRequest{
-				Owner:   owner,
-				Name:    name,
-				Version: version,
+				Owner:    owner,
+				Name:     name,
+				Version:  version,
+				Revision: revision,
 			}),
 	)
 	if err != nil {
