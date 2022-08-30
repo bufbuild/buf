@@ -69,6 +69,14 @@ message RegistryConfig {
     GoConfig go_config = 1;
     NPMConfig npm_config = 2;
   }
+  // Reserved for future remote registry types.
+  reserved 3 to 9;
+  // The options to pass to the plugin. These will
+  // be merged into a single, comma-separated string.
+  // If options is non-empty, it will override any
+  // default options specified in the plugin's
+  // metadata (the opts key in buf.plugin.yaml).
+  repeated string options = 10;
 }
 
 message CuratedPluginReference {

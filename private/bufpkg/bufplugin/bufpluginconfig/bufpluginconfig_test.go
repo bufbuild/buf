@@ -62,6 +62,9 @@ func TestGetConfigForBucket(t *testing.T) {
 						},
 					},
 				},
+				Options: map[string]string{
+					"separate_package": "true",
+				},
 			},
 		},
 		pluginConfig,
@@ -98,6 +101,9 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 							Version: "v1.32.0",
 						},
 					},
+				},
+				Options: map[string]string{
+					"separate_package": "true",
 				},
 			},
 		},
@@ -180,6 +186,20 @@ func TestParsePluginConfigEmptyVersionYAML(t *testing.T) {
 	t.Parallel()
 	_, err := ParseConfig(filepath.Join("testdata", "failure", "invalid-empty-version.yaml"))
 	require.Error(t, err)
+}
+
+func TestPluginOptionsRoundTrip(t *testing.T) {
+	assertPluginOptionsRoundTrip(t, nil)
+	assertPluginOptionsRoundTrip(t, map[string]string{})
+	assertPluginOptionsRoundTrip(t, map[string]string{
+		"option-1":          "value-1",
+		"option-2":          "value-2",
+		"option-no-value-3": "",
+	})
+}
+
+func assertPluginOptionsRoundTrip(t testing.TB, options map[string]string) {
+	assert.Equal(t, options, OptionsSliceToPluginOptions(PluginOptionsToOptionsSlice(options)))
 }
 
 func TestGetConfigForDataInvalidDependency(t *testing.T) {
