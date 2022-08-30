@@ -52,6 +52,7 @@ type PluginCurationService interface {
 		owner string,
 		name string,
 		version string,
+		revision uint32,
 	) (plugin *v1alpha1.CuratedPlugin, versions []*v1alpha1.CuratedPluginVersionRevisions, err error)
 }
 
