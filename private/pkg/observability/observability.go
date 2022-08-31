@@ -23,7 +23,6 @@ import (
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
 	"go.opencensus.io/trace"
-	"go.opentelemetry.io/otel"
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
@@ -88,7 +87,6 @@ func Start(options ...StartOption) io.Closer {
 	}
 	for _, tracerProviderCloser := range startOptions.tracerProviderClosers {
 		tracerProviderCloser := tracerProviderCloser
-		otel.SetTracerProvider(tracerProviderCloser)
 		closers = append(closers, tracerProviderCloser)
 	}
 	return ioextended.ChainCloser(closers...)

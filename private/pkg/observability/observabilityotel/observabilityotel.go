@@ -15,10 +15,17 @@
 package observabilityotel
 
 import (
+	"context"
+
 	"github.com/bufbuild/buf/private/pkg/observability"
-	"go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func NewTracerProviderCloser(tracerProvider *trace.TracerProvider) observability.TracerProviderCloser {
+type TracerProvider interface {
+	Tracer(string, ...trace.TracerOption) trace.Tracer
+	Shutdown(context.Context) error
+}
+
+func NewTracerProviderCloser(tracerProvider TracerProvider) observability.TracerProviderCloser {
 	return newTracerProviderCloser(tracerProvider)
 }

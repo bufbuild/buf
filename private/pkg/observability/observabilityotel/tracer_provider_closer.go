@@ -17,15 +17,14 @@ package observabilityotel
 import (
 	"context"
 
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 )
 
 type tracerProviderCloser struct {
-	tracerProvider *sdktrace.TracerProvider
+	tracerProvider TracerProvider
 }
 
-func newTracerProviderCloser(tracerProvider *sdktrace.TracerProvider) *tracerProviderCloser {
+func newTracerProviderCloser(tracerProvider TracerProvider) *tracerProviderCloser {
 	return &tracerProviderCloser{
 		tracerProvider: tracerProvider,
 	}
