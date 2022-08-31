@@ -47,6 +47,7 @@ const (
 	dryRunFlagName          = "dry-run"
 	pullFlagName            = "pull"
 	buildArgFlagName        = "build-arg"
+	imageFlagName           = "image"
 )
 
 // NewCommand returns a new Command.
@@ -80,6 +81,7 @@ type flags struct {
 	DryRun          bool
 	PullParent      bool
 	BuildArgs       []string
+	Image           string
 }
 
 func newFlags() *flags {
@@ -139,6 +141,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"Build arguments.",
 	)
+	flagSet.StringVar(
+		&f.Image,
+		imageFlagName,
+		"",
+		"Existing image to push.",
+	)
 }
 
 func run(
@@ -183,6 +191,10 @@ func run(
 	if err != nil {
 		return err
 	}
+	outputLanguages, err := bufplugin.OutputLanguagesToProtoLanguages(pluginConfig.OutputLanguages)
+	if err != nil {
+		return err
+	}
 	// TODO: Once we support multiple plugin source types, this could be abstracted away
 	// in the bufpluginsource package. This is much simpler for now though.
 	dockerfile, err := loadDockerfile(ctx, sourceBucket)
@@ -201,26 +213,36 @@ func run(
 		retErr = multierr.Append(retErr, client.Close())
 	}()
 
-	buildResponse, err := client.Build(
-		ctx,
-		dockerfile,
-		pluginConfig,
-		bufplugindocker.WithConfigDirPath(container.ConfigDirPath()),
-		bufplugindocker.WithTarget(flags.Target),
-		bufplugindocker.WithCacheFrom(flags.CacheFrom),
-		bufplugindocker.WithPullParent(flags.PullParent),
-		bufplugindocker.WithBuildArgs(flags.BuildArgs),
-	)
-	if err != nil {
-		return err
+	var createdImage string
+	if len(flags.Image) > 0 {
+		tagResponse, err := client.Tag(ctx, flags.Image, pluginConfig)
+		if err != nil {
+			return err
+		}
+		createdImage = tagResponse.Image
+	} else {
+		buildResponse, err := client.Build(
+			ctx,
+			dockerfile,
+			pluginConfig,
+			bufplugindocker.WithConfigDirPath(container.ConfigDirPath()),
+			bufplugindocker.WithTarget(flags.Target),
+			bufplugindocker.WithCacheFrom(flags.CacheFrom),
+			bufplugindocker.WithPullParent(flags.PullParent),
+			bufplugindocker.WithBuildArgs(flags.BuildArgs),
+		)
+		if err != nil {
+			return err
+		}
+		createdImage = buildResponse.Image
 	}
 
 	// We build a Docker image using a unique ID label each time.
 	// After we're done publishing the image, we delete it to not leave a lot of images left behind.
 	// buildkit maintains a separate build cache so removing the image doesn't appear to impact future rebuilds.
 	defer func() {
-		if _, err := client.Delete(ctx, buildResponse.Image); err != nil {
-			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", buildResponse.Image))
+		if _, err := client.Delete(ctx, createdImage); err != nil {
+			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", createdImage))
 		}
 	}()
 
@@ -239,11 +261,10 @@ func run(
 		authConfig.Username = machine.Login()
 		authConfig.Password = machine.Password()
 	}
-	pushResponse, err := client.Push(ctx, buildResponse.Image, authConfig)
+	pushResponse, err := client.Push(ctx, createdImage, authConfig)
 	if err != nil {
 		return err
 	}
-
 	plugin, err := bufplugin.NewPlugin(
 		pluginConfig.PluginVersion,
 		pluginConfig.Dependencies,
@@ -265,8 +286,13 @@ func run(
 		return err
 	}
 	var nextRevision uint32
-	// TODO: Revisit if we decide to make revision part of plugin_version
-	currentRevision, _, err := service.GetLatestCuratedPlugin(ctx, pluginConfig.Name.Owner(), pluginConfig.Name.Plugin(), pluginConfig.PluginVersion)
+	currentRevision, _, err := service.GetLatestCuratedPlugin(
+		ctx,
+		pluginConfig.Name.Owner(),
+		pluginConfig.Name.Plugin(),
+		pluginConfig.PluginVersion,
+		0, // get latest revision for the plugin version.
+	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err
@@ -282,12 +308,13 @@ func run(
 		bufplugin.PluginToProtoPluginRegistryType(plugin),
 		plugin.Version(),
 		plugin.ContainerImageDigest(),
-		bufplugin.PluginOptionsToOptionsSlice(plugin.DefaultOptions()),
+		bufpluginconfig.PluginOptionsToOptionsSlice(plugin.DefaultOptions()),
 		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
 		plugin.SourceURL(),
 		plugin.Description(),
 		bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry()),
 		nextRevision,
+		outputLanguages,
 	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {

@@ -15,6 +15,8 @@
 package bufplugin
 
 import (
+	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
@@ -92,12 +94,44 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 	return registryType
 }
 
+// OutputLanguagesToProtoLanguages determines the appropriate registryv1alpha1.PluginRegistryType for the plugin.
+func OutputLanguagesToProtoLanguages(languages []string) ([]registryv1alpha1.PluginLanguage, error) {
+	languageToEnum := make(map[string]registryv1alpha1.PluginLanguage)
+	var supportedLanguages []string
+	for pluginLanguageKey, pluginLanguage := range registryv1alpha1.PluginLanguage_value {
+		if pluginLanguage == 0 {
+			continue
+		}
+		pluginLanguageKey := strings.TrimPrefix(pluginLanguageKey, "PLUGIN_LANGUAGE_")
+		pluginLanguageKey = strings.ToLower(pluginLanguageKey)
+		// Example:
+		// { go: 1, javascript: 2 }
+		languageToEnum[pluginLanguageKey] = registryv1alpha1.PluginLanguage(pluginLanguage)
+		supportedLanguages = append(supportedLanguages, pluginLanguageKey)
+	}
+	sort.Strings(supportedLanguages)
+	var protoLanguages []registryv1alpha1.PluginLanguage
+	for _, language := range languages {
+		if pluginLanguage, ok := languageToEnum[language]; ok {
+			protoLanguages = append(protoLanguages, pluginLanguage)
+			continue
+		}
+		return nil, fmt.Errorf("invalid plugin output language: %q\nsupported languages: %s", language, strings.Join(supportedLanguages, ", "))
+	}
+	sort.Slice(protoLanguages, func(i, j int) bool {
+		return protoLanguages[i] < protoLanguages[j]
+	})
+	return protoLanguages, nil
+}
+
 // PluginRegistryToProtoRegistryConfig converts a bufpluginconfig.RegistryConfig to a registryv1alpha1.RegistryConfig.
 func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.RegistryConfig) *registryv1alpha1.RegistryConfig {
 	if pluginRegistry == nil {
 		return nil
 	}
-	registryConfig := &registryv1alpha1.RegistryConfig{}
+	registryConfig := &registryv1alpha1.RegistryConfig{
+		Options: bufpluginconfig.PluginOptionsToOptionsSlice(pluginRegistry.Options),
+	}
 	if pluginRegistry.Go != nil {
 		goConfig := &registryv1alpha1.GoConfig{}
 		goConfig.MinimumVersion = pluginRegistry.Go.MinVersion
@@ -107,7 +141,9 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_GoConfig{GoConfig: goConfig}
 	} else if pluginRegistry.NPM != nil {
-		npmConfig := &registryv1alpha1.NPMConfig{}
+		npmConfig := &registryv1alpha1.NPMConfig{
+			RewriteImportPathSuffix: pluginRegistry.NPM.RewriteImportPathSuffix,
+		}
 		npmConfig.RuntimeLibraries = make([]*registryv1alpha1.NPMConfig_RuntimeLibrary, 0, len(pluginRegistry.NPM.Deps))
 		for _, dependency := range pluginRegistry.NPM.Deps {
 			npmConfig.RuntimeLibraries = append(npmConfig.RuntimeLibraries, npmRuntimeDependencyToProtoNPMRuntimeLibrary(dependency))
@@ -122,7 +158,9 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 	if config == nil {
 		return nil
 	}
-	registryConfig := &bufpluginconfig.RegistryConfig{}
+	registryConfig := &bufpluginconfig.RegistryConfig{
+		Options: bufpluginconfig.OptionsSliceToPluginOptions(config.Options),
+	}
 	if config.GetGoConfig() != nil {
 		goConfig := &bufpluginconfig.GoRegistryConfig{}
 		goConfig.MinVersion = config.GetGoConfig().GetMinimumVersion()
@@ -132,7 +170,9 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 		}
 		registryConfig.Go = goConfig
 	} else if config.GetNpmConfig() != nil {
-		npmConfig := &bufpluginconfig.NPMRegistryConfig{}
+		npmConfig := &bufpluginconfig.NPMRegistryConfig{
+			RewriteImportPathSuffix: config.GetNpmConfig().GetRewriteImportPathSuffix(),
+		}
 		npmConfig.Deps = make([]*bufpluginconfig.NPMRegistryDependencyConfig, 0, len(config.GetNpmConfig().GetRuntimeLibraries()))
 		for _, library := range config.GetNpmConfig().GetRuntimeLibraries() {
 			npmConfig.Deps = append(npmConfig.Deps, protoNPMRuntimeLibraryToNPMRuntimeDependency(library))
@@ -210,38 +250,4 @@ func PluginIdentityToProtoCuratedPluginReference(identity bufpluginref.PluginIde
 		Owner: identity.Owner(),
 		Name:  identity.Plugin(),
 	}
-}
-
-// PluginOptionsToOptionsSlice converts a map representation of plugin options to a slice of the form '<key>=<value>' or '<key>' for empty values.
-func PluginOptionsToOptionsSlice(pluginOptions map[string]string) []string {
-	if pluginOptions == nil {
-		return nil
-	}
-	options := make([]string, 0, len(pluginOptions))
-	for key, value := range pluginOptions {
-		if len(value) > 0 {
-			options = append(options, key+"="+value)
-		} else {
-			options = append(options, key)
-		}
-	}
-	return options
-}
-
-// OptionsSliceToPluginOptions converts a slice of plugin options to a map (using the first '=' as a delimiter between key and value).
-// If no '=' is found, the option will be stored in the map with an empty string value.
-func OptionsSliceToPluginOptions(options []string) map[string]string {
-	if options == nil {
-		return nil
-	}
-	pluginOptions := make(map[string]string, len(options))
-	for _, option := range options {
-		fields := strings.SplitN(option, "=", 2)
-		if len(fields) == 2 {
-			pluginOptions[fields[0]] = fields[1]
-		} else {
-			pluginOptions[option] = ""
-		}
-	}
-	return pluginOptions
 }

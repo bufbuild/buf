@@ -52,6 +52,7 @@ func TestGetConfigForBucket(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
+			OutputLanguages: []string{"go"},
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
@@ -61,6 +62,9 @@ func TestGetConfigForBucket(t *testing.T) {
 							Version: "v1.32.0",
 						},
 					},
+				},
+				Options: map[string]string{
+					"separate_package": "true",
 				},
 			},
 		},
@@ -89,6 +93,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
+			OutputLanguages: []string{"go"},
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
@@ -98,6 +103,9 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 							Version: "v1.32.0",
 						},
 					},
+				},
+				Options: map[string]string{
+					"separate_package": "true",
 				},
 			},
 		},
@@ -132,6 +140,7 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
+			OutputLanguages: []string{"typescript"},
 			Registry: &RegistryConfig{
 				NPM: &NPMRegistryConfig{
 					Deps: []*NPMRegistryDependencyConfig{
@@ -180,6 +189,20 @@ func TestParsePluginConfigEmptyVersionYAML(t *testing.T) {
 	t.Parallel()
 	_, err := ParseConfig(filepath.Join("testdata", "failure", "invalid-empty-version.yaml"))
 	require.Error(t, err)
+}
+
+func TestPluginOptionsRoundTrip(t *testing.T) {
+	assertPluginOptionsRoundTrip(t, nil)
+	assertPluginOptionsRoundTrip(t, map[string]string{})
+	assertPluginOptionsRoundTrip(t, map[string]string{
+		"option-1":          "value-1",
+		"option-2":          "value-2",
+		"option-no-value-3": "",
+	})
+}
+
+func assertPluginOptionsRoundTrip(t testing.TB, options map[string]string) {
+	assert.Equal(t, options, OptionsSliceToPluginOptions(PluginOptionsToOptionsSlice(options)))
 }
 
 func TestGetConfigForDataInvalidDependency(t *testing.T) {

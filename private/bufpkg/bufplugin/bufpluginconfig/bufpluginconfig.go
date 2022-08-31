@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -80,6 +81,8 @@ type Config struct {
 	// the empty string, and the option will be propagated to the
 	// compiler without the '=' delimiter.
 	DefaultOptions map[string]string
+	// OutputLanguages is a list of output languages the plugin supports.
+	OutputLanguages []string
 	// Registry is the registry configuration, which lets the user specify
 	// dependencies and other metadata that applies to a specific
 	// remote generation registry (e.g. the Go module proxy, NPM registry,
@@ -93,6 +96,23 @@ type Config struct {
 type RegistryConfig struct {
 	Go  *GoRegistryConfig
 	NPM *NPMRegistryConfig
+	// Options is the set of options passed into the plugin for the
+	// remote registry.
+	//
+	// For now, all options are string values. This could eventually
+	// support other types (like JSON Schema and Terraform variables),
+	// where strings are the default value unless otherwise specified.
+	//
+	// Note that some legacy plugins don't always express their options
+	// as key value pairs. For example, protoc-gen-java has an option
+	// that can be passed like so:
+	//
+	//  java_opt=annotate_code
+	//
+	// In those cases, the option value in this map will be set to
+	// the empty string, and the option will be propagated to the
+	// compiler without the '=' delimiter.
+	Options map[string]string
 }
 
 // GoRegistryConfig is the registry configuration for a Go plugin.
@@ -109,7 +129,8 @@ type GoRegistryDependencyConfig struct {
 
 // NPMRegistryConfig is the registry configuration for a JavaScript NPM plugin.
 type NPMRegistryConfig struct {
-	Deps []*NPMRegistryDependencyConfig
+	RewriteImportPathSuffix string
+	Deps                    []*NPMRegistryDependencyConfig
 }
 
 // NPMRegistryDependencyConfig is the npm registry dependency configuration.
@@ -183,17 +204,52 @@ func ParseConfig(config string, options ...ConfigOption) (*Config, error) {
 	return nil, fmt.Errorf("invalid plugin configuration version: must be one of %v", AllConfigFilePaths)
 }
 
+// PluginOptionsToOptionsSlice converts a map representation of plugin options to a slice of the form '<key>=<value>' or '<key>' for empty values.
+func PluginOptionsToOptionsSlice(pluginOptions map[string]string) []string {
+	if pluginOptions == nil {
+		return nil
+	}
+	options := make([]string, 0, len(pluginOptions))
+	for key, value := range pluginOptions {
+		if len(value) > 0 {
+			options = append(options, key+"="+value)
+		} else {
+			options = append(options, key)
+		}
+	}
+	return options
+}
+
+// OptionsSliceToPluginOptions converts a slice of plugin options to a map (using the first '=' as a delimiter between key and value).
+// If no '=' is found, the option will be stored in the map with an empty string value.
+func OptionsSliceToPluginOptions(options []string) map[string]string {
+	if options == nil {
+		return nil
+	}
+	pluginOptions := make(map[string]string, len(options))
+	for _, option := range options {
+		fields := strings.SplitN(option, "=", 2)
+		if len(fields) == 2 {
+			pluginOptions[fields[0]] = fields[1]
+		} else {
+			pluginOptions[option] = ""
+		}
+	}
+	return pluginOptions
+}
+
 // ExternalConfig represents the on-disk representation
 // of the plugin configuration at version v1.
 type ExternalConfig struct {
-	Version       string                 `json:"version,omitempty" yaml:"version,omitempty"`
-	Name          string                 `json:"name,omitempty" yaml:"name,omitempty"`
-	PluginVersion string                 `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
-	SourceURL     string                 `json:"source_url,omitempty" yaml:"source_url,omitempty"`
-	Description   string                 `json:"description,omitempty" yaml:"description,omitempty"`
-	Deps          []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
-	DefaultOpts   []string               `json:"default_opts,omitempty" yaml:"default_opts,omitempty"`
-	Registry      ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
+	Version         string                 `json:"version,omitempty" yaml:"version,omitempty"`
+	Name            string                 `json:"name,omitempty" yaml:"name,omitempty"`
+	PluginVersion   string                 `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
+	SourceURL       string                 `json:"source_url,omitempty" yaml:"source_url,omitempty"`
+	Description     string                 `json:"description,omitempty" yaml:"description,omitempty"`
+	Deps            []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
+	DefaultOpts     []string               `json:"default_opts,omitempty" yaml:"default_opts,omitempty"`
+	OutputLanguages []string               `json:"output_languages,omitempty" yaml:"output_languages,omitempty"`
+	Registry        ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
 }
 
 // ExternalDependency represents a dependency on another plugin.
@@ -205,8 +261,9 @@ type ExternalDependency struct {
 // ExternalRegistryConfig is the external configuration for the registry
 // of a plugin.
 type ExternalRegistryConfig struct {
-	Go  ExternalGoRegistryConfig  `json:"go,omitempty" yaml:"go,omitempty"`
-	NPM ExternalNPMRegistryConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
+	Go   ExternalGoRegistryConfig  `json:"go,omitempty" yaml:"go,omitempty"`
+	NPM  ExternalNPMRegistryConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
+	Opts []string                  `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
 // ExternalGoRegistryConfig is the external registry configuration for a Go plugin.
@@ -226,7 +283,8 @@ func (e ExternalGoRegistryConfig) IsEmpty() bool {
 
 // ExternalNPMRegistryConfig is the external registry configuration for a JavaScript NPM plugin.
 type ExternalNPMRegistryConfig struct {
-	Deps []struct {
+	RewriteImportPathSuffix string `json:"rewrite_import_path_suffix,omitempty" yaml:"rewrite_import_path_suffix,omitempty"`
+	Deps                    []struct {
 		Package string `json:"package,omitempty" yaml:"package,omitempty"`
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`

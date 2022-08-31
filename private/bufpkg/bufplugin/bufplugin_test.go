@@ -51,6 +51,7 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
 		NPM: &bufpluginconfig.NPMRegistryConfig{
+			RewriteImportPathSuffix: "connectweb.js",
 			Deps: []*bufpluginconfig.NPMRegistryDependencyConfig{
 				{
 					Package: "@bufbuild/protobuf",
@@ -59,22 +60,47 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			},
 		},
 	})
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		Go: &bufpluginconfig.GoRegistryConfig{
+			MinVersion: "1.18",
+			Deps: []*bufpluginconfig.GoRegistryDependencyConfig{
+				{
+					Module:  "github.com/bufbuild/connect-go",
+					Version: "v0.4.0",
+				},
+			},
+		},
+		Options: map[string]string{
+			"separate_package": "true",
+		},
+	})
 }
 
 func assertPluginRegistryRoundTrip(t testing.TB, config *bufpluginconfig.RegistryConfig) {
 	assert.Equal(t, config, ProtoRegistryConfigToPluginRegistry(PluginRegistryToProtoRegistryConfig(config)))
 }
 
-func TestPluginOptionsRoundTrip(t *testing.T) {
-	assertPluginOptionsRoundTrip(t, nil)
-	assertPluginOptionsRoundTrip(t, map[string]string{})
-	assertPluginOptionsRoundTrip(t, map[string]string{
-		"option-1":          "value-1",
-		"option-2":          "value-2",
-		"option-no-value-3": "",
-	})
-}
-
-func assertPluginOptionsRoundTrip(t testing.TB, options map[string]string) {
-	assert.Equal(t, options, OptionsSliceToPluginOptions(PluginOptionsToOptionsSlice(options)))
+func TestLanguagesToProtoLanguages(t *testing.T) {
+	protoLanguages, err := OutputLanguagesToProtoLanguages([]string{"go"})
+	require.NoError(t, err)
+	assert.Equal(t,
+		[]registryv1alpha1.PluginLanguage{
+			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_GO,
+		},
+		protoLanguages,
+	)
+	protoLanguages, err = OutputLanguagesToProtoLanguages([]string{"typescript", "javascript"})
+	require.NoError(t, err)
+	assert.Equal(t,
+		[]registryv1alpha1.PluginLanguage{
+			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_JAVASCRIPT,
+			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_TYPESCRIPT,
+		},
+		protoLanguages,
+	)
+	_, err = OutputLanguagesToProtoLanguages([]string{"unknown_language", "another_unknown_language"})
+	require.Error(t, err)
+	protoLanguages, err = OutputLanguagesToProtoLanguages(nil)
+	require.NoError(t, err)
+	assert.Equal(t, 0, len(protoLanguages))
 }

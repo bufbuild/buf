@@ -53,6 +53,8 @@ type Client interface {
 	Push(ctx context.Context, image string, auth *RegistryAuthConfig) (*PushResponse, error)
 	// Delete removes the Docker image from local Docker Engine.
 	Delete(ctx context.Context, image string) (*DeleteResponse, error)
+	// Tag creates a Docker image tag from an existing image and plugin config.
+	Tag(ctx context.Context, image string, config *bufpluginconfig.Config) (*TagResponse, error)
 	// Close releases any resources used by the underlying Docker client.
 	Close() error
 }
@@ -111,6 +113,13 @@ type PushResponse struct {
 	// Digest specifies the Docker image digest in the format <hash_algorithm>:<hash>.
 	// The digest returned from Client.Push differs from the image id returned in Client.Build.
 	Digest string
+}
+
+// TagResponse returns details of a successful image tag call.
+type TagResponse struct {
+	// Image contains the Docker image name in the local Docker engine including the tag.
+	// It is created from the bufpluginconfig.Config's Name.IdentityString() and a unique id.
+	Image string
 }
 
 // DeleteResponse is a placeholder for data to be returned from a successful image delete call.
@@ -178,9 +187,8 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 			Tags:     []string{imageName},
 			Platform: target,
 			Labels: map[string]string{
-				"build.buf.plugins.config.remote": pluginConfig.Name.Remote(),
-				"build.buf.plugins.config.owner":  pluginConfig.Name.Owner(),
-				"build.buf.plugins.config.name":   pluginConfig.Name.Plugin(),
+				"build.buf.plugins.config.owner": pluginConfig.Name.Owner(),
+				"build.buf.plugins.config.name":  pluginConfig.Name.Plugin(),
 			},
 			Version:    types.BuilderBuildKit, // DOCKER_BUILDKIT=1
 			SessionID:  buildkitSession.ID(),
@@ -243,6 +251,18 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 		Image:   imageName,
 		ImageID: imageInfo.ID,
 	}, nil
+}
+
+func (d *dockerAPIClient) Tag(ctx context.Context, image string, config *bufpluginconfig.Config) (*TagResponse, error) {
+	buildID := stringid.GenerateRandomID()
+	imageName := config.Name.IdentityString() + ":" + buildID
+	if !strings.HasPrefix(imageName, pluginsImagePrefix) {
+		imageName = pluginsImagePrefix + imageName
+	}
+	if err := d.cli.ImageTag(ctx, image, imageName); err != nil {
+		return nil, err
+	}
+	return &TagResponse{Image: imageName}, nil
 }
 
 func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *RegistryAuthConfig) (response *PushResponse, retErr error) {

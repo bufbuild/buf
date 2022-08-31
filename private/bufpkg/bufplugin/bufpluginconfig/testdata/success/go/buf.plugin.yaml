@@ -8,9 +8,12 @@ deps:
     revision: 1
 default_opts:
   - paths=source_relative
+output_languages: [go]
 registry:
   go:
     min_version: 1.18
     deps:
       - module: google.golang.org/grpc
         version: v1.32.0
+  opts:
+    - separate_package=true
