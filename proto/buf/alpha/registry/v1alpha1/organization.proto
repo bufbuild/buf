@@ -17,7 +17,7 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
-import "buf/alpha/registry/v1alpha1/veracity.proto";
+import "buf/alpha/registry/v1alpha1/verification_status.proto";
 import "google/protobuf/timestamp.proto";
 
 message Organization {
@@ -34,8 +34,8 @@ message Organization {
   // url is the user configurable URL in the description of the organization,
   // always included the scheme and will not have a #fragment suffix.
   string url = 6;
-  // veracity of the organization, configurable by server admin.
-  Veracity veracity = 7;
+  // verification status of the organization, configurable by server admin.
+  VerificationStatus verification_status = 7;
 }
 
 // OrganizationMembership is a nested structure that contains

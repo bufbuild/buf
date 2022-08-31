@@ -16,11 +16,12 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-// Veracity is the verification status of a owner, either user or organization.
-enum Veracity {
-  VERACITY_UNSPECIFIED = 0;
+// VerificationStatus is the verification status of an owner on if we recognize them,
+// an owner can be either user or organization.
+enum VerificationStatus {
+  VERIFICATION_STATUS_UNSPECIFIED = 0;
   // OFFICIAL indicates that the owner is maintained by Buf.
-  VERACITY_OFFICIAL = 1;
+  VERIFICATION_STATUS_OFFICIAL = 1;
   // VERIFIED_PUBLISHER indicates that the owner is a third-party that verified by Buf.
-  VERACITY_VERIFIED_PUBLISHER = 2;
+  VERIFICATION_STATUS_VERIFIED_PUBLISHER = 2;
 }

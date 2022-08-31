@@ -19,7 +19,7 @@ package buf.alpha.registry.v1alpha1;
 import "buf/alpha/registry/v1alpha1/license.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
-import "buf/alpha/registry/v1alpha1/veracity.proto";
+import "buf/alpha/registry/v1alpha1/verification_status.proto";
 import "google/protobuf/timestamp.proto";
 
 enum Visibility {
@@ -58,8 +58,8 @@ message Repository {
   string url = 12;
   // license is the user configurable license of the repository.
   License license = 13;
-  // veracity of the owner of the repository, configurable by server admin.
-  Veracity veracity = 14;
+  // verification status of the owner of the repository, configurable by server admin.
+  VerificationStatus verification_status = 14;
   // last commit time in main branch of the repository.
   google.protobuf.Timestamp last_commit_time = 15;
 }

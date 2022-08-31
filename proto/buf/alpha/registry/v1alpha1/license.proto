@@ -18,7 +18,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-// License is the enums from SPDX license information.
+// License is the enum of SPDX license information.
 //
 // See https://spdx.org/licenses.
 enum License {

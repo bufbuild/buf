@@ -36,7 +36,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// License is the enums from SPDX license information.
+// License is the enum of SPDX license information.
 //
 // See https://spdx.org/licenses.
 type License int32

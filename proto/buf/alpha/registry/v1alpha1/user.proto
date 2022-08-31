@@ -17,7 +17,7 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
-import "buf/alpha/registry/v1alpha1/veracity.proto";
+import "buf/alpha/registry/v1alpha1/verification_status.proto";
 import "google/protobuf/timestamp.proto";
 
 message User {
@@ -36,8 +36,8 @@ message User {
   // url is the user configurable URL in the description of the user,
   // always included the scheme and will not have a #fragment suffix.
   string url = 7;
-  // veracity of the user, configurable by server admin.
-  Veracity veracity = 8;
+  // verification status of the user, configurable by server admin.
+  VerificationStatus verification_status = 8;
 }
 
 // TODO: #663 move this to organization service
