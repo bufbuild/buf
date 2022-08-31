@@ -52,6 +52,7 @@ func TestGetConfigForBucket(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
+			Languages: []string{"go"},
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
