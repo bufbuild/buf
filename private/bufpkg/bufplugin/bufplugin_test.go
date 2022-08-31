@@ -79,3 +79,28 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 func assertPluginRegistryRoundTrip(t testing.TB, config *bufpluginconfig.RegistryConfig) {
 	assert.Equal(t, config, ProtoRegistryConfigToPluginRegistry(PluginRegistryToProtoRegistryConfig(config)))
 }
+
+func TestLanguagesToProtoLanguages(t *testing.T) {
+	protoLanguages, err := OutputLanguagesToProtoLanguages([]string{"go"})
+	require.NoError(t, err)
+	assert.Equal(t,
+		[]registryv1alpha1.PluginLanguage{
+			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_GO,
+		},
+		protoLanguages,
+	)
+	protoLanguages, err = OutputLanguagesToProtoLanguages([]string{"typescript", "javascript"})
+	require.NoError(t, err)
+	assert.Equal(t,
+		[]registryv1alpha1.PluginLanguage{
+			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_JAVASCRIPT,
+			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_TYPESCRIPT,
+		},
+		protoLanguages,
+	)
+	_, err = OutputLanguagesToProtoLanguages([]string{"unknown_language", "another_unknown_language"})
+	require.Error(t, err)
+	protoLanguages, err = OutputLanguagesToProtoLanguages(nil)
+	require.NoError(t, err)
+	assert.Equal(t, 0, len(protoLanguages))
+}
