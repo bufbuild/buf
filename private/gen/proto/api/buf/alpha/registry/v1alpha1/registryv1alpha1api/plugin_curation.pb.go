@@ -45,6 +45,7 @@ type PluginCurationService interface {
 		description string,
 		registryConfig *v1alpha1.RegistryConfig,
 		revision uint32,
+		outputLanguages []v1alpha1.PluginLanguage,
 	) (configuration *v1alpha1.CuratedPlugin, err error)
 	// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
 	GetLatestCuratedPlugin(

@@ -15,6 +15,10 @@
 package bufplugin
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -88,6 +92,36 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 		}
 	}
 	return registryType
+}
+
+// OutputLanguagesToProtoLanguages determines the appropriate registryv1alpha1.PluginRegistryType for the plugin.
+func OutputLanguagesToProtoLanguages(languages []string) ([]registryv1alpha1.PluginLanguage, error) {
+	languageToEnum := make(map[string]registryv1alpha1.PluginLanguage)
+	var supportedLanguages []string
+	for pluginLanguageKey, pluginLanguage := range registryv1alpha1.PluginLanguage_value {
+		if pluginLanguage == 0 {
+			continue
+		}
+		pluginLanguageKey := strings.TrimPrefix(pluginLanguageKey, "PLUGIN_LANGUAGE_")
+		pluginLanguageKey = strings.ToLower(pluginLanguageKey)
+		// Example:
+		// { go: 1, javascript: 2 }
+		languageToEnum[pluginLanguageKey] = registryv1alpha1.PluginLanguage(pluginLanguage)
+		supportedLanguages = append(supportedLanguages, pluginLanguageKey)
+	}
+	sort.Strings(supportedLanguages)
+	var protoLanguages []registryv1alpha1.PluginLanguage
+	for _, language := range languages {
+		if pluginLanguage, ok := languageToEnum[language]; ok {
+			protoLanguages = append(protoLanguages, pluginLanguage)
+			continue
+		}
+		return nil, fmt.Errorf("invalid plugin output language: %q\nsupported languages: %s", language, strings.Join(supportedLanguages, ", "))
+	}
+	sort.Slice(protoLanguages, func(i, j int) bool {
+		return protoLanguages[i] < protoLanguages[j]
+	})
+	return protoLanguages, nil
 }
 
 // PluginRegistryToProtoRegistryConfig converts a bufpluginconfig.RegistryConfig to a registryv1alpha1.RegistryConfig.
