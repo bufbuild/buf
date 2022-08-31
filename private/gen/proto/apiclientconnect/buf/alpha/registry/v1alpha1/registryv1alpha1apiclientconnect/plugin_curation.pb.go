@@ -66,6 +66,7 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 	description string,
 	registryConfig *v1alpha1.RegistryConfig,
 	revision uint32,
+	langs []v1alpha1.PluginLang,
 ) (configuration *v1alpha1.CuratedPlugin, _ error) {
 	response, err := s.client.CreateCuratedPlugin(
 		ctx,
@@ -82,6 +83,7 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 				Description:          description,
 				RegistryConfig:       registryConfig,
 				Revision:             revision,
+				Langs:                langs,
 			}),
 	)
 	if err != nil {

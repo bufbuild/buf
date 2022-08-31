@@ -27,6 +27,18 @@ enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_NPM = 2;
 }
 
+// PluginLang is used to specify the languages a plugin supports.
+enum PluginLang {
+  PLUGIN_LANG_UNSPECIFIED = 0;
+  PLUGIN_LANG_GO = 1;
+  PLUGIN_LANG_JAVASCRIPT = 2;
+  PLUGIN_LANG_TYPESCRIPT = 3;
+  PLUGIN_LANG_SWIFT = 4;
+  PLUGIN_LANG_CPP = 5;
+  PLUGIN_LANG_JAVA = 6;
+  PLUGIN_LANG_DART = 7;
+}
+
 // GoConfig is the configuration for a Go plugin.
 message GoConfig {
   // RuntimeLibrary describes the runtime library dependency of the generated code.
@@ -120,6 +132,8 @@ message CuratedPlugin {
   RegistryConfig registry_config = 12;
   // The revision for this plugin version.
   uint32 revision = 13;
+  // The languages supported by the plugin.
+  repeated PluginLang langs = 14;
 }
 
 // PluginCurationService manages curated plugins.
@@ -203,6 +217,8 @@ message CreateCuratedPluginRequest {
   RegistryConfig registry_config = 12;
   // The revision for this plugin version.
   uint32 revision = 13;
+  // The languages supported by the plugin.
+  repeated PluginLang langs = 14;
 }
 
 message CreateCuratedPluginResponse {
