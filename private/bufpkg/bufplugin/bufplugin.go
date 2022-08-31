@@ -109,6 +109,7 @@ func OutputLanguagesToProtoLanguages(languages []string) ([]registryv1alpha1.Plu
 		languageToEnum[pluginLanguageKey] = registryv1alpha1.PluginLanguage(pluginLanguage)
 		supportedLanguages = append(supportedLanguages, pluginLanguageKey)
 	}
+	sort.Strings(supportedLanguages)
 	var protoLanguages []registryv1alpha1.PluginLanguage
 	for _, language := range languages {
 		if pluginLanguage, ok := languageToEnum[language]; ok {
