@@ -96,14 +96,14 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 		return nil, err
 	}
 	return &Config{
-		Name:           pluginIdentity,
-		PluginVersion:  pluginVersion,
-		DefaultOptions: defaultOptions,
-		Dependencies:   dependencies,
-		Registry:       registryConfig,
-		SourceURL:      externalConfig.SourceURL,
-		Description:    externalConfig.Description,
-		Languages:      externalConfig.Languages,
+		Name:            pluginIdentity,
+		PluginVersion:   pluginVersion,
+		DefaultOptions:  defaultOptions,
+		Dependencies:    dependencies,
+		Registry:        registryConfig,
+		SourceURL:       externalConfig.SourceURL,
+		Description:     externalConfig.Description,
+		OutputLanguages: externalConfig.OutputLanguages,
 	}, nil
 }
 

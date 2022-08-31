@@ -52,7 +52,7 @@ func TestGetConfigForBucket(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
-			Languages: []string{"go"},
+			OutputLanguages: []string{"go"},
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
@@ -93,7 +93,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
-			Languages: []string{"go"},
+			OutputLanguages: []string{"go"},
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
@@ -140,7 +140,7 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
-			Languages: []string{"typescript"},
+			OutputLanguages: []string{"typescript"},
 			Registry: &RegistryConfig{
 				NPM: &NPMRegistryConfig{
 					Deps: []*NPMRegistryDependencyConfig{

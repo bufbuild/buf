@@ -27,7 +27,7 @@ enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_NPM = 2;
 }
 
-// PluginLanguage is used to specify the languages a plugin supports.
+// PluginLanguage is used to specify the output languages a plugin supports.
 enum PluginLanguage {
   PLUGIN_LANGUAGE_UNSPECIFIED = 0;
   PLUGIN_LANGUAGE_GO = 1;
@@ -139,8 +139,8 @@ message CuratedPlugin {
   RegistryConfig registry_config = 12;
   // The revision for this plugin version.
   uint32 revision = 13;
-  // The languages supported by the plugin.
-  repeated PluginLanguage languages = 14;
+  // The output languages supported by the plugin.
+  repeated PluginLanguage output_languages = 14;
 }
 
 // PluginCurationService manages curated plugins.
@@ -224,8 +224,8 @@ message CreateCuratedPluginRequest {
   RegistryConfig registry_config = 12;
   // The revision for this plugin version.
   uint32 revision = 13;
-  // The languages supported by the plugin.
-  repeated PluginLanguage languages = 14;
+  // The output languages supported by the plugin.
+  repeated PluginLanguage output_languages = 14;
 }
 
 message CreateCuratedPluginResponse {

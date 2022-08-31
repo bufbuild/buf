@@ -191,6 +191,10 @@ func run(
 	if err != nil {
 		return err
 	}
+	outputLanguages, err := bufplugin.OutputLanguagesToProtoLanguages(pluginConfig.OutputLanguages)
+	if err != nil {
+		return err
+	}
 	// TODO: Once we support multiple plugin source types, this could be abstracted away
 	// in the bufpluginsource package. This is much simpler for now though.
 	dockerfile, err := loadDockerfile(ctx, sourceBucket)
@@ -261,7 +265,6 @@ func run(
 	if err != nil {
 		return err
 	}
-
 	plugin, err := bufplugin.NewPlugin(
 		pluginConfig.PluginVersion,
 		pluginConfig.Dependencies,
@@ -311,7 +314,7 @@ func run(
 		plugin.Description(),
 		bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry()),
 		nextRevision,
-		bufplugin.LanguagesToProtoLanguages(pluginConfig.Languages),
+		outputLanguages,
 	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {
