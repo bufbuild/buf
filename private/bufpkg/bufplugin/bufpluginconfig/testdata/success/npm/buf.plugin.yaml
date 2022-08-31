@@ -3,6 +3,7 @@ name: buf.build/protocolbuffers/js
 plugin_version: v1.0.0
 default_opts:
   - paths=source_relative
+languages: [typescript]
 registry:
   npm:
     deps:

@@ -311,7 +311,7 @@ func run(
 		plugin.Description(),
 		bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry()),
 		nextRevision,
-		nil, // Plumb through
+		bufplugin.LanguagesToProtoLanguages(pluginConfig.Languages),
 	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {

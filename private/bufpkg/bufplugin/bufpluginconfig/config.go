@@ -103,6 +103,7 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 		Registry:       registryConfig,
 		SourceURL:      externalConfig.SourceURL,
 		Description:    externalConfig.Description,
+		Languages:      externalConfig.Languages,
 	}, nil
 }
 

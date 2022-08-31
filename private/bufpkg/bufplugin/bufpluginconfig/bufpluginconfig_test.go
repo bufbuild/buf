@@ -92,6 +92,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
+			Languages: []string{"go"},
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
@@ -138,6 +139,7 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 			DefaultOptions: map[string]string{
 				"paths": "source_relative",
 			},
+			Languages: []string{"typescript"},
 			Registry: &RegistryConfig{
 				NPM: &NPMRegistryConfig{
 					Deps: []*NPMRegistryDependencyConfig{

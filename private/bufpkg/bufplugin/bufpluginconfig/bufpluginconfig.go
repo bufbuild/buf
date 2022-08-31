@@ -81,6 +81,8 @@ type Config struct {
 	// the empty string, and the option will be propagated to the
 	// compiler without the '=' delimiter.
 	DefaultOptions map[string]string
+	// Languages is a list of languages the plugin supports.
+	Languages []string
 	// Registry is the registry configuration, which lets the user specify
 	// dependencies and other metadata that applies to a specific
 	// remote generation registry (e.g. the Go module proxy, NPM registry,
@@ -246,6 +248,7 @@ type ExternalConfig struct {
 	Description   string                 `json:"description,omitempty" yaml:"description,omitempty"`
 	Deps          []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
 	DefaultOpts   []string               `json:"default_opts,omitempty" yaml:"default_opts,omitempty"`
+	Languages     []string               `json:"languages,omitempty" yaml:"languages,omitempty"`
 	Registry      ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
 }
 
