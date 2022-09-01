@@ -332,7 +332,6 @@ type Event struct {
 	// Payload of the audited event. It specifies additional context on the event.
 	//
 	// Types that are assignable to Payload:
-	//
 	//	*Event_OrganizationCreated
 	Payload isEvent_Payload `protobuf_oneof:"payload"`
 }
