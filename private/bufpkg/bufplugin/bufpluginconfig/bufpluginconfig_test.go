@@ -19,6 +19,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
@@ -211,7 +212,11 @@ func TestPluginOptionsRoundTrip(t *testing.T) {
 }
 
 func assertPluginOptionsRoundTrip(t testing.TB, options map[string]string) {
-	assert.Equal(t, options, OptionsSliceToPluginOptions(PluginOptionsToOptionsSlice(options)))
+	optionsSlice := PluginOptionsToOptionsSlice(options)
+	assert.True(t, sort.SliceIsSorted(optionsSlice, func(i, j int) bool {
+		return optionsSlice[i] < optionsSlice[j]
+	}))
+	assert.Equal(t, options, OptionsSliceToPluginOptions(optionsSlice))
 }
 
 func TestGetConfigForDataInvalidDependency(t *testing.T) {
