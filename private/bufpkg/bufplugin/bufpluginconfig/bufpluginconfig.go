@@ -261,9 +261,9 @@ type ExternalDependency struct {
 // ExternalRegistryConfig is the external configuration for the registry
 // of a plugin.
 type ExternalRegistryConfig struct {
-	Go   ExternalGoRegistryConfig  `json:"go,omitempty" yaml:"go,omitempty"`
-	NPM  ExternalNPMRegistryConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
-	Opts []string                  `json:"opts,omitempty" yaml:"opts,omitempty"`
+	Go   *ExternalGoRegistryConfig  `json:"go,omitempty" yaml:"go,omitempty"`
+	NPM  *ExternalNPMRegistryConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
+	Opts []string                   `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
 // ExternalGoRegistryConfig is the external registry configuration for a Go plugin.
@@ -276,11 +276,6 @@ type ExternalGoRegistryConfig struct {
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 
-// IsEmpty returns true if the configuration is empty.
-func (e ExternalGoRegistryConfig) IsEmpty() bool {
-	return e.MinVersion == "" && len(e.Deps) == 0
-}
-
 // ExternalNPMRegistryConfig is the external registry configuration for a JavaScript NPM plugin.
 type ExternalNPMRegistryConfig struct {
 	RewriteImportPathSuffix string `json:"rewrite_import_path_suffix,omitempty" yaml:"rewrite_import_path_suffix,omitempty"`
@@ -288,11 +283,6 @@ type ExternalNPMRegistryConfig struct {
 		Package string `json:"package,omitempty" yaml:"package,omitempty"`
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
-}
-
-// IsEmpty returns true if the configuration is empty.
-func (e ExternalNPMRegistryConfig) IsEmpty() bool {
-	return len(e.Deps) == 0
 }
 
 type externalConfigVersion struct {

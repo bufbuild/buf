@@ -39,6 +39,9 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 	assertPluginRegistryRoundTrip(t, nil)
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		Go: &bufpluginconfig.GoRegistryConfig{},
+	})
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
 		Go: &bufpluginconfig.GoRegistryConfig{
 			MinVersion: "1.18",
 			Deps: []*bufpluginconfig.GoRegistryDependencyConfig{
@@ -48,6 +51,9 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 				},
 			},
 		},
+	})
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		NPM: &bufpluginconfig.NPMRegistryConfig{},
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
 		NPM: &bufpluginconfig.NPMRegistryConfig{
