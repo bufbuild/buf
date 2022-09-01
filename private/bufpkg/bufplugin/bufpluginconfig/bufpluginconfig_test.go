@@ -191,6 +191,15 @@ func TestParsePluginConfigEmptyVersionYAML(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestParsePluginConfigGoNoDepsOrMinVersion(t *testing.T) {
+	t.Parallel()
+	cfg, err := ParseConfig(filepath.Join("testdata", "success", "go-empty-registry", "buf.plugin.yaml"))
+	require.NoError(t, err)
+	assert.NotNil(t, cfg.Registry)
+	assert.NotNil(t, cfg.Registry.Go)
+	assert.Equal(t, &GoRegistryConfig{}, cfg.Registry.Go)
+}
+
 func TestPluginOptionsRoundTrip(t *testing.T) {
 	assertPluginOptionsRoundTrip(t, nil)
 	assertPluginOptionsRoundTrip(t, map[string]string{})
