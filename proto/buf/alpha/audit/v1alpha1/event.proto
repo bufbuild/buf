@@ -56,6 +56,7 @@ message Resource {
 // EventType is the type of audited event.
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_ORGANIZATION_CREATED = 1;
 }
 
 // Event is an audited action that happened in the BSR, with the information of
@@ -73,5 +74,10 @@ message Event {
   // Time of the audited event. It specifies "when" it happened.
   google.protobuf.Timestamp event_time = 5;
   // Payload of the audited event. It specifies additional context on the event.
-  // TODO add oneof payload events.
+  oneof payload {
+    OrganizationCreatedPayload organization_created = 6;
+  }
 }
+
+// OrganizationCreatedPayload is the payload for an ORGANIZATION_CREATED event.
+message OrganizationCreatedPayload {}
