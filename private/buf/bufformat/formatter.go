@@ -1442,73 +1442,11 @@ func (f *formatter) writeSpecialFloatLiteral(specialFloatLiteralNode *ast.Specia
 }
 
 // writeStringLiteral writes a string literal value (e.g. "foo").
+// Note that the raw string is written as-is so that it preserves
+// the quote style used in the original source.
 func (f *formatter) writeStringLiteral(stringLiteralNode *ast.StringLiteralNode) {
-	f.writeStringWithStyle(stringLiteralNode.Val)
-}
-
-// writeStringValue writes a string value (e.g. "foo").
-func (f *formatter) writeStringValue(stringValueNode ast.StringValueNode) {
-	f.writeStringWithStyle(stringValueNode.AsString())
-}
-
-// writeStringWithStyle writes a string value with surrounding single quotes or double quotes
-// based on the string value's content. The formatter prefers double quotes, but uses single
-// quotes if the content contains any (") literals and not any (') literals.
-//
-// > If the string contains any of the special escaped characters, then double quotes will be used.
-//
-//  TODO: The change proposed here isn't actually valid. With this,
-//  the user's input would unconditionally use double quotes whenever
-//  it encounters one of the following literals. It'd be impossible
-//  for the a string literal to specify a literal \n (without it
-//  being interpreted as a newline).
-//
-//  We need access to the original string's surrounding quote style so
-//  that we can preserve it in the formatted output - if the user specified
-//  a string with single quotes ('') or double quotes (""), then the formatted
-//  result should always use the same style.
-//
-//  It doesn't look like this information is available from the protocompile
-//  AST today - we'll need to see what we can do to make this possible.
-//  Otherwise, it's impossible for the formatter to know how to user's
-//  string.
-//
-//  The original issue relates to https://github.com/bufbuild/buf/issues/1093
-//
-// For example,
-//
-//  1. f"o"'o' -> "f\"o\"'o'"  (") and (') are used - surround with (")
-//  2. f"oo" -> 'f"oo"'        (") is used - surround with (')
-//  3. f'oo' -> "f'oo'"        (') is used - surround with (")
-//  4. foo -> "foo"            By default, use double quotes
-func (f *formatter) writeStringWithStyle(value string) {
-	var (
-		singleQuote       = strings.ContainsRune(value, '\'')
-		doubleQuote       = strings.ContainsRune(value, '"')
-		escapedCharacters = []rune{
-			'\n',
-			'\r',
-			'\t',
-			'\v',
-			'\f',
-			'\\',
-		}
-		hexadecimalPrefix = strings.Contains(value, "\\x")
-	)
-	isEscaped := hexadecimalPrefix
-	for _, escapedCharacter := range escapedCharacters {
-		isEscaped = isEscaped || strings.ContainsRune(value, escapedCharacter)
-	}
-	var formattedString string
-	if doubleQuote && !singleQuote && !isEscaped {
-		// Use a single quote if the content contains any (") or (\")
-		// literals, and not any (') literals or other escapable
-		// characters (e.g. '\n').
-		formattedString = fmt.Sprintf("'%s'", value)
-	} else {
-		formattedString = fmt.Sprintf("%q", value)
-	}
-	f.WriteString(formattedString)
+	info := f.fileNode.TokenInfo(stringLiteralNode.Token())
+	f.WriteString(info.RawText())
 }
 
 // writeUintLiteral writes a uint literal (e.g. '42').
@@ -1657,8 +1595,6 @@ func (f *formatter) writeNode(node ast.Node) {
 		f.writeSpecialFloatLiteral(element)
 	case *ast.StringLiteralNode:
 		f.writeStringLiteral(element)
-	case ast.StringValueNode:
-		f.writeStringValue(element)
 	case *ast.SyntaxNode:
 		f.writeSyntax(element)
 	case *ast.UintLiteralNode:
