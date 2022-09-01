@@ -75,9 +75,12 @@ message Event {
   google.protobuf.Timestamp event_time = 5;
   // Payload of the audited event. It specifies additional context on the event.
   oneof payload {
-    OrganizationCreatedPayload organization_created = 6;
+    PayloadOrganizationCreated organization_created = 6;
   }
 }
 
-// OrganizationCreatedPayload is the payload for an ORGANIZATION_CREATED event.
-message OrganizationCreatedPayload {}
+// PayloadOrganizationCreated is the payload for an ORGANIZATION_CREATED event.
+message PayloadOrganizationCreated {
+  // The name of the created organization.
+  string name = 1;
+}
