@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
@@ -217,6 +218,7 @@ func PluginOptionsToOptionsSlice(pluginOptions map[string]string) []string {
 			options = append(options, key)
 		}
 	}
+	sort.Strings(options)
 	return options
 }
 
