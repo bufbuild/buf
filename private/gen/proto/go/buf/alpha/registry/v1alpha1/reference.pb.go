@@ -40,6 +40,7 @@ type Reference struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Reference:
+	//
 	//	*Reference_Tag
 	//	*Reference_Commit
 	//	*Reference_Main

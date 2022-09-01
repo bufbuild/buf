@@ -60,9 +60,10 @@ type Config struct {
 	IgnoreIdPaths []*IDPaths `protobuf:"bytes,5,rep,name=ignore_id_paths,json=ignoreIdPaths,proto3" json:"ignore_id_paths,omitempty"`
 	// ignore_unstable_packages ignores packages with a last component that is one of the unstable forms recognised
 	// by the PACKAGE_VERSION_SUFFIX:
-	//   v\d+test.*
-	//   v\d+(alpha|beta)\d+
-	//   v\d+p\d+(alpha|beta)\d+
+	//
+	//	v\d+test.*
+	//	v\d+(alpha|beta)\d+
+	//	v\d+p\d+(alpha|beta)\d+
 	IgnoreUnstablePackages bool `protobuf:"varint,6,opt,name=ignore_unstable_packages,json=ignoreUnstablePackages,proto3" json:"ignore_unstable_packages,omitempty"`
 }
 

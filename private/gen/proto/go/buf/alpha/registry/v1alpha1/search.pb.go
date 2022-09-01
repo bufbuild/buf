@@ -528,6 +528,7 @@ type SearchResult struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Item:
+	//
 	//	*SearchResult_Repository
 	//	*SearchResult_Organization
 	//	*SearchResult_User

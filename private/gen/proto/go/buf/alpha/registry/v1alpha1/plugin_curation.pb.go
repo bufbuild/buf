@@ -302,6 +302,7 @@ type RegistryConfig struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to RegistryConfig:
+	//
 	//	*RegistryConfig_GoConfig
 	//	*RegistryConfig_NpmConfig
 	RegistryConfig isRegistryConfig_RegistryConfig `protobuf_oneof:"registry_config"`

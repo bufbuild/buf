@@ -104,6 +104,7 @@ type EventPayload struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Payload:
+	//
 	//	*EventPayload_RepositoryPush
 	Payload isEventPayload_Payload `protobuf_oneof:"payload"`
 }

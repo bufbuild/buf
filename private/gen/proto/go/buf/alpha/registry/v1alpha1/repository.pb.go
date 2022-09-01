@@ -98,6 +98,7 @@ type Repository struct {
 	// unique, mutable
 	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
 	// Types that are assignable to Owner:
+	//
 	//	*Repository_UserId
 	//	*Repository_OrganizationId
 	Owner      isRepository_Owner `protobuf_oneof:"owner"`
