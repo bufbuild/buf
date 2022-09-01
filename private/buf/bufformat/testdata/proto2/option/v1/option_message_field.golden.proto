@@ -20,7 +20,7 @@ message Test {
   repeated Simple r = 4;
   map<string, int32> m = 5;
 
-  optional bytes b = 6 [default = "\x00\x01\x02\x03\x04\x05\x06\afubar!"];
+  optional bytes b = 6 [default = "\0\1\2\3\4\5\6\7fubar!"];
 
   extensions 100 to 200;
 
