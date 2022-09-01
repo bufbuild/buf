@@ -40,7 +40,6 @@ type Owner struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Owner:
-	//
 	//	*Owner_User
 	//	*Owner_Organization
 	Owner isOwner_Owner `protobuf_oneof:"owner"`

@@ -1620,7 +1620,6 @@ type MessageField struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to MessageField:
-	//
 	//	*MessageField_Field
 	//	*MessageField_Oneof
 	MessageField isMessageField_MessageField `protobuf_oneof:"message_field"`
