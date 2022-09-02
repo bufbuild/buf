@@ -81,6 +81,8 @@ message Event {
 
 // PayloadOrganizationCreated is the payload for an ORGANIZATION_CREATED event.
 message PayloadOrganizationCreated {
-  // The name of the created organization.
+  // name is the name of the created organization.
   string name = 1;
+  // created_time is when the organization was created.
+  google.protobuf.Timestamp created_time = 2;
 }
