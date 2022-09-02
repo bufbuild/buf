@@ -30,6 +30,8 @@ message Actor {
   ActorType type = 1;
   // Id of the actor who caused the audited event.
   string id = 2;
+  // Name of the actor who caused the audited event.
+  string name = 3;
 }
 
 // ResourceType is the type of the resource that was affected by the audited
@@ -51,11 +53,14 @@ message Resource {
   ResourceType type = 1;
   // Id of the affected resource by the audited event.
   string id = 2;
+  // Name of the affected resource by the audited event.
+  string name = 3;
 }
 
 // EventType is the type of audited event.
 enum EventType {
   EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_ORGANIZATION_CREATED = 1;
 }
 
 // Event is an audited action that happened in the BSR, with the information of
@@ -68,10 +73,18 @@ message Event {
   EventType type = 2;
   // Actor of the audited event. It specifies "who" did it.
   Actor actor = 3;
-  // Resource of the audited event. It specifies "which resouce" was affected.
+  // Resource of the audited event. It specifies "which resource" was affected.
   Resource resource = 4;
   // Time of the audited event. It specifies "when" it happened.
   google.protobuf.Timestamp event_time = 5;
   // Payload of the audited event. It specifies additional context on the event.
-  // TODO add oneof payload events.
+  oneof payload {
+    PayloadOrganizationCreated organization_created = 6;
+  }
+}
+
+// PayloadOrganizationCreated is the payload for an ORGANIZATION_CREATED event.
+message PayloadOrganizationCreated {
+  // created_time is when the organization was created.
+  google.protobuf.Timestamp created_time = 1;
 }
