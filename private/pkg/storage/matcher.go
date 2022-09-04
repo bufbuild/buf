@@ -33,6 +33,13 @@ func MatchPathExt(ext string) Matcher {
 	})
 }
 
+// MatchPathBase returns a Matcher for the base.
+func MatchPathBase(base string) Matcher {
+	return pathMatcherFunc(func(path string) bool {
+		return normalpath.Base(path) == base
+	})
+}
+
 // MatchPathEqual returns a Matcher for the path.
 func MatchPathEqual(equalPath string) Matcher {
 	return pathMatcherFunc(func(path string) bool {
