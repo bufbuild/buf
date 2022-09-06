@@ -408,6 +408,7 @@ type Event struct {
 	// Payload of the audited event. It specifies additional context on the event.
 	//
 	// Types that are assignable to Payload:
+	//
 	//	*Event_OrganizationCreated
 	//	*Event_OrganizationDeleted
 	//	*Event_OrganizationMemberAdded
