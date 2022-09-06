@@ -138,10 +138,10 @@ message PayloadOrganizationMemberAdded {
 }
 
 message PayloadOrganizationMemberRoleChanged {
-  // member_id is the id of the member whose role was changed.
-  string member_id = 1;
-  // member_name is the name of the member whose role was changed.
-  string member_name = 2;
+  // organization_id is the id of the organization within which the role was changed.
+  string organization_id = 1;
+  // organization_name is the name of the organization within which the role was changed.
+  string organization_name = 2;
   // old_role is the old role of the member whose role was changed.
   buf.alpha.registry.v1alpha1.OrganizationRole old_role = 3;
   // new_role is the new role of the member whose role was changed.
@@ -153,16 +153,25 @@ message PayloadOrganizationMemberRemoved {
   string member_id = 1;
   // member_name is the name of the member removed from the organization.
   string member_name = 2;
-  // old_role is the old role of the member removed from the organization.
-  buf.alpha.registry.v1alpha1.OrganizationRole old_role = 3;
+  // member_role is the old role of the member removed from the organization.
+  buf.alpha.registry.v1alpha1.OrganizationRole member_role = 3;
 }
 
 message PayloadRepositoryCreated {
   // create_time is when the repository was created.
   google.protobuf.Timestamp create_time = 1;
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 2;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 3;
 }
 
-message PayloadRepositoryDeleted {}
+message PayloadRepositoryDeleted {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+}
 
 message PayloadRepositoryPushed {
   // owner_id is the id of the owner of the repository.
@@ -202,16 +211,25 @@ message PayloadRepositoryMemberRemoved {
   string member_id = 1;
   // member_name is the name of the member removed from the repository.
   string member_name = 2;
-  // old_role is the old role of the member removed from the repository.
-  buf.alpha.registry.v1alpha1.RepositoryRole old_role = 3;
+  // member_role is the old role of the member removed from the repository.
+  buf.alpha.registry.v1alpha1.RepositoryRole member_role = 3;
 }
 
 message PayloadPluginCreated {
   // create_time is when the plugin was created.
   google.protobuf.Timestamp create_time = 1;
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 2;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 3;
 }
 
-message PayloadPluginDeleted {}
+message PayloadPluginDeleted {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+}
 
 message PayloadPluginPushed {
   // owner_id is the id of the owner of the plugin.
