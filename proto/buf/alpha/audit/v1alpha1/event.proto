@@ -133,8 +133,8 @@ message PayloadOrganizationMemberAdded {
   string member_id = 1;
   // member_name is the name of the member added to the organization.
   string member_name = 2;
-  // new_role is the role granted to the member added to the organization.
-  buf.alpha.registry.v1alpha1.OrganizationRole new_role = 3;
+  // member_role is the role granted to the member added to the organization.
+  buf.alpha.registry.v1alpha1.OrganizationRole member_role = 3;
 }
 
 message PayloadOrganizationMemberRoleChanged {
@@ -191,8 +191,8 @@ message PayloadRepositoryMemberAdded {
   string member_id = 1;
   // member_name is the name of the member added to the repository.
   string member_name = 2;
-  // new_role is the role granted to the member added to the repository.
-  buf.alpha.registry.v1alpha1.RepositoryRole new_role = 3;
+  // member_role is the role granted to the member added to the repository.
+  buf.alpha.registry.v1alpha1.RepositoryRole member_role = 3;
 }
 
 message PayloadRepositoryMemberRoleChanged {
