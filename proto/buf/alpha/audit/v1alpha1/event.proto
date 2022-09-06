@@ -153,7 +153,7 @@ message PayloadOrganizationMemberRemoved {
   string member_id = 1;
   // member_name is the name of the member removed from the organization.
   string member_name = 2;
-  // member_role is the old role of the member removed from the organization.
+  // member_role is the role that the member had when removed from the organization.
   buf.alpha.registry.v1alpha1.OrganizationRole member_role = 3;
 }
 
@@ -211,7 +211,7 @@ message PayloadRepositoryMemberRemoved {
   string member_id = 1;
   // member_name is the name of the member removed from the repository.
   string member_name = 2;
-  // member_role is the old role of the member removed from the repository.
+  // member_role is the role that the member had when removed from the repository.
   buf.alpha.registry.v1alpha1.RepositoryRole member_role = 3;
 }
 
