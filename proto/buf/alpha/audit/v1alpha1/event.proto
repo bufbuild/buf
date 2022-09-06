@@ -178,12 +178,14 @@ message PayloadRepositoryPushed {
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
   string owner_name = 2;
-  // commit is the name of the created commit.
-  string commit = 3;
+  // repository_id is the id of the repository within which the commit was created.
+  string repository_id = 3;
+  // repository_name is the name of the repository within which the commit was created.
+  string repository_name = 4;
   // tags are the tags included in the push. Optional.
-  repeated string tags = 4;
+  repeated string tags = 5;
   // draft_name is the name of the draft. Optional.
-  string draft_name = 5;
+  string draft_name = 6;
 }
 
 message PayloadRepositoryMemberAdded {
