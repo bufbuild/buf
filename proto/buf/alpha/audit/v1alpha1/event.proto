@@ -126,10 +126,10 @@ message PayloadOrganizationCreated {}
 message PayloadOrganizationDeleted {}
 
 message PayloadOrganizationMemberAdded {
-  // member_id is the id of the member added to the organization.
-  string member_id = 1;
-  // member_name is the name of the member added to the organization.
-  string member_name = 2;
+  // organization_id is the id of the organization with the new member.
+  string organization_id = 1;
+  // organization_name is the name of the organization with the new member.
+  string organization_name = 2;
   // member_role is the role granted to the member added to the organization.
   buf.alpha.registry.v1alpha1.OrganizationRole member_role = 3;
 }
@@ -146,10 +146,10 @@ message PayloadOrganizationMemberRoleChanged {
 }
 
 message PayloadOrganizationMemberRemoved {
-  // member_id is the id of the member removed from the organization.
-  string member_id = 1;
-  // member_name is the name of the member removed from the organization.
-  string member_name = 2;
+  // organization_id is the id of the organization that the member was removed from.
+  string organization_id = 1;
+  // organization_name is the name of the organization that the member was removed from.
+  string organization_name = 2;
   // member_role is the role that the member had when removed from the organization.
   buf.alpha.registry.v1alpha1.OrganizationRole member_role = 3;
 }
@@ -184,19 +184,19 @@ message PayloadRepositoryPushed {
 }
 
 message PayloadRepositoryMemberAdded {
-  // member_id is the id of the member added to the repository.
-  string member_id = 1;
-  // member_name is the name of the member added to the repository.
-  string member_name = 2;
+  // repository_id is the id of the repository with the new member.
+  string repository_id = 1;
+  // repository_name is the name of the repository with the new member.
+  string repository_name = 2;
   // member_role is the role granted to the member added to the repository.
   buf.alpha.registry.v1alpha1.RepositoryRole member_role = 3;
 }
 
 message PayloadRepositoryMemberRoleChanged {
-  // member_id is the id of the member whose role was changed.
-  string member_id = 1;
-  // member_name is the name of the member whose role was changed.
-  string member_name = 2;
+  // repository_id is the id of the repository within which the role was changed.
+  string repository_id = 1;
+  // repository_name is the name of the repository within which the role was changed.
+  string repository_name = 2;
   // old_role is the old role of the member whose role was changed.
   buf.alpha.registry.v1alpha1.RepositoryRole old_role = 3;
   // new_role is the new role of the member whose role was changed.
@@ -204,10 +204,10 @@ message PayloadRepositoryMemberRoleChanged {
 }
 
 message PayloadRepositoryMemberRemoved {
-  // member_id is the id of the member removed from the repository.
-  string member_id = 1;
-  // member_name is the name of the member removed from the repository.
-  string member_name = 2;
+  // repository_id is the id of the repository that the member was removed from.
+  string repository_id = 1;
+  // repository_name is the name of the repository that the member was removed from.
+  string repository_name = 2;
   // member_role is the role that the member had when removed from the repository.
   buf.alpha.registry.v1alpha1.RepositoryRole member_role = 3;
 }
