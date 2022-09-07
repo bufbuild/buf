@@ -46,7 +46,6 @@ include make/go/dep_minisign.mk
 include make/go/dep_protoc.mk
 include make/go/dep_protoc_gen_go.mk
 include make/go/dep_protoc_gen_connect_go.mk
-include make/go/dep_go_fuzz.mk
 include make/go/go.mk
 include make/go/docker.mk
 include make/go/buf.mk
