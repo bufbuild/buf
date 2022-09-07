@@ -121,10 +121,7 @@ message Event {
   }
 }
 
-message PayloadOrganizationCreated {
-  // create_time is when the organization was created.
-  google.protobuf.Timestamp create_time = 1;
-}
+message PayloadOrganizationCreated {}
 
 message PayloadOrganizationDeleted {}
 
@@ -158,12 +155,10 @@ message PayloadOrganizationMemberRemoved {
 }
 
 message PayloadRepositoryCreated {
-  // create_time is when the repository was created.
-  google.protobuf.Timestamp create_time = 1;
   // owner_id is the id of the owner of the repository.
-  string owner_id = 2;
+  string owner_id = 1;
   // owner_name is the name of the owner of the repository.
-  string owner_name = 3;
+  string owner_name = 2;
 }
 
 message PayloadRepositoryDeleted {
@@ -218,12 +213,10 @@ message PayloadRepositoryMemberRemoved {
 }
 
 message PayloadPluginCreated {
-  // create_time is when the plugin was created.
-  google.protobuf.Timestamp create_time = 1;
   // owner_id is the id of the owner of the plugin.
-  string owner_id = 2;
+  string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
-  string owner_name = 3;
+  string owner_name = 2;
 }
 
 message PayloadPluginDeleted {
@@ -240,10 +233,7 @@ message PayloadPluginPushed {
   string owner_name = 2;
 }
 
-message PayloadUserRegistered {
-  // create_time is when the user was created.
-  google.protobuf.Timestamp create_time = 1;
-}
+message PayloadUserRegistered {}
 
 message PayloadUserDeactivated {}
 
