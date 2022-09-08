@@ -22,11 +22,16 @@ import (
 )
 
 // LimitWriteBucket returns a [WriteBucket] that writes to [writeBucket]
-// but stops with an error after [limit] bytes are are written.
+// but stops with an error after [limit] bytes are written.
 //
 // The error can be checked using [IsWriteLimitReached].
-func LimitWriteBucket(writeBucket WriteBucket, limit int64) WriteBucket {
-	return newLimitedWriter(writeBucket, limit)
+//
+// A negative [limit] is same as 0 limit.
+func LimitWriteBucket(writeBucket WriteBucket, limit int) WriteBucket {
+	if limit < 0 {
+		limit = 0
+	}
+	return newLimitedWriteBucket(writeBucket, int64(limit))
 }
 
 type limitedWriteBucket struct {
@@ -35,7 +40,7 @@ type limitedWriteBucket struct {
 	limit       int64
 }
 
-func newLimitedWriter(bucket WriteBucket, limit int64) *limitedWriteBucket {
+func newLimitedWriteBucket(bucket WriteBucket, limit int64) *limitedWriteBucket {
 	return &limitedWriteBucket{
 		WriteBucket: bucket,
 		currentSize: atomic.NewInt64(0),
