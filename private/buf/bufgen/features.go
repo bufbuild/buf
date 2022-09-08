@@ -80,16 +80,16 @@ func checkRequiredFeatures(
 		}
 		if len(failed) > 0 {
 			// TODO: plugin config to turn this into an error
-			_, _ = fmt.Fprintf(container.Stderr(), "Warning: plugin %q  does not support required features.\n",
+			_, _ = fmt.Fprintf(container.Stderr(), "Warning: plugin %q does not support required features.\n",
 				configs[responseIndex].PluginName())
 			sort.Slice(failedFeatures, func(i, j int) bool {
 				return failedFeatures[i].Number() < failedFeatures[j].Number()
 			})
 			for _, feature := range failedFeatures {
 				files := failed[feature]
-				_, _ = fmt.Fprintf(container.Stderr(), "%s, required by %d file(s):\n  ",
+				_, _ = fmt.Fprintf(container.Stderr(), "  Feature %q is required by %d file(s):\n",
 					featureName(feature), len(files))
-				_, _ = fmt.Fprintf(container.Stderr(), "  %s\n", strings.Join(files, ","))
+				_, _ = fmt.Fprintf(container.Stderr(), "    %s\n", strings.Join(files, ","))
 			}
 		}
 	}
