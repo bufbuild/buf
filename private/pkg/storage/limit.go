@@ -16,7 +16,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 
 	"go.uber.org/atomic"
 )
@@ -76,9 +75,18 @@ func newLimitedWriteObjectCloser(
 }
 
 func (o *limitedWriteObjectCloser) Write(p []byte) (n int, err error) {
-	newSize := o.bucketSize.Add(int64(len(p)))
-	if newSize > o.limit {
-		return 0, fmt.Errorf("limit writer: write limit reached: limit: %d, exceeded by: %d", o.limit, newSize-o.limit)
+	writeSize := int64(len(p))
+	newBucketSize := o.bucketSize.Add(writeSize)
+	if newBucketSize > o.limit {
+		o.bucketSize.Sub(writeSize)
+		return 0, &errWriteLimitReached{
+			Limit:       o.limit,
+			ExceedingBy: newBucketSize - o.limit,
+		}
 	}
-	return o.WriteObjectCloser.Write(p)
+	writtenSize, err := o.WriteObjectCloser.Write(p)
+	if writtenSize < int(writeSize) {
+		o.bucketSize.Sub(writeSize - int64(writtenSize))
+	}
+	return writtenSize, err
 }
