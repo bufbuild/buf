@@ -212,7 +212,7 @@ func RunWithTLSConfig(tlsConfig *tls.Config) RunOption {
 // is cancelled when the input context is cancelled, the listener is
 // closed upon return.
 //
-// The Run can be configured further by passing a variety of options.
+// The Run function can be configured further by passing a variety of options.
 func Run(
 	ctx context.Context,
 	logger *zap.Logger,
