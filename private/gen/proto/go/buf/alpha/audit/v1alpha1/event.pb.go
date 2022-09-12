@@ -1472,9 +1472,9 @@ type PayloadRepositoryVisibilityChanged struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// repository_id is the id of the repository that the member was removed from.
+	// repository_id is the id of the repository that the visibility was changed on.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	// repository_name is the name of the repository that the member was removed from.
+	// repository_name is the name of the repository that the visibility was changed on.
 	RepositoryName string `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
 	// visibility is the new visibility of the repository.
 	Visibility v1alpha1.Visibility `protobuf:"varint,3,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`

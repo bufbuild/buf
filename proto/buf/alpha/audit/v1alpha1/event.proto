@@ -215,9 +215,9 @@ message PayloadRepositoryMemberRemoved {
 }
 
 message PayloadRepositoryVisibilityChanged {
-  // repository_id is the id of the repository that the member was removed from.
+  // repository_id is the id of the repository that the visibility was changed on.
   string repository_id = 1;
-  // repository_name is the name of the repository that the member was removed from.
+  // repository_name is the name of the repository that the visibility was changed on.
   string repository_name = 2;
   // visibility is the new visibility of the repository.
   buf.alpha.registry.v1alpha1.Visibility visibility = 3;
