@@ -186,41 +186,55 @@ message PayloadRepositoryPushed {
 }
 
 message PayloadRepositoryMemberAdded {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
   // repository_id is the id of the repository with the new member.
-  string repository_id = 1;
+  string repository_id = 3;
   // repository_name is the name of the repository with the new member.
-  string repository_name = 2;
+  string repository_name = 4;
   // member_role is the role granted to the member added to the repository.
-  buf.alpha.registry.v1alpha1.RepositoryRole member_role = 3;
+  buf.alpha.registry.v1alpha1.RepositoryRole member_role = 5;
 }
 
 message PayloadRepositoryMemberRoleChanged {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
   // repository_id is the id of the repository within which the role was changed.
-  string repository_id = 1;
+  string repository_id = 3;
   // repository_name is the name of the repository within which the role was changed.
-  string repository_name = 2;
+  string repository_name = 4;
   // old_role is the old role of the member whose role was changed.
-  buf.alpha.registry.v1alpha1.RepositoryRole old_role = 3;
+  buf.alpha.registry.v1alpha1.RepositoryRole old_role = 5;
   // new_role is the new role of the member whose role was changed.
-  buf.alpha.registry.v1alpha1.RepositoryRole new_role = 4;
+  buf.alpha.registry.v1alpha1.RepositoryRole new_role = 6;
 }
 
 message PayloadRepositoryMemberRemoved {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
   // repository_id is the id of the repository that the member was removed from.
-  string repository_id = 1;
+  string repository_id = 3;
   // repository_name is the name of the repository that the member was removed from.
-  string repository_name = 2;
+  string repository_name = 4;
   // member_role is the role that the member had when removed from the repository.
-  buf.alpha.registry.v1alpha1.RepositoryRole member_role = 3;
+  buf.alpha.registry.v1alpha1.RepositoryRole member_role = 5;
 }
 
 message PayloadRepositoryVisibilityChanged {
-  // repository_id is the id of the repository that the visibility was changed on.
-  string repository_id = 1;
-  // repository_name is the name of the repository that the visibility was changed on.
-  string repository_name = 2;
-  // visibility is the new visibility of the repository.
-  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // old_visibility is the old visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility old_visibility = 3;
+  // new_visibility is the new visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility new_visibility = 4;
 }
 
 message PayloadPluginCreated {
