@@ -18,7 +18,6 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
-import "buf/alpha/registry/v1alpha1/verification_status.proto";
 import "google/protobuf/timestamp.proto";
 
 enum Visibility {
@@ -55,16 +54,11 @@ message Repository {
   // url is the user configurable URL in the description of the repository,
   // always included the scheme and will not have a #fragment suffix.
   string url = 12;
-  // license_spdx_id is the user configurable license of the repository, which should be one of
-  // the identifier defined in https://spdx.org/licenses, or "custom" to represent a
-  // custom license.
+  // license_spdx_id is the license of the latest main commit on the repository, based
+  // on the license file pushed, which should be one of the identifier defined in
+  // https://spdx.org/licenses, and will be empty if the license file is not presented
+  // or cannot be classified into a known license.
   string license_spdx_id = 13;
-  // license_url is the user configurable url to the license text.
-  string license_url = 14;
-  // verification status of the owner of the repository, configurable by server admin.
-  VerificationStatus verification_status = 15;
-  // last commit time in main branch of the repository.
-  google.protobuf.Timestamp last_commit_time = 16;
 }
 
 message RepositoryCounts {

@@ -115,16 +115,11 @@ type Repository struct {
 	// url is the user configurable URL in the description of the repository,
 	// always included the scheme and will not have a #fragment suffix.
 	Url string `protobuf:"bytes,12,opt,name=url,proto3" json:"url,omitempty"`
-	// license_spdx_id is the user configurable license of the repository, which should be one of
-	// the identifier defined in https://spdx.org/licenses, or "custom" to represent a
-	// custom license.
+	// license_spdx_id is the license of the latest main commit on the repository, based
+	// on the license file pushed, which should be one of the identifier defined in
+	// https://spdx.org/licenses, and will be empty if the license file is not presented
+	// or cannot be classified into a known license.
 	LicenseSpdxId string `protobuf:"bytes,13,opt,name=license_spdx_id,json=licenseSpdxId,proto3" json:"license_spdx_id,omitempty"`
-	// license_url is the user configurable url to the license text.
-	LicenseUrl string `protobuf:"bytes,14,opt,name=license_url,json=licenseUrl,proto3" json:"license_url,omitempty"`
-	// verification status of the owner of the repository, configurable by server admin.
-	VerificationStatus VerificationStatus `protobuf:"varint,15,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
-	// last commit time in main branch of the repository.
-	LastCommitTime *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=last_commit_time,json=lastCommitTime,proto3" json:"last_commit_time,omitempty"`
 }
 
 func (x *Repository) Reset() {
@@ -255,27 +250,6 @@ func (x *Repository) GetLicenseSpdxId() string {
 		return x.LicenseSpdxId
 	}
 	return ""
-}
-
-func (x *Repository) GetLicenseUrl() string {
-	if x != nil {
-		return x.LicenseUrl
-	}
-	return ""
-}
-
-func (x *Repository) GetVerificationStatus() VerificationStatus {
-	if x != nil {
-		return x.VerificationStatus
-	}
-	return VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED
-}
-
-func (x *Repository) GetLastCommitTime() *timestamppb.Timestamp {
-	if x != nil {
-		return x.LastCommitTime
-	}
-	return nil
 }
 
 type isRepository_Owner interface {
@@ -2260,58 +2234,42 @@ var file_buf_alpha_registry_v1alpha1_repository_proto_rawDesc = []byte{
 	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2f, 0x72, 0x6f, 0x6c, 0x65, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x1a, 0x26, 0x62, 0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2f, 0x72,
 	0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
-	0x2f, 0x75, 0x73, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x35, 0x62, 0x75, 0x66,
-	0x2f, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2f,
-	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2f, 0x76, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x1a, 0x1f, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x62, 0x75, 0x66, 0x2f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x22, 0xd7, 0x05, 0x0a, 0x0a, 0x52, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f,
-	0x72, 0x79, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02,
-	0x69, 0x64, 0x12, 0x3b, 0x0a, 0x0b, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d,
-	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74,
-	0x61, 0x6d, 0x70, 0x52, 0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x12,
-	0x3b, 0x0a, 0x0b, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70,
-	0x52, 0x0a, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04,
-	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65,
-	0x12, 0x19, 0x0a, 0x07, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28,
-	0x09, 0x48, 0x00, 0x52, 0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x12, 0x29, 0x0a, 0x0f, 0x6f,
-	0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x06,
-	0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x0e, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x47, 0x0a, 0x0a, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69,
-	0x6c, 0x69, 0x74, 0x79, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x27, 0x2e, 0x62, 0x75, 0x66,
-	0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x56, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c,
-	0x69, 0x74, 0x79, 0x52, 0x0a, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x12,
-	0x1e, 0x0a, 0x0a, 0x64, 0x65, 0x70, 0x72, 0x65, 0x63, 0x61, 0x74, 0x65, 0x64, 0x18, 0x08, 0x20,
-	0x01, 0x28, 0x08, 0x52, 0x0a, 0x64, 0x65, 0x70, 0x72, 0x65, 0x63, 0x61, 0x74, 0x65, 0x64, 0x12,
-	0x2f, 0x0a, 0x13, 0x64, 0x65, 0x70, 0x72, 0x65, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x12, 0x64, 0x65,
-	0x70, 0x72, 0x65, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x12, 0x1d, 0x0a, 0x0a, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x0a,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x4e, 0x61, 0x6d, 0x65, 0x12,
-	0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x0b,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f,
-	0x6e, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x6c, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03,
-	0x75, 0x72, 0x6c, 0x12, 0x26, 0x0a, 0x0f, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x5f, 0x73,
-	0x70, 0x64, 0x78, 0x5f, 0x69, 0x64, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x6c, 0x69,
-	0x63, 0x65, 0x6e, 0x73, 0x65, 0x53, 0x70, 0x64, 0x78, 0x49, 0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x6c,
-	0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x0e, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x0a, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x55, 0x72, 0x6c, 0x12, 0x60, 0x0a, 0x13,
-	0x76, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61,
-	0x74, 0x75, 0x73, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2f, 0x2e, 0x62, 0x75, 0x66, 0x2e,
-	0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x56, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x12, 0x76, 0x65, 0x72, 0x69,
-	0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x44,
-	0x0a, 0x10, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x5f, 0x74, 0x69,
-	0x6d, 0x65, 0x18, 0x10, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
-	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73,
-	0x74, 0x61, 0x6d, 0x70, 0x52, 0x0e, 0x6c, 0x61, 0x73, 0x74, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
-	0x54, 0x69, 0x6d, 0x65, 0x42, 0x07, 0x0a, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x22, 0x68, 0x0a,
+	0x2f, 0x75, 0x73, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74, 0x69, 0x6d,
+	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x8e, 0x04, 0x0a,
+	0x0a, 0x52, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72, 0x79, 0x12, 0x0e, 0x0a, 0x02, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x3b, 0x0a, 0x0b, 0x63,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
+	0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0a, 0x63, 0x72,
+	0x65, 0x61, 0x74, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x3b, 0x0a, 0x0b, 0x75, 0x70, 0x64, 0x61,
+	0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e,
+	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
+	0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0a, 0x75, 0x70, 0x64, 0x61, 0x74,
+	0x65, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x19, 0x0a, 0x07, 0x75, 0x73, 0x65,
+	0x72, 0x5f, 0x69, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x06, 0x75, 0x73,
+	0x65, 0x72, 0x49, 0x64, 0x12, 0x29, 0x0a, 0x0f, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52,
+	0x0e, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12,
+	0x47, 0x0a, 0x0a, 0x76, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x18, 0x07, 0x20,
+	0x01, 0x28, 0x0e, 0x32, 0x27, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e,
+	0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61,
+	0x31, 0x2e, 0x56, 0x69, 0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x52, 0x0a, 0x76, 0x69,
+	0x73, 0x69, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x12, 0x1e, 0x0a, 0x0a, 0x64, 0x65, 0x70, 0x72,
+	0x65, 0x63, 0x61, 0x74, 0x65, 0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x64, 0x65,
+	0x70, 0x72, 0x65, 0x63, 0x61, 0x74, 0x65, 0x64, 0x12, 0x2f, 0x0a, 0x13, 0x64, 0x65, 0x70, 0x72,
+	0x65, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18,
+	0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x12, 0x64, 0x65, 0x70, 0x72, 0x65, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x6f, 0x77, 0x6e,
+	0x65, 0x72, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6f,
+	0x77, 0x6e, 0x65, 0x72, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63,
+	0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64,
+	0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72,
+	0x6c, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x12, 0x26, 0x0a, 0x0f,
+	0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x5f, 0x73, 0x70, 0x64, 0x78, 0x5f, 0x69, 0x64, 0x18,
+	0x0d, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x6c, 0x69, 0x63, 0x65, 0x6e, 0x73, 0x65, 0x53, 0x70,
+	0x64, 0x78, 0x49, 0x64, 0x42, 0x07, 0x0a, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x22, 0x68, 0x0a,
 	0x10, 0x52, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72, 0x79, 0x43, 0x6f, 0x75, 0x6e, 0x74,
 	0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x74, 0x61, 0x67, 0x73, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x09, 0x74, 0x61, 0x67, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74,
@@ -2819,75 +2777,72 @@ var file_buf_alpha_registry_v1alpha1_repository_proto_goTypes = []interface{}{
 	(*UpdateRepositorySettingsByNameRequest)(nil),  // 36: buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameRequest
 	(*UpdateRepositorySettingsByNameResponse)(nil), // 37: buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameResponse
 	(*timestamppb.Timestamp)(nil),                  // 38: google.protobuf.Timestamp
-	(VerificationStatus)(0),                        // 39: buf.alpha.registry.v1alpha1.VerificationStatus
-	(*User)(nil),                                   // 40: buf.alpha.registry.v1alpha1.User
-	(RepositoryRole)(0),                            // 41: buf.alpha.registry.v1alpha1.RepositoryRole
+	(*User)(nil),                                   // 39: buf.alpha.registry.v1alpha1.User
+	(RepositoryRole)(0),                            // 40: buf.alpha.registry.v1alpha1.RepositoryRole
 }
 var file_buf_alpha_registry_v1alpha1_repository_proto_depIdxs = []int32{
 	38, // 0: buf.alpha.registry.v1alpha1.Repository.create_time:type_name -> google.protobuf.Timestamp
 	38, // 1: buf.alpha.registry.v1alpha1.Repository.update_time:type_name -> google.protobuf.Timestamp
 	0,  // 2: buf.alpha.registry.v1alpha1.Repository.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	39, // 3: buf.alpha.registry.v1alpha1.Repository.verification_status:type_name -> buf.alpha.registry.v1alpha1.VerificationStatus
-	38, // 4: buf.alpha.registry.v1alpha1.Repository.last_commit_time:type_name -> google.protobuf.Timestamp
-	40, // 5: buf.alpha.registry.v1alpha1.RepositoryContributor.user:type_name -> buf.alpha.registry.v1alpha1.User
-	41, // 6: buf.alpha.registry.v1alpha1.RepositoryContributor.explicit_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	41, // 7: buf.alpha.registry.v1alpha1.RepositoryContributor.implicit_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	1,  // 8: buf.alpha.registry.v1alpha1.GetRepositoriesByFullNameResponse.repositories:type_name -> buf.alpha.registry.v1alpha1.Repository
-	1,  // 9: buf.alpha.registry.v1alpha1.GetRepositoryResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
-	2,  // 10: buf.alpha.registry.v1alpha1.GetRepositoryResponse.counts:type_name -> buf.alpha.registry.v1alpha1.RepositoryCounts
-	1,  // 11: buf.alpha.registry.v1alpha1.GetRepositoryByFullNameResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
-	2,  // 12: buf.alpha.registry.v1alpha1.GetRepositoryByFullNameResponse.counts:type_name -> buf.alpha.registry.v1alpha1.RepositoryCounts
-	1,  // 13: buf.alpha.registry.v1alpha1.ListRepositoriesResponse.repositories:type_name -> buf.alpha.registry.v1alpha1.Repository
-	1,  // 14: buf.alpha.registry.v1alpha1.ListUserRepositoriesResponse.repositories:type_name -> buf.alpha.registry.v1alpha1.Repository
-	1,  // 15: buf.alpha.registry.v1alpha1.ListRepositoriesUserCanAccessResponse.repositories:type_name -> buf.alpha.registry.v1alpha1.Repository
-	1,  // 16: buf.alpha.registry.v1alpha1.ListOrganizationRepositoriesResponse.repositories:type_name -> buf.alpha.registry.v1alpha1.Repository
-	0,  // 17: buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameRequest.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	1,  // 18: buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
-	1,  // 19: buf.alpha.registry.v1alpha1.DeprecateRepositoryByNameResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
-	1,  // 20: buf.alpha.registry.v1alpha1.UndeprecateRepositoryByNameResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
-	41, // 21: buf.alpha.registry.v1alpha1.SetRepositoryContributorRequest.repository_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	3,  // 22: buf.alpha.registry.v1alpha1.ListRepositoryContributorsResponse.users:type_name -> buf.alpha.registry.v1alpha1.RepositoryContributor
-	3,  // 23: buf.alpha.registry.v1alpha1.GetRepositoryContributorResponse.user:type_name -> buf.alpha.registry.v1alpha1.RepositoryContributor
-	0,  // 24: buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameRequest.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
-	6,  // 25: buf.alpha.registry.v1alpha1.RepositoryService.GetRepository:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryRequest
-	8,  // 26: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryByFullNameRequest
-	10, // 27: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositories:input_type -> buf.alpha.registry.v1alpha1.ListRepositoriesRequest
-	12, // 28: buf.alpha.registry.v1alpha1.RepositoryService.ListUserRepositories:input_type -> buf.alpha.registry.v1alpha1.ListUserRepositoriesRequest
-	14, // 29: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoriesUserCanAccess:input_type -> buf.alpha.registry.v1alpha1.ListRepositoriesUserCanAccessRequest
-	16, // 30: buf.alpha.registry.v1alpha1.RepositoryService.ListOrganizationRepositories:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationRepositoriesRequest
-	18, // 31: buf.alpha.registry.v1alpha1.RepositoryService.CreateRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameRequest
-	20, // 32: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepository:input_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryRequest
-	22, // 33: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryByFullNameRequest
-	24, // 34: buf.alpha.registry.v1alpha1.RepositoryService.DeprecateRepositoryByName:input_type -> buf.alpha.registry.v1alpha1.DeprecateRepositoryByNameRequest
-	26, // 35: buf.alpha.registry.v1alpha1.RepositoryService.UndeprecateRepositoryByName:input_type -> buf.alpha.registry.v1alpha1.UndeprecateRepositoryByNameRequest
-	4,  // 36: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesByFullName:input_type -> buf.alpha.registry.v1alpha1.GetRepositoriesByFullNameRequest
-	28, // 37: buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryContributor:input_type -> buf.alpha.registry.v1alpha1.SetRepositoryContributorRequest
-	30, // 38: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoryContributors:input_type -> buf.alpha.registry.v1alpha1.ListRepositoryContributorsRequest
-	32, // 39: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryContributor:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryContributorRequest
-	34, // 40: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositorySettings:input_type -> buf.alpha.registry.v1alpha1.GetRepositorySettingsRequest
-	36, // 41: buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName:input_type -> buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameRequest
-	7,  // 42: buf.alpha.registry.v1alpha1.RepositoryService.GetRepository:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryResponse
-	9,  // 43: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryByFullNameResponse
-	11, // 44: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositories:output_type -> buf.alpha.registry.v1alpha1.ListRepositoriesResponse
-	13, // 45: buf.alpha.registry.v1alpha1.RepositoryService.ListUserRepositories:output_type -> buf.alpha.registry.v1alpha1.ListUserRepositoriesResponse
-	15, // 46: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoriesUserCanAccess:output_type -> buf.alpha.registry.v1alpha1.ListRepositoriesUserCanAccessResponse
-	17, // 47: buf.alpha.registry.v1alpha1.RepositoryService.ListOrganizationRepositories:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationRepositoriesResponse
-	19, // 48: buf.alpha.registry.v1alpha1.RepositoryService.CreateRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameResponse
-	21, // 49: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepository:output_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryResponse
-	23, // 50: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryByFullNameResponse
-	25, // 51: buf.alpha.registry.v1alpha1.RepositoryService.DeprecateRepositoryByName:output_type -> buf.alpha.registry.v1alpha1.DeprecateRepositoryByNameResponse
-	27, // 52: buf.alpha.registry.v1alpha1.RepositoryService.UndeprecateRepositoryByName:output_type -> buf.alpha.registry.v1alpha1.UndeprecateRepositoryByNameResponse
-	5,  // 53: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesByFullName:output_type -> buf.alpha.registry.v1alpha1.GetRepositoriesByFullNameResponse
-	29, // 54: buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryContributor:output_type -> buf.alpha.registry.v1alpha1.SetRepositoryContributorResponse
-	31, // 55: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoryContributors:output_type -> buf.alpha.registry.v1alpha1.ListRepositoryContributorsResponse
-	33, // 56: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryContributor:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryContributorResponse
-	35, // 57: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositorySettings:output_type -> buf.alpha.registry.v1alpha1.GetRepositorySettingsResponse
-	37, // 58: buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName:output_type -> buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameResponse
-	42, // [42:59] is the sub-list for method output_type
-	25, // [25:42] is the sub-list for method input_type
-	25, // [25:25] is the sub-list for extension type_name
-	25, // [25:25] is the sub-list for extension extendee
-	0,  // [0:25] is the sub-list for field type_name
+	39, // 3: buf.alpha.registry.v1alpha1.RepositoryContributor.user:type_name -> buf.alpha.registry.v1alpha1.User
+	40, // 4: buf.alpha.registry.v1alpha1.RepositoryContributor.explicit_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	40, // 5: buf.alpha.registry.v1alpha1.RepositoryContributor.implicit_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	1,  // 6: buf.alpha.registry.v1alpha1.GetRepositoriesByFullNameResponse.repositories:type_name -> buf.alpha.registry.v1alpha1.Repository
+	1,  // 7: buf.alpha.registry.v1alpha1.GetRepositoryResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
+	2,  // 8: buf.alpha.registry.v1alpha1.GetRepositoryResponse.counts:type_name -> buf.alpha.registry.v1alpha1.RepositoryCounts
+	1,  // 9: buf.alpha.registry.v1alpha1.GetRepositoryByFullNameResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
+	2,  // 10: buf.alpha.registry.v1alpha1.GetRepositoryByFullNameResponse.counts:type_name -> buf.alpha.registry.v1alpha1.RepositoryCounts
+	1,  // 11: buf.alpha.registry.v1alpha1.ListRepositoriesResponse.repositories:type_name -> buf.alpha.registry.v1alpha1.Repository
+	1,  // 12: buf.alpha.registry.v1alpha1.ListUserRepositoriesResponse.repositories:type_name -> buf.alpha.registry.v1alpha1.Repository
+	1,  // 13: buf.alpha.registry.v1alpha1.ListRepositoriesUserCanAccessResponse.repositories:type_name -> buf.alpha.registry.v1alpha1.Repository
+	1,  // 14: buf.alpha.registry.v1alpha1.ListOrganizationRepositoriesResponse.repositories:type_name -> buf.alpha.registry.v1alpha1.Repository
+	0,  // 15: buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameRequest.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	1,  // 16: buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
+	1,  // 17: buf.alpha.registry.v1alpha1.DeprecateRepositoryByNameResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
+	1,  // 18: buf.alpha.registry.v1alpha1.UndeprecateRepositoryByNameResponse.repository:type_name -> buf.alpha.registry.v1alpha1.Repository
+	40, // 19: buf.alpha.registry.v1alpha1.SetRepositoryContributorRequest.repository_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	3,  // 20: buf.alpha.registry.v1alpha1.ListRepositoryContributorsResponse.users:type_name -> buf.alpha.registry.v1alpha1.RepositoryContributor
+	3,  // 21: buf.alpha.registry.v1alpha1.GetRepositoryContributorResponse.user:type_name -> buf.alpha.registry.v1alpha1.RepositoryContributor
+	0,  // 22: buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameRequest.visibility:type_name -> buf.alpha.registry.v1alpha1.Visibility
+	6,  // 23: buf.alpha.registry.v1alpha1.RepositoryService.GetRepository:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryRequest
+	8,  // 24: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryByFullNameRequest
+	10, // 25: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositories:input_type -> buf.alpha.registry.v1alpha1.ListRepositoriesRequest
+	12, // 26: buf.alpha.registry.v1alpha1.RepositoryService.ListUserRepositories:input_type -> buf.alpha.registry.v1alpha1.ListUserRepositoriesRequest
+	14, // 27: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoriesUserCanAccess:input_type -> buf.alpha.registry.v1alpha1.ListRepositoriesUserCanAccessRequest
+	16, // 28: buf.alpha.registry.v1alpha1.RepositoryService.ListOrganizationRepositories:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationRepositoriesRequest
+	18, // 29: buf.alpha.registry.v1alpha1.RepositoryService.CreateRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameRequest
+	20, // 30: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepository:input_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryRequest
+	22, // 31: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepositoryByFullName:input_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryByFullNameRequest
+	24, // 32: buf.alpha.registry.v1alpha1.RepositoryService.DeprecateRepositoryByName:input_type -> buf.alpha.registry.v1alpha1.DeprecateRepositoryByNameRequest
+	26, // 33: buf.alpha.registry.v1alpha1.RepositoryService.UndeprecateRepositoryByName:input_type -> buf.alpha.registry.v1alpha1.UndeprecateRepositoryByNameRequest
+	4,  // 34: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesByFullName:input_type -> buf.alpha.registry.v1alpha1.GetRepositoriesByFullNameRequest
+	28, // 35: buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryContributor:input_type -> buf.alpha.registry.v1alpha1.SetRepositoryContributorRequest
+	30, // 36: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoryContributors:input_type -> buf.alpha.registry.v1alpha1.ListRepositoryContributorsRequest
+	32, // 37: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryContributor:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryContributorRequest
+	34, // 38: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositorySettings:input_type -> buf.alpha.registry.v1alpha1.GetRepositorySettingsRequest
+	36, // 39: buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName:input_type -> buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameRequest
+	7,  // 40: buf.alpha.registry.v1alpha1.RepositoryService.GetRepository:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryResponse
+	9,  // 41: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryByFullNameResponse
+	11, // 42: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositories:output_type -> buf.alpha.registry.v1alpha1.ListRepositoriesResponse
+	13, // 43: buf.alpha.registry.v1alpha1.RepositoryService.ListUserRepositories:output_type -> buf.alpha.registry.v1alpha1.ListUserRepositoriesResponse
+	15, // 44: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoriesUserCanAccess:output_type -> buf.alpha.registry.v1alpha1.ListRepositoriesUserCanAccessResponse
+	17, // 45: buf.alpha.registry.v1alpha1.RepositoryService.ListOrganizationRepositories:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationRepositoriesResponse
+	19, // 46: buf.alpha.registry.v1alpha1.RepositoryService.CreateRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.CreateRepositoryByFullNameResponse
+	21, // 47: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepository:output_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryResponse
+	23, // 48: buf.alpha.registry.v1alpha1.RepositoryService.DeleteRepositoryByFullName:output_type -> buf.alpha.registry.v1alpha1.DeleteRepositoryByFullNameResponse
+	25, // 49: buf.alpha.registry.v1alpha1.RepositoryService.DeprecateRepositoryByName:output_type -> buf.alpha.registry.v1alpha1.DeprecateRepositoryByNameResponse
+	27, // 50: buf.alpha.registry.v1alpha1.RepositoryService.UndeprecateRepositoryByName:output_type -> buf.alpha.registry.v1alpha1.UndeprecateRepositoryByNameResponse
+	5,  // 51: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesByFullName:output_type -> buf.alpha.registry.v1alpha1.GetRepositoriesByFullNameResponse
+	29, // 52: buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryContributor:output_type -> buf.alpha.registry.v1alpha1.SetRepositoryContributorResponse
+	31, // 53: buf.alpha.registry.v1alpha1.RepositoryService.ListRepositoryContributors:output_type -> buf.alpha.registry.v1alpha1.ListRepositoryContributorsResponse
+	33, // 54: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryContributor:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryContributorResponse
+	35, // 55: buf.alpha.registry.v1alpha1.RepositoryService.GetRepositorySettings:output_type -> buf.alpha.registry.v1alpha1.GetRepositorySettingsResponse
+	37, // 56: buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName:output_type -> buf.alpha.registry.v1alpha1.UpdateRepositorySettingsByNameResponse
+	40, // [40:57] is the sub-list for method output_type
+	23, // [23:40] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_registry_v1alpha1_repository_proto_init() }
@@ -2897,7 +2852,6 @@ func file_buf_alpha_registry_v1alpha1_repository_proto_init() {
 	}
 	file_buf_alpha_registry_v1alpha1_role_proto_init()
 	file_buf_alpha_registry_v1alpha1_user_proto_init()
-	file_buf_alpha_registry_v1alpha1_verification_status_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_buf_alpha_registry_v1alpha1_repository_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Repository); i {
