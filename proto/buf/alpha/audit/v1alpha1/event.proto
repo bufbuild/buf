@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.audit.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -110,6 +111,7 @@ message Event {
     PayloadRepositoryMemberAdded repository_member_added = 14;
     PayloadRepositoryMemberRoleChanged repository_member_role_changed = 15;
     PayloadRepositoryMemberRemoved repository_member_removed = 16;
+    PayloadRepositoryVisibilityChanged repository_visibility_changed = 25;
     PayloadPluginCreated plugin_created = 17;
     PayloadPluginDeleted plugin_deleted = 18;
     PayloadPluginPushed plugin_pushed = 19;
@@ -210,6 +212,15 @@ message PayloadRepositoryMemberRemoved {
   string repository_name = 2;
   // member_role is the role that the member had when removed from the repository.
   buf.alpha.registry.v1alpha1.RepositoryRole member_role = 3;
+}
+
+message PayloadRepositoryVisibilityChanged {
+  // repository_id is the id of the repository that the member was removed from.
+  string repository_id = 1;
+  // repository_name is the name of the repository that the member was removed from.
+  string repository_name = 2;
+  // visibility is the new visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
 }
 
 message PayloadPluginCreated {
