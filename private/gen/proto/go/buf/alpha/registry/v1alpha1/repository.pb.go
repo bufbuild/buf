@@ -116,9 +116,10 @@ type Repository struct {
 	// always included the scheme and will not have a #fragment suffix.
 	Url string `protobuf:"bytes,12,opt,name=url,proto3" json:"url,omitempty"`
 	// license is the user configurable license of the repository, which should be one of
-	// the identifier defined in https://spdx.org/licenses
+	// the identifier defined in https://spdx.org/licenses, or "custom" to represent a
+	// custom license.
 	License string `protobuf:"bytes,13,opt,name=license,proto3" json:"license,omitempty"`
-	// license url is the user configurable url to the license text.
+	// license_url is the user configurable url to the license text.
 	LicenseUrl string `protobuf:"bytes,14,opt,name=license_url,json=licenseUrl,proto3" json:"license_url,omitempty"`
 	// verification status of the owner of the repository, configurable by server admin.
 	VerificationStatus VerificationStatus `protobuf:"varint,15,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`

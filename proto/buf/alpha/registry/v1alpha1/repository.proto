@@ -56,9 +56,10 @@ message Repository {
   // always included the scheme and will not have a #fragment suffix.
   string url = 12;
   // license is the user configurable license of the repository, which should be one of
-  // the identifier defined in https://spdx.org/licenses
+  // the identifier defined in https://spdx.org/licenses, or "custom" to represent a
+  // custom license.
   string license = 13;
-  // license url is the user configurable url to the license text.
+  // license_url is the user configurable url to the license text.
   string license_url = 14;
   // verification status of the owner of the repository, configurable by server admin.
   VerificationStatus verification_status = 15;

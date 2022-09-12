@@ -22,6 +22,7 @@ enum VerificationStatus {
   VERIFICATION_STATUS_UNSPECIFIED = 0;
   // OFFICIAL indicates that the owner is maintained by Buf.
   VERIFICATION_STATUS_OFFICIAL = 1;
-  // VERIFIED_PUBLISHER indicates that the owner is a third-party that verified by Buf.
+  // VERIFIED_PUBLISHER indicates that the owner is a third-party that has been
+  // verified by Buf.
   VERIFICATION_STATUS_VERIFIED_PUBLISHER = 2;
 }

@@ -42,7 +42,8 @@ const (
 	VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED VerificationStatus = 0
 	// OFFICIAL indicates that the owner is maintained by Buf.
 	VerificationStatus_VERIFICATION_STATUS_OFFICIAL VerificationStatus = 1
-	// VERIFIED_PUBLISHER indicates that the owner is a third-party that verified by Buf.
+	// VERIFIED_PUBLISHER indicates that the owner is a third-party that has been
+	// verified by Buf.
 	VerificationStatus_VERIFICATION_STATUS_VERIFIED_PUBLISHER VerificationStatus = 2
 )
 
