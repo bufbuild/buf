@@ -27,23 +27,22 @@ import (
 // includes fields described in https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#httprequest
 type httpRequestLog struct {
 	requestMethod string
-	requestUrl    string
+	requestURL    string
 	status        int
 	responseSize  string
 	userAgent     string
-	remoteIp      string
-	serverIp      string
+	remoteIP      string
 	latency       string
 	protocol      string
 }
 
 func (h *httpRequestLog) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("requestMethod", h.requestMethod)
-	enc.AddString("requestUrl", h.requestUrl)
+	enc.AddString("requestUrl", h.requestURL)
 	enc.AddInt("status", h.status)
 	enc.AddString("responseSize", h.responseSize)
 	enc.AddString("userAgent", h.userAgent)
-	enc.AddString("remoteIP", h.remoteIp)
+	enc.AddString("remoteIP", h.remoteIP)
 	enc.AddString("latency", h.latency)
 	enc.AddString("protocol", h.protocol)
 
@@ -92,7 +91,7 @@ func newLogEntry(logger *zap.Logger, request *http.Request) *logEntry {
 func (l *logEntry) Write(status int, size int, _ http.Header, duration time.Duration, _ interface{}) {
 	httpField := zap.Object(
 		"httpRequest",
-		newHttpRequestLog(l.request, status, size, duration),
+		newHTTPRequestLog(l.request, status, size, duration),
 	)
 	fields := append(
 		getTopLevelRequestFields(l.request),
@@ -129,20 +128,20 @@ func getTopLevelRequestFields(request *http.Request) []zap.Field {
 	}
 }
 
-func newHttpRequestLog(r *http.Request, status int, responseSize int, duration time.Duration) *httpRequestLog {
+func newHTTPRequestLog(r *http.Request, status int, responseSize int, duration time.Duration) *httpRequestLog {
 	return &httpRequestLog{
 		requestMethod: r.Method,
-		requestUrl:    getFullUrl(r),
+		requestURL:    getFullURL(r),
 		status:        status,
 		responseSize:  fmt.Sprintf("%v", responseSize),
 		userAgent:     r.UserAgent(),
-		remoteIp:      r.RemoteAddr,
+		remoteIP:      r.RemoteAddr,
 		latency:       fmt.Sprintf("%fs", duration.Seconds()),
 		protocol:      r.Proto,
 	}
 }
 
-func getFullUrl(r *http.Request) string {
+func getFullURL(r *http.Request) string {
 	if r.URL.IsAbs() {
 		return r.URL.String()
 	}
