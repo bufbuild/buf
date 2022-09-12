@@ -27,6 +27,7 @@ enum SearchFilter {
   SEARCH_FILTER_PLUGIN = 4;
   SEARCH_FILTER_TEMPLATE = 5;
   SEARCH_FILTER_TEAM = 6;
+  SEARCH_FILTER_CURATED_PLUGIN = 7;
 }
 
 message RepositorySearchResult {
@@ -68,6 +69,14 @@ message PluginSearchResult {
   bool deprecated = 5;
 }
 
+message CuratedPluginSearchResult {
+  string id = 1;
+  string name = 2;
+  // The name of the user or organization
+  // who is the owner of this plugin.
+  string owner = 3;
+}
+
 message TemplateSearchResult {
   string id = 1;
   string name = 2;
@@ -87,6 +96,7 @@ message SearchResult {
     TeamSearchResult team = 4;
     PluginSearchResult plugin = 5;
     TemplateSearchResult template = 6;
+    CuratedPluginSearchResult curated_plugin = 7;
   }
 }
 
