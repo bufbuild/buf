@@ -174,3 +174,51 @@ func RunnerWithSilentEndpoints(silentEndpoints ...string) RunnerOption {
 		}
 	}
 }
+
+// RunOption is an option for a new Run.
+type RunOption = RunnerOption
+
+// RunWithShutdownTimeout returns a new RunOption that uses the given shutdown timeout.
+//
+// The default is to use DefaultShutdownTimeout.
+// If shutdownTimeout is 0, no graceful shutdown will be performed.
+func RunWithShutdownTimeout(shutdownTimeout time.Duration) RunOption {
+	return func(runner *runner) {
+		runner.shutdownTimeout = shutdownTimeout
+	}
+}
+
+// RunWithReadHeaderTimeout returns a new RunOption that uses the given read header timeout.
+//
+// The default is to use DefaultReadHeaderTimeout.
+// If readHeaderTimeout is 0, no read header timeout will be used.
+func RunWithReadHeaderTimeout(readHeaderTimeout time.Duration) RunOption {
+	return func(runner *runner) {
+		runner.readHeaderTimeout = readHeaderTimeout
+	}
+}
+
+// RunWithTLSConfig returns a new RunOption that uses the given tls.Config.
+//
+// The default is to use no TLS.
+func RunWithTLSConfig(tlsConfig *tls.Config) RunOption {
+	return func(runner *runner) {
+		runner.tlsConfig = tlsConfig
+	}
+}
+
+// Run will start a HTTP server listening on the provided listener and
+// serving the provided handler. This call is blocking and the run
+// is cancelled when the input context is cancelled, the listener is
+// closed upon return.
+//
+// The Run can be configured further by passing a variety of options.
+func Run(
+	ctx context.Context,
+	logger *zap.Logger,
+	listener net.Listener,
+	handler http.Handler,
+	options ...RunOption,
+) (retErr error) {
+	return newRunner(logger, options...).serve(ctx, listener, handler)
+}
