@@ -58,10 +58,12 @@ message Repository {
   // license is the user configurable license of the repository, which should be one of
   // the identifier defined in https://spdx.org/licenses
   string license = 13;
+  // license url is the user configurable url to the license text.
+  string license_url = 14;
   // verification status of the owner of the repository, configurable by server admin.
-  VerificationStatus verification_status = 14;
+  VerificationStatus verification_status = 15;
   // last commit time in main branch of the repository.
-  google.protobuf.Timestamp last_commit_time = 15;
+  google.protobuf.Timestamp last_commit_time = 16;
 }
 
 message RepositoryCounts {
