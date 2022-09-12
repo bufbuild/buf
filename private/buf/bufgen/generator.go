@@ -251,7 +251,7 @@ func (g *generator) execLocalPlugin(
 	response, err := appprotoexecGenerator.Generate(
 		ctx,
 		container,
-		pluginConfig.Name,
+		pluginConfig.PluginName(),
 		bufimage.ImagesToCodeGeneratorRequests(
 			pluginImages,
 			pluginConfig.Opt,
