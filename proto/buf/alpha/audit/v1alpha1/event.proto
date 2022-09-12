@@ -219,8 +219,10 @@ message PayloadRepositoryVisibilityChanged {
   string repository_id = 1;
   // repository_name is the name of the repository that the visibility was changed on.
   string repository_name = 2;
-  // visibility is the new visibility of the repository.
-  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+  // old_visibility is the old visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility old_visibility = 3;
+  // new_visibility is the new visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility new_visibility = 4;
 }
 
 message PayloadPluginCreated {
