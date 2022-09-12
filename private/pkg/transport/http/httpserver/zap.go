@@ -15,12 +15,40 @@
 package httpserver
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
+
+// includes fields described in https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#httprequest
+type httpRequestLog struct {
+	requestMethod string
+	requestUrl    string
+	status        int
+	responseSize  string
+	userAgent     string
+	remoteIp      string
+	serverIp      string
+	latency       string
+	protocol      string
+}
+
+func (h *httpRequestLog) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("requestMethod", h.requestMethod)
+	enc.AddString("requestUrl", h.requestUrl)
+	enc.AddInt("status", h.status)
+	enc.AddString("responseSize", h.responseSize)
+	enc.AddString("userAgent", h.userAgent)
+	enc.AddString("remoteIP", h.remoteIp)
+	enc.AddString("latency", h.latency)
+	enc.AddString("protocol", h.protocol)
+
+	return nil
+}
 
 func newZapMiddleware(logger *zap.Logger, silentEndpoints map[string]struct{}) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -62,11 +90,13 @@ func newLogEntry(logger *zap.Logger, request *http.Request) *logEntry {
 }
 
 func (l *logEntry) Write(status int, size int, _ http.Header, duration time.Duration, _ interface{}) {
+	httpField := zap.Object(
+		"httpRequest",
+		newHttpRequestLog(l.request, status, size, duration),
+	)
 	fields := append(
-		getRequestFields(l.request),
-		zap.Int("status", status),
-		zap.Int("size", size),
-		zap.Duration("duration", duration),
+		getTopLevelRequestFields(l.request),
+		httpField,
 	)
 	l.logger.Info("request", fields...)
 }
@@ -89,4 +119,32 @@ func getRequestFields(request *http.Request) []zap.Field {
 		zap.String("host", request.Host),
 		zap.String("path", request.RequestURI),
 	}
+}
+
+// this gets request fields that are relevant but not covered by http request log
+func getTopLevelRequestFields(request *http.Request) []zap.Field {
+	return []zap.Field{
+		zap.String("host", request.Host),
+		zap.String("path", request.RequestURI),
+	}
+}
+
+func newHttpRequestLog(r *http.Request, status int, responseSize int, duration time.Duration) *httpRequestLog {
+	return &httpRequestLog{
+		requestMethod: r.Method,
+		requestUrl:    getFullUrl(r),
+		status:        status,
+		responseSize:  fmt.Sprintf("%v", responseSize),
+		userAgent:     r.UserAgent(),
+		remoteIp:      r.RemoteAddr,
+		latency:       fmt.Sprintf("%fs", duration.Seconds()),
+		protocol:      r.Proto,
+	}
+}
+
+func getFullUrl(r *http.Request) string {
+	if r.URL.IsAbs() {
+		return r.URL.String()
+	}
+	return fmt.Sprintf("%v%v", r.Host, r.URL)
 }
