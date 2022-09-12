@@ -46,7 +46,6 @@ include make/go/dep_minisign.mk
 include make/go/dep_protoc.mk
 include make/go/dep_protoc_gen_go.mk
 include make/go/dep_protoc_gen_connect_go.mk
-include make/go/dep_go_fuzz.mk
 include make/go/go.mk
 include make/go/docker.mk
 include make/go/buf.mk
@@ -123,7 +122,7 @@ bufgeneratesteps:: \
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
-	DOCKER_IMAGE=golang:1.19.0-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.19.1-bullseye bash make/buf/scripts/release.bash
 
 # We have to manually set the Homebrew version on the Homebrew badge as there
 # is no badge on shields.io for Homebrew packages outside of homebrew-core
@@ -147,7 +146,7 @@ ifndef GOVERSION
 endif
 	# make sure both of these docker images exist
 	# the release of these images will lag the actual release
-	docker pull golang:$(GOVERSION)-buster
+	docker pull golang:$(GOVERSION)-bullseye
 	docker pull golang:$(GOVERSION)-alpine3.16
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)

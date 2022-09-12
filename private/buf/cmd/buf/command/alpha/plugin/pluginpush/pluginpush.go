@@ -191,6 +191,10 @@ func run(
 	if err != nil {
 		return err
 	}
+	outputLanguages, err := bufplugin.OutputLanguagesToProtoLanguages(pluginConfig.OutputLanguages)
+	if err != nil {
+		return err
+	}
 	// TODO: Once we support multiple plugin source types, this could be abstracted away
 	// in the bufpluginsource package. This is much simpler for now though.
 	dockerfile, err := loadDockerfile(ctx, sourceBucket)
@@ -261,7 +265,6 @@ func run(
 	if err != nil {
 		return err
 	}
-
 	plugin, err := bufplugin.NewPlugin(
 		pluginConfig.PluginVersion,
 		pluginConfig.Dependencies,
@@ -283,8 +286,13 @@ func run(
 		return err
 	}
 	var nextRevision uint32
-	// TODO: Revisit if we decide to make revision part of plugin_version
-	currentRevision, _, err := service.GetLatestCuratedPlugin(ctx, pluginConfig.Name.Owner(), pluginConfig.Name.Plugin(), pluginConfig.PluginVersion)
+	currentRevision, _, err := service.GetLatestCuratedPlugin(
+		ctx,
+		pluginConfig.Name.Owner(),
+		pluginConfig.Name.Plugin(),
+		pluginConfig.PluginVersion,
+		0, // get latest revision for the plugin version.
+	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err
@@ -306,6 +314,7 @@ func run(
 		plugin.Description(),
 		bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry()),
 		nextRevision,
+		outputLanguages,
 	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {

@@ -96,20 +96,21 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 		return nil, err
 	}
 	return &Config{
-		Name:           pluginIdentity,
-		PluginVersion:  pluginVersion,
-		DefaultOptions: defaultOptions,
-		Dependencies:   dependencies,
-		Registry:       registryConfig,
-		SourceURL:      externalConfig.SourceURL,
-		Description:    externalConfig.Description,
+		Name:            pluginIdentity,
+		PluginVersion:   pluginVersion,
+		DefaultOptions:  defaultOptions,
+		Dependencies:    dependencies,
+		Registry:        registryConfig,
+		SourceURL:       externalConfig.SourceURL,
+		Description:     externalConfig.Description,
+		OutputLanguages: externalConfig.OutputLanguages,
 	}, nil
 }
 
 func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*RegistryConfig, error) {
 	var (
-		isGoEmpty  = externalRegistryConfig.Go.IsEmpty()
-		isNPMEmpty = externalRegistryConfig.NPM.IsEmpty()
+		isGoEmpty  = externalRegistryConfig.Go == nil
+		isNPMEmpty = externalRegistryConfig.NPM == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
@@ -152,7 +153,10 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 	}, nil
 }
 
-func newNPMRegistryConfig(externalNPMRegistryConfig ExternalNPMRegistryConfig) (*NPMRegistryConfig, error) {
+func newNPMRegistryConfig(externalNPMRegistryConfig *ExternalNPMRegistryConfig) (*NPMRegistryConfig, error) {
+	if externalNPMRegistryConfig == nil {
+		return nil, nil
+	}
 	var dependencies []*NPMRegistryDependencyConfig
 	for _, dep := range externalNPMRegistryConfig.Deps {
 		if dep.Package == "" {
@@ -184,7 +188,10 @@ func newNPMRegistryConfig(externalNPMRegistryConfig ExternalNPMRegistryConfig) (
 	}, nil
 }
 
-func newGoRegistryConfig(externalGoRegistryConfig ExternalGoRegistryConfig) (*GoRegistryConfig, error) {
+func newGoRegistryConfig(externalGoRegistryConfig *ExternalGoRegistryConfig) (*GoRegistryConfig, error) {
+	if externalGoRegistryConfig == nil {
+		return nil, nil
+	}
 	if externalGoRegistryConfig.MinVersion != "" && !modfile.GoVersionRE.MatchString(externalGoRegistryConfig.MinVersion) {
 		return nil, fmt.Errorf("the go minimum version %q must be a valid semantic version in the form of <major>.<minor>", externalGoRegistryConfig.MinVersion)
 	}

@@ -15,6 +15,10 @@
 package bufplugin
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -90,6 +94,36 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 	return registryType
 }
 
+// OutputLanguagesToProtoLanguages determines the appropriate registryv1alpha1.PluginRegistryType for the plugin.
+func OutputLanguagesToProtoLanguages(languages []string) ([]registryv1alpha1.PluginLanguage, error) {
+	languageToEnum := make(map[string]registryv1alpha1.PluginLanguage)
+	var supportedLanguages []string
+	for pluginLanguageKey, pluginLanguage := range registryv1alpha1.PluginLanguage_value {
+		if pluginLanguage == 0 {
+			continue
+		}
+		pluginLanguageKey := strings.TrimPrefix(pluginLanguageKey, "PLUGIN_LANGUAGE_")
+		pluginLanguageKey = strings.ToLower(pluginLanguageKey)
+		// Example:
+		// { go: 1, javascript: 2 }
+		languageToEnum[pluginLanguageKey] = registryv1alpha1.PluginLanguage(pluginLanguage)
+		supportedLanguages = append(supportedLanguages, pluginLanguageKey)
+	}
+	sort.Strings(supportedLanguages)
+	var protoLanguages []registryv1alpha1.PluginLanguage
+	for _, language := range languages {
+		if pluginLanguage, ok := languageToEnum[language]; ok {
+			protoLanguages = append(protoLanguages, pluginLanguage)
+			continue
+		}
+		return nil, fmt.Errorf("invalid plugin output language: %q\nsupported languages: %s", language, strings.Join(supportedLanguages, ", "))
+	}
+	sort.Slice(protoLanguages, func(i, j int) bool {
+		return protoLanguages[i] < protoLanguages[j]
+	})
+	return protoLanguages, nil
+}
+
 // PluginRegistryToProtoRegistryConfig converts a bufpluginconfig.RegistryConfig to a registryv1alpha1.RegistryConfig.
 func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.RegistryConfig) *registryv1alpha1.RegistryConfig {
 	if pluginRegistry == nil {
@@ -101,18 +135,22 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 	if pluginRegistry.Go != nil {
 		goConfig := &registryv1alpha1.GoConfig{}
 		goConfig.MinimumVersion = pluginRegistry.Go.MinVersion
-		goConfig.RuntimeLibraries = make([]*registryv1alpha1.GoConfig_RuntimeLibrary, 0, len(pluginRegistry.Go.Deps))
-		for _, dependency := range pluginRegistry.Go.Deps {
-			goConfig.RuntimeLibraries = append(goConfig.RuntimeLibraries, goRuntimeDependencyToProtoGoRuntimeLibrary(dependency))
+		if pluginRegistry.Go.Deps != nil {
+			goConfig.RuntimeLibraries = make([]*registryv1alpha1.GoConfig_RuntimeLibrary, 0, len(pluginRegistry.Go.Deps))
+			for _, dependency := range pluginRegistry.Go.Deps {
+				goConfig.RuntimeLibraries = append(goConfig.RuntimeLibraries, goRuntimeDependencyToProtoGoRuntimeLibrary(dependency))
+			}
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_GoConfig{GoConfig: goConfig}
 	} else if pluginRegistry.NPM != nil {
 		npmConfig := &registryv1alpha1.NPMConfig{
 			RewriteImportPathSuffix: pluginRegistry.NPM.RewriteImportPathSuffix,
 		}
-		npmConfig.RuntimeLibraries = make([]*registryv1alpha1.NPMConfig_RuntimeLibrary, 0, len(pluginRegistry.NPM.Deps))
-		for _, dependency := range pluginRegistry.NPM.Deps {
-			npmConfig.RuntimeLibraries = append(npmConfig.RuntimeLibraries, npmRuntimeDependencyToProtoNPMRuntimeLibrary(dependency))
+		if pluginRegistry.NPM.Deps != nil {
+			npmConfig.RuntimeLibraries = make([]*registryv1alpha1.NPMConfig_RuntimeLibrary, 0, len(pluginRegistry.NPM.Deps))
+			for _, dependency := range pluginRegistry.NPM.Deps {
+				npmConfig.RuntimeLibraries = append(npmConfig.RuntimeLibraries, npmRuntimeDependencyToProtoNPMRuntimeLibrary(dependency))
+			}
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_NpmConfig{NpmConfig: npmConfig}
 	}
@@ -130,18 +168,24 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 	if config.GetGoConfig() != nil {
 		goConfig := &bufpluginconfig.GoRegistryConfig{}
 		goConfig.MinVersion = config.GetGoConfig().GetMinimumVersion()
-		goConfig.Deps = make([]*bufpluginconfig.GoRegistryDependencyConfig, 0, len(config.GetGoConfig().GetRuntimeLibraries()))
-		for _, library := range config.GetGoConfig().GetRuntimeLibraries() {
-			goConfig.Deps = append(goConfig.Deps, protoGoRuntimeLibraryToGoRuntimeDependency(library))
+		runtimeLibraries := config.GetGoConfig().GetRuntimeLibraries()
+		if runtimeLibraries != nil {
+			goConfig.Deps = make([]*bufpluginconfig.GoRegistryDependencyConfig, 0, len(runtimeLibraries))
+			for _, library := range runtimeLibraries {
+				goConfig.Deps = append(goConfig.Deps, protoGoRuntimeLibraryToGoRuntimeDependency(library))
+			}
 		}
 		registryConfig.Go = goConfig
 	} else if config.GetNpmConfig() != nil {
 		npmConfig := &bufpluginconfig.NPMRegistryConfig{
 			RewriteImportPathSuffix: config.GetNpmConfig().GetRewriteImportPathSuffix(),
 		}
-		npmConfig.Deps = make([]*bufpluginconfig.NPMRegistryDependencyConfig, 0, len(config.GetNpmConfig().GetRuntimeLibraries()))
-		for _, library := range config.GetNpmConfig().GetRuntimeLibraries() {
-			npmConfig.Deps = append(npmConfig.Deps, protoNPMRuntimeLibraryToNPMRuntimeDependency(library))
+		runtimeLibraries := config.GetNpmConfig().GetRuntimeLibraries()
+		if runtimeLibraries != nil {
+			npmConfig.Deps = make([]*bufpluginconfig.NPMRegistryDependencyConfig, 0, len(runtimeLibraries))
+			for _, library := range runtimeLibraries {
+				npmConfig.Deps = append(npmConfig.Deps, protoNPMRuntimeLibraryToNPMRuntimeDependency(library))
+			}
 		}
 		registryConfig.NPM = npmConfig
 	}

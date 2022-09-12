@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
@@ -81,6 +82,8 @@ type Config struct {
 	// the empty string, and the option will be propagated to the
 	// compiler without the '=' delimiter.
 	DefaultOptions map[string]string
+	// OutputLanguages is a list of output languages the plugin supports.
+	OutputLanguages []string
 	// Registry is the registry configuration, which lets the user specify
 	// dependencies and other metadata that applies to a specific
 	// remote generation registry (e.g. the Go module proxy, NPM registry,
@@ -215,6 +218,7 @@ func PluginOptionsToOptionsSlice(pluginOptions map[string]string) []string {
 			options = append(options, key)
 		}
 	}
+	sort.Strings(options)
 	return options
 }
 
@@ -239,14 +243,15 @@ func OptionsSliceToPluginOptions(options []string) map[string]string {
 // ExternalConfig represents the on-disk representation
 // of the plugin configuration at version v1.
 type ExternalConfig struct {
-	Version       string                 `json:"version,omitempty" yaml:"version,omitempty"`
-	Name          string                 `json:"name,omitempty" yaml:"name,omitempty"`
-	PluginVersion string                 `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
-	SourceURL     string                 `json:"source_url,omitempty" yaml:"source_url,omitempty"`
-	Description   string                 `json:"description,omitempty" yaml:"description,omitempty"`
-	Deps          []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
-	DefaultOpts   []string               `json:"default_opts,omitempty" yaml:"default_opts,omitempty"`
-	Registry      ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
+	Version         string                 `json:"version,omitempty" yaml:"version,omitempty"`
+	Name            string                 `json:"name,omitempty" yaml:"name,omitempty"`
+	PluginVersion   string                 `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
+	SourceURL       string                 `json:"source_url,omitempty" yaml:"source_url,omitempty"`
+	Description     string                 `json:"description,omitempty" yaml:"description,omitempty"`
+	Deps            []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
+	DefaultOpts     []string               `json:"default_opts,omitempty" yaml:"default_opts,omitempty"`
+	OutputLanguages []string               `json:"output_languages,omitempty" yaml:"output_languages,omitempty"`
+	Registry        ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
 }
 
 // ExternalDependency represents a dependency on another plugin.
@@ -258,9 +263,9 @@ type ExternalDependency struct {
 // ExternalRegistryConfig is the external configuration for the registry
 // of a plugin.
 type ExternalRegistryConfig struct {
-	Go   ExternalGoRegistryConfig  `json:"go,omitempty" yaml:"go,omitempty"`
-	NPM  ExternalNPMRegistryConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
-	Opts []string                  `json:"opts,omitempty" yaml:"opts,omitempty"`
+	Go   *ExternalGoRegistryConfig  `json:"go,omitempty" yaml:"go,omitempty"`
+	NPM  *ExternalNPMRegistryConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
+	Opts []string                   `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
 // ExternalGoRegistryConfig is the external registry configuration for a Go plugin.
@@ -273,11 +278,6 @@ type ExternalGoRegistryConfig struct {
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 
-// IsEmpty returns true if the configuration is empty.
-func (e ExternalGoRegistryConfig) IsEmpty() bool {
-	return e.MinVersion == "" && len(e.Deps) == 0
-}
-
 // ExternalNPMRegistryConfig is the external registry configuration for a JavaScript NPM plugin.
 type ExternalNPMRegistryConfig struct {
 	RewriteImportPathSuffix string `json:"rewrite_import_path_suffix,omitempty" yaml:"rewrite_import_path_suffix,omitempty"`
@@ -285,11 +285,6 @@ type ExternalNPMRegistryConfig struct {
 		Package string `json:"package,omitempty" yaml:"package,omitempty"`
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
-}
-
-// IsEmpty returns true if the configuration is empty.
-func (e ExternalNPMRegistryConfig) IsEmpty() bool {
-	return len(e.Deps) == 0
 }
 
 type externalConfigVersion struct {

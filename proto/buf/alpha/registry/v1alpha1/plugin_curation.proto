@@ -27,6 +27,25 @@ enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_NPM = 2;
 }
 
+// PluginLanguage is used to specify the output languages a plugin supports.
+enum PluginLanguage {
+  PLUGIN_LANGUAGE_UNSPECIFIED = 0;
+  PLUGIN_LANGUAGE_GO = 1;
+  PLUGIN_LANGUAGE_JAVASCRIPT = 2;
+  PLUGIN_LANGUAGE_TYPESCRIPT = 3;
+  PLUGIN_LANGUAGE_SWIFT = 4;
+  PLUGIN_LANGUAGE_CPP = 5;
+  PLUGIN_LANGUAGE_JAVA = 6;
+  PLUGIN_LANGUAGE_DART = 7;
+  PLUGIN_LANGUAGE_RUST = 8;
+  PLUGIN_LANGUAGE_PYTHON = 9;
+  PLUGIN_LANGUAGE_RUBY = 10;
+  PLUGIN_LANGUAGE_KOTLIN = 11;
+  PLUGIN_LANGUAGE_OBJECTIVE_C = 12;
+  PLUGIN_LANGUAGE_PHP = 13;
+  PLUGIN_LANGUAGE_CSHARP = 14;
+}
+
 // GoConfig is the configuration for a Go plugin.
 message GoConfig {
   // RuntimeLibrary describes the runtime library dependency of the generated code.
@@ -120,6 +139,8 @@ message CuratedPlugin {
   RegistryConfig registry_config = 12;
   // The revision for this plugin version.
   uint32 revision = 13;
+  // The output languages supported by the plugin.
+  repeated PluginLanguage output_languages = 14;
 }
 
 // PluginCurationService manages curated plugins.
@@ -203,6 +224,8 @@ message CreateCuratedPluginRequest {
   RegistryConfig registry_config = 12;
   // The revision for this plugin version.
   uint32 revision = 13;
+  // The output languages supported by the plugin.
+  repeated PluginLanguage output_languages = 14;
 }
 
 message CreateCuratedPluginResponse {
@@ -228,9 +251,14 @@ message GetLatestCuratedPluginRequest {
   string owner = 1;
   // The name of the plugin, i.e. "connect-go".
   string name = 2;
-  // Optional: Semver-formatted plugin version.
-  // If not specified, the latest version will be retrieved.
+  // Both version (semver-formatted) and revision are optional, which means
+  // return the latest plugin.
+  // If version is set, but revision is omitted, then return the latest
+  // revision for that version.
+  // If version and revision are both set, return specific plugin.
+  // It is an error to set a revision without a corresponding version.
   string version = 3;
+  uint32 revision = 4;
 }
 
 message GetLatestCuratedPluginResponse {
