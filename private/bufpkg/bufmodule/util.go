@@ -72,6 +72,20 @@ func getDocumentationForBucket(
 	return string(documentationData), nil
 }
 
+func getLicenseForBucket(
+	ctx context.Context,
+	readBucket storage.ReadBucket,
+) (string, error) {
+	licenseData, err := storage.ReadPath(ctx, readBucket, LicenseFilePath)
+	if err != nil {
+		if storage.IsNotExist(err) {
+			return "", nil
+		}
+		return "", err
+	}
+	return string(licenseData), nil
+}
+
 func copyModulePinsSortedByOnlyCommit(modulePins []bufmoduleref.ModulePin) []bufmoduleref.ModulePin {
 	s := make([]bufmoduleref.ModulePin, len(modulePins))
 	copy(s, modulePins)

@@ -79,11 +79,18 @@ func (b *moduleBucketBuilder) buildForBucket(
 	if err != nil {
 		return nil, err
 	}
+	licenseFileBucket, err := getFileReadBucket(ctx, readBucket, bufmodule.LicenseFilePath)
+	if err != nil {
+		return nil, err
+	}
 	if lockFileReadBucket != nil {
 		rootBuckets = append(rootBuckets, lockFileReadBucket)
 	}
 	if docFileReadBucket != nil {
 		rootBuckets = append(rootBuckets, docFileReadBucket)
+	}
+	if licenseFileBucket != nil {
+		rootBuckets = append(rootBuckets, licenseFileBucket)
 	}
 	for root, excludes := range config.RootToExcludes {
 		roots = append(roots, root)
