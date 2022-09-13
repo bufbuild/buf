@@ -386,6 +386,11 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
+	if license := module.License(); license != "" {
+		if _, err := hash.Write([]byte(license)); err != nil {
+			return "", err
+		}
+	}
 	if breakingConfig := module.BreakingConfig(); breakingConfig != nil {
 		breakingConfigBytes, err := bufbreakingconfig.BytesForConfig(breakingConfig)
 		if err != nil {
