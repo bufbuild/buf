@@ -44,7 +44,7 @@ enum ResourceType {
   RESOURCE_TYPE_ORGANIZATION = 2;
   RESOURCE_TYPE_ORGANIZATION_MEMBER = 3;
   RESOURCE_TYPE_REPOSITORY = 4;
-  RESOURCE_TYPE_REPOSITORY_MEMBER = 5;
+  RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
   RESOURCE_TYPE_PLUGIN = 7;
 }
@@ -70,9 +70,9 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_CREATED = 6;
   EVENT_TYPE_REPOSITORY_DELETED = 7;
   EVENT_TYPE_REPOSITORY_PUSHED = 8;
-  EVENT_TYPE_REPOSITORY_MEMBER_ADDED = 9;
-  EVENT_TYPE_REPOSITORY_MEMBER_ROLE_CHANGED = 10;
-  EVENT_TYPE_REPOSITORY_MEMBER_REMOVED = 11;
+  EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED = 9;
+  EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED = 10;
+  EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
@@ -108,9 +108,9 @@ message Event {
     PayloadRepositoryCreated repository_created = 11;
     PayloadRepositoryDeleted repository_deleted = 12;
     PayloadRepositoryPushed repository_pushed = 13;
-    PayloadRepositoryMemberAdded repository_member_added = 14;
-    PayloadRepositoryMemberRoleChanged repository_member_role_changed = 15;
-    PayloadRepositoryMemberRemoved repository_member_removed = 16;
+    PayloadRepositoryContributorAdded repository_contributor_added = 14;
+    PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 15;
+    PayloadRepositoryContributorRemoved repository_contributor_removed = 16;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 25;
     PayloadPluginCreated plugin_created = 17;
     PayloadPluginDeleted plugin_deleted = 18;
@@ -185,20 +185,20 @@ message PayloadRepositoryPushed {
   string draft_name = 6;
 }
 
-message PayloadRepositoryMemberAdded {
+message PayloadRepositoryContributorAdded {
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
   string owner_name = 2;
-  // repository_id is the id of the repository with the new member.
+  // repository_id is the id of the repository with the new contributor.
   string repository_id = 3;
-  // repository_name is the name of the repository with the new member.
+  // repository_name is the name of the repository with the new contributor.
   string repository_name = 4;
-  // member_role is the role granted to the member added to the repository.
-  buf.alpha.registry.v1alpha1.RepositoryRole member_role = 5;
+  // contributor_role is the role granted to the contributor added to the repository.
+  buf.alpha.registry.v1alpha1.RepositoryRole contributor_role = 5;
 }
 
-message PayloadRepositoryMemberRoleChanged {
+message PayloadRepositoryContributorRoleChanged {
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
@@ -207,23 +207,23 @@ message PayloadRepositoryMemberRoleChanged {
   string repository_id = 3;
   // repository_name is the name of the repository within which the role was changed.
   string repository_name = 4;
-  // old_role is the old role of the member whose role was changed.
+  // old_role is the old role of the contributor whose role was changed.
   buf.alpha.registry.v1alpha1.RepositoryRole old_role = 5;
-  // new_role is the new role of the member whose role was changed.
+  // new_role is the new role of the contributor whose role was changed.
   buf.alpha.registry.v1alpha1.RepositoryRole new_role = 6;
 }
 
-message PayloadRepositoryMemberRemoved {
+message PayloadRepositoryContributorRemoved {
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
   string owner_name = 2;
-  // repository_id is the id of the repository that the member was removed from.
+  // repository_id is the id of the repository that the contributor was removed from.
   string repository_id = 3;
-  // repository_name is the name of the repository that the member was removed from.
+  // repository_name is the name of the repository that the contributor was removed from.
   string repository_name = 4;
-  // member_role is the role that the member had when removed from the repository.
-  buf.alpha.registry.v1alpha1.RepositoryRole member_role = 5;
+  // contributor_role is the role that the contributor had when removed from the repository.
+  buf.alpha.registry.v1alpha1.RepositoryRole contributor_role = 5;
 }
 
 message PayloadRepositoryVisibilityChanged {
