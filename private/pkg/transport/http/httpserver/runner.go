@@ -96,19 +96,29 @@ func (s *runner) Run(
 			return err
 		}
 	}
+	return s.serve(ctx, listener, mux)
+}
 
+// serve is intended to only be called within the httpserver package by
+// the Run function. Once callers have migrated away from NewRunner().Run()
+// it would be ideal to move this logic into the Run function.
+func (s *runner) serve(
+	ctx context.Context,
+	listener net.Listener,
+	handler http.Handler,
+) error {
 	stdLogger, err := zap.NewStdLogAt(s.logger, zap.ErrorLevel)
 	if err != nil {
 		return err
 	}
 	httpServer := &http.Server{
-		Handler:           mux,
+		Handler:           handler,
 		ReadHeaderTimeout: s.readHeaderTimeout,
 		ErrorLog:          stdLogger,
 		TLSConfig:         s.tlsConfig,
 	}
 	if s.tlsConfig == nil {
-		httpServer.Handler = h2c.NewHandler(mux, &http2.Server{
+		httpServer.Handler = h2c.NewHandler(handler, &http2.Server{
 			IdleTimeout: DefaultIdleTimeout,
 		})
 	}
