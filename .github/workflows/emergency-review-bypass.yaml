@@ -1,0 +1,19 @@
+name: Bypass review in case of emergency
+on:
+  pull_request:
+    types:
+      - labeled
+permissions:
+  pull-requests: write
+jobs:
+  approve:
+    if: github.event.label.name == "emergency-review-bypass"
+    runs-on: self-hosted
+    permissions:
+      pull-requests: write
+    steps:
+      - name: approve pull request
+        uses: hmarr/auto-approve-action@9ae347e9f84a25da76c915a406cb17cfece1716d
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.inputs.pullRequestNumber }}
