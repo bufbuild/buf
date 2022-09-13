@@ -88,16 +88,16 @@ func newLogEntry(logger *zap.Logger, request *http.Request) *logEntry {
 	}
 }
 
-func (l *logEntry) Write(status int, size int, _ http.Header, duration time.Duration, _ interface{}) {
-	httpField := zap.Object(
-		"httpRequest",
-		newHTTPRequestLog(l.request, status, size, duration),
+func (l *logEntry) Write(status, size int, _ http.Header, duration time.Duration, _ interface{}) {
+	l.logger.Info(
+		"request",
+		zap.Object(
+			"httpRequest",
+			newHTTPRequestLog(l.request, status, size, duration),
+		),
+		zap.String("host", l.request.Host),
+		zap.String("path", l.request.RequestURI),
 	)
-	fields := append(
-		getTopLevelRequestFields(l.request),
-		httpField,
-	)
-	l.logger.Info("request", fields...)
 }
 
 func (l *logEntry) Panic(value interface{}, stack []byte) {
@@ -120,15 +120,7 @@ func getRequestFields(request *http.Request) []zap.Field {
 	}
 }
 
-// this gets request fields that are relevant but not covered by http request log
-func getTopLevelRequestFields(request *http.Request) []zap.Field {
-	return []zap.Field{
-		zap.String("host", request.Host),
-		zap.String("path", request.RequestURI),
-	}
-}
-
-func newHTTPRequestLog(r *http.Request, status int, responseSize int, duration time.Duration) *httpRequestLog {
+func newHTTPRequestLog(r *http.Request, status, responseSize int, duration time.Duration) *httpRequestLog {
 	return &httpRequestLog{
 		requestMethod: r.Method,
 		requestURL:    getFullURL(r),
