@@ -85,7 +85,7 @@ func (o *limitedWriteObjectCloser) Write(p []byte) (int, error) {
 		}
 	}
 	writtenSize, err := o.WriteObjectCloser.Write(p)
-	if writtenSize < int(writeSize) {
+	if int64(writtenSize) < writeSize {
 		o.bucketSize.Sub(writeSize - int64(writtenSize))
 	}
 	return writtenSize, err
