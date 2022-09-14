@@ -308,6 +308,46 @@ func TestModuleReaderCacherWithConfiguration(t *testing.T) {
 	require.Equal(t, config.Lint, cachedConfig.Lint)
 }
 
+func TestModuleReaderCacherWithLicense(t *testing.T) {
+	ctx := context.Background()
+
+	modulePin, err := bufmoduleref.NewModulePin(
+		"buf.build",
+		"foo",
+		"bar",
+		"main",
+		bufmoduletesting.TestCommit,
+		time.Now(),
+	)
+	require.NoError(t, err)
+	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithLicense)
+	require.NoError(t, err)
+	module, err := bufmodule.NewModuleForBucket(
+		ctx,
+		readBucket,
+		bufmodule.ModuleWithModuleIdentity(modulePin),
+	)
+	require.NoError(t, err)
+
+	dataReadWriteBucket, sumReadWriteBucket, _ := newTestDataSumBucketsAndLocker(t)
+	moduleCacher := newModuleCacher(zap.NewNop(), dataReadWriteBucket, sumReadWriteBucket, false)
+	err = moduleCacher.PutModule(
+		context.Background(),
+		modulePin,
+		module,
+	)
+	require.NoError(t, err)
+	module, err = moduleCacher.GetModule(ctx, modulePin)
+	require.NoError(t, err)
+	readWriteBucket := storagemem.NewReadWriteBucket()
+	require.NoError(t, bufmodule.ModuleToBucket(ctx, module, readWriteBucket))
+	// Verify that the license file was created.
+	exists, err := storage.Exists(ctx, readWriteBucket, bufmodule.LicenseFilePath)
+	require.NoError(t, err)
+	require.True(t, exists)
+	require.Equal(t, bufmoduletesting.TestModuleLicense, module.License())
+}
+
 func newTestDataSumBucketsAndLocker(t *testing.T) (storage.ReadWriteBucket, storage.ReadWriteBucket, filelock.Locker) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	dataReadWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
