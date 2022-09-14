@@ -74,7 +74,7 @@ func newLimitedWriteObjectCloser(
 	}
 }
 
-func (o *limitedWriteObjectCloser) Write(p []byte) (n int, err error) {
+func (o *limitedWriteObjectCloser) Write(p []byte) (int, error) {
 	writeSize := int64(len(p))
 	newBucketSize := o.bucketSize.Add(writeSize)
 	if newBucketSize > o.limit {
