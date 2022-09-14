@@ -24,6 +24,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -35,6 +37,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 )
 
 const (
@@ -1495,5 +1498,38 @@ func RunTestSuite(
 			"1.proto",
 			"1.proto",
 		)
+	})
+	t.Run("limit-write-bucket", func(t *testing.T) {
+		t.Parallel()
+		writeBucket := newWriteBucket(t, defaultProvider)
+		readBucket := writeBucketToReadBucket(t, writeBucket)
+		const limit = 2048
+		limitedWriteBucket := storage.LimitWriteBucket(writeBucket, limit)
+		var (
+			wg           sync.WaitGroup
+			writtenBytes atomic.Int64
+			triedBytes   atomic.Int64
+		)
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				data := bytes.Repeat([]byte("b"), i*100)
+				path := strconv.Itoa(i)
+				triedBytes.Add(int64(len(data)))
+				err := storage.PutPath(context.Background(), limitedWriteBucket, path, data)
+				if err != nil {
+					assert.True(t, storage.IsWriteLimitReached(err))
+					return
+				}
+				readData, err := storage.ReadPath(context.Background(), readBucket, path)
+				assert.NoError(t, err)
+				assert.Equal(t, readData, data)
+				writtenBytes.Add(int64(len(data)))
+			}(i)
+		}
+		wg.Wait()
+		require.Greater(t, triedBytes.Load(), int64(limit))
+		assert.LessOrEqual(t, writtenBytes.Load(), int64(limit))
 	})
 }
