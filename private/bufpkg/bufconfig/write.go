@@ -32,7 +32,7 @@ import (
 
 const (
 	exampleName = "buf.build/acme/weather"
-	// This is only used for `buf config init`.
+	// This is only used for `buf mod init`.
 	tmplDocumentationCommentsData = `{{$top := .}}# This specifies the configuration file version.
 #
 # This controls the configuration file layout, defaults, and lint/breaking

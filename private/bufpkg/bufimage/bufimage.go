@@ -297,7 +297,7 @@ func ImageWithOnlyPathsAllowNotExist(
 // ImageByDir returns multiple images that have non-imports split
 // by directory.
 //
-// That is, each Image will only contain a single directoy's files
+// That is, each Image will only contain a single directory's files
 // as it's non-imports, along with all required imports for the
 // files in that directory.
 func ImageByDir(image Image) ([]Image, error) {
