@@ -54,10 +54,10 @@ message Repository {
   // url is the user configurable URL in the description of the repository,
   // always included the scheme and will not have a #fragment suffix.
   string url = 12;
-  // license_spdx_id is the license of the latest main commit on the repository, based
-  // on the license file pushed, which should be one of the identifier defined in
-  // https://spdx.org/licenses, and will be empty if the license file is not presented
-  // or cannot be classified into a known license.
+  // license_spdx_id is the current license of the repository, based on the
+  // license file pushed, which should be one of the identifier defined in
+  // https://spdx.org/licenses, and will be empty if the license file is not
+  // presented or cannot be classified into a known license.
   string license_spdx_id = 13;
 }
 

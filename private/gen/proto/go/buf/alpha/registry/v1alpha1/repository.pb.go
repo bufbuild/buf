@@ -115,10 +115,10 @@ type Repository struct {
 	// url is the user configurable URL in the description of the repository,
 	// always included the scheme and will not have a #fragment suffix.
 	Url string `protobuf:"bytes,12,opt,name=url,proto3" json:"url,omitempty"`
-	// license_spdx_id is the license of the latest main commit on the repository, based
-	// on the license file pushed, which should be one of the identifier defined in
-	// https://spdx.org/licenses, and will be empty if the license file is not presented
-	// or cannot be classified into a known license.
+	// license_spdx_id is the current license of the repository, based on the
+	// license file pushed, which should be one of the identifier defined in
+	// https://spdx.org/licenses, and will be empty if the license file is not
+	// presented or cannot be classified into a known license.
 	LicenseSpdxId string `protobuf:"bytes,13,opt,name=license_spdx_id,json=licenseSpdxId,proto3" json:"license_spdx_id,omitempty"`
 }
 
