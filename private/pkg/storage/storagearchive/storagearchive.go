@@ -29,6 +29,13 @@ import (
 	"go.uber.org/multierr"
 )
 
+var (
+	// ErrFileSizeLimit is returned when file read limit is reached.
+	//
+	// See [WithMaxFileSizeUntarOption]
+	ErrFileSizeLimit = errors.New("file size exceeded read limit")
+)
+
 // Tar tars the given bucket to the writer.
 //
 // Only regular files are added to the writer.
@@ -81,7 +88,12 @@ func Untar(
 	writeBucket storage.WriteBucket,
 	mapper storage.Mapper,
 	stripComponentCount uint32,
+	opts ...UntarOption,
 ) error {
+	options := &untarOptions{}
+	for _, opt := range opts {
+		opt.applyUntar(options)
+	}
 	tarReader := tar.NewReader(reader)
 	walkChecker := storageutil.NewWalkChecker()
 	for tarHeader, err := tarReader.Next(); err != io.EOF; tarHeader, err = tarReader.Next() {
@@ -91,23 +103,49 @@ func Untar(
 		if err := walkChecker.Check(ctx); err != nil {
 			return err
 		}
+		if tarHeader.Size < 0 {
+			return fmt.Errorf("invalid size for tar file %s: %d", tarHeader.Name, tarHeader.Size)
+		}
+		var fileReader io.Reader = tarReader
+		if options.maxFileSize > 0 {
+			fileReader = io.LimitReader(fileReader, options.maxFileSize)
+		}
 		path, ok, err := unmapArchivePath(tarHeader.Name, mapper, stripComponentCount)
 		if err != nil {
 			return err
 		}
-		if !ok {
-			continue
-		}
-		if tarHeader.FileInfo().Mode().IsRegular() {
-			if tarHeader.Size < 0 {
-				return fmt.Errorf("invalid size for tar file %s: %d", tarHeader.Name, tarHeader.Size)
+		if !ok || !tarHeader.FileInfo().Mode().IsRegular() {
+			// Next also discards the file but doesn't apply the limit.
+			// Explicitly discard the file with limit applied.
+			if _, err := io.Copy(io.Discard, fileReader); err != nil {
+				return err
 			}
-			if err := storage.CopyReader(ctx, writeBucket, tarReader, path); err != nil {
+		} else {
+			if err := storage.CopyReader(ctx, writeBucket, fileReader, path); err != nil {
 				return err
 			}
 		}
+		// [io.LimitedReader] returns an EOF when limit is reached.
+		// Read a byte from tarReader to see if the limit was hit.
+		bytesRead, err := tarReader.Read([]byte{0})
+		if err != nil && err != io.EOF {
+			return err
+		}
+		if bytesRead > 0 {
+			return ErrFileSizeLimit
+		}
 	}
 	return nil
+}
+
+// UntarOption is an option for [Untar].
+type UntarOption interface {
+	applyUntar(*untarOptions)
+}
+
+// WithMaxFileSizeUntarOption returns an option that limits the maximum size
+func WithMaxFileSizeUntarOption(size int) UntarOption {
+	return &withMaxFileSizeUntarOption{maxFileSize: int64(size)}
 }
 
 // Zip zips the given bucket to the writer.
