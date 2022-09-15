@@ -2,13 +2,16 @@
 
 ## [Unreleased]
 
+- Include `LICENSE` file in the module on `buf push`.
+
+## [v1.8.0] - 2022-09-14
+
 - Change default for `--origin` flag of `buf beta studio-agent` to `https://studio.buf.build`
 - Change default for `--timeout` flag of `buf beta studio-agent` to `0` (no timeout). Before it was
   `2m` (the default for all the other `buf` commands).
 - Add support for experimental code generation with the `plugin:` key in `buf.gen.yaml`.
 - Preserve single quotes with `buf format`.
 - Support `junit` format errors with `--error-format`.
-- Include `LICENSE` file in the module on `buf push`.
 
 ## [v1.7.0] - 2022-06-27
 
@@ -726,7 +729,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.8.0...HEAD
+[v1.8.0]: https://github.com/bufbuild/buf/compare/v1.7.0...v1.8.0
 [v1.7.0]: https://github.com/bufbuild/buf/compare/v1.6.0...v1.7.0
 [v1.6.0]: https://github.com/bufbuild/buf/compare/v1.5.0...v1.6.0
 [v1.5.0]: https://github.com/bufbuild/buf/compare/v1.4.0...v1.5.0
