@@ -304,6 +304,26 @@ func TestDocumentation(t *testing.T) {
 	)
 }
 
+func TestLicense(t *testing.T) {
+	testLicenseBucket(
+		t,
+		"testdata/5",
+		"Test Module License",
+		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/5/proto/1.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/5/proto/a/2.proto", false, nil, ""),
+	)
+}
+
+func TestLicenseSymlink(t *testing.T) {
+	testLicenseBucket(
+		t,
+		"testdata/6",
+		"Test Module License", // expecting the same license with testdata/5 as it symlink to the license there
+		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/6/proto/1.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/6/proto/a/2.proto", false, nil, ""),
+	)
+}
+
 func testBucketGetFileInfos(
 	t *testing.T,
 	relDir string,
@@ -436,6 +456,40 @@ func testDocumentationBucket(
 	require.NotNil(t, module)
 	assert.NotEmpty(t, module.Documentation())
 	require.NoError(t, err)
+	fileInfos, err := module.TargetFileInfos(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(
+		t,
+		expectedFileInfos,
+		fileInfos,
+	)
+}
+
+func testLicenseBucket(
+	t *testing.T,
+	relDir string,
+	expectedLicense string,
+	expectedFileInfos ...bufmoduleref.FileInfo,
+) {
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		relDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+	config, err := bufmoduleconfig.NewConfigV1(
+		bufmoduleconfig.ExternalConfigV1{},
+	)
+	require.NoError(t, err)
+	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+		context.Background(),
+		readWriteBucket,
+		config,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, module)
+	assert.NotEmpty(t, module.License())
+	assert.Equal(t, expectedLicense, module.License())
 	fileInfos, err := module.TargetFileInfos(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(
