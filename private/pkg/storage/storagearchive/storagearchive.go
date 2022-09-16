@@ -106,33 +106,18 @@ func Untar(
 		if tarHeader.Size < 0 {
 			return fmt.Errorf("invalid size for tar file %s: %d", tarHeader.Name, tarHeader.Size)
 		}
-		var fileReader io.Reader = tarReader
-		if options.maxFileSize > 0 {
-			fileReader = io.LimitReader(fileReader, options.maxFileSize)
+		if options.maxFileSize > 0 && tarHeader.Size > options.maxFileSize {
+			return fmt.Errorf("%w %s:%d", ErrFileSizeLimit, tarHeader.Name, tarHeader.Size)
 		}
 		path, ok, err := unmapArchivePath(tarHeader.Name, mapper, stripComponentCount)
 		if err != nil {
 			return err
 		}
 		if !ok || !tarHeader.FileInfo().Mode().IsRegular() {
-			// Next also discards the file but doesn't apply the limit.
-			// Explicitly discard the file with limit applied.
-			if _, err := io.Copy(io.Discard, fileReader); err != nil {
-				return err
-			}
-		} else {
-			if err := storage.CopyReader(ctx, writeBucket, fileReader, path); err != nil {
-				return err
-			}
+			continue
 		}
-		// [io.LimitedReader] returns an EOF when limit is reached.
-		// Read a byte from tarReader to see if the limit was hit.
-		bytesRead, err := tarReader.Read([]byte{0})
-		if err != nil && err != io.EOF {
+		if err := storage.CopyReader(ctx, writeBucket, tarReader, path); err != nil {
 			return err
-		}
-		if bytesRead > 0 {
-			return ErrFileSizeLimit
 		}
 	}
 	return nil
