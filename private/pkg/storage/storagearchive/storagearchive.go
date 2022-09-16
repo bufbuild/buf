@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -90,7 +91,9 @@ func Untar(
 	stripComponentCount uint32,
 	opts ...UntarOption,
 ) error {
-	options := &untarOptions{}
+	options := &untarOptions{
+		maxFileSize: math.MaxInt64,
+	}
 	for _, opt := range opts {
 		opt.applyUntar(options)
 	}
@@ -106,7 +109,7 @@ func Untar(
 		if tarHeader.Size < 0 {
 			return fmt.Errorf("invalid size for tar file %s: %d", tarHeader.Name, tarHeader.Size)
 		}
-		if options.maxFileSize > 0 && tarHeader.Size > options.maxFileSize {
+		if tarHeader.Size > options.maxFileSize {
 			return fmt.Errorf("%w %s:%d", ErrFileSizeLimit, tarHeader.Name, tarHeader.Size)
 		}
 		path, ok, err := unmapArchivePath(tarHeader.Name, mapper, stripComponentCount)
