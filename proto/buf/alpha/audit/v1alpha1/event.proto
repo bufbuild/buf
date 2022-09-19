@@ -69,7 +69,7 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED = 5;
   EVENT_TYPE_REPOSITORY_CREATED = 6;
   EVENT_TYPE_REPOSITORY_DELETED = 7;
-  EVENT_TYPE_REPOSITORY_PUSHED = 8;
+  EVENT_TYPE_REPOSITORY_COMMIT_PUSHED = 8;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED = 9;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED = 10;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
@@ -107,7 +107,7 @@ message Event {
     PayloadOrganizationMemberRemoved organization_member_removed = 10;
     PayloadRepositoryCreated repository_created = 11;
     PayloadRepositoryDeleted repository_deleted = 12;
-    PayloadRepositoryPushed repository_pushed = 13;
+    PayloadRepositoryCommitPushed repository_commit_pushed = 13;
     PayloadRepositoryContributorAdded repository_contributor_added = 14;
     PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 15;
     PayloadRepositoryContributorRemoved repository_contributor_removed = 16;
@@ -170,7 +170,7 @@ message PayloadRepositoryDeleted {
   string owner_name = 2;
 }
 
-message PayloadRepositoryPushed {
+message PayloadRepositoryCommitPushed {
   // owner_id is the id of the owner of the repository.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
