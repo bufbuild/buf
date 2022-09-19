@@ -179,12 +179,10 @@ message PayloadRepositoryCommitPushed {
   string repository_id = 3;
   // repository_name is the name of the repository within which the commit was created.
   string repository_name = 4;
-  // commit_id is the id of the commit that resulted in the BSR.
-  string commit_id = 5;
   // tags are the tags included in the push. Optional.
-  repeated string tags = 6;
+  repeated string tags = 5;
   // draft_name is the name of the draft. Optional.
-  string draft_name = 7;
+  string draft_name = 6;
 }
 
 message PayloadRepositoryContributorAdded {
