@@ -435,7 +435,6 @@ func testDocumentationBucket(
 	require.NoError(t, err)
 	require.NotNil(t, module)
 	assert.NotEmpty(t, module.Documentation())
-	require.NoError(t, err)
 	fileInfos, err := module.TargetFileInfos(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(
