@@ -133,7 +133,6 @@ func run(
 		nil,   // externalDirOrFilePaths
 		nil,   // externalExcludeDirOrFilePaths
 		false, // externalDirOrFilePathsAllowNotExist
-		false, // excludeSourceCodeInfo
 	)
 	if err != nil {
 		return err

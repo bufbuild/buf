@@ -49,7 +49,7 @@ var buftestingDirPath = filepath.Join(
 func TestGoogleapis(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
-	image := testBuildGoogleapis(t, true)
+	image := testBuildGoogleapis(t)
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
 	assert.Equal(
 		t,
@@ -259,8 +259,8 @@ func TestSpaceBetweenNumberAndID(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"spacebetweennumberandid",
-		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:3:invalid syntax in integer value: 10to"),
-		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:3:syntax error: unexpected error, expecting int literal"),
+		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:14:invalid syntax in integer value: 10to"),
+		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:14:syntax error: unexpected error, expecting int literal"),
 	)
 }
 
@@ -279,9 +279,9 @@ func TestDuplicateSyntheticOneofs(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"duplicatesyntheticoneofs",
-		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a2.proto:5:1:duplicate symbol a.Foo: already defined as message in "a1.proto"`),
-		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a2.proto:6:3:duplicate symbol a.Foo._bar: already defined as oneof in "a1.proto"`),
-		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a2.proto:6:3:duplicate symbol a.Foo.bar: already defined as field in "a1.proto"`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:5:9:symbol "a.Foo" already defined at a2.proto:5:9`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:6:19:symbol "a.Foo._bar" already defined at a2.proto:6:19`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:6:19:symbol "a.Foo.bar" already defined at a2.proto:6:19`),
 	)
 }
 
@@ -305,7 +305,7 @@ func TestCompareSemicolons(t *testing.T) {
 
 func testCompare(t *testing.T, runner command.Runner, relDirPath string) {
 	dirPath := filepath.Join("testdata", relDirPath)
-	image, fileAnnotations := testBuild(t, false, dirPath)
+	image, fileAnnotations := testBuild(t, dirPath, WithExcludeSourceCodeInfo())
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
@@ -314,19 +314,15 @@ func testCompare(t *testing.T, runner command.Runner, relDirPath string) {
 	prototesting.AssertFileDescriptorSetsEqual(t, runner, fileDescriptorSet, actualProtocFileDescriptorSet)
 }
 
-func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
+func testBuildGoogleapis(t *testing.T, options ...BuildOption) bufimage.Image {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	image, fileAnnotations := testBuild(t, includeSourceInfo, googleapisDirPath)
+	image, fileAnnotations := testBuild(t, googleapisDirPath, options...)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	return image
 }
 
-func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation) {
+func testBuild(t *testing.T, dirPath string, options ...BuildOption) (bufimage.Image, []bufanalysis.FileAnnotation) {
 	moduleFileSet := testGetModuleFileSet(t, dirPath)
-	var options []BuildOption
-	if !includeSourceInfo {
-		options = append(options, WithExcludeSourceCodeInfo())
-	}
 	image, fileAnnotations, err := NewBuilder(zap.NewNop()).Build(
 		context.Background(),
 		moduleFileSet,
@@ -383,7 +379,9 @@ func testGetImageImportPaths(image bufimage.Image) []string {
 }
 
 func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
-	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", filepath.FromSlash(relDirPath)))
+	t.Helper()
+	_, fileAnnotations := testBuild(t, filepath.Join("testdata", filepath.FromSlash(relDirPath)),
+		WithParallelism(1)) // TestCyclicImport is non-deterministic if we don't limit this
 	got := make([]string, len(fileAnnotations))
 	for i, annotation := range fileAnnotations {
 		got[i] = annotation.String()
@@ -392,6 +390,7 @@ func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
 }
 
 func testImageWithExcludedFilePaths(t *testing.T, image bufimage.Image, excludePaths []string) {
+	t.Helper()
 	for _, imageFile := range image.Files() {
 		if !imageFile.IsImport() {
 			for _, excludePath := range excludePaths {

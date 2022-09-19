@@ -20,6 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/protocompile"
 	"go.uber.org/zap"
 )
 
@@ -52,6 +53,36 @@ type BuildOption func(*buildOptions)
 // WithExcludeSourceCodeInfo returns a BuildOption that excludes sourceCodeInfo.
 func WithExcludeSourceCodeInfo() BuildOption {
 	return func(buildOptions *buildOptions) {
-		buildOptions.excludeSourceCodeInfo = true
+		buildOptions.sourceInfoMode = protocompile.SourceInfoNone
+	}
+}
+
+// WithExtraSourceCodeInfo returns a BuildOption that causes source code info to
+// be generated with extra comments.
+func WithExtraSourceCodeInfo() BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.sourceInfoMode = protocompile.SourceInfoExtraComments
+	}
+}
+
+// WithParallelism indicates the maximum level of parallelism to use when building
+// an image. If unspecified, the maximum parallelism will be automatically set to
+// min(runtime.NumCPU(), runtime.GOMAXPROCS(-1)).
+func WithParallelism(parallelism int) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.parallelism = parallelism
+	}
+}
+
+// WithCanonicalByteOutput indicates that file descriptor protos in the built
+// image should be marshaled to the protobuf binary format using a "canonical"
+// format, that matches byte-for-byte the output of protoc. This should only
+// be used by callers that intend to write a binary descriptor set file. When
+// true, options in the returned descriptor protos are not available
+// programmatically because the data is stored as (pre-serialized) unrecognized
+// fields (so that marshaling to bytes is in the right format).
+func WithCanonicalByteOutput() BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.canonicalByteOutput = true
 	}
 }

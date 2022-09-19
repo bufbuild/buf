@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -310,10 +311,10 @@ func run(
 		container,
 		ref,
 		flags.Config,
-		flags.Paths,        // we filter on files
-		flags.ExcludePaths, // we exclude these paths
-		false,              // input files must exist
-		false,              // we must include source info for generation
+		flags.Paths,                             // we filter on files
+		flags.ExcludePaths,                      // we exclude these paths
+		false,                                   // input files must exist
+		bufimagebuild.WithCanonicalByteOutput(), // include source info, match protoc byte-for-byte
 	)
 	if err != nil {
 		return err

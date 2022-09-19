@@ -942,6 +942,7 @@ func testLintConfigModifier(
 	image, fileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
 		ctx,
 		moduleFileSet,
+		bufimagebuild.WithExtraSourceCodeInfo(),
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)

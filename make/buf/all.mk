@@ -1,6 +1,5 @@
-# https://github.com/jhump/protoreflect/commits/master 20220416 checked 20220417
 GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/jhump/protoreflect@060cc04fc18bbaff608f8c02a537f62f56a8ebd0
+	github.com/bufbuild/protocompile@68c60f3c760e09f045ec147acc09bae03b092e64
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 GO_BINS := $(GO_BINS) \
 	cmd/buf \

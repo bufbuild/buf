@@ -14,7 +14,7 @@ updates:
       interval: "weekly"
     ignore:
       # We manually update this from master and lock the commit in make/buf/all.mk
-      - dependency-name: "github.com/jhump/protoreflect"
+      - dependency-name: "github.com/bufbuild/protocompile"
       # This needs to be locked to the same version we generate with, which is
       # controlled via dep_protoc_gen_connect_go.mk
       - dependency-name: "github.com/bufbuild/connect-go"

@@ -134,7 +134,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	var buildOptions []bufimagebuild.BuildOption
+	buildOptions := []bufimagebuild.BuildOption{bufimagebuild.WithCanonicalByteOutput()}
 	// we always need source code info if we are doing generation
 	if len(env.PluginNameToPluginInfo) == 0 && !env.IncludeSourceInfo {
 		buildOptions = append(buildOptions, bufimagebuild.WithExcludeSourceCodeInfo())

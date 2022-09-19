@@ -12,6 +12,22 @@
 - Formatter uses a compact, single-line representation for array and message literals
   in option values that are sufficiently simple (single scalar element or field).
 - Include `LICENSE` file in the module on `buf push`.
+- New compiler that is XX% faster, uses XX% less memory, and addresses a few bugs
+  where Buf would accept proto sources that protoc would reject:
+   - In proto3 files, field and enum names undergo a validation that they are
+     sufficiently different so that there will be no conflicts in JSON names.
+   - Fully-qualified names of elements (like a message, enum, or service) may not
+     conflict with package names.
+   - A oneof or extend block may not contain empty statements.
+   - Package names may not be >= 512 characters in length or contain > 100 dots.
+   - Nesting depth of messages may not be > 32.
+   - Field types and method input/output types may not refer to synthetic
+     map entry messages.
+  When generating a file descriptor set from local sources, the resulting file
+  should now be identical, byte-for-byte, to files produced by protoc. Aside from
+  bugs (like listed above), the output has always been *semantically* equal. But
+  now the compiler generates source code info and serializes options in ways that
+  match the output of protoc.
 
 ## [v1.8.0] - 2022-09-14
 

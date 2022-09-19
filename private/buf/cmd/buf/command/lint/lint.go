@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -133,10 +134,10 @@ func run(
 		container,
 		ref,
 		flags.Config,
-		flags.Paths,        // we filter checks for files
-		flags.ExcludePaths, // we exclude these paths
-		false,              // input files must exist
-		false,              // we must include source info for linting
+		flags.Paths,                             // we filter checks for files
+		flags.ExcludePaths,                      // we exclude these paths
+		false,                                   // input files must exist
+		bufimagebuild.WithExtraSourceCodeInfo(), // we want *extra* source info for linting
 	)
 	if err != nil {
 		return err

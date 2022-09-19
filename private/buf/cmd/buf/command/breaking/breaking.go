@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -180,7 +181,6 @@ func run(
 		flags.Paths,        // we filter checks for files
 		flags.ExcludePaths, // we exclude these paths
 		false,              // files specified must exist on the main input
-		false,              // we must include source info for this side of the check
 	)
 	if err != nil {
 		return err
@@ -216,7 +216,7 @@ func run(
 		externalPaths,      // we filter checks for files
 		flags.ExcludePaths, // we exclude these paths
 		true,               // files are allowed to not exist on the against input
-		true,               // no need to include source info for against
+		bufimagebuild.WithExcludeSourceCodeInfo(), // no need to include source info for against
 	)
 	if err != nil {
 		return err

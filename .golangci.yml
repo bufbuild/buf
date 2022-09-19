@@ -133,3 +133,6 @@ issues:
         - forbidigo
       path: private/bufpkg/bufplugin/bufplugindocker/docker.go
       text: "use of `errgroup"
+    - linters:
+        - containedctx
+      path: private/bufpkg/bufmodule/bufmoduleprotocompile

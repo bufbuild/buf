@@ -45,7 +45,6 @@ type FileInfo interface {
 	//
 	// Example:
 	//	 Assume we had the input path /foo/bar which is a local directory.
-
 	//   Path: one/one.proto
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto

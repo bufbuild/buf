@@ -113,7 +113,7 @@ func (e *fileLister) listFilesWithImports(
 		nil,
 		nil,
 		false,
-		true,
+		bufimagebuild.WithExcludeSourceCodeInfo(),
 	)
 	if err != nil {
 		return nil, nil, err
@@ -153,7 +153,7 @@ func (e *fileLister) listFilesWithoutImports(
 			nil,
 			nil,
 			false,
-			true,
+			bufimagebuild.WithExcludeSourceCodeInfo(),
 		)
 		if err != nil {
 			return nil, nil, err

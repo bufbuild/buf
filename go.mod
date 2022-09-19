@@ -4,14 +4,14 @@ go 1.18
 
 require (
 	github.com/bufbuild/connect-go v0.4.0
-	github.com/bufbuild/protocompile v0.0.0-20220927163942-e0e013a8d791
+	github.com/bufbuild/protocompile v0.0.0-20221004130402-a20e4810edfa
 	github.com/docker/docker v20.10.18+incompatible
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid v4.3.0+incompatible
 	github.com/google/go-cmp v0.5.9
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
-	github.com/jhump/protoreflect v1.12.1-0.20220721211354-060cc04fc18b
+	github.com/jhump/protoreflect v1.13.1-0.20220928232736-101791cb1b4c
 	github.com/klauspost/compress v1.15.11
 	github.com/klauspost/pgzip v1.2.5
 	github.com/moby/buildkit v0.10.4
