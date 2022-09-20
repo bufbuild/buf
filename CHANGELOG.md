@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Push lint and breaking configuration to the registry.
 
 ## [v1.8.0] - 2022-09-14
 
