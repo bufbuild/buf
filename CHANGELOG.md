@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Push lint and breaking configuration to the registry.
 - Include `LICENSE` file in the module on `buf push`.
 
 ## [v1.8.0] - 2022-09-14

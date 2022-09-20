@@ -1532,4 +1532,33 @@ func RunTestSuite(
 		require.Greater(t, triedBytes.Load(), int64(limit))
 		assert.LessOrEqual(t, writtenBytes.Load(), int64(limit))
 	})
+	t.Run("limit-untar-file-size", func(t *testing.T) {
+		t.Parallel()
+		writeBucket := newWriteBucket(t, defaultProvider)
+		const limit = 2048
+		files := map[string][]byte{
+			"within":  bytes.Repeat([]byte{0}, limit-1),
+			"at":      bytes.Repeat([]byte{0}, limit),
+			"exceeds": bytes.Repeat([]byte{0}, limit+1),
+		}
+		for path, data := range files {
+			err := storage.PutPath(context.Background(), writeBucket, path, data)
+			require.NoError(t, err)
+		}
+		var buffer bytes.Buffer
+		err := storagearchive.Tar(context.Background(), writeBucketToReadBucket(t, writeBucket), &buffer)
+		require.NoError(t, err)
+		writeBucket = newWriteBucket(t, defaultProvider)
+		tarball := bytes.NewReader(buffer.Bytes())
+		err = storagearchive.Untar(context.Background(), tarball, writeBucket, nil, 0, storagearchive.WithMaxFileSizeUntarOption(limit))
+		assert.ErrorIs(t, err, storagearchive.ErrFileSizeLimit)
+		_, err = tarball.Seek(0, io.SeekStart)
+		require.NoError(t, err)
+		err = storagearchive.Untar(context.Background(), tarball, writeBucket, nil, 0)
+		assert.NoError(t, err)
+		_, err = tarball.Seek(0, io.SeekStart)
+		require.NoError(t, err)
+		err = storagearchive.Untar(context.Background(), tarball, writeBucket, nil, 0, storagearchive.WithMaxFileSizeUntarOption(limit+1))
+		assert.NoError(t, err)
+	})
 }
