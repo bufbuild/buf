@@ -101,29 +101,11 @@ message SearchResult {
   }
 }
 
-message SearchTagRequest {
-  // The owner of the repository.
-  string repository_owner = 1;
-  // The name of the repository.
-  string repository_name = 2;
-  // The search string.
-  string query = 3;
-  uint32 page_size = 4;
-  // The first page is returned if this is 0.
-  uint32 page_token = 5;
-}
-
-message SearchTagResponse {
-  repeated RepositoryCommit repository_commits = 1;
-  // There are no more pages if this is 0.
-  uint32 next_page_token = 2;
-}
-
 // SearchService is the search service.
 service SearchService {
   // Search searches the BSR.
   rpc Search(SearchRequest) returns (SearchResponse);
-  // Search searches in a repository
+  // SearchTag searches in a repository
   rpc SearchTag(SearchTagRequest) returns (SearchTagResponse);
 }
 
@@ -141,6 +123,24 @@ message SearchRequest {
 
 message SearchResponse {
   repeated SearchResult search_results = 1;
+  // There are no more pages if this is 0.
+  uint32 next_page_token = 2;
+}
+
+message SearchTagRequest {
+  // The owner of the repository.
+  string repository_owner = 1;
+  // The name of the repository.
+  string repository_name = 2;
+  // The search string.
+  string query = 3;
+  uint32 page_size = 4;
+  // The first page is returned if this is 0.
+  uint32 page_token = 5;
+}
+
+message SearchTagResponse {
+  repeated RepositoryCommit repository_commits = 1;
   // There are no more pages if this is 0.
   uint32 next_page_token = 2;
 }

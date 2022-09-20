@@ -53,7 +53,7 @@ func (s *searchServiceClient) Search(
 	return response.Msg.SearchResults, response.Msg.NextPageToken, nil
 }
 
-// Search searches in a repository
+// SearchTag searches in a repository
 func (s *searchServiceClient) SearchTag(
 	ctx context.Context,
 	repositoryOwner string,

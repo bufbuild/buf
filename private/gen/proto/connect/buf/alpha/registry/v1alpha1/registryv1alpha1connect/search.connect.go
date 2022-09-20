@@ -43,7 +43,7 @@ const (
 type SearchServiceClient interface {
 	// Search searches the BSR.
 	Search(context.Context, *connect_go.Request[v1alpha1.SearchRequest]) (*connect_go.Response[v1alpha1.SearchResponse], error)
-	// Search searches in a repository
+	// SearchTag searches in a repository
 	SearchTag(context.Context, *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error)
 }
 
@@ -91,7 +91,7 @@ func (c *searchServiceClient) SearchTag(ctx context.Context, req *connect_go.Req
 type SearchServiceHandler interface {
 	// Search searches the BSR.
 	Search(context.Context, *connect_go.Request[v1alpha1.SearchRequest]) (*connect_go.Response[v1alpha1.SearchResponse], error)
-	// Search searches in a repository
+	// SearchTag searches in a repository
 	SearchTag(context.Context, *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error)
 }
 
