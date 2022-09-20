@@ -52,3 +52,29 @@ func (s *searchServiceClient) Search(
 	}
 	return response.Msg.SearchResults, response.Msg.NextPageToken, nil
 }
+
+// Search searches in a repository
+func (s *searchServiceClient) SearchTag(
+	ctx context.Context,
+	repositoryOwner string,
+	repositoryName string,
+	query string,
+	pageSize uint32,
+	pageToken uint32,
+) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken uint32, _ error) {
+	response, err := s.client.SearchTag(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.SearchTagRequest{
+				RepositoryOwner: repositoryOwner,
+				RepositoryName:  repositoryName,
+				Query:           query,
+				PageSize:        pageSize,
+				PageToken:       pageToken,
+			}),
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	return response.Msg.RepositoryCommits, response.Msg.NextPageToken, nil
+}
