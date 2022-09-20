@@ -31,8 +31,8 @@ type SearchService interface {
 		pageToken uint32,
 		filters []v1alpha1.SearchFilter,
 	) (searchResults []*v1alpha1.SearchResult, nextPageToken uint32, err error)
-	// SearchTag searches in a repository
-	SearchTag(
+	// SearchCommitReference searches in a repository
+	SearchCommitReference(
 		ctx context.Context,
 		repositoryOwner string,
 		repositoryName string,

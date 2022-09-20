@@ -43,8 +43,8 @@ const (
 type SearchServiceClient interface {
 	// Search searches the BSR.
 	Search(context.Context, *connect_go.Request[v1alpha1.SearchRequest]) (*connect_go.Response[v1alpha1.SearchResponse], error)
-	// SearchTag searches in a repository
-	SearchTag(context.Context, *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error)
+	// SearchCommitReference searches in a repository
+	SearchCommitReference(context.Context, *connect_go.Request[v1alpha1.SearchCommitReferenceRequest]) (*connect_go.Response[v1alpha1.SearchCommitReferenceResponse], error)
 }
 
 // NewSearchServiceClient constructs a client for the buf.alpha.registry.v1alpha1.SearchService
@@ -62,9 +62,9 @@ func NewSearchServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 			baseURL+"/buf.alpha.registry.v1alpha1.SearchService/Search",
 			opts...,
 		),
-		searchTag: connect_go.NewClient[v1alpha1.SearchTagRequest, v1alpha1.SearchTagResponse](
+		searchCommitReference: connect_go.NewClient[v1alpha1.SearchCommitReferenceRequest, v1alpha1.SearchCommitReferenceResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.SearchService/SearchTag",
+			baseURL+"/buf.alpha.registry.v1alpha1.SearchService/SearchCommitReference",
 			opts...,
 		),
 	}
@@ -72,8 +72,8 @@ func NewSearchServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 
 // searchServiceClient implements SearchServiceClient.
 type searchServiceClient struct {
-	search    *connect_go.Client[v1alpha1.SearchRequest, v1alpha1.SearchResponse]
-	searchTag *connect_go.Client[v1alpha1.SearchTagRequest, v1alpha1.SearchTagResponse]
+	search                *connect_go.Client[v1alpha1.SearchRequest, v1alpha1.SearchResponse]
+	searchCommitReference *connect_go.Client[v1alpha1.SearchCommitReferenceRequest, v1alpha1.SearchCommitReferenceResponse]
 }
 
 // Search calls buf.alpha.registry.v1alpha1.SearchService.Search.
@@ -81,9 +81,9 @@ func (c *searchServiceClient) Search(ctx context.Context, req *connect_go.Reques
 	return c.search.CallUnary(ctx, req)
 }
 
-// SearchTag calls buf.alpha.registry.v1alpha1.SearchService.SearchTag.
-func (c *searchServiceClient) SearchTag(ctx context.Context, req *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error) {
-	return c.searchTag.CallUnary(ctx, req)
+// SearchCommitReference calls buf.alpha.registry.v1alpha1.SearchService.SearchCommitReference.
+func (c *searchServiceClient) SearchCommitReference(ctx context.Context, req *connect_go.Request[v1alpha1.SearchCommitReferenceRequest]) (*connect_go.Response[v1alpha1.SearchCommitReferenceResponse], error) {
+	return c.searchCommitReference.CallUnary(ctx, req)
 }
 
 // SearchServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.SearchService
@@ -91,8 +91,8 @@ func (c *searchServiceClient) SearchTag(ctx context.Context, req *connect_go.Req
 type SearchServiceHandler interface {
 	// Search searches the BSR.
 	Search(context.Context, *connect_go.Request[v1alpha1.SearchRequest]) (*connect_go.Response[v1alpha1.SearchResponse], error)
-	// SearchTag searches in a repository
-	SearchTag(context.Context, *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error)
+	// SearchCommitReference searches in a repository
+	SearchCommitReference(context.Context, *connect_go.Request[v1alpha1.SearchCommitReferenceRequest]) (*connect_go.Response[v1alpha1.SearchCommitReferenceResponse], error)
 }
 
 // NewSearchServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -107,9 +107,9 @@ func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect_go.Handle
 		svc.Search,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.SearchService/SearchTag", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.SearchService/SearchTag",
-		svc.SearchTag,
+	mux.Handle("/buf.alpha.registry.v1alpha1.SearchService/SearchCommitReference", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.SearchService/SearchCommitReference",
+		svc.SearchCommitReference,
 		opts...,
 	))
 	return "/buf.alpha.registry.v1alpha1.SearchService/", mux
@@ -122,6 +122,6 @@ func (UnimplementedSearchServiceHandler) Search(context.Context, *connect_go.Req
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.Search is not implemented"))
 }
 
-func (UnimplementedSearchServiceHandler) SearchTag(context.Context, *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.SearchTag is not implemented"))
+func (UnimplementedSearchServiceHandler) SearchCommitReference(context.Context, *connect_go.Request[v1alpha1.SearchCommitReferenceRequest]) (*connect_go.Response[v1alpha1.SearchCommitReferenceResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.SearchCommitReference is not implemented"))
 }
