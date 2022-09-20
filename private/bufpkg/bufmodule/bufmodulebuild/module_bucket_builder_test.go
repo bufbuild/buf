@@ -16,13 +16,19 @@ package bufmodulebuild
 
 import (
 	"context"
+	"io"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -302,6 +308,78 @@ func TestDocumentation(t *testing.T) {
 		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/4/proto/1.proto", false, nil, ""),
 		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/4/proto/a/2.proto", false, nil, ""),
 	)
+}
+
+func TestConfigInclusion(t *testing.T) {
+	t.Run("buf.yaml", func(t *testing.T) {
+		t.Parallel()
+		testConfigInclusion(t, "buf.yaml")
+	})
+	t.Run("buf.mod", func(t *testing.T) {
+		t.Parallel()
+		testConfigInclusion(t, "buf.mod")
+	})
+}
+
+func testConfigInclusion(t *testing.T, confname string) {
+	// bucket creation
+	bufyaml := `
+version: v1
+breaking:
+  ignore_unstable_packages: true
+lint:
+  allow_comment_ignores: true
+`
+	ctx := context.Background()
+	bucket, err := memBucket(ctx,
+		confname, bufyaml,
+		"a/1.proto", "",
+	)
+	require.NoError(t, err)
+
+	// build
+	config, err := bufmoduleconfig.NewConfigV1(
+		bufmoduleconfig.ExternalConfigV1{},
+	)
+	require.NoError(t, err)
+	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+		ctx,
+		bucket,
+		config,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, module)
+
+	// assert: one proto consumed
+	fileInfos, err := module.TargetFileInfos(ctx)
+	assert.NoError(t, err)
+	assert.Len(t, fileInfos, 1)
+
+	// assert: breaking and lint configuration exists
+	zeroBreaking := bufbreakingconfig.NewConfigV1(
+		bufbreakingconfig.ExternalConfigV1{},
+	)
+	assert.NotEqual(t, zeroBreaking, module.BreakingConfig(), "empty BreakingConfig")
+	zeroLint := buflintconfig.NewConfigV1(
+		buflintconfig.ExternalConfigV1{},
+	)
+	assert.NotEqual(t, zeroLint, module.LintConfig(), "empty LintConfig")
+}
+
+func memBucket(ctx context.Context, pathcontent ...string) (storage.ReadBucket, error) {
+	membucket := storagemem.NewReadWriteBucket()
+	for i := 0; i < len(pathcontent); i += 2 {
+		fh, err := membucket.Put(ctx, pathcontent[i])
+		if err != nil {
+			return nil, err
+		}
+		_, err = io.Copy(fh, strings.NewReader(pathcontent[i+1]))
+		if err != nil {
+			return nil, err
+		}
+		fh.Close()
+	}
+	return membucket, nil
 }
 
 func testBucketGetFileInfos(
