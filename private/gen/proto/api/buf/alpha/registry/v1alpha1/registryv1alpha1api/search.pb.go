@@ -31,13 +31,26 @@ type SearchService interface {
 		pageToken uint32,
 		filters []v1alpha1.SearchFilter,
 	) (searchResults []*v1alpha1.SearchResult, nextPageToken uint32, err error)
-	// SearchCommitReference searches in a repository
-	SearchCommitReference(
+	// SearchTag searches for tags in a repository
+	SearchTag(
 		ctx context.Context,
 		repositoryOwner string,
 		repositoryName string,
 		query string,
 		pageSize uint32,
 		pageToken uint32,
+		orderBy v1alpha1.OrderBy,
+		reverse bool,
+	) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken uint32, err error)
+	// SearchDraft searches for drafts in a repository
+	SearchDraft(
+		ctx context.Context,
+		repositoryOwner string,
+		repositoryName string,
+		query string,
+		pageSize uint32,
+		pageToken uint32,
+		orderBy v1alpha1.OrderBy,
+		reverse bool,
 	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken uint32, err error)
 }
