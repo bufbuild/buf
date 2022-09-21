@@ -52,3 +52,55 @@ func (s *searchServiceClient) Search(
 	}
 	return response.Msg.SearchResults, response.Msg.NextPageToken, nil
 }
+
+// SearchTag searches for tags in a repository
+func (s *searchServiceClient) SearchTag(
+	ctx context.Context,
+	repositoryOwner string,
+	repositoryName string,
+	query string,
+	pageSize uint32,
+	pageToken uint32,
+) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken uint32, _ error) {
+	response, err := s.client.SearchTag(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.SearchTagRequest{
+				RepositoryOwner: repositoryOwner,
+				RepositoryName:  repositoryName,
+				Query:           query,
+				PageSize:        pageSize,
+				PageToken:       pageToken,
+			}),
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	return response.Msg.RepositoryTags, response.Msg.NextPageToken, nil
+}
+
+// SearchDraft searches for drafts in a repository
+func (s *searchServiceClient) SearchDraft(
+	ctx context.Context,
+	repositoryOwner string,
+	repositoryName string,
+	query string,
+	pageSize uint32,
+	pageToken uint32,
+) (repositoryDrafts []*v1alpha1.RepositoryDraft, nextPageToken uint32, _ error) {
+	response, err := s.client.SearchDraft(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.SearchDraftRequest{
+				RepositoryOwner: repositoryOwner,
+				RepositoryName:  repositoryName,
+				Query:           query,
+				PageSize:        pageSize,
+				PageToken:       pageToken,
+			}),
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	return response.Msg.RepositoryDrafts, response.Msg.NextPageToken, nil
+}

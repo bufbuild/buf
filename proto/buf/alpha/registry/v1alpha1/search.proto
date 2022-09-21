@@ -17,8 +17,9 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/plugin.proto";
+import "buf/alpha/registry/v1alpha1/reference.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
-import "buf/alpha/registry/v1alpha1/repository_commit.proto";
+import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
 enum SearchFilter {
   SEARCH_FILTER_UNSPECIFIED = 0;
@@ -105,6 +106,10 @@ message SearchResult {
 service SearchService {
   // Search searches the BSR.
   rpc Search(SearchRequest) returns (SearchResponse);
+  // SearchTag searches for tags in a repository
+  rpc SearchTag(SearchTagRequest) returns (SearchTagResponse);
+  // SearchDraft searches for drafts in a repository
+  rpc SearchDraft(SearchDraftRequest) returns (SearchDraftResponse);
 }
 
 message SearchRequest {
@@ -121,6 +126,42 @@ message SearchRequest {
 
 message SearchResponse {
   repeated SearchResult search_results = 1;
+  // There are no more pages if this is 0.
+  uint32 next_page_token = 2;
+}
+
+message SearchTagRequest {
+  // The owner of the repository.
+  string repository_owner = 1;
+  // The name of the repository.
+  string repository_name = 2;
+  // The search string.
+  string query = 3;
+  uint32 page_size = 4;
+  // The first page is returned if this is 0.
+  uint32 page_token = 5;
+}
+
+message SearchTagResponse {
+  repeated RepositoryTag repository_tags = 1;
+  // There are no more pages if this is 0.
+  uint32 next_page_token = 2;
+}
+
+message SearchDraftRequest {
+  // The owner of the repository.
+  string repository_owner = 1;
+  // The name of the repository.
+  string repository_name = 2;
+  // The search string.
+  string query = 3;
+  uint32 page_size = 4;
+  // The first page is returned if this is 0.
+  uint32 page_token = 5;
+}
+
+message SearchDraftResponse {
+  repeated RepositoryDraft repository_drafts = 1;
   // There are no more pages if this is 0.
   uint32 next_page_token = 2;
 }
