@@ -52,29 +52,3 @@ func (s *searchServiceClient) Search(
 	}
 	return response.Msg.SearchResults, response.Msg.NextPageToken, nil
 }
-
-// SearchCommitReference searches in a repository
-func (s *searchServiceClient) SearchCommitReference(
-	ctx context.Context,
-	repositoryOwner string,
-	repositoryName string,
-	query string,
-	pageSize uint32,
-	pageToken uint32,
-) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken uint32, _ error) {
-	response, err := s.client.SearchCommitReference(
-		ctx,
-		connect_go.NewRequest(
-			&v1alpha1.SearchCommitReferenceRequest{
-				RepositoryOwner: repositoryOwner,
-				RepositoryName:  repositoryName,
-				Query:           query,
-				PageSize:        pageSize,
-				PageToken:       pageToken,
-			}),
-	)
-	if err != nil {
-		return nil, 0, err
-	}
-	return response.Msg.RepositoryCommits, response.Msg.NextPageToken, nil
-}
