@@ -1,0 +1,4 @@
+syntax = "proto3";
+message Foooo {
+  Foooo foo = 1;
+}

@@ -1509,6 +1509,54 @@ a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value
 	)
 }
 
+func TestBreakingInt64ToMessage(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+		testdata/messages/message/test.proto:3:3:Field "1" on message "Foooo" changed type from "int64" to "message".
+		`),
+		"breaking",
+		"--against",
+		filepath.Join(".", "testdata", "messages", "int64", "test.proto"),
+		filepath.Join(".", "testdata", "messages", "message", "test.proto"),
+	)
+}
+
+func TestBreakingInt32ToInt64(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+		testdata/messages/int64/test.proto:3:3:Field "1" on message "Foooo" changed type from "int32" to "int64".
+		`),
+		"breaking",
+		"--against",
+		filepath.Join(".", "testdata", "messages", "int32", "test.proto"),
+		filepath.Join(".", "testdata", "messages", "int64", "test.proto"),
+	)
+}
+
+func TestBreakingMessageToMessage(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+		testdata/messages/message2/test.proto:3:3:Field "1" on message "Foooo" changed type from "Foooo" to "Foooo2".
+		`),
+		"breaking",
+		"--against",
+		filepath.Join(".", "testdata", "messages", "message", "test.proto"),
+		filepath.Join(".", "testdata", "messages", "message2", "test.proto"),
+	)
+}
+
 func TestVersion(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, bufcli.Version, "--version")
