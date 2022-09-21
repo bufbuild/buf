@@ -87,7 +87,7 @@ func (s *searchServiceClient) SearchDraft(
 	query string,
 	pageSize uint32,
 	pageToken uint32,
-) (repositoryDrafts []*v1alpha1.RepositoryDraft, nextPageToken uint32, _ error) {
+) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken uint32, _ error) {
 	response, err := s.client.SearchDraft(
 		ctx,
 		connect_go.NewRequest(
@@ -102,5 +102,5 @@ func (s *searchServiceClient) SearchDraft(
 	if err != nil {
 		return nil, 0, err
 	}
-	return response.Msg.RepositoryDrafts, response.Msg.NextPageToken, nil
+	return response.Msg.RepositoryCommits, response.Msg.NextPageToken, nil
 }

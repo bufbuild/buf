@@ -48,5 +48,5 @@ type SearchService interface {
 		query string,
 		pageSize uint32,
 		pageToken uint32,
-	) (repositoryDrafts []*v1alpha1.RepositoryDraft, nextPageToken uint32, err error)
+	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken uint32, err error)
 }

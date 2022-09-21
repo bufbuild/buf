@@ -19,6 +19,7 @@ package buf.alpha.registry.v1alpha1;
 import "buf/alpha/registry/v1alpha1/plugin.proto";
 import "buf/alpha/registry/v1alpha1/reference.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
+import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
 enum SearchFilter {
@@ -161,7 +162,7 @@ message SearchDraftRequest {
 }
 
 message SearchDraftResponse {
-  repeated RepositoryDraft repository_drafts = 1;
+  repeated RepositoryCommit repository_commits = 1;
   // There are no more pages if this is 0.
   uint32 next_page_token = 2;
 }
