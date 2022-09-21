@@ -22,7 +22,7 @@ option (list) = {
     -42, // Trailing on '-42'.
 
     // Leading comment on '-43'.
-    -/* Between '-' and '43' */43 // Trailing on '43'.
+    - /* Between '-' and '43' */ 43 // Trailing on '43'.
   ],
 
   recursive: [

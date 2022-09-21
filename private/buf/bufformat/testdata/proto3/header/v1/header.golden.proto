@@ -8,12 +8,12 @@
 //      All of them should retain their newlines.
 
 // This is another leading comment on the syntax.
-syntax/* This comment is attached to the '=' */ = "proto3"; // Trailing comment on syntax.
+syntax /* This comment is attached to the '=' */ = "proto3"; // Trailing comment on syntax.
 
 // Between syntax and package.
 
-package /* Leading on package name. */header.v1/* Leading on semicolon */; // Trailing in-line.
+package /* Leading on package name. */ header.v1 /* Leading on semicolon */; // Trailing in-line.
 
-import /* Leading on import path */"custom.proto";
+import /* Leading on import path */ "custom.proto";
 
-option /* Leading on option name */ (custom.file_thing_option).truth/* Between truth and value */ = true/* After 'true' */;
+option /* Leading on option name */ (custom.file_thing_option).truth /* Between truth and value */ = true /* After 'true' */;
