@@ -61,6 +61,8 @@ func (s *searchServiceClient) SearchTag(
 	query string,
 	pageSize uint32,
 	pageToken uint32,
+	orderBy v1alpha1.OrderBy,
+	reverse bool,
 ) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken uint32, _ error) {
 	response, err := s.client.SearchTag(
 		ctx,
@@ -71,6 +73,8 @@ func (s *searchServiceClient) SearchTag(
 				Query:           query,
 				PageSize:        pageSize,
 				PageToken:       pageToken,
+				OrderBy:         orderBy,
+				Reverse:         reverse,
 			}),
 	)
 	if err != nil {
@@ -87,6 +91,8 @@ func (s *searchServiceClient) SearchDraft(
 	query string,
 	pageSize uint32,
 	pageToken uint32,
+	orderBy v1alpha1.OrderBy,
+	reverse bool,
 ) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken uint32, _ error) {
 	response, err := s.client.SearchDraft(
 		ctx,
@@ -97,6 +103,8 @@ func (s *searchServiceClient) SearchDraft(
 				Query:           query,
 				PageSize:        pageSize,
 				PageToken:       pageToken,
+				OrderBy:         orderBy,
+				Reverse:         reverse,
 			}),
 	)
 	if err != nil {

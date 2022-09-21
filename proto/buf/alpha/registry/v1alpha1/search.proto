@@ -32,6 +32,13 @@ enum SearchFilter {
   SEARCH_FILTER_CURATED_PLUGIN = 7;
 }
 
+enum OrderBy {
+  ORDER_BY_UNSPECIFIED = 0;
+  ORDER_BY_CREATE_TIME = 1;
+  ORDER_BY_UPDATE_TIME = 2;
+  ORDER_BY_NAME = 3;
+}
+
 message RepositorySearchResult {
   string id = 1;
   string name = 2;
@@ -140,6 +147,10 @@ message SearchTagRequest {
   uint32 page_size = 4;
   // The first page is returned if this is 0.
   uint32 page_token = 5;
+  // The field to order results by.
+  OrderBy order_by = 6;
+  // Reverse orders results in descending order.
+  bool reverse = 7;
 }
 
 message SearchTagResponse {
@@ -158,6 +169,10 @@ message SearchDraftRequest {
   uint32 page_size = 4;
   // The first page is returned if this is 0.
   uint32 page_token = 5;
+  // The field to order results by.
+  OrderBy order_by = 6;
+  // Reverse orders results in descending order.
+  bool reverse = 7;
 }
 
 message SearchDraftResponse {
