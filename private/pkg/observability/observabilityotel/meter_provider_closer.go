@@ -17,25 +17,25 @@ package observabilityotel
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/pkg/observability"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/trace"
 )
 
-type TracerProvider interface {
-	Tracer(string, ...trace.TracerOption) trace.Tracer
-	Shutdown(context.Context) error
+type meterProviderCloser struct {
+	meterProvider MeterProvider
 }
 
-type MeterProvider interface {
-	Meter(instrumentationName string, opts ...metric.MeterOption) metric.Meter
-	Shutdown(context.Context) error
+func newMeterProviderCloser(meterProvider MeterProvider) *meterProviderCloser {
+	return &meterProviderCloser{
+		meterProvider: meterProvider,
+	}
 }
 
-func NewTracerProviderCloser(tracerProvider TracerProvider) observability.TracerProviderCloser {
-	return newTracerProviderCloser(tracerProvider)
+func (m *meterProviderCloser) Close() error {
+	// Note: the application layer above does not pass down a context required for
+	// otelsdkmetric.MeterProvider.Shutdown
+	return m.meterProvider.Shutdown(context.Background())
 }
 
-func NewMeterProviderCloser(meterProvider MeterProvider) observability.MeterProviderCloser {
-	return newMeterProviderCloser(meterProvider)
+func (m *meterProviderCloser) Meter(instrumentationName string, opts ...metric.MeterOption) metric.Meter {
+	return m.meterProvider.Meter(instrumentationName, opts...)
 }
