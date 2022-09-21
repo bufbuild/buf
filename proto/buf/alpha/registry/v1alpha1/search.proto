@@ -17,7 +17,6 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/plugin.proto";
-import "buf/alpha/registry/v1alpha1/reference.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
