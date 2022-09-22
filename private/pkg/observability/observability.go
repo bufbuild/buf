@@ -23,6 +23,7 @@ import (
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
 	"go.opencensus.io/trace"
+	otelmetric "go.opentelemetry.io/otel/metric"
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
@@ -48,6 +49,11 @@ type TraceViewExportCloser interface {
 
 type TracerProviderCloser interface {
 	oteltrace.TracerProvider
+	io.Closer
+}
+
+type MeterProviderCloser interface {
+	otelmetric.MeterProvider
 	io.Closer
 }
 
@@ -89,6 +95,10 @@ func Start(options ...StartOption) io.Closer {
 		tracerProviderCloser := tracerProviderCloser
 		closers = append(closers, tracerProviderCloser)
 	}
+	for _, meterProviderCloser := range startOptions.meterProviderClosers {
+		meterProviderCloser := meterProviderCloser
+		closers = append(closers, meterProviderCloser)
+	}
 	return ioextended.ChainCloser(closers...)
 }
 
@@ -122,6 +132,12 @@ func StartWithTracerProviderCloser(tracerProviderCloser TracerProviderCloser) St
 	}
 }
 
+func StartWithMeterProviderCloser(meterProviderCloser MeterProviderCloser) StartOption {
+	return func(startOptions *startOptions) {
+		startOptions.meterProviderClosers = append(startOptions.meterProviderClosers, meterProviderCloser)
+	}
+}
+
 // NewHTTPTransport returns a HTTP transport instrumented with OpenCensus traces and metrics.
 func NewHTTPTransport(base http.RoundTripper, tags ...tag.Mutator) http.RoundTripper {
 	return &wrappedRoundTripper{
@@ -145,6 +161,7 @@ type startOptions struct {
 	viewExportClosers      []ViewExportCloser
 	traceViewExportClosers []TraceViewExportCloser
 	tracerProviderClosers  []TracerProviderCloser
+	meterProviderClosers   []MeterProviderCloser
 }
 
 func newStartOptions() *startOptions {
