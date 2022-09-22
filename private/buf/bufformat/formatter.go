@@ -590,16 +590,6 @@ func (f *formatter) maybeWriteCompactMessageLiteral(
 	return true
 }
 
-func compactOptionHasMessageOrArray(compactOptionsNode *ast.CompactOptionsNode) bool {
-	for _, elem := range compactOptionsNode.Options {
-		switch elem.Val.(type) {
-		case *ast.ArrayLiteralNode, *ast.MessageLiteralNode:
-			return true
-		}
-	}
-	return false
-}
-
 func messageLiteralHasNestedMessageOrArray(messageLiteralNode *ast.MessageLiteralNode) bool {
 	for _, elem := range messageLiteralNode.Elements {
 		switch elem.Val.(type) {
@@ -1111,8 +1101,7 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 		f.inCompactOptions = false
 	}()
 	if len(compactOptionsNode.Options) == 1 &&
-		!f.hasInteriorComments(compactOptionsNode) &&
-		!compactOptionHasMessageOrArray(compactOptionsNode) {
+		!f.hasInteriorComments(compactOptionsNode) {
 		// If there's only a single compact scalar option without comments, we can write it
 		// in-line. For example:
 		//
