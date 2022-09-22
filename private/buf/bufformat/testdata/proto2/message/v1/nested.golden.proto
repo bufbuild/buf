@@ -6,7 +6,7 @@ message Foo {
   optional string name = 1 /* Between the '1' and the '[' */ [deprecated = true]; // In-line comment on name.
 
   // Repeated values comment.
-  repeated int64 values = 2 /* Before the semiolon */ ;
+  repeated int64 values = 2 /* Before the semiolon */;
 
   message /* Bar is a nested message */ Bar /* Before the '{' */ {
     /* This one is required */
