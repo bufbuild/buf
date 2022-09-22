@@ -145,7 +145,7 @@ message SearchTagRequest {
   // The search string.
   string query = 3;
   uint32 page_size = 4;
-  // The first page is returned if this is 0.
+  // The first page is returned if this is empty.
   string page_token = 5;
   // The field to order results by.
   OrderBy order_by = 6;
@@ -155,7 +155,7 @@ message SearchTagRequest {
 
 message SearchTagResponse {
   repeated RepositoryTag repository_tags = 1;
-  // There are no more pages if this is 0.
+  // There are no more pages if this is empty.
   string next_page_token = 2;
 }
 
@@ -167,7 +167,7 @@ message SearchDraftRequest {
   // The search string.
   string query = 3;
   uint32 page_size = 4;
-  // The first page is returned if this is 0.
+  // The first page is returned if this is empty.
   string page_token = 5;
   // The field to order results by.
   OrderBy order_by = 6;
@@ -177,6 +177,6 @@ message SearchDraftRequest {
 
 message SearchDraftResponse {
   repeated RepositoryCommit repository_commits = 1;
-  // There are no more pages if this is 0.
+  // There are no more pages if this is empty.
   string next_page_token = 2;
 }

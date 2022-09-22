@@ -937,7 +937,7 @@ type SearchTagRequest struct {
 	// The search string.
 	Query    string `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
 	PageSize uint32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is 0.
+	// The first page is returned if this is empty.
 	PageToken string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	// The field to order results by.
 	OrderBy OrderBy `protobuf:"varint,6,opt,name=order_by,json=orderBy,proto3,enum=buf.alpha.registry.v1alpha1.OrderBy" json:"order_by,omitempty"`
@@ -1032,7 +1032,7 @@ type SearchTagResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	RepositoryTags []*RepositoryTag `protobuf:"bytes,1,rep,name=repository_tags,json=repositoryTags,proto3" json:"repository_tags,omitempty"`
-	// There are no more pages if this is 0.
+	// There are no more pages if this is empty.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -1094,7 +1094,7 @@ type SearchDraftRequest struct {
 	// The search string.
 	Query    string `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
 	PageSize uint32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// The first page is returned if this is 0.
+	// The first page is returned if this is empty.
 	PageToken string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	// The field to order results by.
 	OrderBy OrderBy `protobuf:"varint,6,opt,name=order_by,json=orderBy,proto3,enum=buf.alpha.registry.v1alpha1.OrderBy" json:"order_by,omitempty"`
@@ -1189,7 +1189,7 @@ type SearchDraftResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	RepositoryCommits []*RepositoryCommit `protobuf:"bytes,1,rep,name=repository_commits,json=repositoryCommits,proto3" json:"repository_commits,omitempty"`
-	// There are no more pages if this is 0.
+	// There are no more pages if this is empty.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
