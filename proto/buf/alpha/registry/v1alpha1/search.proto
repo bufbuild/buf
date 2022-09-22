@@ -19,6 +19,7 @@ package buf.alpha.registry.v1alpha1;
 import "buf/alpha/registry/v1alpha1/plugin.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
+import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
 enum SearchFilter {
   SEARCH_FILTER_UNSPECIFIED = 0;
@@ -29,6 +30,13 @@ enum SearchFilter {
   SEARCH_FILTER_TEMPLATE = 5;
   SEARCH_FILTER_TEAM = 6;
   SEARCH_FILTER_CURATED_PLUGIN = 7;
+}
+
+enum OrderBy {
+  ORDER_BY_UNSPECIFIED = 0;
+  ORDER_BY_CREATE_TIME = 1;
+  ORDER_BY_UPDATE_TIME = 2;
+  ORDER_BY_NAME = 3;
 }
 
 message RepositorySearchResult {
@@ -105,8 +113,10 @@ message SearchResult {
 service SearchService {
   // Search searches the BSR.
   rpc Search(SearchRequest) returns (SearchResponse);
-  // SearchCommitReference searches in a repository
-  rpc SearchCommitReference(SearchCommitReferenceRequest) returns (SearchCommitReferenceResponse);
+  // SearchTag searches for tags in a repository
+  rpc SearchTag(SearchTagRequest) returns (SearchTagResponse);
+  // SearchDraft searches for drafts in a repository
+  rpc SearchDraft(SearchDraftRequest) returns (SearchDraftResponse);
 }
 
 message SearchRequest {
@@ -127,7 +137,7 @@ message SearchResponse {
   uint32 next_page_token = 2;
 }
 
-message SearchCommitReferenceRequest {
+message SearchTagRequest {
   // The owner of the repository.
   string repository_owner = 1;
   // The name of the repository.
@@ -135,12 +145,38 @@ message SearchCommitReferenceRequest {
   // The search string.
   string query = 3;
   uint32 page_size = 4;
-  // The first page is returned if this is 0.
-  uint32 page_token = 5;
+  // The first page is returned if this is empty.
+  string page_token = 5;
+  // The field to order results by.
+  OrderBy order_by = 6;
+  // Reverse orders results in descending order.
+  bool reverse = 7;
 }
 
-message SearchCommitReferenceResponse {
+message SearchTagResponse {
+  repeated RepositoryTag repository_tags = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message SearchDraftRequest {
+  // The owner of the repository.
+  string repository_owner = 1;
+  // The name of the repository.
+  string repository_name = 2;
+  // The search string.
+  string query = 3;
+  uint32 page_size = 4;
+  // The first page is returned if this is empty.
+  string page_token = 5;
+  // The field to order results by.
+  OrderBy order_by = 6;
+  // Reverse orders results in descending order.
+  bool reverse = 7;
+}
+
+message SearchDraftResponse {
   repeated RepositoryCommit repository_commits = 1;
-  // There are no more pages if this is 0.
-  uint32 next_page_token = 2;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
 }
