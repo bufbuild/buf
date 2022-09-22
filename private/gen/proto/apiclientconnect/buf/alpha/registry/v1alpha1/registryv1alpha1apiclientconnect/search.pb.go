@@ -60,10 +60,10 @@ func (s *searchServiceClient) SearchTag(
 	repositoryName string,
 	query string,
 	pageSize uint32,
-	pageToken uint32,
+	pageToken string,
 	orderBy v1alpha1.OrderBy,
 	reverse bool,
-) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken uint32, _ error) {
+) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken string, _ error) {
 	response, err := s.client.SearchTag(
 		ctx,
 		connect_go.NewRequest(
@@ -78,7 +78,7 @@ func (s *searchServiceClient) SearchTag(
 			}),
 	)
 	if err != nil {
-		return nil, 0, err
+		return nil, "", err
 	}
 	return response.Msg.RepositoryTags, response.Msg.NextPageToken, nil
 }
@@ -90,10 +90,10 @@ func (s *searchServiceClient) SearchDraft(
 	repositoryName string,
 	query string,
 	pageSize uint32,
-	pageToken uint32,
+	pageToken string,
 	orderBy v1alpha1.OrderBy,
 	reverse bool,
-) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken uint32, _ error) {
+) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
 	response, err := s.client.SearchDraft(
 		ctx,
 		connect_go.NewRequest(
@@ -108,7 +108,7 @@ func (s *searchServiceClient) SearchDraft(
 			}),
 	)
 	if err != nil {
-		return nil, 0, err
+		return nil, "", err
 	}
 	return response.Msg.RepositoryCommits, response.Msg.NextPageToken, nil
 }
