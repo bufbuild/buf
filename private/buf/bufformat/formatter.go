@@ -525,6 +525,9 @@ func (f *formatter) writeMessage(messageNode *ast.MessageNode) {
 //	  >
 //	}
 func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNode) {
+	if f.maybeWriteCompactMessageLiteral(messageLiteralNode, false) {
+		return
+	}
 	var elementWriterFunc func()
 	if len(messageLiteralNode.Elements) > 0 {
 		elementWriterFunc = func() {
@@ -543,6 +546,9 @@ func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNo
 func (f *formatter) writeMessageLiteralForArray(
 	messageLiteralNode *ast.MessageLiteralNode,
 ) {
+	if f.maybeWriteCompactMessageLiteral(messageLiteralNode, true) {
+		return
+	}
 	var elementWriterFunc func()
 	if len(messageLiteralNode.Elements) > 0 {
 		elementWriterFunc = func() {
@@ -556,6 +562,62 @@ func (f *formatter) writeMessageLiteralForArray(
 		f.writeOpenBracePrefixForArray,
 		f.writeBodyEndInline,
 	)
+}
+
+func (f *formatter) maybeWriteCompactMessageLiteral(
+	messageLiteralNode *ast.MessageLiteralNode,
+	inArrayLiteral bool,
+) bool {
+	if len(messageLiteralNode.Elements) == 0 || len(messageLiteralNode.Elements) > 1 ||
+		f.hasInteriorComments(messageLiteralNode) ||
+		messageLiteralHasNestedMessageOrArray(messageLiteralNode) {
+		return false
+	}
+	// messages with a single scalar field and no comments can be
+	// printed all on one line
+	if inArrayLiteral {
+		f.Indent()
+	}
+	f.writeInline(messageLiteralNode.Open)
+	fieldNode := messageLiteralNode.Elements[0]
+	f.writeInline(fieldNode.Name)
+	if fieldNode.Sep != nil {
+		f.writeInline(fieldNode.Sep)
+	}
+	f.Space()
+	f.writeInline(fieldNode.Val)
+	f.writeInline(messageLiteralNode.Close)
+	return true
+}
+
+func compactOptionHasMessageOrArray(compactOptionsNode *ast.CompactOptionsNode) bool {
+	for _, elem := range compactOptionsNode.Options {
+		switch elem.Val.(type) {
+		case *ast.ArrayLiteralNode, *ast.MessageLiteralNode:
+			return true
+		}
+	}
+	return false
+}
+
+func messageLiteralHasNestedMessageOrArray(messageLiteralNode *ast.MessageLiteralNode) bool {
+	for _, elem := range messageLiteralNode.Elements {
+		switch elem.Val.(type) {
+		case *ast.ArrayLiteralNode, *ast.MessageLiteralNode:
+			return true
+		}
+	}
+	return false
+}
+
+func arrayLiteralHasNestedMessageOrArray(arrayLiteralNode *ast.ArrayLiteralNode) bool {
+	for _, elem := range arrayLiteralNode.Elements {
+		switch elem.(type) {
+		case *ast.ArrayLiteralNode, *ast.MessageLiteralNode:
+			return true
+		}
+	}
+	return false
 }
 
 // writeMessageLiteralElements writes the message literal's elements.
@@ -1048,44 +1110,39 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 	defer func() {
 		f.inCompactOptions = false
 	}()
-	if len(compactOptionsNode.Options) == 1 {
-		// If there's only a single compact option without comments, we can write it in-line.
-		//
-		// For example,
+	if len(compactOptionsNode.Options) == 1 &&
+		!f.hasInteriorComments(compactOptionsNode) &&
+		!compactOptionHasMessageOrArray(compactOptionsNode) {
+		// If there's only a single compact scalar option without comments, we can write it
+		// in-line. For example:
 		//
 		//  [deprecated = true]
 		//
 		// However, this does not include the case when the '[' has trailing comments,
 		// or the option name has leading comments. In those cases, we write the option
-		// across multiple lines.
-		//
-		// For example,
+		// across multiple lines. For example:
 		//
 		//  [
 		//    // This type is deprecated.
-		//    deprecated = true;
+		//    deprecated = true
 		//  ]
 		//
 		optionNode := compactOptionsNode.Options[0]
-		openBracketInfo := f.fileNode.NodeInfo(compactOptionsNode.OpenBracket)
-		optionNameInfo := f.fileNode.NodeInfo(optionNode.Name)
-		if openBracketInfo.TrailingComments().Len() == 0 && optionNameInfo.LeadingComments().Len() == 0 {
-			f.writeInline(compactOptionsNode.OpenBracket)
-			f.writeInline(optionNode.Name)
-			f.Space()
-			f.writeInline(optionNode.Equals)
-			if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
-				// If there's only a single compact option, the value needs to
-				// write its comments (if any) in a way that preserves the closing ']'.
-				f.writeCompoundStringLiteralForSingleOption(node)
-				f.writeInline(compactOptionsNode.CloseBracket)
-				return
-			}
-			f.Space()
-			f.writeInline(optionNode.Val)
+		f.writeInline(compactOptionsNode.OpenBracket)
+		f.writeInline(optionNode.Name)
+		f.Space()
+		f.writeInline(optionNode.Equals)
+		if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
+			// If there's only a single compact option, the value needs to
+			// write its comments (if any) in a way that preserves the closing ']'.
+			f.writeCompoundStringLiteralForSingleOption(node)
 			f.writeInline(compactOptionsNode.CloseBracket)
 			return
 		}
+		f.Space()
+		f.writeInline(optionNode.Val)
+		f.writeInline(compactOptionsNode.CloseBracket)
+		return
 	}
 	var elementWriterFunc func()
 	if len(compactOptionsNode.Options) > 0 {
@@ -1111,6 +1168,26 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 	)
 }
 
+func (f *formatter) hasInteriorComments(n ast.Node) bool {
+	cn, ok := n.(ast.CompositeNode)
+	if !ok {
+		return false
+	}
+	children := cn.Children()
+	for i, child := range children {
+		// interior comments mean we ignore leading comments on first
+		// token and trailing comments on the last one
+		info := f.fileNode.NodeInfo(child)
+		if i > 0 && info.LeadingComments().Len() > 0 {
+			return true
+		}
+		if i < len(children)-1 && info.TrailingComments().Len() > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // writeArrayLiteral writes an array literal across multiple lines.
 //
 // For example,
@@ -1120,6 +1197,18 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 //	  "bar"
 //	]
 func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
+	if len(arrayLiteralNode.Elements) == 1 &&
+		!f.hasInteriorComments(arrayLiteralNode) &&
+		!arrayLiteralHasNestedMessageOrArray(arrayLiteralNode) {
+		// arrays with a single scalar value and no comments can be
+		// printed all on one line
+		valueNode := arrayLiteralNode.Elements[0]
+		f.writeInline(arrayLiteralNode.OpenBracket)
+		f.writeInline(valueNode)
+		f.writeInline(arrayLiteralNode.CloseBracket)
+		return
+	}
+
 	var elementWriterFunc func()
 	if len(arrayLiteralNode.Elements) > 0 {
 		elementWriterFunc = func() {

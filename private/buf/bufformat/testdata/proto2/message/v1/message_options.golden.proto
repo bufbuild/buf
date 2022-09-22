@@ -48,18 +48,18 @@ message Foo {
         /*trail*/
       ]
       d [
-        <
-          foo: 99
-        >,
-        <
-          foo: 98
-        >,
+        <foo: 99>,
+        <foo: 98>,
         <
           /*lead*/
           foo: 97
           /*trail*/
         >
       ]
+      e []
+      f {}
+      g: [1]
     >
+    frobnitz: <foo: 1>
   };
 }

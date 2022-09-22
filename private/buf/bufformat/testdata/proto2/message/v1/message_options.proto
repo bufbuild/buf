@@ -27,11 +27,16 @@ option (custom.message_thing_option)= {
   buzz:<
     a:"abc" b:"xyz"
     c:[ /*lead*/"foo", "bar", "baz"/*trail*/]
-    d[
-      <foo: 99>,
+    d[<
+        foo: 99
+      >,
       <foo:98>,
       </*lead*/foo:97/*trail*/>
     ]
+    e []
+    f { }
+       g: [1]
   >
+  frobnitz: <foo:1>
 };
 }
