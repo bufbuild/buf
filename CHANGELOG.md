@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 - Push lint and breaking configuration to the registry.
+- Fixed issues in formatter related to whitespace around inline comments.
+- Updated formatter to use a compact, single-line representation for array
+  and message literals in option values that are sufficiently simple (single
+  scalar element or field).
 
 ## [v1.8.0] - 2022-09-14
 
