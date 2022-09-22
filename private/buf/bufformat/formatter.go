@@ -117,10 +117,10 @@ func (f *formatter) WriteString(elem string) {
 	if f.pendingSpace {
 		f.pendingSpace = false
 		first, _ := utf8.DecodeRuneInString(elem)
-		// We don't want dangling spaces before a newline or
-		// before a semicolon. So only print the space if the
-		// next character to write is neither of those.
-		if first != '\n' && first != ';' {
+		// We don't want dangling spaces before a newline, a
+		// comma, or a semicolon. So only print the space if the
+		// next character to write is not any of those.
+		if first != '\n' && first != ';' && first != ',' {
 			if _, err := f.writer.Write([]byte{' '}); err != nil {
 				f.err = multierr.Append(f.err, err)
 				return
