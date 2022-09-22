@@ -38,10 +38,10 @@ type SearchService interface {
 		repositoryName string,
 		query string,
 		pageSize uint32,
-		pageToken uint32,
+		pageToken string,
 		orderBy v1alpha1.OrderBy,
 		reverse bool,
-	) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken uint32, err error)
+	) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken string, err error)
 	// SearchDraft searches for drafts in a repository
 	SearchDraft(
 		ctx context.Context,
@@ -49,8 +49,8 @@ type SearchService interface {
 		repositoryName string,
 		query string,
 		pageSize uint32,
-		pageToken uint32,
+		pageToken string,
 		orderBy v1alpha1.OrderBy,
 		reverse bool,
-	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken uint32, err error)
+	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
 }
