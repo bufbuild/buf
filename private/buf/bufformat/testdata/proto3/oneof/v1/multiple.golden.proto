@@ -19,5 +19,5 @@ message Foo {
     int64 four = 4;
   } // Trailing comment on oneof's '}'.
 
-// Another trailing comment before end of definition.
+  // Another trailing comment before end of definition.
 }

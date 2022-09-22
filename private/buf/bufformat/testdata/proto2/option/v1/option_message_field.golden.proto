@@ -53,7 +53,7 @@ message Test {
         // Leading comment on extension name.
         [/* One */ foo.bar.Test.Nested._NestedNested._garblez /* Two */] /* Three */ : "boo" // Trailing comment on extension name.
 
-      // Leading comment on '}'.
+        // Leading comment on '}'.
       };
       message NestedNestedNested {
         option (rept) = {

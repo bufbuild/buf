@@ -323,7 +323,7 @@ func (f *formatter) writePackage(packageNode *ast.PackageNode) {
 func (f *formatter) writeImport(importNode *ast.ImportNode) {
 	// We don't use f.writeStart here because the imports are sorted
 	// and potentially changed order.
-	f.writeBodyEndInline(importNode.Keyword)
+	f.writeElementInlineTrailing(importNode.Keyword, false)
 	f.Space()
 	// We don't want to write the "public" and "weak" nodes
 	// if they aren't defined. One could be set, but never both.
@@ -345,7 +345,7 @@ func (f *formatter) writeImport(importNode *ast.ImportNode) {
 func (f *formatter) writeFileOption(optionNode *ast.OptionNode) {
 	// We don't use f.writeStart here because the options are sorted
 	// and potentially changed order.
-	f.writeBodyEndInline(optionNode.Keyword)
+	f.writeElementInlineTrailing(optionNode.Keyword, false)
 	f.Space()
 	f.writeNode(optionNode.Name)
 	f.Space()
@@ -569,7 +569,7 @@ func (f *formatter) maybeWriteCompactMessageLiteral(
 	inArrayLiteral bool,
 ) bool {
 	if len(messageLiteralNode.Elements) == 0 || len(messageLiteralNode.Elements) > 1 ||
-		f.hasInteriorComments(messageLiteralNode) ||
+		f.hasInteriorComments(messageLiteralNode.Children()...) ||
 		messageLiteralHasNestedMessageOrArray(messageLiteralNode) {
 		return false
 	}
@@ -1101,7 +1101,7 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 		f.inCompactOptions = false
 	}()
 	if len(compactOptionsNode.Options) == 1 &&
-		!f.hasInteriorComments(compactOptionsNode) {
+		!f.hasInteriorComments(compactOptionsNode.OpenBracket, compactOptionsNode.Options[0].Name) {
 		// If there's only a single compact scalar option without comments, we can write it
 		// in-line. For example:
 		//
@@ -1157,20 +1157,15 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 	)
 }
 
-func (f *formatter) hasInteriorComments(n ast.Node) bool {
-	cn, ok := n.(ast.CompositeNode)
-	if !ok {
-		return false
-	}
-	children := cn.Children()
-	for i, child := range children {
+func (f *formatter) hasInteriorComments(nodes ...ast.Node) bool {
+	for i, n := range nodes {
 		// interior comments mean we ignore leading comments on first
 		// token and trailing comments on the last one
-		info := f.fileNode.NodeInfo(child)
+		info := f.fileNode.NodeInfo(n)
 		if i > 0 && info.LeadingComments().Len() > 0 {
 			return true
 		}
-		if i < len(children)-1 && info.TrailingComments().Len() > 0 {
+		if i < len(nodes)-1 && info.TrailingComments().Len() > 0 {
 			return true
 		}
 	}
@@ -1187,7 +1182,7 @@ func (f *formatter) hasInteriorComments(n ast.Node) bool {
 //	]
 func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
 	if len(arrayLiteralNode.Elements) == 1 &&
-		!f.hasInteriorComments(arrayLiteralNode) &&
+		!f.hasInteriorComments(arrayLiteralNode.Children()...) &&
 		!arrayLiteralHasNestedMessageOrArray(arrayLiteralNode) {
 		// arrays with a single scalar value and no comments can be
 		// printed all on one line
@@ -1215,7 +1210,7 @@ func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
 				}
 				if lastElement {
 					// The last element won't have a trailing comma.
-					f.writeBodyEnd(arrayLiteralNode.Elements[i])
+					f.writeElementEndLineTrailing(arrayLiteralNode.Elements[i], false)
 					return
 				}
 				f.writeStart(arrayLiteralNode.Elements[i])
@@ -1461,7 +1456,7 @@ func (f *formatter) writeCompoundStringLiteral(compoundStringLiteralNode *ast.Co
 			// wrote a newline, we need to add one here.
 			f.P()
 		}
-		f.writeBodyEnd(child)
+		f.writeElementEndLineTrailing(child, false)
 	}
 	f.Out()
 }
@@ -1487,10 +1482,10 @@ func (f *formatter) writeCompoundStringLiteralForSingleOption(compoundStringLite
 			f.P()
 		}
 		if i == len(compoundStringLiteralNode.Children())-1 {
-			f.writeBodyEndInline(child)
+			f.writeElementInlineTrailing(child, false)
 			break
 		}
-		f.writeBodyEnd(child)
+		f.writeElementEndLineTrailing(child, false)
 	}
 	f.Out()
 }
@@ -1513,10 +1508,10 @@ func (f *formatter) writeCompoundStringLiteralForArray(
 			}
 		}
 		if !lastElement && i == len(compoundStringLiteralNode.Children())-1 {
-			f.writeBodyEndInline(child)
+			f.writeElementInlineTrailing(child, false)
 			return
 		}
-		f.writeBodyEnd(child)
+		f.writeElementEndLineTrailing(child, false)
 	}
 }
 
@@ -1866,6 +1861,10 @@ func (f *formatter) writeInline(node ast.Node) {
 //	  // Leading comment on '}'.
 //	} // Trailing comment on '}.
 func (f *formatter) writeBodyEnd(node ast.Node) {
+	f.writeElementEndLineTrailing(node, true)
+}
+
+func (f *formatter) writeElementEndLineTrailing(node ast.Node, bodyEnd bool) {
 	if _, ok := node.(ast.CompositeNode); ok {
 		// We only want to write comments for terminal nodes.
 		// Otherwise comments accessible from CompositeNodes
@@ -1876,10 +1875,14 @@ func (f *formatter) writeBodyEnd(node ast.Node) {
 	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
 	if info.LeadingComments().Len() > 0 {
-		f.P()
-		f.In()
+		if bodyEnd {
+			f.P()
+			f.In()
+		}
 		f.writeMultilineComments(info.LeadingComments())
-		f.Out()
+		if bodyEnd {
+			f.Out()
+		}
 	}
 	f.Indent()
 	f.writeNode(node)
@@ -1911,10 +1914,14 @@ func (f *formatter) writeBodyEnd(node ast.Node) {
 //	  string bar = 1 [
 //	    deprecated = true
 //
-//	  // Leading comment on ']'.
+//	    // Leading comment on ']'.
 //	  ] /* Trailing comment on ']' */ ;
 //	}
 func (f *formatter) writeBodyEndInline(node ast.Node) {
+	f.writeElementInlineTrailing(node, true)
+}
+
+func (f *formatter) writeElementInlineTrailing(node ast.Node, bodyEnd bool) {
 	if _, ok := node.(ast.CompositeNode); ok {
 		// We only want to write comments for terminal nodes.
 		// Otherwise comments accessible from CompositeNodes
@@ -1925,18 +1932,24 @@ func (f *formatter) writeBodyEndInline(node ast.Node) {
 	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
 	if info.LeadingComments().Len() > 0 {
-		if f.previousHasTrailingComments() {
+		if bodyEnd {
 			// line between prior node's trailing comments and upcoming leading comments
 			f.P()
+			f.In()
 		}
-		f.In()
 		f.writeMultilineComments(info.LeadingComments())
-		f.Out()
+		if bodyEnd {
+			f.Out()
+		}
 	}
 	f.Indent()
 	f.writeNode(node)
 	if info.TrailingComments().Len() > 0 {
 		f.writeInlineComments(info.TrailingComments())
+		if bodyEnd && f.previousHasTrailingComments() {
+			// line between prior node's trailing comments and upcoming leading comments
+			f.P()
+		}
 	}
 }
 
@@ -2120,16 +2133,15 @@ func (f *formatter) hasTrailingComment(node ast.Node) bool {
 // need to add a newline (e.g. at the end of a composite type's body, and
 // for EOF comments).
 func (f *formatter) previousTrailingCommentsWroteNewline() bool {
-	previousTrailingComments := f.fileNode.NodeInfo(f.previousNode).TrailingComments()
-	if previousTrailingComments.Len() > 0 {
-		return newlineCount(previousTrailingComments.Index(0).LeadingWhitespace()) > 0
-	}
-	return false
+	return f.previousHasTrailingComments() && f.lastWritten == '\n'
 }
 
 // previousHasTrailingComments returns true if the previous node included
 // trailing comments
 func (f *formatter) previousHasTrailingComments() bool {
+	if f.previousNode == nil {
+		return false
+	}
 	previousTrailingComments := f.fileNode.NodeInfo(f.previousNode).TrailingComments()
 	return previousTrailingComments.Len() > 0
 }
