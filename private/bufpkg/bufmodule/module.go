@@ -141,11 +141,11 @@ func newModuleForBucket(
 	if err != nil {
 		return nil, err
 	}
-	documentation, err := getDocumentationForBucket(ctx, sourceReadBucket)
+	documentation, err := getFileContentForBucket(ctx, sourceReadBucket, DocumentationFilePath)
 	if err != nil {
 		return nil, err
 	}
-	license, err := getLicenseForBucket(ctx, sourceReadBucket)
+	license, err := getFileContentForBucket(ctx, sourceReadBucket, LicenseFilePath)
 	if err != nil {
 		return nil, err
 	}

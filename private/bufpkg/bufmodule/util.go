@@ -58,32 +58,19 @@ func moduleFileToProto(ctx context.Context, module Module, path string) (_ *modu
 	return protoModuleFile, nil
 }
 
-func getDocumentationForBucket(
+func getFileContentForBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
+	path string,
 ) (string, error) {
-	documentationData, err := storage.ReadPath(ctx, readBucket, DocumentationFilePath)
+	data, err := storage.ReadPath(ctx, readBucket, path)
 	if err != nil {
 		if storage.IsNotExist(err) {
 			return "", nil
 		}
 		return "", err
 	}
-	return string(documentationData), nil
-}
-
-func getLicenseForBucket(
-	ctx context.Context,
-	readBucket storage.ReadBucket,
-) (string, error) {
-	licenseData, err := storage.ReadPath(ctx, readBucket, LicenseFilePath)
-	if err != nil {
-		if storage.IsNotExist(err) {
-			return "", nil
-		}
-		return "", err
-	}
-	return string(licenseData), nil
+	return string(data), nil
 }
 
 func copyModulePinsSortedByOnlyCommit(modulePins []bufmoduleref.ModulePin) []bufmoduleref.ModulePin {
