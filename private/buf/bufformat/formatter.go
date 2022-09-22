@@ -83,9 +83,7 @@ func (f *formatter) P(elements ...string) {
 
 // Space adds a space to the generated output.
 func (f *formatter) Space() {
-	if !strings.ContainsRune("\x00 \t\n", f.lastWritten) {
-		f.pendingSpace = true
-	}
+	f.pendingSpace = true
 }
 
 // In increases the current level of indentation.
@@ -117,10 +115,16 @@ func (f *formatter) WriteString(elem string) {
 	if f.pendingSpace {
 		f.pendingSpace = false
 		first, _ := utf8.DecodeRuneInString(elem)
-		// We don't want dangling spaces before a newline, a
-		// comma, or a semicolon. So only print the space if the
-		// next character to write is not any of those.
-		if first != '\n' && first != ';' && first != ',' {
+
+		// We don't want "dangling spaces" before certain characters:
+		// newlines, commas, semicolons, and close parens/braces.
+		// Similarly, we don't want extra/doubled spaces or dangling
+		// spaces after certain characters: open parens/braces. So
+		// only print the space if the previous and next character
+		// don't match above conditions.
+
+		if !strings.ContainsRune("\x00 \t\n<[{(", f.lastWritten) &&
+			!strings.ContainsRune("\n;,)]}>", first) {
 			if _, err := f.writer.Write([]byte{' '}); err != nil {
 				f.err = multierr.Append(f.err, err)
 				return
@@ -538,7 +542,6 @@ func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNo
 // an element in an array literal.
 func (f *formatter) writeMessageLiteralForArray(
 	messageLiteralNode *ast.MessageLiteralNode,
-	lastElement bool,
 ) {
 	var elementWriterFunc func()
 	if len(messageLiteralNode.Elements) > 0 {
@@ -1183,7 +1186,7 @@ func (f *formatter) writeCompositeValueForArrayLiteral(
 	case *ast.SignedFloatLiteralNode:
 		f.writeSignedFloatLiteralForArray(node, lastElement)
 	case *ast.MessageLiteralNode:
-		f.writeMessageLiteralForArray(node, lastElement)
+		f.writeMessageLiteralForArray(node)
 	default:
 		f.err = multierr.Append(f.err, fmt.Errorf("unexpected array value node %T", node))
 	}
@@ -1284,9 +1287,6 @@ func (f *formatter) writeBody(
 		}
 	}
 	f.Out()
-	if info := f.fileNode.NodeInfo(closeBrace); info.LeadingComments().Len() > 0 {
-		f.P()
-	}
 	closeBraceWriterFunc(closeBrace)
 }
 
@@ -1785,8 +1785,7 @@ func (f *formatter) writeInline(node ast.Node) {
 //
 //	message Foo {
 //	  string bar = 1;
-//
-//	// Leading comment on '}'.
+//	  // Leading comment on '}'.
 //	} // Trailing comment on '}.
 func (f *formatter) writeBodyEnd(node ast.Node) {
 	if _, ok := node.(ast.CompositeNode); ok {
@@ -1799,7 +1798,10 @@ func (f *formatter) writeBodyEnd(node ast.Node) {
 	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
 	if info.LeadingComments().Len() > 0 {
+		f.P()
+		f.In()
 		f.writeMultilineComments(info.LeadingComments())
+		f.Out()
 	}
 	f.Indent()
 	f.writeNode(node)
@@ -1845,7 +1847,13 @@ func (f *formatter) writeBodyEndInline(node ast.Node) {
 	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
 	if info.LeadingComments().Len() > 0 {
+		if f.previousHasTrailingComments() {
+			// line between prior node's trailing comments and upcoming leading comments
+			f.P()
+		}
+		f.In()
 		f.writeMultilineComments(info.LeadingComments())
+		f.Out()
 	}
 	f.Indent()
 	f.writeNode(node)
@@ -2039,6 +2047,13 @@ func (f *formatter) previousTrailingCommentsWroteNewline() bool {
 		return newlineCount(previousTrailingComments.Index(0).LeadingWhitespace()) > 0
 	}
 	return false
+}
+
+// previousHasTrailingComments returns true if the previous node included
+// trailing comments
+func (f *formatter) previousHasTrailingComments() bool {
+	previousTrailingComments := f.fileNode.NodeInfo(f.previousNode).TrailingComments()
+	return previousTrailingComments.Len() > 0
 }
 
 // stringForOptionName returns the string representation of the given option name node.

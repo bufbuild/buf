@@ -20,5 +20,5 @@ service /* Before Ping comment */ Ping /* After Ping comment */ {
   }
 
   // The Streamer method is bidirectional.
-  rpc Streamer( /* Client-side streaming */ stream Message) returns (stream /* Server-side streaming */ Message);
+  rpc Streamer(/* Client-side streaming */ stream Message) returns (stream /* Server-side streaming */ Message);
 }
