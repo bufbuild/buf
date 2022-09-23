@@ -1,0 +1,21 @@
+name: Bypass review in case of emergency
+on:
+  pull_request:
+    types:
+      - labeled
+permissions:
+  pull-requests: write
+jobs:
+  approve:
+    if: github.event.label.name == 'Emergency Bypass Review'
+    runs-on: self-hosted
+    steps:
+      - name: approve pull request
+        uses: hmarr/auto-approve-action@9ae347e9f84a25da76c915a406cb17cfece1716d
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.inputs.pullRequestNumber }}
+      - name: Slack Notification
+        run: |
+          jq --null-input '{ text: "Oh no! The following PR was emergency approved: ${{github.event.pull_request.html_url}}" }' \
+          | curl -sSL -X POST -H 'Content-Type: application/json' -d @- '${{ secrets.SLACK_MERGE_WITHOUT_APPROVAL_WEBHOOK }}'

@@ -1,0 +1,30 @@
+name: PR Approval Bypass Notifier
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+permissions:
+  pull-requests: read
+jobs:
+  approval:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail If No Approval
+        if: ${{ github.event.pull_request.merged }}
+        env:
+          AUTH_HEADER: 'Authorization: token ${{ secrets.GITHUB_TOKEN }}'
+          JSON_HEADER: 'Content-Type: application/json'
+          REVIEWS_URL: 'https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews'
+        run: |
+          curl -sSL -H "${JSON_HEADER}" -H "${AUTH_HEADER}" "${REVIEWS_URL}" \
+            | jq -e '. | map({user: .user.login, state: .state})
+                       | reduce .[] as $x ({}; .[$x.user] = $x.state)
+                       | to_entries | map(.value)
+                       | contains(["APPROVED"]) and (contains(["CHANGES_REQUESTED"]) | not)'
+      - name: Slack Notification
+        if: ${{ failure() }}
+        run: |
+          jq --null-input '{ text: "Oh no! The following PR was merged without approval: w${{github.event.pull_request.html_url}}" }' \
+          | curl -sSL -X POST -H 'Content-Type: application/json' -d @- '${{ secrets.SLACK_MERGE_WITHOUT_APPROVAL_WEBHOOK }}'
