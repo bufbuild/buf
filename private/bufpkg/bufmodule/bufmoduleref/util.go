@@ -129,9 +129,9 @@ func newInvalidModuleOwnerStringError(s string) error {
 }
 
 func newInvalidModuleIdentityStringError(s string) error {
-	return fmt.Errorf("module identity %q is invalid: must be in the form remote/owner/repository", s)
+	return fmt.Errorf("module identity %q is invalid: must be in the form remote/owner/module", s)
 }
 
 func newInvalidModuleReferenceStringError(s string) error {
-	return fmt.Errorf("module reference %q is invalid: must be in the form remote/owner/repository:reference", s)
+	return fmt.Errorf("module reference %q is invalid: must be in the form remote/owner/module:reference", s)
 }

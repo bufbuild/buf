@@ -139,7 +139,7 @@ type ModuleIdentity interface {
 
 	Repository() string
 
-	// IdentityString is the string remote/owner/repository.
+	// IdentityString is the string remote/owner/module.
 	IdentityString() string
 
 	isModuleIdentity()
@@ -156,7 +156,7 @@ func NewModuleIdentity(
 
 // ModuleIdentityForString returns a new ModuleIdentity for the given string.
 //
-// This parses the path in the form remote/owner/repository
+// This parses the path in the form remote/owner/module
 //
 // TODO: we may want to add a special error if we detect / or @ as this may be a common mistake.
 func ModuleIdentityForString(path string) (ModuleIdentity, error) {
@@ -175,8 +175,8 @@ func ModuleIdentityForString(path string) (ModuleIdentity, error) {
 type ModuleReference interface {
 	ModuleIdentity
 
-	// Prints either remote/owner/repository:{branch,commit}
-	// If the reference is equal to MainBranch, prints remote/owner/repository.
+	// Prints either remote/owner/module:{branch,commit}
+	// If the reference is equal to MainBranch, prints remote/owner/module.
 	fmt.Stringer
 
 	// Either branch, tag, or commit
@@ -236,7 +236,7 @@ func NewProtoModuleReferencesForModuleReferences(moduleReferences ...ModuleRefer
 // ModuleReferenceForString returns a new ModuleReference for the given string.
 // If a branch, commit, draft, or tag is not provided, the "main" branch is used.
 //
-// This parses the path in the form remote/owner/repository{:branch,:commit,:draft,:tag}.
+// This parses the path in the form remote/owner/module{:branch,:commit,:draft,:tag}.
 func ModuleReferenceForString(path string) (ModuleReference, error) {
 	remote, owner, repository, reference, err := parseModuleReferenceComponents(path)
 	if err != nil {
@@ -272,7 +272,7 @@ func IsCommitReference(reference string) bool {
 type ModulePin interface {
 	ModuleIdentity
 
-	// Prints remote/owner/repository:commit, which matches ModuleReference
+	// Prints remote/owner/module:commit, which matches ModuleReference
 	fmt.Stringer
 
 	// all of these will be set

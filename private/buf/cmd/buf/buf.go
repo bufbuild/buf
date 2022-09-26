@@ -232,7 +232,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "webhook",
-								Short: "Manage webhooks for a repository on the Buf Schema Registry.",
+								Short: "Manage webhooks for a module on the Buf Schema Registry.",
 								SubCommands: []*appcmd.Command{
 									webhookcreate.NewCommand("create", builder),
 									webhookdelete.NewCommand("delete", builder),

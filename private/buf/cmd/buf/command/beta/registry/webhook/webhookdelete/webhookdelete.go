@@ -37,7 +37,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: "Delete a repository webhook.",
+		Short: "Delete a module webhook.",
 		Args:  cobra.ExactArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

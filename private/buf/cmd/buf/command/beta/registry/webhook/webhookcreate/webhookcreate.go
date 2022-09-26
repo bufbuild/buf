@@ -43,7 +43,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: "Create a repository webhook.",
+		Short: "Create a module webhook.",
 		Args:  cobra.ExactArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

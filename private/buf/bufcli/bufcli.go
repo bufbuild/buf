@@ -1020,8 +1020,8 @@ func createCacheDirs(dirPaths ...string) error {
 	return nil
 }
 
-// parseFullyQualifiedPath parse a string in <buf.build/owner/repository#fully-qualified-type> or
-// <buf.build/owner/repository:reference#fully-qualified-type> format into a module reference and a type name
+// parseFullyQualifiedPath parse a string in <buf.build/owner/module#fully-qualified-type> or
+// <buf.build/owner/module:reference#fully-qualified-type> format into a module reference and a type name
 func parseFullyQualifiedPath(
 	fullyQualifiedPath string,
 ) (moduleRef string, typeName string, _ error) {

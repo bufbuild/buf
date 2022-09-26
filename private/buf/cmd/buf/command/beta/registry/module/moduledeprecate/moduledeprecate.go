@@ -35,8 +35,8 @@ const (
 func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Deprecate a repository on the BSR.",
+		Use:   name + " <buf.build/owner/module>",
+		Short: "Deprecate a module on the BSR.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -90,7 +90,7 @@ func run(ctx context.Context, container appflag.Container, flags *flags) error {
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository deprecated."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Module deprecated."); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil
