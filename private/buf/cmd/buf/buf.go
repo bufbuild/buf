@@ -171,7 +171,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "tag",
-								Short: "Manage a repository's tags.",
+								Short: "Manage a module's tags.",
 								SubCommands: []*appcmd.Command{
 									tagcreate.NewCommand("create", builder),
 									taglist.NewCommand("list", builder),
@@ -179,7 +179,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "commit",
-								Short: "Manage a repository's commits.",
+								Short: "Manage a module's commits.",
 								SubCommands: []*appcmd.Command{
 									commitget.NewCommand("get", builder),
 									commitlist.NewCommand("list", builder),
@@ -187,7 +187,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "draft",
-								Short: "Manage a repository's drafts.",
+								Short: "Manage a module's drafts.",
 								SubCommands: []*appcmd.Command{
 									draftdelete.NewCommand("delete", builder),
 									draftlist.NewCommand("list", builder),
