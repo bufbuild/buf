@@ -85,7 +85,7 @@ func run(
 		return err
 	}
 	if !flags.Force {
-		if err := bufcli.PromptUserForDelete(container, "repository", moduleIdentity.Repository()); err != nil {
+		if err := bufcli.PromptUserForDelete(container, "module", moduleIdentity.Repository()); err != nil {
 			return err
 		}
 	}
@@ -95,7 +95,7 @@ func run(
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository deleted."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Module deleted."); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil

@@ -60,7 +60,7 @@ func run(ctx context.Context, container appflag.Container) error {
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository undeprecated."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Module undeprecated."); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil
