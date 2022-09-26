@@ -244,7 +244,7 @@ func getDependencies(
 	for dependencyRemote, dependencyModulePins := range remoteToDependencyModulePins {
 		repositoryService, ok := remoteToRepositoryService[dependencyRemote]
 		if !ok {
-			return nil, fmt.Errorf("a repository service is not available for %s", dependencyRemote)
+			return nil, fmt.Errorf("a module service is not available for %s", dependencyRemote)
 		}
 		dependencyFullNames := make([]string, len(dependencyModulePins))
 		for i, pin := range dependencyModulePins {

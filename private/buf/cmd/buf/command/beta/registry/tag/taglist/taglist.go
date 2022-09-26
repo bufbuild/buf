@@ -43,7 +43,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/module>",
-		Short: "List tags for the specified repository.",
+		Short: "List tags for the specified module.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -97,7 +97,7 @@ func run(
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
 	if container.Arg(0) == "" {
-		return appcmd.NewInvalidArgumentError("repository is required")
+		return appcmd.NewInvalidArgumentError("module is required")
 	}
 	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
 	if err != nil {

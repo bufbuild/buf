@@ -30,7 +30,7 @@ import (
 func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/module>",
-		Short: "Undeprecate a BSR repository.",
+		Short: "Undeprecate a BSR module.",
 		Args:  cobra.ExactArgs(1),
 		Run:   builder.NewRunFunc(run, bufcli.NewErrorInterceptor()),
 	}

@@ -38,7 +38,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/module>",
-		Short: "Get a BSR repository by name.",
+		Short: "Get a BSR module by name.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

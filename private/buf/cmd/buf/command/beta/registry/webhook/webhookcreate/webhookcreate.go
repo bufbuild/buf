@@ -29,7 +29,7 @@ import (
 
 const (
 	ownerFlagName        = "owner"
-	repositoryFlagName   = "repository"
+	repositoryFlagName   = "module"
 	callbackURLFlagName  = "callback-url"
 	webhookEventFlagName = "event"
 	remoteFlagName       = "remote"
@@ -79,14 +79,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.OwnerName,
 		ownerFlagName,
 		"",
-		`The owner name of the repository to create a webhook for.`,
+		`The owner name of the module to create a webhook for.`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, ownerFlagName)
 	flagSet.StringVar(
 		&f.RepositoryName,
 		repositoryFlagName,
 		"",
-		"The repository name to create a webhook for.",
+		"The module name to create a webhook for.",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, repositoryFlagName)
 	flagSet.StringVar(
@@ -100,7 +100,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Remote,
 		remoteFlagName,
 		"",
-		"The remote of the repository the created webhook will belong to.",
+		"The remote of the module the created webhook will belong to.",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
 }
