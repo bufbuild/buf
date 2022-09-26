@@ -196,7 +196,7 @@ func validateModuleIdentity(moduleIdentity ModuleIdentity) error {
 	if err := ValidateOwner(moduleIdentity.Owner(), "owner"); err != nil {
 		return err
 	}
-	if err := ValidateRepository(moduleIdentity.Repository()); err != nil {
+	if err := ValidateRepository(moduleIdentity.Module()); err != nil {
 		return err
 	}
 	return nil

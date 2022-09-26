@@ -151,14 +151,14 @@ func (m *moduleReader) GetModule(
 	}
 	repository, _, err := repositoryService.GetRepositoryByFullName(
 		ctx,
-		fmt.Sprintf("%s/%s", modulePin.Owner(), modulePin.Repository()),
+		fmt.Sprintf("%s/%s", modulePin.Owner(), modulePin.Module()),
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	if repository.Deprecated {
-		warnMsg := fmt.Sprintf(`Repository "%s" is deprecated`, modulePin.IdentityString())
+		warnMsg := fmt.Sprintf(`Module "%s" is deprecated`, modulePin.IdentityString())
 		if repository.DeprecationMessage != "" {
 			warnMsg = fmt.Sprintf("%s: %s", warnMsg, repository.DeprecationMessage)
 		}

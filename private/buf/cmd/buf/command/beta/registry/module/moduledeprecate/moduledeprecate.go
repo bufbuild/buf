@@ -82,7 +82,7 @@ func run(ctx context.Context, container appflag.Container, flags *flags) error {
 	if _, err = service.DeprecateRepositoryByName(
 		ctx,
 		moduleIdentity.Owner(),
-		moduleIdentity.Repository(),
+		moduleIdentity.Module(),
 		flags.Message,
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {

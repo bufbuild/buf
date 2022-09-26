@@ -155,7 +155,7 @@ type Location interface {
 type ModuleIdentity interface {
 	Remote() string
 	Owner() string
-	Repository() string
+	Module() string
 }
 
 // FileInfo contains Protobuf file info.

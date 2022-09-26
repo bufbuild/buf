@@ -36,7 +36,7 @@ func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/module>",
-		Short: "Update a BSR repository settings.",
+		Short: "Update a BSR module settings.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -85,7 +85,7 @@ func run(
 	if err = service.UpdateRepositorySettingsByName(
 		ctx,
 		moduleIdentity.Owner(),
-		moduleIdentity.Repository(),
+		moduleIdentity.Module(),
 		visibility,
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {

@@ -40,7 +40,7 @@ func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/module>",
-		Short: "List drafts for the specified repository.",
+		Short: "List drafts for the specified module.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -112,7 +112,7 @@ func run(
 	repositoryCommits, nextPageToken, err := service.ListRepositoryDraftCommits(
 		ctx,
 		moduleIdentity.Owner(),
-		moduleIdentity.Repository(),
+		moduleIdentity.Module(),
 		flags.PageSize,
 		flags.PageToken,
 		flags.Reverse,

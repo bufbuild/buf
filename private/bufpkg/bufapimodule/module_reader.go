@@ -44,7 +44,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 	module, err := downloadService.Download(
 		ctx,
 		modulePin.Owner(),
-		modulePin.Repository(),
+		modulePin.Module(),
 		modulePin.Commit(),
 	)
 	if err != nil {
@@ -57,7 +57,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
 		modulePin.Remote(),
 		modulePin.Owner(),
-		modulePin.Repository(),
+		modulePin.Module(),
 	)
 	if err != nil {
 		return nil, err

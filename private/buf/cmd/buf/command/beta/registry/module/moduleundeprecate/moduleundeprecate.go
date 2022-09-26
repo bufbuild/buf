@@ -30,7 +30,7 @@ import (
 func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/module>",
-		Short: "Undeprecate a BSR repository.",
+		Short: "Undeprecate a BSR module.",
 		Args:  cobra.ExactArgs(1),
 		Run:   builder.NewRunFunc(run, bufcli.NewErrorInterceptor()),
 	}
@@ -53,14 +53,14 @@ func run(ctx context.Context, container appflag.Container) error {
 	if _, err = service.UndeprecateRepositoryByName(
 		ctx,
 		moduleIdentity.Owner(),
-		moduleIdentity.Repository(),
+		moduleIdentity.Module(),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository undeprecated."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Module undeprecated."); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil

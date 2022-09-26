@@ -152,10 +152,10 @@ func run(
 			continue
 		}
 		warnMsg := fmt.Sprintf(
-			`Repository "%s/%s/%s" is deprecated`,
+			`Module "%s/%s/%s" is deprecated`,
 			modulePin.Remote(),
 			modulePin.Owner(),
-			modulePin.Repository(),
+			modulePin.Module(),
 		)
 		if repository.DeprecationMessage != "" {
 			warnMsg = fmt.Sprintf("%s: %s", warnMsg, repository.DeprecationMessage)
@@ -244,11 +244,11 @@ func getDependencies(
 	for dependencyRemote, dependencyModulePins := range remoteToDependencyModulePins {
 		repositoryService, ok := remoteToRepositoryService[dependencyRemote]
 		if !ok {
-			return nil, fmt.Errorf("a repository service is not available for %s", dependencyRemote)
+			return nil, fmt.Errorf("a module service is not available for %s", dependencyRemote)
 		}
 		dependencyFullNames := make([]string, len(dependencyModulePins))
 		for i, pin := range dependencyModulePins {
-			dependencyFullNames[i] = fmt.Sprintf("%s/%s", pin.Owner(), pin.Repository())
+			dependencyFullNames[i] = fmt.Sprintf("%s/%s", pin.Owner(), pin.Module())
 		}
 		dependencyRepos, err := repositoryService.GetRepositoriesByFullName(ctx, dependencyFullNames)
 		if err != nil {

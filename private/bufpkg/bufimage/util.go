@@ -335,7 +335,7 @@ func fileDescriptorProtoToProtoImageFile(
 			Name: &imagev1.ModuleName{
 				Remote:     proto.String(moduleIdentity.Remote()),
 				Owner:      proto.String(moduleIdentity.Owner()),
-				Repository: proto.String(moduleIdentity.Repository()),
+				Repository: proto.String(moduleIdentity.Module()),
 			},
 		}
 		if moduleCommit != "" {

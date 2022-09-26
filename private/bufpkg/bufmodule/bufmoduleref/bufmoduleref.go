@@ -137,7 +137,7 @@ func ModuleOwnerForString(path string) (ModuleOwner, error) {
 type ModuleIdentity interface {
 	ModuleOwner
 
-	Repository() string
+	Module() string
 
 	// IdentityString is the string remote/owner/module.
 	IdentityString() string
@@ -373,7 +373,7 @@ func ModuleReferenceEqual(a ModuleReference, b ModuleReference) bool {
 	}
 	return a.Remote() == b.Remote() &&
 		a.Owner() == b.Owner() &&
-		a.Repository() == b.Repository() &&
+		a.Module() == b.Module() &&
 		a.Reference() == b.Reference()
 }
 
@@ -387,7 +387,7 @@ func ModulePinEqual(a ModulePin, b ModulePin) bool {
 	}
 	return a.Remote() == b.Remote() &&
 		a.Owner() == b.Owner() &&
-		a.Repository() == b.Repository() &&
+		a.Module() == b.Module() &&
 		a.Branch() == b.Branch() &&
 		a.Commit() == b.Commit() &&
 		a.CreateTime().Equal(b.CreateTime())
@@ -444,7 +444,7 @@ func PutDependencyModulePinsToBucket(
 			buflock.Dependency{
 				Remote:     pin.Remote(),
 				Owner:      pin.Owner(),
-				Repository: pin.Repository(),
+				Repository: pin.Module(),
 				Commit:     pin.Commit(),
 			},
 		)

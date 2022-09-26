@@ -263,7 +263,7 @@ func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string) {
 		addr,
 		flagName,
 		"",
-		fmt.Sprintf(`The repository's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The module's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 }
 

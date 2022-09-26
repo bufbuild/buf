@@ -37,7 +37,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repo:draft>",
-		Short: "Delete a draft of a BSR repository by name.",
+		Short: "Delete a draft of a BSR module by name.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -104,7 +104,7 @@ func run(
 	if err := service.DeleteRepositoryDraftCommit(
 		ctx,
 		moduleReference.Owner(),
-		moduleReference.Repository(),
+		moduleReference.Module(),
 		moduleReference.Reference(),
 	); err != nil {
 		// not explicitly handling error with connect.CodeNotFound as it can be repository not found or draft not found.

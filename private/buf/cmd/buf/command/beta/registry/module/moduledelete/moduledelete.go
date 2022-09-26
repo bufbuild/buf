@@ -37,7 +37,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/module>",
-		Short: "Delete a BSR repository by name.",
+		Short: "Delete a BSR module by name.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -85,17 +85,17 @@ func run(
 		return err
 	}
 	if !flags.Force {
-		if err := bufcli.PromptUserForDelete(container, "repository", moduleIdentity.Repository()); err != nil {
+		if err := bufcli.PromptUserForDelete(container, "module", moduleIdentity.Module()); err != nil {
 			return err
 		}
 	}
-	if err := service.DeleteRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Repository()); err != nil {
+	if err := service.DeleteRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Module()); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository deleted."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Module deleted."); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil

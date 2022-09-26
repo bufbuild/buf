@@ -97,10 +97,10 @@ func modulePinCompareTo(a ModulePin, b ModulePin) int {
 	if a.Owner() > b.Owner() {
 		return 1
 	}
-	if a.Repository() < b.Repository() {
+	if a.Module() < b.Module() {
 		return -1
 	}
-	if a.Repository() > b.Repository() {
+	if a.Module() > b.Module() {
 		return 1
 	}
 	if a.Branch() < b.Branch() {
