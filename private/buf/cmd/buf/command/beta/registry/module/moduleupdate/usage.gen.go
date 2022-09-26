@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package repositorylist
+package moduleupdate
 
 import _ "github.com/bufbuild/buf/private/usage"

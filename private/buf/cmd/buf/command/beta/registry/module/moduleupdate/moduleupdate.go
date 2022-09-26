@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositoryundeprecate
+package moduleupdate
 
 import (
 	"context"
@@ -24,21 +24,53 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+)
+
+const (
+	visibilityFlagName = "visibility"
 )
 
 // NewCommand returns a new Command
 func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
+	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "Undeprecate a BSR repository.",
+		Short: "Update a BSR repository settings.",
 		Args:  cobra.ExactArgs(1),
-		Run:   builder.NewRunFunc(run, bufcli.NewErrorInterceptor()),
+		Run: builder.NewRunFunc(
+			func(ctx context.Context, container appflag.Container) error {
+				return run(ctx, container, flags)
+			},
+			bufcli.NewErrorInterceptor(),
+		),
+		BindFlags: flags.Bind,
 	}
 }
 
-func run(ctx context.Context, container appflag.Container) error {
+type flags struct {
+	Visibility string
+}
+
+func newFlags() *flags {
+	return &flags{}
+}
+
+func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
+}
+
+func run(
+	ctx context.Context,
+	container appflag.Container,
+	flags *flags,
+) error {
 	bufcli.WarnBetaCommand(ctx, container)
 	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	visibility, err := bufcli.VisibilityFlagToVisibilityAllowUnspecified(flags.Visibility)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -50,17 +82,18 @@ func run(ctx context.Context, container appflag.Container) error {
 	if err != nil {
 		return err
 	}
-	if _, err = service.UndeprecateRepositoryByName(
+	if err = service.UpdateRepositorySettingsByName(
 		ctx,
 		moduleIdentity.Owner(),
 		moduleIdentity.Repository(),
+		visibility,
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository undeprecated."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Settings Updated."); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil

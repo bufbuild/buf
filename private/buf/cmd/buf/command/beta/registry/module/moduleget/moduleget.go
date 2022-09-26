@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorylist
+package moduleget
 
 import (
 	"context"
@@ -23,16 +23,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-const (
-	pageSizeFlagName  = "page-size"
-	pageTokenFlagName = "page-token"
-	reverseFlagName   = "reverse"
-	formatFlagName    = "format"
-)
+const formatFlagName = "format"
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -41,8 +37,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build>",
-		Short: "List BSR repositories.",
+		Use:   name + " <buf.build/owner/repository>",
+		Short: "Get a BSR repository by name.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -55,10 +51,7 @@ func NewCommand(
 }
 
 type flags struct {
-	PageSize  uint32
-	PageToken string
-	Reverse   bool
-	Format    string
+	Format string
 }
 
 func newFlags() *flags {
@@ -66,21 +59,6 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.Uint32Var(&f.PageSize,
-		pageSizeFlagName,
-		10,
-		`The page size.`,
-	)
-	flagSet.StringVar(&f.PageToken,
-		pageTokenFlagName,
-		"",
-		`The page token. If more results are available, a "next_page" key is present in the --format=json output.`,
-	)
-	flagSet.BoolVar(&f.Reverse,
-		reverseFlagName,
-		false,
-		`Reverse the results.`,
-	)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
@@ -95,12 +73,9 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	remote := container.Arg(0)
-	if err := bufmoduleref.ValidateRemoteNotEmpty(remote); err != nil {
-		return err
-	}
-	if err := bufmoduleref.ValidateRemoteHasNoPaths(remote); err != nil {
-		return err
+	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
@@ -111,22 +86,23 @@ func run(
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewRepositoryService(ctx, remote)
+	service, err := apiProvider.NewRepositoryService(ctx, moduleIdentity.Remote())
 	if err != nil {
 		return err
 	}
-	repositories, nextPageToken, err := service.ListRepositories(
+	repository, _, err := service.GetRepositoryByFullName(
 		ctx,
-		flags.PageSize,
-		flags.PageToken,
-		flags.Reverse,
+		moduleIdentity.Owner()+"/"+moduleIdentity.Repository(),
 	)
 	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+		}
 		return err
 	}
 	return bufprint.NewRepositoryPrinter(
 		apiProvider,
-		remote,
+		moduleIdentity.Remote(),
 		container.Stdout(),
-	).PrintRepositories(ctx, format, nextPageToken, repositories...)
+	).PrintRepository(ctx, format, repository)
 }

@@ -131,7 +131,7 @@ func ModuleOwnerForString(path string) (ModuleOwner, error) {
 
 // ModuleIdentity is a module identity.
 //
-// It just contains remote, owner, repository.
+// It just contains remote, owner, module.
 //
 // This is shared by ModuleReference and ModulePin.
 type ModuleIdentity interface {

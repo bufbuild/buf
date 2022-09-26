@@ -12,76 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositoryget
+package moduleundeprecate
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
-const formatFlagName = "format"
-
 // NewCommand returns a new Command
-func NewCommand(
-	name string,
-	builder appflag.Builder,
-) *appcmd.Command {
-	flags := newFlags()
+func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "Get a BSR repository by name.",
+		Short: "Undeprecate a BSR repository.",
 		Args:  cobra.ExactArgs(1),
-		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
-				return run(ctx, container, flags)
-			},
-			bufcli.NewErrorInterceptor(),
-		),
-		BindFlags: flags.Bind,
+		Run:   builder.NewRunFunc(run, bufcli.NewErrorInterceptor()),
 	}
 }
 
-type flags struct {
-	Format string
-}
-
-func newFlags() *flags {
-	return &flags{}
-}
-
-func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.Format,
-		formatFlagName,
-		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
-	)
-}
-
-func run(
-	ctx context.Context,
-	container appflag.Container,
-	flags *flags,
-) error {
+func run(ctx context.Context, container appflag.Container) error {
 	bufcli.WarnBetaCommand(ctx, container)
 	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	format, err := bufprint.ParseFormat(flags.Format)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
@@ -90,19 +50,18 @@ func run(
 	if err != nil {
 		return err
 	}
-	repository, _, err := service.GetRepositoryByFullName(
+	if _, err = service.UndeprecateRepositoryByName(
 		ctx,
-		moduleIdentity.Owner()+"/"+moduleIdentity.Repository(),
-	)
-	if err != nil {
+		moduleIdentity.Owner(),
+		moduleIdentity.Repository(),
+	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	return bufprint.NewRepositoryPrinter(
-		apiProvider,
-		moduleIdentity.Remote(),
-		container.Stdout(),
-	).PrintRepository(ctx, format, repository)
+	if _, err := fmt.Fprintln(container.Stdout(), "Repository undeprecated."); err != nil {
+		return bufcli.NewInternalError(err)
+	}
+	return nil
 }

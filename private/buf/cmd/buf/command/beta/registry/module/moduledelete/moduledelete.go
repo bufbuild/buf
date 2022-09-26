@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorydeprecate
+package moduledelete
 
 import (
 	"context"
@@ -27,16 +27,17 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const (
-	messageFlagName = "message"
-)
+const forceFlagName = "force"
 
 // NewCommand returns a new Command
-func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
+func NewCommand(
+	name string,
+	builder appflag.Builder,
+) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "Deprecate a repository on the BSR.",
+		Short: "Delete a BSR repository by name.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -49,7 +50,7 @@ func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 }
 
 type flags struct {
-	Message string
+	Force bool
 }
 
 func newFlags() *flags {
@@ -57,15 +58,19 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.Message,
-		messageFlagName,
-		"",
-		`The message to display with deprecation warnings.`,
+	flagSet.BoolVar(
+		&f.Force,
+		forceFlagName,
+		false,
+		"Force deletion without confirming. Use with caution.",
 	)
 }
 
-func run(ctx context.Context, container appflag.Container, flags *flags) error {
+func run(
+	ctx context.Context,
+	container appflag.Container,
+	flags *flags,
+) error {
 	bufcli.WarnBetaCommand(ctx, container)
 	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
 	if err != nil {
@@ -79,18 +84,18 @@ func run(ctx context.Context, container appflag.Container, flags *flags) error {
 	if err != nil {
 		return err
 	}
-	if _, err = service.DeprecateRepositoryByName(
-		ctx,
-		moduleIdentity.Owner(),
-		moduleIdentity.Repository(),
-		flags.Message,
-	); err != nil {
+	if !flags.Force {
+		if err := bufcli.PromptUserForDelete(container, "repository", moduleIdentity.Repository()); err != nil {
+			return err
+		}
+	}
+	if err := service.DeleteRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Repository()); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository deprecated."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Repository deleted."); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil

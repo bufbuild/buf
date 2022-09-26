@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorycreate
+package modulelist
 
 import (
 	"context"
@@ -23,14 +23,15 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 const (
-	formatFlagName     = "format"
-	visibilityFlagName = "visibility"
+	pageSizeFlagName  = "page-size"
+	pageTokenFlagName = "page-token"
+	reverseFlagName   = "reverse"
+	formatFlagName    = "format"
 )
 
 // NewCommand returns a new Command
@@ -40,8 +41,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Create a new repository on the BSR.",
+		Use:   name + " <buf.build>",
+		Short: "List BSR repositories.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -54,8 +55,10 @@ func NewCommand(
 }
 
 type flags struct {
-	Format     string
-	Visibility string
+	PageSize  uint32
+	PageToken string
+	Reverse   bool
+	Format    string
 }
 
 func newFlags() *flags {
@@ -63,13 +66,26 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
-	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
+	flagSet.Uint32Var(&f.PageSize,
+		pageSizeFlagName,
+		10,
+		`The page size.`,
+	)
+	flagSet.StringVar(&f.PageToken,
+		pageTokenFlagName,
+		"",
+		`The page token. If more results are available, a "next_page" key is present in the --format=json output.`,
+	)
+	flagSet.BoolVar(&f.Reverse,
+		reverseFlagName,
+		false,
+		`Reverse the results.`,
+	)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
 		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
+		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
 	)
 }
 
@@ -79,13 +95,12 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+	remote := container.Arg(0)
+	if err := bufmoduleref.ValidateRemoteNotEmpty(remote); err != nil {
+		return err
 	}
-	visibility, err := bufcli.VisibilityFlagToVisibility(flags.Visibility)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+	if err := bufmoduleref.ValidateRemoteHasNoPaths(remote); err != nil {
+		return err
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
@@ -96,24 +111,22 @@ func run(
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewRepositoryService(ctx, moduleIdentity.Remote())
+	service, err := apiProvider.NewRepositoryService(ctx, remote)
 	if err != nil {
 		return err
 	}
-	repository, err := service.CreateRepositoryByFullName(
+	repositories, nextPageToken, err := service.ListRepositories(
 		ctx,
-		moduleIdentity.Owner()+"/"+moduleIdentity.Repository(),
-		visibility,
+		flags.PageSize,
+		flags.PageToken,
+		flags.Reverse,
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeAlreadyExists {
-			return bufcli.NewRepositoryNameAlreadyExistsError(container.Arg(0))
-		}
 		return err
 	}
 	return bufprint.NewRepositoryPrinter(
 		apiProvider,
-		moduleIdentity.Remote(),
+		remote,
 		container.Stdout(),
-	).PrintRepository(ctx, format, repository)
+	).PrintRepositories(ctx, format, nextPageToken, repositories...)
 }
