@@ -1072,10 +1072,10 @@ func testNewModuleReference(
 	t *testing.T,
 	remote string,
 	owner string,
-	module string,
+	repository string,
 	reference string,
 ) bufmoduleref.ModuleReference {
-	moduleReference, err := bufmoduleref.NewModuleReference(remote, owner, module, reference)
+	moduleReference, err := bufmoduleref.NewModuleReference(remote, owner, repository, reference)
 	require.NoError(t, err)
 	return moduleReference
 }
