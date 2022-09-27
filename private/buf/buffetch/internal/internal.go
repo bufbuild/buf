@@ -210,7 +210,7 @@ type ModuleRef interface {
 
 // NewModuleRef returns a new ModuleRef.
 //
-// The path must be in the form server/owner/repository/branch[:digest].
+// The path must be in the form server/owner/module/branch[:digest].
 func NewModuleRef(path string) (ModuleRef, error) {
 	return newModuleRef("", path)
 }

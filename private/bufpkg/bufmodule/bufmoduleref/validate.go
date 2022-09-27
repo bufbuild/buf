@@ -89,7 +89,7 @@ func ValidateOwner(owner string, ownerType string) error {
 	return nil
 }
 
-// ValidateRepository verifies the given repository name is well-formed.
+// ValidateRepository verifies the given module name is well-formed.
 // It performs client-side validation only, and is limited to properties
 // we do not think will change in the future.
 func ValidateRepository(repository string) error {
@@ -119,7 +119,7 @@ func ValidateCommit(commit string) error {
 	return nil
 }
 
-// ValidateBranch verifies the given repository branch is well-formed.
+// ValidateBranch verifies the given module branch is well-formed.
 // It performs client-side validation only, and is limited to properties
 // we do not think will change in the future.
 func ValidateBranch(branch string) error {
