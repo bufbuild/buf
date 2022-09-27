@@ -27,8 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/modulecreate"
@@ -47,6 +45,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginversion/pluginversionlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/snapshot/snapshotget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/snapshot/snapshotlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatecreate"
@@ -181,8 +181,8 @@ func NewRootCommand(name string) *appcmd.Command {
 								Use:   "commit",
 								Short: "Manage a module's commits.",
 								SubCommands: []*appcmd.Command{
-									commitget.NewCommand("get", builder),
-									commitlist.NewCommand("list", builder),
+									snapshotget.NewCommand("get", builder),
+									snapshotlist.NewCommand("list", builder),
 								},
 							},
 							{
