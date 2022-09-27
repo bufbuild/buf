@@ -12,27 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorylist
+package moduledelete
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-const (
-	pageSizeFlagName  = "page-size"
-	pageTokenFlagName = "page-token"
-	reverseFlagName   = "reverse"
-	formatFlagName    = "format"
-)
+const forceFlagName = "force"
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -41,8 +36,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build>",
-		Short: "List BSR repositories.",
+		Use:   name + " <buf.build/owner/module>",
+		Short: "Delete a BSR module by name.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -55,10 +50,7 @@ func NewCommand(
 }
 
 type flags struct {
-	PageSize  uint32
-	PageToken string
-	Reverse   bool
-	Format    string
+	Force bool
 }
 
 func newFlags() *flags {
@@ -66,26 +58,11 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.Uint32Var(&f.PageSize,
-		pageSizeFlagName,
-		10,
-		`The page size.`,
-	)
-	flagSet.StringVar(&f.PageToken,
-		pageTokenFlagName,
-		"",
-		`The page token. If more results are available, a "next_page" key is present in the --format=json output.`,
-	)
-	flagSet.BoolVar(&f.Reverse,
-		reverseFlagName,
+	flagSet.BoolVar(
+		&f.Force,
+		forceFlagName,
 		false,
-		`Reverse the results.`,
-	)
-	flagSet.StringVar(
-		&f.Format,
-		formatFlagName,
-		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+		"Force deletion without confirming. Use with caution.",
 	)
 }
 
@@ -95,38 +72,31 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	remote := container.Arg(0)
-	if err := bufmoduleref.ValidateRemoteNotEmpty(remote); err != nil {
-		return err
-	}
-	if err := bufmoduleref.ValidateRemoteHasNoPaths(remote); err != nil {
-		return err
-	}
-	format, err := bufprint.ParseFormat(flags.Format)
+	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewRepositoryService(ctx, remote)
+	service, err := apiProvider.NewRepositoryService(ctx, moduleIdentity.Remote())
 	if err != nil {
 		return err
 	}
-	repositories, nextPageToken, err := service.ListRepositories(
-		ctx,
-		flags.PageSize,
-		flags.PageToken,
-		flags.Reverse,
-	)
-	if err != nil {
+	if !flags.Force {
+		if err := bufcli.PromptUserForDelete(container, "module", moduleIdentity.Repository()); err != nil {
+			return err
+		}
+	}
+	if err := service.DeleteRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Repository()); err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+		}
 		return err
 	}
-	return bufprint.NewRepositoryPrinter(
-		apiProvider,
-		remote,
-		container.Stdout(),
-	).PrintRepositories(ctx, format, nextPageToken, repositories...)
+	if _, err := fmt.Fprintln(container.Stdout(), "Module deleted."); err != nil {
+		return bufcli.NewInternalError(err)
+	}
+	return nil
 }

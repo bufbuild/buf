@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorydeprecate
+package moduleupdate
 
 import (
 	"context"
@@ -28,15 +28,15 @@ import (
 )
 
 const (
-	messageFlagName = "message"
+	visibilityFlagName = "visibility"
 )
 
 // NewCommand returns a new Command
 func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Deprecate a repository on the BSR.",
+		Use:   name + " <buf.build/owner/module>",
+		Short: "Update a BSR module settings.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -49,7 +49,7 @@ func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 }
 
 type flags struct {
-	Message string
+	Visibility string
 }
 
 func newFlags() *flags {
@@ -57,17 +57,20 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.Message,
-		messageFlagName,
-		"",
-		`The message to display with deprecation warnings.`,
-	)
+	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
 }
 
-func run(ctx context.Context, container appflag.Container, flags *flags) error {
+func run(
+	ctx context.Context,
+	container appflag.Container,
+	flags *flags,
+) error {
 	bufcli.WarnBetaCommand(ctx, container)
 	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	visibility, err := bufcli.VisibilityFlagToVisibilityAllowUnspecified(flags.Visibility)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -79,18 +82,18 @@ func run(ctx context.Context, container appflag.Container, flags *flags) error {
 	if err != nil {
 		return err
 	}
-	if _, err = service.DeprecateRepositoryByName(
+	if err = service.UpdateRepositorySettingsByName(
 		ctx,
 		moduleIdentity.Owner(),
 		moduleIdentity.Repository(),
-		flags.Message,
+		visibility,
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository deprecated."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Settings Updated."); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil

@@ -31,6 +31,13 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/modulecreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/moduledelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/moduledeprecate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/moduleget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/modulelist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/moduleundeprecate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/moduleupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
@@ -40,13 +47,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginversion/pluginversionlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydeprecate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryget"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorylist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryundeprecate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatecreate"
@@ -157,21 +157,21 @@ func NewRootCommand(name string) *appcmd.Command {
 								},
 							},
 							{
-								Use:   "repository",
-								Short: "Manage repositories.",
+								Use:   "module",
+								Short: "Manage modules.",
 								SubCommands: []*appcmd.Command{
-									repositorycreate.NewCommand("create", builder),
-									repositoryget.NewCommand("get", builder),
-									repositorylist.NewCommand("list", builder),
-									repositorydelete.NewCommand("delete", builder),
-									repositorydeprecate.NewCommand("deprecate", builder),
-									repositoryundeprecate.NewCommand("undeprecate", builder),
-									repositoryupdate.NewCommand("update", builder),
+									modulecreate.NewCommand("create", builder),
+									moduleget.NewCommand("get", builder),
+									modulelist.NewCommand("list", builder),
+									moduledelete.NewCommand("delete", builder),
+									moduledeprecate.NewCommand("deprecate", builder),
+									moduleundeprecate.NewCommand("undeprecate", builder),
+									moduleupdate.NewCommand("update", builder),
 								},
 							},
 							{
 								Use:   "tag",
-								Short: "Manage a repository's tags.",
+								Short: "Manage a module's tags.",
 								SubCommands: []*appcmd.Command{
 									tagcreate.NewCommand("create", builder),
 									taglist.NewCommand("list", builder),
@@ -179,7 +179,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "commit",
-								Short: "Manage a repository's commits.",
+								Short: "Manage a module's commits.",
 								SubCommands: []*appcmd.Command{
 									commitget.NewCommand("get", builder),
 									commitlist.NewCommand("list", builder),
@@ -187,7 +187,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "draft",
-								Short: "Manage a repository's drafts.",
+								Short: "Manage a module's drafts.",
 								SubCommands: []*appcmd.Command{
 									draftdelete.NewCommand("delete", builder),
 									draftlist.NewCommand("list", builder),
@@ -232,7 +232,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "webhook",
-								Short: "Manage webhooks for a repository on the Buf Schema Registry.",
+								Short: "Manage webhooks for a module on the Buf Schema Registry.",
 								SubCommands: []*appcmd.Command{
 									webhookcreate.NewCommand("create", builder),
 									webhookdelete.NewCommand("delete", builder),

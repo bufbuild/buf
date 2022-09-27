@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositoryundeprecate
+package moduleundeprecate
 
 import (
 	"context"
@@ -29,8 +29,8 @@ import (
 // NewCommand returns a new Command
 func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Undeprecate a BSR repository.",
+		Use:   name + " <buf.build/owner/module>",
+		Short: "Undeprecate a BSR module.",
 		Args:  cobra.ExactArgs(1),
 		Run:   builder.NewRunFunc(run, bufcli.NewErrorInterceptor()),
 	}
@@ -60,7 +60,7 @@ func run(ctx context.Context, container appflag.Container) error {
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository undeprecated."); err != nil {
+	if _, err := fmt.Fprintln(container.Stdout(), "Module undeprecated."); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil

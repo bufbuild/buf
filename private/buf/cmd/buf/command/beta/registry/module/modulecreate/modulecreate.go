@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorydelete
+package modulecreate
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -27,7 +28,10 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const forceFlagName = "force"
+const (
+	formatFlagName     = "format"
+	visibilityFlagName = "visibility"
+)
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -36,8 +40,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Delete a BSR repository by name.",
+		Use:   name + " <buf.build/owner/module>",
+		Short: "Create a new module on the BSR.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -50,7 +54,8 @@ func NewCommand(
 }
 
 type flags struct {
-	Force bool
+	Format     string
+	Visibility string
 }
 
 func newFlags() *flags {
@@ -58,11 +63,13 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(
-		&f.Force,
-		forceFlagName,
-		false,
-		"Force deletion without confirming. Use with caution.",
+	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
+	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
+	flagSet.StringVar(
+		&f.Format,
+		formatFlagName,
+		bufprint.FormatText.String(),
+		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
 	)
 }
 
@@ -76,6 +83,15 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
+	visibility, err := bufcli.VisibilityFlagToVisibility(flags.Visibility)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	format, err := bufprint.ParseFormat(flags.Format)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
@@ -84,19 +100,20 @@ func run(
 	if err != nil {
 		return err
 	}
-	if !flags.Force {
-		if err := bufcli.PromptUserForDelete(container, "repository", moduleIdentity.Repository()); err != nil {
-			return err
-		}
-	}
-	if err := service.DeleteRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Repository()); err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+	repository, err := service.CreateRepositoryByFullName(
+		ctx,
+		moduleIdentity.Owner()+"/"+moduleIdentity.Repository(),
+		visibility,
+	)
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeAlreadyExists {
+			return bufcli.NewRepositoryNameAlreadyExistsError(container.Arg(0))
 		}
 		return err
 	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository deleted."); err != nil {
-		return bufcli.NewInternalError(err)
-	}
-	return nil
+	return bufprint.NewRepositoryPrinter(
+		apiProvider,
+		moduleIdentity.Remote(),
+		container.Stdout(),
+	).PrintRepository(ctx, format, repository)
 }
