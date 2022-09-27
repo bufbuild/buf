@@ -152,7 +152,7 @@ func run(
 			continue
 		}
 		warnMsg := fmt.Sprintf(
-			`Repository "%s/%s/%s" is deprecated`,
+			`Module "%s/%s/%s" is deprecated`,
 			modulePin.Remote(),
 			modulePin.Owner(),
 			modulePin.Repository(),

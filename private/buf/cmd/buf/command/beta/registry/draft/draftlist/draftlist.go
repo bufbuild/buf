@@ -39,8 +39,8 @@ const (
 func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "List drafts for the specified repository.",
+		Use:   name + " <buf.build/owner/module>",
+		Short: "List drafts for the specified module.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

@@ -94,7 +94,7 @@ func ValidateOwner(owner string, ownerType string) error {
 // we do not think will change in the future.
 func ValidateRepository(repository string) error {
 	if repository == "" {
-		return errors.New("repository name is required")
+		return errors.New("module name is required")
 	}
 	return nil
 }
@@ -104,7 +104,7 @@ func ValidateRepository(repository string) error {
 // we do not think will change in the future.
 func ValidateReference(reference string) error {
 	if reference == "" {
-		return errors.New("repository reference is required")
+		return errors.New("module reference is required")
 	}
 	return nil
 }
@@ -137,7 +137,7 @@ func ValidateBranch(branch string) error {
 // we do not think will change in the future.
 func ValidateTag(tag string) error {
 	if tag == "" {
-		return errors.New("repository tag is required")
+		return errors.New("module tag is required")
 	}
 	return nil
 }

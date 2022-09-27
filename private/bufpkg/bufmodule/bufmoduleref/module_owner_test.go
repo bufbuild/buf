@@ -42,7 +42,7 @@ func TestModuleOwnerForStringError(t *testing.T) {
 			Input: "/foo",
 		},
 		{
-			Name:  "Module owner with a repository",
+			Name:  "Module owner with a module",
 			Input: "foo.com/bar/baz",
 		},
 		{

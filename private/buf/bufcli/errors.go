@@ -114,7 +114,7 @@ func NewOrganizationNameAlreadyExistsError(name string) error {
 // NewRepositoryNameAlreadyExistsError informs the user that a repository
 // with that name already exists.
 func NewRepositoryNameAlreadyExistsError(name string) error {
-	return fmt.Errorf("a repository named %q already exists", name)
+	return fmt.Errorf("a module named %q already exists", name)
 }
 
 // NewTagOrDraftNameAlreadyExistsError informs the user that a tag
@@ -132,7 +132,7 @@ func NewOrganizationNotFoundError(name string) error {
 // NewRepositoryNotFoundError informs the user that a repository with
 // that name does not exist.
 func NewRepositoryNotFoundError(name string) error {
-	return fmt.Errorf(`a repository named %q does not exist, use "buf beta registry repository create" to create one`, name)
+	return fmt.Errorf(`a module named %q does not exist, use "buf beta registry module create" to create one`, name)
 }
 
 // NewModuleReferenceNotFoundError informs the user that a module

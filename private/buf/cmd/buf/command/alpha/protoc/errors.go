@@ -94,7 +94,7 @@ func newDescriptorSetInNotSupportedError() error {
 	return fmt.Errorf(
 		`--%s is not supported by buf.
 
-Buf will work with cross-repository imports Buf Schema Registry, which will be based on source files, not pre-built Images.
+Buf will work with cross-module imports Buf Schema Registry, which will be based on source files, not pre-built Images.
 We think this is a much safer option that leads to less errors and more consistent results.
 
 Please email us at support@buf.build if this is a need for your organization.`,
