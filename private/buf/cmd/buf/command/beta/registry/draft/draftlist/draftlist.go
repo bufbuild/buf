@@ -36,10 +36,10 @@ const (
 )
 
 // NewCommand returns a new Command
-func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
+func NewCommand(cmdName string, builder appflag.Builder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/name>",
+		Use:   cmdName + " <buf.build/owner/name>",
 		Short: "List drafts for the specified module.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
