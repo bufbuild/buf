@@ -26,9 +26,9 @@ import (
 )
 
 const (
-	ownerFlagName      = "owner"
-	repositoryFlagName = "repository"
-	remoteFlagName     = "remote"
+	ownerFlagName  = "owner"
+	moduleFlagName = "module"
+	remoteFlagName = "remote"
 )
 
 // NewCommand returns a new Command
@@ -52,9 +52,9 @@ func NewCommand(
 }
 
 type flags struct {
-	OwnerName      string
-	RepositoryName string
-	Remote         string
+	OwnerName string
+	Module    string
+	Remote    string
 }
 
 func newFlags() *flags {
@@ -70,12 +70,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 	_ = cobra.MarkFlagRequired(flagSet, ownerFlagName)
 	flagSet.StringVar(
-		&f.RepositoryName,
-		repositoryFlagName,
+		&f.Module,
+		moduleFlagName,
 		"",
 		"The module name to list webhooks for.",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, repositoryFlagName)
+	_ = cobra.MarkFlagRequired(flagSet, moduleFlagName)
 	flagSet.StringVar(
 		&f.Remote,
 		remoteFlagName,
@@ -99,7 +99,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	results, _, err := service.ListWebhooks(ctx, flags.RepositoryName, flags.OwnerName, "")
+	results, _, err := service.ListWebhooks(ctx, flags.Module, flags.OwnerName, "")
 	if err != nil {
 		return err
 	}
