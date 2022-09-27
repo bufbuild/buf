@@ -29,7 +29,7 @@ import (
 
 const (
 	ownerFlagName        = "owner"
-	moduleFlagName       = "module"
+	moduleFlagName       = "name"
 	callbackURLFlagName  = "callback-url"
 	webhookEventFlagName = "event"
 	remoteFlagName       = "remote"
@@ -57,8 +57,8 @@ func NewCommand(
 
 type flags struct {
 	WebhookEvent string
-	OwnerName    string
-	ModuleName   string
+	Owner        string
+	Name         string
 	CallbackURL  string
 	Remote       string
 }
@@ -76,14 +76,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 	_ = cobra.MarkFlagRequired(flagSet, webhookEventFlagName)
 	flagSet.StringVar(
-		&f.OwnerName,
+		&f.Owner,
 		ownerFlagName,
 		"",
 		`The owner name of the module to create a webhook for.`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, ownerFlagName)
 	flagSet.StringVar(
-		&f.ModuleName,
+		&f.Name,
 		moduleFlagName,
 		"",
 		"The module name to create a webhook for.",
@@ -126,8 +126,8 @@ func run(
 	createWebhook, err := service.CreateWebhook(
 		ctx,
 		registryv1alpha1.WebhookEvent(event),
-		flags.OwnerName,
-		flags.ModuleName,
+		flags.Owner,
+		flags.Name,
 		flags.CallbackURL,
 	)
 	if err != nil {
