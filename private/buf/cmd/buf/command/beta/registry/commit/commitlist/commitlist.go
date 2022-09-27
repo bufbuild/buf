@@ -42,7 +42,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/module[:ref]>",
+		Use:   name + " <buf.build/owner/name[:ref]>",
 		Short: "List commits.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(

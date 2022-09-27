@@ -36,7 +36,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/module:draft>",
+		Use:   name + " <buf.build/owner/name:draft>",
 		Short: "Delete a draft of a BSR module by name.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(

@@ -20,7 +20,7 @@ import (
 )
 
 // newCacheKey returns the key associated with the given module pin.
-// The cache key is of the form: remote/owner/module/commit.
+// The cache key is of the form: remote/owner/name/commit.
 func newCacheKey(modulePin bufmoduleref.ModulePin) string {
 	return normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository(), modulePin.Commit())
 }
