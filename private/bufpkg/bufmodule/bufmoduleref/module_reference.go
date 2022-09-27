@@ -62,7 +62,7 @@ func newProtoModuleReferenceForModuleReference(
 	return &modulev1alpha1.ModuleReference{
 		Remote:     moduleReference.Remote(),
 		Owner:      moduleReference.Owner(),
-		Repository: moduleReference.Module(),
+		Repository: moduleReference.Repository(),
 		Reference:  moduleReference.Reference(),
 	}
 }
@@ -75,7 +75,7 @@ func (m *moduleReference) Owner() string {
 	return m.owner
 }
 
-func (m *moduleReference) Module() string {
+func (m *moduleReference) Repository() string {
 	return m.repository
 }
 

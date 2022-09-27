@@ -85,7 +85,7 @@ func run(
 	if err = service.UpdateRepositorySettingsByName(
 		ctx,
 		moduleIdentity.Owner(),
-		moduleIdentity.Module(),
+		moduleIdentity.Repository(),
 		visibility,
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {

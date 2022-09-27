@@ -131,13 +131,13 @@ func ModuleOwnerForString(path string) (ModuleOwner, error) {
 
 // ModuleIdentity is a module identity.
 //
-// It just contains remote, owner, repository.
+// It just contains remote, owner, module.
 //
 // This is shared by ModuleReference and ModulePin.
 type ModuleIdentity interface {
 	ModuleOwner
 
-	Module() string
+	Repository() string
 
 	// IdentityString is the string remote/owner/module.
 	IdentityString() string
@@ -335,7 +335,7 @@ func NewProtoModulePinsForModulePins(modulePins ...ModulePin) []*modulev1alpha1.
 
 // ValidateModuleReferencesUniqueByIdentity returns an error if the module references contain any duplicates.
 //
-// This only checks remote, owner, repository.
+// This only checks remote, owner, module.
 func ValidateModuleReferencesUniqueByIdentity(moduleReferences []ModuleReference) error {
 	seenModuleReferences := make(map[string]struct{})
 	for _, moduleReference := range moduleReferences {
@@ -350,7 +350,7 @@ func ValidateModuleReferencesUniqueByIdentity(moduleReferences []ModuleReference
 
 // ValidateModulePinsUniqueByIdentity returns an error if the module pins contain any duplicates.
 //
-// This only checks remote, owner, repository.
+// This only checks remote, owner, module.
 func ValidateModulePinsUniqueByIdentity(modulePins []ModulePin) error {
 	seenModulePins := make(map[string]struct{})
 	for _, modulePin := range modulePins {
@@ -373,7 +373,7 @@ func ModuleReferenceEqual(a ModuleReference, b ModuleReference) bool {
 	}
 	return a.Remote() == b.Remote() &&
 		a.Owner() == b.Owner() &&
-		a.Module() == b.Module() &&
+		a.Repository() == b.Repository() &&
 		a.Reference() == b.Reference()
 }
 
@@ -387,7 +387,7 @@ func ModulePinEqual(a ModulePin, b ModulePin) bool {
 	}
 	return a.Remote() == b.Remote() &&
 		a.Owner() == b.Owner() &&
-		a.Module() == b.Module() &&
+		a.Repository() == b.Repository() &&
 		a.Branch() == b.Branch() &&
 		a.Commit() == b.Commit() &&
 		a.CreateTime().Equal(b.CreateTime())
@@ -444,7 +444,7 @@ func PutDependencyModulePinsToBucket(
 			buflock.Dependency{
 				Remote:     pin.Remote(),
 				Owner:      pin.Owner(),
-				Repository: pin.Module(),
+				Repository: pin.Repository(),
 				Commit:     pin.Commit(),
 			},
 		)

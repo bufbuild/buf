@@ -47,7 +47,7 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 	repositoryCommit, err := repositoryCommitService.GetRepositoryCommitByReference(
 		ctx,
 		moduleReference.Owner(),
-		moduleReference.Module(),
+		moduleReference.Repository(),
 		moduleReference.Reference(),
 	)
 	if err != nil {
@@ -60,7 +60,7 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 	return bufmoduleref.NewModulePin(
 		moduleReference.Remote(),
 		moduleReference.Owner(),
-		moduleReference.Module(),
+		moduleReference.Repository(),
 		"",
 		repositoryCommit.Name,
 		repositoryCommit.CreateTime.AsTime(),

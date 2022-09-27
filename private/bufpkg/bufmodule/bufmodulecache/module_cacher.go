@@ -96,7 +96,7 @@ func (m *moduleCacher) GetModule(
 	// we are in an invalid state
 	if storedDigest == "" {
 		m.logger.Sugar().Warnf(
-			"Module %q has invalid cache state: no stored digest could be found. The cache will attempt to self-correct.",
+			"Repository %q has invalid cache state: no stored digest could be found. The cache will attempt to self-correct.",
 			modulePin.String(),
 		)
 		// We want to return ErrNotExist so that the ModuleReader can re-download
@@ -109,7 +109,7 @@ func (m *moduleCacher) GetModule(
 	}
 	if digest != storedDigest {
 		m.logger.Sugar().Warnf(
-			"Module %q has invalid cache state: calculated digest %q does not match stored digest %q. The cache will attempt to self-correct.",
+			"Repository %q has invalid cache state: calculated digest %q does not match stored digest %q. The cache will attempt to self-correct.",
 			modulePin.String(),
 			digest,
 			storedDigest,

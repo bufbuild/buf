@@ -102,7 +102,7 @@ func run(
 	}
 	repository, err := service.CreateRepositoryByFullName(
 		ctx,
-		moduleIdentity.Owner()+"/"+moduleIdentity.Module(),
+		moduleIdentity.Owner()+"/"+moduleIdentity.Repository(),
 		visibility,
 	)
 	if err != nil {

@@ -53,7 +53,7 @@ func run(ctx context.Context, container appflag.Container) error {
 	if _, err = service.UndeprecateRepositoryByName(
 		ctx,
 		moduleIdentity.Owner(),
-		moduleIdentity.Module(),
+		moduleIdentity.Repository(),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))

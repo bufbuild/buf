@@ -104,11 +104,11 @@ func TestModuleReferenceForStringError(t *testing.T) {
 			Input: "/barr/baz:v1",
 		},
 		{
-			Name:  "Module without an owner",
+			Name:  "Repository without an owner",
 			Input: "foo.com//baz:v1",
 		},
 		{
-			Name:  "Module without a repository",
+			Name:  "Module without a module name",
 			Input: "foo.com/barr/:v1",
 		},
 		{

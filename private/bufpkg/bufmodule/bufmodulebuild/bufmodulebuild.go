@@ -129,7 +129,7 @@ func WithPathsAllowNotExist(paths []string) BuildOption {
 	}
 }
 
-// WithModuleIdentity returns a new BuildOption that is used to construct a Module with a ModuleIdentity.
+// WithModuleIdentity returns a new BuildOption that is used to construct a Repository with a ModuleIdentity.
 //
 // TODO: this is never called
 // TODO: we also have ModuleWithModuleIdentityAndCommit in bufmodule

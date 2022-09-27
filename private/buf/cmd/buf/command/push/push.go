@@ -164,7 +164,7 @@ func run(
 	localModulePin, err := service.Push(
 		ctx,
 		moduleIdentity.Owner(),
-		moduleIdentity.Module(),
+		moduleIdentity.Repository(),
 		"",
 		protoModule,
 		flags.Tags,

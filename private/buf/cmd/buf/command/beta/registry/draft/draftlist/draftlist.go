@@ -112,7 +112,7 @@ func run(
 	repositoryCommits, nextPageToken, err := service.ListRepositoryDraftCommits(
 		ctx,
 		moduleIdentity.Owner(),
-		moduleIdentity.Module(),
+		moduleIdentity.Repository(),
 		flags.PageSize,
 		flags.PageToken,
 		flags.Reverse,

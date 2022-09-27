@@ -110,10 +110,10 @@ func modulePinCompareToOnlyCommit(a bufmoduleref.ModulePin, b bufmoduleref.Modul
 	if a.Owner() > b.Owner() {
 		return 1
 	}
-	if a.Module() < b.Module() {
+	if a.Repository() < b.Repository() {
 		return -1
 	}
-	if a.Module() > b.Module() {
+	if a.Repository() > b.Repository() {
 		return 1
 	}
 	if a.Commit() < b.Commit() {

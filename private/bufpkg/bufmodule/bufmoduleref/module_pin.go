@@ -77,7 +77,7 @@ func newProtoModulePinForModulePin(
 	return &modulev1alpha1.ModulePin{
 		Remote:     modulePin.Remote(),
 		Owner:      modulePin.Owner(),
-		Repository: modulePin.Module(),
+		Repository: modulePin.Repository(),
 		Branch:     modulePin.Branch(),
 		Commit:     modulePin.Commit(),
 		// no need to validate as we already know this is valid
@@ -93,7 +93,7 @@ func (m *modulePin) Owner() string {
 	return m.owner
 }
 
-func (m *modulePin) Module() string {
+func (m *modulePin) Repository() string {
 	return m.repository
 }
 

@@ -44,7 +44,7 @@ func (m *moduleIdentity) Owner() string {
 	return m.owner
 }
 
-func (m *moduleIdentity) Module() string {
+func (m *moduleIdentity) Repository() string {
 	return m.repository
 }
 

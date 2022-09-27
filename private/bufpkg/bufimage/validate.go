@@ -67,7 +67,7 @@ func validateProtoModuleName(protoModuleName *imagev1.ModuleName) error {
 		return errors.New("empty ModuleName.Owner")
 	}
 	if protoModuleName.GetRepository() == "" {
-		return errors.New("empty ModuleName.Module")
+		return errors.New("empty ModuleName.Repository")
 	}
 	return nil
 }

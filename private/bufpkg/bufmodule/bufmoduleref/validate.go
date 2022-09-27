@@ -89,12 +89,12 @@ func ValidateOwner(owner string, ownerType string) error {
 	return nil
 }
 
-// ValidateRepository verifies the given repository name is well-formed.
+// ValidateRepository verifies the given module name is well-formed.
 // It performs client-side validation only, and is limited to properties
 // we do not think will change in the future.
 func ValidateRepository(repository string) error {
 	if repository == "" {
-		return errors.New("repository name is required")
+		return errors.New("module name is required")
 	}
 	return nil
 }
@@ -104,7 +104,7 @@ func ValidateRepository(repository string) error {
 // we do not think will change in the future.
 func ValidateReference(reference string) error {
 	if reference == "" {
-		return errors.New("repository reference is required")
+		return errors.New("module reference is required")
 	}
 	return nil
 }
@@ -119,7 +119,7 @@ func ValidateCommit(commit string) error {
 	return nil
 }
 
-// ValidateBranch verifies the given repository branch is well-formed.
+// ValidateBranch verifies the given module branch is well-formed.
 // It performs client-side validation only, and is limited to properties
 // we do not think will change in the future.
 func ValidateBranch(branch string) error {
@@ -127,7 +127,7 @@ func ValidateBranch(branch string) error {
 		return fmt.Errorf("branch is not %s", Main)
 	}
 	//if branch == "" {
-	//	return errors.New("repository branch is required")
+	//	return errors.New("module branch is required")
 	//}
 	return nil
 }
@@ -137,7 +137,7 @@ func ValidateBranch(branch string) error {
 // we do not think will change in the future.
 func ValidateTag(tag string) error {
 	if tag == "" {
-		return errors.New("repository tag is required")
+		return errors.New("module tag is required")
 	}
 	return nil
 }
@@ -196,7 +196,7 @@ func validateModuleIdentity(moduleIdentity ModuleIdentity) error {
 	if err := ValidateOwner(moduleIdentity.Owner(), "owner"); err != nil {
 		return err
 	}
-	if err := ValidateRepository(moduleIdentity.Module()); err != nil {
+	if err := ValidateRepository(moduleIdentity.Repository()); err != nil {
 		return err
 	}
 	return nil

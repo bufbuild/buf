@@ -104,7 +104,7 @@ func run(
 	if err := service.DeleteRepositoryDraftCommit(
 		ctx,
 		moduleReference.Owner(),
-		moduleReference.Module(),
+		moduleReference.Repository(),
 		moduleReference.Reference(),
 	); err != nil {
 		// not explicitly handling error with connect.CodeNotFound as it can be repository not found or draft not found.

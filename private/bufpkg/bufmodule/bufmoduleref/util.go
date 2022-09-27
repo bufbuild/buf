@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-// parseModuleReferenceComponents parses and returns the remote, owner, repository,
+// parseModuleReferenceComponents parses and returns the remote, owner, module,
 // and ref (branch, commit, draft, or tag) from the given path.
 func parseModuleReferenceComponents(path string) (remote string, owner string, repository string, ref string, err error) {
 	// split by the first "/" to separate the remote and remaining part
@@ -97,10 +97,10 @@ func modulePinCompareTo(a ModulePin, b ModulePin) int {
 	if a.Owner() > b.Owner() {
 		return 1
 	}
-	if a.Module() < b.Module() {
+	if a.Repository() < b.Repository() {
 		return -1
 	}
-	if a.Module() > b.Module() {
+	if a.Repository() > b.Repository() {
 		return 1
 	}
 	if a.Branch() < b.Branch() {

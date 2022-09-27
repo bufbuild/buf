@@ -92,7 +92,7 @@ func run(
 	}
 	repository, _, err := service.GetRepositoryByFullName(
 		ctx,
-		moduleIdentity.Owner()+"/"+moduleIdentity.Module(),
+		moduleIdentity.Owner()+"/"+moduleIdentity.Repository(),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {

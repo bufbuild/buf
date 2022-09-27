@@ -151,7 +151,7 @@ func (m *moduleReader) GetModule(
 	}
 	repository, _, err := repositoryService.GetRepositoryByFullName(
 		ctx,
-		fmt.Sprintf("%s/%s", modulePin.Owner(), modulePin.Module()),
+		fmt.Sprintf("%s/%s", modulePin.Owner(), modulePin.Repository()),
 	)
 	if err != nil {
 		return nil, err

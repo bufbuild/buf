@@ -93,7 +93,7 @@ func run(
 	repositoryCommit, err := service.GetRepositoryCommitByReference(
 		ctx,
 		moduleReference.Owner(),
-		moduleReference.Module(),
+		moduleReference.Repository(),
 		moduleReference.Reference(),
 	)
 	if err != nil {

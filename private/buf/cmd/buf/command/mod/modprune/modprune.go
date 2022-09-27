@@ -138,7 +138,7 @@ func referencesPinnedByLock(moduleReferences []bufmoduleref.ModuleReference, mod
 		newModuleReference, err := bufmoduleref.NewModuleReference(
 			moduleReference.Remote(),
 			moduleReference.Owner(),
-			moduleReference.Module(),
+			moduleReference.Repository(),
 			pin.Commit(),
 		)
 		if err != nil {

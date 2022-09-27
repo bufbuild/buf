@@ -85,11 +85,11 @@ func run(
 		return err
 	}
 	if !flags.Force {
-		if err := bufcli.PromptUserForDelete(container, "module", moduleIdentity.Module()); err != nil {
+		if err := bufcli.PromptUserForDelete(container, "module", moduleIdentity.Repository()); err != nil {
 			return err
 		}
 	}
-	if err := service.DeleteRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Module()); err != nil {
+	if err := service.DeleteRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Repository()); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
