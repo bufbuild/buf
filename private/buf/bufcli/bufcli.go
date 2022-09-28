@@ -252,8 +252,7 @@ func BindDisableSymlinks(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 		flagName,
 		false,
 		`Do not follow symlinks when reading sources or configuration from the local filesystem.
-By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry.
-Symlinks are never followed in Windows.`,
+By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry.`,
 	)
 }
 
