@@ -210,7 +210,6 @@ func (f *formatter) writeFileHeader() {
 		packageNode *ast.PackageNode
 		importNodes []*ast.ImportNode
 		optionNodes []*ast.OptionNode
-		typeNodes   []ast.FileElement
 	)
 	for _, fileElement := range f.fileNode.Decls {
 		switch node := fileElement.(type) {
@@ -220,10 +219,8 @@ func (f *formatter) writeFileHeader() {
 			importNodes = append(importNodes, node)
 		case *ast.OptionNode:
 			optionNodes = append(optionNodes, node)
-		case *ast.EmptyDeclNode:
-			continue
 		default:
-			typeNodes = append(typeNodes, node)
+			continue
 		}
 	}
 	if f.fileNode.Syntax == nil && packageNode == nil && importNodes == nil && optionNodes == nil {
@@ -1874,11 +1871,6 @@ func (f *formatter) writeBodyEndInline(node ast.Node, leadingInline bool) {
 	}
 }
 
-func (f *formatter) writeBodyStartInline(node ast.Node) {
-	f.writeStart(node)
-	//f.writeBodyEndInline(node, false)
-}
-
 // writeLineEnd writes the node so that it ends a line.
 //
 // This is useful for writing individual nodes like ';' and other
@@ -2027,38 +2019,6 @@ func (f *formatter) writeTrailingEndComments(comments ast.Comments) {
 		f.WriteString(strings.TrimSpace(comment.RawText()))
 	}
 	f.P()
-}
-
-// startsWithNewline returns true if the formatter needs to insert a newline
-// before the node is printed. We need to use this in special circumstances,
-// namely the file header types, when we always want to include a newline
-// between the syntax, package, and import/option blocks.
-func (f *formatter) startsWithNewline(info ast.NodeInfo) bool {
-	nodeNewlineCount := newlineCount(info.LeadingWhitespace())
-	if info.LeadingComments().Len() > 0 {
-		// If leading comments are defined, the whitespace we care about
-		// is attached to the first comment.
-		nodeNewlineCount = newlineCount(info.LeadingComments().Index(0).LeadingWhitespace())
-	}
-	return nodeNewlineCount > 1
-}
-
-// previousTrailingCommentsWroteNewline returns true if the previous node's
-// trailing comments wrote a newline. We need to use this whenever we otherwise
-// need to add a newline (e.g. at the end of a composite type's body, and
-// for EOF comments).
-func (f *formatter) previousTrailingCommentsWroteNewline() bool {
-	return f.previousHasTrailingComments() && f.lastWritten == '\n'
-}
-
-// previousHasTrailingComments returns true if the previous node included
-// trailing comments
-func (f *formatter) previousHasTrailingComments() bool {
-	if f.previousNode == nil {
-		return false
-	}
-	previousTrailingComments := f.fileNode.NodeInfo(f.previousNode).TrailingComments()
-	return previousTrailingComments.Len() > 0
 }
 
 func (f *formatter) leadingCommentsContainBlankLine(n ast.Node) bool {
