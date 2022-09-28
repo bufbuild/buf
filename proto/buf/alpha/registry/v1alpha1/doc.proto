@@ -270,7 +270,7 @@ message EnumValue {
 
 // EnumValueOptions provide information for the documentation of options for an enum value.
 message EnumValueOptions {
-  reserved "UninterpretedOptions";
+  reserved "uninterpreted_options";
   bool deprecated = 1;
   repeated string custom_options = 1000;
 }
