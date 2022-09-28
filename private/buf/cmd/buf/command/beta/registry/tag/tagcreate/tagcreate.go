@@ -37,8 +37,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/name:snapshot> <tag>",
-		Short: "Create a tag for the specified snapshot.",
+		Use:   name + " <buf.build/owner/name:commit> <tag>",
+		Short: "Create a tag for the specified commit.",
 		Args:  cobra.ExactArgs(2),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -80,7 +80,7 @@ func run(
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 	if !bufmoduleref.IsCommitModuleReference(moduleReference) {
-		return fmt.Errorf("snapshot is required, but a tag was given: %q", container.Arg(0))
+		return fmt.Errorf("commit is required, but a tag was given: %q", container.Arg(0))
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
