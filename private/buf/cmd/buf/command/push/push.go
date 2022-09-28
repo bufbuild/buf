@@ -174,7 +174,7 @@ func run(
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
 			if _, err := container.Stderr().Write(
-				[]byte("The latest commit has the same content; not creating a new commit.\n"),
+				[]byte("The latest snapshot has the same content; not creating a new snapshot.\n"),
 			); err != nil {
 				return err
 			}
