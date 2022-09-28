@@ -178,6 +178,15 @@ message Service {
   string file_path = 5;
   Location location = 6;
   repeated Method methods = 7;
+  ServiceOptions service_options = 8;
+}
+
+// ServiceOptions provide information for the documentation of options for a given service.
+message ServiceOptions {
+  reserved 999;
+  reserved "uninterpreted_options";
+  bool deprecated = 1;
+  repeated string custom_options = 1000;
 }
 
 // Method provides information for the documentation for a method of a given service.
@@ -190,6 +199,22 @@ message Method {
   string description = 2;
   MethodRequestResponse request = 3;
   MethodRequestResponse response = 4;
+  MethodOptions method_options = 5;
+}
+
+// MethodOptions provide information for the documentation of options for a method.
+message MethodOptions {
+  reserved 999;
+  reserved "uninterpreted_options";
+  bool deprecated = 1;
+  IdempotencyLevel idempotency_level = 2;
+  repeated string custom_options = 1000;
+  enum IdempotencyLevel {
+    IDEMPOTENCY_LEVEL_UNSPECIFIED = 0;
+    IDEMPOTENCY_LEVEL_UNKNOWN = 1;
+    IDEMPOTENCY_LEVEL_NO_SIDE_EFFECTS = 2;
+    IDEMPOTENCY_LEVEL_IDEMPOTENT = 3;
+  }
 }
 
 // MethodRequestResponse provides information for the documentation of a Method request or response message.
@@ -222,6 +247,16 @@ message Enum {
   string file_path = 5;
   Location location = 6;
   repeated EnumValue values = 7;
+  EnumOptions enum_options = 8;
+}
+
+// EnumOptions provide information for the documentation of options for an enum.
+message EnumOptions {
+  reserved 999;
+  reserved "uninterpreted_options";
+  bool deprecated = 1;
+  bool allow_alias = 2;
+  repeated string custom_options = 1000;
 }
 
 // EnumValue provides information for the documentation of an enum value.
@@ -233,6 +268,15 @@ message EnumValue {
   // Paragraph newlines (double new lines) are respected, however single newlines are not.
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
   string description = 3;
+  EnumValueOptions enum_value_options = 4;
+}
+
+// EnumValueOptions provide information for the documentation of options for an enum value.
+message EnumValueOptions {
+  reserved 999;
+  reserved "UninterpretedOptions";
+  bool deprecated = 1;
+  repeated string custom_options = 1000;
 }
 
 // ImportRef provides the import metadata if a type is imported.
@@ -264,6 +308,7 @@ message Message {
   repeated MessageField fields = 7;
   Location location = 8;
   repeated Field message_extensions = 9;
+  MessageOptions message_options = 10;
 }
 
 // MessageField can be either a single field or a oneof set of fields.
@@ -274,10 +319,25 @@ message MessageField {
   }
 }
 
+// MessageOptions provide information for the documentation of options for a message.
+message MessageOptions {
+  reserved 2, 3, 4, 999;
+  reserved "message_set_wire_format", "no_standard_descriptor_accessor", "map_entry", "uninterpreted_options";
+  bool deprecated = 1;
+  repeated string custom_options = 1000;
+}
+
 // Oneof represents a oneof set of fields.
 message Oneof {
   string name = 1;
   repeated Field fields = 2;
+  OneofOptions oneof_options = 3;
+}
+
+// OneofOptions provide information for the documentation of options for a oneof.
+message OneofOptions {
+  reserved 999;
+  reserved "uninterpreted_options";
 }
 
 // Field provides information for the documentation of a message field.
@@ -303,6 +363,30 @@ message Field {
   // Extendee is the name of the type that is being extended if the field is an extension.
   // This is an empty string for fields that are not extenions.
   string extendee = 9;
+  FieldOptions field_options = 10;
+}
+
+// FieldOptions provide information for the documentation of options for a field.
+message FieldOptions {
+  reserved 5, 6, 7, 999;
+  reserved "lazy", "unverified_lazy", "weak", "uninterpreted_options";
+  bool deprecated = 1;
+  bool packed = 2;
+  CType ctype = 3;
+  JSType jstype = 4;
+  repeated string custom_options = 1000;
+  enum CType {
+    C_TYPE_UNSPECIFIED = 0;
+    C_TYPE_STRING = 1;
+    C_TYPE_CORD = 2;
+    C_TYPE_STRING_PIECE = 3;
+  }
+  enum JSType {
+    JS_TYPE_UNSPECIFIED = 0;
+    JS_TYPE_JS_NORMAL = 1;
+    JS_TYPE_JS_STRING = 2;
+    JS_TYPE_JS_NUMBER = 3;
+  }
 }
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
