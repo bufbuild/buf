@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package commitget
+package snapshotlist
 
 import _ "github.com/bufbuild/buf/private/usage"

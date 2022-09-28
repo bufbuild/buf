@@ -85,7 +85,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		tagFlagShortName,
 		nil,
 		fmt.Sprintf(
-			"Create a tag for the pushed commit. Multiple tags are created if specified multiple times. Cannot be used together with --%s.",
+			"Create a tag for the pushed snapshot. Multiple tags are created if specified multiple times. Cannot be used together with --%s.",
 			draftFlagName,
 		),
 	)
@@ -94,7 +94,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		draftFlagName,
 		"",
 		fmt.Sprintf(
-			"Make the pushed commit a draft with the specified name. Cannot be used together with --%s (-%s).",
+			"Make the pushed snapshot a draft with the specified name. Cannot be used together with --%s (-%s).",
 			tagFlagName,
 			tagFlagShortName,
 		),
@@ -174,7 +174,7 @@ func run(
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
 			if _, err := container.Stderr().Write(
-				[]byte("The latest commit has the same content; not creating a new commit.\n"),
+				[]byte("The latest snapshot has the same content; not creating a new snapshot.\n"),
 			); err != nil {
 				return err
 			}

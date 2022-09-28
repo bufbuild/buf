@@ -122,7 +122,7 @@ func run(
 
 // referencesPinnedByLock takes moduleReferences and a list of pins, then
 // returns a new list of moduleReferences with the same identity, but their
-// reference set to the commit of the pin with the corresponding identity.
+// reference set to the snapshot of the pin with the corresponding identity.
 func referencesPinnedByLock(moduleReferences []bufmoduleref.ModuleReference, modulePins []bufmoduleref.ModulePin) ([]bufmoduleref.ModuleReference, error) {
 	pinsByIdentity := make(map[string]bufmoduleref.ModulePin, len(modulePins))
 	for _, modulePin := range modulePins {
