@@ -61,7 +61,7 @@ message One {
   }
 
   /*
-  c-style comment
+     c-style comment
   */
 
   int64 one_one = 1 [(custom.field_option) = true];

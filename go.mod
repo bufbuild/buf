@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/bufbuild/connect-go v0.4.0
-	github.com/bufbuild/protocompile v0.0.0-20220921194504-8e564fc19a59
+	github.com/bufbuild/protocompile v0.0.0-20220927163942-e0e013a8d791
 	github.com/docker/docker v20.10.18+incompatible
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/gofrs/flock v0.8.1

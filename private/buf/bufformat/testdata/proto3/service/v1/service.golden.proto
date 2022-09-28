@@ -3,16 +3,12 @@ syntax = "proto3";
 message Message {}
 
 // Ping is an example service.
-service /* Before Ping comment */ Ping /* After Ping comment */ {
-  // Trailing comment on '{'
-
+service /* Before Ping comment */ Ping /* After Ping comment */ { // Trailing comment on '{'
   // This service is deprecated.
   option deprecated = true; // In-line comment on deprecated option.
 
   rpc /* Before Ping Method */ Ping(/* Before Request */Message/* After Request */) returns /* Before paren */ (Message);
-  rpc Echo(Message) returns (Message) {
-    // Trailing comment on '{'
-
+  rpc Echo(Message) returns (Message) { // Trailing comment on '{'
     option deprecated = true; // In-line on deprecated option.
 
     // This method has no side effects.

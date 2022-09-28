@@ -78,23 +78,21 @@ func testFormatNoDiff(t *testing.T, path string) {
 				readBucket,
 				"",
 				func(formattedFile storage.ReadObject) error {
-					originalPath := formattedFile.Path()
-					t.Run(originalPath, func(t *testing.T) {
-						if !strings.HasSuffix(originalPath, ".golden.proto") {
-							// If the fhe current file is not a golden file,
-							// we just need to make sure that the formatted
-							// result is equivalent to its original form.
-							//
-							// This ensures that formatting is idempotent.
-							originalPath = strings.Replace(originalPath, ".proto", ".golden.proto", 1)
+					expectedPath := formattedFile.Path()
+					t.Run(expectedPath, func(t *testing.T) {
+						// The expecetd format result is the golden file. If
+						// this file IS a golden file, it is expected to not
+						// change.
+						if !strings.HasSuffix(expectedPath, ".golden.proto") {
+							expectedPath = strings.Replace(expectedPath, ".proto", ".golden.proto", 1)
 						}
 						formattedData, err := io.ReadAll(formattedFile)
 						require.NoError(t, err)
-						originalFile, err := moduleBucket.Get(ctx, originalPath)
+						expectedFile, err := moduleBucket.Get(ctx, expectedPath)
 						require.NoError(t, err)
-						originalData, err := io.ReadAll(originalFile)
+						expectedData, err := io.ReadAll(expectedFile)
 						require.NoError(t, err)
-						fileDiff, err := diff.Diff(ctx, runner, formattedData, originalData, formattedFile.Path(), originalPath)
+						fileDiff, err := diff.Diff(ctx, runner, expectedData, formattedData, expectedPath, formattedFile.Path()+" (formatted)")
 						require.NoError(t, err)
 						require.Empty(t, string(fileDiff))
 					})

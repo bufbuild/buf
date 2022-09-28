@@ -22,7 +22,6 @@ message Foo {
   option (custom.message_thing_option) = {
     /*leading*/
     foo: 1
-
     /*trailing*/
   } /*leading*/; /*trailing*/
 
@@ -31,7 +30,6 @@ message Foo {
   repeated int64 values = 2 [
     /* leading comment */
     packed = false
-
     /* trailing comment */
   ];
 
@@ -47,7 +45,6 @@ message Foo {
         "foo",
         "bar",
         "baz"
-
         /*trail*/
       ]
       d [
@@ -56,7 +53,6 @@ message Foo {
         <
           /*lead*/
           foo: 97
-
           /*trail*/
         >
       ]

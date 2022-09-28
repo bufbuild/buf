@@ -18,7 +18,6 @@ extend Foo {
 
   // Leading comment on '}'.
 } // Trailing comment on '}'.
-
 // Another trailing comment on '}'.
 
 // Comment on EOF.
