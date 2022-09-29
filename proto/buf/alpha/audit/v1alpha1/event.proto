@@ -43,9 +43,9 @@ enum ResourceType {
   RESOURCE_TYPE_USER = 1;
   RESOURCE_TYPE_ORGANIZATION = 2;
   RESOURCE_TYPE_ORGANIZATION_MEMBER = 3;
-  RESOURCE_TYPE_REPOSITORY = 4;
-  RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
-  RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
+  RESOURCE_TYPE_MODULE = 4;
+  RESOURCE_TYPE_MODULE_CONTRIBUTOR = 5;
+  RESOURCE_TYPE_MODULE_COMMIT = 6;
   RESOURCE_TYPE_PLUGIN = 7;
 }
 
@@ -67,13 +67,13 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_MEMBER_ADDED = 3;
   EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED = 4;
   EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED = 5;
-  EVENT_TYPE_REPOSITORY_CREATED = 6;
-  EVENT_TYPE_REPOSITORY_DELETED = 7;
-  EVENT_TYPE_REPOSITORY_COMMIT_PUSHED = 8;
-  EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED = 9;
-  EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED = 10;
-  EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
-  EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
+  EVENT_TYPE_MODULE_CREATED = 6;
+  EVENT_TYPE_MODULE_DELETED = 7;
+  EVENT_TYPE_MODULE_COMMIT_PUSHED = 8;
+  EVENT_TYPE_MODULE_CONTRIBUTOR_ADDED = 9;
+  EVENT_TYPE_MODULE_CONTRIBUTOR_ROLE_CHANGED = 10;
+  EVENT_TYPE_MODULE_CONTRIBUTOR_REMOVED = 11;
+  EVENT_TYPE_MODULE_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
   EVENT_TYPE_PLUGIN_PUSHED = 15;
@@ -105,13 +105,13 @@ message Event {
     PayloadOrganizationMemberAdded organization_member_added = 8;
     PayloadOrganizationMemberRoleChanged organization_member_role_changed = 9;
     PayloadOrganizationMemberRemoved organization_member_removed = 10;
-    PayloadRepositoryCreated repository_created = 11;
-    PayloadRepositoryDeleted repository_deleted = 12;
-    PayloadRepositoryCommitPushed repository_commit_pushed = 13;
-    PayloadRepositoryContributorAdded repository_contributor_added = 14;
-    PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 15;
-    PayloadRepositoryContributorRemoved repository_contributor_removed = 16;
-    PayloadRepositoryVisibilityChanged repository_visibility_changed = 25;
+    PayloadModuleCreated module_created = 11;
+    PayloadModuleDeleted module_deleted = 12;
+    PayloadModuleCommitPushed module_commit_pushed = 13;
+    PayloadModuleContributorAdded module_contributor_added = 14;
+    PayloadModuleContributorRoleChanged module_contributor_role_changed = 15;
+    PayloadModuleContributorRemoved module_contributor_removed = 16;
+    PayloadModuleVisibilityChanged module_visibility_changed = 25;
     PayloadPluginCreated plugin_created = 17;
     PayloadPluginDeleted plugin_deleted = 18;
     PayloadPluginPushed plugin_pushed = 19;
@@ -156,84 +156,84 @@ message PayloadOrganizationMemberRemoved {
   buf.alpha.registry.v1alpha1.OrganizationRole member_role = 3;
 }
 
-message PayloadRepositoryCreated {
-  // owner_id is the id of the owner of the repository.
+message PayloadModuleCreated {
+  // owner_id is the id of the owner of the module.
   string owner_id = 1;
-  // owner_name is the name of the owner of the repository.
+  // owner_name is the name of the owner of the module.
   string owner_name = 2;
 }
 
-message PayloadRepositoryDeleted {
-  // owner_id is the id of the owner of the repository.
+message PayloadModuleDeleted {
+  // owner_id is the id of the owner of the module.
   string owner_id = 1;
-  // owner_name is the name of the owner of the repository.
+  // owner_name is the name of the owner of the module.
   string owner_name = 2;
 }
 
-message PayloadRepositoryCommitPushed {
-  // owner_id is the id of the owner of the repository.
+message PayloadModuleCommitPushed {
+  // owner_id is the id of the owner of the module.
   string owner_id = 1;
-  // owner_name is the name of the owner of the repository.
+  // owner_name is the name of the owner of the module.
   string owner_name = 2;
-  // repository_id is the id of the repository within which the commit was created.
-  string repository_id = 3;
-  // repository_name is the name of the repository within which the commit was created.
-  string repository_name = 4;
+  // module_id is the id of the module within which the commit was created.
+  string module_id = 3;
+  // module_name is the name of the module within which the commit was created.
+  string module_name = 4;
   // tags are the tags included in the push. Optional.
   repeated string tags = 5;
   // draft_name is the name of the draft. Optional.
   string draft_name = 6;
 }
 
-message PayloadRepositoryContributorAdded {
-  // owner_id is the id of the owner of the repository.
+message PayloadModuleContributorAdded {
+  // owner_id is the id of the owner of the module.
   string owner_id = 1;
-  // owner_name is the name of the owner of the repository.
+  // owner_name is the name of the owner of the module.
   string owner_name = 2;
-  // repository_id is the id of the repository with the new contributor.
-  string repository_id = 3;
-  // repository_name is the name of the repository with the new contributor.
-  string repository_name = 4;
-  // contributor_role is the role granted to the contributor added to the repository.
+  // module_id is the id of the module with the new contributor.
+  string module_id = 3;
+  // module_name is the name of the module with the new contributor.
+  string module_name = 4;
+  // contributor_role is the role granted to the contributor added to the module.
   buf.alpha.registry.v1alpha1.RepositoryRole contributor_role = 5;
 }
 
-message PayloadRepositoryContributorRoleChanged {
-  // owner_id is the id of the owner of the repository.
+message PayloadModuleContributorRoleChanged {
+  // owner_id is the id of the owner of the module.
   string owner_id = 1;
-  // owner_name is the name of the owner of the repository.
+  // owner_name is the name of the owner of the module.
   string owner_name = 2;
-  // repository_id is the id of the repository within which the role was changed.
-  string repository_id = 3;
-  // repository_name is the name of the repository within which the role was changed.
-  string repository_name = 4;
+  // module_id is the id of the module within which the role was changed.
+  string module_id = 3;
+  // module_name is the name of the module within which the role was changed.
+  string module_name = 4;
   // old_role is the old role of the contributor whose role was changed.
   buf.alpha.registry.v1alpha1.RepositoryRole old_role = 5;
   // new_role is the new role of the contributor whose role was changed.
   buf.alpha.registry.v1alpha1.RepositoryRole new_role = 6;
 }
 
-message PayloadRepositoryContributorRemoved {
-  // owner_id is the id of the owner of the repository.
+message PayloadModuleContributorRemoved {
+  // owner_id is the id of the owner of the module.
   string owner_id = 1;
-  // owner_name is the name of the owner of the repository.
+  // owner_name is the name of the owner of the module.
   string owner_name = 2;
-  // repository_id is the id of the repository that the contributor was removed from.
-  string repository_id = 3;
-  // repository_name is the name of the repository that the contributor was removed from.
-  string repository_name = 4;
-  // contributor_role is the role that the contributor had when removed from the repository.
+  // module_id is the id of the module that the contributor was removed from.
+  string module_id = 3;
+  // module_name is the name of the module that the contributor was removed from.
+  string module_name = 4;
+  // contributor_role is the role that the contributor had when removed from the module.
   buf.alpha.registry.v1alpha1.RepositoryRole contributor_role = 5;
 }
 
-message PayloadRepositoryVisibilityChanged {
-  // owner_id is the id of the owner of the repository.
+message PayloadModuleVisibilityChanged {
+  // owner_id is the id of the owner of the module.
   string owner_id = 1;
-  // owner_name is the name of the owner of the repository.
+  // owner_name is the name of the owner of the module.
   string owner_name = 2;
-  // old_visibility is the old visibility of the repository.
+  // old_visibility is the old visibility of the module.
   buf.alpha.registry.v1alpha1.Visibility old_visibility = 3;
-  // new_visibility is the new visibility of the repository.
+  // new_visibility is the new visibility of the module.
   buf.alpha.registry.v1alpha1.Visibility new_visibility = 4;
 }
 
