@@ -66,7 +66,7 @@ type RepositoryCommit struct {
 	DraftName string `protobuf:"bytes,9,opt,name=draft_name,json=draftName,proto3" json:"draft_name,omitempty"`
 	// license_spdx_id is the license of the commit, based on the
 	// license file pushed, which should be one of the identifier defined in
-	// https://spdx.org/licenses, and will be empty if the license file is not
+	// https://spdx.org/licenses, and will be not set if the license file is not
 	// presented or cannot be classified into a known license.
 	LicenseSpdxId string `protobuf:"bytes,10,opt,name=license_spdx_id,json=licenseSpdxId,proto3" json:"license_spdx_id,omitempty"`
 }
