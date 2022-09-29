@@ -28,28 +28,40 @@ import (
 
 // formatter writes an *ast.FileNode as a .proto file.
 type formatter struct {
-	writer      io.Writer
-	fileNode    *ast.FileNode
-	indent      int
+	writer   io.Writer
+	fileNode *ast.FileNode
+
+	// Current level of indentation.
+	indent int
+	// The last character written to writer.
 	lastWritten rune
 
-	// Used to determine how the current node's
-	// leading comments should be written.
+	// The last node written. This must be updated from all functions
+	// that write comments with a node. This flag informs how the next
+	// node's leading comments and whitespace should be written.
 	previousNode ast.Node
 
-	// if true, a space will be written to the output unless the next character
-	// written is a newline (don't wait errant trailing spaces)
+	// If true, a space will be written to the output unless the next character
+	// written is a newline (don't wait errant trailing spaces).
 	pendingSpace bool
-	// if true, the formatter is in the middle of printing compact options
+	// If true, the formatter is in the middle of printing compact options.
 	inCompactOptions bool
 
+	// Track runes that open blocks/scopes and are expected to increase indention
+	// level. For example, when runes "{" "[" "(" ")" are written, the pending
+	// value is 2 (increment three times for "{" "[" "("; decrement once for ")").
+	// If it's greater than zero at the end of a line, we call In() so that
+	// subsequent lines are indented. If it's less than zero at the end of a line,
+	// we call Out(). This minimizes the amount of explicit indent/unindent code
+	// that is needed and makes it less error-prone.
 	pendingIndent int
-	inline        bool
+	// If true, an inline node/sequence is being written. We treat whitespace a
+	// little differently for when blocks are printed inline vs. across multiple
+	// lines. So this flag informs the logic that makes those whitespace decisions.
+	inline bool
 
-	// Records all errors that occur during
-	// the formatting process. Nearly any
-	// non-nil error represents a bug in the
-	// implementation.
+	// Records all errors that occur during the formatting process. Nearly any
+	// non-nil error represents a bug in the implementation.
 	err error
 }
 
@@ -80,12 +92,7 @@ func (f *formatter) P(elements ...string) {
 			f.WriteString(elem)
 		}
 	}
-	//_, file, line, ok := runtime.Caller(1)
-	//if ok {
-	//	f.WriteString(fmt.Sprintf("\t\t\t%s:%d\n", file, line))
-	//} else {
 	f.WriteString("\n")
-	//}
 
 	if f.pendingIndent > 0 {
 		f.In()
