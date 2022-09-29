@@ -1,8 +1,8 @@
 syntax = "proto3";
 
 message Foo {
-  reserved /* 43 is the start */43 to /* max is the end */max;
-  reserved "foo"/* Comment before the ',' */, /* Comment before "bar" */"bar";
+  reserved /* 43 is the start */ 43 to /* max is the end */ max;
+  reserved "foo" /* Comment before the ',' */, /* Comment before "bar" */ "bar";
 
   // Always reserve the forty-second field.
   reserved 42;

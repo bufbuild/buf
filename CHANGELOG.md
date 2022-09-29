@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 - Push lint and breaking configuration to the registry.
+- Formatter better edits/preserves whitespace around inline comments.
+- Formatter correctly indents multi-line block (C-style) comments.
+- Formatter now indents trailing comments at the end of an indented block body
+  (including contents of message and array literals and elements in compact options)
+  the same as the rest of the body (instead of out one level, like the closing
+  punctuation).
+- Formatter uses a compact, single-line representation for array and message literals
+  in option values that are sufficiently simple (single scalar element or field).
 
 ## [v1.8.0] - 2022-09-14
 
