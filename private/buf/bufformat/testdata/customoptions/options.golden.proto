@@ -15,6 +15,7 @@ message Thing {
   repeated Thing repeated_thing = 7;
   repeated string repeated_baz = 8;
 }
+// this is a comment after Thing
 
 extend google.protobuf.MessageOptions {
   bool message_option = 80001;
@@ -70,10 +71,12 @@ extend google.protobuf.EnumValueOptions {
   Thing enum_value_thing_option = 80016;
 }
 
+// this is a comment before service options
 extend google.protobuf.ServiceOptions {
   bool service_option = 80012;
   Thing service_thing_option = 80014;
 }
+// this is a comment after service options
 
 extend google.protobuf.ExtensionRangeOptions {
   bool extension_range_option = 80012;

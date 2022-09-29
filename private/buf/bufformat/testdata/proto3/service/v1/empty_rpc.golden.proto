@@ -13,5 +13,5 @@ service Foo {
     // Body comment.
   }
 
-// Leading comment on '}'.
+  // Leading comment on '}'.
 }
