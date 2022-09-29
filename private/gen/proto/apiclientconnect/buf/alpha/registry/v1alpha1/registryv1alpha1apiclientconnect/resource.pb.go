@@ -33,15 +33,15 @@ type resourceServiceClient struct {
 // resource either as a repository or a plugin.
 func (s *resourceServiceClient) GetResourceByName(
 	ctx context.Context,
-	name string,
 	owner string,
+	name string,
 ) (resource *v1alpha1.Resource, _ error) {
 	response, err := s.client.GetResourceByName(
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.GetResourceByNameRequest{
-				Name:  name,
 				Owner: owner,
+				Name:  name,
 			}),
 	)
 	if err != nil {

@@ -34,10 +34,10 @@ service ResourceService {
 }
 
 message GetResourceByNameRequest {
+  // Owner of the requested resource.
+  string owner = 1;
   // Name of the requested resource.
-  string name = 1;
-  // Owner of the resource.
-  string owner = 2;
+  string name = 2;
 }
 
 message GetResourceByNameResponse {

@@ -27,7 +27,7 @@ type ResourceService interface {
 	// resource either as a repository or a plugin.
 	GetResourceByName(
 		ctx context.Context,
-		name string,
 		owner string,
+		name string,
 	) (resource *v1alpha1.Resource, err error)
 }
