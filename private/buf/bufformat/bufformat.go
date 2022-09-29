@@ -21,8 +21,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/jhump/protocompile/parser"
-	"github.com/jhump/protocompile/reporter"
+	"github.com/bufbuild/protocompile/parser"
+	"github.com/bufbuild/protocompile/reporter"
 	"go.uber.org/multierr"
 )
 

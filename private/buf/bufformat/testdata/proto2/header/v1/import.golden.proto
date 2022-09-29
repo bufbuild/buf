@@ -1,4 +1,4 @@
 // This should be first.
 /* This should be second */
-import /* A well-known type */"google/protobuf/descriptor.proto"; // In-line on the descriptor.proto import.
-import /* Another well-known type */"google/protobuf/type.proto"; // In-line on the type.proto import.
+import /* A well-known type */ "google/protobuf/descriptor.proto"; // In-line on the descriptor.proto import.
+import /* Another well-known type */ "google/protobuf/type.proto"; // In-line on the type.proto import.

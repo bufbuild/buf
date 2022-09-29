@@ -4,20 +4,20 @@ import "custom.proto";
 
 message Foo {
   string name = 1 [
-    (custom.float_field_option) = /* Before */42.2/* After */, // Trailing
-    (custom.double_field_option) = /* Before */42.2424/* After */, // Trailing
-    (custom.int32_field_option) = /* Before */32/* After */, // Trailing
-    (custom.int64_field_option) = /* Before */64/* After */, // Trailing
-    (custom.uint32_field_option) = /* Before */3200/* After */, // Trailing
-    (custom.uint64_field_option) = /* Before */6400/* After */, // Trailing
-    (custom.sint32_field_option) = -/* The '-' can be detached. */32/* After 32 */, // Trailing
-    (custom.sint64_field_option) = -/* Again */64/* After 64 */, // Trailing
-    (custom.fixed32_field_option) = /* Before */3232/* After */, // Trailing
-    (custom.fixed64_field_option) = /* Before */6464/* After */, // Trailing
-    (custom.sfixed32_field_option) = -/* Again */3232/* After */, // Trailing
-    (custom.sfixed64_field_option) = -/* Finally */6464/* After */, // Trailing
-    (custom.bool_field_option) = /* Before */true/* After */, // Trailing
-    (custom.bytes_field_option) = /* Before */"bytes"/* After */, // Trailing
+    (custom.float_field_option) = /* Before */ 42.2 /* After */, // Trailing
+    (custom.double_field_option) = /* Before */ 42.2424 /* After */, // Trailing
+    (custom.int32_field_option) = /* Before */ 32 /* After */, // Trailing
+    (custom.int64_field_option) = /* Before */ 64 /* After */, // Trailing
+    (custom.uint32_field_option) = /* Before */ 3200 /* After */, // Trailing
+    (custom.uint64_field_option) = /* Before */ 6400 /* After */, // Trailing
+    (custom.sint32_field_option) = - /* The '-' can be detached. */ 32 /* After 32 */, // Trailing
+    (custom.sint64_field_option) = - /* Again */ 64 /* After 64 */, // Trailing
+    (custom.fixed32_field_option) = /* Before */ 3232 /* After */, // Trailing
+    (custom.fixed64_field_option) = /* Before */ 6464 /* After */, // Trailing
+    (custom.sfixed32_field_option) = - /* Again */ 3232 /* After */, // Trailing
+    (custom.sfixed64_field_option) = - /* Finally */ 6464 /* After */, // Trailing
+    (custom.bool_field_option) = /* Before */ true /* After */, // Trailing
+    (custom.bytes_field_option) = /* Before */ "bytes" /* After */, // Trailing
     (custom.string_field_option) =
       /* One */
       "this"
