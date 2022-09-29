@@ -49,9 +49,7 @@ message One {
   // subsequent message-option comment
   option (custom.message_option) = false; // message-option-inline comment
   // message-option comment 2
-  option (custom.message_thing_option) = {
-    foo: 5
-  }; // message-option-inline comment 2
+  option (custom.message_thing_option) = {foo: 5}; // message-option-inline comment 2
 
   // body comment 2
 
@@ -63,15 +61,13 @@ message One {
   }
 
   /*
-  c-style comment
+     c-style comment
   */
 
   int64 one_one = 1 [(custom.field_option) = true];
   Two one_two = 2 [
     (custom.field_option) = false,
-    (custom.field_thing_option) = {
-      foo: 6
-    }
+    (custom.field_thing_option) = {foo: 6}
   ]; // field-option-inline comment
 
   Three one_three = 3; /* field-inline c-style comment */
@@ -83,17 +79,13 @@ message One {
 
     // oneof-field comment
     option (custom.oneof_option) = true; // oneof-option-field-inline comment
-    option (custom.oneof_thing_option) = {
-      foo: 7
-    }; // oneof-option-field-inline comment 2
+    option (custom.oneof_thing_option) = {foo: 7}; // oneof-option-field-inline comment 2
     int64 foo1 = 8;
     string foo2 = 9;
     // oneof-field comment 2
     int64 woot3 = 10 [
       (custom.field_option) = false,
-      (custom.field_thing_option) = {
-        foo: 8
-      }
+      (custom.field_thing_option) = {foo: 8}
     ]; // oneof-option-field-inline comment 3
     // oneof-field comment 2
     custom.Thing custom_field = 11; // oneof-option-field-inline comment 4
@@ -152,7 +144,7 @@ message One {
     }
   ];
 
-// body comment one2
+  // body comment one2
 } // trailing comment one1
 
 message Two {
@@ -190,9 +182,7 @@ enum OtherEnum {
       bar: 2,
       recursive: {
         foo: 3,
-        recursive: {
-          bar: 2
-        }
+        recursive: {bar: 2}
       }
     }
   ]; // enum-option-inline comment
@@ -207,9 +197,7 @@ enum OtherEnum {
 // ExampleService is the example service.
 service ExampleService {
   option (custom.service_option) = true; // service-option-inline comment
-  option (custom.service_thing_option) = {
-    foo: 1
-  }; // service-option-inline comment 2
+  option (custom.service_thing_option) = {foo: 1}; // service-option-inline comment 2
   // rpc-leading comment
   rpc Example(One) returns (Two) {
     option (custom.method_option) = true;
@@ -218,9 +206,7 @@ service ExampleService {
       bar: 2,
       recursive: {
         foo: 3,
-        recursive: {
-          bar: 2
-        }
+        recursive: {bar: 2}
       }
     }; // service-option-inline comment 2
   } // rpc-inline comment
