@@ -483,12 +483,14 @@ func addFieldChangedType(add addFunc, previousField protosource.Field, field pro
 	default:
 		fieldLocation = field.TypeLocation()
 	}
+	// otherwise prints as hex
+	previousNumberString := strconv.FormatInt(int64(previousField.Number()), 10)
 	add(
 		field,
 		nil,
 		fieldLocation,
 		`Field %q on message %q changed type from %q to %q.%s`,
-		strconv.FormatInt(int64(previousField.Number()), 10), // otherwise prints as hex
+		previousNumberString,
 		field.Message().Name(),
 		previousField.Type().String(),
 		field.Type().String(),
