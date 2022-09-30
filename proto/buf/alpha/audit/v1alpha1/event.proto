@@ -77,7 +77,7 @@ enum EventType {
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
   EVENT_TYPE_PLUGIN_PUSHED = 15;
-  EVENT_TYPE_USER_REGISTERED = 16;
+  EVENT_TYPE_USER_CREATED = 16;
   EVENT_TYPE_USER_DELETED = 17;
   EVENT_TYPE_USER_DEACTIVATED = 18;
   EVENT_TYPE_USER_LOGGED_IN = 19;
@@ -115,7 +115,7 @@ message Event {
     PayloadPluginCreated plugin_created = 17;
     PayloadPluginDeleted plugin_deleted = 18;
     PayloadPluginPushed plugin_pushed = 19;
-    PayloadUserRegistered user_registered = 20;
+    PayloadUserCreated user_created = 20;
     PayloadUserDeactivated user_deactivated = 21;
     PayloadUserDeleted user_deleted = 22;
     PayloadUserLoggedIn user_logged_in = 23;
@@ -258,7 +258,7 @@ message PayloadPluginPushed {
   string owner_name = 2;
 }
 
-message PayloadUserRegistered {}
+message PayloadUserCreated {}
 
 message PayloadUserDeactivated {}
 
