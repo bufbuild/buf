@@ -21,7 +21,7 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
-// ResourceService is a service that provides RPCs that allow BSR to query resources
+// ResourceService manages resources.
 type ResourceService interface {
 	// GetResourceByName takes a resource name and returns the
 	// resource either as a repository or a plugin.
