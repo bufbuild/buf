@@ -13,8 +13,30 @@ option (custom.message_thing_option) = {
 
  /* Leading comment on the 'foo' element */ foo:  1  /* Comment on bar */ bar:   2  /* Comment on truth */  truth:false    }  ;
 
+
+
+      option (custom.message_thing_option)=  { /*leading*/ foo: 1 /*trailing*/ } /*leading*/;/*trailing*/
+
        // This is attached to the optional label.
      optional string name = 1 [    deprecated   = true  ]; 
-   repeated int64 values = 2;  
+   repeated int64 values = 2 [  /* leading comment */ packed=false /* trailing comment */ ];
 
-  }
+
+option (custom.message_thing_option)= {
+  foo:1 bar:2 baz:3
+  buzz:<
+    a:"abc" b:"xyz"
+    c:[ /*lead*/"foo", "bar", "baz"/*trail*/]
+    d[<
+        foo: 99
+      >,
+      <foo:98>,
+      </*lead*/foo:97/*trail*/>
+    ]
+    e []
+    f { }
+       g: [1]
+  >
+  frobnitz: <foo:1>
+};
+}

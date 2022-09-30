@@ -4,13 +4,13 @@ go 1.18
 
 require (
 	github.com/bufbuild/connect-go v0.4.0
+	github.com/bufbuild/protocompile v0.0.0-20220927163942-e0e013a8d791
 	github.com/docker/docker v20.10.18+incompatible
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid v4.3.0+incompatible
 	github.com/google/go-cmp v0.5.9
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
-	github.com/jhump/protocompile v0.0.0-20220916183013-0209c974984d
 	github.com/jhump/protoreflect v1.12.1-0.20220721211354-060cc04fc18b
 	github.com/klauspost/compress v1.15.10
 	github.com/klauspost/pgzip v1.2.5
@@ -23,7 +23,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.0
 	go.opencensus.io v0.23.0
-	go.opentelemetry.io/otel/metric v0.32.0
+	go.opentelemetry.io/otel/metric v0.32.1
 	go.opentelemetry.io/otel/trace v1.10.0
 	go.uber.org/atomic v1.10.0
 	go.uber.org/multierr v1.8.0
@@ -33,7 +33,7 @@ require (
 	golang.org/x/sync v0.0.0-20220907140024-f12130a52804
 	golang.org/x/term v0.0.0-20220919170432-7a66f970e087
 	golang.org/x/tools v0.1.12
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8
 	gopkg.in/yaml.v3 v3.0.1
 )
 

@@ -19,10 +19,6 @@ message Foo {
   string five = 5 [(name) = "f\"o\"o"];
   string six = 6 [(name) = 'f\'o\'o'];
   string seven = 7 [(name) = "foo"];
-  string eight = 8 [(foo) = {
-    something: 'something:"foo"'
-  }];
-  string nine = 9 [(foo) = {
-    something: "something:\"foo\"\nanother:\"bar\""
-  }];
+  string eight = 8 [(foo) = {something: 'something:"foo"'}];
+  string nine = 9 [(foo) = {something: "something:\"foo\"\nanother:\"bar\""}];
 }
