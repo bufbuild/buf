@@ -554,6 +554,26 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 	}, nil
 }
 
+// NewResourceService creates a new ResourceService
+func (p *provider) NewResourceService(ctx context.Context, address string) (registryv1alpha1api.ResourceService, error) {
+	interceptors := p.interceptors
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	return &resourceServiceClient{
+		logger: p.logger,
+		client: registryv1alpha1connect.NewResourceServiceClient(
+			p.httpClient,
+			address,
+			connect_go.WithInterceptors(interceptors...),
+		),
+	}, nil
+}
+
 // NewSearchService creates a new SearchService
 func (p *provider) NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error) {
 	interceptors := p.interceptors
