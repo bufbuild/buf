@@ -45,7 +45,7 @@ enum ResourceType {
   RESOURCE_TYPE_ORGANIZATION_MEMBER = 3;
   RESOURCE_TYPE_MODULE = 4;
   RESOURCE_TYPE_MODULE_CONTRIBUTOR = 5;
-  RESOURCE_TYPE_MODULE_COMMIT = 6;
+  RESOURCE_TYPE_MODULE_SNAPSHOT = 6;
   RESOURCE_TYPE_PLUGIN = 7;
 }
 
@@ -69,7 +69,7 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED = 5;
   EVENT_TYPE_MODULE_CREATED = 6;
   EVENT_TYPE_MODULE_DELETED = 7;
-  EVENT_TYPE_MODULE_COMMIT_PUSHED = 8;
+  EVENT_TYPE_MODULE_SNAPSHOT_PUSHED = 8;
   EVENT_TYPE_MODULE_CONTRIBUTOR_ADDED = 9;
   EVENT_TYPE_MODULE_CONTRIBUTOR_ROLE_CHANGED = 10;
   EVENT_TYPE_MODULE_CONTRIBUTOR_REMOVED = 11;
@@ -107,7 +107,7 @@ message Event {
     PayloadOrganizationMemberRemoved organization_member_removed = 10;
     PayloadModuleCreated module_created = 11;
     PayloadModuleDeleted module_deleted = 12;
-    PayloadModuleCommitPushed module_commit_pushed = 13;
+    PayloadModuleSnapshotPushed module_snapshot_pushed = 13;
     PayloadModuleContributorAdded module_contributor_added = 14;
     PayloadModuleContributorRoleChanged module_contributor_role_changed = 15;
     PayloadModuleContributorRemoved module_contributor_removed = 16;
@@ -170,12 +170,12 @@ message PayloadModuleDeleted {
   string owner_name = 2;
 }
 
-message PayloadModuleCommitPushed {
+message PayloadModuleSnapshotPushed {
   // owner_id is the id of the owner of the module.
   string owner_id = 1;
   // owner_name is the name of the owner of the module.
   string owner_name = 2;
-  // module_id is the id of the module within which the commit was created.
+  // module_id is the id of the module within which the snapshot was created.
   string module_id = 3;
   // module_name is the name of the module within which the commit was created.
   string module_name = 4;
