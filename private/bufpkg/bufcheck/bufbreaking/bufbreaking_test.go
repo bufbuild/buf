@@ -678,7 +678,6 @@ func TestRunBreakingIntEnum(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 8, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_TYPE"),
 	)
-
 }
 
 func TestRunBreakingMessageEnum(t *testing.T) {
