@@ -45,8 +45,8 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <source>",
 		Short: "Use a source reference to convert a binary or JSON serialized message supplied through stdin or the input flag.",
-		Long: `The first argument is the source that defines the serialized message (like buf.build/acme/weather).
-Alternatively, you can omit the source and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
+		Long: `The first argument is the input that defines the serialized message (like buf.build/acme/weather).
+Alternatively, you can omit the input and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -63,6 +63,9 @@ type flags struct {
 	Type        string
 	Input       string
 	Output      string
+
+	// special
+	InputHashtag string
 }
 
 func newFlags() *flags {
@@ -70,6 +73,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -115,7 +119,7 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, "", "")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}

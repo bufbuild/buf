@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
@@ -29,7 +30,7 @@ import (
 )
 
 func TestConvert(t *testing.T) {
-	testRun := func(t *testing.T, want string, args ...string) {
+	testRun := func(t *testing.T, stdin io.Reader, want string, args ...string) {
 		var stout bytes.Buffer
 		appcmdtesting.RunCommandSuccess(
 			t,
@@ -40,7 +41,7 @@ func TestConvert(t *testing.T) {
 				)
 			},
 			internaltesting.NewEnvFunc(t),
-			nil,
+			stdin,
 			&stout,
 			args...,
 		)
@@ -54,6 +55,7 @@ func TestConvert(t *testing.T) {
 	t.Run("",
 		func(t *testing.T) {
 			testRun(t,
+				nil,
 				"testdata/bin_json/want.json",
 				"--type=buf.Foo",
 				"--input=testdata/bin_json/descriptor.plain.bin",
@@ -64,10 +66,23 @@ func TestConvert(t *testing.T) {
 	t.Run("",
 		func(t *testing.T) {
 			testRun(t,
+				nil,
 				"testdata/json_bin/want.bin",
 				"--type=buf.Foo",
 				"--input=testdata/json_bin/payload.json",
 				"testdata/json_bin/buf.proto",
 			)
 		})
+
+	t.Run("",
+		func(t *testing.T) {
+			testRun(t,
+				strings.NewReader(`{"one":"55"}`),
+				"testdata/json_bin/want.bin",
+				"-#format=json",
+				"--type=buf.Foo",
+				"testdata/json_bin/buf.proto",
+			)
+		})
+
 }
