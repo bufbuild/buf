@@ -1,4 +1,0 @@
-syntax = "proto3";
-message Foo {
-  int64 foo = 1;
-}

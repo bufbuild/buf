@@ -1,7 +1,0 @@
-syntax = "proto3";
-message Foo {
-  Foo2 foo = 1;
-}
-message Foo2 {
-  int32 foo = 1;
-}
