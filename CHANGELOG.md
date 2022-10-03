@@ -11,6 +11,7 @@
   punctuation).
 - Formatter uses a compact, single-line representation for array and message literals
   in option values that are sufficiently simple (single scalar element or field).
+- Include `LICENSE` file in the module on `buf push`.
 
 ## [v1.8.0] - 2022-09-14
 

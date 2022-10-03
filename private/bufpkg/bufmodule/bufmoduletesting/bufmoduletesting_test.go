@@ -33,3 +33,13 @@ func TestModuleDigestB3(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, bufmoduletesting.TestDigestB3WithConfiguration, digest)
 }
+
+func TestModuleDigestB3WithLicense(t *testing.T) {
+	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithLicense)
+	require.NoError(t, err)
+	module, err := bufmodule.NewModuleForBucket(context.Background(), readBucket)
+	require.NoError(t, err)
+	digest, err := bufmodule.ModuleDigestB3(context.Background(), module)
+	require.NoError(t, err)
+	require.Equal(t, bufmoduletesting.TestDigestB3WithLicense, digest)
+}

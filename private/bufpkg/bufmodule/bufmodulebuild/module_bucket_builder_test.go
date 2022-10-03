@@ -310,6 +310,16 @@ func TestDocumentation(t *testing.T) {
 	)
 }
 
+func TestLicense(t *testing.T) {
+	testLicenseBucket(
+		t,
+		"testdata/5",
+		"Test Module License",
+		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/5/proto/1.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/5/proto/a/2.proto", false, nil, ""),
+	)
+}
+
 func TestConfigInclusion(t *testing.T) {
 	t.Run("buf.yaml", func(t *testing.T) {
 		t.Parallel()
@@ -513,6 +523,40 @@ func testDocumentationBucket(
 	require.NoError(t, err)
 	require.NotNil(t, module)
 	assert.NotEmpty(t, module.Documentation())
+	fileInfos, err := module.TargetFileInfos(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(
+		t,
+		expectedFileInfos,
+		fileInfos,
+	)
+}
+
+func testLicenseBucket(
+	t *testing.T,
+	relDir string,
+	expectedLicense string,
+	expectedFileInfos ...bufmoduleref.FileInfo,
+) {
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		relDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+	config, err := bufmoduleconfig.NewConfigV1(
+		bufmoduleconfig.ExternalConfigV1{},
+	)
+	require.NoError(t, err)
+	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+		context.Background(),
+		readWriteBucket,
+		config,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, module)
+	assert.NotEmpty(t, module.License())
+	assert.Equal(t, expectedLicense, module.License())
 	fileInfos, err := module.TargetFileInfos(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(
