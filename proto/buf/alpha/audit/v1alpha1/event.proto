@@ -76,11 +76,11 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
-  EVENT_TYPE_USER_CREATED = 16;
-  EVENT_TYPE_USER_DELETED = 17;
-  EVENT_TYPE_USER_DEACTIVATED = 18;
-  EVENT_TYPE_USER_LOGGED_IN = 19;
-  EVENT_TYPE_USER_LOGGED_OUT = 20;
+  EVENT_TYPE_USER_CREATED = 15;
+  EVENT_TYPE_USER_DELETED = 16;
+  EVENT_TYPE_USER_DEACTIVATED = 17;
+  EVENT_TYPE_USER_LOGGED_IN = 18;
+  EVENT_TYPE_USER_LOGGED_OUT = 19;
 }
 
 // Event is an audited action that happened in the BSR, with the information of
@@ -110,9 +110,9 @@ message Event {
     PayloadRepositoryContributorAdded repository_contributor_added = 14;
     PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 15;
     PayloadRepositoryContributorRemoved repository_contributor_removed = 16;
-    PayloadRepositoryVisibilityChanged repository_visibility_changed = 25;
-    PayloadPluginCreated plugin_created = 17;
-    PayloadPluginDeleted plugin_deleted = 18;
+    PayloadRepositoryVisibilityChanged repository_visibility_changed = 17;
+    PayloadPluginCreated plugin_created = 18;
+    PayloadPluginDeleted plugin_deleted = 19;
     PayloadUserCreated user_created = 20;
     PayloadUserDeactivated user_deactivated = 21;
     PayloadUserDeleted user_deleted = 22;
