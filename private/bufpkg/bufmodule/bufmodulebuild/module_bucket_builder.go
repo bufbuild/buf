@@ -74,6 +74,7 @@ func (b *moduleBucketBuilder) buildForBucket(
 	externalPaths := []string{
 		buflock.ExternalConfigFilePath,
 		bufmodule.DocumentationFilePath,
+		bufmodule.LicenseFilePath,
 	}
 	externalPaths = append(externalPaths, bufconfig.AllConfigFilePaths...)
 	rootBuckets := make([]storage.ReadBucket, 0, len(externalPaths))
