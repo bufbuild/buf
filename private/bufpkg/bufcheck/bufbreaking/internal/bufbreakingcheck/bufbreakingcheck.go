@@ -474,12 +474,21 @@ func addFieldChangedType(add addFunc, previousField protosource.Field, field pro
 			combinedExtraMessage = " " + joined
 		}
 	}
+	var fieldLocation protosource.Location
+	switch field.Type() {
+	case protosource.FieldDescriptorProtoTypeMessage,
+		protosource.FieldDescriptorProtoTypeEnum,
+		protosource.FieldDescriptorProtoTypeGroup:
+		fieldLocation = field.TypeNameLocation()
+	default:
+		fieldLocation = field.TypeLocation()
+	}
 	// otherwise prints as hex
 	previousNumberString := strconv.FormatInt(int64(previousField.Number()), 10)
 	add(
 		field,
 		nil,
-		field.TypeLocation(),
+		fieldLocation,
 		`Field %q on message %q changed type from %q to %q.%s`,
 		previousNumberString,
 		field.Message().Name(),
