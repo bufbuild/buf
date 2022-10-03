@@ -76,7 +76,6 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_PLUGIN_CREATED = 13;
   EVENT_TYPE_PLUGIN_DELETED = 14;
-  EVENT_TYPE_PLUGIN_PUSHED = 15;
   EVENT_TYPE_USER_CREATED = 16;
   EVENT_TYPE_USER_DELETED = 17;
   EVENT_TYPE_USER_DEACTIVATED = 18;
@@ -114,7 +113,6 @@ message Event {
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 25;
     PayloadPluginCreated plugin_created = 17;
     PayloadPluginDeleted plugin_deleted = 18;
-    PayloadPluginPushed plugin_pushed = 19;
     PayloadUserCreated user_created = 20;
     PayloadUserDeactivated user_deactivated = 21;
     PayloadUserDeleted user_deleted = 22;
@@ -245,13 +243,6 @@ message PayloadPluginCreated {
 }
 
 message PayloadPluginDeleted {
-  // owner_id is the id of the owner of the plugin.
-  string owner_id = 1;
-  // owner_name is the name of the owner of the plugin.
-  string owner_name = 2;
-}
-
-message PayloadPluginPushed {
   // owner_id is the id of the owner of the plugin.
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
