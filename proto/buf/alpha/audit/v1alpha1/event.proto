@@ -34,6 +34,10 @@ message Actor {
   string id = 2;
   // Name of the actor who caused the audited event.
   string name = 3;
+  // UserAgent is the User-Agent header associated with the request that caused the audited event, if any.
+  string user_agent = 4;
+  // IP is the IP address associated with the request that caused the audited event, if any.
+  string ip = 5;
 }
 
 // ResourceType is the type of the resource that was affected by the audited
