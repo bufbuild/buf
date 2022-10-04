@@ -20,11 +20,19 @@ import "buf/alpha/audit/v1alpha1/event.proto";
 
 // AuditService is the Audit service.
 service AuditService {
-  // ListAuditedEvents lists all repositories recorded in the BSR instance.
+  // ListAuditedEvents lists audited events recorded in the BSR instance.
   rpc ListAuditedEvents(ListAuditedEventsRequest) returns (ListAuditedEventsResponse);
 }
 
-message ListAuditedEventsRequest {}
+message ListAuditedEventsRequest {
+  // The page size for listing audited events, values between 1-250.
+  uint32 page_size = 1;
+  // The page token for paginating. The first page is returned if this is empty.
+  string page_token = 2;
+  // The listed audited events are order by created time in ascending order.
+  // You can reverse that order setting this value to true.
+  bool reverse = 3;
+}
 
 message ListAuditedEventsResponse {
   // The list of audited in the current page.

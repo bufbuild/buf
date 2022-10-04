@@ -29,14 +29,21 @@ type auditServiceClient struct {
 	client auditv1alpha1connect.AuditServiceClient
 }
 
-// ListAuditedEvents lists all repositories recorded in the BSR instance.
+// ListAuditedEvents lists audited events recorded in the BSR instance.
 func (s *auditServiceClient) ListAuditedEvents(
 	ctx context.Context,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
 ) (events []*v1alpha1.Event, nextPageToken string, _ error) {
 	response, err := s.client.ListAuditedEvents(
 		ctx,
 		connect_go.NewRequest(
-			&v1alpha1.ListAuditedEventsRequest{}),
+			&v1alpha1.ListAuditedEventsRequest{
+				PageSize:  pageSize,
+				PageToken: pageToken,
+				Reverse:   reverse,
+			}),
 	)
 	if err != nil {
 		return nil, "", err

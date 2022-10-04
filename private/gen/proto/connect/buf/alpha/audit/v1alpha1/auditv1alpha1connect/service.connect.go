@@ -41,7 +41,7 @@ const (
 
 // AuditServiceClient is a client for the buf.alpha.audit.v1alpha1.AuditService service.
 type AuditServiceClient interface {
-	// ListAuditedEvents lists all repositories recorded in the BSR instance.
+	// ListAuditedEvents lists audited events recorded in the BSR instance.
 	ListAuditedEvents(context.Context, *connect_go.Request[v1alpha1.ListAuditedEventsRequest]) (*connect_go.Response[v1alpha1.ListAuditedEventsResponse], error)
 }
 
@@ -75,7 +75,7 @@ func (c *auditServiceClient) ListAuditedEvents(ctx context.Context, req *connect
 
 // AuditServiceHandler is an implementation of the buf.alpha.audit.v1alpha1.AuditService service.
 type AuditServiceHandler interface {
-	// ListAuditedEvents lists all repositories recorded in the BSR instance.
+	// ListAuditedEvents lists audited events recorded in the BSR instance.
 	ListAuditedEvents(context.Context, *connect_go.Request[v1alpha1.ListAuditedEventsRequest]) (*connect_go.Response[v1alpha1.ListAuditedEventsResponse], error)
 }
 

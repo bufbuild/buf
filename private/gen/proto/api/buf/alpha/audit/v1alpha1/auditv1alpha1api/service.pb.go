@@ -23,8 +23,11 @@ import (
 
 // AuditService is the Audit service.
 type AuditService interface {
-	// ListAuditedEvents lists all repositories recorded in the BSR instance.
+	// ListAuditedEvents lists audited events recorded in the BSR instance.
 	ListAuditedEvents(
 		ctx context.Context,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
 	) (events []*v1alpha1.Event, nextPageToken string, err error)
 }
