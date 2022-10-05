@@ -34,10 +34,6 @@ message Actor {
   string id = 2;
   // Name of the actor who caused the audited event.
   string name = 3;
-  // UserAgent is the User-Agent header associated with the request that caused the audited event, if any.
-  string user_agent = 4;
-  // IP is the IP address associated with the request that caused the audited event, if any.
-  string ip = 5;
 }
 
 // ResourceType is the type of the resource that was affected by the audited
@@ -87,6 +83,16 @@ enum EventType {
   EVENT_TYPE_USER_LOGGED_OUT = 19;
 }
 
+// EventMetadata provides additional details about the audited event.
+message EventMetadata {
+  // UserAgent is the User-Agent header associated with the request that triggered the audited event, if any.
+  string user_agent = 3;
+  // IP is the IP address associated with the request that triggered the audited event, if any.
+  string ip = 2;
+  // TraceID is the ID of the trace associated with the audited event, if any.
+  string trace_id = 3
+}
+
 // Event is an audited action that happened in the BSR, with the information of
 // what happened, when it happened, who did it, which resource was affected, and
 // more contextual information on the event.
@@ -101,27 +107,29 @@ message Event {
   Resource resource = 4;
   // Time of the audited event. It specifies "when" it happened.
   google.protobuf.Timestamp event_time = 5;
+  // Metadata about the audited event. It specifies any additional details about the audited event.
+  EventMetadata metadata = 6
   // Payload of the audited event. It specifies additional context on the event.
   oneof payload {
-    PayloadOrganizationCreated organization_created = 6;
-    PayloadOrganizationDeleted organization_deleted = 7;
-    PayloadOrganizationMemberAdded organization_member_added = 8;
-    PayloadOrganizationMemberRoleChanged organization_member_role_changed = 9;
-    PayloadOrganizationMemberRemoved organization_member_removed = 10;
-    PayloadRepositoryCreated repository_created = 11;
-    PayloadRepositoryDeleted repository_deleted = 12;
-    PayloadRepositoryCommitPushed repository_commit_pushed = 13;
-    PayloadRepositoryContributorAdded repository_contributor_added = 14;
-    PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 15;
-    PayloadRepositoryContributorRemoved repository_contributor_removed = 16;
-    PayloadRepositoryVisibilityChanged repository_visibility_changed = 17;
-    PayloadPluginCreated plugin_created = 18;
-    PayloadPluginDeleted plugin_deleted = 19;
-    PayloadUserCreated user_created = 20;
-    PayloadUserDeactivated user_deactivated = 21;
-    PayloadUserDeleted user_deleted = 22;
-    PayloadUserLoggedIn user_logged_in = 23;
-    PayloadUserLoggedOut user_logged_out = 24;
+    PayloadOrganizationCreated organization_created = 7;
+    PayloadOrganizationDeleted organization_deleted = 8;
+    PayloadOrganizationMemberAdded organization_member_added = 9;
+    PayloadOrganizationMemberRoleChanged organization_member_role_changed = 10;
+    PayloadOrganizationMemberRemoved organization_member_removed = 11;
+    PayloadRepositoryCreated repository_created = 12;
+    PayloadRepositoryDeleted repository_deleted = 13;
+    PayloadRepositoryCommitPushed repository_commit_pushed = 14;
+    PayloadRepositoryContributorAdded repository_contributor_added = 15;
+    PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 16;
+    PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
+    PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
+    PayloadPluginCreated plugin_created = 19;
+    PayloadPluginDeleted plugin_deleted = 20;
+    PayloadUserCreated user_created = 21;
+    PayloadUserDeactivated user_deactivated = 22;
+    PayloadUserDeleted user_deleted = 23;
+    PayloadUserLoggedIn user_logged_in = 24;
+    PayloadUserLoggedOut user_logged_out = 25;
   }
 }
 
