@@ -29,5 +29,5 @@ type DownloadService interface {
 		owner string,
 		repository string,
 		reference string,
-	) (module *v1alpha1.Module, err error)
+	) (module *v1alpha1.Module, manifest *v1alpha1.Blob, blobs []*v1alpha1.Blob, err error)
 }

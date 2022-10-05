@@ -31,5 +31,10 @@ message DownloadRequest {
 }
 
 message DownloadResponse {
-  buf.alpha.module.v1alpha1.Module module = 1;
+  buf.alpha.module.v1alpha1.Module module = 1 [deprecated = true];
+  // manifest is the manifest of the module's content.
+  buf.alpha.module.v1alpha1.Blob manifest = 2;
+  // blobs is a set of blobs that closes on the module's manifest to form the
+  // complete module's content.
+  repeated buf.alpha.module.v1alpha1.Blob blobs = 3;
 }

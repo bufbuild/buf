@@ -41,7 +41,9 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 	if err != nil {
 		return nil, err
 	}
-	module, err := downloadService.Download(
+	// TODO: Prefer taking a manifest and blobs to form a bucket and module
+	// from bufmodule.NewModuleForBucket.
+	module, _, _, err := downloadService.Download(
 		ctx,
 		modulePin.Owner(),
 		modulePin.Repository(),

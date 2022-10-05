@@ -20,6 +20,22 @@ import "buf/alpha/breaking/v1/config.proto";
 import "buf/alpha/lint/v1/config.proto";
 import "google/protobuf/timestamp.proto";
 
+// Hash represents a hash function's value.
+message Hash {
+  // kind describes the hash algorithm. e.g. "shake256"
+  string kind = 1;
+  // digest is the hash's output without encoding.
+  bytes digest = 2;
+}
+
+// Blob represents some module content with an associated hash.
+message Blob {
+  // Hash of the content.
+  Hash hash = 1;
+  // Content of the blob. Optional when Blob is used as a content pointer.
+  bytes content = 2;
+}
+
 // Module is a module.
 message Module {
   // files are the files that make up the set.
