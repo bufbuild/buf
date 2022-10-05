@@ -31,7 +31,7 @@ import (
 
 func TestConvert(t *testing.T) {
 	t.Run("bin-to-json-file-proto", func(t *testing.T) {
-		testRun(
+		testConvert(
 			t,
 			nil,
 			"testdata/bin_json/payload.json",
@@ -41,7 +41,7 @@ func TestConvert(t *testing.T) {
 		)
 	})
 	t.Run("json-to-bin-file-proto", func(t *testing.T) {
-		testRun(
+		testConvert(
 			t,
 			nil,
 			"testdata/bin_json/payload.bin",
@@ -51,7 +51,7 @@ func TestConvert(t *testing.T) {
 		)
 	})
 	t.Run("stdin-json-to-bin-proto", func(t *testing.T) {
-		testRun(
+		testConvert(
 			t,
 			strings.NewReader(`{"one":"55"}`),
 			"testdata/bin_json/payload.bin",
@@ -64,7 +64,7 @@ func TestConvert(t *testing.T) {
 	t.Run("stdin-bin-to-json-proto", func(t *testing.T) {
 		file, err := os.Open("testdata/bin_json/payload.bin")
 		require.NoError(t, err)
-		testRun(
+		testConvert(
 			t,
 			file,
 			"testdata/bin_json/payload.json",
@@ -75,7 +75,7 @@ func TestConvert(t *testing.T) {
 		)
 	})
 	t.Run("stdin-json-to-json-proto", func(t *testing.T) {
-		testRun(
+		testConvert(
 			t,
 			strings.NewReader(`{"one":"55"}`),
 			"testdata/bin_json/payload.json",
@@ -90,7 +90,7 @@ func TestConvert(t *testing.T) {
 	t.Run("stdin-input-to-json-image", func(t *testing.T) {
 		file, err := os.Open("testdata/bin_json/image.bin")
 		require.NoError(t, err)
-		testRun(
+		testConvert(
 			t,
 			file,
 			"testdata/bin_json/payload.json",
@@ -104,7 +104,7 @@ func TestConvert(t *testing.T) {
 	t.Run("stdin-json-to-json-image", func(t *testing.T) {
 		file, err := os.Open("testdata/bin_json/payload.bin")
 		require.NoError(t, err)
-		testRun(
+		testConvert(
 			t,
 			file,
 			"testdata/bin_json/payload.json",
@@ -119,7 +119,7 @@ func TestConvert(t *testing.T) {
 	t.Run("stdin-bin-payload-to-json-with-image", func(t *testing.T) {
 		file, err := os.Open("testdata/bin_json/payload.bin")
 		require.NoError(t, err)
-		testRun(
+		testConvert(
 			t,
 			file,
 			"testdata/bin_json/payload.json",
@@ -132,7 +132,7 @@ func TestConvert(t *testing.T) {
 	t.Run("stdin-json-payload-to-bin-with-image", func(t *testing.T) {
 		file, err := os.Open("testdata/bin_json/payload.json")
 		require.NoError(t, err)
-		testRun(
+		testConvert(
 			t,
 			file,
 			"testdata/bin_json/payload.bin",
@@ -147,7 +147,7 @@ func TestConvert(t *testing.T) {
 	t.Run("stdin-image-json-to-bin", func(t *testing.T) {
 		file, err := os.Open("testdata/bin_json/image.json")
 		require.NoError(t, err)
-		testRun(
+		testConvert(
 			t,
 			file,
 			"testdata/bin_json/payload.bin",
@@ -160,7 +160,7 @@ func TestConvert(t *testing.T) {
 	})
 }
 
-func testRun(t *testing.T, stdin io.Reader, want string, args ...string) {
+func testConvert(t *testing.T, stdin io.Reader, want string, args ...string) {
 	var stdout bytes.Buffer
 	appcmdtesting.RunCommandSuccess(
 		t,
