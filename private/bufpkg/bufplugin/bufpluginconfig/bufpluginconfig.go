@@ -89,9 +89,9 @@ type Config struct {
 	// remote generation registry (e.g. the Go module proxy, NPM registry,
 	// etc).
 	Registry *RegistryConfig
-	// LicenseSPDXID is the license of the plugin, which should be one of
+	// LicenseSpdxID is the license of the plugin, which should be one of
 	// the identifier defined in https://spdx.org/licenses
-	LicenseSPDXID string
+	LicenseSpdxID string
 }
 
 // RegistryConfig is the configuration for the registry of a plugin.
@@ -255,7 +255,7 @@ type ExternalConfig struct {
 	DefaultOpts     []string               `json:"default_opts,omitempty" yaml:"default_opts,omitempty"`
 	OutputLanguages []string               `json:"output_languages,omitempty" yaml:"output_languages,omitempty"`
 	Registry        ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
-	LicenseSPDXID   string                 `json:"license_spdx_id,omitempty" yaml:"license_spdx_id,omitempty"`
+	LicenseSpdxID   string                 `json:"license_spdx_id,omitempty" yaml:"license_spdx_id,omitempty"`
 }
 
 // ExternalDependency represents a dependency on another plugin.
