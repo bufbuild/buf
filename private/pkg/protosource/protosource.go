@@ -371,6 +371,7 @@ type Field interface {
 	// Set vs unset matters for packed
 	// See the comments on descriptor.proto
 	Packed() *bool
+	Deprecated() *bool
 	// Empty string unless the field is part of an extension
 	Extendee() string
 

@@ -504,8 +504,10 @@ func (f *file) populateMessage(
 			return nil, err
 		}
 		var packed *bool
+		var deprecated *bool
 		if fieldDescriptorProto.Options != nil {
 			packed = fieldDescriptorProto.GetOptions().Packed
+			deprecated = fieldDescriptorProto.GetOptions().Deprecated
 		}
 		label, err := getFieldDescriptorProtoLabel(fieldDescriptorProto.GetLabel())
 		if err != nil {
@@ -549,6 +551,7 @@ func (f *file) populateMessage(
 			jsType,
 			cType,
 			packed,
+			deprecated,
 			getMessageFieldNumberPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageFieldTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageFieldTypeNamePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
@@ -577,8 +580,10 @@ func (f *file) populateMessage(
 			return nil, err
 		}
 		var packed *bool
+		var deprecated *bool
 		if fieldDescriptorProto.Options != nil {
 			packed = fieldDescriptorProto.GetOptions().Packed
+			deprecated = fieldDescriptorProto.GetOptions().Deprecated
 		}
 		label, err := getFieldDescriptorProtoLabel(fieldDescriptorProto.GetLabel())
 		if err != nil {
@@ -622,6 +627,7 @@ func (f *file) populateMessage(
 			jsType,
 			cType,
 			packed,
+			deprecated,
 			getMessageExtensionNumberPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionTypeNamePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
@@ -789,8 +795,10 @@ func (f *file) populateExtension(
 		return nil, err
 	}
 	var packed *bool
+	var deprecated *bool
 	if fieldDescriptorProto.Options != nil {
 		packed = fieldDescriptorProto.GetOptions().Packed
+		deprecated = fieldDescriptorProto.GetOptions().Deprecated
 	}
 	label, err := getFieldDescriptorProtoLabel(fieldDescriptorProto.GetLabel())
 	if err != nil {
@@ -825,6 +833,7 @@ func (f *file) populateExtension(
 		jsType,
 		cType,
 		packed,
+		deprecated,
 		getFileExtensionNumberPath(fieldIndex),
 		getFileExtensionTypePath(fieldIndex),
 		getFileExtensionTypeNamePath(fieldIndex),
