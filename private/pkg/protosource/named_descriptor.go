@@ -23,7 +23,6 @@ type namedDescriptor struct {
 	locationDescriptor
 
 	name        string
-	deprecated  bool
 	namePath    []int32
 	nestedNames []string
 }
@@ -31,7 +30,6 @@ type namedDescriptor struct {
 func newNamedDescriptor(
 	locationDescriptor locationDescriptor,
 	name string,
-	deprecated bool,
 	namePath []int32,
 	nestedNames []string,
 ) (namedDescriptor, error) {
@@ -41,7 +39,6 @@ func newNamedDescriptor(
 	return namedDescriptor{
 		locationDescriptor: locationDescriptor,
 		name:               name,
-		deprecated:         deprecated,
 		namePath:           namePath,
 		nestedNames:        nestedNames,
 	}, nil
@@ -63,10 +60,6 @@ func (n *namedDescriptor) NestedName() string {
 
 func (n *namedDescriptor) Name() string {
 	return n.name
-}
-
-func (n *namedDescriptor) Deprecated() bool {
-	return n.deprecated
 }
 
 func (n *namedDescriptor) NameLocation() Location {

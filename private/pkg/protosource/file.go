@@ -359,7 +359,6 @@ func (f *file) populateEnum(
 			getEnumPath(enumIndex, nestedMessageIndexes...),
 		),
 		enumDescriptorProto.GetName(),
-		enumDescriptorProto.GetOptions().GetDeprecated(),
 		getEnumNamePath(enumIndex, nestedMessageIndexes...),
 		nestedMessageNames,
 	)
@@ -384,7 +383,6 @@ func (f *file) populateEnum(
 				getEnumValuePath(enumIndex, enumValueIndex, nestedMessageIndexes...),
 			),
 			enumValueDescriptorProto.GetName(),
-			enumValueDescriptorProto.GetOptions().GetDeprecated(),
 			getEnumValueNamePath(enumIndex, enumValueIndex, nestedMessageIndexes...),
 			append(nestedMessageNames, enum.Name()),
 		)
@@ -398,6 +396,7 @@ func (f *file) populateEnum(
 			),
 			enum,
 			int(enumValueDescriptorProto.GetNumber()),
+			enumValueDescriptorProto.GetOptions().GetDeprecated(),
 			getEnumValueNumberPath(enumIndex, enumValueIndex, nestedMessageIndexes...),
 		)
 		enum.addValue(enumValue)
@@ -449,7 +448,6 @@ func (f *file) populateMessage(
 			getMessagePath(topLevelMessageIndex, nestedMessageIndexes...),
 		),
 		descriptorProto.GetName(),
-		descriptorProto.GetOptions().GetDeprecated(),
 		getMessageNamePath(topLevelMessageIndex, nestedMessageIndexes...),
 		nestedMessageNames,
 	)
@@ -471,7 +469,7 @@ func (f *file) populateMessage(
 	)
 	oneofIndexToOneof := make(map[int]*oneof)
 	for oneofIndex, oneofDescriptorProto := range descriptorProto.GetOneofDecl() {
-		oneofNamedDescriptor, err := newOneofDescriptor(
+		oneofNamedDescriptor, err := newNamedDescriptor(
 			newLocationDescriptor(
 				f.descriptor,
 				getMessageOneofPath(oneofIndex, topLevelMessageIndex, nestedMessageIndexes...),
@@ -501,7 +499,6 @@ func (f *file) populateMessage(
 				getMessageFieldPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			),
 			fieldDescriptorProto.GetName(),
-			fieldDescriptorProto.GetOptions().GetDeprecated(),
 			getMessageFieldNamePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			append(nestedMessageNames, message.Name()),
 		)
@@ -578,7 +575,6 @@ func (f *file) populateMessage(
 				getMessageExtensionPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			),
 			fieldDescriptorProto.GetName(),
-			fieldDescriptorProto.GetOptions().GetDeprecated(),
 			getMessageExtensionNamePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			append(nestedMessageNames, message.Name()),
 		)
@@ -732,7 +728,6 @@ func (f *file) populateService(
 			getServicePath(serviceIndex),
 		),
 		serviceDescriptorProto.GetName(),
-		serviceDescriptorProto.GetOptions().GetDeprecated(),
 		getServiceNamePath(serviceIndex),
 		nil,
 	)
@@ -744,6 +739,7 @@ func (f *file) populateService(
 		newOptionExtensionDescriptor(
 			serviceDescriptorProto.GetOptions(),
 		),
+		serviceDescriptorProto.GetOptions().GetDeprecated(),
 	)
 	for methodIndex, methodDescriptorProto := range serviceDescriptorProto.GetMethod() {
 		methodNamedDescriptor, err := newNamedDescriptor(
@@ -752,7 +748,6 @@ func (f *file) populateService(
 				getMethodPath(serviceIndex, methodIndex),
 			),
 			methodDescriptorProto.GetName(),
-			methodDescriptorProto.GetOptions().GetDeprecated(),
 			getMethodNamePath(serviceIndex, methodIndex),
 			[]string{service.Name()},
 		)
@@ -773,6 +768,7 @@ func (f *file) populateService(
 			strings.TrimPrefix(methodDescriptorProto.GetOutputType(), "."),
 			methodDescriptorProto.GetClientStreaming(),
 			methodDescriptorProto.GetServerStreaming(),
+			methodDescriptorProto.GetOptions().GetDeprecated(),
 			getMethodInputTypePath(serviceIndex, methodIndex),
 			getMethodOutputTypePath(serviceIndex, methodIndex),
 			idempotencyLevel,
@@ -796,7 +792,6 @@ func (f *file) populateExtension(
 			getFileExtensionPath(fieldIndex),
 		),
 		fieldDescriptorProto.GetName(),
-		fieldDescriptorProto.GetOptions().GetDeprecated(),
 		getFileExtensionNamePath(fieldIndex),
 		nil,
 	)

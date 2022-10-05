@@ -403,7 +403,7 @@ type Service interface {
 
 	Methods() []Method
 
-	Deprecated() *bool
+	Deprecated() bool
 }
 
 // Method is a method descriptor.
@@ -419,7 +419,7 @@ type Method interface {
 	InputTypeLocation() Location
 	OutputTypeLocation() Location
 
-	deprecated() bool
+	Deprecated() bool
 	IdempotencyLevel() MethodOptionsIdempotencyLevel
 	IdempotencyLevelLocation() Location
 }
