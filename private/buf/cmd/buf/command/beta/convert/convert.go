@@ -61,7 +61,7 @@ Alternatively, you can omit the input and specify a fully qualified path for the
 type flags struct {
 	ErrorFormat string
 	Type        string
-	Input       string
+	Payload     string
 	Output      string
 
 	// special
@@ -91,7 +91,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 Alternatively, this can be a fully qualified path to the type without providing the source (like buf.build/acme/weather#acme.weather.v1.Units).`,
 	)
 	flagSet.StringVar(
-		&f.Input,
+		&f.Payload,
 		payloadFlagName,
 		"-",
 		fmt.Sprintf(
@@ -142,7 +142,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	payloadMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Input, bufconvert.MessageEncodingBin)
+	payloadMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Payload, bufconvert.MessageEncodingBin)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
