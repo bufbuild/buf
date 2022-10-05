@@ -461,6 +461,7 @@ func (f *file) populateMessage(
 		descriptorProto.GetOptions().GetMapEntry(),
 		descriptorProto.GetOptions().GetMessageSetWireFormat(),
 		descriptorProto.GetOptions().GetNoStandardDescriptorAccessor(),
+		descriptorProto.GetOptions().GetDeprecated(),
 		getMessageMessageSetWireFormatPath(topLevelMessageIndex, nestedMessageIndexes...),
 		getMessageNoStandardDescriptorAccessorPath(topLevelMessageIndex, nestedMessageIndexes...),
 	)
