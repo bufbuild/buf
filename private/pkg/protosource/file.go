@@ -371,6 +371,7 @@ func (f *file) populateEnum(
 			enumDescriptorProto.GetOptions(),
 		),
 		enumDescriptorProto.GetOptions().GetAllowAlias(),
+		enumDescriptorProto.GetOptions().GetDeprecated(),
 		getEnumAllowAliasPath(enumIndex, nestedMessageIndexes...),
 		parent,
 	)

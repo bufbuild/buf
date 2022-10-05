@@ -308,6 +308,7 @@ type Enum interface {
 	ReservedEnumRanges() []EnumRange
 
 	AllowAlias() bool
+	Deprecated() bool
 	AllowAliasLocation() Location
 
 	// Will return nil if this is a top-level Enum
