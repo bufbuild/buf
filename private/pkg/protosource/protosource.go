@@ -323,6 +323,7 @@ type EnumValue interface {
 	Enum() Enum
 	Number() int
 
+	Deprecated() bool
 	NumberLocation() Location
 }
 
@@ -401,6 +402,8 @@ type Service interface {
 	OptionExtensionDescriptor
 
 	Methods() []Method
+
+	Deprecated() *bool
 }
 
 // Method is a method descriptor.
@@ -416,6 +419,7 @@ type Method interface {
 	InputTypeLocation() Location
 	OutputTypeLocation() Location
 
+	deprecated() bool
 	IdempotencyLevel() MethodOptionsIdempotencyLevel
 	IdempotencyLevelLocation() Location
 }

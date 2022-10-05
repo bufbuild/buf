@@ -19,57 +19,50 @@ import (
 	"strings"
 )
 
-type namedDescriptor struct {
+type oneofDescriptor struct {
 	locationDescriptor
 
 	name        string
-	deprecated  bool
 	namePath    []int32
 	nestedNames []string
 }
 
-func newNamedDescriptor(
+func newOneofDescriptor(
 	locationDescriptor locationDescriptor,
 	name string,
-	deprecated bool,
 	namePath []int32,
 	nestedNames []string,
-) (namedDescriptor, error) {
+) (oneofDescriptor, error) {
 	if name == "" {
-		return namedDescriptor{}, fmt.Errorf("no name in %q", locationDescriptor.File().Path())
+		return oneofDescriptor{}, fmt.Errorf("no name in %q", locationDescriptor.File().Path())
 	}
-	return namedDescriptor{
+	return oneofDescriptor{
 		locationDescriptor: locationDescriptor,
 		name:               name,
-		deprecated:         deprecated,
 		namePath:           namePath,
 		nestedNames:        nestedNames,
 	}, nil
 }
 
-func (n *namedDescriptor) FullName() string {
+func (n *oneofDescriptor) FullName() string {
 	if n.File().Package() != "" {
 		return n.File().Package() + "." + n.NestedName()
 	}
 	return n.NestedName()
 }
 
-func (n *namedDescriptor) NestedName() string {
+func (n *oneofDescriptor) NestedName() string {
 	if len(n.nestedNames) == 0 {
 		return n.Name()
 	}
 	return strings.Join(n.nestedNames, ".") + "." + n.Name()
 }
 
-func (n *namedDescriptor) Name() string {
+func (n *oneofDescriptor) Name() string {
 	return n.name
 }
 
-func (n *namedDescriptor) Deprecated() bool {
-	return n.deprecated
-}
-
-func (n *namedDescriptor) NameLocation() Location {
+func (n *oneofDescriptor) NameLocation() Location {
 	nameLocation := n.getLocation(n.namePath)
 	location := n.getLocation(n.path)
 	if nameLocation != nil {

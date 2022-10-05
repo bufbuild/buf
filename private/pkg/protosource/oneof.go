@@ -15,7 +15,7 @@
 package protosource
 
 type oneof struct {
-	namedDescriptor
+	oneofDescriptor
 	optionExtensionDescriptor
 
 	message Message
@@ -23,12 +23,12 @@ type oneof struct {
 }
 
 func newOneof(
-	namedDescriptor namedDescriptor,
+	oneofDescriptor oneofDescriptor,
 	optionExtensionDescriptor optionExtensionDescriptor,
 	message Message,
 ) *oneof {
 	return &oneof{
-		namedDescriptor:           namedDescriptor,
+		oneofDescriptor:           oneofDescriptor,
 		optionExtensionDescriptor: optionExtensionDescriptor,
 		message:                   message,
 	}
