@@ -346,7 +346,7 @@ type Message interface {
 
 	MessageSetWireFormat() bool
 	NoStandardDescriptorAccessor() bool
-	IsDeprecated() bool
+	Deprecated() bool
 	MessageSetWireFormatLocation() Location
 	NoStandardDescriptorAccessorLocation() Location
 }
