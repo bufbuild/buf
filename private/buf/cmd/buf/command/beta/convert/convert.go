@@ -123,7 +123,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	source, typeName, err := bufcli.ParseSourceAndType(ctx, input, flags.Type)
+	source, typeName, err := bufcli.ParseInputAndType(ctx, input, flags.Type)
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	inputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Input, bufconvert.MessageEncodingBin)
+	payloadMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Input, bufconvert.MessageEncodingBin)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
@@ -153,12 +153,12 @@ func run(
 		container,
 		image,
 		typeName,
-		inputMessageRef,
+		payloadMessageRef,
 	)
 	if err != nil {
 		return err
 	}
-	defaultOutputEncoding, err := inverseEncoding(inputMessageRef.MessageEncoding())
+	defaultOutputEncoding, err := inverseEncoding(payloadMessageRef.MessageEncoding())
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func run(
 }
 
 // inverseEncoding returns the opposite encoding of the provided encoding,
-// which will be the default output encoding for a given input encoding.
+// which will be the default output encoding for a given payload encoding.
 func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
 	switch encoding {
 	case bufconvert.MessageEncodingBin:
