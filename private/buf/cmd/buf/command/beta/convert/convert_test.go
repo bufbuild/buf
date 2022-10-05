@@ -30,163 +30,163 @@ import (
 )
 
 func TestConvert(t *testing.T) {
-	testRun := func(t *testing.T, stdin io.Reader, want string, args ...string) {
-		var stout bytes.Buffer
-		appcmdtesting.RunCommandSuccess(
+	t.Run("bin-to-json-file-proto", func(t *testing.T) {
+		testRun(
 			t,
-			func(name string) *appcmd.Command {
-				return NewCommand(
-					name,
-					appflag.NewBuilder(name),
-				)
-			},
-			internaltesting.NewEnvFunc(t),
-			stdin,
-			&stout,
-			args...,
+			nil,
+			"testdata/bin_json/payload.json",
+			"--type=buf.Foo",
+			"--payload=testdata/bin_json/payload.bin",
+			"testdata/bin_json/buf.proto",
 		)
-		wantReader, err := os.Open(want)
+	})
+
+	t.Run("json-to-bin-file-proto", func(t *testing.T) {
+		testRun(
+			t,
+			nil,
+			"testdata/bin_json/payload.bin",
+			"--type=buf.Foo",
+			"--payload=testdata/bin_json/payload.json",
+			"testdata/bin_json/buf.proto",
+		)
+	})
+
+	t.Run("stdin-json-to-bin-proto", func(t *testing.T) {
+		testRun(
+			t,
+			strings.NewReader(`{"one":"55"}`),
+			"testdata/bin_json/payload.bin",
+			"--type=buf.Foo",
+			"--payload",
+			"-#format=json",
+			"testdata/bin_json/buf.proto",
+		)
+	})
+
+	t.Run("stdin-bin-to-json-proto", func(t *testing.T) {
+		file, err := os.Open("testdata/bin_json/payload.bin")
 		require.NoError(t, err)
-		wantBytes, err := io.ReadAll(wantReader)
+		testRun(
+			t,
+			file,
+			"testdata/bin_json/payload.json",
+			"--type=buf.Foo",
+			"--payload",
+			"-#format=bin",
+			"testdata/bin_json/buf.proto",
+		)
+	})
+
+	t.Run("stdin-json-to-json-proto", func(t *testing.T) {
+		testRun(
+			t,
+			strings.NewReader(`{"one":"55"}`),
+			"testdata/bin_json/payload.json",
+			"--type=buf.Foo",
+			"testdata/bin_json/buf.proto",
+			"--payload",
+			"-#format=json",
+			"-o",
+			"-#format=json",
+		)
+	})
+
+	t.Run("stdin-input-to-json-image", func(t *testing.T) {
+		file, err := os.Open("testdata/bin_json/image.bin")
 		require.NoError(t, err)
-		assert.Equal(t, string(wantBytes), stout.String())
-	}
+		testRun(
+			t,
+			file,
+			"testdata/bin_json/payload.json",
+			"--type=buf.Foo",
+			"-",
+			"--payload=testdata/bin_json/payload.bin",
+			"-o",
+			"-#format=json",
+		)
+	})
 
-	t.Run("bin-to-json-file-proto",
-		func(t *testing.T) {
-			testRun(t,
-				nil,
-				"testdata/bin_json/payload.json",
-				"--type=buf.Foo",
-				"--payload=testdata/bin_json/payload.bin",
-				"testdata/bin_json/buf.proto",
-			)
-		})
+	t.Run("stdin-json-to-json-image", func(t *testing.T) {
+		file, err := os.Open("testdata/bin_json/payload.bin")
+		require.NoError(t, err)
+		testRun(
+			t,
+			file,
+			"testdata/bin_json/payload.json",
+			"--type=buf.Foo",
+			"testdata/bin_json/image.bin",
+			"--payload",
+			"-#format=bin",
+			"-o",
+			"-#format=json",
+		)
+	})
 
-	t.Run("json-to-bin-file-proto",
-		func(t *testing.T) {
-			testRun(t,
-				nil,
-				"testdata/bin_json/payload.bin",
-				"--type=buf.Foo",
-				"--payload=testdata/bin_json/payload.json",
-				"testdata/bin_json/buf.proto",
-			)
-		})
+	t.Run("stdin-bin-payload-to-json-with-image", func(t *testing.T) {
+		file, err := os.Open("testdata/bin_json/payload.bin")
+		require.NoError(t, err)
+		testRun(
+			t,
+			file,
+			"testdata/bin_json/payload.json",
+			"--type=buf.Foo",
+			"testdata/bin_json/image.bin",
+			"-o",
+			"-#format=json",
+		)
+	})
 
-	t.Run("stdin-json-to-bin-proto",
-		func(t *testing.T) {
-			testRun(t,
-				strings.NewReader(`{"one":"55"}`),
-				"testdata/bin_json/payload.bin",
-				"--type=buf.Foo",
-				"--payload",
-				"-#format=json",
-				"testdata/bin_json/buf.proto",
-			)
-		})
+	t.Run("stdin-json-payload-to-bin-with-image", func(t *testing.T) {
+		file, err := os.Open("testdata/bin_json/payload.json")
+		require.NoError(t, err)
+		testRun(
+			t,
+			file,
+			"testdata/bin_json/payload.bin",
+			"--type=buf.Foo",
+			"testdata/bin_json/image.bin",
+			"--payload",
+			"-#format=json",
+			"-o",
+			"-#format=bin",
+		)
+	})
 
-	t.Run("stdin-bin-to-json-proto",
-		func(t *testing.T) {
-			file, err := os.Open("testdata/bin_json/payload.bin")
-			require.NoError(t, err)
-			testRun(t,
-				file,
-				"testdata/bin_json/payload.json",
-				"--type=buf.Foo",
-				"--payload",
-				"-#format=bin",
-				"testdata/bin_json/buf.proto",
-			)
-		})
+	t.Run("stdin-image-json-to-bin", func(t *testing.T) {
+		file, err := os.Open("testdata/bin_json/image.json")
+		require.NoError(t, err)
+		testRun(
+			t,
+			file,
+			"testdata/bin_json/payload.bin",
+			"--type=buf.Foo",
+			"-#format=json",
+			"--payload=testdata/bin_json/payload.json",
+			"-o",
+			"-#format=bin",
+		)
+	})
+}
 
-	t.Run("stdin-json-to-json-proto",
-		func(t *testing.T) {
-			testRun(t,
-				strings.NewReader(`{"one":"55"}`),
-				"testdata/bin_json/payload.json",
-				"--type=buf.Foo",
-				"testdata/bin_json/buf.proto",
-				"--payload",
-				"-#format=json",
-				"-o",
-				"-#format=json",
+func testRun(t *testing.T, stdin io.Reader, want string, args ...string) {
+	var stdout bytes.Buffer
+	appcmdtesting.RunCommandSuccess(
+		t,
+		func(name string) *appcmd.Command {
+			return NewCommand(
+				name,
+				appflag.NewBuilder(name),
 			)
-		})
-
-	t.Run("stdin-input-to-json-image",
-		func(t *testing.T) {
-			file, err := os.Open("testdata/bin_json/image.bin")
-			require.NoError(t, err)
-			testRun(t,
-				file,
-				"testdata/bin_json/payload.json",
-				"--type=buf.Foo",
-				"-",
-				"--payload=testdata/bin_json/payload.bin",
-				"-o",
-				"-#format=json",
-			)
-		})
-
-	t.Run("stdin-json-to-json-image",
-		func(t *testing.T) {
-			file, err := os.Open("testdata/bin_json/payload.bin")
-			require.NoError(t, err)
-			testRun(t,
-				file,
-				"testdata/bin_json/payload.json",
-				"--type=buf.Foo",
-				"testdata/bin_json/image.bin",
-				"--payload",
-				"-#format=bin",
-				"-o",
-				"-#format=json",
-			)
-		})
-
-	t.Run("stdin-bin-payload-to-json-with-image",
-		func(t *testing.T) {
-			file, err := os.Open("testdata/bin_json/payload.bin")
-			require.NoError(t, err)
-			testRun(t,
-				file,
-				"testdata/bin_json/payload.json",
-				"--type=buf.Foo",
-				"testdata/bin_json/image.bin",
-				"-o",
-				"-#format=json",
-			)
-		})
-
-	t.Run("stdin-json-payload-to-bin-with-image",
-		func(t *testing.T) {
-			file, err := os.Open("testdata/bin_json/payload.json")
-			require.NoError(t, err)
-			testRun(t,
-				file,
-				"testdata/bin_json/payload.bin",
-				"--type=buf.Foo",
-				"testdata/bin_json/image.bin",
-				"--payload",
-				"-#format=json",
-				"-o",
-				"-#format=bin",
-			)
-		})
-
-	t.Run("stdin-image-json-to-bin",
-		func(t *testing.T) {
-			file, err := os.Open("testdata/bin_json/image.json")
-			require.NoError(t, err)
-			testRun(t,
-				file,
-				"testdata/bin_json/payload.bin",
-				"--type=buf.Foo",
-				"-#format=json",
-				"--payload=testdata/bin_json/payload.json",
-				"-o",
-				"-#format=bin",
-			)
-		})
+		},
+		internaltesting.NewEnvFunc(t),
+		stdin,
+		&stdout,
+		args...,
+	)
+	wantReader, err := os.Open(want)
+	require.NoError(t, err)
+	wantBytes, err := io.ReadAll(wantReader)
+	require.NoError(t, err)
+	assert.Equal(t, string(wantBytes), stdout.String())
 }

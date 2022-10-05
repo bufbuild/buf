@@ -87,7 +87,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The full type name of the serialized message (like acme.weather.v1.Units) within the input.
+		`The full type name of the serialized payload (like acme.weather.v1.Units) within the input.
 Alternatively, this can be a fully qualified path to the type without providing the source (like buf.build/acme/weather#acme.weather.v1.Units).`,
 	)
 	flagSet.StringVar(
@@ -95,7 +95,7 @@ Alternatively, this can be a fully qualified path to the type without providing 
 		payloadFlagName,
 		"-",
 		fmt.Sprintf(
-			`The location to read the input message. Must be one of format %s.`,
+			`The location to read the payload. Must be one of format %s.`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)
