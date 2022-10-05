@@ -69,6 +69,10 @@ func (f *file) CsharpNamespace() string {
 	return f.fileDescriptor.GetOptions().GetCsharpNamespace()
 }
 
+func (f *file) Deprecated() bool {
+	return f.fileDescriptor.GetOptions().GetDeprecated()
+}
+
 func (f *file) GoPackage() string {
 	return f.fileDescriptor.GetOptions().GetGoPackage()
 }

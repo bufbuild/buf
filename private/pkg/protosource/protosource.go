@@ -217,6 +217,7 @@ type File interface {
 	PhpMetadataNamespace() string
 	RubyPackage() string
 	SwiftPrefix() string
+	Deprecated() bool
 
 	OptimizeFor() FileOptionsOptimizeMode
 	CcGenericServices() bool
