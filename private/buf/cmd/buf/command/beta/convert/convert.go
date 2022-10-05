@@ -31,7 +31,7 @@ import (
 const (
 	errorFormatFlagName = "error-format"
 	typeFlagName        = "type"
-	inputFlagName       = "input"
+	payloadFlagName     = "payload"
 	outputFlagName      = "output"
 	outputFlagShortName = "o"
 )
@@ -43,8 +43,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <source>",
-		Short: "Use a source reference to convert a binary or JSON serialized message supplied through stdin or the input flag.",
+		Use:   name + " <input>",
+		Short: "Use a input reference to convert a binary or JSON serialized message supplied through stdin or the payload flag.",
 		Long: `The first argument is the input that defines the serialized message (like buf.build/acme/weather).
 Alternatively, you can omit the input and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
 		Args: cobra.MaximumNArgs(1),
@@ -92,7 +92,7 @@ Alternatively, this can be a fully qualified path to the type without providing 
 	)
 	flagSet.StringVar(
 		&f.Input,
-		inputFlagName,
+		payloadFlagName,
 		"-",
 		fmt.Sprintf(
 			`The location to read the input message. Must be one of format %s.`,
