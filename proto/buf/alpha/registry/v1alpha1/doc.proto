@@ -365,21 +365,9 @@ message FieldOptions {
   reserved "lazy", "unverified_lazy", "weak", "uninterpreted_options";
   bool deprecated = 1;
   bool packed = 2;
-  CType ctype = 3;
-  JSType jstype = 4;
+  int32 ctype = 3;
+  int32 jstype = 4;
   repeated string custom_options = 1000;
-  enum CType {
-    C_TYPE_UNSPECIFIED = 0;
-    C_TYPE_STRING = 1;
-    C_TYPE_CORD = 2;
-    C_TYPE_STRING_PIECE = 3;
-  }
-  enum JSType {
-    JS_TYPE_UNSPECIFIED = 0;
-    JS_TYPE_JS_NORMAL = 1;
-    JS_TYPE_JS_STRING = 2;
-    JS_TYPE_JS_NUMBER = 3;
-  }
 }
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
