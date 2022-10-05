@@ -86,11 +86,11 @@ enum EventType {
 // EventMetadata provides additional details about the audited event.
 message EventMetadata {
   // UserAgent is the User-Agent header associated with the request that triggered the audited event, if any.
-  string user_agent = 3;
+  string user_agent = 1;
   // IP is the IP address associated with the request that triggered the audited event, if any.
   string ip = 2;
   // TraceID is the ID of the trace associated with the audited event, if any.
-  string trace_id = 3
+  string trace_id = 3;
 }
 
 // Event is an audited action that happened in the BSR, with the information of
@@ -108,7 +108,7 @@ message Event {
   // Time of the audited event. It specifies "when" it happened.
   google.protobuf.Timestamp event_time = 5;
   // Metadata about the audited event. It specifies any additional details about the audited event.
-  EventMetadata metadata = 6
+  EventMetadata metadata = 6;
   // Payload of the audited event. It specifies additional context on the event.
   oneof payload {
     PayloadOrganizationCreated organization_created = 7;
