@@ -87,7 +87,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The full type name of the serialized message (like acme.weather.v1.Units).
+		`The full type name of the serialized message (like acme.weather.v1.Units) within the input.
 Alternatively, this can be a fully qualified path to the type without providing the source (like buf.build/acme/weather#acme.weather.v1.Units).`,
 	)
 	flagSet.StringVar(
