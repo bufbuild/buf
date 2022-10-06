@@ -205,14 +205,8 @@ message Method {
 message MethodOptions {
   reserved "uninterpreted_options";
   bool deprecated = 1;
-  IdempotencyLevel idempotency_level = 2;
+  int32 idempotency_level = 2;
   repeated string custom_options = 1000;
-  enum IdempotencyLevel {
-    IDEMPOTENCY_LEVEL_UNSPECIFIED = 0;
-    IDEMPOTENCY_LEVEL_UNKNOWN = 1;
-    IDEMPOTENCY_LEVEL_NO_SIDE_EFFECTS = 2;
-    IDEMPOTENCY_LEVEL_IDEMPOTENT = 3;
-  }
 }
 
 // MethodRequestResponse provides information for the documentation of a Method request or response message.
