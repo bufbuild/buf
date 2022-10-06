@@ -403,7 +403,6 @@ type Service interface {
 	OptionExtensionDescriptor
 
 	Methods() []Method
-
 	Deprecated() bool
 }
 
