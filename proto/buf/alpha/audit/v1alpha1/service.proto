@@ -17,6 +17,7 @@ syntax = "proto3";
 package buf.alpha.audit.v1alpha1;
 
 import "buf/alpha/audit/v1alpha1/event.proto";
+import "google/protobuf/timestamp.proto";
 
 // AuditService is the Audit service.
 service AuditService {
@@ -32,6 +33,10 @@ message ListAuditedEventsRequest {
   // The listed audited events are order by created time in ascending order.
   // You can reverse that order setting this value to true.
   bool reverse = 3;
+  // The start timestamp to filter events from.
+  google.protobuf.Timestamp start = 4;
+  // The end timestamp to filter events to.
+  google.protobuf.Timestamp end = 5;
 }
 
 message ListAuditedEventsResponse {

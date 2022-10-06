@@ -22,6 +22,7 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/audit/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type auditServiceClient struct {
@@ -35,6 +36,8 @@ func (s *auditServiceClient) ListAuditedEvents(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
+	start *timestamppb.Timestamp,
+	end *timestamppb.Timestamp,
 ) (events []*v1alpha1.Event, nextPageToken string, _ error) {
 	response, err := s.client.ListAuditedEvents(
 		ctx,
@@ -43,6 +46,8 @@ func (s *auditServiceClient) ListAuditedEvents(
 				PageSize:  pageSize,
 				PageToken: pageToken,
 				Reverse:   reverse,
+				Start:     start,
+				End:       end,
 			}),
 	)
 	if err != nil {

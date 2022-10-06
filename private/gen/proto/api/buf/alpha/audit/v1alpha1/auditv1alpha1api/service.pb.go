@@ -19,6 +19,7 @@ package auditv1alpha1api
 import (
 	context "context"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/audit/v1alpha1"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // AuditService is the Audit service.
@@ -29,5 +30,7 @@ type AuditService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
+		start *timestamppb.Timestamp,
+		end *timestamppb.Timestamp,
 	) (events []*v1alpha1.Event, nextPageToken string, err error)
 }
