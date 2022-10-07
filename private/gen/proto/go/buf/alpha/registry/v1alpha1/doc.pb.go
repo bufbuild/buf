@@ -1226,7 +1226,8 @@ type MethodOptions struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Deprecated       bool  `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	Deprecated bool `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	// idempotency_level holds a value of the enumeration `google.protobuf.MethodOptions.IdempotencyLevel.
 	IdempotencyLevel int32 `protobuf:"varint,2,opt,name=idempotency_level,json=idempotencyLevel,proto3" json:"idempotency_level,omitempty"`
 }
 
@@ -2185,10 +2186,12 @@ type FieldOptions struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Deprecated bool  `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
-	Packed     bool  `protobuf:"varint,2,opt,name=packed,proto3" json:"packed,omitempty"`
-	Ctype      int32 `protobuf:"varint,3,opt,name=ctype,proto3" json:"ctype,omitempty"`
-	Jstype     int32 `protobuf:"varint,4,opt,name=jstype,proto3" json:"jstype,omitempty"`
+	Deprecated bool `protobuf:"varint,1,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
+	Packed     bool `protobuf:"varint,2,opt,name=packed,proto3" json:"packed,omitempty"`
+	// ctype holds a value of the enumeration `google.protobuf.FieldOptions.CType.
+	Ctype int32 `protobuf:"varint,3,opt,name=ctype,proto3" json:"ctype,omitempty"`
+	// jstype holds a value of the enumeration `google.protobuf.FieldOptions.JSType.
+	Jstype int32 `protobuf:"varint,4,opt,name=jstype,proto3" json:"jstype,omitempty"`
 }
 
 func (x *FieldOptions) Reset() {
