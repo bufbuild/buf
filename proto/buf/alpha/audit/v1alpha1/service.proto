@@ -40,9 +40,9 @@ message ListAuditedEventsRequest {
 }
 
 message ListAuditedEventsResponse {
-  // The list of audited in the current page.
+  // The list of audited events in the current page.
   repeated buf.alpha.audit.v1alpha1.Event events = 1;
-  // The audited events' next page token. There are no more pages if this is
-  // empty.
+  // The token for the next page of audited events. There are no more pages if
+  // this is empty.
   string next_page_token = 2;
 }
