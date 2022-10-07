@@ -202,6 +202,7 @@ message Method {
 // MethodOptions provides information for the documentation of options for a method.
 message MethodOptions {
   bool deprecated = 1;
+  // idempotency_level holds a value of the enumeration `google.protobuf.MethodOptions.IdempotencyLevel.
   int32 idempotency_level = 2;
 }
 
@@ -342,7 +343,9 @@ message Field {
 message FieldOptions {
   bool deprecated = 1;
   bool packed = 2;
+  // ctype holds a value of the enumeration `google.protobuf.FieldOptions.CType.
   int32 ctype = 3;
+  // jstype holds a value of the enumeration `google.protobuf.FieldOptions.JSType.
   int32 jstype = 4;
 }
 
