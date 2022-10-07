@@ -181,11 +181,10 @@ message Service {
   ServiceOptions service_options = 8;
 }
 
-// ServiceOptions provide information for the documentation of options for a given service.
+// ServiceOptions provides information for the documentation of options for a given service.
 message ServiceOptions {
-  reserved "uninterpreted_options";
   bool deprecated = 1;
-  repeated string custom_options = 1000;
+  repeated string custom_options = 2;
 }
 
 // Method provides information for the documentation for a method of a given service.
@@ -201,12 +200,11 @@ message Method {
   MethodOptions method_options = 5;
 }
 
-// MethodOptions provide information for the documentation of options for a method.
+// MethodOptions provides information for the documentation of options for a method.
 message MethodOptions {
-  reserved "uninterpreted_options";
   bool deprecated = 1;
   int32 idempotency_level = 2;
-  repeated string custom_options = 1000;
+  repeated string custom_options = 3;
 }
 
 // MethodRequestResponse provides information for the documentation of a Method request or response message.
@@ -242,12 +240,11 @@ message Enum {
   EnumOptions enum_options = 8;
 }
 
-// EnumOptions provide information for the documentation of options for an enum.
+// EnumOptions provides information for the documentation of options for an enum.
 message EnumOptions {
-  reserved "uninterpreted_options";
   bool deprecated = 1;
   bool allow_alias = 2;
-  repeated string custom_options = 1000;
+  repeated string custom_options = 3;
 }
 
 // EnumValue provides information for the documentation of an enum value.
@@ -262,11 +259,10 @@ message EnumValue {
   EnumValueOptions enum_value_options = 4;
 }
 
-// EnumValueOptions provide information for the documentation of options for an enum value.
+// EnumValueOptions provides information for the documentation of options for an enum value.
 message EnumValueOptions {
-  reserved "uninterpreted_options";
   bool deprecated = 1;
-  repeated string custom_options = 1000;
+  repeated string custom_options = 2;
 }
 
 // ImportRef provides the import metadata if a type is imported.
@@ -309,23 +305,16 @@ message MessageField {
   }
 }
 
-// MessageOptions provide information for the documentation of options for a message.
+// MessageOptions provides information for the documentation of options for a message.
 message MessageOptions {
-  reserved "message_set_wire_format", "no_standard_descriptor_accessor", "map_entry", "uninterpreted_options";
   bool deprecated = 1;
-  repeated string custom_options = 1000;
+  repeated string custom_options = 2;
 }
 
 // Oneof represents a oneof set of fields.
 message Oneof {
   string name = 1;
   repeated Field fields = 2;
-  OneofOptions oneof_options = 3;
-}
-
-// OneofOptions provide information for the documentation of options for a oneof.
-message OneofOptions {
-  reserved "uninterpreted_options";
 }
 
 // Field provides information for the documentation of a message field.
@@ -354,14 +343,13 @@ message Field {
   FieldOptions field_options = 10;
 }
 
-// FieldOptions provide information for the documentation of options for a field.
+// FieldOptions provides information for the documentation of options for a field.
 message FieldOptions {
-  reserved "lazy", "unverified_lazy", "weak", "uninterpreted_options";
   bool deprecated = 1;
   bool packed = 2;
   int32 ctype = 3;
   int32 jstype = 4;
-  repeated string custom_options = 1000;
+  repeated string custom_options = 5;
 }
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
