@@ -184,7 +184,6 @@ message Service {
 // ServiceOptions provides information for the documentation of options for a given service.
 message ServiceOptions {
   bool deprecated = 1;
-  repeated string custom_options = 2;
 }
 
 // Method provides information for the documentation for a method of a given service.
@@ -204,7 +203,6 @@ message Method {
 message MethodOptions {
   bool deprecated = 1;
   int32 idempotency_level = 2;
-  repeated string custom_options = 3;
 }
 
 // MethodRequestResponse provides information for the documentation of a Method request or response message.
@@ -244,7 +242,6 @@ message Enum {
 message EnumOptions {
   bool deprecated = 1;
   bool allow_alias = 2;
-  repeated string custom_options = 3;
 }
 
 // EnumValue provides information for the documentation of an enum value.
@@ -262,7 +259,6 @@ message EnumValue {
 // EnumValueOptions provides information for the documentation of options for an enum value.
 message EnumValueOptions {
   bool deprecated = 1;
-  repeated string custom_options = 2;
 }
 
 // ImportRef provides the import metadata if a type is imported.
@@ -308,7 +304,6 @@ message MessageField {
 // MessageOptions provides information for the documentation of options for a message.
 message MessageOptions {
   bool deprecated = 1;
-  repeated string custom_options = 2;
 }
 
 // Oneof represents a oneof set of fields.
@@ -349,7 +344,6 @@ message FieldOptions {
   bool packed = 2;
   int32 ctype = 3;
   int32 jstype = 4;
-  repeated string custom_options = 5;
 }
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
