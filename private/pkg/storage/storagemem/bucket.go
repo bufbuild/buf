@@ -28,13 +28,13 @@ import (
 
 type bucket struct {
 	pathToImmutableObject map[string]*internal.ImmutableObject
-	writeObjectCallback   func(objectPath string)
+	writeObjectCallback   func(objectPath string, data []byte)
 	lock                  sync.RWMutex
 }
 
 func newBucket(
 	pathToImmutableObject map[string]*internal.ImmutableObject,
-	writeObjectCallback func(objectPath string),
+	writeObjectCallback func(objectPath string, data []byte),
 ) *bucket {
 	if pathToImmutableObject == nil {
 		pathToImmutableObject = make(map[string]*internal.ImmutableObject)

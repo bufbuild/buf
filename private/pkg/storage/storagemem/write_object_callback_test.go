@@ -17,6 +17,8 @@ package storagemem_test
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"testing"
 
@@ -31,9 +33,13 @@ func TestWriteCallbackIsInvoked(t *testing.T) {
 		wg          sync.WaitGroup
 		invocations int
 	)
-	const filePathToWrite = "my/path/to/file.foo"
-	callbackFn := func(objectPath string) {
+	const (
+		filePathToWrite   = "my/path/to/file.foo"
+		dataPrefixToWrite = "some data to write:"
+	)
+	callbackFn := func(objectPath string, data []byte) {
 		assert.Equal(t, filePathToWrite, objectPath)
+		assert.True(t, strings.HasPrefix(string(data), dataPrefixToWrite), fmt.Sprintf("written data %q is not prefixed by %q", string(data), dataPrefixToWrite))
 		invocations++
 		wg.Done()
 	}
@@ -45,7 +51,7 @@ func TestWriteCallbackIsInvoked(t *testing.T) {
 	const writesToPerform = 5
 	for i := 0; i < writesToPerform; i++ {
 		wg.Add(1)
-		_, err = woc.Write([]byte(fmt.Sprintf("some data to write: %d", i)))
+		_, err = woc.Write([]byte(dataPrefixToWrite + strconv.Itoa(i)))
 		require.NoError(t, err)
 	}
 	wg.Wait()

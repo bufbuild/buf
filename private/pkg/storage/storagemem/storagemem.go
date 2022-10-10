@@ -26,14 +26,14 @@ import (
 var errDuplicatePath = errors.New("duplicate path")
 
 type readWriteBucketOptions struct {
-	writeObjectCallback func(objectPath string)
+	writeObjectCallback func(objectPath string, data []byte)
 }
 
 type ReadWriteBucketOption func(*readWriteBucketOptions)
 
 // ReadWriteBucketWithWriteObjectCallback invokes the given function everytime
 // there is a write in a bucket object, reporting its path.
-func ReadWriteBucketWithWriteObjectCallback(writeObjectCallback func(objectPath string)) ReadWriteBucketOption {
+func ReadWriteBucketWithWriteObjectCallback(writeObjectCallback func(objectPath string, data []byte)) ReadWriteBucketOption {
 	return func(opts *readWriteBucketOptions) {
 		opts.writeObjectCallback = writeObjectCallback
 	}
