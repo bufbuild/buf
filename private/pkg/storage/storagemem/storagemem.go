@@ -32,7 +32,7 @@ type readWriteBucketOptions struct {
 type ReadWriteBucketOption func(*readWriteBucketOptions)
 
 // ReadWriteBucketWithWriteObjectCallback invokes the given function everytime
-// there is a write in a bucket object, reporting its path.
+// there is a write in a bucket object, reporting its path and the written data.
 func ReadWriteBucketWithWriteObjectCallback(writeObjectCallback func(objectPath string, data []byte)) ReadWriteBucketOption {
 	return func(opts *readWriteBucketOptions) {
 		opts.writeObjectCallback = writeObjectCallback
