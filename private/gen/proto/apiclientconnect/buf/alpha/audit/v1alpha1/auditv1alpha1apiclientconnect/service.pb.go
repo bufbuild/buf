@@ -35,7 +35,6 @@ func (s *auditServiceClient) ListAuditedEvents(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
 	start *timestamppb.Timestamp,
 	end *timestamppb.Timestamp,
 ) (events []*v1alpha1.Event, nextPageToken string, _ error) {
@@ -45,7 +44,6 @@ func (s *auditServiceClient) ListAuditedEvents(
 			&v1alpha1.ListAuditedEventsRequest{
 				PageSize:  pageSize,
 				PageToken: pageToken,
-				Reverse:   reverse,
 				Start:     start,
 				End:       end,
 			}),

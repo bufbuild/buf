@@ -29,7 +29,6 @@ type AuditService interface {
 		ctx context.Context,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
 		start *timestamppb.Timestamp,
 		end *timestamppb.Timestamp,
 	) (events []*v1alpha1.Event, nextPageToken string, err error)
