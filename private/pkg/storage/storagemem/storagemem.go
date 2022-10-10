@@ -25,9 +25,27 @@ import (
 
 var errDuplicatePath = errors.New("duplicate path")
 
+type readWriteBucketOptions struct {
+	writeObjectCallback func(objectPath string)
+}
+
+type ReadWriteBucketOption func(*readWriteBucketOptions)
+
+// ReadWriteBucketWithWriteObjectCallback invokes the given function everytime
+// there is a write in a bucket object, reporting its path.
+func ReadWriteBucketWithWriteObjectCallback(writeObjectCallback func(objectPath string)) ReadWriteBucketOption {
+	return func(opts *readWriteBucketOptions) {
+		opts.writeObjectCallback = writeObjectCallback
+	}
+}
+
 // NewReadWriteBucket returns a new in-memory ReadWriteBucket.
-func NewReadWriteBucket() storage.ReadWriteBucket {
-	return newBucket(nil)
+func NewReadWriteBucket(opts ...ReadWriteBucketOption) storage.ReadWriteBucket {
+	var readWriteBucketOptions readWriteBucketOptions
+	for _, option := range opts {
+		option(&readWriteBucketOptions)
+	}
+	return newBucket(nil, readWriteBucketOptions.writeObjectCallback)
 }
 
 // NewReadBucket returns a new ReadBucket.
@@ -44,5 +62,5 @@ func NewReadBucket(pathToData map[string][]byte) (storage.ReadBucket, error) {
 		}
 		pathToImmutableObject[path] = internal.NewImmutableObject(path, "", data)
 	}
-	return newBucket(pathToImmutableObject), nil
+	return newBucket(pathToImmutableObject, nil), nil
 }

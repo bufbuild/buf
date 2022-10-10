@@ -23,21 +23,24 @@ import (
 )
 
 type writeObjectCloser struct {
-	bucket       *bucket
-	path         string
-	externalPath string
-	buffer       *bytes.Buffer
-	closed       bool
+	bucket              *bucket
+	path                string
+	externalPath        string
+	buffer              *bytes.Buffer
+	closed              bool
+	writeObjectCallback func(objectPath string)
 }
 
 func newWriteObjectCloser(
 	bucket *bucket,
 	path string,
+	writeObjectCallback func(objectPath string),
 ) *writeObjectCloser {
 	return &writeObjectCloser{
-		bucket: bucket,
-		path:   path,
-		buffer: bytes.NewBuffer(nil),
+		bucket:              bucket,
+		path:                path,
+		buffer:              bytes.NewBuffer(nil),
+		writeObjectCallback: writeObjectCallback,
 	}
 }
 
@@ -45,6 +48,11 @@ func (w *writeObjectCloser) Write(p []byte) (int, error) {
 	if w.closed {
 		return 0, storage.ErrClosed
 	}
+	defer func() {
+		if w.writeObjectCallback != nil {
+			w.writeObjectCallback(w.path)
+		}
+	}()
 	return w.buffer.Write(p)
 }
 

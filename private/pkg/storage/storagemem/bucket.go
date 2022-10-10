@@ -28,15 +28,20 @@ import (
 
 type bucket struct {
 	pathToImmutableObject map[string]*internal.ImmutableObject
+	writeObjectCallback   func(objectPath string)
 	lock                  sync.RWMutex
 }
 
-func newBucket(pathToImmutableObject map[string]*internal.ImmutableObject) *bucket {
+func newBucket(
+	pathToImmutableObject map[string]*internal.ImmutableObject,
+	writeObjectCallback func(objectPath string),
+) *bucket {
 	if pathToImmutableObject == nil {
 		pathToImmutableObject = make(map[string]*internal.ImmutableObject)
 	}
 	return &bucket{
 		pathToImmutableObject: pathToImmutableObject,
+		writeObjectCallback:   writeObjectCallback,
 	}
 }
 
@@ -93,7 +98,7 @@ func (b *bucket) Put(ctx context.Context, path string) (storage.WriteObjectClose
 	if err != nil {
 		return nil, err
 	}
-	return newWriteObjectCloser(b, path), nil
+	return newWriteObjectCloser(b, path, b.writeObjectCallback), nil
 }
 
 func (b *bucket) Delete(ctx context.Context, path string) error {
