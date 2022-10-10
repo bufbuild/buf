@@ -30,13 +30,10 @@ message ListAuditedEventsRequest {
   uint32 page_size = 1;
   // The page token for paginating. The first page is returned if this is empty.
   string page_token = 2;
-  // The listed audited events are order by created time in ascending order.
-  // You can reverse that order setting this value to true.
-  bool reverse = 3;
   // The start timestamp to filter events from.
-  google.protobuf.Timestamp start = 4;
+  google.protobuf.Timestamp start = 3;
   // The end timestamp to filter events to.
-  google.protobuf.Timestamp end = 5;
+  google.protobuf.Timestamp end = 4;
 }
 
 message ListAuditedEventsResponse {
