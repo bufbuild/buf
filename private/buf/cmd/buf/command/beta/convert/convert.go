@@ -31,6 +31,7 @@ import (
 const (
 	errorFormatFlagName = "error-format"
 	typeFlagName        = "type"
+	schemaFlagName      = "schema"
 	payloadFlagName     = "payload"
 	outputFlagName      = "output"
 	outputFlagShortName = "o"
@@ -43,10 +44,10 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
-		Short: "Use a input reference to convert a binary or JSON serialized message supplied through stdin or the payload flag.",
-		Long: `The first argument is the input that defines the serialized message (like buf.build/acme/weather).
-Alternatively, you can omit the input and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
+		Use:   name + " <payload>",
+		Short: "Convert a binary or JSON serialized payloads using the schema supplied",
+		Long: `The first argument is the serialized message payload. 
+The --schema flag is either a .proto, image, or buf module and the --type flag specifies the type within the schema.`,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -61,8 +62,9 @@ Alternatively, you can omit the input and specify a fully qualified path for the
 type flags struct {
 	ErrorFormat string
 	Type        string
-	Payload     string
-	Output      string
+	//Payload     string
+	Output string
+	Schema string
 
 	// special
 	InputHashtag string
@@ -90,15 +92,15 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		`The full type name of the serialized payload (like acme.weather.v1.Units) within the input.
 Alternatively, this can be a fully qualified path to the type without providing the source (like buf.build/acme/weather#acme.weather.v1.Units).`,
 	)
-	flagSet.StringVar(
-		&f.Payload,
-		payloadFlagName,
-		"-",
-		fmt.Sprintf(
-			`The location to read the payload. Must be one of format %s.`,
-			bufconvert.MessageEncodingFormatsString,
-		),
-	)
+	//flagSet.StringVar(
+	//	&f.Payload,
+	//	payloadFlagName,
+	//	"-",
+	//	fmt.Sprintf(
+	//		`The location to read the payload. Must be one of format %s.`,
+	//		bufconvert.MessageEncodingFormatsString,
+	//	),
+	//)
 	flagSet.StringVarP(
 		&f.Output,
 		outputFlagName,
@@ -109,6 +111,14 @@ Alternatively, this can be a fully qualified path to the type without providing 
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)
+
+	flagSet.StringVar(
+		&f.Schema,
+		schemaFlagName,
+		".",
+		`A set of .proto files, a buf module or an Image`,
+	)
+
 }
 
 func run(
@@ -119,11 +129,7 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
-	if err != nil {
-		return err
-	}
-	source, typeName, err := bufcli.ParseInputAndType(ctx, input, flags.Type)
+	source, typeName, err := bufcli.ParseInputAndType(ctx, flags.Schema, flags.Type)
 	if err != nil {
 		return err
 	}
@@ -142,7 +148,13 @@ func run(
 	if err != nil {
 		return err
 	}
-	payloadMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Payload, bufconvert.MessageEncodingBin)
+	arg := ""
+	if container.NumArgs() > 0 {
+		arg = container.Arg(0)
+	} else {
+		arg = "-"
+	}
+	payloadMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, arg /*flags.Payload*/, bufconvert.MessageEncodingBin)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
