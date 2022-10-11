@@ -96,9 +96,12 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 	if err != nil {
 		return nil, err
 	}
-	if externalConfig.LicenseSpdxID != "" {
-		if _, ok := dataspdx.GetLicenseInfo(externalConfig.LicenseSpdxID); !ok {
-			return nil, fmt.Errorf("license SPDX ID %q is not a valid known SPDX ID", externalConfig.LicenseSpdxID)
+	spdxLicenseID := externalConfig.SPDXLicenseID
+	if spdxLicenseID != "" {
+		if licenseInfo, ok := dataspdx.GetLicenseInfo(spdxLicenseID); ok {
+			spdxLicenseID = licenseInfo.ID()
+		} else {
+			return nil, fmt.Errorf("unknown SPDX License ID %q", spdxLicenseID)
 		}
 	}
 	return &Config{
@@ -110,7 +113,7 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 		SourceURL:       externalConfig.SourceURL,
 		Description:     externalConfig.Description,
 		OutputLanguages: externalConfig.OutputLanguages,
-		LicenseSpdxID:   externalConfig.LicenseSpdxID,
+		SPDXLicenseID:   spdxLicenseID,
 	}, nil
 }
 

@@ -315,7 +315,7 @@ func run(
 		bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry()),
 		nextRevision,
 		outputLanguages,
-		pluginConfig.LicenseSpdxID,
+		pluginConfig.SPDXLicenseID,
 	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {

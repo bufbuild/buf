@@ -141,9 +141,9 @@ message CuratedPlugin {
   uint32 revision = 13;
   // The output languages supported by the plugin.
   repeated PluginLanguage output_languages = 14;
-  // license_spdx_id is the license of the plugin, which should be one of the identifier
+  // spdx_license_id is the license of the plugin, which should be one of the identifiers
   // defined in https://spdx.org/licenses
-  string license_spdx_id = 15;
+  string spdx_license_id = 15;
 }
 
 // PluginCurationService manages curated plugins.
@@ -229,9 +229,9 @@ message CreateCuratedPluginRequest {
   uint32 revision = 13;
   // The output languages supported by the plugin.
   repeated PluginLanguage output_languages = 14;
-  // license_spdx_id is the license of the plugin, which should be one of the identifier
+  // spdx_license_id is the license of the plugin, which should be one of the identifiers
   // defined in https://spdx.org/licenses
-  string license_spdx_id = 15;
+  string spdx_license_id = 15;
 }
 
 message CreateCuratedPluginResponse {
