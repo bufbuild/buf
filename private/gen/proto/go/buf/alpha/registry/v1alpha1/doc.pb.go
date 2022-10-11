@@ -220,6 +220,7 @@ func (x *FileInfo) GetFileOptions() *FileOptions {
 	return nil
 }
 
+// FileOptions provides information for the documentation of options for a file.
 type FileOptions struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
