@@ -58,6 +58,11 @@ message FileInfo {
   string path = 1;
   bool is_dir = 2;
   repeated FileInfo children = 3;
+  FileOptions file_options = 4;
+}
+
+message FileOptions {
+  bool deprecated = 1;
 }
 
 // GetSourceFileRequest takes an owner, repository, reference, and normalized path.
