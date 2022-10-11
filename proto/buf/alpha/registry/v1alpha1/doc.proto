@@ -61,6 +61,7 @@ message FileInfo {
   FileOptions file_options = 4;
 }
 
+// FileOptions provides information for the documentation of options for a file.
 message FileOptions {
   bool deprecated = 1;
 }
