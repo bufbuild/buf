@@ -33,7 +33,7 @@ type field struct {
 	jsType         FieldOptionsJSType
 	cType          FieldOptionsCType
 	packed         *bool
-	deprecated     *bool
+	deprecated     bool
 	numberPath     []int32
 	typePath       []int32
 	typeNamePath   []int32
@@ -59,7 +59,7 @@ func newField(
 	jsType FieldOptionsJSType,
 	cType FieldOptionsCType,
 	packed *bool,
-	deprecated *bool,
+	deprecated bool,
 	numberPath []int32,
 	typePath []int32,
 	typeNamePath []int32,
@@ -149,7 +149,7 @@ func (f *field) Packed() *bool {
 	return f.packed
 }
 
-func (f *field) Deprecated() *bool {
+func (f *field) Deprecated() bool {
 	return f.deprecated
 }
 
