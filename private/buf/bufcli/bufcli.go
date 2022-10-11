@@ -802,26 +802,26 @@ func NewImageForSource(
 	return bufimage.MergeImages(images...)
 }
 
-// ParseSourceAndType returns the moduleReference and typeName from the source and type provided by the user.
-// When source is not provided, we assume the type is a fully qualified path to the type and try to parse it.
-// Otherwise, if both source and type are provided, the type must be a valid Protobuf identifier (e.g. weather.v1.Units).
-func ParseSourceAndType(
+// ParseInputAndType returns the moduleReference and typeName from the input and type provided by the user.
+// When input is not provided, we assume the type is a fully qualified path to the type and try to parse it.
+// Otherwise, if both input and type are provided, the type must be a valid Protobuf identifier (e.g. weather.v1.Units).
+func ParseInputAndType(
 	ctx context.Context,
-	source string,
+	input string,
 	typeName string,
 ) (string, string, error) {
-	if source != "" && typeName != "" {
+	if input != "" && typeName != "" {
 		if err := bufreflect.ValidateTypeName(typeName); err != nil {
 			return "", "", err
 		}
-		return source, typeName, nil
+		return input, typeName, nil
 	}
 	if typeName == "" {
 		return "", "", appcmd.NewInvalidArgumentError("type is required")
 	}
 	moduleReference, moduleTypeName, err := parseFullyQualifiedPath(typeName)
 	if err != nil {
-		return "", "", appcmd.NewInvalidArgumentErrorf("if a source isn't provided, the type needs to be a fully qualified path that includes the module reference; failed to parse the type: %v", err)
+		return "", "", appcmd.NewInvalidArgumentErrorf("if a input isn't provided, the type needs to be a fully qualified path that includes the module reference; failed to parse the type: %v", err)
 	}
 	return moduleReference, moduleTypeName, nil
 }
