@@ -52,7 +52,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
+		Use:   name + " <schema>",
 		Short: "Generate stubs for protoc plugins using a template.",
 		Long: `This command uses a template file of the shape:
 

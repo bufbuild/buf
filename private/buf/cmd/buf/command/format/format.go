@@ -63,7 +63,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
+		Use:   name + " <schema>",
 		Short: "Format all Protobuf files from the specified input and output the result.",
 		Long: `
 By default, the input is the current directory and the formatted content is written to stdout. For example,

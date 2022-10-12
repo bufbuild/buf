@@ -438,7 +438,7 @@ func TestFailCheckBreaking3(t *testing.T) {
 		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		<input>:1:1:Previously present file "bar.proto" was deleted.
+		<schema>:1:1:Previously present file "bar.proto" was deleted.
 		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
 		`),
 		"breaking",
@@ -472,7 +472,7 @@ func TestFailCheckBreaking5(t *testing.T) {
 		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-    <input>:1:1:Previously present file "bar.proto" was deleted.
+    <schema>:1:1:Previously present file "bar.proto" was deleted.
 		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
 		`),
 		"breaking",

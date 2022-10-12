@@ -81,7 +81,7 @@ func (f *fileAnnotation) String() string {
 	if f == nil {
 		return ""
 	}
-	path := "<input>"
+	path := "<schema>"
 	line := f.startLine
 	column := f.startColumn
 	message := f.message

@@ -45,7 +45,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
+		Use:   name + " <schema>",
 		Short: "List all Protobuf files for the input.",
 		Long:  bufcli.GetInputLong(`the source, module, or image to list from`),
 		Args:  cobra.MaximumNArgs(1),

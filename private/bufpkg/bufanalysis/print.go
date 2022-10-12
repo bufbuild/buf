@@ -58,7 +58,7 @@ func printAsJUnit(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	}
 	annotationsByPath := groupAnnotationsByPath(fileAnnotations)
 	for _, annotations := range annotationsByPath {
-		path := "<input>"
+		path := "<schema>"
 		if fileInfo := annotations[0].FileInfo(); fileInfo != nil {
 			path = fileInfo.ExternalPath()
 		}
@@ -131,7 +131,7 @@ func groupAnnotationsByPath(annotations []FileAnnotation) [][]FileAnnotation {
 	pathToIndex := make(map[string]int)
 	annotationsByPath := make([][]FileAnnotation, 0)
 	for _, annotation := range annotations {
-		path := "<input>"
+		path := "<schema>"
 		if fileInfo := annotation.FileInfo(); fileInfo != nil {
 			path = fileInfo.ExternalPath()
 		}
@@ -156,7 +156,7 @@ func printFileAnnotationAsMSVS(buffer *bytes.Buffer, f FileAnnotation) error {
 	if f == nil {
 		return nil
 	}
-	path := "<input>"
+	path := "<schema>"
 	line := f.StartLine()
 	column := f.StartColumn()
 	message := f.Message()

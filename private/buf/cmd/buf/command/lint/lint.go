@@ -47,7 +47,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
+		Use:   name + " <schema>",
 		Short: "Verify that the input location passes lint checks.",
 		Long:  bufcli.GetInputLong(`the source, module, or Image to lint`),
 		Args:  cobra.MaximumNArgs(1),

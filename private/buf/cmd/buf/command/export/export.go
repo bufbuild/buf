@@ -54,7 +54,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
+		Use:   name + " <schema>",
 		Short: "Export the files from the input location to an output location.",
 		Long:  bufcli.GetInputLong(`the source or module to export`),
 		Args:  cobra.MaximumNArgs(1),
