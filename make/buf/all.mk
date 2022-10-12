@@ -1,3 +1,4 @@
+# https://github.com/bufbuild/protocompile/commits/master 20220928 checked 20221004
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/bufbuild/protocompile@68c60f3c760e09f045ec147acc09bae03b092e64
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...

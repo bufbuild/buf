@@ -35,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/testingextended"
+	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -380,8 +381,14 @@ func testGetImageImportPaths(image bufimage.Image) []string {
 
 func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
 	t.Helper()
-	_, fileAnnotations := testBuild(t, filepath.Join("testdata", filepath.FromSlash(relDirPath)),
-		WithParallelism(1)) // TestCyclicImport is non-deterministic if we don't limit this
+
+	previousParallelism := thread.Parallelism()
+	thread.SetParallelism(1) // TestCyclicImport is non-deterministic if we don't limit this
+	defer func() {
+		thread.SetParallelism(previousParallelism)
+	}()
+
+	_, fileAnnotations := testBuild(t, filepath.Join("testdata", filepath.FromSlash(relDirPath)))
 	got := make([]string, len(fileAnnotations))
 	for i, annotation := range fileAnnotations {
 		got[i] = annotation.String()

@@ -65,15 +65,6 @@ func WithExtraSourceCodeInfo() BuildOption {
 	}
 }
 
-// WithParallelism indicates the maximum level of parallelism to use when building
-// an image. If unspecified, the maximum parallelism will be automatically set to
-// min(runtime.NumCPU(), runtime.GOMAXPROCS(-1)).
-func WithParallelism(parallelism int) BuildOption {
-	return func(buildOptions *buildOptions) {
-		buildOptions.parallelism = parallelism
-	}
-}
-
 // WithCanonicalByteOutput indicates that file descriptor protos in the built
 // image should be marshaled to the protobuf binary format using a "canonical"
 // format, that matches byte-for-byte the output of protoc. This should only

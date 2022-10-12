@@ -119,7 +119,7 @@ func getBuildResult(
 	var errorsWithPos []reporter.ErrorWithPos
 	var warningErrorsWithPos []reporter.ErrorWithPos
 	compiler := protocompile.Compiler{
-		MaxParallelism: options.parallelism,
+		MaxParallelism: thread.Parallelism(),
 		SourceInfoMode: options.sourceInfoMode,
 		Resolver:       &protocompile.SourceResolver{Accessor: parserAccessorHandler.Open},
 		Reporter: reporter.NewReporter(
@@ -442,14 +442,12 @@ func newBuildResult(
 
 type buildOptions struct {
 	sourceInfoMode      protocompile.SourceInfoMode
-	parallelism         int
 	canonicalByteOutput bool
 }
 
 func newBuildOptions() *buildOptions {
 	return &buildOptions{
 		sourceInfoMode: protocompile.SourceInfoStandard,
-		parallelism:    thread.Parallelism(),
 	}
 }
 

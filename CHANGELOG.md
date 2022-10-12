@@ -12,8 +12,19 @@
 - Formatter uses a compact, single-line representation for array and message literals
   in option values that are sufficiently simple (single scalar element or field).
 - Include `LICENSE` file in the module on `buf push`.
-- New compiler that is XX% faster, uses XX% less memory, and addresses a few bugs
-  where Buf would accept proto sources that protoc would reject:
+- New compiler that is faster and uses less memory than the outgoing one.
+   - When generating source code info, the new compiler is 20% faster, and allocates
+     13% less memory.
+   - If _not_ generating source code info, the new compiler is 50% faster and
+     allocates 35% less memory.
+   - In addition to allocating less memory through the course of a compilation, the
+     new compiler releases some memory much earlier, allowing it to be garbage
+     collected much sooner. This means that by the end of a very large compilation
+     process, less than half as much memory is live/pinned to the heap, decreasing
+     overall memory pressure.
+
+  The new compiler also addresses a few bugs where Buf would accept proto sources
+  that protoc would reject:
    - In proto3 files, field and enum names undergo a validation that they are
      sufficiently different so that there will be no conflicts in JSON names.
    - Fully-qualified names of elements (like a message, enum, or service) may not
@@ -23,6 +34,7 @@
    - Nesting depth of messages may not be > 32.
    - Field types and method input/output types may not refer to synthetic
      map entry messages.
+
   When generating a file descriptor set from local sources, the resulting file
   should now be identical, byte-for-byte, to files produced by protoc. Aside from
   bugs (like listed above), the output has always been *semantically* equal. But
