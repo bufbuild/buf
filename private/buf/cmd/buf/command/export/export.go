@@ -55,7 +55,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <schema>",
-		Short: "Export the files from the input location to an output location.",
+		Short: "Export the files from the input schema to an output location.",
 		Long:  bufcli.GetInputLong(`the source or module to export`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -77,7 +77,7 @@ type flags struct {
 	DisableSymlinks bool
 
 	// special
-	InputHashtag string
+	SchemaHashtag string
 }
 
 func newFlags() *flags {
@@ -86,7 +86,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
-	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindSchemaHashtag(flagSet, &f.SchemaHashtag)
 	bufcli.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
@@ -111,11 +111,11 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	schema, err := bufcli.GetInputValue(container, flags.SchemaHashtag, ".")
 	if err != nil {
 		return err
 	}
-	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetSourceOrModuleRef(ctx, input)
+	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetSourceOrModuleRef(ctx, schema)
 	if err != nil {
 		return err
 	}

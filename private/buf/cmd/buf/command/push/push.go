@@ -69,7 +69,7 @@ type flags struct {
 	// Deprecated
 	Tracks []string
 	// special
-	InputHashtag string
+	SchemaHashtag string
 }
 
 func newFlags() *flags {
@@ -77,7 +77,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindSchemaHashtag(flagSet, &f.SchemaHashtag)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.StringSliceVarP(
 		&f.Tags,
@@ -131,7 +131,7 @@ func run(
 	if len(flags.Tags) > 0 && flags.Draft != "" {
 		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, draftFlagName)
 	}
-	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	source, err := bufcli.GetInputValue(container, flags.SchemaHashtag, ".")
 	if err != nil {
 		return err
 	}

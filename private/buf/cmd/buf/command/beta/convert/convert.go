@@ -73,7 +73,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindSchemaHashtag(flagSet, &f.InputHashtag)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,

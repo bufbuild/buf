@@ -48,7 +48,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <schema>",
-		Short: "Verify that the input location passes lint checks.",
+		Short: "Verify that the input schema passes lint checks.",
 		Long:  bufcli.GetInputLong(`the source, module, or Image to lint`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -68,7 +68,7 @@ type flags struct {
 	ExcludePaths    []string
 	DisableSymlinks bool
 	// special
-	InputHashtag string
+	SchemaHashtag string
 }
 
 func newFlags() *flags {
@@ -76,7 +76,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindSchemaHashtag(flagSet, &f.SchemaHashtag)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
@@ -105,11 +105,11 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlagLint(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	schema, err := bufcli.GetInputValue(container, flags.SchemaHashtag, ".")
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, input)
+	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, schema)
 	if err != nil {
 		return err
 	}

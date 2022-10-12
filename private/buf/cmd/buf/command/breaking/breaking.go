@@ -53,7 +53,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <schema> --against <against-schema>",
-		Short: "Verify that the input location has no breaking changes compared to the against location.",
+		Short: "Verify that the input schema has no breaking changes compared to the against schema.",
 		Long:  bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -77,7 +77,7 @@ type flags struct {
 	ExcludePaths      []string
 	DisableSymlinks   bool
 	// special
-	InputHashtag string
+	SchemaHashtag string
 }
 
 func newFlags() *flags {
@@ -86,7 +86,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
-	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindSchemaHashtag(flagSet, &f.SchemaHashtag)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.StringVar(
@@ -109,8 +109,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		limitToInputFilesFlagName,
 		false,
 		fmt.Sprintf(
-			`Only run breaking checks against the files in the input.
-When set, the against input contains only the files in the input.
+			`Only run breaking checks against the files in the input schema.
+When set, the against schema contains only the files in the input schema.
 Overrides --%s.`,
 			pathsFlagName,
 		),
@@ -149,11 +149,11 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	schema, err := bufcli.GetInputValue(container, flags.SchemaHashtag, ".")
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, input)
+	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, schema)
 	if err != nil {
 		return err
 	}

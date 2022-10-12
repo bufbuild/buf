@@ -64,9 +64,9 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <schema>",
-		Short: "Format all Protobuf files from the specified input and output the result.",
+		Short: "Format all Protobuf files from the specified input schema and output the result.",
 		Long: `
-By default, the input is the current directory and the formatted content is written to stdout. For example,
+By default, the input schema is the current directory and the formatted content is written to stdout. For example,
 
 # Write the current directory's formatted content to stdout
 $ buf format
@@ -103,7 +103,7 @@ $ buf format --exit-code
 $ buf format -w --exit-code
 $ buf format -d --exit-code
 
-Format a file, directory, or module reference by specifying an input. For example,
+Format a file, directory, or module reference by specifying a input schema. For example,
 
 # Write the formatted file to stdout
 $ buf format simple/simple.proto
@@ -172,7 +172,7 @@ type flags struct {
 	Output          string
 	Write           bool
 	// special
-	InputHashtag string
+	SchemaHashtag string
 }
 
 func newFlags() *flags {
@@ -180,7 +180,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindSchemaHashtag(flagSet, &f.SchemaHashtag)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
@@ -242,7 +242,7 @@ func run(
 	if flags.Output != "-" && flags.Write {
 		return fmt.Errorf("--%s cannot be used with --%s", outputFlagName, writeFlagName)
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	schema, err := bufcli.GetInputValue(container, flags.SchemaHashtag, ".")
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ func run(
 		container.Logger(),
 		buffetch.RefParserWithProtoFileRefAllowed(),
 	)
-	sourceOrModuleRef, err := refParser.GetSourceOrModuleRef(ctx, input)
+	sourceOrModuleRef, err := refParser.GetSourceOrModuleRef(ctx, schema)
 	if err != nil {
 		return err
 	}
@@ -330,7 +330,7 @@ func run(
 	if protoFileRef, ok := sourceOrModuleRef.(buffetch.ProtoFileRef); ok {
 		// If we have a single ProtoFileRef, we only want to format that file.
 		// The file will be available from the first module (i.e. it's
-		// the target input, or the first module in a workspace).
+		// the target schema, or the first module in a workspace).
 		if len(moduleConfigs) == 0 {
 			// Unreachable - we should always have at least one module.
 			return fmt.Errorf("could not build module for %s", container.Arg(0))
@@ -380,7 +380,7 @@ func run(
 			// TODO: Fix the buffetch.ProtoFileRef so that it works in
 			// these situtations.
 			return fmt.Errorf(
-				"input %s was not found - is the directory containing this file defined in your %s?",
+				"schema %s was not found - is the directory containing this file defined in your %s?",
 				container.Arg(0),
 				bufwork.ExternalConfigV1FilePath,
 			)
@@ -506,7 +506,7 @@ func formatModule(
 				//
 				// storage.Copy operates on normal paths, so the copied content is always placed
 				// relative to the bucket's root (as expected). The rewrite in-place behavior can
-				// be rephrased as writing to the same bucket as the input (e.g. buf format proto -o proto).
+				// be rephrased as writing to the same bucket as the input schema (e.g. buf format proto -o proto).
 				//
 				// Now, if the user asks to rewrite an entire workspace (i.e. a directory containing
 				// a buf.work.yaml), we would need to call storage.Copy for each of the directories

@@ -72,8 +72,8 @@ const (
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
 
-	inputHashtagFlagName      = "__hashtag__"
-	inputHashtagFlagShortName = "#"
+	schemaHashtagFlagName      = "__hashtag__"
+	schemaHashtagFlagShortName = "#"
 
 	userPromptAttempts = 3
 
@@ -214,20 +214,20 @@ If specified multiple times, the union is taken.`,
 	)
 }
 
-// BindInputHashtag binds the input hashtag flag.
+// BindSchemaHashtag binds the schema hashtag flag.
 //
 // This needs to be added to any command that has the input as the first argument.
 // This deals with the situation "buf build -#format=json" which results in
 // a parse error from pflag.
-func BindInputHashtag(flagSet *pflag.FlagSet, addr *string) {
+func BindSchemaHashtag(flagSet *pflag.FlagSet, addr *string) {
 	flagSet.StringVarP(
 		addr,
-		inputHashtagFlagName,
-		inputHashtagFlagShortName,
+		schemaHashtagFlagName,
+		schemaHashtagFlagShortName,
 		"",
 		"",
 	)
-	_ = flagSet.MarkHidden(inputHashtagFlagName)
+	_ = flagSet.MarkHidden(schemaHashtagFlagName)
 }
 
 // BindExcludePaths binds the exclude-path flag.
@@ -316,22 +316,22 @@ If no argument is specified, defaults to ".".`,
 // The existence of 0 or 1 args should be handled by the Args field on Command.
 func GetInputValue(
 	container appflag.Container,
-	inputHashtag string,
+	schemaHashtag string,
 	defaultValue string,
 ) (string, error) {
 	var arg string
 	switch numArgs := container.NumArgs(); numArgs {
 	case 0:
-		if inputHashtag != "" {
-			arg = "-#" + inputHashtag
+		if schemaHashtag != "" {
+			arg = "-#" + schemaHashtag
 		}
 	case 1:
 		arg = container.Arg(0)
 		if arg == "" {
 			return "", errors.New("first argument is present but empty")
 		}
-		// if arg is non-empty and inputHashtag is non-empty, this means two arguments were specified
-		if inputHashtag != "" {
+		// if arg is non-empty and schemaHashtag is non-empty, this means two arguments were specified
+		if schemaHashtag != "" {
 			return "", errors.New("only 1 argument allowed but 2 arguments specified")
 		}
 	default:

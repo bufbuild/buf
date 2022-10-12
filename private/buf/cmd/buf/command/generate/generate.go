@@ -193,7 +193,7 @@ type flags struct {
 	ExcludePaths    []string
 	DisableSymlinks bool
 	// special
-	InputHashtag string
+	SchemaHashtag string
 }
 
 func newFlags() *flags {
@@ -202,7 +202,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
-	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindSchemaHashtag(flagSet, &f.SchemaHashtag)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	flagSet.BoolVar(
@@ -266,7 +266,7 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	input, err := bufcli.GetInputValue(container, flags.SchemaHashtag, ".")
 	if err != nil {
 		return err
 	}

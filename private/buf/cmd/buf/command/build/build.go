@@ -51,7 +51,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <schema>",
-		Short: "Build all Protobuf files from the specified input and output a Buf image.",
+		Short: "Build all Protobuf files from the specified schema input and output a Buf image.",
 		Long:  bufcli.GetInputLong(`the source or module to build or image to convert`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -76,7 +76,7 @@ type flags struct {
 	DisableSymlinks     bool
 	Types               []string
 	// special
-	InputHashtag string
+	SchemaHashtag string
 }
 
 func newFlags() *flags {
@@ -84,7 +84,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindSchemaHashtag(flagSet, &f.SchemaHashtag)
 	bufcli.BindAsFileDescriptorSet(flagSet, &f.AsFileDescriptorSet, asFileDescriptorSetFlagName)
 	bufcli.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
 	bufcli.BindExcludeSourceInfo(flagSet, &f.ExcludeSourceInfo, excludeSourceInfoFlagName)
@@ -135,14 +135,14 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	schema, err := bufcli.GetInputValue(container, flags.SchemaHashtag, ".")
 	if err != nil {
 		return err
 	}
 	image, err := bufcli.NewImageForSource(
 		ctx,
 		container,
-		input,
+		schema,
 		flags.ErrorFormat,
 		flags.DisableSymlinks,
 		flags.Config,
