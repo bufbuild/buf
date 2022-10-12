@@ -48,6 +48,7 @@ func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	}
 }
 
+// TODO: add Description and Url field if it's desired to udpate them from the CLI
 type flags struct {
 	Visibility string
 }
@@ -87,6 +88,10 @@ func run(
 		moduleIdentity.Owner(),
 		moduleIdentity.Repository(),
 		visibility,
+		// TODO: pass description
+		"",
+		// TODO: pass url
+		"",
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
