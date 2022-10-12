@@ -87,5 +87,8 @@ type OrganizationService interface {
 		repositoryBaseRole v1alpha1.RepositoryRole,
 		pluginBaseRole v1alpha1.PluginRole,
 		templateBaseRole v1alpha1.TemplateRole,
+		description string,
+		url string,
+		verificationStatus v1alpha1.VerificationStatus,
 	) (err error)
 }

@@ -76,6 +76,8 @@ service UserService {
   rpc UpdateUserServerRole(UpdateUserServerRoleRequest) returns (UpdateUserServerRoleResponse);
   // CountUsers returns the number of users in the server by the user state provided.
   rpc CountUsers(CountUsersRequest) returns (CountUsersResponse);
+  // UpdateUserSettings update the user settings including description.
+  rpc UpdateUserSettings(UpdateUserSettingsRequest) returns (UpdateUserSettingsResponse);
 }
 
 message CreateUserRequest {
@@ -158,3 +160,13 @@ message CountUsersRequest {
 message CountUsersResponse {
   uint32 total_count = 1;
 }
+
+message UpdateUserSettingsRequest {
+  string user_id = 1;
+  // Changes are only made to specified values. Unspecified ones are left unchanged.
+  string description = 2;
+  string url = 3;
+  VerificationStatus verification_status = 4;
+}
+
+message UpdateUserSettingsResponse {}

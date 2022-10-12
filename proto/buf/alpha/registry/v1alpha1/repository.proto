@@ -297,6 +297,8 @@ message UpdateRepositorySettingsByNameRequest {
   string repository_name = 2;
   // Changes are only made to specified values. Unspecified ones are left unchanged.
   Visibility visibility = 3;
+  string description = 4;
+  string url = 5;
 }
 
 message UpdateRepositorySettingsByNameResponse {}

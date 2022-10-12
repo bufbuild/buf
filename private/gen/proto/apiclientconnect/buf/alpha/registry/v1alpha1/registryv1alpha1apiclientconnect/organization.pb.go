@@ -261,6 +261,9 @@ func (s *organizationServiceClient) UpdateOrganizationSettings(
 	repositoryBaseRole v1alpha1.RepositoryRole,
 	pluginBaseRole v1alpha1.PluginRole,
 	templateBaseRole v1alpha1.TemplateRole,
+	description string,
+	url string,
+	verificationStatus v1alpha1.VerificationStatus,
 ) (_ error) {
 	_, err := s.client.UpdateOrganizationSettings(
 		ctx,
@@ -270,6 +273,9 @@ func (s *organizationServiceClient) UpdateOrganizationSettings(
 				RepositoryBaseRole: repositoryBaseRole,
 				PluginBaseRole:     pluginBaseRole,
 				TemplateBaseRole:   templateBaseRole,
+				Description:        description,
+				Url:                url,
+				VerificationStatus: verificationStatus,
 			}),
 	)
 	if err != nil {
