@@ -2127,7 +2127,7 @@ func TestConvertRoundTrip(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"--input",
+			"--payload",
 			"-#format=json",
 		)
 		testRun(
@@ -2157,7 +2157,7 @@ func TestConvertRoundTrip(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"--input",
+			"--payload",
 			"-#format=json",
 			"-o",
 			"-#format=bin",
@@ -2172,7 +2172,7 @@ func TestConvertRoundTrip(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"--input",
+			"--payload",
 			"-#format=bin",
 			"-o",
 			"-#format=json",
@@ -2192,7 +2192,7 @@ func TestConvertRoundTrip(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"--input",
+			"--payload",
 			"-#format=json",
 			"-o",
 			filepath.Join(tempDir, "decoded_message.bin"),
@@ -2207,7 +2207,7 @@ func TestConvertRoundTrip(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"--input",
+			"--payload",
 			filepath.Join(tempDir, "decoded_message.bin"),
 		)
 		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
