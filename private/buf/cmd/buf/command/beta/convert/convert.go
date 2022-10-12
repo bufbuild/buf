@@ -66,7 +66,7 @@ type flags struct {
 	Schema      string
 
 	// special
-	InputHashtag string
+	PayloadHashtag string
 }
 
 func newFlags() *flags {
@@ -74,7 +74,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindInputHashtag(flagSet, &f.PayloadHashtag)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -134,7 +134,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	payload, err := bufcli.GetInputValue(container, flags.InputHashtag, "-")
+	payload, err := bufcli.GetInputValue(container, flags.PayloadHashtag, "-")
 	if err != nil {
 		return err
 	}
