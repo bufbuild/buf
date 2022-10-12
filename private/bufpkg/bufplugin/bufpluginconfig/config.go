@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/gen/data/dataspdx"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/semver"
 )
@@ -95,6 +96,14 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 	if err != nil {
 		return nil, err
 	}
+	spdxLicenseID := externalConfig.SPDXLicenseID
+	if spdxLicenseID != "" {
+		if licenseInfo, ok := dataspdx.GetLicenseInfo(spdxLicenseID); ok {
+			spdxLicenseID = licenseInfo.ID()
+		} else {
+			return nil, fmt.Errorf("unknown SPDX License ID %q", spdxLicenseID)
+		}
+	}
 	return &Config{
 		Name:            pluginIdentity,
 		PluginVersion:   pluginVersion,
@@ -104,6 +113,7 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 		SourceURL:       externalConfig.SourceURL,
 		Description:     externalConfig.Description,
 		OutputLanguages: externalConfig.OutputLanguages,
+		SPDXLicenseID:   spdxLicenseID,
 	}, nil
 }
 
