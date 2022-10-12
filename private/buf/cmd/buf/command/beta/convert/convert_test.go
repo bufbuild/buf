@@ -35,9 +35,9 @@ func TestConvert(t *testing.T) {
 			t,
 			nil,
 			"testdata/bin_json/payload.json",
+			"testdata/bin_json/payload.bin",
 			"--type=buf.Foo",
-			"--payload=testdata/bin_json/payload.bin",
-			"testdata/bin_json/buf.proto",
+			"--schema=testdata/bin_json/buf.proto",
 		)
 	})
 	t.Run("json-to-bin-file-proto", func(t *testing.T) {
@@ -45,9 +45,9 @@ func TestConvert(t *testing.T) {
 			t,
 			nil,
 			"testdata/bin_json/payload.bin",
+			"testdata/bin_json/payload.json",
 			"--type=buf.Foo",
-			"--payload=testdata/bin_json/payload.json",
-			"testdata/bin_json/buf.proto",
+			"--schema=testdata/bin_json/buf.proto",
 		)
 	})
 	t.Run("stdin-json-to-bin-proto", func(t *testing.T) {
@@ -55,10 +55,9 @@ func TestConvert(t *testing.T) {
 			t,
 			strings.NewReader(`{"one":"55"}`),
 			"testdata/bin_json/payload.bin",
+			"--schema=testdata/bin_json/buf.proto",
 			"--type=buf.Foo",
-			"--payload",
 			"-#format=json",
-			"testdata/bin_json/buf.proto",
 		)
 	})
 	t.Run("stdin-bin-to-json-proto", func(t *testing.T) {
@@ -68,10 +67,9 @@ func TestConvert(t *testing.T) {
 			t,
 			file,
 			"testdata/bin_json/payload.json",
-			"--type=buf.Foo",
-			"--payload",
 			"-#format=bin",
-			"testdata/bin_json/buf.proto",
+			"--schema=testdata/bin_json/buf.proto",
+			"--type=buf.Foo",
 		)
 	})
 	t.Run("stdin-json-to-json-proto", func(t *testing.T) {
@@ -80,9 +78,8 @@ func TestConvert(t *testing.T) {
 			strings.NewReader(`{"one":"55"}`),
 			"testdata/bin_json/payload.json",
 			"--type=buf.Foo",
-			"testdata/bin_json/buf.proto",
-			"--payload",
 			"-#format=json",
+			"--schema=testdata/bin_json/buf.proto",
 			"-o",
 			"-#format=json",
 		)
@@ -95,8 +92,8 @@ func TestConvert(t *testing.T) {
 			file,
 			"testdata/bin_json/payload.json",
 			"--type=buf.Foo",
-			"-",
-			"--payload=testdata/bin_json/payload.bin",
+			"testdata/bin_json/payload.bin",
+			"--schema=-",
 			"-o",
 			"-#format=json",
 		)
@@ -108,10 +105,9 @@ func TestConvert(t *testing.T) {
 			t,
 			file,
 			"testdata/bin_json/payload.json",
-			"--type=buf.Foo",
-			"testdata/bin_json/image.bin",
-			"--payload",
 			"-#format=bin",
+			"--type=buf.Foo",
+			"--schema=testdata/bin_json/image.bin",
 			"-o",
 			"-#format=json",
 		)
@@ -124,7 +120,7 @@ func TestConvert(t *testing.T) {
 			file,
 			"testdata/bin_json/payload.json",
 			"--type=buf.Foo",
-			"testdata/bin_json/image.bin",
+			"--schema=testdata/bin_json/image.bin",
 			"-o",
 			"-#format=json",
 		)
@@ -140,7 +136,7 @@ func TestConvert(t *testing.T) {
 			"--type=buf.Foo",
 			"--schema=testdata/bin_json/image.bin",
 			"-o",
-			"-#format=json",
+			"-#format=bin",
 		)
 	})
 	t.Run("stdin-image-json-to-bin", func(t *testing.T) {
@@ -152,22 +148,6 @@ func TestConvert(t *testing.T) {
 			"testdata/bin_json/payload.bin",
 			"testdata/bin_json/payload.json",
 			"--type=buf.Foo",
-			"-#format=json",
-			//"--payload=",
-			"-o",
-			"-#format=bin",
-		)
-	})
-
-	t.Run("no-module", func(t *testing.T) {
-		require.NoError(t, os.Chdir("no-module"))
-		testConvert(
-			t,
-			nil,
-			"../testdata/bin_json/payload.bin",
-			"--type=buf.Foo",
-			"-#format=json",
-			"--payload=testdata/bin_json/payload.json",
 			"-o",
 			"-#format=bin",
 		)

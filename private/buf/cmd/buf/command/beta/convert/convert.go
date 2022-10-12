@@ -118,7 +118,6 @@ Alternatively, this can be a fully qualified path to the type without providing 
 		".",
 		`A set of .proto files, a buf module or an Image`,
 	)
-
 }
 
 func run(
@@ -148,13 +147,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	arg := ""
-	if container.NumArgs() > 0 {
-		arg = container.Arg(0)
-	} else {
-		arg = "-"
+	payload, err := bufcli.GetInputValue(container, flags.InputHashtag, "-")
+	if err != nil {
+		return err
 	}
-	payloadMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, arg /*flags.Payload*/, bufconvert.MessageEncodingBin)
+	payloadMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, payload, bufconvert.MessageEncodingBin)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
