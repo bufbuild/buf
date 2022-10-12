@@ -45,7 +45,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <payload>",
-		Short: "Convert a binary or JSON serialized payloads using the schema supplied",
+		Short: "Convert a binary or JSON serialized payload using the supplied schema",
 		Long: `The first argument is the serialized message payload. 
 The --schema flag is either a .proto, image, or buf module and the --type flag specifies the type within the schema.`,
 		Args: cobra.MaximumNArgs(1),
