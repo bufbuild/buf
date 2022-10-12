@@ -69,10 +69,6 @@ func (f *file) CsharpNamespace() string {
 	return f.fileDescriptor.GetOptions().GetCsharpNamespace()
 }
 
-func (f *file) Deprecated() bool {
-	return f.fileDescriptor.GetOptions().GetDeprecated()
-}
-
 func (f *file) GoPackage() string {
 	return f.fileDescriptor.GetOptions().GetGoPackage()
 }
@@ -375,7 +371,6 @@ func (f *file) populateEnum(
 			enumDescriptorProto.GetOptions(),
 		),
 		enumDescriptorProto.GetOptions().GetAllowAlias(),
-		enumDescriptorProto.GetOptions().GetDeprecated(),
 		getEnumAllowAliasPath(enumIndex, nestedMessageIndexes...),
 		parent,
 	)
@@ -400,7 +395,6 @@ func (f *file) populateEnum(
 			),
 			enum,
 			int(enumValueDescriptorProto.GetNumber()),
-			enumValueDescriptorProto.GetOptions().GetDeprecated(),
 			getEnumValueNumberPath(enumIndex, enumValueIndex, nestedMessageIndexes...),
 		)
 		enum.addValue(enumValue)
@@ -467,7 +461,6 @@ func (f *file) populateMessage(
 		descriptorProto.GetOptions().GetMapEntry(),
 		descriptorProto.GetOptions().GetMessageSetWireFormat(),
 		descriptorProto.GetOptions().GetNoStandardDescriptorAccessor(),
-		descriptorProto.GetOptions().GetDeprecated(),
 		getMessageMessageSetWireFormatPath(topLevelMessageIndex, nestedMessageIndexes...),
 		getMessageNoStandardDescriptorAccessorPath(topLevelMessageIndex, nestedMessageIndexes...),
 	)
@@ -555,7 +548,6 @@ func (f *file) populateMessage(
 			jsType,
 			cType,
 			packed,
-			fieldDescriptorProto.GetOptions().GetDeprecated(),
 			getMessageFieldNumberPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageFieldTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageFieldTypeNamePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
@@ -629,7 +621,6 @@ func (f *file) populateMessage(
 			jsType,
 			cType,
 			packed,
-			fieldDescriptorProto.GetOptions().GetDeprecated(),
 			getMessageExtensionNumberPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionTypeNamePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
@@ -739,7 +730,6 @@ func (f *file) populateService(
 		newOptionExtensionDescriptor(
 			serviceDescriptorProto.GetOptions(),
 		),
-		serviceDescriptorProto.GetOptions().GetDeprecated(),
 	)
 	for methodIndex, methodDescriptorProto := range serviceDescriptorProto.GetMethod() {
 		methodNamedDescriptor, err := newNamedDescriptor(
@@ -768,7 +758,6 @@ func (f *file) populateService(
 			strings.TrimPrefix(methodDescriptorProto.GetOutputType(), "."),
 			methodDescriptorProto.GetClientStreaming(),
 			methodDescriptorProto.GetServerStreaming(),
-			methodDescriptorProto.GetOptions().GetDeprecated(),
 			getMethodInputTypePath(serviceIndex, methodIndex),
 			getMethodOutputTypePath(serviceIndex, methodIndex),
 			idempotencyLevel,
@@ -835,7 +824,6 @@ func (f *file) populateExtension(
 		jsType,
 		cType,
 		packed,
-		fieldDescriptorProto.GetOptions().GetDeprecated(),
 		getFileExtensionNumberPath(fieldIndex),
 		getFileExtensionTypePath(fieldIndex),
 		getFileExtensionTypeNamePath(fieldIndex),

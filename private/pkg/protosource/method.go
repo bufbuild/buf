@@ -25,7 +25,6 @@ type method struct {
 	outputTypeName       string
 	clientStreaming      bool
 	serverStreaming      bool
-	deprecated           bool
 	inputTypePath        []int32
 	outputTypePath       []int32
 	idempotencyLevel     MethodOptionsIdempotencyLevel
@@ -40,7 +39,6 @@ func newMethod(
 	outputTypeName string,
 	clientStreaming bool,
 	serverStreaming bool,
-	deprecated bool,
 	inputTypePath []int32,
 	outputTypePath []int32,
 	idempotencyLevel MethodOptionsIdempotencyLevel,
@@ -60,7 +58,6 @@ func newMethod(
 		outputTypeName:            outputTypeName,
 		clientStreaming:           clientStreaming,
 		serverStreaming:           serverStreaming,
-		deprecated:                deprecated,
 		inputTypePath:             inputTypePath,
 		outputTypePath:            outputTypePath,
 		idempotencyLevel:          idempotencyLevel,
@@ -86,10 +83,6 @@ func (m *method) ClientStreaming() bool {
 
 func (m *method) ServerStreaming() bool {
 	return m.serverStreaming
-}
-
-func (m *method) Deprecated() bool {
-	return m.deprecated
 }
 
 func (m *method) InputTypeLocation() Location {

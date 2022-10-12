@@ -30,7 +30,6 @@ type message struct {
 	isMapEntry                       bool
 	messageSetWireFormat             bool
 	noStandardDescriptorAccessor     bool
-	deprecated                       bool
 	messageSetWireFormatPath         []int32
 	noStandardDescriptorAccessorPath []int32
 }
@@ -42,7 +41,6 @@ func newMessage(
 	isMapEntry bool,
 	messageSetWireFormat bool,
 	noStandardDescriptorAccessor bool,
-	deprecated bool,
 	messageSetWireFormatPath []int32,
 	noStandardDescriptorAccessorPath []int32,
 ) *message {
@@ -53,7 +51,6 @@ func newMessage(
 		isMapEntry:                       isMapEntry,
 		messageSetWireFormat:             messageSetWireFormat,
 		noStandardDescriptorAccessor:     noStandardDescriptorAccessor,
-		deprecated:                       deprecated,
 		messageSetWireFormatPath:         messageSetWireFormatPath,
 		noStandardDescriptorAccessorPath: noStandardDescriptorAccessorPath,
 	}
@@ -113,10 +110,6 @@ func (m *message) MessageSetWireFormat() bool {
 
 func (m *message) NoStandardDescriptorAccessor() bool {
 	return m.noStandardDescriptorAccessor
-}
-
-func (m *message) Deprecated() bool {
-	return m.deprecated
 }
 
 func (m *message) MessageSetWireFormatLocation() Location {

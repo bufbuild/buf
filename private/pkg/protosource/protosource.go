@@ -217,7 +217,6 @@ type File interface {
 	PhpMetadataNamespace() string
 	RubyPackage() string
 	SwiftPrefix() string
-	Deprecated() bool
 
 	OptimizeFor() FileOptionsOptimizeMode
 	CcGenericServices() bool
@@ -309,7 +308,6 @@ type Enum interface {
 	ReservedEnumRanges() []EnumRange
 
 	AllowAlias() bool
-	Deprecated() bool
 	AllowAliasLocation() Location
 
 	// Will return nil if this is a top-level Enum
@@ -324,7 +322,6 @@ type EnumValue interface {
 	Enum() Enum
 	Number() int
 
-	Deprecated() bool
 	NumberLocation() Location
 }
 
@@ -349,7 +346,6 @@ type Message interface {
 
 	MessageSetWireFormat() bool
 	NoStandardDescriptorAccessor() bool
-	Deprecated() bool
 	MessageSetWireFormatLocation() Location
 	NoStandardDescriptorAccessorLocation() Location
 }
@@ -374,7 +370,6 @@ type Field interface {
 	// Set vs unset matters for packed
 	// See the comments on descriptor.proto
 	Packed() *bool
-	Deprecated() bool
 	// Empty string unless the field is part of an extension
 	Extendee() string
 
@@ -403,7 +398,6 @@ type Service interface {
 	OptionExtensionDescriptor
 
 	Methods() []Method
-	Deprecated() bool
 }
 
 // Method is a method descriptor.
@@ -419,7 +413,6 @@ type Method interface {
 	InputTypeLocation() Location
 	OutputTypeLocation() Location
 
-	Deprecated() bool
 	IdempotencyLevel() MethodOptionsIdempotencyLevel
 	IdempotencyLevelLocation() Location
 }

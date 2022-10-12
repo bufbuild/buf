@@ -18,19 +18,16 @@ type service struct {
 	namedDescriptor
 	optionExtensionDescriptor
 
-	methods    []Method
-	deprecated bool
+	methods []Method
 }
 
 func newService(
 	namedDescriptor namedDescriptor,
 	optionExtensionDescriptor optionExtensionDescriptor,
-	deprecated bool,
 ) *service {
 	return &service{
 		namedDescriptor:           namedDescriptor,
 		optionExtensionDescriptor: optionExtensionDescriptor,
-		deprecated:                deprecated,
 	}
 }
 
@@ -40,8 +37,4 @@ func (m *service) Methods() []Method {
 
 func (m *service) addMethod(method Method) {
 	m.methods = append(m.methods, method)
-}
-
-func (m *service) Deprecated() bool {
-	return m.deprecated
 }

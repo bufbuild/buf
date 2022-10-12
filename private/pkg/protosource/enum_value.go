@@ -20,7 +20,6 @@ type enumValue struct {
 
 	enum       Enum
 	number     int
-	deprecated bool
 	numberPath []int32
 }
 
@@ -29,7 +28,6 @@ func newEnumValue(
 	optionExtensionDescriptor optionExtensionDescriptor,
 	enum Enum,
 	number int,
-	deprecated bool,
 	numberPath []int32,
 ) *enumValue {
 	return &enumValue{
@@ -37,7 +35,6 @@ func newEnumValue(
 		optionExtensionDescriptor: optionExtensionDescriptor,
 		enum:                      enum,
 		number:                    number,
-		deprecated:                deprecated,
 		numberPath:                numberPath,
 	}
 }
@@ -48,10 +45,6 @@ func (e *enumValue) Enum() Enum {
 
 func (e *enumValue) Number() int {
 	return e.number
-}
-
-func (e *enumValue) Deprecated() bool {
-	return e.deprecated
 }
 
 func (e *enumValue) NumberLocation() Location {
