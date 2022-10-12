@@ -32,7 +32,7 @@ const (
 	errorFormatFlagName = "error-format"
 	typeFlagName        = "type"
 	schemaFlagName      = "schema"
-	payloadFlagName     = "payload"
+	schemaFlagShortName = "s"
 	outputFlagName      = "output"
 	outputFlagShortName = "o"
 )
@@ -62,9 +62,8 @@ The --schema flag is either a .proto, image, or buf module and the --type flag s
 type flags struct {
 	ErrorFormat string
 	Type        string
-	//Payload     string
-	Output string
-	Schema string
+	Output      string
+	Schema      string
 
 	// special
 	InputHashtag string
@@ -89,18 +88,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The full type name of the serialized payload (like acme.weather.v1.Units) within the input.
-Alternatively, this can be a fully qualified path to the type without providing the source (like buf.build/acme/weather#acme.weather.v1.Units).`,
+		`The full type name of the serialized payload (like acme.weather.v1.Units) within the schema input.`,
 	)
-	//flagSet.StringVar(
-	//	&f.Payload,
-	//	payloadFlagName,
-	//	"-",
-	//	fmt.Sprintf(
-	//		`The location to read the payload. Must be one of format %s.`,
-	//		bufconvert.MessageEncodingFormatsString,
-	//	),
-	//)
 	flagSet.StringVarP(
 		&f.Output,
 		outputFlagName,
@@ -112,11 +101,13 @@ Alternatively, this can be a fully qualified path to the type without providing 
 		),
 	)
 
-	flagSet.StringVar(
+	flagSet.StringVarP(
 		&f.Schema,
 		schemaFlagName,
+		schemaFlagShortName,
 		".",
-		`A set of .proto files, a buf module or an Image`,
+		`Source, module or image to use as descriptor for converting message.
+Must be one of format [bin,dir,git,json,mod,protofile,tar,zip].`,
 	)
 }
 
