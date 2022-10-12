@@ -17,3 +17,4 @@ registry:
         version: v1.32.0
   opts:
     - separate_package=true
+spdx_license_id: Apache-2.0
