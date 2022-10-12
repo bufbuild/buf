@@ -105,7 +105,7 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlagLint(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	schema, err := bufcli.GetInputValue(container, flags.SchemaHashtag, ".")
+	schema, err := bufcli.GetArgValue(container, flags.SchemaHashtag, ".")
 	if err != nil {
 		return err
 	}

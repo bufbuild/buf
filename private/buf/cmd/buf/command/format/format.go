@@ -242,7 +242,7 @@ func run(
 	if flags.Output != "-" && flags.Write {
 		return fmt.Errorf("--%s cannot be used with --%s", outputFlagName, writeFlagName)
 	}
-	schema, err := bufcli.GetInputValue(container, flags.SchemaHashtag, ".")
+	schema, err := bufcli.GetArgValue(container, flags.SchemaHashtag, ".")
 	if err != nil {
 		return err
 	}

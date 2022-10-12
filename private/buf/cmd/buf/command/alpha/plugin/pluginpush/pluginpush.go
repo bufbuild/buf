@@ -167,7 +167,7 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	source, err := bufcli.GetInputValue(container, "" /* The input hashtag is not supported here */, ".")
+	source, err := bufcli.GetArgValue(container, "" /* The schema hashtag is not supported here */, ".")
 	if err != nil {
 		return err
 	}

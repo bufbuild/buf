@@ -131,7 +131,7 @@ func run(
 	if len(flags.Tags) > 0 && flags.Draft != "" {
 		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, draftFlagName)
 	}
-	source, err := bufcli.GetInputValue(container, flags.SchemaHashtag, ".")
+	source, err := bufcli.GetArgValue(container, flags.SchemaHashtag, ".")
 	if err != nil {
 		return err
 	}

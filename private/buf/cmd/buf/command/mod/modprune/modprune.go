@@ -55,7 +55,7 @@ func run(
 	ctx context.Context,
 	container appflag.Container,
 ) error {
-	directoryInput, err := bufcli.GetInputValue(container, "", ".")
+	directoryInput, err := bufcli.GetArgValue(container, "", ".")
 	if err != nil {
 		return err
 	}

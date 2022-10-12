@@ -111,7 +111,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	schema, err := bufcli.GetInputValue(container, flags.SchemaHashtag, ".")
+	schema, err := bufcli.GetArgValue(container, flags.SchemaHashtag, ".")
 	if err != nil {
 		return err
 	}

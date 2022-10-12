@@ -119,11 +119,11 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
+	schema, err := bufcli.GetArgValue(container, flags.InputHashtag, "")
 	if err != nil {
 		return err
 	}
-	source, typeName, err := bufcli.ParseInputAndType(ctx, input, flags.Type)
+	source, typeName, err := bufcli.ParseInputAndType(ctx, schema, flags.Type)
 	if err != nil {
 		return err
 	}

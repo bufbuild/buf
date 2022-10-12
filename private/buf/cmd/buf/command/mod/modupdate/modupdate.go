@@ -88,7 +88,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	directoryInput, err := bufcli.GetInputValue(container, "", ".")
+	directoryInput, err := bufcli.GetArgValue(container, "", ".")
 	if err != nil {
 		return err
 	}

@@ -310,28 +310,28 @@ If no argument is specified, defaults to ".".`,
 	)
 }
 
-// GetInputValue gets the first arg.
+// GetArgValue gets the first arg.
 //
-// Also parses the special input hashtag flag that deals with the situation "buf build -#format=json".
+// Also parses the special arg hashtag flag that deals with the situation "buf build -#format=json".
 // The existence of 0 or 1 args should be handled by the Args field on Command.
-func GetInputValue(
+func GetArgValue(
 	container appflag.Container,
-	schemaHashtag string,
+	hashtag string,
 	defaultValue string,
 ) (string, error) {
 	var arg string
 	switch numArgs := container.NumArgs(); numArgs {
 	case 0:
-		if schemaHashtag != "" {
-			arg = "-#" + schemaHashtag
+		if hashtag != "" {
+			arg = "-#" + hashtag
 		}
 	case 1:
 		arg = container.Arg(0)
 		if arg == "" {
 			return "", errors.New("first argument is present but empty")
 		}
-		// if arg is non-empty and schemaHashtag is non-empty, this means two arguments were specified
-		if schemaHashtag != "" {
+		// if arg is non-empty and hashtag is non-empty, this means two arguments were specified
+		if hashtag != "" {
 			return "", errors.New("only 1 argument allowed but 2 arguments specified")
 		}
 	default:
