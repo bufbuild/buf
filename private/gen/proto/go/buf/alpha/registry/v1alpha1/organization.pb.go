@@ -1438,11 +1438,11 @@ type UpdateOrganizationSettingsRequest struct {
 	PluginBaseRole PluginRole `protobuf:"varint,3,opt,name=plugin_base_role,json=pluginBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.PluginRole" json:"plugin_base_role,omitempty"`
 	// optional, no update to this base role will be made if this is unspecified.
 	TemplateBaseRole TemplateRole `protobuf:"varint,4,opt,name=template_base_role,json=templateBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"template_base_role,omitempty"`
-	// optional, no update to this base role will be made if this is unspecified.
+	// optional, no update to description will be made if this is unspecified.
 	Description string `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	// optional, no update to this base role will be made if this is unspecified.
+	// optional, no update to url will be made if this is unspecified.
 	Url string `protobuf:"bytes,6,opt,name=url,proto3" json:"url,omitempty"`
-	// optional, no update to this base role will be made if this is unspecified.
+	// optional, no update to verification_status will be made if this is unspecified.
 	VerificationStatus VerificationStatus `protobuf:"varint,7,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
 }
 
