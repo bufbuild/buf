@@ -92,7 +92,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fromFlagName,
 		"-",
 		fmt.Sprintf(
-			`The location to read the from. Must be one of format %s.`,
+			`The location to read the from payload. Must be one of format %s.`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)
@@ -170,7 +170,7 @@ func run(
 }
 
 // inverseEncoding returns the opposite encoding of the provided encoding,
-// which will be the default output encoding for a given from encoding.
+// which will be the default output encoding for a given payload encoding.
 func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
 	switch encoding {
 	case bufconvert.MessageEncodingBin:
