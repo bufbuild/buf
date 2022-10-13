@@ -85,7 +85,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The full type name of the serialized from (like acme.weather.v1.Units) within the input.`,
+		`The full type name of the serialized from payload (like acme.weather.v1.Units) within the input.`,
 	)
 	flagSet.StringVar(
 		&f.From,
