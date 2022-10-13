@@ -62,8 +62,7 @@ type UserService interface {
 	UpdateUserSettings(
 		ctx context.Context,
 		userId string,
-		description string,
-		url string,
-		verificationStatus v1alpha1.VerificationStatus,
+		description *string,
+		url *string,
 	) (err error)
 }

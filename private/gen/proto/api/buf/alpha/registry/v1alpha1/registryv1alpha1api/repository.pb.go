@@ -120,7 +120,7 @@ type RepositoryService interface {
 		ownerName string,
 		repositoryName string,
 		visibility v1alpha1.Visibility,
-		description string,
-		url string,
+		description *string,
+		url *string,
 	) (err error)
 }

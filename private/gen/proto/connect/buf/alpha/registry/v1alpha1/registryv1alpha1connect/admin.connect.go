@@ -44,6 +44,10 @@ type AdminServiceClient interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
 	// solely owned by the user will also be deleted.
 	ForceDeleteUser(context.Context, *connect_go.Request[v1alpha1.ForceDeleteUserRequest]) (*connect_go.Response[v1alpha1.ForceDeleteUserResponse], error)
+	// Update a user's verification status
+	UpdateUserVerificationStatus(context.Context, *connect_go.Request[v1alpha1.UpdateUserVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateUserVerificationStatusResponse], error)
+	// Update a organization's verification
+	UpdateOrganizationVerificationStatus(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AdminService
@@ -61,12 +65,24 @@ func NewAdminServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 			baseURL+"/buf.alpha.registry.v1alpha1.AdminService/ForceDeleteUser",
 			opts...,
 		),
+		updateUserVerificationStatus: connect_go.NewClient[v1alpha1.UpdateUserVerificationStatusRequest, v1alpha1.UpdateUserVerificationStatusResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.AdminService/UpdateUserVerificationStatus",
+			opts...,
+		),
+		updateOrganizationVerificationStatus: connect_go.NewClient[v1alpha1.UpdateOrganizationVerificationStatusRequest, v1alpha1.UpdateOrganizationVerificationStatusResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.AdminService/UpdateOrganizationVerificationStatus",
+			opts...,
+		),
 	}
 }
 
 // adminServiceClient implements AdminServiceClient.
 type adminServiceClient struct {
-	forceDeleteUser *connect_go.Client[v1alpha1.ForceDeleteUserRequest, v1alpha1.ForceDeleteUserResponse]
+	forceDeleteUser                      *connect_go.Client[v1alpha1.ForceDeleteUserRequest, v1alpha1.ForceDeleteUserResponse]
+	updateUserVerificationStatus         *connect_go.Client[v1alpha1.UpdateUserVerificationStatusRequest, v1alpha1.UpdateUserVerificationStatusResponse]
+	updateOrganizationVerificationStatus *connect_go.Client[v1alpha1.UpdateOrganizationVerificationStatusRequest, v1alpha1.UpdateOrganizationVerificationStatusResponse]
 }
 
 // ForceDeleteUser calls buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser.
@@ -74,11 +90,27 @@ func (c *adminServiceClient) ForceDeleteUser(ctx context.Context, req *connect_g
 	return c.forceDeleteUser.CallUnary(ctx, req)
 }
 
+// UpdateUserVerificationStatus calls
+// buf.alpha.registry.v1alpha1.AdminService.UpdateUserVerificationStatus.
+func (c *adminServiceClient) UpdateUserVerificationStatus(ctx context.Context, req *connect_go.Request[v1alpha1.UpdateUserVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateUserVerificationStatusResponse], error) {
+	return c.updateUserVerificationStatus.CallUnary(ctx, req)
+}
+
+// UpdateOrganizationVerificationStatus calls
+// buf.alpha.registry.v1alpha1.AdminService.UpdateOrganizationVerificationStatus.
+func (c *adminServiceClient) UpdateOrganizationVerificationStatus(ctx context.Context, req *connect_go.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error) {
+	return c.updateOrganizationVerificationStatus.CallUnary(ctx, req)
+}
+
 // AdminServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AdminService service.
 type AdminServiceHandler interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
 	// solely owned by the user will also be deleted.
 	ForceDeleteUser(context.Context, *connect_go.Request[v1alpha1.ForceDeleteUserRequest]) (*connect_go.Response[v1alpha1.ForceDeleteUserResponse], error)
+	// Update a user's verification status
+	UpdateUserVerificationStatus(context.Context, *connect_go.Request[v1alpha1.UpdateUserVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateUserVerificationStatusResponse], error)
+	// Update a organization's verification
+	UpdateOrganizationVerificationStatus(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -93,6 +125,16 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 		svc.ForceDeleteUser,
 		opts...,
 	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.AdminService/UpdateUserVerificationStatus", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.AdminService/UpdateUserVerificationStatus",
+		svc.UpdateUserVerificationStatus,
+		opts...,
+	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.AdminService/UpdateOrganizationVerificationStatus", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.AdminService/UpdateOrganizationVerificationStatus",
+		svc.UpdateOrganizationVerificationStatus,
+		opts...,
+	))
 	return "/buf.alpha.registry.v1alpha1.AdminService/", mux
 }
 
@@ -101,4 +143,12 @@ type UnimplementedAdminServiceHandler struct{}
 
 func (UnimplementedAdminServiceHandler) ForceDeleteUser(context.Context, *connect_go.Request[v1alpha1.ForceDeleteUserRequest]) (*connect_go.Response[v1alpha1.ForceDeleteUserResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) UpdateUserVerificationStatus(context.Context, *connect_go.Request[v1alpha1.UpdateUserVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateUserVerificationStatusResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.UpdateUserVerificationStatus is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) UpdateOrganizationVerificationStatus(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.UpdateOrganizationVerificationStatus is not implemented"))
 }

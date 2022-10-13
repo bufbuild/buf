@@ -1439,11 +1439,9 @@ type UpdateOrganizationSettingsRequest struct {
 	// optional, no update to this base role will be made if this is unspecified.
 	TemplateBaseRole TemplateRole `protobuf:"varint,4,opt,name=template_base_role,json=templateBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"template_base_role,omitempty"`
 	// optional, no update to description will be made if this is unspecified.
-	Description string `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	Description *string `protobuf:"bytes,5,opt,name=description,proto3,oneof" json:"description,omitempty"`
 	// optional, no update to url will be made if this is unspecified.
-	Url string `protobuf:"bytes,6,opt,name=url,proto3" json:"url,omitempty"`
-	// optional, no update to verification_status will be made if this is unspecified.
-	VerificationStatus VerificationStatus `protobuf:"varint,7,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
+	Url *string `protobuf:"bytes,6,opt,name=url,proto3,oneof" json:"url,omitempty"`
 }
 
 func (x *UpdateOrganizationSettingsRequest) Reset() {
@@ -1507,24 +1505,17 @@ func (x *UpdateOrganizationSettingsRequest) GetTemplateBaseRole() TemplateRole {
 }
 
 func (x *UpdateOrganizationSettingsRequest) GetDescription() string {
-	if x != nil {
-		return x.Description
+	if x != nil && x.Description != nil {
+		return *x.Description
 	}
 	return ""
 }
 
 func (x *UpdateOrganizationSettingsRequest) GetUrl() string {
-	if x != nil {
-		return x.Url
+	if x != nil && x.Url != nil {
+		return *x.Url
 	}
 	return ""
-}
-
-func (x *UpdateOrganizationSettingsRequest) GetVerificationStatus() VerificationStatus {
-	if x != nil {
-		return x.VerificationStatus
-	}
-	return VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED
 }
 
 type UpdateOrganizationSettingsResponse struct {
@@ -1766,7 +1757,7 @@ var file_buf_alpha_registry_v1alpha1_organization_proto_rawDesc = []byte{
 	0x61, 0x74, 0x65, 0x42, 0x61, 0x73, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x23, 0x0a, 0x0d, 0x6d,
 	0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x04, 0x20, 0x01,
 	0x28, 0x0d, 0x52, 0x0c, 0x6d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74,
-	0x22, 0xed, 0x03, 0x0a, 0x21, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4f, 0x72, 0x67, 0x61, 0x6e,
+	0x22, 0xad, 0x03, 0x0a, 0x21, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4f, 0x72, 0x67, 0x61, 0x6e,
 	0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52,
 	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x27, 0x0a, 0x0f, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69,
 	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
@@ -1787,16 +1778,12 @@ var file_buf_alpha_registry_v1alpha1_organization_proto_rawDesc = []byte{
 	0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74,
 	0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x54, 0x65, 0x6d, 0x70,
 	0x6c, 0x61, 0x74, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x10, 0x74, 0x65, 0x6d, 0x70, 0x6c, 0x61,
-	0x74, 0x65, 0x42, 0x61, 0x73, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65,
-	0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x10, 0x0a, 0x03,
-	0x75, 0x72, 0x6c, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x12, 0x60,
-	0x0a, 0x13, 0x76, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73,
-	0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2f, 0x2e, 0x62, 0x75,
-	0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79,
-	0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x56, 0x65, 0x72, 0x69, 0x66, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x12, 0x76, 0x65,
-	0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73,
+	0x74, 0x65, 0x42, 0x61, 0x73, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x25, 0x0a, 0x0b, 0x64, 0x65,
+	0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x48,
+	0x00, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x88, 0x01,
+	0x01, 0x12, 0x15, 0x0a, 0x03, 0x75, 0x72, 0x6c, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x48, 0x01,
+	0x52, 0x03, 0x75, 0x72, 0x6c, 0x88, 0x01, 0x01, 0x42, 0x0e, 0x0a, 0x0c, 0x5f, 0x64, 0x65, 0x73,
+	0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x06, 0x0a, 0x04, 0x5f, 0x75, 0x72, 0x6c,
 	0x22, 0x24, 0x0a, 0x22, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69,
 	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65,
 	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xf1, 0x0e, 0x0a, 0x13, 0x4f, 0x72, 0x67, 0x61, 0x6e,
@@ -2009,38 +1996,37 @@ var file_buf_alpha_registry_v1alpha1_organization_proto_depIdxs = []int32{
 	31, // 16: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest.repository_base_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
 	32, // 17: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest.plugin_base_role:type_name -> buf.alpha.registry.v1alpha1.PluginRole
 	33, // 18: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest.template_base_role:type_name -> buf.alpha.registry.v1alpha1.TemplateRole
-	29, // 19: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest.verification_status:type_name -> buf.alpha.registry.v1alpha1.VerificationStatus
-	2,  // 20: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationRequest
-	4,  // 21: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationByName:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationByNameRequest
-	6,  // 22: buf.alpha.registry.v1alpha1.OrganizationService.ListOrganizations:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationsRequest
-	8,  // 23: buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations:input_type -> buf.alpha.registry.v1alpha1.ListUserOrganizationsRequest
-	10, // 24: buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization:input_type -> buf.alpha.registry.v1alpha1.CreateOrganizationRequest
-	12, // 25: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganization:input_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationRequest
-	14, // 26: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganizationByName:input_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationByNameRequest
-	16, // 27: buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.AddOrganizationMemberRequest
-	18, // 28: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationMemberRequest
-	20, // 29: buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.RemoveOrganizationMemberRequest
-	22, // 30: buf.alpha.registry.v1alpha1.OrganizationService.SetOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.SetOrganizationMemberRequest
-	24, // 31: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationSettingsRequest
-	26, // 32: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings:input_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest
-	3,  // 33: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationResponse
-	5,  // 34: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationByName:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationByNameResponse
-	7,  // 35: buf.alpha.registry.v1alpha1.OrganizationService.ListOrganizations:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationsResponse
-	9,  // 36: buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations:output_type -> buf.alpha.registry.v1alpha1.ListUserOrganizationsResponse
-	11, // 37: buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization:output_type -> buf.alpha.registry.v1alpha1.CreateOrganizationResponse
-	13, // 38: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganization:output_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationResponse
-	15, // 39: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganizationByName:output_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationByNameResponse
-	17, // 40: buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.AddOrganizationMemberResponse
-	19, // 41: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationMemberResponse
-	21, // 42: buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.RemoveOrganizationMemberResponse
-	23, // 43: buf.alpha.registry.v1alpha1.OrganizationService.SetOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.SetOrganizationMemberResponse
-	25, // 44: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse
-	27, // 45: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings:output_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsResponse
-	33, // [33:46] is the sub-list for method output_type
-	20, // [20:33] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	2,  // 19: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationRequest
+	4,  // 20: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationByName:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationByNameRequest
+	6,  // 21: buf.alpha.registry.v1alpha1.OrganizationService.ListOrganizations:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationsRequest
+	8,  // 22: buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations:input_type -> buf.alpha.registry.v1alpha1.ListUserOrganizationsRequest
+	10, // 23: buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization:input_type -> buf.alpha.registry.v1alpha1.CreateOrganizationRequest
+	12, // 24: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganization:input_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationRequest
+	14, // 25: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganizationByName:input_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationByNameRequest
+	16, // 26: buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.AddOrganizationMemberRequest
+	18, // 27: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationMemberRequest
+	20, // 28: buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.RemoveOrganizationMemberRequest
+	22, // 29: buf.alpha.registry.v1alpha1.OrganizationService.SetOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.SetOrganizationMemberRequest
+	24, // 30: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationSettingsRequest
+	26, // 31: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings:input_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest
+	3,  // 32: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationResponse
+	5,  // 33: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationByName:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationByNameResponse
+	7,  // 34: buf.alpha.registry.v1alpha1.OrganizationService.ListOrganizations:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationsResponse
+	9,  // 35: buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations:output_type -> buf.alpha.registry.v1alpha1.ListUserOrganizationsResponse
+	11, // 36: buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization:output_type -> buf.alpha.registry.v1alpha1.CreateOrganizationResponse
+	13, // 37: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganization:output_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationResponse
+	15, // 38: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganizationByName:output_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationByNameResponse
+	17, // 39: buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.AddOrganizationMemberResponse
+	19, // 40: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationMemberResponse
+	21, // 41: buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.RemoveOrganizationMemberResponse
+	23, // 42: buf.alpha.registry.v1alpha1.OrganizationService.SetOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.SetOrganizationMemberResponse
+	25, // 43: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse
+	27, // 44: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings:output_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsResponse
+	32, // [32:45] is the sub-list for method output_type
+	19, // [19:32] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_registry_v1alpha1_organization_proto_init() }
@@ -2388,6 +2374,7 @@ func file_buf_alpha_registry_v1alpha1_organization_proto_init() {
 			}
 		}
 	}
+	file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[26].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

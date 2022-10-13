@@ -164,9 +164,8 @@ message CountUsersResponse {
 message UpdateUserSettingsRequest {
   string user_id = 1;
   // Changes are only made to specified values. Unspecified ones are left unchanged.
-  string description = 2;
-  string url = 3;
-  VerificationStatus verification_status = 4;
+  optional string description = 2;
+  optional string url = 3;
 }
 
 message UpdateUserSettingsResponse {}

@@ -190,18 +190,16 @@ func (s *userServiceClient) CountUsers(ctx context.Context, userStateFilter v1al
 func (s *userServiceClient) UpdateUserSettings(
 	ctx context.Context,
 	userId string,
-	description string,
-	url string,
-	verificationStatus v1alpha1.VerificationStatus,
+	description *string,
+	url *string,
 ) (_ error) {
 	_, err := s.client.UpdateUserSettings(
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.UpdateUserSettingsRequest{
-				UserId:             userId,
-				Description:        description,
-				Url:                url,
-				VerificationStatus: verificationStatus,
+				UserId:      userId,
+				Description: description,
+				Url:         url,
 			}),
 	)
 	if err != nil {

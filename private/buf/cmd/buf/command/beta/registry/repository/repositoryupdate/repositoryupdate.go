@@ -89,9 +89,9 @@ func run(
 		moduleIdentity.Repository(),
 		visibility,
 		// TODO: pass description
-		"",
+		nil,
 		// TODO: pass url
-		"",
+		nil,
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))

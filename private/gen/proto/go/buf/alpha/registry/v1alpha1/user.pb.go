@@ -1159,9 +1159,8 @@ type UpdateUserSettingsRequest struct {
 
 	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	// Changes are only made to specified values. Unspecified ones are left unchanged.
-	Description        string             `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	Url                string             `protobuf:"bytes,3,opt,name=url,proto3" json:"url,omitempty"`
-	VerificationStatus VerificationStatus `protobuf:"varint,4,opt,name=verification_status,json=verificationStatus,proto3,enum=buf.alpha.registry.v1alpha1.VerificationStatus" json:"verification_status,omitempty"`
+	Description *string `protobuf:"bytes,2,opt,name=description,proto3,oneof" json:"description,omitempty"`
+	Url         *string `protobuf:"bytes,3,opt,name=url,proto3,oneof" json:"url,omitempty"`
 }
 
 func (x *UpdateUserSettingsRequest) Reset() {
@@ -1204,24 +1203,17 @@ func (x *UpdateUserSettingsRequest) GetUserId() string {
 }
 
 func (x *UpdateUserSettingsRequest) GetDescription() string {
-	if x != nil {
-		return x.Description
+	if x != nil && x.Description != nil {
+		return *x.Description
 	}
 	return ""
 }
 
 func (x *UpdateUserSettingsRequest) GetUrl() string {
-	if x != nil {
-		return x.Url
+	if x != nil && x.Url != nil {
+		return *x.Url
 	}
 	return ""
-}
-
-func (x *UpdateUserSettingsRequest) GetVerificationStatus() VerificationStatus {
-	if x != nil {
-		return x.VerificationStatus
-	}
-	return VerificationStatus_VERIFICATION_STATUS_UNSPECIFIED
 }
 
 type UpdateUserSettingsResponse struct {
@@ -1401,20 +1393,16 @@ var file_buf_alpha_registry_v1alpha1_user_proto_rawDesc = []byte{
 	0x72, 0x22, 0x35, 0x0a, 0x12, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x55, 0x73, 0x65, 0x72, 0x73, 0x52,
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1f, 0x0a, 0x0b, 0x74, 0x6f, 0x74, 0x61, 0x6c,
 	0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0a, 0x74, 0x6f,
-	0x74, 0x61, 0x6c, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0xca, 0x01, 0x0a, 0x19, 0x55, 0x70, 0x64,
+	0x74, 0x61, 0x6c, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x8a, 0x01, 0x0a, 0x19, 0x55, 0x70, 0x64,
 	0x61, 0x74, 0x65, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52,
 	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69,
 	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x12,
-	0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f,
-	0x6e, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03,
-	0x75, 0x72, 0x6c, 0x12, 0x60, 0x0a, 0x13, 0x76, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e,
-	0x32, 0x2f, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67,
-	0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x56,
-	0x65, 0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x74, 0x75,
-	0x73, 0x52, 0x12, 0x76, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53,
-	0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x1c, 0x0a, 0x1a, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x55,
+	0x25, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74,
+	0x69, 0x6f, 0x6e, 0x88, 0x01, 0x01, 0x12, 0x15, 0x0a, 0x03, 0x75, 0x72, 0x6c, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x09, 0x48, 0x01, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x88, 0x01, 0x01, 0x42, 0x0e, 0x0a,
+	0x0c, 0x5f, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x06, 0x0a,
+	0x04, 0x5f, 0x75, 0x72, 0x6c, 0x22, 0x1c, 0x0a, 0x1a, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x55,
 	0x73, 0x65, 0x72, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
 	0x6e, 0x73, 0x65, 0x2a, 0x5a, 0x0a, 0x09, 0x55, 0x73, 0x65, 0x72, 0x53, 0x74, 0x61, 0x74, 0x65,
 	0x12, 0x1a, 0x0a, 0x16, 0x55, 0x53, 0x45, 0x52, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x45, 0x5f, 0x55,
@@ -1577,32 +1565,31 @@ var file_buf_alpha_registry_v1alpha1_user_proto_depIdxs = []int32{
 	2,  // 10: buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse.users:type_name -> buf.alpha.registry.v1alpha1.OrganizationUser
 	26, // 11: buf.alpha.registry.v1alpha1.UpdateUserServerRoleRequest.server_role:type_name -> buf.alpha.registry.v1alpha1.ServerRole
 	0,  // 12: buf.alpha.registry.v1alpha1.CountUsersRequest.user_state_filter:type_name -> buf.alpha.registry.v1alpha1.UserState
-	24, // 13: buf.alpha.registry.v1alpha1.UpdateUserSettingsRequest.verification_status:type_name -> buf.alpha.registry.v1alpha1.VerificationStatus
-	3,  // 14: buf.alpha.registry.v1alpha1.UserService.CreateUser:input_type -> buf.alpha.registry.v1alpha1.CreateUserRequest
-	5,  // 15: buf.alpha.registry.v1alpha1.UserService.GetUser:input_type -> buf.alpha.registry.v1alpha1.GetUserRequest
-	7,  // 16: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:input_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameRequest
-	9,  // 17: buf.alpha.registry.v1alpha1.UserService.ListUsers:input_type -> buf.alpha.registry.v1alpha1.ListUsersRequest
-	11, // 18: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersRequest
-	13, // 19: buf.alpha.registry.v1alpha1.UserService.DeleteUser:input_type -> buf.alpha.registry.v1alpha1.DeleteUserRequest
-	15, // 20: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:input_type -> buf.alpha.registry.v1alpha1.DeactivateUserRequest
-	17, // 21: buf.alpha.registry.v1alpha1.UserService.UpdateUserServerRole:input_type -> buf.alpha.registry.v1alpha1.UpdateUserServerRoleRequest
-	19, // 22: buf.alpha.registry.v1alpha1.UserService.CountUsers:input_type -> buf.alpha.registry.v1alpha1.CountUsersRequest
-	21, // 23: buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings:input_type -> buf.alpha.registry.v1alpha1.UpdateUserSettingsRequest
-	4,  // 24: buf.alpha.registry.v1alpha1.UserService.CreateUser:output_type -> buf.alpha.registry.v1alpha1.CreateUserResponse
-	6,  // 25: buf.alpha.registry.v1alpha1.UserService.GetUser:output_type -> buf.alpha.registry.v1alpha1.GetUserResponse
-	8,  // 26: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:output_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameResponse
-	10, // 27: buf.alpha.registry.v1alpha1.UserService.ListUsers:output_type -> buf.alpha.registry.v1alpha1.ListUsersResponse
-	12, // 28: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse
-	14, // 29: buf.alpha.registry.v1alpha1.UserService.DeleteUser:output_type -> buf.alpha.registry.v1alpha1.DeleteUserResponse
-	16, // 30: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:output_type -> buf.alpha.registry.v1alpha1.DeactivateUserResponse
-	18, // 31: buf.alpha.registry.v1alpha1.UserService.UpdateUserServerRole:output_type -> buf.alpha.registry.v1alpha1.UpdateUserServerRoleResponse
-	20, // 32: buf.alpha.registry.v1alpha1.UserService.CountUsers:output_type -> buf.alpha.registry.v1alpha1.CountUsersResponse
-	22, // 33: buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings:output_type -> buf.alpha.registry.v1alpha1.UpdateUserSettingsResponse
-	24, // [24:34] is the sub-list for method output_type
-	14, // [14:24] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	3,  // 13: buf.alpha.registry.v1alpha1.UserService.CreateUser:input_type -> buf.alpha.registry.v1alpha1.CreateUserRequest
+	5,  // 14: buf.alpha.registry.v1alpha1.UserService.GetUser:input_type -> buf.alpha.registry.v1alpha1.GetUserRequest
+	7,  // 15: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:input_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameRequest
+	9,  // 16: buf.alpha.registry.v1alpha1.UserService.ListUsers:input_type -> buf.alpha.registry.v1alpha1.ListUsersRequest
+	11, // 17: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersRequest
+	13, // 18: buf.alpha.registry.v1alpha1.UserService.DeleteUser:input_type -> buf.alpha.registry.v1alpha1.DeleteUserRequest
+	15, // 19: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:input_type -> buf.alpha.registry.v1alpha1.DeactivateUserRequest
+	17, // 20: buf.alpha.registry.v1alpha1.UserService.UpdateUserServerRole:input_type -> buf.alpha.registry.v1alpha1.UpdateUserServerRoleRequest
+	19, // 21: buf.alpha.registry.v1alpha1.UserService.CountUsers:input_type -> buf.alpha.registry.v1alpha1.CountUsersRequest
+	21, // 22: buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings:input_type -> buf.alpha.registry.v1alpha1.UpdateUserSettingsRequest
+	4,  // 23: buf.alpha.registry.v1alpha1.UserService.CreateUser:output_type -> buf.alpha.registry.v1alpha1.CreateUserResponse
+	6,  // 24: buf.alpha.registry.v1alpha1.UserService.GetUser:output_type -> buf.alpha.registry.v1alpha1.GetUserResponse
+	8,  // 25: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:output_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameResponse
+	10, // 26: buf.alpha.registry.v1alpha1.UserService.ListUsers:output_type -> buf.alpha.registry.v1alpha1.ListUsersResponse
+	12, // 27: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse
+	14, // 28: buf.alpha.registry.v1alpha1.UserService.DeleteUser:output_type -> buf.alpha.registry.v1alpha1.DeleteUserResponse
+	16, // 29: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:output_type -> buf.alpha.registry.v1alpha1.DeactivateUserResponse
+	18, // 30: buf.alpha.registry.v1alpha1.UserService.UpdateUserServerRole:output_type -> buf.alpha.registry.v1alpha1.UpdateUserServerRoleResponse
+	20, // 31: buf.alpha.registry.v1alpha1.UserService.CountUsers:output_type -> buf.alpha.registry.v1alpha1.CountUsersResponse
+	22, // 32: buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings:output_type -> buf.alpha.registry.v1alpha1.UpdateUserSettingsResponse
+	23, // [23:33] is the sub-list for method output_type
+	13, // [13:23] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_registry_v1alpha1_user_proto_init() }
@@ -1878,6 +1865,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 			}
 		}
 	}
+	file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
