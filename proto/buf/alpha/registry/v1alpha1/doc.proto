@@ -178,6 +178,14 @@ message Service {
   string file_path = 5;
   Location location = 6;
   repeated Method methods = 7;
+  ServiceOptions service_options = 8;
+  // file_deprecated is the deprecation status of the file containing the service.
+  bool file_deprecated = 9;
+}
+
+// ServiceOptions provides information for the documentation of options for a given service.
+message ServiceOptions {
+  bool deprecated = 1;
 }
 
 // Method provides information for the documentation for a method of a given service.
@@ -190,6 +198,14 @@ message Method {
   string description = 2;
   MethodRequestResponse request = 3;
   MethodRequestResponse response = 4;
+  MethodOptions method_options = 5;
+}
+
+// MethodOptions provides information for the documentation of options for a method.
+message MethodOptions {
+  bool deprecated = 1;
+  // idempotency_level holds a value of the enumeration `google.protobuf.MethodOptions.IdempotencyLevel.
+  int32 idempotency_level = 2;
 }
 
 // MethodRequestResponse provides information for the documentation of a Method request or response message.
@@ -222,6 +238,15 @@ message Enum {
   string file_path = 5;
   Location location = 6;
   repeated EnumValue values = 7;
+  EnumOptions enum_options = 8;
+  // file_deprecated is the deprecation status of the file containing the enum.
+  bool file_deprecated = 9;
+}
+
+// EnumOptions provides information for the documentation of options for an enum.
+message EnumOptions {
+  bool deprecated = 1;
+  bool allow_alias = 2;
 }
 
 // EnumValue provides information for the documentation of an enum value.
@@ -233,6 +258,12 @@ message EnumValue {
   // Paragraph newlines (double new lines) are respected, however single newlines are not.
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
   string description = 3;
+  EnumValueOptions enum_value_options = 4;
+}
+
+// EnumValueOptions provides information for the documentation of options for an enum value.
+message EnumValueOptions {
+  bool deprecated = 1;
 }
 
 // ImportRef provides the import metadata if a type is imported.
@@ -264,6 +295,9 @@ message Message {
   repeated MessageField fields = 7;
   Location location = 8;
   repeated Field message_extensions = 9;
+  MessageOptions message_options = 10;
+  // file_deprecated is the deprecation status of the file containing the message.
+  bool file_deprecated = 11;
 }
 
 // MessageField can be either a single field or a oneof set of fields.
@@ -272,6 +306,11 @@ message MessageField {
     Field field = 1;
     Oneof oneof = 2;
   }
+}
+
+// MessageOptions provides information for the documentation of options for a message.
+message MessageOptions {
+  bool deprecated = 1;
 }
 
 // Oneof represents a oneof set of fields.
@@ -303,6 +342,17 @@ message Field {
   // Extendee is the name of the type that is being extended if the field is an extension.
   // This is an empty string for fields that are not extenions.
   string extendee = 9;
+  FieldOptions field_options = 10;
+}
+
+// FieldOptions provides information for the documentation of options for a field.
+message FieldOptions {
+  bool deprecated = 1;
+  bool packed = 2;
+  // ctype holds a value of the enumeration `google.protobuf.FieldOptions.CType.
+  int32 ctype = 3;
+  // jstype holds a value of the enumeration `google.protobuf.FieldOptions.JSType.
+  int32 jstype = 4;
 }
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
@@ -332,4 +382,6 @@ message FileExtension {
   Location location = 4;
   // fields are all the fields that are associated with the extension.
   repeated Field fields = 5;
+  // file_deprecated is the deprecation status of the file containing the field.
+  bool file_deprecated = 6;
 }
