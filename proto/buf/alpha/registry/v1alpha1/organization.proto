@@ -205,11 +205,11 @@ message UpdateOrganizationSettingsRequest {
   PluginRole plugin_base_role = 3;
   // optional, no update to this base role will be made if this is unspecified.
   TemplateRole template_base_role = 4;
-  // optional, no update to this base role will be made if this is unspecified.
+  // optional, no update to description will be made if this is unspecified.
   string description = 5;
-  // optional, no update to this base role will be made if this is unspecified.
+  // optional, no update to url will be made if this is unspecified.
   string url = 6;
-  // optional, no update to this base role will be made if this is unspecified.
+  // optional, no update to verification_status will be made if this is unspecified.
   VerificationStatus verification_status = 7;
 }
 
