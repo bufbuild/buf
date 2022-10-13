@@ -45,9 +45,8 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input>",
 		Short: "Use a input reference to convert a binary or JSON serialized message supplied through stdin or the payload flag.",
-		Long: `The first argument is the input that defines the serialized message (like buf.build/acme/weather).
-Alternatively, you can omit the input and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
-		Args: cobra.MaximumNArgs(1),
+		Long:  `The first argument is the input that defines the serialized message (like buf.build/acme/weather).`,
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -87,8 +86,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The full type name of the serialized payload (like acme.weather.v1.Units) within the input.
-Alternatively, this can be a fully qualified path to the type without providing the source (like buf.build/acme/weather#acme.weather.v1.Units).`,
+		`The full type name of the serialized payload (like acme.weather.v1.Units) within the input.`,
 	)
 	flagSet.StringVar(
 		&f.Payload,
