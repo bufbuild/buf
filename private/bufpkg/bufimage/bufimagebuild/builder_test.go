@@ -50,7 +50,7 @@ var buftestingDirPath = filepath.Join(
 func TestGoogleapis(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
-	image := testBuildGoogleapis(t)
+	image := testBuildGoogleapis(t, true)
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
 	assert.Equal(
 		t,
@@ -306,7 +306,7 @@ func TestCompareSemicolons(t *testing.T) {
 
 func testCompare(t *testing.T, runner command.Runner, relDirPath string) {
 	dirPath := filepath.Join("testdata", relDirPath)
-	image, fileAnnotations := testBuild(t, dirPath, WithExcludeSourceCodeInfo())
+	image, fileAnnotations := testBuild(t, false, dirPath)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
@@ -315,15 +315,19 @@ func testCompare(t *testing.T, runner command.Runner, relDirPath string) {
 	prototesting.AssertFileDescriptorSetsEqual(t, runner, fileDescriptorSet, actualProtocFileDescriptorSet)
 }
 
-func testBuildGoogleapis(t *testing.T, options ...BuildOption) bufimage.Image {
+func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	image, fileAnnotations := testBuild(t, googleapisDirPath, options...)
+	image, fileAnnotations := testBuild(t, includeSourceInfo, googleapisDirPath)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	return image
 }
 
-func testBuild(t *testing.T, dirPath string, options ...BuildOption) (bufimage.Image, []bufanalysis.FileAnnotation) {
+func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation) {
 	moduleFileSet := testGetModuleFileSet(t, dirPath)
+	var options []BuildOption
+	if !includeSourceInfo {
+		options = append(options, WithExcludeSourceCodeInfo())
+	}
 	image, fileAnnotations, err := NewBuilder(zap.NewNop()).Build(
 		context.Background(),
 		moduleFileSet,
@@ -388,7 +392,7 @@ func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
 		thread.SetParallelism(previousParallelism)
 	}()
 
-	_, fileAnnotations := testBuild(t, filepath.Join("testdata", filepath.FromSlash(relDirPath)))
+	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", filepath.FromSlash(relDirPath)))
 	got := make([]string, len(fileAnnotations))
 	for i, annotation := range fileAnnotations {
 		got[i] = annotation.String()

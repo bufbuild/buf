@@ -35,11 +35,6 @@
    - Field types and method input/output types may not refer to synthetic
      map entry messages.
 
-  When generating a file descriptor set from local sources, the resulting file
-  should now be identical, byte-for-byte, to files produced by protoc. Aside from
-  bugs (like listed above), the output has always been *semantically* equal. But
-  now the compiler generates source code info and serializes options in ways that
-  match the output of protoc.
 
 ## [v1.8.0] - 2022-09-14
 

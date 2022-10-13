@@ -79,7 +79,7 @@ func (i *imageConfigReader) GetImageConfigs(
 	externalDirOrFilePaths []string,
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
-	buildOptions ...bufimagebuild.BuildOption,
+	excludeSourceCodeInfo bool,
 ) ([]ImageConfig, []bufanalysis.FileAnnotation, error) {
 	switch t := ref.(type) {
 	case buffetch.ImageRef:
@@ -91,7 +91,7 @@ func (i *imageConfigReader) GetImageConfigs(
 			externalDirOrFilePaths,
 			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
-			bufimagebuild.ExcludesSourceInfo(buildOptions...),
+			excludeSourceCodeInfo,
 		)
 		return []ImageConfig{env}, nil, err
 	case buffetch.SourceRef:
@@ -103,7 +103,7 @@ func (i *imageConfigReader) GetImageConfigs(
 			externalDirOrFilePaths,
 			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
-			buildOptions...,
+			excludeSourceCodeInfo,
 		)
 	case buffetch.ModuleRef:
 		return i.getSourceOrModuleImageConfigs(
@@ -114,7 +114,7 @@ func (i *imageConfigReader) GetImageConfigs(
 			externalDirOrFilePaths,
 			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
-			buildOptions...,
+			excludeSourceCodeInfo,
 		)
 	default:
 		return nil, nil, fmt.Errorf("invalid ref: %T", ref)
@@ -129,7 +129,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	externalDirOrFilePaths []string,
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
-	buildOptions ...bufimagebuild.BuildOption,
+	excludeSourceCodeInfo bool,
 ) ([]ImageConfig, []bufanalysis.FileAnnotation, error) {
 	moduleConfigs, err := i.moduleConfigReader.GetModuleConfigs(
 		ctx,
@@ -167,7 +167,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 			ctx,
 			moduleConfig.Config(),
 			moduleFileSet,
-			buildOptions...,
+			excludeSourceCodeInfo,
 		)
 		if err != nil {
 			return nil, nil, err
@@ -238,14 +238,18 @@ func (i *imageConfigReader) buildModule(
 	ctx context.Context,
 	config *bufconfig.Config,
 	moduleFileSet bufmodule.ModuleFileSet,
-	buildOptions ...bufimagebuild.BuildOption,
+	excludeSourceCodeInfo bool,
 ) (ImageConfig, []bufanalysis.FileAnnotation, error) {
 	ctx, span := trace.StartSpan(ctx, "build_module")
 	defer span.End()
+	var options []bufimagebuild.BuildOption
+	if excludeSourceCodeInfo {
+		options = append(options, bufimagebuild.WithExcludeSourceCodeInfo())
+	}
 	image, fileAnnotations, err := i.imageBuilder.Build(
 		ctx,
 		moduleFileSet,
-		buildOptions...,
+		options...,
 	)
 	if err != nil {
 		return nil, nil, err

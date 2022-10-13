@@ -34,7 +34,7 @@ func TestCompareGoogleapis(t *testing.T) {
 	// Don't run in parallel as it allocates a lot of memory
 	// cannot directly compare with source code info as buf alpha protoc creates additional source
 	// code infos that protoc does not
-	image := testBuildGoogleapis(t, WithExcludeSourceCodeInfo())
+	image := testBuildGoogleapis(t, false)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
 	runner := command.NewRunner()
 	actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, runner, false)

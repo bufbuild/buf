@@ -32,7 +32,6 @@ import (
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type builder struct {
@@ -50,18 +49,21 @@ func (b *builder) Build(
 	moduleFileSet bufmodule.ModuleFileSet,
 	options ...BuildOption,
 ) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
-	buildOptions := getBuildOptions(options...)
+	buildOptions := newBuildOptions()
+	for _, option := range options {
+		option(buildOptions)
+	}
 	return b.build(
 		ctx,
 		moduleFileSet,
-		buildOptions,
+		buildOptions.excludeSourceCodeInfo,
 	)
 }
 
 func (b *builder) build(
 	ctx context.Context,
 	moduleFileSet bufmodule.ModuleFileSet,
-	options *buildOptions,
+	excludeSourceCodeInfo bool,
 ) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
 	ctx, span := trace.StartSpan(ctx, "build")
 	defer span.End()
@@ -83,7 +85,7 @@ func (b *builder) build(
 		ctx,
 		parserAccessorHandler,
 		paths,
-		options,
+		excludeSourceCodeInfo,
 	)
 	if buildResult.Err != nil {
 		return nil, nil, buildResult.Err
@@ -98,7 +100,7 @@ func (b *builder) build(
 	}
 	image, err := getImage(
 		ctx,
-		options,
+		excludeSourceCodeInfo,
 		fileDescriptors,
 		parserAccessorHandler,
 		buildResult.SyntaxUnspecifiedFilenames,
@@ -114,13 +116,17 @@ func getBuildResult(
 	ctx context.Context,
 	parserAccessorHandler bufmoduleprotocompile.ParserAccessorHandler,
 	paths []string,
-	options *buildOptions,
+	excludeSourceCodeInfo bool,
 ) *buildResult {
 	var errorsWithPos []reporter.ErrorWithPos
 	var warningErrorsWithPos []reporter.ErrorWithPos
+	sourceInfoMode := protocompile.SourceInfoStandard
+	if excludeSourceCodeInfo {
+		sourceInfoMode = protocompile.SourceInfoNone
+	}
 	compiler := protocompile.Compiler{
 		MaxParallelism: thread.Parallelism(),
-		SourceInfoMode: options.sourceInfoMode,
+		SourceInfoMode: sourceInfoMode,
 		Resolver:       &protocompile.SourceResolver{Accessor: parserAccessorHandler.Open},
 		Reporter: reporter.NewReporter(
 			func(errorWithPos reporter.ErrorWithPos) error {
@@ -261,7 +267,7 @@ func checkAndSortFileDescriptors(
 // This assumes checkAndSortFileDescriptors was called.
 func getImage(
 	ctx context.Context,
-	options *buildOptions,
+	excludeSourceCodeInfo bool,
 	sortedFileDescriptors []protoreflect.FileDescriptor,
 	parserAccessorHandler bufmoduleprotocompile.ParserAccessorHandler,
 	syntaxUnspecifiedFilenames map[string]struct{},
@@ -289,7 +295,7 @@ func getImage(
 	for _, fileDescriptor := range sortedFileDescriptors {
 		imageFiles, err = getImageFilesRec(
 			ctx,
-			options,
+			excludeSourceCodeInfo,
 			fileDescriptor,
 			parserAccessorHandler,
 			syntaxUnspecifiedFilenames,
@@ -307,7 +313,7 @@ func getImage(
 
 func getImageFilesRec(
 	ctx context.Context,
-	options *buildOptions,
+	excludeSourceCodeInfo bool,
 	fileDescriptor protoreflect.FileDescriptor,
 	parserAccessorHandler bufmoduleprotocompile.ParserAccessorHandler,
 	syntaxUnspecifiedFilenames map[string]struct{},
@@ -332,7 +338,7 @@ func getImageFilesRec(
 	}
 	var err error
 	for i := 0; i < fileDescriptor.Imports().Len(); i++ {
-		dependency := fileDescriptor.Imports().Get(i)
+		dependency := fileDescriptor.Imports().Get(i).FileDescriptor
 		if unusedDependencyFilenames != nil {
 			if _, ok := unusedDependencyFilenames[dependency.Path()]; ok {
 				unusedDependencyIndexes = append(
@@ -343,7 +349,7 @@ func getImageFilesRec(
 		}
 		imageFiles, err = getImageFilesRec(
 			ctx,
-			options,
+			excludeSourceCodeInfo,
 			dependency,
 			parserAccessorHandler,
 			syntaxUnspecifiedFilenames,
@@ -357,17 +363,11 @@ func getImageFilesRec(
 		}
 	}
 
-	var fileDescriptorProto *descriptorpb.FileDescriptorProto
-	if linkerResult, ok := fileDescriptor.(linker.Result); ok && options.canonicalByteOutput {
-		fileDescriptorProto = linkerResult.CanonicalProto()
-	} else {
-		fileDescriptorProto = protoutil.ProtoFromFileDescriptor(fileDescriptor)
-	}
-
+	fileDescriptorProto := protoutil.ProtoFromFileDescriptor(fileDescriptor)
 	if fileDescriptorProto == nil {
 		return nil, errors.New("nil FileDescriptorProto")
 	}
-	if options.sourceInfoMode == protocompile.SourceInfoNone {
+	if excludeSourceCodeInfo {
 		// need to do this anyways as Parser does not respect this for FileDescriptorProtos
 		fileDescriptorProto.SourceCodeInfo = nil
 	}
@@ -441,27 +441,9 @@ func newBuildResult(
 }
 
 type buildOptions struct {
-	sourceInfoMode      protocompile.SourceInfoMode
-	canonicalByteOutput bool
+	excludeSourceCodeInfo bool
 }
 
 func newBuildOptions() *buildOptions {
-	return &buildOptions{
-		sourceInfoMode: protocompile.SourceInfoStandard,
-	}
-}
-
-func getBuildOptions(options ...BuildOption) *buildOptions {
-	buildOptions := newBuildOptions()
-	for _, option := range options {
-		option(buildOptions)
-	}
-	return buildOptions
-}
-
-// ExcludesSourceInfo returns true if the given build options indicate
-// that the built image should exclude source info.
-func ExcludesSourceInfo(options ...BuildOption) bool {
-	buildOptions := getBuildOptions(options...)
-	return buildOptions.sourceInfoMode == protocompile.SourceInfoNone
+	return &buildOptions{}
 }

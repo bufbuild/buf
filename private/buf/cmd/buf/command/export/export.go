@@ -235,7 +235,7 @@ func run(
 			flags.Paths,
 			flags.ExcludePaths,
 			false,
-			bufimagebuild.WithExcludeSourceCodeInfo(), // SourceCodeInfo is not needed here for outputting the source code
+			true, // SourceCodeInfo is not needed here for outputting the source code
 		)
 		if err != nil {
 			return err

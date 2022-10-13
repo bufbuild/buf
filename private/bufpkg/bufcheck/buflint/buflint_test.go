@@ -818,9 +818,9 @@ func TestCommentIgnoresOff(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 64, 9, 64, 12, "ONEOF_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 66, 11, 66, 14, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 71, 9, 71, 19, "SERVICE_PASCAL_CASE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 74, 7, 74, 16, "RPC_PASCAL_CASE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 76, 7, 76, 28, "RPC_REQUEST_STANDARD_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 79, 7, 79, 28, "RPC_RESPONSE_STANDARD_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 7, 75, 16, "RPC_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 17, 75, 38, "RPC_REQUEST_STANDARD_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 49, 75, 70, "RPC_RESPONSE_STANDARD_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "b.proto", 5, 1, 5, 11, "PACKAGE_DIRECTORY_MATCH"),
 		bufanalysistesting.NewFileAnnotation(t, "b.proto", 5, 1, 5, 11, "PACKAGE_VERSION_SUFFIX"),
 		bufanalysistesting.NewFileAnnotation(t, "b.proto", 9, 26, 9, 28, "ENUM_FIRST_VALUE_ZERO"),
@@ -942,7 +942,6 @@ func testLintConfigModifier(
 	image, fileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
 		ctx,
 		moduleFileSet,
-		bufimagebuild.WithExtraSourceCodeInfo(),
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)

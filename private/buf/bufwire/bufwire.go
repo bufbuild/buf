@@ -54,7 +54,7 @@ type ImageConfigReader interface {
 		externalDirOrFilePaths []string,
 		externalExcludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
-		buildOptions ...bufimagebuild.BuildOption,
+		excludeSourceCodeInfo bool,
 	) ([]ImageConfig, []bufanalysis.FileAnnotation, error)
 }
 

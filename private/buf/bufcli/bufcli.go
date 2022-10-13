@@ -750,7 +750,7 @@ func NewImageForSource(
 	externalDirOrFilePaths []string,
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
-	buildOptions ...bufimagebuild.BuildOption,
+	excludeSourceCodeInfo bool,
 ) (bufimage.Image, error) {
 	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, source)
 	if err != nil {
@@ -779,7 +779,7 @@ func NewImageForSource(
 		externalDirOrFilePaths,
 		externalExcludeDirOrFilePaths,
 		externalDirOrFilePathsAllowNotExist,
-		buildOptions...,
+		excludeSourceCodeInfo,
 	)
 	if err != nil {
 		return nil, err

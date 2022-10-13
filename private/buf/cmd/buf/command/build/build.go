@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -140,21 +139,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageRef, err := buffetch.NewImageRefParser(container.Logger()).GetImageRef(ctx, flags.Output)
-	if err != nil {
-		return fmt.Errorf("--%s: %v", outputFlagName, err)
-	}
-	var buildOptions []bufimagebuild.BuildOption
-	if flags.ExcludeSourceInfo {
-		buildOptions = append(buildOptions, bufimagebuild.WithExcludeSourceCodeInfo())
-	} else if !flags.AsFileDescriptorSet {
-		// if not a descriptor set, not necessary to try to match protoc, so include extra comments
-		buildOptions = append(buildOptions, bufimagebuild.WithExtraSourceCodeInfo())
-	}
-	if flags.AsFileDescriptorSet && imageRef.ImageEncoding() == buffetch.ImageEncodingBin {
-		// if generating binary format, emit the same bytes as protoc
-		buildOptions = append(buildOptions, bufimagebuild.WithCanonicalByteOutput())
-	}
 	image, err := bufcli.NewImageForSource(
 		ctx,
 		container,
@@ -165,10 +149,14 @@ func run(
 		flags.Paths,
 		flags.ExcludePaths, // we exclude these paths
 		false,
-		buildOptions...,
+		flags.ExcludeSourceInfo,
 	)
 	if err != nil {
 		return err
+	}
+	imageRef, err := buffetch.NewImageRefParser(container.Logger()).GetImageRef(ctx, flags.Output)
+	if err != nil {
+		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
 	if len(flags.Types) > 0 {
 		image, err = bufimageutil.ImageFilteredByTypes(image, flags.Types...)
