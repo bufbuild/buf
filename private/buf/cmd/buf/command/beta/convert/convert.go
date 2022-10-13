@@ -31,9 +31,8 @@ import (
 const (
 	errorFormatFlagName = "error-format"
 	typeFlagName        = "type"
-	payloadFlagName     = "payload"
-	outputFlagName      = "output"
-	outputFlagShortName = "o"
+	fromFlagName        = "from"
+	outputFlagName      = "to"
 )
 
 // NewCommand returns a new Command.
@@ -44,7 +43,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Use a input reference to convert a binary or JSON serialized message supplied through stdin or the payload flag.",
+		Short: "Use a input reference to convert a binary or JSON serialized message supplied through stdin or the from flag.",
 		Long:  `The first argument is the input that defines the serialized message (like buf.build/acme/weather).`,
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -60,7 +59,7 @@ func NewCommand(
 type flags struct {
 	ErrorFormat string
 	Type        string
-	Payload     string
+	From        string
 	Output      string
 
 	// special
@@ -86,21 +85,20 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The full type name of the serialized payload (like acme.weather.v1.Units) within the input.`,
+		`The full type name of the serialized from (like acme.weather.v1.Units) within the input.`,
 	)
 	flagSet.StringVar(
-		&f.Payload,
-		payloadFlagName,
+		&f.From,
+		fromFlagName,
 		"-",
 		fmt.Sprintf(
-			`The location to read the payload. Must be one of format %s.`,
+			`The location to read the from. Must be one of format %s.`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)
-	flagSet.StringVarP(
+	flagSet.StringVar(
 		&f.Output,
 		outputFlagName,
-		outputFlagShortName,
 		"-",
 		fmt.Sprintf(
 			`The location to write the converted result to. Must be one of format %s.`,
@@ -136,7 +134,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	payloadMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Payload, bufconvert.MessageEncodingBin)
+	fromMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.From, bufconvert.MessageEncodingBin)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
@@ -147,12 +145,12 @@ func run(
 		container,
 		image,
 		flags.Type,
-		payloadMessageRef,
+		fromMessageRef,
 	)
 	if err != nil {
 		return err
 	}
-	defaultOutputEncoding, err := inverseEncoding(payloadMessageRef.MessageEncoding())
+	defaultOutputEncoding, err := inverseEncoding(fromMessageRef.MessageEncoding())
 	if err != nil {
 		return err
 	}
@@ -172,7 +170,7 @@ func run(
 }
 
 // inverseEncoding returns the opposite encoding of the provided encoding,
-// which will be the default output encoding for a given payload encoding.
+// which will be the default output encoding for a given from encoding.
 func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
 	switch encoding {
 	case bufconvert.MessageEncodingBin:
