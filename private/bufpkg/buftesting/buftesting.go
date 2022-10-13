@@ -39,7 +39,8 @@ const (
 	// NumGoogleapisFilesWithImports is the number of googleapis files on the current test commit with imports.
 	NumGoogleapisFilesWithImports = 1585
 
-	testGoogleapisCommit = "37c923effe8b002884466074f84bc4e78e6ade62"
+	// https://github.com/googleapis/googleapis/commits/master 20221013 checked 20221013
+	testGoogleapisCommit = "e4d17a6d68ffbc39f9f7e1f70b9cfea6d00c9e2c"
 )
 
 var (
