@@ -16,13 +16,13 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/plugin.proto";
+import "buf/alpha/registry/v1alpha1/plugin_curation.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 
 message Resource {
   oneof resource {
     Repository repository = 1;
-    Plugin plugin = 2;
+    CuratedPlugin plugin = 2;
   }
 }
 

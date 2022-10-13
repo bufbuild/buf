@@ -31,7 +31,7 @@ import (
 const (
 	errorFormatFlagName = "error-format"
 	typeFlagName        = "type"
-	inputFlagName       = "input"
+	payloadFlagName     = "payload"
 	outputFlagName      = "output"
 	outputFlagShortName = "o"
 )
@@ -43,10 +43,10 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <source>",
-		Short: "Use a source reference to convert a binary or JSON serialized message supplied through stdin or the input flag.",
-		Long: `The first argument is the source that defines the serialized message (like buf.build/acme/weather).
-Alternatively, you can omit the source and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
+		Use:   name + " <input>",
+		Short: "Use a input reference to convert a binary or JSON serialized message supplied through stdin or the payload flag.",
+		Long: `The first argument is the input that defines the serialized message (like buf.build/acme/weather).
+Alternatively, you can omit the input and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -61,8 +61,11 @@ Alternatively, you can omit the source and specify a fully qualified path for th
 type flags struct {
 	ErrorFormat string
 	Type        string
-	Input       string
+	Payload     string
 	Output      string
+
+	// special
+	InputHashtag string
 }
 
 func newFlags() *flags {
@@ -70,6 +73,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -83,15 +87,15 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The full type name of the serialized message (like acme.weather.v1.Units).
+		`The full type name of the serialized payload (like acme.weather.v1.Units) within the input.
 Alternatively, this can be a fully qualified path to the type without providing the source (like buf.build/acme/weather#acme.weather.v1.Units).`,
 	)
 	flagSet.StringVar(
-		&f.Input,
-		inputFlagName,
+		&f.Payload,
+		payloadFlagName,
 		"-",
 		fmt.Sprintf(
-			`The location to read the input message. Must be one of format %s.`,
+			`The location to read the payload. Must be one of format %s.`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)
@@ -115,11 +119,11 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, "", "")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
 	if err != nil {
 		return err
 	}
-	source, typeName, err := bufcli.ParseSourceAndType(ctx, input, flags.Type)
+	source, typeName, err := bufcli.ParseInputAndType(ctx, input, flags.Type)
 	if err != nil {
 		return err
 	}
@@ -137,7 +141,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	inputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Input, bufconvert.MessageEncodingBin)
+	payloadMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Payload, bufconvert.MessageEncodingBin)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
@@ -148,12 +152,12 @@ func run(
 		container,
 		image,
 		typeName,
-		inputMessageRef,
+		payloadMessageRef,
 	)
 	if err != nil {
 		return err
 	}
-	defaultOutputEncoding, err := inverseEncoding(inputMessageRef.MessageEncoding())
+	defaultOutputEncoding, err := inverseEncoding(payloadMessageRef.MessageEncoding())
 	if err != nil {
 		return err
 	}
@@ -173,7 +177,7 @@ func run(
 }
 
 // inverseEncoding returns the opposite encoding of the provided encoding,
-// which will be the default output encoding for a given input encoding.
+// which will be the default output encoding for a given payload encoding.
 func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
 	switch encoding {
 	case bufconvert.MessageEncodingBin:

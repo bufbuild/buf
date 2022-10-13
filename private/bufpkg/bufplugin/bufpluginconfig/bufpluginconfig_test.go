@@ -68,6 +68,7 @@ func TestGetConfigForBucket(t *testing.T) {
 					"separate_package": "true",
 				},
 			},
+			SPDXLicenseID: "Apache-2.0",
 		},
 		pluginConfig,
 	)
@@ -109,6 +110,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 					"separate_package": "true",
 				},
 			},
+			SPDXLicenseID: "Apache-2.0",
 		},
 		pluginConfig,
 	)
@@ -156,6 +158,7 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 					},
 				},
 			},
+			SPDXLicenseID: "BSD-3-Clause",
 		},
 		pluginConfig,
 	)
