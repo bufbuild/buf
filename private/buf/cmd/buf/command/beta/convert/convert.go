@@ -60,7 +60,7 @@ type flags struct {
 	ErrorFormat string
 	Type        string
 	From        string
-	Output      string
+	To          string
 
 	// special
 	InputHashtag string
@@ -97,7 +97,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		),
 	)
 	flagSet.StringVar(
-		&f.Output,
+		&f.To,
 		outputFlagName,
 		"-",
 		fmt.Sprintf(
@@ -150,11 +150,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	defaultOutputEncoding, err := inverseEncoding(fromMessageRef.MessageEncoding())
+	defaultToEncoding, err := inverseEncoding(fromMessageRef.MessageEncoding())
 	if err != nil {
 		return err
 	}
-	outputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Output, defaultOutputEncoding)
+	outputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.To, defaultToEncoding)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
