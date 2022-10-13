@@ -123,14 +123,10 @@ func run(
 	if err != nil {
 		return err
 	}
-	source, typeName, err := bufcli.ParseInputAndType(ctx, input, flags.Type)
-	if err != nil {
-		return err
-	}
 	image, err := bufcli.NewImageForSource(
 		ctx,
 		container,
-		source,
+		input,
 		flags.ErrorFormat,
 		false, // disableSymlinks
 		"",    // configOverride
@@ -152,7 +148,7 @@ func run(
 		ctx,
 		container,
 		image,
-		typeName,
+		flags.Type,
 		payloadMessageRef,
 	)
 	if err != nil {
