@@ -1788,7 +1788,7 @@ func TestConvertOutput(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"--output",
+			"--to",
 			filepath.Join(outputTempDir, "result.json"),
 		)
 		readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(outputTempDir)
@@ -1817,7 +1817,7 @@ func TestConvertOutput(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"-o",
+			"--to",
 			filepath.Join(outputTempDir, "result.txt"),
 		)
 		readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(outputTempDir)
@@ -1846,7 +1846,7 @@ func TestConvertOutput(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"-o",
+			"--to",
 			"-",
 		)
 		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
@@ -2127,7 +2127,7 @@ func TestConvertRoundTrip(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"--payload",
+			"--from",
 			"-#format=json",
 		)
 		testRun(
@@ -2157,9 +2157,9 @@ func TestConvertRoundTrip(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"--payload",
+			"--from",
 			"-#format=json",
-			"-o",
+			"--to",
 			"-#format=bin",
 		)
 		testRun(
@@ -2172,9 +2172,9 @@ func TestConvertRoundTrip(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"--payload",
+			"--from",
 			"-#format=bin",
-			"-o",
+			"--to",
 			"-#format=json",
 		)
 		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
@@ -2192,9 +2192,9 @@ func TestConvertRoundTrip(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"--payload",
+			"--from",
 			"-#format=json",
-			"-o",
+			"--to",
 			filepath.Join(tempDir, "decoded_message.bin"),
 		)
 		testRun(
@@ -2207,7 +2207,7 @@ func TestConvertRoundTrip(t *testing.T) {
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
-			"--payload",
+			"--from",
 			filepath.Join(tempDir, "decoded_message.bin"),
 		)
 		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
