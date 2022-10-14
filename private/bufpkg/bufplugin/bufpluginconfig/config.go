@@ -96,7 +96,6 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 	if err != nil {
 		return nil, err
 	}
-	registryConfig.Hidden = externalConfig.Registry.Hidden
 	spdxLicenseID := externalConfig.SPDXLicenseID
 	if spdxLicenseID != "" {
 		if licenseInfo, ok := dataspdx.GetLicenseInfo(spdxLicenseID); ok {
@@ -150,6 +149,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		return &RegistryConfig{
 			NPM:     npmRegistryConfig,
 			Options: options,
+			Hidden:  externalRegistryConfig.Hidden,
 		}, nil
 	}
 	// At this point, the Go runtime is guaranteed to be specified. Note
@@ -161,6 +161,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 	return &RegistryConfig{
 		Go:      goRegistryConfig,
 		Options: options,
+		Hidden:  externalRegistryConfig.Hidden,
 	}, nil
 }
 
