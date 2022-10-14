@@ -131,6 +131,7 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 	}
 	registryConfig := &registryv1alpha1.RegistryConfig{
 		Options: bufpluginconfig.PluginOptionsToOptionsSlice(pluginRegistry.Options),
+		Hidden:  pluginRegistry.Hidden,
 	}
 	if pluginRegistry.Go != nil {
 		goConfig := &registryv1alpha1.GoConfig{}
@@ -164,6 +165,7 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 	}
 	registryConfig := &bufpluginconfig.RegistryConfig{
 		Options: bufpluginconfig.OptionsSliceToPluginOptions(config.Options),
+		Hidden:  config.Hidden,
 	}
 	if config.GetGoConfig() != nil {
 		goConfig := &bufpluginconfig.GoRegistryConfig{}
