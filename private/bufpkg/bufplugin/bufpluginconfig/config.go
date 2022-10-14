@@ -96,6 +96,7 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 	if err != nil {
 		return nil, err
 	}
+	registryConfig.Hidden = externalConfig.Registry.Hidden
 	spdxLicenseID := externalConfig.SPDXLicenseID
 	if spdxLicenseID != "" {
 		if licenseInfo, ok := dataspdx.GetLicenseInfo(spdxLicenseID); ok {

@@ -80,6 +80,17 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			"separate_package": "true",
 		},
 	})
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		Hidden: true,
+		NPM: &bufpluginconfig.NPMRegistryConfig{
+			Deps: []*bufpluginconfig.NPMRegistryDependencyConfig{
+				{
+					Package: "google-protobuf",
+					Version: "^3.21.2",
+				},
+			},
+		},
+	})
 }
 
 func assertPluginRegistryRoundTrip(t testing.TB, config *bufpluginconfig.RegistryConfig) {
