@@ -45,12 +45,18 @@ func NewCommand(
 		Use:   name + " <input>",
 		Short: "Convert a message from binary to JSON or vice versa",
 		Long: `
-Convert a message using either a source .proto, buf module, image or bsr module as the schema to marshal and unmarshal 
-the "from" payload.
+Use an input proto to interpret a proto/json message and convert it to a different format.
 
-# Convert a json payload to a binary proto file
+The simplest form is:
 
+$ buf beta convert <input> --type=<type> --from=<payload> --to=<output>
+
+<input> is the same input as any other buf command. 
+It can be a local .proto file, binary output of "buf build", bsr module or local buf module.
+e.g.
 $ buf beta convert example.proto --type=Foo.proto --from=payload.json --to=output.bin
+
+# Other examples
 
 # All of <input>, "--from" and "to" accept formatting options
 
@@ -66,7 +72,7 @@ $ echo "{\"one\":\"55\"}" | buf beta convert buf.proto --type buf.Foo --from -#f
 
 # Redirect from stdin to <input>
 
-buf build -o - | buf beta convert -#format=bin --type buf.Foo --from=payload.json
+$ buf build -o - | buf beta convert -#format=bin --type buf.Foo --from=payload.json
 
 # Use a module on the bsr
 
