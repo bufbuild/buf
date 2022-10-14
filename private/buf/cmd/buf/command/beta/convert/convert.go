@@ -43,9 +43,36 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Use a input reference to convert a binary or JSON serialized message supplied through stdin or the from flag.",
-		Long:  `The first argument is the input that defines the serialized message (like buf.build/acme/weather).`,
-		Args:  cobra.MaximumNArgs(1),
+		Short: "Convert a message from binary to JSON or vice versa",
+		Long: `
+Convert a message using either a source .proto, buf module, image or bsr module as the schema to marshal and unmarshal 
+the "from" payload.
+
+# Convert a json payload to a binary proto file
+
+$ buf beta convert example.proto --type=Foo.proto --from=payload.json --to=output.bin
+
+# All of <input>, "--from" and "to" accept formatting options
+
+$ buf beta convert example.proto#format=bin --type=buf.Foo --from=payload#format=json --to=out#format=json
+
+# Both <input> and "--from" accept stdin redirecting
+
+$ buf beta convert <(buf build -o -)#format=bin --type=foo.Bar --from=<(echo "{\"one\":\"55\"}")#format=json
+
+# Redirect from stdin to --from
+
+$ echo "{\"one\":\"55\"}" | buf beta convert buf.proto --type buf.Foo --from -#format=json
+
+# Redirect from stdin to <input>
+
+buf build -o - | buf beta convert -#format=bin --type buf.Foo --from=payload.json
+
+# Use a module on the bsr
+
+buf beta convert buf.build/<org>/<repo> --type buf.Foo --from=payload.json
+`,
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -85,14 +112,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The full type name of the serialized from payload (like acme.weather.v1.Units) within the input.`,
+		`The full type name of the message within the input (e.g. acme.weather.v1.Units)`,
 	)
 	flagSet.StringVar(
 		&f.From,
 		fromFlagName,
 		"-",
 		fmt.Sprintf(
-			`The location to read the from payload. Must be one of format %s.`,
+			`The location of the payload to be converted. Supported formats are %s.`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)
@@ -101,7 +128,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagName,
 		"-",
 		fmt.Sprintf(
-			`The location to write the converted result to. Must be one of format %s.`,
+			`The output location of the conversion. Supported formats are %s.`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)
