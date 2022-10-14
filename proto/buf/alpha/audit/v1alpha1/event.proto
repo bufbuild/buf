@@ -267,12 +267,6 @@ message PayloadUserDeactivated {}
 
 message PayloadUserDeleted {}
 
-message PayloadUserLoggedIn {
-  // subject is the IdP-specific subject of the user who logged in.
-  string subject = 1;
-}
+message PayloadUserLoggedIn {}
 
-message PayloadUserLoggedOut {
-  // subject is the IdP-specific subject of the user who logged out.
-  string subject = 1;
-}
+message PayloadUserLoggedOut {}
