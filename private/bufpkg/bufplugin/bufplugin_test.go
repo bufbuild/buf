@@ -81,7 +81,6 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 		},
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
-		Hidden: true,
 		NPM: &bufpluginconfig.NPMRegistryConfig{
 			Deps: []*bufpluginconfig.NPMRegistryDependencyConfig{
 				{
@@ -90,6 +89,7 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 				},
 			},
 		},
+		Hidden: true,
 	})
 }
 
