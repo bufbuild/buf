@@ -18,6 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 enum Visibility {
@@ -295,10 +296,11 @@ message GetRepositorySettingsResponse {
 message UpdateRepositorySettingsByNameRequest {
   string owner_name = 1;
   string repository_name = 2;
-  // Changes are only made to specified values. Unspecified ones are left unchanged.
   Visibility visibility = 3;
-  optional string description = 4;
-  optional string url = 5;
+  // Changes are only made to values specified in field_mask.
+  google.protobuf.FieldMask field_mask = 4;
+  string description = 5;
+  string url = 6;
 }
 
 message UpdateRepositorySettingsByNameResponse {}

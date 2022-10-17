@@ -19,6 +19,7 @@ package registryv1alpha1api
 import (
 	context "context"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 // UserService is the User service.
@@ -62,7 +63,8 @@ type UserService interface {
 	UpdateUserSettings(
 		ctx context.Context,
 		userId string,
-		description *string,
-		url *string,
+		fieldMask *fieldmaskpb.FieldMask,
+		description string,
+		url string,
 	) (err error)
 }

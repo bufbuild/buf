@@ -18,6 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/verification_status.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 message Organization {
@@ -205,10 +206,10 @@ message UpdateOrganizationSettingsRequest {
   PluginRole plugin_base_role = 3;
   // optional, no update to this base role will be made if this is unspecified.
   TemplateRole template_base_role = 4;
-  // optional, no update to description will be made if this is unspecified.
-  optional string description = 5;
-  // optional, no update to url will be made if this is unspecified.
-  optional string url = 6;
+  // Changes are only made to values specified in field_mask.
+  google.protobuf.FieldMask field_mask = 5;
+  string description = 6;
+  string url = 7;
 }
 
 message UpdateOrganizationSettingsResponse {}

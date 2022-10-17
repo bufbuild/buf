@@ -22,6 +22,7 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
+	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 type userServiceClient struct {
@@ -190,14 +191,16 @@ func (s *userServiceClient) CountUsers(ctx context.Context, userStateFilter v1al
 func (s *userServiceClient) UpdateUserSettings(
 	ctx context.Context,
 	userId string,
-	description *string,
-	url *string,
+	fieldMask *fieldmaskpb.FieldMask,
+	description string,
+	url string,
 ) (_ error) {
 	_, err := s.client.UpdateUserSettings(
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.UpdateUserSettingsRequest{
 				UserId:      userId,
+				FieldMask:   fieldMask,
 				Description: description,
 				Url:         url,
 			}),

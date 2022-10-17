@@ -19,6 +19,7 @@ package registryv1alpha1api
 import (
 	context "context"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 // OrganizationService is the Organization service.
@@ -87,7 +88,8 @@ type OrganizationService interface {
 		repositoryBaseRole v1alpha1.RepositoryRole,
 		pluginBaseRole v1alpha1.PluginRole,
 		templateBaseRole v1alpha1.TemplateRole,
-		description *string,
-		url *string,
+		fieldMask *fieldmaskpb.FieldMask,
+		description string,
+		url string,
 	) (err error)
 }

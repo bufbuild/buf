@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 const (
@@ -88,10 +89,10 @@ func run(
 		moduleIdentity.Owner(),
 		moduleIdentity.Repository(),
 		visibility,
-		// TODO: pass description
-		nil,
-		// TODO: pass url
-		nil,
+		// TODO: pass field mask, description and url
+		&fieldmaskpb.FieldMask{},
+		"",
+		"",
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))

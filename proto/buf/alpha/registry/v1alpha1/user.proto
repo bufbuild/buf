@@ -18,6 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/verification_status.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 message User {
@@ -163,9 +164,10 @@ message CountUsersResponse {
 
 message UpdateUserSettingsRequest {
   string user_id = 1;
-  // Changes are only made to specified values. Unspecified ones are left unchanged.
-  optional string description = 2;
-  optional string url = 3;
+  // Changes are only made to values specified in field_mask.
+  google.protobuf.FieldMask field_mask = 2;
+  string description = 3;
+  string url = 4;
 }
 
 message UpdateUserSettingsResponse {}

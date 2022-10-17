@@ -22,6 +22,7 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
+	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 type organizationServiceClient struct {
@@ -261,8 +262,9 @@ func (s *organizationServiceClient) UpdateOrganizationSettings(
 	repositoryBaseRole v1alpha1.RepositoryRole,
 	pluginBaseRole v1alpha1.PluginRole,
 	templateBaseRole v1alpha1.TemplateRole,
-	description *string,
-	url *string,
+	fieldMask *fieldmaskpb.FieldMask,
+	description string,
+	url string,
 ) (_ error) {
 	_, err := s.client.UpdateOrganizationSettings(
 		ctx,
@@ -272,6 +274,7 @@ func (s *organizationServiceClient) UpdateOrganizationSettings(
 				RepositoryBaseRole: repositoryBaseRole,
 				PluginBaseRole:     pluginBaseRole,
 				TemplateBaseRole:   templateBaseRole,
+				FieldMask:          fieldMask,
 				Description:        description,
 				Url:                url,
 			}),
