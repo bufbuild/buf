@@ -24,6 +24,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/jhump/protoreflect/desc/protoparse"
+
 	"github.com/bufbuild/buf/private/buf/bufapp"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwire"
@@ -751,6 +754,9 @@ func NewImageForSource(
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (bufimage.Image, error) {
+	if datawkt.Exists(source) {
+		return WellKnownTypeImage(source)
+	}
 	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, source)
 	if err != nil {
 		return nil, err
@@ -799,6 +805,29 @@ func NewImageForSource(
 		images = append(images, imageConfig.Image())
 	}
 	return bufimage.MergeImages(images...)
+}
+
+// WellKnownTypeImage returns an image for a well known type source file.
+func WellKnownTypeImage(wkpath string) (bufimage.Image, error) {
+	descriptors, err := protoparse.Parser{}.ParseFiles(wkpath)
+	if err != nil {
+		return nil, err
+	}
+	var imageFiles []bufimage.ImageFile
+	for _, desc := range descriptors {
+		imageFile, err := bufimage.NewImageFile(desc.AsFileDescriptorProto(),
+			nil,
+			"",
+			"",
+			false,
+			false,
+			nil)
+		if err != nil {
+			return nil, err
+		}
+		imageFiles = append(imageFiles, imageFile)
+	}
+	return bufimage.NewImage(imageFiles)
 }
 
 // VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
