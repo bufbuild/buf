@@ -363,8 +363,11 @@ func (r *reader) getProtoFileBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	if datawkt.Exists(protoFileRef.Path()) {
-		return wellKnownTypeBucket(ctx)
+
+	if _, err := os.Stat(protoFileRef.Path()); os.IsNotExist(err) {
+		if datawkt.Exists(protoFileRef.Path()) {
+			return wellKnownTypeBucket(ctx)
+		}
 	}
 	terminateFileProvider, err := getTerminateFileProviderForOS(normalpath.Dir(protoFileRef.Path()), terminateFileNames)
 	if err != nil {
