@@ -295,6 +295,7 @@ message GetRepositorySettingsResponse {
 message UpdateRepositorySettingsByNameRequest {
   string owner_name = 1;
   string repository_name = 2;
+  // optional, update to visibility will only be made if this is specified.
   Visibility visibility = 3;
   // optional, update to description will only be made when this is present
   optional string description = 4;
