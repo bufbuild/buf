@@ -230,10 +230,10 @@ func wktToPath(fulltype string) string {
 		return ""
 	}
 	filePath := msgType.Descriptor().ParentFile().Path()
-	if datawkt.Exists(filePath) {
-		// found it!
-		return filePath
+	if !datawkt.Exists(filePath) {
+		// not a well-known type
+		return ""
 	}
-	// not a well-known type
-	return ""
+	// found it!
+	return filePath
 }
