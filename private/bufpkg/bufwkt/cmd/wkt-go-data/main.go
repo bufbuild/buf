@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -146,11 +145,13 @@ func getProtosourceFiles(
 	container appflag.Container,
 	bucket storage.ReadBucket,
 ) ([]protosource.File, error) {
-	module, err := bufmodulebuild.NewModuleBucketBuilder(container.Logger()).BuildForBucket(
-		ctx,
-		bucket,
-		&bufmoduleconfig.Config{},
-	)
+	// TODO: why is this not working? this is the path that should be used, not NewModuleForBucket
+	//module, err := bufmodulebuild.NewModuleBucketBuilder(container.Logger()).BuildForBucket(
+	//ctx,
+	//bucket,
+	//&bufmoduleconfig.Config{},
+	//)
+	module, err := bufmodule.NewModuleForBucket(ctx, bucket)
 	if err != nil {
 		return nil, err
 	}
@@ -168,6 +169,9 @@ func getProtosourceFiles(
 		ctx, moduleFileSet,
 		bufimagebuild.WithExcludeSourceCodeInfo(),
 	)
+	if err != nil {
+		return nil, err
+	}
 	if len(fileAnnotations) > 0 {
 		// stderr since we do output to stdouo
 		if err := bufanalysis.PrintFileAnnotations(
@@ -178,9 +182,6 @@ func getProtosourceFiles(
 			return nil, err
 		}
 		return nil, app.NewError(100, "")
-	}
-	if err != nil {
-		return nil, err
 	}
 	return protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
 }
@@ -279,6 +280,31 @@ var (
 		_, _ = buffer.WriteString(`},
 `)
 	}
+
+	_, _ = buffer.WriteString(`}
+
+	messageNameToFilePath = map[string]string{
+`)
+	for _, messageFullNameToFilePair := range messageFullNameToFile {
+		_, _ = buffer.WriteString(`"`)
+		_, _ = buffer.WriteString(messageFullNameToFilePair.key)
+		_, _ = buffer.WriteString(`": "`)
+		_, _ = buffer.WriteString(messageFullNameToFilePair.value)
+		_, _ = buffer.WriteString(`",`)
+		_, _ = buffer.WriteString("\n")
+	}
+	_, _ = buffer.WriteString(`}
+
+	enumNameToFilePath = map[string]string{
+`)
+	for _, enumFullNameToFilePair := range enumFullNameToFile {
+		_, _ = buffer.WriteString(`"`)
+		_, _ = buffer.WriteString(enumFullNameToFilePair.key)
+		_, _ = buffer.WriteString(`": "`)
+		_, _ = buffer.WriteString(enumFullNameToFilePair.value)
+		_, _ = buffer.WriteString(`",`)
+		_, _ = buffer.WriteString("\n")
+	}
 	_, _ = buffer.WriteString(`}
 )
 
@@ -296,6 +322,18 @@ func init() {
 func Exists(path string) bool {
 	_, ok := pathToData[normalpath.Normalize(path)]
 	return ok
+}
+
+// MessageFilePath gets the file path for the given message, if the message exists.
+func MessageFilePath(messageName string) (string, bool) {
+	filePath, ok := messageNameToFilePath[messageName]
+	return filePath, ok
+}
+
+// EnumFilePath gets the file path for the given enum, if the enum exists.
+func EnumFilePath(enumName string) (string, bool) {
+	filePath, ok := enumNameToFilePath[enumName]
+	return filePath, ok
 }
 `)
 
