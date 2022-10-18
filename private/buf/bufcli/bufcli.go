@@ -39,7 +39,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -802,30 +801,6 @@ func NewImageForSource(
 	return bufimage.MergeImages(images...)
 }
 
-// ParseInputAndType returns the moduleReference and typeName from the input and type provided by the user.
-// When input is not provided, we assume the type is a fully qualified path to the type and try to parse it.
-// Otherwise, if both input and type are provided, the type must be a valid Protobuf identifier (e.g. weather.v1.Units).
-func ParseInputAndType(
-	ctx context.Context,
-	input string,
-	typeName string,
-) (string, string, error) {
-	if input != "" && typeName != "" {
-		if err := bufreflect.ValidateTypeName(typeName); err != nil {
-			return "", "", err
-		}
-		return input, typeName, nil
-	}
-	if typeName == "" {
-		return "", "", appcmd.NewInvalidArgumentError("type is required")
-	}
-	moduleReference, moduleTypeName, err := parseFullyQualifiedPath(typeName)
-	if err != nil {
-		return "", "", appcmd.NewInvalidArgumentErrorf("if a input isn't provided, the type needs to be a fully qualified path that includes the module reference; failed to parse the type: %v", err)
-	}
-	return moduleReference, moduleTypeName, nil
-}
-
 // VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
 func VisibilityFlagToVisibility(visibility string) (registryv1alpha1.Visibility, error) {
 	switch visibility {
@@ -1017,26 +992,4 @@ func createCacheDirs(dirPaths ...string) error {
 		}
 	}
 	return nil
-}
-
-// parseFullyQualifiedPath parse a string in <buf.build/owner/repository#fully-qualified-type> or
-// <buf.build/owner/repository:reference#fully-qualified-type> format into a module reference and a type name
-func parseFullyQualifiedPath(
-	fullyQualifiedPath string,
-) (moduleRef string, typeName string, _ error) {
-	if fullyQualifiedPath == "" {
-		return "", "", appcmd.NewInvalidArgumentError("you must specify a fully qualified path")
-	}
-	components := strings.Split(fullyQualifiedPath, "#")
-	if len(components) != 2 {
-		return "", "", appcmd.NewInvalidArgumentErrorf("%q is not a valid fully qualified path", fullyQualifiedPath)
-	}
-	moduleReference, err := bufmoduleref.ModuleReferenceForString(components[0])
-	if err != nil {
-		return "", "", err
-	}
-	if err := bufreflect.ValidateTypeName(components[1]); err != nil {
-		return "", "", err
-	}
-	return moduleReference.String(), components[1], nil
 }

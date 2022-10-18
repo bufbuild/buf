@@ -18,8 +18,10 @@ package apiclientconnect
 
 import (
 	apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient"
+	auditv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/audit/v1alpha1/auditv1alpha1apiclient"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	webhookv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/webhook/v1alpha1/webhookv1alpha1apiclient"
+	auditv1alpha1apiclientconnect "github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/audit/v1alpha1/auditv1alpha1apiclientconnect"
 	registryv1alpha1apiclientconnect "github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
 	webhookv1alpha1apiclientconnect "github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/webhook/v1alpha1/webhookv1alpha1apiclientconnect"
 	connect_go "github.com/bufbuild/connect-go"
@@ -37,6 +39,11 @@ func NewProvider(
 		option(providerOptions)
 	}
 	return &provider{
+		bufAlphaAuditV1alpha1Provider: auditv1alpha1apiclientconnect.NewProvider(
+			logger,
+			httpClient,
+			providerOptions.bufAlphaAuditV1alpha1ProviderOptions...,
+		),
 		bufAlphaRegistryV1alpha1Provider: registryv1alpha1apiclientconnect.NewProvider(
 			logger,
 			httpClient,
@@ -51,12 +58,17 @@ func NewProvider(
 }
 
 type provider struct {
+	bufAlphaAuditV1alpha1Provider    auditv1alpha1apiclient.Provider
 	bufAlphaRegistryV1alpha1Provider registryv1alpha1apiclient.Provider
 	bufAlphaWebhookV1alpha1Provider  webhookv1alpha1apiclient.Provider
 }
 
 // ProviderOption is an option for a new Provider.
 type ProviderOption func(*providerOptions)
+
+func (p *provider) BufAlphaAuditV1alpha1() auditv1alpha1apiclient.Provider {
+	return p.bufAlphaAuditV1alpha1Provider
+}
 
 func (p *provider) BufAlphaRegistryV1alpha1() registryv1alpha1apiclient.Provider {
 	return p.bufAlphaRegistryV1alpha1Provider
@@ -67,6 +79,7 @@ func (p *provider) BufAlphaWebhookV1alpha1() webhookv1alpha1apiclient.Provider {
 }
 
 type providerOptions struct {
+	bufAlphaAuditV1alpha1ProviderOptions    []auditv1alpha1apiclientconnect.ProviderOption
 	bufAlphaRegistryV1alpha1ProviderOptions []registryv1alpha1apiclientconnect.ProviderOption
 	bufAlphaWebhookV1alpha1ProviderOptions  []webhookv1alpha1apiclientconnect.ProviderOption
 }

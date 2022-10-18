@@ -17,12 +17,14 @@
 package apiclient
 
 import (
+	auditv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/audit/v1alpha1/auditv1alpha1apiclient"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	webhookv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/webhook/v1alpha1/webhookv1alpha1apiclient"
 )
 
 // Provider provides all Providers.
 type Provider interface {
+	BufAlphaAuditV1alpha1() auditv1alpha1apiclient.Provider
 	BufAlphaRegistryV1alpha1() registryv1alpha1apiclient.Provider
 	BufAlphaWebhookV1alpha1() webhookv1alpha1apiclient.Provider
 }
