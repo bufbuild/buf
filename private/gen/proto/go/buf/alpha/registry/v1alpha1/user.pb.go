@@ -1159,7 +1159,7 @@ type UpdateUserSettingsRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// Changes are only made to values specified in field_mask.
+	// Changes to fields below are only made when specified in field_mask.
 	FieldMask   *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=field_mask,json=fieldMask,proto3" json:"field_mask,omitempty"`
 	Description string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	Url         string                 `protobuf:"bytes,4,opt,name=url,proto3" json:"url,omitempty"`

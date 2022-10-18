@@ -297,7 +297,7 @@ message UpdateRepositorySettingsByNameRequest {
   string owner_name = 1;
   string repository_name = 2;
   Visibility visibility = 3;
-  // Changes are only made to values specified in field_mask.
+  // Changes to fields below are only made when specified in field_mask.
   google.protobuf.FieldMask field_mask = 4;
   string description = 5;
   string url = 6;

@@ -2117,7 +2117,7 @@ type UpdateRepositorySettingsByNameRequest struct {
 	OwnerName      string     `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
 	RepositoryName string     `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
 	Visibility     Visibility `protobuf:"varint,3,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`
-	// Changes are only made to values specified in field_mask.
+	// Changes to fields below are only made when specified in field_mask.
 	FieldMask   *fieldmaskpb.FieldMask `protobuf:"bytes,4,opt,name=field_mask,json=fieldMask,proto3" json:"field_mask,omitempty"`
 	Description string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
 	Url         string                 `protobuf:"bytes,6,opt,name=url,proto3" json:"url,omitempty"`

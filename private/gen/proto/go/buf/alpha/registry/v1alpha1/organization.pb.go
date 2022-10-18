@@ -1439,7 +1439,7 @@ type UpdateOrganizationSettingsRequest struct {
 	PluginBaseRole PluginRole `protobuf:"varint,3,opt,name=plugin_base_role,json=pluginBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.PluginRole" json:"plugin_base_role,omitempty"`
 	// optional, no update to this base role will be made if this is unspecified.
 	TemplateBaseRole TemplateRole `protobuf:"varint,4,opt,name=template_base_role,json=templateBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"template_base_role,omitempty"`
-	// Changes are only made to values specified in field_mask.
+	// Changes to fields below are only made when specified in field_mask.
 	FieldMask   *fieldmaskpb.FieldMask `protobuf:"bytes,5,opt,name=field_mask,json=fieldMask,proto3" json:"field_mask,omitempty"`
 	Description string                 `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
 	Url         string                 `protobuf:"bytes,7,opt,name=url,proto3" json:"url,omitempty"`
