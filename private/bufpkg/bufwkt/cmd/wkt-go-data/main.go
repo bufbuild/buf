@@ -99,18 +99,18 @@ func run(ctx context.Context, container appflag.Container, flags *flags) error {
 	if err != nil {
 		return err
 	}
-	messageFullNameToFile, err := getSortedMessageFullNameToFile(protosourceFiles)
+	fullNameToMessage, err := protosource.FullNameToMessage(protosourceFiles...)
 	if err != nil {
 		return err
 	}
-	enumFullNameToFile, err := getSortedEnumFullNameToFile(protosourceFiles)
+	fullNameToEnum, err := protosource.FullNameToEnum(protosourceFiles...)
 	if err != nil {
 		return err
 	}
 	golangFileData, err := getGolangFileData(
 		pathToData,
-		messageFullNameToFile,
-		enumFullNameToFile,
+		fullNameToMessage,
+		fullNameToEnum,
 		packageName,
 	)
 	if err != nil {
@@ -186,48 +186,10 @@ func getProtosourceFiles(
 	return protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
 }
 
-func getSortedMessageFullNameToFile(protosourceFiles []protosource.File) ([]*stringPair, error) {
-	fullNameToMessage, err := protosource.FullNameToMessage(protosourceFiles...)
-	if err != nil {
-		return nil, err
-	}
-	fullNameToFile := make([]*stringPair, 0, len(fullNameToMessage))
-	for fullName, message := range fullNameToMessage {
-		fullNameToFile = append(
-			fullNameToFile,
-			newStringPair(
-				fullName,
-				message.File().Path(),
-			),
-		)
-	}
-	sortStringPairs(fullNameToFile)
-	return fullNameToFile, nil
-}
-
-func getSortedEnumFullNameToFile(protosourceFiles []protosource.File) ([]*stringPair, error) {
-	fullNameToEnum, err := protosource.FullNameToEnum(protosourceFiles...)
-	if err != nil {
-		return nil, err
-	}
-	fullNameToFile := make([]*stringPair, 0, len(fullNameToEnum))
-	for fullName, enum := range fullNameToEnum {
-		fullNameToFile = append(
-			fullNameToFile,
-			newStringPair(
-				fullName,
-				enum.File().Path(),
-			),
-		)
-	}
-	sortStringPairs(fullNameToFile)
-	return fullNameToFile, nil
-}
-
 func getGolangFileData(
 	pathToData map[string][]byte,
-	messageFullNameToFile []*stringPair,
-	enumFullNameToFile []*stringPair,
+	fullNameToMessage map[string]protosource.Message,
+	fullNameToEnum map[string]protosource.Enum,
 	packageName string,
 ) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
@@ -285,11 +247,12 @@ var (
 
 	messageNameToFilePath = map[string]string{
 `)
-	for _, messageFullNameToFilePair := range messageFullNameToFile {
+	for _, fullNameToMessagePairKey := range sortKeys(fullNameToMessage) {
+		fullNameToMessagePairVal := fullNameToMessage[fullNameToMessagePairKey]
 		_, _ = buffer.WriteString(`"`)
-		_, _ = buffer.WriteString(messageFullNameToFilePair.key)
+		_, _ = buffer.WriteString(fullNameToMessagePairKey)
 		_, _ = buffer.WriteString(`": "`)
-		_, _ = buffer.WriteString(messageFullNameToFilePair.value)
+		_, _ = buffer.WriteString(fullNameToMessagePairVal.File().Path())
 		_, _ = buffer.WriteString(`",`)
 		_, _ = buffer.WriteString("\n")
 	}
@@ -297,11 +260,12 @@ var (
 
 	enumNameToFilePath = map[string]string{
 `)
-	for _, enumFullNameToFilePair := range enumFullNameToFile {
+	for _, fullNameToEnumPairKey := range sortKeys(fullNameToEnum) {
+		fullNameToEnumPairVal := fullNameToEnum[fullNameToEnumPairKey]
 		_, _ = buffer.WriteString(`"`)
-		_, _ = buffer.WriteString(enumFullNameToFilePair.key)
+		_, _ = buffer.WriteString(fullNameToEnumPairKey)
 		_, _ = buffer.WriteString(`": "`)
-		_, _ = buffer.WriteString(enumFullNameToFilePair.value)
+		_, _ = buffer.WriteString(fullNameToEnumPairVal.File().Path())
 		_, _ = buffer.WriteString(`",`)
 		_, _ = buffer.WriteString("\n")
 	}
@@ -340,23 +304,13 @@ func EnumFilePath(enumName string) (string, bool) {
 	return format.Source(buffer.Bytes())
 }
 
-type stringPair struct {
-	key   string
-	value string
-}
-
-func newStringPair(key string, value string) *stringPair {
-	return &stringPair{
-		key:   key,
-		value: value,
+func sortKeys[M any](m map[string]M) []string {
+	ret := make([]string, 0, len(m))
+	for key := range m {
+		ret = append(ret, key)
 	}
-}
-
-func sortStringPairs(stringPairs []*stringPair) {
-	sort.Slice(
-		stringPairs,
-		func(i int, j int) bool {
-			return stringPairs[i].key < stringPairs[j].key
-		},
-	)
+	sort.Slice(ret, func(i, j int) bool {
+		return ret[i] < ret[j]
+	})
+	return ret
 }
