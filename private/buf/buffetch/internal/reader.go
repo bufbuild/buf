@@ -24,6 +24,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -360,6 +362,18 @@ func (r *reader) getProtoFileBucket(
 ) (ReadBucketCloserWithTerminateFileProvider, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
+	}
+	if datawkt.Exists(protoFileRef.Path()) {
+		bucket := storage.NopReadBucketCloser(datawkt.ReadBucket)
+		terminateFileProvider, err := getTerminateFileProviderForBucket(ctx, bucket, "", nil)
+		if err != nil {
+			return nil, err
+		}
+		bucketCloser, err := newReadBucketCloser(bucket, "", "")
+		if err != nil {
+			return nil, err
+		}
+		return newReadBucketCloserWithTerminateFiles(bucketCloser, terminateFileProvider), nil
 	}
 	terminateFileProvider, err := getTerminateFileProviderForOS(normalpath.Dir(protoFileRef.Path()), terminateFileNames)
 	if err != nil {
