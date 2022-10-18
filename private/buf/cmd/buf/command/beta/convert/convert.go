@@ -31,9 +31,8 @@ import (
 const (
 	errorFormatFlagName = "error-format"
 	typeFlagName        = "type"
-	payloadFlagName     = "payload"
-	outputFlagName      = "output"
-	outputFlagShortName = "o"
+	fromFlagName        = "from"
+	outputFlagName      = "to"
 )
 
 // NewCommand returns a new Command.
@@ -44,9 +43,41 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Use a input reference to convert a binary or JSON serialized message supplied through stdin or the payload flag.",
-		Long: `The first argument is the input that defines the serialized message (like buf.build/acme/weather).
-Alternatively, you can omit the input and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
+		Short: "Convert a message from binary to JSON or vice versa",
+		Long: `
+Use an input proto to interpret a proto/json message and convert it to a different format.
+
+The simplest form is:
+
+$ buf beta convert <input> --type=<type> --from=<payload> --to=<output>
+
+<input> is the same input as any other buf command. 
+It can be a local .proto file, binary output of "buf build", bsr module or local buf module.
+e.g.
+$ buf beta convert example.proto --type=Foo.proto --from=payload.json --to=output.bin
+
+# Other examples
+
+# All of <input>, "--from" and "to" accept formatting options
+
+$ buf beta convert example.proto#format=bin --type=buf.Foo --from=payload#format=json --to=out#format=json
+
+# Both <input> and "--from" accept stdin redirecting
+
+$ buf beta convert <(buf build -o -)#format=bin --type=foo.Bar --from=<(echo "{\"one\":\"55\"}")#format=json
+
+# Redirect from stdin to --from
+
+$ echo "{\"one\":\"55\"}" | buf beta convert buf.proto --type buf.Foo --from -#format=json
+
+# Redirect from stdin to <input>
+
+$ buf build -o - | buf beta convert -#format=bin --type buf.Foo --from=payload.json
+
+# Use a module on the bsr
+
+buf beta convert buf.build/<org>/<repo> --type buf.Foo --from=payload.json
+`,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -61,8 +92,8 @@ Alternatively, you can omit the input and specify a fully qualified path for the
 type flags struct {
 	ErrorFormat string
 	Type        string
-	Payload     string
-	Output      string
+	From        string
+	To          string
 
 	// special
 	InputHashtag string
@@ -87,25 +118,23 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The full type name of the serialized payload (like acme.weather.v1.Units) within the input.
-Alternatively, this can be a fully qualified path to the type without providing the source (like buf.build/acme/weather#acme.weather.v1.Units).`,
+		`The full type name of the message within the input (e.g. acme.weather.v1.Units)`,
 	)
 	flagSet.StringVar(
-		&f.Payload,
-		payloadFlagName,
+		&f.From,
+		fromFlagName,
 		"-",
 		fmt.Sprintf(
-			`The location to read the payload. Must be one of format %s.`,
+			`The location of the payload to be converted. Supported formats are %s.`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)
-	flagSet.StringVarP(
-		&f.Output,
+	flagSet.StringVar(
+		&f.To,
 		outputFlagName,
-		outputFlagShortName,
 		"-",
 		fmt.Sprintf(
-			`The location to write the converted result to. Must be one of format %s.`,
+			`The output location of the conversion. Supported formats are %s.`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)
@@ -123,14 +152,10 @@ func run(
 	if err != nil {
 		return err
 	}
-	source, typeName, err := bufcli.ParseInputAndType(ctx, input, flags.Type)
-	if err != nil {
-		return err
-	}
 	image, err := bufcli.NewImageForSource(
 		ctx,
 		container,
-		source,
+		input,
 		flags.ErrorFormat,
 		false, // disableSymlinks
 		"",    // configOverride
@@ -142,7 +167,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	payloadMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Payload, bufconvert.MessageEncodingBin)
+	fromMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.From, bufconvert.MessageEncodingBin)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
@@ -152,17 +177,17 @@ func run(
 		ctx,
 		container,
 		image,
-		typeName,
-		payloadMessageRef,
+		flags.Type,
+		fromMessageRef,
 	)
 	if err != nil {
 		return err
 	}
-	defaultOutputEncoding, err := inverseEncoding(payloadMessageRef.MessageEncoding())
+	defaultToEncoding, err := inverseEncoding(fromMessageRef.MessageEncoding())
 	if err != nil {
 		return err
 	}
-	outputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Output, defaultOutputEncoding)
+	outputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.To, defaultToEncoding)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}

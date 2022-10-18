@@ -149,6 +149,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		return &RegistryConfig{
 			NPM:     npmRegistryConfig,
 			Options: options,
+			Hidden:  externalRegistryConfig.Hidden,
 		}, nil
 	}
 	// At this point, the Go runtime is guaranteed to be specified. Note
@@ -160,6 +161,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 	return &RegistryConfig{
 		Go:      goRegistryConfig,
 		Options: options,
+		Hidden:  externalRegistryConfig.Hidden,
 	}, nil
 }
 
