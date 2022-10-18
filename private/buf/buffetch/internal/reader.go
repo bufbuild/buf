@@ -364,16 +364,7 @@ func (r *reader) getProtoFileBucket(
 		return nil, NewReadLocalDisabledError()
 	}
 	if datawkt.Exists(protoFileRef.Path()) {
-		bucket := storage.NopReadBucketCloser(datawkt.ReadBucket)
-		terminateFileProvider, err := getTerminateFileProviderForBucket(ctx, bucket, "", nil)
-		if err != nil {
-			return nil, err
-		}
-		bucketCloser, err := newReadBucketCloser(bucket, "", "")
-		if err != nil {
-			return nil, err
-		}
-		return newReadBucketCloserWithTerminateFiles(bucketCloser, terminateFileProvider), nil
+		return wellKnownTypeBucket(ctx)
 	}
 	terminateFileProvider, err := getTerminateFileProviderForOS(normalpath.Dir(protoFileRef.Path()), terminateFileNames)
 	if err != nil {
@@ -402,6 +393,20 @@ func (r *reader) getProtoFileBucket(
 		readWriteBucketCloser,
 		terminateFileProvider,
 	), nil
+}
+
+// wellKnownTypeBucket will allow reading of google/protobuf well known types proto files.
+func wellKnownTypeBucket(ctx context.Context) (ReadBucketCloserWithTerminateFileProvider, error) {
+	bucket := storage.NopReadBucketCloser(datawkt.ReadBucket)
+	terminateFileProvider, err := getTerminateFileProviderForBucket(ctx, bucket, "", nil)
+	if err != nil {
+		return nil, err
+	}
+	bucketCloser, err := newReadBucketCloser(bucket, "", "")
+	if err != nil {
+		return nil, err
+	}
+	return newReadBucketCloserWithTerminateFiles(bucketCloser, terminateFileProvider), nil
 }
 
 // getBucketRootPathAndRelativePath is a helper function that returns the rootPath and relative
