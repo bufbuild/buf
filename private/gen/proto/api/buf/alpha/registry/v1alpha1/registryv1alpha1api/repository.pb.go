@@ -19,7 +19,6 @@ package registryv1alpha1api
 import (
 	context "context"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 // RepositoryService is the Repository service.
@@ -121,8 +120,7 @@ type RepositoryService interface {
 		ownerName string,
 		repositoryName string,
 		visibility v1alpha1.Visibility,
-		fieldMask *fieldmaskpb.FieldMask,
-		description string,
-		url string,
+		description *string,
+		url *string,
 	) (err error)
 }

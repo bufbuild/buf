@@ -22,7 +22,6 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
-	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 type repositoryServiceClient struct {
@@ -355,9 +354,8 @@ func (s *repositoryServiceClient) UpdateRepositorySettingsByName(
 	ownerName string,
 	repositoryName string,
 	visibility v1alpha1.Visibility,
-	fieldMask *fieldmaskpb.FieldMask,
-	description string,
-	url string,
+	description *string,
+	url *string,
 ) (_ error) {
 	_, err := s.client.UpdateRepositorySettingsByName(
 		ctx,
@@ -366,7 +364,6 @@ func (s *repositoryServiceClient) UpdateRepositorySettingsByName(
 				OwnerName:      ownerName,
 				RepositoryName: repositoryName,
 				Visibility:     visibility,
-				FieldMask:      fieldMask,
 				Description:    description,
 				Url:            url,
 			}),
