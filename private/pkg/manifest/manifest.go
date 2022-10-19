@@ -195,7 +195,9 @@ func NewManifestFromBucket(
 		if err != nil {
 			return err
 		}
-		m.AddContent(path, obj)
+		if err := m.AddContent(path, obj); err != nil {
+			return err
+		}
 		return obj.Close()
 	})
 	if err != nil {
@@ -209,20 +211,21 @@ func (m *Manifest) addDigest(path string, digest *Digest) {
 	m.digests[digest.String()] = path
 }
 
-// AddContent adds a manifest entry for path by its content.
-func (m *Manifest) AddContent(path string, content io.Reader) {
+// AddContent adds a manifest entry for path by its content. Returned errors
+// are errors from reading content, except io.EOF is swallowed.
+func (m *Manifest) AddContent(path string, content io.Reader) error {
 	m.hash.Reset()
-	// sha3.ShakeHash never errors, reading or writing. These checks are to
-	// satisfy linting, possibly exploding if some breaking behavior change
-	// happens.
 	if _, err := io.Copy(m.hash, content); err != nil {
-		panic(err)
+		return err
 	}
 	digest := make([]byte, shake256Lenth)
 	if _, err := m.hash.Read(digest); err != nil {
-		panic(err)
+		// sha3.ShakeHash never errors or short reads. Something horribly wrong
+		// happened if your computer ended up here.
+		return err
 	}
 	m.addDigest(path, NewDigestFromBytes(shake256Name, digest))
+	return nil
 }
 
 // GetPath returns the matching path for the given digest. The digest is

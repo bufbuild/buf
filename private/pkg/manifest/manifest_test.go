@@ -83,12 +83,20 @@ func TestEmptyManifest(t *testing.T) {
 }
 
 func TestAddContent(t *testing.T) {
+	// single entry
 	manifest := NewManifest()
-	manifest.AddContent("null", bytes.NewReader(nil))
+	err := manifest.AddContent("null", bytes.NewReader(nil))
+	require.NoError(t, err)
 	expect := fmt.Sprintf("%s  null\n", mkdigest(nil))
 	retContent, err := manifest.MarshalText()
 	require.NoError(t, err)
 	assert.Equal(t, expect, string(retContent))
+
+	// failing content read
+	expectedErr := errors.New("testing error")
+	err = manifest.AddContent("null", iotest.ErrReader(expectedErr))
+	assert.Error(t, err)
+	assert.Equal(t, expectedErr, err)
 }
 
 func testInvalidManifest(
@@ -173,7 +181,8 @@ func TestFromBucket(t *testing.T) {
 
 func TestGetPath(t *testing.T) {
 	m := NewManifest()
-	m.AddContent("null", bytes.NewReader(nil))
+	err := m.AddContent("null", bytes.NewReader(nil))
+	require.NoError(t, err)
 	path, ok := m.GetPath(mkdigest(nil))
 	assert.True(t, ok)
 	assert.Equal(t, "null", path)
@@ -184,7 +193,8 @@ func TestGetPath(t *testing.T) {
 
 func TestGetDigest(t *testing.T) {
 	m := NewManifest()
-	m.AddContent("null", bytes.NewReader(nil))
+	err := m.AddContent("null", bytes.NewReader(nil))
+	require.NoError(t, err)
 	digest, ok := m.GetDigest("null")
 	assert.True(t, ok)
 	assert.Equal(t, mkdigest(nil), digest)
