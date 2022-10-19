@@ -212,10 +212,10 @@ func NewManifestFromBucket(
 
 func (m *Manifest) addDigest(path string, digest *Digest) error {
 	if digest.Type() != shake256Name {
-		return errors.New("unsupported hash")
+		return fmt.Errorf("unsupported hash: %s", digest.Type())
 	}
-	if len(digest.Bytes()) != shake256Length {
-		return errors.New("short digest")
+	if n := len(digest.Bytes()); n != shake256Length {
+		return fmt.Errorf("short digest: %d of %d bytes", n, shake256Length)
 	}
 	m.paths[path] = digest
 	m.digests[digest.String()] = path
