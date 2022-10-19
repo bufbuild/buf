@@ -2043,6 +2043,36 @@ func TestConvert(t *testing.T) {
 			"-#format=bin",
 		)
 	})
+
+	t.Run("wkt-incorrect-input", func(t *testing.T) {
+		testRunStdout(t,
+			nil,
+			1,
+			"",
+			"beta",
+			"convert",
+			"filedoestexist",
+			"--type=google.protobuf.Duration",
+			"--from=testdata/convert/bin_json/duration.json",
+			"--to",
+			"-#format=bin",
+		)
+	})
+
+	t.Run("wkt-google-file-local", func(t *testing.T) {
+		testRunStdout(t,
+			nil,
+			1,
+			"",
+			"beta",
+			"convert",
+			"google/protobuf/timestamp.proto",
+			"--type=google.protobuf.Duration",
+			"--from=testdata/convert/bin_json/duration.json",
+			"--to",
+			"-#format=bin",
+		)
+	})
 }
 
 func TestFormat(t *testing.T) {
