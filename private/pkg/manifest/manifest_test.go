@@ -134,7 +134,7 @@ func TestInvalidManifests(t *testing.T) {
 	)
 	testInvalidManifest(
 		t,
-		"invalid hash",
+		"malformed digest string",
 		"bar  foo\n",
 	)
 	testInvalidManifest(

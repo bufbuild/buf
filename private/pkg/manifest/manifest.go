@@ -35,7 +35,6 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/multierr"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -95,8 +94,9 @@ func (d *Digest) Hex() string {
 
 // ManifestError occurs when a manifest is malformed.
 type ManifestError struct {
-	lineno int
-	msg    string
+	lineno  int
+	msg     string
+	wrapped error
 }
 
 var _ error = (*ManifestError)(nil)
@@ -107,9 +107,20 @@ func newManifestError(lineno int, msg string) *ManifestError {
 		msg:    msg,
 	}
 }
+func newManifestErrorFromError(lineno int, err error) *ManifestError {
+	return &ManifestError{
+		lineno:  lineno,
+		msg:     err.Error(),
+		wrapped: err,
+	}
+}
 
 func (e *ManifestError) Error() string {
 	return fmt.Sprintf("invalid manifest: %d: %s", e.lineno, e.msg)
+}
+
+func (e *ManifestError) Unwrap() error {
+	return e.wrapped
 }
 
 // Manifest represents a list of paths and their digests.
@@ -159,10 +170,7 @@ func NewManifestFromReader(manifest io.Reader) (*Manifest, error) {
 		}
 		digest, err := NewDigestFromString(hash)
 		if err != nil {
-			return nil, multierr.Append(
-				newManifestError(lineno, "invalid hash"),
-				err,
-			)
+			return nil, newManifestErrorFromError(lineno, err)
 		}
 		if digest.Type() != shake256Name {
 			return nil, newManifestError(lineno, "unknown hash")
