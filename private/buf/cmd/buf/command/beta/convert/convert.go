@@ -16,8 +16,9 @@ package convert
 
 import (
 	"context"
+	"errors"
 	"fmt"
-
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -154,9 +155,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	if wkpath, ok := datawkt.MessageFilePath(flags.Type); container.NumArgs() == 0 && ok {
-		input = wkpath
-	}
 	image, err := bufcli.NewImageForSource(
 		ctx,
 		container,
@@ -169,8 +167,29 @@ func run(
 		false, // externalDirOrFilePathsAllowNotExist
 		false, // excludeSourceCodeInfo
 	)
+
 	if err != nil {
 		return err
+	}
+	_, err = bufimageutil.ImageFilteredByTypes(image, flags.Type)
+	if err != nil && errors.Is(err, bufimageutil.ErrImageFilterTypeNotFound) {
+		if wkpath, ok := datawkt.MessageFilePath(flags.Type); ok {
+			image, err = bufcli.NewImageForSource(
+				ctx,
+				container,
+				wkpath,
+				flags.ErrorFormat,
+				false, // disableSymlinks
+				"",    // configOverride
+				nil,   // externalDirOrFilePaths
+				nil,   // externalExcludeDirOrFilePaths
+				false, // externalDirOrFilePathsAllowNotExist
+				false, // excludeSourceCodeInfo
+			)
+		}
+		if err != nil {
+			return err
+		}
 	}
 	fromMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.From, bufconvert.MessageEncodingBin)
 	if err != nil {
