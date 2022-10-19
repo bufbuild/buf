@@ -47,3 +47,43 @@ func (s *adminServiceClient) ForceDeleteUser(
 	}
 	return response.Msg.User, response.Msg.Organizations, response.Msg.Repositories, response.Msg.Plugins, response.Msg.Templates, nil
 }
+
+// Update a user's verification status
+func (s *adminServiceClient) UpdateUserVerificationStatus(
+	ctx context.Context,
+	userId string,
+	verificationStatus v1alpha1.VerificationStatus,
+) (_ error) {
+	_, err := s.client.UpdateUserVerificationStatus(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.UpdateUserVerificationStatusRequest{
+				UserId:             userId,
+				VerificationStatus: verificationStatus,
+			}),
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Update a organization's verification
+func (s *adminServiceClient) UpdateOrganizationVerificationStatus(
+	ctx context.Context,
+	organizationId string,
+	verificationStatus v1alpha1.VerificationStatus,
+) (_ error) {
+	_, err := s.client.UpdateOrganizationVerificationStatus(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.UpdateOrganizationVerificationStatusRequest{
+				OrganizationId:     organizationId,
+				VerificationStatus: verificationStatus,
+			}),
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
