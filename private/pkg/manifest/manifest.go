@@ -239,18 +239,18 @@ func (m *Manifest) AddContent(path string, content io.Reader) error {
 	return m.addDigest(path, NewDigestFromBytes(shake256Name, digest))
 }
 
-// GetPaths returns one or more matching path for a given digest. The digest
+// Paths returns one or more matching path for a given digest. The digest
 // is expected to be a lower-case hex encoded value. paths is nil and ok is
 // false if no paths are found.
-func (m *Manifest) GetPaths(digest *Digest) (paths []string, ok bool) {
+func (m *Manifest) Paths(digest *Digest) (paths []string, ok bool) {
 	paths, ok = m.digestToPaths[digest.String()]
 	return paths, ok
 }
 
-// GetDigest returns the matching digest for the given path. The path must be
+// Digest returns the matching digest for the given path. The path must be
 // an exact match. The returned digest is a lower-case hex encoded value.
 // digest is the empty string and ok is false if no digest is found.
-func (m *Manifest) GetDigest(path string) (digest *Digest, ok bool) {
+func (m *Manifest) Digest(path string) (digest *Digest, ok bool) {
 	digest, ok = m.pathToDigest[path]
 	return digest, ok
 }
