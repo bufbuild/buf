@@ -2021,8 +2021,8 @@ func TestConvert(t *testing.T) {
 			"testdata/convert/bin_json/payload.bin",
 			"beta",
 			"convert",
-			"--type=buf.Foo",
 			"-#format=json",
+			"--type=buf.Foo",
 			"--from=testdata/convert/bin_json/payload.json",
 			"--to",
 			"-#format=bin",
@@ -2073,6 +2073,62 @@ func TestConvert(t *testing.T) {
 			"-#format=bin",
 		)
 	})
+
+}
+func TestConvertDir(t *testing.T) {
+	require.NoError(t, os.Chdir("testdata/convert/bin_json"))
+	defer func() { os.Chdir("../../..") }()
+	t.Run("default-dir", func(t *testing.T) {
+
+		testRunStdout(t,
+			nil,
+			0,
+			`{"one":"55"}`,
+			"beta",
+			"convert",
+			"--type",
+			"buf.Foo",
+			"--from",
+			"payload.bin",
+		)
+	})
+
+	t.Run("default-dir-stdin-from", func(t *testing.T) {
+		require.NoError(t, os.Chdir("testdata/convert/bin_json"))
+		defer func() { os.Chdir("../../..") }()
+		file, err := os.Open("payload.bin")
+		require.NoError(t, err)
+		testRunStdout(t,
+			file,
+			0,
+			`{"one":"55"}`,
+			"beta",
+			"convert",
+			"--type",
+			"buf.Foo",
+			"--from",
+			"-#format=bin",
+		)
+	})
+
+	t.Run("stdin-image", func(t *testing.T) {
+		require.NoError(t, os.Chdir("testdata/convert/bin_json"))
+		defer func() { os.Chdir("../../..") }()
+		file, err := os.Open("image.bin")
+		require.NoError(t, err)
+		testRunStdout(t,
+			file,
+			0,
+			`{"one":"55"}`,
+			"beta",
+			"convert",
+			"--type",
+			"buf.Foo",
+			"--from",
+			"payload.bin",
+		)
+	})
+
 }
 
 func TestFormat(t *testing.T) {
