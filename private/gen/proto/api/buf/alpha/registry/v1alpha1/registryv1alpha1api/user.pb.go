@@ -58,4 +58,11 @@ type UserService interface {
 	) (err error)
 	// CountUsers returns the number of users in the server by the user state provided.
 	CountUsers(ctx context.Context, userStateFilter v1alpha1.UserState) (totalCount uint32, err error)
+	// UpdateUserSettings update the user settings including description.
+	UpdateUserSettings(
+		ctx context.Context,
+		userId string,
+		description *string,
+		url *string,
+	) (err error)
 }

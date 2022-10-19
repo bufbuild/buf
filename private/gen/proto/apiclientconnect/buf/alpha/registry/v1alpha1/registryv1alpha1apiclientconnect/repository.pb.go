@@ -354,6 +354,8 @@ func (s *repositoryServiceClient) UpdateRepositorySettingsByName(
 	ownerName string,
 	repositoryName string,
 	visibility v1alpha1.Visibility,
+	description *string,
+	url *string,
 ) (_ error) {
 	_, err := s.client.UpdateRepositorySettingsByName(
 		ctx,
@@ -362,6 +364,8 @@ func (s *repositoryServiceClient) UpdateRepositorySettingsByName(
 				OwnerName:      ownerName,
 				RepositoryName: repositoryName,
 				Visibility:     visibility,
+				Description:    description,
+				Url:            url,
 			}),
 	)
 	if err != nil {
