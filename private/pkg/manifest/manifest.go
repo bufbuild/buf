@@ -41,8 +41,8 @@ import (
 var errPartial error = errors.New("partial record")
 
 const (
-	shake256Name  = "shake256"
-	shake256Lenth = 64
+	shake256Name   = "shake256"
+	shake256Length = 64
 )
 
 type Digest struct {
@@ -214,7 +214,7 @@ func (m *Manifest) addDigest(path string, digest *Digest) error {
 	if digest.Type() != shake256Name {
 		return errors.New("unsupported hash")
 	}
-	if len(digest.Bytes()) != shake256Lenth {
+	if len(digest.Bytes()) != shake256Length {
 		return errors.New("short digest")
 	}
 	m.paths[path] = digest
@@ -229,7 +229,7 @@ func (m *Manifest) AddContent(path string, content io.Reader) error {
 	if _, err := io.Copy(m.hash, content); err != nil {
 		return err
 	}
-	digest := make([]byte, shake256Lenth)
+	digest := make([]byte, shake256Length)
 	if _, err := m.hash.Read(digest); err != nil {
 		// sha3.ShakeHash never errors or short reads. Something horribly wrong
 		// happened if your computer ended up here.
