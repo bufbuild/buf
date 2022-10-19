@@ -34,6 +34,9 @@
   punctuation).
 - Formatter uses a compact, single-line representation for array and message literals
   in option values that are sufficiently simple (single scalar element or field).
+- Include `LICENSE` file in the module on `buf push`.
+- `buf beta convert` flags have changed from `--input` to `--from` and `--output`/`-o` to `--to`
+- fully qualified type names now must be parsed to the `input` argument and `--type` flag separately
 
 ## [v1.8.0] - 2022-09-14
 
