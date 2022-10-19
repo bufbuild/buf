@@ -107,6 +107,7 @@ func testInvalidManifest(
 	desc string,
 	line string,
 ) {
+	t.Helper()
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
 		_, err := NewManifestFromReader(strings.NewReader(line))
