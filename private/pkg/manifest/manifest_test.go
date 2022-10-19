@@ -64,7 +64,13 @@ func TestRoundTripManifest(t *testing.T) {
 	null := mkdigest([]byte{})
 	var manifestBuilder bytes.Buffer
 	for i := 0; i < 2; i++ {
-		fmt.Fprintf(&manifestBuilder, "%s  null%d\n", null, i)
+		fmt.Fprintf(
+			&manifestBuilder,
+			"%s:%s  null%d\n",
+			null.Type(),
+			null.Hex(),
+			i,
+		)
 	}
 	manifestContent := manifestBuilder.Bytes()
 	var m Manifest
