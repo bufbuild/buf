@@ -24,6 +24,8 @@ import (
 	"path/filepath"
 	"sort"
 
+	"golang.org/x/exp/constraints"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -247,12 +249,11 @@ var (
 
 	messageNameToFilePath = map[string]string{
 `)
-	for _, fullNameToMessagePairKey := range sortKeys(fullNameToMessage) {
-		fullNameToMessagePairVal := fullNameToMessage[fullNameToMessagePairKey]
+	for _, fullNameToMessagePair := range sortedPairs(fullNameToMessage) {
 		_, _ = buffer.WriteString(`"`)
-		_, _ = buffer.WriteString(fullNameToMessagePairKey)
+		_, _ = buffer.WriteString(fullNameToMessagePair.key)
 		_, _ = buffer.WriteString(`": "`)
-		_, _ = buffer.WriteString(fullNameToMessagePairVal.File().Path())
+		_, _ = buffer.WriteString(fullNameToMessagePair.val.File().Path())
 		_, _ = buffer.WriteString(`",`)
 		_, _ = buffer.WriteString("\n")
 	}
@@ -260,12 +261,11 @@ var (
 
 	enumNameToFilePath = map[string]string{
 `)
-	for _, fullNameToEnumPairKey := range sortKeys(fullNameToEnum) {
-		fullNameToEnumPairVal := fullNameToEnum[fullNameToEnumPairKey]
+	for _, fullNameToEnumPair := range sortedPairs(fullNameToEnum) {
 		_, _ = buffer.WriteString(`"`)
-		_, _ = buffer.WriteString(fullNameToEnumPairKey)
+		_, _ = buffer.WriteString(fullNameToEnumPair.key)
 		_, _ = buffer.WriteString(`": "`)
-		_, _ = buffer.WriteString(fullNameToEnumPairVal.File().Path())
+		_, _ = buffer.WriteString(fullNameToEnumPair.val.File().Path())
 		_, _ = buffer.WriteString(`",`)
 		_, _ = buffer.WriteString("\n")
 	}
@@ -304,13 +304,18 @@ func EnumFilePath(enumName string) (string, bool) {
 	return format.Source(buffer.Bytes())
 }
 
-func sortKeys[M any](m map[string]M) []string {
-	ret := make([]string, 0, len(m))
+type keyValPair[K any, V any] struct {
+	key K
+	val V
+}
+
+func sortedPairs[K constraints.Ordered, V any](m map[K]V) []keyValPair[K, V] {
+	ret := make([]keyValPair[K, V], 0, len(m))
 	for key := range m {
-		ret = append(ret, key)
+		ret = append(ret, keyValPair[K, V]{key: key, val: m[key]})
 	}
 	sort.Slice(ret, func(i, j int) bool {
-		return ret[i] < ret[j]
+		return ret[i].key < ret[j].key
 	})
 	return ret
 }
