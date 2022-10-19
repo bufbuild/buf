@@ -348,7 +348,7 @@ message Field {
 // FieldOptions provides information for the documentation of options for a field.
 message FieldOptions {
   bool deprecated = 1;
-  bool packed = 2;
+  optional bool packed = 2;
   // ctype holds a value of the enumeration `google.protobuf.FieldOptions.CType.
   int32 ctype = 3;
   // jstype holds a value of the enumeration `google.protobuf.FieldOptions.JSType.

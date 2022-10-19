@@ -29,4 +29,16 @@ type AdminService interface {
 		ctx context.Context,
 		userId string,
 	) (user *v1alpha1.User, organizations []*v1alpha1.Organization, repositories []*v1alpha1.Repository, plugins []*v1alpha1.Plugin, templates []*v1alpha1.Template, err error)
+	// Update a user's verification status
+	UpdateUserVerificationStatus(
+		ctx context.Context,
+		userId string,
+		verificationStatus v1alpha1.VerificationStatus,
+	) (err error)
+	// Update a organization's verification
+	UpdateOrganizationVerificationStatus(
+		ctx context.Context,
+		organizationId string,
+		verificationStatus v1alpha1.VerificationStatus,
+	) (err error)
 }

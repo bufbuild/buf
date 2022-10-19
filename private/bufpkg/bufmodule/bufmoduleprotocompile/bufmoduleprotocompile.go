@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmoduleprotoparse
+package bufmoduleprotocompile
 
 import (
 	"context"
@@ -22,14 +22,14 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/jhump/protoreflect/desc/protoparse"
+	"github.com/bufbuild/protocompile/reporter"
 )
 
-// ParserAccessorHandler handles ParserAccessor operations for protoparse..
+// ParserAccessorHandler handles source file access operations for protocompile.
 type ParserAccessorHandler interface {
 	// Open opens the given path, and tracks the external path and import status.
 	//
-	// This function can be used as a ParserAccessor for protoparse.
+	// This function can be used as the accessor function for a protocompile.SourceResolver.
 	Open(path string) (io.ReadCloser, error)
 	// ExternalPath returns the external path for the input path.
 	//
@@ -37,9 +37,9 @@ type ParserAccessorHandler interface {
 	ExternalPath(path string) string
 	// IsImport returns true if the path is an import.
 	IsImport(path string) bool
-	// Returns nil if not available.
+	// ModuleIdentity returns nil if not available.
 	ModuleIdentity(path string) bufmoduleref.ModuleIdentity
-	// Returns empty if not available.
+	// Commit returns empty if not available.
 	Commit(path string) string
 }
 
@@ -57,7 +57,7 @@ func NewParserAccessorHandler(ctx context.Context, module bufmodule.Module) Pars
 func GetFileAnnotations(
 	ctx context.Context,
 	parserAccessorHandler ParserAccessorHandler,
-	errorsWithPos []protoparse.ErrorWithPos,
+	errorsWithPos []reporter.ErrorWithPos,
 ) ([]bufanalysis.FileAnnotation, error) {
 	fileAnnotations := make([]bufanalysis.FileAnnotation, 0, len(errorsWithPos))
 	for _, errorWithPos := range errorsWithPos {
@@ -78,7 +78,7 @@ func GetFileAnnotations(
 func GetFileAnnotation(
 	ctx context.Context,
 	parserAccessorHandler ParserAccessorHandler,
-	errorWithPos protoparse.ErrorWithPos,
+	errorWithPos reporter.ErrorWithPos,
 ) (bufanalysis.FileAnnotation, error) {
 	var fileInfo bufmoduleref.FileInfo
 	var startLine int
@@ -92,12 +92,7 @@ func GetFileAnnotation(
 	if errorWithPos.Unwrap() != nil {
 		message = errorWithPos.Unwrap().Error()
 	}
-	sourcePos := protoparse.SourcePos{}
-	if errorWithSourcePos, ok := errorWithPos.(protoparse.ErrorWithSourcePos); ok {
-		if pos := errorWithSourcePos.Pos; pos != nil {
-			sourcePos = *pos
-		}
-	}
+	sourcePos := errorWithPos.GetPosition()
 	if sourcePos.Filename != "" {
 		path, err := normalpath.NormalizeAndValidate(sourcePos.Filename)
 		if err != nil {
