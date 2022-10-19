@@ -59,6 +59,7 @@ func mkdigest(content []byte) *Digest {
 }
 
 func TestRoundTripManifest(t *testing.T) {
+	t.Parallel()
 	// read a manifest using the unmarshaling method
 	null := mkdigest([]byte{})
 	var manifestBuilder bytes.Buffer
@@ -77,12 +78,14 @@ func TestRoundTripManifest(t *testing.T) {
 }
 
 func TestEmptyManifest(t *testing.T) {
+	t.Parallel()
 	content, err := NewManifest().MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(content))
 }
 
 func TestAddContent(t *testing.T) {
+	t.Parallel()
 	// single entry
 	manifest := NewManifest()
 	err := manifest.AddContent("null", bytes.NewReader(nil))
@@ -150,6 +153,7 @@ func TestInvalidManifests(t *testing.T) {
 }
 
 func TestBrokenRead(t *testing.T) {
+	t.Parallel()
 	expected := errors.New("testing error")
 	_, err := NewManifestFromReader(iotest.ErrReader(expected))
 	assert.Error(t, err)
@@ -157,12 +161,14 @@ func TestBrokenRead(t *testing.T) {
 }
 
 func TestUnmarshalBrokenManifest(t *testing.T) {
+	t.Parallel()
 	var m Manifest
 	err := m.UnmarshalText([]byte("foo"))
 	assert.Error(t, err)
 }
 
 func TestFromBucket(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	bucket, err := storagemem.NewReadBucket(
 		map[string][]byte{
@@ -180,6 +186,7 @@ func TestFromBucket(t *testing.T) {
 }
 
 func TestGetPath(t *testing.T) {
+	t.Parallel()
 	m := NewManifest()
 	err := m.AddContent("null", bytes.NewReader(nil))
 	require.NoError(t, err)
@@ -192,6 +199,7 @@ func TestGetPath(t *testing.T) {
 }
 
 func TestGetDigest(t *testing.T) {
+	t.Parallel()
 	m := NewManifest()
 	err := m.AddContent("null", bytes.NewReader(nil))
 	require.NoError(t, err)
