@@ -158,19 +158,6 @@ func TestConvert(t *testing.T) {
 			"-#format=bin",
 		)
 	})
-
-	t.Run("wkt", func(t *testing.T) {
-		testConvert(
-			t,
-			nil,
-			"testdata/bin_json/duration.json",
-			"--type=google.protobuf.Duration",
-			"--from",
-			"testdata/bin_json/duration.bin",
-			"--to",
-			"-#format=json",
-		)
-	})
 }
 
 func testConvert(t *testing.T, stdin io.Reader, want string, args ...string) {
