@@ -172,13 +172,9 @@ func NewManifestFromReader(manifest io.Reader) (*Manifest, error) {
 		if err != nil {
 			return nil, newManifestErrorFromError(lineno, err)
 		}
-		if digest.Type() != shake256Name {
-			return nil, newManifestError(lineno, "unknown hash")
+		if err := m.addDigest(path, digest); err != nil {
+			return nil, newManifestErrorFromError(lineno, err)
 		}
-		if len(digest.Bytes()) != shake256Lenth {
-			return nil, newManifestError(lineno, "short digest")
-		}
-		m.addDigest(path, digest)
 	}
 	err := scanner.Err()
 	if err == errPartial {
@@ -214,9 +210,16 @@ func NewManifestFromBucket(
 	return m, nil
 }
 
-func (m *Manifest) addDigest(path string, digest *Digest) {
+func (m *Manifest) addDigest(path string, digest *Digest) error {
+	if digest.Type() != shake256Name {
+		return errors.New("unsupported hash")
+	}
+	if len(digest.Bytes()) != shake256Lenth {
+		return errors.New("short digest")
+	}
 	m.paths[path] = digest
 	m.digests[digest.String()] = path
+	return nil
 }
 
 // AddContent adds a manifest entry for path by its content. Returned errors
@@ -232,8 +235,7 @@ func (m *Manifest) AddContent(path string, content io.Reader) error {
 		// happened if your computer ended up here.
 		return err
 	}
-	m.addDigest(path, NewDigestFromBytes(shake256Name, digest))
-	return nil
+	return m.addDigest(path, NewDigestFromBytes(shake256Name, digest))
 }
 
 // GetPath returns the matching path for the given digest. The digest is
