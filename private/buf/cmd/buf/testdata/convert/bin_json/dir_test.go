@@ -76,4 +76,57 @@ func TestConvertDir(t *testing.T) {
 			"duration.bin",
 		)
 	})
+
+	t.Run("wkt", func(t *testing.T) {
+		appcmdtesting.RunCommandExitCodeStdoutFile(
+			t,
+			cmd,
+			0,
+			"duration.bin",
+			nil,
+			nil,
+			"beta",
+			"convert",
+			"--type=google.protobuf.Duration",
+			"--from=duration.json",
+			"--to",
+			"-#format=bin",
+		)
+	})
+
+	t.Run("wkt-incorrect-input", func(t *testing.T) {
+		appcmdtesting.RunCommandExitCodeStdout(
+			t,
+			cmd,
+			1,
+			"",
+			nil,
+			nil,
+			"beta",
+			"convert",
+			"filedoestexist",
+			"--type=google.protobuf.Duration",
+			"--from=duration.json",
+			"--to",
+			"-#format=bin",
+		)
+	})
+
+	t.Run("wkt-google-file-local", func(t *testing.T) {
+		appcmdtesting.RunCommandExitCodeStdout(
+			t,
+			cmd,
+			1,
+			"",
+			nil,
+			nil,
+			"beta",
+			"convert",
+			"google/protobuf/timestamp.proto",
+			"--type=google.protobuf.Duration",
+			"--from=duration.json",
+			"--to",
+			"-#format=bin",
+		)
+	})
 }

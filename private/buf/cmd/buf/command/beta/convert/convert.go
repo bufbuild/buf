@@ -167,12 +167,12 @@ func run(
 		false, // externalDirOrFilePathsAllowNotExist
 		false, // excludeSourceCodeInfo
 	)
-
 	if err != nil {
 		return err
 	}
-	_, err = bufimageutil.ImageFilteredByTypes(image, flags.Type)
-	if err != nil && errors.Is(err, bufimageutil.ErrImageFilterTypeNotFound) {
+	// If the input is invalid builtin wkts will never be resolved.
+	_, filterErr := bufimageutil.ImageFilteredByTypes(image, flags.Type)
+	if container.NumArgs() > 0 && filterErr != nil && errors.Is(filterErr, bufimageutil.ErrImageFilterTypeNotFound) {
 		if wkpath, ok := datawkt.MessageFilePath(flags.Type); ok {
 			image, err = bufcli.NewImageForSource(
 				ctx,

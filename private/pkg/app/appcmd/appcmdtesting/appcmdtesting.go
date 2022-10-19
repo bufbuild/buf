@@ -55,6 +55,23 @@ func RunCommandExitCodeStdout(
 	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
 }
 
+// RunCommandExitCodeStdoutFile runs the command and compares the exit code and stdout output.
+func RunCommandExitCodeStdoutFile(
+	t *testing.T,
+	newCommand func(use string) *appcmd.Command,
+	expectedExitCode int,
+	expectedStdout string,
+	newEnv func(use string) map[string]string,
+	stdin io.Reader,
+	args ...string,
+) {
+	file, err := os.Open(expectedStdout)
+	require.NoError(t, err)
+	expectedstdoutConts, err := io.ReadAll(file)
+	require.NoError(t, err)
+	RunCommandExitCodeStdout(t, newCommand, expectedExitCode, string(expectedstdoutConts), newEnv, stdin, args...)
+}
+
 func RunCommandExitCodeStdoutStdinFile(
 	t *testing.T,
 	newCommand func(use string) *appcmd.Command,
