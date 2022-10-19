@@ -123,11 +123,11 @@ func (e *ManifestError) Unwrap() error {
 	return e.wrapped
 }
 
-// Manifest represents a list of paths and their digests.
+// Manifest represents a list of pathToDigest and their digests.
 type Manifest struct {
-	paths   map[string]*Digest
-	digests map[string]string
-	hash    sha3.ShakeHash
+	pathToDigest map[string]*Digest
+	digestToPath map[string]string // TODO: digest -> []string
+	hash         sha3.ShakeHash
 }
 
 var _ encoding.TextMarshaler = (*Manifest)(nil)
@@ -136,9 +136,9 @@ var _ encoding.TextUnmarshaler = (*Manifest)(nil)
 // NewManifest creates an empty manifest.
 func NewManifest() *Manifest {
 	return &Manifest{
-		paths:   make(map[string]*Digest),
-		digests: make(map[string]string),
-		hash:    sha3.NewShake256(),
+		pathToDigest: make(map[string]*Digest),
+		digestToPath: make(map[string]string),
+		hash:         sha3.NewShake256(),
 	}
 }
 
@@ -217,8 +217,8 @@ func (m *Manifest) addDigest(path string, digest *Digest) error {
 	if n := len(digest.Bytes()); n != shake256Length {
 		return fmt.Errorf("short digest: %d of %d bytes", n, shake256Length)
 	}
-	m.paths[path] = digest
-	m.digests[digest.String()] = path
+	m.pathToDigest[path] = digest
+	m.digestToPath[digest.String()] = path
 	return nil
 }
 
@@ -242,7 +242,7 @@ func (m *Manifest) AddContent(path string, content io.Reader) error {
 // expected to be a lower-case hex encoded value. path is the empty string and
 // ok is false if no path is found.
 func (m *Manifest) GetPath(digest *Digest) (path string, ok bool) {
-	path, ok = m.digests[digest.String()]
+	path, ok = m.digestToPath[digest.String()]
 	return path, ok
 }
 
@@ -250,22 +250,22 @@ func (m *Manifest) GetPath(digest *Digest) (path string, ok bool) {
 // an exact match. The returned digest is a lower-case hex encoded value.
 // digest is the empty string and ok is false if no digest is found.
 func (m *Manifest) GetDigest(path string) (digest *Digest, ok bool) {
-	digest, ok = m.paths[path]
+	digest, ok = m.pathToDigest[path]
 	return digest, ok
 }
 
 // MarshalText encodes the manifest into its canonical form.
 func (m *Manifest) MarshalText() ([]byte, error) {
-	// order by paths
-	paths := make([]string, 0, len(m.paths))
-	for path := range m.paths {
+	// order by path
+	paths := make([]string, 0, len(m.pathToDigest))
+	for path := range m.pathToDigest {
 		paths = append(paths, path)
 	}
 	sort.Strings(paths)
 
 	var coded bytes.Buffer
 	for _, path := range paths {
-		fmt.Fprintf(&coded, "%s  %s\n", m.paths[path], path)
+		fmt.Fprintf(&coded, "%s  %s\n", m.pathToDigest[path], path)
 	}
 	return coded.Bytes(), nil
 }
@@ -279,8 +279,8 @@ func (m *Manifest) UnmarshalText(text []byte) error {
 	if err != nil {
 		return err
 	}
-	m.paths = newm.paths
-	m.digests = newm.digests
+	m.pathToDigest = newm.pathToDigest
+	m.digestToPath = newm.digestToPath
 	m.hash = newm.hash
 	return nil
 }
