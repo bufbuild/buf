@@ -125,9 +125,9 @@ func (e *ManifestError) Unwrap() error {
 
 // Manifest represents a list of pathToDigest and their digests.
 type Manifest struct {
-	pathToDigest map[string]*Digest
-	digestToPath map[string]string // TODO: digest -> []string
-	hash         sha3.ShakeHash
+	pathToDigest  map[string]*Digest
+	digestToPaths map[string][]string
+	hash          sha3.ShakeHash
 }
 
 var _ encoding.TextMarshaler = (*Manifest)(nil)
@@ -136,9 +136,9 @@ var _ encoding.TextUnmarshaler = (*Manifest)(nil)
 // NewManifest creates an empty manifest.
 func NewManifest() *Manifest {
 	return &Manifest{
-		pathToDigest: make(map[string]*Digest),
-		digestToPath: make(map[string]string),
-		hash:         sha3.NewShake256(),
+		pathToDigest:  make(map[string]*Digest),
+		digestToPaths: make(map[string][]string),
+		hash:          sha3.NewShake256(),
 	}
 }
 
@@ -218,7 +218,8 @@ func (m *Manifest) addDigest(path string, digest *Digest) error {
 		return fmt.Errorf("short digest: %d of %d bytes", n, shake256Length)
 	}
 	m.pathToDigest[path] = digest
-	m.digestToPath[digest.String()] = path
+	key := digest.String()
+	m.digestToPaths[key] = append(m.digestToPaths[key], path)
 	return nil
 }
 
@@ -238,12 +239,12 @@ func (m *Manifest) AddContent(path string, content io.Reader) error {
 	return m.addDigest(path, NewDigestFromBytes(shake256Name, digest))
 }
 
-// GetPath returns the matching path for the given digest. The digest is
-// expected to be a lower-case hex encoded value. path is the empty string and
-// ok is false if no path is found.
-func (m *Manifest) GetPath(digest *Digest) (path string, ok bool) {
-	path, ok = m.digestToPath[digest.String()]
-	return path, ok
+// GetPaths returns one or more matching path for a given digest. The digest
+// is expected to be a lower-case hex encoded value. paths is nil and ok is
+// false if no paths are found.
+func (m *Manifest) GetPaths(digest *Digest) (paths []string, ok bool) {
+	paths, ok = m.digestToPaths[digest.String()]
+	return paths, ok
 }
 
 // GetDigest returns the matching digest for the given path. The path must be
@@ -280,7 +281,7 @@ func (m *Manifest) UnmarshalText(text []byte) error {
 		return err
 	}
 	m.pathToDigest = newm.pathToDigest
-	m.digestToPath = newm.digestToPath
+	m.digestToPaths = newm.digestToPaths
 	m.hash = newm.hash
 	return nil
 }

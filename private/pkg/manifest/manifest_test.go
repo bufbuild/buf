@@ -39,8 +39,8 @@ func Example() {
 	manifest, _ := NewManifestFromBucket(ctx, bucket)
 	digest, _ := manifest.GetDigest("foo")
 	fmt.Printf("digest[:16]: %s\n", digest.Hex()[:16])
-	path, _ := manifest.GetPath(digest)
-	fmt.Printf("path at digest: %s\n", path)
+	path, _ := manifest.GetPaths(digest)
+	fmt.Printf("path at digest: %s\n", path[0])
 	// Output:
 	// digest[:16]: a15163728ed24e1c
 	// path at digest: foo
@@ -186,17 +186,19 @@ func TestFromBucket(t *testing.T) {
 	assert.Equal(t, expected, string(retContent))
 }
 
-func TestGetPath(t *testing.T) {
+func TestGetPaths(t *testing.T) {
 	t.Parallel()
 	m := NewManifest()
 	err := m.AddContent("null", bytes.NewReader(nil))
 	require.NoError(t, err)
-	path, ok := m.GetPath(mkdigest(nil))
+	err = m.AddContent("null2", bytes.NewReader(nil))
+	require.NoError(t, err)
+	paths, ok := m.GetPaths(mkdigest(nil))
 	assert.True(t, ok)
-	assert.Equal(t, "null", path)
-	path, ok = m.GetPath(mkdigest([]byte{0}))
+	assert.ElementsMatch(t, []string{"null", "null2"}, paths)
+	paths, ok = m.GetPaths(mkdigest([]byte{0}))
 	assert.False(t, ok)
-	assert.Empty(t, path)
+	assert.Empty(t, paths)
 }
 
 func TestGetDigest(t *testing.T) {
