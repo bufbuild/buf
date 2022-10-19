@@ -35,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/testingextended"
+	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -259,8 +260,8 @@ func TestSpaceBetweenNumberAndID(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"spacebetweennumberandid",
-		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:3:invalid syntax in integer value: 10to"),
-		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:3:syntax error: unexpected error, expecting int literal"),
+		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:14:invalid syntax in integer value: 10to"),
+		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:14:syntax error: unexpected error, expecting int literal"),
 	)
 }
 
@@ -279,9 +280,9 @@ func TestDuplicateSyntheticOneofs(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"duplicatesyntheticoneofs",
-		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a2.proto:5:1:duplicate symbol a.Foo: already defined as message in "a1.proto"`),
-		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a2.proto:6:3:duplicate symbol a.Foo._bar: already defined as oneof in "a1.proto"`),
-		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a2.proto:6:3:duplicate symbol a.Foo.bar: already defined as field in "a1.proto"`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:5:9:symbol "a.Foo" already defined at a2.proto:5:9`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:6:19:symbol "a.Foo._bar" already defined at a2.proto:6:19`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:6:19:symbol "a.Foo.bar" already defined at a2.proto:6:19`),
 	)
 }
 
@@ -383,6 +384,14 @@ func testGetImageImportPaths(image bufimage.Image) []string {
 }
 
 func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
+	t.Helper()
+
+	previousParallelism := thread.Parallelism()
+	thread.SetParallelism(1) // TestCyclicImport is non-deterministic if we don't limit this
+	defer func() {
+		thread.SetParallelism(previousParallelism)
+	}()
+
 	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", filepath.FromSlash(relDirPath)))
 	got := make([]string, len(fileAnnotations))
 	for i, annotation := range fileAnnotations {
@@ -392,6 +401,7 @@ func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
 }
 
 func testImageWithExcludedFilePaths(t *testing.T, image bufimage.Image, excludePaths []string) {
+	t.Helper()
 	for _, imageFile := range image.Files() {
 		if !imageFile.IsImport() {
 			for _, excludePath := range excludePaths {
