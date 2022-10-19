@@ -2325,6 +2325,20 @@ func testRunStdoutProfile(t *testing.T, stdin io.Reader, expectedExitCode int, e
 	)
 }
 
+func testRunStdoutFile(t *testing.T, stdin io.Reader, expectedExitCode int, wantFile string, args ...string) {
+	wantReader, err := os.Open(wantFile)
+	require.NoError(t, err)
+	wantBytes, err := io.ReadAll(wantReader)
+	require.NoError(t, err)
+	testRunStdout(
+		t,
+		stdin,
+		expectedExitCode,
+		string(wantBytes),
+		args...,
+	)
+}
+
 func testRun(
 	t *testing.T,
 	expectedExitCode int,
