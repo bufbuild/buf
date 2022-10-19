@@ -76,6 +76,7 @@ func NewDigestFromString(typedDigest string) (*Digest, error) {
 	return NewDigestFromHex(hashfunc, digestStr)
 }
 
+// String returns the hash in a manifest's string format: "<type>:<hex>"
 func (d *Digest) String() string {
 	return d.Type() + ":" + d.Hex()
 }
