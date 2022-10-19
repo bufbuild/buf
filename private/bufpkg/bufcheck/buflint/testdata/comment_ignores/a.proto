@@ -71,11 +71,6 @@ message messageFoo {
 service serviceFoo {
   // buf:lint:ignore RPC_PASCAL_CASE
   // buf:lint:ignore RPC_REQUEST_STANDARD_NAME
-  rpc methodFoo(
-      // buf:lint:ignore RPC_REQUEST_STANDARD_NAME
-      google.protobuf.Empty
-    ) returns (
-      // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
-      google.protobuf.Empty
-    ) {}
+  // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+  rpc methodFoo(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }

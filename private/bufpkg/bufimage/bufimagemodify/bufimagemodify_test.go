@@ -76,7 +76,7 @@ func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage
 	moduleFileSet := testGetModuleFileSet(t, dirPath)
 	var options []bufimagebuild.BuildOption
 	if !includeSourceInfo {
-		options = append(options, bufimagebuild.WithExcludeSourceCodeInfo())
+		options = []bufimagebuild.BuildOption{bufimagebuild.WithExcludeSourceCodeInfo()}
 	}
 	image, annotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
 		context.Background(),
