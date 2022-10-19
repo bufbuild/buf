@@ -121,10 +121,6 @@ type OptionExtensionDescriptor interface {
 	// OptionExtension returns the value for an options extension field.
 	//
 	// Returns false if the extension is not set.
-	// Panics if the ExtensionType does not extend the message.
-	//
-	// TODO: handle the panic by figuring out if ExtensionType extends the
-	// message before passing to HasExtension or GetExtension.
 	//
 	// See https://pkg.go.dev/google.golang.org/protobuf/proto#HasExtension
 	// See https://pkg.go.dev/google.golang.org/protobuf/proto#GetExtension
