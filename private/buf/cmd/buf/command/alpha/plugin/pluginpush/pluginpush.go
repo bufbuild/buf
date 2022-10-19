@@ -316,6 +316,7 @@ func run(
 		nextRevision,
 		outputLanguages,
 		pluginConfig.SPDXLicenseID,
+		pluginConfig.LicenseURL,
 	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {

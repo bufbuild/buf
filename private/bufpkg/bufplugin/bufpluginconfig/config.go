@@ -114,6 +114,7 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 		Description:     externalConfig.Description,
 		OutputLanguages: externalConfig.OutputLanguages,
 		SPDXLicenseID:   spdxLicenseID,
+		LicenseURL:      externalConfig.LicenseURL,
 	}, nil
 }
 
