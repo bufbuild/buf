@@ -1,4 +1,4 @@
-package bin_json_test
+package bin_json
 
 import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf"
