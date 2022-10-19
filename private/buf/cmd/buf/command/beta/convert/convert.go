@@ -19,8 +19,6 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconvert"
@@ -156,7 +154,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	if wkpath := wktToPath(flags.Type); input == "" && wkpath != "" {
+	if wkpath, ok := datawkt.MessageFilePath(flags.Type); container.NumArgs() == 0 && ok {
 		input = wkpath
 	}
 	image, err := bufcli.NewImageForSource(
@@ -220,20 +218,4 @@ func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEnc
 	default:
 		return 0, fmt.Errorf("unknown message encoding %v", encoding)
 	}
-}
-
-// wktToPath returns the import path of the proto file for a well known type.
-func wktToPath(fulltype string) string {
-	msgType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(fulltype))
-	if err != nil {
-		// not a statically known type
-		return ""
-	}
-	filePath := msgType.Descriptor().ParentFile().Path()
-	if !datawkt.Exists(filePath) {
-		// not a well-known type
-		return ""
-	}
-	// found it!
-	return filePath
 }
