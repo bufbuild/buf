@@ -104,8 +104,7 @@ func TestAddContent(t *testing.T) {
 	// failing content read
 	expectedErr := errors.New("testing error")
 	err = manifest.AddContent("null", iotest.ErrReader(expectedErr))
-	assert.Error(t, err)
-	assert.Equal(t, expectedErr, err)
+	assert.ErrorIs(t, err, expectedErr)
 }
 
 func testInvalidManifest(
@@ -163,8 +162,7 @@ func TestBrokenRead(t *testing.T) {
 	t.Parallel()
 	expected := errors.New("testing error")
 	_, err := NewManifestFromReader(iotest.ErrReader(expected))
-	assert.Error(t, err)
-	assert.Equal(t, expected, err)
+	assert.ErrorIs(t, err, expected)
 }
 
 func TestUnmarshalBrokenManifest(t *testing.T) {
