@@ -41,7 +41,10 @@ import (
 
 var errPartial error = errors.New("partial record")
 
-const shake256Name = "shake256"
+const (
+	shake256Name  = "shake256"
+	shake256Lenth = 64
+)
 
 type Digest struct {
 	dtype  string
@@ -163,7 +166,7 @@ func NewManifestFromReader(manifest io.Reader) (*Manifest, error) {
 		if digest.Type() != shake256Name {
 			return nil, newManifestError(lineno, "unknown hash")
 		}
-		if len(digest.Bytes()) != 64 {
+		if len(digest.Bytes()) != shake256Lenth {
 			return nil, newManifestError(lineno, "short digest")
 		}
 		m.addDigest(path, digest)
@@ -214,7 +217,7 @@ func (m *Manifest) AddContent(path string, content io.Reader) {
 	if _, err := io.Copy(m.hash, content); err != nil {
 		panic(err)
 	}
-	digest := make([]byte, 64)
+	digest := make([]byte, shake256Lenth)
 	if _, err := m.hash.Read(digest); err != nil {
 		panic(err)
 	}
