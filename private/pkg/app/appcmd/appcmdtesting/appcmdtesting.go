@@ -72,6 +72,7 @@ func RunCommandExitCodeStdoutFile(
 	RunCommandExitCodeStdout(t, newCommand, expectedExitCode, string(expectedstdoutConts), newEnv, stdin, args...)
 }
 
+// RunCommandExitCodeStdoutStdinFile runs the command and allows a stdinFile to be opened and piped into the command.
 func RunCommandExitCodeStdoutStdinFile(
 	t *testing.T,
 	newCommand func(use string) *appcmd.Command,
