@@ -1,10 +1,16 @@
 name: Release
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: The version you intend to release
+
 
 env:
   DEV_DIR: "${env.GITHUB_WORKSPACE}/dev"
   BUFBUILD_BUF_DIR: "${DEV_DIR}/buf"
+  VERSION: ${{ github.event.inputs.message }}
 
 jobs:
   prepare:
@@ -26,8 +32,8 @@ jobs:
       - name: Install Buf
         working-directory: ${env.BUFBUILD_BUF_DIR}
         run: make installbuf
-      - name: Set VERSION variable from buf cli
-        run: echo "VERSION=$(buf --version)" >> $GITHUB_ENV
+#      - name: Set VERSION variable from buf cli
+#        run: echo "VERSION=$(buf --version)" >> $GITHUB_ENV
       - name: Update Buf Version
         env:
         - VERSION: ${env.VERSION}
