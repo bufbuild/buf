@@ -185,3 +185,25 @@ func (s *userServiceClient) CountUsers(ctx context.Context, userStateFilter v1al
 	}
 	return response.Msg.TotalCount, nil
 }
+
+// UpdateUserSettings update the user settings including description.
+func (s *userServiceClient) UpdateUserSettings(
+	ctx context.Context,
+	userId string,
+	description *string,
+	url *string,
+) (_ error) {
+	_, err := s.client.UpdateUserSettings(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.UpdateUserSettingsRequest{
+				UserId:      userId,
+				Description: description,
+				Url:         url,
+			}),
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
