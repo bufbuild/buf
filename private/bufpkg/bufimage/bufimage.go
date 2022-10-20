@@ -261,6 +261,7 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest, opt
 	)
 }
 
+// NewImageForProtoOption is an option for use with NewImageForProto.
 type NewImageForProtoOption func(*newImageForProtoOptions)
 
 // WithNoReparse instructs NewImageForProto to skip the reparse step. The reparse
