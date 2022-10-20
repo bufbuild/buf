@@ -122,11 +122,49 @@ func TestConvertDir(t *testing.T) {
 			nil,
 			"beta",
 			"convert",
-			"google/protobuf/timestamp.proto",
+			"google/protobuf/timestamp.proto", // this file doesn't exist locally
 			"--type=google.protobuf.Duration",
 			"--from=duration.json",
 			"--to",
 			"-#format=bin",
+		)
+	})
+
+	t.Run("wkt-local-wkt-exists", func(t *testing.T) {
+		expected := `{"name":"blah"}`
+		stdin := strings.NewReader(expected)
+		appcmdtesting.RunCommandExitCodeStdout(
+			t,
+			cmd,
+			0,
+			expected,
+			nil,
+			stdin,
+			"beta",
+			"convert",
+			"--type=google.protobuf.Method",
+			"--from=-#format=json",
+			"--to",
+			"-#format=json",
+		)
+	})
+
+	t.Run("wkt-local-changed", func(t *testing.T) {
+		expected := `{"notinoriginal":"blah"}`
+		stdin := strings.NewReader(expected)
+		appcmdtesting.RunCommandExitCodeStdout(
+			t,
+			cmd,
+			0,
+			expected,
+			nil,
+			stdin,
+			"beta",
+			"convert",
+			"--type=google.protobuf.Method",
+			"--from=-#format=json",
+			"--to",
+			"-#format=json",
 		)
 	})
 }
