@@ -76,8 +76,7 @@ func TestConvertDir(t *testing.T) {
 			"duration.bin",
 		)
 	})
-
-	t.Run("wkt", func(t *testing.T) {
+	t.Run("wkt-bin", func(t *testing.T) {
 		appcmdtesting.RunCommandExitCodeStdoutFile(
 			t,
 			cmd,
@@ -93,7 +92,6 @@ func TestConvertDir(t *testing.T) {
 			"-#format=bin",
 		)
 	})
-
 	t.Run("wkt-incorrect-input", func(t *testing.T) {
 		appcmdtesting.RunCommandExitCodeStdout(
 			t,
@@ -111,7 +109,6 @@ func TestConvertDir(t *testing.T) {
 			"-#format=bin",
 		)
 	})
-
 	t.Run("wkt-google-file-local", func(t *testing.T) {
 		appcmdtesting.RunCommandExitCodeStdout(
 			t,
@@ -129,7 +126,6 @@ func TestConvertDir(t *testing.T) {
 			"-#format=bin",
 		)
 	})
-
 	t.Run("wkt-local-wkt-exists", func(t *testing.T) {
 		expected := `{"name":"blah"}`
 		stdin := strings.NewReader(expected)
@@ -148,15 +144,31 @@ func TestConvertDir(t *testing.T) {
 			"-#format=json",
 		)
 	})
-
 	t.Run("wkt-local-changed", func(t *testing.T) {
-		expected := `{"notinoriginal":"blah"}`
+		expected := `{"notinoriginal":"blah"}` // notinoriginal exists in the local api.proto
 		stdin := strings.NewReader(expected)
 		appcmdtesting.RunCommandExitCodeStdout(
 			t,
 			cmd,
 			0,
 			expected,
+			nil,
+			stdin,
+			"beta",
+			"convert",
+			"--type=google.protobuf.Method",
+			"--from=-#format=json",
+			"--to",
+			"-#format=json",
+		)
+	})
+	t.Run("wkt-local-changed", func(t *testing.T) {
+		stdin := strings.NewReader(`{"notinchanged":"blah"}`) // notinchanged does not exist in the local api.proto
+		appcmdtesting.RunCommandExitCodeStdout(
+			t,
+			cmd,
+			0,
+			"{}", // we expect empty json because the field doesn't exist in api.proto
 			nil,
 			stdin,
 			"beta",
