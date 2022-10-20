@@ -67,6 +67,7 @@ func (i *imageReader) GetImage(
 		return nil, err
 	}
 	protoImage := &imagev1.Image{}
+	var imageFromProtoOptions []bufimage.NewImageForProtoOption
 	switch imageEncoding := imageRef.ImageEncoding(); imageEncoding {
 	// we have to double parse due to custom options
 	// See https://github.com/golang/protobuf/issues/1123
@@ -78,9 +79,6 @@ func (i *imageReader) GetImage(
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		span.End()
-		if err := bufimage.ReparseImageProto(ctx, protoImage); err != nil {
-			return nil, err
-		}
 	case buffetch.ImageEncodingJSON:
 		firstProtoImage := &imagev1.Image{}
 		_, span := trace.StartSpan(ctx, "first_json_unmarshal")
@@ -105,6 +103,8 @@ func (i *imageReader) GetImage(
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		span.End()
+		// we've already re-parsed, by unmarshalling 2x above
+		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	default:
 		return nil, fmt.Errorf("unknown image encoding: %v", imageEncoding)
 	}
@@ -113,7 +113,7 @@ func (i *imageReader) GetImage(
 			fileDescriptorProto.SourceCodeInfo = nil
 		}
 	}
-	image, err := bufimage.NewImageForProto(protoImage)
+	image, err := bufimage.NewImageForProto(protoImage, imageFromProtoOptions...)
 	if err != nil {
 		return nil, err
 	}
