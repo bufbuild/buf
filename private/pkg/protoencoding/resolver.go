@@ -15,6 +15,8 @@
 package protoencoding
 
 import (
+	"sync"
+
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -83,4 +85,49 @@ func addExtensionsToTypes(types *protoregistry.Types, extensionDescriptors proto
 		}
 	}
 	return nil
+}
+
+type lazyResolver struct {
+	fn       func() (Resolver, error)
+	init     sync.Once
+	resolver Resolver
+	err      error
+}
+
+func (l *lazyResolver) maybeInit() {
+	l.init.Do(func() {
+		l.resolver, l.err = l.fn()
+	})
+}
+
+func (l *lazyResolver) FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error) {
+	l.maybeInit()
+	if l.err != nil {
+		return nil, l.err
+	}
+	return l.resolver.FindExtensionByName(field)
+}
+
+func (l *lazyResolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
+	l.maybeInit()
+	if l.err != nil {
+		return nil, l.err
+	}
+	return l.FindExtensionByNumber(message, field)
+}
+
+func (l *lazyResolver) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
+	l.maybeInit()
+	if l.err != nil {
+		return nil, l.err
+	}
+	return l.FindMessageByName(message)
+}
+
+func (l *lazyResolver) FindMessageByURL(url string) (protoreflect.MessageType, error) {
+	l.maybeInit()
+	if l.err != nil {
+		return nil, l.err
+	}
+	return l.resolver.FindMessageByURL(url)
 }
