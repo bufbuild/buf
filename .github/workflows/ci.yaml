@@ -59,7 +59,7 @@ jobs:
             ${{ runner.os }}-buf-test-
       - name: reinstall git
         if: success()
-        run: sudo apt-get install git='1:2.36.*'
+        run: sudo apt-get install git='1:2.25.*'
       - name: make-test
         if: success()
         run: make test
