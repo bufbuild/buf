@@ -1,0 +1,47 @@
+name: Release
+on:
+  workflow_dispatch:
+
+env:
+  DEV_DIR: "${env.GITHUB_WORKSPACE}/dev"
+  BUFBUILD_BUF_DIR: "${DEV_DIR}/buf"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: APPID
+          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+          repository: ${{ github.repository }}
+          permissions: >-
+            {"contents": "write", "pull_requests": "write"}
+      - name: Checkout repository code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+      - name: Install Buf
+        working-directory: ${env.BUFBUILD_BUF_DIR}
+        run: make installbuf
+      - name: Set VERSION variable from buf cli
+        run: echo "VERSION=$(buf --version)" >> $GITHUB_ENV
+      - name: Update Buf Version
+        env:
+        - VERSION: ${env.VERSION}
+        run: make updateversion
+      - name: Create PR
+        uses: peter-evans/create-pull-request@ad43dccb4d726ca8514126628bec209b8354b6dd
+        with:
+          add-paths: .
+          commit-message: "updateversion"
+          branch: release/v${env.VERSION}
+          delete-branch: true
+          title: "Release ${env.VERSION}"
+          body: |
+            Release prepared for ${env.VERSION}
+            
+            Reminder: Update the changelog
+          token: ${{ steps.generate_token.outputs.token }}
