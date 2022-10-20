@@ -20,8 +20,10 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -120,7 +122,7 @@ func TestBasic(t *testing.T) {
 		"b/b.proto",
 		"a/a.proto",
 		"a/b.proto",
-		"b/b.proto",
+		"b/a.proto",
 	)
 	protoImageFileOutlandishDirectoryName := NewProtoImageFile(
 		t,
@@ -451,11 +453,9 @@ func TestBasic(t *testing.T) {
 		},
 		newImage.Files(),
 	)
-	require.Equal(
-		t,
-		protoImage,
-		bufimage.ImageToProtoImage(newImage),
-	)
+	diff := cmp.Diff(protoImage, bufimage.ImageToProtoImage(newImage), protocmp.Transform())
+	require.Equal(t, "", diff)
+	// TODO: all of the below proto equality checks should use cmp.Diff
 	require.Equal(
 		t,
 		&descriptorpb.FileDescriptorSet{
