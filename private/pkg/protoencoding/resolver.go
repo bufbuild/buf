@@ -94,40 +94,37 @@ type lazyResolver struct {
 	err      error
 }
 
-func (l *lazyResolver) maybeInit() {
+func (l *lazyResolver) maybeInit() error {
 	l.init.Do(func() {
 		l.resolver, l.err = l.fn()
 	})
+	return l.err
 }
 
 func (l *lazyResolver) FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error) {
-	l.maybeInit()
-	if l.err != nil {
-		return nil, l.err
+	if err := l.maybeInit(); err != nil {
+		return nil, err
 	}
 	return l.resolver.FindExtensionByName(field)
 }
 
 func (l *lazyResolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
-	l.maybeInit()
-	if l.err != nil {
-		return nil, l.err
+	if err := l.maybeInit(); err != nil {
+		return nil, err
 	}
 	return l.resolver.FindExtensionByNumber(message, field)
 }
 
 func (l *lazyResolver) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
-	l.maybeInit()
-	if l.err != nil {
-		return nil, l.err
+	if err := l.maybeInit(); err != nil {
+		return nil, err
 	}
 	return l.resolver.FindMessageByName(message)
 }
 
 func (l *lazyResolver) FindMessageByURL(url string) (protoreflect.MessageType, error) {
-	l.maybeInit()
-	if l.err != nil {
-		return nil, l.err
+	if err := l.maybeInit(); err != nil {
+		return nil, err
 	}
 	return l.resolver.FindMessageByURL(url)
 }
