@@ -24,8 +24,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/gen/data/datawkt"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -363,12 +361,6 @@ func (r *reader) getProtoFileBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-
-	if _, err := os.Stat(protoFileRef.Path()); os.IsNotExist(err) {
-		if datawkt.Exists(protoFileRef.Path()) {
-			return wellKnownTypeBucket(ctx, protoFileRef.Path())
-		}
-	}
 	terminateFileProvider, err := getTerminateFileProviderForOS(normalpath.Dir(protoFileRef.Path()), terminateFileNames)
 	if err != nil {
 		return nil, err
@@ -396,36 +388,6 @@ func (r *reader) getProtoFileBucket(
 		readWriteBucketCloser,
 		terminateFileProvider,
 	), nil
-}
-
-// wellKnownTypeBucket will allow reading of google/protobuf well known types proto files.
-func wellKnownTypeBucket(ctx context.Context, path string) (ReadBucketCloserWithTerminateFileProvider, error) {
-	readcloser, err := datawkt.ReadBucket.Get(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	allbytes, err := io.ReadAll(readcloser)
-	if err != nil {
-		return nil, err
-	}
-	bucket, err := storagemem.NewReadBucket(map[string][]byte{path: allbytes})
-	if err != nil {
-		return nil, err
-	}
-	bucketCloser := storage.NopReadBucketCloser(bucket)
-	subDirPath, err := normalpath.NormalizeAndValidate(path)
-	if err != nil {
-		return nil, err
-	}
-	terminateFileProvider, err := getTerminateFileProviderForBucket(ctx, bucket, subDirPath, nil)
-	if err != nil {
-		return nil, err
-	}
-	bucketReadCloser, err := newReadBucketCloser(bucketCloser, path, "")
-	if err != nil {
-		return nil, err
-	}
-	return newReadBucketCloserWithTerminateFiles(bucketReadCloser, terminateFileProvider), nil
 }
 
 // getBucketRootPathAndRelativePath is a helper function that returns the rootPath and relative

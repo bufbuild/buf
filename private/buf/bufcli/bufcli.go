@@ -19,6 +19,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"io"
 	"net/http"
 	"os"
@@ -799,6 +802,39 @@ func NewImageForSource(
 		images = append(images, imageConfig.Image())
 	}
 	return bufimage.MergeImages(images...)
+}
+
+// WellKnownTypeImage returns the image for the well known type path (google/protobuf/duration.proto for example).
+func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wktpath string) (bufimage.Image, error) {
+	readcloser, err := datawkt.ReadBucket.Get(ctx, wktpath)
+	if err != nil {
+		return nil, err
+	}
+	allbytes, err := io.ReadAll(readcloser)
+	if err != nil {
+		return nil, err
+	}
+	bucket, err := storagemem.NewReadBucket(map[string][]byte{wktpath: allbytes})
+	if err != nil {
+		return nil, err
+	}
+	sourceConfig, err := bufconfig.GetConfigForBucket(
+		ctx,
+		storage.NopReadBucketCloser(bucket),
+	)
+	if err != nil {
+		return nil, err
+	}
+	module, err := bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
+		ctx,
+		bucket,
+		sourceConfig.Build,
+	)
+	if err != nil {
+		return nil, err
+	}
+	image, _, err := bufimagebuild.NewBuilder(logger).Build(ctx, bufmodule.NewModuleFileSet(module, nil))
+	return image, err
 }
 
 // VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.

@@ -18,12 +18,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/private/gen/data/datawkt"
-
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconvert"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -155,7 +154,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	image, err := bufcli.NewImageForSource(
+	image, inputErr := bufcli.NewImageForSource(
 		ctx,
 		container,
 		input,
@@ -167,29 +166,30 @@ func run(
 		false, // externalDirOrFilePathsAllowNotExist
 		false, // excludeSourceCodeInfo
 	)
-	if err != nil {
-		return err
+	var resolveWellKnownType bool
+	if inputErr != nil {
+		if container.NumArgs() == 0 {
+			resolveWellKnownType = true
+		} else {
+			return inputErr
+		}
+	} else {
+		_, filterErr := bufimageutil.ImageFilteredByTypes(image, flags.Type)
+		if errors.Is(filterErr, bufimageutil.ErrImageFilterTypeNotFound) {
+			resolveWellKnownType = true
+		}
 	}
-	// If the input is invalid builtin wkts will never be resolved.
-	_, filterErr := bufimageutil.ImageFilteredByTypes(image, flags.Type)
-	if container.NumArgs() > 0 && filterErr != nil && errors.Is(filterErr, bufimageutil.ErrImageFilterTypeNotFound) {
+	if resolveWellKnownType {
 		if wkpath, ok := datawkt.MessageFilePath(flags.Type); ok {
-			image, err = bufcli.NewImageForSource(
-				ctx,
-				container,
-				wkpath,
-				flags.ErrorFormat,
-				false, // disableSymlinks
-				"",    // configOverride
-				nil,   // externalDirOrFilePaths
-				nil,   // externalExcludeDirOrFilePaths
-				false, // externalDirOrFilePathsAllowNotExist
-				false, // excludeSourceCodeInfo
-			)
+			var wktErr error
+			image, wktErr = bufcli.WellKnownTypeImage(ctx, container.Logger(), wkpath)
+			if wktErr != nil {
+				return wktErr
+			}
 		}
-		if err != nil {
-			return err
-		}
+	}
+	if inputErr != nil && image == nil {
+		return inputErr
 	}
 	fromMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.From, bufconvert.MessageEncodingBin)
 	if err != nil {
