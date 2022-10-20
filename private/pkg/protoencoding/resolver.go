@@ -113,7 +113,7 @@ func (l *lazyResolver) FindExtensionByNumber(message protoreflect.FullName, fiel
 	if l.err != nil {
 		return nil, l.err
 	}
-	return l.FindExtensionByNumber(message, field)
+	return l.resolver.FindExtensionByNumber(message, field)
 }
 
 func (l *lazyResolver) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
@@ -121,7 +121,7 @@ func (l *lazyResolver) FindMessageByName(message protoreflect.FullName) (protore
 	if l.err != nil {
 		return nil, l.err
 	}
-	return l.FindMessageByName(message)
+	return l.resolver.FindMessageByName(message)
 }
 
 func (l *lazyResolver) FindMessageByURL(url string) (protoreflect.MessageType, error) {
