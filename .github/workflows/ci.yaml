@@ -57,9 +57,6 @@ jobs:
           key: ${{ runner.os }}-buf-test-${{ hashFiles('**/go.sum', 'make/**') }}
           restore-keys: |
             ${{ runner.os }}-buf-test-
-      - name: reinstall git
-        if: success()
-        run: sudo apt-get install git='1:2.25.*' && sudo apt --fix-broken install
       - name: make-test
         if: success()
         run: make test
