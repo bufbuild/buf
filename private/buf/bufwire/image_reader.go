@@ -72,29 +72,15 @@ func (i *imageReader) GetImage(
 	// See https://github.com/golang/protobuf/issues/1123
 	// TODO: revisit
 	case buffetch.ImageEncodingBin:
-		firstProtoImage := &imagev1.Image{}
+		protoImage := &imagev1.Image{}
 		_, span := trace.StartSpan(ctx, "first_wire_unmarshal")
-		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
+		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, protoImage); err != nil {
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		span.End()
-		_, span = trace.StartSpan(ctx, "new_resolver")
-		// TODO right now, NewResolver sets AllowUnresolvable to true all the time
-		// we want to make this into a check, and we verify if we need this for the individual command
-		resolver, err := protoencoding.NewResolver(
-			bufimage.ProtoImageToFileDescriptors(
-				firstProtoImage,
-			)...,
-		)
-		if err != nil {
+		if err := bufimage.ReparseImageProto(ctx, protoImage); err != nil {
 			return nil, err
 		}
-		span.End()
-		_, span = trace.StartSpan(ctx, "second_wire_unmarshal")
-		if err := protoencoding.NewWireUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
-			return nil, fmt.Errorf("could not unmarshal image: %v", err)
-		}
-		span.End()
 	case buffetch.ImageEncodingJSON:
 		firstProtoImage := &imagev1.Image{}
 		_, span := trace.StartSpan(ctx, "first_json_unmarshal")

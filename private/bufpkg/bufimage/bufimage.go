@@ -15,6 +15,7 @@
 package bufimage
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
@@ -22,6 +23,8 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"go.opencensus.io/trace"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -165,6 +168,30 @@ func MergeImages(images ...Image) (Image, error) {
 		}
 		return newImage(imageFiles, true)
 	}
+}
+
+// ReparseImageProto should be done after deserializing an image from binary format. This
+// rehydrates custom options, which would otherwise remain unrecognized.
+func ReparseImageProto(ctx context.Context, protoImage *imagev1.Image) error {
+	_, span := trace.StartSpan(ctx, "new_resolver")
+	// TODO right now, NewResolver sets AllowUnresolvable to true all the time
+	// we want to make this into a check, and we verify if we need this for the individual command
+	resolver, err := protoencoding.NewResolver(
+		ProtoImageToFileDescriptors(
+			protoImage,
+		)...,
+	)
+	span.End()
+	if err != nil {
+		return err
+	}
+	_, span = trace.StartSpan(ctx, "reparse_unrecognized")
+	err = protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect())
+	span.End()
+	if err != nil {
+		return fmt.Errorf("could not reparse image: %v", err)
+	}
+	return nil
 }
 
 // NewImageForProto returns a new Image for the given proto Image.
