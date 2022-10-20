@@ -92,7 +92,7 @@ type Config struct {
 	// SPDXLicenseID is the license of the plugin, which should be one of
 	// the identifiers defined in https://spdx.org/licenses
 	SPDXLicenseID string
-	// LicenseURL specifies where the source for the plugin can be found.
+	// LicenseURL specifies where the plugin's license can be found.
 	LicenseURL string
 }
 
