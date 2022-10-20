@@ -223,6 +223,8 @@ func createGitDirs(
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 0"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "commit", "-m", "commit 0")
+	// must explicitly allow file protocol for subsequent submodule step to work
+	runCommand(ctx, t, container, runner, "git", "-C", originPath, "config", "protocol.file.allow", "always")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "submodule", "add", submodulePath, "submodule")
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 1"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "add", "test.proto")
