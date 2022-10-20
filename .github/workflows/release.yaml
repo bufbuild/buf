@@ -20,7 +20,7 @@ jobs:
         id: generate_token
         uses: tibdex/github-app-token@v1
         with:
-          app_id: APPID
+          app_id: 251311
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
           repository: ${{ github.repository }}
           permissions: >-
