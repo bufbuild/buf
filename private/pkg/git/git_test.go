@@ -173,6 +173,7 @@ func TestGitCloner(t *testing.T) {
 }
 
 func readBucketForName(ctx context.Context, t *testing.T, runner command.Runner, path string, depth uint32, name Name, recurseSubmodules bool) storage.ReadBucket {
+	t.Helper()
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	cloner := NewCloner(zap.NewNop(), storageosProvider, runner, ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
@@ -222,6 +223,8 @@ func createGitDirs(
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 0"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "commit", "-m", "commit 0")
+	// must explicitly allow file protocol for subsequent submodule step to work
+	runCommand(ctx, t, container, runner, "git", "-C", originPath, "config", "protocol.file.allow", "always")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "submodule", "add", submodulePath, "submodule")
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 1"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "add", "test.proto")
@@ -257,6 +260,7 @@ func runCommand(
 	name string,
 	args ...string,
 ) {
+	t.Helper()
 	output, err := command.RunStdout(ctx, container, runner, name, args...)
 	if err != nil {
 		var exitErr *exec.ExitError
