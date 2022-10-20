@@ -167,16 +167,16 @@ func run(
 		false, // excludeSourceCodeInfo
 	)
 	var resolveWellKnownType bool
-	if inputErr != nil {
-		if container.NumArgs() == 0 {
+	// only resolve wkts if input was not set.
+	if container.NumArgs() == 0 {
+		if inputErr != nil {
 			resolveWellKnownType = true
-		} else {
-			return inputErr
 		}
-	} else {
-		_, filterErr := bufimageutil.ImageFilteredByTypes(image, flags.Type)
-		if errors.Is(filterErr, bufimageutil.ErrImageFilterTypeNotFound) {
-			resolveWellKnownType = true
+		if image != nil {
+			_, filterErr := bufimageutil.ImageFilteredByTypes(image, flags.Type)
+			if errors.Is(filterErr, bufimageutil.ErrImageFilterTypeNotFound) {
+				resolveWellKnownType = true
+			}
 		}
 	}
 	if resolveWellKnownType {
