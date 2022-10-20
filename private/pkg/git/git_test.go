@@ -17,6 +17,8 @@ package git
 import (
 	"context"
 	"errors"
+	"net/http/cgi"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -214,6 +216,21 @@ func createGitDirs(
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "commit", "-m", "commit 0")
 
+	gitExecPath, err := command.RunStdout(ctx, container, runner, "git", "--exec-path")
+	require.NoError(t, err)
+	t.Log(filepath.Join(string(gitExecPath), "git-http-backend"))
+	// https://git-scm.com/docs/git-http-backend#_description
+	f, err := os.Create(filepath.Join(submodulePath, ".git", "git-daemon-export-ok"))
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+	server := httptest.NewServer(&cgi.Handler{
+		Path: filepath.Join(strings.TrimSpace(string(gitExecPath)), "git-http-backend"),
+		Dir:  submodulePath,
+		Env:  []string{"GIT_PROJECT_ROOT=" + submodulePath},
+	})
+	t.Cleanup(server.Close)
+	submodulePath = server.URL
+
 	originPath := filepath.Join(tmpDir, "origin")
 	require.NoError(t, os.MkdirAll(originPath, 0777))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "init")
@@ -223,8 +240,6 @@ func createGitDirs(
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 0"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "commit", "-m", "commit 0")
-	// must explicitly allow file protocol for subsequent submodule step to work
-	runCommand(ctx, t, container, runner, "git", "-C", originPath, "config", "protocol.file.allow", "always")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "submodule", "add", submodulePath, "submodule")
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 1"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "add", "test.proto")
