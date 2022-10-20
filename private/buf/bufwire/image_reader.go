@@ -73,7 +73,7 @@ func (i *imageReader) GetImage(
 	// See https://github.com/golang/protobuf/issues/1123
 	// TODO: revisit
 	case buffetch.ImageEncodingBin:
-		_, span := trace.StartSpan(ctx, "first_wire_unmarshal")
+		_, span := trace.StartSpan(ctx, "wire_unmarshal")
 		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, protoImage); err != nil {
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
