@@ -515,7 +515,7 @@ type CuratedPlugin struct {
 	// spdx_license_id is the license of the plugin, which should be one of the identifiers
 	// defined in https://spdx.org/licenses
 	SpdxLicenseId string `protobuf:"bytes,15,opt,name=spdx_license_id,json=spdxLicenseId,proto3" json:"spdx_license_id,omitempty"`
-	// license_url specifies where the source for the plugin can be found.
+	// license_url specifies an optional URL for the plugin's license (if not using a standard spdx_license_id).
 	LicenseUrl string `protobuf:"bytes,16,opt,name=license_url,json=licenseUrl,proto3" json:"license_url,omitempty"`
 }
 
@@ -937,7 +937,7 @@ type CreateCuratedPluginRequest struct {
 	// spdx_license_id is the license of the plugin, which should be one of the identifiers
 	// defined in https://spdx.org/licenses
 	SpdxLicenseId string `protobuf:"bytes,15,opt,name=spdx_license_id,json=spdxLicenseId,proto3" json:"spdx_license_id,omitempty"`
-	// license_url specifies where the source for the plugin can be found.
+	// license_url specifies an optional URL for the plugin's license (if not using a standard spdx_license_id).
 	LicenseUrl string `protobuf:"bytes,16,opt,name=license_url,json=licenseUrl,proto3" json:"license_url,omitempty"`
 }
 
