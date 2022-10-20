@@ -205,6 +205,10 @@ message UpdateOrganizationSettingsRequest {
   PluginRole plugin_base_role = 3;
   // optional, no update to this base role will be made if this is unspecified.
   TemplateRole template_base_role = 4;
+  // optional, update to description will only be made when this is present
+  optional string description = 5;
+  // optional, update to url will only be made when this is present
+  optional string url = 6;
 }
 
 message UpdateOrganizationSettingsResponse {}
