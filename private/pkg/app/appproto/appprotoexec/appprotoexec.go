@@ -148,7 +148,11 @@ func NewHandler(
 		}
 		return newProtocProxyHandler(logger, storageosProvider, runner, protocPath, pluginName), nil
 	}
-	return nil, fmt.Errorf("could not find protoc plugin for name %s", pluginName)
+	return nil, fmt.Errorf(
+		"could not find protoc plugin for name %s - please make sure protoc-gen-%s is installed and present on your $PATH",
+		pluginName,
+		pluginName,
+	)
 }
 
 // HandlerOption is an option for a new Handler.
