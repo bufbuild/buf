@@ -476,15 +476,12 @@ type newImageForProtoOptions struct {
 func reparseImageProto(protoImage *imagev1.Image) error {
 	// TODO right now, NewResolver sets AllowUnresolvable to true all the time
 	// we want to make this into a check, and we verify if we need this for the individual command
-	resolver, err := protoencoding.NewResolver(
+	resolver := protoencoding.NewLazyResolver(
 		ProtoImageToFileDescriptors(
 			protoImage,
 		)...,
 	)
-	if err != nil {
-		return err
-	}
-	if err = protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {
+	if err := protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {
 		return fmt.Errorf("could not reparse image: %v", err)
 	}
 	return nil

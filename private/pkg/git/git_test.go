@@ -173,6 +173,7 @@ func TestGitCloner(t *testing.T) {
 }
 
 func readBucketForName(ctx context.Context, t *testing.T, runner command.Runner, path string, depth uint32, name Name, recurseSubmodules bool) storage.ReadBucket {
+	t.Helper()
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	cloner := NewCloner(zap.NewNop(), storageosProvider, runner, ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
@@ -257,6 +258,7 @@ func runCommand(
 	name string,
 	args ...string,
 ) {
+	t.Helper()
 	output, err := command.RunStdout(ctx, container, runner, name, args...)
 	if err != nil {
 		var exitErr *exec.ExitError
