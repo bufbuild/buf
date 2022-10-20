@@ -168,39 +168,6 @@ func MergeImages(images ...Image) (Image, error) {
 	}
 }
 
-type NewImageForProtoOption func(*newImageForProtoOptions)
-
-type newImageForProtoOptions struct {
-	noReparse bool
-}
-
-// WithNoReparse instructs NewImageForProto to skip the reparse step. The reparse
-// step is usually needed when unmarshalling the image from bytes. It reconstitutes
-// custom options, from unrecognized bytes to known extension fields.
-func WithNoReparse() NewImageForProtoOption {
-	return func(options *newImageForProtoOptions) {
-		options.noReparse = true
-	}
-}
-
-func reparseImageProto(protoImage *imagev1.Image) error {
-	// TODO right now, NewResolver sets AllowUnresolvable to true all the time
-	// we want to make this into a check, and we verify if we need this for the individual command
-	resolver, err := protoencoding.NewResolver(
-		ProtoImageToFileDescriptors(
-			protoImage,
-		)...,
-	)
-	if err != nil {
-		return err
-	}
-	err = protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect())
-	if err != nil {
-		return fmt.Errorf("could not reparse image: %v", err)
-	}
-	return nil
-}
-
 // NewImageForProto returns a new Image for the given proto Image.
 //
 // The input Files are expected to be in correct DAG order!
@@ -268,7 +235,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 //
 // The input Files are expected to be in correct DAG order!
 // TODO: Consider checking the above, and if not, reordering the Files.
-func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) (Image, error) {
+func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest, options ...NewImageForProtoOption) (Image, error) {
 	if err := protodescriptor.ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
 		return nil, err
 	}
@@ -282,6 +249,7 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) (Im
 		&imagev1.Image{
 			File: protoImageFiles,
 		},
+		options...,
 	)
 	if err != nil {
 		return nil, err
@@ -291,6 +259,17 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) (Im
 		request.GetFileToGenerate(),
 		nil,
 	)
+}
+
+type NewImageForProtoOption func(*newImageForProtoOptions)
+
+// WithNoReparse instructs NewImageForProto to skip the reparse step. The reparse
+// step is usually needed when unmarshalling the image from bytes. It reconstitutes
+// custom options, from unrecognized bytes to known extension fields.
+func WithNoReparse() NewImageForProtoOption {
+	return func(options *newImageForProtoOptions) {
+		options.noReparse = true
+	}
 }
 
 // ImageWithoutImports returns a copy of the Image without imports.
@@ -488,4 +467,25 @@ func ImagesToCodeGeneratorRequests(
 // ProtoImageToFileDescriptors returns the FileDescriptors for the proto Image.
 func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.FileDescriptor {
 	return protoImageFilesToFileDescriptors(protoImage.File)
+}
+
+type newImageForProtoOptions struct {
+	noReparse bool
+}
+
+func reparseImageProto(protoImage *imagev1.Image) error {
+	// TODO right now, NewResolver sets AllowUnresolvable to true all the time
+	// we want to make this into a check, and we verify if we need this for the individual command
+	resolver, err := protoencoding.NewResolver(
+		ProtoImageToFileDescriptors(
+			protoImage,
+		)...,
+	)
+	if err != nil {
+		return err
+	}
+	if err = protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {
+		return fmt.Errorf("could not reparse image: %v", err)
+	}
+	return nil
 }
