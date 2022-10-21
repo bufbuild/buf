@@ -143,20 +143,6 @@ func NewManifest() *Manifest {
 	}
 }
 
-func splitManifest(data []byte, atEOF bool) (int, []byte, error) {
-	// Return a line without LF.
-	if i := bytes.IndexByte(data, '\n'); i >= 0 {
-		return i + 1, data[0:i], nil
-	}
-
-	// EOF occurred with a partial line.
-	if atEOF && len(data) != 0 {
-		return 0, nil, errNoFinalNewline
-	}
-
-	return 0, nil, nil
-}
-
 // NewManifestFromReader builds a manifest an encoded manifest reader.
 func NewManifestFromReader(manifest io.Reader) (*Manifest, error) {
 	m := NewManifest()
@@ -287,4 +273,18 @@ func (m *Manifest) UnmarshalText(text []byte) error {
 	m.digestToPaths = newm.digestToPaths
 	m.hash = newm.hash
 	return nil
+}
+
+func splitManifest(data []byte, atEOF bool) (int, []byte, error) {
+	// Return a line without LF.
+	if i := bytes.IndexByte(data, '\n'); i >= 0 {
+		return i + 1, data[0:i], nil
+	}
+
+	// EOF occurred with a partial line.
+	if atEOF && len(data) != 0 {
+		return 0, nil, errNoFinalNewline
+	}
+
+	return 0, nil, nil
 }
