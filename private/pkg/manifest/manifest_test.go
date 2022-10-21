@@ -46,18 +46,6 @@ func Example() {
 	// path at digest: foo
 }
 
-func mkdigest(content []byte) *Digest {
-	hash := sha3.NewShake256()
-	if _, err := hash.Write(content); err != nil {
-		panic(err)
-	}
-	digest := make([]byte, 64)
-	if _, err := hash.Read(digest); err != nil {
-		panic(err)
-	}
-	return NewDigestFromBytes("shake256", digest)
-}
-
 func TestRoundTripManifest(t *testing.T) {
 	t.Parallel()
 	// read a manifest using the unmarshaling method
@@ -105,19 +93,6 @@ func TestAddContent(t *testing.T) {
 	expectedErr := errors.New("testing error")
 	err = manifest.AddContent("my/path", iotest.ErrReader(expectedErr))
 	assert.ErrorIs(t, err, expectedErr)
-}
-
-func testInvalidManifest(
-	t *testing.T,
-	desc string,
-	line string,
-) {
-	t.Helper()
-	t.Run(desc, func(t *testing.T) {
-		t.Parallel()
-		_, err := NewManifestFromReader(strings.NewReader(line))
-		assert.ErrorContains(t, err, desc)
-	})
 }
 
 func TestInvalidManifests(t *testing.T) {
@@ -216,4 +191,29 @@ func TestDigest(t *testing.T) {
 	digest, ok = m.Digest("foo")
 	assert.False(t, ok)
 	assert.Empty(t, digest)
+}
+
+func mkdigest(content []byte) *Digest {
+	hash := sha3.NewShake256()
+	if _, err := hash.Write(content); err != nil {
+		panic(err)
+	}
+	digest := make([]byte, 64)
+	if _, err := hash.Read(digest); err != nil {
+		panic(err)
+	}
+	return NewDigestFromBytes("shake256", digest)
+}
+
+func testInvalidManifest(
+	t *testing.T,
+	desc string,
+	line string,
+) {
+	t.Helper()
+	t.Run(desc, func(t *testing.T) {
+		t.Parallel()
+		_, err := NewManifestFromReader(strings.NewReader(line))
+		assert.ErrorContains(t, err, desc)
+	})
 }
