@@ -127,7 +127,7 @@ func TestConvertDir(t *testing.T) {
 		)
 	})
 	t.Run("wkt-local-wkt-exists", func(t *testing.T) {
-		expected := `{"name":"blah"}`
+		expected := `{"name":"blah"}` // valid google.protobuf.Method message
 		stdin := strings.NewReader(expected)
 		appcmdtesting.RunCommandExitCodeStdout(
 			t,
@@ -180,7 +180,7 @@ func TestConvertDir(t *testing.T) {
 		)
 	})
 	t.Run("wkt-import", func(t *testing.T) {
-		expected := `{"syntax":"SYNTAX_PROTO3"}` // Syntax is not defined in type.proto
+		expected := `{"syntax":"SYNTAX_PROTO3"}` // Syntax is imported into type.proto
 		stdin := strings.NewReader(expected)
 		appcmdtesting.RunCommandExitCodeStdout(
 			t,

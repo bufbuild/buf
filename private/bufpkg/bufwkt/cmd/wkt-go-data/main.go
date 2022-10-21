@@ -175,7 +175,7 @@ func getProtosourceFiles(
 		return nil, err
 	}
 	if len(fileAnnotations) > 0 {
-		// stderr since we do output to stdouo
+		// stderr since we do output to stdouot
 		if err := bufanalysis.PrintFileAnnotations(
 			container.Stderr(),
 			fileAnnotations,
