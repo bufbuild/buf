@@ -215,7 +215,7 @@ func (m *Manifest) addDigest(path string, digest *Digest) error {
 		return fmt.Errorf("unsupported hash: %s", digest.Type())
 	}
 	if n := len(digest.Bytes()); n != shake256Length {
-		return fmt.Errorf("short digest: %d of %d bytes", n, shake256Length)
+		return fmt.Errorf("invalid digest: got %d bytes, expected %d bytes", n, shake256Length)
 	}
 	m.pathToDigest[path] = *digest
 	key := digest.String()

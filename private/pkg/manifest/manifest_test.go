@@ -133,7 +133,7 @@ func TestInvalidManifests(t *testing.T) {
 	)
 	testInvalidManifest(
 		t,
-		"short digest",
+		"invalid digest",
 		"shake256:1234  foo\n",
 	)
 	testInvalidManifest(
