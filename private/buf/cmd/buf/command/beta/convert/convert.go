@@ -181,9 +181,9 @@ func run(
 		}
 	}
 	if resolveWellKnownType {
-		if wkpath, ok := datawkt.MessageFilePath(flags.Type); ok {
+		if _, ok := datawkt.MessageFilePath(flags.Type); ok {
 			var wktErr error
-			image, wktErr = bufcli.WellKnownTypeImage(ctx, container.Logger(), wkpath)
+			image, wktErr = bufcli.WellKnownTypeImage(ctx, container.Logger(), flags.Type)
 			if wktErr != nil {
 				return wktErr
 			}
