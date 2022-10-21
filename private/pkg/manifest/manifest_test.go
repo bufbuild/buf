@@ -94,16 +94,16 @@ func TestAddContent(t *testing.T) {
 	t.Parallel()
 	// single entry
 	manifest := NewManifest()
-	err := manifest.AddContent("null", bytes.NewReader(nil))
+	err := manifest.AddContent("my/path", bytes.NewReader(nil))
 	require.NoError(t, err)
-	expect := fmt.Sprintf("%s  null\n", mkdigest(nil))
+	expect := fmt.Sprintf("%s  my/path\n", mkdigest(nil))
 	retContent, err := manifest.MarshalText()
 	require.NoError(t, err)
 	assert.Equal(t, expect, string(retContent))
 
 	// failing content read
 	expectedErr := errors.New("testing error")
-	err = manifest.AddContent("null", iotest.ErrReader(expectedErr))
+	err = manifest.AddContent("my/path", iotest.ErrReader(expectedErr))
 	assert.ErrorIs(t, err, expectedErr)
 }
 
@@ -193,13 +193,13 @@ func TestFromBucket(t *testing.T) {
 func TestPaths(t *testing.T) {
 	t.Parallel()
 	m := NewManifest()
-	err := m.AddContent("null", bytes.NewReader(nil))
+	err := m.AddContent("path/one", bytes.NewReader(nil))
 	require.NoError(t, err)
-	err = m.AddContent("null2", bytes.NewReader(nil))
+	err = m.AddContent("path/two", bytes.NewReader(nil))
 	require.NoError(t, err)
 	paths, ok := m.Paths(mkdigest(nil))
 	assert.True(t, ok)
-	assert.ElementsMatch(t, []string{"null", "null2"}, paths)
+	assert.ElementsMatch(t, []string{"path/one", "path/two"}, paths)
 	paths, ok = m.Paths(mkdigest([]byte{0}))
 	assert.False(t, ok)
 	assert.Empty(t, paths)
@@ -208,9 +208,9 @@ func TestPaths(t *testing.T) {
 func TestDigest(t *testing.T) {
 	t.Parallel()
 	m := NewManifest()
-	err := m.AddContent("null", bytes.NewReader(nil))
+	err := m.AddContent("my/path", bytes.NewReader(nil))
 	require.NoError(t, err)
-	digest, ok := m.Digest("null")
+	digest, ok := m.Digest("my/path")
 	assert.True(t, ok)
 	assert.Equal(t, mkdigest(nil), digest)
 	digest, ok = m.Digest("foo")
