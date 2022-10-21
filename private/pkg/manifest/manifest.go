@@ -241,8 +241,8 @@ func (m *Manifest) AddContent(path string, content io.Reader) error {
 }
 
 // Paths returns one or more matching path for a given digest. The digest
-// is expected to be a lower-case hex encoded value. paths is nil and ok is
-// false if no paths are found.
+// is expected to be a lower-case hex encoded value. Returned paths are
+// unordred. paths is nil and ok is false if no paths are found.
 func (m *Manifest) Paths(digest *Digest) (paths []string, ok bool) {
 	paths, ok = m.digestToPaths[digest.String()]
 	return paths, ok
