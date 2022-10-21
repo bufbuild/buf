@@ -40,6 +40,10 @@ func (o *optionExtensionDescriptor) OptionExtension(extensionType protoreflect.E
 	return proto.GetExtension(o.message, extensionType), true
 }
 
+func (o *optionExtensionDescriptor) RangeExtensions(callback func(protoreflect.ExtensionType, interface{}) bool) {
+	proto.RangeExtensions(o.message, callback)
+}
+
 func (o *optionExtensionDescriptor) PresentExtensionNumbers() []int32 {
 	fieldNumbersSet := map[int32]struct{}{}
 	var fieldNumbers []int32

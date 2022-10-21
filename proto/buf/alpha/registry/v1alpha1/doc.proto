@@ -319,6 +319,10 @@ message Oneof {
   repeated Field fields = 2;
 }
 
+message OneofOptions {
+  repeated string custom_option = 1;
+}
+
 // Field provides information for the documentation of a message field.
 message Field {
   string name = 1;

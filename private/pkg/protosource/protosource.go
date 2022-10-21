@@ -126,6 +126,14 @@ type OptionExtensionDescriptor interface {
 	// See https://pkg.go.dev/google.golang.org/protobuf/proto#GetExtension
 	OptionExtension(extensionType protoreflect.ExtensionType) (interface{}, bool)
 
+	// RangeExtensions iterates over every populated extension field in an
+	// undefined order, calling callback for each extension type and value encountered.
+	//
+	// It returns immediately if callback returns false.
+	//
+	// See https://pkg.go.dev/google.golang.org/protobuf/proto#RangeExtensions
+	RangeExtensions(callback func(protoreflect.ExtensionType, interface{}) bool)
+
 	// PresentExtensionNumbers returns field numbers for all options that
 	// have a set value on this descriptor.
 	PresentExtensionNumbers() []int32
