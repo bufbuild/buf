@@ -45,6 +45,7 @@ const (
 	shake256Length = 64
 )
 
+// Digest represents a hash function's value.
 type Digest struct {
 	dtype  string
 	digest []byte
