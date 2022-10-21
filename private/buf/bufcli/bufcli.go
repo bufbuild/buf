@@ -806,7 +806,7 @@ func NewImageForSource(
 }
 
 // WellKnownTypeImage returns the image for the well known type (google.protobuf.Duration for example).
-func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wktype string) (bufimage.Image, error) {
+func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType string) (bufimage.Image, error) {
 	sourceConfig, err := bufconfig.GetConfigForBucket(
 		ctx,
 		storage.NopReadBucketCloser(datawkt.ReadBucket),
@@ -826,7 +826,7 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wktype string) 
 	if err != nil {
 		return nil, err
 	}
-	return bufimageutil.ImageFilteredByTypes(image, wktype)
+	return bufimageutil.ImageFilteredByTypes(image, wellKnownType)
 }
 
 // VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
