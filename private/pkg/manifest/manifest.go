@@ -38,7 +38,7 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-var errPartial error = errors.New("partial record")
+var errNoFinalNewline error = errors.New("partial record: missing newline")
 
 const (
 	shake256Name   = "shake256"
@@ -150,7 +150,7 @@ func splitManifest(data []byte, atEOF bool) (int, []byte, error) {
 
 	// EOF occurred with a partial line.
 	if atEOF && len(data) != 0 {
-		return 0, nil, errPartial
+		return 0, nil, errNoFinalNewline
 	}
 
 	return 0, nil, nil
@@ -177,7 +177,7 @@ func NewManifestFromReader(manifest io.Reader) (*Manifest, error) {
 		}
 	}
 	err := scanner.Err()
-	if err == errPartial {
+	if err == errNoFinalNewline {
 		return nil, newManifestError(lineno, "partial record")
 	}
 	if err != nil {
