@@ -92,6 +92,8 @@ type Config struct {
 	// SPDXLicenseID is the license of the plugin, which should be one of
 	// the identifiers defined in https://spdx.org/licenses
 	SPDXLicenseID string
+	// LicenseURL specifies where the plugin's license can be found.
+	LicenseURL string
 }
 
 // RegistryConfig is the configuration for the registry of a plugin.
@@ -260,6 +262,7 @@ type ExternalConfig struct {
 	OutputLanguages []string               `json:"output_languages,omitempty" yaml:"output_languages,omitempty"`
 	Registry        ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
 	SPDXLicenseID   string                 `json:"spdx_license_id,omitempty" yaml:"spdx_license_id,omitempty"`
+	LicenseURL      string                 `json:"license_url,omitempty" yaml:"license_url,omitempty"`
 }
 
 // ExternalDependency represents a dependency on another plugin.

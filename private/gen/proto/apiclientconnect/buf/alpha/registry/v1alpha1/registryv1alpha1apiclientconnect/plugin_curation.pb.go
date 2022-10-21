@@ -68,6 +68,7 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 	revision uint32,
 	outputLanguages []v1alpha1.PluginLanguage,
 	spdxLicenseId string,
+	licenseUrl string,
 ) (configuration *v1alpha1.CuratedPlugin, _ error) {
 	response, err := s.client.CreateCuratedPlugin(
 		ctx,
@@ -86,6 +87,7 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 				Revision:             revision,
 				OutputLanguages:      outputLanguages,
 				SpdxLicenseId:        spdxLicenseId,
+				LicenseUrl:           licenseUrl,
 			}),
 	)
 	if err != nil {

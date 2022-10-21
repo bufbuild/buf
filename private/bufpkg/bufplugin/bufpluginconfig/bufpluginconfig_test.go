@@ -69,6 +69,7 @@ func TestGetConfigForBucket(t *testing.T) {
 				},
 			},
 			SPDXLicenseID: "Apache-2.0",
+			LicenseURL:    "https://github.com/grpc/grpc-go/blob/master/LICENSE",
 		},
 		pluginConfig,
 	)
@@ -111,6 +112,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 				},
 			},
 			SPDXLicenseID: "Apache-2.0",
+			LicenseURL:    "https://github.com/grpc/grpc-go/blob/master/LICENSE",
 		},
 		pluginConfig,
 	)
