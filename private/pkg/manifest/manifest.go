@@ -38,12 +38,12 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-var errNoFinalNewline error = errors.New("partial record: missing newline")
-
 const (
 	shake256Name   = "shake256"
 	shake256Length = 64
 )
+
+var errNoFinalNewline error = errors.New("partial record: missing newline")
 
 // Digest represents a hash function's value.
 type Digest struct {
