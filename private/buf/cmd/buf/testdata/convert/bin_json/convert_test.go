@@ -179,4 +179,22 @@ func TestConvertDir(t *testing.T) {
 			"-#format=json",
 		)
 	})
+	t.Run("wkt-import", func(t *testing.T) {
+		expected := `{"syntax":"SYNTAX_PROTO3"}` // Syntax is not defined in type.proto
+		stdin := strings.NewReader(expected)
+		appcmdtesting.RunCommandExitCodeStdout(
+			t,
+			cmd,
+			0,
+			expected,
+			nil,
+			stdin,
+			"beta",
+			"convert",
+			"--type=google.protobuf.Type",
+			"--from=-#format=json",
+			"--to",
+			"-#format=json",
+		)
+	})
 }
