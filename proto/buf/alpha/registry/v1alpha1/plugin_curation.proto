@@ -148,6 +148,8 @@ message CuratedPlugin {
   // spdx_license_id is the license of the plugin, which should be one of the identifiers
   // defined in https://spdx.org/licenses
   string spdx_license_id = 15;
+  // license_url specifies an optional URL for the plugin's license (if not using a standard spdx_license_id).
+  string license_url = 16;
 }
 
 // PluginCurationService manages curated plugins.
@@ -236,6 +238,8 @@ message CreateCuratedPluginRequest {
   // spdx_license_id is the license of the plugin, which should be one of the identifiers
   // defined in https://spdx.org/licenses
   string spdx_license_id = 15;
+  // license_url specifies an optional URL for the plugin's license (if not using a standard spdx_license_id).
+  string license_url = 16;
 }
 
 message CreateCuratedPluginResponse {
