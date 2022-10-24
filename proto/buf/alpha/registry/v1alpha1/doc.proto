@@ -186,6 +186,7 @@ message Service {
 // ServiceOptions provides information for the documentation of options for a given service.
 message ServiceOptions {
   bool deprecated = 1;
+  repeated CustomOption custom_options = 2;
 }
 
 // Method provides information for the documentation for a method of a given service.
@@ -206,6 +207,7 @@ message MethodOptions {
   bool deprecated = 1;
   // idempotency_level holds a value of the enumeration `google.protobuf.MethodOptions.IdempotencyLevel.
   int32 idempotency_level = 2;
+  repeated CustomOption custom_options = 3;
 }
 
 // MethodRequestResponse provides information for the documentation of a Method request or response message.
@@ -247,6 +249,7 @@ message Enum {
 message EnumOptions {
   bool deprecated = 1;
   bool allow_alias = 2;
+  repeated CustomOption custom_options = 3;
 }
 
 // EnumValue provides information for the documentation of an enum value.
@@ -264,6 +267,7 @@ message EnumValue {
 // EnumValueOptions provides information for the documentation of options for an enum value.
 message EnumValueOptions {
   bool deprecated = 1;
+  repeated CustomOption custom_options = 2;
 }
 
 // ImportRef provides the import metadata if a type is imported.
@@ -311,16 +315,18 @@ message MessageField {
 // MessageOptions provides information for the documentation of options for a message.
 message MessageOptions {
   bool deprecated = 1;
+  repeated CustomOption custom_options = 2;
 }
 
 // Oneof represents a oneof set of fields.
 message Oneof {
   string name = 1;
   repeated Field fields = 2;
+  OneofOptions oneof_options = 3;
 }
 
 message OneofOptions {
-  repeated string custom_option = 1;
+  repeated CustomOption custom_options = 1;
 }
 
 // Field provides information for the documentation of a message field.
@@ -357,6 +363,7 @@ message FieldOptions {
   int32 ctype = 3;
   // jstype holds a value of the enumeration `google.protobuf.FieldOptions.JSType.
   int32 jstype = 4;
+  repeated CustomOption custom_options = 5;
 }
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
@@ -388,4 +395,10 @@ message FileExtension {
   repeated Field fields = 5;
   // file_deprecated is the deprecation status of the file containing the field.
   bool file_deprecated = 6;
+}
+
+// CustomOption provides the type and value information for the documentation.
+message CustomOption {
+  string custom_option_type = 1;
+  string custom_option_value = 2;
 }
