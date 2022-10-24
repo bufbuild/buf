@@ -21,7 +21,6 @@ package appprotoexec
 import (
 	"context"
 	"fmt"
-	"os/exec"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
@@ -127,13 +126,13 @@ func NewHandler(
 		option(handlerOptions)
 	}
 	if handlerOptions.pluginPath != "" {
-		pluginPath, err := exec.LookPath(handlerOptions.pluginPath)
+		pluginPath, err := unsafeLookPath(handlerOptions.pluginPath)
 		if err != nil {
 			return nil, err
 		}
 		return newBinaryHandler(logger, runner, pluginPath), nil
 	}
-	pluginPath, err := exec.LookPath("protoc-gen-" + pluginName)
+	pluginPath, err := unsafeLookPath("protoc-gen-" + pluginName)
 	if err == nil {
 		return newBinaryHandler(logger, runner, pluginPath), nil
 	}
@@ -142,7 +141,7 @@ func NewHandler(
 		if handlerOptions.protocPath == "" {
 			handlerOptions.protocPath = "protoc"
 		}
-		protocPath, err := exec.LookPath(handlerOptions.protocPath)
+		protocPath, err := unsafeLookPath(handlerOptions.protocPath)
 		if err != nil {
 			return nil, err
 		}
