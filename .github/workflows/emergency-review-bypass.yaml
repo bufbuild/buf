@@ -11,7 +11,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: approve pull request
-        uses: hmarr/auto-approve-action@a2e6f2a0ccf5c63ef8754de360464edbf47e66ee
+        uses: hmarr/auto-approve-action@de8ae18c173c131e182d4adf2c874d8d2308a85b
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pull-request-number: ${{ github.event.inputs.pullRequestNumber }}
