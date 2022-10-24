@@ -60,7 +60,7 @@ func TestConvertDir(t *testing.T) {
 			"payload.bin",
 		)
 	})
-	t.Run("wkt", func(t *testing.T) {
+	t.Run("wellknowntype", func(t *testing.T) {
 		appcmdtesting.RunCommandExitCodeStdout(
 			t,
 			cmd,
@@ -76,7 +76,7 @@ func TestConvertDir(t *testing.T) {
 			"duration.bin",
 		)
 	})
-	t.Run("wkt-bin", func(t *testing.T) {
+	t.Run("wellknowntype-bin", func(t *testing.T) {
 		appcmdtesting.RunCommandExitCodeStdoutFile(
 			t,
 			cmd,
@@ -92,7 +92,7 @@ func TestConvertDir(t *testing.T) {
 			"-#format=bin",
 		)
 	})
-	t.Run("wkt-incorrect-input", func(t *testing.T) {
+	t.Run("wellknowntype-incorrect-input", func(t *testing.T) {
 		appcmdtesting.RunCommandExitCodeStdout(
 			t,
 			cmd,
@@ -109,7 +109,7 @@ func TestConvertDir(t *testing.T) {
 			"-#format=bin",
 		)
 	})
-	t.Run("wkt-google-file-local", func(t *testing.T) {
+	t.Run("wellknowntype-google-file-local", func(t *testing.T) {
 		appcmdtesting.RunCommandExitCodeStdout(
 			t,
 			cmd,
@@ -126,7 +126,7 @@ func TestConvertDir(t *testing.T) {
 			"-#format=bin",
 		)
 	})
-	t.Run("wkt-local-wkt-exists", func(t *testing.T) {
+	t.Run("wellknowntype-local-wkt-exists", func(t *testing.T) {
 		expected := `{"name":"blah"}` // valid google.protobuf.Method message
 		stdin := strings.NewReader(expected)
 		appcmdtesting.RunCommandExitCodeStdout(
@@ -144,7 +144,7 @@ func TestConvertDir(t *testing.T) {
 			"-#format=json",
 		)
 	})
-	t.Run("wkt-local-changed", func(t *testing.T) {
+	t.Run("wellknowntype-local-changed", func(t *testing.T) {
 		expected := `{"notinoriginal":"blah"}` // notinoriginal exists in the local api.proto
 		stdin := strings.NewReader(expected)
 		appcmdtesting.RunCommandExitCodeStdout(
@@ -162,7 +162,7 @@ func TestConvertDir(t *testing.T) {
 			"-#format=json",
 		)
 	})
-	t.Run("wkt-local-changed", func(t *testing.T) {
+	t.Run("wellknowntype-local-changed", func(t *testing.T) {
 		stdin := strings.NewReader(`{"notinchanged":"blah"}`) // notinchanged does not exist in the local api.proto
 		appcmdtesting.RunCommandExitCodeStdout(
 			t,
@@ -179,7 +179,7 @@ func TestConvertDir(t *testing.T) {
 			"-#format=json",
 		)
 	})
-	t.Run("wkt-import", func(t *testing.T) {
+	t.Run("wellknowntype-import", func(t *testing.T) {
 		expected := `{"syntax":"SYNTAX_PROTO3"}` // Syntax is imported into type.proto
 		stdin := strings.NewReader(expected)
 		appcmdtesting.RunCommandExitCodeStdout(
