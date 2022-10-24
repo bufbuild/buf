@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	licenseListURL = "https://raw.githubusercontent.com/spdx/license-list-data/v3.12/json/licenses.json"
+	licenseListURL = "https://raw.githubusercontent.com/spdx/license-list-data/v3.18/json/licenses.json"
 )
 
 var (
