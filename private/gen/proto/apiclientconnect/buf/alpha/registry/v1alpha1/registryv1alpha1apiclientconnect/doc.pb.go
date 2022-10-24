@@ -103,8 +103,8 @@ func (s *docServiceClient) GetModulePackages(
 	return response.Msg.Name, response.Msg.ModulePackages, nil
 }
 
-// GetModuleDocumentation retrieves the documentation for module based on the given
-// owner, repository, and reference.
+// GetModuleDocumentation retrieves the documentations including buf.md and LICENSE files
+// for module based on the given owner, repository, and reference.
 func (s *docServiceClient) GetModuleDocumentation(
 	ctx context.Context,
 	owner string,
