@@ -92,7 +92,6 @@ type licenseInfoList struct {
 }
 
 type LicenseInfo struct {
-	ID        string `json:"licenseId,omitempty" yaml:"licenseId,omitempty"`
-	Name      string `json:"name,omitempty" yaml:"name,omitempty"`
-	Reference string `json:"reference,omitempty" yaml:"reference,omitempty"`
+	ID   string `json:"licenseId,omitempty" yaml:"licenseId,omitempty"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 }

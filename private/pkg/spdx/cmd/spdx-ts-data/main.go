@@ -74,14 +74,9 @@ export const LICENSES = {
 		if err != nil {
 			return nil, err
 		}
-		reference, err := json.Marshal(licenseInfo.Reference)
-		if err != nil {
-			return nil, err
-		}
 		_, _ = buffer.WriteString(`	"` + strings.ToLower(licenseInfo.ID) + `": {
 		ID: ` + string(id) + ` as const,
 		name: ` + string(name) + ` as const,
-		reference: ` + string(reference) + ` as const,
 	},
 `)
 	}
