@@ -17,6 +17,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -65,10 +66,22 @@ export const LICENSES = {
 `)
 
 	for _, licenseInfo := range licenseInfos {
+		id, err := json.Marshal(licenseInfo.ID)
+		if err != nil {
+			return nil, err
+		}
+		name, err := json.Marshal(licenseInfo.Name)
+		if err != nil {
+			return nil, err
+		}
+		reference, err := json.Marshal(licenseInfo.Reference)
+		if err != nil {
+			return nil, err
+		}
 		_, _ = buffer.WriteString(`	"` + strings.ToLower(licenseInfo.ID) + `": {
-		ID: "` + licenseInfo.ID + `" as const,
-		name: ` + "`" + licenseInfo.Name + "`" + ` as const,
-		reference: "` + licenseInfo.Reference + `" as const,
+		ID: ` + string(id) + ` as const,
+		name: ` + string(name) + ` as const,
+		reference: ` + string(reference) + ` as const,
 	},
 `)
 	}
