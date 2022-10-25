@@ -393,7 +393,7 @@ message FileExtension {
   Location location = 4;
   // fields are all the fields that are associated with the extension.
   repeated Field fields = 5;
-  // file_deprecated is the deprecation status of the file containing the field.
+  // file_deprecated is the deprecation status of the file containing the extension.
   bool file_deprecated = 6;
 }
 

@@ -2479,7 +2479,7 @@ type FileExtension struct {
 	Location *Location `protobuf:"bytes,4,opt,name=location,proto3" json:"location,omitempty"`
 	// fields are all the fields that are associated with the extension.
 	Fields []*Field `protobuf:"bytes,5,rep,name=fields,proto3" json:"fields,omitempty"`
-	// file_deprecated is the deprecation status of the file containing the field.
+	// file_deprecated is the deprecation status of the file containing the extension.
 	FileDeprecated bool `protobuf:"varint,6,opt,name=file_deprecated,json=fileDeprecated,proto3" json:"file_deprecated,omitempty"`
 }
 
