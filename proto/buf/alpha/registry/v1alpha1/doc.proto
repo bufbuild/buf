@@ -31,8 +31,8 @@ service DocService {
   // GetModulePackages retrieves the list of packages for the module based on the given
   // owner, repository, and reference.
   rpc GetModulePackages(GetModulePackagesRequest) returns (GetModulePackagesResponse);
-  // GetModuleDocumentation retrieves the documentation for module based on the given
-  // owner, repository, and reference.
+  // GetModuleDocumentation retrieves the documentations including buf.md and LICENSE files
+  // for module based on the given owner, repository, and reference.
   rpc GetModuleDocumentation(GetModuleDocumentationRequest) returns (GetModuleDocumentationResponse);
   // GetPackageDocumentation retrieves a a slice of documentation structures
   // for the given owner, repository, reference, and package name.
@@ -106,7 +106,7 @@ message GetModuleDocumentationResponse {
   ModuleDocumentation module_documentation = 1;
 }
 
-// ModuleDocumentation provides the name of the module and associated documentation.
+// ModuleDocumentation provides the name of the module and associated documentations.
 message ModuleDocumentation {
   string name = 1;
   // This is the string representation of the contents of the buf.md file for module-level documentation.
@@ -114,6 +114,11 @@ message ModuleDocumentation {
   // The buf.md file is a part of the module.
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
   string documentation = 3;
+  // This is the string representation of the contents of the LICENSE file for module-level license.
+  //
+  // The LICENSE file is a part of the module.
+  // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
+  string license = 4;
 }
 
 // GetPackageDocumentationRequest takes an owner, repository, reference, and package name.
