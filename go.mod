@@ -3,7 +3,7 @@ module github.com/bufbuild/buf
 go 1.18
 
 require (
-	github.com/bufbuild/connect-go v1.0.0
+	github.com/bufbuild/connect-go v1.1.0
 	github.com/bufbuild/protocompile v0.1.0
 	github.com/docker/docker v20.10.20+incompatible
 	github.com/go-chi/chi/v5 v5.0.7
@@ -11,7 +11,7 @@ require (
 	github.com/gofrs/uuid v4.3.0+incompatible
 	github.com/google/go-cmp v0.5.9
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
-	github.com/jhump/protoreflect v1.13.1-0.20220928232736-101791cb1b4c
+	github.com/jhump/protoreflect v1.14.0
 	github.com/klauspost/compress v1.15.11
 	github.com/klauspost/pgzip v1.2.5
 	github.com/moby/buildkit v0.10.5
