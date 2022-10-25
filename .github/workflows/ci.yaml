@@ -98,7 +98,7 @@ jobs:
           if echo "${GITHUB_REF}" | grep ^refs/heads/main$ >/dev/null; then
             echo "tag=latest" >> $GITHUB_OUTPUT
           elif echo "${GITHUB_REF}" | grep ^refs/tags/v >/dev/null; then
-            echo "tag=$(echo \"${GITHUB_REF}\" | sed \"s/refs\/tags\/v//\")" >> $GITHUB_OUTPUT
+            echo "tag=${GITHUB_REF}" | sed "s|refs/tags/v||" >> $GITHUB_OUTPUT
           fi
       - name: docker-build-push
         uses: docker/build-push-action@v3
