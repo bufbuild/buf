@@ -399,6 +399,6 @@ message FileExtension {
 
 // CustomOption provides the type and value information for the documentation.
 message CustomOption {
-  string custom_option_type = 1;
+  string custom_option_name = 1;
   string custom_option_value = 2;
 }
