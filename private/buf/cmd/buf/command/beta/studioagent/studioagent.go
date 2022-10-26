@@ -192,10 +192,10 @@ func run(
 		container.Logger(),
 		httpListener,
 		mux,
-		httpserver.RunnerWithTLSConfig(
+		httpserver.RunWithTLSConfig(
 			serverTLSConfig,
 		),
-		httpserver.RunnerWithMaxBodySize(
+		httpserver.RunWithMaxBodySize(
 			bufstudioagent.MaxMessageSizeBytesDefault,
 		),
 	)
