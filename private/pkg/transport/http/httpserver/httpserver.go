@@ -41,7 +41,6 @@ type runner struct {
 	shutdownTimeout   time.Duration
 	readHeaderTimeout time.Duration
 	tlsConfig         *tls.Config
-	maxBodySize       int64
 	walkFunc          chi.WalkFunc
 }
 
@@ -74,16 +73,6 @@ func RunWithReadHeaderTimeout(readHeaderTimeout time.Duration) RunOption {
 func RunWithTLSConfig(tlsConfig *tls.Config) RunOption {
 	return func(runner *runner) {
 		runner.tlsConfig = tlsConfig
-	}
-}
-
-// RunWithMaxBodySize returns a new RunOption that sets the max size of
-// incoming request body.
-//
-// The default is to not limit body size.
-func RunWithMaxBodySize(maxBodySize int64) RunOption {
-	return func(runner *runner) {
-		runner.maxBodySize = maxBodySize
 	}
 }
 
@@ -164,7 +153,6 @@ func Run(
 		zap.String("address", listener.Addr().String()),
 		zap.Duration("shutdown_timeout", s.shutdownTimeout),
 		zap.Bool("tls", s.tlsConfig != nil),
-		zap.Int64("max_body_size", s.maxBodySize),
 	)
 	if err := eg.Wait(); err != http.ErrServerClosed {
 		return err
