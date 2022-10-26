@@ -39,7 +39,7 @@ jobs:
         id: ghr
         uses: softprops/action-gh-release@v1
         with:
-          token: ${{ secrets.PAT }}
+          token: ${{ steps.generate_token.outputs.token }}
           generate_release_notes: true # change to the CHANGELOG somehow
           files: |
             ${{env.FILES}}

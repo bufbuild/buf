@@ -25,7 +25,7 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.PAT }}
+          token: ${{ steps.generate_token.outputs.token }}
       - uses: actions/setup-go@v3
         with:
           go-version: '^1.19.x'
@@ -46,7 +46,7 @@ jobs:
             Release prepared for ${{env.VERSION}}
             
             Reminder: Update the changelog
-          token: ${{ secrets.PAT }}
+          token: ${{ steps.generate_token.outputs.token }}
       - name: Slack Notification
         run: |
           jq --null-input '{ text: "BufCLI Release v${{env.VERSION}} has started: ${{ steps.cpr.outputs.pull-request-url }}" }' \

@@ -25,11 +25,11 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.PAT }}
+          token: ${{ steps.generate_token.outputs.token }}
           fetch-depth: 0
       - name: Tag Release
         run: |
-          git config --global user.password ${{ secrets.PAT }}
+          git config --global user.password ${{ steps.generate_token.outputs.token }}
           git tag -d ${{env.VERSION}} 2> /dev/null || echo 'local ref does not exist'
           git push origin :${{env.VERSION}} 2> /dev/null || echo 'remote ref does not exist'
           git tag ${{env.VERSION}}
