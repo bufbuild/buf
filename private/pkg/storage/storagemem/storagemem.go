@@ -25,15 +25,41 @@ import (
 
 var errDuplicatePath = errors.New("duplicate path")
 
+type options struct {
+	pathToData map[string][]byte
+}
+
+// Option is provided by NewReadWriteBucket2 options.
+type Option interface {
+	apply(*options)
+}
+
+type pathData map[string][]byte
+
+func (pd pathData) apply(opts *options) {
+	opts.pathToData = pd
+}
+
+// WithFiles adds files by path to their content into the bucket.
+func WithFiles(pathToData map[string][]byte) Option {
+	return (pathData)(pathToData)
+}
+
 // NewReadWriteBucket returns a new in-memory ReadWriteBucket.
 func NewReadWriteBucket() storage.ReadWriteBucket {
 	return newBucket(nil)
 }
 
-// NewReadBucket returns a new ReadBucket.
-func NewReadBucket(pathToData map[string][]byte) (storage.ReadBucket, error) {
-	pathToImmutableObject := make(map[string]*internal.ImmutableObject, len(pathToData))
-	for path, data := range pathToData {
+// NewReadWriteBucket2 returns a new in-memory ReadWriteBucket. Errors are
+// returned with invalid options.
+func NewReadWriteBucket2(opts ...Option) (storage.ReadWriteBucket, error) {
+	opt := options{}
+	for _, o := range opts {
+		o.apply(&opt)
+	}
+
+	pathToImmutableObject := make(map[string]*internal.ImmutableObject, len(opt.pathToData))
+	for path, data := range opt.pathToData {
 		path, err := storageutil.ValidatePath(path)
 		if err != nil {
 			return nil, err
@@ -45,4 +71,9 @@ func NewReadBucket(pathToData map[string][]byte) (storage.ReadBucket, error) {
 		pathToImmutableObject[path] = internal.NewImmutableObject(path, "", data)
 	}
 	return newBucket(pathToImmutableObject), nil
+}
+
+// NewReadBucket returns a new ReadBucket.
+func NewReadBucket(pathToData map[string][]byte) (storage.ReadBucket, error) {
+	return NewReadWriteBucket2(WithFiles(pathToData))
 }
