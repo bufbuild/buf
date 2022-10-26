@@ -8,10 +8,10 @@ permissions:
 jobs:
   approve:
     if: github.event.label.name == 'Emergency Bypass Review'
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: approve pull request
-        uses: hmarr/auto-approve-action@a2e6f2a0ccf5c63ef8754de360464edbf47e66ee
+        uses: hmarr/auto-approve-action@9ae347e9f84a25da76c915a406cb17cfece1716d
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pull-request-number: ${{ github.event.inputs.pullRequestNumber }}
