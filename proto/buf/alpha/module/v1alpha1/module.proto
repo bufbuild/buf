@@ -21,7 +21,7 @@ import "buf/alpha/lint/v1/config.proto";
 import "google/protobuf/timestamp.proto";
 
 enum HashKind {
-  HASH_KIND_UNKNOWN_UNSPECIFIED = 0;
+  HASH_KIND_UNSPECIFIED = 0;
   HASH_KIND_SHAKE256 = 1;
 }
 
