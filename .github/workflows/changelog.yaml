@@ -1,4 +1,5 @@
-name: ChangeLog
+name: Verify ChangeLog
+
 on:
   push:
     branches:
