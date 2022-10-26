@@ -47,6 +47,8 @@ const (
 	sliceLength = math.MaxInt64
 )
 
+var failedError = app.NewError( /* exitCode */ 100, "something went wrong")
+
 func main() {
 	appcmd.Main(context.Background(), newCommand())
 }
@@ -183,7 +185,7 @@ func getProtosourceFiles(
 		); err != nil {
 			return nil, err
 		}
-		return nil, app.NewError(100, "")
+		return nil, failedError
 	}
 	return protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
 }
