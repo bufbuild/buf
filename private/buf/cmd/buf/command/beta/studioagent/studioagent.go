@@ -187,19 +187,14 @@ func run(
 		return err
 	}
 
-	httpRunner := httpserver.NewRunner(
+	return httpserver.Run(
+		ctx,
 		container.Logger(),
-		httpserver.RunnerWithTLSConfig(
+		httpListener,
+		mux,
+		httpserver.RunWithTLSConfig(
 			serverTLSConfig,
 		),
-		httpserver.RunnerWithMaxBodySize(
-			bufstudioagent.MaxMessageSizeBytesDefault,
-		),
-	)
-	return httpRunner.Run(
-		ctx,
-		httpListener,
-		httpserver.NewHTTPHandlerMapper(mux),
 	)
 }
 
