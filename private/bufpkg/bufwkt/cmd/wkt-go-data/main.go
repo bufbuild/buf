@@ -220,7 +220,6 @@ var (
 
 	pathToData = map[string][]byte{
 `)
-
 	paths := make([]string, 0, len(pathToData))
 	for path := range pathToData {
 		paths = append(paths, path)
@@ -249,7 +248,6 @@ var (
 		p(`},
 `)
 	}
-
 	p(`}
 
 	messageNameToFilePath = map[string]string{
@@ -305,7 +303,6 @@ func EnumFilePath(enumName string) (string, bool) {
 	return filePath, ok
 }
 `)
-
 	return format.Source(buffer.Bytes())
 }
 
