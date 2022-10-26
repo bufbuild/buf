@@ -39,7 +39,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
@@ -679,17 +678,20 @@ func PromptUserForPassword(container app.Container, prompt string) (string, erro
 	return promptUser(container, prompt, true)
 }
 
-// ReadModuleWithWorkspacesDisabled gets a module from a source ref.
+// BucketAndConfigForSource returns a bucket and config. The bucket contains
+// just the files that constitute a module. It also checks if config
+// exists and defines a module identity, returning ErrNoConfigFile and
+// ErrNoModuleName respectfully.
 //
-// Workspaces are disabled for this function.
-func ReadModuleWithWorkspacesDisabled(
+// Workspaces are disabled when fetching the source.
+func BucketAndConfigForSource(
 	ctx context.Context,
 	logger *zap.Logger,
 	container app.EnvStdinContainer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	source string,
-) (bufmodule.Module, bufmoduleref.ModuleIdentity, error) {
+) (storage.ReadBucketCloser, *bufconfig.Config, error) {
 	sourceRef, err := buffetch.NewSourceRefParser(
 		logger,
 	).GetSourceRef(
@@ -727,19 +729,25 @@ func ReadModuleWithWorkspacesDisabled(
 	if err != nil {
 		return nil, nil, err
 	}
-	moduleIdentity := sourceConfig.ModuleIdentity
-	if moduleIdentity == nil {
+	if sourceConfig.ModuleIdentity == nil {
 		return nil, nil, ErrNoModuleName
 	}
-	module, err := bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
+
+	return sourceBucket, sourceConfig, nil
+}
+
+// ReadModule gets a module from a source bucket and its config.
+func ReadModule(
+	ctx context.Context,
+	logger *zap.Logger,
+	sourceBucket storage.ReadBucketCloser,
+	sourceConfig *bufconfig.Config,
+) (bufmodule.Module, error) {
+	return bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
 		ctx,
 		sourceBucket,
 		sourceConfig.Build,
 	)
-	if err != nil {
-		return nil, nil, err
-	}
-	return module, moduleIdentity, err
 }
 
 // NewImageForSource resolves a single bufimage.Image from the user-provided source with the build options.

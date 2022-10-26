@@ -139,13 +139,23 @@ func run(
 	runner := command.NewRunner()
 	// We are pushing to the BSR, this module has to be independently buildable
 	// given the configuration it has without any enclosing workspace.
-	module, moduleIdentity, err := bufcli.ReadModuleWithWorkspacesDisabled(
+	sourceBucket, sourceConfig, err := bufcli.BucketAndConfigForSource(
 		ctx,
 		container.Logger(),
 		container,
 		storageosProvider,
 		runner,
 		source,
+	)
+	if err != nil {
+		return err
+	}
+	moduleIdentity := sourceConfig.ModuleIdentity
+	module, err := bufcli.ReadModule(
+		ctx,
+		container.Logger(),
+		sourceBucket,
+		sourceConfig,
 	)
 	if err != nil {
 		return err
