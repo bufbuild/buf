@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifest
+package manifest_test
 
 import (
 	"bytes"
@@ -25,6 +25,7 @@ import (
 	"testing/iotest"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,10 +39,10 @@ func Example() {
 			"foo": []byte("bar"),
 		},
 	)
-	manifest, _ := NewManifestFromBucket(ctx, bucket)
-	digest, _ := manifest.DigestFor("foo")
+	m, _ := manifest.NewFromBucket(ctx, bucket)
+	digest, _ := m.DigestFor("foo")
 	fmt.Printf("digest[:16]: %s\n", digest.Hex()[:16])
-	path, _ := manifest.PathsFor(digest.String())
+	path, _ := m.PathsFor(digest.String())
 	fmt.Printf("path at digest: %s\n", path[0])
 	// Output:
 	// digest[:16]: a15163728ed24e1c
@@ -63,7 +64,7 @@ func TestRoundTripManifest(t *testing.T) {
 		)
 	}
 	manifestContent := manifestBuilder.Bytes()
-	var m Manifest
+	var m manifest.Manifest
 	err := m.UnmarshalText(manifestContent)
 	require.NoError(t, err)
 
@@ -75,7 +76,7 @@ func TestRoundTripManifest(t *testing.T) {
 
 func TestEmptyManifest(t *testing.T) {
 	t.Parallel()
-	content, err := NewManifest().MarshalText()
+	content, err := manifest.New().MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(content))
 }
@@ -83,17 +84,17 @@ func TestEmptyManifest(t *testing.T) {
 func TestAddContent(t *testing.T) {
 	t.Parallel()
 	// single entry
-	manifest := NewManifest()
-	err := manifest.AddContent("my/path", bytes.NewReader(nil))
+	m := manifest.New()
+	err := m.AddContent("my/path", bytes.NewReader(nil))
 	require.NoError(t, err)
 	expect := fmt.Sprintf("%s  my/path\n", mkdigest(nil))
-	retContent, err := manifest.MarshalText()
+	retContent, err := m.MarshalText()
 	require.NoError(t, err)
 	assert.Equal(t, expect, string(retContent))
 
 	// failing content read
 	expectedErr := errors.New("testing error")
-	err = manifest.AddContent("my/path", iotest.ErrReader(expectedErr))
+	err = m.AddContent("my/path", iotest.ErrReader(expectedErr))
 	assert.ErrorIs(t, err, expectedErr)
 }
 
@@ -138,13 +139,13 @@ func TestInvalidManifests(t *testing.T) {
 func TestBrokenRead(t *testing.T) {
 	t.Parallel()
 	expected := errors.New("testing error")
-	_, err := NewManifestFromReader(iotest.ErrReader(expected))
+	_, err := manifest.NewFromReader(iotest.ErrReader(expected))
 	assert.ErrorIs(t, err, expected)
 }
 
 func TestUnmarshalBrokenManifest(t *testing.T) {
 	t.Parallel()
-	var m Manifest
+	var m manifest.Manifest
 	err := m.UnmarshalText([]byte("foo"))
 	assert.Error(t, err)
 }
@@ -158,7 +159,7 @@ func TestFromBucket(t *testing.T) {
 			"foo":  []byte("bar"),
 		})
 	require.NoError(t, err)
-	m, err := NewManifestFromBucket(ctx, bucket)
+	m, err := manifest.NewFromBucket(ctx, bucket)
 	require.NoError(t, err)
 	expected := fmt.Sprintf("%s  foo\n", mkdigest([]byte("bar")))
 	expected += fmt.Sprintf("%s  null\n", mkdigest(nil))
@@ -169,7 +170,7 @@ func TestFromBucket(t *testing.T) {
 
 func TestDigestPaths(t *testing.T) {
 	t.Parallel()
-	m := NewManifest()
+	m := manifest.New()
 	err := m.AddContent("path/one", bytes.NewReader(nil))
 	require.NoError(t, err)
 	err = m.AddContent("path/two", bytes.NewReader(nil))
@@ -184,7 +185,7 @@ func TestDigestPaths(t *testing.T) {
 
 func TestPathDigest(t *testing.T) {
 	t.Parallel()
-	m := NewManifest()
+	m := manifest.New()
 	err := m.AddContent("my/path", bytes.NewReader(nil))
 	require.NoError(t, err)
 	digest, ok := m.DigestFor("my/path")
@@ -195,7 +196,7 @@ func TestPathDigest(t *testing.T) {
 	assert.Empty(t, digest)
 }
 
-func mkdigest(content []byte) *Digest {
+func mkdigest(content []byte) *manifest.Digest {
 	hash := sha3.NewShake256()
 	if _, err := hash.Write(content); err != nil {
 		panic(err)
@@ -204,7 +205,7 @@ func mkdigest(content []byte) *Digest {
 	if _, err := hash.Read(digest); err != nil {
 		panic(err)
 	}
-	return NewDigestFromBytes("shake256", digest)
+	return manifest.NewDigestFromBytes("shake256", digest)
 }
 
 func testInvalidManifest(
@@ -215,7 +216,7 @@ func testInvalidManifest(
 	t.Helper()
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		_, err := NewManifestFromReader(strings.NewReader(line))
+		_, err := manifest.NewFromReader(strings.NewReader(line))
 		assert.ErrorContains(t, err, desc)
 	})
 }
@@ -223,7 +224,7 @@ func testInvalidManifest(
 func TestDigestValidator(t *testing.T) {
 	t.Parallel()
 	const content = "the content"
-	digest := NewDigestFromBytes("not-supported-dtype", []byte(content))
+	digest := manifest.NewDigestFromBytes("not-supported-dtype", []byte(content))
 	require.NotNil(t, digest)
 	_, err := digest.Valid(strings.NewReader(content))
 	require.ErrorContains(t, err, "unsupported hash")
@@ -235,7 +236,7 @@ func TestValidateContent(t *testing.T) {
 		filePath    = "path/to/file"
 		fileContent = "one line\nanother line\nyet another one\n"
 	)
-	m := NewManifest()
+	m := manifest.New()
 	require.NoError(t, m.AddContent(filePath, strings.NewReader(fileContent)))
 	fileDigest, ok := m.DigestFor(filePath)
 	require.True(t, ok)
@@ -258,22 +259,22 @@ func TestDigestFromBlobHash(t *testing.T) {
 		"shake256": modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
 	}
 	for supportedType, supportedKind := range typesToKinds {
-		digestFromFile := NewDigestFromBytes(supportedType, []byte(fileContent))
+		digestFromFile := manifest.NewDigestFromBytes(supportedType, []byte(fileContent))
 		require.NotNil(t, digestFromFile)
 		assert.Equal(t, supportedType, digestFromFile.Type())
 		blobHash := modulev1alpha1.Hash{
 			Kind:   supportedKind,
 			Digest: digestFromFile.Bytes(),
 		}
-		digestFromBlobHash, err := NewDigestFromBlobHash(&blobHash)
+		digestFromBlobHash, err := manifest.NewDigestFromBlobHash(&blobHash)
 		require.NoError(t, err)
 		assert.Equal(t, digestFromFile.String(), digestFromBlobHash.String())
 	}
 }
 
-func TestManifestPaths(t *testing.T) {
+func TestAllPaths(t *testing.T) {
 	t.Parallel()
-	m := NewManifest()
+	m := manifest.New()
 	for i := 0; i < 20; i++ {
 		err := m.AddContent(
 			fmt.Sprintf("path/to/file%0d", i),

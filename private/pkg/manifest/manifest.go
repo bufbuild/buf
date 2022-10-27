@@ -123,34 +123,34 @@ func (d *Digest) Valid(content io.Reader) (bool, error) {
 	return d.Hex() == hex.EncodeToString(digest), nil
 }
 
-// ManifestError occurs when a manifest is malformed.
-type ManifestError struct {
+// Error occurs when a manifest is malformed.
+type Error struct {
 	lineno  int
 	msg     string
 	wrapped error
 }
 
-var _ error = (*ManifestError)(nil)
+var _ error = (*Error)(nil)
 
-func newManifestError(lineno int, msg string) *ManifestError {
-	return &ManifestError{
+func newError(lineno int, msg string) *Error {
+	return &Error{
 		lineno: lineno,
 		msg:    msg,
 	}
 }
-func newManifestErrorFromError(lineno int, err error) *ManifestError {
-	return &ManifestError{
+func newErrorWrapped(lineno int, err error) *Error {
+	return &Error{
 		lineno:  lineno,
 		msg:     err.Error(),
 		wrapped: err,
 	}
 }
 
-func (e *ManifestError) Error() string {
+func (e *Error) Error() string {
 	return fmt.Sprintf("invalid manifest: %d: %s", e.lineno, e.msg)
 }
 
-func (e *ManifestError) Unwrap() error {
+func (e *Error) Unwrap() error {
 	return e.wrapped
 }
 
@@ -164,8 +164,8 @@ type Manifest struct {
 var _ encoding.TextMarshaler = (*Manifest)(nil)
 var _ encoding.TextUnmarshaler = (*Manifest)(nil)
 
-// NewManifest creates an empty manifest.
-func NewManifest() *Manifest {
+// New creates an empty manifest.
+func New() *Manifest {
 	return &Manifest{
 		pathToDigest:  make(map[string]Digest),
 		digestToPaths: make(map[string][]string),
@@ -173,9 +173,9 @@ func NewManifest() *Manifest {
 	}
 }
 
-// NewManifestFromReader builds a manifest an encoded manifest reader.
-func NewManifestFromReader(manifest io.Reader) (*Manifest, error) {
-	m := NewManifest()
+// NewFromReader builds a manifest from an encoded manifest reader.
+func NewFromReader(manifest io.Reader) (*Manifest, error) {
+	m := New()
 	scanner := bufio.NewScanner(manifest)
 	scanner.Split(splitManifest)
 	lineno := 0
@@ -183,19 +183,19 @@ func NewManifestFromReader(manifest io.Reader) (*Manifest, error) {
 		lineno++
 		hash, path, found := strings.Cut(scanner.Text(), "  ")
 		if !found {
-			return nil, newManifestError(lineno, "invalid entry")
+			return nil, newError(lineno, "invalid entry")
 		}
 		digest, err := NewDigestFromString(hash)
 		if err != nil {
-			return nil, newManifestErrorFromError(lineno, err)
+			return nil, newErrorWrapped(lineno, err)
 		}
 		if err := m.addDigest(path, digest); err != nil {
-			return nil, newManifestErrorFromError(lineno, err)
+			return nil, newErrorWrapped(lineno, err)
 		}
 	}
 	err := scanner.Err()
 	if err == errNoFinalNewline {
-		return nil, newManifestError(lineno, "partial record")
+		return nil, newError(lineno, "partial record")
 	}
 	if err != nil {
 		return nil, err
@@ -204,12 +204,12 @@ func NewManifestFromReader(manifest io.Reader) (*Manifest, error) {
 	return m, nil
 }
 
-// NewManifestFromBucket creates a manifest from a bucket.
-func NewManifestFromBucket(
+// NewFromBucket creates a manifest from a storage bucket.
+func NewFromBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 ) (*Manifest, error) {
-	m := NewManifest()
+	m := New()
 	err := bucket.Walk(ctx, "", func(info storage.ObjectInfo) error {
 		path := info.Path()
 		obj, err := bucket.Get(ctx, path)
@@ -298,7 +298,7 @@ func (m *Manifest) MarshalText() ([]byte, error) {
 // Use NewManifestFromReader if you have an io.Reader and want to avoid memory
 // copying.
 func (m *Manifest) UnmarshalText(text []byte) error {
-	newm, err := NewManifestFromReader(bytes.NewReader(text))
+	newm, err := NewFromReader(bytes.NewReader(text))
 	if err != nil {
 		return err
 	}
