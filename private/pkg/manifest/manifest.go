@@ -34,6 +34,7 @@ import (
 	"sort"
 	"strings"
 
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"golang.org/x/crypto/sha3"
 )
@@ -43,7 +44,12 @@ const (
 	shake256Length = 64
 )
 
-var errNoFinalNewline error = errors.New("partial record: missing newline")
+var (
+	errNoFinalNewline      = errors.New("partial record: missing newline")
+	moduleKindToDigestType = map[modulev1alpha1.HashKind]string{
+		modulev1alpha1.HashKind_HASH_KIND_SHAKE256: shake256Name,
+	}
+)
 
 // Digest represents a hash function's value.
 type Digest struct {
@@ -76,6 +82,17 @@ func NewDigestFromString(typedDigest string) (*Digest, error) {
 	return NewDigestFromHex(hashfunc, digestStr)
 }
 
+func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
+	if hash == nil {
+		return nil, fmt.Errorf("nil hash")
+	}
+	dType, ok := moduleKindToDigestType[hash.Kind]
+	if !ok {
+		return nil, fmt.Errorf("unsupported hash kind: %s", hash.Kind.String())
+	}
+	return NewDigestFromBytes(dType, hash.Digest), nil
+}
+
 // String returns the hash in a manifest's string format: "<type>:<hex>"
 func (d *Digest) String() string {
 	return d.Type() + ":" + d.Hex()
@@ -91,6 +108,19 @@ func (d *Digest) Bytes() []byte {
 
 func (d *Digest) Hex() string {
 	return d.hexstr
+}
+
+// Valid checks if the current digest matches a passed content, and any error
+// attempting to validate.
+func (d *Digest) Valid(content io.Reader) (bool, error) {
+	if d.Type() != shake256Name {
+		return false, fmt.Errorf("unsupported hash: %s", d.Type())
+	}
+	digest, err := shake256DigestFrom(sha3.NewShake256(), content)
+	if err != nil {
+		return false, err
+	}
+	return d.Hex() == hex.EncodeToString(digest), nil
 }
 
 // ManifestError occurs when a manifest is malformed.
@@ -214,13 +244,8 @@ func (m *Manifest) addDigest(path string, digest *Digest) error {
 // are errors from reading content, except io.EOF is swallowed.
 func (m *Manifest) AddContent(path string, content io.Reader) error {
 	m.hash.Reset()
-	if _, err := io.Copy(m.hash, content); err != nil {
-		return err
-	}
-	digest := make([]byte, shake256Length)
-	if _, err := m.hash.Read(digest); err != nil {
-		// sha3.ShakeHash never errors or short reads. Something horribly wrong
-		// happened if your computer ended up here.
+	digest, err := shake256DigestFrom(m.hash, content)
+	if err != nil {
 		return err
 	}
 	return m.addDigest(path, NewDigestFromBytes(shake256Name, digest))
@@ -287,4 +312,17 @@ func splitManifest(data []byte, atEOF bool) (int, []byte, error) {
 	}
 
 	return 0, nil, nil
+}
+
+func shake256DigestFrom(hash sha3.ShakeHash, content io.Reader) ([]byte, error) {
+	if _, err := io.Copy(hash, content); err != nil {
+		return nil, err
+	}
+	digest := make([]byte, shake256Length)
+	if _, err := hash.Read(digest); err != nil {
+		// sha3.ShakeHash never errors or short reads. Something horribly wrong
+		// happened if your computer ended up here.
+		return nil, err
+	}
+	return digest, nil
 }

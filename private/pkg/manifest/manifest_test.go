@@ -23,6 +23,7 @@ import (
 	"testing"
 	"testing/iotest"
 
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -216,4 +217,55 @@ func testInvalidManifest(
 		_, err := NewManifestFromReader(strings.NewReader(line))
 		assert.ErrorContains(t, err, desc)
 	})
+}
+
+func TestDigestValidator(t *testing.T) {
+	t.Parallel()
+	const content = "the content"
+	digest := NewDigestFromBytes("not-supported-dtype", []byte(content))
+	require.NotNil(t, digest)
+	_, err := digest.Valid(strings.NewReader(content))
+	require.ErrorContains(t, err, "unsupported hash")
+}
+
+func TestValidateContent(t *testing.T) {
+	t.Parallel()
+	const (
+		filePath    = "path/to/file"
+		fileContent = "one line\nanother line\nyet another one\n"
+	)
+	m := NewManifest()
+	require.NoError(t, m.AddContent(filePath, strings.NewReader(fileContent)))
+	fileDigest, ok := m.Digest(filePath)
+	require.True(t, ok)
+	require.NotNil(t, fileDigest)
+	valid, err := fileDigest.Valid(strings.NewReader(fileContent))
+	require.NoError(t, err)
+	assert.True(t, valid)
+	valid, err = fileDigest.Valid(strings.NewReader("some other content"))
+	require.NoError(t, err)
+	assert.False(t, valid)
+}
+
+func TestDigestFromBlobHash(t *testing.T) {
+	t.Parallel()
+	const (
+		filePath    = "path/to/file"
+		fileContent = "one line\nanother line\nyet another one\n"
+	)
+	typesToKinds := map[string]modulev1alpha1.HashKind{
+		"shake256": modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
+	}
+	for supportedType, supportedKind := range typesToKinds {
+		digestFromFile := NewDigestFromBytes(supportedType, []byte(fileContent))
+		require.NotNil(t, digestFromFile)
+		assert.Equal(t, supportedType, digestFromFile.Type())
+		blobHash := modulev1alpha1.Hash{
+			Kind:   supportedKind,
+			Digest: digestFromFile.Bytes(),
+		}
+		digestFromBlobHash, err := NewDigestFromBlobHash(&blobHash)
+		require.NoError(t, err)
+		assert.Equal(t, digestFromFile.String(), digestFromBlobHash.String())
+	}
 }
