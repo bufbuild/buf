@@ -63,7 +63,6 @@ func TestDownload(t *testing.T) {
 			err: connect.NewError(connect.CodeNotFound, nil),
 		},
 		true,
-		true,
 		"does not exist",
 	)
 	testDownload(
@@ -73,7 +72,6 @@ func TestDownload(t *testing.T) {
 			err: errors.New("internal"),
 		},
 		true,
-		true,
 		"internal",
 	)
 	testDownload(
@@ -81,8 +79,22 @@ func TestDownload(t *testing.T) {
 		"success but response has all empty fields",
 		&mockDownloadService{},
 		true,
-		true,
 		"module is required",
+	)
+	testDownload(
+		t,
+		"success",
+		&mockDownloadService{
+			module: &v1alpha1.Module{
+				Files: []*v1alpha1.ModuleFile{
+					{
+						Path: "foo.proto",
+					},
+				},
+			},
+		},
+		false,
+		"",
 	)
 }
 
@@ -90,7 +102,6 @@ func testDownload(
 	t *testing.T,
 	desc string,
 	downloadServiceProvider registryv1alpha1apiclient.DownloadServiceProvider,
-	expectNilModule bool,
 	expectError bool,
 	errorContains string,
 ) {
@@ -109,17 +120,13 @@ func testDownload(
 		)
 		require.NoError(t, err)
 		module, err := moduleReader.GetModule(ctx, pin)
-		if expectNilModule {
-			assert.Nil(t, module)
-		} else {
-			assert.NotNil(t, module)
-		}
 		if expectError {
 			assert.Error(t, err)
 			if errorContains != "" {
 				assert.ErrorContains(t, err, errorContains)
 			}
 		} else {
+			assert.NotNil(t, module)
 			assert.NoError(t, err)
 		}
 	})
