@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.audit.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/plugin.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "google/protobuf/timestamp.proto";
@@ -171,6 +172,8 @@ message PayloadRepositoryCreated {
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
   string owner_name = 2;
+  // visibility is the visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
 }
 
 message PayloadRepositoryDeleted {
@@ -178,6 +181,8 @@ message PayloadRepositoryDeleted {
   string owner_id = 1;
   // owner_name is the name of the owner of the repository.
   string owner_name = 2;
+  // visibility is the visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
 }
 
 message PayloadRepositoryCommitPushed {
@@ -252,6 +257,8 @@ message PayloadPluginCreated {
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
   string owner_name = 2;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.PluginVisibility visibility = 3;
 }
 
 message PayloadPluginDeleted {
@@ -259,6 +266,8 @@ message PayloadPluginDeleted {
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
   string owner_name = 2;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.PluginVisibility visibility = 3;
 }
 
 message PayloadUserCreated {}

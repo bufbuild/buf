@@ -685,13 +685,14 @@ func PromptUserForPassword(container app.Container, prompt string) (string, erro
 // Workspaces are disabled for this function.
 func ReadModuleWithWorkspacesDisabled(
 	ctx context.Context,
-	container appflag.Container,
+	logger *zap.Logger,
+	container app.EnvStdinContainer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	source string,
 ) (bufmodule.Module, bufmoduleref.ModuleIdentity, error) {
 	sourceRef, err := buffetch.NewSourceRefParser(
-		container.Logger(),
+		logger,
 	).GetSourceRef(
 		ctx,
 		source,
@@ -700,7 +701,7 @@ func ReadModuleWithWorkspacesDisabled(
 		return nil, nil, err
 	}
 	sourceBucket, err := newFetchSourceReader(
-		container.Logger(),
+		logger,
 		storageosProvider,
 		runner,
 	).GetSourceBucket(
@@ -731,7 +732,7 @@ func ReadModuleWithWorkspacesDisabled(
 	if moduleIdentity == nil {
 		return nil, nil, ErrNoModuleName
 	}
-	module, err := bufmodulebuild.NewModuleBucketBuilder(container.Logger()).BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
 		ctx,
 		sourceBucket,
 		sourceConfig.Build,
