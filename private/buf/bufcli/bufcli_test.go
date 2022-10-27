@@ -122,13 +122,13 @@ func testReadModuleWithWorkspacesDisabled(
 			assert.NotNil(t, module)
 			assert.NotNil(t, identity)
 			assert.NoError(t, err)
-		} else {
-			if expectedErr != nil {
-				assert.ErrorIs(t, err, expectedErr)
-			}
-			if expectedErrContains != "" {
-				assert.ErrorContains(t, err, expectedErrContains)
-			}
+			return
+		}
+		if expectedErr != nil {
+			assert.ErrorIs(t, err, expectedErr)
+		}
+		if expectedErrContains != "" {
+			assert.ErrorContains(t, err, expectedErrContains)
 		}
 	})
 }
