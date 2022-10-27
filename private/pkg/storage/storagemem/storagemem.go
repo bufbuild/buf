@@ -29,7 +29,7 @@ type options struct {
 	pathToData map[string][]byte
 }
 
-// Option is provided by NewReadWriteBucket2 options.
+// Option is provided by NewReadWriteBucketWithOptions options.
 type Option interface {
 	apply(*options)
 }
@@ -46,13 +46,14 @@ func WithFiles(pathToData map[string][]byte) Option {
 }
 
 // NewReadWriteBucket returns a new in-memory ReadWriteBucket.
+// Deprecated: Use NewReadWriteBucketWithOptions without any options.
 func NewReadWriteBucket() storage.ReadWriteBucket {
 	return newBucket(nil)
 }
 
-// NewReadWriteBucket2 returns a new in-memory ReadWriteBucket. Errors are
-// returned with invalid options.
-func NewReadWriteBucket2(opts ...Option) (storage.ReadWriteBucket, error) {
+// NewReadWriteBucketWithOptions returns a new in-memory ReadWriteBucket.
+// Errors are returned with invalid options.
+func NewReadWriteBucketWithOptions(opts ...Option) (storage.ReadWriteBucket, error) {
 	opt := options{}
 	for _, o := range opts {
 		o.apply(&opt)
@@ -75,5 +76,5 @@ func NewReadWriteBucket2(opts ...Option) (storage.ReadWriteBucket, error) {
 
 // NewReadBucket returns a new ReadBucket.
 func NewReadBucket(pathToData map[string][]byte) (storage.ReadBucket, error) {
-	return NewReadWriteBucket2(WithFiles(pathToData))
+	return NewReadWriteBucketWithOptions(WithFiles(pathToData))
 }

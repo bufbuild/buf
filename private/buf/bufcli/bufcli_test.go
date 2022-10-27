@@ -36,7 +36,7 @@ func (m *mockBucketProvider) NewReadWriteBucket(
 	_ string,
 	_ ...storageos.ReadWriteBucketOption,
 ) (storage.ReadWriteBucket, error) {
-	return storagemem.NewReadWriteBucket2(storagemem.WithFiles(m.files))
+	return storagemem.NewReadWriteBucketWithOptions(storagemem.WithFiles(m.files))
 }
 
 func TestReadModuleWithWorkspacesDisabled(t *testing.T) {
