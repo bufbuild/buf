@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifest
+package manifest_test
 
 import (
 	"bytes"
@@ -23,6 +23,7 @@ import (
 	"testing"
 	"testing/iotest"
 
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,10 +37,10 @@ func Example() {
 			"foo": []byte("bar"),
 		},
 	)
-	manifest, _ := NewManifestFromBucket(ctx, bucket)
-	digest, _ := manifest.Digest("foo")
+	m, _ := manifest.NewFromBucket(ctx, bucket)
+	digest, _ := m.Digest("foo")
 	fmt.Printf("digest[:16]: %s\n", digest.Hex()[:16])
-	path, _ := manifest.Paths(digest)
+	path, _ := m.Paths(digest)
 	fmt.Printf("path at digest: %s\n", path[0])
 	// Output:
 	// digest[:16]: a15163728ed24e1c
@@ -61,7 +62,7 @@ func TestRoundTripManifest(t *testing.T) {
 		)
 	}
 	manifestContent := manifestBuilder.Bytes()
-	var m Manifest
+	var m manifest.Manifest
 	err := m.UnmarshalText(manifestContent)
 	require.NoError(t, err)
 
@@ -73,7 +74,7 @@ func TestRoundTripManifest(t *testing.T) {
 
 func TestEmptyManifest(t *testing.T) {
 	t.Parallel()
-	content, err := NewManifest().MarshalText()
+	content, err := manifest.New().MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(content))
 }
@@ -81,17 +82,17 @@ func TestEmptyManifest(t *testing.T) {
 func TestAddContent(t *testing.T) {
 	t.Parallel()
 	// single entry
-	manifest := NewManifest()
-	err := manifest.AddContent("my/path", bytes.NewReader(nil))
+	m := manifest.New()
+	err := m.AddContent("my/path", bytes.NewReader(nil))
 	require.NoError(t, err)
 	expect := fmt.Sprintf("%s  my/path\n", mkdigest(nil))
-	retContent, err := manifest.MarshalText()
+	retContent, err := m.MarshalText()
 	require.NoError(t, err)
 	assert.Equal(t, expect, string(retContent))
 
 	// failing content read
 	expectedErr := errors.New("testing error")
-	err = manifest.AddContent("my/path", iotest.ErrReader(expectedErr))
+	err = m.AddContent("my/path", iotest.ErrReader(expectedErr))
 	assert.ErrorIs(t, err, expectedErr)
 }
 
@@ -136,13 +137,13 @@ func TestInvalidManifests(t *testing.T) {
 func TestBrokenRead(t *testing.T) {
 	t.Parallel()
 	expected := errors.New("testing error")
-	_, err := NewManifestFromReader(iotest.ErrReader(expected))
+	_, err := manifest.NewFromReader(iotest.ErrReader(expected))
 	assert.ErrorIs(t, err, expected)
 }
 
 func TestUnmarshalBrokenManifest(t *testing.T) {
 	t.Parallel()
-	var m Manifest
+	var m manifest.Manifest
 	err := m.UnmarshalText([]byte("foo"))
 	assert.Error(t, err)
 }
@@ -156,7 +157,7 @@ func TestFromBucket(t *testing.T) {
 			"foo":  []byte("bar"),
 		})
 	require.NoError(t, err)
-	m, err := NewManifestFromBucket(ctx, bucket)
+	m, err := manifest.NewFromBucket(ctx, bucket)
 	require.NoError(t, err)
 	expected := fmt.Sprintf("%s  foo\n", mkdigest([]byte("bar")))
 	expected += fmt.Sprintf("%s  null\n", mkdigest(nil))
@@ -167,7 +168,7 @@ func TestFromBucket(t *testing.T) {
 
 func TestPaths(t *testing.T) {
 	t.Parallel()
-	m := NewManifest()
+	m := manifest.New()
 	err := m.AddContent("path/one", bytes.NewReader(nil))
 	require.NoError(t, err)
 	err = m.AddContent("path/two", bytes.NewReader(nil))
@@ -182,7 +183,7 @@ func TestPaths(t *testing.T) {
 
 func TestDigest(t *testing.T) {
 	t.Parallel()
-	m := NewManifest()
+	m := manifest.New()
 	err := m.AddContent("my/path", bytes.NewReader(nil))
 	require.NoError(t, err)
 	digest, ok := m.Digest("my/path")
@@ -193,7 +194,7 @@ func TestDigest(t *testing.T) {
 	assert.Empty(t, digest)
 }
 
-func mkdigest(content []byte) *Digest {
+func mkdigest(content []byte) *manifest.Digest {
 	hash := sha3.NewShake256()
 	if _, err := hash.Write(content); err != nil {
 		panic(err)
@@ -202,7 +203,7 @@ func mkdigest(content []byte) *Digest {
 	if _, err := hash.Read(digest); err != nil {
 		panic(err)
 	}
-	return NewDigestFromBytes("shake256", digest)
+	return manifest.NewDigestFromBytes("shake256", digest)
 }
 
 func testInvalidManifest(
@@ -213,7 +214,7 @@ func testInvalidManifest(
 	t.Helper()
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		_, err := NewManifestFromReader(strings.NewReader(line))
+		_, err := manifest.NewFromReader(strings.NewReader(line))
 		assert.ErrorContains(t, err, desc)
 	})
 }
