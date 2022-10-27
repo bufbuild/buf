@@ -41,7 +41,7 @@ func Example() {
 	manifest, _ := NewManifestFromBucket(ctx, bucket)
 	digest, _ := manifest.DigestFor("foo")
 	fmt.Printf("digest[:16]: %s\n", digest.Hex()[:16])
-	path, _ := manifest.PathsFor(digest)
+	path, _ := manifest.PathsFor(digest.String())
 	fmt.Printf("path at digest: %s\n", path[0])
 	// Output:
 	// digest[:16]: a15163728ed24e1c
@@ -174,10 +174,10 @@ func TestDigestPaths(t *testing.T) {
 	require.NoError(t, err)
 	err = m.AddContent("path/two", bytes.NewReader(nil))
 	require.NoError(t, err)
-	paths, ok := m.PathsFor(mkdigest(nil))
+	paths, ok := m.PathsFor(mkdigest(nil).String())
 	assert.True(t, ok)
 	assert.ElementsMatch(t, []string{"path/one", "path/two"}, paths)
-	paths, ok = m.PathsFor(mkdigest([]byte{0}))
+	paths, ok = m.PathsFor(mkdigest([]byte{0}).String())
 	assert.False(t, ok)
 	assert.Empty(t, paths)
 }

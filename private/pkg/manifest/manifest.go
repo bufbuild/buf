@@ -262,20 +262,24 @@ func (m *Manifest) Paths() []string {
 }
 
 // PathsFor returns one or more matching path for a given digest. The digest is
-// expected to be a lower-case hex encoded value. Returned paths are unordred.
-// paths is nil and ok is false if no paths are found.
-func (m *Manifest) PathsFor(digest *Digest) ([]string, bool) {
-	paths, ok := m.digestToPaths[digest.String()]
-	return paths, ok
+// expected to be a lower-case hex encoded value. Returned paths are unordered.
+// Paths is nil and ok is false if no paths are found.
+func (m *Manifest) PathsFor(digest string) ([]string, bool) {
+	paths, ok := m.digestToPaths[digest]
+	if !ok {
+		return nil, false
+	}
+	return paths, true
 }
 
 // DigestFor returns the matching digest for the given path. The path must be an
-// exact match. The returned digest is a lower-case hex encoded value. digest is
-// the empty string and ok is false if no digest is found.
+// exact match. Digest is nil and ok is false if no digest is found.
 func (m *Manifest) DigestFor(path string) (*Digest, bool) {
-	digestValue, ok := m.pathToDigest[path]
-	digest := &digestValue
-	return digest, ok
+	digest, ok := m.pathToDigest[path]
+	if !ok {
+		return nil, false
+	}
+	return &digest, true
 }
 
 // MarshalText encodes the manifest into its canonical form.
