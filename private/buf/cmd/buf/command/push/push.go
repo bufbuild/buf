@@ -170,6 +170,8 @@ func run(
 		flags.Tags,
 		nil,
 		flags.Draft,
+		nil,
+		nil,
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {

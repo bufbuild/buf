@@ -36,7 +36,7 @@ func (s *downloadServiceClient) Download(
 	owner string,
 	repository string,
 	reference string,
-) (module *v1alpha1.Module, _ error) {
+) (module *v1alpha1.Module, manifest *v1alpha1.Blob, blobs []*v1alpha1.Blob, _ error) {
 	response, err := s.client.Download(
 		ctx,
 		connect_go.NewRequest(
@@ -47,7 +47,7 @@ func (s *downloadServiceClient) Download(
 			}),
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
-	return response.Msg.Module, nil
+	return response.Msg.Module, response.Msg.Manifest, response.Msg.Blobs, nil
 }

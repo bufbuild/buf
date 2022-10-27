@@ -37,6 +37,168 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type HashKind int32
+
+const (
+	HashKind_HASH_KIND_UNSPECIFIED HashKind = 0
+	HashKind_HASH_KIND_SHAKE256    HashKind = 1
+)
+
+// Enum value maps for HashKind.
+var (
+	HashKind_name = map[int32]string{
+		0: "HASH_KIND_UNSPECIFIED",
+		1: "HASH_KIND_SHAKE256",
+	}
+	HashKind_value = map[string]int32{
+		"HASH_KIND_UNSPECIFIED": 0,
+		"HASH_KIND_SHAKE256":    1,
+	}
+)
+
+func (x HashKind) Enum() *HashKind {
+	p := new(HashKind)
+	*p = x
+	return p
+}
+
+func (x HashKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (HashKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_buf_alpha_module_v1alpha1_module_proto_enumTypes[0].Descriptor()
+}
+
+func (HashKind) Type() protoreflect.EnumType {
+	return &file_buf_alpha_module_v1alpha1_module_proto_enumTypes[0]
+}
+
+func (x HashKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use HashKind.Descriptor instead.
+func (HashKind) EnumDescriptor() ([]byte, []int) {
+	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{0}
+}
+
+// Hash represents a hash function's value.
+type Hash struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// kind describes the hash algorithm. e.g. "SHAKE256"
+	Kind HashKind `protobuf:"varint,1,opt,name=kind,proto3,enum=buf.alpha.module.v1alpha1.HashKind" json:"kind,omitempty"`
+	// digest is the hash's output without encoding.
+	Digest []byte `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
+}
+
+func (x *Hash) Reset() {
+	*x = Hash{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[0]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Hash) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Hash) ProtoMessage() {}
+
+func (x *Hash) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[0]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Hash.ProtoReflect.Descriptor instead.
+func (*Hash) Descriptor() ([]byte, []int) {
+	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Hash) GetKind() HashKind {
+	if x != nil {
+		return x.Kind
+	}
+	return HashKind_HASH_KIND_UNSPECIFIED
+}
+
+func (x *Hash) GetDigest() []byte {
+	if x != nil {
+		return x.Digest
+	}
+	return nil
+}
+
+// Blob represents some module content with an associated hash.
+type Blob struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Hash of the content.
+	Hash *Hash `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	// Content of the blob. Optional when Blob is used as a content pointer.
+	Content []byte `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+}
+
+func (x *Blob) Reset() {
+	*x = Blob{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Blob) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Blob) ProtoMessage() {}
+
+func (x *Blob) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Blob.ProtoReflect.Descriptor instead.
+func (*Blob) Descriptor() ([]byte, []int) {
+	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Blob) GetHash() *Hash {
+	if x != nil {
+		return x.Hash
+	}
+	return nil
+}
+
+func (x *Blob) GetContent() []byte {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
 // Module is a module.
 type Module struct {
 	state         protoimpl.MessageState
@@ -70,7 +232,7 @@ type Module struct {
 func (x *Module) Reset() {
 	*x = Module{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[0]
+		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -83,7 +245,7 @@ func (x *Module) String() string {
 func (*Module) ProtoMessage() {}
 
 func (x *Module) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[0]
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -96,7 +258,7 @@ func (x *Module) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Module.ProtoReflect.Descriptor instead.
 func (*Module) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{0}
+	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Module) GetFiles() []*ModuleFile {
@@ -157,7 +319,7 @@ type ModuleFile struct {
 func (x *ModuleFile) Reset() {
 	*x = ModuleFile{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[1]
+		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -170,7 +332,7 @@ func (x *ModuleFile) String() string {
 func (*ModuleFile) ProtoMessage() {}
 
 func (x *ModuleFile) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[1]
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -183,7 +345,7 @@ func (x *ModuleFile) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModuleFile.ProtoReflect.Descriptor instead.
 func (*ModuleFile) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{1}
+	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ModuleFile) GetPath() string {
@@ -216,7 +378,7 @@ type ModuleReference struct {
 func (x *ModuleReference) Reset() {
 	*x = ModuleReference{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[2]
+		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -229,7 +391,7 @@ func (x *ModuleReference) String() string {
 func (*ModuleReference) ProtoMessage() {}
 
 func (x *ModuleReference) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[2]
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -242,7 +404,7 @@ func (x *ModuleReference) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModuleReference.ProtoReflect.Descriptor instead.
 func (*ModuleReference) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{2}
+	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ModuleReference) GetRemote() string {
@@ -290,7 +452,7 @@ type ModulePin struct {
 func (x *ModulePin) Reset() {
 	*x = ModulePin{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[3]
+		mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -303,7 +465,7 @@ func (x *ModulePin) String() string {
 func (*ModulePin) ProtoMessage() {}
 
 func (x *ModulePin) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[3]
+	mi := &file_buf_alpha_module_v1alpha1_module_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -316,7 +478,7 @@ func (x *ModulePin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModulePin.ProtoReflect.Descriptor instead.
 func (*ModulePin) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{3}
+	return file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ModulePin) GetRemote() string {
@@ -374,7 +536,18 @@ var file_buf_alpha_module_v1alpha1_module_proto_rawDesc = []byte{
 	0x68, 0x61, 0x2f, 0x6c, 0x69, 0x6e, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69,
 	0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61,
-	0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xd3, 0x02, 0x0a, 0x06, 0x4d, 0x6f, 0x64,
+	0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x57, 0x0a, 0x04, 0x48, 0x61, 0x73, 0x68,
+	0x12, 0x37, 0x0a, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x23,
+	0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x6d, 0x6f, 0x64, 0x75, 0x6c,
+	0x65, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x4b,
+	0x69, 0x6e, 0x64, 0x52, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x64, 0x69, 0x67,
+	0x65, 0x73, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x64, 0x69, 0x67, 0x65, 0x73,
+	0x74, 0x22, 0x55, 0x0a, 0x04, 0x42, 0x6c, 0x6f, 0x62, 0x12, 0x33, 0x0a, 0x04, 0x68, 0x61, 0x73,
+	0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c,
+	0x70, 0x68, 0x61, 0x2e, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70,
+	0x68, 0x61, 0x31, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x18,
+	0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52,
+	0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x22, 0xd3, 0x02, 0x0a, 0x06, 0x4d, 0x6f, 0x64,
 	0x75, 0x6c, 0x65, 0x12, 0x3b, 0x0a, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03,
 	0x28, 0x0b, 0x32, 0x25, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x6d,
 	0x6f, 0x64, 0x75, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x4d,
@@ -421,24 +594,28 @@ var file_buf_alpha_module_v1alpha1_module_proto_rawDesc = []byte{
 	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d,
 	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x54, 0x69,
 	0x6d, 0x65, 0x4a, 0x04, 0x08, 0x06, 0x10, 0x07, 0x52, 0x06, 0x64, 0x69, 0x67, 0x65, 0x73, 0x74,
-	0x42, 0x8a, 0x02, 0x0a, 0x1d, 0x63, 0x6f, 0x6d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70,
-	0x68, 0x61, 0x2e, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68,
-	0x61, 0x31, 0x42, 0x0b, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50,
-	0x01, 0x5a, 0x55, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x62, 0x75,
-	0x66, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x2f, 0x62, 0x75, 0x66, 0x2f, 0x70, 0x72, 0x69, 0x76, 0x61,
-	0x74, 0x65, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x2f,
-	0x62, 0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2f, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65,
-	0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x3b, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65,
-	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xa2, 0x02, 0x03, 0x42, 0x41, 0x4d, 0xaa, 0x02,
-	0x19, 0x42, 0x75, 0x66, 0x2e, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x4d, 0x6f, 0x64, 0x75, 0x6c,
-	0x65, 0x2e, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xca, 0x02, 0x19, 0x42, 0x75, 0x66,
-	0x5c, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x5c, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5c, 0x56, 0x31,
-	0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xe2, 0x02, 0x25, 0x42, 0x75, 0x66, 0x5c, 0x41, 0x6c, 0x70,
-	0x68, 0x61, 0x5c, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68,
-	0x61, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
-	0x1c, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x4d, 0x6f, 0x64,
-	0x75, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x2a, 0x3d, 0x0a, 0x08, 0x48, 0x61, 0x73, 0x68, 0x4b, 0x69, 0x6e, 0x64, 0x12, 0x19, 0x0a, 0x15,
+	0x48, 0x41, 0x53, 0x48, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43,
+	0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x16, 0x0a, 0x12, 0x48, 0x41, 0x53, 0x48, 0x5f,
+	0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x53, 0x48, 0x41, 0x4b, 0x45, 0x32, 0x35, 0x36, 0x10, 0x01, 0x42,
+	0x8a, 0x02, 0x0a, 0x1d, 0x63, 0x6f, 0x6d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68,
+	0x61, 0x2e, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61,
+	0x31, 0x42, 0x0b, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01,
+	0x5a, 0x55, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x62, 0x75, 0x66,
+	0x62, 0x75, 0x69, 0x6c, 0x64, 0x2f, 0x62, 0x75, 0x66, 0x2f, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74,
+	0x65, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x2f, 0x62,
+	0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2f, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x2f,
+	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x3b, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x76,
+	0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xa2, 0x02, 0x03, 0x42, 0x41, 0x4d, 0xaa, 0x02, 0x19,
+	0x42, 0x75, 0x66, 0x2e, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65,
+	0x2e, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xca, 0x02, 0x19, 0x42, 0x75, 0x66, 0x5c,
+	0x41, 0x6c, 0x70, 0x68, 0x61, 0x5c, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x61,
+	0x6c, 0x70, 0x68, 0x61, 0x31, 0xe2, 0x02, 0x25, 0x42, 0x75, 0x66, 0x5c, 0x41, 0x6c, 0x70, 0x68,
+	0x61, 0x5c, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61,
+	0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x1c,
+	0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x4d, 0x6f, 0x64, 0x75,
+	0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -453,27 +630,33 @@ func file_buf_alpha_module_v1alpha1_module_proto_rawDescGZIP() []byte {
 	return file_buf_alpha_module_v1alpha1_module_proto_rawDescData
 }
 
-var file_buf_alpha_module_v1alpha1_module_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_buf_alpha_module_v1alpha1_module_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_buf_alpha_module_v1alpha1_module_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_buf_alpha_module_v1alpha1_module_proto_goTypes = []interface{}{
-	(*Module)(nil),                // 0: buf.alpha.module.v1alpha1.Module
-	(*ModuleFile)(nil),            // 1: buf.alpha.module.v1alpha1.ModuleFile
-	(*ModuleReference)(nil),       // 2: buf.alpha.module.v1alpha1.ModuleReference
-	(*ModulePin)(nil),             // 3: buf.alpha.module.v1alpha1.ModulePin
-	(*v1.Config)(nil),             // 4: buf.alpha.breaking.v1.Config
-	(*v11.Config)(nil),            // 5: buf.alpha.lint.v1.Config
-	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
+	(HashKind)(0),                 // 0: buf.alpha.module.v1alpha1.HashKind
+	(*Hash)(nil),                  // 1: buf.alpha.module.v1alpha1.Hash
+	(*Blob)(nil),                  // 2: buf.alpha.module.v1alpha1.Blob
+	(*Module)(nil),                // 3: buf.alpha.module.v1alpha1.Module
+	(*ModuleFile)(nil),            // 4: buf.alpha.module.v1alpha1.ModuleFile
+	(*ModuleReference)(nil),       // 5: buf.alpha.module.v1alpha1.ModuleReference
+	(*ModulePin)(nil),             // 6: buf.alpha.module.v1alpha1.ModulePin
+	(*v1.Config)(nil),             // 7: buf.alpha.breaking.v1.Config
+	(*v11.Config)(nil),            // 8: buf.alpha.lint.v1.Config
+	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
 }
 var file_buf_alpha_module_v1alpha1_module_proto_depIdxs = []int32{
-	1, // 0: buf.alpha.module.v1alpha1.Module.files:type_name -> buf.alpha.module.v1alpha1.ModuleFile
-	3, // 1: buf.alpha.module.v1alpha1.Module.dependencies:type_name -> buf.alpha.module.v1alpha1.ModulePin
-	4, // 2: buf.alpha.module.v1alpha1.Module.breaking_config:type_name -> buf.alpha.breaking.v1.Config
-	5, // 3: buf.alpha.module.v1alpha1.Module.lint_config:type_name -> buf.alpha.lint.v1.Config
-	6, // 4: buf.alpha.module.v1alpha1.ModulePin.create_time:type_name -> google.protobuf.Timestamp
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	0, // 0: buf.alpha.module.v1alpha1.Hash.kind:type_name -> buf.alpha.module.v1alpha1.HashKind
+	1, // 1: buf.alpha.module.v1alpha1.Blob.hash:type_name -> buf.alpha.module.v1alpha1.Hash
+	4, // 2: buf.alpha.module.v1alpha1.Module.files:type_name -> buf.alpha.module.v1alpha1.ModuleFile
+	6, // 3: buf.alpha.module.v1alpha1.Module.dependencies:type_name -> buf.alpha.module.v1alpha1.ModulePin
+	7, // 4: buf.alpha.module.v1alpha1.Module.breaking_config:type_name -> buf.alpha.breaking.v1.Config
+	8, // 5: buf.alpha.module.v1alpha1.Module.lint_config:type_name -> buf.alpha.lint.v1.Config
+	9, // 6: buf.alpha.module.v1alpha1.ModulePin.create_time:type_name -> google.protobuf.Timestamp
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_module_v1alpha1_module_proto_init() }
@@ -483,7 +666,7 @@ func file_buf_alpha_module_v1alpha1_module_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Module); i {
+			switch v := v.(*Hash); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -495,7 +678,7 @@ func file_buf_alpha_module_v1alpha1_module_proto_init() {
 			}
 		}
 		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ModuleFile); i {
+			switch v := v.(*Blob); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -507,7 +690,7 @@ func file_buf_alpha_module_v1alpha1_module_proto_init() {
 			}
 		}
 		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ModuleReference); i {
+			switch v := v.(*Module); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -519,6 +702,30 @@ func file_buf_alpha_module_v1alpha1_module_proto_init() {
 			}
 		}
 		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ModuleFile); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ModuleReference); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_buf_alpha_module_v1alpha1_module_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ModulePin); i {
 			case 0:
 				return &v.state
@@ -536,13 +743,14 @@ func file_buf_alpha_module_v1alpha1_module_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_buf_alpha_module_v1alpha1_module_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   4,
+			NumEnums:      1,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_buf_alpha_module_v1alpha1_module_proto_goTypes,
 		DependencyIndexes: file_buf_alpha_module_v1alpha1_module_proto_depIdxs,
+		EnumInfos:         file_buf_alpha_module_v1alpha1_module_proto_enumTypes,
 		MessageInfos:      file_buf_alpha_module_v1alpha1_module_proto_msgTypes,
 	}.Build()
 	File_buf_alpha_module_v1alpha1_module_proto = out.File

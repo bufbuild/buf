@@ -34,5 +34,7 @@ type PushService interface {
 		tags []string,
 		tracks []string,
 		draftName string,
+		manifest *v1alpha1.Blob,
+		blobs []*v1alpha1.Blob,
 	) (localModulePin *v1alpha11.LocalModulePin, err error)
 }
