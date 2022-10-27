@@ -45,8 +45,8 @@ const (
 )
 
 var (
-	errNoFinalNewline      = errors.New("partial record: missing newline")
-	moduleKindToDigestType = map[modulev1alpha1.HashKind]string{
+	errNoFinalNewline    = errors.New("partial record: missing newline")
+	hashKindToDigestType = map[modulev1alpha1.HashKind]string{
 		modulev1alpha1.HashKind_HASH_KIND_SHAKE256: shake256Name,
 	}
 )
@@ -86,7 +86,7 @@ func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
 	if hash == nil {
 		return nil, fmt.Errorf("nil hash")
 	}
-	dType, ok := moduleKindToDigestType[hash.Kind]
+	dType, ok := hashKindToDigestType[hash.Kind]
 	if !ok {
 		return nil, fmt.Errorf("unsupported hash kind: %s", hash.Kind.String())
 	}
