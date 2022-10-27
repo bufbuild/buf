@@ -30,6 +30,9 @@ func (e *ErrAuth) Unwrap() error {
 
 // Error implements the error interface and returns the error message.
 func (e *ErrAuth) Error() string {
+	if e.cause == nil {
+		return "unknown error"
+	}
 	return e.cause.Error()
 }
 
