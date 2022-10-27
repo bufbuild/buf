@@ -38,6 +38,8 @@ func newModuleReader(
 
 func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
 	downloadService := m.downloadClientFactory(modulePin.Remote())
+	// TODO: Prefer taking a manifest and blobs to form a bucket and module
+	// from bufmodule.NewModuleForBucket.
 	resp, err := downloadService.Download(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.DownloadRequest{
