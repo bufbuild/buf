@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -268,4 +269,20 @@ func TestDigestFromBlobHash(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, digestFromFile.String(), digestFromBlobHash.String())
 	}
+}
+
+func TestAllPaths(t *testing.T) {
+	t.Parallel()
+	m := NewManifest()
+	for i := 0; i < 20; i++ {
+		err := m.AddContent(
+			fmt.Sprintf("path/to/file%0d", i),
+			bytes.NewReader(nil),
+		)
+		require.NoError(t, err)
+	}
+	sortedPaths := m.AllPaths()
+	assert.True(t, sort.SliceIsSorted(sortedPaths, func(i, j int) bool {
+		return sortedPaths[i] < sortedPaths[j] // lexicographically sorted
+	}))
 }

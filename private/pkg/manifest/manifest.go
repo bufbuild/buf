@@ -268,17 +268,21 @@ func (m *Manifest) Digest(path string) (digest *Digest, ok bool) {
 	return digest, ok
 }
 
-// MarshalText encodes the manifest into its canonical form.
-func (m *Manifest) MarshalText() ([]byte, error) {
-	// order by path
+// AllPaths returns a sorted list of all paths in the manifest.
+func (m *Manifest) AllPaths() []string {
 	paths := make([]string, 0, len(m.pathToDigest))
 	for path := range m.pathToDigest {
 		paths = append(paths, path)
 	}
 	sort.Strings(paths)
+	return paths
+}
 
+// MarshalText encodes the manifest into its canonical form.
+func (m *Manifest) MarshalText() ([]byte, error) {
 	var coded bytes.Buffer
-	for _, path := range paths {
+	sortedPaths := m.AllPaths()
+	for _, path := range sortedPaths {
 		digest := m.pathToDigest[path]
 		fmt.Fprintf(&coded, "%s  %s\n", &digest, path)
 	}
