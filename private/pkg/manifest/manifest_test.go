@@ -39,9 +39,9 @@ func Example() {
 		},
 	)
 	manifest, _ := NewManifestFromBucket(ctx, bucket)
-	digest, _ := manifest.Digest("foo")
+	digest, _ := manifest.DigestFor("foo")
 	fmt.Printf("digest[:16]: %s\n", digest.Hex()[:16])
-	path, _ := manifest.Paths(digest)
+	path, _ := manifest.PathsFor(digest)
 	fmt.Printf("path at digest: %s\n", path[0])
 	// Output:
 	// digest[:16]: a15163728ed24e1c
@@ -167,30 +167,30 @@ func TestFromBucket(t *testing.T) {
 	assert.Equal(t, expected, string(retContent))
 }
 
-func TestPaths(t *testing.T) {
+func TestDigestPaths(t *testing.T) {
 	t.Parallel()
 	m := NewManifest()
 	err := m.AddContent("path/one", bytes.NewReader(nil))
 	require.NoError(t, err)
 	err = m.AddContent("path/two", bytes.NewReader(nil))
 	require.NoError(t, err)
-	paths, ok := m.Paths(mkdigest(nil))
+	paths, ok := m.PathsFor(mkdigest(nil))
 	assert.True(t, ok)
 	assert.ElementsMatch(t, []string{"path/one", "path/two"}, paths)
-	paths, ok = m.Paths(mkdigest([]byte{0}))
+	paths, ok = m.PathsFor(mkdigest([]byte{0}))
 	assert.False(t, ok)
 	assert.Empty(t, paths)
 }
 
-func TestDigest(t *testing.T) {
+func TestPathDigest(t *testing.T) {
 	t.Parallel()
 	m := NewManifest()
 	err := m.AddContent("my/path", bytes.NewReader(nil))
 	require.NoError(t, err)
-	digest, ok := m.Digest("my/path")
+	digest, ok := m.DigestFor("my/path")
 	assert.True(t, ok)
 	assert.Equal(t, mkdigest(nil), digest)
-	digest, ok = m.Digest("foo")
+	digest, ok = m.DigestFor("foo")
 	assert.False(t, ok)
 	assert.Empty(t, digest)
 }
@@ -237,7 +237,7 @@ func TestValidateContent(t *testing.T) {
 	)
 	m := NewManifest()
 	require.NoError(t, m.AddContent(filePath, strings.NewReader(fileContent)))
-	fileDigest, ok := m.Digest(filePath)
+	fileDigest, ok := m.DigestFor(filePath)
 	require.True(t, ok)
 	require.NotNil(t, fileDigest)
 	valid, err := fileDigest.Valid(strings.NewReader(fileContent))
@@ -271,7 +271,7 @@ func TestDigestFromBlobHash(t *testing.T) {
 	}
 }
 
-func TestAllPaths(t *testing.T) {
+func TestManifestPaths(t *testing.T) {
 	t.Parallel()
 	m := NewManifest()
 	for i := 0; i < 20; i++ {
@@ -281,7 +281,7 @@ func TestAllPaths(t *testing.T) {
 		)
 		require.NoError(t, err)
 	}
-	sortedPaths := m.AllPaths()
+	sortedPaths := m.Paths()
 	assert.True(t, sort.SliceIsSorted(sortedPaths, func(i, j int) bool {
 		return sortedPaths[i] < sortedPaths[j] // lexicographically sorted
 	}))

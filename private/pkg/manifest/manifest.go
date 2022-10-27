@@ -251,25 +251,8 @@ func (m *Manifest) AddContent(path string, content io.Reader) error {
 	return m.addDigest(path, NewDigestFromBytes(shake256Name, digest))
 }
 
-// Paths returns one or more matching path for a given digest. The digest
-// is expected to be a lower-case hex encoded value. Returned paths are
-// unordred. paths is nil and ok is false if no paths are found.
-func (m *Manifest) Paths(digest *Digest) (paths []string, ok bool) {
-	paths, ok = m.digestToPaths[digest.String()]
-	return paths, ok
-}
-
-// Digest returns the matching digest for the given path. The path must be
-// an exact match. The returned digest is a lower-case hex encoded value.
-// digest is the empty string and ok is false if no digest is found.
-func (m *Manifest) Digest(path string) (digest *Digest, ok bool) {
-	digestValue, ok := m.pathToDigest[path]
-	digest = &digestValue
-	return digest, ok
-}
-
-// AllPaths returns a sorted list of all paths in the manifest.
-func (m *Manifest) AllPaths() []string {
+// Paths returns a sorted list of all paths in the manifest.
+func (m *Manifest) Paths() []string {
 	paths := make([]string, 0, len(m.pathToDigest))
 	for path := range m.pathToDigest {
 		paths = append(paths, path)
@@ -278,10 +261,27 @@ func (m *Manifest) AllPaths() []string {
 	return paths
 }
 
+// PathsFor returns one or more matching path for a given digest. The digest is
+// expected to be a lower-case hex encoded value. Returned paths are unordred.
+// paths is nil and ok is false if no paths are found.
+func (m *Manifest) PathsFor(digest *Digest) ([]string, bool) {
+	paths, ok := m.digestToPaths[digest.String()]
+	return paths, ok
+}
+
+// DigestFor returns the matching digest for the given path. The path must be an
+// exact match. The returned digest is a lower-case hex encoded value. digest is
+// the empty string and ok is false if no digest is found.
+func (m *Manifest) DigestFor(path string) (*Digest, bool) {
+	digestValue, ok := m.pathToDigest[path]
+	digest := &digestValue
+	return digest, ok
+}
+
 // MarshalText encodes the manifest into its canonical form.
 func (m *Manifest) MarshalText() ([]byte, error) {
 	var coded bytes.Buffer
-	sortedPaths := m.AllPaths()
+	sortedPaths := m.Paths()
 	for _, path := range sortedPaths {
 		digest := m.pathToDigest[path]
 		fmt.Fprintf(&coded, "%s  %s\n", &digest, path)
