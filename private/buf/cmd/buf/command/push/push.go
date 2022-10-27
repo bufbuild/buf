@@ -141,6 +141,7 @@ func run(
 	// given the configuration it has without any enclosing workspace.
 	module, moduleIdentity, err := bufcli.ReadModuleWithWorkspacesDisabled(
 		ctx,
+		container.Logger(),
 		container,
 		storageosProvider,
 		runner,
