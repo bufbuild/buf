@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
 )
@@ -49,15 +49,17 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 //
 // Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
 // a client.
-func NewAuthorizationInterceptorProvider(container appflag.Container) func(string) connect.UnaryInterceptorFunc {
+func NewAuthorizationInterceptorProvider(container app.EnvContainer) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
 				ctx context.Context,
 				req connect.AnyRequest,
 			) (connect.AnyResponse, error) {
-				token := container.Env(tokenEnvKey)
+				envKey := tokenEnvKey
+				token := container.Env(envKey)
 				if token == "" {
+					envKey = ""
 					machine, err := netrc.GetMachineForName(container, address)
 					if err != nil {
 						return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
@@ -69,7 +71,11 @@ func NewAuthorizationInterceptorProvider(container appflag.Container) func(strin
 				if token != "" {
 					req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
 				}
-				return next(ctx, req)
+				response, err := next(ctx, req)
+				if err != nil {
+					err = &ErrAuth{cause: err, tokenEnvKey: envKey}
+				}
+				return response, err
 			})
 		}
 		return interceptor

@@ -28,13 +28,24 @@ type Resolver interface {
 	protoregistry.MessageTypeResolver
 }
 
-// NewResolver creates a New Resolver.
+// NewResolver creates a new Resolver.
 //
 // If the input slice is empty, this returns nil
 // The given FileDescriptors must be self-contained, that is they must contain all imports.
 // This can NOT be guaranteed for FileDescriptorSets given over the wire, and can only be guaranteed from builds.
 func NewResolver(fileDescriptors ...protodescriptor.FileDescriptor) (Resolver, error) {
 	return newResolver(fileDescriptors...)
+}
+
+// NewLazyResolver creates a new Resolver that is constructed from the given
+// descriptors only as needed, if invoked.
+//
+// If there is an error when constructing the resolver, it will be returned by all
+// method calls of the returned resolver.
+func NewLazyResolver(fileDescriptors ...protodescriptor.FileDescriptor) Resolver {
+	return &lazyResolver{fn: func() (Resolver, error) {
+		return newResolver(fileDescriptors...)
+	}}
 }
 
 // Marshaler marshals Messages.

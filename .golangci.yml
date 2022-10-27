@@ -126,7 +126,7 @@ issues:
       # we actually want to use errgroup when starting an HTTP server
     - linters:
         - forbidigo
-      path: private/pkg/transport/http/httpserver/runner.go
+      path: private/pkg/transport/http/httpserver/httpserver.go
       text: "use of `errgroup"
       # we want to use errgroup here
     - linters:
@@ -136,3 +136,8 @@ issues:
     - linters:
         - containedctx
       path: private/bufpkg/bufmodule/bufmoduleprotocompile
+      # We should be able to use net/http/cgi in a unit test, in addition the CVE mentions only versions of go < 1.6.3 are affected.
+    - linters:
+        - gosec
+      path: private/pkg/git/git_test.go
+      text: "G504:"

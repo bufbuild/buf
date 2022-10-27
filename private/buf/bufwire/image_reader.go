@@ -67,31 +67,14 @@ func (i *imageReader) GetImage(
 		return nil, err
 	}
 	protoImage := &imagev1.Image{}
+	var imageFromProtoOptions []bufimage.NewImageForProtoOption
 	switch imageEncoding := imageRef.ImageEncoding(); imageEncoding {
 	// we have to double parse due to custom options
 	// See https://github.com/golang/protobuf/issues/1123
 	// TODO: revisit
 	case buffetch.ImageEncodingBin:
-		firstProtoImage := &imagev1.Image{}
-		_, span := trace.StartSpan(ctx, "first_wire_unmarshal")
-		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
-			return nil, fmt.Errorf("could not unmarshal image: %v", err)
-		}
-		span.End()
-		_, span = trace.StartSpan(ctx, "new_resolver")
-		// TODO right now, NewResolver sets AllowUnresolvable to true all the time
-		// we want to make this into a check, and we verify if we need this for the individual command
-		resolver, err := protoencoding.NewResolver(
-			bufimage.ProtoImageToFileDescriptors(
-				firstProtoImage,
-			)...,
-		)
-		if err != nil {
-			return nil, err
-		}
-		span.End()
-		_, span = trace.StartSpan(ctx, "second_wire_unmarshal")
-		if err := protoencoding.NewWireUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
+		_, span := trace.StartSpan(ctx, "wire_unmarshal")
+		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, protoImage); err != nil {
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		span.End()
@@ -119,6 +102,8 @@ func (i *imageReader) GetImage(
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		span.End()
+		// we've already re-parsed, by unmarshalling 2x above
+		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	default:
 		return nil, fmt.Errorf("unknown image encoding: %v", imageEncoding)
 	}
@@ -127,7 +112,7 @@ func (i *imageReader) GetImage(
 			fileDescriptorProto.SourceCodeInfo = nil
 		}
 	}
-	image, err := bufimage.NewImageForProto(protoImage)
+	image, err := bufimage.NewImageForProto(protoImage, imageFromProtoOptions...)
 	if err != nil {
 		return nil, err
 	}

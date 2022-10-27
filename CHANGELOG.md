@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.9.0] - 2022-10-19
+
 - New compiler that is faster and uses less memory than the outgoing one.
   - When generating source code info, the new compiler is 20% faster, and allocates
     13% less memory.
@@ -762,7 +766,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.9.0...HEAD
+[v1.9.0]: https://github.com/bufbuild/buf/compare/v1.8.0...v1.9.0
 [v1.8.0]: https://github.com/bufbuild/buf/compare/v1.7.0...v1.8.0
 [v1.7.0]: https://github.com/bufbuild/buf/compare/v1.6.0...v1.7.0
 [v1.6.0]: https://github.com/bufbuild/buf/compare/v1.5.0...v1.6.0
