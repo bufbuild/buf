@@ -22,7 +22,7 @@ jobs:
   token:
     runs-on: ubuntu-latest
     outputs:
-      value: ${{ steps.generate.outputs.token }}
+      value: ${{ steps.generate.outputs.value }}
     steps:
       - name: Generate token
         id: generate
