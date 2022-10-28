@@ -15,8 +15,8 @@ on:
 
 env:
   VERSION: ${{ github.event.inputs.version }}
-  RELEASE_MINISIGN_PRIVATE_KEY: ${{ secrets.RELEASE_PRIVATE_KEY }}
-  RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{ secrets.RELEASE_PRIVATE_KEY_PASSWORD }}
+  RELEASE_MINISIGN_PRIVATE_KEY: "${{ secrets.RELEASE_PRIVATE_KEY }}"
+  RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: "${{ secrets.RELEASE_PRIVATE_KEY_PASSWORD }}"
 
 jobs:
   token:
@@ -24,13 +24,15 @@ jobs:
     steps:
       - name: Generate token
         id: generate
-        uses: tibdex/github-app-token@v1
-        with:
-          app_id: 251311
-          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-          repository: ${{ github.repository }}
-          permissions: >-
-            {"contents": "write", "pull_requests": "write"}
+        run: |
+          echo "token=$GITHUB_TOKEN" >> $GITHUB_OUTPUT
+  #        uses: tibdex/github-app-token@v1
+#        with:
+#          app_id: 251311
+#          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+#          repository: ${{ github.repository }}
+#          permissions: >-
+#            {"contents": "write", "pull_requests": "write"}
   prepare:
     runs-on: ubuntu-latest
     needs: token
@@ -82,7 +84,7 @@ jobs:
               exit 0
             fi
           done
-          echo ERROR: CHANGELOG has not been updated
+          ::error title=FAIL::CHANGELOG has not been updated
           exit 1
   tag:
     runs-on: ubuntu-latest
