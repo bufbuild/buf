@@ -111,7 +111,7 @@ jobs:
           git push origin ${{env.VERSION}}
   perform:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'v') }}
+    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'v') && github.ref_type == 'tag'}}
     steps:
       - name: Generate token
         id: generate_token
