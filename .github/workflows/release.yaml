@@ -27,7 +27,7 @@ jobs:
       - name: Generate token
         id: generate
         run: |
-          echo "token=${{env.GITHUB_TOKEN}}" >> $GITHUB_OUTPUT
+          echo "value=${{env.GITHUB_TOKEN}}" >> $GITHUB_OUTPUT
   #        uses: tibdex/github-app-token@v1
 #        with:
 #          app_id: 251311
