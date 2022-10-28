@@ -124,6 +124,11 @@ jobs:
 #          repository: ${{ github.repository }}
 #          permissions: >-
 #            {"contents": "write", "pull_requests": "write"}
+      - name: Checkout repository code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
       - name: Set VERSION variable from tag
         run: |
           echo "VERSION=${{github.ref_name}}" >> $GITHUB_ENV
