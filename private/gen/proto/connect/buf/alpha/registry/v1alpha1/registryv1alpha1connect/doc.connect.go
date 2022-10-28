@@ -53,8 +53,8 @@ type DocServiceClient interface {
 	// GetModulePackages retrieves the list of packages for the module based on the given
 	// owner, repository, and reference.
 	GetModulePackages(context.Context, *connect_go.Request[v1alpha1.GetModulePackagesRequest]) (*connect_go.Response[v1alpha1.GetModulePackagesResponse], error)
-	// GetModuleDocumentation retrieves the documentation for module based on the given
-	// owner, repository, and reference.
+	// GetModuleDocumentation retrieves the documentations including buf.md and LICENSE files
+	// for module based on the given owner, repository, and reference.
 	GetModuleDocumentation(context.Context, *connect_go.Request[v1alpha1.GetModuleDocumentationRequest]) (*connect_go.Response[v1alpha1.GetModuleDocumentationResponse], error)
 	// GetPackageDocumentation retrieves a a slice of documentation structures
 	// for the given owner, repository, reference, and package name.
@@ -147,8 +147,8 @@ type DocServiceHandler interface {
 	// GetModulePackages retrieves the list of packages for the module based on the given
 	// owner, repository, and reference.
 	GetModulePackages(context.Context, *connect_go.Request[v1alpha1.GetModulePackagesRequest]) (*connect_go.Response[v1alpha1.GetModulePackagesResponse], error)
-	// GetModuleDocumentation retrieves the documentation for module based on the given
-	// owner, repository, and reference.
+	// GetModuleDocumentation retrieves the documentations including buf.md and LICENSE files
+	// for module based on the given owner, repository, and reference.
 	GetModuleDocumentation(context.Context, *connect_go.Request[v1alpha1.GetModuleDocumentationRequest]) (*connect_go.Response[v1alpha1.GetModuleDocumentationResponse], error)
 	// GetPackageDocumentation retrieves a a slice of documentation structures
 	// for the given owner, repository, reference, and package name.

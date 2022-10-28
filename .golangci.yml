@@ -126,7 +126,7 @@ issues:
       # we actually want to use errgroup when starting an HTTP server
     - linters:
         - forbidigo
-      path: private/pkg/transport/http/httpserver/runner.go
+      path: private/pkg/transport/http/httpserver/httpserver.go
       text: "use of `errgroup"
       # we want to use errgroup here
     - linters:
