@@ -17,27 +17,27 @@ on:
 
 env:
   VERSION: ${{ github.event.inputs.version }}
-  RELEASE_MINISIGN_PRIVATE_KEY: ${{ secrets.RELEASE_PRIVATE_KEY }}
-  RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{ secrets.RELEASE_PRIVATE_KEY_PASSWORD }}
+  RELEASE_MINISIGN_PRIVATE_KEY: "${{ secrets.RELEASE_PRIVATE_KEY }}"
+  RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: "${{ secrets.RELEASE_PRIVATE_KEY_PASSWORD }}"
 
 jobs:
   prepare:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version != '' }}
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: tibdex/github-app-token@v1
-        with:
-          app_id: 251311
-          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-          repository: ${{ github.repository }}
-          permissions: >-
-            {"contents": "write", "pull_requests": "write"}
+#      - name: Generate token
+#        id: generate_token
+#        uses: tibdex/github-app-token@v1
+#        with:
+#          app_id: 251311
+#          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+#          repository: ${{ github.repository }}
+#          permissions: >-
+#            {"contents": "write", "pull_requests": "write"}
       - name: Checkout repository code
         uses: actions/checkout@v3
         with:
-          token: ${{ steps.generate_token.outputs.token }}
+          token: ${{ secrets.PAT }}
       - uses: actions/setup-go@v3
         with:
           go-version: '^1.19.x'
@@ -58,7 +58,7 @@ jobs:
             Release prepared for ${{env.VERSION}}
             
             Reminder: Update the changelog
-          token: ${{ steps.generate_token.outputs.token }}
+          token: ${{ secrets.PAT }}
       - name: Slack Notification
         run: |
           jq --null-input '{ text: "BufCLI Release v${{env.VERSION}} has started: ${{ steps.cpr.outputs.pull-request-url }}" }' \
@@ -86,15 +86,15 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release') }}
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: tibdex/github-app-token@v1
-        with:
-          app_id: 251311
-          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-          repository: ${{ github.repository }}
-          permissions: >-
-            {"contents": "write"}
+#      - name: Generate token
+#        id: generate_token
+#        uses: tibdex/github-app-token@v1
+#        with:
+#          app_id: 251311
+#          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+#          repository: ${{ github.repository }}
+#          permissions: >-
+#            {"contents": "write"}
       - name: Set VERSION variable from tag
         run: |
           VERSION=${{github.head_ref}}
@@ -102,11 +102,11 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v3
         with:
-          token: ${{ steps.generate_token.outputs.token }}
+          token: ${{ secrets.PAT }}
           fetch-depth: 0
       - name: Tag Release
         run: |
-          git config --global user.password ${{ steps.generate_token.outputs.token }}
+          git config --global user.password ${{ secrets.PAT }}
           git tag -d ${{env.VERSION}} 2> /dev/null || echo 'local ref does not exist'
           git push origin :${{env.VERSION}} 2> /dev/null || echo 'remote ref does not exist'
           git tag ${{env.VERSION}}
@@ -115,22 +115,22 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'v') && github.ref_type == 'tag'}}
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: tibdex/github-app-token@v1
-        with:
-          app_id: 251311
-          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-          repository: ${{ github.repository }}
-          permissions: >-
-            {"contents": "write", "pull_requests": "write"}
+#      - name: Generate token
+#        id: generate_token
+#        uses: tibdex/github-app-token@v1
+#        with:
+#          app_id: 251311
+#          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+#          repository: ${{ github.repository }}
+#          permissions: >-
+#            {"contents": "write", "pull_requests": "write"}
       - name: Set VERSION variable from tag
         run: |
           echo "VERSION=${{github.ref_name}}" >> $GITHUB_ENV
       - name: Checkout repository code
         uses: actions/checkout@v3
         with:
-          token: ${{ steps.generate_token.outputs.token }}
+          token: ${{ secrets.PAT }}
       - uses: actions/setup-go@v3
         with:
           go-version: '^1.19.x'
@@ -143,7 +143,7 @@ jobs:
         id: ghr
         uses: softprops/action-gh-release@v1
         with:
-          token: ${{ steps.generate_token.outputs.token }}
+          token: ${{ secrets.PAT }}
           generate_release_notes: true # change to the CHANGELOG somehow
           files: |
             ${{env.FILES}}
@@ -155,15 +155,15 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' }}
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: tibdex/github-app-token@v1
-        with:
-          app_id: 251311
-          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-          repository: ${{ github.repository }}
-          permissions: >-
-            {"contents": "write", "pull_requests": "write"}
+#      - name: Generate token
+#        id: generate_token
+#        uses: tibdex/github-app-token@v1
+#        with:
+#          app_id: 251311
+#          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+#          repository: ${{ github.repository }}
+#          permissions: >-
+#            {"contents": "write", "pull_requests": "write"}
       - name: Set NEXT VERSION variable from tag
         run: |
           NEXT_VERSION=$(echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}'
