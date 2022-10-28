@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/sha3"
 )
 
 func Example() {
@@ -38,9 +37,9 @@ func Example() {
 		},
 	)
 	m, _ := manifest.NewFromBucket(ctx, bucket)
-	digest, _ := m.Digest("foo")
+	digest, _ := m.DigestFor("foo")
 	fmt.Printf("digest[:16]: %s\n", digest.Hex()[:16])
-	path, _ := m.Paths(digest)
+	path, _ := m.PathsFor(digest.String())
 	fmt.Printf("path at digest: %s\n", path[0])
 	// Output:
 	// digest[:16]: a15163728ed24e1c
@@ -50,7 +49,7 @@ func Example() {
 func TestRoundTripManifest(t *testing.T) {
 	t.Parallel()
 	// read a manifest using the unmarshaling method
-	null := mkdigest([]byte{})
+	null := mustDigestShake256(t, []byte{})
 	var manifestBuilder bytes.Buffer
 	for i := 0; i < 2; i++ {
 		fmt.Fprintf(
@@ -79,21 +78,22 @@ func TestEmptyManifest(t *testing.T) {
 	assert.Equal(t, 0, len(content))
 }
 
-func TestAddContent(t *testing.T) {
+func TestAddEntry(t *testing.T) {
 	t.Parallel()
-	// single entry
 	m := manifest.New()
-	err := m.AddContent("my/path", bytes.NewReader(nil))
-	require.NoError(t, err)
-	expect := fmt.Sprintf("%s  my/path\n", mkdigest(nil))
+	fileDigest := mustDigestShake256(t, nil)
+	const filePath = "my/path"
+	require.NoError(t, m.AddEntry(filePath, *fileDigest))
+	require.NoError(t, m.AddEntry(filePath, *fileDigest)) // adding the same entry twice is fine
+
+	require.Error(t, m.AddEntry("", *fileDigest))
+	require.Error(t, m.AddEntry("other/path", manifest.Digest{}))
+	require.Error(t, m.AddEntry(filePath, *mustDigestShake256(t, []byte("other content"))))
+
+	expect := fmt.Sprintf("%s  %s\n", fileDigest, filePath)
 	retContent, err := m.MarshalText()
 	require.NoError(t, err)
 	assert.Equal(t, expect, string(retContent))
-
-	// failing content read
-	expectedErr := errors.New("testing error")
-	err = m.AddContent("my/path", iotest.ErrReader(expectedErr))
-	assert.ErrorIs(t, err, expectedErr)
 }
 
 func TestInvalidManifests(t *testing.T) {
@@ -114,7 +114,7 @@ func TestInvalidManifests(t *testing.T) {
 	)
 	testInvalidManifest(
 		t,
-		"unsupported hash",
+		"unsupported digest type",
 		"md5:d41d8cd98f00b204e9800998ecf8427e  foo\n",
 	)
 	testInvalidManifest(
@@ -130,7 +130,7 @@ func TestInvalidManifests(t *testing.T) {
 	testInvalidManifest(
 		t,
 		"partial record",
-		fmt.Sprintf("%s  null", mkdigest(nil)),
+		fmt.Sprintf("%s  null", mustDigestShake256(t, nil)),
 	)
 }
 
@@ -159,51 +159,42 @@ func TestFromBucket(t *testing.T) {
 	require.NoError(t, err)
 	m, err := manifest.NewFromBucket(ctx, bucket)
 	require.NoError(t, err)
-	expected := fmt.Sprintf("%s  foo\n", mkdigest([]byte("bar")))
-	expected += fmt.Sprintf("%s  null\n", mkdigest(nil))
+	// sorted by paths
+	expected := fmt.Sprintf("%s  foo\n", mustDigestShake256(t, []byte("bar")))
+	expected += fmt.Sprintf("%s  null\n", mustDigestShake256(t, nil))
 	retContent, err := m.MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, expected, string(retContent))
 }
 
-func TestPaths(t *testing.T) {
+func TestDigestPaths(t *testing.T) {
 	t.Parallel()
 	m := manifest.New()
-	err := m.AddContent("path/one", bytes.NewReader(nil))
+	sharedDigest := mustDigestShake256(t, nil)
+	err := m.AddEntry("path/one", *sharedDigest)
 	require.NoError(t, err)
-	err = m.AddContent("path/two", bytes.NewReader(nil))
+	err = m.AddEntry("path/two", *sharedDigest)
 	require.NoError(t, err)
-	paths, ok := m.Paths(mkdigest(nil))
+	paths, ok := m.PathsFor(sharedDigest.String())
 	assert.True(t, ok)
 	assert.ElementsMatch(t, []string{"path/one", "path/two"}, paths)
-	paths, ok = m.Paths(mkdigest([]byte{0}))
+	paths, ok = m.PathsFor(mustDigestShake256(t, []byte{0}).String())
 	assert.False(t, ok)
 	assert.Empty(t, paths)
 }
 
-func TestDigest(t *testing.T) {
+func TestPathDigest(t *testing.T) {
 	t.Parallel()
 	m := manifest.New()
-	err := m.AddContent("my/path", bytes.NewReader(nil))
+	digest := mustDigestShake256(t, nil)
+	err := m.AddEntry("my/path", *digest)
 	require.NoError(t, err)
-	digest, ok := m.Digest("my/path")
+	retDigest, ok := m.DigestFor("my/path")
 	assert.True(t, ok)
-	assert.Equal(t, mkdigest(nil), digest)
-	digest, ok = m.Digest("foo")
+	assert.Equal(t, digest, retDigest)
+	retDigest, ok = m.DigestFor("foo")
 	assert.False(t, ok)
-	assert.Empty(t, digest)
-}
-
-func mkdigest(content []byte) *manifest.Digest {
-	hash := sha3.NewShake256()
-	if _, err := hash.Write(content); err != nil {
-		panic(err)
-	}
-	digest := make([]byte, 64)
-	if _, err := hash.Read(digest); err != nil {
-		panic(err)
-	}
-	return manifest.NewDigestFromBytes("shake256", digest)
+	assert.Empty(t, retDigest)
 }
 
 func testInvalidManifest(
@@ -217,4 +208,18 @@ func testInvalidManifest(
 		_, err := manifest.NewFromReader(strings.NewReader(line))
 		assert.ErrorContains(t, err, desc)
 	})
+}
+
+func TestAllPaths(t *testing.T) {
+	t.Parallel()
+	m := manifest.New()
+	var addedPaths []string
+	for i := 0; i < 20; i++ {
+		path := fmt.Sprintf("path/to/file%0d", i)
+		require.NoError(t, m.AddEntry(path, *mustDigestShake256(t, nil)))
+		addedPaths = append(addedPaths, path)
+	}
+	retPaths := m.Paths()
+	assert.Equal(t, len(addedPaths), len(retPaths))
+	assert.ElementsMatch(t, addedPaths, retPaths)
 }
