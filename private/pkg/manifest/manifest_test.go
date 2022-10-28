@@ -78,14 +78,19 @@ func TestEmptyManifest(t *testing.T) {
 	assert.Equal(t, 0, len(content))
 }
 
-func TestAddDigest(t *testing.T) {
+func TestAddEntry(t *testing.T) {
 	t.Parallel()
-	// single entry
 	m := manifest.New()
-	digest := mustDigestShake256(t, nil)
+	fileDigest := mustDigestShake256(t, nil)
 	const filePath = "my/path"
-	require.NoError(t, m.AddEntry(filePath, *digest))
-	expect := fmt.Sprintf("%s  %s\n", digest, filePath)
+	require.NoError(t, m.AddEntry(filePath, *fileDigest))
+	require.NoError(t, m.AddEntry(filePath, *fileDigest)) // adding the same entry twice is fine
+
+	require.Error(t, m.AddEntry("", *fileDigest))
+	require.Error(t, m.AddEntry("other/path", manifest.Digest{}))
+	require.Error(t, m.AddEntry(filePath, *mustDigestShake256(t, []byte("other content"))))
+
+	expect := fmt.Sprintf("%s  %s\n", fileDigest, filePath)
 	retContent, err := m.MarshalText()
 	require.NoError(t, err)
 	assert.Equal(t, expect, string(retContent))
@@ -154,7 +159,7 @@ func TestFromBucket(t *testing.T) {
 	require.NoError(t, err)
 	m, err := manifest.NewFromBucket(ctx, bucket)
 	require.NoError(t, err)
-	// sorted paths
+	// sorted by paths
 	expected := fmt.Sprintf("%s  foo\n", mustDigestShake256(t, []byte("bar")))
 	expected += fmt.Sprintf("%s  null\n", mustDigestShake256(t, nil))
 	retContent, err := m.MarshalText()

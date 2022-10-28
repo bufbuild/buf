@@ -34,6 +34,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/multierr"
 )
 
 var errNoFinalNewline = errors.New("partial record: missing newline")
@@ -128,12 +129,13 @@ func NewFromBucket(
 	if err != nil {
 		return nil, err
 	}
-	if walkErr := bucket.Walk(ctx, "", func(info storage.ObjectInfo) error {
+	if walkErr := bucket.Walk(ctx, "", func(info storage.ObjectInfo) (retErr error) {
 		path := info.Path()
 		obj, err := bucket.Get(ctx, path)
 		if err != nil {
 			return err
 		}
+		defer func() { retErr = multierr.Append(retErr, obj.Close()) }()
 		digest, err := digester.Digest(obj)
 		if err != nil {
 			return err
@@ -141,15 +143,31 @@ func NewFromBucket(
 		if err := m.AddEntry(path, *digest); err != nil {
 			return err
 		}
-		return obj.Close()
+		return nil
 	}); walkErr != nil {
 		return nil, walkErr
 	}
 	return m, nil
 }
 
-// AddEntry adds an entry to the manifest with a path and its digest.
+// AddEntry adds an entry to the manifest with a path and its digest. It fails
+// if the path already exists in the manifest with a different digest.
 func (m *Manifest) AddEntry(path string, digest Digest) error {
+	if path == "" {
+		return errors.New("empty path")
+	}
+	if digest.Type() == "" || digest.Hex() == "" {
+		return errors.New("invalid digest")
+	}
+	if existingDigest, exists := m.pathToDigest[path]; exists {
+		if existingDigest.Equal(digest) {
+			return nil // same entry already in the manifest, nothing to do
+		}
+		return fmt.Errorf(
+			"cannot add digest %q for path %q (already associated to digest %q)",
+			digest.String(), path, existingDigest.String(),
+		)
+	}
 	m.pathToDigest[path] = digest
 	key := digest.String()
 	m.digestToPaths[key] = append(m.digestToPaths[key], path)
