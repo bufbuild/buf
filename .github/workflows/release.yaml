@@ -17,6 +17,8 @@ on:
 
 env:
   VERSION: ${{ github.event.inputs.version }}
+  RELEASE_MINISIGN_PRIVATE_KEY: ${{ secrets.RELEASE_PRIVATE_KEY }}
+  RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{ secrets.RELEASE_PRIVATE_KEY_PASSWORD }}
 
 jobs:
   prepare:
