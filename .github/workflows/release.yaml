@@ -17,8 +17,6 @@ on:
 
 env:
   VERSION: ${{ github.event.inputs.version }}
-  RELEASE_MINISIGN_PRIVATE_KEY: "${{ secrets.RELEASE_PRIVATE_KEY }}"
-  RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: "${{ secrets.RELEASE_PRIVATE_KEY_PASSWORD }}"
 
 jobs:
   prepare:
@@ -135,7 +133,14 @@ jobs:
         with:
           go-version: '^1.19.x'
       - name: Create assets
+        env:
+          RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
+          RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}}
         run: make bufrelease
+      - name: unset keys
+        run: |
+          unset RELEASE_MINISIGN_PRIVATE_KEY
+          unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD
       - name: Set FILES variable from tag
         run: |
           echo "FILES=$(find ${{github.workspace}}/.build/release/buf/assets -type f)" >> $GITHUB_ENV
