@@ -191,6 +191,7 @@ jobs:
         run: make updatehomebrewbadge
       - name: raise PR
         run: |
+          git config --global user.password ${{ secrets.PAT }}
           git checkout -b next/${{env.NEXT_VERSION}}
           git commit -am "Back to development"
           gh pr create --title "Back to development for ${{env.NEXT_VERSION}}" --fill
