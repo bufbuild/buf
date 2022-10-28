@@ -19,17 +19,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 	"testing"
 	"testing/iotest"
 
-	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/sha3"
 )
 
 func Example() {
@@ -52,7 +49,7 @@ func Example() {
 func TestRoundTripManifest(t *testing.T) {
 	t.Parallel()
 	// read a manifest using the unmarshaling method
-	null := mkdigest([]byte{})
+	null := mustDigestShake256(t, []byte{})
 	var manifestBuilder bytes.Buffer
 	for i := 0; i < 2; i++ {
 		fmt.Fprintf(
@@ -81,21 +78,17 @@ func TestEmptyManifest(t *testing.T) {
 	assert.Equal(t, 0, len(content))
 }
 
-func TestAddContent(t *testing.T) {
+func TestAddDigest(t *testing.T) {
 	t.Parallel()
 	// single entry
 	m := manifest.New()
-	err := m.AddContent("my/path", bytes.NewReader(nil))
-	require.NoError(t, err)
-	expect := fmt.Sprintf("%s  my/path\n", mkdigest(nil))
+	digest := mustDigestShake256(t, nil)
+	const filePath = "my/path"
+	require.NoError(t, m.AddEntry(filePath, *digest))
+	expect := fmt.Sprintf("%s  %s\n", digest, filePath)
 	retContent, err := m.MarshalText()
 	require.NoError(t, err)
 	assert.Equal(t, expect, string(retContent))
-
-	// failing content read
-	expectedErr := errors.New("testing error")
-	err = m.AddContent("my/path", iotest.ErrReader(expectedErr))
-	assert.ErrorIs(t, err, expectedErr)
 }
 
 func TestInvalidManifests(t *testing.T) {
@@ -116,7 +109,7 @@ func TestInvalidManifests(t *testing.T) {
 	)
 	testInvalidManifest(
 		t,
-		"unsupported hash",
+		"unsupported digest type",
 		"md5:d41d8cd98f00b204e9800998ecf8427e  foo\n",
 	)
 	testInvalidManifest(
@@ -132,7 +125,7 @@ func TestInvalidManifests(t *testing.T) {
 	testInvalidManifest(
 		t,
 		"partial record",
-		fmt.Sprintf("%s  null", mkdigest(nil)),
+		fmt.Sprintf("%s  null", mustDigestShake256(t, nil)),
 	)
 }
 
@@ -161,8 +154,9 @@ func TestFromBucket(t *testing.T) {
 	require.NoError(t, err)
 	m, err := manifest.NewFromBucket(ctx, bucket)
 	require.NoError(t, err)
-	expected := fmt.Sprintf("%s  foo\n", mkdigest([]byte("bar")))
-	expected += fmt.Sprintf("%s  null\n", mkdigest(nil))
+	// sorted paths
+	expected := fmt.Sprintf("%s  foo\n", mustDigestShake256(t, []byte("bar")))
+	expected += fmt.Sprintf("%s  null\n", mustDigestShake256(t, nil))
 	retContent, err := m.MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, expected, string(retContent))
@@ -171,14 +165,15 @@ func TestFromBucket(t *testing.T) {
 func TestDigestPaths(t *testing.T) {
 	t.Parallel()
 	m := manifest.New()
-	err := m.AddContent("path/one", bytes.NewReader(nil))
+	sharedDigest := mustDigestShake256(t, nil)
+	err := m.AddEntry("path/one", *sharedDigest)
 	require.NoError(t, err)
-	err = m.AddContent("path/two", bytes.NewReader(nil))
+	err = m.AddEntry("path/two", *sharedDigest)
 	require.NoError(t, err)
-	paths, ok := m.PathsFor(mkdigest(nil).String())
+	paths, ok := m.PathsFor(sharedDigest.String())
 	assert.True(t, ok)
 	assert.ElementsMatch(t, []string{"path/one", "path/two"}, paths)
-	paths, ok = m.PathsFor(mkdigest([]byte{0}).String())
+	paths, ok = m.PathsFor(mustDigestShake256(t, []byte{0}).String())
 	assert.False(t, ok)
 	assert.Empty(t, paths)
 }
@@ -186,26 +181,15 @@ func TestDigestPaths(t *testing.T) {
 func TestPathDigest(t *testing.T) {
 	t.Parallel()
 	m := manifest.New()
-	err := m.AddContent("my/path", bytes.NewReader(nil))
+	digest := mustDigestShake256(t, nil)
+	err := m.AddEntry("my/path", *digest)
 	require.NoError(t, err)
-	digest, ok := m.DigestFor("my/path")
+	retDigest, ok := m.DigestFor("my/path")
 	assert.True(t, ok)
-	assert.Equal(t, mkdigest(nil), digest)
-	digest, ok = m.DigestFor("foo")
+	assert.Equal(t, digest, retDigest)
+	retDigest, ok = m.DigestFor("foo")
 	assert.False(t, ok)
-	assert.Empty(t, digest)
-}
-
-func mkdigest(content []byte) *manifest.Digest {
-	hash := sha3.NewShake256()
-	if _, err := hash.Write(content); err != nil {
-		panic(err)
-	}
-	digest := make([]byte, 64)
-	if _, err := hash.Read(digest); err != nil {
-		panic(err)
-	}
-	return manifest.NewDigestFromBytes("shake256", digest)
+	assert.Empty(t, retDigest)
 }
 
 func testInvalidManifest(
@@ -221,69 +205,16 @@ func testInvalidManifest(
 	})
 }
 
-func TestDigestValidator(t *testing.T) {
-	t.Parallel()
-	const content = "the content"
-	digest := manifest.NewDigestFromBytes("not-supported-dtype", []byte(content))
-	require.NotNil(t, digest)
-	_, err := digest.Valid(strings.NewReader(content))
-	require.ErrorContains(t, err, "unsupported hash")
-}
-
-func TestValidateContent(t *testing.T) {
-	t.Parallel()
-	const (
-		filePath    = "path/to/file"
-		fileContent = "one line\nanother line\nyet another one\n"
-	)
-	m := manifest.New()
-	require.NoError(t, m.AddContent(filePath, strings.NewReader(fileContent)))
-	fileDigest, ok := m.DigestFor(filePath)
-	require.True(t, ok)
-	require.NotNil(t, fileDigest)
-	valid, err := fileDigest.Valid(strings.NewReader(fileContent))
-	require.NoError(t, err)
-	assert.True(t, valid)
-	valid, err = fileDigest.Valid(strings.NewReader("some other content"))
-	require.NoError(t, err)
-	assert.False(t, valid)
-}
-
-func TestDigestFromBlobHash(t *testing.T) {
-	t.Parallel()
-	const (
-		filePath    = "path/to/file"
-		fileContent = "one line\nanother line\nyet another one\n"
-	)
-	typesToKinds := map[string]modulev1alpha1.HashKind{
-		"shake256": modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
-	}
-	for supportedType, supportedKind := range typesToKinds {
-		digestFromFile := manifest.NewDigestFromBytes(supportedType, []byte(fileContent))
-		require.NotNil(t, digestFromFile)
-		assert.Equal(t, supportedType, digestFromFile.Type())
-		blobHash := modulev1alpha1.Hash{
-			Kind:   supportedKind,
-			Digest: digestFromFile.Bytes(),
-		}
-		digestFromBlobHash, err := manifest.NewDigestFromBlobHash(&blobHash)
-		require.NoError(t, err)
-		assert.Equal(t, digestFromFile.String(), digestFromBlobHash.String())
-	}
-}
-
 func TestAllPaths(t *testing.T) {
 	t.Parallel()
 	m := manifest.New()
+	var addedPaths []string
 	for i := 0; i < 20; i++ {
-		err := m.AddContent(
-			fmt.Sprintf("path/to/file%0d", i),
-			bytes.NewReader(nil),
-		)
-		require.NoError(t, err)
+		path := fmt.Sprintf("path/to/file%0d", i)
+		require.NoError(t, m.AddEntry(path, *mustDigestShake256(t, nil)))
+		addedPaths = append(addedPaths, path)
 	}
-	sortedPaths := m.Paths()
-	assert.True(t, sort.SliceIsSorted(sortedPaths, func(i, j int) bool {
-		return sortedPaths[i] < sortedPaths[j] // lexicographically sorted
-	}))
+	retPaths := m.Paths()
+	assert.Equal(t, len(addedPaths), len(retPaths))
+	assert.ElementsMatch(t, addedPaths, retPaths)
 }

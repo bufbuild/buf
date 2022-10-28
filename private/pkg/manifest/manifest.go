@@ -27,101 +27,16 @@ import (
 	"bytes"
 	"context"
 	"encoding"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"sort"
 	"strings"
 
-	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"golang.org/x/crypto/sha3"
 )
 
-const (
-	shake256Name   = "shake256"
-	shake256Length = 64
-)
-
-var (
-	errNoFinalNewline    = errors.New("partial record: missing newline")
-	hashKindToDigestType = map[modulev1alpha1.HashKind]string{
-		modulev1alpha1.HashKind_HASH_KIND_SHAKE256: shake256Name,
-	}
-)
-
-// Digest represents a hash function's value.
-type Digest struct {
-	dtype  string
-	digest []byte
-	hexstr string
-}
-
-func NewDigestFromBytes(dtype string, digest []byte) *Digest {
-	return &Digest{
-		dtype:  dtype,
-		digest: digest,
-		hexstr: hex.EncodeToString(digest),
-	}
-}
-
-func NewDigestFromHex(dtype string, hexstr string) (*Digest, error) {
-	digest, err := hex.DecodeString(hexstr)
-	if err != nil {
-		return nil, err
-	}
-	return NewDigestFromBytes(dtype, digest), nil
-}
-
-func NewDigestFromString(typedDigest string) (*Digest, error) {
-	hashfunc, digestStr, found := strings.Cut(typedDigest, ":")
-	if !found {
-		return nil, errors.New("malformed digest string")
-	}
-	return NewDigestFromHex(hashfunc, digestStr)
-}
-
-func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
-	if hash == nil {
-		return nil, fmt.Errorf("nil hash")
-	}
-	dType, ok := hashKindToDigestType[hash.Kind]
-	if !ok {
-		return nil, fmt.Errorf("unsupported hash kind: %s", hash.Kind.String())
-	}
-	return NewDigestFromBytes(dType, hash.Digest), nil
-}
-
-// String returns the hash in a manifest's string format: "<type>:<hex>"
-func (d *Digest) String() string {
-	return d.Type() + ":" + d.Hex()
-}
-
-func (d *Digest) Type() string {
-	return d.dtype
-}
-
-func (d *Digest) Bytes() []byte {
-	return d.digest
-}
-
-func (d *Digest) Hex() string {
-	return d.hexstr
-}
-
-// Valid checks if the current digest matches a passed content, and any error
-// attempting to validate.
-func (d *Digest) Valid(content io.Reader) (bool, error) {
-	if d.Type() != shake256Name {
-		return false, fmt.Errorf("unsupported hash: %s", d.Type())
-	}
-	digest, err := shake256DigestFrom(sha3.NewShake256(), content)
-	if err != nil {
-		return false, err
-	}
-	return d.Hex() == hex.EncodeToString(digest), nil
-}
+var errNoFinalNewline = errors.New("partial record: missing newline")
 
 // Error occurs when a manifest is malformed.
 type Error struct {
@@ -154,11 +69,10 @@ func (e *Error) Unwrap() error {
 	return e.wrapped
 }
 
-// Manifest represents a list of pathToDigest and their digests.
+// Manifest represents a list of paths and their digests.
 type Manifest struct {
 	pathToDigest  map[string]Digest
 	digestToPaths map[string][]string
-	hash          sha3.ShakeHash
 }
 
 var _ encoding.TextMarshaler = (*Manifest)(nil)
@@ -169,7 +83,6 @@ func New() *Manifest {
 	return &Manifest{
 		pathToDigest:  make(map[string]Digest),
 		digestToPaths: make(map[string][]string),
-		hash:          sha3.NewShake256(),
 	}
 }
 
@@ -189,7 +102,7 @@ func NewFromReader(manifest io.Reader) (*Manifest, error) {
 		if err != nil {
 			return nil, newErrorWrapped(lineno, err)
 		}
-		if err := m.addDigest(path, digest); err != nil {
+		if err := m.AddEntry(path, *digest); err != nil {
 			return nil, newErrorWrapped(lineno, err)
 		}
 	}
@@ -204,60 +117,51 @@ func NewFromReader(manifest io.Reader) (*Manifest, error) {
 	return m, nil
 }
 
-// NewFromBucket creates a manifest from a storage bucket.
+// NewFromBucket creates a manifest from a storage bucket, with all its digests
+// in DigestTypeShake256.
 func NewFromBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 ) (*Manifest, error) {
 	m := New()
-	err := bucket.Walk(ctx, "", func(info storage.ObjectInfo) error {
+	digester, err := NewDigester(DigestTypeShake256)
+	if err != nil {
+		return nil, err
+	}
+	if walkErr := bucket.Walk(ctx, "", func(info storage.ObjectInfo) error {
 		path := info.Path()
 		obj, err := bucket.Get(ctx, path)
 		if err != nil {
 			return err
 		}
-		if err := m.AddContent(path, obj); err != nil {
+		digest, err := digester.Digest(obj)
+		if err != nil {
+			return err
+		}
+		if err := m.AddEntry(path, *digest); err != nil {
 			return err
 		}
 		return obj.Close()
-	})
-	if err != nil {
-		return nil, err
+	}); walkErr != nil {
+		return nil, walkErr
 	}
 	return m, nil
 }
 
-func (m *Manifest) addDigest(path string, digest *Digest) error {
-	if digest.Type() != shake256Name {
-		return fmt.Errorf("unsupported hash: %s", digest.Type())
-	}
-	if n := len(digest.Bytes()); n != shake256Length {
-		return fmt.Errorf("invalid digest: got %d bytes, expected %d bytes", n, shake256Length)
-	}
-	m.pathToDigest[path] = *digest
+// AddEntry adds an entry to the manifest with a path and its digest.
+func (m *Manifest) AddEntry(path string, digest Digest) error {
+	m.pathToDigest[path] = digest
 	key := digest.String()
 	m.digestToPaths[key] = append(m.digestToPaths[key], path)
 	return nil
 }
 
-// AddContent adds a manifest entry for path by its content. Returned errors
-// are errors from reading content, except io.EOF is swallowed.
-func (m *Manifest) AddContent(path string, content io.Reader) error {
-	m.hash.Reset()
-	digest, err := shake256DigestFrom(m.hash, content)
-	if err != nil {
-		return err
-	}
-	return m.addDigest(path, NewDigestFromBytes(shake256Name, digest))
-}
-
-// Paths returns a sorted list of all paths in the manifest.
+// Paths returns all paths in the manifest.
 func (m *Manifest) Paths() []string {
 	paths := make([]string, 0, len(m.pathToDigest))
 	for path := range m.pathToDigest {
 		paths = append(paths, path)
 	}
-	sort.Strings(paths)
 	return paths
 }
 
@@ -285,8 +189,9 @@ func (m *Manifest) DigestFor(path string) (*Digest, bool) {
 // MarshalText encodes the manifest into its canonical form.
 func (m *Manifest) MarshalText() ([]byte, error) {
 	var coded bytes.Buffer
-	sortedPaths := m.Paths()
-	for _, path := range sortedPaths {
+	paths := m.Paths()
+	sort.Strings(paths)
+	for _, path := range paths {
 		digest := m.pathToDigest[path]
 		fmt.Fprintf(&coded, "%s  %s\n", &digest, path)
 	}
@@ -304,7 +209,6 @@ func (m *Manifest) UnmarshalText(text []byte) error {
 	}
 	m.pathToDigest = newm.pathToDigest
 	m.digestToPaths = newm.digestToPaths
-	m.hash = newm.hash
 	return nil
 }
 
@@ -320,17 +224,4 @@ func splitManifest(data []byte, atEOF bool) (int, []byte, error) {
 	}
 
 	return 0, nil, nil
-}
-
-func shake256DigestFrom(hash sha3.ShakeHash, content io.Reader) ([]byte, error) {
-	if _, err := io.Copy(hash, content); err != nil {
-		return nil, err
-	}
-	digest := make([]byte, shake256Length)
-	if _, err := hash.Read(digest); err != nil {
-		// sha3.ShakeHash never errors or short reads. Something horribly wrong
-		// happened if your computer ended up here.
-		return nil, err
-	}
-	return digest, nil
 }
