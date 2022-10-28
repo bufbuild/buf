@@ -135,14 +135,18 @@ jobs:
         with:
           go-version: '^1.19.x'
       - name: Create assets
-        env:
-          RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
-          RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}}
-        run: make bufrelease
-      - name: unset keys
+#        env:
+#          RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
+#          RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}}
+#        run: make bufrelease
         run: |
-          unset RELEASE_MINISIGN_PRIVATE_KEY
-          unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD
+          mkdir -p .build/release/buf/assets
+          touch .build/release/buf/assets/Release.txt
+          echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}' >> .build/release/buf/assets/Release.txt
+#      - name: unset keys
+#        run: |
+#          unset RELEASE_MINISIGN_PRIVATE_KEY
+#          unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD
       - name: Set FILES variable from tag
         run: |
           echo "FILES=$(find ${{github.workspace}}/.build/release/buf/assets -type f)" >> $GITHUB_ENV
@@ -173,7 +177,7 @@ jobs:
 #            {"contents": "write", "pull_requests": "write"}
       - name: Set NEXT VERSION variable from tag
         run: |
-          NEXT_VERSION=$(echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}'
+          NEXT_VERSION=$(echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}')
           echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
       - name: update version
         run: make updateversion VERSION=${{env.NEXT_VERSION}}
