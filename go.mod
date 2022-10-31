@@ -12,7 +12,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
 	github.com/jhump/protoreflect v1.14.0
-	github.com/klauspost/compress v1.15.11
+	github.com/klauspost/compress v1.15.12
 	github.com/klauspost/pgzip v1.2.5
 	github.com/moby/buildkit v0.10.5
 	github.com/oklog/ulid/v2 v2.1.0
