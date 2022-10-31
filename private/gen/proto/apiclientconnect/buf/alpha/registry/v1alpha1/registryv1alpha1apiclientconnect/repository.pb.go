@@ -373,3 +373,19 @@ func (s *repositoryServiceClient) UpdateRepositorySettingsByName(
 	}
 	return nil
 }
+
+// GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
+// request should match the length of the metadata in the response, but the order in the response is unspecified.
+func (s *repositoryServiceClient) GetRepositoriesMetadata(ctx context.Context, ids []string) (metadata []*v1alpha1.RepositoryMetadata, _ error) {
+	response, err := s.client.GetRepositoriesMetadata(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.GetRepositoriesMetadataRequest{
+				Ids: ids,
+			}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Msg.Metadata, nil
+}
