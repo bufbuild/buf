@@ -10,13 +10,15 @@ on:
   push:
     branches:
       - 'release/**'
+      - 'next/**'
     tags:
       - v*
+  release:
+    types: [ created ]
 
 env:
   VERSION: ${{ github.event.inputs.version }}
-  RELEASE_MINISIGN_PRIVATE_KEY: ${{ secrets.RELEASE_PRIVATE_KEY }}
-  RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{ secrets.RELEASE_PRIVATE_KEY_PASSWORD }}
+  APP_ID: 251311
 
 jobs:
   prepare:
@@ -27,7 +29,7 @@ jobs:
         id: generate_token
         uses: tibdex/github-app-token@v1
         with:
-          app_id: 251311
+          app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
           repository: ${{ github.repository }}
           permissions: >-
@@ -88,7 +90,7 @@ jobs:
         id: generate_token
         uses: tibdex/github-app-token@v1
         with:
-          app_id: 251311
+          app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
           repository: ${{ github.repository }}
           permissions: >-
@@ -117,23 +119,31 @@ jobs:
         id: generate_token
         uses: tibdex/github-app-token@v1
         with:
-          app_id: 251311
+          app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
           repository: ${{ github.repository }}
           permissions: >-
             {"contents": "write", "pull_requests": "write"}
-      - name: Set VERSION variable from tag
-        run: |
-          echo "VERSION=${{github.ref_name}}" >> $GITHUB_ENV
       - name: Checkout repository code
         uses: actions/checkout@v3
         with:
-          token: ${{ steps.generate_token.outputs.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Set VERSION variable from tag
+        run: |
+          echo "VERSION=${{github.ref_name}}" >> $GITHUB_ENV
       - uses: actions/setup-go@v3
         with:
           go-version: '^1.19.x'
       - name: Create assets
+        env:
+          RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
+          RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}}
         run: make bufrelease
+      - name: unset keys
+        run: |
+          unset RELEASE_MINISIGN_PRIVATE_KEY
+          unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD
       - name: Set FILES variable from tag
         run: |
           echo "FILES=$(find ${{github.workspace}}/.build/release/buf/assets -type f)" >> $GITHUB_ENV
@@ -149,3 +159,39 @@ jobs:
         run: |
           jq --null-input '{ text: "BufCLI Release v${{env.VERSION}} is complete: ${{ steps.ghr.outputs.url }}" }' \
           | curl -sSL -X POST -H 'Content-Type: application/json' -d @- '${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}'
+  post-release:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' }}
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{env.APP_ID}}
+          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+          repository: ${{ github.repository }}
+          permissions: >-
+            {"contents": "write", "pull_requests": "write"}
+      - name: Checkout repository code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Set NEXT VERSION variable from tag
+        run: |
+          NEXT_VERSION=$(echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}')
+          echo "NEXT_VERSION=$NEXT_VERSION-dev" >> $GITHUB_ENV
+      - name: update version
+        run: make updateversion VERSION=${{env.NEXT_VERSION}}
+      - name: update home brew badge
+        run: make updatehomebrewbadge
+      - name: create PR
+        uses: peter-evans/create-pull-request@ad43dccb4d726ca8514126628bec209b8354b6dd
+        with:
+          add-paths: .
+          commit-message: "Back to development"
+          branch: next/${{env.NEXT_VERSION}}
+          delete-branch: true
+          title: "Return to development"
+          body: Release complete for ${{github.ref_name}}
+          token: ${{ steps.generate_token.outputs.token }}
