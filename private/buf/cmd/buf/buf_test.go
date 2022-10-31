@@ -37,6 +37,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var convertTestDataDir = filepath.Join("command", "beta", "convert", "testdata", "convert")
+
 func TestSuccess1(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 1, ``, "build", "--source", filepath.Join("testdata", "success"))
@@ -1728,7 +1730,7 @@ func TestConvertWithImage(t *testing.T) {
 	)
 
 	t.Run("stdin input", func(t *testing.T) {
-		stdin, err := os.Open(filepath.Join("testdata", "convert", "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.bin"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		stdout := bytes.NewBuffer(nil)
@@ -1775,7 +1777,7 @@ func TestConvertOutput(t *testing.T) {
 		filepath.Join(tempDir, "image.bin"),
 	)
 	t.Run("json file output", func(t *testing.T) {
-		stdin, err := os.Open(filepath.Join("testdata", "convert", "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.bin"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		outputTempDir := t.TempDir()
@@ -1804,7 +1806,7 @@ func TestConvertOutput(t *testing.T) {
 		)
 	})
 	t.Run("txt file output", func(t *testing.T) {
-		stdin, err := os.Open(filepath.Join("testdata", "convert", "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.bin"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		outputTempDir := t.TempDir()
@@ -1833,7 +1835,7 @@ func TestConvertOutput(t *testing.T) {
 		)
 	})
 	t.Run("stdout with dash", func(t *testing.T) {
-		stdin, err := os.Open(filepath.Join("testdata", "convert", "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.bin"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		stdout := bytes.NewBuffer(nil)
@@ -1866,7 +1868,7 @@ func TestConvertInvalidTypeName(t *testing.T) {
 		"-o",
 		filepath.Join(tempDir, "image.bin"),
 	)
-	stdin, err := os.Open(filepath.Join("testdata", "convert", "descriptor.plain.bin"))
+	stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.bin"))
 	require.NoError(t, err)
 	defer stdin.Close()
 	testRunStdoutStderr(
@@ -1888,124 +1890,124 @@ func TestConvert(t *testing.T) {
 		testRunStdoutFile(t,
 			nil,
 			0,
-			"command/beta/convert/testdata/convert/bin_json/payload.json",
+			convertTestDataDir+"/bin_json/payload.json",
 			"beta",
 			"convert",
 			"--type=buf.Foo",
-			"--from=testdata/convert/bin_json/payload.bin",
-			"command/beta/convert/testdata/convert/bin_json/buf.proto",
+			"--from="+convertTestDataDir+"/bin_json/payload.bin",
+			convertTestDataDir+"/bin_json/buf.proto",
 		)
 	})
 	t.Run("json-to-bin-file-proto", func(t *testing.T) {
 		testRunStdoutFile(t,
 			nil,
 			0,
-			"command/beta/convert/testdata/convert/bin_json/payload.bin",
+			convertTestDataDir+"/bin_json/payload.bin",
 			"beta",
 			"convert",
 			"--type=buf.Foo",
-			"--from=testdata/convert/bin_json/payload.json",
-			"command/beta/convert/testdata/convert/bin_json/buf.proto",
+			"--from="+convertTestDataDir+"/bin_json/payload.json",
+			convertTestDataDir+"/bin_json/buf.proto",
 		)
 	})
 	t.Run("stdin-json-to-bin-proto", func(t *testing.T) {
 		testRunStdoutFile(t,
 			strings.NewReader(`{"one":"55"}`),
 			0,
-			"command/beta/convert/testdata/convert/bin_json/payload.bin",
+			convertTestDataDir+"/bin_json/payload.bin",
 			"beta",
 			"convert",
 			"--type=buf.Foo",
 			"--from",
 			"-#format=json",
-			"command/beta/convert/testdata/convert/bin_json/buf.proto",
+			convertTestDataDir+"/bin_json/buf.proto",
 		)
 	})
 	t.Run("stdin-bin-to-json-proto", func(t *testing.T) {
-		file, err := os.Open("command/beta/convert/testdata/convert/bin_json/payload.bin")
+		file, err := os.Open(convertTestDataDir + "/bin_json/payload.bin")
 		require.NoError(t, err)
 		testRunStdoutFile(t, file,
 			0,
-			"command/beta/convert/testdata/convert/bin_json/payload.json",
+			convertTestDataDir+"/bin_json/payload.json",
 			"beta",
 			"convert",
 			"--type=buf.Foo",
 			"--from",
 			"-#format=bin",
-			"command/beta/convert/testdata/convert/bin_json/buf.proto",
+			convertTestDataDir+"/bin_json/buf.proto",
 		)
 	})
 	t.Run("stdin-json-to-json-proto", func(t *testing.T) {
 		testRunStdoutFile(t,
 			strings.NewReader(`{"one":"55"}`),
 			0,
-			"command/beta/convert/testdata/convert/bin_json/payload.json",
+			convertTestDataDir+"/bin_json/payload.json",
 			"beta",
 			"convert",
 			"--type=buf.Foo",
-			"command/beta/convert/testdata/convert/bin_json/buf.proto",
+			convertTestDataDir+"/bin_json/buf.proto",
 			"--from",
 			"-#format=json",
 			"--to",
 			"-#format=json")
 	})
 	t.Run("stdin-input-to-json-image", func(t *testing.T) {
-		file, err := os.Open("command/beta/convert/testdata/convert/bin_json/image.bin")
+		file, err := os.Open(convertTestDataDir + "/bin_json/image.bin")
 		require.NoError(t, err)
 		testRunStdoutFile(t, file,
 			0,
-			"command/beta/convert/testdata/convert/bin_json/payload.json",
+			convertTestDataDir+"/bin_json/payload.json",
 			"beta",
 			"convert",
 			"--type=buf.Foo",
 			"-",
-			"--from=testdata/convert/bin_json/payload.bin",
+			"--from="+convertTestDataDir+"/bin_json/payload.bin",
 			"--to",
 			"-#format=json",
 		)
 	})
 	t.Run("stdin-json-to-json-image", func(t *testing.T) {
-		file, err := os.Open("command/beta/convert/testdata/convert/bin_json/payload.bin")
+		file, err := os.Open(convertTestDataDir + "/bin_json/payload.bin")
 		require.NoError(t, err)
 		testRunStdoutFile(t,
 			file,
 			0,
-			"command/beta/convert/testdata/convert/bin_json/payload.json",
+			convertTestDataDir+"/bin_json/payload.json",
 			"beta",
 			"convert",
 			"--type=buf.Foo",
-			"command/beta/convert/testdata/convert/bin_json/image.bin",
+			convertTestDataDir+"/bin_json/image.bin",
 			"--from",
 			"-#format=bin",
 			"--to",
 			"-#format=json")
 	})
 	t.Run("stdin-bin-payload-to-json-with-image", func(t *testing.T) {
-		file, err := os.Open("command/beta/convert/testdata/convert/bin_json/payload.bin")
+		file, err := os.Open(convertTestDataDir + "/bin_json/payload.bin")
 		require.NoError(t, err)
 		testRunStdoutFile(t,
 			file,
 			0,
-			"command/beta/convert/testdata/convert/bin_json/payload.json",
+			convertTestDataDir+"/bin_json/payload.json",
 			"beta",
 			"convert",
 			"--type=buf.Foo",
-			"command/beta/convert/testdata/convert/bin_json/image.bin",
+			convertTestDataDir+"/bin_json/image.bin",
 			"--to",
 			"-#format=json",
 		)
 	})
 	t.Run("stdin-json-payload-to-bin-with-image", func(t *testing.T) {
-		file, err := os.Open("command/beta/convert/testdata/convert/bin_json/payload.json")
+		file, err := os.Open(convertTestDataDir + "/bin_json/payload.json")
 		require.NoError(t, err)
 		testRunStdoutFile(t,
 			file,
 			0,
-			"command/beta/convert/testdata/convert/bin_json/payload.bin",
+			convertTestDataDir+"/bin_json/payload.bin",
 			"beta",
 			"convert",
 			"--type=buf.Foo",
-			"command/beta/convert/testdata/convert/bin_json/image.bin",
+			convertTestDataDir+"/bin_json/image.bin",
 			"--from",
 			"-#format=json",
 			"--to",
@@ -2013,17 +2015,17 @@ func TestConvert(t *testing.T) {
 		)
 	})
 	t.Run("stdin-image-json-to-bin", func(t *testing.T) {
-		file, err := os.Open("command/beta/convert/testdata/convert/bin_json/image.json")
+		file, err := os.Open(convertTestDataDir + "/bin_json/image.json")
 		require.NoError(t, err)
 		testRunStdoutFile(t,
 			file,
 			0,
-			"command/beta/convert/testdata/convert/bin_json/payload.bin",
+			convertTestDataDir+"/bin_json/payload.bin",
 			"beta",
 			"convert",
 			"--type=buf.Foo",
 			"-#format=json",
-			"--from=testdata/convert/bin_json/payload.json",
+			"--from="+convertTestDataDir+"/bin_json/payload.json",
 			"--to",
 			"-#format=bin",
 		)
