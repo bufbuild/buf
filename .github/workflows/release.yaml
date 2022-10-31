@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - 'release/**'
+      - 'next/**'
     tags:
       - v*
   release:
@@ -65,7 +66,7 @@ jobs:
 #          | curl -sSL -X POST -H 'Content-Type: application/json' -d @- '${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}'
   verify:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'release') }}
+    if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'release') || startsWith(github.ref_name, 'next') }}
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v3
