@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- Allow `enabled: false` in `buf.gen.yaml`, in which case `buf generate` will ignore managed mode options.
+- Allow setting `enabled: false` under `managed` in `buf.gen.yaml`, in which 
+  case `buf generate` will ignore managed mode options.
 
 ## [v1.9.0] - 2022-10-19
 
