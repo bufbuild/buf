@@ -244,12 +244,14 @@ type GoPackagePrefixConfig struct {
 // Only use in CLI tools.
 func ReadConfig(
 	ctx context.Context,
+	logger *zap.Logger,
 	provider Provider,
 	readBucket storage.ReadBucket,
 	options ...ReadConfigOption,
 ) (*Config, error) {
 	return readConfig(
 		ctx,
+		logger,
 		provider,
 		readBucket,
 		options...,

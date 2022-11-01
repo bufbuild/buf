@@ -27,11 +27,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func readConfig(
 	ctx context.Context,
+	logger *zap.Logger,
 	provider Provider,
 	readBucket storage.ReadBucket,
 	options ...ReadConfigOption,
@@ -43,22 +45,23 @@ func readConfig(
 	if override := readConfigOptions.override; override != "" {
 		switch filepath.Ext(override) {
 		case ".json":
-			return getConfigJSONFile(override)
+			return getConfigJSONFile(logger, override)
 		case ".yaml", ".yml":
-			return getConfigYAMLFile(override)
+			return getConfigYAMLFile(logger, override)
 		default:
-			return getConfigJSONOrYAMLData(override)
+			return getConfigJSONOrYAMLData(logger, override)
 		}
 	}
 	return provider.GetConfig(ctx, readBucket)
 }
 
-func getConfigJSONFile(file string) (*Config, error) {
+func getConfigJSONFile(logger *zap.Logger, file string) (*Config, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("could not read file %s: %v", file, err)
 	}
 	return getConfig(
+		logger,
 		encoding.UnmarshalJSONNonStrict,
 		encoding.UnmarshalJSONStrict,
 		data,
@@ -66,12 +69,13 @@ func getConfigJSONFile(file string) (*Config, error) {
 	)
 }
 
-func getConfigYAMLFile(file string) (*Config, error) {
+func getConfigYAMLFile(logger *zap.Logger, file string) (*Config, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("could not read file %s: %v", file, err)
 	}
 	return getConfig(
+		logger,
 		encoding.UnmarshalYAMLNonStrict,
 		encoding.UnmarshalYAMLStrict,
 		data,
@@ -79,8 +83,9 @@ func getConfigYAMLFile(file string) (*Config, error) {
 	)
 }
 
-func getConfigJSONOrYAMLData(data string) (*Config, error) {
+func getConfigJSONOrYAMLData(logger *zap.Logger, data string) (*Config, error) {
 	return getConfig(
+		logger,
 		encoding.UnmarshalJSONOrYAMLNonStrict,
 		encoding.UnmarshalJSONOrYAMLStrict,
 		[]byte(data),
@@ -89,6 +94,7 @@ func getConfigJSONOrYAMLData(data string) (*Config, error) {
 }
 
 func getConfig(
+	logger *zap.Logger,
 	unmarshalNonStrict func([]byte, interface{}) error,
 	unmarshalStrict func([]byte, interface{}) error,
 	data []byte,
@@ -116,14 +122,14 @@ func getConfig(
 		if err := validateExternalConfigV1(externalConfigV1, id); err != nil {
 			return nil, err
 		}
-		return newConfigV1(externalConfigV1, id)
+		return newConfigV1(logger, externalConfigV1, id)
 	default:
 		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, V1Version)
 	}
 }
 
-func newConfigV1(externalConfig ExternalConfigV1, id string) (*Config, error) {
-	managedConfig, err := newManagedConfigV1(externalConfig.Managed)
+func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string) (*Config, error) {
+	managedConfig, err := newManagedConfigV1(logger, externalConfig.Managed)
 	if err != nil {
 		return nil, err
 	}
@@ -229,11 +235,11 @@ func checkPathAndStrategyUnset(id string, plugin ExternalPluginConfigV1, pluginI
 	return nil
 }
 
-func newManagedConfigV1(externalManagedConfig ExternalManagedConfigV1) (*ManagedConfig, error) {
-	if !externalManagedConfig.Enabled && !externalManagedConfig.IsEmpty() {
-		return nil, errors.New("managed mode options are set but 'managed.enabled: true' is not set")
-	}
+func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManagedConfigV1) (*ManagedConfig, error) {
 	if !externalManagedConfig.Enabled {
+		if !externalManagedConfig.IsEmpty() && logger != nil {
+			logger.Sugar().Warn("managed mode options are set but are not enabled")
+		}
 		return nil, nil
 	}
 	javaPackagePrefixConfig, err := newJavaPackagePrefixConfigV1(externalManagedConfig.JavaPackagePrefix)

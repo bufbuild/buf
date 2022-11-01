@@ -285,6 +285,7 @@ func run(
 	}
 	genConfig, err := bufgen.ReadConfig(
 		ctx,
+		logger,
 		bufgen.NewProvider(logger),
 		readWriteBucket,
 		bufgen.ReadConfigWithOverride(flags.Template),
