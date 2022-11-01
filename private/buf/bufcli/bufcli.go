@@ -624,6 +624,9 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 			if buftransport.IsAPISubdomainEnabled(container) {
 				address = buftransport.PrependAPISubdomain(address)
 			}
+			if config.TLS == nil {
+				return buftransport.PrependHTTP(address)
+			}
 			return buftransport.PrependHTTPS(address)
 		}),
 		bufapiclient.RegistryProviderWithInterceptors(
