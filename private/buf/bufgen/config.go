@@ -238,7 +238,7 @@ func checkPathAndStrategyUnset(id string, plugin ExternalPluginConfigV1, pluginI
 func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManagedConfigV1) (*ManagedConfig, error) {
 	if !externalManagedConfig.Enabled {
 		if !externalManagedConfig.IsEmpty() && logger != nil {
-			logger.Sugar().Warn("managed mode has options present, but is not enabled")
+			logger.Sugar().Warn("managed mode options are set but are not enabled")
 		}
 		return nil, nil
 	}
