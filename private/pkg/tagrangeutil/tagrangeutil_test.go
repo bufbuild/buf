@@ -53,11 +53,11 @@ func stringToTestRanges(rangesString string) []protosource.TagRange {
 		}
 		begin, err := strconv.Atoi(beginString)
 		if err != nil {
-			panic(err.Error())
+			panic(err)
 		}
 		end, err := strconv.Atoi(endString)
 		if err != nil {
-			panic(err.Error())
+			panic(err)
 		}
 		results = append(results, testTagRange{begin, end})
 	}
