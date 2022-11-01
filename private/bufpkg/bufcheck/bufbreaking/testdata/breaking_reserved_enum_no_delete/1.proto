@@ -3,7 +3,7 @@ syntax = "proto3";
 package a;
 
 enum Two {
-  reserved 100 to 200;
+  reserved 100 to 250;
   reserved 300;
   reserved "foo";
   TWO_UNSPECIFIED = 0;
@@ -14,7 +14,7 @@ enum Two {
 message Three {
   message Four {
     enum Five {
-      reserved 100 to 200;
+      reserved 100 to 250;
       reserved 300;
       reserved "foo";
       FIVE_UNSPECIFIED = 0;
@@ -22,7 +22,7 @@ message Three {
       FIVE_TWO = 2;
     }
     enum Six {
-      reserved 3 to 5, 100 to 200;
+      reserved 3 to 5, 100 to 250;
       reserved 300, 301, 1000 to max;
       reserved "foo", "bar";
       reserved "baz";
@@ -40,7 +40,7 @@ message Three {
     SEVEN_TWO = 2;
   }
   enum Eight {
-    reserved 3 to 5, 100 to 200;
+    reserved 3 to 5, 100 to 250;
     reserved 300, 301, 1000 to max;
     reserved "foo", "bar";
     reserved "baz";
