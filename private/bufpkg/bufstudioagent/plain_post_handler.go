@@ -169,25 +169,16 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// TODO(rvanginkel) should this context be cloned to remove attached values (but keep timeout)?
 	response, err := client.CallUnary(r.Context(), request)
 	if err != nil {
-		// TODO deal with this error handling using `connect.IsFromServer(err)`
-		// instead of these heuristics, once it's available. See
-		// https://github.com/bufbuild/connect-go/issues/222
-		//
 		// We need to differentiate client errors from server errors. In the former,
 		// trigger a `StatusBadGateway` result, and in the latter surface whatever
 		// error information came back from the server.
 		//
 		// Any error here is expected to be wrapped in a `connect.Error` struct. We
-		// need to check *first* if within it also wraps a low level network issue,
-		// so we can assume the request never left the client, or a response never
-		// arrived from the server. In those scenarios we trigger a
-		// `StatusBadGateway` to signal that the upstream server is unreachable or
-		// in a bad status...
-		if netErr := new(net.OpError); errors.As(err, &netErr) {
-			http.Error(w, err.Error(), http.StatusBadGateway)
-			return
-		}
-		if urlErr := new(url.Error); errors.As(err, &urlErr) {
+		// need to check *first* if it's not a wire error, so we can assume the
+		// request never left the client, or a response never arrived from the
+		// server. In those scenarios we trigger a `StatusBadGateway` to signal
+		// that the upstream server is unreachable or in a bad status...
+		if !connect.IsWireError(err) {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return
 		}
