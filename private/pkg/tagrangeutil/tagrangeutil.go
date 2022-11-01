@@ -75,7 +75,7 @@ func groupAdjacentTagRanges(ranges []protosource.TagRange) []tagRangeGroup {
 	return groupedTagRanges
 }
 
-// CheckIsSubset checks if supersetRanges is a strict superset of subsetRanges.
+// CheckIsSubset checks if supersetRanges is a superset of subsetRanges.
 // If so, it returns true and nil. If not, it returns false with a slice of failing ranges from subsetRanges.
 func CheckIsSubset(supersetRanges []protosource.TagRange, subsetRanges []protosource.TagRange) (bool, []protosource.TagRange) {
 	if len(subsetRanges) == 0 {
