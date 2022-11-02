@@ -131,7 +131,8 @@ service RepositoryService {
   // UpdateRepositorySettingsByName updates the settings of a repository.
   rpc UpdateRepositorySettingsByName(UpdateRepositorySettingsByNameRequest) returns (UpdateRepositorySettingsByNameResponse);
   // GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
-  // request should match the length of the metadata in the response, but the order in the response is unspecified.
+  // request should match the length of the metadata in the response, and the order of repositories in the response
+  // should match the order of the metadata in the request.
   rpc GetRepositoriesMetadata(GetRepositoriesMetadataRequest) returns (GetRepositoriesMetadataResponse);
 }
 

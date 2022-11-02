@@ -80,7 +80,8 @@ type RepositoryServiceClient interface {
 	// UpdateRepositorySettingsByName updates the settings of a repository.
 	UpdateRepositorySettingsByName(context.Context, *connect_go.Request[v1alpha1.UpdateRepositorySettingsByNameRequest]) (*connect_go.Response[v1alpha1.UpdateRepositorySettingsByNameResponse], error)
 	// GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
-	// request should match the length of the metadata in the response, but the order in the response is unspecified.
+	// request should match the length of the metadata in the response, and the order of repositories in the response
+	// should match the order of the metadata in the request.
 	GetRepositoriesMetadata(context.Context, *connect_go.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect_go.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
 }
 
@@ -354,7 +355,8 @@ type RepositoryServiceHandler interface {
 	// UpdateRepositorySettingsByName updates the settings of a repository.
 	UpdateRepositorySettingsByName(context.Context, *connect_go.Request[v1alpha1.UpdateRepositorySettingsByNameRequest]) (*connect_go.Response[v1alpha1.UpdateRepositorySettingsByNameResponse], error)
 	// GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
-	// request should match the length of the metadata in the response, but the order in the response is unspecified.
+	// request should match the length of the metadata in the response, and the order of repositories in the response
+	// should match the order of the metadata in the request.
 	GetRepositoriesMetadata(context.Context, *connect_go.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect_go.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
 }
 
