@@ -24,8 +24,11 @@ package manifest
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"go.uber.org/multierr"
 )
 
@@ -59,4 +62,34 @@ func NewFromBucket(
 		return nil, walkErr
 	}
 	return m, nil
+}
+
+// ToBucket takes a map of digest to files' contents, and builds a storagemem
+// bucket from the manifest.
+func (m *Manifest) ToBucket(digestToFiles map[string][]byte) (storage.ReadBucket, error) {
+	if len(m.Paths()) == 0 {
+		// nothing to build
+		return storagemem.NewReadWriteBucketWithOptions()
+	}
+	if len(digestToFiles) < 1 {
+		return nil, errors.New("empty files map")
+	}
+	bucketFiles := make(map[string][]byte, 0)
+	for _, filePath := range m.Paths() {
+		fileDigest, ok := m.DigestFor(filePath)
+		if !ok {
+			return nil, fmt.Errorf("path %q has no digest", filePath)
+		}
+		fileContent, ok := digestToFiles[fileDigest.String()]
+		if !ok {
+			return nil, fmt.Errorf(
+				"cannot build file %q: digest %q not present in input",
+				filePath, fileDigest.String(),
+			)
+		}
+		bucketFiles[filePath] = fileContent
+	}
+	return storagemem.NewReadWriteBucketWithOptions(
+		storagemem.WithFiles(bucketFiles),
+	)
 }
