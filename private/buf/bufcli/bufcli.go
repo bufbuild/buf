@@ -35,11 +35,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -51,6 +53,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
@@ -800,6 +803,30 @@ func NewImageForSource(
 		images = append(images, imageConfig.Image())
 	}
 	return bufimage.MergeImages(images...)
+}
+
+// WellKnownTypeImage returns the image for the well known type (google.protobuf.Duration for example).
+func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType string) (bufimage.Image, error) {
+	sourceConfig, err := bufconfig.GetConfigForBucket(
+		ctx,
+		storage.NopReadBucketCloser(datawkt.ReadBucket),
+	)
+	if err != nil {
+		return nil, err
+	}
+	module, err := bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
+		ctx,
+		datawkt.ReadBucket,
+		sourceConfig.Build,
+	)
+	if err != nil {
+		return nil, err
+	}
+	image, _, err := bufimagebuild.NewBuilder(logger).Build(ctx, bufmodule.NewModuleFileSet(module, nil))
+	if err != nil {
+		return nil, err
+	}
+	return bufimageutil.ImageFilteredByTypes(image, wellKnownType)
 }
 
 // VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
