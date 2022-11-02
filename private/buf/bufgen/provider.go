@@ -53,6 +53,7 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 		return nil, err
 	}
 	return getConfig(
+		p.logger,
 		encoding.UnmarshalYAMLNonStrict,
 		encoding.UnmarshalYAMLStrict,
 		data,

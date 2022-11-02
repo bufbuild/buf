@@ -43,17 +43,6 @@ func CopyReadBucketToTempDir(
 	return tempDirPath, readWriteBucket
 }
 
-// NewEnv returns a new env map for testing.
-func NewEnv(tb testing.TB, use string) func(string) map[string]string {
-	tempDirPath := tb.TempDir()
-	return func(use string) map[string]string {
-		return map[string]string{
-			useEnvVar(use, "CACHE_DIR"): tempDirPath,
-			"PATH":                      os.Getenv("PATH"),
-		}
-	}
-}
-
 // NewEnvFunc returns a new env func for testing.
 func NewEnvFunc(tb testing.TB) func(string) map[string]string {
 	tempDirPath := tb.TempDir()

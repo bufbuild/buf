@@ -59,13 +59,14 @@ func testProvider(t *testing.T, version string) {
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", version))
 	require.NoError(t, err)
 
+	nopLogger := zap.NewNop()
 	provider := NewProvider(zap.NewNop())
 	actual, err := provider.GetConfig(context.Background(), readWriteBucket)
 	require.NoError(t, err)
 
 	emptyBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
-	expected, err := ReadConfig(context.Background(), provider, emptyBucket, ReadConfigWithOverride(fmt.Sprintf(testConfigFileData, version)))
+	expected, err := ReadConfig(context.Background(), nopLogger, provider, emptyBucket, ReadConfigWithOverride(fmt.Sprintf(testConfigFileData, version)))
 	require.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
