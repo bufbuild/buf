@@ -2,6 +2,7 @@
 .build/
 .ctrlp
 .env/
+.idea/
 .tmp/
 .vscode/
 cmd/buf/buf
