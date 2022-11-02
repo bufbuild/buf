@@ -192,6 +192,7 @@ jobs:
           commit-message: "Back to development"
           branch: next/${{env.NEXT_VERSION}}
           delete-branch: true
+          base: main
           title: "Return to development"
           body: Release complete for ${{github.ref_name}}
           token: ${{ steps.generate_token.outputs.token }}
