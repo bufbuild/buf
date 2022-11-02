@@ -25,16 +25,12 @@ package manifest
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"encoding"
 	"errors"
 	"fmt"
 	"io"
 	"sort"
 	"strings"
-
-	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/multierr"
 )
 
 var errNoFinalNewline = errors.New("partial record: missing newline")
@@ -115,38 +111,6 @@ func NewFromReader(manifest io.Reader) (*Manifest, error) {
 		return nil, err
 	}
 
-	return m, nil
-}
-
-// NewFromBucket creates a manifest from a storage bucket, with all its digests
-// in DigestTypeShake256.
-func NewFromBucket(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-) (*Manifest, error) {
-	m := New()
-	digester, err := NewDigester(DigestTypeShake256)
-	if err != nil {
-		return nil, err
-	}
-	if walkErr := bucket.Walk(ctx, "", func(info storage.ObjectInfo) (retErr error) {
-		path := info.Path()
-		obj, err := bucket.Get(ctx, path)
-		if err != nil {
-			return err
-		}
-		defer func() { retErr = multierr.Append(retErr, obj.Close()) }()
-		digest, err := digester.Digest(obj)
-		if err != nil {
-			return err
-		}
-		if err := m.AddEntry(path, *digest); err != nil {
-			return err
-		}
-		return nil
-	}); walkErr != nil {
-		return nil, walkErr
-	}
 	return m, nil
 }
 

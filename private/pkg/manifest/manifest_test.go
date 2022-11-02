@@ -148,25 +148,6 @@ func TestUnmarshalBrokenManifest(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestFromBucket(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-	bucket, err := storagemem.NewReadBucket(
-		map[string][]byte{
-			"null": nil,
-			"foo":  []byte("bar"),
-		})
-	require.NoError(t, err)
-	m, err := manifest.NewFromBucket(ctx, bucket)
-	require.NoError(t, err)
-	// sorted by paths
-	expected := fmt.Sprintf("%s  foo\n", mustDigestShake256(t, []byte("bar")))
-	expected += fmt.Sprintf("%s  null\n", mustDigestShake256(t, nil))
-	retContent, err := m.MarshalText()
-	assert.NoError(t, err)
-	assert.Equal(t, expected, string(retContent))
-}
-
 func TestDigestPaths(t *testing.T) {
 	t.Parallel()
 	m := manifest.New()
