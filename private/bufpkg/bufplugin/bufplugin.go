@@ -143,7 +143,7 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_GoConfig{GoConfig: goConfig}
 	} else if pluginRegistry.NPM != nil {
-		importStyle, err := goImportStyleToProtoImportStyle(pluginRegistry.NPM.ImportStyle)
+		importStyle, err := npmImportStyleToProtoImportStyle(pluginRegistry.NPM.ImportStyle)
 		if err != nil {
 			return nil, err
 		}
@@ -182,7 +182,7 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 		}
 		registryConfig.Go = goConfig
 	} else if config.GetNpmConfig() != nil {
-		importStyle, err := protoImportStyleToGoImportStyle(config.GetNpmConfig().GetImportStyle())
+		importStyle, err := protoImportStyleToNPMImportStyle(config.GetNpmConfig().GetImportStyle())
 		if err != nil {
 			return nil, err
 		}
@@ -202,7 +202,7 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 	return registryConfig, nil
 }
 
-func goImportStyleToProtoImportStyle(importStyle string) (registryv1alpha1.NPMImportStyle, error) {
+func npmImportStyleToProtoImportStyle(importStyle string) (registryv1alpha1.NPMImportStyle, error) {
 	switch importStyle {
 	case "commonjs":
 		return registryv1alpha1.NPMImportStyle_NPM_IMPORT_STYLE_COMMONJS, nil
@@ -212,7 +212,7 @@ func goImportStyleToProtoImportStyle(importStyle string) (registryv1alpha1.NPMIm
 	return 0, fmt.Errorf(`invalid import style %q: must be one of "module" or "commonjs"`, importStyle)
 }
 
-func protoImportStyleToGoImportStyle(importStyle registryv1alpha1.NPMImportStyle) (string, error) {
+func protoImportStyleToNPMImportStyle(importStyle registryv1alpha1.NPMImportStyle) (string, error) {
 	switch importStyle {
 	case registryv1alpha1.NPMImportStyle_NPM_IMPORT_STYLE_COMMONJS:
 		return "commonjs", nil
