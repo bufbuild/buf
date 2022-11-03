@@ -96,10 +96,6 @@ message RegistryConfig {
   // default options specified in the plugin's
   // metadata (the opts key in buf.plugin.yaml).
   repeated string options = 10;
-  // Hidden plugins are not exposed in the BSR UI and cannot be used
-  // directly in code generation by end users. They are typically
-  // used to generate base types for other plugins.
-  bool hidden = 11;
 }
 
 message CuratedPluginReference {
