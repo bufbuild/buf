@@ -17,6 +17,7 @@ package push
 import (
 	"archive/tar"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -32,10 +33,12 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	connect_go "github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -143,6 +146,29 @@ func TestPush(t *testing.T) {
 	)
 }
 
+func TestBucketBlobs(t *testing.T) {
+	t.Parallel()
+	bucket, err := storagemem.NewReadBucket(
+		map[string][]byte{
+			"buf.yaml":  bufYAML(t, "foo", "bar", "repo"),
+			"foo.proto": nil,
+			"bar.proto": nil,
+		},
+	)
+	require.NoError(t, err)
+	blobs, err := bucketBlobs(context.Background(), bucket)
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(blobs))
+	digests := make(map[string]struct{})
+	for _, blob := range blobs {
+		shake := modulev1alpha1.HashKind_HASH_KIND_SHAKE256
+		assert.Equal(t, blob.Hash.Kind, shake)
+		hexDigest := hex.EncodeToString(blob.Hash.Digest)
+		assert.NotContains(t, digests, hexDigest, "duplicated blob")
+		digests[hexDigest] = struct{}{}
+	}
+}
+
 func pushService(t *testing.T) (*httptest.Server, *mockPushService) {
 	mock := newMockPushService(t)
 	mux := http.NewServeMux()
@@ -165,6 +191,8 @@ func testPush(
 	mock.respond(owner, resp)
 	mock.callback(owner, func(req *registryv1alpha1.PushRequest) {
 		assert.NotNil(t, req.Module, "missing module")
+		assert.NotNil(t, req.Manifest, "missing manifest")
+		assert.NotNil(t, req.Blobs, "missing blobs")
 	})
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()

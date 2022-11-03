@@ -16,15 +16,20 @@ package push
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
@@ -165,6 +170,14 @@ func run(
 	if err != nil {
 		return err
 	}
+	manifest, err := manifestBlob(ctx, sourceBucket)
+	if err != nil {
+		return err
+	}
+	blobs, err := bucketBlobs(ctx, sourceBucket)
+	if err != nil {
+		return err
+	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
@@ -182,8 +195,8 @@ func run(
 		flags.Tags,
 		nil,
 		flags.Draft,
-		nil,
-		nil,
+		manifest,
+		blobs,
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
@@ -203,4 +216,51 @@ func run(
 		return err
 	}
 	return nil
+}
+
+// manifestBlob returns a canonical manifest in blob form from a bucket.
+func manifestBlob(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+) (*modulev1alpha1.Blob, error) {
+	moduleManifest, err := manifest.NewFromBucket(ctx, bucket)
+	if err != nil {
+		return nil, err
+	}
+	manifestText, err := moduleManifest.MarshalText()
+	if err != nil {
+		return nil, err
+	}
+	return manifest.NewBlobFromBytes(manifestText), nil
+}
+
+// bucketBlobs returns a deduplicated set of blobs for the files in bucket.
+func bucketBlobs(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+) ([]*modulev1alpha1.Blob, error) {
+	var blobs []*modulev1alpha1.Blob
+	haveBlob := make(map[string]struct{})
+	if walkErr := bucket.Walk(ctx, "", func(info storage.ObjectInfo) error {
+		path := info.Path()
+		file, err := bucket.Get(ctx, path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		bytes, err := io.ReadAll(file)
+		if err != nil {
+			return err
+		}
+		blob := manifest.NewBlobFromBytes(bytes)
+		hexDigest := hex.EncodeToString(blob.Hash.Digest)
+		if _, ok := haveBlob[hexDigest]; !ok {
+			blobs = append(blobs, blob)
+			haveBlob[hexDigest] = struct{}{}
+		}
+		return nil
+	}); walkErr != nil {
+		return nil, walkErr
+	}
+	return blobs, nil
 }
