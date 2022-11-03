@@ -53,7 +53,9 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 		},
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
-		NPM: &bufpluginconfig.NPMRegistryConfig{},
+		NPM: &bufpluginconfig.NPMRegistryConfig{
+			ImportStyle: "module",
+		},
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
 		NPM: &bufpluginconfig.NPMRegistryConfig{
