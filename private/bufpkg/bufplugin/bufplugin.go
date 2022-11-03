@@ -125,9 +125,9 @@ func OutputLanguagesToProtoLanguages(languages []string) ([]registryv1alpha1.Plu
 }
 
 // PluginRegistryToProtoRegistryConfig converts a bufpluginconfig.RegistryConfig to a registryv1alpha1.RegistryConfig.
-func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.RegistryConfig) *registryv1alpha1.RegistryConfig {
+func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.RegistryConfig) (*registryv1alpha1.RegistryConfig, error) {
 	if pluginRegistry == nil {
-		return nil
+		return nil, nil
 	}
 	registryConfig := &registryv1alpha1.RegistryConfig{
 		Options: bufpluginconfig.PluginOptionsToOptionsSlice(pluginRegistry.Options),
@@ -143,9 +143,13 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_GoConfig{GoConfig: goConfig}
 	} else if pluginRegistry.NPM != nil {
+		importStyle, err := goImportStyleToProtoImportStyle(pluginRegistry.NPM.ImportStyle)
+		if err != nil {
+			return nil, err
+		}
 		npmConfig := &registryv1alpha1.NPMConfig{
 			RewriteImportPathSuffix: pluginRegistry.NPM.RewriteImportPathSuffix,
-			ImportStyle:             pluginRegistry.NPM.ImportStyle,
+			ImportStyle:             importStyle,
 		}
 		if pluginRegistry.NPM.Deps != nil {
 			npmConfig.RuntimeLibraries = make([]*registryv1alpha1.NPMConfig_RuntimeLibrary, 0, len(pluginRegistry.NPM.Deps))
@@ -155,13 +159,13 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_NpmConfig{NpmConfig: npmConfig}
 	}
-	return registryConfig
+	return registryConfig, nil
 }
 
 // ProtoRegistryConfigToPluginRegistry converts a registryv1alpha1.RegistryConfig to a bufpluginconfig.RegistryConfig .
-func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig) *bufpluginconfig.RegistryConfig {
+func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig) (*bufpluginconfig.RegistryConfig, error) {
 	if config == nil {
-		return nil
+		return nil, nil
 	}
 	registryConfig := &bufpluginconfig.RegistryConfig{
 		Options: bufpluginconfig.OptionsSliceToPluginOptions(config.Options),
@@ -178,9 +182,13 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 		}
 		registryConfig.Go = goConfig
 	} else if config.GetNpmConfig() != nil {
+		importStyle, err := protoImportStyleToGoImportStyle(config.GetNpmConfig().GetImportStyle())
+		if err != nil {
+			return nil, err
+		}
 		npmConfig := &bufpluginconfig.NPMRegistryConfig{
 			RewriteImportPathSuffix: config.GetNpmConfig().GetRewriteImportPathSuffix(),
-			ImportStyle:             config.GetNpmConfig().GetImportStyle(),
+			ImportStyle:             importStyle,
 		}
 		runtimeLibraries := config.GetNpmConfig().GetRuntimeLibraries()
 		if runtimeLibraries != nil {
@@ -191,7 +199,27 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 		}
 		registryConfig.NPM = npmConfig
 	}
-	return registryConfig
+	return registryConfig, nil
+}
+
+func goImportStyleToProtoImportStyle(importStyle string) (registryv1alpha1.NPMImportStyle, error) {
+	switch importStyle {
+	case "commonjs":
+		return registryv1alpha1.NPMImportStyle_NPM_IMPORT_STYLE_COMMONJS, nil
+	case "module":
+		return registryv1alpha1.NPMImportStyle_NPM_IMPORT_STYLE_MODULE, nil
+	}
+	return 0, fmt.Errorf(`invalid import style %q: must be one of "module" or "commonjs"`, importStyle)
+}
+
+func protoImportStyleToGoImportStyle(importStyle registryv1alpha1.NPMImportStyle) (string, error) {
+	switch importStyle {
+	case registryv1alpha1.NPMImportStyle_NPM_IMPORT_STYLE_COMMONJS:
+		return "commonjs", nil
+	case registryv1alpha1.NPMImportStyle_NPM_IMPORT_STYLE_MODULE:
+		return "module", nil
+	}
+	return "", fmt.Errorf("unknown import style: %v", importStyle)
 }
 
 // goRuntimeDependencyToProtoGoRuntimeLibrary converts a bufpluginconfig.GoRegistryDependencyConfig to a registryv1alpha1.GoConfig_RuntimeLibrary.

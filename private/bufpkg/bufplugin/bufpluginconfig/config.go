@@ -193,6 +193,11 @@ func newNPMRegistryConfig(externalNPMRegistryConfig *ExternalNPMRegistryConfig) 
 			},
 		)
 	}
+	switch externalNPMRegistryConfig.ImportStyle {
+	case "module", "commonjs":
+	default:
+		return nil, errors.New(`npm registry config import_style must be one of: "module" or "commonjs"`)
+	}
 	return &NPMRegistryConfig{
 		RewriteImportPathSuffix: externalNPMRegistryConfig.RewriteImportPathSuffix,
 		Deps:                    dependencies,

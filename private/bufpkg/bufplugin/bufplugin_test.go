@@ -84,7 +84,11 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 }
 
 func assertPluginRegistryRoundTrip(t testing.TB, config *bufpluginconfig.RegistryConfig) {
-	assert.Equal(t, config, ProtoRegistryConfigToPluginRegistry(PluginRegistryToProtoRegistryConfig(config)))
+	protoRegistryConfig, err := PluginRegistryToProtoRegistryConfig(config)
+	require.NoError(t, err)
+	registryConfig, err := ProtoRegistryConfigToPluginRegistry(protoRegistryConfig)
+	require.NoError(t, err)
+	assert.Equal(t, config, registryConfig)
 }
 
 func TestLanguagesToProtoLanguages(t *testing.T) {

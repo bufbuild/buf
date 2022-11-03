@@ -277,6 +277,10 @@ func run(
 	if err != nil {
 		return err
 	}
+	protoRegistryConfig, err := bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry())
+	if err != nil {
+		return err
+	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
@@ -312,7 +316,7 @@ func run(
 		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
 		plugin.SourceURL(),
 		plugin.Description(),
-		bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry()),
+		protoRegistryConfig,
 		nextRevision,
 		outputLanguages,
 		pluginConfig.SPDXLicenseID,
