@@ -57,6 +57,7 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
 		NPM: &bufpluginconfig.NPMRegistryConfig{
+			ImportStyle:             "module",
 			RewriteImportPathSuffix: "connectweb.js",
 			Deps: []*bufpluginconfig.NPMRegistryDependencyConfig{
 				{

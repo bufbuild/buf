@@ -145,6 +145,7 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 	} else if pluginRegistry.NPM != nil {
 		npmConfig := &registryv1alpha1.NPMConfig{
 			RewriteImportPathSuffix: pluginRegistry.NPM.RewriteImportPathSuffix,
+			ImportStyle:             pluginRegistry.NPM.ImportStyle,
 		}
 		if pluginRegistry.NPM.Deps != nil {
 			npmConfig.RuntimeLibraries = make([]*registryv1alpha1.NPMConfig_RuntimeLibrary, 0, len(pluginRegistry.NPM.Deps))
@@ -179,6 +180,7 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 	} else if config.GetNpmConfig() != nil {
 		npmConfig := &bufpluginconfig.NPMRegistryConfig{
 			RewriteImportPathSuffix: config.GetNpmConfig().GetRewriteImportPathSuffix(),
+			ImportStyle:             config.GetNpmConfig().GetImportStyle(),
 		}
 		runtimeLibraries := config.GetNpmConfig().GetRuntimeLibraries()
 		if runtimeLibraries != nil {
