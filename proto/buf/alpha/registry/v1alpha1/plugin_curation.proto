@@ -80,6 +80,10 @@ message NPMConfig {
   // Setting this value, i.e. "connectweb.js" or "pb.js", informs the BSR npm registry
   // that the plugin supports import rewrites with the given import suffix.
   string rewrite_import_path_suffix = 2;
+  // The import style used for the "type" field in the package.json file. If
+  // left unset the value will be "module". This exists to support legacy plugins
+  // that require "commonjs" support.
+  string import_style = 3;
 }
 
 // RegistryConfig is the configuration for the remote registry of a plugin.

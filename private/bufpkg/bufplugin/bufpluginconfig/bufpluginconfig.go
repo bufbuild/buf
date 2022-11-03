@@ -137,6 +137,7 @@ type GoRegistryDependencyConfig struct {
 type NPMRegistryConfig struct {
 	RewriteImportPathSuffix string
 	Deps                    []*NPMRegistryDependencyConfig
+	ImportStyle             string
 }
 
 // NPMRegistryDependencyConfig is the npm registry dependency configuration.
@@ -292,6 +293,8 @@ type ExternalNPMRegistryConfig struct {
 		Package string `json:"package,omitempty" yaml:"package,omitempty"`
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
+	// The import style used for the "type" field in the package.json file.
+	ImportStyle string `json:"import_style,omitempty" yaml:"import_style,omitempty"`
 }
 
 type externalConfigVersion struct {

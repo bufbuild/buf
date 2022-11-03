@@ -148,6 +148,7 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 			OutputLanguages: []string{"typescript"},
 			Registry: &RegistryConfig{
 				NPM: &NPMRegistryConfig{
+					ImportStyle: "commonjs",
 					Deps: []*NPMRegistryDependencyConfig{
 						{
 							Package: "grpc-web",
