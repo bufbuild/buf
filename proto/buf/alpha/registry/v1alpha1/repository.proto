@@ -18,6 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
+import "buf/alpha/registry/v1alpha1/verification_status.proto";
 import "google/protobuf/timestamp.proto";
 
 enum Visibility {
@@ -75,6 +76,21 @@ message RepositoryContributor {
   RepositoryRole implicit_role = 4;
 }
 
+message RepositoryMetadata {
+  // The ID of the repository.
+  string id = 1;
+  // The name of the repository.
+  string name = 2;
+  // The owner name of the repository.
+  string owner_name = 3;
+  // The verification status of the owner of the repository.
+  VerificationStatus owner_verification_status = 4;
+  // The commit time of the latest main commit in the repository.
+  google.protobuf.Timestamp latest_commit_time = 5;
+  // The SPDX license ID of the latest main commit in the repository.
+  string latest_spdx_license_id = 6;
+}
+
 // RepositoryService is the Repository service.
 service RepositoryService {
   // GetRepository gets a repository by ID.
@@ -114,6 +130,10 @@ service RepositoryService {
   rpc GetRepositorySettings(GetRepositorySettingsRequest) returns (GetRepositorySettingsResponse);
   // UpdateRepositorySettingsByName updates the settings of a repository.
   rpc UpdateRepositorySettingsByName(UpdateRepositorySettingsByNameRequest) returns (UpdateRepositorySettingsByNameResponse);
+  // GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
+  // request should match the length of the metadata in the response, and the order of repositories in the response
+  // should match the order of the metadata in the request.
+  rpc GetRepositoriesMetadata(GetRepositoriesMetadataRequest) returns (GetRepositoriesMetadataResponse);
 }
 
 message GetRepositoriesByFullNameRequest {
@@ -304,3 +324,12 @@ message UpdateRepositorySettingsByNameRequest {
 }
 
 message UpdateRepositorySettingsByNameResponse {}
+
+message GetRepositoriesMetadataRequest {
+  // The list of repository IDs to request the metadata.
+  repeated string ids = 1;
+}
+
+message GetRepositoriesMetadataResponse {
+  repeated RepositoryMetadata metadata = 1;
+}
