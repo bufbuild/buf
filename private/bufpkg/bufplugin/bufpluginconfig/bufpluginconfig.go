@@ -294,6 +294,7 @@ type ExternalNPMRegistryConfig struct {
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
 	// The import style used for the "type" field in the package.json file.
+	// Must be one of "module" or "commonjs".
 	ImportStyle string `json:"import_style,omitempty" yaml:"import_style,omitempty"`
 }
 
