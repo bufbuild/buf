@@ -129,10 +129,8 @@ func (m *manifestBucket) Stat(ctx context.Context, path string) (storage.ObjectI
 	if !ok {
 		return nil, storage.NewErrNotExist(path)
 	}
-	return &manifestBucketObject{
-		path: path,
-		// no need for setting file, not gonna be read.
-	}, nil
+	// storage.ObjectInfo only requires path
+	return &manifestBucketObject{path: path}, nil
 }
 func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
 	prefix, err := storageutil.ValidatePrefix(prefix)
@@ -147,18 +145,12 @@ func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage
 		if !normalpath.EqualsOrContainsPath(prefix, path, normalpath.Relative) {
 			continue
 		}
-		blob, ok := m.pathToBlob[path]
+		_, ok := m.pathToBlob[path]
 		if !ok {
 			return storage.NewErrNotExist(path)
 		}
-		file, err := blob.Open(ctx)
-		if err != nil {
-			return err
-		}
-		if err := f(&manifestBucketObject{
-			path: path,
-			file: file,
-		}); err != nil {
+		// storage.ObjectInfo only requires path
+		if err := f(&manifestBucketObject{path: path}); err != nil {
 			return err
 		}
 	}
