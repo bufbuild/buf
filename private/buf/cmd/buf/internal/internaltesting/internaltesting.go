@@ -48,8 +48,9 @@ func NewEnvFunc(tb testing.TB) func(string) map[string]string {
 	tempDirPath := tb.TempDir()
 	return func(use string) map[string]string {
 		return map[string]string{
-			useEnvVar(use, "CACHE_DIR"): tempDirPath,
-			"PATH":                      os.Getenv("PATH"),
+			useEnvVar(use, "CACHE_DIR"):  tempDirPath,
+			useEnvVar(use, "CONFIG_DIR"): tempDirPath,
+			"PATH":                       os.Getenv("PATH"),
 		}
 	}
 }
