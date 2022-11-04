@@ -16,6 +16,7 @@ package push
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -182,6 +183,9 @@ func run(
 			return nil
 		}
 		return err
+	}
+	if localModulePin == nil {
+		return errors.New("Missing local module pin in the registry's response.")
 	}
 	if _, err := container.Stdout().Write([]byte(localModulePin.Commit + "\n")); err != nil {
 		return err
