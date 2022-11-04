@@ -24,13 +24,32 @@ package manifest
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"io"
+	"sort"
 
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 	"go.uber.org/multierr"
 )
+
+// manifestBucket is a storage.ReadBucket implementation from a manifest an an
+// array of blobs.
+type manifestBucket struct {
+	manifest   Manifest
+	pathToBlob map[string]Blob
+}
+
+type manifestBucketObject struct {
+	path string
+	file io.ReadCloser
+}
+
+func (o *manifestBucketObject) Path() string               { return o.path }
+func (o *manifestBucketObject) ExternalPath() string       { return o.path }
+func (o *manifestBucketObject) Read(p []byte) (int, error) { return o.file.Read(p) }
+func (o *manifestBucketObject) Close() error               { return o.file.Close() }
 
 // NewFromBucket creates a manifest from a storage bucket, with all its digests
 // in DigestTypeShake256.
@@ -64,32 +83,92 @@ func NewFromBucket(
 	return m, nil
 }
 
-// ToBucket takes a map of digest to files' contents, and builds a storagemem
-// bucket from the manifest.
-func (m *Manifest) ToBucket(digestToFiles map[string][]byte) (storage.ReadBucket, error) {
-	if len(m.Paths()) == 0 {
-		// nothing to build
-		return storagemem.NewReadWriteBucketWithOptions()
-	}
-	if len(digestToFiles) < 1 {
-		return nil, errors.New("empty files map")
-	}
-	bucketFiles := make(map[string][]byte, 0)
-	for _, filePath := range m.Paths() {
-		fileDigest, ok := m.DigestFor(filePath)
-		if !ok {
-			return nil, fmt.Errorf("path %q has no digest", filePath)
+// NewBucket takes a manifest and an array of blobs and builds a readable storage bucket that
+// contains the files in the manifest, optionally validating its digest-content match.
+func NewBucket(m Manifest, blobs []Blob, validateContents bool) (storage.ReadBucket, error) {
+	digestToBlobs := make(map[string]Blob, len(blobs))
+	for _, b := range blobs {
+		digest := b.Digest().String()
+		_, alreadyPresent := digestToBlobs[digest]
+		if alreadyPresent {
+			return nil, fmt.Errorf("blob with digest %q duplicated", digest)
 		}
-		fileContent, ok := digestToFiles[fileDigest.String()]
-		if !ok {
-			return nil, fmt.Errorf(
-				"cannot build file %q: digest %q not present in input",
-				filePath, fileDigest.String(),
-			)
+		_, presentInManifest := m.PathsFor(digest)
+		if !presentInManifest {
+			return nil, fmt.Errorf("blob with digest %q is not present in manifest", digest)
 		}
-		bucketFiles[filePath] = fileContent
+		digestToBlobs[digest] = b
 	}
-	return storagemem.NewReadWriteBucketWithOptions(
-		storagemem.WithFiles(bucketFiles),
-	)
+	pathToBlob := make(map[string]Blob, len(blobs))
+	for _, path := range m.Paths() {
+		pathDigest, ok := m.DigestFor(path)
+		if !ok {
+			return nil, fmt.Errorf("path %q not present in manifest", path)
+		}
+		blob, ok := digestToBlobs[pathDigest.String()]
+		if !ok {
+			return nil, fmt.Errorf("manifest path %q with digest %q has no associated blob", path, pathDigest.String())
+		}
+		pathToBlob[path] = blob
+	}
+	return &manifestBucket{
+		manifest:   m,
+		pathToBlob: pathToBlob,
+	}, nil
+}
+
+func (m *manifestBucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
+	blob, ok := m.pathToBlob[path]
+	if !ok {
+		return nil, storage.NewErrNotExist(path)
+	}
+	file, err := blob.Open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &manifestBucketObject{
+		path: path,
+		file: file,
+	}, nil
+}
+
+func (m *manifestBucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
+	_, ok := m.pathToBlob[path]
+	if !ok {
+		return nil, storage.NewErrNotExist(path)
+	}
+	return &manifestBucketObject{
+		path: path,
+		// no need for setting file, not gonna be read.
+	}, nil
+}
+func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
+	prefix, err := storageutil.ValidatePrefix(prefix)
+	if err != nil {
+		return err
+	}
+	paths := m.manifest.Paths()
+	sort.Slice(paths, func(i, j int) bool {
+		return paths[i] < paths[j]
+	})
+	for _, path := range paths {
+		if !normalpath.EqualsOrContainsPath(prefix, path, normalpath.Relative) {
+			continue
+		}
+		blob, ok := m.pathToBlob[path]
+		if !ok {
+			return storage.NewErrNotExist(path)
+		}
+		file, err := blob.Open(ctx)
+		if err != nil {
+			return err
+		}
+		if err := f(&manifestBucketObject{
+			path: path,
+			file: file,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -57,31 +57,25 @@ func TestToBucket(t *testing.T) {
 		"mypkg/v1/bar.proto": []byte("repeated proto content"),
 	}
 	m := manifest.New()
-	digestToContent := make(map[string][]byte, 0)
+	blobs := make(map[string]manifest.Blob, 0)
 	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
 	require.NoError(t, err)
 	for path, content := range files {
 		digest, err := digester.Digest(bytes.NewReader(content))
 		require.NoError(t, err)
 		require.NoError(t, m.AddEntry(path, *digest))
-		digestToContent[digest.String()] = content
+		blob, err := manifest.NewMemoryBlob(*digest, content, true)
+		require.NoError(t, err)
+		blobs[digest.String()] = blob
 	}
-
-	t.Run("InvalidDigestsMaps", func(t *testing.T) {
-		t.Parallel()
-		_, err = m.ToBucket(nil)
-		assert.Error(t, err)
-		_, err = m.ToBucket(map[string][]byte{
-			"some":  {},
-			"other": []byte("foo"),
-			"files": []byte("bar"),
-		})
-		assert.Error(t, err)
-	})
 
 	t.Run("ValidDigestsMap", func(t *testing.T) {
 		t.Parallel()
-		bucket, err := m.ToBucket(digestToContent)
+		var blobsArray []manifest.Blob
+		for _, b := range blobs {
+			blobsArray = append(blobsArray, b)
+		}
+		bucket, err := manifest.NewBucket(*m, blobsArray, true)
 		require.NoError(t, err)
 		// make sure all files are present and have the right content
 		for path, content := range files {
@@ -104,7 +98,7 @@ func TestToBucket(t *testing.T) {
 func TestToBucketEmpty(t *testing.T) {
 	t.Parallel()
 	m := manifest.New()
-	bucket, err := m.ToBucket(nil)
+	bucket, err := manifest.NewBucket(*m, nil, true)
 	require.NoError(t, err)
 	// make sure there are no files in the bucket
 	require.NoError(t, bucket.Walk(context.Background(), "", func(obj storage.ObjectInfo) error {

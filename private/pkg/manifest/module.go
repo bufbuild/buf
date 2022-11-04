@@ -15,13 +15,61 @@
 package manifest
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 )
 
 var hashKindToDigestType = map[modulev1alpha1.HashKind]DigestType{
 	modulev1alpha1.HashKind_HASH_KIND_SHAKE256: DigestTypeShake256,
+}
+
+type Blob interface {
+	Digest() *Digest
+	Open(ctx context.Context) (io.ReadCloser, error)
+}
+
+type memoryBlob struct {
+	digest  Digest
+	content []byte
+}
+
+var _ Blob = (*memoryBlob)(nil)
+
+// NewMemoryBlob takes a digest and a content, and turns it into an in-memory
+// representation of a blob, which returns the digest and an io.ReadCloser for
+// its content. It optionally validates that the passed digest and content
+// match.
+func NewMemoryBlob(digest Digest, content []byte, validateHash bool) (Blob, error) {
+	if validateHash {
+		digester, err := NewDigester(digest.Type())
+		if err != nil {
+			return nil, err
+		}
+		contentDigest, err := digester.Digest(bytes.NewReader(content))
+		if err != nil {
+			return nil, err
+		}
+		if !digest.Equal(*contentDigest) {
+			return nil, fmt.Errorf("digest and content mismatch")
+		}
+	}
+	return &memoryBlob{
+		digest:  digest,
+		content: content,
+	}, nil
+}
+
+func (b *memoryBlob) Digest() *Digest {
+	return &b.digest
+}
+
+func (b *memoryBlob) Open(ctx context.Context) (io.ReadCloser, error) {
+	return ioutil.NopCloser(bytes.NewReader(b.content)), nil
 }
 
 func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
