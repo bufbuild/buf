@@ -15,6 +15,8 @@
 package manifest_test
 
 import (
+	"context"
+	"io"
 	"testing"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -42,4 +44,61 @@ func TestDigestFromBlobHash(t *testing.T) {
 	digestFromBlobHash, err := manifest.NewDigestFromBlobHash(&blobHash)
 	require.NoError(t, err)
 	assert.Equal(t, digestFromContent.String(), digestFromBlobHash.String())
+}
+
+func TestNewMemoryBlob(t *testing.T) {
+	t.Parallel()
+	const content = "some file content"
+	digest := mustDigestShake256(t, []byte(content))
+	blob, err := manifest.NewMemoryBlob(*digest, []byte(content), true)
+	require.NoError(t, err)
+	assert.True(t, blob.Digest().Equal(*digest))
+	file, err := blob.Open(context.Background())
+	require.NoError(t, err)
+	blobContent, err := io.ReadAll(file)
+	require.NoError(t, err)
+	assert.Equal(t, []byte(content), blobContent)
+}
+
+func TestInvalidMemoryBlob(t *testing.T) {
+	t.Parallel()
+	const content = "some file content"
+	digest := mustDigestShake256(t, []byte(content))
+
+	t.Run("NoValidateHash", func(t *testing.T) {
+		t.Parallel()
+		_, err := manifest.NewMemoryBlob(*digest, []byte("different content"), false)
+		assert.NoError(t, err)
+	})
+	t.Run("ValidatingHash", func(t *testing.T) {
+		t.Parallel()
+		_, err := manifest.NewMemoryBlob(*digest, []byte("different content"), true)
+		assert.Error(t, err)
+	})
+}
+
+func TestNewDigestFromBlobHash(t *testing.T) {
+	t.Parallel()
+	digest := mustDigestShake256(t, []byte("my content"))
+	retDigest, err := manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
+		Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
+		Digest: digest.Bytes(),
+	})
+	require.NoError(t, err)
+	assert.True(t, digest.Equal(*retDigest))
+}
+
+func TestInvalidNewDigestFromBlobHash(t *testing.T) {
+	t.Parallel()
+	_, err := manifest.NewDigestFromBlobHash(nil)
+	require.Error(t, err)
+	_, err = manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
+		Kind: modulev1alpha1.HashKind_HASH_KIND_UNSPECIFIED,
+	})
+	require.Error(t, err)
+	_, err = manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
+		Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
+		Digest: []byte("invalid digest"),
+	})
+	require.Error(t, err)
 }
