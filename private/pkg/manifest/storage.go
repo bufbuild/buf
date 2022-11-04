@@ -77,7 +77,7 @@ func NewFromBucket(
 
 // NewBucket takes a manifest and an array of blobs and builds a readable storage bucket that
 // contains the files in the manifest, optionally validating its digest-content match.
-func NewBucket(m Manifest, blobs []Blob, validateContents bool) (storage.ReadBucket, error) {
+func NewBucket(m Manifest, blobs []Blob) (storage.ReadBucket, error) {
 	digestToBlobs := make(map[string]Blob, len(blobs))
 	for _, b := range blobs {
 		digest := b.Digest().String()

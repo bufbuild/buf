@@ -75,7 +75,7 @@ func TestToBucket(t *testing.T) {
 		for _, b := range blobs {
 			blobsArray = append(blobsArray, b)
 		}
-		bucket, err := manifest.NewBucket(*m, blobsArray, true)
+		bucket, err := manifest.NewBucket(*m, blobsArray)
 		require.NoError(t, err)
 		// make sure all files are present and have the right content
 		for path, content := range files {
@@ -98,7 +98,7 @@ func TestToBucket(t *testing.T) {
 func TestToBucketEmpty(t *testing.T) {
 	t.Parallel()
 	m := manifest.New()
-	bucket, err := manifest.NewBucket(*m, nil, true)
+	bucket, err := manifest.NewBucket(*m, nil)
 	require.NoError(t, err)
 	// make sure there are no files in the bucket
 	require.NoError(t, bucket.Walk(context.Background(), "", func(obj storage.ObjectInfo) error {
