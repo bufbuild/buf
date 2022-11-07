@@ -47,7 +47,7 @@ jobs:
         run: make updateversion
       - name: Create PR
         id: cpr
-        uses: peter-evans/create-pull-request@ad43dccb4d726ca8514126628bec209b8354b6dd
+        uses: peter-evans/create-pull-request@b4d51739f96fca8047ad065eccef63442d8e99f7
         with:
           add-paths: .
           commit-message: "Update version to v${{env.VERSION}}"
@@ -186,7 +186,7 @@ jobs:
       - name: update home brew badge
         run: make updatehomebrewbadge
       - name: create PR
-        uses: peter-evans/create-pull-request@ad43dccb4d726ca8514126628bec209b8354b6dd
+        uses: peter-evans/create-pull-request@b4d51739f96fca8047ad065eccef63442d8e99f7
         with:
           add-paths: .
           commit-message: "Back to development"
