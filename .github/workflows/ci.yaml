@@ -15,7 +15,7 @@ jobs:
         if: success()
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19.2
+          go-version: 1.19.3
       - name: cache
         if: success()
         uses: actions/cache@v3
@@ -44,7 +44,7 @@ jobs:
         if: success()
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19.2
+          go-version: 1.19.3
       - name: cache
         if: success()
         uses: actions/cache@v3

@@ -123,4 +123,8 @@ type RepositoryService interface {
 		description *string,
 		url *string,
 	) (err error)
+	// GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
+	// request should match the length of the metadata in the response, and the order of repositories in the response
+	// should match the order of the metadata in the request.
+	GetRepositoriesMetadata(ctx context.Context, ids []string) (metadata []*v1alpha1.RepositoryMetadata, err error)
 }

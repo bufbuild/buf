@@ -119,10 +119,6 @@ type RegistryConfig struct {
 	// the empty string, and the option will be propagated to the
 	// compiler without the '=' delimiter.
 	Options map[string]string
-	// Hidden plugins are not exposed in the BSR UI and cannot be used
-	// directly in code generation by end users. They are typically
-	// used to generate base types for other plugins.
-	Hidden bool
 }
 
 // GoRegistryConfig is the registry configuration for a Go plugin.
@@ -141,6 +137,7 @@ type GoRegistryDependencyConfig struct {
 type NPMRegistryConfig struct {
 	RewriteImportPathSuffix string
 	Deps                    []*NPMRegistryDependencyConfig
+	ImportStyle             string
 }
 
 // NPMRegistryDependencyConfig is the npm registry dependency configuration.
@@ -274,10 +271,9 @@ type ExternalDependency struct {
 // ExternalRegistryConfig is the external configuration for the registry
 // of a plugin.
 type ExternalRegistryConfig struct {
-	Go     *ExternalGoRegistryConfig  `json:"go,omitempty" yaml:"go,omitempty"`
-	NPM    *ExternalNPMRegistryConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
-	Opts   []string                   `json:"opts,omitempty" yaml:"opts,omitempty"`
-	Hidden bool                       `json:"hidden,omitempty" yaml:"hidden,omitempty"`
+	Go   *ExternalGoRegistryConfig  `json:"go,omitempty" yaml:"go,omitempty"`
+	NPM  *ExternalNPMRegistryConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
+	Opts []string                   `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
 // ExternalGoRegistryConfig is the external registry configuration for a Go plugin.
@@ -297,6 +293,9 @@ type ExternalNPMRegistryConfig struct {
 		Package string `json:"package,omitempty" yaml:"package,omitempty"`
 		Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
+	// The import style used for the "type" field in the package.json file.
+	// Must be one of "module" or "commonjs".
+	ImportStyle string `json:"import_style,omitempty" yaml:"import_style,omitempty"`
 }
 
 type externalConfigVersion struct {
