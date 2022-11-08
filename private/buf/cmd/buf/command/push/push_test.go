@@ -74,12 +74,12 @@ func (m *mockPushService) Push(
 		m.called[owner] = struct{}{}
 	}
 	resp := m.resp[owner]
-	if resp != nil {
-		return &connect_go.Response[registryv1alpha1.PushResponse]{
-			Msg: resp,
-		}, nil
+	if resp == nil {
+		return nil, errors.New("bad request")
 	}
-	return nil, errors.New("bad request")
+	return &connect_go.Response[registryv1alpha1.PushResponse]{
+		Msg: resp,
+	}, nil
 }
 
 func (m *mockPushService) respond(owner string, resp *registryv1alpha1.PushResponse) {
@@ -168,7 +168,7 @@ func testPush(
 	})
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		appName := "test"
+		const appName = "test"
 		err := appcmd.Run(
 			context.Background(),
 			app.NewContainer(
