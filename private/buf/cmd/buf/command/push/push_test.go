@@ -26,6 +26,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
@@ -42,6 +43,7 @@ import (
 
 type mockPushService struct {
 	t         *testing.T
+	lock      sync.Mutex
 	callbacks map[string]func(*registryv1alpha1.PushRequest)
 	called    map[string]struct{}
 	resp      map[string]*registryv1alpha1.PushResponse
@@ -63,6 +65,8 @@ func (m *mockPushService) Push(
 	_ context.Context,
 	req *connect_go.Request[registryv1alpha1.PushRequest],
 ) (*connect_go.Response[registryv1alpha1.PushResponse], error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	owner := req.Msg.Owner
 	cb, ok := m.callbacks[owner]
 	if ok {
@@ -79,6 +83,8 @@ func (m *mockPushService) Push(
 }
 
 func (m *mockPushService) respond(owner string, resp *registryv1alpha1.PushResponse) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.resp[owner] = resp
 }
 
@@ -86,10 +92,14 @@ func (m *mockPushService) callback(
 	owner string,
 	cb func(*registryv1alpha1.PushRequest),
 ) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.callbacks[owner] = cb
 }
 
 func (m *mockPushService) assertAllCallbacksCalled() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	for k := range m.callbacks {
 		_, ok := m.called[k]
 		assert.True(m.t, ok)
