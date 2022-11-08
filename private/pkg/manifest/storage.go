@@ -26,7 +26,7 @@ import (
 	"go.uber.org/multierr"
 )
 
-// manifestBucket is a storage.ReadBucket implementation from a manifest an an
+// manifestBucket is a storage.ReadBucket implementation from a manifest and an
 // array of blobs.
 type manifestBucket struct {
 	manifest   Manifest
@@ -132,6 +132,7 @@ func (m *manifestBucket) Stat(ctx context.Context, path string) (storage.ObjectI
 	// storage.ObjectInfo only requires path
 	return &manifestBucketObject{path: path}, nil
 }
+
 func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
 	prefix, err := storageutil.ValidatePrefix(prefix)
 	if err != nil {
