@@ -91,14 +91,14 @@ func TestNewDigestFromBlobHash(t *testing.T) {
 func TestInvalidNewDigestFromBlobHash(t *testing.T) {
 	t.Parallel()
 	_, err := manifest.NewDigestFromBlobHash(nil)
-	require.Error(t, err)
+	assert.Error(t, err)
 	_, err = manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
 		Kind: modulev1alpha1.HashKind_HASH_KIND_UNSPECIFIED,
 	})
-	require.Error(t, err)
+	assert.Error(t, err)
 	_, err = manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
 		Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
 		Digest: []byte("invalid digest"),
 	})
-	require.Error(t, err)
+	assert.Error(t, err)
 }
