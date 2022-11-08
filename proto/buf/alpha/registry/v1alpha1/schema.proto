@@ -1,0 +1,196 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "google/protobuf/descriptor.proto";
+
+// Provides endpoints for downloading dynamic schemas and for using schemas
+// in validation and data transformation functions.
+service SchemaService {
+  // GetSchema allows the caller to download a schema for one or more requested
+  // types, RPC services, or RPC methods.
+  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse);
+
+  // Reformat allows the caller to indicate a type schema which will be used to
+  // transform given data to a different format.
+  rpc Reformat(ReformatRequest) returns (ReformatResponse);
+}
+
+// Module identifies a particular module in the registry.
+message Module {
+  // A user or organization. Required.
+  string owner = 1;
+  // A repository or module name. Required.
+  string repository = 2;
+
+  // A reference to a version. Optional. If present, it may refer to either a
+  // tag or a commit.
+  //
+  // If absent, the latest version for the module identified by the above
+  // owner and repository fields is assumed.
+  string reference = 3;
+}
+
+message GetSchemaRequest {
+  // The module from which the schema is retrieved. Required.
+  Module module = 1;
+
+  // A version in the form of a commit ID (may not be a tag or other reference).
+  // If present, the response should only include a schema if the requested
+  // version resolves to something other than this commit. This can be used
+  // to detect newer versions, when the reference in id is empty/absent, or
+  // to detect changes to a tag.
+  string only_if_not_version = 2;
+
+  // One or more element names. The names may be type names (messages or enums),
+  // service names, or method names. All names must be fully-qualified. If any name
+  // is unknown, the request will fail and no schema will be returned.
+  //
+  // The resulting schema contains these elements and all of their dependencies,
+  // which is enough information for the caller to construct a dynamic message for
+  // any requested types (e.g. requested message types or request and response types
+  // for requested service and method names).
+  repeated string element_names = 5;
+
+  // If true, well-known imports will be included the returned set of files. If
+  // false or not present, these files will omitted from the response (e.g. the
+  // caller is assumed to already know the types they define).
+  //
+  // These files are a subset of the files in the "well-known types" module:
+  // https://buf.build/beta/wellknowntypes
+  //
+  // Specifically, the files that are omitted by default are the following:
+  //  * google/protobuf/any.proto
+  //  * google/protobuf/descriptor.proto
+  //  * google/protobuf/duration.proto
+  //  * google/protobuf/empty.proto
+  //  * google/protobuf/field_mask.proto
+  //  * google/protobuf/struct.proto
+  //  * google/protobuf/timestamp.proto
+  //  * google/protobuf/wrapper.proto
+  //
+  // These include all well-known types that have custom JSON formats and
+  // the types in "descriptor.proto", required for Protobuf reflection.
+  // Callers typically use compiled-in versions of these files.
+  bool include_well_known_imports = 6;
+
+  // If true, the returned schema will be expanded to include custom option
+  // definitions for options present on the requested schema elements.
+  bool include_custom_options = 7;
+
+  // If true, the returned schema will include all known extensions for any
+  // extendable messages among the requested schema elements.
+  bool include_extensions = 8;
+}
+
+message GetSchemaResponse {
+  // The resolved version of the schema. If the request included a reference to a commit,
+  // this value is the same as that commit. If the request included a reference to a tag,
+  // this is the commit version for that tag. If the request did not include any version,
+  // this is the latest version of the requested module.
+  //
+  // This version can be used in subsequent invocations in the only_if_not_version
+  // request field to poll for newer versions of the schema.
+  string version = 1;
+  // The schema, which is a set of file descriptors that include the requested elements
+  // and their dependencies.
+  //
+  // If the request included an only_if_not_version value, and the resolved version
+  // matched that version, this will be absent, indicating that the resolved version
+  // has not changed.
+  google.protobuf.FileDescriptorSet schema_files = 2;
+}
+
+message ReformatRequest {
+  // The module which contains the schema of interest. Required.
+  Module module = 1;
+  // The message type of the input data. Required.
+  string message_name = 2;
+
+  // The input data that is to be reformatted. Required.
+  bytes input_data = 3;
+
+  // The format of the input data. Required.
+  Format input_format = 4;
+  // If true, any unresolvable fields in the input are discarded. For
+  // formats other than FORMAT_BINARY, this means that the operation
+  // will fail if the input contains unrecognized field names. For
+  // FORMAT_BINARY, unrecognized fields can be retained and possibly
+  // included in the reformatted output (depending on the requested
+  // output format).
+  bool discard_unknown = 5;
+
+  oneof output_format {
+    BinaryOutputOptions output_binary = 6;
+    JSONOutputOptions output_json = 7;
+    TextOutputOptions output_text = 8;
+  }
+}
+
+enum Format {
+  FORMAT_UNSPECIFIED = 0;
+
+  FORMAT_BINARY = 1;
+  FORMAT_JSON = 2;
+  FORMAT_TEXT = 3;
+}
+
+message BinaryOutputOptions {
+  // If true, the output will be deterministic. In particular, extension fields
+  // will be emitted in tag number order and entries in map fields will be
+  // ordered by key.
+  bool deterministic = 1;
+}
+
+message JSONOutputOptions {
+  // Indentation to use for multi-line output. If empty, the output will be
+  // compact instead of multi-line. If not empty, it may contain only space
+  // and tab characters.
+  string indent = 1;
+  // Emits JSON field names using the names as defined in proto source. If false
+  // (the default), field names are emitted using a custom json_name option if
+  // present or a camel-case version of the name otherwise.
+  bool use_proto_names = 2;
+  // Enum fields will be emitted as numeric values. If false (the dafault), enum
+  // fields are emitted as strings that are the enum values' names.
+  bool use_enum_numbers = 3;
+  // Includes fields that have their default values. This applies only to fields
+  // defined in proto3 syntax that have no explicit "optional" keyword. Other
+  // optional fields will be included if present in the input data.
+  bool include_defaults = 4;
+}
+
+message TextOutputOptions {
+  // Indentation to use for multi-line output. If empty, the output will be
+  // compact instead of multi-line. If not empty, it may contain only space
+  // and tab characters.
+  string indent = 1;
+  // If true and the input data includes unrecognized fields, the unrecognized
+  // fields will be preserved in the text output (using field numbers and raw
+  // values).
+  bool include_unrecognized = 2;
+}
+
+message ReformatResponse {
+  // The resolved version of the schema. If the request included a reference to a commit,
+  // this value is the same as that commit. If the request included a reference to a tag,
+  // this is the commit version for that tag. If the request did not include any version,
+  // this is the latest version of the requested module.
+  string version = 1;
+  // The reformatted data.
+  bytes output_data = 2;
+}
