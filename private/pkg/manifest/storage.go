@@ -83,7 +83,8 @@ type bucketOptions struct {
 type BucketOption func(*bucketOptions)
 
 // BucketWithAllManifestBlobsValidation validates that all the passed digests in
-// the manifest have a corresponding blob in the blob set.
+// the manifest have a corresponding blob in the blob set. If this option is not
+// passed, then buckets with partial/incomplete blobs is allowed.
 func BucketWithAllManifestBlobsValidation() BucketOption {
 	return func(opts *bucketOptions) {
 		opts.allManifestBlobs = true
@@ -91,7 +92,7 @@ func BucketWithAllManifestBlobsValidation() BucketOption {
 }
 
 // BucketWithNoExtraBlobsValidation validates that the passed blob set has no
-// additional blobs beyong the ones in the manifest.
+// additional blobs beyond the ones in the manifest.
 func BucketWithNoExtraBlobsValidation() BucketOption {
 	return func(opts *bucketOptions) {
 		opts.noExtraBlobs = true
@@ -177,7 +178,7 @@ func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage
 			return storage.NewErrNotExist(path)
 		}
 		if _, ok := m.blobs.digestToBlob[digest.String()]; !ok {
-			// this could happen if the bucket was not checked for completeness.
+			// this could happen if the bucket was built with partial blobs
 			continue
 		}
 		// storage.ObjectInfo only requires path

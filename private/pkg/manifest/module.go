@@ -21,6 +21,7 @@ import (
 	"io"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"go.uber.org/multierr"
 )
 
 var hashKindToDigestType = map[modulev1alpha1.HashKind]DigestType{
@@ -47,6 +48,13 @@ type memoryBlobOptions struct {
 
 // MemoryBlobOption are options passed when creating a new memory blob.
 type MemoryBlobOption func(*memoryBlobOptions)
+
+// MemoryBlobWithHashValidation checks that the passed content and digest match.
+func MemoryBlobWithHashValidation() MemoryBlobOption {
+	return func(opts *memoryBlobOptions) {
+		opts.validateHash = true
+	}
+}
 
 // NewMemoryBlob takes a digest and a content, and turns it into an in-memory
 // representation of a blob, which returns the digest and an io.ReadCloser for
@@ -83,11 +91,12 @@ func (b *memoryBlob) Open(_ context.Context) (io.ReadCloser, error) {
 	return io.NopCloser(bytes.NewReader(b.content)), nil
 }
 
-func (b *memoryBlob) EqualContent(ctx context.Context, other Blob) (bool, error) {
+func (b *memoryBlob) EqualContent(ctx context.Context, other Blob) (_ bool, retErr error) {
 	otherContentRC, err := other.Open(ctx)
 	if err != nil {
 		return false, fmt.Errorf("open other blob: %w", err)
 	}
+	defer func() { retErr = multierr.Append(retErr, otherContentRC.Close()) }()
 	otherContent, err := io.ReadAll(otherContentRC)
 	if err != nil {
 		return false, fmt.Errorf("read other blob: %w", err)
@@ -109,13 +118,6 @@ type blobSetOptions struct {
 
 // BlobSetOption are options passed when creating a new blob set.
 type BlobSetOption func(*blobSetOptions)
-
-// MemoryBlobWithHashValidation checks that the passed content and digest match.
-func MemoryBlobWithHashValidation() MemoryBlobOption {
-	return func(opts *memoryBlobOptions) {
-		opts.validateHash = true
-	}
-}
 
 // BlobSetWithContentValidation turns on content validation for all the blobs
 // when creating a new BlobSet. If this option is on, multiple blobs with the
