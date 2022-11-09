@@ -114,12 +114,18 @@ bufgenerateclean:: bufgeneratecleango
 bufgenerateprotogo:
 	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
 
+.PHONY: bufgenerateprotogoconnect
+bufgenerateprotogoconnect:
+	$(BUF_BIN) generate proto --template data/template/buf.go-connect.gen.yaml
+
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
-	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
+	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml \
+		--exclude-path proto/buf/alpha/registry/v1alpha1/schema.proto
 
 bufgeneratesteps:: \
 	bufgenerateprotogo \
+	bufgenerateprotogoconnect \
 	bufgenerateprotogoclient
 
 .PHONY: bufrelease
