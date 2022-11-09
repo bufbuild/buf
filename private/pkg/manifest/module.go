@@ -30,7 +30,8 @@ var hashKindToDigestType = map[modulev1alpha1.HashKind]DigestType{
 
 type Blob interface {
 	Digest() *Digest
-	Open(ctx context.Context) (io.ReadCloser, error)
+	Open(context.Context) (io.ReadCloser, error)
+	EqualContent(ctx context.Context, other Blob) (bool, error)
 }
 
 type memoryBlob struct {
@@ -40,12 +41,28 @@ type memoryBlob struct {
 
 var _ Blob = (*memoryBlob)(nil)
 
+type memoryBlobOptions struct {
+	validateHash bool
+}
+
+type MemoryBlobOption func(*memoryBlobOptions)
+
+// WithHashValidation checks that the passed content and digest match.
+func WithHashValidation() MemoryBlobOption {
+	return func(opts *memoryBlobOptions) {
+		opts.validateHash = true
+	}
+}
+
 // NewMemoryBlob takes a digest and a content, and turns it into an in-memory
 // representation of a blob, which returns the digest and an io.ReadCloser for
-// its content. It optionally validates that the passed digest and content
-// match.
-func NewMemoryBlob(digest Digest, content []byte, validateHash bool) (Blob, error) {
-	if validateHash {
+// its content.
+func NewMemoryBlob(digest Digest, content []byte, opts ...MemoryBlobOption) (Blob, error) {
+	var config memoryBlobOptions
+	for _, option := range opts {
+		option(&config)
+	}
+	if config.validateHash {
 		digester, err := NewDigester(digest.Type())
 		if err != nil {
 			return nil, err
@@ -68,8 +85,23 @@ func (b *memoryBlob) Digest() *Digest {
 	return &b.digest
 }
 
-func (b *memoryBlob) Open(ctx context.Context) (io.ReadCloser, error) {
+func (b *memoryBlob) Open(_ context.Context) (io.ReadCloser, error) {
 	return ioutil.NopCloser(bytes.NewReader(b.content)), nil
+}
+
+func (b *memoryBlob) EqualContent(ctx context.Context, other Blob) (bool, error) {
+	otherContentRC, err := other.Open(ctx)
+	if err != nil {
+		return false, fmt.Errorf("open other blob: %w", err)
+	}
+	otherContent, err := io.ReadAll(otherContentRC)
+	if err != nil {
+		return false, fmt.Errorf("read other blob: %w", err)
+	}
+	if c := bytes.Compare(b.content, otherContent); c != 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
 func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {

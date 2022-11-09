@@ -25,11 +25,58 @@ import (
 	"go.uber.org/multierr"
 )
 
+// BlobSet represents a set of deduplicated blobs, by digests.
+type BlobSet struct {
+	digestToBlob map[string]Blob
+}
+
+type blobSetOptions struct {
+	validateContent bool
+}
+
+type BlobSetOption func(*blobSetOptions)
+
+// WithContentValidation turns on content validation for all the blobs when
+// creating a new BlobSet. If this option is on, multiple blobs with the same
+// digest might be passed, as long as the contents match. If this option is not
+// passed, then the latest content digest will prevail in the set.
+func WithContentValidation() BlobSetOption {
+	return func(opts *blobSetOptions) {
+		opts.validateContent = true
+	}
+}
+
+// NewBlobSet receives an slice of blobs, and deduplicates them into a BlobSet.
+func NewBlobSet(ctx context.Context, blobs []Blob, opts ...BlobSetOption) (*BlobSet, error) {
+	var config blobSetOptions
+	for _, option := range opts {
+		option(&config)
+	}
+	digestToBlobs := make(map[string]Blob, len(blobs))
+	for _, b := range blobs {
+		digestStr := b.Digest().String()
+		if config.validateContent {
+			existingBlob, alreadyPresent := digestToBlobs[digestStr]
+			if alreadyPresent {
+				equalContent, err := b.EqualContent(ctx, existingBlob)
+				if err != nil {
+					return nil, fmt.Errorf("compare duplicated blobs with digest %q: %w", digestStr, err)
+				}
+				if !equalContent {
+					return nil, fmt.Errorf("duplicated blobs with digest %q have different contents", digestStr)
+				}
+			}
+		}
+		digestToBlobs[digestStr] = b
+	}
+	return &BlobSet{digestToBlob: digestToBlobs}, nil
+}
+
 // manifestBucket is a storage.ReadBucket implementation from a manifest and an
 // array of blobs.
 type manifestBucket struct {
-	manifest     Manifest
-	digestToBlob map[string]Blob
+	manifest Manifest
+	blobs    BlobSet
 }
 
 type manifestBucketObject struct {
@@ -74,22 +121,12 @@ func NewFromBucket(
 	return m, nil
 }
 
-// NewBucket takes a manifest and an array of blobs and builds a readable storage bucket that
-// contains the files in the manifest.
-func NewBucket(m Manifest, blobs []Blob) (storage.ReadBucket, error) {
-	digestToBlobs := make(map[string]Blob, len(blobs))
-	for _, b := range blobs {
-		digest := b.Digest().String()
-		_, alreadyPresent := digestToBlobs[digest]
-		if alreadyPresent {
-			return nil, fmt.Errorf("blob with digest %q duplicated", digest)
-		}
-		_, presentInManifest := m.PathsFor(digest)
-		if !presentInManifest {
-			return nil, fmt.Errorf("blob with digest %q is not present in manifest", digest)
-		}
-		digestToBlobs[digest] = b
-	}
+// NewBucket takes a manifest and a blob set and builds a readable storage
+// bucket that contains the files in the manifest.
+func NewBucket(m Manifest, blobs BlobSet) (storage.ReadBucket, error) {
+	// TODO optionally check:
+	// - all paths in the manifest are present
+	// - blob set has no extra blobs
 	for _, path := range m.Paths() {
 		pathDigest, ok := m.DigestFor(path)
 		if !ok {
@@ -101,8 +138,8 @@ func NewBucket(m Manifest, blobs []Blob) (storage.ReadBucket, error) {
 		}
 	}
 	return &manifestBucket{
-		manifest:     m,
-		digestToBlob: digestToBlobs,
+		manifest: m,
+		blobs:    blobs,
 	}, nil
 }
 
