@@ -42,7 +42,7 @@ func NewBlobFromBytes(content []byte) *modulev1alpha1.Blob {
 	blob := &modulev1alpha1.Blob{
 		Hash: &modulev1alpha1.Hash{
 			Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
-			Digest: make([]byte, 64),
+			Digest: make([]byte, shake256Length),
 		},
 		Content: content,
 	}
