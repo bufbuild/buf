@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sort"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -143,11 +142,8 @@ func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage
 	if err != nil {
 		return err
 	}
-	paths := m.manifest.Paths()
-	sort.Slice(paths, func(i, j int) bool {
-		return paths[i] < paths[j]
-	})
-	for _, path := range paths {
+	// walk order is not guaranteed
+	for _, path := range m.manifest.Paths() {
 		if !normalpath.EqualsOrContainsPath(prefix, path, normalpath.Relative) {
 			continue
 		}
