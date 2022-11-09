@@ -87,7 +87,7 @@ func (b *memoryBlob) Digest() *Digest {
 	return &b.digest
 }
 
-func (b *memoryBlob) Open(_ context.Context) (io.ReadCloser, error) {
+func (b *memoryBlob) Open(context.Context) (io.ReadCloser, error) {
 	return io.NopCloser(bytes.NewReader(b.content)), nil
 }
 
@@ -120,9 +120,10 @@ type blobSetOptions struct {
 type BlobSetOption func(*blobSetOptions)
 
 // BlobSetWithContentValidation turns on content validation for all the blobs
-// when creating a new BlobSet. If this option is on, multiple blobs with the
-// same digest might be passed, as long as the contents match. If this option is
-// not passed, then the latest content digest will prevail in the set.
+// when creating a new BlobSet. If this option is on, blobs with the same digest
+// must have the same content (in case blobs with the same digest are sent). If
+// this option is not passed, then the latest duplicated blob digest content
+// will prevail in the set.
 func BlobSetWithContentValidation() BlobSetOption {
 	return func(opts *blobSetOptions) {
 		opts.validateContent = true
