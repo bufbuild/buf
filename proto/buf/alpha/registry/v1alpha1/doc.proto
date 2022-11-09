@@ -389,6 +389,6 @@ message FileExtension {
   Location location = 4;
   // fields are all the fields that are associated with the extension.
   repeated Field fields = 5;
-  // implicitly_deprecated is true if its enclosing file is deprecated.
+  // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 6;
 }

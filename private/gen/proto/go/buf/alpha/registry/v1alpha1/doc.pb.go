@@ -2397,7 +2397,7 @@ type FileExtension struct {
 	Location *Location `protobuf:"bytes,4,opt,name=location,proto3" json:"location,omitempty"`
 	// fields are all the fields that are associated with the extension.
 	Fields []*Field `protobuf:"bytes,5,rep,name=fields,proto3" json:"fields,omitempty"`
-	// implicitly_deprecated is true if its enclosing file is deprecated.
+	// implicitly_deprecated is true if its enclosing file or parent element is deprecated.
 	ImplicitlyDeprecated bool `protobuf:"varint,6,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
 }
 
