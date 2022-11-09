@@ -25,53 +25,6 @@ import (
 	"go.uber.org/multierr"
 )
 
-// BlobSet represents a set of deduplicated blobs, by digests.
-type BlobSet struct {
-	digestToBlob map[string]Blob
-}
-
-type blobSetOptions struct {
-	validateContent bool
-}
-
-type BlobSetOption func(*blobSetOptions)
-
-// WithContentValidation turns on content validation for all the blobs when
-// creating a new BlobSet. If this option is on, multiple blobs with the same
-// digest might be passed, as long as the contents match. If this option is not
-// passed, then the latest content digest will prevail in the set.
-func WithContentValidation() BlobSetOption {
-	return func(opts *blobSetOptions) {
-		opts.validateContent = true
-	}
-}
-
-// NewBlobSet receives an slice of blobs, and deduplicates them into a BlobSet.
-func NewBlobSet(ctx context.Context, blobs []Blob, opts ...BlobSetOption) (*BlobSet, error) {
-	var config blobSetOptions
-	for _, option := range opts {
-		option(&config)
-	}
-	digestToBlobs := make(map[string]Blob, len(blobs))
-	for _, b := range blobs {
-		digestStr := b.Digest().String()
-		if config.validateContent {
-			existingBlob, alreadyPresent := digestToBlobs[digestStr]
-			if alreadyPresent {
-				equalContent, err := b.EqualContent(ctx, existingBlob)
-				if err != nil {
-					return nil, fmt.Errorf("compare duplicated blobs with digest %q: %w", digestStr, err)
-				}
-				if !equalContent {
-					return nil, fmt.Errorf("duplicated blobs with digest %q have different contents", digestStr)
-				}
-			}
-		}
-		digestToBlobs[digestStr] = b
-	}
-	return &BlobSet{digestToBlob: digestToBlobs}, nil
-}
-
 // manifestBucket is a storage.ReadBucket implementation from a manifest and an
 // array of blobs.
 type manifestBucket struct {
@@ -121,20 +74,54 @@ func NewFromBucket(
 	return m, nil
 }
 
+type bucketOptions struct {
+	allManifestBlobs bool
+	noExtraBlobs     bool
+}
+
+// BucketOption are options passed when creating a new manifest bucket.
+type BucketOption func(*bucketOptions)
+
+// BucketWithAllManifestBlobsValidation validates that all the passed digests in
+// the manifest have a corresponding blob in the blob set.
+func BucketWithAllManifestBlobsValidation() BucketOption {
+	return func(opts *bucketOptions) {
+		opts.allManifestBlobs = true
+	}
+}
+
+// BucketWithNoExtraBlobsValidation validates that the passed blob set has no
+// additional blobs beyong the ones in the manifest.
+func BucketWithNoExtraBlobsValidation() BucketOption {
+	return func(opts *bucketOptions) {
+		opts.noExtraBlobs = true
+	}
+}
+
 // NewBucket takes a manifest and a blob set and builds a readable storage
 // bucket that contains the files in the manifest.
-func NewBucket(m Manifest, blobs BlobSet) (storage.ReadBucket, error) {
-	// TODO optionally check:
-	// - all paths in the manifest are present
-	// - blob set has no extra blobs
-	for _, path := range m.Paths() {
-		pathDigest, ok := m.DigestFor(path)
-		if !ok {
-			// we're iterating manifest paths, this should never happen.
-			return nil, fmt.Errorf("path %q not present in manifest", path)
+func NewBucket(m Manifest, blobs BlobSet, opts ...BucketOption) (storage.ReadBucket, error) {
+	var config bucketOptions
+	for _, option := range opts {
+		option(&config)
+	}
+	if config.allManifestBlobs {
+		for _, path := range m.Paths() {
+			pathDigest, ok := m.DigestFor(path)
+			if !ok {
+				// we're iterating manifest paths, this should never happen.
+				return nil, fmt.Errorf("path %q not present in manifest", path)
+			}
+			if _, ok := blobs.digestToBlob[pathDigest.String()]; !ok {
+				return nil, fmt.Errorf("manifest path %q with digest %q has no associated blob", path, pathDigest.String())
+			}
 		}
-		if _, ok := digestToBlobs[pathDigest.String()]; !ok {
-			return nil, fmt.Errorf("manifest path %q with digest %q has no associated blob", path, pathDigest.String())
+	}
+	if config.noExtraBlobs {
+		for digestStr := range blobs.digestToBlob {
+			if _, ok := m.digestToPaths[digestStr]; !ok {
+				return nil, fmt.Errorf("blob with digest %q is not present in the manifest", digestStr)
+			}
 		}
 	}
 	return &manifestBucket{
@@ -148,7 +135,7 @@ func (m *manifestBucket) Get(ctx context.Context, path string) (storage.ReadObje
 	if !ok {
 		return nil, storage.NewErrNotExist(path)
 	}
-	blob, ok := m.digestToBlob[digest.String()]
+	blob, ok := m.blobs.digestToBlob[digest.String()]
 	if !ok {
 		return nil, storage.NewErrNotExist(path)
 	}
@@ -167,7 +154,7 @@ func (m *manifestBucket) Stat(ctx context.Context, path string) (storage.ObjectI
 	if !ok {
 		return nil, storage.NewErrNotExist(path)
 	}
-	if _, ok := m.digestToBlob[digest.String()]; !ok {
+	if _, ok := m.blobs.digestToBlob[digest.String()]; !ok {
 		return nil, storage.NewErrNotExist(path)
 	}
 	// storage.ObjectInfo only requires path
@@ -188,7 +175,7 @@ func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage
 		if !ok {
 			return storage.NewErrNotExist(path)
 		}
-		if _, ok := m.digestToBlob[digest.String()]; !ok {
+		if _, ok := m.blobs.digestToBlob[digest.String()]; !ok {
 			return storage.NewErrNotExist(path)
 		}
 		// storage.ObjectInfo only requires path

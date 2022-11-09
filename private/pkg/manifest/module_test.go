@@ -16,6 +16,7 @@ package manifest_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"testing"
 
@@ -50,7 +51,11 @@ func TestNewMemoryBlob(t *testing.T) {
 	t.Parallel()
 	const content = "some file content"
 	digest := mustDigestShake256(t, []byte(content))
-	blob, err := manifest.NewMemoryBlob(*digest, []byte(content), true)
+	blob, err := manifest.NewMemoryBlob(
+		*digest,
+		[]byte(content),
+		manifest.MemoryBlobWithHashValidation(),
+	)
 	require.NoError(t, err)
 	assert.True(t, blob.Digest().Equal(*digest))
 	file, err := blob.Open(context.Background())
@@ -67,12 +72,16 @@ func TestInvalidMemoryBlob(t *testing.T) {
 
 	t.Run("NoValidateHash", func(t *testing.T) {
 		t.Parallel()
-		_, err := manifest.NewMemoryBlob(*digest, []byte("different content"), false)
+		_, err := manifest.NewMemoryBlob(*digest, []byte("different content"))
 		assert.NoError(t, err)
 	})
 	t.Run("ValidatingHash", func(t *testing.T) {
 		t.Parallel()
-		_, err := manifest.NewMemoryBlob(*digest, []byte("different content"), true)
+		_, err := manifest.NewMemoryBlob(
+			*digest,
+			[]byte("different content"),
+			manifest.MemoryBlobWithHashValidation(),
+		)
 		assert.Error(t, err)
 	})
 }
@@ -101,4 +110,55 @@ func TestInvalidNewDigestFromBlobHash(t *testing.T) {
 		Digest: []byte("invalid digest"),
 	})
 	assert.Error(t, err)
+}
+
+func TestNewBlobSet(t *testing.T) {
+	t.Parallel()
+	var blobs []manifest.Blob
+	for i := 0; i < 10; i++ {
+		content := fmt.Sprintf("some content %d", i)
+		digest := mustDigestShake256(t, []byte(content))
+		blob, err := manifest.NewMemoryBlob(
+			*digest, []byte(content),
+			manifest.MemoryBlobWithHashValidation(),
+		)
+		require.NoError(t, err)
+		blobs = append(blobs, blob)
+	}
+	t.Run("Valid", func(t *testing.T) {
+		t.Parallel()
+		blobSet, err := manifest.NewBlobSet(
+			context.Background(),
+			blobs,
+			manifest.BlobSetWithContentValidation(),
+		)
+		require.NoError(t, err)
+		assert.NotNil(t, blobSet)
+	})
+	t.Run("BlobSetWithContentValidation", func(t *testing.T) {
+		t.Parallel()
+		t.Run("DuplicatedValidBlobs", func(t *testing.T) {
+			t.Parallel()
+			duplicatedBlobs := append(blobs, blobs[0])
+			blobSet, err := manifest.NewBlobSet(
+				context.Background(),
+				duplicatedBlobs,
+				manifest.BlobSetWithContentValidation(),
+			)
+			require.NoError(t, err)
+			assert.NotNil(t, blobSet)
+		})
+		t.Run("DuplicatedInvalidBlobs", func(t *testing.T) {
+			t.Parallel()
+			incorrectBlob, err := manifest.NewMemoryBlob(*blobs[0].Digest(), []byte("some invalid content"))
+			require.NoError(t, err)
+			require.NotNil(t, incorrectBlob)
+			_, err = manifest.NewBlobSet(
+				context.Background(),
+				append(blobs, incorrectBlob),
+				manifest.BlobSetWithContentValidation(),
+			)
+			require.Error(t, err)
+		})
+	})
 }

@@ -67,7 +67,11 @@ func TestNewBucket(t *testing.T) {
 		digest, err := digester.Digest(bytes.NewReader(content))
 		require.NoError(t, err)
 		require.NoError(t, m.AddEntry(path, *digest))
-		blob, err := manifest.NewMemoryBlob(*digest, content, true)
+		blob, err := manifest.NewMemoryBlob(
+			*digest,
+			content,
+			manifest.MemoryBlobWithHashValidation(),
+		)
 		require.NoError(t, err)
 		digestToBlobs[digest.String()] = blob
 	}
@@ -75,32 +79,52 @@ func TestNewBucket(t *testing.T) {
 	for _, b := range digestToBlobs {
 		blobs = append(blobs, b)
 	}
+	blobSet, err := manifest.NewBlobSet(
+		context.Background(),
+		blobs,
+		manifest.BlobSetWithContentValidation(),
+	)
+	require.NoError(t, err)
 
-	t.Run("ArrayWithDuplicatedEntries", func(t *testing.T) {
+	t.Run("BucketWithAllManifestBlobsValidation", func(t *testing.T) {
 		t.Parallel()
-		_, err := manifest.NewBucket(*m, append(blobs, blobs[0])) // one item repeated
+		incompleteBlobSet, err := manifest.NewBlobSet(
+			context.Background(),
+			blobs[1:], // removing one item
+		)
+		require.NoError(t, err)
+		_, err = manifest.NewBucket(
+			*m, *incompleteBlobSet,
+			manifest.BucketWithAllManifestBlobsValidation(),
+		)
 		assert.Error(t, err)
 	})
 
-	t.Run("ArrayWithIncompleteEntries", func(t *testing.T) {
-		t.Parallel()
-		_, err := manifest.NewBucket(*m, blobs[1:]) // removing one item
-		assert.Error(t, err)
-	})
-
-	t.Run("ArrayWithOrphanDigest", func(t *testing.T) {
+	t.Run("BucketWithNoExtraBlobsValidation", func(t *testing.T) {
 		t.Parallel()
 		const content = "some other file contents"
 		digest := mustDigestShake256(t, []byte(content))
-		orphanBlob, err := manifest.NewMemoryBlob(*digest, []byte(content), false)
+		orphanBlob, err := manifest.NewMemoryBlob(*digest, []byte(content))
 		require.NoError(t, err)
-		_, err = manifest.NewBucket(*m, append(blobs, orphanBlob))
+		tooLargeBlobSet, err := manifest.NewBlobSet(
+			context.Background(),
+			append(blobs, orphanBlob),
+		)
+		require.NoError(t, err)
+		_, err = manifest.NewBucket(
+			*m, *tooLargeBlobSet,
+			manifest.BucketWithNoExtraBlobsValidation(),
+		)
 		assert.Error(t, err)
 	})
 
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
-		bucket, err := manifest.NewBucket(*m, blobs)
+		bucket, err := manifest.NewBucket(
+			*m, *blobSet,
+			manifest.BucketWithAllManifestBlobsValidation(),
+			manifest.BucketWithNoExtraBlobsValidation(),
+		)
 		require.NoError(t, err)
 
 		t.Run("BucketGet", func(t *testing.T) {
@@ -152,7 +176,7 @@ func TestNewBucket(t *testing.T) {
 func TestToBucketEmpty(t *testing.T) {
 	t.Parallel()
 	m := manifest.New()
-	bucket, err := manifest.NewBucket(*m, nil)
+	bucket, err := manifest.NewBucket(*m, manifest.BlobSet{})
 	require.NoError(t, err)
 	// make sure there are no files in the bucket
 	require.NoError(t, bucket.Walk(context.Background(), "", func(obj storage.ObjectInfo) error {
