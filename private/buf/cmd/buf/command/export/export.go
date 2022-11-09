@@ -56,8 +56,22 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input>",
 		Short: "Export the files from the input location to an output location.",
-		Long:  bufcli.GetInputLong(`the source or module to export`),
-		Args:  cobra.MaximumNArgs(1),
+		Long: bufcli.GetInputLong(`the source or module to export`) + `
+
+$ buf export <input> --output=<output-dir>
+
+input can be of the format [dir,git,mod,protofile,tar,targz,zip].
+
+output will represent a directory with all of the .proto files in the <input>.
+
+# Export a remote module locally.
+$ buf export buf.build/<owner>/<repo> --output=<output-dir>
+
+# Export current directory to another local directory. 
+$ buf export . --output=<output-dir>
+
+`,
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
