@@ -141,7 +141,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change.",
 				SubCommands: []*appcmd.Command{
-					convert.NewCommand("convert", builder),
+					//convert.NewCommand("convert", builder),
 					migratev1beta1.NewCommand("migrate-v1beta1", builder),
 					studioagent.NewCommand("studio-agent", noTimeoutBuilder),
 					{
