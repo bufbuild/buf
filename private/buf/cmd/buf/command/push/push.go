@@ -15,11 +15,11 @@
 package push
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -231,7 +231,7 @@ func manifestBlob(
 	if err != nil {
 		return nil, err
 	}
-	return manifest.NewBlobFromBytes(manifestText), nil
+	return manifest.NewBlobFromReader(bytes.NewReader(manifestText))
 }
 
 // bucketBlobs returns a deduplicated set of blobs for the files in bucket.
@@ -248,11 +248,10 @@ func bucketBlobs(
 			return err
 		}
 		defer file.Close()
-		bytes, err := io.ReadAll(file)
+		blob, err := manifest.NewBlobFromReader(file)
 		if err != nil {
 			return err
 		}
-		blob := manifest.NewBlobFromBytes(bytes)
 		hexDigest := hex.EncodeToString(blob.Hash.Digest)
 		if _, ok := haveBlob[hexDigest]; !ok {
 			blobs = append(blobs, blob)

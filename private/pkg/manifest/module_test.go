@@ -15,6 +15,7 @@
 package manifest_test
 
 import (
+	"bytes"
 	"testing"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -44,8 +45,8 @@ func TestDigestFromBlobHash(t *testing.T) {
 	assert.Equal(t, digestFromContent.String(), digestFromBlobHash.String())
 }
 
-func TestBlobFromBytes(t *testing.T) {
-	testBlobFromBytes(
+func TestBlobFromReader(t *testing.T) {
+	testBlobFromReader(
 		t,
 		[]byte("hello"),
 		[]byte{
@@ -59,10 +60,11 @@ func TestBlobFromBytes(t *testing.T) {
 	)
 }
 
-func testBlobFromBytes(t *testing.T, content []byte, digest []byte) {
+func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
 	t.Helper()
 	t.Parallel()
-	blob := manifest.NewBlobFromBytes(content)
+	blob, err := manifest.NewBlobFromReader(bytes.NewReader(content))
+	require.NoError(t, err)
 	expect := &modulev1alpha1.Blob{
 		Hash: &modulev1alpha1.Hash{
 			Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,

@@ -15,10 +15,11 @@
 package manifest
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"golang.org/x/crypto/sha3"
 )
 
 var hashKindToDigestType = map[modulev1alpha1.HashKind]DigestType{
@@ -37,15 +38,25 @@ func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
 	return NewDigestFromBytes(dType, hash.Digest)
 }
 
-// NewBlobFromBytes creates a module Blob from in-memory content.
-func NewBlobFromBytes(content []byte) *modulev1alpha1.Blob {
+// NewBlobFromReader creates a module Blob from content, which is read until
+// completion. The returned blob contains all bytes read.
+func NewBlobFromReader(content io.Reader) (*modulev1alpha1.Blob, error) {
+	digester, err := NewDigester(DigestTypeShake256)
+	if err != nil {
+		return nil, err
+	}
+	var contentInMemory bytes.Buffer
+	tee := io.TeeReader(content, &contentInMemory)
+	digest, err := digester.Digest(tee)
+	if err != nil {
+		return nil, err
+	}
 	blob := &modulev1alpha1.Blob{
 		Hash: &modulev1alpha1.Hash{
 			Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
-			Digest: make([]byte, shake256Length),
+			Digest: digest.Bytes(),
 		},
-		Content: content,
+		Content: contentInMemory.Bytes(),
 	}
-	sha3.ShakeSum256(blob.Hash.Digest, content)
-	return blob
+	return blob, nil
 }
