@@ -161,8 +161,11 @@ func TestBucketBlobs(t *testing.T) {
 	assert.Equal(t, 2, len(blobs))
 	digests := make(map[string]struct{})
 	for _, blob := range blobs {
-		shake := modulev1alpha1.HashKind_HASH_KIND_SHAKE256
-		assert.Equal(t, blob.Hash.Kind, shake)
+		assert.Equal(
+			t,
+			blob.Hash.Kind,
+			modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
+		)
 		hexDigest := hex.EncodeToString(blob.Hash.Digest)
 		assert.NotContains(t, digests, hexDigest, "duplicated blob")
 		digests[hexDigest] = struct{}{}
