@@ -184,7 +184,7 @@ message Service {
   Location location = 6;
   repeated Method methods = 7;
   ServiceOptions service_options = 8;
-  // implicitly_deprecated is the deprecation status of its enclosing element.
+  // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 9;
 }
 
@@ -204,6 +204,8 @@ message Method {
   MethodRequestResponse request = 3;
   MethodRequestResponse response = 4;
   MethodOptions method_options = 5;
+  // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
+  bool implicitly_deprecated = 6;
 }
 
 // MethodOptions provides information for the documentation of options for a method.
@@ -244,7 +246,7 @@ message Enum {
   Location location = 6;
   repeated EnumValue values = 7;
   EnumOptions enum_options = 8;
-  // implicitly_deprecated is the deprecation status of its enclosing element.
+  // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 9;
 }
 
@@ -301,7 +303,7 @@ message Message {
   Location location = 8;
   repeated Field message_extensions = 9;
   MessageOptions message_options = 10;
-  // implicitly_deprecated is the deprecation status of its enclosing element.
+  // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 11;
 }
 
@@ -387,6 +389,6 @@ message FileExtension {
   Location location = 4;
   // fields are all the fields that are associated with the extension.
   repeated Field fields = 5;
-  // implicitly_deprecated is the deprecation status of its enclosing element.
+  // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 6;
 }
