@@ -37,7 +37,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var convertTestDataDir = filepath.Join("command", "beta", "convert", "testdata", "convert")
+var convertTestDataDir = filepath.Join("command", "convert", "testdata", "convert")
 
 func TestSuccess1(t *testing.T) {
 	t.Parallel()
