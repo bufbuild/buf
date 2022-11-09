@@ -173,10 +173,12 @@ func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage
 		}
 		digest, ok := m.manifest.pathToDigest[path]
 		if !ok {
+			// we're iterating manifest paths, this should never happen.
 			return storage.NewErrNotExist(path)
 		}
 		if _, ok := m.blobs.digestToBlob[digest.String()]; !ok {
-			return storage.NewErrNotExist(path)
+			// this could happen if the bucket was not checked for completeness.
+			continue
 		}
 		// storage.ObjectInfo only requires path
 		if err := f(&manifestBucketObject{path: path}); err != nil {

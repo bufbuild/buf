@@ -60,7 +60,7 @@ func TestNewBucket(t *testing.T) {
 		"mypkglongername/v1/baz.proto": []byte("repeated proto content"),
 	}
 	m := manifest.New()
-	digestToBlobs := make(map[string]manifest.Blob, 0)
+	var blobs []manifest.Blob
 	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
 	require.NoError(t, err)
 	for path, content := range files {
@@ -73,11 +73,7 @@ func TestNewBucket(t *testing.T) {
 			manifest.MemoryBlobWithHashValidation(),
 		)
 		require.NoError(t, err)
-		digestToBlobs[digest.String()] = blob
-	}
-	var blobs []manifest.Blob
-	for _, b := range digestToBlobs {
-		blobs = append(blobs, b)
+		blobs = append(blobs, blob)
 	}
 	blobSet, err := manifest.NewBlobSet(
 		context.Background(),
@@ -93,11 +89,22 @@ func TestNewBucket(t *testing.T) {
 			blobs[1:], // removing one item
 		)
 		require.NoError(t, err)
+
 		_, err = manifest.NewBucket(
 			*m, *incompleteBlobSet,
 			manifest.BucketWithAllManifestBlobsValidation(),
 		)
 		assert.Error(t, err)
+
+		bucket, err := manifest.NewBucket(*m, *incompleteBlobSet)
+		assert.NoError(t, err)
+		assert.NotNil(t, bucket)
+		var bucketFilesCount int
+		require.NoError(t, bucket.Walk(context.Background(), "", func(obj storage.ObjectInfo) error {
+			bucketFilesCount++
+			return nil
+		}))
+		assert.Equal(t, len(files)-1, bucketFilesCount) // all but the removed item
 	})
 
 	t.Run("BucketWithNoExtraBlobsValidation", func(t *testing.T) {

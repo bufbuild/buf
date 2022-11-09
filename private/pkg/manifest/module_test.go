@@ -125,6 +125,7 @@ func TestNewBlobSet(t *testing.T) {
 		require.NoError(t, err)
 		blobs = append(blobs, blob)
 	}
+
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
 		blobSet, err := manifest.NewBlobSet(
@@ -135,6 +136,7 @@ func TestNewBlobSet(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, blobSet)
 	})
+
 	t.Run("BlobSetWithContentValidation", func(t *testing.T) {
 		t.Parallel()
 		t.Run("DuplicatedValidBlobs", func(t *testing.T) {
@@ -148,9 +150,12 @@ func TestNewBlobSet(t *testing.T) {
 			require.NoError(t, err)
 			assert.NotNil(t, blobSet)
 		})
+
 		t.Run("DuplicatedInvalidBlobs", func(t *testing.T) {
 			t.Parallel()
-			incorrectBlob, err := manifest.NewMemoryBlob(*blobs[0].Digest(), []byte("some invalid content"))
+			incorrectBlob, err := manifest.NewMemoryBlob(
+				*blobs[0].Digest(), []byte("some different content"),
+			)
 			require.NoError(t, err)
 			require.NotNil(t, incorrectBlob)
 			_, err = manifest.NewBlobSet(
