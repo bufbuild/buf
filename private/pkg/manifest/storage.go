@@ -29,8 +29,8 @@ import (
 // manifestBucket is a storage.ReadBucket implementation from a manifest and an
 // array of blobs.
 type manifestBucket struct {
-	manifest   Manifest
-	pathToBlob map[string]Blob
+	manifest     Manifest
+	digestToBlob map[string]Blob
 }
 
 type manifestBucketObject struct {
@@ -91,26 +91,28 @@ func NewBucket(m Manifest, blobs []Blob) (storage.ReadBucket, error) {
 		}
 		digestToBlobs[digest] = b
 	}
-	pathToBlob := make(map[string]Blob, len(blobs))
 	for _, path := range m.Paths() {
 		pathDigest, ok := m.DigestFor(path)
 		if !ok {
+			// we're iterating manifest paths, this should never happen.
 			return nil, fmt.Errorf("path %q not present in manifest", path)
 		}
-		blob, ok := digestToBlobs[pathDigest.String()]
-		if !ok {
+		if _, ok := digestToBlobs[pathDigest.String()]; !ok {
 			return nil, fmt.Errorf("manifest path %q with digest %q has no associated blob", path, pathDigest.String())
 		}
-		pathToBlob[path] = blob
 	}
 	return &manifestBucket{
-		manifest:   m,
-		pathToBlob: pathToBlob,
+		manifest:     m,
+		digestToBlob: digestToBlobs,
 	}, nil
 }
 
 func (m *manifestBucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
-	blob, ok := m.pathToBlob[path]
+	digest, ok := m.manifest.pathToDigest[path]
+	if !ok {
+		return nil, storage.NewErrNotExist(path)
+	}
+	blob, ok := m.digestToBlob[digest.String()]
 	if !ok {
 		return nil, storage.NewErrNotExist(path)
 	}
@@ -125,8 +127,11 @@ func (m *manifestBucket) Get(ctx context.Context, path string) (storage.ReadObje
 }
 
 func (m *manifestBucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
-	_, ok := m.pathToBlob[path]
+	digest, ok := m.manifest.pathToDigest[path]
 	if !ok {
+		return nil, storage.NewErrNotExist(path)
+	}
+	if _, ok := m.digestToBlob[digest.String()]; !ok {
 		return nil, storage.NewErrNotExist(path)
 	}
 	// storage.ObjectInfo only requires path
@@ -146,8 +151,11 @@ func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage
 		if !normalpath.EqualsOrContainsPath(prefix, path, normalpath.Relative) {
 			continue
 		}
-		_, ok := m.pathToBlob[path]
+		digest, ok := m.manifest.pathToDigest[path]
 		if !ok {
+			return storage.NewErrNotExist(path)
+		}
+		if _, ok := m.digestToBlob[digest.String()]; !ok {
 			return storage.NewErrNotExist(path)
 		}
 		// storage.ObjectInfo only requires path
