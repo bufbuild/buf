@@ -84,9 +84,13 @@ func TestNewBucket(t *testing.T) {
 
 	t.Run("BucketWithAllManifestBlobsValidation", func(t *testing.T) {
 		t.Parallel()
+		// only send 3 blobs: there are 6 files with 4 different contents,
+		// regardless of which blobs are sent, there will always be missing at least
+		// one.
+		const blobsToSend = 3
 		incompleteBlobSet, err := manifest.NewBlobSet(
 			context.Background(),
-			blobs[1:], // removing one item
+			blobs[:blobsToSend],
 		)
 		require.NoError(t, err)
 
@@ -104,7 +108,7 @@ func TestNewBucket(t *testing.T) {
 			bucketFilesCount++
 			return nil
 		}))
-		assert.Equal(t, len(files)-1, bucketFilesCount) // all but the removed item
+		assert.Equal(t, blobsToSend, bucketFilesCount)
 	})
 
 	t.Run("BucketWithNoExtraBlobsValidation", func(t *testing.T) {
