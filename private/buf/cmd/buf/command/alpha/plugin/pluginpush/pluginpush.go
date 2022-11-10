@@ -268,7 +268,6 @@ func run(
 	plugin, err := bufplugin.NewPlugin(
 		pluginConfig.PluginVersion,
 		pluginConfig.Dependencies,
-		pluginConfig.DefaultOptions,
 		pluginConfig.Registry,
 		pushResponse.Digest,
 		pluginConfig.SourceURL,
@@ -312,7 +311,6 @@ func run(
 		bufplugin.PluginToProtoPluginRegistryType(plugin),
 		plugin.Version(),
 		plugin.ContainerImageDigest(),
-		bufpluginconfig.PluginOptionsToOptionsSlice(plugin.DefaultOptions()),
 		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
 		plugin.SourceURL(),
 		plugin.Description(),
