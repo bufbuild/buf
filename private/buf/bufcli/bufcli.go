@@ -48,6 +48,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/app/appname"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -597,7 +598,7 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 	)
 }
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
+// NewRegistryProviderWithToken creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
 // set in the header of all outgoing requests from this provider
 func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
 	return newRegistryProviderWithOptions(
@@ -635,6 +636,36 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 	options = append(options, opts...)
 
 	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
+}
+
+// NewConnectClientConfig creates a new connect.ClientConfig which uses a token reader to look
+// up the token in the container or in netrc based on the address of each individual client.
+// It is then set in the header of all outgoing requests from clients created using this config.
+func NewConnectClientConfig(container appflag.Container) (*connectclient.Config, error) {
+	// TODO: when the generated provider is ripped out, create this config directly
+	//  instead of converting from the provider
+	prov, err := NewRegistryProvider(context.Background(), container)
+	if err != nil {
+		return nil, err
+	}
+	return prov.ToClientConfig(), nil
+}
+
+// NewConnectClientConfigWithToken creates a new connect.ClientConfig with a given token. The provided token is
+// set in the header of all outgoing requests from this provider
+func NewConnectClientConfigWithToken(container appflag.Container, token string) (*connectclient.Config, error) {
+	// TODO: when the generated provider is ripped out, create this config directly
+	//  instead of converting from the provider
+	prov, err := newRegistryProviderWithOptions(
+		container,
+		bufapiclient.RegistryProviderWithAuthInterceptorProvider(
+			bufconnect.NewAuthorizationInterceptorProviderWithToken(token),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return prov.ToClientConfig(), nil
 }
 
 // PromptUserForDelete is used to receieve user confirmation that a specific
