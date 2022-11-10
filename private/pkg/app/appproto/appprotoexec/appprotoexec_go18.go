@@ -17,7 +17,6 @@
 package appprotoexec
 
 import (
-	"errors"
 	"os/exec"
 )
 
