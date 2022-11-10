@@ -744,15 +744,12 @@ func ReadModule(
 	ctx context.Context,
 	logger *zap.Logger,
 	sourceBucket storage.ReadBucket,
+	sourceConfig *bufconfig.Config,
 ) (bufmodule.Module, error) {
-	config, err := bufconfig.GetConfigForBucket(ctx, sourceBucket)
-	if err != nil {
-		return nil, err
-	}
 	return bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
 		ctx,
 		sourceBucket,
-		config.Build,
+		sourceConfig.Build,
 	)
 }
 
