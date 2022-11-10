@@ -58,17 +58,22 @@ func NewCommand(
 		Short: "Export the files from the input location to an output location.",
 		Long: bufcli.GetInputLong(`the source or module to export`) + `
 
+Examples:
+
 $ buf export <input> --output=<output-dir>
 
 input can be of the format [dir,git,mod,protofile,tar,targz,zip].
 
-output will represent a directory with all of the .proto files in the <input>.
-
-# Export a remote module locally.
-$ buf export buf.build/<owner>/<repo> --output=<output-dir>
+output will be a directory with all of the .proto files in the <input>.
 
 # Export current directory to another local directory. 
 $ buf export . --output=<output-dir>
+
+# Export a remote module to a local directory.
+$ buf export buf.build/<owner>/<repo> --output=<output-dir>
+
+# Export a git repo to a local directory.
+$ buf export https://<git-server>/<owner>/<repo>.git --output=<output-dir>
 
 `,
 		Args: cobra.MaximumNArgs(1),
