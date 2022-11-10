@@ -30,7 +30,7 @@ func TestPluginToProtoPluginRegistryType(t *testing.T) {
 }
 
 func assertPluginToPluginRegistryType(t testing.TB, config *bufpluginconfig.RegistryConfig, registryType registryv1alpha1.PluginRegistryType) {
-	plugin, err := NewPlugin("v1.0.0", nil, nil, config, "sha256:digest", "", "")
+	plugin, err := NewPlugin("v1.0.0", nil, config, "sha256:digest", "", "")
 	require.Nil(t, err)
 	assert.Equal(t, registryType, PluginToProtoPluginRegistryType(plugin))
 }
