@@ -246,6 +246,10 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 	if err != nil {
 		return nil, err
 	}
+	csharpNamespacePrefixConfig, err := newCsharpNamespacePrefixConfigV1(externalManagedConfig.CsharpNamespacePrefix)
+	if err != nil {
+		return nil, err
+	}
 	var optimizeFor *descriptorpb.FileOptions_OptimizeMode
 	if externalManagedConfig.OptimizeFor != "" {
 		value, ok := descriptorpb.FileOptions_OptimizeMode_value[externalManagedConfig.OptimizeFor]
@@ -282,13 +286,14 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 		}
 	}
 	return &ManagedConfig{
-		CcEnableArenas:        externalManagedConfig.CcEnableArenas,
-		JavaMultipleFiles:     externalManagedConfig.JavaMultipleFiles,
-		JavaStringCheckUtf8:   externalManagedConfig.JavaStringCheckUtf8,
-		JavaPackagePrefix:     javaPackagePrefixConfig,
-		OptimizeFor:           optimizeFor,
-		GoPackagePrefixConfig: goPackagePrefixConfig,
-		Override:              override,
+		CcEnableArenas:              externalManagedConfig.CcEnableArenas,
+		JavaMultipleFiles:           externalManagedConfig.JavaMultipleFiles,
+		JavaStringCheckUtf8:         externalManagedConfig.JavaStringCheckUtf8,
+		JavaPackagePrefix:           javaPackagePrefixConfig,
+		CsharpNameSpacePrefixConfig: csharpNamespacePrefixConfig,
+		OptimizeFor:                 optimizeFor,
+		GoPackagePrefixConfig:       goPackagePrefixConfig,
+		Override:                    override,
 	}, nil
 }
 
@@ -373,6 +378,45 @@ func newGoPackagePrefixConfigV1(externalGoPackagePrefixConfig ExternalGoPackageP
 	}
 	return &GoPackagePrefixConfig{
 		Default:  defaultGoPackagePrefix,
+		Except:   except,
+		Override: override,
+	}, nil
+}
+
+func newCsharpNamespacePrefixConfigV1(
+	externalCsharpNamespacePrefixConfig ExternalCsharpNamespacePrefixConfigV1,
+) (*CsharpNameSpacePrefixConfig, error) {
+	if externalCsharpNamespacePrefixConfig.IsEmpty() {
+		return nil, nil
+	}
+	// it's ok to have "" as default
+	seenModuleIdentities := make(map[string]struct{}, len(externalCsharpNamespacePrefixConfig.Except))
+	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalCsharpNamespacePrefixConfig.Except))
+	for _, moduleName := range externalCsharpNamespacePrefixConfig.Except {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid csharp_namespace_prefix except: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid csharp_namespace_prefix except: %q is defined multiple times", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		except = append(except, moduleIdentity)
+	}
+	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalCsharpNamespacePrefixConfig.Override))
+	for moduleName, csharpNamespacePrefix := range externalCsharpNamespacePrefixConfig.Override {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid csharp_namespace_prefix override key: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid csharp_namespace_prefix override: %q is already defined as an except", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		override[moduleIdentity] = csharpNamespacePrefix
+	}
+	return &CsharpNameSpacePrefixConfig{
+		Default:  externalCsharpNamespacePrefixConfig.Default,
 		Except:   except,
 		Override: override,
 	}, nil

@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
@@ -414,7 +415,6 @@ func newModifier(
 	modifier := bufimagemodify.NewMultiModifier(
 		bufimagemodify.JavaOuterClassname(logger, sweeper, managedConfig.Override[bufimagemodify.JavaOuterClassNameID]),
 		bufimagemodify.ObjcClassPrefix(logger, sweeper, managedConfig.Override[bufimagemodify.ObjcClassPrefixID]),
-		bufimagemodify.CsharpNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.CsharpNamespaceID]),
 		bufimagemodify.PhpNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpNamespaceID]),
 		bufimagemodify.PhpMetadataNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
 		bufimagemodify.RubyPackage(logger, sweeper, managedConfig.Override[bufimagemodify.RubyPackageID]),
@@ -476,6 +476,25 @@ func newModifier(
 		}
 		modifier = bufimagemodify.Merge(modifier, javaStringCheckUtf8)
 	}
+	var (
+		csharpNamespaceDefaultPrefix string
+		csharpNamespaceExcept        []bufmoduleref.ModuleIdentity
+		csharpNamespaceOverride      map[bufmoduleref.ModuleIdentity]string
+	)
+	if csharpNameSpacePrefixConfig := managedConfig.CsharpNameSpacePrefixConfig; csharpNameSpacePrefixConfig != nil {
+		csharpNamespaceDefaultPrefix = csharpNameSpacePrefixConfig.Default
+		csharpNamespaceExcept = csharpNameSpacePrefixConfig.Except
+		csharpNamespaceOverride = csharpNameSpacePrefixConfig.Override
+	}
+	csharpNamespaceModifier := bufimagemodify.CsharpNamespace(
+		logger,
+		sweeper,
+		csharpNamespaceDefaultPrefix,
+		csharpNamespaceExcept,
+		csharpNamespaceOverride,
+		managedConfig.Override[bufimagemodify.CsharpNamespaceID],
+	)
+	modifier = bufimagemodify.Merge(modifier, csharpNamespaceModifier)
 	if managedConfig.OptimizeFor != nil {
 		optimizeFor, err := bufimagemodify.OptimizeFor(
 			logger,

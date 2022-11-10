@@ -243,9 +243,19 @@ func ObjcClassPrefix(
 func CsharpNamespace(
 	logger *zap.Logger,
 	sweeper Sweeper,
+	defaultPrefix string,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) Modifier {
-	return csharpNamespace(logger, sweeper, overrides)
+	return csharpNamespace(
+		logger,
+		sweeper,
+		defaultPrefix,
+		except,
+		moduleOverrides,
+		overrides,
+	)
 }
 
 // PhpNamespace returns a Modifier that sets the php_namespace file option

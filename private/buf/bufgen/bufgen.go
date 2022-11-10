@@ -214,13 +214,14 @@ func (p *PluginConfig) IsRemote() bool {
 
 // ManagedConfig is the managed mode configuration.
 type ManagedConfig struct {
-	CcEnableArenas        *bool
-	JavaMultipleFiles     *bool
-	JavaStringCheckUtf8   *bool
-	JavaPackagePrefix     *JavaPackagePrefixConfig
-	OptimizeFor           *descriptorpb.FileOptions_OptimizeMode
-	GoPackagePrefixConfig *GoPackagePrefixConfig
-	Override              map[string]map[string]string
+	CcEnableArenas              *bool
+	JavaMultipleFiles           *bool
+	JavaStringCheckUtf8         *bool
+	JavaPackagePrefix           *JavaPackagePrefixConfig
+	CsharpNameSpacePrefixConfig *CsharpNameSpacePrefixConfig
+	OptimizeFor                 *descriptorpb.FileOptions_OptimizeMode
+	GoPackagePrefixConfig       *GoPackagePrefixConfig
+	Override                    map[string]map[string]string
 }
 
 // JavaPackagePrefixConfig is the java_package prefix configuration.
@@ -236,6 +237,14 @@ type GoPackagePrefixConfig struct {
 	Default string
 	Except  []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> go_package prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// CsharpNameSpacePrefixConfig is the csharp_namespace prefix configuration.
+type CsharpNameSpacePrefixConfig struct {
+	Default string
+	Except  []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> csharp_namespace prefix.
 	Override map[bufmoduleref.ModuleIdentity]string
 }
 
@@ -302,14 +311,15 @@ type ExternalPluginConfigV1 struct {
 //
 // Only use outside of this package for testing.
 type ExternalManagedConfigV1 struct {
-	Enabled             bool                              `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	CcEnableArenas      *bool                             `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
-	JavaMultipleFiles   *bool                             `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
-	JavaStringCheckUtf8 *bool                             `json:"java_string_check_utf8,omitempty" yaml:"java_string_check_utf8,omitempty"`
-	JavaPackagePrefix   ExternalJavaPackagePrefixConfigV1 `json:"java_package_prefix,omitempty" yaml:"java_package_prefix,omitempty"`
-	OptimizeFor         string                            `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
-	GoPackagePrefix     ExternalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
-	Override            map[string]map[string]string      `json:"override,omitempty" yaml:"override,omitempty"`
+	Enabled               bool                                  `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	CcEnableArenas        *bool                                 `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
+	JavaMultipleFiles     *bool                                 `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
+	JavaStringCheckUtf8   *bool                                 `json:"java_string_check_utf8,omitempty" yaml:"java_string_check_utf8,omitempty"`
+	JavaPackagePrefix     ExternalJavaPackagePrefixConfigV1     `json:"java_package_prefix,omitempty" yaml:"java_package_prefix,omitempty"`
+	CsharpNamespacePrefix ExternalCsharpNamespacePrefixConfigV1 `json:"csharp_namespace_prefix,omitempty" yaml:"csharp_namespace_prefix,omitempty"`
+	OptimizeFor           string                                `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
+	GoPackagePrefix       ExternalGoPackagePrefixConfigV1       `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
+	Override              map[string]map[string]string          `json:"override,omitempty" yaml:"override,omitempty"`
 }
 
 // IsEmpty returns true if the config is empty, excluding the 'Enabled' setting.
@@ -378,6 +388,20 @@ type ExternalGoPackagePrefixConfigV1 struct {
 
 // IsEmpty returns true if the config is empty.
 func (e ExternalGoPackagePrefixConfigV1) IsEmpty() bool {
+	return e.Default == "" &&
+		len(e.Except) == 0 &&
+		len(e.Override) == 0
+}
+
+// ExternalGoPackagePrefixConfigV1 is the external go_package prefix configuration.
+type ExternalCsharpNamespacePrefixConfigV1 struct {
+	Default  string            `json:"default,omitempty" yaml:"default,omitempty"`
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// IsEmpty returns true if the config is empty.
+func (e ExternalCsharpNamespacePrefixConfigV1) IsEmpty() bool {
 	return e.Default == "" &&
 		len(e.Except) == 0 &&
 		len(e.Override) == 0

@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -35,19 +36,46 @@ var csharpNamespacePath = []int32{8, 37}
 func csharpNamespace(
 	logger *zap.Logger,
 	sweeper Sweeper,
+	defaultPrefix string,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) Modifier {
+	// Convert the bufmoduleref.ModuleIdentity types into
+	// strings so that they're comparable.
+	exceptModuleIdentityStrings := make(map[string]struct{}, len(except))
+	for _, moduleIdentity := range except {
+		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
+	}
+	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
+	for moduleIdentity, csharpNamespacePrefix := range moduleOverrides {
+		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = csharpNamespacePrefix
+	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				csharpNamespaceValue := csharpNamespaceValue(imageFile)
+				namespacePrefix := defaultPrefix
+				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+					moduleIdentityString := moduleIdentity.IdentityString()
+					if modulePrefixOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
+						namespacePrefix = modulePrefixOverride
+						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+					}
+				}
+				csharpNamespaceValue := csharpNamespaceValue(imageFile, namespacePrefix)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					csharpNamespaceValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
 				if err := csharpNamespaceForFile(ctx, sweeper, imageFile, csharpNamespaceValue); err != nil {
 					return err
+				}
+			}
+			for moduleIdentityString := range overrideModuleIdentityStrings {
+				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
+					logger.Sugar().Warnf("csharp_namespace_prefix override for %q was unused", moduleIdentityString)
 				}
 			}
 			for overrideFile := range overrides {
@@ -82,10 +110,28 @@ func csharpNamespaceForFile(
 	return nil
 }
 
+func csharpNamespaceValue(imageFile bufimage.ImageFile, namespacePrefix string) string {
+	subNamespace := csharpSubNamespaceValue(imageFile)
+	// TODO: check if prefix is trimmed before passed here
+	if namespacePrefix == "" {
+		return subNamespace
+	}
+	if subNamespace == "" {
+		return namespacePrefix
+	}
+	return strings.Join(
+		[]string{
+			namespacePrefix,
+			subNamespace,
+		},
+		".",
+	)
+}
+
 // csharpNamespaceValue returns the csharp_namespace for the given ImageFile based on its
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
-func csharpNamespaceValue(imageFile bufimage.ImageFile) string {
+func csharpSubNamespaceValue(imageFile bufimage.ImageFile) string {
 	pkg := imageFile.Proto().GetPackage()
 	if pkg == "" {
 		return ""
