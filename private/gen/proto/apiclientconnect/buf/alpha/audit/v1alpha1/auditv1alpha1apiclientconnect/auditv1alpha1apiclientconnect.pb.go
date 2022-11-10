@@ -21,6 +21,7 @@ import (
 	auditv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/audit/v1alpha1/auditv1alpha1api"
 	auditv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/audit/v1alpha1/auditv1alpha1apiclient"
 	auditv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/audit/v1alpha1/auditv1alpha1connect"
+	connect "github.com/bufbuild/buf/private/pkg/connect"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
 )
@@ -72,6 +73,20 @@ func WithAuthInterceptorProvider(authInterceptorProvider func(string) connect_go
 	return func(provider *provider) {
 		provider.authInterceptorProvider = authInterceptorProvider
 	}
+}
+
+func (p *provider) ToClientConfig() *connect.ClientConfig {
+	var opts []connect.ClientConfigOption
+	if p.addressMapper != nil {
+		opts = append(opts, connect.WithAddressMapper(p.addressMapper))
+	}
+	if len(p.interceptors) > 0 {
+		opts = append(opts, connect.WithInterceptors(p.interceptors))
+	}
+	if p.authInterceptorProvider != nil {
+		opts = append(opts, connect.WithAuthInterceptorProvider(p.authInterceptorProvider))
+	}
+	return connect.NewClientConfig(p.httpClient, opts...)
 }
 
 // NewAuditService creates a new AuditService

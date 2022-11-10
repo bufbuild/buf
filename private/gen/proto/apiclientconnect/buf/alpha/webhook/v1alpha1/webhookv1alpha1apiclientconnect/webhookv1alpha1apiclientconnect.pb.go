@@ -21,6 +21,7 @@ import (
 	webhookv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/webhook/v1alpha1/webhookv1alpha1api"
 	webhookv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/webhook/v1alpha1/webhookv1alpha1apiclient"
 	webhookv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/webhook/v1alpha1/webhookv1alpha1connect"
+	connect "github.com/bufbuild/buf/private/pkg/connect"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
 )
@@ -72,6 +73,20 @@ func WithAuthInterceptorProvider(authInterceptorProvider func(string) connect_go
 	return func(provider *provider) {
 		provider.authInterceptorProvider = authInterceptorProvider
 	}
+}
+
+func (p *provider) ToClientConfig() *connect.ClientConfig {
+	var opts []connect.ClientConfigOption
+	if p.addressMapper != nil {
+		opts = append(opts, connect.WithAddressMapper(p.addressMapper))
+	}
+	if len(p.interceptors) > 0 {
+		opts = append(opts, connect.WithInterceptors(p.interceptors))
+	}
+	if p.authInterceptorProvider != nil {
+		opts = append(opts, connect.WithAuthInterceptorProvider(p.authInterceptorProvider))
+	}
+	return connect.NewClientConfig(p.httpClient, opts...)
 }
 
 // NewEventService creates a new EventService
