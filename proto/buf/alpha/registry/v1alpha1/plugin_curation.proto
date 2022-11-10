@@ -132,7 +132,6 @@ message CuratedPlugin {
   // the algorithm.
   // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
   string container_image_digest = 6;
-  reserved 7;
   // The creation time of the plugin.
   google.protobuf.Timestamp create_time = 8;
   // List of plugin dependencies.
@@ -220,7 +219,6 @@ message CreateCuratedPluginRequest {
   // the algorithm.
   // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
   string container_image_digest = 5;
-  reserved 6;
   // List of plugin dependencies.
   repeated CuratedPluginReference dependencies = 7;
   // The URL leading to the source code of the plugin, if available.
