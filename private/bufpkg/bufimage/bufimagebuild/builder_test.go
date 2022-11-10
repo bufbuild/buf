@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -270,7 +271,13 @@ func TestCyclicImport(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"cyclicimport",
-		fmt.Sprintf(`%s:5:8:cycle found in imports: "a/a.proto" -> "b/b.proto" -> "a/a.proto"`, filepath.FromSlash("testdata/cyclicimport/a/a.proto")),
+		// This is mostly deterministic, but toggling -race on or off when running tests changes the
+		// observed order. So we need this to work correctly either way.
+		fmt.Sprintf(`%s:5:8:cycle found in imports: "a/a.proto" -> "b/b.proto" -> "a/a.proto"
+				|| %s:5:8:cycle found in imports: "b/b.proto" -> "a/a.proto" -> "b/b.proto"`,
+			filepath.FromSlash("testdata/cyclicimport/a/a.proto"),
+			filepath.FromSlash("testdata/cyclicimport/b/b.proto"),
+		),
 	)
 }
 
@@ -397,7 +404,19 @@ func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
 	for i, annotation := range fileAnnotations {
 		got[i] = annotation.String()
 	}
-	require.Equal(t, want, got)
+	require.Equal(t, len(want), len(got))
+	for i := range want {
+		options := strings.Split(want[i], "||")
+		matched := false
+		for _, option := range options {
+			option = strings.TrimSpace(option)
+			if got[i] == option {
+				matched = true
+				break
+			}
+		}
+		require.True(t, matched, "annotation at index %d: wanted %q ; got %q", i, want[i], got[i])
+	}
 }
 
 func testImageWithExcludedFilePaths(t *testing.T, image bufimage.Image, excludePaths []string) {

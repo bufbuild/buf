@@ -79,6 +79,10 @@ type RepositoryServiceClient interface {
 	GetRepositorySettings(context.Context, *connect_go.Request[v1alpha1.GetRepositorySettingsRequest]) (*connect_go.Response[v1alpha1.GetRepositorySettingsResponse], error)
 	// UpdateRepositorySettingsByName updates the settings of a repository.
 	UpdateRepositorySettingsByName(context.Context, *connect_go.Request[v1alpha1.UpdateRepositorySettingsByNameRequest]) (*connect_go.Response[v1alpha1.UpdateRepositorySettingsByNameResponse], error)
+	// GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
+	// request should match the length of the metadata in the response, and the order of repositories in the response
+	// should match the order of the metadata in the request.
+	GetRepositoriesMetadata(context.Context, *connect_go.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect_go.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
 }
 
 // NewRepositoryServiceClient constructs a client for the
@@ -177,6 +181,11 @@ func NewRepositoryServiceClient(httpClient connect_go.HTTPClient, baseURL string
 			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositorySettingsByName",
 			opts...,
 		),
+		getRepositoriesMetadata: connect_go.NewClient[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesMetadata",
+			opts...,
+		),
 	}
 }
 
@@ -199,6 +208,7 @@ type repositoryServiceClient struct {
 	getRepositoryContributor       *connect_go.Client[v1alpha1.GetRepositoryContributorRequest, v1alpha1.GetRepositoryContributorResponse]
 	getRepositorySettings          *connect_go.Client[v1alpha1.GetRepositorySettingsRequest, v1alpha1.GetRepositorySettingsResponse]
 	updateRepositorySettingsByName *connect_go.Client[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse]
+	getRepositoriesMetadata        *connect_go.Client[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse]
 }
 
 // GetRepository calls buf.alpha.registry.v1alpha1.RepositoryService.GetRepository.
@@ -298,6 +308,12 @@ func (c *repositoryServiceClient) UpdateRepositorySettingsByName(ctx context.Con
 	return c.updateRepositorySettingsByName.CallUnary(ctx, req)
 }
 
+// GetRepositoriesMetadata calls
+// buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata.
+func (c *repositoryServiceClient) GetRepositoriesMetadata(ctx context.Context, req *connect_go.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect_go.Response[v1alpha1.GetRepositoriesMetadataResponse], error) {
+	return c.getRepositoriesMetadata.CallUnary(ctx, req)
+}
+
 // RepositoryServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryService service.
 type RepositoryServiceHandler interface {
@@ -338,6 +354,10 @@ type RepositoryServiceHandler interface {
 	GetRepositorySettings(context.Context, *connect_go.Request[v1alpha1.GetRepositorySettingsRequest]) (*connect_go.Response[v1alpha1.GetRepositorySettingsResponse], error)
 	// UpdateRepositorySettingsByName updates the settings of a repository.
 	UpdateRepositorySettingsByName(context.Context, *connect_go.Request[v1alpha1.UpdateRepositorySettingsByNameRequest]) (*connect_go.Response[v1alpha1.UpdateRepositorySettingsByNameResponse], error)
+	// GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
+	// request should match the length of the metadata in the response, and the order of repositories in the response
+	// should match the order of the metadata in the request.
+	GetRepositoriesMetadata(context.Context, *connect_go.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect_go.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
 }
 
 // NewRepositoryServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -432,6 +452,11 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect_g
 		svc.UpdateRepositorySettingsByName,
 		opts...,
 	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesMetadata", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesMetadata",
+		svc.GetRepositoriesMetadata,
+		opts...,
+	))
 	return "/buf.alpha.registry.v1alpha1.RepositoryService/", mux
 }
 
@@ -504,4 +529,8 @@ func (UnimplementedRepositoryServiceHandler) GetRepositorySettings(context.Conte
 
 func (UnimplementedRepositoryServiceHandler) UpdateRepositorySettingsByName(context.Context, *connect_go.Request[v1alpha1.UpdateRepositorySettingsByNameRequest]) (*connect_go.Response[v1alpha1.UpdateRepositorySettingsByNameResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.UpdateRepositorySettingsByName is not implemented"))
+}
+
+func (UnimplementedRepositoryServiceHandler) GetRepositoriesMetadata(context.Context, *connect_go.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect_go.Response[v1alpha1.GetRepositoriesMetadataResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata is not implemented"))
 }

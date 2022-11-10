@@ -19,12 +19,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
@@ -39,8 +41,8 @@ func (m *mockBucketProvider) NewReadWriteBucket(
 	return storagemem.NewReadWriteBucketWithOptions(storagemem.WithFiles(m.files))
 }
 
-func TestReadModuleWithWorkspacesDisabled(t *testing.T) {
-	testReadModuleWithWorkspacesDisabled(
+func TestBucketAndConfigForSource(t *testing.T) {
+	testBucketAndConfigForSource(
 		t,
 		"minimal module",
 		moduleFiles("remote/owner/repository"),
@@ -48,7 +50,7 @@ func TestReadModuleWithWorkspacesDisabled(t *testing.T) {
 		nil,
 		"",
 	)
-	testReadModuleWithWorkspacesDisabled(
+	testBucketAndConfigForSource(
 		t,
 		"bad name",
 		moduleFiles("foo"),
@@ -56,7 +58,7 @@ func TestReadModuleWithWorkspacesDisabled(t *testing.T) {
 		nil,
 		"module identity",
 	)
-	testReadModuleWithWorkspacesDisabled(
+	testBucketAndConfigForSource(
 		t,
 		"bad path",
 		moduleFiles("remote/owner/repository"),
@@ -64,7 +66,7 @@ func TestReadModuleWithWorkspacesDisabled(t *testing.T) {
 		nil,
 		"invalid dir path",
 	)
-	testReadModuleWithWorkspacesDisabled(
+	testBucketAndConfigForSource(
 		t,
 		"no config file",
 		nil,
@@ -72,7 +74,7 @@ func TestReadModuleWithWorkspacesDisabled(t *testing.T) {
 		ErrNoConfigFile,
 		"",
 	)
-	testReadModuleWithWorkspacesDisabled(
+	testBucketAndConfigForSource(
 		t,
 		"no module name",
 		moduleFiles(""),
@@ -80,6 +82,27 @@ func TestReadModuleWithWorkspacesDisabled(t *testing.T) {
 		ErrNoModuleName,
 		"",
 	)
+}
+
+func TestReadModule(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	logger := zap.NewNop()
+	sourceBucket, sourceConfig, err := bucketAndConfig(
+		ctx,
+		logger,
+		moduleFiles("remote/owner/repository"),
+		".",
+	)
+	require.NoError(t, err)
+	module, err := ReadModule(
+		ctx,
+		logger,
+		sourceBucket,
+		sourceConfig,
+	)
+	assert.NotNil(t, module)
+	assert.NoError(t, err)
 }
 
 func moduleFiles(name string) map[string][]byte {
@@ -92,7 +115,28 @@ func moduleFiles(name string) map[string][]byte {
 	}
 }
 
-func testReadModuleWithWorkspacesDisabled(
+func bucketAndConfig(
+	ctx context.Context,
+	logger *zap.Logger,
+	files map[string][]byte,
+	source string,
+) (storage.ReadBucketCloser, *bufconfig.Config, error) {
+	container := app.NewContainer(nil, nil, nil, nil)
+	bucketProvider := &mockBucketProvider{
+		files: files,
+	}
+	runner := command.NewRunner()
+	return BucketAndConfigForSource(
+		ctx,
+		logger,
+		container,
+		bucketProvider,
+		runner,
+		source,
+	)
+}
+
+func testBucketAndConfigForSource(
 	t *testing.T,
 	desc string,
 	files map[string][]byte,
@@ -105,22 +149,15 @@ func testReadModuleWithWorkspacesDisabled(
 		t.Parallel()
 		ctx := context.Background()
 		logger := zap.NewNop()
-		container := app.NewContainer(nil, nil, nil, nil)
-		bucketProvider := &mockBucketProvider{
-			files: files,
-		}
-		runner := command.NewRunner()
-		module, identity, err := ReadModuleWithWorkspacesDisabled(
+		sourceBucket, sourceConfig, err := bucketAndConfig(
 			ctx,
 			logger,
-			container,
-			bucketProvider,
-			runner,
+			files,
 			source,
 		)
 		if expectedErr == nil && expectedErrContains == "" {
-			assert.NotNil(t, module)
-			assert.NotNil(t, identity)
+			assert.NotNil(t, sourceBucket)
+			assert.NotNil(t, sourceConfig)
 			assert.NoError(t, err)
 			return
 		}

@@ -53,10 +53,13 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 		},
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
-		NPM: &bufpluginconfig.NPMRegistryConfig{},
+		NPM: &bufpluginconfig.NPMRegistryConfig{
+			ImportStyle: "module",
+		},
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
 		NPM: &bufpluginconfig.NPMRegistryConfig{
+			ImportStyle:             "module",
 			RewriteImportPathSuffix: "connectweb.js",
 			Deps: []*bufpluginconfig.NPMRegistryDependencyConfig{
 				{
@@ -80,21 +83,14 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			"separate_package": "true",
 		},
 	})
-	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
-		NPM: &bufpluginconfig.NPMRegistryConfig{
-			Deps: []*bufpluginconfig.NPMRegistryDependencyConfig{
-				{
-					Package: "google-protobuf",
-					Version: "^3.21.2",
-				},
-			},
-		},
-		Hidden: true,
-	})
 }
 
 func assertPluginRegistryRoundTrip(t testing.TB, config *bufpluginconfig.RegistryConfig) {
-	assert.Equal(t, config, ProtoRegistryConfigToPluginRegistry(PluginRegistryToProtoRegistryConfig(config)))
+	protoRegistryConfig, err := PluginRegistryToProtoRegistryConfig(config)
+	require.NoError(t, err)
+	registryConfig, err := ProtoRegistryConfigToPluginRegistry(protoRegistryConfig)
+	require.NoError(t, err)
+	assert.Equal(t, config, registryConfig)
 }
 
 func TestLanguagesToProtoLanguages(t *testing.T) {
