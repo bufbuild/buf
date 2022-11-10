@@ -108,7 +108,7 @@ func TestNewBucket(t *testing.T) {
 			bucketFilesCount++
 			return nil
 		}))
-		assert.Equal(t, blobsToSend, bucketFilesCount)
+		assert.Less(t, bucketFilesCount, len(files)) // incomplete bucket
 	})
 
 	t.Run("BucketWithNoExtraBlobsValidation", func(t *testing.T) {
