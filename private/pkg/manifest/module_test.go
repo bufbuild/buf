@@ -16,6 +16,9 @@ package manifest_test
 
 import (
 	"bytes"
+	"context"
+	"fmt"
+	"io"
 	"testing"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -43,6 +46,127 @@ func TestDigestFromBlobHash(t *testing.T) {
 	digestFromBlobHash, err := manifest.NewDigestFromBlobHash(&blobHash)
 	require.NoError(t, err)
 	assert.Equal(t, digestFromContent.String(), digestFromBlobHash.String())
+}
+
+func TestNewMemoryBlob(t *testing.T) {
+	t.Parallel()
+	const content = "some file content"
+	digest := mustDigestShake256(t, []byte(content))
+	blob, err := manifest.NewMemoryBlob(
+		*digest,
+		[]byte(content),
+		manifest.MemoryBlobWithHashValidation(),
+	)
+	require.NoError(t, err)
+	assert.True(t, blob.Digest().Equal(*digest))
+	file, err := blob.Open(context.Background())
+	require.NoError(t, err)
+	blobContent, err := io.ReadAll(file)
+	require.NoError(t, err)
+	assert.Equal(t, []byte(content), blobContent)
+}
+
+func TestInvalidMemoryBlob(t *testing.T) {
+	t.Parallel()
+	const content = "some file content"
+	digest := mustDigestShake256(t, []byte(content))
+
+	t.Run("NoValidateHash", func(t *testing.T) {
+		t.Parallel()
+		_, err := manifest.NewMemoryBlob(*digest, []byte("different content"))
+		assert.NoError(t, err)
+	})
+	t.Run("ValidatingHash", func(t *testing.T) {
+		t.Parallel()
+		_, err := manifest.NewMemoryBlob(
+			*digest,
+			[]byte("different content"),
+			manifest.MemoryBlobWithHashValidation(),
+		)
+		assert.Error(t, err)
+	})
+}
+
+func TestNewDigestFromBlobHash(t *testing.T) {
+	t.Parallel()
+	digest := mustDigestShake256(t, []byte("my content"))
+	retDigest, err := manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
+		Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
+		Digest: digest.Bytes(),
+	})
+	require.NoError(t, err)
+	assert.True(t, digest.Equal(*retDigest))
+}
+
+func TestInvalidNewDigestFromBlobHash(t *testing.T) {
+	t.Parallel()
+	_, err := manifest.NewDigestFromBlobHash(nil)
+	assert.Error(t, err)
+	_, err = manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
+		Kind: modulev1alpha1.HashKind_HASH_KIND_UNSPECIFIED,
+	})
+	assert.Error(t, err)
+	_, err = manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
+		Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
+		Digest: []byte("invalid digest"),
+	})
+	assert.Error(t, err)
+}
+
+func TestNewBlobSet(t *testing.T) {
+	t.Parallel()
+	var blobs []manifest.Blob
+	for i := 0; i < 10; i++ {
+		content := fmt.Sprintf("some content %d", i)
+		digest := mustDigestShake256(t, []byte(content))
+		blob, err := manifest.NewMemoryBlob(
+			*digest, []byte(content),
+			manifest.MemoryBlobWithHashValidation(),
+		)
+		require.NoError(t, err)
+		blobs = append(blobs, blob)
+	}
+
+	t.Run("Valid", func(t *testing.T) {
+		t.Parallel()
+		blobSet, err := manifest.NewBlobSet(
+			context.Background(),
+			blobs,
+			manifest.BlobSetWithContentValidation(),
+		)
+		require.NoError(t, err)
+		assert.NotNil(t, blobSet)
+	})
+
+	t.Run("BlobSetWithContentValidation", func(t *testing.T) {
+		t.Parallel()
+		t.Run("DuplicatedValidBlobs", func(t *testing.T) {
+			t.Parallel()
+			duplicatedBlobs := append(blobs, blobs[0])
+			blobSet, err := manifest.NewBlobSet(
+				context.Background(),
+				duplicatedBlobs,
+				manifest.BlobSetWithContentValidation(),
+			)
+			require.NoError(t, err)
+			assert.NotNil(t, blobSet)
+		})
+
+		t.Run("DuplicatedInvalidBlobs", func(t *testing.T) {
+			t.Parallel()
+			incorrectBlob, err := manifest.NewMemoryBlob(
+				*blobs[0].Digest(), []byte("some different content"),
+			)
+			require.NoError(t, err)
+			require.NotNil(t, incorrectBlob)
+			_, err = manifest.NewBlobSet(
+				context.Background(),
+				append(blobs, incorrectBlob),
+				manifest.BlobSetWithContentValidation(),
+			)
+			require.Error(t, err)
+		})
+	})
 }
 
 func TestBlobFromReader(t *testing.T) {
