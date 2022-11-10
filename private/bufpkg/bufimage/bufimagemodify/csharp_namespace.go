@@ -69,7 +69,13 @@ func csharpNamespace(
 					csharpNamespaceValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
-				if err := csharpNamespaceForFile(ctx, sweeper, imageFile, csharpNamespaceValue); err != nil {
+				if err := csharpNamespaceForFile(
+					ctx,
+					sweeper,
+					imageFile,
+					csharpNamespaceValue,
+					exceptModuleIdentityStrings,
+				); err != nil {
 					return err
 				}
 			}
@@ -93,13 +99,14 @@ func csharpNamespaceForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	csharpNamespaceValue string,
+	exceptModuleIdentityStrings map[string]struct{},
 ) error {
-	descriptor := imageFile.Proto()
-	if isWellKnownType(ctx, imageFile) || csharpNamespaceValue == "" {
+	if shouldSkipCsharpNamespaceForFile(ctx, imageFile, csharpNamespaceValue, exceptModuleIdentityStrings) {
 		// This is a well-known type or we could not resolve a non-empty csharp_namespace
 		// value, so this is a no-op.
 		return nil
 	}
+	descriptor := imageFile.Proto()
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
@@ -108,6 +115,26 @@ func csharpNamespaceForFile(
 		sweeper.mark(imageFile.Path(), csharpNamespacePath)
 	}
 	return nil
+}
+
+func shouldSkipCsharpNamespaceForFile(
+	ctx context.Context,
+	imageFile bufimage.ImageFile,
+	csharpNamespaceValue string,
+	exceptModuleIdentityStrings map[string]struct{},
+) bool {
+	if isWellKnownType(ctx, imageFile) || csharpNamespaceValue == "" {
+		// This is a well-known type or we could not resolve a non-empty csharp_namespace
+		// value, so this is a no-op.
+		return true
+	}
+
+	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 func csharpNamespaceValue(imageFile bufimage.ImageFile, namespacePrefix string) string {
