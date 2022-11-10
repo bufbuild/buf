@@ -88,7 +88,7 @@ func TestReadModule(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := zap.NewNop()
-	sourceBucket, sourceConfig, err := bucketAndConfig(
+	sourceBucket, _, err := bucketFrom(
 		ctx,
 		logger,
 		moduleFiles("remote/owner/repository"),
@@ -99,7 +99,6 @@ func TestReadModule(t *testing.T) {
 		ctx,
 		logger,
 		sourceBucket,
-		sourceConfig,
 	)
 	assert.NotNil(t, module)
 	assert.NoError(t, err)
@@ -115,7 +114,7 @@ func moduleFiles(name string) map[string][]byte {
 	}
 }
 
-func bucketAndConfig(
+func bucketFrom(
 	ctx context.Context,
 	logger *zap.Logger,
 	files map[string][]byte,
@@ -149,7 +148,7 @@ func testBucketAndConfigForSource(
 		t.Parallel()
 		ctx := context.Background()
 		logger := zap.NewNop()
-		sourceBucket, sourceConfig, err := bucketAndConfig(
+		sourceBucket, sourceConfig, err := bucketFrom(
 			ctx,
 			logger,
 			files,

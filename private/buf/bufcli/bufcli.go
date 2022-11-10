@@ -743,13 +743,16 @@ func BucketAndConfigForSource(
 func ReadModule(
 	ctx context.Context,
 	logger *zap.Logger,
-	sourceBucket storage.ReadBucketCloser,
-	sourceConfig *bufconfig.Config,
+	sourceBucket storage.ReadBucket,
 ) (bufmodule.Module, error) {
+	config, err := bufconfig.GetConfigForBucket(ctx, sourceBucket)
+	if err != nil {
+		return nil, err
+	}
 	return bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
 		ctx,
 		sourceBucket,
-		sourceConfig.Build,
+		config.Build,
 	)
 }
 
