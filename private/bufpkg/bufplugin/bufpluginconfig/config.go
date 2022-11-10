@@ -150,7 +150,6 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		return &RegistryConfig{
 			NPM:     npmRegistryConfig,
 			Options: options,
-			Hidden:  externalRegistryConfig.Hidden,
 		}, nil
 	}
 	// At this point, the Go runtime is guaranteed to be specified. Note
@@ -162,7 +161,6 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 	return &RegistryConfig{
 		Go:      goRegistryConfig,
 		Options: options,
-		Hidden:  externalRegistryConfig.Hidden,
 	}, nil
 }
 
@@ -195,9 +193,15 @@ func newNPMRegistryConfig(externalNPMRegistryConfig *ExternalNPMRegistryConfig) 
 			},
 		)
 	}
+	switch externalNPMRegistryConfig.ImportStyle {
+	case "module", "commonjs":
+	default:
+		return nil, errors.New(`npm registry config import_style must be one of: "module" or "commonjs"`)
+	}
 	return &NPMRegistryConfig{
 		RewriteImportPathSuffix: externalNPMRegistryConfig.RewriteImportPathSuffix,
 		Deps:                    dependencies,
+		ImportStyle:             externalNPMRegistryConfig.ImportStyle,
 	}, nil
 }
 

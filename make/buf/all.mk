@@ -10,6 +10,7 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientconnect \
 	private/bufpkg/bufstyle/cmd/bufstyle \
+	private/bufpkg/bufwkt/cmd/wkt-go-data \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
@@ -23,6 +24,7 @@ DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
 	.ctrlp \
+	.idea/ \
 	.vscode/ \
 	private/buf/cmd/buf/command/alpha/protoc/test.txt \
 	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
@@ -66,11 +68,11 @@ bandeps: installbandeps
 postlonglint:: bandeps
 
 .PHONY: godata
-godata: installspdx-go-data installstorage-go-data $(PROTOC)
+godata: installspdx-go-data installwkt-go-data $(PROTOC)
 	rm -rf private/gen/data
 	mkdir -p private/gen/data/datawkt
 	mkdir -p private/gen/data/dataspdx
-	storage-go-data $(CACHE_INCLUDE) --package datawkt > private/gen/data/datawkt/datawkt.gen.go
+	wkt-go-data $(CACHE_INCLUDE) --package datawkt > private/gen/data/datawkt/datawkt.gen.go
 	spdx-go-data --package dataspdx > private/gen/data/dataspdx/dataspdx.gen.go
 
 prepostgenerate:: godata
@@ -122,7 +124,7 @@ bufgeneratesteps:: \
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
-	DOCKER_IMAGE=golang:1.19.2-bullseye bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.19.3-bullseye bash make/buf/scripts/release.bash
 
 # We have to manually set the Homebrew version on the Homebrew badge as there
 # is no badge on shields.io for Homebrew packages outside of homebrew-core

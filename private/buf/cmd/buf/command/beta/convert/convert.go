@@ -16,11 +16,14 @@ package convert
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconvert"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -148,11 +151,11 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
-	image, err := bufcli.NewImageForSource(
+	image, inputErr := bufcli.NewImageForSource(
 		ctx,
 		container,
 		input,
@@ -164,8 +167,30 @@ func run(
 		false, // externalDirOrFilePathsAllowNotExist
 		false, // excludeSourceCodeInfo
 	)
-	if err != nil {
-		return err
+	var resolveWellKnownType bool
+	// only resolve wkts if input was not set.
+	if container.NumArgs() == 0 {
+		if inputErr != nil {
+			resolveWellKnownType = true
+		}
+		if image != nil {
+			_, filterErr := bufimageutil.ImageFilteredByTypes(image, flags.Type)
+			if errors.Is(filterErr, bufimageutil.ErrImageFilterTypeNotFound) {
+				resolveWellKnownType = true
+			}
+		}
+	}
+	if resolveWellKnownType {
+		if _, ok := datawkt.MessageFilePath(flags.Type); ok {
+			var wktErr error
+			image, wktErr = bufcli.WellKnownTypeImage(ctx, container.Logger(), flags.Type)
+			if wktErr != nil {
+				return wktErr
+			}
+		}
+	}
+	if inputErr != nil && image == nil {
+		return inputErr
 	}
 	fromMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.From, bufconvert.MessageEncodingBin)
 	if err != nil {

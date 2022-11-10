@@ -16,6 +16,7 @@ package push
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -139,12 +140,23 @@ func run(
 	runner := command.NewRunner()
 	// We are pushing to the BSR, this module has to be independently buildable
 	// given the configuration it has without any enclosing workspace.
-	module, moduleIdentity, err := bufcli.ReadModuleWithWorkspacesDisabled(
+	sourceBucket, sourceConfig, err := bufcli.BucketAndConfigForSource(
 		ctx,
+		container.Logger(),
 		container,
 		storageosProvider,
 		runner,
 		source,
+	)
+	if err != nil {
+		return err
+	}
+	moduleIdentity := sourceConfig.ModuleIdentity
+	module, err := bufcli.ReadModule(
+		ctx,
+		container.Logger(),
+		sourceBucket,
+		sourceConfig,
 	)
 	if err != nil {
 		return err
@@ -181,6 +193,9 @@ func run(
 			return nil
 		}
 		return err
+	}
+	if localModulePin == nil {
+		return errors.New("Missing local module pin in the registry's response.")
 	}
 	if _, err := container.Stdout().Write([]byte(localModulePin.Commit + "\n")); err != nil {
 		return err

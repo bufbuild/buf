@@ -15,7 +15,7 @@ jobs:
         if: success()
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19.2
+          go-version: 1.19.3
       - name: cache
         if: success()
         uses: actions/cache@v3
@@ -44,7 +44,7 @@ jobs:
         if: success()
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19.2
+          go-version: 1.19.3
       - name: cache
         if: success()
         uses: actions/cache@v3
@@ -96,9 +96,9 @@ jobs:
         id: tag
         run: |
           if echo "${GITHUB_REF}" | grep ^refs/heads/main$ >/dev/null; then
-            echo ::set-output name=tag::latest
+            echo "tag=latest" >> $GITHUB_OUTPUT
           elif echo "${GITHUB_REF}" | grep ^refs/tags/v >/dev/null; then
-            echo ::set-output name=tag::"$(echo "${GITHUB_REF}" | sed "s/refs\/tags\/v//")"
+            echo "tag=${GITHUB_REF}" | sed "s|refs/tags/v||" >> $GITHUB_OUTPUT
           fi
       - name: docker-build-push
         uses: docker/build-push-action@v3

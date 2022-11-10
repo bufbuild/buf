@@ -35,11 +35,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -51,6 +52,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
@@ -621,6 +623,9 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 			if buftransport.IsAPISubdomainEnabled(container) {
 				address = buftransport.PrependAPISubdomain(address)
 			}
+			if config.TLS == nil {
+				return buftransport.PrependHTTP(address)
+			}
 			return buftransport.PrependHTTPS(address)
 		}),
 		bufapiclient.RegistryProviderWithInterceptors(
@@ -676,18 +681,22 @@ func PromptUserForPassword(container app.Container, prompt string) (string, erro
 	return promptUser(container, prompt, true)
 }
 
-// ReadModuleWithWorkspacesDisabled gets a module from a source ref.
+// BucketAndConfigForSource returns a bucket and config. The bucket contains
+// just the files that constitute a module. It also checks if config
+// exists and defines a module identity, returning ErrNoConfigFile and
+// ErrNoModuleName respectfully.
 //
-// Workspaces are disabled for this function.
-func ReadModuleWithWorkspacesDisabled(
+// Workspaces are disabled when fetching the source.
+func BucketAndConfigForSource(
 	ctx context.Context,
-	container appflag.Container,
+	logger *zap.Logger,
+	container app.EnvStdinContainer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	source string,
-) (bufmodule.Module, bufmoduleref.ModuleIdentity, error) {
+) (storage.ReadBucketCloser, *bufconfig.Config, error) {
 	sourceRef, err := buffetch.NewSourceRefParser(
-		container.Logger(),
+		logger,
 	).GetSourceRef(
 		ctx,
 		source,
@@ -696,7 +705,7 @@ func ReadModuleWithWorkspacesDisabled(
 		return nil, nil, err
 	}
 	sourceBucket, err := newFetchSourceReader(
-		container.Logger(),
+		logger,
 		storageosProvider,
 		runner,
 	).GetSourceBucket(
@@ -723,19 +732,25 @@ func ReadModuleWithWorkspacesDisabled(
 	if err != nil {
 		return nil, nil, err
 	}
-	moduleIdentity := sourceConfig.ModuleIdentity
-	if moduleIdentity == nil {
+	if sourceConfig.ModuleIdentity == nil {
 		return nil, nil, ErrNoModuleName
 	}
-	module, err := bufmodulebuild.NewModuleBucketBuilder(container.Logger()).BuildForBucket(
+
+	return sourceBucket, sourceConfig, nil
+}
+
+// ReadModule gets a module from a source bucket and its config.
+func ReadModule(
+	ctx context.Context,
+	logger *zap.Logger,
+	sourceBucket storage.ReadBucketCloser,
+	sourceConfig *bufconfig.Config,
+) (bufmodule.Module, error) {
+	return bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
 		ctx,
 		sourceBucket,
 		sourceConfig.Build,
 	)
-	if err != nil {
-		return nil, nil, err
-	}
-	return module, moduleIdentity, err
 }
 
 // NewImageForSource resolves a single bufimage.Image from the user-provided source with the build options.
@@ -799,6 +814,30 @@ func NewImageForSource(
 		images = append(images, imageConfig.Image())
 	}
 	return bufimage.MergeImages(images...)
+}
+
+// WellKnownTypeImage returns the image for the well known type (google.protobuf.Duration for example).
+func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType string) (bufimage.Image, error) {
+	sourceConfig, err := bufconfig.GetConfigForBucket(
+		ctx,
+		storage.NopReadBucketCloser(datawkt.ReadBucket),
+	)
+	if err != nil {
+		return nil, err
+	}
+	module, err := bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
+		ctx,
+		datawkt.ReadBucket,
+		sourceConfig.Build,
+	)
+	if err != nil {
+		return nil, err
+	}
+	image, _, err := bufimagebuild.NewBuilder(logger).Build(ctx, bufmodule.NewModuleFileSet(module, nil))
+	if err != nil {
+		return nil, err
+	}
+	return bufimageutil.ImageFilteredByTypes(image, wellKnownType)
 }
 
 // VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.

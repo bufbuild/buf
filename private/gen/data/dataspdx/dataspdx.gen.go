@@ -124,6 +124,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"apl-1.0": {
 		id: "APL-1.0",
 	},
+	"app-s2p": {
+		id: "App-s2p",
+	},
 	"apsl-1.0": {
 		id: "APSL-1.0",
 	},
@@ -135,6 +138,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"apsl-2.0": {
 		id: "APSL-2.0",
+	},
+	"arphic-1999": {
+		id: "Arphic-1999",
 	},
 	"artistic-1.0": {
 		id: "Artistic-1.0",
@@ -148,6 +154,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"artistic-2.0": {
 		id: "Artistic-2.0",
 	},
+	"baekmuk": {
+		id: "Baekmuk",
+	},
 	"bahyph": {
 		id: "Bahyph",
 	},
@@ -156,6 +165,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"beerware": {
 		id: "Beerware",
+	},
+	"bitstream-vera": {
+		id: "Bitstream-Vera",
 	},
 	"bittorrent-1.0": {
 		id: "BitTorrent-1.0",
@@ -204,6 +216,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"bsd-3-clause-modification": {
 		id: "BSD-3-Clause-Modification",
+	},
+	"bsd-3-clause-no-military-license": {
+		id: "BSD-3-Clause-No-Military-License",
 	},
 	"bsd-3-clause-no-nuclear-license": {
 		id: "BSD-3-Clause-No-Nuclear-License",
@@ -268,11 +283,23 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"cc-by-2.5": {
 		id: "CC-BY-2.5",
 	},
+	"cc-by-2.5-au": {
+		id: "CC-BY-2.5-AU",
+	},
 	"cc-by-3.0": {
 		id: "CC-BY-3.0",
 	},
 	"cc-by-3.0-at": {
 		id: "CC-BY-3.0-AT",
+	},
+	"cc-by-3.0-de": {
+		id: "CC-BY-3.0-DE",
+	},
+	"cc-by-3.0-igo": {
+		id: "CC-BY-3.0-IGO",
+	},
+	"cc-by-3.0-nl": {
+		id: "CC-BY-3.0-NL",
 	},
 	"cc-by-3.0-us": {
 		id: "CC-BY-3.0-US",
@@ -292,6 +319,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"cc-by-nc-3.0": {
 		id: "CC-BY-NC-3.0",
 	},
+	"cc-by-nc-3.0-de": {
+		id: "CC-BY-NC-3.0-DE",
+	},
 	"cc-by-nc-4.0": {
 		id: "CC-BY-NC-4.0",
 	},
@@ -307,6 +337,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"cc-by-nc-nd-3.0": {
 		id: "CC-BY-NC-ND-3.0",
 	},
+	"cc-by-nc-nd-3.0-de": {
+		id: "CC-BY-NC-ND-3.0-DE",
+	},
 	"cc-by-nc-nd-3.0-igo": {
 		id: "CC-BY-NC-ND-3.0-IGO",
 	},
@@ -319,11 +352,23 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"cc-by-nc-sa-2.0": {
 		id: "CC-BY-NC-SA-2.0",
 	},
+	"cc-by-nc-sa-2.0-fr": {
+		id: "CC-BY-NC-SA-2.0-FR",
+	},
+	"cc-by-nc-sa-2.0-uk": {
+		id: "CC-BY-NC-SA-2.0-UK",
+	},
 	"cc-by-nc-sa-2.5": {
 		id: "CC-BY-NC-SA-2.5",
 	},
 	"cc-by-nc-sa-3.0": {
 		id: "CC-BY-NC-SA-3.0",
+	},
+	"cc-by-nc-sa-3.0-de": {
+		id: "CC-BY-NC-SA-3.0-DE",
+	},
+	"cc-by-nc-sa-3.0-igo": {
+		id: "CC-BY-NC-SA-3.0-IGO",
 	},
 	"cc-by-nc-sa-4.0": {
 		id: "CC-BY-NC-SA-4.0",
@@ -339,6 +384,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"cc-by-nd-3.0": {
 		id: "CC-BY-ND-3.0",
+	},
+	"cc-by-nd-3.0-de": {
+		id: "CC-BY-ND-3.0-DE",
 	},
 	"cc-by-nd-4.0": {
 		id: "CC-BY-ND-4.0",
@@ -364,6 +412,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"cc-by-sa-3.0-at": {
 		id: "CC-BY-SA-3.0-AT",
 	},
+	"cc-by-sa-3.0-de": {
+		id: "CC-BY-SA-3.0-DE",
+	},
 	"cc-by-sa-4.0": {
 		id: "CC-BY-SA-4.0",
 	},
@@ -379,8 +430,14 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"cddl-1.1": {
 		id: "CDDL-1.1",
 	},
+	"cdl-1.0": {
+		id: "CDL-1.0",
+	},
 	"cdla-permissive-1.0": {
 		id: "CDLA-Permissive-1.0",
+	},
+	"cdla-permissive-2.0": {
+		id: "CDLA-Permissive-2.0",
 	},
 	"cdla-sharing-1.0": {
 		id: "CDLA-Sharing-1.0",
@@ -430,6 +487,12 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"cnri-python-gpl-compatible": {
 		id: "CNRI-Python-GPL-Compatible",
 	},
+	"coil-1.0": {
+		id: "COIL-1.0",
+	},
+	"community-spec-1.0": {
+		id: "Community-Spec-1.0",
+	},
 	"condor-1.1": {
 		id: "Condor-1.1",
 	},
@@ -469,6 +532,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"diffmark": {
 		id: "diffmark",
 	},
+	"dl-de-by-2.0": {
+		id: "DL-DE-BY-2.0",
+	},
 	"doc": {
 		id: "DOC",
 	},
@@ -501,6 +567,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"egenix": {
 		id: "eGenix",
+	},
+	"elastic-2.0": {
+		id: "Elastic-2.0",
 	},
 	"entessa": {
 		id: "Entessa",
@@ -537,6 +606,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"fair": {
 		id: "Fair",
+	},
+	"fdk-aac": {
+		id: "FDK-AAC",
 	},
 	"frameworx-1.0": {
 		id: "Frameworx-1.0",
@@ -757,6 +829,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"isc": {
 		id: "ISC",
 	},
+	"jam": {
+		id: "Jam",
+	},
 	"jasper-2.0": {
 		id: "JasPer-2.0",
 	},
@@ -838,6 +913,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"liliq-rplus-1.1": {
 		id: "LiLiQ-Rplus-1.1",
 	},
+	"linux-man-pages-copyleft": {
+		id: "Linux-man-pages-copyleft",
+	},
 	"linux-openib": {
 		id: "Linux-OpenIB",
 	},
@@ -862,8 +940,17 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"lppl-1.3c": {
 		id: "LPPL-1.3c",
 	},
+	"lzma-sdk-9.11-to-9.20": {
+		id: "LZMA-SDK-9.11-to-9.20",
+	},
+	"lzma-sdk-9.22": {
+		id: "LZMA-SDK-9.22",
+	},
 	"makeindex": {
 		id: "MakeIndex",
+	},
+	"minpack": {
+		id: "Minpack",
 	},
 	"miros": {
 		id: "MirOS",
@@ -898,6 +985,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"motosoto": {
 		id: "Motosoto",
 	},
+	"mpi-permissive": {
+		id: "mpi-permissive",
+	},
 	"mpich2": {
 		id: "mpich2",
 	},
@@ -912,6 +1002,12 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"mpl-2.0-no-copyleft-exception": {
 		id: "MPL-2.0-no-copyleft-exception",
+	},
+	"mplus": {
+		id: "mplus",
+	},
+	"ms-lpl": {
+		id: "MS-LPL",
 	},
 	"ms-pl": {
 		id: "MS-PL",
@@ -964,6 +1060,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"ngpl": {
 		id: "NGPL",
 	},
+	"nicta-1.0": {
+		id: "NICTA-1.0",
+	},
 	"nist-pd": {
 		id: "NIST-PD",
 	},
@@ -972,6 +1071,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"nlod-1.0": {
 		id: "NLOD-1.0",
+	},
+	"nlod-2.0": {
+		id: "NLOD-2.0",
 	},
 	"nlpl": {
 		id: "NLPL",
@@ -1117,6 +1219,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"opl-1.0": {
 		id: "OPL-1.0",
 	},
+	"opubl-1.0": {
+		id: "OPUBL-1.0",
+	},
 	"oset-pl-2.1": {
 		id: "OSET-PL-2.1",
 	},
@@ -1174,6 +1279,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"python-2.0": {
 		id: "Python-2.0",
 	},
+	"python-2.0.1": {
+		id: "Python-2.0.1",
+	},
 	"qhull": {
 		id: "Qhull",
 	},
@@ -1212,6 +1320,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"scea": {
 		id: "SCEA",
+	},
+	"schemereport": {
+		id: "SchemeReport",
 	},
 	"sendmail": {
 		id: "Sendmail",
@@ -1359,6 +1470,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"x11": {
 		id: "X11",
+	},
+	"x11-distribute-modifications-variant": {
+		id: "X11-distribute-modifications-variant",
 	},
 	"xerox": {
 		id: "Xerox",

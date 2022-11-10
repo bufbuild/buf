@@ -12,34 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httpserver
+// Generated. DO NOT EDIT.
 
-import (
-	"net/http"
+package tagrangeutil
 
-	"github.com/go-chi/chi/v5"
-)
-
-type httpHandlerMapper struct {
-	handler http.Handler
-	prefix  string
-}
-
-func newHTTPHandlerMapper(
-	handler http.Handler,
-	options ...HTTPHandlerMapperOption,
-) *httpHandlerMapper {
-	httpHandlerMapper := &httpHandlerMapper{
-		handler: handler,
-		prefix:  "/",
-	}
-	for _, option := range options {
-		option(httpHandlerMapper)
-	}
-	return httpHandlerMapper
-}
-
-func (m *httpHandlerMapper) Map(router chi.Router) error {
-	router.Mount(m.prefix, m.handler)
-	return nil
-}
+import _ "github.com/bufbuild/buf/private/usage"
