@@ -82,9 +82,9 @@ type bucketOptions struct {
 // BucketOption are options passed when creating a new manifest bucket.
 type BucketOption func(*bucketOptions)
 
-// BucketWithAllManifestBlobsValidation validates that all the passed digests in
-// the manifest have a corresponding blob in the blob set. If this option is not
-// passed, then buckets with partial/incomplete blobs is allowed.
+// BucketWithAllManifestBlobsValidation validates that all manifest digests in
+// have a corresponding blob in the blob set. If this option is not passed, then
+// buckets with partial/incomplete blobs is allowed.
 func BucketWithAllManifestBlobsValidation() BucketOption {
 	return func(opts *bucketOptions) {
 		opts.allManifestBlobs = true
@@ -131,12 +131,23 @@ func NewBucket(m Manifest, blobs BlobSet, opts ...BucketOption) (storage.ReadBuc
 	}, nil
 }
 
-func (m *manifestBucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
-	digest, ok := m.manifest.pathToDigest[path]
+// blobFor returns a blob for a given path. It returns the blob if found, or nil
+// and ok=false if the path has no digest in the manifest, or if the blob for
+// that digest is not present.
+func (m *manifestBucket) blobFor(path string) (_ Blob, ok bool) {
+	digest, ok := m.manifest.DigestFor(path)
 	if !ok {
-		return nil, storage.NewErrNotExist(path)
+		return nil, false
 	}
 	blob, ok := m.blobs.digestToBlob[digest.String()]
+	if !ok {
+		return nil, false
+	}
+	return blob, true
+}
+
+func (m *manifestBucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
+	blob, ok := m.blobFor(path)
 	if !ok {
 		return nil, storage.NewErrNotExist(path)
 	}
@@ -151,11 +162,7 @@ func (m *manifestBucket) Get(ctx context.Context, path string) (storage.ReadObje
 }
 
 func (m *manifestBucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
-	digest, ok := m.manifest.pathToDigest[path]
-	if !ok {
-		return nil, storage.NewErrNotExist(path)
-	}
-	if _, ok := m.blobs.digestToBlob[digest.String()]; !ok {
+	if _, ok := m.blobFor(path); !ok {
 		return nil, storage.NewErrNotExist(path)
 	}
 	// storage.ObjectInfo only requires path
@@ -172,12 +179,7 @@ func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage
 		if !normalpath.EqualsOrContainsPath(prefix, path, normalpath.Relative) {
 			continue
 		}
-		digest, ok := m.manifest.pathToDigest[path]
-		if !ok {
-			// we're iterating manifest paths, this should never happen.
-			return storage.NewErrNotExist(path)
-		}
-		if _, ok := m.blobs.digestToBlob[digest.String()]; !ok {
+		if _, ok := m.blobFor(path); !ok {
 			// this could happen if the bucket was built with partial blobs
 			continue
 		}
