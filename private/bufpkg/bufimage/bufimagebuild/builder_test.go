@@ -271,8 +271,7 @@ func TestCyclicImport(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"cyclicimport",
-		// This is mostly deterministic, but toggling -race on or off when running tests changes the
-		// observed order. So we need this to work correctly either way.
+		// Since the compiler is multi-threaded, order of file compilation can happen one of two ways
 		fmt.Sprintf(`%s:5:8:cycle found in imports: "a/a.proto" -> "b/b.proto" -> "a/a.proto"
 				|| %s:5:8:cycle found in imports: "b/b.proto" -> "a/a.proto" -> "b/b.proto"`,
 			filepath.FromSlash("testdata/cyclicimport/a/a.proto"),
@@ -287,9 +286,13 @@ func TestDuplicateSyntheticOneofs(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"duplicatesyntheticoneofs",
-		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:5:9:symbol "a.Foo" already defined at a2.proto:5:9`),
-		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:6:19:symbol "a.Foo._bar" already defined at a2.proto:6:19`),
-		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:6:19:symbol "a.Foo.bar" already defined at a2.proto:6:19`),
+		// Since the compiler is multi-threaded, order of file compilation can happen one of two ways
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:5:9:symbol "a.Foo" already defined at a2.proto:5:9
+				|| testdata/duplicatesyntheticoneofs/a2.proto:5:9:symbol "a.Foo" already defined at a1.proto:5:9`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:6:19:symbol "a.Foo._bar" already defined at a2.proto:6:19
+				|| testdata/duplicatesyntheticoneofs/a2.proto:6:19:symbol "a.Foo._bar" already defined at a1.proto:6:19`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:6:19:symbol "a.Foo.bar" already defined at a2.proto:6:19
+				|| testdata/duplicatesyntheticoneofs/a2.proto:6:19:symbol "a.Foo.bar" already defined at a1.proto:6:19`),
 	)
 }
 
@@ -393,8 +396,9 @@ func testGetImageImportPaths(image bufimage.Image) []string {
 func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
 	t.Helper()
 
+	// Allowing real parallelism makes some test expectations too complicated to express and assert
 	previousParallelism := thread.Parallelism()
-	thread.SetParallelism(1) // TestCyclicImport is non-deterministic if we don't limit this
+	thread.SetParallelism(1)
 	defer func() {
 		thread.SetParallelism(previousParallelism)
 	}()
