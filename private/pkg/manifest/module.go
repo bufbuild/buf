@@ -156,6 +156,16 @@ func NewBlobSet(ctx context.Context, blobs []Blob, opts ...BlobSetOption) (*Blob
 	return &BlobSet{digestToBlob: digestToBlobs}, nil
 }
 
+// BlobFor returns the blob for the passed digest string, or nil, ok=false if
+// the digest has no blob in the set.
+func (s *BlobSet) BlobFor(digest string) (Blob, bool) {
+	blob, ok := s.digestToBlob[digest]
+	if !ok {
+		return nil, false
+	}
+	return blob, true
+}
+
 // NewDigestFromBlobHash returns a Digest based on a proto Hash.
 func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
 	if hash == nil {

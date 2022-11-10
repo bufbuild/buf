@@ -113,7 +113,7 @@ func NewBucket(m Manifest, blobs BlobSet, opts ...BucketOption) (storage.ReadBuc
 				// we're iterating manifest paths, this should never happen.
 				return nil, fmt.Errorf("path %q not present in manifest", path)
 			}
-			if _, ok := blobs.digestToBlob[pathDigest.String()]; !ok {
+			if _, ok := blobs.BlobFor(pathDigest.String()); !ok {
 				return nil, fmt.Errorf("manifest path %q with digest %q has no associated blob", path, pathDigest.String())
 			}
 		}
@@ -139,7 +139,7 @@ func (m *manifestBucket) blobFor(path string) (_ Blob, ok bool) {
 	if !ok {
 		return nil, false
 	}
-	blob, ok := m.blobs.digestToBlob[digest.String()]
+	blob, ok := m.blobs.BlobFor(digest.String())
 	if !ok {
 		return nil, false
 	}
