@@ -15,7 +15,9 @@
 package push
 
 import (
+	"bytes"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -23,11 +25,14 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
@@ -168,6 +173,14 @@ func run(
 	if err != nil {
 		return err
 	}
+	manifest, err := manifestBlob(ctx, sourceBucket)
+	if err != nil {
+		return err
+	}
+	blobs, err := bucketBlobs(ctx, sourceBucket)
+	if err != nil {
+		return err
+	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
@@ -181,6 +194,8 @@ func run(
 			Module:     protoModule,
 			Tags:       flags.Tags,
 			DraftName:  flags.Draft,
+			Manifest:   manifest,
+			Blobs:      blobs,
 		}),
 	)
 	if err != nil {
@@ -201,4 +216,50 @@ func run(
 		return err
 	}
 	return nil
+}
+
+// manifestBlob returns a canonical manifest in blob form from a bucket.
+func manifestBlob(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+) (*modulev1alpha1.Blob, error) {
+	moduleManifest, err := manifest.NewFromBucket(ctx, bucket)
+	if err != nil {
+		return nil, err
+	}
+	manifestText, err := moduleManifest.MarshalText()
+	if err != nil {
+		return nil, err
+	}
+	return manifest.NewBlobFromReader(bytes.NewReader(manifestText))
+}
+
+// bucketBlobs returns a deduplicated set of blobs for the files in bucket.
+func bucketBlobs(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+) ([]*modulev1alpha1.Blob, error) {
+	var blobs []*modulev1alpha1.Blob
+	haveBlob := make(map[string]struct{})
+	if walkErr := bucket.Walk(ctx, "", func(info storage.ObjectInfo) error {
+		path := info.Path()
+		file, err := bucket.Get(ctx, path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		blob, err := manifest.NewBlobFromReader(file)
+		if err != nil {
+			return err
+		}
+		hexDigest := hex.EncodeToString(blob.Hash.Digest)
+		if _, ok := haveBlob[hexDigest]; !ok {
+			blobs = append(blobs, blob)
+			haveBlob[hexDigest] = struct{}{}
+		}
+		return nil
+	}); walkErr != nil {
+		return nil, walkErr
+	}
+	return blobs, nil
 }
