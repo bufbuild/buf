@@ -184,8 +184,8 @@ message Service {
   Location location = 6;
   repeated Method methods = 7;
   ServiceOptions service_options = 8;
-  // file_deprecated is the deprecation status of the file containing the service.
-  bool file_deprecated = 9;
+  // implicitly_deprecated is true if its enclosing file is deprecated.
+  bool implicitly_deprecated = 9;
 }
 
 // ServiceOptions provides information for the documentation of options for a given service.
@@ -204,6 +204,8 @@ message Method {
   MethodRequestResponse request = 3;
   MethodRequestResponse response = 4;
   MethodOptions method_options = 5;
+  // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
+  bool implicitly_deprecated = 6;
 }
 
 // MethodOptions provides information for the documentation of options for a method.
@@ -244,8 +246,8 @@ message Enum {
   Location location = 6;
   repeated EnumValue values = 7;
   EnumOptions enum_options = 8;
-  // file_deprecated is the deprecation status of the file containing the enum.
-  bool file_deprecated = 9;
+  // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
+  bool implicitly_deprecated = 9;
 }
 
 // EnumOptions provides information for the documentation of options for an enum.
@@ -301,8 +303,8 @@ message Message {
   Location location = 8;
   repeated Field message_extensions = 9;
   MessageOptions message_options = 10;
-  // file_deprecated is the deprecation status of the file containing the message.
-  bool file_deprecated = 11;
+  // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
+  bool implicitly_deprecated = 11;
 }
 
 // MessageField can be either a single field or a oneof set of fields.
@@ -387,6 +389,6 @@ message FileExtension {
   Location location = 4;
   // fields are all the fields that are associated with the extension.
   repeated Field fields = 5;
-  // file_deprecated is the deprecation status of the file containing the field.
-  bool file_deprecated = 6;
+  // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
+  bool implicitly_deprecated = 6;
 }
