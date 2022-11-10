@@ -141,3 +141,8 @@ issues:
         - gosec
       path: private/pkg/git/git_test.go
       text: "G504:"
+      # Module is still expected for older registries, hence should be tested.
+    - linters:
+        - staticcheck
+      path: private/buf/cmd/buf/command/push/push_test.go
+      text: "SA1019"

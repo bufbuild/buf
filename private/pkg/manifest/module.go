@@ -166,7 +166,7 @@ func (s *BlobSet) BlobFor(digest string) (Blob, bool) {
 	return blob, true
 }
 
-// NewDigestFromBlobHash returns a Digest based on a proto Hash.
+// NewDigestFromBlobHash maps a module Hash to a digest.
 func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
 	if hash == nil {
 		return nil, fmt.Errorf("nil hash")
@@ -176,4 +176,27 @@ func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
 		return nil, fmt.Errorf("unsupported hash kind: %s", hash.Kind.String())
 	}
 	return NewDigestFromBytes(dType, hash.Digest)
+}
+
+// NewBlobFromReader creates a module Blob from content, which is read until
+// completion. The returned blob contains all bytes read.
+func NewBlobFromReader(content io.Reader) (*modulev1alpha1.Blob, error) {
+	digester, err := NewDigester(DigestTypeShake256)
+	if err != nil {
+		return nil, err
+	}
+	var contentInMemory bytes.Buffer
+	tee := io.TeeReader(content, &contentInMemory)
+	digest, err := digester.Digest(tee)
+	if err != nil {
+		return nil, err
+	}
+	blob := &modulev1alpha1.Blob{
+		Hash: &modulev1alpha1.Hash{
+			Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
+			Digest: digest.Bytes(),
+		},
+		Content: contentInMemory.Bytes(),
+	}
+	return blob, nil
 }
