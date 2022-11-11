@@ -39,7 +39,6 @@ type PluginCurationService interface {
 		registryType v1alpha1.PluginRegistryType,
 		version string,
 		containerImageDigest string,
-		defaultOptions []string,
 		dependencies []*v1alpha1.CuratedPluginReference,
 		sourceUrl string,
 		description string,

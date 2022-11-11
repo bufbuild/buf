@@ -26,15 +26,17 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	connect "github.com/bufbuild/connect-go"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -44,20 +46,20 @@ type generator struct {
 	logger                *zap.Logger
 	storageosProvider     storageos.Provider
 	appprotoexecGenerator appprotoexec.Generator
-	registryProvider      registryv1alpha1apiclient.Provider
+	clientConfig          *connectclient.Config
 }
 
 func newGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 ) *generator {
 	return &generator{
 		logger:                logger,
 		storageosProvider:     storageosProvider,
 		appprotoexecGenerator: appprotoexec.NewGenerator(logger, storageosProvider, runner),
-		registryProvider:      registryProvider,
+		clientConfig:          clientConfig,
 	}
 }
 
@@ -283,43 +285,43 @@ func (g *generator) execRemotePlugin(
 	if err != nil {
 		return nil, fmt.Errorf("invalid plugin path: %w", err)
 	}
-	generateService, err := g.registryProvider.NewGenerateService(ctx, remote)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create generate service for remote %q: %w", remote, err)
-	}
+	generateService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewGenerateServiceClient)
 	var parameters []string
 	if len(pluginConfig.Opt) > 0 {
 		// Only include parameters if they're not empty.
 		parameters = []string{pluginConfig.Opt}
 	}
-	responses, _, err := generateService.GeneratePlugins(
+	response, err := generateService.GeneratePlugins(
 		ctx,
-		bufimage.ImageToProtoImage(image),
-		[]*registryv1alpha1.PluginReference{
-			{
-				Owner:      owner,
-				Name:       name,
-				Version:    version,
-				Parameters: parameters,
+		connect.NewRequest(
+			&registryv1alpha1.GeneratePluginsRequest{
+				Image: bufimage.ImageToProtoImage(image),
+				Plugins: []*registryv1alpha1.PluginReference{
+					{
+						Owner:      owner,
+						Name:       name,
+						Version:    version,
+						Parameters: parameters,
+					},
+				},
+				IncludeImports:        includeImports,
+				IncludeWellKnownTypes: includeWellKnownTypes,
 			},
-		},
-		includeImports,
-		includeWellKnownTypes,
+		),
 	)
 	if err != nil {
 		return nil, err
 	}
+	responses := response.Msg.Responses
 	if len(responses) != 1 {
 		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), 1)
 	}
-	pluginService, err := g.registryProvider.NewPluginService(ctx, remote)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create plugin service for remote %q: %w", remote, err)
-	}
-	plugin, err := pluginService.GetPlugin(ctx, owner, name)
+	pluginService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewPluginServiceClient)
+	resp, err := pluginService.GetPlugin(ctx, connect.NewRequest(&registryv1alpha1.GetPluginRequest{Owner: owner, Name: name}))
 	if err != nil {
 		return nil, err
 	}
+	plugin := resp.Msg.Plugin
 	if plugin.Deprecated {
 		warnMsg := fmt.Sprintf(`Plugin "%s/%s/%s" is deprecated`, remote, owner, name)
 		if plugin.DeprecationMessage != "" {
@@ -352,30 +354,32 @@ func (g *generator) execRemotePluginV2(
 		remote = identity.Remote()
 		curatedPluginReference = bufplugin.PluginIdentityToProtoCuratedPluginReference(identity)
 	}
-	codeGenerationService, err := g.registryProvider.NewCodeGenerationService(ctx, remote)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create code generation service for remote %q: %w", remote, err)
-	}
+	codeGenerationService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewCodeGenerationServiceClient)
 	var options []string
 	if len(pluginConfig.Opt) > 0 {
 		// Only include parameters if they're not empty.
 		options = []string{pluginConfig.Opt}
 	}
-	responses, err := codeGenerationService.GenerateCode(
+	response, err := codeGenerationService.GenerateCode(
 		ctx,
-		bufimage.ImageToProtoImage(image),
-		[]*registryv1alpha1.PluginGenerationRequest{
-			{
-				PluginReference: curatedPluginReference,
-				Options:         options,
+		connect.NewRequest(
+			&registryv1alpha1.GenerateCodeRequest{
+				Image: bufimage.ImageToProtoImage(image),
+				Requests: []*registryv1alpha1.PluginGenerationRequest{
+					{
+						PluginReference: curatedPluginReference,
+						Options:         options,
+					},
+				},
+				IncludeImports:        includeImports,
+				IncludeWellKnownTypes: includeWellKnownTypes,
 			},
-		},
-		includeImports,
-		includeWellKnownTypes,
+		),
 	)
 	if err != nil {
 		return nil, err
 	}
+	responses := response.Msg.Responses
 	if len(responses) != 1 {
 		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), 1)
 	}

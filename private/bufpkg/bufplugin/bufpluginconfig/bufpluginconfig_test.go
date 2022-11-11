@@ -50,9 +50,6 @@ func TestGetConfigForBucket(t *testing.T) {
 			Dependencies: []bufpluginref.PluginReference{
 				pluginDependency,
 			},
-			DefaultOptions: map[string]string{
-				"paths": "source_relative",
-			},
 			OutputLanguages: []string{"go"},
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
@@ -92,9 +89,6 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			Description:   "Generates Go language bindings of services in protobuf definition files for gRPC.",
 			Dependencies: []bufpluginref.PluginReference{
 				pluginDependency,
-			},
-			DefaultOptions: map[string]string{
-				"paths": "source_relative",
 			},
 			OutputLanguages: []string{"go"},
 			Registry: &RegistryConfig{
@@ -140,11 +134,8 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 	require.Equal(
 		t,
 		&Config{
-			Name:          pluginIdentity,
-			PluginVersion: "v1.0.0",
-			DefaultOptions: map[string]string{
-				"paths": "source_relative",
-			},
+			Name:            pluginIdentity,
+			PluginVersion:   "v1.0.0",
 			OutputLanguages: []string{"typescript"},
 			Registry: &RegistryConfig{
 				NPM: &NPMRegistryConfig{
@@ -178,9 +169,6 @@ func TestParsePluginConfigOptionsYAML(t *testing.T) {
 		&Config{
 			Name:          pluginIdentity,
 			PluginVersion: "v2.0.0",
-			DefaultOptions: map[string]string{
-				"annotate_code": "",
-			},
 		},
 		pluginConfig,
 	)

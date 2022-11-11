@@ -19,10 +19,12 @@ package registryv1alpha1apiclient
 import (
 	context "context"
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
+	connectclient "github.com/bufbuild/buf/private/pkg/connectclient"
 )
 
 // Provider provides all the types in registryv1alpha1apiclient.
 type Provider interface {
+	ToClientConfig() *connectclient.Config
 	AdminServiceProvider
 	AuthnServiceProvider
 	AuthzServiceProvider
