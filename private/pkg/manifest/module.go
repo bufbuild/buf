@@ -114,17 +114,17 @@ func (b *memoryBlob) EqualContent(ctx context.Context, other Blob) (_ bool, retE
 }
 
 // AsProtoBlob returns the current blob as a proto module blob.
-func (m *memoryBlob) AsProtoBlob() (*modulev1alpha1.Blob, error) {
-	hashKind, ok := digestTypeToHashKind[m.digest.Type()]
+func (b *memoryBlob) AsProtoBlob() (*modulev1alpha1.Blob, error) {
+	hashKind, ok := digestTypeToHashKind[b.digest.Type()]
 	if !ok {
-		return nil, fmt.Errorf("digest type %q not supported by module proto", m.Digest().Type())
+		return nil, fmt.Errorf("digest type %q not supported by module proto", b.Digest().Type())
 	}
 	return &modulev1alpha1.Blob{
 		Hash: &modulev1alpha1.Hash{
 			Kind:   hashKind,
-			Digest: m.digest.Bytes(),
+			Digest: b.digest.Bytes(),
 		},
-		Content: m.content,
+		Content: b.content,
 	}, nil
 }
 
