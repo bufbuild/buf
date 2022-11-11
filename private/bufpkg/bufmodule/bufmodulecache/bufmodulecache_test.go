@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
-	"github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/filelock"
@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/verbose"
+	connect_go "github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -73,14 +74,14 @@ func TestReaderBasic(t *testing.T) {
 
 	deprecationMessage := "this is the deprecation message"
 
-	repositoryServiceProvider := &fakeRepositoryServiceProvider{
-		repositoryService: &fakeRepositoryService{
+	repositoryClientFactory := fakeRepositoryServiceClientFactory(
+		&fakeRepositoryService{
 			repository: &registryv1alpha1.Repository{
 				Deprecated:         true,
 				DeprecationMessage: deprecationMessage,
 			},
 		},
-	}
+	)
 
 	// the delegate uses the cache we just populated
 	delegateModuleReader := newModuleReader(
@@ -90,7 +91,7 @@ func TestReaderBasic(t *testing.T) {
 		delegateDataReadWriteBucket,
 		delegateSumReadWriteBucket,
 		moduleCacher,
-		repositoryServiceProvider,
+		repositoryClientFactory,
 	)
 
 	core, observedLogs := observer.New(zapcore.WarnLevel)
@@ -103,7 +104,7 @@ func TestReaderBasic(t *testing.T) {
 		mainDataReadWriteBucket,
 		mainSumReadWriteBucket,
 		delegateModuleReader,
-		repositoryServiceProvider,
+		repositoryClientFactory,
 	)
 	getModule, err := moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
@@ -369,19 +370,22 @@ func testFile1HasNoExternalPath(t *testing.T, ctx context.Context, module bufmod
 	require.NoError(t, file1ModuleFile.Close())
 }
 
-type fakeRepositoryServiceProvider struct {
-	repositoryService registryv1alpha1api.RepositoryService
-}
-
-func (f *fakeRepositoryServiceProvider) NewRepositoryService(context.Context, string) (registryv1alpha1api.RepositoryService, error) {
-	return f.repositoryService, nil
+func fakeRepositoryServiceClientFactory(repositoryService registryv1alpha1connect.RepositoryServiceClient) RepositoryServiceClientFactory {
+	return func(string) registryv1alpha1connect.RepositoryServiceClient {
+		return repositoryService
+	}
 }
 
 type fakeRepositoryService struct {
-	registryv1alpha1api.RepositoryService
+	registryv1alpha1connect.RepositoryServiceClient
 	repository *registryv1alpha1.Repository
 }
 
-func (f *fakeRepositoryService) GetRepositoryByFullName(context.Context, string) (*registryv1alpha1.Repository, *registryv1alpha1.RepositoryCounts, error) {
-	return f.repository, nil, nil
+func (f *fakeRepositoryService) GetRepositoryByFullName(
+	_ context.Context,
+	_ *connect_go.Request[registryv1alpha1.GetRepositoryByFullNameRequest],
+) (*connect_go.Response[registryv1alpha1.GetRepositoryByFullNameResponse], error) {
+	return connect_go.NewResponse(&registryv1alpha1.GetRepositoryByFullNameResponse{
+		Repository: f.repository,
+	}), nil
 }

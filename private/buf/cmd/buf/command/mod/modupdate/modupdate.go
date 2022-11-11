@@ -24,11 +24,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/connect-go"
@@ -228,15 +229,11 @@ func getDependencies(
 		return nil, bufcli.NewInternalError(err)
 	}
 	// We want to create one repository service per relevant remote.
-	remoteToRepositoryService := make(map[string]registryv1alpha1api.RepositoryService)
+	remoteToRepositoryService := make(map[string]registryv1alpha1connect.RepositoryServiceClient)
 	remoteToDependencyModulePins := make(map[string][]bufmoduleref.ModulePin)
 	for _, pin := range dependencyModulePins {
 		if _, ok := remoteToRepositoryService[pin.Remote()]; !ok {
-			repositoryService, err := apiProvider.NewRepositoryService(ctx, pin.Remote())
-			if err != nil {
-				return nil, err
-			}
-			remoteToRepositoryService[pin.Remote()] = repositoryService
+			remoteToRepositoryService[pin.Remote()] = connectclient.Make(apiProvider.ToClientConfig(), pin.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
 		}
 		remoteToDependencyModulePins[pin.Remote()] = append(remoteToDependencyModulePins[pin.Remote()], pin)
 	}
@@ -250,7 +247,10 @@ func getDependencies(
 		for i, pin := range dependencyModulePins {
 			dependencyFullNames[i] = fmt.Sprintf("%s/%s", pin.Owner(), pin.Repository())
 		}
-		dependencyRepos, err := repositoryService.GetRepositoriesByFullName(ctx, dependencyFullNames)
+		resp, err := repositoryService.GetRepositoriesByFullName(ctx,
+			connect.NewRequest(&registryv1alpha1.GetRepositoriesByFullNameRequest{
+				FullNames: dependencyFullNames,
+			}))
 		if err != nil {
 			return nil, err
 		}
@@ -258,7 +258,7 @@ func getDependencies(
 		for i, modulePin := range dependencyModulePins {
 			pinnedRepositories[i] = &pinnedRepository{
 				modulePin:  modulePin,
-				repository: dependencyRepos[i],
+				repository: resp.Msg.Repositories[i],
 			}
 		}
 		allPinnedRepositories = append(allPinnedRepositories, pinnedRepositories...)

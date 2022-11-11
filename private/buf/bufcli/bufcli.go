@@ -571,7 +571,7 @@ func newModuleReaderAndCreateCacheDirs(
 		dataReadWriteBucket,
 		sumReadWriteBucket,
 		bufapimodule.NewModuleReader(registryProvider),
-		registryProvider,
+		bufmodulecache.NewRepositoryServiceClientFactory(registryProvider.ToClientConfig()),
 		moduleReaderOptions...,
 	)
 	return moduleReader, nil
