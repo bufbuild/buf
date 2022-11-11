@@ -293,7 +293,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
@@ -301,7 +301,7 @@ func run(
 		container,
 		storageosProvider,
 		runner,
-		registryProvider,
+		clientConfig,
 	)
 	if err != nil {
 		return err
@@ -352,7 +352,7 @@ func run(
 		logger,
 		storageosProvider,
 		runner,
-		registryProvider.ToClientConfig(),
+		clientConfig,
 	).Generate(
 		ctx,
 		container,
