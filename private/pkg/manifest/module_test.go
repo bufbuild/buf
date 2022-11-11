@@ -115,10 +115,9 @@ func TestInvalidNewDigestFromBlobHash(t *testing.T) {
 
 func TestNewBlobSet(t *testing.T) {
 	t.Parallel()
-	blobs := newBlobsArray(t)
 	blobSet, err := manifest.NewBlobSet(
 		context.Background(),
-		blobs,
+		newBlobsArray(t),
 		manifest.BlobSetWithContentValidation(),
 	)
 	require.NoError(t, err)
@@ -128,10 +127,9 @@ func TestNewBlobSet(t *testing.T) {
 func TestNewBlobValidDuplicates(t *testing.T) {
 	t.Parallel()
 	blobs := newBlobsArray(t)
-	duplicatedBlobs := append(blobs, blobs[0])
 	blobSet, err := manifest.NewBlobSet(
 		context.Background(),
-		duplicatedBlobs,
+		append(blobs, blobs[0]), // send the first blob twice
 		manifest.BlobSetWithContentValidation(),
 	)
 	require.NoError(t, err)
@@ -141,14 +139,14 @@ func TestNewBlobValidDuplicates(t *testing.T) {
 func TestNewBlobInvalidDuplicates(t *testing.T) {
 	blobs := newBlobsArray(t)
 	incorrectBlob, err := manifest.NewMemoryBlob(
-		*blobs[0].Digest(), []byte("some different content"),
+		*blobs[0].Digest(),
+		[]byte("not blobs[0] content"),
 	)
 	require.NoError(t, err)
 	require.NotNil(t, incorrectBlob)
-	duplicatedBlobs := append(blobs, incorrectBlob)
 	_, err = manifest.NewBlobSet(
 		context.Background(),
-		duplicatedBlobs,
+		append(blobs, incorrectBlob), // send first digest twice, with diff content
 		manifest.BlobSetWithContentValidation(),
 	)
 	require.Error(t, err)
