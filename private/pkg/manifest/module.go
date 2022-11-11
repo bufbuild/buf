@@ -24,9 +24,14 @@ import (
 	"go.uber.org/multierr"
 )
 
-var hashKindToDigestType = map[modulev1alpha1.HashKind]DigestType{
-	modulev1alpha1.HashKind_HASH_KIND_SHAKE256: DigestTypeShake256,
-}
+var (
+	hashKindToDigestType = map[modulev1alpha1.HashKind]DigestType{
+		modulev1alpha1.HashKind_HASH_KIND_SHAKE256: DigestTypeShake256,
+	}
+	digestTypeToHashKind = map[DigestType]modulev1alpha1.HashKind{
+		DigestTypeShake256: modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
+	}
+)
 
 // Blob is a blob with a digest and a content.
 type Blob interface {
@@ -107,6 +112,32 @@ func (b *memoryBlob) EqualContent(ctx context.Context, other Blob) (_ bool, retE
 	return true, nil
 }
 
+// AsProtoBlob returns the passed blob as a proto module blob.
+func AsProtoBlob(ctx context.Context, b Blob) (*modulev1alpha1.Blob, error) {
+	hashKind, ok := digestTypeToHashKind[b.Digest().Type()]
+	if !ok {
+		return nil, fmt.Errorf("digest type %q not supported by module proto", b.Digest().Type())
+	}
+	rc, err := b.Open(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open blob: %w", err)
+	}
+	content, err := io.ReadAll(rc)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read blob contents: %w", err)
+	}
+	if err := rc.Close(); err != nil {
+		return nil, fmt.Errorf("cannot close blob: %w", err)
+	}
+	return &modulev1alpha1.Blob{
+		Hash: &modulev1alpha1.Hash{
+			Kind:   hashKind,
+			Digest: b.Digest().Bytes(),
+		},
+		Content: content,
+	}, nil
+}
+
 // BlobSet represents a set of deduplicated blobs, by digests.
 type BlobSet struct {
 	digestToBlob map[string]Blob
@@ -166,6 +197,15 @@ func (s *BlobSet) BlobFor(digest string) (Blob, bool) {
 	return blob, true
 }
 
+// Blobs returns the blobs in the set as an array.
+func (s *BlobSet) Blobs() []Blob {
+	blobs := make([]Blob, 0, len(s.digestToBlob))
+	for _, b := range s.digestToBlob {
+		blobs = append(blobs, b)
+	}
+	return blobs
+}
+
 // NewDigestFromBlobHash maps a module Hash to a digest.
 func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
 	if hash == nil {
@@ -178,25 +218,30 @@ func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
 	return NewDigestFromBytes(dType, hash.Digest)
 }
 
-// NewBlobFromReader creates a module Blob from content, which is read until
-// completion. The returned blob contains all bytes read.
-func NewBlobFromReader(content io.Reader) (*modulev1alpha1.Blob, error) {
+// NewMemoryBlobFromReader creates a memory blob from content, which is read
+// until completion. The returned blob contains all bytes read. If you are using
+// this in a loop, you might better use NewMemoryBlobFromReaderWithDigester so
+// you can reuse your digester.
+func NewMemoryBlobFromReader(content io.Reader) (Blob, error) {
 	digester, err := NewDigester(DigestTypeShake256)
 	if err != nil {
 		return nil, err
 	}
+	return NewMemoryBlobFromReaderWithDigester(content, digester)
+}
+
+// NewMemoryBlobFromReaderWithDigester creates a memory blob from content with
+// the passed digester. The content is read until completion. The returned blob
+// contains all bytes read.
+func NewMemoryBlobFromReaderWithDigester(content io.Reader, digester Digester) (Blob, error) {
 	var contentInMemory bytes.Buffer
 	tee := io.TeeReader(content, &contentInMemory)
 	digest, err := digester.Digest(tee)
 	if err != nil {
 		return nil, err
 	}
-	blob := &modulev1alpha1.Blob{
-		Hash: &modulev1alpha1.Hash{
-			Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
-			Digest: digest.Bytes(),
-		},
-		Content: contentInMemory.Bytes(),
-	}
-	return blob, nil
+	return &memoryBlob{
+		digest:  *digest,
+		content: contentInMemory.Bytes(),
+	}, nil
 }

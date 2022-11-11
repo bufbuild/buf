@@ -42,17 +42,18 @@ func (o *manifestBucketObject) ExternalPath() string       { return o.path }
 func (o *manifestBucketObject) Read(p []byte) (int, error) { return o.file.Read(p) }
 func (o *manifestBucketObject) Close() error               { return o.file.Close() }
 
-// NewFromBucket creates a manifest from a storage bucket, with all its digests
-// in DigestTypeShake256.
+// NewFromBucket creates a manifest and all its files' blobs from a storage
+// bucket, with all its digests in DigestTypeShake256.
 func NewFromBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
-) (*Manifest, error) {
+) (*Manifest, *BlobSet, error) {
 	m := New()
 	digester, err := NewDigester(DigestTypeShake256)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	var blobs []Blob
 	if walkErr := bucket.Walk(ctx, "", func(info storage.ObjectInfo) (retErr error) {
 		path := info.Path()
 		obj, err := bucket.Get(ctx, path)
@@ -60,18 +61,23 @@ func NewFromBucket(
 			return err
 		}
 		defer func() { retErr = multierr.Append(retErr, obj.Close()) }()
-		digest, err := digester.Digest(obj)
+		blob, err := NewMemoryBlobFromReaderWithDigester(obj, digester)
 		if err != nil {
 			return err
 		}
-		if err := m.AddEntry(path, *digest); err != nil {
+		blobs = append(blobs, blob)
+		if err := m.AddEntry(path, *blob.Digest()); err != nil {
 			return err
 		}
 		return nil
 	}); walkErr != nil {
-		return nil, walkErr
+		return nil, nil, walkErr
 	}
-	return m, nil
+	blobSet, err := NewBlobSet(ctx, blobs) // no need to pass validation options, we're building and digesting the blobs
+	if err != nil {
+		return nil, nil, err
+	}
+	return m, blobSet, nil
 }
 
 type bucketOptions struct {

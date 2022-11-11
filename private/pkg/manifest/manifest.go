@@ -194,6 +194,15 @@ func (m *Manifest) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// Blob returns the manifest's blob.
+func (m *Manifest) Blob() (Blob, error) {
+	manifestText, err := m.MarshalText()
+	if err != nil {
+		return nil, err
+	}
+	return NewMemoryBlobFromReader(bytes.NewReader(manifestText))
+}
+
 func splitManifest(data []byte, atEOF bool) (int, []byte, error) {
 	// Return a line without LF.
 	if i := bytes.IndexByte(data, '\n'); i >= 0 {
