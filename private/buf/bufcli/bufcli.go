@@ -642,7 +642,7 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 // up the token in the container or in netrc based on the address of each individual client.
 // It is then set in the header of all outgoing requests from clients created using this config.
 func NewConnectClientConfig(container appflag.Container) (*connectclient.Config, error) {
-	// TODO: when the generated provider is ripped out, create this config directly
+	// TODO(BSR-798): when the generated provider is ripped out, create this config directly
 	//  instead of converting from the provider
 	prov, err := NewRegistryProvider(context.Background(), container)
 	if err != nil {
