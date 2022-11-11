@@ -47,7 +47,7 @@ func TestDigestFromBlobHash(t *testing.T) {
 	}
 	digestFromBlobHash, err := manifest.NewDigestFromBlobHash(&blobHash)
 	require.NoError(t, err)
-	assert.Equal(t, expectedDigest.String(), digestFromBlobHash.String())
+	assert.True(t, digestFromBlobHash.Equal(expectedDigest))
 }
 
 func TestNewMemoryBlob(t *testing.T) {
