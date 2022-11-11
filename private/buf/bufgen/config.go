@@ -389,7 +389,7 @@ func newCsharpNamespacePrefixConfigV1(
 	if externalCsharpNamespacePrefixConfig.IsEmpty() {
 		return nil, nil
 	}
-	// it's ok to have "" as default
+	// It's ok to have "" as default, for backward compatibility.
 	seenModuleIdentities := make(map[string]struct{}, len(externalCsharpNamespacePrefixConfig.Except))
 	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalCsharpNamespacePrefixConfig.Except))
 	for _, moduleName := range externalCsharpNamespacePrefixConfig.Except {

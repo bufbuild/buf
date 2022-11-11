@@ -139,7 +139,6 @@ func shouldSkipCsharpNamespaceForFile(
 
 func csharpNamespaceValue(imageFile bufimage.ImageFile, namespacePrefix string) string {
 	subNamespace := csharpSubNamespaceValue(imageFile)
-	// TODO: check if prefix is trimmed before passed here
 	if namespacePrefix == "" {
 		return subNamespace
 	}
