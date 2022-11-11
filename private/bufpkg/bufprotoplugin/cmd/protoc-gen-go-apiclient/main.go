@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	contextPackage    = protogen.GoImportPath("context")
-	connectPkgPackage = protogen.GoImportPath("github.com/bufbuild/buf/private/pkg/connect")
-	pluginName        = "apiclient"
+	contextPackage       = protogen.GoImportPath("context")
+	connectclientPackage = protogen.GoImportPath("github.com/bufbuild/buf/private/pkg/connectclient")
+	pluginName           = "apiclient"
 )
 
 func main() {
@@ -53,7 +53,7 @@ func handleGoPackage(helper protogenutil.NamedHelper, plugin *protogen.Plugin, g
 	}
 	goPackageName := helper.NewGoPackageName(goPackageFileSet.GoPackageName, pluginName)
 	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
-	clientConfigGoIdentString := g.QualifiedGoIdent(connectPkgPackage.Ident("ClientConfig"))
+	clientConfigGoIdentString := g.QualifiedGoIdent(connectclientPackage.Ident("Config"))
 	g.P(`// Provider provides all the types in `, goPackageName, `.`)
 	g.P(`type Provider interface {`)
 	g.P(`ToClientConfig() *`, clientConfigGoIdentString)

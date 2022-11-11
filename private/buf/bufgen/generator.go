@@ -32,10 +32,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/connect"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	connect_go "github.com/bufbuild/connect-go"
+	connect "github.com/bufbuild/connect-go"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -45,20 +45,20 @@ type generator struct {
 	logger                *zap.Logger
 	storageosProvider     storageos.Provider
 	appprotoexecGenerator appprotoexec.Generator
-	connectConfig         *connect.ClientConfig
+	clientConfig          *connectclient.Config
 }
 
 func newGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	connectConfig *connect.ClientConfig,
+	clientConfig *connectclient.Config,
 ) *generator {
 	return &generator{
 		logger:                logger,
 		storageosProvider:     storageosProvider,
 		appprotoexecGenerator: appprotoexec.NewGenerator(logger, storageosProvider, runner),
-		connectConfig:         connectConfig,
+		clientConfig:          clientConfig,
 	}
 }
 
@@ -284,7 +284,7 @@ func (g *generator) execRemotePlugin(
 	if err != nil {
 		return nil, fmt.Errorf("invalid plugin path: %w", err)
 	}
-	generateService := connect.MakeClient(g.connectConfig, remote, registryv1alpha1connect.NewGenerateServiceClient)
+	generateService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewGenerateServiceClient)
 	var parameters []string
 	if len(pluginConfig.Opt) > 0 {
 		// Only include parameters if they're not empty.
@@ -292,7 +292,7 @@ func (g *generator) execRemotePlugin(
 	}
 	response, err := generateService.GeneratePlugins(
 		ctx,
-		connect_go.NewRequest(
+		connect.NewRequest(
 			&registryv1alpha1.GeneratePluginsRequest{
 				Image: bufimage.ImageToProtoImage(image),
 				Plugins: []*registryv1alpha1.PluginReference{
@@ -315,8 +315,8 @@ func (g *generator) execRemotePlugin(
 	if len(responses) != 1 {
 		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), 1)
 	}
-	pluginService := connect.MakeClient(g.connectConfig, remote, registryv1alpha1connect.NewPluginServiceClient)
-	resp, err := pluginService.GetPlugin(ctx, connect_go.NewRequest(&registryv1alpha1.GetPluginRequest{Owner: owner, Name: name}))
+	pluginService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewPluginServiceClient)
+	resp, err := pluginService.GetPlugin(ctx, connect.NewRequest(&registryv1alpha1.GetPluginRequest{Owner: owner, Name: name}))
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +353,7 @@ func (g *generator) execRemotePluginV2(
 		remote = identity.Remote()
 		curatedPluginReference = bufplugin.PluginIdentityToProtoCuratedPluginReference(identity)
 	}
-	codeGenerationService := connect.MakeClient(g.connectConfig, remote, registryv1alpha1connect.NewCodeGenerationServiceClient)
+	codeGenerationService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewCodeGenerationServiceClient)
 	var options []string
 	if len(pluginConfig.Opt) > 0 {
 		// Only include parameters if they're not empty.
@@ -361,7 +361,7 @@ func (g *generator) execRemotePluginV2(
 	}
 	response, err := codeGenerationService.GenerateCode(
 		ctx,
-		connect_go.NewRequest(
+		connect.NewRequest(
 			&registryv1alpha1.GenerateCodeRequest{
 				Image: bufimage.ImageToProtoImage(image),
 				Requests: []*registryv1alpha1.PluginGenerationRequest{

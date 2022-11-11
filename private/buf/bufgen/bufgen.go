@@ -28,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/connect"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -115,13 +115,13 @@ func NewGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	connectConfig *connect.ClientConfig,
+	clientConfig *connectclient.Config,
 ) Generator {
 	return newGenerator(
 		logger,
 		storageosProvider,
 		runner,
-		connectConfig,
+		clientConfig,
 	)
 }
 

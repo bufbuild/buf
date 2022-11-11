@@ -24,11 +24,11 @@ import (
 )
 
 const (
-	contextPackage    = protogen.GoImportPath("context")
-	connectGoPackage  = protogen.GoImportPath("github.com/bufbuild/connect-go")
-	connectPkgPackage = protogen.GoImportPath("github.com/bufbuild/buf/private/pkg/connect")
-	zapPackage        = protogen.GoImportPath("go.uber.org/zap")
-	pluginName        = "apiclientconnect"
+	contextPackage       = protogen.GoImportPath("context")
+	connectGoPackage     = protogen.GoImportPath("github.com/bufbuild/connect-go")
+	connectclientPackage = protogen.GoImportPath("github.com/bufbuild/buf/private/pkg/connectclient")
+	zapPackage           = protogen.GoImportPath("go.uber.org/zap")
+	pluginName           = "apiclientconnect"
 )
 
 func main() {
@@ -137,12 +137,12 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`}`)
 	g.P()
 
-	clientConfigGoIdentString := g.QualifiedGoIdent(connectPkgPackage.Ident("ClientConfig"))
-	newClientConfigGoIdentString := g.QualifiedGoIdent(connectPkgPackage.Ident("NewClientConfig"))
-	clientConfigOptionGoIdentString := g.QualifiedGoIdent(connectPkgPackage.Ident("ClientConfigOption"))
-	clientConfigWithAddressMapperGoIdentString := g.QualifiedGoIdent(connectPkgPackage.Ident("WithAddressMapper"))
-	clientConfigWithInterceptorsGoIdentString := g.QualifiedGoIdent(connectPkgPackage.Ident("WithInterceptors"))
-	clientConfigWithAuthInterceptorGoIdentString := g.QualifiedGoIdent(connectPkgPackage.Ident("WithAuthInterceptorProvider"))
+	clientConfigGoIdentString := g.QualifiedGoIdent(connectclientPackage.Ident("Config"))
+	newClientConfigGoIdentString := g.QualifiedGoIdent(connectclientPackage.Ident("NewConfig"))
+	clientConfigOptionGoIdentString := g.QualifiedGoIdent(connectclientPackage.Ident("ConfigOption"))
+	clientConfigWithAddressMapperGoIdentString := g.QualifiedGoIdent(connectclientPackage.Ident("WithAddressMapper"))
+	clientConfigWithInterceptorsGoIdentString := g.QualifiedGoIdent(connectclientPackage.Ident("WithInterceptors"))
+	clientConfigWithAuthInterceptorGoIdentString := g.QualifiedGoIdent(connectclientPackage.Ident("WithAuthInterceptorProvider"))
 
 	// Bridge to connect.ClientConfig, for alternate stub creation (for a world w/out these generated api helpers)
 	g.P(`func (p *provider) ToClientConfig() *`, clientConfigGoIdentString, ` {`)

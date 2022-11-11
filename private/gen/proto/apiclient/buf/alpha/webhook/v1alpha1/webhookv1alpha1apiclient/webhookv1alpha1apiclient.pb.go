@@ -19,12 +19,12 @@ package webhookv1alpha1apiclient
 import (
 	context "context"
 	webhookv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/webhook/v1alpha1/webhookv1alpha1api"
-	connect "github.com/bufbuild/buf/private/pkg/connect"
+	connectclient "github.com/bufbuild/buf/private/pkg/connectclient"
 )
 
 // Provider provides all the types in webhookv1alpha1apiclient.
 type Provider interface {
-	ToClientConfig() *connect.ClientConfig
+	ToClientConfig() *connectclient.Config
 	EventServiceProvider
 }
 
