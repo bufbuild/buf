@@ -26,7 +26,7 @@ type ClientConfig struct {
 }
 
 func NewClientConfig(httpClient connect_go.HTTPClient, options ...ClientConfigOption) *ClientConfig {
-	cfg  := ClientConfig{
+	cfg := ClientConfig{
 		httpClient: httpClient,
 	}
 	for _, opt := range options {
