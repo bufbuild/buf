@@ -137,6 +137,7 @@ func TestNewBlobValidDuplicates(t *testing.T) {
 }
 
 func TestNewBlobInvalidDuplicates(t *testing.T) {
+	t.Parallel()
 	blobs := newBlobsArray(t)
 	incorrectBlob, err := manifest.NewMemoryBlob(
 		*blobs[0].Digest(),
