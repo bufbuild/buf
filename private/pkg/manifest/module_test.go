@@ -173,6 +173,8 @@ func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
 	t.Parallel()
 	blob, err := manifest.NewMemoryBlobFromReader(bytes.NewReader(content))
 	require.NoError(t, err)
+	protoBlob, err := blob.AsProtoBlob()
+	require.NoError(t, err)
 	expect := &modulev1alpha1.Blob{
 		Hash: &modulev1alpha1.Hash{
 			Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
@@ -180,7 +182,7 @@ func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
 		},
 		Content: content,
 	}
-	assert.Equal(t, expect, blob)
+	assert.Equal(t, expect, protoBlob)
 }
 
 func newBlobsArray(t *testing.T) []manifest.Blob {
