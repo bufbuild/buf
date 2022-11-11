@@ -34,7 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/verbose"
-	connect_go "github.com/bufbuild/connect-go"
+	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -383,9 +383,9 @@ type fakeRepositoryService struct {
 
 func (f *fakeRepositoryService) GetRepositoryByFullName(
 	_ context.Context,
-	_ *connect_go.Request[registryv1alpha1.GetRepositoryByFullNameRequest],
-) (*connect_go.Response[registryv1alpha1.GetRepositoryByFullNameResponse], error) {
-	return connect_go.NewResponse(&registryv1alpha1.GetRepositoryByFullNameResponse{
+	_ *connect.Request[registryv1alpha1.GetRepositoryByFullNameRequest],
+) (*connect.Response[registryv1alpha1.GetRepositoryByFullNameResponse], error) {
+	return connect.NewResponse(&registryv1alpha1.GetRepositoryByFullNameResponse{
 		Repository: f.repository,
 	}), nil
 }

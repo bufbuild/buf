@@ -82,7 +82,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
+	service := connectclient.Make(
+		clientConfig,
+		moduleIdentity.Remote(),
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
 	if _, err := service.UpdateRepositorySettingsByName(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.UpdateRepositorySettingsByNameRequest{

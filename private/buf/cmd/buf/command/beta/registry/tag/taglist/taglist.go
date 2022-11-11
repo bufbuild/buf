@@ -115,7 +115,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	repositoryService := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
+	repositoryService := connectclient.Make(
+		clientConfig,
+		moduleIdentity.Remote(),
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
 	resp, err := repositoryService.GetRepositoryByFullName(ctx,
 		connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
 			FullName: moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),

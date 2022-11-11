@@ -49,7 +49,11 @@ func run(ctx context.Context, container appflag.Container) error {
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
+	service := connectclient.Make(
+		clientConfig,
+		moduleIdentity.Remote(),
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
 	if _, err := service.UndeprecateRepositoryByName(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.UndeprecateRepositoryByNameRequest{

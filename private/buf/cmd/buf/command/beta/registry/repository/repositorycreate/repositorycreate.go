@@ -99,7 +99,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(apiProvider.ToClientConfig(), moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
+	service := connectclient.Make(
+		apiProvider.ToClientConfig(),
+		moduleIdentity.Remote(),
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
 	resp, err := service.CreateRepositoryByFullName(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{

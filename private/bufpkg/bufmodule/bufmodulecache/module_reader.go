@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
-	connect_go "github.com/bufbuild/connect-go"
+	"github.com/bufbuild/connect-go"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -149,7 +149,7 @@ func (m *moduleReader) GetModule(
 	repositoryService := m.repositoryClientFactory(modulePin.Remote())
 	resp, err := repositoryService.GetRepositoryByFullName(
 		ctx,
-		connect_go.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
+		connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
 			FullName: fmt.Sprintf("%s/%s", modulePin.Owner(), modulePin.Repository()),
 		}),
 	)

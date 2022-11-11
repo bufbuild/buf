@@ -115,7 +115,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(apiProvider.ToClientConfig(), remote, registryv1alpha1connect.NewRepositoryServiceClient)
+	service := connectclient.Make(
+		apiProvider.ToClientConfig(),
+		remote,
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
 	resp, err := service.ListRepositories(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.ListRepositoriesRequest{

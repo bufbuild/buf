@@ -83,7 +83,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
+	service := connectclient.Make(
+		clientConfig,
+		moduleIdentity.Remote(),
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(container, "repository", moduleIdentity.Repository()); err != nil {
 			return err
