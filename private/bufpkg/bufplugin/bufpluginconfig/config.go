@@ -17,7 +17,6 @@ package bufpluginconfig
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/gen/data/dataspdx"
@@ -40,39 +39,6 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 	}
 	if !semver.IsValid(pluginVersion) {
 		return nil, fmt.Errorf("plugin_version %q must be a valid semantic version", externalConfig.PluginVersion)
-	}
-	var defaultOptions map[string]string
-	if len(externalConfig.DefaultOpts) > 0 {
-		// We only want to create a non-nil map if the user
-		// actually specified any options.
-		defaultOptions = make(map[string]string)
-	}
-	for _, option := range externalConfig.DefaultOpts {
-		split := strings.Split(option, "=")
-		if len(split) > 2 {
-			return nil, errors.New(`plugin default_options must be specified as "<key>=<value>" strings`)
-		}
-		if len(split) == 1 {
-			// Some plugins don't actually specify the '=' delimiter
-			// (e.g. protoc-gen-java's java_opt=annotate_code). To
-			// support these legacy options, we map the key to an empty
-			// string value.
-			//
-			// This means that plugin options with an explicit
-			// 'something=""' option are actually passed in as
-			// --something (omitting the explicit "" entirely).
-			//
-			// This behavior might need to change depending on if
-			// there are valid use cases here, but we eventually
-			// want to support structured options as key, value
-			// pairs, so we enforce this implicit behavior for now.
-			split = append(split, "")
-		}
-		key, value := split[0], split[1]
-		if _, ok := defaultOptions[key]; ok {
-			return nil, fmt.Errorf("plugin default option %q was specified more than once", key)
-		}
-		defaultOptions[key] = value
 	}
 	var dependencies []bufpluginref.PluginReference
 	if len(externalConfig.Deps) > 0 {
@@ -107,7 +73,6 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 	return &Config{
 		Name:            pluginIdentity,
 		PluginVersion:   pluginVersion,
-		DefaultOptions:  defaultOptions,
 		Dependencies:    dependencies,
 		Registry:        registryConfig,
 		SourceURL:       externalConfig.SourceURL,

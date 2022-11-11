@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package apiclientconnect
+package connectclient
 
 import _ "github.com/bufbuild/buf/private/usage"

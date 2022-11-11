@@ -1,8 +1,6 @@
 version: v1
 name: buf.build/library/go
 plugin_version: v1.28.1
-default_opts:
-  - paths=source_relative
 output_languages: [go]
 registry:
   go: {}
