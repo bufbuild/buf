@@ -352,7 +352,7 @@ func run(
 		logger,
 		storageosProvider,
 		runner,
-		registryProvider,
+		registryProvider.ToClientConfig(),
 	).Generate(
 		ctx,
 		container,
