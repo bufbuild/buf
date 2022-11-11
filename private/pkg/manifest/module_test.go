@@ -33,19 +33,21 @@ func TestDigestFromBlobHash(t *testing.T) {
 		filePath    = "path/to/file"
 		fileContent = "one line\nanother line\nyet another one\n"
 	)
-	digestFromContent, err := manifest.NewDigestFromBytes(
+	expectedDigest := mustDigestShake256(t, []byte(fileContent))
+	retDigest, err := manifest.NewDigestFromBytes(
 		manifest.DigestTypeShake256,
-		mustDigestShake256(t, []byte(fileContent)).Bytes(),
+		expectedDigest.Bytes(),
 	)
 	require.NoError(t, err)
-	assert.Equal(t, manifest.DigestTypeShake256, digestFromContent.Type())
+	assert.Equal(t, manifest.DigestTypeShake256, retDigest.Type())
+
 	blobHash := modulev1alpha1.Hash{
 		Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
-		Digest: digestFromContent.Bytes(),
+		Digest: expectedDigest.Bytes(),
 	}
 	digestFromBlobHash, err := manifest.NewDigestFromBlobHash(&blobHash)
 	require.NoError(t, err)
-	assert.Equal(t, digestFromContent.String(), digestFromBlobHash.String())
+	assert.Equal(t, expectedDigest.String(), digestFromBlobHash.String())
 }
 
 func TestNewMemoryBlob(t *testing.T) {
@@ -53,12 +55,11 @@ func TestNewMemoryBlob(t *testing.T) {
 	const content = "some file content"
 	digest := mustDigestShake256(t, []byte(content))
 	blob, err := manifest.NewMemoryBlob(
-		*digest,
-		[]byte(content),
+		digest, []byte(content),
 		manifest.MemoryBlobWithHashValidation(),
 	)
 	require.NoError(t, err)
-	assert.True(t, blob.Digest().Equal(*digest))
+	assert.True(t, digest.Equal(blob.Digest()))
 	file, err := blob.Open(context.Background())
 	require.NoError(t, err)
 	blobContent, err := io.ReadAll(file)
@@ -73,14 +74,13 @@ func TestInvalidMemoryBlob(t *testing.T) {
 
 	t.Run("NoValidateHash", func(t *testing.T) {
 		t.Parallel()
-		_, err := manifest.NewMemoryBlob(*digest, []byte("different content"))
+		_, err := manifest.NewMemoryBlob(digest, []byte("different content"))
 		assert.NoError(t, err)
 	})
 	t.Run("ValidatingHash", func(t *testing.T) {
 		t.Parallel()
 		_, err := manifest.NewMemoryBlob(
-			*digest,
-			[]byte("different content"),
+			digest, []byte("different content"),
 			manifest.MemoryBlobWithHashValidation(),
 		)
 		assert.Error(t, err)
@@ -140,7 +140,7 @@ func TestNewBlobInvalidDuplicates(t *testing.T) {
 	t.Parallel()
 	blobs := newBlobsArray(t)
 	incorrectBlob, err := manifest.NewMemoryBlob(
-		*blobs[0].Digest(),
+		blobs[0].Digest(),
 		[]byte("not blobs[0] content"),
 	)
 	require.NoError(t, err)
@@ -191,7 +191,7 @@ func newBlobsArray(t *testing.T) []manifest.Blob {
 		content := fmt.Sprintf("some content %d", i)
 		digest := mustDigestShake256(t, []byte(content))
 		blob, err := manifest.NewMemoryBlob(
-			*digest, []byte(content),
+			digest, []byte(content),
 			manifest.MemoryBlobWithHashValidation(),
 		)
 		require.NoError(t, err)

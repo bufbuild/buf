@@ -83,14 +83,14 @@ func TestAddEntry(t *testing.T) {
 	m := manifest.New()
 	fileDigest := mustDigestShake256(t, nil)
 	const filePath = "my/path"
-	require.NoError(t, m.AddEntry(filePath, *fileDigest))
-	require.NoError(t, m.AddEntry(filePath, *fileDigest)) // adding the same entry twice is fine
+	require.NoError(t, m.AddEntry(filePath, fileDigest))
+	require.NoError(t, m.AddEntry(filePath, fileDigest)) // adding the same entry twice is fine
 
-	require.Error(t, m.AddEntry("", *fileDigest))
+	require.Error(t, m.AddEntry("", fileDigest))
 	require.Error(t, m.AddEntry("other/path", manifest.Digest{}))
-	require.Error(t, m.AddEntry(filePath, *mustDigestShake256(t, []byte("other content"))))
+	require.Error(t, m.AddEntry(filePath, mustDigestShake256(t, []byte("other content"))))
 
-	expect := fmt.Sprintf("%s  %s\n", fileDigest, filePath)
+	expect := fmt.Sprintf("%s  %s\n", fileDigest.String(), filePath)
 	retContent, err := m.MarshalText()
 	require.NoError(t, err)
 	assert.Equal(t, expect, string(retContent))
@@ -152,14 +152,15 @@ func TestDigestPaths(t *testing.T) {
 	t.Parallel()
 	m := manifest.New()
 	sharedDigest := mustDigestShake256(t, nil)
-	err := m.AddEntry("path/one", *sharedDigest)
+	err := m.AddEntry("path/one", sharedDigest)
 	require.NoError(t, err)
-	err = m.AddEntry("path/two", *sharedDigest)
+	err = m.AddEntry("path/two", sharedDigest)
 	require.NoError(t, err)
 	paths, ok := m.PathsFor(sharedDigest.String())
 	assert.True(t, ok)
 	assert.ElementsMatch(t, []string{"path/one", "path/two"}, paths)
-	paths, ok = m.PathsFor(mustDigestShake256(t, []byte{0}).String())
+	otherDigest := mustDigestShake256(t, []byte{0})
+	paths, ok = m.PathsFor(otherDigest.String())
 	assert.False(t, ok)
 	assert.Empty(t, paths)
 }
@@ -168,14 +169,14 @@ func TestPathDigest(t *testing.T) {
 	t.Parallel()
 	m := manifest.New()
 	digest := mustDigestShake256(t, nil)
-	err := m.AddEntry("my/path", *digest)
+	err := m.AddEntry("my/path", digest)
 	require.NoError(t, err)
 	retDigest, ok := m.DigestFor("my/path")
 	assert.True(t, ok)
-	assert.Equal(t, digest, retDigest)
+	assert.True(t, retDigest.Equal(digest))
 	retDigest, ok = m.DigestFor("foo")
 	assert.False(t, ok)
-	assert.Empty(t, retDigest)
+	assert.Nil(t, retDigest)
 }
 
 func testInvalidManifest(
@@ -197,7 +198,7 @@ func TestAllPaths(t *testing.T) {
 	var addedPaths []string
 	for i := 0; i < 20; i++ {
 		path := fmt.Sprintf("path/to/file%0d", i)
-		require.NoError(t, m.AddEntry(path, *mustDigestShake256(t, nil)))
+		require.NoError(t, m.AddEntry(path, mustDigestShake256(t, nil)))
 		addedPaths = append(addedPaths, path)
 	}
 	retPaths := m.Paths()

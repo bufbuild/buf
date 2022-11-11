@@ -45,18 +45,18 @@ func TestFromBucket(t *testing.T) {
 		fooDigest  = mustDigestShake256(t, []byte("bar"))
 		nullDigest = mustDigestShake256(t, nil)
 	)
-	expected := fmt.Sprintf("%s  foo\n", fooDigest)
-	expected += fmt.Sprintf("%s  null\n", nullDigest)
+	expected := fmt.Sprintf("%s  foo\n", fooDigest.String())
+	expected += fmt.Sprintf("%s  null\n", nullDigest.String())
 	retContent, err := m.MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, expected, string(retContent))
 	// blobs
 	fooBlob, ok := blobSet.BlobFor(fooDigest.String())
 	require.True(t, ok)
-	assert.True(t, fooDigest.Equal(*fooBlob.Digest()))
+	assert.True(t, fooDigest.Equal(fooBlob.Digest()))
 	nullBlob, ok := blobSet.BlobFor(nullDigest.String())
 	require.True(t, ok)
-	assert.True(t, nullDigest.Equal(*nullBlob.Digest()))
+	assert.True(t, nullDigest.Equal(nullBlob.Digest()))
 }
 
 func TestNewBucket(t *testing.T) {
@@ -126,7 +126,7 @@ func TestNewBucket(t *testing.T) {
 		t.Parallel()
 		const content = "some other file contents"
 		digest := mustDigestShake256(t, []byte(content))
-		orphanBlob, err := manifest.NewMemoryBlob(*digest, []byte(content))
+		orphanBlob, err := manifest.NewMemoryBlob(digest, []byte(content))
 		require.NoError(t, err)
 		tooLargeBlobSet, err := manifest.NewBlobSet(
 			context.Background(),

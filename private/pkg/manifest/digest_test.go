@@ -29,17 +29,18 @@ import (
 
 func TestNewDigestBytes(t *testing.T) {
 	t.Parallel()
+	nilDigest := mustDigestShake256(t, nil)
 	testInvalidDigestBytes(
 		t,
 		"empty",
 		"",
-		mustDigestShake256(t, nil).Bytes(),
+		nilDigest.Bytes(),
 	)
 	testInvalidDigestBytes(
 		t,
 		"unsupported digest type",
 		"md5",
-		mustDigestShake256(t, nil).Bytes(),
+		nilDigest.Bytes(),
 	)
 	testInvalidDigestBytes(
 		t,
@@ -51,23 +52,24 @@ func TestNewDigestBytes(t *testing.T) {
 		t,
 		"invalid digest",
 		manifest.DigestTypeShake256,
-		mustDigestShake256(t, nil).Bytes()[:10],
+		nilDigest.Bytes()[:10],
 	)
 }
 
 func TestNewDigestHex(t *testing.T) {
 	t.Parallel()
+	nilDigest := mustDigestShake256(t, nil)
 	testInvalidDigestHex(
 		t,
 		"empty",
 		"",
-		mustDigestShake256(t, nil).Hex(),
+		nilDigest.Hex(),
 	)
 	testInvalidDigestHex(
 		t,
 		"unsupported digest type",
 		"md5",
-		mustDigestShake256(t, nil).Hex(),
+		nilDigest.Hex(),
 	)
 	testInvalidDigestHex(
 		t,
@@ -85,7 +87,7 @@ func TestNewDigestHex(t *testing.T) {
 		t,
 		"invalid digest",
 		manifest.DigestTypeShake256,
-		mustDigestShake256(t, nil).Hex()[:10],
+		nilDigest.Hex()[:10],
 	)
 }
 
@@ -157,18 +159,18 @@ func TestEqualDigests(t *testing.T) {
 	d1 := mustDigestShake256(t, []byte(fileContent))
 	d2 := mustDigestShake256(t, []byte(fileContent))
 	d3 := mustDigestShake256(t, []byte("some other content"))
-	assert.True(t, d1.Equal(*d2))
-	assert.True(t, d2.Equal(*d1))
-	assert.False(t, d1.Equal(*d3))
+	assert.True(t, d1.Equal(d2))
+	assert.True(t, d2.Equal(d1))
+	assert.False(t, d1.Equal(d3))
 }
 
-func mustDigestShake256(t *testing.T, content []byte) *manifest.Digest {
+func mustDigestShake256(t *testing.T, content []byte) manifest.Digest {
 	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
 	require.NoError(t, err)
 	require.NotNil(t, digester)
 	digest, err := digester.Digest(bytes.NewReader(content))
 	require.NoError(t, err)
-	return digest
+	return *digest
 }
 
 func testInvalidDigestString(

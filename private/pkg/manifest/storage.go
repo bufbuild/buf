@@ -66,7 +66,7 @@ func NewFromBucket(
 			return err
 		}
 		blobs = append(blobs, blob)
-		if err := m.AddEntry(path, *blob.Digest()); err != nil {
+		if err := m.AddEntry(path, blob.Digest()); err != nil {
 			return err
 		}
 		return nil

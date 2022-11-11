@@ -35,7 +35,7 @@ var (
 
 // Blob is a blob with a digest and a content.
 type Blob interface {
-	Digest() *Digest
+	Digest() Digest
 	Open(context.Context) (io.ReadCloser, error)
 	EqualContent(ctx context.Context, other Blob) (bool, error)
 }
@@ -88,8 +88,8 @@ func NewMemoryBlob(digest Digest, content []byte, opts ...MemoryBlobOption) (Blo
 	}, nil
 }
 
-func (b *memoryBlob) Digest() *Digest {
-	return &b.digest
+func (b *memoryBlob) Digest() Digest {
+	return b.digest
 }
 
 func (b *memoryBlob) Open(context.Context) (io.ReadCloser, error) {
@@ -114,9 +114,10 @@ func (b *memoryBlob) EqualContent(ctx context.Context, other Blob) (_ bool, retE
 
 // AsProtoBlob returns the passed blob as a proto module blob.
 func AsProtoBlob(ctx context.Context, b Blob) (*modulev1alpha1.Blob, error) {
-	hashKind, ok := digestTypeToHashKind[b.Digest().Type()]
+	digest := b.Digest()
+	hashKind, ok := digestTypeToHashKind[digest.Type()]
 	if !ok {
-		return nil, fmt.Errorf("digest type %q not supported by module proto", b.Digest().Type())
+		return nil, fmt.Errorf("digest type %q not supported by module proto", digest.Type())
 	}
 	rc, err := b.Open(ctx)
 	if err != nil {
@@ -132,7 +133,7 @@ func AsProtoBlob(ctx context.Context, b Blob) (*modulev1alpha1.Blob, error) {
 	return &modulev1alpha1.Blob{
 		Hash: &modulev1alpha1.Hash{
 			Kind:   hashKind,
-			Digest: b.Digest().Bytes(),
+			Digest: digest.Bytes(),
 		},
 		Content: content,
 	}, nil
@@ -169,7 +170,8 @@ func NewBlobSet(ctx context.Context, blobs []Blob, opts ...BlobSetOption) (*Blob
 	}
 	digestToBlobs := make(map[string]Blob, len(blobs))
 	for _, b := range blobs {
-		digestStr := b.Digest().String()
+		digest := b.Digest()
+		digestStr := digest.String()
 		if config.validateContent {
 			existingBlob, alreadyPresent := digestToBlobs[digestStr]
 			if alreadyPresent {
