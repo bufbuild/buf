@@ -15,9 +15,7 @@
 package push
 
 import (
-	"bytes"
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -170,11 +168,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	manifest, err := manifestBlob(ctx, sourceBucket)
-	if err != nil {
-		return err
-	}
-	blobs, err := bucketBlobs(ctx, sourceBucket)
+	manifest, blobs, err := manifestAndFilesBlobs(ctx, sourceBucket)
 	if err != nil {
 		return err
 	}
@@ -218,48 +212,27 @@ func run(
 	return nil
 }
 
-// manifestBlob returns a canonical manifest in blob form from a bucket.
-func manifestBlob(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-) (*modulev1alpha1.Blob, error) {
-	moduleManifest, err := manifest.NewFromBucket(ctx, bucket)
+func manifestAndFilesBlobs(ctx context.Context, sourceBucket storage.ReadBucket) (*modulev1alpha1.Blob, []*modulev1alpha1.Blob, error) {
+	m, blobs, err := manifest.NewFromBucket(ctx, sourceBucket)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	manifestText, err := moduleManifest.MarshalText()
+	manifestBlob, err := m.Blob()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return manifest.NewBlobFromReader(bytes.NewReader(manifestText))
-}
-
-// bucketBlobs returns a deduplicated set of blobs for the files in bucket.
-func bucketBlobs(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-) ([]*modulev1alpha1.Blob, error) {
-	var blobs []*modulev1alpha1.Blob
-	haveBlob := make(map[string]struct{})
-	if walkErr := bucket.Walk(ctx, "", func(info storage.ObjectInfo) error {
-		path := info.Path()
-		file, err := bucket.Get(ctx, path)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		blob, err := manifest.NewBlobFromReader(file)
-		if err != nil {
-			return err
-		}
-		hexDigest := hex.EncodeToString(blob.Hash.Digest)
-		if _, ok := haveBlob[hexDigest]; !ok {
-			blobs = append(blobs, blob)
-			haveBlob[hexDigest] = struct{}{}
-		}
-		return nil
-	}); walkErr != nil {
-		return nil, walkErr
+	manifestProtoBlob, err := manifestBlob.AsProtoBlob()
+	if err != nil {
+		return nil, nil, err
 	}
-	return blobs, nil
+	filesBlobs := blobs.Blobs()
+	filesProtoBlobs := make([]*modulev1alpha1.Blob, 0, len(filesBlobs))
+	for _, b := range filesBlobs {
+		pb, err := b.AsProtoBlob()
+		if err != nil {
+			return nil, nil, err
+		}
+		filesProtoBlobs = append(filesProtoBlobs, pb)
+	}
+	return manifestProtoBlob, filesProtoBlobs, nil
 }

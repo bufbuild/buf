@@ -38,14 +38,25 @@ func TestFromBucket(t *testing.T) {
 			"foo":  []byte("bar"),
 		})
 	require.NoError(t, err)
-	m, err := manifest.NewFromBucket(ctx, bucket)
+	m, blobSet, err := manifest.NewFromBucket(ctx, bucket)
 	require.NoError(t, err)
 	// sorted by paths
-	expected := fmt.Sprintf("%s  foo\n", mustDigestShake256(t, []byte("bar")))
-	expected += fmt.Sprintf("%s  null\n", mustDigestShake256(t, nil))
+	var (
+		fooDigest  = mustDigestShake256(t, []byte("bar"))
+		nullDigest = mustDigestShake256(t, nil)
+	)
+	expected := fmt.Sprintf("%s  foo\n", fooDigest)
+	expected += fmt.Sprintf("%s  null\n", nullDigest)
 	retContent, err := m.MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, expected, string(retContent))
+	// blobs
+	fooBlob, ok := blobSet.BlobFor(fooDigest.String())
+	require.True(t, ok)
+	assert.True(t, fooDigest.Equal(*fooBlob.Digest()))
+	nullBlob, ok := blobSet.BlobFor(nullDigest.String())
+	require.True(t, ok)
+	assert.True(t, nullDigest.Equal(*nullBlob.Digest()))
 }
 
 func TestNewBucket(t *testing.T) {

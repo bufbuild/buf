@@ -171,7 +171,7 @@ func TestBlobFromReader(t *testing.T) {
 func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
 	t.Helper()
 	t.Parallel()
-	blob, err := manifest.NewBlobFromReader(bytes.NewReader(content))
+	blob, err := manifest.NewMemoryBlobFromReader(bytes.NewReader(content))
 	require.NoError(t, err)
 	expect := &modulev1alpha1.Blob{
 		Hash: &modulev1alpha1.Hash{
