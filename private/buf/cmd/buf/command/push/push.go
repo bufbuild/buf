@@ -221,14 +221,14 @@ func manifestAndFilesBlobs(ctx context.Context, sourceBucket storage.ReadBucket)
 	if err != nil {
 		return nil, nil, err
 	}
-	manifestProtoBlob, err := manifestBlob.AsProtoBlob()
+	manifestProtoBlob, err := manifest.AsProtoBlob(ctx, manifestBlob)
 	if err != nil {
 		return nil, nil, err
 	}
 	filesBlobs := blobs.Blobs()
 	filesProtoBlobs := make([]*modulev1alpha1.Blob, 0, len(filesBlobs))
 	for _, b := range filesBlobs {
-		pb, err := b.AsProtoBlob()
+		pb, err := manifest.AsProtoBlob(ctx, b)
 		if err != nil {
 			return nil, nil, err
 		}
