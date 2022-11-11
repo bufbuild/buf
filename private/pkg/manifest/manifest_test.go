@@ -36,7 +36,7 @@ func Example() {
 			"foo": []byte("bar"),
 		},
 	)
-	m, _ := manifest.NewFromBucket(ctx, bucket)
+	m, _, _ := manifest.NewFromBucket(ctx, bucket)
 	digest, _ := m.DigestFor("foo")
 	fmt.Printf("digest[:16]: %s\n", digest.Hex()[:16])
 	path, _ := m.PathsFor(digest.String())
