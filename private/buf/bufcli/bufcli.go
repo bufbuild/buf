@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufapiclient"
 	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -41,7 +40,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -57,6 +55,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -586,31 +585,8 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 	return bufapp.NewConfig(container, externalConfig)
 }
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider which uses a token reader to look
-// up the token in the container or in netrc based on the address of each individual client from the provider.
-// It is then set in the header of all outgoing requests from this provider
-func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProviderWithOptions(
-		container,
-		bufapiclient.RegistryProviderWithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProvider(container),
-		),
-	)
-}
-
-// NewRegistryProviderWithToken creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
-// set in the header of all outgoing requests from this provider
-func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProviderWithOptions(
-		container,
-		bufapiclient.RegistryProviderWithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProviderWithToken(token),
-		),
-	)
-}
-
 // Returns a registry provider with the given options applied in addition to default ones for all providers
-func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {
+func newConnectClientConfigWithOptions(container appflag.Container, opts ...connectclient.ConfigOption) (*connectclient.Config, error) {
 	config, err := NewConfig(container)
 	if err != nil {
 		return nil, err
@@ -619,8 +595,8 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 		httpclient.WithObservability(),
 		httpclient.WithTLSConfig(config.TLS),
 	)
-	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithAddressMapper(func(address string) string {
+	options := []connectclient.ConfigOption{
+		connectclient.WithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {
 				address = buftransport.PrependAPISubdomain(address)
 			}
@@ -629,43 +605,36 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 			}
 			return buftransport.PrependHTTPS(address)
 		}),
-		bufapiclient.RegistryProviderWithInterceptors(
-			bufconnect.NewSetCLIVersionInterceptor(Version),
+		connectclient.WithInterceptors(
+			[]connect.Interceptor{bufconnect.NewSetCLIVersionInterceptor(Version)},
 		),
 	}
 	options = append(options, opts...)
 
-	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
+	return connectclient.NewConfig(client, options...), nil
 }
 
 // NewConnectClientConfig creates a new connect.ClientConfig which uses a token reader to look
 // up the token in the container or in netrc based on the address of each individual client.
 // It is then set in the header of all outgoing requests from clients created using this config.
 func NewConnectClientConfig(container appflag.Container) (*connectclient.Config, error) {
-	// TODO(BSR-798): when the generated provider is ripped out, create this config directly
-	//  instead of converting from the provider
-	prov, err := NewRegistryProvider(context.Background(), container)
-	if err != nil {
-		return nil, err
-	}
-	return prov.ToClientConfig(), nil
+	return newConnectClientConfigWithOptions(
+		container,
+		connectclient.WithAuthInterceptorProvider(
+			bufconnect.NewAuthorizationInterceptorProvider(container),
+		),
+	)
 }
 
 // NewConnectClientConfigWithToken creates a new connect.ClientConfig with a given token. The provided token is
 // set in the header of all outgoing requests from this provider
 func NewConnectClientConfigWithToken(container appflag.Container, token string) (*connectclient.Config, error) {
-	// TODO(BSR-798): when the generated provider is ripped out, create this config directly
-	//  instead of converting from the provider
-	prov, err := newRegistryProviderWithOptions(
+	return newConnectClientConfigWithOptions(
 		container,
-		bufapiclient.RegistryProviderWithAuthInterceptorProvider(
+		connectclient.WithAuthInterceptorProvider(
 			bufconnect.NewAuthorizationInterceptorProviderWithToken(token),
 		),
 	)
-	if err != nil {
-		return nil, err
-	}
-	return prov.ToClientConfig(), nil
 }
 
 // PromptUserForDelete is used to receieve user confirmation that a specific
