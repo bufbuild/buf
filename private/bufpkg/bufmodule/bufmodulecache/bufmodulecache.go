@@ -16,7 +16,8 @@ package bufmodulecache
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
@@ -25,6 +26,14 @@ import (
 
 // ModuleReaderOption is an option for creating a ModuleReader.
 type ModuleReaderOption func(*moduleReaderOptions)
+
+type RepositoryServiceClientFactory func(address string) registryv1alpha1connect.RepositoryServiceClient
+
+func NewRepositoryServiceClientFactory(clientConfig *connectclient.Config) RepositoryServiceClientFactory {
+	return func(address string) registryv1alpha1connect.RepositoryServiceClient {
+		return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryServiceClient)
+	}
+}
 
 // NewModuleReader returns a new ModuleReader that uses cache as a caching layer, and
 // delegate as the source of truth.
@@ -35,7 +44,7 @@ func NewModuleReader(
 	dataReadWriteBucket storage.ReadWriteBucket,
 	sumReadWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
-	repositoryServiceProvider registryv1alpha1apiclient.RepositoryServiceProvider,
+	repositoryClientFactory RepositoryServiceClientFactory,
 	options ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
@@ -45,7 +54,7 @@ func NewModuleReader(
 		dataReadWriteBucket,
 		sumReadWriteBucket,
 		delegate,
-		repositoryServiceProvider,
+		repositoryClientFactory,
 		options...,
 	)
 }
