@@ -19,27 +19,25 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/connect-go"
 )
 
 type moduleReader struct {
-	clientConfig *connectclient.Config
+	downloadClientFactory DownloadServiceClientFactory
 }
 
 func newModuleReader(
-	clientConfig *connectclient.Config,
+	downloadClientFactory DownloadServiceClientFactory,
 ) *moduleReader {
 	return &moduleReader{
-		clientConfig: clientConfig,
+		downloadClientFactory: downloadClientFactory,
 	}
 }
 
 func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
-	downloadService := connectclient.Make(m.clientConfig, modulePin.Remote(), registryv1alpha1connect.NewDownloadServiceClient)
+	downloadService := m.downloadClientFactory(modulePin.Remote())
 	resp, err := downloadService.Download(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.DownloadRequest{

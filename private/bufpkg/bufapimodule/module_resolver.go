@@ -18,35 +18,29 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/connect-go"
 	"go.uber.org/zap"
 )
 
 type moduleResolver struct {
-	logger       *zap.Logger
-	clientConfig *connectclient.Config
+	logger                        *zap.Logger
+	repositoryCommitClientFactory RepositoryCommitServiceClientFactory
 }
 
 func newModuleResolver(
 	logger *zap.Logger,
-	clientConfig *connectclient.Config,
+	repositoryCommitClientFactory RepositoryCommitServiceClientFactory,
 ) *moduleResolver {
 	return &moduleResolver{
-		logger:       logger,
-		clientConfig: clientConfig,
+		logger:                        logger,
+		repositoryCommitClientFactory: repositoryCommitClientFactory,
 	}
 }
 
 func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmoduleref.ModuleReference) (bufmoduleref.ModulePin, error) {
-	repositoryCommitService := connectclient.Make(
-		m.clientConfig,
-		moduleReference.Remote(),
-		registryv1alpha1connect.NewRepositoryCommitServiceClient,
-	)
+	repositoryCommitService := m.repositoryCommitClientFactory(moduleReference.Remote())
 	resp, err := repositoryCommitService.GetRepositoryCommitByReference(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.GetRepositoryCommitByReferenceRequest{
