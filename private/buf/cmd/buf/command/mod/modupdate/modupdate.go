@@ -181,14 +181,11 @@ func getDependencies(
 	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
 		return nil, nil
 	}
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return nil, err
 	}
-	service, err := apiProvider.NewResolveService(ctx, remote)
-	if err != nil {
-		return nil, err
-	}
+	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
 	var protoDependencyModuleReferences []*modulev1alpha1.ModuleReference
 	var currentProtoModulePins []*modulev1alpha1.ModulePin
 	if len(flags.Only) > 0 {
@@ -213,10 +210,12 @@ func getDependencies(
 			moduleConfig.Build.DependencyModuleReferences...,
 		)
 	}
-	protoDependencyModulePins, err := service.GetModulePins(
+	resp, err := service.GetModulePins(
 		ctx,
-		protoDependencyModuleReferences,
-		currentProtoModulePins,
+		connect.NewRequest(&registryv1alpha1.GetModulePinsRequest{
+			ModuleReferences:  protoDependencyModuleReferences,
+			CurrentModulePins: currentProtoModulePins,
+		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeUnimplemented && remote != bufconnect.DefaultRemote {
@@ -224,7 +223,7 @@ func getDependencies(
 		}
 		return nil, err
 	}
-	dependencyModulePins, err := bufmoduleref.NewModulePinsForProtos(protoDependencyModulePins...)
+	dependencyModulePins, err := bufmoduleref.NewModulePinsForProtos(resp.Msg.ModulePins...)
 	if err != nil {
 		return nil, bufcli.NewInternalError(err)
 	}
@@ -233,7 +232,7 @@ func getDependencies(
 	remoteToDependencyModulePins := make(map[string][]bufmoduleref.ModulePin)
 	for _, pin := range dependencyModulePins {
 		if _, ok := remoteToRepositoryService[pin.Remote()]; !ok {
-			remoteToRepositoryService[pin.Remote()] = connectclient.Make(apiProvider.ToClientConfig(), pin.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
+			remoteToRepositoryService[pin.Remote()] = connectclient.Make(clientConfig, pin.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
 		}
 		remoteToDependencyModulePins[pin.Remote()] = append(remoteToDependencyModulePins[pin.Remote()], pin)
 	}
