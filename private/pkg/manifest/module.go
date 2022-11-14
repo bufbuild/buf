@@ -121,6 +121,26 @@ func AsProtoBlob(ctx context.Context, b Blob) (*modulev1alpha1.Blob, error) {
 	}, nil
 }
 
+// FromProtoBlob returns A Blob from a proto module blob.
+func FromProtoBlob(b *modulev1alpha1.Blob) (Blob, error) {
+	if b == nil {
+		return nil, fmt.Errorf("nil blob")
+	}
+	hashDigest, err := NewDigestFromBlobHash(b.Hash)
+	if err != nil {
+		return nil, fmt.Errorf("digest from hash: %w", err)
+	}
+	memBlob, err := NewMemoryBlob(
+		*hashDigest,
+		b.Content,
+		MemoryBlobWithHashValidation(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("new digester from hash type: %w", err)
+	}
+	return memBlob, nil
+}
+
 // BlobSet represents a set of deduplicated blobs, by digests.
 type BlobSet struct {
 	digestToBlob map[string]Blob
