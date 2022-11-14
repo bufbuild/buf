@@ -17,23 +17,23 @@ package bufapimodule
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"go.uber.org/zap"
 )
 
 // NewModuleReader returns a new ModuleReader backed by the download service.
 func NewModuleReader(
-	downloadServiceProvider registryv1alpha1apiclient.DownloadServiceProvider,
+	clientConfig *connectclient.Config,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
-		downloadServiceProvider,
+		clientConfig,
 	)
 }
 
 // NewModuleResolver returns a new ModuleResolver backed by the resolve service.
 func NewModuleResolver(
 	logger *zap.Logger,
-	repositoryCommitServiceProvider registryv1alpha1apiclient.RepositoryCommitServiceProvider,
+	clientConfig *connectclient.Config,
 ) bufmodule.ModuleResolver {
-	return newModuleResolver(logger, repositoryCommitServiceProvider)
+	return newModuleResolver(logger, clientConfig)
 }
