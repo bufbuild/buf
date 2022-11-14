@@ -95,12 +95,12 @@ func run(
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
 	service := connectclient.Make(
-		apiProvider.ToClientConfig(),
+		clientConfig,
 		moduleIdentity.Remote(),
 		registryv1alpha1connect.NewRepositoryServiceClient,
 	)
@@ -119,7 +119,7 @@ func run(
 	}
 	repository := resp.Msg.Repository
 	return bufprint.NewRepositoryPrinter(
-		apiProvider,
+		clientConfig,
 		moduleIdentity.Remote(),
 		container.Stdout(),
 	).PrintRepository(ctx, format, repository)
