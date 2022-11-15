@@ -31,7 +31,6 @@ var (
 	digestTypeToHashKind = map[DigestType]modulev1alpha1.HashKind{
 		DigestTypeShake256: modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
 	}
-	blockSize = 4098
 )
 
 // Blob is a blob with a digest and a content.
@@ -236,6 +235,7 @@ func NewMemoryBlobFromReaderWithDigester(content io.Reader, digester Digester) (
 // An error is returned if an unexpected I/O error occurred when opening,
 // reading, or closing either blob.
 func BlobEqual(ctx context.Context, a, b Blob) (_ bool, retErr error) {
+	const blockSize = 4098
 	if !a.Digest().Equal(*b.Digest()) {
 		// digests don't match
 		return false, nil
