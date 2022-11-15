@@ -29,6 +29,10 @@ type recommendationServiceClient struct {
 	client registryv1alpha1connect.RecommendationServiceClient
 }
 
+func (s *recommendationServiceClient) Unwrap() registryv1alpha1connect.RecommendationServiceClient {
+	return s.client
+}
+
 // RecommendedRepositories returns a list of recommended repositories.
 func (s *recommendationServiceClient) RecommendedRepositories(ctx context.Context) (repositories []*v1alpha1.RecommendedRepository, _ error) {
 	response, err := s.client.RecommendedRepositories(

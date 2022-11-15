@@ -29,6 +29,10 @@ type adminServiceClient struct {
 	client registryv1alpha1connect.AdminServiceClient
 }
 
+func (s *adminServiceClient) Unwrap() registryv1alpha1connect.AdminServiceClient {
+	return s.client
+}
+
 // ForceDeleteUser forces to delete a user. Resources and organizations that are
 // solely owned by the user will also be deleted.
 func (s *adminServiceClient) ForceDeleteUser(

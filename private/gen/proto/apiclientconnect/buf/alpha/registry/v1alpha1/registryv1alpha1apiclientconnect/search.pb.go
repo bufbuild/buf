@@ -29,6 +29,10 @@ type searchServiceClient struct {
 	client registryv1alpha1connect.SearchServiceClient
 }
 
+func (s *searchServiceClient) Unwrap() registryv1alpha1connect.SearchServiceClient {
+	return s.client
+}
+
 // Search searches the BSR.
 func (s *searchServiceClient) Search(
 	ctx context.Context,

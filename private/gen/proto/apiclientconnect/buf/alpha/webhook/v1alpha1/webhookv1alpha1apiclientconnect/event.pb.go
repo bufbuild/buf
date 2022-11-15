@@ -30,6 +30,10 @@ type eventServiceClient struct {
 	client webhookv1alpha1connect.EventServiceClient
 }
 
+func (s *eventServiceClient) Unwrap() webhookv1alpha1connect.EventServiceClient {
+	return s.client
+}
+
 // Event is the rpc which receives webhook events.
 func (s *eventServiceClient) Event(
 	ctx context.Context,

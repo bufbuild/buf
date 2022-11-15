@@ -246,6 +246,10 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`client `, clientGoIdentString)
 		g.P(`}`)
 		g.P()
+		g.P(`func (s *`, structName, `Client) Unwrap() `, clientGoIdentString, ` {`)
+		g.P(`return s.client`)
+		g.P(`}`)
+		g.P()
 
 		for _, method := range service.Methods {
 			if err := protogenutil.ValidateMethodUnary(method); err != nil {
