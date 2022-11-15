@@ -29,6 +29,10 @@ type displayServiceClient struct {
 	client registryv1alpha1connect.DisplayServiceClient
 }
 
+func (s *displayServiceClient) Unwrap() registryv1alpha1connect.DisplayServiceClient {
+	return s.client
+}
+
 // DisplayOrganizationElements returns which organization elements should be displayed to the user.
 func (s *displayServiceClient) DisplayOrganizationElements(
 	ctx context.Context,

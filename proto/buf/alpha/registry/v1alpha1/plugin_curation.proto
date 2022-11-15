@@ -151,6 +151,9 @@ message CuratedPlugin {
   string spdx_license_id = 15;
   // license_url specifies an optional URL for the plugin's license (if not using a standard spdx_license_id).
   string license_url = 16;
+  // verified indicates the plugin has been verified. Verification is a property
+  // of the BSR and cannot be set by end-users.
+  bool verified = 17;
 }
 
 // PluginCurationService manages curated plugins.

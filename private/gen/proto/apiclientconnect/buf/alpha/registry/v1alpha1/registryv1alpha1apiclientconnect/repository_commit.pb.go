@@ -29,6 +29,10 @@ type repositoryCommitServiceClient struct {
 	client registryv1alpha1connect.RepositoryCommitServiceClient
 }
 
+func (s *repositoryCommitServiceClient) Unwrap() registryv1alpha1connect.RepositoryCommitServiceClient {
+	return s.client
+}
+
 // ListRepositoryCommitsByBranch lists the repository commits associated
 // with a repository branch on a repository, ordered by their create time.
 func (s *repositoryCommitServiceClient) ListRepositoryCommitsByBranch(

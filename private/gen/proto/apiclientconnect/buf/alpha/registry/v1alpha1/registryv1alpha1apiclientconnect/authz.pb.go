@@ -29,6 +29,10 @@ type authzServiceClient struct {
 	client registryv1alpha1connect.AuthzServiceClient
 }
 
+func (s *authzServiceClient) Unwrap() registryv1alpha1connect.AuthzServiceClient {
+	return s.client
+}
+
 // UserCanCreateOrganizationRepository returns whether the user is authorized
 // to create repositories in an organization.
 func (s *authzServiceClient) UserCanCreateOrganizationRepository(ctx context.Context, organizationId string) (authorized bool, _ error) {

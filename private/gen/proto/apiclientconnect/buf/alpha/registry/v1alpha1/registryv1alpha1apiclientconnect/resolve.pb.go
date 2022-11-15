@@ -30,6 +30,10 @@ type resolveServiceClient struct {
 	client registryv1alpha1connect.ResolveServiceClient
 }
 
+func (s *resolveServiceClient) Unwrap() registryv1alpha1connect.ResolveServiceClient {
+	return s.client
+}
+
 // GetModulePins finds all the latest digests and respective dependencies of
 // the provided module references and picks a set of distinct modules pins.
 //
@@ -59,6 +63,10 @@ func (s *resolveServiceClient) GetModulePins(
 type localResolveServiceClient struct {
 	logger *zap.Logger
 	client registryv1alpha1connect.LocalResolveServiceClient
+}
+
+func (s *localResolveServiceClient) Unwrap() registryv1alpha1connect.LocalResolveServiceClient {
+	return s.client
 }
 
 // GetLocalModulePins gets the latest pins for the specified local module references.

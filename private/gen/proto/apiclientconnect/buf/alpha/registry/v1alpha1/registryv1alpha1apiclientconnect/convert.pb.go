@@ -30,6 +30,10 @@ type convertServiceClient struct {
 	client registryv1alpha1connect.ConvertServiceClient
 }
 
+func (s *convertServiceClient) Unwrap() registryv1alpha1connect.ConvertServiceClient {
+	return s.client
+}
+
 // Convert converts a serialized message according to
 // the provided type name using an image.
 func (s *convertServiceClient) Convert(

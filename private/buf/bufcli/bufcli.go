@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufapiclient"
 	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -41,13 +40,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/app/appname"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -56,6 +55,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -373,11 +373,14 @@ func NewWireImageConfigReader(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 ) (bufwire.ImageConfigReader, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
-	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
+	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -396,11 +399,14 @@ func NewWireModuleConfigReader(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 ) (bufwire.ModuleConfigReader, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
-	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
+	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -418,11 +424,14 @@ func NewWireModuleConfigReaderForModuleReader(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 	moduleReader bufmodule.ModuleReader,
 ) (bufwire.ModuleConfigReader, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
@@ -436,11 +445,14 @@ func NewWireFileLister(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 ) (bufwire.FileLister, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
-	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
+	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -500,11 +512,11 @@ func NewWireProtoEncodingWriter(
 // required cache directories.
 func NewModuleReaderAndCreateCacheDirs(
 	container appflag.Container,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 ) (bufmodule.ModuleReader, error) {
 	return newModuleReaderAndCreateCacheDirs(
 		container,
-		registryProvider,
+		clientConfig,
 	)
 }
 
@@ -515,18 +527,18 @@ func NewModuleReaderAndCreateCacheDirs(
 // cache is otherwise dangerous and requires manager approval.
 func NewModuleReaderAndCreateCacheDirsWithExternalPaths(
 	container appflag.Container,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 ) (bufmodule.ModuleReader, error) {
 	return newModuleReaderAndCreateCacheDirs(
 		container,
-		registryProvider,
+		clientConfig,
 		bufmodulecache.ModuleReaderWithExternalPaths(),
 	)
 }
 
 func newModuleReaderAndCreateCacheDirs(
 	container appflag.Container,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 	moduleReaderOptions ...bufmodulecache.ModuleReaderOption,
 ) (bufmodule.ModuleReader, error) {
 	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
@@ -569,8 +581,8 @@ func newModuleReaderAndCreateCacheDirs(
 		fileLocker,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
-		bufapimodule.NewModuleReader(registryProvider),
-		registryProvider,
+		bufapimodule.NewModuleReader(bufapimodule.NewDownloadServiceClientFactory(clientConfig)),
+		bufmodulecache.NewRepositoryServiceClientFactory(clientConfig),
 		moduleReaderOptions...,
 	)
 	return moduleReader, nil
@@ -585,31 +597,8 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 	return bufapp.NewConfig(container, externalConfig)
 }
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider which uses a token reader to look
-// up the token in the container or in netrc based on the address of each individual client from the provider.
-// It is then set in the header of all outgoing requests from this provider
-func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProviderWithOptions(
-		container,
-		bufapiclient.RegistryProviderWithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProvider(container),
-		),
-	)
-}
-
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
-// set in the header of all outgoing requests from this provider
-func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProviderWithOptions(
-		container,
-		bufapiclient.RegistryProviderWithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProviderWithToken(token),
-		),
-	)
-}
-
 // Returns a registry provider with the given options applied in addition to default ones for all providers
-func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {
+func newConnectClientConfigWithOptions(container appflag.Container, opts ...connectclient.ConfigOption) (*connectclient.Config, error) {
 	config, err := NewConfig(container)
 	if err != nil {
 		return nil, err
@@ -618,8 +607,8 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 		httpclient.WithObservability(),
 		httpclient.WithTLSConfig(config.TLS),
 	)
-	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithAddressMapper(func(address string) string {
+	options := []connectclient.ConfigOption{
+		connectclient.WithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {
 				address = buftransport.PrependAPISubdomain(address)
 			}
@@ -628,13 +617,36 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 			}
 			return buftransport.PrependHTTPS(address)
 		}),
-		bufapiclient.RegistryProviderWithInterceptors(
-			bufconnect.NewSetCLIVersionInterceptor(Version),
+		connectclient.WithInterceptors(
+			[]connect.Interceptor{bufconnect.NewSetCLIVersionInterceptor(Version)},
 		),
 	}
 	options = append(options, opts...)
 
-	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
+	return connectclient.NewConfig(client, options...), nil
+}
+
+// NewConnectClientConfig creates a new connect.ClientConfig which uses a token reader to look
+// up the token in the container or in netrc based on the address of each individual client.
+// It is then set in the header of all outgoing requests from clients created using this config.
+func NewConnectClientConfig(container appflag.Container) (*connectclient.Config, error) {
+	return newConnectClientConfigWithOptions(
+		container,
+		connectclient.WithAuthInterceptorProvider(
+			bufconnect.NewAuthorizationInterceptorProvider(container),
+		),
+	)
+}
+
+// NewConnectClientConfigWithToken creates a new connect.ClientConfig with a given token. The provided token is
+// set in the header of all outgoing requests from this provider
+func NewConnectClientConfigWithToken(container appflag.Container, token string) (*connectclient.Config, error) {
+	return newConnectClientConfigWithOptions(
+		container,
+		connectclient.WithAuthInterceptorProvider(
+			bufconnect.NewAuthorizationInterceptorProviderWithToken(token),
+		),
+	)
 }
 
 // PromptUserForDelete is used to receieve user confirmation that a specific
@@ -772,7 +784,7 @@ func NewImageForSource(
 	}
 	storageosProvider := NewStorageosProvider(disableSymlinks)
 	runner := command.NewRunner()
-	registryProvider, err := NewRegistryProvider(ctx, container)
+	clientConfig, err := NewConnectClientConfig(container)
 	if err != nil {
 		return nil, err
 	}
@@ -780,7 +792,7 @@ func NewImageForSource(
 		container,
 		storageosProvider,
 		runner,
-		registryProvider,
+		clientConfig,
 	)
 	if err != nil {
 		return nil, err

@@ -17,23 +17,39 @@ package bufapimodule
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"go.uber.org/zap"
 )
 
+type DownloadServiceClientFactory func(address string) registryv1alpha1connect.DownloadServiceClient
+type RepositoryCommitServiceClientFactory func(address string) registryv1alpha1connect.RepositoryCommitServiceClient
+
+func NewDownloadServiceClientFactory(clientConfig *connectclient.Config) DownloadServiceClientFactory {
+	return func(address string) registryv1alpha1connect.DownloadServiceClient {
+		return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewDownloadServiceClient)
+	}
+}
+
+func NewRepositoryCommitServiceClientFactory(clientConfig *connectclient.Config) RepositoryCommitServiceClientFactory {
+	return func(address string) registryv1alpha1connect.RepositoryCommitServiceClient {
+		return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryCommitServiceClient)
+	}
+}
+
 // NewModuleReader returns a new ModuleReader backed by the download service.
 func NewModuleReader(
-	downloadServiceProvider registryv1alpha1apiclient.DownloadServiceProvider,
+	downloadClientFactory DownloadServiceClientFactory,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
-		downloadServiceProvider,
+		downloadClientFactory,
 	)
 }
 
 // NewModuleResolver returns a new ModuleResolver backed by the resolve service.
 func NewModuleResolver(
 	logger *zap.Logger,
-	repositoryCommitServiceProvider registryv1alpha1apiclient.RepositoryCommitServiceProvider,
+	repositoryCommitClientFactory RepositoryCommitServiceClientFactory,
 ) bufmodule.ModuleResolver {
-	return newModuleResolver(logger, repositoryCommitServiceProvider)
+	return newModuleResolver(logger, repositoryCommitClientFactory)
 }

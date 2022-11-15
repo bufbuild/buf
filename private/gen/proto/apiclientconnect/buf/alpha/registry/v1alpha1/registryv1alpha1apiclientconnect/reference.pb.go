@@ -29,6 +29,10 @@ type referenceServiceClient struct {
 	client registryv1alpha1connect.ReferenceServiceClient
 }
 
+func (s *referenceServiceClient) Unwrap() registryv1alpha1connect.ReferenceServiceClient {
+	return s.client
+}
+
 // GetReferenceByName takes a reference name and returns the
 // reference either as 'main', a tag, or commit.
 func (s *referenceServiceClient) GetReferenceByName(

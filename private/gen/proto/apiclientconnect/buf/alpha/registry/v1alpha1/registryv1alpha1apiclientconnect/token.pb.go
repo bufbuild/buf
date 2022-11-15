@@ -30,6 +30,10 @@ type tokenServiceClient struct {
 	client registryv1alpha1connect.TokenServiceClient
 }
 
+func (s *tokenServiceClient) Unwrap() registryv1alpha1connect.TokenServiceClient {
+	return s.client
+}
+
 // CreateToken creates a new token suitable for machine-to-machine authentication.
 func (s *tokenServiceClient) CreateToken(
 	ctx context.Context,

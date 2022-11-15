@@ -21,6 +21,7 @@ import (
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	connectclient "github.com/bufbuild/buf/private/pkg/connectclient"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
 )
@@ -72,6 +73,20 @@ func WithAuthInterceptorProvider(authInterceptorProvider func(string) connect_go
 	return func(provider *provider) {
 		provider.authInterceptorProvider = authInterceptorProvider
 	}
+}
+
+func (p *provider) ToClientConfig() *connectclient.Config {
+	var opts []connectclient.ConfigOption
+	if p.addressMapper != nil {
+		opts = append(opts, connectclient.WithAddressMapper(p.addressMapper))
+	}
+	if len(p.interceptors) > 0 {
+		opts = append(opts, connectclient.WithInterceptors(p.interceptors))
+	}
+	if p.authInterceptorProvider != nil {
+		opts = append(opts, connectclient.WithAuthInterceptorProvider(p.authInterceptorProvider))
+	}
+	return connectclient.NewConfig(p.httpClient, opts...)
 }
 
 // NewAdminService creates a new AdminService

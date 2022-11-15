@@ -29,6 +29,10 @@ type githubServiceClient struct {
 	client registryv1alpha1connect.GithubServiceClient
 }
 
+func (s *githubServiceClient) Unwrap() registryv1alpha1connect.GithubServiceClient {
+	return s.client
+}
+
 // GetGithubAppConfig returns a Github Application Configuration.
 func (s *githubServiceClient) GetGithubAppConfig(ctx context.Context) (appConfig *v1alpha1.GithubAppConfig, _ error) {
 	response, err := s.client.GetGithubAppConfig(

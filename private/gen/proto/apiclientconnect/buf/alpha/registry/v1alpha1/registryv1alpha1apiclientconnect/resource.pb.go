@@ -29,6 +29,10 @@ type resourceServiceClient struct {
 	client registryv1alpha1connect.ResourceServiceClient
 }
 
+func (s *resourceServiceClient) Unwrap() registryv1alpha1connect.ResourceServiceClient {
+	return s.client
+}
+
 // GetResourceByName takes a resource name and returns the
 // resource either as a repository or a plugin.
 func (s *resourceServiceClient) GetResourceByName(
