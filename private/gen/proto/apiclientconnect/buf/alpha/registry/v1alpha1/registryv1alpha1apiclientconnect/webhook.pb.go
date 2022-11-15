@@ -29,6 +29,10 @@ type webhookServiceClient struct {
 	client registryv1alpha1connect.WebhookServiceClient
 }
 
+func (s *webhookServiceClient) Unwrap() registryv1alpha1connect.WebhookServiceClient {
+	return s.client
+}
+
 // Create a webhook, subscribes to a given repository event for a callback URL
 // invocation.
 func (s *webhookServiceClient) CreateWebhook(

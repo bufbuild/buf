@@ -29,6 +29,10 @@ type jSONSchemaServiceClient struct {
 	client registryv1alpha1connect.JSONSchemaServiceClient
 }
 
+func (s *jSONSchemaServiceClient) Unwrap() registryv1alpha1connect.JSONSchemaServiceClient {
+	return s.client
+}
+
 // GetJSONSchema allows users to get an (approximate) json schema for a
 // protobuf type.
 func (s *jSONSchemaServiceClient) GetJSONSchema(

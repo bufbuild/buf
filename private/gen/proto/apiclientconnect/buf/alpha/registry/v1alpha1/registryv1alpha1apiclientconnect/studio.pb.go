@@ -29,6 +29,10 @@ type studioServiceClient struct {
 	client registryv1alpha1connect.StudioServiceClient
 }
 
+func (s *studioServiceClient) Unwrap() registryv1alpha1connect.StudioServiceClient {
+	return s.client
+}
+
 // ListStudioAgentPresets returns a list of agent presets in the server.
 func (s *studioServiceClient) ListStudioAgentPresets(ctx context.Context) (agents []*v1alpha1.StudioAgentPreset, _ error) {
 	response, err := s.client.ListStudioAgentPresets(

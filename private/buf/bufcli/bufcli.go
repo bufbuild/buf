@@ -376,7 +376,10 @@ func NewWireImageConfigReader(
 	clientConfig *connectclient.Config,
 ) (bufwire.ImageConfigReader, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, clientConfig)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
 	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return nil, err
@@ -399,7 +402,10 @@ func NewWireModuleConfigReader(
 	clientConfig *connectclient.Config,
 ) (bufwire.ModuleConfigReader, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, clientConfig)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
 	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return nil, err
@@ -422,7 +428,10 @@ func NewWireModuleConfigReaderForModuleReader(
 	moduleReader bufmodule.ModuleReader,
 ) (bufwire.ModuleConfigReader, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, clientConfig)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
@@ -439,7 +448,10 @@ func NewWireFileLister(
 	clientConfig *connectclient.Config,
 ) (bufwire.FileLister, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, clientConfig)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
 	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return nil, err
@@ -569,7 +581,7 @@ func newModuleReaderAndCreateCacheDirs(
 		fileLocker,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
-		bufapimodule.NewModuleReader(clientConfig),
+		bufapimodule.NewModuleReader(bufapimodule.NewDownloadServiceClientFactory(clientConfig)),
 		bufmodulecache.NewRepositoryServiceClientFactory(clientConfig),
 		moduleReaderOptions...,
 	)

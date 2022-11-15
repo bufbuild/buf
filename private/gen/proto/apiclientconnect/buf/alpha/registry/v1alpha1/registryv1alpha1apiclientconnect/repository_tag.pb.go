@@ -29,6 +29,10 @@ type repositoryTagServiceClient struct {
 	client registryv1alpha1connect.RepositoryTagServiceClient
 }
 
+func (s *repositoryTagServiceClient) Unwrap() registryv1alpha1connect.RepositoryTagServiceClient {
+	return s.client
+}
+
 // CreateRepositoryTag creates a new repository tag.
 func (s *repositoryTagServiceClient) CreateRepositoryTag(
 	ctx context.Context,

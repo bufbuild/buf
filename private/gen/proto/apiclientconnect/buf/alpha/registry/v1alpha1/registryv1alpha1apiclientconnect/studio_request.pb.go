@@ -29,6 +29,10 @@ type studioRequestServiceClient struct {
 	client registryv1alpha1connect.StudioRequestServiceClient
 }
 
+func (s *studioRequestServiceClient) Unwrap() registryv1alpha1connect.StudioRequestServiceClient {
+	return s.client
+}
+
 // CreateStudioRequest registers a favorite Studio Requests to the caller's
 // BSR profile.
 func (s *studioRequestServiceClient) CreateStudioRequest(

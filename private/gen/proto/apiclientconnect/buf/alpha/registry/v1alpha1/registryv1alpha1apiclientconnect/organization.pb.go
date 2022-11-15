@@ -29,6 +29,10 @@ type organizationServiceClient struct {
 	client registryv1alpha1connect.OrganizationServiceClient
 }
 
+func (s *organizationServiceClient) Unwrap() registryv1alpha1connect.OrganizationServiceClient {
+	return s.client
+}
+
 // GetOrganization gets a organization by ID.
 func (s *organizationServiceClient) GetOrganization(ctx context.Context, id string) (organization *v1alpha1.Organization, _ error) {
 	response, err := s.client.GetOrganization(
