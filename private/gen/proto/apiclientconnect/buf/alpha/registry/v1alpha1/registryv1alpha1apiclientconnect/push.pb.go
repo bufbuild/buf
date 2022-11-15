@@ -30,6 +30,10 @@ type pushServiceClient struct {
 	client registryv1alpha1connect.PushServiceClient
 }
 
+func (s *pushServiceClient) Unwrap() registryv1alpha1connect.PushServiceClient {
+	return s.client
+}
+
 // Push pushes.
 func (s *pushServiceClient) Push(
 	ctx context.Context,

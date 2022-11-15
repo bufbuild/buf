@@ -29,6 +29,10 @@ type repositoryServiceClient struct {
 	client registryv1alpha1connect.RepositoryServiceClient
 }
 
+func (s *repositoryServiceClient) Unwrap() registryv1alpha1connect.RepositoryServiceClient {
+	return s.client
+}
+
 // GetRepository gets a repository by ID.
 func (s *repositoryServiceClient) GetRepository(
 	ctx context.Context,

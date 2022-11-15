@@ -30,6 +30,10 @@ type pluginCurationServiceClient struct {
 	client registryv1alpha1connect.PluginCurationServiceClient
 }
 
+func (s *pluginCurationServiceClient) Unwrap() registryv1alpha1connect.PluginCurationServiceClient {
+	return s.client
+}
+
 // ListCuratedPlugins returns all the curated plugins available.
 func (s *pluginCurationServiceClient) ListCuratedPlugins(
 	ctx context.Context,
@@ -121,6 +125,10 @@ func (s *pluginCurationServiceClient) GetLatestCuratedPlugin(
 type codeGenerationServiceClient struct {
 	logger *zap.Logger
 	client registryv1alpha1connect.CodeGenerationServiceClient
+}
+
+func (s *codeGenerationServiceClient) Unwrap() registryv1alpha1connect.CodeGenerationServiceClient {
+	return s.client
 }
 
 // GenerateCode generates code using the specified remote plugins.

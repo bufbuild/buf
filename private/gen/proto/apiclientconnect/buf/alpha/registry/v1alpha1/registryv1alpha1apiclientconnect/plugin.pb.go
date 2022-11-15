@@ -29,6 +29,10 @@ type pluginServiceClient struct {
 	client registryv1alpha1connect.PluginServiceClient
 }
 
+func (s *pluginServiceClient) Unwrap() registryv1alpha1connect.PluginServiceClient {
+	return s.client
+}
+
 // ListPlugins returns all the plugins available to the user. This includes
 // public plugins, those uploaded to organizations the user is part of,
 // and any plugins uploaded directly by the user.

@@ -30,6 +30,10 @@ type downloadServiceClient struct {
 	client registryv1alpha1connect.DownloadServiceClient
 }
 
+func (s *downloadServiceClient) Unwrap() registryv1alpha1connect.DownloadServiceClient {
+	return s.client
+}
+
 // Download downloads.
 func (s *downloadServiceClient) Download(
 	ctx context.Context,

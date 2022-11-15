@@ -29,6 +29,10 @@ type ownerServiceClient struct {
 	client registryv1alpha1connect.OwnerServiceClient
 }
 
+func (s *ownerServiceClient) Unwrap() registryv1alpha1connect.OwnerServiceClient {
+	return s.client
+}
+
 // GetOwnerByName takes an owner name and returns the owner as
 // either a user or organization.
 func (s *ownerServiceClient) GetOwnerByName(ctx context.Context, name string) (owner *v1alpha1.Owner, _ error) {

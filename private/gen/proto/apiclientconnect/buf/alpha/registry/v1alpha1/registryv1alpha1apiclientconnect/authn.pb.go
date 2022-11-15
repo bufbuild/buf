@@ -29,6 +29,10 @@ type authnServiceClient struct {
 	client registryv1alpha1connect.AuthnServiceClient
 }
 
+func (s *authnServiceClient) Unwrap() registryv1alpha1connect.AuthnServiceClient {
+	return s.client
+}
+
 // GetCurrentUser gets information associated with the current user.
 //
 // The user's ID is retrieved from the request's authentication header.

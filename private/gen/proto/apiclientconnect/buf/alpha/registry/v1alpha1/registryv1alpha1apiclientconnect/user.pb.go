@@ -29,6 +29,10 @@ type userServiceClient struct {
 	client registryv1alpha1connect.UserServiceClient
 }
 
+func (s *userServiceClient) Unwrap() registryv1alpha1connect.UserServiceClient {
+	return s.client
+}
+
 // CreateUser creates a new user with the given username.
 func (s *userServiceClient) CreateUser(ctx context.Context, username string) (user *v1alpha1.User, _ error) {
 	response, err := s.client.CreateUser(

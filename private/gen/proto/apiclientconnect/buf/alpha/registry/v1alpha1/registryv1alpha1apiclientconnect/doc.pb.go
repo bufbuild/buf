@@ -29,6 +29,10 @@ type docServiceClient struct {
 	client registryv1alpha1connect.DocServiceClient
 }
 
+func (s *docServiceClient) Unwrap() registryv1alpha1connect.DocServiceClient {
+	return s.client
+}
+
 // GetSourceDirectoryInfo retrieves the directory and file structure for the
 // given owner, repository and reference.
 //

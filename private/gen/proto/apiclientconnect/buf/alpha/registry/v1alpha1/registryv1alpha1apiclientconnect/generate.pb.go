@@ -31,6 +31,10 @@ type generateServiceClient struct {
 	client registryv1alpha1connect.GenerateServiceClient
 }
 
+func (s *generateServiceClient) Unwrap() registryv1alpha1connect.GenerateServiceClient {
+	return s.client
+}
+
 // GeneratePlugins generates an array of files given the provided
 // module reference and plugin version and option tuples. No attempt
 // is made at merging insertion points.

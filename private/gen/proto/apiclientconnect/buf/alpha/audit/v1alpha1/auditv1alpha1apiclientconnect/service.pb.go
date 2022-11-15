@@ -30,6 +30,10 @@ type auditServiceClient struct {
 	client auditv1alpha1connect.AuditServiceClient
 }
 
+func (s *auditServiceClient) Unwrap() auditv1alpha1connect.AuditServiceClient {
+	return s.client
+}
+
 // ListAuditedEvents lists audited events recorded in the BSR instance.
 func (s *auditServiceClient) ListAuditedEvents(
 	ctx context.Context,

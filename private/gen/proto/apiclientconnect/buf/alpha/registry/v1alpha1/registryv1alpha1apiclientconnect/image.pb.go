@@ -30,6 +30,10 @@ type imageServiceClient struct {
 	client registryv1alpha1connect.ImageServiceClient
 }
 
+func (s *imageServiceClient) Unwrap() registryv1alpha1connect.ImageServiceClient {
+	return s.client
+}
+
 // GetImage serves a compiled image for the local module. It automatically
 // downloads dependencies if necessary.
 func (s *imageServiceClient) GetImage(
