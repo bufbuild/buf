@@ -281,13 +281,14 @@ func BlobEqual(ctx context.Context, a, b Blob) (_ bool, retErr error) {
 			break
 		}
 	}
-	_, aErr := io.ReadAtLeast(aFile, aBlock, 1)
-	_, bErr := io.ReadAtLeast(bFile, bBlock, 1)
-	if aErr != io.EOF || bErr != io.EOF {
-		// a or b is longer, or we late errored
-		return false, multierr.Append(nilEOF(aErr), nilEOF(bErr))
+	aN, aErr := aFile.Read(aBlock[:1])
+	bN, bErr := bFile.Read(bBlock[:1])
+	if aN == 0 && bN == 0 && aErr == io.EOF && bErr == io.EOF {
+		// a and b are at EOF with no more data for us
+		return true, nil
 	}
-	return true, nil
+	// either a or b are longer
+	return false, multierr.Append(nilEOF(aErr), nilEOF(bErr))
 }
 
 // nilEOF maps io.EOF to nil
