@@ -37,7 +37,6 @@ var (
 type Blob interface {
 	Digest() Digest
 	Open(context.Context) (io.ReadCloser, error)
-	EqualContent(ctx context.Context, other Blob) (bool, error)
 }
 
 type memoryBlob struct {
@@ -94,22 +93,6 @@ func (b *memoryBlob) Digest() Digest {
 
 func (b *memoryBlob) Open(context.Context) (io.ReadCloser, error) {
 	return io.NopCloser(bytes.NewReader(b.content)), nil
-}
-
-func (b *memoryBlob) EqualContent(ctx context.Context, other Blob) (_ bool, retErr error) {
-	otherContentRC, err := other.Open(ctx)
-	if err != nil {
-		return false, fmt.Errorf("open other blob: %w", err)
-	}
-	defer func() { retErr = multierr.Append(retErr, otherContentRC.Close()) }()
-	otherContent, err := io.ReadAll(otherContentRC)
-	if err != nil {
-		return false, fmt.Errorf("read other blob: %w", err)
-	}
-	if c := bytes.Compare(b.content, otherContent); c != 0 {
-		return false, nil
-	}
-	return true, nil
 }
 
 // AsProtoBlob returns the passed blob as a proto module blob.
@@ -175,7 +158,7 @@ func NewBlobSet(ctx context.Context, blobs []Blob, opts ...BlobSetOption) (*Blob
 		if config.validateContent {
 			existingBlob, alreadyPresent := digestToBlobs[digestStr]
 			if alreadyPresent {
-				equalContent, err := b.EqualContent(ctx, existingBlob)
+				equalContent, err := BlobEqual(ctx, b, existingBlob)
 				if err != nil {
 					return nil, fmt.Errorf("compare duplicated blobs with digest %q: %w", digestStr, err)
 				}
@@ -246,4 +229,74 @@ func NewMemoryBlobFromReaderWithDigester(content io.Reader, digester Digester) (
 		digest:  *digest,
 		content: contentInMemory.Bytes(),
 	}, nil
+}
+
+// BlobEqual returns true if blob a is the same as blob b. The digest is
+// checked for equality and the content bytes compared.
+//
+// An error is returned if an unexpected I/O error occurred when opening,
+// reading, or closing either blob.
+func BlobEqual(ctx context.Context, a, b Blob) (_ bool, retErr error) {
+	const blockSize = 4098
+	if !a.Digest().Equal(*b.Digest()) {
+		// digests don't match
+		return false, nil
+	}
+	aFile, err := a.Open(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { retErr = multierr.Append(retErr, aFile.Close()) }()
+	bFile, err := b.Open(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { retErr = multierr.Append(retErr, bFile.Close()) }()
+	// Read blockSize from a, then from b, and compare.
+	aBlock := make([]byte, blockSize)
+	bBlock := make([]byte, blockSize)
+	for {
+		aN, aErr := aFile.Read(aBlock)
+		bN, bErr := io.ReadAtLeast(bFile, bBlock[:aN], aN) // exactly aN bytes
+		// We're running unexpected error processing (not EOF) before comparing
+		// bytes because it doesn't matter if the returned bytes match if an
+		// error occurred before an expected EOF.
+		if bErr == io.ErrUnexpectedEOF {
+			// b is shorter; we can error early
+			return false, nil
+		}
+		if aErr != nil && aErr != io.EOF {
+			// unexpected read error
+			return false, aErr
+		}
+		if bErr != nil && bErr != io.EOF {
+			// unexpected read error
+			return false, bErr
+		}
+		if !bytes.Equal(aBlock[:aN], bBlock[:bN]) {
+			// Read content doesn't match. Don't forget to forward any errors
+			// returned.
+			return false, multierr.Append(nilEOF(aErr), nilEOF(bErr))
+		}
+		if aErr == io.EOF || bErr == io.EOF {
+			// EOF
+			break
+		}
+	}
+	aN, aErr := aFile.Read(aBlock[:1])
+	bN, bErr := bFile.Read(bBlock[:1])
+	if aN == 0 && bN == 0 && aErr == io.EOF && bErr == io.EOF {
+		// a and b are at EOF with no more data for us
+		return true, nil
+	}
+	// either a or b are longer
+	return false, multierr.Append(nilEOF(aErr), nilEOF(bErr))
+}
+
+// nilEOF maps io.EOF to nil
+func nilEOF(err error) error {
+	if err == io.EOF {
+		return nil
+	}
+	return err
 }

@@ -17,9 +17,12 @@ package manifest_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"testing"
+	"testing/iotest"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/manifest"
@@ -166,6 +169,208 @@ func TestBlobFromReader(t *testing.T) {
 			0x6d, 0x12, 0x74, 0x66, 0xe3, 0xd0, 0x7e, 0x8b, 0xe3,
 		},
 	)
+}
+
+type mockBlob struct {
+	digest  *manifest.Digest
+	content io.Reader
+	openErr bool
+}
+
+func (mb *mockBlob) Digest() *manifest.Digest { return mb.digest }
+func (mb *mockBlob) Open(_ context.Context) (io.ReadCloser, error) {
+	if mb.openErr {
+		return nil, errors.New("open error")
+	}
+	return io.NopCloser(mb.content), nil
+}
+
+type errAtEndReader struct{ reader io.Reader }
+
+func (e *errAtEndReader) Read(p []byte) (int, error) {
+	n, err := e.reader.Read(p)
+	if err == io.EOF {
+		return n, errors.New("test erroring at EOF")
+	}
+	return n, err
+}
+
+func TestBlobEqual(t *testing.T) {
+	testBlobEqual(
+		t,
+		"does equal",
+		strings.NewReader("foo"),
+		strings.NewReader("foo"),
+		true,
+		false,
+	)
+	testBlobEqual(
+		t,
+		"equal with differing length reads",
+		strings.NewReader("foo"),
+		iotest.OneByteReader(strings.NewReader("foo")),
+		true,
+		false,
+	)
+	testBlobEqual(
+		t,
+		"mismatched equal-length content",
+		strings.NewReader("foo"),
+		strings.NewReader("bar"),
+		false,
+		false,
+	)
+	testBlobEqual(
+		t,
+		"mismatched equal-length content data with error",
+		iotest.DataErrReader(strings.NewReader("foo")),
+		iotest.DataErrReader(strings.NewReader("bar")),
+		false,
+		false,
+	)
+	testBlobEqual(
+		t,
+		"mismatched longer left content",
+		strings.NewReader("foofoo"),
+		strings.NewReader("foo"),
+		false,
+		false,
+	)
+	testBlobEqual(
+		t,
+		"mismatched longer right content",
+		strings.NewReader("foo"),
+		strings.NewReader("foofoo"),
+		false,
+		false,
+	)
+	testBlobEqual(
+		t,
+		"fast error left read",
+		iotest.ErrReader(errors.New("testing error")),
+		strings.NewReader("foo"),
+		false,
+		true,
+	)
+	testBlobEqual(
+		t,
+		"fast error right read",
+		strings.NewReader("foo"),
+		iotest.ErrReader(errors.New("testing error")),
+		false,
+		true,
+	)
+	testBlobEqual(
+		t,
+		"late error left read",
+		&errAtEndReader{reader: strings.NewReader("foo")},
+		strings.NewReader("foo"),
+		false,
+		true,
+	)
+	testBlobEqual(
+		t,
+		"late error right read",
+		strings.NewReader("foo"),
+		&errAtEndReader{reader: strings.NewReader("foo")},
+		false,
+		true,
+	)
+	testBlobEqual(
+		t,
+		"middle error left read",
+		iotest.TimeoutReader(iotest.OneByteReader(strings.NewReader("foo"))),
+		strings.NewReader("foo"),
+		false,
+		true,
+	)
+	testBlobEqual(
+		t,
+		"middle error right read",
+		strings.NewReader("foo"),
+		iotest.TimeoutReader(iotest.OneByteReader(strings.NewReader("foo"))),
+		false,
+		true,
+	)
+}
+
+func TestBlobEqualDigestMismatch(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	require.NoError(t, err)
+	const foo = "foo"
+	const bar = "bar"
+	aDigest, err := digester.Digest(strings.NewReader(foo))
+	require.NoError(t, err)
+	bDigest, err := digester.Digest(strings.NewReader(bar))
+	require.NoError(t, err)
+	aBlob := &mockBlob{
+		digest:  aDigest,
+		content: strings.NewReader(foo),
+	}
+	bBlob := &mockBlob{
+		digest:  bDigest,
+		content: strings.NewReader(""),
+	}
+	equal, err := manifest.BlobEqual(ctx, aBlob, bBlob)
+	assert.False(t, equal)
+	assert.NoError(t, err)
+}
+
+func TestBlobEqualOpenError(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	aBlob := &mockBlob{
+		digest:  &manifest.Digest{},
+		openErr: true,
+	}
+	bBlob := &mockBlob{
+		digest: &manifest.Digest{},
+	}
+	equal, err := manifest.BlobEqual(ctx, aBlob, bBlob)
+	assert.False(t, equal)
+	assert.Error(t, err)
+	aBlob = &mockBlob{
+		digest: &manifest.Digest{},
+	}
+	bBlob = &mockBlob{
+		digest:  &manifest.Digest{},
+		openErr: true,
+	}
+	equal, err = manifest.BlobEqual(ctx, aBlob, bBlob)
+	assert.False(t, equal)
+	assert.Error(t, err)
+}
+
+func testBlobEqual(
+	t *testing.T,
+	desc string,
+	a, b io.Reader,
+	isEqual bool,
+	isError bool,
+) {
+	t.Helper()
+	t.Run(desc, func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		digest := &manifest.Digest{} // Avoid digest equality test.
+		aBlob := &mockBlob{
+			digest:  digest,
+			content: a,
+		}
+		bBlob := &mockBlob{
+			digest:  digest,
+			content: b,
+		}
+		equal, err := manifest.BlobEqual(ctx, aBlob, bBlob)
+		assert.Equal(t, isEqual, equal)
+		if isError {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+	})
 }
 
 func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
