@@ -46,13 +46,6 @@ message GetSchemaRequest {
   // for requested service and method names).
   repeated string element_names = 2;
 
-  // A version in the form of a commit ID (may not be a tag or other reference).
-  // If present, the response should only include a schema if the requested
-  // version resolves to something other than this commit. This can be used
-  // to detect newer versions, when the reference in id is empty/absent, or
-  // to detect changes to a tag.
-  string only_if_not_version = 3;
-
   // If true, well-known imports will be included the returned set of files. If
   // false or not present, these files will omitted from the response (e.g. the
   // caller is assumed to already know the types they define).
@@ -78,6 +71,9 @@ message GetSchemaRequest {
   // TODO: flags for whether to include custom options referenced in the
   //  descriptor set and whether to include known extensions for any
   //  extendable messages in the descriptor set
+
+  // TODO: semantics for efficiently polling for latest version w/out
+  //  repeatedly re-downloading the same schema when there's no change
 }
 
 message GetSchemaResponse {
@@ -85,16 +81,9 @@ message GetSchemaResponse {
   // this value is the same as that commit. If the request included a reference to a tag,
   // this is the commit version for that tag. If the request did not include any version,
   // this is the latest version of the requested module.
-  //
-  // This version can be used in subsequent invocations in the only_if_not_version
-  // request field to poll for newer versions of the schema.
   string version = 1;
   // The schema, which is a set of file descriptors that include the requested elements
   // and their dependencies.
-  //
-  // If the request included an only_if_not_version value, and the resolved version
-  // matched that version, this will be absent, indicating that the resolved version
-  // has not changed.
   google.protobuf.FileDescriptorSet schema_files = 2;
 }
 
