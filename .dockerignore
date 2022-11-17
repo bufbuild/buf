@@ -13,8 +13,6 @@ private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-wri
 private/buf/cmd/buf/command/alpha/protoc/test.txt
 private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/
 private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api/protoc-gen-go-api
-private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient/protoc-gen-go-apiclient
-private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientconnect/protoc-gen-go-apiclientconnect
 private/bufpkg/bufstyle/cmd/bufstyle/bufstyle
 private/bufpkg/buftesting/cache/
 private/bufpkg/bufwkt/cmd/wkt-go-data/wkt-go-data
