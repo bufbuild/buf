@@ -24,8 +24,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netextended"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -280,21 +283,24 @@ func run(
 	if err != nil {
 		return err
 	}
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewPluginCurationService(ctx, pluginConfig.Name.Remote())
-	if err != nil {
-		return err
-	}
+	service := connectclient.Make(
+		clientConfig,
+		pluginConfig.Name.Remote(),
+		registryv1alpha1connect.NewPluginCurationServiceClient,
+	)
 	var nextRevision uint32
-	currentRevision, _, err := service.GetLatestCuratedPlugin(
+	latestPluginResp, err := service.GetLatestCuratedPlugin(
 		ctx,
-		pluginConfig.Name.Owner(),
-		pluginConfig.Name.Plugin(),
-		pluginConfig.PluginVersion,
-		0, // get latest revision for the plugin version.
+		connect.NewRequest(&registryv1alpha1.GetLatestCuratedPluginRequest{
+			Owner:    pluginConfig.Name.Owner(),
+			Name:     pluginConfig.Name.Plugin(),
+			Version:  pluginConfig.PluginVersion,
+			Revision: 0, // get latest revision for the plugin version.
+		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeNotFound {
@@ -302,23 +308,26 @@ func run(
 		}
 		nextRevision = 1
 	} else {
-		nextRevision = currentRevision.Revision + 1
+		nextRevision = latestPluginResp.Msg.Plugin.Revision + 1
 	}
-	curatedPlugin, err := service.CreateCuratedPlugin(
+	var curatedPlugin *registryv1alpha1.CuratedPlugin
+	createPluginResp, err := service.CreateCuratedPlugin(
 		ctx,
-		pluginConfig.Name.Owner(),
-		pluginConfig.Name.Plugin(),
-		bufplugin.PluginToProtoPluginRegistryType(plugin),
-		plugin.Version(),
-		plugin.ContainerImageDigest(),
-		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
-		plugin.SourceURL(),
-		plugin.Description(),
-		protoRegistryConfig,
-		nextRevision,
-		outputLanguages,
-		pluginConfig.SPDXLicenseID,
-		pluginConfig.LicenseURL,
+		connect.NewRequest(&registryv1alpha1.CreateCuratedPluginRequest{
+			Owner:                pluginConfig.Name.Owner(),
+			Name:                 pluginConfig.Name.Plugin(),
+			RegistryType:         bufplugin.PluginToProtoPluginRegistryType(plugin),
+			Version:              plugin.Version(),
+			ContainerImageDigest: plugin.ContainerImageDigest(),
+			Dependencies:         bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
+			SourceUrl:            plugin.SourceURL(),
+			Description:          plugin.Description(),
+			RegistryConfig:       protoRegistryConfig,
+			Revision:             nextRevision,
+			OutputLanguages:      outputLanguages,
+			SpdxLicenseId:        pluginConfig.SPDXLicenseID,
+			LicenseUrl:           pluginConfig.LicenseURL,
+		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {
@@ -330,7 +339,9 @@ func run(
 			zap.String("name", pluginConfig.Name.IdentityString()),
 			zap.String("digest", plugin.ContainerImageDigest()),
 		)
-		curatedPlugin = currentRevision
+		curatedPlugin = latestPluginResp.Msg.Plugin
+	} else {
+		curatedPlugin = createPluginResp.Msg.Configuration
 	}
 	return bufprint.NewCuratedPluginPrinter(container.Stdout()).PrintCuratedPlugin(ctx, format, curatedPlugin)
 }
