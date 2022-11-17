@@ -96,7 +96,6 @@ privateusage:
 postprepostgenerate:: privateusage
 
 bufgeneratedeps:: \
-	installprotoc-gen-go-api \
 	$(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO)
 
 .PHONY: bufgeneratecleango
