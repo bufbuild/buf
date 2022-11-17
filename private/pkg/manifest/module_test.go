@@ -172,13 +172,13 @@ func TestBlobFromReader(t *testing.T) {
 }
 
 type mockBlob struct {
-	digest  *manifest.Digest
+	digest  manifest.Digest
 	content io.Reader
 	openErr bool
 }
 
-func (mb *mockBlob) Digest() *manifest.Digest { return mb.digest }
-func (mb *mockBlob) Open(_ context.Context) (io.ReadCloser, error) {
+func (mb *mockBlob) Digest() manifest.Digest { return mb.digest }
+func (mb *mockBlob) Open(context.Context) (io.ReadCloser, error) {
 	if mb.openErr {
 		return nil, errors.New("open error")
 	}
@@ -306,11 +306,11 @@ func TestBlobEqualDigestMismatch(t *testing.T) {
 	bDigest, err := digester.Digest(strings.NewReader(bar))
 	require.NoError(t, err)
 	aBlob := &mockBlob{
-		digest:  aDigest,
+		digest:  *aDigest,
 		content: strings.NewReader(foo),
 	}
 	bBlob := &mockBlob{
-		digest:  bDigest,
+		digest:  *bDigest,
 		content: strings.NewReader(""),
 	}
 	equal, err := manifest.BlobEqual(ctx, aBlob, bBlob)
@@ -321,23 +321,13 @@ func TestBlobEqualDigestMismatch(t *testing.T) {
 func TestBlobEqualOpenError(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	aBlob := &mockBlob{
-		digest:  &manifest.Digest{},
-		openErr: true,
-	}
-	bBlob := &mockBlob{
-		digest: &manifest.Digest{},
-	}
+	aBlob := &mockBlob{openErr: true}
+	bBlob := &mockBlob{}
 	equal, err := manifest.BlobEqual(ctx, aBlob, bBlob)
 	assert.False(t, equal)
 	assert.Error(t, err)
-	aBlob = &mockBlob{
-		digest: &manifest.Digest{},
-	}
-	bBlob = &mockBlob{
-		digest:  &manifest.Digest{},
-		openErr: true,
-	}
+	aBlob = &mockBlob{}
+	bBlob = &mockBlob{openErr: true}
 	equal, err = manifest.BlobEqual(ctx, aBlob, bBlob)
 	assert.False(t, equal)
 	assert.Error(t, err)
@@ -354,7 +344,7 @@ func testBlobEqual(
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
-		digest := &manifest.Digest{} // Avoid digest equality test.
+		var digest manifest.Digest // Avoid digest equality test.
 		aBlob := &mockBlob{
 			digest:  digest,
 			content: a,

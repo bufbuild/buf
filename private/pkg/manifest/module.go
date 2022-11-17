@@ -238,7 +238,7 @@ func NewMemoryBlobFromReaderWithDigester(content io.Reader, digester Digester) (
 // reading, or closing either blob.
 func BlobEqual(ctx context.Context, a, b Blob) (_ bool, retErr error) {
 	const blockSize = 4098
-	if !a.Digest().Equal(*b.Digest()) {
+	if !a.Digest().Equal(b.Digest()) {
 		// digests don't match
 		return false, nil
 	}

@@ -82,27 +82,27 @@ func NewDigestFromString(typedDigest string) (*Digest, error) {
 }
 
 // String returns the hash in a manifest's string format: "<type>:<hex>".
-func (d *Digest) String() string {
+func (d Digest) String() string {
 	return string(d.dtype) + ":" + d.hexstr
 }
 
 // Type returns the digest type.
-func (d *Digest) Type() DigestType {
+func (d Digest) Type() DigestType {
 	return d.dtype
 }
 
 // Bytes returns the digest bytes.
-func (d *Digest) Bytes() []byte {
+func (d Digest) Bytes() []byte {
 	return d.digest
 }
 
 // Hex returns the digest bytes in its hexadecimal string representation.
-func (d *Digest) Hex() string {
+func (d Digest) Hex() string {
 	return d.hexstr
 }
 
 // Equal compares the digest type and bytes with other digest.
-func (d *Digest) Equal(other Digest) bool {
+func (d Digest) Equal(other Digest) bool {
 	return d.dtype == other.dtype && bytes.Equal(d.digest, other.digest)
 }
 
