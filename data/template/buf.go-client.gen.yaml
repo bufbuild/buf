@@ -10,9 +10,4 @@ plugins:
     out: private/gen/proto/connect
     opt:
       - paths=source_relative
-  - name: go-api
-    out: private/gen/proto/api
-    opt:
-      - paths=source_relative
-      - named_go_package=api=github.com/bufbuild/buf/private/gen/proto/api
 
