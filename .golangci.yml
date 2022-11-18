@@ -146,3 +146,7 @@ issues:
         - staticcheck
       path: private/buf/cmd/buf/command/push/push_test.go
       text: "SA1019"
+    - linters:
+        - staticcheck
+      path: private/bufpkg/bufapimodule/module_reader.go
+      text: "SA1019"
