@@ -373,6 +373,25 @@ func testBlobEqual(
 	})
 }
 
+func TestProtoBlob(t *testing.T) {
+	t.Parallel()
+	content := []byte("hello world")
+	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	require.NoError(t, err)
+	digest, err := digester.Digest(bytes.NewReader(content))
+	require.NoError(t, err)
+	blob, err := manifest.NewMemoryBlob(*digest, content)
+	require.NoError(t, err)
+	ctx := context.Background()
+	protoBlob, err := manifest.AsProtoBlob(ctx, blob)
+	require.NoError(t, err)
+	rtBlob, err := manifest.NewBlobFromProto(protoBlob)
+	require.NoError(t, err)
+	equal, err := manifest.BlobEqual(ctx, blob, rtBlob)
+	require.NoError(t, err)
+	assert.True(t, equal)
+}
+
 func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
 	t.Helper()
 	t.Parallel()

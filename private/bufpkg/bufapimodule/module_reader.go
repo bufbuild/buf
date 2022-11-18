@@ -16,10 +16,12 @@ package bufapimodule
 
 import (
 	"context"
+	"errors"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/connect-go"
 )
@@ -37,9 +39,47 @@ func newModuleReader(
 }
 
 func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
+	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
+		modulePin.Remote(),
+		modulePin.Owner(),
+		modulePin.Repository(),
+	)
+	if err != nil {
+		// malformed pin
+		return nil, err
+	}
+	resp, err := m.download(ctx, modulePin)
+	if err != nil {
+		return nil, err
+	}
+	identityAndCommitOpt := bufmodule.ModuleWithModuleIdentityAndCommit(
+		moduleIdentity,
+		modulePin.Commit(),
+	)
+	if resp.Manifest != nil {
+		// prefer and use manifest and blobs
+		bucket, err := manifest.NewBucketFromManifestBlobs(
+			ctx,
+			resp.Manifest,
+			resp.Blobs,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return bufmodule.NewModuleForBucket(ctx, bucket, identityAndCommitOpt)
+	} else if resp.Module != nil {
+		// build proto module instead
+		return bufmodule.NewModuleForProto(ctx, resp.Module, identityAndCommitOpt)
+	}
+	// funny, success without a module to build
+	return nil, errors.New("no module in response")
+}
+
+func (m *moduleReader) download(
+	ctx context.Context,
+	modulePin bufmoduleref.ModulePin,
+) (*registryv1alpha1.DownloadResponse, error) {
 	downloadService := m.downloadClientFactory(modulePin.Remote())
-	// TODO: Prefer taking a manifest and blobs to form a bucket and module
-	// from bufmodule.NewModuleForBucket.
 	resp, err := downloadService.Download(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.DownloadRequest{
@@ -55,16 +95,5 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		}
 		return nil, err
 	}
-	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
-		modulePin.Remote(),
-		modulePin.Owner(),
-		modulePin.Repository(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return bufmodule.NewModuleForProto(
-		ctx, resp.Msg.Module,
-		bufmodule.ModuleWithModuleIdentityAndCommit(moduleIdentity, modulePin.Commit()),
-	)
+	return resp.Msg, err
 }

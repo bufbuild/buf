@@ -22,18 +22,95 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type mockDownloadService struct {
-	module   *v1alpha1.Module
-	manifest *v1alpha1.Blob
-	blobs    []*v1alpha1.Blob
-	err      error
+	module       *modulev1alpha1.Module
+	manifestBlob *modulev1alpha1.Blob
+	blobs        []*modulev1alpha1.Blob
+	err          error
+}
+
+type option interface {
+	apply(*mockDownloadService) error
+}
+
+type filemap map[string][]byte
+
+func (fm filemap) apply(m *mockDownloadService) error {
+	bucket, err := storagemem.NewReadBucket(fm)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	moduleManifest, blobSet, err := manifest.NewFromBucket(ctx, bucket)
+	if err != nil {
+		return err
+	}
+	mBlob, err := moduleManifest.Blob()
+	if err != nil {
+		return err
+	}
+	m.manifestBlob, err = manifest.AsProtoBlob(ctx, mBlob)
+	if err != nil {
+		return err
+	}
+	blobs := blobSet.Blobs()
+	m.blobs = make([]*modulev1alpha1.Blob, 0, len(blobs))
+	for _, blob := range blobs {
+		protoBlob, err := manifest.AsProtoBlob(ctx, blob)
+		if err != nil {
+			return err
+		}
+		m.blobs = append(m.blobs, protoBlob)
+	}
+	return nil
+}
+
+func WithBlobsFromMap(files map[string][]byte) option {
+	return filemap(files)
+}
+
+type retErr struct{ err error }
+
+func (re retErr) apply(m *mockDownloadService) error {
+	m.err = re.err
+	return nil
+}
+
+func WithError(err error) option {
+	return retErr{err: err}
+}
+
+type retModule struct{ module *modulev1alpha1.Module }
+
+func (rm retModule) apply(m *mockDownloadService) error {
+	m.module = rm.module
+	return nil
+}
+
+func WithModule(module *modulev1alpha1.Module) option {
+	return retModule{module: module}
+}
+
+func NewMockDownloadService(
+	t *testing.T,
+	opts ...option,
+) *mockDownloadService {
+	m := &mockDownloadService{}
+	for _, opt := range opts {
+		if err := opt.apply(m); err != nil {
+			t.Error(err)
+		}
+	}
+	return m
 }
 
 func (m *mockDownloadService) factory(_ string) registryv1alpha1connect.DownloadServiceClient {
@@ -49,7 +126,7 @@ func (m *mockDownloadService) Download(
 	}
 	return connect.NewResponse(&registryv1alpha1.DownloadResponse{
 		Module:   m.module,
-		Manifest: m.manifest,
+		Manifest: m.manifestBlob,
 		Blobs:    m.blobs,
 	}), nil
 }
@@ -58,42 +135,67 @@ func TestDownload(t *testing.T) {
 	testDownload(
 		t,
 		"does-not-exist error",
-		&mockDownloadService{
-			err: connect.NewError(connect.CodeNotFound, nil),
-		},
+		NewMockDownloadService(
+			t,
+			WithError(connect.NewError(connect.CodeNotFound, nil)),
+		),
 		true,
 		"does not exist",
 	)
 	testDownload(
 		t,
 		"unexpected download service error",
-		&mockDownloadService{
-			err: errors.New("internal"),
-		},
+		NewMockDownloadService(
+			t,
+			WithError(errors.New("internal")),
+		),
 		true,
 		"internal",
 	)
 	testDownload(
 		t,
 		"success but response has all empty fields",
-		&mockDownloadService{},
+		NewMockDownloadService(t),
 		true,
-		"module is required",
+		"no module in response",
 	)
 	testDownload(
 		t,
 		"success",
-		&mockDownloadService{
-			module: &v1alpha1.Module{
-				Files: []*v1alpha1.ModuleFile{
+		NewMockDownloadService(
+			t,
+			WithModule(&modulev1alpha1.Module{
+				Files: []*modulev1alpha1.ModuleFile{
 					{
 						Path: "foo.proto",
 					},
 				},
-			},
-		},
+			}),
+		),
 		false,
 		"",
+	)
+	testDownload(
+		t,
+		"success with empty manifest module",
+		NewMockDownloadService(
+			t,
+			WithBlobsFromMap(map[string][]byte{}),
+		),
+		false,
+		"",
+	)
+	testDownload(
+		t,
+		"manifest module with invalid lock file",
+		NewMockDownloadService(
+			t,
+			WithBlobsFromMap(map[string][]byte{
+				"buf.lock": []byte("invalid lock file"),
+			}),
+		),
+		true,
+		"failed to decode lock file",
 	)
 }
 
