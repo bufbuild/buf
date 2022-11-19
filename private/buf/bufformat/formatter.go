@@ -20,6 +20,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/bufbuild/protocompile/ast"
@@ -128,6 +129,10 @@ func (f *formatter) Out() {
 // Indent writes the number of spaces associated
 // with the current level of indentation.
 func (f *formatter) Indent(nextNode ast.Node) {
+	// only indent at beginning of line
+	if f.lastWritten != '\n' {
+		return
+	}
 	indent := f.indent
 	if rn, ok := nextNode.(*ast.RuneNode); ok && indent > 0 {
 		if strings.ContainsRune("}])>", rn.Rune) {
@@ -1945,20 +1950,8 @@ func (f *formatter) writeMultilineCommentsMaybeCompact(comments ast.Comments, fo
 			f.P()
 		}
 		compact = false
-		txt := comment.RawText()
-		if strings.HasPrefix(txt, "/*") && newlineCount(txt) > 0 {
-			lines := strings.Split(txt, "\n")
-			for j, line := range lines {
-				line = strings.TrimSpace(line)
-				if j == 0 || line == "*/" {
-					f.P(line)
-				} else {
-					f.P("   ", line)
-				}
-			}
-		} else {
-			f.P(strings.TrimSpace(comment.RawText()))
-		}
+		f.writeComment(comment.RawText())
+		f.WriteString("\n")
 	}
 }
 
@@ -2023,9 +2016,97 @@ func (f *formatter) writeTrailingEndComments(comments ast.Comments) {
 		if i > 0 || comment.LeadingWhitespace() != "" {
 			f.Space()
 		}
-		f.WriteString(strings.TrimSpace(comment.RawText()))
+		f.writeComment(comment.RawText())
 	}
 	f.P()
+}
+
+func (f *formatter) writeComment(comment string) {
+	if strings.HasPrefix(comment, "/*") && newlineCount(comment) > 0 {
+		lines := strings.Split(comment, "\n")
+		// find minimum indent, so we can make all other lines relative to that
+		minIndent := -1 // sentinel that means unset
+		// start at 1 because line at index zero starts with "/*", not whitespace
+		for i := 1; i < len(lines); i++ {
+			indent, ok := computeIndent(lines[i])
+			if ok && (minIndent == -1 || indent < minIndent) {
+				minIndent = indent
+			}
+		}
+		if minIndent < 0 {
+			// This shouldn't be necessary.
+			// But we do it just in case, to avoid possible panic
+			minIndent = 0
+		}
+		for i, line := range lines {
+			trimmedLine := strings.TrimSpace(line)
+			if trimmedLine == "" || trimmedLine == "*/" {
+				line = trimmedLine
+			} else {
+				// we only trim space from the right; for the left,
+				// we unindent based on indentation found above.
+				line = unindent(line, minIndent)
+				line = strings.TrimRightFunc(line, unicode.IsSpace)
+			}
+			if i > 0 && line != "*/" {
+				line = "   " + line
+			}
+			if i != len(lines)-1 {
+				f.P(line)
+			} else {
+				// for last line, we don't use P because we don't
+				// want to print a trailing newline
+				f.Indent(nil)
+				f.WriteString(line)
+			}
+		}
+	} else {
+		f.Indent(nil)
+		f.WriteString(strings.TrimSpace(comment))
+	}
+}
+
+func unindent(s string, unindent int) string {
+	for i, r := range s {
+		if unindent == 0 {
+			return s[i:]
+		}
+		if unindent < 0 {
+			// removing tab-stop unindented too far, so we
+			// add back some spaces to compensate
+			return strings.Repeat(" ", -unindent) + s[i:]
+		}
+
+		switch r {
+		case ' ':
+			unindent--
+		case '\t':
+			unindent -= 4
+		default:
+			return s[i:]
+		}
+	}
+	// nothing but whitespace...
+	return ""
+}
+
+func computeIndent(s string) (int, bool) {
+	if strings.TrimSpace(s) == "*/" {
+		return 0, false
+	}
+	indent := 0
+	for _, r := range s {
+		switch r {
+		case ' ':
+			indent++
+		case '\t':
+			indent += 4
+		default:
+			return indent, true
+		}
+	}
+	// if we get here, line is nothing but whitespace
+	return 0, false
 }
 
 func (f *formatter) leadingCommentsContainBlankLine(n ast.Node) bool {
