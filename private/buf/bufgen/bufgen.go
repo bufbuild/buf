@@ -240,7 +240,7 @@ type GoPackagePrefixConfig struct {
 	Override map[bufmoduleref.ModuleIdentity]string
 }
 
-// CsharpNameSpacePrefixConfig is the csharp_namespace prefix configuration.
+// CsharpNameSpaceConfig is the csharp_namespace configuration.
 type CsharpNameSpaceConfig struct {
 	Except []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> csharp_namespace prefix.
@@ -392,7 +392,7 @@ func (e ExternalGoPackagePrefixConfigV1) IsEmpty() bool {
 		len(e.Override) == 0
 }
 
-// ExternalGoPackagePrefixConfigV1 is the external go_package prefix configuration.
+// ExternalCsharpNamespaceConfigV1 is the external csharp_namespace configuration.
 type ExternalCsharpNamespaceConfigV1 struct {
 	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
 	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`

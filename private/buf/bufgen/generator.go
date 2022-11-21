@@ -484,9 +484,9 @@ func newModifier(
 		csharpNamespaceExcept   []bufmoduleref.ModuleIdentity
 		csharpNamespaceOverride map[bufmoduleref.ModuleIdentity]string
 	)
-	if csharpNameSpacePrefixConfig := managedConfig.CsharpNameSpaceConfig; csharpNameSpacePrefixConfig != nil {
-		csharpNamespaceExcept = csharpNameSpacePrefixConfig.Except
-		csharpNamespaceOverride = csharpNameSpacePrefixConfig.Override
+	if csharpNameSpaceConfig := managedConfig.CsharpNameSpaceConfig; csharpNameSpaceConfig != nil {
+		csharpNamespaceExcept = csharpNameSpaceConfig.Except
+		csharpNamespaceOverride = csharpNameSpaceConfig.Override
 	}
 	csharpNamespaceModifier := bufimagemodify.CsharpNamespace(
 		logger,

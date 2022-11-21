@@ -384,35 +384,35 @@ func newGoPackagePrefixConfigV1(externalGoPackagePrefixConfig ExternalGoPackageP
 }
 
 func newCsharpNamespaceConfigV1(
-	externalCsharpNamespacePrefixConfig ExternalCsharpNamespaceConfigV1,
+	externalCsharpNamespaceConfig ExternalCsharpNamespaceConfigV1,
 ) (*CsharpNameSpaceConfig, error) {
-	if externalCsharpNamespacePrefixConfig.IsEmpty() {
+	if externalCsharpNamespaceConfig.IsEmpty() {
 		return nil, nil
 	}
-	seenModuleIdentities := make(map[string]struct{}, len(externalCsharpNamespacePrefixConfig.Except))
-	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalCsharpNamespacePrefixConfig.Except))
-	for _, moduleName := range externalCsharpNamespacePrefixConfig.Except {
+	seenModuleIdentities := make(map[string]struct{}, len(externalCsharpNamespaceConfig.Except))
+	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalCsharpNamespaceConfig.Except))
+	for _, moduleName := range externalCsharpNamespaceConfig.Except {
 		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
 		if err != nil {
-			return nil, fmt.Errorf("invalid csharp_namespace_prefix except: %w", err)
+			return nil, fmt.Errorf("invalid csharp_namespace except: %w", err)
 		}
 		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid csharp_namespace_prefix except: %q is defined multiple times", moduleIdentity.IdentityString())
+			return nil, fmt.Errorf("invalid csharp_namespace except: %q is defined multiple times", moduleIdentity.IdentityString())
 		}
 		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
 		except = append(except, moduleIdentity)
 	}
-	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalCsharpNamespacePrefixConfig.Override))
-	for moduleName, csharpNamespacePrefix := range externalCsharpNamespacePrefixConfig.Override {
+	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalCsharpNamespaceConfig.Override))
+	for moduleName, csharpNamespace := range externalCsharpNamespaceConfig.Override {
 		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
 		if err != nil {
-			return nil, fmt.Errorf("invalid csharp_namespace_prefix override key: %w", err)
+			return nil, fmt.Errorf("invalid csharp_namespace override key: %w", err)
 		}
 		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid csharp_namespace_prefix override: %q is already defined as an except", moduleIdentity.IdentityString())
+			return nil, fmt.Errorf("invalid csharp_namespace override: %q is already defined as an except", moduleIdentity.IdentityString())
 		}
 		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		override[moduleIdentity] = csharpNamespacePrefix
+		override[moduleIdentity] = csharpNamespace
 	}
 	return &CsharpNameSpaceConfig{
 		Except:   except,
