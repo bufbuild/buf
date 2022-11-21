@@ -6,9 +6,6 @@ GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
-	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
-	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
-	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientconnect \
 	private/bufpkg/bufstyle/cmd/bufstyle \
 	private/bufpkg/bufwkt/cmd/wkt-go-data \
 	private/pkg/bandeps/cmd/bandeps \
@@ -99,9 +96,6 @@ privateusage:
 postprepostgenerate:: privateusage
 
 bufgeneratedeps:: \
-	installprotoc-gen-go-api \
-	installprotoc-gen-go-apiclient \
-	installprotoc-gen-go-apiclientconnect \
 	$(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO)
 
 .PHONY: bufgeneratecleango

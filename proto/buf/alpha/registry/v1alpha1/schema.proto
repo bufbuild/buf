@@ -1,0 +1,171 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/registry/v1alpha1/module.proto";
+import "google/protobuf/descriptor.proto";
+
+// Provides endpoints for downloading dynamic schemas and for using schemas
+// in validation and data transformation functions.
+service SchemaService {
+  // GetSchema allows the caller to download a schema for one or more requested
+  // types, RPC services, or RPC methods.
+  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse);
+
+  // ConvertMessage allows the caller to convert a given message data blob from
+  // one format to another by referring to a type schema for the blob.
+  rpc ConvertMessage(ConvertMessageRequest) returns (ConvertMessageResponse);
+}
+
+message GetSchemaRequest {
+  // The module from which the schema is retrieved. Required. This refers to a
+  // module that exists in the same BSR instance as is handling this RPC.
+  LocalModuleReference module = 1;
+
+  // One or more element names. The names may be type names (messages or enums),
+  // service names, or method names. All names must be fully-qualified. If any name
+  // is unknown, the request will fail and no schema will be returned.
+  //
+  // The resulting schema contains these elements and all of their dependencies,
+  // which is enough information for the caller to construct a dynamic message for
+  // any requested types (e.g. requested message types or request and response types
+  // for requested service and method names).
+  repeated string element_names = 2;
+
+  // If true, well-known imports will be included the returned set of files. If
+  // false or not present, these files will omitted from the response (e.g. the
+  // caller is assumed to already know the types they define).
+  //
+  // These files are a subset of the files in the "well-known types" module:
+  // https://buf.build/beta/wellknowntypes
+  //
+  // Specifically, the files that are omitted by default are the following:
+  //  * google/protobuf/any.proto
+  //  * google/protobuf/descriptor.proto
+  //  * google/protobuf/duration.proto
+  //  * google/protobuf/empty.proto
+  //  * google/protobuf/field_mask.proto
+  //  * google/protobuf/struct.proto
+  //  * google/protobuf/timestamp.proto
+  //  * google/protobuf/wrapper.proto
+  //
+  // These include all well-known types that have custom JSON formats and
+  // the types in "descriptor.proto", required for Protobuf reflection.
+  // Callers typically use compiled-in versions of these files.
+  bool include_well_known_imports = 4;
+
+  // TODO: flags for whether to include custom options referenced in the
+  //  descriptor set and whether to include known extensions for any
+  //  extendable messages in the descriptor set
+
+  // TODO: semantics for efficiently polling for latest version w/out
+  //  repeatedly re-downloading the same schema when there's no change
+}
+
+message GetSchemaResponse {
+  // The resolved version of the schema. If the request included a reference to a commit,
+  // this value is the same as that commit. If the request included a reference to a tag,
+  // this is the commit version for that tag. If the request did not include any version,
+  // this is the latest version of the requested module.
+  string version = 1;
+  // The schema, which is a set of file descriptors that include the requested elements
+  // and their dependencies.
+  google.protobuf.FileDescriptorSet schema_files = 2;
+}
+
+message ConvertMessageRequest {
+  // The module which contains the schema of interest. Required.
+  LocalModuleReference module = 1;
+  // The fully-qualified name of the message. Required.
+  string message_name = 2;
+
+  // The format of the input data. Required.
+  Format input_format = 3;
+
+  // The input data that is to be converted. Required. This must be
+  // a valid encoding of type indicated by message_name in the format
+  // indicated by input_format.
+  bytes input_data = 4;
+
+  // If true, any unresolvable fields in the input are discarded. For
+  // formats other than FORMAT_BINARY, this means that the operation
+  // will fail if the input contains unrecognized field names. For
+  // FORMAT_BINARY, unrecognized fields can be retained and possibly
+  // included in the reformatted output (depending on the requested
+  // output format).
+  bool discard_unknown = 5;
+
+  oneof output_format {
+    BinaryOutputOptions output_binary = 6;
+    JSONOutputOptions output_json = 7;
+    TextOutputOptions output_text = 8;
+  }
+}
+
+enum Format {
+  FORMAT_UNSPECIFIED = 0;
+
+  FORMAT_BINARY = 1;
+  FORMAT_JSON = 2;
+  FORMAT_TEXT = 3;
+}
+
+message BinaryOutputOptions {
+  // If true, the output will be deterministic. In particular, extension fields
+  // will be emitted in tag number order and entries in map fields will be
+  // ordered by key.
+  bool deterministic = 1;
+}
+
+message JSONOutputOptions {
+  // Indentation to use for multi-line output. If empty, the output will be
+  // compact instead of multi-line. If not empty, it may contain only space
+  // and tab characters.
+  string indent = 1;
+  // Emits JSON field names using the names as defined in proto source. If false
+  // (the default), field names are emitted using a custom json_name option if
+  // present or a camel-case version of the name otherwise.
+  bool use_proto_names = 2;
+  // Enum fields will be emitted as numeric values. If false (the dafault), enum
+  // fields are emitted as strings that are the enum values' names.
+  bool use_enum_numbers = 3;
+  // Includes fields that have their default values. This applies only to fields
+  // defined in proto3 syntax that have no explicit "optional" keyword. Other
+  // optional fields will be included if present in the input data.
+  bool include_defaults = 4;
+}
+
+message TextOutputOptions {
+  // Indentation to use for multi-line output. If empty, the output will be
+  // compact instead of multi-line. If not empty, it may contain only space
+  // and tab characters.
+  string indent = 1;
+  // If true and the input data includes unrecognized fields, the unrecognized
+  // fields will be preserved in the text output (using field numbers and raw
+  // values).
+  bool include_unrecognized = 2;
+}
+
+message ConvertMessageResponse {
+  // The resolved version of the schema. If the request included a reference to a commit,
+  // this value is the same as that commit. If the request included a reference to a tag,
+  // this is the commit version for that tag. If the request did not include any version,
+  // this is the latest version of the requested module.
+  string version = 1;
+  // The reformatted data.
+  bytes output_data = 2;
+}

@@ -21,21 +21,22 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
+	"github.com/bufbuild/connect-go"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
 type moduleReader struct {
-	logger                    *zap.Logger
-	verbosePrinter            verbose.Printer
-	fileLocker                filelock.Locker
-	cache                     *moduleCacher
-	delegate                  bufmodule.ModuleReader
-	repositoryServiceProvider registryv1alpha1apiclient.RepositoryServiceProvider
+	logger                  *zap.Logger
+	verbosePrinter          verbose.Printer
+	fileLocker              filelock.Locker
+	cache                   *moduleCacher
+	delegate                bufmodule.ModuleReader
+	repositoryClientFactory RepositoryServiceClientFactory
 
 	count     int
 	cacheHits int
@@ -49,7 +50,7 @@ func newModuleReader(
 	dataReadWriteBucket storage.ReadWriteBucket,
 	sumReadWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
-	repositoryServiceProvider registryv1alpha1apiclient.RepositoryServiceProvider,
+	repositoryClientFactory RepositoryServiceClientFactory,
 	options ...ModuleReaderOption,
 ) *moduleReader {
 	moduleReaderOptions := &moduleReaderOptions{}
@@ -66,8 +67,8 @@ func newModuleReader(
 			sumReadWriteBucket,
 			moduleReaderOptions.allowCacheExternalPaths,
 		),
-		delegate:                  delegate,
-		repositoryServiceProvider: repositoryServiceProvider,
+		delegate:                delegate,
+		repositoryClientFactory: repositoryClientFactory,
 	}
 }
 
@@ -145,18 +146,17 @@ func (m *moduleReader) GetModule(
 		return nil, err
 	}
 
-	repositoryService, err := m.repositoryServiceProvider.NewRepositoryService(ctx, modulePin.Remote())
-	if err != nil {
-		return nil, err
-	}
-	repository, _, err := repositoryService.GetRepositoryByFullName(
+	repositoryService := m.repositoryClientFactory(modulePin.Remote())
+	resp, err := repositoryService.GetRepositoryByFullName(
 		ctx,
-		fmt.Sprintf("%s/%s", modulePin.Owner(), modulePin.Repository()),
+		connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
+			FullName: fmt.Sprintf("%s/%s", modulePin.Owner(), modulePin.Repository()),
+		}),
 	)
 	if err != nil {
 		return nil, err
 	}
-
+	repository := resp.Msg.Repository
 	if repository.Deprecated {
 		warnMsg := fmt.Sprintf(`Repository "%s" is deprecated`, modulePin.IdentityString())
 		if repository.DeprecationMessage != "" {
