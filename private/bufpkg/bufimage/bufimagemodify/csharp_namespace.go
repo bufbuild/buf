@@ -36,7 +36,6 @@ var csharpNamespacePath = []int32{8, 37}
 func csharpNamespace(
 	logger *zap.Logger,
 	sweeper Sweeper,
-	defaultPrefix string,
 	except []bufmoduleref.ModuleIdentity,
 	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
@@ -48,23 +47,22 @@ func csharpNamespace(
 		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
 	}
 	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
-	for moduleIdentity, csharpNamespacePrefix := range moduleOverrides {
-		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = csharpNamespacePrefix
+	for moduleIdentity, csharpNamespace := range moduleOverrides {
+		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = csharpNamespace
 	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				namespacePrefix := defaultPrefix
+				csharpNamespaceValue := csharpNamespaceValue(imageFile)
 				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
 					moduleIdentityString := moduleIdentity.IdentityString()
-					if modulePrefixOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
-						namespacePrefix = modulePrefixOverride
+					if moduleNamespaceOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
 						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+						csharpNamespaceValue = moduleNamespaceOverride
 					}
 				}
-				csharpNamespaceValue := csharpNamespaceValue(imageFile, namespacePrefix)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					csharpNamespaceValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
@@ -137,27 +135,10 @@ func shouldSkipCsharpNamespaceForFile(
 	return false
 }
 
-func csharpNamespaceValue(imageFile bufimage.ImageFile, namespacePrefix string) string {
-	subNamespace := csharpSubNamespaceValue(imageFile)
-	if namespacePrefix == "" {
-		return subNamespace
-	}
-	if subNamespace == "" {
-		return namespacePrefix
-	}
-	return strings.Join(
-		[]string{
-			namespacePrefix,
-			subNamespace,
-		},
-		".",
-	)
-}
-
 // csharpNamespaceValue returns the csharp_namespace for the given ImageFile based on its
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
-func csharpSubNamespaceValue(imageFile bufimage.ImageFile) string {
+func csharpNamespaceValue(imageFile bufimage.ImageFile) string {
 	pkg := imageFile.Proto().GetPackage()
 	if pkg == "" {
 		return ""

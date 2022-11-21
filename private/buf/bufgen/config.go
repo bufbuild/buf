@@ -246,7 +246,7 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 	if err != nil {
 		return nil, err
 	}
-	csharpNamespacePrefixConfig, err := newCsharpNamespacePrefixConfigV1(externalManagedConfig.CsharpNamespacePrefix)
+	csharpNamespaceConfig, err := newCsharpNamespaceConfigV1(externalManagedConfig.CsharpNamespace)
 	if err != nil {
 		return nil, err
 	}
@@ -286,14 +286,14 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 		}
 	}
 	return &ManagedConfig{
-		CcEnableArenas:              externalManagedConfig.CcEnableArenas,
-		JavaMultipleFiles:           externalManagedConfig.JavaMultipleFiles,
-		JavaStringCheckUtf8:         externalManagedConfig.JavaStringCheckUtf8,
-		JavaPackagePrefix:           javaPackagePrefixConfig,
-		CsharpNameSpacePrefixConfig: csharpNamespacePrefixConfig,
-		OptimizeFor:                 optimizeFor,
-		GoPackagePrefixConfig:       goPackagePrefixConfig,
-		Override:                    override,
+		CcEnableArenas:        externalManagedConfig.CcEnableArenas,
+		JavaMultipleFiles:     externalManagedConfig.JavaMultipleFiles,
+		JavaStringCheckUtf8:   externalManagedConfig.JavaStringCheckUtf8,
+		JavaPackagePrefix:     javaPackagePrefixConfig,
+		CsharpNameSpaceConfig: csharpNamespaceConfig,
+		OptimizeFor:           optimizeFor,
+		GoPackagePrefixConfig: goPackagePrefixConfig,
+		Override:              override,
 	}, nil
 }
 
@@ -383,13 +383,12 @@ func newGoPackagePrefixConfigV1(externalGoPackagePrefixConfig ExternalGoPackageP
 	}, nil
 }
 
-func newCsharpNamespacePrefixConfigV1(
-	externalCsharpNamespacePrefixConfig ExternalCsharpNamespacePrefixConfigV1,
-) (*CsharpNameSpacePrefixConfig, error) {
+func newCsharpNamespaceConfigV1(
+	externalCsharpNamespacePrefixConfig ExternalCsharpNamespaceConfigV1,
+) (*CsharpNameSpaceConfig, error) {
 	if externalCsharpNamespacePrefixConfig.IsEmpty() {
 		return nil, nil
 	}
-	// It's ok to have "" as default, for backward compatibility.
 	seenModuleIdentities := make(map[string]struct{}, len(externalCsharpNamespacePrefixConfig.Except))
 	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalCsharpNamespacePrefixConfig.Except))
 	for _, moduleName := range externalCsharpNamespacePrefixConfig.Except {
@@ -415,8 +414,7 @@ func newCsharpNamespacePrefixConfigV1(
 		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
 		override[moduleIdentity] = csharpNamespacePrefix
 	}
-	return &CsharpNameSpacePrefixConfig{
-		Default:  externalCsharpNamespacePrefixConfig.Default,
+	return &CsharpNameSpaceConfig{
 		Except:   except,
 		Override: override,
 	}, nil

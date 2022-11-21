@@ -2,8 +2,7 @@
     "version": "v1",
     "managed": {
       "enabled": true,
-      "csharp_namespace_prefix": {
-        "default": "",
+      "csharp_namespace": {
         "except": [
           "someremote.com/owner/repo"
         ],

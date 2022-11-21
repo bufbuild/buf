@@ -243,7 +243,6 @@ func ObjcClassPrefix(
 func CsharpNamespace(
 	logger *zap.Logger,
 	sweeper Sweeper,
-	defaultPrefix string,
 	except []bufmoduleref.ModuleIdentity,
 	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
@@ -251,7 +250,6 @@ func CsharpNamespace(
 	return csharpNamespace(
 		logger,
 		sweeper,
-		defaultPrefix,
 		except,
 		moduleOverrides,
 		overrides,

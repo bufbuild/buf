@@ -251,8 +251,7 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	successConfig8 := &Config{
 		ManagedConfig: &ManagedConfig{
-			CsharpNameSpacePrefixConfig: &CsharpNameSpacePrefixConfig{
-				Default: "",
+			CsharpNameSpaceConfig: &CsharpNameSpaceConfig{
 				Except: []bufmoduleref.ModuleIdentity{
 					mustCreateModuleIdentity(
 						t,
@@ -554,11 +553,10 @@ func assertConfigsWithEqualCsharpnamespace(t *testing.T, successConfig *Config, 
 	require.Equal(t, successConfig.PluginConfigs, config.PluginConfigs)
 	require.NotNil(t, successConfig.ManagedConfig)
 	require.NotNil(t, config.ManagedConfig)
-	require.NotNil(t, successConfig.ManagedConfig.CsharpNameSpacePrefixConfig)
-	require.NotNil(t, config.ManagedConfig.CsharpNameSpacePrefixConfig)
-	successCsharpConfig := successConfig.ManagedConfig.CsharpNameSpacePrefixConfig
-	csharpConfig := config.ManagedConfig.CsharpNameSpacePrefixConfig
-	require.Equal(t, successCsharpConfig.Default, csharpConfig.Default)
+	require.NotNil(t, successConfig.ManagedConfig.CsharpNameSpaceConfig)
+	require.NotNil(t, config.ManagedConfig.CsharpNameSpaceConfig)
+	successCsharpConfig := successConfig.ManagedConfig.CsharpNameSpaceConfig
+	csharpConfig := config.ManagedConfig.CsharpNameSpaceConfig
 	require.Equal(t, successCsharpConfig.Except, csharpConfig.Except)
 	assertEqualModuleIdentityKeyedMaps(t, successCsharpConfig.Override, csharpConfig.Override)
 }

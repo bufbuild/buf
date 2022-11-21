@@ -481,19 +481,16 @@ func newModifier(
 		modifier = bufimagemodify.Merge(modifier, javaStringCheckUtf8)
 	}
 	var (
-		csharpNamespaceDefaultPrefix string
-		csharpNamespaceExcept        []bufmoduleref.ModuleIdentity
-		csharpNamespaceOverride      map[bufmoduleref.ModuleIdentity]string
+		csharpNamespaceExcept   []bufmoduleref.ModuleIdentity
+		csharpNamespaceOverride map[bufmoduleref.ModuleIdentity]string
 	)
-	if csharpNameSpacePrefixConfig := managedConfig.CsharpNameSpacePrefixConfig; csharpNameSpacePrefixConfig != nil {
-		csharpNamespaceDefaultPrefix = csharpNameSpacePrefixConfig.Default
+	if csharpNameSpacePrefixConfig := managedConfig.CsharpNameSpaceConfig; csharpNameSpacePrefixConfig != nil {
 		csharpNamespaceExcept = csharpNameSpacePrefixConfig.Except
 		csharpNamespaceOverride = csharpNameSpacePrefixConfig.Override
 	}
 	csharpNamespaceModifier := bufimagemodify.CsharpNamespace(
 		logger,
 		sweeper,
-		csharpNamespaceDefaultPrefix,
 		csharpNamespaceExcept,
 		csharpNamespaceOverride,
 		managedConfig.Override[bufimagemodify.CsharpNamespaceID],
