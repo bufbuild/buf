@@ -200,7 +200,7 @@ func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage
 }
 
 // NewBucketFromManifestBlobs builds a storage bucket from a manifest blob and
-// a set of other blobs, provided in protobuf form. This bucket is suitble for
+// a set of other blobs, provided in protobuf form. This bucket is suitable for
 // building or exporting.
 func NewBucketFromManifestBlobs(
 	ctx context.Context,
