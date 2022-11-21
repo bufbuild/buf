@@ -31,6 +31,108 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestDownload(t *testing.T) {
+	testDownload(
+		t,
+		"does-not-exist error",
+		newMockDownloadService(
+			t,
+			withError(connect.NewError(connect.CodeNotFound, nil)),
+		),
+		true,
+		"does not exist",
+	)
+	testDownload(
+		t,
+		"unexpected download service error",
+		newMockDownloadService(
+			t,
+			withError(errors.New("internal")),
+		),
+		true,
+		"internal",
+	)
+	testDownload(
+		t,
+		"success but response has all empty fields",
+		newMockDownloadService(t),
+		true,
+		"no module in response",
+	)
+	testDownload(
+		t,
+		"success",
+		newMockDownloadService(
+			t,
+			withModule(&modulev1alpha1.Module{
+				Files: []*modulev1alpha1.ModuleFile{
+					{
+						Path: "foo.proto",
+					},
+				},
+			}),
+		),
+		false,
+		"",
+	)
+	testDownload(
+		t,
+		"success with empty manifest module",
+		newMockDownloadService(
+			t,
+			withBlobsFromMap(map[string][]byte{}),
+		),
+		false,
+		"",
+	)
+	testDownload(
+		t,
+		"manifest module with invalid lock file",
+		newMockDownloadService(
+			t,
+			withBlobsFromMap(map[string][]byte{
+				"buf.lock": []byte("invalid lock file"),
+			}),
+		),
+		true,
+		"failed to decode lock file",
+	)
+}
+
+func testDownload(
+	t *testing.T,
+	desc string,
+	mock *mockDownloadService,
+	expectError bool,
+	errorContains string,
+) {
+	t.Helper()
+	t.Run(desc, func(t *testing.T) {
+		t.Parallel()
+		moduleReader := newModuleReader(mock.factory)
+		ctx := context.Background()
+		pin, err := bufmoduleref.NewModulePin(
+			"remote",
+			"owner",
+			"repository",
+			"branch",
+			"commit",
+			time.Now(),
+		)
+		require.NoError(t, err)
+		module, err := moduleReader.GetModule(ctx, pin)
+		if expectError {
+			assert.Error(t, err)
+			if errorContains != "" {
+				assert.ErrorContains(t, err, errorContains)
+			}
+		} else {
+			assert.NotNil(t, module)
+			assert.NoError(t, err)
+		}
+	})
+}
+
 type mockDownloadService struct {
 	module       *modulev1alpha1.Module
 	manifestBlob *modulev1alpha1.Blob
@@ -74,7 +176,7 @@ func (fm filemap) apply(m *mockDownloadService) error {
 	return nil
 }
 
-func WithBlobsFromMap(files map[string][]byte) option {
+func withBlobsFromMap(files map[string][]byte) option {
 	return filemap(files)
 }
 
@@ -85,7 +187,7 @@ func (re retErr) apply(m *mockDownloadService) error {
 	return nil
 }
 
-func WithError(err error) option {
+func withError(err error) option {
 	return retErr{err: err}
 }
 
@@ -96,11 +198,11 @@ func (rm retModule) apply(m *mockDownloadService) error {
 	return nil
 }
 
-func WithModule(module *modulev1alpha1.Module) option {
+func withModule(module *modulev1alpha1.Module) option {
 	return retModule{module: module}
 }
 
-func NewMockDownloadService(
+func newMockDownloadService(
 	t *testing.T,
 	opts ...option,
 ) *mockDownloadService {
@@ -129,106 +231,4 @@ func (m *mockDownloadService) Download(
 		Manifest: m.manifestBlob,
 		Blobs:    m.blobs,
 	}), nil
-}
-
-func TestDownload(t *testing.T) {
-	testDownload(
-		t,
-		"does-not-exist error",
-		NewMockDownloadService(
-			t,
-			WithError(connect.NewError(connect.CodeNotFound, nil)),
-		),
-		true,
-		"does not exist",
-	)
-	testDownload(
-		t,
-		"unexpected download service error",
-		NewMockDownloadService(
-			t,
-			WithError(errors.New("internal")),
-		),
-		true,
-		"internal",
-	)
-	testDownload(
-		t,
-		"success but response has all empty fields",
-		NewMockDownloadService(t),
-		true,
-		"no module in response",
-	)
-	testDownload(
-		t,
-		"success",
-		NewMockDownloadService(
-			t,
-			WithModule(&modulev1alpha1.Module{
-				Files: []*modulev1alpha1.ModuleFile{
-					{
-						Path: "foo.proto",
-					},
-				},
-			}),
-		),
-		false,
-		"",
-	)
-	testDownload(
-		t,
-		"success with empty manifest module",
-		NewMockDownloadService(
-			t,
-			WithBlobsFromMap(map[string][]byte{}),
-		),
-		false,
-		"",
-	)
-	testDownload(
-		t,
-		"manifest module with invalid lock file",
-		NewMockDownloadService(
-			t,
-			WithBlobsFromMap(map[string][]byte{
-				"buf.lock": []byte("invalid lock file"),
-			}),
-		),
-		true,
-		"failed to decode lock file",
-	)
-}
-
-func testDownload(
-	t *testing.T,
-	desc string,
-	mock *mockDownloadService,
-	expectError bool,
-	errorContains string,
-) {
-	t.Helper()
-	t.Run(desc, func(t *testing.T) {
-		t.Parallel()
-		moduleReader := newModuleReader(mock.factory)
-		ctx := context.Background()
-		pin, err := bufmoduleref.NewModulePin(
-			"remote",
-			"owner",
-			"repository",
-			"branch",
-			"commit",
-			time.Now(),
-		)
-		require.NoError(t, err)
-		module, err := moduleReader.GetModule(ctx, pin)
-		if expectError {
-			assert.Error(t, err)
-			if errorContains != "" {
-				assert.ErrorContains(t, err, errorContains)
-			}
-		} else {
-			assert.NotNil(t, module)
-			assert.NoError(t, err)
-		}
-	})
 }
