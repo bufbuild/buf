@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -382,5 +383,282 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 		}
+	})
+}
+
+func TestOptimizeForWithExcept(t *testing.T) {
+	t.Parallel()
+	dirPath := filepath.Join("testdata", "emptyoptions")
+	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+		testRemote,
+		testRepositoryOwner,
+		testRepositoryName,
+	)
+	require.NoError(t, err)
+
+	t.Run("with SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+
+		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(
+			zap.NewNop(),
+			sweeper,
+			descriptorpb.FileOptions_CODE_SIZE,
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			nil,
+			nil,
+		)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, testGetImage(t, dirPath, true), image)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+	})
+
+	t.Run("without SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(
+			zap.NewNop(),
+			sweeper,
+			descriptorpb.FileOptions_CODE_SIZE,
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			nil,
+			nil,
+		)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, testGetImage(t, dirPath, false), image)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+	})
+
+	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+
+		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(
+			zap.NewNop(),
+			sweeper,
+			descriptorpb.FileOptions_CODE_SIZE,
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			nil,
+			map[string]string{
+				"a.proto": "LITE_RUNTIME",
+			},
+		)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+	})
+
+	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(
+			zap.NewNop(),
+			sweeper,
+			descriptorpb.FileOptions_CODE_SIZE,
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			nil,
+			map[string]string{
+				"a.proto": "SPEED",
+			},
+		)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+	})
+}
+
+func TestOptimizeForWithOverride(t *testing.T) {
+	t.Parallel()
+	dirPath := filepath.Join("testdata", "emptyoptions")
+	overrideOptimizeFor := descriptorpb.FileOptions_LITE_RUNTIME
+	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+		testRemote,
+		testRepositoryOwner,
+		testRepositoryName,
+	)
+	require.NoError(t, err)
+
+	t.Run("with SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+
+		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(
+			zap.NewNop(),
+			sweeper,
+			descriptorpb.FileOptions_CODE_SIZE,
+			nil,
+			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
+				testModuleIdentity: overrideOptimizeFor,
+			},
+			nil,
+		)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t,
+				overrideOptimizeFor,
+				descriptor.GetOptions().GetOptimizeFor(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+	})
+
+	t.Run("without SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(
+			zap.NewNop(),
+			sweeper,
+			descriptorpb.FileOptions_CODE_SIZE,
+			nil,
+			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
+				testModuleIdentity: overrideOptimizeFor,
+			},
+			nil,
+		)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t,
+				overrideOptimizeFor,
+				descriptor.GetOptions().GetOptimizeFor(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+	})
+
+	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+
+		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(
+			zap.NewNop(),
+			sweeper,
+			descriptorpb.FileOptions_CODE_SIZE,
+			nil,
+			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
+				testModuleIdentity: overrideOptimizeFor,
+			},
+			map[string]string{
+				"a.proto": "CODE_SIZE",
+			},
+		)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t,
+				descriptorpb.FileOptions_CODE_SIZE,
+				descriptor.GetOptions().GetOptimizeFor(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+	})
+
+	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(
+			zap.NewNop(),
+			sweeper,
+			descriptorpb.FileOptions_CODE_SIZE,
+			nil,
+			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
+				testModuleIdentity: overrideOptimizeFor,
+			},
+			map[string]string{
+				"a.proto": "CODE_SIZE",
+			},
+		)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t,
+				descriptorpb.FileOptions_CODE_SIZE,
+				descriptor.GetOptions().GetOptimizeFor(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 }
