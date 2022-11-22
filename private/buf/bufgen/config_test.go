@@ -45,12 +45,20 @@ func TestReadConfigV1Beta1(t *testing.T) {
 			CcEnableArenas:      &truth,
 			JavaMultipleFiles:   &truth,
 			JavaStringCheckUtf8: nil,
-			OptimizeFor:         optimizeModePtr(descriptorpb.FileOptions_CODE_SIZE),
+			OptimizeFor: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_CODE_SIZE,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 		},
 	}
 	successConfig2 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_SPEED),
+			OptimizeFor: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_SPEED,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 		},
 		PluginConfigs: []*PluginConfig{
 			{
@@ -64,7 +72,11 @@ func TestReadConfigV1Beta1(t *testing.T) {
 	}
 	successConfig3 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_LITE_RUNTIME),
+			OptimizeFor: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 		},
 		PluginConfigs: []*PluginConfig{
 			{
@@ -164,7 +176,11 @@ func TestReadConfigV1(t *testing.T) {
 				Except:   make([]bufmoduleref.ModuleIdentity, 0),
 				Override: make(map[bufmoduleref.ModuleIdentity]string),
 			},
-			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_CODE_SIZE),
+			OptimizeFor: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_CODE_SIZE,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 			Override: map[string]map[string]string{
 				bufimagemodify.JavaPackageID: {"a.proto": "override"},
 			},
@@ -172,7 +188,11 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	successConfig2 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_SPEED),
+			OptimizeFor: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_SPEED,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 		},
 		PluginConfigs: []*PluginConfig{
 			{
@@ -186,7 +206,11 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	successConfig3 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_LITE_RUNTIME),
+			OptimizeFor: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 		},
 		PluginConfigs: []*PluginConfig{
 			{

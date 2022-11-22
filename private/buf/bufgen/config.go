@@ -493,7 +493,9 @@ func newManagedConfigV1Beta1(externalOptionsConfig ExternalOptionsConfigV1Beta1,
 			)
 		}
 		optimizeForConfig = &OptimizeForConfig{
-			Default: descriptorpb.FileOptions_OptimizeMode(value),
+			Default:  descriptorpb.FileOptions_OptimizeMode(value),
+			Except:   make([]bufmoduleref.ModuleIdentity, 0),
+			Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 		}
 	}
 	return &ManagedConfig{
