@@ -515,13 +515,6 @@ func enumMapToStringSlice(enums map[string]int32) []string {
 	return slice
 }
 
-// optimizeModePtr is a convenience function for initializing the
-// *descriptorpb.FileOptions_OptimizeMode type in-line. This is
-// also useful in unit tests.
-func optimizeModePtr(value descriptorpb.FileOptions_OptimizeMode) *descriptorpb.FileOptions_OptimizeMode {
-	return &value
-}
-
 type readConfigOptions struct {
 	override string
 }
