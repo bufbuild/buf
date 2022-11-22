@@ -203,7 +203,7 @@ func OptimizeFor(
 	if err != nil {
 		return nil, fmt.Errorf("invalid override for %s: %w", OptimizeForID, err)
 	}
-	return optimizeFor(logger, sweeper, defaultOptimizeFor, validatedOverrides), nil
+	return optimizeFor(logger, sweeper, defaultOptimizeFor, except, moduleOverrides, validatedOverrides), nil
 }
 
 // GoPackageImportPathForFile returns the go_package import path for the given

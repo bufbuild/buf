@@ -34,7 +34,7 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil)
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			optimizeForModifier,
@@ -59,7 +59,7 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil)
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
 		require.NoError(t, err)
 		err = optimizeForModifier.Modify(
 			context.Background(),
@@ -80,7 +80,7 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, map[string]string{"a.proto": "SPEED"})
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			optimizeForModifier,
@@ -109,7 +109,7 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, map[string]string{"a.proto": "SPEED"})
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
 		require.NoError(t, err)
 		err = optimizeForModifier.Modify(
 			context.Background(),
@@ -138,7 +138,7 @@ func TestOptimizeForAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil)
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			optimizeForModifier,
@@ -164,7 +164,7 @@ func TestOptimizeForAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil)
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
 		require.NoError(t, err)
 		err = optimizeForModifier.Modify(
 			context.Background(),
@@ -185,7 +185,7 @@ func TestOptimizeForAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, map[string]string{"a.proto": "SPEED"})
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			optimizeForModifier,
@@ -214,7 +214,7 @@ func TestOptimizeForAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, map[string]string{"a.proto": "SPEED"})
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
 		require.NoError(t, err)
 		err = optimizeForModifier.Modify(
 			context.Background(),
@@ -243,7 +243,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil)
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, nil)
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			optimizeForModifier,
@@ -269,7 +269,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil)
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, nil)
 		require.NoError(t, err)
 		err = optimizeForModifier.Modify(
 			context.Background(),
@@ -291,7 +291,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, map[string]string{"a.proto": "LITE_RUNTIME"})
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, map[string]string{"a.proto": "LITE_RUNTIME"})
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			optimizeForModifier,
@@ -319,7 +319,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, map[string]string{"a.proto": "LITE_RUNTIME"})
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, map[string]string{"a.proto": "LITE_RUNTIME"})
 		require.NoError(t, err)
 		err = optimizeForModifier.Modify(
 			context.Background(),
@@ -347,7 +347,7 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil)
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, nil)
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			optimizeForModifier,
@@ -370,7 +370,7 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil)
+		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, nil)
 		require.NoError(t, err)
 		err = optimizeForModifier.Modify(
 			context.Background(),
