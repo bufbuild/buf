@@ -46,12 +46,11 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		// Not documenting the first arg (remote) as this is just for testing for now.
-		// TODO: Update when we have self-hosted.
-		Use:   name,
+		Use:   name + " <domain>",
 		Short: `Log in to the Buf Schema Registry.`,
-		Long:  fmt.Sprintf(`This prompts for your BSR username and a BSR token and updates your %s file with these credentials.`, netrc.Filename),
-		Args:  cobra.MaximumNArgs(1),
+		Long: fmt.Sprintf(`This prompts for your BSR username and a BSR token and updates your %s file with these credentials.
+The <domain> argument will default to buf.build if not specified.`, netrc.Filename),
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
