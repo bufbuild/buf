@@ -9,7 +9,7 @@ message Foo {
   /*
      Heading 1:
          Some content goes here.
-     					   More content indented with tabs.
+         						   More content indented with tabs.
          Last bit.
      Heading 2:
          - bullet

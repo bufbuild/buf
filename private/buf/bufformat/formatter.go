@@ -2067,21 +2067,23 @@ func (f *formatter) writeComment(comment string) {
 }
 
 func unindent(s string, unindent int) string {
+	pos := 0
 	for i, r := range s {
-		if unindent == 0 {
+		if pos == unindent {
 			return s[i:]
 		}
-		if unindent < 0 {
+		if pos > unindent {
 			// removing tab-stop unindented too far, so we
 			// add back some spaces to compensate
-			return strings.Repeat(" ", -unindent) + s[i:]
+			return strings.Repeat(" ", pos-unindent) + s[i:]
 		}
 
 		switch r {
 		case ' ':
-			unindent--
+			pos++
 		case '\t':
-			unindent -= 4
+			// jump to next tab stop
+			pos += 8 - (pos % 8)
 		default:
 			return s[i:]
 		}
@@ -2100,7 +2102,8 @@ func computeIndent(s string) (int, bool) {
 		case ' ':
 			indent++
 		case '\t':
-			indent += 4
+			// jump to next tab stop
+			indent += 8 - (indent % 8)
 		default:
 			return indent, true
 		}
