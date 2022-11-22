@@ -246,16 +246,9 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 	if err != nil {
 		return nil, err
 	}
-	var optimizeFor *descriptorpb.FileOptions_OptimizeMode
-	if externalManagedConfig.OptimizeFor != "" {
-		value, ok := descriptorpb.FileOptions_OptimizeMode_value[externalManagedConfig.OptimizeFor]
-		if !ok {
-			return nil, fmt.Errorf(
-				"invalid optimize_for value; expected one of %v",
-				enumMapToStringSlice(descriptorpb.FileOptions_OptimizeMode_value),
-			)
-		}
-		optimizeFor = optimizeModePtr(descriptorpb.FileOptions_OptimizeMode(value))
+	optimizeForConfig, err := newOptimizeForConfigV1(externalManagedConfig.OptimizeFor)
+	if err != nil {
+		return nil, err
 	}
 	goPackagePrefixConfig, err := newGoPackagePrefixConfigV1(externalManagedConfig.GoPackagePrefix)
 	if err != nil {
@@ -286,7 +279,7 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 		JavaMultipleFiles:     externalManagedConfig.JavaMultipleFiles,
 		JavaStringCheckUtf8:   externalManagedConfig.JavaStringCheckUtf8,
 		JavaPackagePrefix:     javaPackagePrefixConfig,
-		OptimizeFor:           optimizeFor,
+		OptimizeFor:           optimizeForConfig,
 		GoPackagePrefixConfig: goPackagePrefixConfig,
 		Override:              override,
 	}, nil
@@ -326,6 +319,67 @@ func newJavaPackagePrefixConfigV1(externalJavaPackagePrefixConfig ExternalJavaPa
 	}
 	return &JavaPackagePrefixConfig{
 		Default:  externalJavaPackagePrefixConfig.Default,
+		Except:   except,
+		Override: override,
+	}, nil
+}
+
+func newOptimizeForConfigV1(externalOptimizeForConfigV1 ExternalOptimizeForConfigV1) (*OptimizeForConfig, error) {
+	if externalOptimizeForConfigV1.IsEmpty() {
+		return nil, nil
+	}
+	if externalOptimizeForConfigV1.Default == "" {
+		// or just print a warning instead?
+		return nil, errors.New("optimize_for setting requires a default value")
+		// Also, if since default + non-empty except / override is not allowed,
+		// internal config of this shouldn't have a pointer as default
+	}
+	value, ok := descriptorpb.FileOptions_OptimizeMode_value[externalOptimizeForConfigV1.Default]
+	if !ok {
+		return nil, fmt.Errorf(
+			"invalid optimize_for default value; expected one of %v",
+			enumMapToStringSlice(descriptorpb.FileOptions_OptimizeMode_value),
+		)
+	}
+	defaultOptimizeFor := descriptorpb.FileOptions_OptimizeMode(value)
+	seenModuleIdentities := make(map[string]struct{}, len(externalOptimizeForConfigV1.Except))
+	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalOptimizeForConfigV1.Except))
+	for _, moduleName := range externalOptimizeForConfigV1.Except {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid optimize_for except: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid optimize_for except: %q is defined multiple times", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		except = append(except, moduleIdentity)
+	}
+	override := make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode, len(externalOptimizeForConfigV1.Override))
+	for moduleName, optimizeFor := range externalOptimizeForConfigV1.Override {
+		// perhaps check whether the override value equals the default value provided?
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid optimize_for override key: %w", err)
+		}
+		value, ok := descriptorpb.FileOptions_OptimizeMode_value[optimizeFor]
+		if !ok {
+			return nil, fmt.Errorf(
+				"invalid optimize_for value; expected one of %v",
+				enumMapToStringSlice(descriptorpb.FileOptions_OptimizeMode_value),
+			)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf(
+				"invalid optimize_for override: %q is already defined as an except",
+				moduleIdentity.IdentityString(),
+			)
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		override[moduleIdentity] = descriptorpb.FileOptions_OptimizeMode(value)
+	}
+	return &OptimizeForConfig{
+		Default:  defaultOptimizeFor,
 		Except:   except,
 		Override: override,
 	}, nil
@@ -429,7 +483,7 @@ func newManagedConfigV1Beta1(externalOptionsConfig ExternalOptionsConfigV1Beta1,
 	if !enabled || externalOptionsConfig == (ExternalOptionsConfigV1Beta1{}) {
 		return nil, nil
 	}
-	var optimizeFor *descriptorpb.FileOptions_OptimizeMode
+	var optimizeForConfig *OptimizeForConfig
 	if externalOptionsConfig.OptimizeFor != "" {
 		value, ok := descriptorpb.FileOptions_OptimizeMode_value[externalOptionsConfig.OptimizeFor]
 		if !ok {
@@ -438,12 +492,14 @@ func newManagedConfigV1Beta1(externalOptionsConfig ExternalOptionsConfigV1Beta1,
 				enumMapToStringSlice(descriptorpb.FileOptions_OptimizeMode_value),
 			)
 		}
-		optimizeFor = optimizeModePtr(descriptorpb.FileOptions_OptimizeMode(value))
+		optimizeForConfig = &OptimizeForConfig{
+			Default: descriptorpb.FileOptions_OptimizeMode(value),
+		}
 	}
 	return &ManagedConfig{
 		CcEnableArenas:    externalOptionsConfig.CcEnableArenas,
 		JavaMultipleFiles: externalOptionsConfig.JavaMultipleFiles,
-		OptimizeFor:       optimizeFor,
+		OptimizeFor:       optimizeForConfig,
 	}, nil
 }
 

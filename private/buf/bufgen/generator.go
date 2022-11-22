@@ -484,7 +484,9 @@ func newModifier(
 		optimizeFor, err := bufimagemodify.OptimizeFor(
 			logger,
 			sweeper,
-			*managedConfig.OptimizeFor,
+			managedConfig.OptimizeFor.Default,
+			managedConfig.JavaPackagePrefix.Except,
+			managedConfig.OptimizeFor.Override,
 			managedConfig.Override[bufimagemodify.OptimizeForID],
 		)
 		if err != nil {
