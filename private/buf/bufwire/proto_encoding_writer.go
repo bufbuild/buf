@@ -16,7 +16,7 @@ package bufwire
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufconvert"
@@ -66,7 +66,7 @@ func (p *protoEncodingWriter) PutMessage(
 	case bufconvert.MessageEncodingJSON:
 		marshaler = protoencoding.NewJSONMarshalerIndent(resolver)
 	default:
-		return fmt.Errorf("unknown message encoding type")
+		return errors.New("unknown message encoding type")
 	}
 	data, err := marshaler.Marshal(message)
 	if err != nil {

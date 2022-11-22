@@ -71,7 +71,7 @@ func (p *protoEncodingReader) GetMessage(
 	case bufconvert.MessageEncodingJSON:
 		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
 	default:
-		return nil, fmt.Errorf("unknown message encoding type")
+		return nil, errors.New("unknown message encoding type")
 	}
 	readCloser := io.NopCloser(container.Stdin())
 	if messageRef.Path() != "-" {
