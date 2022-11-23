@@ -4,6 +4,10 @@
 
 - When using managed mode, setting `enabled: false` now no longer fails `buf generate` 
   and instead prints a warning log and ignores managed mode options.
+- Add `csharp_namespace` option to managed mode, allowing `except`, which excludes 
+  modules from managed mode, and `override`, which specifies `csharp_namespace` values 
+  per module, overriding the default value. By default, when managed mode is enabled, 
+  `csharp_namespace` is set to the package name with each package sub-name capitalized.
 
 ## [v1.9.0] - 2022-10-19
 
