@@ -16,7 +16,7 @@ package getschema
 
 import (
 	"context"
-
+	"encoding/json"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -41,7 +41,7 @@ func NewCommand(
 ) *appcmd.Command {
 	f := newFlags()
 	return &appcmd.Command{
-		Use:   name + "<remote/owner/repository>",
+		Use:   name + " <remote/owner/repository>",
 		Short: "Get a filtered schema from the registry",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
@@ -73,7 +73,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) error {
 		moduleReference.Remote(),
 		registryv1alpha1connect.NewSchemaServiceClient,
 	)
-	if _, err := service.GetSchema(
+	schemaResponse, err := service.GetSchema(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.GetSchemaRequest{
 			Module: &registryv1alpha1.LocalModuleReference{
@@ -84,13 +84,14 @@ func run(ctx context.Context, container appflag.Container, f *flags) error {
 			ElementNames:            f.elementNames,
 			IncludeWellKnownImports: f.includeWellKnownImports,
 		}),
-	); err != nil {
+	)
+	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	return nil
+	return json.NewEncoder(container.Stdout()).Encode(schemaResponse.Msg)
 }
 
 type flags struct {
