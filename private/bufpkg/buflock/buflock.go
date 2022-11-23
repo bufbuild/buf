@@ -44,6 +44,7 @@ type Dependency struct {
 	Owner      string
 	Repository string
 	Commit     string
+	Digest     string
 }
 
 // ReadConfig reads the lock file at ExternalConfigFilePath relative
@@ -83,11 +84,17 @@ type ExternalConfigDependencyV1 struct {
 
 // DependencyForExternalConfigDependencyV1 returns the Dependency representation of a ExternalConfigDependencyV1.
 func DependencyForExternalConfigDependencyV1(dep ExternalConfigDependencyV1) Dependency {
+	// Don't consume old buf digests.
+	digest := dep.Digest
+	if isBufDigest(digest) {
+		digest = ""
+	}
 	return Dependency{
 		Remote:     dep.Remote,
 		Owner:      dep.Owner,
 		Repository: dep.Repository,
 		Commit:     dep.Commit,
+		Digest:     digest,
 	}
 }
 
@@ -100,6 +107,7 @@ func ExternalConfigDependencyV1ForDependency(dep Dependency) ExternalConfigDepen
 		Owner:      dep.Owner,
 		Repository: dep.Repository,
 		Commit:     dep.Commit,
+		Digest:     dep.Digest,
 	}
 }
 
@@ -122,6 +130,7 @@ func DependencyForExternalConfigDependencyV1Beta1(dep ExternalConfigDependencyV1
 		Owner:      dep.Owner,
 		Repository: dep.Repository,
 		Commit:     dep.Commit,
+		Digest:     "", // digests in v1Beta1 are not valid v1 digests
 	}
 }
 
@@ -141,4 +150,16 @@ func ExternalConfigDependencyV1Beta1ForDependency(dep Dependency) ExternalConfig
 // file versions that is used to determine the version.
 type ExternalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+// isBufDugest returns true when the digest string appears to be a (older) buf
+// digest. These digests look like "b[0-9]-".
+func isBufDigest(digest string) bool {
+	if len(digest) >= 3 {
+		prefix := digest[0:3]
+		if prefix == "b1-" || prefix == "b2-" || prefix == "b3-" {
+			return true
+		}
+	}
+	return false
 }

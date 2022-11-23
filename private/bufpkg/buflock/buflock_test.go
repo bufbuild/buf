@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -189,4 +190,89 @@ func TestParseIncompleteConfig(t *testing.T) {
 	readConfig, err = buflock.ReadConfig(context.Background(), readWriteBucket)
 	require.NoError(t, err)
 	require.Equal(t, testConfig, readConfig)
+}
+
+func TestDependencyForExternalConfigDependencyV1(t *testing.T) {
+	testDependencyForExternalConfigDependencyV1(
+		t,
+		"typical",
+		buflock.ExternalConfigDependencyV1{
+			Remote:     "remote",
+			Owner:      "owner",
+			Repository: "repository",
+			Commit:     "aabbccd",
+			Digest:     "shake256:11223344",
+		},
+		buflock.Dependency{
+			Remote:     "remote",
+			Owner:      "owner",
+			Repository: "repository",
+			Commit:     "aabbccd",
+			Digest:     "shake256:11223344",
+		},
+	)
+	testDependencyForExternalConfigDependencyV1(
+		t,
+		"no digest",
+		buflock.ExternalConfigDependencyV1{
+			Remote:     "remote",
+			Owner:      "owner",
+			Repository: "repository",
+			Commit:     "aabbccd",
+		},
+		buflock.Dependency{
+			Remote:     "remote",
+			Owner:      "owner",
+			Repository: "repository",
+			Commit:     "aabbccd",
+		},
+	)
+	testDependencyForExternalConfigDependencyV1(
+		t,
+		"filter out b1 hash",
+		buflock.ExternalConfigDependencyV1{
+			Remote:     "remote",
+			Owner:      "owner",
+			Repository: "repository",
+			Commit:     "aabbccd",
+			Digest:     "b1-gLO3B_5ClhdU52w1gMOxk4GokvCoM1OqjarxMfjStGQ=",
+		},
+		buflock.Dependency{
+			Remote:     "remote",
+			Owner:      "owner",
+			Repository: "repository",
+			Commit:     "aabbccd",
+		},
+	)
+	testDependencyForExternalConfigDependencyV1(
+		t,
+		"filter out b3 hash",
+		buflock.ExternalConfigDependencyV1{
+			Remote:     "remote",
+			Owner:      "owner",
+			Repository: "repository",
+			Commit:     "aabbccd",
+			Digest:     "b3-j7iu4iVzYQUFr97mbq2PNAlM5UjEnjtwEas0q7g4DVM",
+		},
+		buflock.Dependency{
+			Remote:     "remote",
+			Owner:      "owner",
+			Repository: "repository",
+			Commit:     "aabbccd",
+		},
+	)
+}
+
+func testDependencyForExternalConfigDependencyV1(
+	t *testing.T,
+	desc string,
+	in buflock.ExternalConfigDependencyV1,
+	expect buflock.Dependency,
+) {
+	t.Helper()
+	t.Run(desc, func(t *testing.T) {
+		t.Parallel()
+		actual := buflock.DependencyForExternalConfigDependencyV1(in)
+		assert.Equal(t, expect, actual)
+	})
 }

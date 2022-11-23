@@ -75,6 +75,7 @@ func TestNewModuleForBucket(t *testing.T) {
 		"baz",
 		"",
 		"62f35d8aed1149c291d606d958a7ce32",
+		"shake512:11223344",
 		time.Time{},
 	)
 	require.NoError(t, err)
@@ -88,6 +89,7 @@ deps:
     owner: bar
     repository: baz
     commit: 62f35d8aed1149c291d606d958a7ce32
+    digest: shake512:11223344
 `),
 		},
 		false,

@@ -115,6 +115,12 @@ func modulePinCompareTo(a ModulePin, b ModulePin) int {
 	if a.Commit() > b.Commit() {
 		return 1
 	}
+	if a.Digest() < b.Digest() {
+		return -1
+	}
+	if a.Digest() > b.Digest() {
+		return 1
+	}
 	if a.CreateTime().Before(b.CreateTime()) {
 		return -1
 	}

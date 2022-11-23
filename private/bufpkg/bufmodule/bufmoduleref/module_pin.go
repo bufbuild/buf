@@ -28,6 +28,7 @@ type modulePin struct {
 	repository string
 	branch     string
 	commit     string
+	digest     string
 	createTime time.Time
 }
 
@@ -37,6 +38,7 @@ func newModulePin(
 	repository string,
 	branch string,
 	commit string,
+	digest string,
 	createTime time.Time,
 ) (*modulePin, error) {
 	protoCreateTime, err := prototime.NewTimestamp(createTime)
@@ -50,6 +52,7 @@ func newModulePin(
 			Repository: repository,
 			Branch:     branch,
 			Commit:     commit,
+			Digest:     digest,
 			CreateTime: protoCreateTime,
 		},
 	)
@@ -61,12 +64,20 @@ func newModulePinForProto(
 	if err := ValidateProtoModulePin(protoModulePin); err != nil {
 		return nil, err
 	}
+	// Zero out any b digest values. These cannot describe a module pin as they
+	// don't hash all content. This prevents consumption of old digests
+	// processed as a valid pin.
+	digest := protoModulePin.Digest
+	if isBufDigest(digest) {
+		digest = ""
+	}
 	return &modulePin{
 		remote:     protoModulePin.Remote,
 		owner:      protoModulePin.Owner,
 		repository: protoModulePin.Repository,
 		branch:     protoModulePin.Branch,
 		commit:     protoModulePin.Commit,
+		digest:     digest,
 		createTime: protoModulePin.CreateTime.AsTime(),
 	}, nil
 }
@@ -80,6 +91,7 @@ func newProtoModulePinForModulePin(
 		Repository: modulePin.Repository(),
 		Branch:     modulePin.Branch(),
 		Commit:     modulePin.Commit(),
+		Digest:     modulePin.Digest(),
 		// no need to validate as we already know this is valid
 		CreateTime: timestamppb.New(modulePin.CreateTime()),
 	}
@@ -105,6 +117,10 @@ func (m *modulePin) Commit() string {
 	return m.commit
 }
 
+func (m *modulePin) Digest() string {
+	return m.digest
+}
+
 func (m *modulePin) CreateTime() time.Time {
 	return m.createTime
 }
@@ -120,3 +136,15 @@ func (m *modulePin) IdentityString() string {
 func (*modulePin) isModuleOwner()    {}
 func (*modulePin) isModuleIdentity() {}
 func (*modulePin) isModulePin()      {}
+
+// isBufDugest returns true when the digest string appears to be a (older) buf
+// digest. These digests look like "b[0-9]-".
+func isBufDigest(digest string) bool {
+	if len(digest) >= 3 {
+		prefix := digest[0:3]
+		if prefix == "b1-" || prefix == "b2-" || prefix == "b3-" {
+			return true
+		}
+	}
+	return false
+}
