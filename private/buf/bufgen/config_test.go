@@ -273,6 +273,47 @@ func TestReadConfigV1(t *testing.T) {
 		},
 		ManagedConfig: nil,
 	}
+	successConfig8 := &Config{
+		ManagedConfig: &ManagedConfig{
+			CsharpNameSpaceConfig: &CsharpNameSpaceConfig{
+				Except: []bufmoduleref.ModuleIdentity{
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"repo",
+					),
+				},
+				Override: map[bufmoduleref.ModuleIdentity]string{
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"foo",
+					): "a",
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"bar",
+					): "b",
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"baz",
+					): "c",
+				},
+			},
+		},
+		PluginConfigs: []*PluginConfig{
+			{
+				Remote:   "someremote.com/owner/plugins/myplugin",
+				Out:      "gen/go",
+				Strategy: StrategyAll,
+			},
+		},
+	}
 
 	ctx := context.Background()
 	nopLogger := zap.NewNop()
@@ -432,6 +473,30 @@ func TestReadConfigV1(t *testing.T) {
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig7, config)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.yaml")))
+	require.NoError(t, err)
+	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.yaml"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride((string(data))))
+	require.NoError(t, err)
+	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.json")))
+	require.NoError(t, err)
+	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.json"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
+	require.NoError(t, err)
+	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.yml")))
+	require.NoError(t, err)
+	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.yml"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
+	require.NoError(t, err)
+	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error1.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error2.yaml"))
@@ -495,4 +560,40 @@ func testReadConfigError(t *testing.T, logger *zap.Logger, provider Provider, re
 	require.NoError(t, err)
 	_, err = ReadConfig(ctx, logger, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.Error(t, err)
+}
+
+func mustCreateModuleIdentity(
+	t *testing.T,
+	remote string,
+	owner string,
+	repository string,
+) bufmoduleref.ModuleIdentity {
+	moduleIdentity, err := bufmoduleref.NewModuleIdentity(remote, owner, repository)
+	require.NoError(t, err)
+	return moduleIdentity
+}
+
+func assertConfigsWithEqualCsharpnamespace(t *testing.T, successConfig *Config, config *Config) {
+	require.Equal(t, successConfig.PluginConfigs, config.PluginConfigs)
+	require.NotNil(t, successConfig.ManagedConfig)
+	require.NotNil(t, config.ManagedConfig)
+	require.NotNil(t, successConfig.ManagedConfig.CsharpNameSpaceConfig)
+	require.NotNil(t, config.ManagedConfig.CsharpNameSpaceConfig)
+	successCsharpConfig := successConfig.ManagedConfig.CsharpNameSpaceConfig
+	csharpConfig := config.ManagedConfig.CsharpNameSpaceConfig
+	require.Equal(t, successCsharpConfig.Except, csharpConfig.Except)
+	assertEqualModuleIdentityKeyedMaps(t, successCsharpConfig.Override, csharpConfig.Override)
+}
+
+func assertEqualModuleIdentityKeyedMaps(t *testing.T, m1 map[bufmoduleref.ModuleIdentity]string, m2 map[bufmoduleref.ModuleIdentity]string) {
+	require.Equal(t, len(m1), len(m2))
+	keyedM1 := make(map[string]string, len(m1))
+	keyedM2 := make(map[string]string, len(m2))
+	for k, v := range m1 {
+		keyedM1[k.IdentityString()] = v
+	}
+	for k, v := range m2 {
+		keyedM2[k.IdentityString()] = v
+	}
+	require.Equal(t, keyedM1, keyedM2)
 }
