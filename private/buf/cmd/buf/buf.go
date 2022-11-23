@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/schema/getschema"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
@@ -261,6 +262,13 @@ func NewRootCommand(name string) *appcmd.Command {
 									tokenget.NewCommand("get", builder),
 									tokenlist.NewCommand("list", builder),
 									tokendelete.NewCommand("delete", builder),
+								},
+							},
+							{
+								Use:   "schema",
+								Short: "Utilize schemas at runtime",
+								SubCommands: []*appcmd.Command{
+									getschema.NewCommand("get", builder),
 								},
 							},
 						},
