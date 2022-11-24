@@ -314,6 +314,48 @@ func TestReadConfigV1(t *testing.T) {
 			},
 		},
 	}
+	successConfig9 := &Config{
+		ManagedConfig: &ManagedConfig{
+			OptimizeForConfig: &OptimizeForConfig{
+				Default: descriptorpb.FileOptions_CODE_SIZE,
+				Except: []bufmoduleref.ModuleIdentity{
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"repo",
+					),
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"foo",
+					),
+				},
+				Override: map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"bar",
+					): descriptorpb.FileOptions_SPEED,
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"baz",
+					): descriptorpb.FileOptions_LITE_RUNTIME,
+				},
+			},
+		},
+		PluginConfigs: []*PluginConfig{
+			{
+				Remote:   "someremote.com/owner/plugins/myplugin",
+				Out:      "gen/go",
+				Strategy: StrategyAll,
+			},
+		},
+	}
 
 	ctx := context.Background()
 	nopLogger := zap.NewNop()
@@ -497,6 +539,32 @@ func TestReadConfigV1(t *testing.T) {
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+
+	//
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yaml")))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success9.yaml"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride((string(data))))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.json")))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success9.json"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yml")))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success9.yml"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
 
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error1.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error2.yaml"))
