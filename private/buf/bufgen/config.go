@@ -284,7 +284,7 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 		JavaStringCheckUtf8:   externalManagedConfig.JavaStringCheckUtf8,
 		JavaPackagePrefix:     javaPackagePrefixConfig,
 		CsharpNameSpaceConfig: csharpNamespaceConfig,
-		OptimizeFor:           optimizeForConfig,
+		OptimizeForConfig:     optimizeForConfig,
 		GoPackagePrefixConfig: goPackagePrefixConfig,
 		Override:              override,
 	}, nil
@@ -543,7 +543,7 @@ func newManagedConfigV1Beta1(externalOptionsConfig ExternalOptionsConfigV1Beta1,
 	return &ManagedConfig{
 		CcEnableArenas:    externalOptionsConfig.CcEnableArenas,
 		JavaMultipleFiles: externalOptionsConfig.JavaMultipleFiles,
-		OptimizeFor:       optimizeForConfig,
+		OptimizeForConfig: optimizeForConfig,
 	}, nil
 }
 

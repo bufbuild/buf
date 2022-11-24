@@ -219,7 +219,7 @@ type ManagedConfig struct {
 	JavaStringCheckUtf8   *bool
 	JavaPackagePrefix     *JavaPackagePrefixConfig
 	CsharpNameSpaceConfig *CsharpNameSpaceConfig
-	OptimizeFor           *OptimizeForConfig
+	OptimizeForConfig     *OptimizeForConfig
 	GoPackagePrefixConfig *GoPackagePrefixConfig
 	Override              map[string]map[string]string
 }

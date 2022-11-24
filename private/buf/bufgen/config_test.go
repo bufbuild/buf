@@ -45,7 +45,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 			CcEnableArenas:      &truth,
 			JavaMultipleFiles:   &truth,
 			JavaStringCheckUtf8: nil,
-			OptimizeFor: &OptimizeForConfig{
+			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_CODE_SIZE,
 				Except:   make([]bufmoduleref.ModuleIdentity, 0),
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
@@ -54,7 +54,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 	}
 	successConfig2 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: &OptimizeForConfig{
+			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_SPEED,
 				Except:   make([]bufmoduleref.ModuleIdentity, 0),
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
@@ -72,7 +72,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 	}
 	successConfig3 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: &OptimizeForConfig{
+			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
 				Except:   make([]bufmoduleref.ModuleIdentity, 0),
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
@@ -176,7 +176,7 @@ func TestReadConfigV1(t *testing.T) {
 				Except:   make([]bufmoduleref.ModuleIdentity, 0),
 				Override: make(map[bufmoduleref.ModuleIdentity]string),
 			},
-			OptimizeFor: &OptimizeForConfig{
+			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_CODE_SIZE,
 				Except:   make([]bufmoduleref.ModuleIdentity, 0),
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
@@ -188,7 +188,7 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	successConfig2 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: &OptimizeForConfig{
+			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_SPEED,
 				Except:   make([]bufmoduleref.ModuleIdentity, 0),
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
@@ -206,7 +206,7 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	successConfig3 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: &OptimizeForConfig{
+			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
 				Except:   make([]bufmoduleref.ModuleIdentity, 0),
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
@@ -585,10 +585,23 @@ func assertConfigsWithEqualCsharpnamespace(t *testing.T, successConfig *Config, 
 	assertEqualModuleIdentityKeyedMaps(t, successCsharpConfig.Override, csharpConfig.Override)
 }
 
-func assertEqualModuleIdentityKeyedMaps(t *testing.T, m1 map[bufmoduleref.ModuleIdentity]string, m2 map[bufmoduleref.ModuleIdentity]string) {
+func assertConfigsWithEqualOptimizeFor(t *testing.T, successConfig *Config, config *Config) {
+	require.Equal(t, successConfig.PluginConfigs, config.PluginConfigs)
+	require.NotNil(t, successConfig.ManagedConfig)
+	require.NotNil(t, config.ManagedConfig)
+	successOptimizeForConfig := successConfig.ManagedConfig.OptimizeForConfig
+	require.NotNil(t, successOptimizeForConfig)
+	optimizeForConfig := config.ManagedConfig.OptimizeForConfig
+	require.NotNil(t, optimizeForConfig)
+	require.Equal(t, successOptimizeForConfig.Default, optimizeForConfig.Default)
+	require.Equal(t, successOptimizeForConfig.Except, optimizeForConfig.Except)
+	assertEqualModuleIdentityKeyedMaps(t, optimizeForConfig.Override, optimizeForConfig.Override)
+}
+
+func assertEqualModuleIdentityKeyedMaps[V any](t *testing.T, m1 map[bufmoduleref.ModuleIdentity]V, m2 map[bufmoduleref.ModuleIdentity]V) {
 	require.Equal(t, len(m1), len(m2))
-	keyedM1 := make(map[string]string, len(m1))
-	keyedM2 := make(map[string]string, len(m2))
+	keyedM1 := make(map[string]V, len(m1))
+	keyedM2 := make(map[string]V, len(m2))
 	for k, v := range m1 {
 		keyedM1[k.IdentityString()] = v
 	}
