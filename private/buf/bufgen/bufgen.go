@@ -400,13 +400,13 @@ func (e ExternalOptimizeForConfigV1) IsEmpty() bool {
 }
 
 // UnmarshalYAML satisfies the yaml.Unmarshaler interface. This is done to maintain backward compatibility
-// of accepting a plain string value for java_package_prefix.
+// of accepting a plain string value for optimize_for.
 func (e *ExternalOptimizeForConfigV1) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return e.unmarshalWith(unmarshal)
 }
 
 // UnmarshalJSON satisfies the json.Unmarshaler interface. This is done to maintain backward compatibility
-// of accepting a plain string value for java_package_prefix.
+// of accepting a plain string value for optimize_for.
 func (e *ExternalOptimizeForConfigV1) UnmarshalJSON(data []byte) error {
 	unmarshal := func(v interface{}) error {
 		return json.Unmarshal(data, v)

@@ -334,10 +334,7 @@ func newOptimizeForConfigV1(externalOptimizeForConfigV1 ExternalOptimizeForConfi
 		return nil, nil
 	}
 	if externalOptimizeForConfigV1.Default == "" {
-		// or just print a warning instead?
 		return nil, errors.New("optimize_for setting requires a default value")
-		// Also, if since default + non-empty except / override is not allowed,
-		// internal config of this shouldn't have a pointer as default
 	}
 	value, ok := descriptorpb.FileOptions_OptimizeMode_value[externalOptimizeForConfigV1.Default]
 	if !ok {
@@ -362,7 +359,6 @@ func newOptimizeForConfigV1(externalOptimizeForConfigV1 ExternalOptimizeForConfi
 	}
 	override := make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode, len(externalOptimizeForConfigV1.Override))
 	for moduleName, optimizeFor := range externalOptimizeForConfigV1.Override {
-		// perhaps check whether the override value equals the default value provided?
 		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid optimize_for override key: %w", err)
@@ -370,7 +366,7 @@ func newOptimizeForConfigV1(externalOptimizeForConfigV1 ExternalOptimizeForConfi
 		value, ok := descriptorpb.FileOptions_OptimizeMode_value[optimizeFor]
 		if !ok {
 			return nil, fmt.Errorf(
-				"invalid optimize_for value; expected one of %v",
+				"invalid optimize_for override value; expected one of %v",
 				enumMapToStringSlice(descriptorpb.FileOptions_OptimizeMode_value),
 			)
 		}
