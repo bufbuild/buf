@@ -8,7 +8,10 @@
   modules from managed mode, and `override`, which specifies `csharp_namespace` values 
   per module, overriding the default value. By default, when managed mode is enabled, 
   `csharp_namespace` is set to the package name with each package sub-name capitalized.
-
+- Update `optimize_for` option in managed mode, allowing a `default` value for `optimize_for`
+  for all files, `except` and `override`, which both behave similarly to other `except` 
+  and `override` options. Specifying an `optimize_for` value in the earlier versions is
+  equivalent to having a `optimize_for` with that value as default.
 ## [v1.9.0] - 2022-10-19
 
 - New compiler that is faster and uses less memory than the outgoing one.
