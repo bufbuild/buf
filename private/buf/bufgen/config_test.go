@@ -539,8 +539,6 @@ func TestReadConfigV1(t *testing.T) {
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
-
-	//
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yaml")))
 	require.NoError(t, err)
 	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
