@@ -418,7 +418,6 @@ func newModifier(
 ) (bufimagemodify.Modifier, error) {
 	modifier := bufimagemodify.NewMultiModifier(
 		bufimagemodify.JavaOuterClassname(logger, sweeper, managedConfig.Override[bufimagemodify.JavaOuterClassNameID]),
-		bufimagemodify.ObjcClassPrefix(logger, sweeper, managedConfig.Override[bufimagemodify.ObjcClassPrefixID]),
 		bufimagemodify.PhpNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpNamespaceID]),
 		bufimagemodify.PhpMetadataNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
 		bufimagemodify.RubyPackage(logger, sweeper, managedConfig.Override[bufimagemodify.RubyPackageID]),
@@ -528,6 +527,28 @@ func newModifier(
 			goPackageModifier,
 		)
 	}
+	var (
+		objcClassPrefixDefault  string
+		objcClassPrefixExcept   []bufmoduleref.ModuleIdentity
+		objcClassPrefixOverride map[bufmoduleref.ModuleIdentity]string
+	)
+	if objcClassPrefixConfig := managedConfig.ObjcClassPrefixConfig; objcClassPrefixConfig != nil {
+		objcClassPrefixDefault = objcClassPrefixConfig.Default
+		objcClassPrefixExcept = objcClassPrefixConfig.Except
+		objcClassPrefixOverride = objcClassPrefixConfig.Override
+	}
+	objcClassPrefixModifier := bufimagemodify.ObjcClassPrefix(
+		logger,
+		sweeper,
+		objcClassPrefixDefault,
+		objcClassPrefixExcept,
+		objcClassPrefixOverride,
+		managedConfig.Override[bufimagemodify.ObjcClassPrefixID],
+	)
+	modifier = bufimagemodify.Merge(
+		modifier,
+		objcClassPrefixModifier,
+	)
 	return modifier, nil
 }
 
