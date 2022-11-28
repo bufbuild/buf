@@ -20,8 +20,11 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -75,22 +78,23 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewRepositoryService(ctx, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
-	if err = service.UpdateRepositorySettingsByName(
+	service := connectclient.Make(
+		clientConfig,
+		moduleIdentity.Remote(),
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
+	if _, err := service.UpdateRepositorySettingsByName(
 		ctx,
-		moduleIdentity.Owner(),
-		moduleIdentity.Repository(),
-		visibility,
-		// TODO: pass description and url
-		nil,
-		nil,
+		connect.NewRequest(&registryv1alpha1.UpdateRepositorySettingsByNameRequest{
+			OwnerName:      moduleIdentity.Owner(),
+			RepositoryName: moduleIdentity.Repository(),
+			Visibility:     visibility,
+			// TODO: pass description and url
+		}),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))

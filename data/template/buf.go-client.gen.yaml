@@ -10,24 +10,4 @@ plugins:
     out: private/gen/proto/connect
     opt:
       - paths=source_relative
-  - name: go-api
-    out: private/gen/proto/api
-    opt:
-      - paths=source_relative
-      - named_go_package=api=github.com/bufbuild/buf/private/gen/proto/api
-  - name: go-apiclient
-    out: private/gen/proto/apiclient
-    opt:
-      - paths=source_relative
-      - named_go_package=api=github.com/bufbuild/buf/private/gen/proto/api
-      - named_go_package=apiclient=github.com/bufbuild/buf/private/gen/proto/apiclient
-    strategy: all
-  - name: go-apiclientconnect
-    out: private/gen/proto/apiclientconnect
-    opt:
-      - paths=source_relative
-      - named_go_package=api=github.com/bufbuild/buf/private/gen/proto/api
-      - named_go_package=connect=github.com/bufbuild/buf/private/gen/proto/connect
-      - named_go_package=apiclient=github.com/bufbuild/buf/private/gen/proto/apiclient
-      - named_go_package=apiclientconnect=github.com/bufbuild/buf/private/gen/proto/apiclientconnect
-    strategy: all
+

@@ -37,32 +37,12 @@ message RecommendedTemplate {
   string template_id = 4;
 }
 
-// SetRecommendedRepository is the information needed to configure a repository recommendation
-message SetRecommendedRepository {
-  string repository_id = 1;
-  string description = 2;
-}
-
-// SetRecommendedTemplate is the information needed to configure a template recommendation
-message SetRecommendedTemplate {
-  string template_id = 1;
-  string description = 2;
-}
-
 // RecommendationService is the recommendation service.
 service RecommendationService {
   // RecommendedRepositories returns a list of recommended repositories.
   rpc RecommendedRepositories(RecommendedRepositoriesRequest) returns (RecommendedRepositoriesResponse);
   // RecommendedTemplates returns a list of recommended templates.
   rpc RecommendedTemplates(RecommendedTemplatesRequest) returns (RecommendedTemplatesResponse);
-  // ListRecommendedRepositories returns a list of recommended repositories that user have access to.
-  rpc ListRecommendedRepositories(ListRecommendedRepositoriesRequest) returns (ListRecommendedRepositoriesResponse);
-  // ListRecommendedTemplates returns a list of recommended templates that user have access to.
-  rpc ListRecommendedTemplates(ListRecommendedTemplatesRequest) returns (ListRecommendedTemplatesResponse);
-  // SetRecommendedRepositories set the list of repository recommendations in the server.
-  rpc SetRecommendedRepositories(SetRecommendedRepositoriesRequest) returns (SetRecommendedRepositoriesResponse);
-  // SetRecommendedTemplates set the list of template recommendations in the server.
-  rpc SetRecommendedTemplates(SetRecommendedTemplatesRequest) returns (SetRecommendedTemplatesResponse);
 }
 
 message RecommendedRepositoriesRequest {}
@@ -76,27 +56,3 @@ message RecommendedTemplatesRequest {}
 message RecommendedTemplatesResponse {
   repeated RecommendedTemplate templates = 1;
 }
-
-message ListRecommendedRepositoriesRequest {}
-
-message ListRecommendedRepositoriesResponse {
-  repeated RecommendedRepository repositories = 1;
-}
-
-message ListRecommendedTemplatesRequest {}
-
-message ListRecommendedTemplatesResponse {
-  repeated RecommendedTemplate templates = 1;
-}
-
-message SetRecommendedRepositoriesRequest {
-  repeated SetRecommendedRepository repositories = 1;
-}
-
-message SetRecommendedRepositoriesResponse {}
-
-message SetRecommendedTemplatesRequest {
-  repeated SetRecommendedTemplate templates = 1;
-}
-
-message SetRecommendedTemplatesResponse {}
