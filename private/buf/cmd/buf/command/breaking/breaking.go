@@ -159,7 +159,7 @@ func run(
 	}
 	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func run(
 		container,
 		storageosProvider,
 		runner,
-		registryProvider,
+		clientConfig,
 	)
 	if err != nil {
 		return err

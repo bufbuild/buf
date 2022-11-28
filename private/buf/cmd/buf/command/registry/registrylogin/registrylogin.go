@@ -23,9 +23,13 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netrc"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -42,12 +46,11 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		// Not documenting the first arg (remote) as this is just for testing for now.
-		// TODO: Update when we have self-hosted.
-		Use:   name,
+		Use:   name + " <domain>",
 		Short: `Log in to the Buf Schema Registry.`,
-		Long:  fmt.Sprintf(`This prompts for your BSR username and a BSR token and updates your %s file with these credentials.`, netrc.Filename),
-		Args:  cobra.MaximumNArgs(1),
+		Long: fmt.Sprintf(`This prompts for your BSR username and a BSR token and updates your %s file with these credentials.
+The <domain> argument will default to buf.build if not specified.`, netrc.Filename),
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -178,20 +181,18 @@ func inner(
 	if token == "" {
 		return errors.New("token cannot be empty string")
 	}
-	registryProvider, err := bufcli.NewRegistryProviderWithToken(container, token)
+	clientConfig, err := bufcli.NewConnectClientConfigWithToken(container, token)
 	if err != nil {
 		return err
 	}
-	authnService, err := registryProvider.NewAuthnService(ctx, remote)
-	if err != nil {
-		return err
-	}
-	user, err := authnService.GetCurrentUser(ctx)
+	authnService := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewAuthnServiceClient)
+	resp, err := authnService.GetCurrentUser(ctx, connect.NewRequest(&registryv1alpha1.GetCurrentUserRequest{}))
 	if err != nil {
 		// We don't want to use the default error from wrapError here if the error
 		// an unauthenticated error.
 		return errors.New("invalid token provided")
 	}
+	user := resp.Msg.User
 	if user == nil {
 		return errors.New("no user found for provided token")
 	}

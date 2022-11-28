@@ -20,9 +20,13 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/prototime"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -99,18 +103,21 @@ func run(
 			return err
 		}
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	tokenService, err := registryProvider.NewTokenService(ctx, remote)
+	tokenService := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewTokenServiceClient)
+	resp, err := tokenService.CreateToken(
+		ctx,
+		connect.NewRequest(&registryv1alpha1.CreateTokenRequest{
+			Note:       flags.Note,
+			ExpireTime: expireTime,
+		}),
+	)
 	if err != nil {
 		return err
 	}
-	token, err := tokenService.CreateToken(ctx, flags.Note, expireTime)
-	if err != nil {
-		return err
-	}
-	_, err = container.Stdout().Write([]byte(token))
+	_, err = container.Stdout().Write([]byte(resp.Msg.Token))
 	return err
 }

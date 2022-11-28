@@ -66,22 +66,6 @@ type Config struct {
 	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
 	// which depends on the 'protoc-gen-go' generated code.
 	Dependencies []bufpluginref.PluginReference
-	// DefaultOptions is the default set of options passed into the plugin.
-	//
-	// For now, all options are string values. This could eventually
-	// support other types (like JSON Schema and Terraform variables),
-	// where strings are the default value unless otherwise specified.
-	//
-	// Note that some legacy plugins don't always express their options
-	// as key value pairs. For example, protoc-gen-java has an option
-	// that can be passed like so:
-	//
-	//  java_opt=annotate_code
-	//
-	// In those cases, the option value in this map will be set to
-	// the empty string, and the option will be propagated to the
-	// compiler without the '=' delimiter.
-	DefaultOptions map[string]string
 	// OutputLanguages is a list of output languages the plugin supports.
 	OutputLanguages []string
 	// Registry is the registry configuration, which lets the user specify
@@ -255,7 +239,6 @@ type ExternalConfig struct {
 	SourceURL       string                 `json:"source_url,omitempty" yaml:"source_url,omitempty"`
 	Description     string                 `json:"description,omitempty" yaml:"description,omitempty"`
 	Deps            []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
-	DefaultOpts     []string               `json:"default_opts,omitempty" yaml:"default_opts,omitempty"`
 	OutputLanguages []string               `json:"output_languages,omitempty" yaml:"output_languages,omitempty"`
 	Registry        ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
 	SPDXLicenseID   string                 `json:"spdx_license_id,omitempty" yaml:"spdx_license_id,omitempty"`

@@ -3,6 +3,19 @@ import "custom.proto";
 message Foo {
   // Leading comment on map field.
      map<  string,  int64  > pairs = 1 [ deprecated = true,        lazy = true    ] ;
+/*
+            Heading 1:
+                Some content goes here.
+								   More content indented with tabs.
+                Last bit.
+            Heading 2:
+                - bullet
+                - another bullet
+                   1. nested bullet
+                   2. nested bullet again
+                - last bullet
+               Last bit of content.
+           */
 
          // Leading comment on name_with_options.
    string name_with_options = 2 [
@@ -21,6 +34,9 @@ message Foo {
 (custom.bytes_field_option) = "fcf7c1b8749cf99d88e5f34271d636178fb5d130"
 
 
-   ]   ;
-    
+   ]   ; /* foo
+             bar
+              baz
+               buzz */
+
         }

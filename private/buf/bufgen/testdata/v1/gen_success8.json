@@ -1,0 +1,22 @@
+{
+    "version": "v1",
+    "managed": {
+      "enabled": true,
+      "csharp_namespace": {
+        "except": [
+          "someremote.com/owner/repo"
+        ],
+        "override": {
+            "someremote.com/owner/foo": "a",
+            "someremote.com/owner/bar": "b",
+            "someremote.com/owner/baz": "c"
+        }
+      }
+    },
+    "plugins": [
+      {
+        "remote": "someremote.com/owner/plugins/myplugin",
+        "out": "gen/go"
+      }
+    ]
+}

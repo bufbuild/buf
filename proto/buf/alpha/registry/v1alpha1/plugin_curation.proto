@@ -102,9 +102,6 @@ message RegistryConfig {
   reserved 3 to 9;
   // The options to pass to the plugin. These will
   // be merged into a single, comma-separated string.
-  // If options is non-empty, it will override any
-  // default options specified in the plugin's
-  // metadata (the opts key in buf.plugin.yaml).
   repeated string options = 10;
 }
 
@@ -135,8 +132,6 @@ message CuratedPlugin {
   // the algorithm.
   // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
   string container_image_digest = 6;
-  // List of default plugin options in the form "{option}={defaultOption}"
-  repeated string default_options = 7;
   // The creation time of the plugin.
   google.protobuf.Timestamp create_time = 8;
   // List of plugin dependencies.
@@ -156,6 +151,9 @@ message CuratedPlugin {
   string spdx_license_id = 15;
   // license_url specifies an optional URL for the plugin's license (if not using a standard spdx_license_id).
   string license_url = 16;
+  // verified indicates the plugin has been verified. Verification is a property
+  // of the BSR and cannot be set by end-users.
+  bool verified = 17;
 }
 
 // PluginCurationService manages curated plugins.
@@ -202,9 +200,6 @@ message PluginGenerationRequest {
   CuratedPluginReference plugin_reference = 1;
   // The options to pass to the plugin. These will
   // be merged into a single, comma-separated string.
-  // If options is non-empty, it will override any
-  // default options specified in the plugin's
-  // metadata (the opts key in buf.plugin.yaml).
   repeated string options = 2;
 }
 
@@ -227,8 +222,6 @@ message CreateCuratedPluginRequest {
   // the algorithm.
   // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
   string container_image_digest = 5;
-  // List of default plugin options in the form "{option}={defaultOption}"
-  repeated string default_options = 6;
   // List of plugin dependencies.
   repeated CuratedPluginReference dependencies = 7;
   // The URL leading to the source code of the plugin, if available.

@@ -40,22 +40,6 @@ type Plugin interface {
 	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
 	// which depends on the 'protoc-gen-go' generated code.
 	Dependencies() []bufpluginref.PluginReference
-	// DefaultOptions is the set of default options passed to the plugin.
-	//
-	// For now, all options are string values. This could eventually
-	// support other types (like JSON Schema and Terraform variables),
-	// where strings are the default value unless otherwise specified.
-	//
-	// Note that some legacy plugins don't always express their options
-	// as key value pairs. For example, protoc-gen-java has an option
-	// that can be passed like so:
-	//
-	//  java_opt=annotate_code
-	//
-	// In those cases, the option value in this map will be set to
-	// the empty string, and the option will be propagated to the
-	// compiler without the '=' delimiter.
-	DefaultOptions() map[string]string
 	// Registry is the registry configuration, which lets the user specify
 	// registry dependencies, and other metadata that applies to a specific
 	// remote generation registry (e.g. the Go module proxy, NPM registry,
@@ -72,13 +56,12 @@ type Plugin interface {
 func NewPlugin(
 	version string,
 	dependencies []bufpluginref.PluginReference,
-	defaultOptions map[string]string,
 	registryConfig *bufpluginconfig.RegistryConfig,
 	imageDigest string,
 	sourceURL string,
 	description string,
 ) (Plugin, error) {
-	return newPlugin(version, dependencies, defaultOptions, registryConfig, imageDigest, sourceURL, description)
+	return newPlugin(version, dependencies, registryConfig, imageDigest, sourceURL, description)
 }
 
 // PluginToProtoPluginRegistryType determines the appropriate registryv1alpha1.PluginRegistryType for the plugin.
