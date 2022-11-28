@@ -17,6 +17,7 @@ package generate
 import (
 	"context"
 	"fmt"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -192,6 +193,7 @@ type flags struct {
 	IncludeWKT      bool
 	ExcludePaths    []string
 	DisableSymlinks bool
+	Types           []string
 	// special
 	InputHashtag string
 }
@@ -247,6 +249,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		configFlagName,
 		"",
 		`The file or data to use for configuration.`,
+	)
+	flagSet.StringSliceVar(
+		&f.Types,
+		"type",
+		nil,
+		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types.",
 	)
 }
 
@@ -347,6 +355,12 @@ func run(
 			generateOptions,
 			bufgen.GenerateWithIncludeWellKnownTypes(),
 		)
+	}
+	if len(flags.Types) > 0 {
+		image, err = bufimageutil.ImageFilteredByTypes(image, flags.Types...)
+		if err != nil {
+			return err
+		}
 	}
 	return bufgen.NewGenerator(
 		logger,
