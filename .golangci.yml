@@ -21,6 +21,16 @@ linters-settings:
       - '^log\.'
       - '^print$'
       - '^println$'
+  gci:
+    # Section configuration to compare against.
+    # Section names are case-insensitive and may contain parameters in ().
+    # The default order of sections is `standard > default > custom > blank > dot`,
+    # If `custom-order` is `true`, it follows the order of `sections` option.
+    # Default: ["standard", "default"]
+    sections:
+      - standard # Standard section: captures all standard packages.
+      - default # Default section: contains all imports that could not be matched to another section type.
+      - prefix(github.com/bufbuild/buf) # Custom section: groups all imports with the specified Prefix.
   importas:
     alias:
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1
@@ -44,10 +54,10 @@ linters:
     - exportloopref
     - forbidigo
     - forcetypeassert
+    - gci
     - gochecknoinits
     - gofmt
     - goheader
-    - goimports
     - gomodguard
     - goprintffuncname
     - gosec
