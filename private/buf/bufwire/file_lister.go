@@ -18,6 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
+
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -29,8 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type fileLister struct {

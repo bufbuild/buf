@@ -18,9 +18,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 )
 
 func TestBasic(t *testing.T) {

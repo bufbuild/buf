@@ -22,9 +22,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"go.uber.org/multierr"
+
 	"github.com/bufbuild/buf/private/pkg/interrupt"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/multierr"
 )
 
 // File is a temporary file

@@ -22,11 +22,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"go.opencensus.io/trace"
+	"go.uber.org/zap"
+
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"go.opencensus.io/trace"
-	"go.uber.org/zap"
 )
 
 type refParser struct {

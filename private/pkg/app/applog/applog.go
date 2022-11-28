@@ -20,9 +20,10 @@ import (
 	"io"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 )
 
 // Container is a container.

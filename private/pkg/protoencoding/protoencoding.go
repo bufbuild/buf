@@ -15,9 +15,10 @@
 package protoencoding
 
 import (
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoregistry"
+
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 )
 
 // Resolver is a Resolver.

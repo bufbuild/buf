@@ -18,13 +18,14 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
 	"go.opencensus.io/trace"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	oteltrace "go.opentelemetry.io/otel/trace"
+
+	"github.com/bufbuild/buf/private/pkg/ioextended"
 )
 
 // TraceExportCloser describes the interface used to export OpenCensus traces

@@ -15,12 +15,13 @@
 package appflag
 
 import (
+	"go.uber.org/zap"
+
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/app/appname"
 	"github.com/bufbuild/buf/private/pkg/app/appverbose"
 	"github.com/bufbuild/buf/private/pkg/verbose"
-	"go.uber.org/zap"
 )
 
 type container struct {

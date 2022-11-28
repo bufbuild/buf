@@ -20,6 +20,9 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufstudioagent"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -27,8 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/cert/certclient"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpserver"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 const (

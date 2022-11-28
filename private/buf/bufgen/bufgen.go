@@ -23,6 +23,9 @@ import (
 	"fmt"
 	"strconv"
 
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/descriptorpb"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
@@ -31,8 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (

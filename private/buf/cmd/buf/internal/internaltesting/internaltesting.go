@@ -20,9 +20,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/stretchr/testify/require"
 )
 
 // CopyReadBucketToTempDir copies the ReadBucket to a new temporary directory.

@@ -18,6 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+
 	modinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
@@ -25,8 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 const (

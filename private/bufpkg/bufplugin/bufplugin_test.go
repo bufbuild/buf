@@ -17,10 +17,11 @@ package bufplugin
 import (
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 func TestPluginToProtoPluginRegistryType(t *testing.T) {

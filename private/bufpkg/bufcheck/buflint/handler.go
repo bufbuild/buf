@@ -17,6 +17,8 @@ package buflint
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintcheck"
@@ -24,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/protosource"
-	"go.uber.org/zap"
 )
 
 type handler struct {

@@ -19,15 +19,16 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/bufbuild/connect-go"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
-	"github.com/bufbuild/connect-go"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type moduleReader struct {

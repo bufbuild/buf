@@ -17,8 +17,9 @@ package bufmodulebuild
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"go.uber.org/zap"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 )
 
 type moduleFileSetBuilder struct {

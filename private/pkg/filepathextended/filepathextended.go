@@ -28,8 +28,9 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/bufbuild/buf/private/pkg/osextended"
 	"go.uber.org/multierr"
+
+	"github.com/bufbuild/buf/private/pkg/osextended"
 )
 
 // RealClean does filepath.Clean and filepath.FromSlash,

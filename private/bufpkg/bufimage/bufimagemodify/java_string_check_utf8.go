@@ -17,10 +17,11 @@ package bufimagemodify
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 )
 
 // JavaStringCheckUtf8ID is the ID of the java_string_check_utf8 modifier.

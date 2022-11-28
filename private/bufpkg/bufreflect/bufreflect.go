@@ -18,11 +18,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 )
 
 // NewMessage returns a new dynamic proto.Message for the fully qualified typeName

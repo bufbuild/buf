@@ -20,6 +20,8 @@ package bufbreaking
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
@@ -28,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"go.uber.org/zap"
 )
 
 // Handler handles the main breaking functionality.

@@ -19,9 +19,10 @@ import (
 	"context"
 	"io"
 
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
+
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
 
 // ResponseWriter writes CodeGeneratorResponses to the OS filesystem.

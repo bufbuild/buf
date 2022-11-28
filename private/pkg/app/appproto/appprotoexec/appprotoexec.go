@@ -22,12 +22,13 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/pluginpb"
+
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const (

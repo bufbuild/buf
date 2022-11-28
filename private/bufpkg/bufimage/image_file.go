@@ -15,9 +15,10 @@
 package bufimage
 
 import (
+	"google.golang.org/protobuf/types/descriptorpb"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 var _ ImageFile = &imageFile{}

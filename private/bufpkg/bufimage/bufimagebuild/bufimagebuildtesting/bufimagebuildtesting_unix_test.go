@@ -24,8 +24,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bufbuild/buf/private/pkg/command"
 )
 
 func TestCorpus(t *testing.T) {

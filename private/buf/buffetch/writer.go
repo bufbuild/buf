@@ -18,9 +18,10 @@ import (
 	"context"
 	"io"
 
+	"go.uber.org/zap"
+
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"go.uber.org/zap"
 )
 
 type writer struct {

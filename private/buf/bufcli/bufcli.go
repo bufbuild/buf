@@ -24,6 +24,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/bufbuild/connect-go"
+	"github.com/spf13/pflag"
+	"go.uber.org/zap"
+	"golang.org/x/term"
+
 	"github.com/bufbuild/buf/private/buf/bufapp"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwire"
@@ -55,10 +60,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
-	"github.com/bufbuild/connect-go"
-	"github.com/spf13/pflag"
-	"go.uber.org/zap"
-	"golang.org/x/term"
 )
 
 const (

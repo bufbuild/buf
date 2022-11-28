@@ -18,9 +18,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 func TestNormalizeAndCheckPathsRelSuccess1(t *testing.T) {

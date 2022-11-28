@@ -20,12 +20,13 @@ import (
 	"io"
 	"path/filepath"
 
+	"go.opencensus.io/trace"
+	"go.uber.org/multierr"
+
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.opencensus.io/trace"
-	"go.uber.org/multierr"
 )
 
 func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (_ *Config, retErr error) {

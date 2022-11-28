@@ -23,12 +23,13 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
+
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 // since we are in testing, we care less about making sure this times out early

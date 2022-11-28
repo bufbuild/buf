@@ -18,6 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/connect-go"
+	"github.com/spf13/cobra"
+
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
@@ -30,8 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/connect-go"
-	"github.com/spf13/cobra"
 )
 
 // NewCommand returns a new prune Command.

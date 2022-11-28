@@ -30,9 +30,10 @@ import (
 	"strconv"
 	"strings"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const (

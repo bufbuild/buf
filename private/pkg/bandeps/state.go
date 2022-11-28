@@ -18,11 +18,12 @@ import (
 	"context"
 	"sync"
 
+	"go.opencensus.io/trace"
+	"go.uber.org/zap"
+
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.opencensus.io/trace"
-	"go.uber.org/zap"
 )
 
 type state struct {

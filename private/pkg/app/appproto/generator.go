@@ -18,11 +18,12 @@ import (
 	"context"
 	"errors"
 
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/pluginpb"
+
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {

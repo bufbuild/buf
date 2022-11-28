@@ -18,8 +18,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
+
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 )
 
 type file struct {

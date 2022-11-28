@@ -19,11 +19,12 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/protoversion"
 )
 
 // ObjcClassPrefixID is the ID of the objc_class_prefix modifier.
