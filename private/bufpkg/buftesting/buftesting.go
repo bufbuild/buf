@@ -22,16 +22,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/descriptorpb"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (

@@ -18,12 +18,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
+	"github.com/stretchr/testify/require"
 )
 
 var storagetestingDirPath = filepath.Join("..", "storagetesting")

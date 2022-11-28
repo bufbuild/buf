@@ -22,12 +22,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/pkg/osextended"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWorkspaceDir(t *testing.T) {

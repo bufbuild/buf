@@ -25,16 +25,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/diff"
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/multierr"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/descriptorpb"
-
-	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/diff"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
 )
 
 // GetProtocFileDescriptorSet gets the validated FileDescriptorSet using

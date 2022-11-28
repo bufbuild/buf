@@ -20,17 +20,16 @@ import (
 	"os"
 	"time"
 
-	"github.com/pkg/profile"
-	"github.com/spf13/pflag"
-	"go.opencensus.io/trace"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/app/appverbose"
 	"github.com/bufbuild/buf/private/pkg/observability"
 	"github.com/bufbuild/buf/private/pkg/observability/observabilityzap"
+	"github.com/pkg/profile"
+	"github.com/spf13/pflag"
+	"go.opencensus.io/trace"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 type builder struct {

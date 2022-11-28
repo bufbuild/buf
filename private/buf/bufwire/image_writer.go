@@ -18,15 +18,14 @@ import (
 	"context"
 	"fmt"
 
-	"go.opencensus.io/trace"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"go.opencensus.io/trace"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 type imageWriter struct {

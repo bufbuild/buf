@@ -18,12 +18,11 @@ import (
 	"context"
 	"strconv"
 
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/buf/bufref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"go.uber.org/zap"
 )
 
 type refParser struct {

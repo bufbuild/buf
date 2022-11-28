@@ -18,15 +18,14 @@ import (
 	"context"
 	"strings"
 
-	"go.opencensus.io/trace"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"go.opencensus.io/trace"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 // Runner is a runner.

@@ -18,12 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/connect-go"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -39,6 +33,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/connect-go"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 const (

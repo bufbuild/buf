@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"io"
 
-	"go.uber.org/multierr"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -31,6 +29,7 @@ import (
 	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/multierr"
 )
 
 const (

@@ -18,10 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/connect-go"
-
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/netrc"
+	"github.com/bufbuild/connect-go"
 )
 
 const (

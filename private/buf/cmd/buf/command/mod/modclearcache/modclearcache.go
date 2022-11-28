@@ -20,13 +20,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // NewCommand returns a new Command.

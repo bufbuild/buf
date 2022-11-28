@@ -19,10 +19,9 @@ import (
 	"errors"
 	"fmt"
 
-	"google.golang.org/protobuf/types/descriptorpb"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 var (

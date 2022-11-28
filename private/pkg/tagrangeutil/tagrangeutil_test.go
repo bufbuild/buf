@@ -20,9 +20,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/stretchr/testify/assert"
 )
 
 // Implementation of protosource.TagRange for testing.

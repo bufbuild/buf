@@ -23,12 +23,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/pluginpb"
-
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
 )
 
 // NewHandler returns a new appproto.Handler for the protogen.Plugin function.

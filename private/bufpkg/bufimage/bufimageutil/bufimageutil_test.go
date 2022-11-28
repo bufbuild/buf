@@ -21,13 +21,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoprint"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
-	"golang.org/x/tools/txtar"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -35,6 +28,12 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/jhump/protoreflect/desc"
+	"github.com/jhump/protoreflect/desc/protoprint"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zaptest"
+	"golang.org/x/tools/txtar"
 )
 
 const shouldUpdateExpectations = false

@@ -17,8 +17,6 @@ package bufmodulebuild
 import (
 	"context"
 
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -27,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"go.uber.org/zap"
 )
 
 type moduleBucketBuilder struct {

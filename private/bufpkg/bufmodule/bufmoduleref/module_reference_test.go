@@ -17,9 +17,8 @@ package bufmoduleref
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/stretchr/testify/require"
 )
 
 func TestModuleReferenceForString(t *testing.T) {

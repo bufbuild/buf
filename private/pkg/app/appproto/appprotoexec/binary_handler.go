@@ -19,14 +19,13 @@ import (
 	"context"
 	"path/filepath"
 
-	"go.opencensus.io/trace"
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/pluginpb"
-
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"go.opencensus.io/trace"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type binaryHandler struct {

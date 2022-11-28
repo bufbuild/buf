@@ -24,12 +24,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/klauspost/compress/zstd"
-	"github.com/klauspost/pgzip"
-	"go.opencensus.io/trace"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -41,6 +35,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/klauspost/compress/zstd"
+	"github.com/klauspost/pgzip"
+	"go.opencensus.io/trace"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 type reader struct {

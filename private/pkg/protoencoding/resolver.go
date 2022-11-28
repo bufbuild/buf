@@ -17,12 +17,11 @@ package protoencoding
 import (
 	"sync"
 
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
-
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 )
 
 func newResolver(fileDescriptors ...protodescriptor.FileDescriptor) (Resolver, error) {

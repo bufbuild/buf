@@ -20,9 +20,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jdxcode/netrc"
-
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/jdxcode/netrc"
 )
 
 // Filename exposes the netrc filename based on the current operating system.

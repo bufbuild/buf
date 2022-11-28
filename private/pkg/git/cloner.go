@@ -22,15 +22,14 @@ import (
 	"strconv"
 	"strings"
 
-	"go.opencensus.io/trace"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
+	"go.opencensus.io/trace"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 // bufCloneOrigin is the name for the remote. It helps distinguish the origin of

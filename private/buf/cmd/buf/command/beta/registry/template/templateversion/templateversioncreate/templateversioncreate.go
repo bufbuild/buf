@@ -18,10 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/connect-go"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
@@ -30,6 +26,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/connect-go"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 const (

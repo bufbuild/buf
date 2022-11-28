@@ -19,10 +19,6 @@ import (
 	"errors"
 	"os"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
-
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -36,6 +32,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"go.uber.org/multierr"
 )
 
 const (

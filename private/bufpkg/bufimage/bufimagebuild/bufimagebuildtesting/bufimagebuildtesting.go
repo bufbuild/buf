@@ -21,11 +21,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-	"golang.org/x/tools/txtar"
-	"google.golang.org/protobuf/types/descriptorpb"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
@@ -37,6 +32,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
+	"golang.org/x/tools/txtar"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // Fuzz is the entrypoint for the fuzzer.

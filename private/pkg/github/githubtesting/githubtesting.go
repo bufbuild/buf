@@ -19,9 +19,8 @@ import (
 	"context"
 	"net/http"
 
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"go.uber.org/zap"
 )
 
 // ArchiveReader reads GitHub archives.

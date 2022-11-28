@@ -18,11 +18,10 @@ import (
 	"errors"
 	"fmt"
 
-	"golang.org/x/mod/modfile"
-	"golang.org/x/mod/semver"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/gen/data/dataspdx"
+	"golang.org/x/mod/modfile"
+	"golang.org/x/mod/semver"
 )
 
 func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, error) {

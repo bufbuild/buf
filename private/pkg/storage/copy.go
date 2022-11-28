@@ -19,9 +19,8 @@ import (
 	"io"
 	"sync"
 
-	"go.uber.org/multierr"
-
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"go.uber.org/multierr"
 )
 
 // Copy copies the bucket at from to the bucket at to.

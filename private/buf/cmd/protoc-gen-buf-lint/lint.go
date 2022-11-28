@@ -21,8 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/protobuf/types/pluginpb"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -32,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const defaultTimeout = 10 * time.Second

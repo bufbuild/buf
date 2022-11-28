@@ -19,9 +19,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconvert"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -30,6 +27,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 const (

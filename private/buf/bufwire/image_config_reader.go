@@ -19,9 +19,6 @@ import (
 	"errors"
 	"fmt"
 
-	"go.opencensus.io/trace"
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -31,6 +28,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"go.opencensus.io/trace"
+	"go.uber.org/zap"
 )
 
 type imageConfigReader struct {

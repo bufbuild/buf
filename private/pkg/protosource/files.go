@@ -17,9 +17,8 @@ package protosource
 import (
 	"context"
 
-	"go.uber.org/multierr"
-
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"go.uber.org/multierr"
 )
 
 const defaultChunkSizeThreshold = 8

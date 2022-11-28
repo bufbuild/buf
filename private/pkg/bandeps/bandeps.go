@@ -18,10 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"go.uber.org/zap"
 )
 
 // Checker is a checker.

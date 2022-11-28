@@ -15,9 +15,8 @@
 package observabilityzap
 
 import (
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/pkg/observability"
+	"go.uber.org/zap"
 )
 
 // NewTraceExportCloser returns a new TraceExportCloser with a zap backend.

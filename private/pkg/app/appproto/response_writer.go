@@ -20,11 +20,10 @@ import (
 	"context"
 	"io"
 
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
-
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type responseWriter struct {

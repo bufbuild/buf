@@ -17,10 +17,9 @@ package bufmoduleref
 import (
 	"time"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/prototime"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type modulePin struct {

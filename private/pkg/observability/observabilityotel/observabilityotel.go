@@ -17,10 +17,9 @@ package observabilityotel
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/pkg/observability"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/bufbuild/buf/private/pkg/observability"
 )
 
 type TracerProvider interface {

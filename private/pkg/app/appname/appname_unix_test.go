@@ -24,9 +24,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRoundTrip1(t *testing.T) {

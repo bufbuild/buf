@@ -15,14 +15,13 @@
 package bufmodulecache
 
 import (
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
+	"go.uber.org/zap"
 )
 
 // ModuleReaderOption is an option for creating a ModuleReader.

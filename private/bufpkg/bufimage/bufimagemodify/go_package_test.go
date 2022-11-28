@@ -20,12 +20,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 func TestGoPackageError(t *testing.T) {

@@ -18,12 +18,11 @@ import (
 	"context"
 	"io"
 
+	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
-
-	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type provider struct {

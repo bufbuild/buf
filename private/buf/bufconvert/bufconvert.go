@@ -20,11 +20,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.opencensus.io/trace"
-
 	"github.com/bufbuild/buf/private/buf/bufref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"go.opencensus.io/trace"
 )
 
 const (

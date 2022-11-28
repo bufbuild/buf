@@ -23,9 +23,8 @@ package bufmoduletesting
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/stretchr/testify/require"
 )
 
 // NewFileInfo returns a new FileInfo for testing.

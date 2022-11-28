@@ -17,12 +17,11 @@ package bufapimodule
 import (
 	"context"
 
-	"github.com/bufbuild/connect-go"
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/connect-go"
+	"go.uber.org/zap"
 )
 
 type moduleResolver struct {

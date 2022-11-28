@@ -18,9 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"google.golang.org/protobuf/types/descriptorpb"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // fileOptionPath is the path prefix used for FileOptions.

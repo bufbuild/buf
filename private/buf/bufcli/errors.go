@@ -21,13 +21,12 @@ import (
 	"net"
 	"strings"
 
-	"github.com/bufbuild/connect-go"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/connect-go"
 )
 
 const (

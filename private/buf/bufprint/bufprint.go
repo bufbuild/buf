@@ -20,13 +20,12 @@ import (
 	"io"
 	"strconv"
 
-	"go.uber.org/multierr"
-	"google.golang.org/protobuf/proto"
-
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"go.uber.org/multierr"
+	"google.golang.org/protobuf/proto"
 )
 
 const (

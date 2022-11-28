@@ -17,13 +17,12 @@ package bufmodulecache
 import (
 	"context"
 
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 type moduleCacher struct {

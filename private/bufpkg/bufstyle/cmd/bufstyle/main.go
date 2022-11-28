@@ -18,10 +18,9 @@ import (
 	"fmt"
 	"os"
 
-	"golang.org/x/tools/go/analysis/multichecker"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufstyle"
 	"github.com/bufbuild/buf/private/pkg/encoding"
+	"golang.org/x/tools/go/analysis/multichecker"
 )
 
 var externalConfigPath = ".bufstyle.yaml"

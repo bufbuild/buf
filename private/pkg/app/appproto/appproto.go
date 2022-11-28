@@ -29,13 +29,12 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/pluginpb"
-
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const (

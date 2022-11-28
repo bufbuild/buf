@@ -18,10 +18,9 @@ import (
 	"errors"
 	"fmt"
 
-	"golang.org/x/mod/semver"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"golang.org/x/mod/semver"
 )
 
 type plugin struct {

@@ -24,9 +24,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNormalizeAndValidate(t *testing.T) {

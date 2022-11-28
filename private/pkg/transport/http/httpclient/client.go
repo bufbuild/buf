@@ -19,10 +19,9 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/bufbuild/buf/private/pkg/observability"
 	"go.opencensus.io/tag"
 	"golang.org/x/net/http2"
-
-	"github.com/bufbuild/buf/private/pkg/observability"
 )
 
 type clientOptions struct {

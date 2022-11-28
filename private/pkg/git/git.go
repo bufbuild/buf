@@ -17,12 +17,11 @@ package git
 import (
 	"context"
 
-	"go.uber.org/zap"
-
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"go.uber.org/zap"
 )
 
 // Name is a name identifiable by git.
