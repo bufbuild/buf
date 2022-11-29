@@ -121,7 +121,8 @@ func AsProtoBlob(ctx context.Context, b Blob) (*modulev1alpha1.Blob, error) {
 	}, nil
 }
 
-// NewBlobFromProto returns A Blob from a proto module blob.
+// NewBlobFromProto returns a Blob from a proto module blob. It makes sure the
+// digest and content matches.
 func NewBlobFromProto(b *modulev1alpha1.Blob) (Blob, error) {
 	if b == nil {
 		return nil, fmt.Errorf("nil blob")
