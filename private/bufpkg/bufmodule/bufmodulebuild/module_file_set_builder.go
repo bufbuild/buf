@@ -67,7 +67,11 @@ func (m *moduleFileSetBuilder) build(
 		// the cost of parsing the target files and detecting exactly which imports are
 		// used. We already get this for free in Image construction, so it's simplest and
 		// most efficient to bundle all of the modules together like so.
-		dependencyModules = workspace.GetModules()
+		for _, workspaceModule := range workspace.GetModules() {
+			if workspaceModule != module {
+				dependencyModules = append(dependencyModules, workspaceModule)
+			}
+		}
 	}
 	// We know these are unique by remote, owner, repository and
 	// contain all transitive dependencies.
