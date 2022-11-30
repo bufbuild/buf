@@ -295,6 +295,7 @@ type MessageRange interface {
 	Message() Message
 }
 
+// ExtensionRange represents an extension range in Messages.
 type ExtensionRange interface {
 	MessageRange
 	OptionExtensionDescriptor

@@ -72,7 +72,35 @@ func FreeMessageRangeStrings(
 	return s, nil
 }
 
-type ImageFilterOptions func(*imageFilterOptions)
+// ImageFilterOption is an option that can be passed to ImageFilteredByTypesWithOptions.
+type ImageFilterOption func(*imageFilterOptions)
+
+// WithExcludeCustomOptions returns an option that will cause an image filtered via
+// ImageFilteredByTypesWithOptions to *not* include custom options unless they are
+// explicitly named in the list of filter types.
+func WithExcludeCustomOptions() ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		opts.includeCustomOptions = false
+	}
+}
+
+// WithExcludeKnownExtensions returns an option that will cause an image filtered via
+// ImageFilteredByTypesWithOptions to *not* include the known extensions for included
+// extendable messages unless they are explicitly named in the list of filter types.
+func WithExcludeKnownExtensions() ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		opts.includeKnownExtensions = false
+	}
+}
+
+// WithAllowFilterByImportedType returns an option for ImageFilteredByTypesWithOptions
+// that allows a named filter type to be in an imported file or module. Without this
+// option, only types defined directly in the image to be filtered are allowed.
+func WithAllowFilterByImportedType() ImageFilterOption {
+	return func(opts *imageFilterOptions) {
+		opts.allowImportedTypes = true
+	}
+}
 
 // ImageFilteredByTypes returns a minimal image containing only the descriptors
 // required to define those types. The resulting contains only files in which
@@ -146,7 +174,7 @@ func ImageFilteredByTypes(image bufimage.Image, types ...string) (bufimage.Image
 	return ImageFilteredByTypesWithOptions(image, types)
 }
 
-func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts ...ImageFilterOptions) (bufimage.Image, error) {
+func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts ...ImageFilterOption) (bufimage.Image, error) {
 	options := newImageFilterOptions()
 	for _, o := range opts {
 		o(options)

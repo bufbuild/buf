@@ -55,6 +55,9 @@ func TestOptions(t *testing.T) {
 	t.Run("all", func(t *testing.T) {
 		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all.txtar")
 	})
+	t.Run("exclude-options", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all-exclude-options.txtar", WithExcludeCustomOptions())
+	})
 }
 
 func TestNesting(t *testing.T) {
@@ -92,6 +95,7 @@ func TestImportModifiers(t *testing.T) {
 func TestExtensions(t *testing.T) {
 	t.Parallel()
 	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions.txtar")
+	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions-excluded.txtar", WithExcludeKnownExtensions())
 }
 
 func TestTransitivePublic(t *testing.T) {
@@ -150,12 +154,17 @@ func TestTypesFromMainModule(t *testing.T) {
 	_, err = ImageFilteredByTypes(image, "dependency.Dep")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeIsImport)
+
+	// allowed if we specify option
+	_, err = ImageFilteredByTypesWithOptions(image, []string{"dependency.Dep"}, WithAllowFilterByImportedType())
+	require.NoError(t, err)
+
 	_, err = ImageFilteredByTypes(image, "nonexisting")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
 
-func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string) {
+func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	require.NoError(t, err)
@@ -173,7 +182,7 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	require.NoError(t, err)
 	require.Empty(t, analysis)
 
-	filteredImage, err := ImageFilteredByTypes(image, typenames...)
+	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
 	require.NoError(t, err)
 	assert.NotNil(t, image)
 	assert.True(t, imageIsDependencyOrdered(filteredImage), "image files not in dependency order")
