@@ -44,10 +44,11 @@ linters:
     - exportloopref
     - forbidigo
     - forcetypeassert
+    - gci
     - gochecknoinits
     - gofmt
     - goheader
-    - goimports
+    # - goimports
     - gomodguard
     - goprintffuncname
     - gosec
