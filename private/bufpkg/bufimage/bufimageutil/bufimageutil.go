@@ -400,8 +400,10 @@ func descriptorTransitiveClosure(
 			directDependencies = append(directDependencies, explicitOptionDeps...)
 			transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 		}
-		// Extensions declared for this message. We don't include all extensions for descriptor
-		// options types, though. For those, we only gather what is referenced.
+		// Extensions declared for this message.
+		// TODO: We currently exclude all extensions for descriptor options types (and instead
+		//  only gather the ones used in relevant custom options). But if the descriptor option
+		//  type were a named type for filtering, we SHOULD include all of them.
 		if opts.includeKnownExtensions && !isOptionsTypeName(namedDescriptor.FullName()) {
 			for _, extendsDescriptor := range imageIndex.NameToExtensions[namedDescriptor.FullName()] {
 				recursiveDescriptors, err := descriptorTransitiveClosure(extendsDescriptor, imageIndex, seen, opts)
