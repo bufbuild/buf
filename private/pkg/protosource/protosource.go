@@ -295,6 +295,11 @@ type MessageRange interface {
 	Message() Message
 }
 
+type ExtensionRange interface {
+	MessageRange
+	OptionExtensionDescriptor
+}
+
 // Enum is an enum descriptor.
 type Enum interface {
 	NamedDescriptor
@@ -336,6 +341,7 @@ type Message interface {
 	Fields() []Field
 	Extensions() []Field
 	Oneofs() []Oneof
+	ExtensionRanges() []ExtensionRange
 	ExtensionMessageRanges() []MessageRange
 	ReservedMessageRanges() []MessageRange
 

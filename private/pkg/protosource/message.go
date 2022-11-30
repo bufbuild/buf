@@ -25,7 +25,7 @@ type message struct {
 	oneofs                           []Oneof
 	reservedMessageRanges            []MessageRange
 	reservedNames                    []ReservedName
-	extensionMessageRanges           []MessageRange
+	extensionRanges                  []ExtensionRange
 	parent                           Message
 	isMapEntry                       bool
 	messageSetWireFormat             bool
@@ -95,8 +95,16 @@ func (m *message) ReservedNames() []ReservedName {
 	return m.reservedNames
 }
 
+func (m *message) ExtensionRanges() []ExtensionRange {
+	return m.extensionRanges
+}
+
 func (m *message) ExtensionMessageRanges() []MessageRange {
-	return m.extensionMessageRanges
+	extMsgRanges := make([]MessageRange, len(m.extensionRanges))
+	for i, extensionRange := range m.extensionRanges {
+		extMsgRanges[i] = extensionRange
+	}
+	return extMsgRanges
 }
 
 func (m *message) Parent() Message {
@@ -155,6 +163,6 @@ func (m *message) addReservedName(reservedName ReservedName) {
 	m.reservedNames = append(m.reservedNames, reservedName)
 }
 
-func (m *message) addExtensionMessageRange(extensionMessageRange MessageRange) {
-	m.extensionMessageRanges = append(m.extensionMessageRanges, extensionMessageRange)
+func (m *message) addExtensionRange(extensionRange ExtensionRange) {
+	m.extensionRanges = append(m.extensionRanges, extensionRange)
 }

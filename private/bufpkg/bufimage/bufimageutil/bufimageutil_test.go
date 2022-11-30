@@ -49,6 +49,9 @@ func TestOptions(t *testing.T) {
 	t.Run("service", func(t *testing.T) {
 		runDiffTest(t, "testdata/options", []string{"pkg.FooService"}, "pkg.FooService.txtar")
 	})
+	t.Run("method", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.FooService.Do"}, "pkg.FooService.Do.txtar")
+	})
 	t.Run("all", func(t *testing.T) {
 		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all.txtar")
 	})
@@ -91,7 +94,7 @@ func TestExtensions(t *testing.T) {
 	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions.txtar")
 }
 
-func TestTransitivePublicFail(t *testing.T) {
+func TestTransitivePublic(t *testing.T) {
 	ctx := context.Background()
 	bucket, err := storagemem.NewReadBucket(map[string][]byte{
 		"a.proto": []byte(`syntax = "proto3";package a;message Foo{}`),
@@ -112,18 +115,8 @@ func TestTransitivePublicFail(t *testing.T) {
 	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
 	require.NoError(t, err)
 
-	// This filtered image won't be usable as c.proto doesn't have a import
-	// for `a.Foo`. There's two ways to resolve this:
-	//
-	//  1. generate a b.proto with only a public import for a.proto and no other types.
-	//  2. import a.proto directly in c.proto
-	//
-	// Both have some pro's and cons, given that we lint against public
-	// imports I'm currently inclined to defer this decision until we have a
-	// customer need for picking either.
 	_, err = desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unresolvable reference")
+	require.NoError(t, err)
 }
 
 func TestTypesFromMainModule(t *testing.T) {

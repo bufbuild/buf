@@ -679,13 +679,16 @@ func (f *file) populateMessage(
 			f.descriptor,
 			getMessageExtensionRangePath(extensionRangeIndex, topLevelMessageIndex, nestedMessageIndexes...),
 		)
-		extensionMessageRange := newMessageRange(
+		extensionMessageRange := newExtensionRange(
 			extensionRangeLocationDescriptor,
 			message,
 			int(extensionRangeDescriptorProto.GetStart()),
 			int(extensionRangeDescriptorProto.GetEnd()),
+			newOptionExtensionDescriptor(
+				extensionRangeDescriptorProto.GetOptions(),
+			),
 		)
-		message.addExtensionMessageRange(extensionMessageRange)
+		message.addExtensionRange(extensionMessageRange)
 	}
 	for enumIndex, enumDescriptorProto := range descriptorProto.GetEnumType() {
 		nestedEnum, err := f.populateEnum(
