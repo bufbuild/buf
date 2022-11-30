@@ -16,7 +16,6 @@ package bufapimodule
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -29,24 +28,10 @@ import (
 )
 
 type mockCommitServiceClient struct {
+	registryv1alpha1connect.UnimplementedRepositoryCommitServiceHandler
+
 	t       *testing.T
 	refResp *registryv1alpha1.GetRepositoryCommitByReferenceResponse
-}
-
-func (m *mockCommitServiceClient) ListRepositoryCommitsByBranch(
-	_ context.Context,
-	_ *connect.Request[registryv1alpha1.ListRepositoryCommitsByBranchRequest],
-) (*connect.Response[registryv1alpha1.ListRepositoryCommitsByBranchResponse], error) {
-	m.t.Error("unexpected call: ListRepositoryCommitsByBranch")
-	return nil, errors.New("unexpected call")
-}
-
-func (m *mockCommitServiceClient) ListRepositoryCommitsByReference(
-	_ context.Context,
-	_ *connect.Request[registryv1alpha1.ListRepositoryCommitsByReferenceRequest],
-) (*connect.Response[registryv1alpha1.ListRepositoryCommitsByReferenceResponse], error) {
-	m.t.Error("unexpected call: ListRepositoryCommitsByReference")
-	return nil, errors.New("unexpected call")
 }
 
 func (m *mockCommitServiceClient) GetRepositoryCommitByReference(
@@ -54,30 +39,6 @@ func (m *mockCommitServiceClient) GetRepositoryCommitByReference(
 	_ *connect.Request[registryv1alpha1.GetRepositoryCommitByReferenceRequest],
 ) (*connect.Response[registryv1alpha1.GetRepositoryCommitByReferenceResponse], error) {
 	return connect.NewResponse(m.refResp), nil
-}
-
-func (m *mockCommitServiceClient) GetRepositoryCommitBySequenceId(
-	_ context.Context,
-	_ *connect.Request[registryv1alpha1.GetRepositoryCommitBySequenceIdRequest],
-) (*connect.Response[registryv1alpha1.GetRepositoryCommitBySequenceIdResponse], error) {
-	m.t.Error("unexpected call: GetRepositoryCommitBySequenceId")
-	return nil, errors.New("unexpected call")
-}
-
-func (m *mockCommitServiceClient) ListRepositoryDraftCommits(
-	_ context.Context,
-	_ *connect.Request[registryv1alpha1.ListRepositoryDraftCommitsRequest],
-) (*connect.Response[registryv1alpha1.ListRepositoryDraftCommitsResponse], error) {
-	m.t.Error("unexpected call: ListRepositoryDraftCommits")
-	return nil, errors.New("unexpected call")
-}
-
-func (m *mockCommitServiceClient) DeleteRepositoryDraftCommit(
-	_ context.Context,
-	_ *connect.Request[registryv1alpha1.DeleteRepositoryDraftCommitRequest],
-) (*connect.Response[registryv1alpha1.DeleteRepositoryDraftCommitResponse], error) {
-	m.t.Error("unexpected call: DeleteRepositoryDraftCommit")
-	return nil, errors.New("unexpected call")
 }
 
 func TestGetModulePin(t *testing.T) {
