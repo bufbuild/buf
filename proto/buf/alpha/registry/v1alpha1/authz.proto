@@ -36,19 +36,27 @@ service AuthzService {
   rpc UserCanCreatePluginVersion(UserCanCreatePluginVersionRequest) returns (UserCanCreatePluginVersionResponse);
   // UserCanCreateTemplateVersion returns whether the user is authorized
   // to create a template version under the specified template.
-  rpc UserCanCreateTemplateVersion(UserCanCreateTemplateVersionRequest) returns (UserCanCreateTemplateVersionResponse);
+  rpc UserCanCreateTemplateVersion(UserCanCreateTemplateVersionRequest) returns (UserCanCreateTemplateVersionResponse) {
+    option deprecated = true;
+  }
   // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
   // a plugin in an organization.
   rpc UserCanCreateOrganizationPlugin(UserCanCreateOrganizationPluginRequest) returns (UserCanCreateOrganizationPluginResponse);
   // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
   // a template in an organization.
-  rpc UserCanCreateOrganizationTemplate(UserCanCreateOrganizationTemplateRequest) returns (UserCanCreateOrganizationTemplateResponse);
+  rpc UserCanCreateOrganizationTemplate(UserCanCreateOrganizationTemplateRequest) returns (UserCanCreateOrganizationTemplateResponse) {
+    option deprecated = true;
+  }
   // UserCanSeePluginSettings returns whether the user is authorized
   // to see plugin settings.
-  rpc UserCanSeePluginSettings(UserCanSeePluginSettingsRequest) returns (UserCanSeePluginSettingsResponse);
+  rpc UserCanSeePluginSettings(UserCanSeePluginSettingsRequest) returns (UserCanSeePluginSettingsResponse) {
+    option deprecated = true;
+  }
   // UserCanSeeTemplateSettings returns whether the user is authorized
   // to see template settings.
-  rpc UserCanSeeTemplateSettings(UserCanSeeTemplateSettingsRequest) returns (UserCanSeeTemplateSettingsResponse);
+  rpc UserCanSeeTemplateSettings(UserCanSeeTemplateSettingsRequest) returns (UserCanSeeTemplateSettingsResponse) {
+    option deprecated = true;
+  }
   // UserCanAddOrganizationMember returns whether the user is authorized to add
   // any members to the organization and the list of roles they can add.
   rpc UserCanAddOrganizationMember(UserCanAddOrganizationMemberRequest) returns (UserCanAddOrganizationMemberResponse);
@@ -66,7 +74,9 @@ service AuthzService {
   rpc UserCanDeleteRepository(UserCanDeleteRepositoryRequest) returns (UserCanDeleteRepositoryResponse);
   // UserCanDeleteTemplate returns whether the user is authorized
   // to delete a template.
-  rpc UserCanDeleteTemplate(UserCanDeleteTemplateRequest) returns (UserCanDeleteTemplateResponse);
+  rpc UserCanDeleteTemplate(UserCanDeleteTemplateRequest) returns (UserCanDeleteTemplateResponse) {
+    option deprecated = true;
+  }
   // UserCanDeletePlugin returns whether the user is authorized
   // to delete a plugin.
   rpc UserCanDeletePlugin(UserCanDeletePluginRequest) returns (UserCanDeletePluginResponse);
@@ -84,7 +94,9 @@ service AuthzService {
   rpc UserCanManagePluginContributors(UserCanManagePluginContributorsRequest) returns (UserCanManagePluginContributorsResponse);
   // UserCanManageTemplateContributors returns whether the user is authorized to manage
   // any contributors to the template and the list of roles they can manage.
-  rpc UserCanManageTemplateContributors(UserCanManageTemplateContributorsRequest) returns (UserCanManageTemplateContributorsResponse);
+  rpc UserCanManageTemplateContributors(UserCanManageTemplateContributorsRequest) returns (UserCanManageTemplateContributorsResponse) {
+    option deprecated = true;
+  }
 }
 
 message UserCanCreateOrganizationRepositoryRequest {
@@ -140,6 +152,7 @@ message UserCanCreatePluginVersionResponse {
 }
 
 message UserCanCreateTemplateVersionRequest {
+  option deprecated = true;
   // The owner of the template.
   string owner = 1;
   // The name of the template.
@@ -147,6 +160,7 @@ message UserCanCreateTemplateVersionRequest {
 }
 
 message UserCanCreateTemplateVersionResponse {
+  option deprecated = true;
   bool authorized = 1;
 }
 
@@ -161,16 +175,19 @@ message UserCanCreateOrganizationPluginResponse {
 }
 
 message UserCanCreateOrganizationTemplateRequest {
+  option deprecated = true;
   // The ID of the organization for which to check
   // whether the user is authorized.
   string organization_id = 1;
 }
 
 message UserCanCreateOrganizationTemplateResponse {
+  option deprecated = true;
   bool authorized = 1;
 }
 
 message UserCanSeePluginSettingsRequest {
+  option deprecated = true;
   // The owner of the plugin.
   string owner = 1;
   // The name of the plugin.
@@ -178,10 +195,12 @@ message UserCanSeePluginSettingsRequest {
 }
 
 message UserCanSeePluginSettingsResponse {
+  option deprecated = true;
   bool authorized = 1;
 }
 
 message UserCanSeeTemplateSettingsRequest {
+  option deprecated = true;
   // The owner of the template.
   string owner = 1;
   // The name of the template.
@@ -189,6 +208,7 @@ message UserCanSeeTemplateSettingsRequest {
 }
 
 message UserCanSeeTemplateSettingsResponse {
+  option deprecated = true;
   bool authorized = 1;
 }
 
@@ -249,12 +269,14 @@ message UserCanDeleteRepositoryResponse {
 }
 
 message UserCanDeleteTemplateRequest {
+  option deprecated = true;
   // The ID of the template for which to check
   // whether the user is authorized.
   string template_id = 1;
 }
 
 message UserCanDeleteTemplateResponse {
+  option deprecated = true;
   bool authorized = 1;
 }
 
@@ -305,12 +327,14 @@ message UserCanManagePluginContributorsResponse {
 }
 
 message UserCanManageTemplateContributorsRequest {
+  option deprecated = true;
   // The ID of the template for which to check
   // whether the user is authorized.
   string template_id = 1;
 }
 
 message UserCanManageTemplateContributorsResponse {
+  option deprecated = true;
   // The list of roles that the user is authorized to manage, empty list means the user is
   // not authorized to manage any contributors.
   repeated TemplateRole authorized_roles = 1;

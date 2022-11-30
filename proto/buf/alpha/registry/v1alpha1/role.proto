@@ -44,6 +44,7 @@ enum RepositoryRole {
 
 // The roles that users can have for a Template.
 enum TemplateRole {
+  option deprecated = true;
   TEMPLATE_ROLE_UNSPECIFIED = 0;
   TEMPLATE_ROLE_OWNER = 1;
   TEMPLATE_ROLE_ADMIN = 2;

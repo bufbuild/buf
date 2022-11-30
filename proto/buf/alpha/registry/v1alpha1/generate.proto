@@ -19,6 +19,8 @@ package buf.alpha.registry.v1alpha1;
 import "buf/alpha/image/v1/image.proto";
 import "google/protobuf/compiler/plugin.proto";
 
+option deprecated = true;
+
 // File defines a file with a path and some content.
 message File {
   // path is the relative path of the file.

@@ -28,7 +28,9 @@ service DisplayService {
   // DisplayPluginElements returns which plugin elements should be displayed to the user.
   rpc DisplayPluginElements(DisplayPluginElementsRequest) returns (DisplayPluginElementsResponse);
   // DisplayTemplateElements returns which template elements should be displayed to the user.
-  rpc DisplayTemplateElements(DisplayTemplateElementsRequest) returns (DisplayTemplateElementsResponse);
+  rpc DisplayTemplateElements(DisplayTemplateElementsRequest) returns (DisplayTemplateElementsResponse) {
+    option deprecated = true;
+  }
   // DisplayUserElements returns which user elements should be displayed to the user.
   rpc DisplayUserElements(DisplayUserElementsRequest) returns (DisplayUserElementsResponse);
   // DisplayServerElements returns which server elements should be displayed to the user.
@@ -48,10 +50,14 @@ service DisplayService {
   rpc ListManageableUserPluginRoles(ListManageableUserPluginRolesRequest) returns (ListManageableUserPluginRolesResponse);
   // ListManageableTemplateRoles returns which roles should be displayed
   // to the user when they are managing contributors on the template.
-  rpc ListManageableTemplateRoles(ListManageableTemplateRolesRequest) returns (ListManageableTemplateRolesResponse);
+  rpc ListManageableTemplateRoles(ListManageableTemplateRolesRequest) returns (ListManageableTemplateRolesResponse) {
+    option deprecated = true;
+  }
   // ListManageableUserTemplateRoles returns which roles should be displayed
   // to the user when they are managing a specific contributor on the template.
-  rpc ListManageableUserTemplateRoles(ListManageableUserTemplateRolesRequest) returns (ListManageableUserTemplateRolesResponse);
+  rpc ListManageableUserTemplateRoles(ListManageableUserTemplateRolesRequest) returns (ListManageableUserTemplateRolesResponse) {
+    option deprecated = true;
+  }
 }
 
 message DisplayOrganizationElementsRequest {
@@ -66,7 +72,7 @@ message DisplayOrganizationElementsResponse {
   // Display create organization plugin element if true.
   bool create_plugin = 2;
   // Display create organization template element if true.
-  bool create_template = 3;
+  bool create_template = 3 [deprecated = true];
   // Display organization settings element if true.
   bool settings = 4;
   // Display update organization settings element if true.
@@ -106,12 +112,14 @@ message DisplayPluginElementsResponse {
 }
 
 message DisplayTemplateElementsRequest {
+  option deprecated = true;
   // The ID of the template for which to check
   // which elements should be displayed.
   string template_id = 1;
 }
 
 message DisplayTemplateElementsResponse {
+  option deprecated = true;
   // Display create template version element if true.
   bool create_version = 1;
   // Display template settings element if true.
@@ -189,18 +197,21 @@ message ListManageableUserPluginRolesResponse {
 }
 
 message ListManageableTemplateRolesRequest {
+  option deprecated = true;
   // The ID of the template for which to check
   // which roles should be displayed as manageable.
   string template_id = 1;
 }
 
 message ListManageableTemplateRolesResponse {
+  option deprecated = true;
   // The list of roles that should be displayed
   // to the user as manageable.
   repeated TemplateRole roles = 1;
 }
 
 message ListManageableUserTemplateRolesRequest {
+  option deprecated = true;
   // The ID of the template for which to check
   // which roles should be displayed as manageable.
   string template_id = 1;
@@ -210,6 +221,7 @@ message ListManageableUserTemplateRolesRequest {
 }
 
 message ListManageableUserTemplateRolesResponse {
+  option deprecated = true;
   // The list of roles that should be displayed
   // to the user as manageable.
   repeated TemplateRole roles = 1;

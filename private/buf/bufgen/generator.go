@@ -215,7 +215,7 @@ func (g *generator) execPlugins(
 	//  # buf.gen.yaml
 	//  version: v1
 	//  plugins:
-	//    - remote: buf.build/org/plugins/insertion-point-receiver
+	//    - plugin: buf.build/org/insertion-point-receiver
 	//      out: gen/proto
 	//    - name: insertion-point-writer
 	//      out: gen/proto

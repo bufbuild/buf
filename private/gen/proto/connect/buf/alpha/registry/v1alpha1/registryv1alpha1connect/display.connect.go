@@ -48,6 +48,8 @@ type DisplayServiceClient interface {
 	// DisplayPluginElements returns which plugin elements should be displayed to the user.
 	DisplayPluginElements(context.Context, *connect_go.Request[v1alpha1.DisplayPluginElementsRequest]) (*connect_go.Response[v1alpha1.DisplayPluginElementsResponse], error)
 	// DisplayTemplateElements returns which template elements should be displayed to the user.
+	//
+	// Deprecated: do not use.
 	DisplayTemplateElements(context.Context, *connect_go.Request[v1alpha1.DisplayTemplateElementsRequest]) (*connect_go.Response[v1alpha1.DisplayTemplateElementsResponse], error)
 	// DisplayUserElements returns which user elements should be displayed to the user.
 	DisplayUserElements(context.Context, *connect_go.Request[v1alpha1.DisplayUserElementsRequest]) (*connect_go.Response[v1alpha1.DisplayUserElementsResponse], error)
@@ -67,9 +69,13 @@ type DisplayServiceClient interface {
 	ListManageableUserPluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserPluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserPluginRolesResponse], error)
 	// ListManageableTemplateRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the template.
+	//
+	// Deprecated: do not use.
 	ListManageableTemplateRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableTemplateRolesResponse], error)
 	// ListManageableUserTemplateRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the template.
+	//
+	// Deprecated: do not use.
 	ListManageableUserTemplateRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserTemplateRolesResponse], error)
 }
 
@@ -180,6 +186,8 @@ func (c *displayServiceClient) DisplayPluginElements(ctx context.Context, req *c
 }
 
 // DisplayTemplateElements calls buf.alpha.registry.v1alpha1.DisplayService.DisplayTemplateElements.
+//
+// Deprecated: do not use.
 func (c *displayServiceClient) DisplayTemplateElements(ctx context.Context, req *connect_go.Request[v1alpha1.DisplayTemplateElementsRequest]) (*connect_go.Response[v1alpha1.DisplayTemplateElementsResponse], error) {
 	return c.displayTemplateElements.CallUnary(ctx, req)
 }
@@ -220,12 +228,16 @@ func (c *displayServiceClient) ListManageableUserPluginRoles(ctx context.Context
 
 // ListManageableTemplateRoles calls
 // buf.alpha.registry.v1alpha1.DisplayService.ListManageableTemplateRoles.
+//
+// Deprecated: do not use.
 func (c *displayServiceClient) ListManageableTemplateRoles(ctx context.Context, req *connect_go.Request[v1alpha1.ListManageableTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableTemplateRolesResponse], error) {
 	return c.listManageableTemplateRoles.CallUnary(ctx, req)
 }
 
 // ListManageableUserTemplateRoles calls
 // buf.alpha.registry.v1alpha1.DisplayService.ListManageableUserTemplateRoles.
+//
+// Deprecated: do not use.
 func (c *displayServiceClient) ListManageableUserTemplateRoles(ctx context.Context, req *connect_go.Request[v1alpha1.ListManageableUserTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserTemplateRolesResponse], error) {
 	return c.listManageableUserTemplateRoles.CallUnary(ctx, req)
 }
@@ -240,6 +252,8 @@ type DisplayServiceHandler interface {
 	// DisplayPluginElements returns which plugin elements should be displayed to the user.
 	DisplayPluginElements(context.Context, *connect_go.Request[v1alpha1.DisplayPluginElementsRequest]) (*connect_go.Response[v1alpha1.DisplayPluginElementsResponse], error)
 	// DisplayTemplateElements returns which template elements should be displayed to the user.
+	//
+	// Deprecated: do not use.
 	DisplayTemplateElements(context.Context, *connect_go.Request[v1alpha1.DisplayTemplateElementsRequest]) (*connect_go.Response[v1alpha1.DisplayTemplateElementsResponse], error)
 	// DisplayUserElements returns which user elements should be displayed to the user.
 	DisplayUserElements(context.Context, *connect_go.Request[v1alpha1.DisplayUserElementsRequest]) (*connect_go.Response[v1alpha1.DisplayUserElementsResponse], error)
@@ -259,9 +273,13 @@ type DisplayServiceHandler interface {
 	ListManageableUserPluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserPluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserPluginRolesResponse], error)
 	// ListManageableTemplateRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the template.
+	//
+	// Deprecated: do not use.
 	ListManageableTemplateRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableTemplateRolesResponse], error)
 	// ListManageableUserTemplateRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the template.
+	//
+	// Deprecated: do not use.
 	ListManageableUserTemplateRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserTemplateRolesResponse], error)
 }
 
