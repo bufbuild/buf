@@ -1,6 +1,6 @@
 -- a.proto --
 syntax = "proto3";
-import public "public.proto";
+import "public.proto";
 import "regular.proto";
 message ImportPublic {
   Public x = 1;
