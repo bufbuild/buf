@@ -36,14 +36,15 @@ message GetSchemaRequest {
   // module that exists in the same BSR instance as is handling this RPC.
   LocalModuleReference module = 1;
 
-  // One or more element names. The names may be type names (messages or enums),
+  // Zero or more element names. The names may be type names (messages or enums),
   // service names, or method names. All names must be fully-qualified. If any name
   // is unknown, the request will fail and no schema will be returned.
   //
-  // The resulting schema contains these elements and all of their dependencies,
-  // which is enough information for the caller to construct a dynamic message for
-  // any requested types (e.g. requested message types or request and response types
-  // for requested service and method names).
+  // If no names are provided, the full schema for the module is returned. Otherwise,
+  // the resulting schema contains only the named elements and all of their
+  // dependencies, which is enough information for the caller to construct a dynamic
+  // message for any requested types (e.g. requested message types or request and
+  // response types for requested service and method names).
   repeated string element_names = 2;
 
   // If true, well-known imports will be included the returned set of files. If
@@ -68,12 +69,34 @@ message GetSchemaRequest {
   // Callers typically use compiled-in versions of these files.
   bool include_well_known_imports = 4;
 
-  // TODO: flags for whether to include custom options referenced in the
-  //  descriptor set and whether to include known extensions for any
-  //  extendable messages in the descriptor set
+  // If present, this is a commit ID that the client already has cached. So if
+  // the given module reference resolves to this same version, the server should
+  // not send back any descriptors since the client already has them.
+  //
+  // This allows a client to efficiently poll for updates: after the initial RPC
+  // to get a schema, the client can cache the descriptors and the resolved
+  // version. It then includes that version in subsequent requests in this field,
+  // and the server will only reply with a schema (and new version number) if/when
+  // the resolved version changes.
+  string if_not_version = 5;
 
-  // TODO: semantics for efficiently polling for latest version w/out
-  //  repeatedly re-downloading the same schema when there's no change
+  // If true, the returned schema will include extension definitions for custom
+  // options that appear on schema elements. When filtering the schema based on the
+  // given element names, options on all encountered elements will be examined as
+  // well.
+  //
+  // This flag is ignored if element_names is empty as the entire schema is always
+  // returned in that case.
+  bool include_custom_options = 6;
+
+  // If true, the returned schema will include known extensions for extendable
+  // messages for schema elements. If include_custom_options is false, such extensions
+  // may still be returned if the applicable descriptor options type is part of the
+  // requested schema.
+  //
+  // This flag is ignored if element_names is empty as the entire schema is always
+  // returned in that case.
+  bool include_known_extensions = 7;
 }
 
 message GetSchemaResponse {
