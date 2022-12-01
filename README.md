@@ -156,7 +156,7 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [roadmap]: https://docs.buf.build/roadmap
 [source]: https://docs.buf.build/installation#from-source
 [tarball]: https://docs.buf.build/installation#tarball
-[templates]: https://docs-buf-build/configuration/v1/buf-gen-yaml
+[templates]: https://docs.buf.build/configuration/v1/buf-gen-yaml
 [tour]: https://docs.buf.build/tour/introduction
 [users]: https://docs.buf.build/bsr/user-management#organization-roles
 [verifying]: https://docs.buf.build/installation#verifying-a-release
