@@ -162,6 +162,7 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 	return &Config{
 		PluginConfigs: pluginConfigs,
 		ManagedConfig: managedConfig,
+		TypesConfig:   externalConfig.Types,
 	}, nil
 }
 
