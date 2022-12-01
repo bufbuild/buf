@@ -16,6 +16,7 @@ package bufapimodule
 
 import (
 	"context"
+	"errors"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -55,6 +56,9 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 			return nil, storage.NewErrNotExist(moduleReference.String())
 		}
 		return nil, err
+	}
+	if resp.Msg.RepositoryCommit == nil {
+		return nil, errors.New("empty response")
 	}
 	return bufmoduleref.NewModulePin(
 		moduleReference.Remote(),
