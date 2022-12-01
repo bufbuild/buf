@@ -72,3 +72,23 @@ func (r *messageRange) End() int {
 func (r *messageRange) Max() bool {
 	return r.end == messageRangeInclusiveMax
 }
+
+type extensionRange struct {
+	*messageRange
+	optionExtensionDescriptor
+}
+
+func newExtensionRange(
+	locationDescriptor locationDescriptor,
+	message Message,
+	start int,
+	end int,
+	opts optionExtensionDescriptor,
+) *extensionRange {
+	return &extensionRange{
+		messageRange: newMessageRange(
+			locationDescriptor, message, start, end,
+		),
+		optionExtensionDescriptor: opts,
+	}
+}

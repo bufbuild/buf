@@ -26,9 +26,9 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -115,13 +115,13 @@ func NewGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 ) Generator {
 	return newGenerator(
 		logger,
 		storageosProvider,
 		runner,
-		registryProvider,
+		clientConfig,
 	)
 }
 
@@ -218,6 +218,7 @@ type ManagedConfig struct {
 	JavaMultipleFiles     *bool
 	JavaStringCheckUtf8   *bool
 	JavaPackagePrefix     *JavaPackagePrefixConfig
+	CsharpNameSpaceConfig *CsharpNameSpaceConfig
 	OptimizeFor           *descriptorpb.FileOptions_OptimizeMode
 	GoPackagePrefixConfig *GoPackagePrefixConfig
 	Override              map[string]map[string]string
@@ -236,6 +237,13 @@ type GoPackagePrefixConfig struct {
 	Default string
 	Except  []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> go_package prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// CsharpNameSpaceConfig is the csharp_namespace configuration.
+type CsharpNameSpaceConfig struct {
+	Except []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> csharp_namespace prefix.
 	Override map[bufmoduleref.ModuleIdentity]string
 }
 
@@ -307,6 +315,7 @@ type ExternalManagedConfigV1 struct {
 	JavaMultipleFiles   *bool                             `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
 	JavaStringCheckUtf8 *bool                             `json:"java_string_check_utf8,omitempty" yaml:"java_string_check_utf8,omitempty"`
 	JavaPackagePrefix   ExternalJavaPackagePrefixConfigV1 `json:"java_package_prefix,omitempty" yaml:"java_package_prefix,omitempty"`
+	CsharpNamespace     ExternalCsharpNamespaceConfigV1   `json:"csharp_namespace,omitempty" yaml:"csharp_namespace,omitempty"`
 	OptimizeFor         string                            `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 	GoPackagePrefix     ExternalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
 	Override            map[string]map[string]string      `json:"override,omitempty" yaml:"override,omitempty"`
@@ -380,6 +389,18 @@ type ExternalGoPackagePrefixConfigV1 struct {
 func (e ExternalGoPackagePrefixConfigV1) IsEmpty() bool {
 	return e.Default == "" &&
 		len(e.Except) == 0 &&
+		len(e.Override) == 0
+}
+
+// ExternalCsharpNamespaceConfigV1 is the external csharp_namespace configuration.
+type ExternalCsharpNamespaceConfigV1 struct {
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// IsEmpty returns true if the config is empty.
+func (e ExternalCsharpNamespaceConfigV1) IsEmpty() bool {
+	return len(e.Except) == 0 &&
 		len(e.Override) == 0
 }
 

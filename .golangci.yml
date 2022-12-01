@@ -44,10 +44,11 @@ linters:
     - exportloopref
     - forbidigo
     - forcetypeassert
+    - gci
     - gochecknoinits
     - gofmt
     - goheader
-    - goimports
+    # - goimports
     - gomodguard
     - goprintffuncname
     - gosec
@@ -141,3 +142,7 @@ issues:
         - gosec
       path: private/pkg/git/git_test.go
       text: "G504:"
+    - linters:
+        - stylecheck
+      path: private/bufpkg/bufapimodule/module_resolver_test.go
+      text: "ST1003:"

@@ -39,13 +39,22 @@ type imageIndex struct {
 }
 
 // newImageIndexForImage builds an imageIndex for a given image.
-func newImageIndexForImage(image bufimage.Image) (*imageIndex, error) {
+func newImageIndexForImage(image bufimage.Image, opts *imageFilterOptions) (*imageIndex, error) {
 	index := &imageIndex{
 		NameToDescriptor: make(map[string]protosource.NamedDescriptor),
-		NameToExtensions: make(map[string][]protosource.Field),
-		NameToOptions:    make(map[string]map[int32]protosource.Field),
 	}
+	if opts.includeCustomOptions {
+		index.NameToOptions = make(map[string]map[int32]protosource.Field)
+	}
+	if opts.includeKnownExtensions {
+		index.NameToExtensions = make(map[string][]protosource.Field)
+	}
+
 	for _, file := range image.Files() {
+		// TODO: protosource.File is a heavyweight representation, and NewFile is not a cheap
+		//  operation. We only really need to gather fully-qualified names for each element
+		//  and to have some minimal level of upward references (e.g. access a descriptor's
+		//  parent element), which could be done with a far more efficient representation.
 		protosourceFile, err := protosource.NewFile(newInputFile(file))
 		if err != nil {
 			return nil, err
@@ -55,15 +64,19 @@ func newImageIndexForImage(image bufimage.Image) (*imageIndex, error) {
 				return fmt.Errorf("duplicate for %q: %#v != %#v", message.FullName(), storedDescriptor, message)
 			}
 			index.NameToDescriptor[message.FullName()] = message
+			if !opts.includeKnownExtensions && !opts.includeCustomOptions {
+				return nil
+			}
 			for _, field := range message.Extensions() {
 				index.NameToDescriptor[field.FullName()] = field
 				extendeeName := field.Extendee()
-				if isOptionsTypeName(extendeeName) {
+				if opts.includeCustomOptions && isOptionsTypeName(extendeeName) {
 					if _, ok := index.NameToOptions[extendeeName]; !ok {
 						index.NameToOptions[extendeeName] = make(map[int32]protosource.Field)
 					}
 					index.NameToOptions[extendeeName][int32(field.Number())] = field
-				} else {
+				}
+				if opts.includeKnownExtensions {
 					index.NameToExtensions[extendeeName] = append(index.NameToExtensions[extendeeName], field)
 				}
 			}
@@ -85,16 +98,26 @@ func newImageIndexForImage(image bufimage.Image) (*imageIndex, error) {
 				return nil, fmt.Errorf("duplicate for %q: %#v != %#v", service.FullName(), storedDescriptor, service)
 			}
 			index.NameToDescriptor[service.FullName()] = service
+			for _, method := range service.Methods() {
+				if storedDescriptor, ok := index.NameToDescriptor[method.FullName()]; ok {
+					return nil, fmt.Errorf("duplicate for %q: %#v != %#v", method.FullName(), storedDescriptor, method)
+				}
+				index.NameToDescriptor[method.FullName()] = method
+			}
+		}
+		if !opts.includeKnownExtensions && !opts.includeCustomOptions {
+			continue
 		}
 		for _, field := range protosourceFile.Extensions() {
 			index.NameToDescriptor[field.FullName()] = field
 			extendeeName := field.Extendee()
-			if isOptionsTypeName(extendeeName) {
+			if opts.includeCustomOptions && isOptionsTypeName(extendeeName) {
 				if _, ok := index.NameToOptions[extendeeName]; !ok {
 					index.NameToOptions[extendeeName] = make(map[int32]protosource.Field)
 				}
 				index.NameToOptions[extendeeName][int32(field.Number())] = field
-			} else {
+			}
+			if opts.includeKnownExtensions {
 				index.NameToExtensions[extendeeName] = append(index.NameToExtensions[extendeeName], field)
 			}
 		}

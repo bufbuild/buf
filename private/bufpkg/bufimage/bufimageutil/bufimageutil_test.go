@@ -49,8 +49,14 @@ func TestOptions(t *testing.T) {
 	t.Run("service", func(t *testing.T) {
 		runDiffTest(t, "testdata/options", []string{"pkg.FooService"}, "pkg.FooService.txtar")
 	})
+	t.Run("method", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.FooService.Do"}, "pkg.FooService.Do.txtar")
+	})
 	t.Run("all", func(t *testing.T) {
 		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all.txtar")
+	})
+	t.Run("exclude-options", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all-exclude-options.txtar", WithExcludeCustomOptions())
 	})
 }
 
@@ -89,9 +95,10 @@ func TestImportModifiers(t *testing.T) {
 func TestExtensions(t *testing.T) {
 	t.Parallel()
 	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions.txtar")
+	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions-excluded.txtar", WithExcludeKnownExtensions())
 }
 
-func TestTransitivePublicFail(t *testing.T) {
+func TestTransitivePublic(t *testing.T) {
 	ctx := context.Background()
 	bucket, err := storagemem.NewReadBucket(map[string][]byte{
 		"a.proto": []byte(`syntax = "proto3";package a;message Foo{}`),
@@ -112,18 +119,8 @@ func TestTransitivePublicFail(t *testing.T) {
 	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
 	require.NoError(t, err)
 
-	// This filtered image won't be usable as c.proto doesn't have a import
-	// for `a.Foo`. There's two ways to resolve this:
-	//
-	//  1. generate a b.proto with only a public import for a.proto and no other types.
-	//  2. import a.proto directly in c.proto
-	//
-	// Both have some pro's and cons, given that we lint against public
-	// imports I'm currently inclined to defer this decision until we have a
-	// customer need for picking either.
 	_, err = desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unresolvable reference")
+	require.NoError(t, err)
 }
 
 func TestTypesFromMainModule(t *testing.T) {
@@ -157,12 +154,17 @@ func TestTypesFromMainModule(t *testing.T) {
 	_, err = ImageFilteredByTypes(image, "dependency.Dep")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeIsImport)
+
+	// allowed if we specify option
+	_, err = ImageFilteredByTypesWithOptions(image, []string{"dependency.Dep"}, WithAllowFilterByImportedType())
+	require.NoError(t, err)
+
 	_, err = ImageFilteredByTypes(image, "nonexisting")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
 
-func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string) {
+func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	require.NoError(t, err)
@@ -180,7 +182,7 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	require.NoError(t, err)
 	require.Empty(t, analysis)
 
-	filteredImage, err := ImageFilteredByTypes(image, typenames...)
+	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
 	require.NoError(t, err)
 	assert.NotNil(t, image)
 	assert.True(t, imageIsDependencyOrdered(filteredImage), "image files not in dependency order")

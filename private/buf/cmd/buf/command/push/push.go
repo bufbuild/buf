@@ -22,9 +22,12 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
@@ -165,23 +168,20 @@ func run(
 	if err != nil {
 		return err
 	}
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewPushService(ctx, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
-	localModulePin, err := service.Push(
+	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewPushServiceClient)
+	resp, err := service.Push(
 		ctx,
-		moduleIdentity.Owner(),
-		moduleIdentity.Repository(),
-		"",
-		protoModule,
-		flags.Tags,
-		nil,
-		flags.Draft,
+		connect.NewRequest(&registryv1alpha1.PushRequest{
+			Owner:      moduleIdentity.Owner(),
+			Repository: moduleIdentity.Repository(),
+			Module:     protoModule,
+			Tags:       flags.Tags,
+			DraftName:  flags.Draft,
+		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
@@ -194,10 +194,10 @@ func run(
 		}
 		return err
 	}
-	if localModulePin == nil {
+	if resp.Msg.LocalModulePin == nil {
 		return errors.New("Missing local module pin in the registry's response.")
 	}
-	if _, err := container.Stdout().Write([]byte(localModulePin.Commit + "\n")); err != nil {
+	if _, err := container.Stdout().Write([]byte(resp.Msg.LocalModulePin.Commit + "\n")); err != nil {
 		return err
 	}
 	return nil
