@@ -37,18 +37,16 @@ service ConvertService {
 message GetFileDescriptorSetRequest {
   // always unwrap when easily possible for requests (ie dont use nested message)
   // TODO should these be here, or should we make this more generic?
-  string owner = 1;
-  string repository = 2;
+  //string owner = 1;
+  //string repository = 2;
+
+  "buf.build/foo/bar"
+  "foo/bar"
+  // it is up to the implementation whether this is required
+  string module/id/container/project = 1;
   // draft or commit
   // may be empty, if empty, this gets latest
-  string reference = 3;
-
-  repeated string enums = 4;
-  repeated string messages = 5;
-  repeated string services = 6;
-  // TODO: should this be here?
-  repeated string methods = 7;
-
+  string version = 3;
   // One or more element names. The names may be type names (messages or enums),
   // service names, or method names. All names must be fully-qualified. If any name
   // is unknown, the request will fail and no schema will be returned.
@@ -57,7 +55,7 @@ message GetFileDescriptorSetRequest {
   // which is enough information for the caller to construct a dynamic message for
   // any requested types (e.g. requested message types or request and response types
   // for requested service and method names).
-  repeated string types = 8;
+  repeated string types = 4;
 }
 
 message GetFileDescriptorSetResponse {
@@ -73,61 +71,24 @@ message GetFileDescriptorSetResponse {
   google.protobuf.FileDescriptorSet file_descriptor_set = 2;
 }
 
-message ConvertMessageRequest {
-  // TODO should these be here, or should we make this more generic?
-  string owner = 1;
-  string repository = 2;
-  // draft or commit
-  // may be empty, if empty, this gets latest
-  string reference = 3;
-
-  // The fully-qualified name of the message. Required.
-  // TODO dont like message_*, but what to do?
-  string message_name = 2;
-
-
-  // The input data that is to be converted. Required. This must be
-  // a valid encoding of type indicated by message_name in the format
-  // indicated by input_format.
-  // TODO would prefer "data"
-  bytes message_data = 4;
-
-  // The format of the input data. Required.
-  // TODO would prefer "format"
-  Format message_format = 3;
-
-  // If true, any unresolvable fields in the input are discarded. For
-  // formats other than FORMAT_BINARY, this means that the operation
-  // will fail if the input contains unrecognized field names. For
-  // FORMAT_BINARY, unrecognized fields can be retained and possibly
-  // included in the reformatted output (depending on the requested
-  // output format).
-  //bool discard_unknown = 5;
-
-  // TODO if we have no binary or text options, can we do without JSON options at launch?
-  oneof output_format {
-    //BinaryOutputOptions output_binary = 6;
-    JSONOutputOptions output_json = 7;
-    //TextOutputOptions output_text = 8;
-  }
-}
-
 enum Format {
-  FORMAT_UNSPECIFIED = 0;
 
-  FORMAT_BINARY = 1;
-  FORMAT_JSON = 2;
-  //FORMAT_TEXT = 3;
+}
+message Message {
+  string name
+  string data
+  Format format
 }
 
-//message BinaryOutputOptions {
-  //// If true, the output will be deterministic. In particular, extension fields
-  //// will be emitted in tag number order and entries in map fields will be
-  //// ordered by key.
+message ConvertMessageRequest {
+message BinaryOptions {
+  // If true, the output will be deterministic. In particular, extension fields
+  // will be emitted in tag number order and entries in map fields will be
+  // ordered by key.
   //bool deterministic = 1;
-//}
+}
 
-message JSONOutputOptions {
+message JSONOptions {
   // Indentation to use for multi-line output. If empty, the output will be
   // compact instead of multi-line. If not empty, it may contain only space
   // and tab characters.
@@ -145,16 +106,64 @@ message JSONOutputOptions {
   bool include_defaults = 4;
 }
 
-//message TextOutputOptions {
-  //// Indentation to use for multi-line output. If empty, the output will be
-  //// compact instead of multi-line. If not empty, it may contain only space
-  //// and tab characters.
-  //string indent = 1;
-  //// If true and the input data includes unrecognized fields, the unrecognized
-  //// fields will be preserved in the text output (using field numbers and raw
-  //// values).
-  //bool include_unrecognized = 2;
-//}
+message TextOptions {
+  // Indentation to use for multi-line output. If empty, the output will be
+  // compact instead of multi-line. If not empty, it may contain only space
+  // and tab characters.
+  string indent = 1;
+  // If true and the input data includes unrecognized fields, the unrecognized
+  // fields will be preserved in the text output (using field numbers and raw
+  // values).
+  bool include_unrecognized = 2;
+}
+
+  // TODO should these be here, or should we make this more generic?
+  string owner = 1;
+  string repository = 2;
+  // draft or commit
+  // may be empty, if empty, this gets latest
+  string version = 3;
+
+
+  message input = 1;
+  Format output_format = 2;
+
+  //// The fully-qualified name of the message. Required.
+  //// TODO dont like message_*, but what to do?
+  //string message_name = 2;
+  //// The input data that is to be converted. Required. This must be
+  //// a valid encoding of type indicated by message_name in the format
+  //// indicated by input_format.
+  //// TODO would prefer "data"
+  //bytes message_data = 4;
+  //// The format of the input data. Required.
+  //// TODO would prefer "format"
+  //Format message_format = 3;
+
+  // If true, any unresolvable fields in the input are discarded. For
+  // formats other than FORMAT_BINARY, this means that the operation
+  // will fail if the input contains unrecognized field names. For
+  // FORMAT_BINARY, unrecognized fields can be retained and possibly
+  // included in the reformatted output (depending on the requested
+  // output format).
+  //bool discard_unknown = 5;
+
+  // TODO if we have no binary or text options, can we do without JSON options at launch?
+  oneof options {
+    BinaryOptions binary_options = 6;
+    JSONOptions json_options = 7;
+    TextOptions text_options = 8;
+  }
+}
+
+enum Format {
+  FORMAT_UNSPECIFIED = 0;
+
+  FORMAT_BINARY = 1;
+  FORMAT_JSON = 2;
+  FORMAT_TEXT = 3;
+}
+
 
 message ConvertMessageResponse {
   // The resolved version of the schema. If the request included a reference to a commit,
