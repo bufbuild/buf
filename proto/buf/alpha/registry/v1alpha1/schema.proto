@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/module.proto";
 import "google/protobuf/descriptor.proto";
 
 // Provides endpoints for downloading dynamic schemas and for using schemas
@@ -32,9 +31,14 @@ service SchemaService {
 }
 
 message GetSchemaRequest {
-  // The module from which the schema is retrieved. Required. This refers to a
-  // module that exists in the same BSR instance as is handling this RPC.
-  LocalModuleReference module = 1;
+  // The owner of the repo that contains the schema to retrieve (a user name or
+  // organization name).
+  string owner = 1;
+  // The name of the repo that contains the schema to retrieve.
+  string repository = 2;
+  // Optional version of the repo. If unspecified, defaults to latest version on
+  // the repo's "main" branch.
+  string reference = 3;
 
   // Zero or more element names. The names may be type names (messages or enums),
   // service names, or method names. All names must be fully-qualified. If any name
@@ -45,29 +49,7 @@ message GetSchemaRequest {
   // dependencies, which is enough information for the caller to construct a dynamic
   // message for any requested types (e.g. requested message types or request and
   // response types for requested service and method names).
-  repeated string element_names = 2;
-
-  // If true, well-known imports will be included the returned set of files. If
-  // false or not present, these files will omitted from the response (e.g. the
-  // caller is assumed to already know the types they define).
-  //
-  // These files are a subset of the files in the "well-known types" module:
-  // https://buf.build/beta/wellknowntypes
-  //
-  // Specifically, the files that are omitted by default are the following:
-  //  * google/protobuf/any.proto
-  //  * google/protobuf/descriptor.proto
-  //  * google/protobuf/duration.proto
-  //  * google/protobuf/empty.proto
-  //  * google/protobuf/field_mask.proto
-  //  * google/protobuf/struct.proto
-  //  * google/protobuf/timestamp.proto
-  //  * google/protobuf/wrapper.proto
-  //
-  // These include all well-known types that have custom JSON formats and
-  // the types in "descriptor.proto", required for Protobuf reflection.
-  // Callers typically use compiled-in versions of these files.
-  bool include_well_known_imports = 4;
+  repeated string element_names = 4;
 
   // If present, this is a commit ID that the client already has cached. So if
   // the given module reference resolves to this same version, the server should
@@ -111,18 +93,25 @@ message GetSchemaResponse {
 }
 
 message ConvertMessageRequest {
-  // The module which contains the schema of interest. Required.
-  LocalModuleReference module = 1;
+  // The owner of the repo that contains the schema to retrieve (a user name or
+  // organization name).
+  string owner = 1;
+  // The name of the repo that contains the schema to retrieve.
+  string repository = 2;
+  // Optional version of the repo. If unspecified, defaults to latest version on
+  // the repo's "main" branch.
+  string reference = 3;
+
   // The fully-qualified name of the message. Required.
-  string message_name = 2;
+  string message_name = 4;
 
   // The format of the input data. Required.
-  Format input_format = 3;
+  Format input_format = 5;
 
   // The input data that is to be converted. Required. This must be
   // a valid encoding of type indicated by message_name in the format
   // indicated by input_format.
-  bytes input_data = 4;
+  bytes input_data = 6;
 
   // If true, any unresolvable fields in the input are discarded. For
   // formats other than FORMAT_BINARY, this means that the operation
@@ -130,12 +119,12 @@ message ConvertMessageRequest {
   // FORMAT_BINARY, unrecognized fields can be retained and possibly
   // included in the reformatted output (depending on the requested
   // output format).
-  bool discard_unknown = 5;
+  bool discard_unknown = 7;
 
   oneof output_format {
-    BinaryOutputOptions output_binary = 6;
-    JSONOutputOptions output_json = 7;
-    TextOutputOptions output_text = 8;
+    BinaryOutputOptions output_binary = 8;
+    JSONOutputOptions output_json = 9;
+    TextOutputOptions output_text = 10;
   }
 }
 
