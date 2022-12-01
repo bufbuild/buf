@@ -21,20 +21,33 @@ import "google/protobuf/descriptor.proto";
 
 // Provides endpoints for downloading dynamic schemas and for using schemas
 // in validation and data transformation functions.
-service SchemaService {
-  // GetSchema allows the caller to download a schema for one or more requested
+// TODO don't like name
+service FileDescriptorSetService {
+  // GetFileDescriptorSet allows the caller to download a schema for one or more requested
   // types, RPC services, or RPC methods.
-  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse);
+  rpc GetFileDescriptorSet(GetFileDescriptorSetRequest) returns (GetFileDescriptorSetResponse);
+}
 
+service ConvertService {
   // ConvertMessage allows the caller to convert a given message data blob from
   // one format to another by referring to a type schema for the blob.
   rpc ConvertMessage(ConvertMessageRequest) returns (ConvertMessageResponse);
 }
 
-message GetSchemaRequest {
-  // The module from which the schema is retrieved. Required. This refers to a
-  // module that exists in the same BSR instance as is handling this RPC.
-  LocalModuleReference module = 1;
+message GetFileDescriptorSetRequest {
+  // always unwrap when easily possible for requests (ie dont use nested message)
+  // TODO should these be here, or should we make this more generic?
+  string owner = 1;
+  string repository = 2;
+  // draft or commit
+  // may be empty, if empty, this gets latest
+  string reference = 3;
+
+  repeated string enums = 4;
+  repeated string messages = 5;
+  repeated string services = 6;
+  // TODO: should this be here?
+  repeated string methods = 7;
 
   // One or more element names. The names may be type names (messages or enums),
   // service names, or method names. All names must be fully-qualified. If any name
@@ -44,62 +57,44 @@ message GetSchemaRequest {
   // which is enough information for the caller to construct a dynamic message for
   // any requested types (e.g. requested message types or request and response types
   // for requested service and method names).
-  repeated string element_names = 2;
-
-  // If true, well-known imports will be included the returned set of files. If
-  // false or not present, these files will omitted from the response (e.g. the
-  // caller is assumed to already know the types they define).
-  //
-  // These files are a subset of the files in the "well-known types" module:
-  // https://buf.build/beta/wellknowntypes
-  //
-  // Specifically, the files that are omitted by default are the following:
-  //  * google/protobuf/any.proto
-  //  * google/protobuf/descriptor.proto
-  //  * google/protobuf/duration.proto
-  //  * google/protobuf/empty.proto
-  //  * google/protobuf/field_mask.proto
-  //  * google/protobuf/struct.proto
-  //  * google/protobuf/timestamp.proto
-  //  * google/protobuf/wrapper.proto
-  //
-  // These include all well-known types that have custom JSON formats and
-  // the types in "descriptor.proto", required for Protobuf reflection.
-  // Callers typically use compiled-in versions of these files.
-  bool include_well_known_imports = 4;
-
-  // TODO: flags for whether to include custom options referenced in the
-  //  descriptor set and whether to include known extensions for any
-  //  extendable messages in the descriptor set
-
-  // TODO: semantics for efficiently polling for latest version w/out
-  //  repeatedly re-downloading the same schema when there's no change
+  repeated string types = 8;
 }
 
-message GetSchemaResponse {
+message GetFileDescriptorSetResponse {
   // The resolved version of the schema. If the request included a reference to a commit,
   // this value is the same as that commit. If the request included a reference to a tag,
   // this is the commit version for that tag. If the request did not include any version,
   // this is the latest version of the requested module.
+  // TODO what is a "commit version"?
+  // TODO should this even be part of the response?
   string version = 1;
   // The schema, which is a set of file descriptors that include the requested elements
   // and their dependencies.
-  google.protobuf.FileDescriptorSet schema_files = 2;
+  google.protobuf.FileDescriptorSet file_descriptor_set = 2;
 }
 
 message ConvertMessageRequest {
-  // The module which contains the schema of interest. Required.
-  LocalModuleReference module = 1;
+  // TODO should these be here, or should we make this more generic?
+  string owner = 1;
+  string repository = 2;
+  // draft or commit
+  // may be empty, if empty, this gets latest
+  string reference = 3;
+
   // The fully-qualified name of the message. Required.
+  // TODO dont like message_*, but what to do?
   string message_name = 2;
 
-  // The format of the input data. Required.
-  Format input_format = 3;
 
   // The input data that is to be converted. Required. This must be
   // a valid encoding of type indicated by message_name in the format
   // indicated by input_format.
-  bytes input_data = 4;
+  // TODO would prefer "data"
+  bytes message_data = 4;
+
+  // The format of the input data. Required.
+  // TODO would prefer "format"
+  Format message_format = 3;
 
   // If true, any unresolvable fields in the input are discarded. For
   // formats other than FORMAT_BINARY, this means that the operation
@@ -107,12 +102,13 @@ message ConvertMessageRequest {
   // FORMAT_BINARY, unrecognized fields can be retained and possibly
   // included in the reformatted output (depending on the requested
   // output format).
-  bool discard_unknown = 5;
+  //bool discard_unknown = 5;
 
+  // TODO if we have no binary or text options, can we do without JSON options at launch?
   oneof output_format {
-    BinaryOutputOptions output_binary = 6;
+    //BinaryOutputOptions output_binary = 6;
     JSONOutputOptions output_json = 7;
-    TextOutputOptions output_text = 8;
+    //TextOutputOptions output_text = 8;
   }
 }
 
@@ -121,15 +117,15 @@ enum Format {
 
   FORMAT_BINARY = 1;
   FORMAT_JSON = 2;
-  FORMAT_TEXT = 3;
+  //FORMAT_TEXT = 3;
 }
 
-message BinaryOutputOptions {
-  // If true, the output will be deterministic. In particular, extension fields
-  // will be emitted in tag number order and entries in map fields will be
-  // ordered by key.
-  bool deterministic = 1;
-}
+//message BinaryOutputOptions {
+  //// If true, the output will be deterministic. In particular, extension fields
+  //// will be emitted in tag number order and entries in map fields will be
+  //// ordered by key.
+  //bool deterministic = 1;
+//}
 
 message JSONOutputOptions {
   // Indentation to use for multi-line output. If empty, the output will be
@@ -149,23 +145,24 @@ message JSONOutputOptions {
   bool include_defaults = 4;
 }
 
-message TextOutputOptions {
-  // Indentation to use for multi-line output. If empty, the output will be
-  // compact instead of multi-line. If not empty, it may contain only space
-  // and tab characters.
-  string indent = 1;
-  // If true and the input data includes unrecognized fields, the unrecognized
-  // fields will be preserved in the text output (using field numbers and raw
-  // values).
-  bool include_unrecognized = 2;
-}
+//message TextOutputOptions {
+  //// Indentation to use for multi-line output. If empty, the output will be
+  //// compact instead of multi-line. If not empty, it may contain only space
+  //// and tab characters.
+  //string indent = 1;
+  //// If true and the input data includes unrecognized fields, the unrecognized
+  //// fields will be preserved in the text output (using field numbers and raw
+  //// values).
+  //bool include_unrecognized = 2;
+//}
 
 message ConvertMessageResponse {
   // The resolved version of the schema. If the request included a reference to a commit,
   // this value is the same as that commit. If the request included a reference to a tag,
   // this is the commit version for that tag. If the request did not include any version,
   // this is the latest version of the requested module.
+  // TODO do we need this?
   string version = 1;
   // The reformatted data.
-  bytes output_data = 2;
+  bytes data = 2;
 }
