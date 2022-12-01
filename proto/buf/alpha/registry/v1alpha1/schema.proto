@@ -62,23 +62,23 @@ message GetSchemaRequest {
   // the resolved version changes.
   string if_not_version = 5;
 
-  // If true, the returned schema will include extension definitions for custom
+  // If true, the returned schema will not include extension definitions for custom
   // options that appear on schema elements. When filtering the schema based on the
-  // given element names, options on all encountered elements will be examined as
-  // well.
+  // given element names, options on all encountered elements are usually examined
+  // as well. But that is not the case if excluding custom options.
   //
   // This flag is ignored if element_names is empty as the entire schema is always
   // returned in that case.
-  bool include_custom_options = 6;
+  bool exclude_custom_options = 6;
 
-  // If true, the returned schema will include known extensions for extendable
-  // messages for schema elements. If include_custom_options is false, such extensions
+  // If true, the returned schema will not include known extensions for extendable
+  // messages for schema elements. If exclude_custom_options is true, such extensions
   // may still be returned if the applicable descriptor options type is part of the
   // requested schema.
   //
   // This flag is ignored if element_names is empty as the entire schema is always
   // returned in that case.
-  bool include_known_extensions = 7;
+  bool exclude_known_extensions = 7;
 }
 
 message GetSchemaResponse {
