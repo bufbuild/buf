@@ -56,15 +56,15 @@ message GetSchemaRequest {
   repeated string element_names = 4;
 
   // If present, this is a commit ID that the client already has cached. So if
-  // the given module reference resolves to this same version, the server should
+  // the given module version resolves to this same commit, the server should
   // not send back any descriptors since the client already has them.
   //
   // This allows a client to efficiently poll for updates: after the initial RPC
   // to get a schema, the client can cache the descriptors and the resolved
-  // version. It then includes that version in subsequent requests in this field,
-  // and the server will only reply with a schema (and new version number) if/when
-  // the resolved version changes.
-  string if_not_version = 5;
+  // commit ID. It then includes that commit ID. in subsequent requests in this
+  // field, and the server will only reply with a schema (and new commit ID)
+  // if/when the resolved commit changes.
+  string if_not_commit_id = 5;
 
   // If true, the returned schema will not include extension definitions for custom
   // options that appear on schema elements. When filtering the schema based on the
@@ -83,6 +83,10 @@ message GetSchemaRequest {
   // This flag is ignored if element_names is empty as the entire schema is always
   // returned in that case.
   bool exclude_known_extensions = 7;
+
+  // TODO: consider providing a way for client to indicate what files the server
+  //   can exclude, to reduce response size when caller already knows things
+  //   (for example, usually no need to include google/protobuf/descriptor.proto)
 }
 
 message GetSchemaResponse {
