@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -35,19 +36,50 @@ var rubyPackagePath = []int32{8, 45}
 func rubyPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) Modifier {
+	// Convert the bufmoduleref.ModuleIdentity types into
+	// strings so that they're comparable.
+	exceptModuleIdentityStrings := make(map[string]struct{}, len(except))
+	for _, moduleIdentity := range except {
+		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
+	}
+	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
+	for moduleIdentity, rubyPackage := range moduleOverrides {
+		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = rubyPackage
+	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				rubyPackageValue := rubyPackageValue(imageFile)
+				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+					moduleIdentityString := moduleIdentity.IdentityString()
+					if moduleNamespaceOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
+						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+						rubyPackageValue = moduleNamespaceOverride
+					}
+				}
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					rubyPackageValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
-				if err := rubyPackageForFile(ctx, sweeper, imageFile, rubyPackageValue); err != nil {
+				if err := rubyPackageForFile(
+					ctx,
+					sweeper,
+					imageFile,
+					rubyPackageValue,
+					exceptModuleIdentityStrings,
+				); err != nil {
 					return err
+				}
+			}
+			for moduleIdentityString := range overrideModuleIdentityStrings {
+				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
+					logger.Sugar().Warnf("ruby_package override for %q was unused", moduleIdentityString)
 				}
 			}
 			for overrideFile := range overrides {
@@ -65,12 +97,18 @@ func rubyPackageForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	rubyPackageValue string,
+	exceptModuleIdentityStrings map[string]struct{},
 ) error {
 	descriptor := imageFile.Proto()
 	if isWellKnownType(ctx, imageFile) || rubyPackageValue == "" {
 		// This is a well-known type or we could not resolve a non-empty ruby_package
 		// value, so this is a no-op.
 		return nil
+	}
+	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+			return nil
+		}
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}

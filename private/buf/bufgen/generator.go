@@ -421,7 +421,6 @@ func newModifier(
 		bufimagemodify.ObjcClassPrefix(logger, sweeper, managedConfig.Override[bufimagemodify.ObjcClassPrefixID]),
 		bufimagemodify.PhpNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpNamespaceID]),
 		bufimagemodify.PhpMetadataNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
-		bufimagemodify.RubyPackage(logger, sweeper, managedConfig.Override[bufimagemodify.RubyPackageID]),
 	)
 	javaPackagePrefix := &JavaPackagePrefixConfig{Default: bufimagemodify.DefaultJavaPackagePrefix}
 	if managedConfig.JavaPackagePrefix != nil {
@@ -528,6 +527,25 @@ func newModifier(
 			goPackageModifier,
 		)
 	}
+	var (
+		rubyPackageExcept    []bufmoduleref.ModuleIdentity
+		rubyPackageOverrides map[bufmoduleref.ModuleIdentity]string
+	)
+	if rubyPackageConfig := managedConfig.RubyPackage; rubyPackageConfig != nil {
+		rubyPackageExcept = rubyPackageConfig.Except
+		rubyPackageOverrides = rubyPackageConfig.Override
+	}
+	rubyPackageModifier := bufimagemodify.RubyPackage(
+		logger,
+		sweeper,
+		rubyPackageExcept,
+		rubyPackageOverrides,
+		managedConfig.Override[bufimagemodify.RubyPackageID],
+	)
+	modifier = bufimagemodify.Merge(
+		modifier,
+		rubyPackageModifier,
+	)
 	return modifier, nil
 }
 

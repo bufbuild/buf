@@ -214,13 +214,16 @@ func (p *PluginConfig) IsRemote() bool {
 
 // ManagedConfig is the managed mode configuration.
 type ManagedConfig struct {
-	CcEnableArenas        *bool
-	JavaMultipleFiles     *bool
-	JavaStringCheckUtf8   *bool
+	CcEnableArenas      *bool
+	JavaMultipleFiles   *bool
+	JavaStringCheckUtf8 *bool
+	// TODO: rename this field to JavaPackagePrefix to stay consistent
+	// with GoPackagePrefixConfig, or rename GoPackagePrefixConfig.
 	JavaPackagePrefix     *JavaPackagePrefixConfig
 	CsharpNameSpaceConfig *CsharpNameSpaceConfig
 	OptimizeFor           *descriptorpb.FileOptions_OptimizeMode
 	GoPackagePrefixConfig *GoPackagePrefixConfig
+	RubyPackage           *RubyPackageConfig
 	Override              map[string]map[string]string
 }
 
@@ -237,6 +240,13 @@ type GoPackagePrefixConfig struct {
 	Default string
 	Except  []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> go_package prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// RubyPackgeConfig is the ruby_packge configuration.
+type RubyPackageConfig struct {
+	Except []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> ruby_package.
 	Override map[bufmoduleref.ModuleIdentity]string
 }
 
@@ -318,6 +328,7 @@ type ExternalManagedConfigV1 struct {
 	CsharpNamespace     ExternalCsharpNamespaceConfigV1   `json:"csharp_namespace,omitempty" yaml:"csharp_namespace,omitempty"`
 	OptimizeFor         string                            `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 	GoPackagePrefix     ExternalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
+	RubyPackage         ExternalRubyPackageConfigV1       `json:"ruby_package,omitempty" yaml:"ruby_package,omitempty"`
 	Override            map[string]map[string]string      `json:"override,omitempty" yaml:"override,omitempty"`
 }
 
@@ -327,8 +338,10 @@ func (e ExternalManagedConfigV1) IsEmpty() bool {
 		e.JavaMultipleFiles == nil &&
 		e.JavaStringCheckUtf8 == nil &&
 		e.JavaPackagePrefix.IsEmpty() &&
+		e.CsharpNamespace.IsEmpty() &&
 		e.OptimizeFor == "" &&
 		e.GoPackagePrefix.IsEmpty() &&
+		e.RubyPackage.IsEmpty() &&
 		len(e.Override) == 0
 }
 
@@ -390,6 +403,17 @@ func (e ExternalGoPackagePrefixConfigV1) IsEmpty() bool {
 	return e.Default == "" &&
 		len(e.Except) == 0 &&
 		len(e.Override) == 0
+}
+
+// ExternalRubyPackageConfigV1 is the external ruby_package configuration
+type ExternalRubyPackageConfigV1 struct {
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// IsEmpty returns true is the config is empty
+func (e ExternalRubyPackageConfigV1) IsEmpty() bool {
+	return len(e.Except) == 0 && len(e.Override) == 0
 }
 
 // ExternalCsharpNamespaceConfigV1 is the external csharp_namespace configuration.
