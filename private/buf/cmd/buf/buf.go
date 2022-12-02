@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
@@ -62,6 +61,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/format"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
@@ -115,6 +115,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
 			push.NewCommand("push", builder),
+			convert.NewCommand("convert", builder),
 			{
 				Use:   "mod",
 				Short: "Manage Buf modules.",
