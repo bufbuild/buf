@@ -8,6 +8,7 @@
   modules from managed mode, and `override`, which specifies `csharp_namespace` values 
   per module, overriding the default value. By default, when managed mode is enabled, 
   `csharp_namespace` is set to the package name with each package sub-name capitalized.
+- Promote `buf convert` to stable, keep `buf beta convert` aliased in the beta command.
 
 ## [v1.9.0] - 2022-10-19
 
