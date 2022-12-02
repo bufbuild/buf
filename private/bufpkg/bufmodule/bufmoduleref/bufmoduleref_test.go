@@ -34,12 +34,12 @@ func TestPutDependencyModulePinsToBucket(t *testing.T) {
 	require.NoError(t, err)
 	nullDigest, err := digester.Digest(&bytes.Buffer{})
 	require.NoError(t, err)
-	const header = buflock.Header + "version: v1\n"
+	const lockV1Header = buflock.Header + "version: v1\n"
 	testPutDependencyModulePinsToBucket(
 		t,
 		"no pins",
 		[]ModulePin{},
-		header,
+		lockV1Header,
 	)
 	testPutDependencyModulePinsToBucket(
 		t,
@@ -47,7 +47,7 @@ func TestPutDependencyModulePinsToBucket(t *testing.T) {
 		[]ModulePin{
 			pin(t, "repository"),
 		},
-		header+deps(
+		lockV1Header+deps(
 			t,
 			buflock.ExternalConfigDependencyV1{
 				Remote:     "remote",
@@ -65,7 +65,7 @@ func TestPutDependencyModulePinsToBucket(t *testing.T) {
 			pin(t, "repo-a"),
 			pin(t, "repo-b"),
 		},
-		header+deps(
+		lockV1Header+deps(
 			t,
 			buflock.ExternalConfigDependencyV1{
 				Remote:     "remote",
