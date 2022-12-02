@@ -14,12 +14,10 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: setup-go
-        if: success()
         uses: actions/setup-go@v3 # this contains a fix for Windows file extraction
         with:
           go-version: 1.19.3
       - name: cache
-        if: success()
         uses: actions/cache@v3
         with:
           path: |
@@ -31,5 +29,4 @@ jobs:
             ${{ runner.os }}-buf-windows-
       - name: test
         shell: bash
-        if: success()
         run: ./windows/test.bash
