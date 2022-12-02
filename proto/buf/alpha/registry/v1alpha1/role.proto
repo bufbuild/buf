@@ -54,6 +54,7 @@ enum TemplateRole {
 
 // The roles that users can have for a Plugin.
 enum PluginRole {
+  option deprecated = true;
   PLUGIN_ROLE_UNSPECIFIED = 0;
   PLUGIN_ROLE_OWNER = 1;
   PLUGIN_ROLE_ADMIN = 2;

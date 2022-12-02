@@ -48,7 +48,7 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
-  RESOURCE_TYPE_PLUGIN = 7;
+  RESOURCE_TYPE_PLUGIN = 7 [deprecated = true];
 }
 
 // Resource is the affected resource by the audited event.
@@ -76,8 +76,8 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED = 10;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
-  EVENT_TYPE_PLUGIN_CREATED = 13;
-  EVENT_TYPE_PLUGIN_DELETED = 14;
+  EVENT_TYPE_PLUGIN_CREATED = 13 [deprecated = true];
+  EVENT_TYPE_PLUGIN_DELETED = 14 [deprecated = true];
   EVENT_TYPE_USER_CREATED = 15;
   EVENT_TYPE_USER_DELETED = 16;
   EVENT_TYPE_USER_DEACTIVATED = 17;
@@ -125,8 +125,8 @@ message Event {
     PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 16;
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
-    PayloadPluginCreated plugin_created = 19;
-    PayloadPluginDeleted plugin_deleted = 20;
+    PayloadPluginCreated plugin_created = 19 [deprecated = true];
+    PayloadPluginDeleted plugin_deleted = 20 [deprecated = true];
     PayloadUserCreated user_created = 21;
     PayloadUserDeactivated user_deactivated = 22;
     PayloadUserDeleted user_deleted = 23;
@@ -254,6 +254,7 @@ message PayloadRepositoryVisibilityChanged {
 }
 
 message PayloadPluginCreated {
+  option deprecated = true;
   // owner_id is the id of the owner of the plugin.
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
@@ -263,6 +264,7 @@ message PayloadPluginCreated {
 }
 
 message PayloadPluginDeleted {
+  option deprecated = true;
   // owner_id is the id of the owner of the plugin.
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.

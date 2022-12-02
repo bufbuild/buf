@@ -46,6 +46,8 @@ type DisplayServiceClient interface {
 	// DisplayRepositoryElements returns which repository elements should be displayed to the user.
 	DisplayRepositoryElements(context.Context, *connect_go.Request[v1alpha1.DisplayRepositoryElementsRequest]) (*connect_go.Response[v1alpha1.DisplayRepositoryElementsResponse], error)
 	// DisplayPluginElements returns which plugin elements should be displayed to the user.
+	//
+	// Deprecated: do not use.
 	DisplayPluginElements(context.Context, *connect_go.Request[v1alpha1.DisplayPluginElementsRequest]) (*connect_go.Response[v1alpha1.DisplayPluginElementsResponse], error)
 	// DisplayTemplateElements returns which template elements should be displayed to the user.
 	//
@@ -63,9 +65,13 @@ type DisplayServiceClient interface {
 	ListManageableUserRepositoryRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserRepositoryRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserRepositoryRolesResponse], error)
 	// ListManageablePluginRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the plugin.
+	//
+	// Deprecated: do not use.
 	ListManageablePluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageablePluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageablePluginRolesResponse], error)
 	// ListManageableUserPluginRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the plugin.
+	//
+	// Deprecated: do not use.
 	ListManageableUserPluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserPluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserPluginRolesResponse], error)
 	// ListManageableTemplateRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the template.
@@ -181,6 +187,8 @@ func (c *displayServiceClient) DisplayRepositoryElements(ctx context.Context, re
 }
 
 // DisplayPluginElements calls buf.alpha.registry.v1alpha1.DisplayService.DisplayPluginElements.
+//
+// Deprecated: do not use.
 func (c *displayServiceClient) DisplayPluginElements(ctx context.Context, req *connect_go.Request[v1alpha1.DisplayPluginElementsRequest]) (*connect_go.Response[v1alpha1.DisplayPluginElementsResponse], error) {
 	return c.displayPluginElements.CallUnary(ctx, req)
 }
@@ -216,12 +224,16 @@ func (c *displayServiceClient) ListManageableUserRepositoryRoles(ctx context.Con
 
 // ListManageablePluginRoles calls
 // buf.alpha.registry.v1alpha1.DisplayService.ListManageablePluginRoles.
+//
+// Deprecated: do not use.
 func (c *displayServiceClient) ListManageablePluginRoles(ctx context.Context, req *connect_go.Request[v1alpha1.ListManageablePluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageablePluginRolesResponse], error) {
 	return c.listManageablePluginRoles.CallUnary(ctx, req)
 }
 
 // ListManageableUserPluginRoles calls
 // buf.alpha.registry.v1alpha1.DisplayService.ListManageableUserPluginRoles.
+//
+// Deprecated: do not use.
 func (c *displayServiceClient) ListManageableUserPluginRoles(ctx context.Context, req *connect_go.Request[v1alpha1.ListManageableUserPluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserPluginRolesResponse], error) {
 	return c.listManageableUserPluginRoles.CallUnary(ctx, req)
 }
@@ -250,6 +262,8 @@ type DisplayServiceHandler interface {
 	// DisplayRepositoryElements returns which repository elements should be displayed to the user.
 	DisplayRepositoryElements(context.Context, *connect_go.Request[v1alpha1.DisplayRepositoryElementsRequest]) (*connect_go.Response[v1alpha1.DisplayRepositoryElementsResponse], error)
 	// DisplayPluginElements returns which plugin elements should be displayed to the user.
+	//
+	// Deprecated: do not use.
 	DisplayPluginElements(context.Context, *connect_go.Request[v1alpha1.DisplayPluginElementsRequest]) (*connect_go.Response[v1alpha1.DisplayPluginElementsResponse], error)
 	// DisplayTemplateElements returns which template elements should be displayed to the user.
 	//
@@ -267,9 +281,13 @@ type DisplayServiceHandler interface {
 	ListManageableUserRepositoryRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserRepositoryRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserRepositoryRolesResponse], error)
 	// ListManageablePluginRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the plugin.
+	//
+	// Deprecated: do not use.
 	ListManageablePluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageablePluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageablePluginRolesResponse], error)
 	// ListManageableUserPluginRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the plugin.
+	//
+	// Deprecated: do not use.
 	ListManageableUserPluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserPluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserPluginRolesResponse], error)
 	// ListManageableTemplateRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the template.

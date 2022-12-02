@@ -51,9 +51,13 @@ type AuthzServiceClient interface {
 	// to see organization settings.
 	UserCanSeeOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.UserCanSeeOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.UserCanSeeOrganizationSettingsResponse], error)
 	// UserCanReadPlugin returns whether the user has read access to the specified plugin.
+	//
+	// Deprecated: do not use.
 	UserCanReadPlugin(context.Context, *connect_go.Request[v1alpha1.UserCanReadPluginRequest]) (*connect_go.Response[v1alpha1.UserCanReadPluginResponse], error)
 	// UserCanCreatePluginVersion returns whether the user is authorized
 	// to create a plugin version under the specified plugin.
+	//
+	// Deprecated: do not use.
 	UserCanCreatePluginVersion(context.Context, *connect_go.Request[v1alpha1.UserCanCreatePluginVersionRequest]) (*connect_go.Response[v1alpha1.UserCanCreatePluginVersionResponse], error)
 	// UserCanCreateTemplateVersion returns whether the user is authorized
 	// to create a template version under the specified template.
@@ -62,6 +66,8 @@ type AuthzServiceClient interface {
 	UserCanCreateTemplateVersion(context.Context, *connect_go.Request[v1alpha1.UserCanCreateTemplateVersionRequest]) (*connect_go.Response[v1alpha1.UserCanCreateTemplateVersionResponse], error)
 	// UserCanCreateOrganizationPlugin returns whether the user is authorized to create
 	// a plugin in an organization.
+	//
+	// Deprecated: do not use.
 	UserCanCreateOrganizationPlugin(context.Context, *connect_go.Request[v1alpha1.UserCanCreateOrganizationPluginRequest]) (*connect_go.Response[v1alpha1.UserCanCreateOrganizationPluginResponse], error)
 	// UserCanCreateOrganizationPlugin returns whether the user is authorized to create
 	// a template in an organization.
@@ -100,6 +106,8 @@ type AuthzServiceClient interface {
 	UserCanDeleteTemplate(context.Context, *connect_go.Request[v1alpha1.UserCanDeleteTemplateRequest]) (*connect_go.Response[v1alpha1.UserCanDeleteTemplateResponse], error)
 	// UserCanDeletePlugin returns whether the user is authorized
 	// to delete a plugin.
+	//
+	// Deprecated: do not use.
 	UserCanDeletePlugin(context.Context, *connect_go.Request[v1alpha1.UserCanDeletePluginRequest]) (*connect_go.Response[v1alpha1.UserCanDeletePluginResponse], error)
 	// UserCanDeleteUser returns whether the user is authorized
 	// to delete a user.
@@ -112,6 +120,8 @@ type AuthzServiceClient interface {
 	UserCanManageRepositoryContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error)
 	// UserCanManagePluginContributors returns whether the user is authorized to manage
 	// any contributors to the plugin and the list of roles they can manage.
+	//
+	// Deprecated: do not use.
 	UserCanManagePluginContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManagePluginContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManagePluginContributorsResponse], error)
 	// UserCanManageTemplateContributors returns whether the user is authorized to manage
 	// any contributors to the template and the list of roles they can manage.
@@ -288,12 +298,16 @@ func (c *authzServiceClient) UserCanSeeOrganizationSettings(ctx context.Context,
 }
 
 // UserCanReadPlugin calls buf.alpha.registry.v1alpha1.AuthzService.UserCanReadPlugin.
+//
+// Deprecated: do not use.
 func (c *authzServiceClient) UserCanReadPlugin(ctx context.Context, req *connect_go.Request[v1alpha1.UserCanReadPluginRequest]) (*connect_go.Response[v1alpha1.UserCanReadPluginResponse], error) {
 	return c.userCanReadPlugin.CallUnary(ctx, req)
 }
 
 // UserCanCreatePluginVersion calls
 // buf.alpha.registry.v1alpha1.AuthzService.UserCanCreatePluginVersion.
+//
+// Deprecated: do not use.
 func (c *authzServiceClient) UserCanCreatePluginVersion(ctx context.Context, req *connect_go.Request[v1alpha1.UserCanCreatePluginVersionRequest]) (*connect_go.Response[v1alpha1.UserCanCreatePluginVersionResponse], error) {
 	return c.userCanCreatePluginVersion.CallUnary(ctx, req)
 }
@@ -308,6 +322,8 @@ func (c *authzServiceClient) UserCanCreateTemplateVersion(ctx context.Context, r
 
 // UserCanCreateOrganizationPlugin calls
 // buf.alpha.registry.v1alpha1.AuthzService.UserCanCreateOrganizationPlugin.
+//
+// Deprecated: do not use.
 func (c *authzServiceClient) UserCanCreateOrganizationPlugin(ctx context.Context, req *connect_go.Request[v1alpha1.UserCanCreateOrganizationPluginRequest]) (*connect_go.Response[v1alpha1.UserCanCreateOrganizationPluginResponse], error) {
 	return c.userCanCreateOrganizationPlugin.CallUnary(ctx, req)
 }
@@ -372,6 +388,8 @@ func (c *authzServiceClient) UserCanDeleteTemplate(ctx context.Context, req *con
 }
 
 // UserCanDeletePlugin calls buf.alpha.registry.v1alpha1.AuthzService.UserCanDeletePlugin.
+//
+// Deprecated: do not use.
 func (c *authzServiceClient) UserCanDeletePlugin(ctx context.Context, req *connect_go.Request[v1alpha1.UserCanDeletePluginRequest]) (*connect_go.Response[v1alpha1.UserCanDeletePluginResponse], error) {
 	return c.userCanDeletePlugin.CallUnary(ctx, req)
 }
@@ -395,6 +413,8 @@ func (c *authzServiceClient) UserCanManageRepositoryContributors(ctx context.Con
 
 // UserCanManagePluginContributors calls
 // buf.alpha.registry.v1alpha1.AuthzService.UserCanManagePluginContributors.
+//
+// Deprecated: do not use.
 func (c *authzServiceClient) UserCanManagePluginContributors(ctx context.Context, req *connect_go.Request[v1alpha1.UserCanManagePluginContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManagePluginContributorsResponse], error) {
 	return c.userCanManagePluginContributors.CallUnary(ctx, req)
 }
@@ -419,9 +439,13 @@ type AuthzServiceHandler interface {
 	// to see organization settings.
 	UserCanSeeOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.UserCanSeeOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.UserCanSeeOrganizationSettingsResponse], error)
 	// UserCanReadPlugin returns whether the user has read access to the specified plugin.
+	//
+	// Deprecated: do not use.
 	UserCanReadPlugin(context.Context, *connect_go.Request[v1alpha1.UserCanReadPluginRequest]) (*connect_go.Response[v1alpha1.UserCanReadPluginResponse], error)
 	// UserCanCreatePluginVersion returns whether the user is authorized
 	// to create a plugin version under the specified plugin.
+	//
+	// Deprecated: do not use.
 	UserCanCreatePluginVersion(context.Context, *connect_go.Request[v1alpha1.UserCanCreatePluginVersionRequest]) (*connect_go.Response[v1alpha1.UserCanCreatePluginVersionResponse], error)
 	// UserCanCreateTemplateVersion returns whether the user is authorized
 	// to create a template version under the specified template.
@@ -430,6 +454,8 @@ type AuthzServiceHandler interface {
 	UserCanCreateTemplateVersion(context.Context, *connect_go.Request[v1alpha1.UserCanCreateTemplateVersionRequest]) (*connect_go.Response[v1alpha1.UserCanCreateTemplateVersionResponse], error)
 	// UserCanCreateOrganizationPlugin returns whether the user is authorized to create
 	// a plugin in an organization.
+	//
+	// Deprecated: do not use.
 	UserCanCreateOrganizationPlugin(context.Context, *connect_go.Request[v1alpha1.UserCanCreateOrganizationPluginRequest]) (*connect_go.Response[v1alpha1.UserCanCreateOrganizationPluginResponse], error)
 	// UserCanCreateOrganizationPlugin returns whether the user is authorized to create
 	// a template in an organization.
@@ -468,6 +494,8 @@ type AuthzServiceHandler interface {
 	UserCanDeleteTemplate(context.Context, *connect_go.Request[v1alpha1.UserCanDeleteTemplateRequest]) (*connect_go.Response[v1alpha1.UserCanDeleteTemplateResponse], error)
 	// UserCanDeletePlugin returns whether the user is authorized
 	// to delete a plugin.
+	//
+	// Deprecated: do not use.
 	UserCanDeletePlugin(context.Context, *connect_go.Request[v1alpha1.UserCanDeletePluginRequest]) (*connect_go.Response[v1alpha1.UserCanDeletePluginResponse], error)
 	// UserCanDeleteUser returns whether the user is authorized
 	// to delete a user.
@@ -480,6 +508,8 @@ type AuthzServiceHandler interface {
 	UserCanManageRepositoryContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error)
 	// UserCanManagePluginContributors returns whether the user is authorized to manage
 	// any contributors to the plugin and the list of roles they can manage.
+	//
+	// Deprecated: do not use.
 	UserCanManagePluginContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManagePluginContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManagePluginContributorsResponse], error)
 	// UserCanManageTemplateContributors returns whether the user is authorized to manage
 	// any contributors to the template and the list of roles they can manage.
