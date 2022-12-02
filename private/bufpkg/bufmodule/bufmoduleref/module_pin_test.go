@@ -15,15 +15,22 @@
 package bufmoduleref
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewModulePin(t *testing.T) {
+	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	require.NoError(t, err)
+	nullDigest, err := digester.Digest(&bytes.Buffer{})
+	require.NoError(t, err)
 	testNewModulePin(t, "no digest", "", true)
-	testNewModulePin(t, "nominal digest", "shake256:11223344", false)
+	testNewModulePin(t, "nominal digest", nullDigest.String(), false)
 	testNewModulePin(t, "b1 digest", "b1-11223344", true)
 	testNewModulePin(t, "b3 digest", "b3-11223344", true)
 }

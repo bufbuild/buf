@@ -18,6 +18,7 @@ import (
 	"time"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/prototime"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -68,7 +69,7 @@ func newModulePinForProto(
 	// don't hash all content. This prevents consumption of old digests
 	// processed as a valid pin.
 	digest := protoModulePin.Digest
-	if isBufDigest(digest) {
+	if !isValidDigest(digest) {
 		digest = ""
 	}
 	return &modulePin{
@@ -137,14 +138,9 @@ func (*modulePin) isModuleOwner()    {}
 func (*modulePin) isModuleIdentity() {}
 func (*modulePin) isModulePin()      {}
 
-// isBufDugest returns true when the digest string appears to be a (older) buf
-// digest. These digests look like "b[0-9]-".
-func isBufDigest(digest string) bool {
-	if len(digest) >= 3 {
-		prefix := digest[0:3]
-		if prefix == "b1-" || prefix == "b2-" || prefix == "b3-" {
-			return true
-		}
-	}
-	return false
+// isValidDigest returns true when the digest string appears to be a valid
+// digest. Older buf digests are not considered valid (b1/b3).
+func isValidDigest(digest string) bool {
+	_, err := manifest.NewDigestFromString(digest)
+	return err == nil
 }

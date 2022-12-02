@@ -15,6 +15,7 @@
 package bufapimodule
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
@@ -22,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,13 +44,17 @@ func (m *mockCommitServiceClient) GetRepositoryCommitByReference(
 }
 
 func TestGetModulePin(t *testing.T) {
+	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	require.NoError(t, err)
+	nullDigest, err := digester.Digest(&bytes.Buffer{})
+	require.NoError(t, err)
 	testGetModulePin(
 		t,
 		"nominal",
 		&registryv1alpha1.GetRepositoryCommitByReferenceResponse{
 			RepositoryCommit: &registryv1alpha1.RepositoryCommit{
 				Id:     "commitid",
-				Digest: "digest",
+				Digest: nullDigest.String(),
 				Name:   "commit",
 				Branch: "unsupported-feature",
 				Author: "John Doe",
@@ -97,8 +103,8 @@ func testGetModulePin(
 			assert.Equal(t, "owner", pin.Owner())
 			assert.Equal(t, "repository", pin.Repository())
 			assert.Equal(t, "", pin.Branch())
-			assert.Equal(t, "commit", pin.Commit())
-			assert.Equal(t, "digest", pin.Digest())
+			assert.Equal(t, resp.RepositoryCommit.Name, pin.Commit())
+			assert.Equal(t, resp.RepositoryCommit.Digest, pin.Digest())
 			assert.Equal(
 				t,
 				time.Date(1970, time.January, 1, 0, 0, 0, 0, time.UTC),

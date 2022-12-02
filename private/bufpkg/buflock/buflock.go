@@ -19,6 +19,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -86,7 +87,7 @@ type ExternalConfigDependencyV1 struct {
 func DependencyForExternalConfigDependencyV1(dep ExternalConfigDependencyV1) Dependency {
 	// Don't consume old buf digests.
 	digest := dep.Digest
-	if isBufDigest(digest) {
+	if !isValidDigest(digest) {
 		digest = ""
 	}
 	return Dependency{
@@ -152,14 +153,9 @@ type ExternalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }
 
-// isBufDugest returns true when the digest string appears to be a (older) buf
-// digest. These digests look like "b[0-9]-".
-func isBufDigest(digest string) bool {
-	if len(digest) >= 3 {
-		prefix := digest[0:3]
-		if prefix == "b1-" || prefix == "b2-" || prefix == "b3-" {
-			return true
-		}
-	}
-	return false
+// isValidDigest returns true when the digest string appears to be a valid
+// digest. Older buf digests are not considered valid (b1/b3).
+func isValidDigest(digest string) bool {
+	_, err := manifest.NewDigestFromString(digest)
+	return err == nil
 }

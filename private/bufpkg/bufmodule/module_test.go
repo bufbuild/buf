@@ -15,11 +15,14 @@
 package bufmodule
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -59,6 +62,10 @@ func testNewModuleForBucket(
 }
 
 func TestNewModuleForBucket(t *testing.T) {
+	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	require.NoError(t, err)
+	nullDigest, err := digester.Digest(&bytes.Buffer{})
+	require.NoError(t, err)
 	testNewModuleForBucket(t,
 		"an empty bucket is a valid parse",
 		map[string][]byte{},
@@ -75,22 +82,22 @@ func TestNewModuleForBucket(t *testing.T) {
 		"baz",
 		"",
 		"62f35d8aed1149c291d606d958a7ce32",
-		"shake512:11223344",
+		nullDigest.String(),
 		time.Time{},
 	)
 	require.NoError(t, err)
 	testNewModuleForBucket(t,
 		"pins are consumed",
 		map[string][]byte{
-			"buf.lock": []byte(`
+			"buf.lock": []byte(fmt.Sprintf(`
 version: v1
 deps:
   - remote: foo
     owner: bar
     repository: baz
     commit: 62f35d8aed1149c291d606d958a7ce32
-    digest: shake512:11223344
-`),
+    digest: %s
+`, nullDigest)),
 		},
 		false,
 		false,
