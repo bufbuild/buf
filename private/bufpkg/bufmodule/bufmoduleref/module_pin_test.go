@@ -39,7 +39,7 @@ func testNewModulePin(
 	t *testing.T,
 	desc string,
 	digest string,
-	zeroDigest bool,
+	expectEmptyDigest bool,
 ) {
 	t.Helper()
 	t.Run(desc, func(t *testing.T) {
@@ -54,7 +54,7 @@ func testNewModulePin(
 			time.Now(),
 		)
 		assert.NoError(t, err)
-		if zeroDigest {
+		if expectEmptyDigest {
 			assert.Equal(t, "", pin.Digest())
 		} else {
 			assert.Equal(t, digest, pin.Digest())
