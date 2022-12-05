@@ -442,6 +442,7 @@ type ExternalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }
 
+// ExternalTypesConfigV1 is an external types configuration.
 type ExternalTypesConfigV1 struct {
 	Include []string `json:"include,omitempty" yaml:"include"`
 }
