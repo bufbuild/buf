@@ -193,7 +193,7 @@ type flags struct {
 	IncludeWKT      bool
 	ExcludePaths    []string
 	DisableSymlinks bool
-	Types           []string
+	IncludeTypes    []string
 	// special
 	InputHashtag string
 }
@@ -251,8 +251,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		`The file or data to use for configuration.`,
 	)
 	flagSet.StringSliceVar(
-		&f.Types,
-		"types",
+		&f.IncludeTypes,
+		"include-types",
 		nil,
 		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types.",
 	)
@@ -356,10 +356,10 @@ func run(
 			bufgen.GenerateWithIncludeWellKnownTypes(),
 		)
 	}
-	types := genConfig.TypesConfig
-	if len(flags.Types) > 0 {
+	types := genConfig.TypesConfig.Include
+	if len(flags.IncludeTypes) > 0 {
 		// override buf.gen.yaml with flag value
-		types = flags.Types
+		types = flags.IncludeTypes
 	}
 	if len(types) > 0 {
 		image, err = bufimageutil.ImageFilteredByTypes(image, types...)

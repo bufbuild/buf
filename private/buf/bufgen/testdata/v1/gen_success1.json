@@ -22,7 +22,9 @@
       "strategy": "all"
     }
   ],
-  "types": [
-    "buf.alpha.lint.v1.IDPaths"
-  ]
+  "types": {
+    "include":[
+      "buf.alpha.lint.v1.IDPaths"
+    ]
+  }
 }

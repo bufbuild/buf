@@ -16,4 +16,5 @@ plugins:
     path: /path/to/foo
     strategy: all
 types:
-  - "buf.alpha.lint.v1.IDPaths"
+  include:
+    - "buf.alpha.lint.v1.IDPaths"
