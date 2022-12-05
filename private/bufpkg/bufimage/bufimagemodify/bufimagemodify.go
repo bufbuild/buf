@@ -262,9 +262,17 @@ func CsharpNamespace(
 func PhpNamespace(
 	logger *zap.Logger,
 	sweeper Sweeper,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) Modifier {
-	return phpNamespace(logger, sweeper, overrides)
+	return phpNamespace(
+		logger,
+		sweeper,
+		except,
+		moduleOverrides,
+		overrides,
+	)
 }
 
 // PhpMetadataNamespace returns a Modifier that sets the php_metadata_namespace file option

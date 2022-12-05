@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -135,18 +136,44 @@ var (
 func phpNamespace(
 	logger *zap.Logger,
 	sweeper Sweeper,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) Modifier {
+	// Convert the bufmoduleref.ModuleIdentity types into
+	// strings so that they're comparable.
+	exceptModuleIdentityStrings := make(map[string]struct{}, len(except))
+	for _, moduleIdentity := range except {
+		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
+	}
+	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
+	for moduleIdentity, csharpNamespace := range moduleOverrides {
+		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = csharpNamespace
+	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				phpNamespaceValue := phpNamespaceValue(imageFile)
+				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+					moduleIdentityString := moduleIdentity.IdentityString()
+					if moduleNamespaceOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
+						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+						phpNamespaceValue = moduleNamespaceOverride
+					}
+				}
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					phpNamespaceValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
-				if err := phpNamespaceForFile(ctx, sweeper, imageFile, phpNamespaceValue); err != nil {
+				if err := phpNamespaceForFile(
+					ctx,
+					sweeper,
+					imageFile,
+					phpNamespaceValue,
+					exceptModuleIdentityStrings,
+				); err != nil {
 					return err
 				}
 			}
@@ -165,12 +192,18 @@ func phpNamespaceForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	phpNamespaceValue string,
+	exceptModuleIdentityStrings map[string]struct{},
 ) error {
 	descriptor := imageFile.Proto()
 	if isWellKnownType(ctx, imageFile) || phpNamespaceValue == "" {
 		// This is a well-known type or we could not resolve a non-empty php_namespace
 		// value, so this is a no-op.
 		return nil
+	}
+	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+			return nil
+		}
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}

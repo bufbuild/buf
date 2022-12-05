@@ -219,6 +219,7 @@ type ManagedConfig struct {
 	JavaStringCheckUtf8   *bool
 	JavaPackagePrefix     *JavaPackagePrefixConfig
 	CsharpNameSpaceConfig *CsharpNameSpaceConfig
+	PhpNamespaceConfig    *PhpNamespaceConfig
 	OptimizeFor           *descriptorpb.FileOptions_OptimizeMode
 	GoPackagePrefixConfig *GoPackagePrefixConfig
 	Override              map[string]map[string]string
@@ -244,6 +245,13 @@ type GoPackagePrefixConfig struct {
 type CsharpNameSpaceConfig struct {
 	Except []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> csharp_namespace prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// PhpNamespaceConfig is the csharp_namespace configuration.
+type PhpNamespaceConfig struct {
+	Except []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> php_namespace prefix.
 	Override map[bufmoduleref.ModuleIdentity]string
 }
 
@@ -315,6 +323,7 @@ type ExternalManagedConfigV1 struct {
 	JavaMultipleFiles   *bool                             `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
 	JavaStringCheckUtf8 *bool                             `json:"java_string_check_utf8,omitempty" yaml:"java_string_check_utf8,omitempty"`
 	JavaPackagePrefix   ExternalJavaPackagePrefixConfigV1 `json:"java_package_prefix,omitempty" yaml:"java_package_prefix,omitempty"`
+	PhpNamespace        ExternalPhpNamespaceConfigV1      `json:"php_namespace,omitempty" yaml:"php_namespace,omitempty"`
 	CsharpNamespace     ExternalCsharpNamespaceConfigV1   `json:"csharp_namespace,omitempty" yaml:"csharp_namespace,omitempty"`
 	OptimizeFor         string                            `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 	GoPackagePrefix     ExternalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
@@ -400,6 +409,18 @@ type ExternalCsharpNamespaceConfigV1 struct {
 
 // IsEmpty returns true if the config is empty.
 func (e ExternalCsharpNamespaceConfigV1) IsEmpty() bool {
+	return len(e.Except) == 0 &&
+		len(e.Override) == 0
+}
+
+// ExternalPhpNamespaceConfigV1 is the external php_namespace configuration.
+type ExternalPhpNamespaceConfigV1 struct {
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// IsEmpty returns true if the config is empty.
+func (e ExternalPhpNamespaceConfigV1) IsEmpty() bool {
 	return len(e.Except) == 0 &&
 		len(e.Override) == 0
 }

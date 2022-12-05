@@ -419,7 +419,6 @@ func newModifier(
 	modifier := bufimagemodify.NewMultiModifier(
 		bufimagemodify.JavaOuterClassname(logger, sweeper, managedConfig.Override[bufimagemodify.JavaOuterClassNameID]),
 		bufimagemodify.ObjcClassPrefix(logger, sweeper, managedConfig.Override[bufimagemodify.ObjcClassPrefixID]),
-		bufimagemodify.PhpNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpNamespaceID]),
 		bufimagemodify.PhpMetadataNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
 		bufimagemodify.RubyPackage(logger, sweeper, managedConfig.Override[bufimagemodify.RubyPackageID]),
 	)
@@ -480,6 +479,25 @@ func newModifier(
 		}
 		modifier = bufimagemodify.Merge(modifier, javaStringCheckUtf8)
 	}
+	var (
+		phpNamespaceExcept   []bufmoduleref.ModuleIdentity
+		phpNamespaceOverride map[bufmoduleref.ModuleIdentity]string
+	)
+	if phpNamespaceConfig := managedConfig.PhpNamespaceConfig; phpNamespaceConfig != nil {
+		phpNamespaceExcept = phpNamespaceConfig.Except
+		phpNamespaceOverride = phpNamespaceConfig.Override
+	}
+	phpNamespaceModifier := bufimagemodify.PhpNamespace(
+		logger,
+		sweeper,
+		phpNamespaceExcept,
+		phpNamespaceOverride,
+		managedConfig.Override[bufimagemodify.PhpNamespaceID],
+	)
+	modifier = bufimagemodify.Merge(
+		modifier,
+		phpNamespaceModifier,
+	)
 	var (
 		csharpNamespaceExcept   []bufmoduleref.ModuleIdentity
 		csharpNamespaceOverride map[bufmoduleref.ModuleIdentity]string

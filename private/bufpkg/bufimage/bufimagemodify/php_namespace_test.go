@@ -33,7 +33,7 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil)
+		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, nil)
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -50,7 +50,7 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(zap.NewNop(), sweeper, nil)
+		modifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -65,7 +65,7 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
+		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, map[string]string{"a.proto": "override"})
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -84,7 +84,7 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
+		modifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, map[string]string{"a.proto": "override"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -105,7 +105,7 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil)
+		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, nil)
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -127,7 +127,7 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(zap.NewNop(), sweeper, nil)
+		modifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -147,7 +147,7 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
+		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, map[string]string{"a.proto": "override"})
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -173,7 +173,7 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
+		modifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, map[string]string{"a.proto": "override"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -208,7 +208,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil)
+		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, nil)
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -231,7 +231,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(zap.NewNop(), sweeper, nil)
+		modifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -252,7 +252,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"})
+		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, map[string]string{"override.proto": "override"})
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -279,7 +279,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"})
+		modifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, map[string]string{"override.proto": "override"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -308,7 +308,7 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil)
+		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, nil)
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -336,7 +336,7 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(zap.NewNop(), sweeper, nil)
+		modifier := PhpNamespace(zap.NewNop(), sweeper, nil, nil, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -356,4 +356,8 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 			)
 		}
 	})
+}
+
+func TestPhpNamespaceExcept(t *testing.T) {
+
 }
