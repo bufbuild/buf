@@ -32,6 +32,7 @@ message RecommendedRepository {
 // RecommendedTemplate is the information needed to recommend a template and link
 // to its owner page.
 message RecommendedTemplate {
+  option deprecated = true;
   string owner = 1;
   string name = 2;
   string description = 3;
@@ -49,7 +50,9 @@ service RecommendationService {
   // RecommendedRepositories returns a list of recommended repositories.
   rpc RecommendedRepositories(RecommendedRepositoriesRequest) returns (RecommendedRepositoriesResponse);
   // RecommendedTemplates returns a list of recommended templates.
-  rpc RecommendedTemplates(RecommendedTemplatesRequest) returns (RecommendedTemplatesResponse);
+  rpc RecommendedTemplates(RecommendedTemplatesRequest) returns (RecommendedTemplatesResponse) {
+    option deprecated = true;
+  }
   // ListRecommendedResources returns a list of recommended resources.
   rpc ListRecommendedResources(ListRecommendedResourcesRequest) returns (ListRecommendedResourcesResponse);
   // SetRecommendedResources set the list of recommendated resources in the server.
@@ -62,9 +65,12 @@ message RecommendedRepositoriesResponse {
   repeated RecommendedRepository repositories = 1;
 }
 
-message RecommendedTemplatesRequest {}
+message RecommendedTemplatesRequest {
+  option deprecated = true;
+}
 
 message RecommendedTemplatesResponse {
+  option deprecated = true;
   repeated RecommendedTemplate templates = 1;
 }
 

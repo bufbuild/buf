@@ -47,9 +47,9 @@ message ForceDeleteUserResponse {
   // The deleted repositories.
   repeated Repository repositories = 3;
   // The deleted plugins.
-  repeated Plugin plugins = 4;
+  repeated Plugin plugins = 4 [deprecated = true];
   // The deleted templates.
-  repeated Template templates = 5;
+  repeated Template templates = 5 [deprecated = true];
 }
 
 message UpdateUserVerificationStatusRequest {
