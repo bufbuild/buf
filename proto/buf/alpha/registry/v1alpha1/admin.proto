@@ -27,10 +27,12 @@ service AdminService {
   // ForceDeleteUser forces to delete a user. Resources and organizations that are
   // solely owned by the user will also be deleted.
   rpc ForceDeleteUser(ForceDeleteUserRequest) returns (ForceDeleteUserResponse);
-  // Update a user's verification status
+  // Update a user's verification status.
   rpc UpdateUserVerificationStatus(UpdateUserVerificationStatusRequest) returns (UpdateUserVerificationStatusResponse);
-  // Update a organization's verification
+  // Update a organization's verification.
   rpc UpdateOrganizationVerificationStatus(UpdateOrganizationVerificationStatusRequest) returns (UpdateOrganizationVerificationStatusResponse);
+  // Create a new machine user on the server.
+  rpc CreateMachineUser(CreateMachineUserRequest) returns (CreateMachineUserResponse);
 }
 
 message ForceDeleteUserRequest {
@@ -45,9 +47,9 @@ message ForceDeleteUserResponse {
   // The deleted repositories.
   repeated Repository repositories = 3;
   // The deleted plugins.
-  repeated Plugin plugins = 4;
+  repeated Plugin plugins = 4 [deprecated = true];
   // The deleted templates.
-  repeated Template templates = 5;
+  repeated Template templates = 5 [deprecated = true];
 }
 
 message UpdateUserVerificationStatusRequest {
@@ -63,3 +65,11 @@ message UpdateOrganizationVerificationStatusRequest {
 }
 
 message UpdateOrganizationVerificationStatusResponse {}
+
+message CreateMachineUserRequest {
+  string username = 1;
+}
+
+message CreateMachineUserResponse {
+  User user = 1;
+}

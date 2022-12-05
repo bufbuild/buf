@@ -45,6 +45,8 @@ type RecommendationServiceClient interface {
 	// RecommendedRepositories returns a list of recommended repositories.
 	RecommendedRepositories(context.Context, *connect_go.Request[v1alpha1.RecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.RecommendedRepositoriesResponse], error)
 	// RecommendedTemplates returns a list of recommended templates.
+	//
+	// Deprecated: do not use.
 	RecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.RecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.RecommendedTemplatesResponse], error)
 	// ListRecommendedResources returns a list of recommended resources.
 	ListRecommendedResources(context.Context, *connect_go.Request[v1alpha1.ListRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedResourcesResponse], error)
@@ -102,6 +104,8 @@ func (c *recommendationServiceClient) RecommendedRepositories(ctx context.Contex
 
 // RecommendedTemplates calls
 // buf.alpha.registry.v1alpha1.RecommendationService.RecommendedTemplates.
+//
+// Deprecated: do not use.
 func (c *recommendationServiceClient) RecommendedTemplates(ctx context.Context, req *connect_go.Request[v1alpha1.RecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.RecommendedTemplatesResponse], error) {
 	return c.recommendedTemplates.CallUnary(ctx, req)
 }
@@ -124,6 +128,8 @@ type RecommendationServiceHandler interface {
 	// RecommendedRepositories returns a list of recommended repositories.
 	RecommendedRepositories(context.Context, *connect_go.Request[v1alpha1.RecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.RecommendedRepositoriesResponse], error)
 	// RecommendedTemplates returns a list of recommended templates.
+	//
+	// Deprecated: do not use.
 	RecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.RecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.RecommendedTemplatesResponse], error)
 	// ListRecommendedResources returns a list of recommended resources.
 	ListRecommendedResources(context.Context, *connect_go.Request[v1alpha1.ListRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedResourcesResponse], error)
