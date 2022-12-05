@@ -356,15 +356,18 @@ func run(
 			bufgen.GenerateWithIncludeWellKnownTypes(),
 		)
 	}
-	types := genConfig.TypesConfig.Include
-	if len(flags.IncludeTypes) > 0 {
-		// override buf.gen.yaml with flag value
-		types = flags.IncludeTypes
-	}
-	if len(types) > 0 {
-		image, err = bufimageutil.ImageFilteredByTypes(image, types...)
-		if err != nil {
-			return err
+	typesConfig := genConfig.TypesConfig
+	if typesConfig != nil {
+		types := typesConfig.Include
+		if len(flags.IncludeTypes) > 0 {
+			// override buf.gen.yaml with flag value
+			types = flags.IncludeTypes
+		}
+		if len(types) > 0 {
+			image, err = bufimageutil.ImageFilteredByTypes(image, types...)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return bufgen.NewGenerator(
