@@ -190,8 +190,8 @@ message GetOrganizationSettingsRequest {
 
 message GetOrganizationSettingsResponse {
   RepositoryRole repository_base_role = 1;
-  PluginRole plugin_base_role = 2;
-  TemplateRole template_base_role = 3;
+  PluginRole plugin_base_role = 2 [deprecated = true];
+  TemplateRole template_base_role = 3 [deprecated = true];
   // The number of members in the organization.
   uint32 members_count = 4;
 }
@@ -202,9 +202,9 @@ message UpdateOrganizationSettingsRequest {
   // optional, no update to this base role will be made if this is unspecified.
   RepositoryRole repository_base_role = 2;
   // optional, no update to this base role will be made if this is unspecified.
-  PluginRole plugin_base_role = 3;
+  PluginRole plugin_base_role = 3 [deprecated = true];
   // optional, no update to this base role will be made if this is unspecified.
-  TemplateRole template_base_role = 4;
+  TemplateRole template_base_role = 4 [deprecated = true];
   // optional, update to description will only be made when this is present
   optional string description = 5;
   // optional, update to url will only be made when this is present

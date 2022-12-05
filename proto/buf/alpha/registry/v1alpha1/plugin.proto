@@ -21,6 +21,8 @@ import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
 import "google/protobuf/timestamp.proto";
 
+option deprecated = true;
+
 // Plugin represents a protoc plugin, such as protoc-gen-go.
 message Plugin {
   // The ID of the plugin, which uniquely identifies the plugin.
