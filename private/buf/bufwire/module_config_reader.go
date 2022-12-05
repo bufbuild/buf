@@ -657,7 +657,7 @@ func (m *moduleConfigReader) getModuleConfig(
 		}
 		buildOptions = append(buildOptions, bufmodulebuild.WithExcludePaths(bucketRelPaths))
 	}
-	module, err := m.moduleBucketBuilder.BuildForBucket(
+	module, err := bufmodulebuild.BuildForBucket(
 		ctx,
 		mappedReadBucket,
 		moduleConfig.Build,

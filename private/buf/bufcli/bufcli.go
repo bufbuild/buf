@@ -388,7 +388,7 @@ func NewWireImageConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
 	), nil
@@ -414,7 +414,7 @@ func NewWireModuleConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
 
@@ -436,7 +436,7 @@ func NewWireModuleConfigReaderForModuleReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
 
@@ -460,7 +460,7 @@ func NewWireFileLister(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
 	), nil
@@ -751,20 +751,6 @@ func BucketAndConfigForSource(
 	return sourceBucket, sourceConfig, nil
 }
 
-// ReadModule gets a module from a source bucket and its config.
-func ReadModule(
-	ctx context.Context,
-	logger *zap.Logger,
-	sourceBucket storage.ReadBucket,
-	sourceConfig *bufconfig.Config,
-) (bufmodule.Module, error) {
-	return bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
-		ctx,
-		sourceBucket,
-		sourceConfig.Build,
-	)
-}
-
 // NewImageForSource resolves a single bufimage.Image from the user-provided source with the build options.
 func NewImageForSource(
 	ctx context.Context,
@@ -837,7 +823,7 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType s
 	if err != nil {
 		return nil, err
 	}
-	module, err := bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
+	module, err := bufmodulebuild.BuildForBucket(
 		ctx,
 		datawkt.ReadBucket,
 		sourceConfig.Build,

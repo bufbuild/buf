@@ -737,7 +737,7 @@ func testBreaking(
 	previousConfig := testGetConfig(t, previousReadWriteBucket)
 	config := testGetConfig(t, readWriteBucket)
 
-	previousModule, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	previousModule, err := bufmodulebuild.BuildForBucket(
 		context.Background(),
 		previousReadWriteBucket,
 		previousConfig.Build,
@@ -760,7 +760,7 @@ func testBreaking(
 	require.Empty(t, previousFileAnnotations)
 	previousImage = bufimage.ImageWithoutImports(previousImage)
 
-	module, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	module, err := bufmodulebuild.BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config.Build,

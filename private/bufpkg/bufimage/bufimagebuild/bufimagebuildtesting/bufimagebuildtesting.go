@@ -115,7 +115,7 @@ func fuzzGetModuleFileSet(ctx context.Context, dirPath string) (bufmodule.Module
 	if err != nil {
 		return nil, err
 	}
-	module, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	module, err := bufmodulebuild.BuildForBucket(
 		ctx,
 		readWriteBucket,
 		config,
