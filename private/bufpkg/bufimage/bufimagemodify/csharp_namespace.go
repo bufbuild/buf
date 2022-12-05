@@ -79,7 +79,7 @@ func csharpNamespace(
 			}
 			for moduleIdentityString := range overrideModuleIdentityStrings {
 				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
-					logger.Sugar().Warnf("csharp_namespace_prefix override for %q was unused", moduleIdentityString)
+					logger.Sugar().Warnf("csharp_namespace override for %q was unused", moduleIdentityString)
 				}
 			}
 			for overrideFile := range overrides {

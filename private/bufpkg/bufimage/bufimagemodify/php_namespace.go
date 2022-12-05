@@ -177,6 +177,11 @@ func phpNamespace(
 					return err
 				}
 			}
+			for moduleIdentityString := range overrideModuleIdentityStrings {
+				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
+					logger.Sugar().Warnf("php_namespace override for %q was unused", moduleIdentityString)
+				}
+			}
 			for overrideFile := range overrides {
 				if _, ok := seenOverrideFiles[overrideFile]; !ok {
 					logger.Sugar().Warnf("%s override for %q was unused", PhpNamespaceID, overrideFile)

@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -359,5 +360,231 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 }
 
 func TestPhpNamespaceExcept(t *testing.T) {
+	t.Parallel()
+	dirPath := filepath.Join("testdata", "phpoptions", "single")
+	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+		testRemote,
+		testRepositoryOwner,
+		testRepositoryName,
+	)
+	require.NoError(t, err)
+	t.Run("with SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
+		sweeper := NewFileOptionSweeper()
+		PhpNamespaceModifier := PhpNamespace(
+			zap.NewNop(),
+			sweeper,
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			nil,
+			nil,
+		)
+		modifier := NewMultiModifier(PhpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, testGetImage(t, dirPath, true), image)
+		// Still not empty, because the module is in except
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+	})
+	t.Run("without SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		phpNamespaceModifier := PhpNamespace(
+			zap.NewNop(),
+			sweeper,
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			nil,
+			nil,
+		)
+		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, testGetImage(t, dirPath, false), image)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+	})
+	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+
+		sweeper := NewFileOptionSweeper()
+		PhpNamespaceModifier := PhpNamespace(
+			zap.NewNop(),
+			sweeper,
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			nil,
+			map[string]string{"override.proto": "override"},
+		)
+		modifier := NewMultiModifier(PhpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		// not modified even though a file has override, because the module is in except
+		assert.Equal(t, testGetImage(t, dirPath, true), image)
+		// Still not empty, because the module is in except
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+	})
+	t.Run("without SourceCodeInfo and per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		PhpNamespaceModifier := PhpNamespace(
+			zap.NewNop(),
+			sweeper,
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			nil,
+			map[string]string{"override.proto": "override"},
+		)
+		modifier := NewMultiModifier(PhpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, testGetImage(t, dirPath, false), image)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+	})
+}
+
+func TestPhpNamespaceOverride(t *testing.T) {
+	t.Parallel()
+	dirPath := filepath.Join("testdata", "phpoptions", "single")
+	overridePhpNamespace := "MODULE"
+	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+		testRemote,
+		testRepositoryOwner,
+		testRepositoryName,
+	)
+	require.NoError(t, err)
+	t.Run("with SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+
+		sweeper := NewFileOptionSweeper()
+		phpNamespaceModifier := PhpNamespace(
+			zap.NewNop(),
+			sweeper,
+			nil,
+			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overridePhpNamespace},
+			nil,
+		)
+		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t, overridePhpNamespace, descriptor.GetOptions().GetPhpNamespace())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
+	})
+	t.Run("without SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		PhpNamespaceModifier := PhpNamespace(
+			zap.NewNop(),
+			sweeper,
+			nil,
+			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overridePhpNamespace},
+			nil,
+		)
+		modifier := NewMultiModifier(PhpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t, overridePhpNamespace, descriptor.GetOptions().GetPhpNamespace())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+	})
+	t.Run("with SourceCodeInfo with per-file override", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+
+		sweeper := NewFileOptionSweeper()
+		phpNamespaceModifier := PhpNamespace(
+			zap.NewNop(),
+			sweeper,
+			nil,
+			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overridePhpNamespace},
+			map[string]string{"override.proto": "override"},
+		)
+		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			if imageFile.Path() == "override.proto" {
+				assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
+				continue
+			}
+			assert.Equal(t, overridePhpNamespace, descriptor.GetOptions().GetPhpNamespace())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
+	})
+	t.Run("without SourceCodeInfo and per-file override", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		phpNamespaceModifier := PhpNamespace(
+			zap.NewNop(),
+			sweeper,
+			nil,
+			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overridePhpNamespace},
+			map[string]string{"override.proto": "override"},
+		)
+		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			if imageFile.Path() == "override.proto" {
+				assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
+				continue
+			}
+			assert.Equal(t, overridePhpNamespace, descriptor.GetOptions().GetPhpNamespace())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+	})
 }
