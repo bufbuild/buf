@@ -14,7 +14,7 @@ require (
 	github.com/jhump/protoreflect v1.14.0
 	github.com/klauspost/compress v1.15.12
 	github.com/klauspost/pgzip v1.2.5
-	github.com/moby/buildkit v0.10.5
+	github.com/moby/buildkit v0.10.6
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/profile v1.7.0
