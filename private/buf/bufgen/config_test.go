@@ -169,6 +169,11 @@ func TestReadConfigV1(t *testing.T) {
 				bufimagemodify.JavaPackageID: {"a.proto": "override"},
 			},
 		},
+		TypesConfig: &TypesConfig{
+			Include: []string{
+				"buf.alpha.lint.v1.IDPaths",
+			},
+		},
 	}
 	successConfig2 := &Config{
 		ManagedConfig: &ManagedConfig{
