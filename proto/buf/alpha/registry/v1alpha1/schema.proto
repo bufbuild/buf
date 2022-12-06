@@ -43,28 +43,27 @@ message GetSchemaRequest {
   // the repo's "main" branch.
   string version = 3;
 
-  // Zero or more element names. The names may be type names (messages or enums),
-  // service names, or method names. All names must be fully-qualified. If any name
+  // Zero or more types names. The names may refer to messages, enums, services,
+  // methods, or extensions. All names must be fully-qualified. If any name
   // is unknown, the request will fail and no schema will be returned.
   //
-  // If no names are provided, the full schema for the module is returned. Otherwise,
-  // the resulting schema contains only the named elements and all of their
-  // dependencies. This is enough information for the caller to construct a dynamic
-  // message for any requested types (e.g. requested message types or request and
-  // response types for requested service and method names) or to dynamically
-  // invoke an RPC for any requested methods or services.
-  repeated string element_names = 4;
+  // If no names are provided, the full schema for the module is returned.
+  // Otherwise, the resulting schema contains only the named elements and all of
+  // their dependencies. This is enough information for the caller to construct
+  // a dynamic message for any requested message types or to dynamically invoke
+  // an RPC for any requested methods or services.
+  repeated string types = 4;
 
-  // If present, this is a commit ID that the client already has cached. So if
-  // the given module version resolves to this same commit, the server should
-  // not send back any descriptors since the client already has them.
+  // If present, this is a commit that the client already has cached. So if the
+  // given module version resolves to this same commit, the server should not
+  // send back any descriptors since the client already has them.
   //
   // This allows a client to efficiently poll for updates: after the initial RPC
   // to get a schema, the client can cache the descriptors and the resolved
-  // commit ID. It then includes that commit ID. in subsequent requests in this
-  // field, and the server will only reply with a schema (and new commit ID)
-  // if/when the resolved commit changes.
-  string if_not_commit_id = 5;
+  // commit. It then includes that commit in subsequent requests in this field,
+  // and the server will only reply with a schema (and new commit) if/when the
+  // resolved commit changes.
+  string if_not_commit = 5;
 
   // If true, the returned schema will not include extension definitions for custom
   // options that appear on schema elements. When filtering the schema based on the
@@ -90,12 +89,12 @@ message GetSchemaRequest {
 }
 
 message GetSchemaResponse {
-  // The resolved version of the schema. If the requested version was a commit ID, this
-  // value is the same as that. If the request included a reference to a tag or branch,
-  // this is the commit ID for that tag or latest commit for that branch. If the request
-  // did not include any version, this is the latest version for the main branch of the
-  // requested module.
-  string commit_id = 1;
+  // The resolved version of the schema. If the requested version was a commit,
+  // this value is the same as that. If the requested version referred to a tag
+  // or branch, this is the commit for that tag or latest commit for that
+  // branch. If the request did not include any version, this is the latest
+  // version for the module's main branch.
+  string commit = 1;
   // The schema, which is a set of file descriptors that include the requested elements
   // and their dependencies.
   google.protobuf.FileDescriptorSet schema_files = 2;
@@ -107,8 +106,8 @@ message ConvertMessageRequest {
   string owner = 1;
   // The name of the repo that contains the schema to retrieve.
   string repository = 2;
-  // Optional version of the repo. If unspecified, defaults to latest version on
-  // the repo's "main" branch.
+  // Optional version of the repo. This can be a tag or branch name or a commit.
+  // If unspecified, defaults to latest version on the repo's "main" branch.
   string version = 3;
 
   // The fully-qualified name of the message. Required.
@@ -165,12 +164,12 @@ message TextOutputOptions {
 }
 
 message ConvertMessageResponse {
-  // The resolved version of the schema. If the requested version was a commit ID, this
-  // value is the same as that. If the request included a reference to a tag or branch,
-  // this is the commit ID for that tag or latest commit for that branch. If the request
-  // did not include any version, this is the latest version for the main branch of the
-  // requested module.
-  string commit_id = 1;
+  // The resolved version of the schema. If the requested version was a commit,
+  // this value is the same as that. If the requested version referred to a tag
+  // or branch, this is the commit for that tag or latest commit for that
+  // branch. If the request did not include any version, this is the latest
+  // version for the module's main branch.
+  string commit = 1;
   // The reformatted data.
   bytes output_data = 2;
 }
