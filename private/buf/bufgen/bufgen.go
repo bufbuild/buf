@@ -163,6 +163,8 @@ type Config struct {
 	PluginConfigs []*PluginConfig
 	// Optional
 	ManagedConfig *ManagedConfig
+	// Optional
+	TypesConfig *TypesConfig
 }
 
 // PluginConfig is a plugin configuration.
@@ -247,6 +249,11 @@ type CsharpNameSpaceConfig struct {
 	Override map[bufmoduleref.ModuleIdentity]string
 }
 
+// TypesConfig is a types configuration
+type TypesConfig struct {
+	Include []string
+}
+
 // ReadConfig reads the configuration from the OS or an override, if any.
 //
 // Only use in CLI tools.
@@ -292,6 +299,7 @@ type ExternalConfigV1 struct {
 	Version string                   `json:"version,omitempty" yaml:"version,omitempty"`
 	Plugins []ExternalPluginConfigV1 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 	Managed ExternalManagedConfigV1  `json:"managed,omitempty" yaml:"managed,omitempty"`
+	Types   *ExternalTypesConfigV1   `json:"types,omitempty" yaml:"types,omitempty"`
 }
 
 // ExternalPluginConfigV1 is an external plugin configuration.
@@ -432,4 +440,9 @@ type ExternalOptionsConfigV1Beta1 struct {
 // file versions that is used to determine the configuration version.
 type ExternalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+// ExternalTypesConfigV1 is an external types configuration.
+type ExternalTypesConfigV1 struct {
+	Include []string `json:"include,omitempty" yaml:"include"`
 }
