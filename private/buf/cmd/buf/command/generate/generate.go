@@ -254,7 +254,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.IncludeTypes,
 		"include-types",
 		nil,
-		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types.",
+		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
 	)
 }
 
