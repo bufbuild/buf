@@ -18,8 +18,8 @@ import (
 	"errors"
 	"fmt"
 
+	modulev1alpha1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 )
 
 const (

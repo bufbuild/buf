@@ -21,13 +21,14 @@
 package registryv1alpha1
 
 import (
-	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	reflect "reflect"
+	sync "sync"
+
+	v1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/image/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	pluginpb "google.golang.org/protobuf/types/pluginpb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (

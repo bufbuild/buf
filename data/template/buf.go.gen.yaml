@@ -3,7 +3,7 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/bufbuild/buf/private/gen/proto/go
+    default: buf.build/gen/go/bufbuild/buf/protocolbuffers/go
 plugins:
   - name: go
     out: private/gen/proto/go
