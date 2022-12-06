@@ -117,6 +117,7 @@ type CreateTokenRequest struct {
 	ExpireTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
 	// The ID of the user to create a new token, can only be
 	// the user who perform this action, or a machine user.
+	// Default to the user who perform this action if this is empty.
 	UserId string `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 }
 
@@ -326,6 +327,7 @@ type ListTokensRequest struct {
 	Reverse   bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
 	// The ID of the user to list tokens, can only be
 	// the user who perform this action, or a machine user.
+	// Default to the user who perform this action if this is empty.
 	UserId string `protobuf:"bytes,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 }
 
