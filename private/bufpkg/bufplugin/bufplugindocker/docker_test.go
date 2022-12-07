@@ -49,8 +49,7 @@ const (
 )
 
 var (
-	dockerEnabled = false
-	imagePattern  = regexp.MustCompile("^(?P<image>[^/]+/[^/]+/[^/:]+)(?::(?P<tag>[^/]+))?(?:/(?P<op>[^/]+))?$")
+	imagePattern = regexp.MustCompile("^(?P<image>[^/]+/[^/]+/[^/:]+)(?::(?P<tag>[^/]+))?(?:/(?P<op>[^/]+))?$")
 )
 
 func TestPushSuccess(t *testing.T) {
@@ -91,8 +90,7 @@ func TestPushError(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	// TODO: We may wish to indicate we want to run Docker tests even if the CLI ping command fails.
-	// This would force CI builds to run these tests, but still allow users without Docker installed to run tests.
+	var dockerEnabled bool
 	if cli, err := client.NewClientWithOpts(client.FromEnv); err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
@@ -106,7 +104,9 @@ func TestMain(m *testing.M) {
 		dockerEnabled = false
 	}
 	// call flag.Parse() here if TestMain uses flags
-	os.Exit(m.Run())
+	if dockerEnabled {
+		os.Exit(m.Run())
+	}
 }
 
 func createClient(t testing.TB, options ...ClientOption) Client {
