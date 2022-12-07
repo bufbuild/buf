@@ -148,35 +148,35 @@ jobs:
         id: ghr
         uses: softprops/action-gh-release@v1
         env:
-          PATH: ${{github.workspace}}/.build/release/buf/assets
+          ASSETS_PATH: ${{github.workspace}}/.build/release/buf/assets
         with:
           token: ${{ steps.generate_token.outputs.token }}
           generate_release_notes: true # change to the CHANGELOG somehow
           files: |
-            ${{env.PATH}}/buf-Darwin-arm64
-            ${{env.PATH}}/buf-Darwin-arm64.tar.gz
-            ${{env.PATH}}/buf-Darwin-x86_64
-            ${{env.PATH}}/buf-Darwin-x86_64.tar.gz
-            ${{env.PATH}}/buf-Linux-aarch64
-            ${{env.PATH}}/buf-Linux-aarch64.tar.gz
-            ${{env.PATH}}/buf-Linux-x86_64
-            ${{env.PATH}}/buf-Linux-x86_64.tar.gz
-            ${{env.PATH}}/buf-Windows-arm64.exe
-            ${{env.PATH}}/buf-Windows-x86_64.exe
-            ${{env.PATH}}/protoc-gen-buf-breaking-Darwin-arm64
-            ${{env.PATH}}/protoc-gen-buf-breaking-Darwin-x86_64
-            ${{env.PATH}}/protoc-gen-buf-breaking-Linux-aarch64
-            ${{env.PATH}}/protoc-gen-buf-breaking-Linux-x86_64
-            ${{env.PATH}}/protoc-gen-buf-breaking-Windows-arm64.exe
-            ${{env.PATH}}/protoc-gen-buf-breaking-Windows-x86_64.exe
-            ${{env.PATH}}/protoc-gen-buf-lint-Darwin-arm64
-            ${{env.PATH}}/protoc-gen-buf-lint-Darwin-x86_64
-            ${{env.PATH}}/protoc-gen-buf-lint-Linux-aarch64
-            ${{env.PATH}}/protoc-gen-buf-lint-Linux-x86_64
-            ${{env.PATH}}/protoc-gen-buf-lint-Windows-arm64.exe
-            ${{env.PATH}}/protoc-gen-buf-lint-Windows-x86_64.exe
-            ${{env.PATH}}/sha256.txt
-            ${{env.PATH}}/sha256.txt.minisig
+            ${{env.ASSETS_PATH}}/buf-Darwin-arm64
+            ${{env.ASSETS_PATH}}/buf-Darwin-arm64.tar.gz
+            ${{env.ASSETS_PATH}}/buf-Darwin-x86_64
+            ${{env.ASSETS_PATH}}/buf-Darwin-x86_64.tar.gz
+            ${{env.ASSETS_PATH}}/buf-Linux-aarch64
+            ${{env.ASSETS_PATH}}/buf-Linux-aarch64.tar.gz
+            ${{env.ASSETS_PATH}}/buf-Linux-x86_64
+            ${{env.ASSETS_PATH}}/buf-Linux-x86_64.tar.gz
+            ${{env.ASSETS_PATH}}/buf-Windows-arm64.exe
+            ${{env.ASSETS_PATH}}/buf-Windows-x86_64.exe
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-breaking-Darwin-arm64
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-breaking-Darwin-x86_64
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-breaking-Linux-aarch64
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-breaking-Linux-x86_64
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-breaking-Windows-arm64.exe
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-breaking-Windows-x86_64.exe
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-lint-Darwin-arm64
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-lint-Darwin-x86_64
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-lint-Linux-aarch64
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-lint-Linux-x86_64
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-lint-Windows-arm64.exe
+            ${{env.ASSETS_PATH}}/protoc-gen-buf-lint-Windows-x86_64.exe
+            ${{env.ASSETS_PATH}}/sha256.txt
+            ${{env.ASSETS_PATH}}/sha256.txt.minisig
       - name: Slack Notification
         run: |
           jq --null-input '{ text: "BufCLI Release v${{env.VERSION}} is complete: ${{ steps.ghr.outputs.url }}" }' \
