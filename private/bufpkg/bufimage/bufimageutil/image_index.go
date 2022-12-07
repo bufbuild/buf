@@ -16,110 +16,120 @@ package bufimageutil
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/protocompile/walk"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// imageIndex holds an index of fully qualified type names to various
-// protosource descriptors.
+// imageIndex holds an index that allows for easily navigating a descriptor
+// hierarchy and its relationships.
 type imageIndex struct {
-	// NameToDescriptor maps fully qualified type names to a NamedDescriptor
-	// and can be used to lookup Descriptors referenced by other
-	// descriptor's fields like `Extendee`, `Parent`, `InputType`, etc.
-	NameToDescriptor map[string]protosource.NamedDescriptor
+	// ByDescriptor maps descriptor proto pointers to information about the
+	// element. The info includes the actual descriptor proto, its parent
+	// element (if it has one), and the file in which it is defined.
+	ByDescriptor map[namedDescriptor]elementInfo
+	// ByName maps fully qualified type names to information about the named
+	// element.
+	ByName map[string]namedDescriptor
+	// Files maps fully qualified type names to the path of the file that
+	// declares the type.
+	Files map[string]*descriptorpb.FileDescriptorProto
 
 	// NameToExtensions maps fully qualified type names to all known
 	// extension definitions for a type name.
-	NameToExtensions map[string][]protosource.Field
+	NameToExtensions map[string][]*descriptorpb.FieldDescriptorProto
 
 	// NameToOptions maps `google.protobuf.*Options` type names to their
 	// known extensions by field tag.
-	NameToOptions map[string]map[int32]protosource.Field
+	NameToOptions map[string]map[int32]*descriptorpb.FieldDescriptorProto
+}
+
+type namedDescriptor interface {
+	proto.Message
+	GetName() string
+}
+
+var _ namedDescriptor = (*descriptorpb.FileDescriptorProto)(nil)
+var _ namedDescriptor = (*descriptorpb.DescriptorProto)(nil)
+var _ namedDescriptor = (*descriptorpb.FieldDescriptorProto)(nil)
+var _ namedDescriptor = (*descriptorpb.OneofDescriptorProto)(nil)
+var _ namedDescriptor = (*descriptorpb.EnumDescriptorProto)(nil)
+var _ namedDescriptor = (*descriptorpb.EnumValueDescriptorProto)(nil)
+var _ namedDescriptor = (*descriptorpb.ServiceDescriptorProto)(nil)
+var _ namedDescriptor = (*descriptorpb.MethodDescriptorProto)(nil)
+
+type elementInfo struct {
+	fullName, file string
+	parent         namedDescriptor
 }
 
 // newImageIndexForImage builds an imageIndex for a given image.
 func newImageIndexForImage(image bufimage.Image, opts *imageFilterOptions) (*imageIndex, error) {
 	index := &imageIndex{
-		NameToDescriptor: make(map[string]protosource.NamedDescriptor),
+		ByName:       make(map[string]namedDescriptor),
+		ByDescriptor: make(map[namedDescriptor]elementInfo),
+		Files:        make(map[string]*descriptorpb.FileDescriptorProto),
 	}
 	if opts.includeCustomOptions {
-		index.NameToOptions = make(map[string]map[int32]protosource.Field)
+		index.NameToOptions = make(map[string]map[int32]*descriptorpb.FieldDescriptorProto)
 	}
 	if opts.includeKnownExtensions {
-		index.NameToExtensions = make(map[string][]protosource.Field)
+		index.NameToExtensions = make(map[string][]*descriptorpb.FieldDescriptorProto)
 	}
 
 	for _, file := range image.Files() {
-		// TODO: protosource.File is a heavyweight representation, and NewFile is not a cheap
-		//  operation. We only really need to gather fully-qualified names for each element
-		//  and to have some minimal level of upward references (e.g. access a descriptor's
-		//  parent element), which could be done with a far more efficient representation.
-		protosourceFile, err := protosource.NewFile(newInputFile(file))
-		if err != nil {
-			return nil, err
-		}
-		if err := protosource.ForEachMessage(func(message protosource.Message) error {
-			if storedDescriptor, ok := index.NameToDescriptor[message.FullName()]; ok && storedDescriptor != message {
-				return fmt.Errorf("duplicate for %q: %#v != %#v", message.FullName(), storedDescriptor, message)
+		fileName := file.Path()
+		fileDescriptorProto := file.Proto()
+		index.Files[fileName] = fileDescriptorProto
+		err := walk.DescriptorProtos(fileDescriptorProto, func(name protoreflect.FullName, msg proto.Message) error {
+			if _, ok := index.ByName[string(name)]; ok {
+				return fmt.Errorf("duplicate for %q", name)
 			}
-			index.NameToDescriptor[message.FullName()] = message
-			if !opts.includeKnownExtensions && !opts.includeCustomOptions {
+			descriptor, ok := msg.(namedDescriptor)
+			if !ok {
+				return fmt.Errorf("unexpected descriptor type %T", msg)
+			}
+			var parent namedDescriptor
+			if pos := strings.LastIndexByte(string(name), '.'); pos != -1 {
+				parent = index.ByName[string(name[:pos])]
+				if parent == nil {
+					// parent name was a package name, not an element name
+					parent = fileDescriptorProto
+				}
+			}
+
+			index.ByName[string(name)] = descriptor
+			index.ByDescriptor[descriptor] = elementInfo{
+				fullName: string(name),
+				parent:   parent,
+				file:     fileName,
+			}
+
+			ext, ok := descriptor.(*descriptorpb.FieldDescriptorProto)
+			if !ok || ext.Extendee == nil {
+				// not an extension, so the rest does not apply
 				return nil
 			}
-			for _, field := range message.Extensions() {
-				index.NameToDescriptor[field.FullName()] = field
-				extendeeName := field.Extendee()
-				if opts.includeCustomOptions && isOptionsTypeName(extendeeName) {
-					if _, ok := index.NameToOptions[extendeeName]; !ok {
-						index.NameToOptions[extendeeName] = make(map[int32]protosource.Field)
-					}
-					index.NameToOptions[extendeeName][int32(field.Number())] = field
-				}
-				if opts.includeKnownExtensions {
-					index.NameToExtensions[extendeeName] = append(index.NameToExtensions[extendeeName], field)
-				}
-			}
-			return nil
-		}, protosourceFile); err != nil {
-			return nil, err
-		}
-		if err = protosource.ForEachEnum(func(enum protosource.Enum) error {
-			if storedDescriptor, ok := index.NameToDescriptor[enum.FullName()]; ok {
-				return fmt.Errorf("duplicate for %q: %#v != %#v", enum.FullName(), storedDescriptor, enum)
-			}
-			index.NameToDescriptor[enum.FullName()] = enum
-			return nil
-		}, protosourceFile); err != nil {
-			return nil, err
-		}
-		for _, service := range protosourceFile.Services() {
-			if storedDescriptor, ok := index.NameToDescriptor[service.FullName()]; ok {
-				return nil, fmt.Errorf("duplicate for %q: %#v != %#v", service.FullName(), storedDescriptor, service)
-			}
-			index.NameToDescriptor[service.FullName()] = service
-			for _, method := range service.Methods() {
-				if storedDescriptor, ok := index.NameToDescriptor[method.FullName()]; ok {
-					return nil, fmt.Errorf("duplicate for %q: %#v != %#v", method.FullName(), storedDescriptor, method)
-				}
-				index.NameToDescriptor[method.FullName()] = method
-			}
-		}
-		if !opts.includeKnownExtensions && !opts.includeCustomOptions {
-			continue
-		}
-		for _, field := range protosourceFile.Extensions() {
-			index.NameToDescriptor[field.FullName()] = field
-			extendeeName := field.Extendee()
+
+			extendeeName := strings.TrimPrefix(ext.GetExtendee(), ".")
 			if opts.includeCustomOptions && isOptionsTypeName(extendeeName) {
 				if _, ok := index.NameToOptions[extendeeName]; !ok {
-					index.NameToOptions[extendeeName] = make(map[int32]protosource.Field)
+					index.NameToOptions[extendeeName] = make(map[int32]*descriptorpb.FieldDescriptorProto)
 				}
-				index.NameToOptions[extendeeName][int32(field.Number())] = field
+				index.NameToOptions[extendeeName][ext.GetNumber()] = ext
 			}
 			if opts.includeKnownExtensions {
-				index.NameToExtensions[extendeeName] = append(index.NameToExtensions[extendeeName], field)
+				index.NameToExtensions[extendeeName] = append(index.NameToExtensions[extendeeName], ext)
 			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, err
 		}
 	}
 	return index, nil
@@ -131,6 +141,7 @@ func isOptionsTypeName(typeName string) bool {
 		"google.protobuf.MessageOptions",
 		"google.protobuf.FieldOptions",
 		"google.protobuf.OneofOptions",
+		"google.protobuf.ExtensionRangeOptions",
 		"google.protobuf.EnumOptions",
 		"google.protobuf.EnumValueOptions",
 		"google.protobuf.ServiceOptions",
