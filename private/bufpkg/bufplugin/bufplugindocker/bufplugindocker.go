@@ -15,9 +15,5 @@
 // Package bufplugindocker contains utilities for building Buf plugins using the Docker API.
 package bufplugindocker
 
-// SourceFilePath is the default source file path
-// for the DockerSource.
-const SourceFilePath = "Dockerfile.plugin"
-
-// SourceFileAlternatePath is the alternate path for the DockerSource.
-const SourceFileAlternatePath = "Dockerfile"
+// ImagePath is the default location for the Docker image archive in a plugin zip file.
+const ImagePath = "image.tar"
