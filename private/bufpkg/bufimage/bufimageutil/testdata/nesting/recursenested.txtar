@@ -2,10 +2,7 @@
 syntax = "proto3";
 package pkg;
 message Foo {
-  string x = 1;
-  NestedFoo nested_foo = 2;
   message NestedFoo {
-    string nested_x = 1;
     message NestedNestedFoo {
       string nested_nested_x = 1;
     }

@@ -206,9 +206,13 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 	// Find all types to include in filtered image.
 	closure := newTransitiveClosure()
 	for _, startingDescriptor := range startingDescriptors {
-		if err := closure.addElement(startingDescriptor, "", imageIndex, options); err != nil {
+		if err := closure.addElement(startingDescriptor, "", false, imageIndex, options); err != nil {
 			return nil, err
 		}
+	}
+	// After all typs are added, add their known extensions
+	if err := closure.addExtensions(imageIndex, options); err != nil {
+		return nil, err
 	}
 	// Create a new image with only the required descriptors.
 	var includedFiles []bufimage.ImageFile
@@ -255,29 +259,13 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		}
 		imageFileDescriptor.WeakDependency = imageFileDescriptor.WeakDependency[:i]
 
-		trimMessages, err := trimMessageDescriptor(imageFileDescriptor.MessageType, closure.elements)
-		if err != nil {
-			return nil, err
-		}
-		imageFileDescriptor.MessageType = trimMessages
-		trimEnums, err := trimEnumDescriptor(imageFileDescriptor.EnumType, closure.elements)
-		if err != nil {
-			return nil, err
-		}
-		imageFileDescriptor.EnumType = trimEnums
-		trimExtensions, err := trimExtensionDescriptors(imageFileDescriptor.Extension, closure.elements)
-		if err != nil {
-			return nil, err
-		}
-		imageFileDescriptor.Extension = trimExtensions
-		i = 0
+		imageFileDescriptor.MessageType = trimMessageDescriptors(imageFileDescriptor.MessageType, closure.elements)
+		imageFileDescriptor.EnumType = trimSlice(imageFileDescriptor.EnumType, closure.elements)
+		imageFileDescriptor.Extension = trimSlice(imageFileDescriptor.Extension, closure.elements)
+		imageFileDescriptor.Service = trimSlice(imageFileDescriptor.Service, closure.elements)
 		for _, serviceDescriptor := range imageFileDescriptor.Service {
-			if _, ok := closure.elements[serviceDescriptor]; ok {
-				imageFileDescriptor.Service[i] = serviceDescriptor
-				i++
-			}
+			serviceDescriptor.Method = trimSlice(serviceDescriptor.Method, closure.elements)
 		}
-		imageFileDescriptor.Service = imageFileDescriptor.Service[:i]
 
 		// TODO: With some from/to mappings, perhaps even sourcecodeinfo
 		// isn't too bad.
@@ -286,72 +274,73 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 	return bufimage.NewImage(includedFiles)
 }
 
-// trimMessageDescriptor removes (nested) messages and nested enums from a slice
+// trimMessageDescriptors removes (nested) messages and nested enums from a slice
 // of message descriptors if their type names are not found in the toKeep map.
-func trimMessageDescriptor(in []*descriptorpb.DescriptorProto, toKeep map[namedDescriptor]struct{}) ([]*descriptorpb.DescriptorProto, error) {
-	i := 0
+func trimMessageDescriptors(in []*descriptorpb.DescriptorProto, toKeep map[namedDescriptor]closureInclusionMode) []*descriptorpb.DescriptorProto {
+	in = trimSlice(in, toKeep)
 	for _, messageDescriptor := range in {
-		if _, ok := toKeep[messageDescriptor]; ok {
-			trimMessages, err := trimMessageDescriptor(messageDescriptor.NestedType, toKeep)
-			if err != nil {
-				return nil, err
-			}
-			messageDescriptor.NestedType = trimMessages
-			trimEnums, err := trimEnumDescriptor(messageDescriptor.EnumType, toKeep)
-			if err != nil {
-				return nil, err
-			}
-			messageDescriptor.EnumType = trimEnums
-			trimExtensions, err := trimExtensionDescriptors(messageDescriptor.Extension, toKeep)
-			if err != nil {
-				return nil, err
-			}
-			messageDescriptor.Extension = trimExtensions
-			in[i] = messageDescriptor
-			i++
+		mode, ok := toKeep[messageDescriptor]
+		if !ok {
+			continue
 		}
+		if mode == inclusionModeEnclosing {
+			// if this is just an enclosing element, we only care about it as a namespace for
+			// other types and don't care about the rest of its contents
+			messageDescriptor.Field = nil
+			messageDescriptor.OneofDecl = nil
+			messageDescriptor.ExtensionRange = nil
+			messageDescriptor.ReservedRange = nil
+			messageDescriptor.ReservedName = nil
+		}
+		messageDescriptor.NestedType = trimMessageDescriptors(messageDescriptor.NestedType, toKeep)
+		messageDescriptor.EnumType = trimSlice(messageDescriptor.EnumType, toKeep)
+		messageDescriptor.Extension = trimSlice(messageDescriptor.Extension, toKeep)
 	}
-	return in[:i], nil
+	return in
 }
 
-// trimEnumDescriptor removes enums from a slice of enum descriptors if their
-// type names are not found in the toKeep map.
-func trimEnumDescriptor(in []*descriptorpb.EnumDescriptorProto, toKeep map[namedDescriptor]struct{}) ([]*descriptorpb.EnumDescriptorProto, error) {
+// trimSlice removes elements from a slice of descriptors if they are
+// not present in the given map.
+func trimSlice[T namedDescriptor](in []T, toKeep map[namedDescriptor]closureInclusionMode) []T {
 	i := 0
-	for _, enumDescriptor := range in {
-		if _, ok := toKeep[enumDescriptor]; ok {
-			in[i] = enumDescriptor
+	for _, descriptor := range in {
+		if _, ok := toKeep[descriptor]; ok {
+			in[i] = descriptor
 			i++
 		}
 	}
-	return in[:i], nil
-}
-
-// trimExtensionDescriptors removes fields from a slice of field descriptors if their
-// type names are not found in the toKeep map.
-func trimExtensionDescriptors(in []*descriptorpb.FieldDescriptorProto, toKeep map[namedDescriptor]struct{}) ([]*descriptorpb.FieldDescriptorProto, error) {
-	i := 0
-	for _, fieldDescriptor := range in {
-		if _, ok := toKeep[fieldDescriptor]; ok {
-			in[i] = fieldDescriptor
-			i++
-		}
-	}
-	return in[:i], nil
+	return in[:i]
 }
 
 // transitiveClosure accumulates the elements, files, and needed imports for a
 // subset of an image. When an element is added to the closure, all of its
 // dependencies are recursively added.
 type transitiveClosure struct {
-	elements map[namedDescriptor]struct{}
+	elements map[namedDescriptor]closureInclusionMode
 	files    map[string]struct{}
 	imports  map[string]map[string]struct{}
 }
 
+type closureInclusionMode int
+
+const (
+	// Element is included in closure because it is directly reachable from a root.
+	inclusionModeExplicit = closureInclusionMode(iota)
+	// Element is included in closure because it is a message or service that
+	// *contains* an explicitly included element but is not itself directly
+	// reachable.
+	inclusionModeEnclosing
+	// Element is included in closure because it is implied by the presence of a
+	// custom option. For example, a field element with a custom option implies
+	// the presence of google.protobuf.FieldOptions. An option type could instead be
+	// explicitly included if it is also directly reachable (i.e. some type in the
+	// graph explicitly refers to the option type).
+	inclusionModeImplicit
+)
+
 func newTransitiveClosure() *transitiveClosure {
 	return &transitiveClosure{
-		elements: map[namedDescriptor]struct{}{},
+		elements: map[namedDescriptor]closureInclusionMode{},
 		files:    map[string]struct{}{},
 		imports:  map[string]map[string]struct{}{},
 	}
@@ -380,6 +369,7 @@ func (t *transitiveClosure) addFile(file string, imageIndex *imageIndex, opts *i
 func (t *transitiveClosure) addElement(
 	descriptor namedDescriptor,
 	referrerFile string,
+	impliedByCustomOption bool,
 	imageIndex *imageIndex,
 	opts *imageFilterOptions,
 ) error {
@@ -391,69 +381,36 @@ func (t *transitiveClosure) addElement(
 		t.addImport(referrerFile, descriptorInfo.file)
 	}
 
-	if _, ok := t.elements[descriptor]; ok {
+	if existingMode, ok := t.elements[descriptor]; ok && existingMode != inclusionModeEnclosing {
+		if existingMode == inclusionModeImplicit && !impliedByCustomOption {
+			// upgrade from implied to explicitly part of closure
+			t.elements[descriptor] = inclusionModeExplicit
+		}
 		return nil // already added this element
 	}
-	t.elements[descriptor] = struct{}{}
+	if impliedByCustomOption {
+		t.elements[descriptor] = inclusionModeImplicit
+	} else {
+		t.elements[descriptor] = inclusionModeExplicit
+	}
+
+	// if this type is enclosed inside another, add enclosing types
+	if err := t.addEnclosing(descriptorInfo.parent, descriptorInfo.file, imageIndex, opts); err != nil {
+		return err
+	}
+	// add any custom options and their dependencies
+	if err := t.exploreCustomOptions(descriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+		return err
+	}
 
 	switch typedDescriptor := descriptor.(type) {
 	case *descriptorpb.DescriptorProto:
+		// Options and types for all fields
 		for _, field := range typedDescriptor.GetField() {
-			switch field.GetType() {
-			case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
-				descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
-				descriptorpb.FieldDescriptorProto_TYPE_GROUP:
-				typeName := strings.TrimPrefix(field.GetTypeName(), ".")
-				typeDescriptor, ok := imageIndex.ByName[typeName]
-				if !ok {
-					return fmt.Errorf("missing %q", typeName)
-				}
-				if err := t.addElement(typeDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
-					return err
-				}
-			case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
-				descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
-				descriptorpb.FieldDescriptorProto_TYPE_INT64,
-				descriptorpb.FieldDescriptorProto_TYPE_UINT64,
-				descriptorpb.FieldDescriptorProto_TYPE_INT32,
-				descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
-				descriptorpb.FieldDescriptorProto_TYPE_FIXED32,
-				descriptorpb.FieldDescriptorProto_TYPE_BOOL,
-				descriptorpb.FieldDescriptorProto_TYPE_STRING,
-				descriptorpb.FieldDescriptorProto_TYPE_BYTES,
-				descriptorpb.FieldDescriptorProto_TYPE_UINT32,
-				descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
-				descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
-				descriptorpb.FieldDescriptorProto_TYPE_SINT32,
-				descriptorpb.FieldDescriptorProto_TYPE_SINT64:
-				// nothing to explore for the field type, but
-				// there might be custom field options
-			default:
-				return fmt.Errorf("unknown field type %d", field.GetType())
-			}
-			// Field options
-			if err := t.exploreCustomOptions(field, descriptorInfo.file, imageIndex, opts); err != nil {
+			if err := t.addFieldType(field, descriptorInfo.file, imageIndex, opts); err != nil {
 				return err
 			}
-		}
-		// Extensions declared for this message.
-		// TODO: We currently exclude all extensions for descriptor options types (and instead
-		//  only gather the ones used in relevant custom options). But if the descriptor option
-		//  type were a named type for filtering, we SHOULD include all of them.
-		if opts.includeKnownExtensions && !isOptionsTypeName(descriptorInfo.fullName) {
-			for _, extendsDescriptor := range imageIndex.NameToExtensions[descriptorInfo.fullName] {
-				if err := t.addElement(extendsDescriptor, "", imageIndex, opts); err != nil {
-					return err
-				}
-			}
-		}
-		// Messages in which this message is nested
-		if _, ok := descriptorInfo.parent.(*descriptorpb.DescriptorProto); ok {
-			// TODO: we don't actually want or need the entire parent message unless it is actually
-			//  referenced by other parts of the schema. As a reference from a nested message, we
-			//  only care about it as a namespace (so all of its other elements, aside from needed
-			//  nested types, could be omitted).
-			if err := t.addElement(descriptorInfo.parent, "", imageIndex, opts); err != nil {
+			if err := t.exploreCustomOptions(field, referrerFile, imageIndex, opts); err != nil {
 				return err
 			}
 		}
@@ -469,52 +426,28 @@ func (t *transitiveClosure) addElement(
 				return err
 			}
 		}
-		// Message options
-		if err := t.exploreCustomOptions(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
-			return err
-		}
+
 	case *descriptorpb.EnumDescriptorProto:
-		// Parent messages
-		if _, ok := descriptorInfo.parent.(*descriptorpb.DescriptorProto); ok {
-			// TODO: ditto above: unless the parent message is used elsewhere, we don't need the
-			//  entire message; we only need it as a placeholder for namespacing.
-			if err := t.addElement(descriptorInfo.parent, "", imageIndex, opts); err != nil {
-				return err
-			}
-		}
 		for _, enumValue := range typedDescriptor.GetValue() {
 			if err := t.exploreCustomOptions(enumValue, descriptorInfo.file, imageIndex, opts); err != nil {
 				return err
 			}
 		}
-		// Enum options
-		if err := t.exploreCustomOptions(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
-			return err
-		}
+
 	case *descriptorpb.ServiceDescriptorProto:
 		for _, method := range typedDescriptor.GetMethod() {
-			if err := t.addElement(method, "", imageIndex, opts); err != nil {
+			if err := t.addElement(method, "", false, imageIndex, opts); err != nil {
 				return err
 			}
 		}
-		// Service options
-		if err := t.exploreCustomOptions(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
-			return err
-		}
-	case *descriptorpb.MethodDescriptorProto:
-		// in case method was directly named as a filter type, make sure we include parent service
-		// TODO: if the service is not also named as a filter type, we could prune the service down
-		//  to only the named methods and shrink the size of the filtered image further.
-		if err := t.addElement(descriptorInfo.parent, "", imageIndex, opts); err != nil {
-			return err
-		}
 
+	case *descriptorpb.MethodDescriptorProto:
 		inputName := strings.TrimPrefix(typedDescriptor.GetInputType(), ".")
 		inputDescriptor, ok := imageIndex.ByName[inputName]
 		if !ok {
 			return fmt.Errorf("missing %q", inputName)
 		}
-		if err := t.addElement(inputDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+		if err := t.addElement(inputDescriptor, descriptorInfo.file, false, imageIndex, opts); err != nil {
 			return err
 		}
 
@@ -523,19 +456,16 @@ func (t *transitiveClosure) addElement(
 		if !ok {
 			return fmt.Errorf("missing %q", outputName)
 		}
-		if err := t.addElement(outputDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
-			return err
-		}
-
-		// Method options
-		if err := t.exploreCustomOptions(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+		if err := t.addElement(outputDescriptor, descriptorInfo.file, false, imageIndex, opts); err != nil {
 			return err
 		}
 
 	case *descriptorpb.FieldDescriptorProto:
-		// Regular fields get handled by protosource.Message, only
-		// protosource.Fields's for extends definitions should reach
-		// here.
+		// Regular fields are handled above in message descriptor case.
+		// We should only find our way here for extensions.
+		if typedDescriptor.Extendee == nil {
+			return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
+		}
 		if typedDescriptor.GetExtendee() == "" {
 			return fmt.Errorf("expected extendee for field %q to not be empty", descriptorInfo.fullName)
 		}
@@ -544,49 +474,129 @@ func (t *transitiveClosure) addElement(
 		if !ok {
 			return fmt.Errorf("missing %q", extendeeName)
 		}
-		if err := t.addElement(extendeeDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+		if err := t.addElement(extendeeDescriptor, descriptorInfo.file, impliedByCustomOption, imageIndex, opts); err != nil {
+			return err
+		}
+		if err := t.addFieldType(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
 			return err
 		}
 
-		switch typedDescriptor.GetType() {
-		case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
-			descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
-			descriptorpb.FieldDescriptorProto_TYPE_GROUP:
-			typeName := strings.TrimPrefix(typedDescriptor.GetTypeName(), ".")
-			typeDescriptor, ok := imageIndex.ByName[typeName]
-			if !ok {
-				return fmt.Errorf("missing %q", typeName)
-			}
-			err := t.addElement(typeDescriptor, descriptorInfo.file, imageIndex, opts)
-			if err != nil {
-				return err
-			}
-		case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
-			descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
-			descriptorpb.FieldDescriptorProto_TYPE_INT64,
-			descriptorpb.FieldDescriptorProto_TYPE_UINT64,
-			descriptorpb.FieldDescriptorProto_TYPE_INT32,
-			descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
-			descriptorpb.FieldDescriptorProto_TYPE_FIXED32,
-			descriptorpb.FieldDescriptorProto_TYPE_BOOL,
-			descriptorpb.FieldDescriptorProto_TYPE_STRING,
-			descriptorpb.FieldDescriptorProto_TYPE_BYTES,
-			descriptorpb.FieldDescriptorProto_TYPE_UINT32,
-			descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
-			descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
-			descriptorpb.FieldDescriptorProto_TYPE_SINT32,
-			descriptorpb.FieldDescriptorProto_TYPE_SINT64:
-			// nothing to follow, custom options handled below.
-		default:
-			return fmt.Errorf("unknown field type %d", typedDescriptor.GetType())
-		}
-		if err := t.exploreCustomOptions(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
-			return err
-		}
 	default:
-		return fmt.Errorf("unexpected protosource type %T", typedDescriptor)
+		return errorUnsupportedFilterType(descriptor, descriptorInfo.fullName)
 	}
 
+	return nil
+}
+
+func errorUnsupportedFilterType(descriptor namedDescriptor, fullName string) error {
+	var descriptorType string
+	switch d := descriptor.(type) {
+	case *descriptorpb.FileDescriptorProto:
+		descriptorType = "file"
+	case *descriptorpb.DescriptorProto:
+		descriptorType = "message"
+	case *descriptorpb.FieldDescriptorProto:
+		if d.Extendee != nil {
+			descriptorType = "extension field"
+		} else {
+			descriptorType = "non-extension field"
+		}
+	case *descriptorpb.OneofDescriptorProto:
+		descriptorType = "oneof"
+	case *descriptorpb.EnumDescriptorProto:
+		descriptorType = "enum"
+	case *descriptorpb.EnumValueDescriptorProto:
+		descriptorType = "enum value"
+	case *descriptorpb.ServiceDescriptorProto:
+		descriptorType = "service"
+	case *descriptorpb.MethodDescriptorProto:
+		descriptorType = "method"
+	default:
+		descriptorType = fmt.Sprintf("%T", d)
+	}
+	return fmt.Errorf("%s is unsupported filter type: %s", fullName, descriptorType)
+}
+
+func (t *transitiveClosure) addEnclosing(descriptor namedDescriptor, enclosingFile string, imageIndex *imageIndex, opts *imageFilterOptions) error {
+	for descriptor != nil {
+		_, isMsg := descriptor.(*descriptorpb.DescriptorProto)
+		_, isSvc := descriptor.(*descriptorpb.ServiceDescriptorProto)
+		if !isMsg && !isSvc {
+			break // not an enclosing type
+		}
+		if _, ok := t.elements[descriptor]; ok {
+			break // already in closure
+		}
+		t.elements[descriptor] = inclusionModeEnclosing
+		if err := t.exploreCustomOptions(descriptor, enclosingFile, imageIndex, opts); err != nil {
+			return err
+		}
+		// now move into this element's parent
+		descriptor = imageIndex.ByDescriptor[descriptor].parent
+	}
+	return nil
+}
+
+func (t *transitiveClosure) addFieldType(field *descriptorpb.FieldDescriptorProto, referrerFile string, imageIndex *imageIndex, opts *imageFilterOptions) error {
+	switch field.GetType() {
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
+		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
+		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
+		typeName := strings.TrimPrefix(field.GetTypeName(), ".")
+		typeDescriptor, ok := imageIndex.ByName[typeName]
+		if !ok {
+			return fmt.Errorf("missing %q", typeName)
+		}
+		err := t.addElement(typeDescriptor, referrerFile, false, imageIndex, opts)
+		if err != nil {
+			return err
+		}
+	case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
+		descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
+		descriptorpb.FieldDescriptorProto_TYPE_INT64,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_INT32,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED32,
+		descriptorpb.FieldDescriptorProto_TYPE_BOOL,
+		descriptorpb.FieldDescriptorProto_TYPE_STRING,
+		descriptorpb.FieldDescriptorProto_TYPE_BYTES,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT32,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT32,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT64:
+	// nothing to follow, custom options handled below.
+	default:
+		return fmt.Errorf("unknown field type %d", field.GetType())
+	}
+	return nil
+}
+
+func (t *transitiveClosure) addExtensions(
+	imageIndex *imageIndex,
+	opts *imageFilterOptions,
+) error {
+	if !opts.includeKnownExtensions {
+		return nil // nothing to do
+	}
+	for e, mode := range t.elements {
+		if mode != inclusionModeExplicit {
+			// we only collect extensions for messages that are directly reachable/referenced.
+			continue
+		}
+		msgDescriptor, ok := e.(*descriptorpb.DescriptorProto)
+		if !ok {
+			// not a message, nothing to do
+			continue
+		}
+		descriptorInfo := imageIndex.ByDescriptor[msgDescriptor]
+		for _, extendsDescriptor := range imageIndex.NameToExtensions[descriptorInfo.fullName] {
+			if err := t.addElement(extendsDescriptor, "", false, imageIndex, opts); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -636,7 +646,7 @@ func (t *transitiveClosure) exploreCustomOptions(
 			err = fmt.Errorf("cannot find ext no %d on %s", fd.Number(), optionsName)
 			return false
 		}
-		err = t.addElement(field, referrerFile, imageIndex, opts)
+		err = t.addElement(field, referrerFile, true, imageIndex, opts)
 		return err == nil
 	})
 	return err

@@ -50,3 +50,7 @@ extend google.protobuf.MethodOptions {
 	optional UnusedOption method_bar = 50001;
 	optional string       method_baz = 50002;
 }
+
+message Files {
+	google.protobuf.FileDescriptorSet files = 1;
+}
