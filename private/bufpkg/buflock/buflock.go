@@ -19,6 +19,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -44,6 +45,7 @@ type Dependency struct {
 	Owner      string
 	Repository string
 	Commit     string
+	Digest     string
 }
 
 // ReadConfig reads the lock file at ExternalConfigFilePath relative
@@ -83,11 +85,17 @@ type ExternalConfigDependencyV1 struct {
 
 // DependencyForExternalConfigDependencyV1 returns the Dependency representation of a ExternalConfigDependencyV1.
 func DependencyForExternalConfigDependencyV1(dep ExternalConfigDependencyV1) Dependency {
+	// Don't consume old buf digests.
+	digest := dep.Digest
+	if !isValidDigest(digest) {
+		digest = ""
+	}
 	return Dependency{
 		Remote:     dep.Remote,
 		Owner:      dep.Owner,
 		Repository: dep.Repository,
 		Commit:     dep.Commit,
+		Digest:     digest,
 	}
 }
 
@@ -100,6 +108,7 @@ func ExternalConfigDependencyV1ForDependency(dep Dependency) ExternalConfigDepen
 		Owner:      dep.Owner,
 		Repository: dep.Repository,
 		Commit:     dep.Commit,
+		Digest:     dep.Digest,
 	}
 }
 
@@ -122,6 +131,7 @@ func DependencyForExternalConfigDependencyV1Beta1(dep ExternalConfigDependencyV1
 		Owner:      dep.Owner,
 		Repository: dep.Repository,
 		Commit:     dep.Commit,
+		Digest:     "", // digests in v1Beta1 are not valid v1 digests
 	}
 }
 
@@ -141,4 +151,11 @@ func ExternalConfigDependencyV1Beta1ForDependency(dep Dependency) ExternalConfig
 // file versions that is used to determine the version.
 type ExternalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+// isValidDigest returns true when the digest string is successfully parsed
+// by the `manifest` pkg. Older buf digests are not considered valid (b1/b3).
+func isValidDigest(digest string) bool {
+	_, err := manifest.NewDigestFromString(digest)
+	return err == nil
 }

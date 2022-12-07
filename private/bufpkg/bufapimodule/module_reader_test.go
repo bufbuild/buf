@@ -117,6 +117,7 @@ func testDownload(
 			"repository",
 			"branch",
 			"commit",
+			"digest",
 			time.Now(),
 		)
 		require.NoError(t, err)
