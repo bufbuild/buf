@@ -110,13 +110,13 @@ func WithAllowFilterByImportedType() ImageFilterOption {
 // those descriptors and their transitive closure of required descriptors, with
 // each file only contains the minimal required types and imports.
 //
-// Although this returns a new bufimage.Image, it mutates the original image's
-// underlying file's `descriptorpb.FileDescriptorProto` and the old image should
+// Although this returns a new [bufimage.Image], it mutates the original image's
+// underlying file's [descriptorpb.FileDescriptorProto]. So the old image should
 // not continue to be used.
 //
 // A descriptor is said to require another descriptor if the dependent
 // descriptor is needed to accurately and completely describe that descriptor.
-// For the follwing types that includes:
+// For the following types that includes:
 //
 //	Messages
 //	 - messages & enums referenced in fields
@@ -177,6 +177,9 @@ func ImageFilteredByTypes(image bufimage.Image, types ...string) (bufimage.Image
 	return ImageFilteredByTypesWithOptions(image, types)
 }
 
+// ImageFilteredByTypesWithOptions returns a minimal image containing only the descriptors
+// required to define those types. See ImageFilteredByTypes for more details. This version
+// allows for customizing the behavior with options.
 func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts ...ImageFilterOption) (bufimage.Image, error) {
 	options := newImageFilterOptions()
 	for _, o := range opts {
@@ -201,46 +204,26 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		startingDescriptors = append(startingDescriptors, startingDescriptor)
 	}
 	// Find all types to include in filtered image.
-	seen := make(map[string]struct{})
-	neededDescriptors := []descriptorAndDirects{}
+	closure := newTransitiveClosure()
 	for _, startingDescriptor := range startingDescriptors {
-		closure, err := descriptorTransitiveClosure(startingDescriptor, imageIndex, seen, options)
-		if err != nil {
+		if err := closure.addElement(startingDescriptor, "", imageIndex, options); err != nil {
 			return nil, err
 		}
-		neededDescriptors = append(neededDescriptors, closure...)
-	}
-	descriptorsByFile := make(map[string][]descriptorAndDirects)
-	for _, descriptor := range neededDescriptors {
-		typeInfo := imageIndex.ByDescriptor[descriptor.Descriptor]
-		descriptorsByFile[typeInfo.file] = append(descriptorsByFile[typeInfo.file], descriptor)
 	}
 	// Create a new image with only the required descriptors.
 	var includedFiles []bufimage.ImageFile
 	for _, imageFile := range image.Files() {
-		descriptors, ok := descriptorsByFile[imageFile.Path()]
+		_, ok := closure.files[imageFile.Path()]
 		if !ok {
 			continue
 		}
-
-		importsRequired := make(map[string]struct{})
-		typesToKeep := make(map[string]struct{})
-		for _, descriptor := range descriptors {
-			typeInfo := imageIndex.ByDescriptor[descriptor.Descriptor]
-			typesToKeep[typeInfo.fullName] = struct{}{}
-			for _, importedDescriptor := range descriptor.Directs {
-				importedInfo := imageIndex.ByDescriptor[importedDescriptor]
-				if importedInfo.file != typeInfo.file {
-					importsRequired[importedInfo.file] = struct{}{}
-				}
-			}
-		}
-
 		includedFiles = append(includedFiles, imageFile)
 		imageFileDescriptor := imageFile.Proto()
+
+		importsRequired := closure.imports[imageFile.Path()]
 		// While employing
 		// https://github.com/golang/go/wiki/SliceTricks#filter-in-place,
-		// also keep a record of which index moved where so we can fixup
+		// also keep a record of which index moved where, so we can fixup
 		// the file's WeakDependency field.
 		indexFromTo := make(map[int32]int32)
 		indexTo := 0
@@ -272,29 +255,24 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		}
 		imageFileDescriptor.WeakDependency = imageFileDescriptor.WeakDependency[:i]
 
-		prefix := ""
-		if imageFileDescriptor.Package != nil {
-			prefix = imageFileDescriptor.GetPackage() + "."
-		}
-		trimMessages, err := trimMessageDescriptor(imageFileDescriptor.MessageType, prefix, typesToKeep)
+		trimMessages, err := trimMessageDescriptor(imageFileDescriptor.MessageType, closure.elements)
 		if err != nil {
 			return nil, err
 		}
 		imageFileDescriptor.MessageType = trimMessages
-		trimEnums, err := trimEnumDescriptor(imageFileDescriptor.EnumType, prefix, typesToKeep)
+		trimEnums, err := trimEnumDescriptor(imageFileDescriptor.EnumType, closure.elements)
 		if err != nil {
 			return nil, err
 		}
 		imageFileDescriptor.EnumType = trimEnums
-		trimExtensions, err := trimExtensionDescriptors(imageFileDescriptor.Extension, prefix, typesToKeep)
+		trimExtensions, err := trimExtensionDescriptors(imageFileDescriptor.Extension, closure.elements)
 		if err != nil {
 			return nil, err
 		}
 		imageFileDescriptor.Extension = trimExtensions
 		i = 0
 		for _, serviceDescriptor := range imageFileDescriptor.Service {
-			name := prefix + serviceDescriptor.GetName()
-			if _, ok := typesToKeep[name]; ok {
+			if _, ok := closure.elements[serviceDescriptor]; ok {
 				imageFileDescriptor.Service[i] = serviceDescriptor
 				i++
 			}
@@ -310,22 +288,21 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 
 // trimMessageDescriptor removes (nested) messages and nested enums from a slice
 // of message descriptors if their type names are not found in the toKeep map.
-func trimMessageDescriptor(in []*descriptorpb.DescriptorProto, prefix string, toKeep map[string]struct{}) ([]*descriptorpb.DescriptorProto, error) {
+func trimMessageDescriptor(in []*descriptorpb.DescriptorProto, toKeep map[namedDescriptor]struct{}) ([]*descriptorpb.DescriptorProto, error) {
 	i := 0
 	for _, messageDescriptor := range in {
-		name := prefix + messageDescriptor.GetName()
-		if _, ok := toKeep[name]; ok {
-			trimMessages, err := trimMessageDescriptor(messageDescriptor.NestedType, name+".", toKeep)
+		if _, ok := toKeep[messageDescriptor]; ok {
+			trimMessages, err := trimMessageDescriptor(messageDescriptor.NestedType, toKeep)
 			if err != nil {
 				return nil, err
 			}
 			messageDescriptor.NestedType = trimMessages
-			trimEnums, err := trimEnumDescriptor(messageDescriptor.EnumType, name+".", toKeep)
+			trimEnums, err := trimEnumDescriptor(messageDescriptor.EnumType, toKeep)
 			if err != nil {
 				return nil, err
 			}
 			messageDescriptor.EnumType = trimEnums
-			trimExtensions, err := trimExtensionDescriptors(messageDescriptor.Extension, name+".", toKeep)
+			trimExtensions, err := trimExtensionDescriptors(messageDescriptor.Extension, toKeep)
 			if err != nil {
 				return nil, err
 			}
@@ -339,11 +316,10 @@ func trimMessageDescriptor(in []*descriptorpb.DescriptorProto, prefix string, to
 
 // trimEnumDescriptor removes enums from a slice of enum descriptors if their
 // type names are not found in the toKeep map.
-func trimEnumDescriptor(in []*descriptorpb.EnumDescriptorProto, prefix string, toKeep map[string]struct{}) ([]*descriptorpb.EnumDescriptorProto, error) {
+func trimEnumDescriptor(in []*descriptorpb.EnumDescriptorProto, toKeep map[namedDescriptor]struct{}) ([]*descriptorpb.EnumDescriptorProto, error) {
 	i := 0
 	for _, enumDescriptor := range in {
-		name := prefix + enumDescriptor.GetName()
-		if _, ok := toKeep[name]; ok {
+		if _, ok := toKeep[enumDescriptor]; ok {
 			in[i] = enumDescriptor
 			i++
 		}
@@ -353,11 +329,10 @@ func trimEnumDescriptor(in []*descriptorpb.EnumDescriptorProto, prefix string, t
 
 // trimExtensionDescriptors removes fields from a slice of field descriptors if their
 // type names are not found in the toKeep map.
-func trimExtensionDescriptors(in []*descriptorpb.FieldDescriptorProto, prefix string, toKeep map[string]struct{}) ([]*descriptorpb.FieldDescriptorProto, error) {
+func trimExtensionDescriptors(in []*descriptorpb.FieldDescriptorProto, toKeep map[namedDescriptor]struct{}) ([]*descriptorpb.FieldDescriptorProto, error) {
 	i := 0
 	for _, fieldDescriptor := range in {
-		name := prefix + fieldDescriptor.GetName()
-		if _, ok := toKeep[name]; ok {
+		if _, ok := toKeep[fieldDescriptor]; ok {
 			in[i] = fieldDescriptor
 			i++
 		}
@@ -365,29 +340,62 @@ func trimExtensionDescriptors(in []*descriptorpb.FieldDescriptorProto, prefix st
 	return in[:i], nil
 }
 
-// descriptorAndDirects holds a protosource.NamedDescriptor and a list of all
-// named descriptors it directly references. A directly referenced dependency is
-// any type that if defined in a different file from the principal descriptor,
-// an import statement would be required for the proto to compile.
-type descriptorAndDirects struct {
-	Descriptor namedDescriptor
-	Directs    []namedDescriptor
+// transitiveClosure accumulates the elements, files, and needed imports for a
+// subset of an image. When an element is added to the closure, all of its
+// dependencies are recursively added.
+type transitiveClosure struct {
+	elements map[namedDescriptor]struct{}
+	files    map[string]struct{}
+	imports  map[string]map[string]struct{}
 }
 
-func descriptorTransitiveClosure(
-	descriptor namedDescriptor,
-	imageIndex *imageIndex,
-	seen map[string]struct{},
-	opts *imageFilterOptions,
-) ([]descriptorAndDirects, error) {
-	descriptorInfo := imageIndex.ByDescriptor[descriptor]
-	if _, ok := seen[descriptorInfo.fullName]; ok {
-		return nil, nil
+func newTransitiveClosure() *transitiveClosure {
+	return &transitiveClosure{
+		elements: map[namedDescriptor]struct{}{},
+		files:    map[string]struct{}{},
+		imports:  map[string]map[string]struct{}{},
 	}
-	seen[descriptorInfo.fullName] = struct{}{}
+}
 
-	var directDependencies []namedDescriptor
-	var transitiveDependencies []descriptorAndDirects
+func (t *transitiveClosure) addImport(fromPath, toPath string) {
+	if fromPath == toPath {
+		return // no need for a file to import itself
+	}
+	imps := t.imports[fromPath]
+	if imps == nil {
+		imps = map[string]struct{}{}
+		t.imports[fromPath] = imps
+	}
+	imps[toPath] = struct{}{}
+}
+
+func (t *transitiveClosure) addFile(file string, imageIndex *imageIndex, opts *imageFilterOptions) error {
+	if _, ok := t.files[file]; ok {
+		return nil // already added
+	}
+	t.files[file] = struct{}{}
+	return t.exploreCustomOptions(imageIndex.Files[file], file, imageIndex, opts)
+}
+
+func (t *transitiveClosure) addElement(
+	descriptor namedDescriptor,
+	referrerFile string,
+	imageIndex *imageIndex,
+	opts *imageFilterOptions,
+) error {
+	descriptorInfo := imageIndex.ByDescriptor[descriptor]
+	if err := t.addFile(descriptorInfo.file, imageIndex, opts); err != nil {
+		return err
+	}
+	if referrerFile != "" {
+		t.addImport(referrerFile, descriptorInfo.file)
+	}
+
+	if _, ok := t.elements[descriptor]; ok {
+		return nil // already added this element
+	}
+	t.elements[descriptor] = struct{}{}
+
 	switch typedDescriptor := descriptor.(type) {
 	case *descriptorpb.DescriptorProto:
 		for _, field := range typedDescriptor.GetField() {
@@ -398,14 +406,11 @@ func descriptorTransitiveClosure(
 				typeName := strings.TrimPrefix(field.GetTypeName(), ".")
 				typeDescriptor, ok := imageIndex.ByName[typeName]
 				if !ok {
-					return nil, fmt.Errorf("missing %q", typeName)
+					return fmt.Errorf("missing %q", typeName)
 				}
-				directDependencies = append(directDependencies, typeDescriptor)
-				recursiveDescriptors, err := descriptorTransitiveClosure(typeDescriptor, imageIndex, seen, opts)
-				if err != nil {
-					return nil, err
+				if err := t.addElement(typeDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+					return err
 				}
-				transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 			case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
 				descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
 				descriptorpb.FieldDescriptorProto_TYPE_INT64,
@@ -424,15 +429,12 @@ func descriptorTransitiveClosure(
 				// nothing to explore for the field type, but
 				// there might be custom field options
 			default:
-				return nil, fmt.Errorf("unknown field type %d", field.GetType())
+				return fmt.Errorf("unknown field type %d", field.GetType())
 			}
-			// fieldoptions
-			explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(field, imageIndex, seen, opts)
-			if err != nil {
-				return nil, err
+			// Field options
+			if err := t.exploreCustomOptions(field, descriptorInfo.file, imageIndex, opts); err != nil {
+				return err
 			}
-			directDependencies = append(directDependencies, explicitOptionDeps...)
-			transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 		}
 		// Extensions declared for this message.
 		// TODO: We currently exclude all extensions for descriptor options types (and instead
@@ -440,11 +442,9 @@ func descriptorTransitiveClosure(
 		//  type were a named type for filtering, we SHOULD include all of them.
 		if opts.includeKnownExtensions && !isOptionsTypeName(descriptorInfo.fullName) {
 			for _, extendsDescriptor := range imageIndex.NameToExtensions[descriptorInfo.fullName] {
-				recursiveDescriptors, err := descriptorTransitiveClosure(extendsDescriptor, imageIndex, seen, opts)
-				if err != nil {
-					return nil, err
+				if err := t.addElement(extendsDescriptor, "", imageIndex, opts); err != nil {
+					return err
 				}
-				transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 			}
 		}
 		// Messages in which this message is nested
@@ -453,141 +453,100 @@ func descriptorTransitiveClosure(
 			//  referenced by other parts of the schema. As a reference from a nested message, we
 			//  only care about it as a namespace (so all of its other elements, aside from needed
 			//  nested types, could be omitted).
-			directDependencies = append(directDependencies, descriptorInfo.parent)
-			recursiveDescriptors, err := descriptorTransitiveClosure(descriptorInfo.parent, imageIndex, seen, opts)
-			if err != nil {
-				return nil, err
+			if err := t.addElement(descriptorInfo.parent, "", imageIndex, opts); err != nil {
+				return err
 			}
-			transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 		}
 		// Options for all oneofs in this message
 		for _, oneOfDescriptor := range typedDescriptor.GetOneofDecl() {
-			explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(oneOfDescriptor, imageIndex, seen, opts)
-			if err != nil {
-				return nil, err
+			if err := t.exploreCustomOptions(oneOfDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+				return err
 			}
-			directDependencies = append(directDependencies, explicitOptionDeps...)
-			transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 		}
 		// Options for all extension ranges in this message
 		for _, extRange := range typedDescriptor.GetExtensionRange() {
-			explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(extRange, imageIndex, seen, opts)
-			if err != nil {
-				return nil, err
+			if err := t.exploreCustomOptions(extRange, descriptorInfo.file, imageIndex, opts); err != nil {
+				return err
 			}
-			directDependencies = append(directDependencies, explicitOptionDeps...)
-			transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 		}
-		// Options
-		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(typedDescriptor, imageIndex, seen, opts)
-		if err != nil {
-			return nil, err
+		// Message options
+		if err := t.exploreCustomOptions(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+			return err
 		}
-		directDependencies = append(directDependencies, explicitOptionDeps...)
-		transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 	case *descriptorpb.EnumDescriptorProto:
 		// Parent messages
 		if _, ok := descriptorInfo.parent.(*descriptorpb.DescriptorProto); ok {
 			// TODO: ditto above: unless the parent message is used elsewhere, we don't need the
 			//  entire message; we only need it as a placeholder for namespacing.
-			directDependencies = append(directDependencies, descriptorInfo.parent)
-			recursiveDescriptors, err := descriptorTransitiveClosure(descriptorInfo.parent, imageIndex, seen, opts)
-			if err != nil {
-				return nil, err
+			if err := t.addElement(descriptorInfo.parent, "", imageIndex, opts); err != nil {
+				return err
 			}
-			transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 		}
 		for _, enumValue := range typedDescriptor.GetValue() {
-			explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(enumValue, imageIndex, seen, opts)
-			if err != nil {
-				return nil, err
+			if err := t.exploreCustomOptions(enumValue, descriptorInfo.file, imageIndex, opts); err != nil {
+				return err
 			}
-			directDependencies = append(directDependencies, explicitOptionDeps...)
-			transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 		}
-		// Options
-		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(typedDescriptor, imageIndex, seen, opts)
-		if err != nil {
-			return nil, err
+		// Enum options
+		if err := t.exploreCustomOptions(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+			return err
 		}
-		directDependencies = append(directDependencies, explicitOptionDeps...)
-		transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 	case *descriptorpb.ServiceDescriptorProto:
 		for _, method := range typedDescriptor.GetMethod() {
-			directDependencies = append(directDependencies, method)
-			recursiveDescriptors, err := descriptorTransitiveClosure(method, imageIndex, seen, opts)
-			if err != nil {
-				return nil, err
+			if err := t.addElement(method, "", imageIndex, opts); err != nil {
+				return err
 			}
-			transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 		}
-		// Options
-		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(typedDescriptor, imageIndex, seen, opts)
-		if err != nil {
-			return nil, err
+		// Service options
+		if err := t.exploreCustomOptions(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+			return err
 		}
-		directDependencies = append(directDependencies, explicitOptionDeps...)
-		transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 	case *descriptorpb.MethodDescriptorProto:
 		// in case method was directly named as a filter type, make sure we include parent service
 		// TODO: if the service is not also named as a filter type, we could prune the service down
 		//  to only the named methods and shrink the size of the filtered image further.
-		recursiveDescriptors, err := descriptorTransitiveClosure(descriptorInfo.parent, imageIndex, seen, opts)
-		if err != nil {
-			return nil, err
+		if err := t.addElement(descriptorInfo.parent, "", imageIndex, opts); err != nil {
+			return err
 		}
-		transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 
 		inputName := strings.TrimPrefix(typedDescriptor.GetInputType(), ".")
 		inputDescriptor, ok := imageIndex.ByName[inputName]
 		if !ok {
-			return nil, fmt.Errorf("missing %q", inputName)
+			return fmt.Errorf("missing %q", inputName)
 		}
-		recursiveDescriptorsIn, err := descriptorTransitiveClosure(inputDescriptor, imageIndex, seen, opts)
-		if err != nil {
-			return nil, err
+		if err := t.addElement(inputDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+			return err
 		}
-		transitiveDependencies = append(transitiveDependencies, recursiveDescriptorsIn...)
-		directDependencies = append(directDependencies, inputDescriptor)
 
 		outputName := strings.TrimPrefix(typedDescriptor.GetOutputType(), ".")
 		outputDescriptor, ok := imageIndex.ByName[outputName]
 		if !ok {
-			return nil, fmt.Errorf("missing %q", outputName)
+			return fmt.Errorf("missing %q", outputName)
 		}
-		recursiveDescriptorsOut, err := descriptorTransitiveClosure(outputDescriptor, imageIndex, seen, opts)
-		if err != nil {
-			return nil, err
+		if err := t.addElement(outputDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+			return err
 		}
-		transitiveDependencies = append(transitiveDependencies, recursiveDescriptorsOut...)
-		directDependencies = append(directDependencies, outputDescriptor)
 
-		// options
-		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(typedDescriptor, imageIndex, seen, opts)
-		if err != nil {
-			return nil, err
+		// Method options
+		if err := t.exploreCustomOptions(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+			return err
 		}
-		directDependencies = append(directDependencies, explicitOptionDeps...)
-		transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 
 	case *descriptorpb.FieldDescriptorProto:
 		// Regular fields get handled by protosource.Message, only
 		// protosource.Fields's for extends definitions should reach
 		// here.
 		if typedDescriptor.GetExtendee() == "" {
-			return nil, fmt.Errorf("expected extendee for field %q to not be empty", descriptorInfo.fullName)
+			return fmt.Errorf("expected extendee for field %q to not be empty", descriptorInfo.fullName)
 		}
 		extendeeName := strings.TrimPrefix(typedDescriptor.GetExtendee(), ".")
 		extendeeDescriptor, ok := imageIndex.ByName[extendeeName]
 		if !ok {
-			return nil, fmt.Errorf("missing %q", extendeeName)
+			return fmt.Errorf("missing %q", extendeeName)
 		}
-		directDependencies = append(directDependencies, extendeeDescriptor)
-		recursiveDescriptors, err := descriptorTransitiveClosure(extendeeDescriptor, imageIndex, seen, opts)
-		if err != nil {
-			return nil, err
+		if err := t.addElement(extendeeDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+			return err
 		}
-		transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 
 		switch typedDescriptor.GetType() {
 		case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
@@ -596,14 +555,12 @@ func descriptorTransitiveClosure(
 			typeName := strings.TrimPrefix(typedDescriptor.GetTypeName(), ".")
 			typeDescriptor, ok := imageIndex.ByName[typeName]
 			if !ok {
-				return nil, fmt.Errorf("missing %q", typeName)
+				return fmt.Errorf("missing %q", typeName)
 			}
-			directDependencies = append(directDependencies, typeDescriptor)
-			recursiveDescriptors, err := descriptorTransitiveClosure(typeDescriptor, imageIndex, seen, opts)
+			err := t.addElement(typeDescriptor, descriptorInfo.file, imageIndex, opts)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 		case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
 			descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
 			descriptorpb.FieldDescriptorProto_TYPE_INT64,
@@ -621,44 +578,27 @@ func descriptorTransitiveClosure(
 			descriptorpb.FieldDescriptorProto_TYPE_SINT64:
 			// nothing to follow, custom options handled below.
 		default:
-			return nil, fmt.Errorf("unknown field type %d", typedDescriptor.GetType())
+			return fmt.Errorf("unknown field type %d", typedDescriptor.GetType())
 		}
-		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(typedDescriptor, imageIndex, seen, opts)
-		if err != nil {
-			return nil, err
+		if err := t.exploreCustomOptions(typedDescriptor, descriptorInfo.file, imageIndex, opts); err != nil {
+			return err
 		}
-		directDependencies = append(directDependencies, explicitOptionDeps...)
-		transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 	default:
-		return nil, fmt.Errorf("unexpected protosource type %T", typedDescriptor)
+		return fmt.Errorf("unexpected protosource type %T", typedDescriptor)
 	}
 
-	fileDescriptor := imageIndex.Files[descriptorInfo.file]
-	explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(fileDescriptor, imageIndex, seen, opts)
-	if err != nil {
-		return nil, err
-	}
-	directDependencies = append(directDependencies, explicitOptionDeps...)
-	transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
-
-	return append(
-		transitiveDependencies,
-		descriptorAndDirects{Descriptor: descriptor, Directs: directDependencies},
-	), nil
+	return nil
 }
 
-func exploreCustomOptions(
+func (t *transitiveClosure) exploreCustomOptions(
 	descriptor proto.Message,
+	referrerFile string,
 	imageIndex *imageIndex,
-	seen map[string]struct{},
 	opts *imageFilterOptions,
-) ([]namedDescriptor, []descriptorAndDirects, error) {
+) error {
 	if !opts.includeCustomOptions {
-		return nil, nil, nil
+		return nil
 	}
-
-	var directDependencies []namedDescriptor
-	var transitiveDependencies []descriptorAndDirects
 
 	var options protoreflect.Message
 	switch descriptor := descriptor.(type) {
@@ -681,7 +621,7 @@ func exploreCustomOptions(
 	case *descriptorpb.DescriptorProto_ExtensionRange:
 		options = descriptor.GetOptions().ProtoReflect()
 	default:
-		return nil, nil, fmt.Errorf("unexpected type for exploring options %T", descriptor)
+		return fmt.Errorf("unexpected type for exploring options %T", descriptor)
 	}
 
 	optionsName := string(options.Descriptor().FullName())
@@ -696,19 +636,10 @@ func exploreCustomOptions(
 			err = fmt.Errorf("cannot find ext no %d on %s", fd.Number(), optionsName)
 			return false
 		}
-		directDependencies = append(directDependencies, field)
-		recursiveDescriptors, recurseErr := descriptorTransitiveClosure(field, imageIndex, seen, opts)
-		if recurseErr != nil {
-			err = recurseErr
-			return false
-		}
-		transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
-		return true
+		err = t.addElement(field, referrerFile, imageIndex, opts)
+		return err == nil
 	})
-	if err != nil {
-		return nil, nil, err
-	}
-	return directDependencies, transitiveDependencies, nil
+	return err
 }
 
 func freeMessageRangeStringsRec(
