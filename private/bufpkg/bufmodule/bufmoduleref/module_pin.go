@@ -138,8 +138,8 @@ func (*modulePin) isModuleOwner()    {}
 func (*modulePin) isModuleIdentity() {}
 func (*modulePin) isModulePin()      {}
 
-// isValidDigest returns true when the digest string appears to be a valid
-// digest. Older buf digests are not considered valid (b1/b3).
+// isValidDigest returns true when the digest string is successfully parsed
+// by the `manifest` pkg. Older buf digests are not considered valid (b1/b3).
 func isValidDigest(digest string) bool {
 	_, err := manifest.NewDigestFromString(digest)
 	return err == nil
