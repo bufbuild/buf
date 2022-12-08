@@ -263,3 +263,4 @@ remoteimports: bufgeneratecleango
 	find private -type f -exec $(SED_I) 's/$(GITHUB_GEN_PROTO_GO)/$(BUF_BUILD_PROTO_GO)/g' {} \;
 	find private -type f -exec $(SED_I) 's/$(GITHUB_GEN_PROTO_CONNECT)/$(BUF_BUILD_PROTO_CONNECT)/g' {} \;
 	goimports -w -l private
+	go mod tidy
