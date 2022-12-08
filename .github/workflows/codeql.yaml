@@ -19,15 +19,12 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: initialize
-        if: success()
         uses: github/codeql-action/init@v2
         with:
           # Limit analysis to Go for now.
           # Available languages: https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#changing-the-languages-that-are-analyzed
           languages: go
       - name: autobuild
-        if: success()
         uses: github/codeql-action/autobuild@v2
       - name: analyze
-        if: success()
         uses: github/codeql-action/analyze@v2

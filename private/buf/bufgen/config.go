@@ -159,9 +159,11 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 		}
 		pluginConfigs = append(pluginConfigs, pluginConfig)
 	}
+	typesConfig := newTypesConfigV1(externalConfig.Types)
 	return &Config{
 		PluginConfigs: pluginConfigs,
 		ManagedConfig: managedConfig,
+		TypesConfig:   typesConfig,
 	}, nil
 }
 
@@ -559,4 +561,13 @@ type readConfigOptions struct {
 
 func newReadConfigOptions() *readConfigOptions {
 	return &readConfigOptions{}
+}
+
+func newTypesConfigV1(in *ExternalTypesConfigV1) *TypesConfig {
+	if in == nil {
+		return nil
+	}
+	return &TypesConfig{
+		Include: in.Include,
+	}
 }

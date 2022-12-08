@@ -16,7 +16,10 @@ package pluginpush
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
@@ -32,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/netextended"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
@@ -44,12 +48,7 @@ const (
 	formatFlagName          = "format"
 	errorFormatFlagName     = "error-format"
 	disableSymlinksFlagName = "disable-symlinks"
-	targetFlagName          = "target"
 	overrideRemoteFlagName  = "override-remote"
-	cacheFromFlagName       = "cache-from"
-	dryRunFlagName          = "dry-run"
-	pullFlagName            = "pull"
-	buildArgFlagName        = "build-arg"
 	imageFlagName           = "image"
 )
 
@@ -62,7 +61,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <source>",
 		Short: "Push a plugin to a registry.",
-		Long:  bufcli.GetSourceDirLong(`the source to push`),
+		Long:  bufcli.GetSourceDirLong(`the source to push (directory containing buf.plugin.yaml or plugin release zip)`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -78,12 +77,7 @@ type flags struct {
 	Format          string
 	ErrorFormat     string
 	DisableSymlinks bool
-	Target          string
 	OverrideRemote  string
-	CacheFrom       []string
-	DryRun          bool
-	PullParent      bool
-	BuildArgs       []string
 	Image           string
 }
 
@@ -115,36 +109,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"Override the default remote found in buf.plugin.yaml name and dependencies.",
 	)
 	flagSet.StringVar(
-		&f.Target,
-		targetFlagName,
-		"",
-		fmt.Sprintf("The target architecture for plugins (default %q).", bufplugindocker.DefaultTarget),
-	)
-	flagSet.StringArrayVar(
-		&f.CacheFrom,
-		cacheFromFlagName,
-		nil,
-		"Cache sources used to optimize build time.",
-	)
-	flagSet.BoolVar(
-		&f.DryRun,
-		dryRunFlagName,
-		false,
-		"Build the plugin but skip pushing it to the BSR.",
-	)
-	flagSet.BoolVar(
-		&f.PullParent,
-		pullFlagName,
-		false,
-		"Pull latest base images prior to build.",
-	)
-	flagSet.StringArrayVar(
-		&f.BuildArgs,
-		buildArgFlagName,
-		nil,
-		"Build arguments.",
-	)
-	flagSet.StringVar(
 		&f.Image,
 		imageFlagName,
 		"",
@@ -174,10 +138,35 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	sourceBucket, err := storageosProvider.NewReadWriteBucket(source)
+	storageProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
+	sourceStat, err := os.Stat(source)
 	if err != nil {
 		return err
+	}
+	var sourceBucket storage.ReadWriteBucket
+	if !sourceStat.IsDir() && strings.HasSuffix(strings.ToLower(sourceStat.Name()), ".zip") {
+		// Unpack plugin release to temporary directory
+		tmpDir, err := os.MkdirTemp(os.TempDir(), "plugin-push")
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := os.RemoveAll(tmpDir); !os.IsNotExist(err) {
+				retErr = multierr.Append(retErr, err)
+			}
+		}()
+		sourceBucket, err = storageProvider.NewReadWriteBucket(tmpDir)
+		if err != nil {
+			return err
+		}
+		if err := unzipPluginToSourceBucket(ctx, source, sourceStat.Size(), sourceBucket); err != nil {
+			return err
+		}
+	} else {
+		sourceBucket, err = storageProvider.NewReadWriteBucket(source)
+		if err != nil {
+			return err
+		}
 	}
 	existingConfigFilePath, err := bufpluginconfig.ExistingConfigFilePath(ctx, sourceBucket)
 	if err != nil {
@@ -198,15 +187,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	// TODO: Once we support multiple plugin source types, this could be abstracted away
-	// in the bufpluginsource package. This is much simpler for now though.
-	dockerfile, err := loadDockerfile(ctx, sourceBucket)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, dockerfile.Close())
-	}()
 
 	client, err := bufplugindocker.NewClient(container.Logger())
 	if err != nil {
@@ -216,43 +196,38 @@ func run(
 		retErr = multierr.Append(retErr, client.Close())
 	}()
 
-	var createdImage string
-	if len(flags.Image) > 0 {
-		tagResponse, err := client.Tag(ctx, flags.Image, pluginConfig)
-		if err != nil {
-			return err
-		}
-		createdImage = tagResponse.Image
+	var imageToTag string
+	if flags.Image != "" {
+		imageToTag = flags.Image
 	} else {
-		buildResponse, err := client.Build(
-			ctx,
-			dockerfile,
-			pluginConfig,
-			bufplugindocker.WithConfigDirPath(container.ConfigDirPath()),
-			bufplugindocker.WithTarget(flags.Target),
-			bufplugindocker.WithCacheFrom(flags.CacheFrom),
-			bufplugindocker.WithPullParent(flags.PullParent),
-			bufplugindocker.WithBuildArgs(flags.BuildArgs),
-		)
+		image, err := loadDockerImage(ctx, sourceBucket)
 		if err != nil {
 			return err
 		}
-		createdImage = buildResponse.Image
+		loadResponse, err := client.Load(ctx, image)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := image.Close(); !errors.Is(err, os.ErrClosed) {
+				retErr = multierr.Append(retErr, err)
+			}
+		}()
+		imageToTag = loadResponse.ImageID
 	}
+	tagResponse, err := client.Tag(ctx, imageToTag, pluginConfig)
+	if err != nil {
+		return err
+	}
+	createdImage := tagResponse.Image
 
-	// We build a Docker image using a unique ID label each time.
+	// We tag a Docker image using a unique ID label each time.
 	// After we're done publishing the image, we delete it to not leave a lot of images left behind.
-	// buildkit maintains a separate build cache so removing the image doesn't appear to impact future rebuilds.
 	defer func() {
 		if _, err := client.Delete(ctx, createdImage); err != nil {
 			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", createdImage))
 		}
 	}()
-
-	if flags.DryRun {
-		container.Logger().Info("Skipping push in dry-run mode.")
-		return nil
-	}
 
 	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
 	if err != nil {
@@ -346,20 +321,21 @@ func run(
 	return bufprint.NewCuratedPluginPrinter(container.Stdout()).PrintCuratedPlugin(ctx, format, curatedPlugin)
 }
 
-func loadDockerfile(ctx context.Context, bucket storage.ReadBucket) (storage.ReadObjectCloser, error) {
-	var err error
-	for _, path := range []string{bufplugindocker.SourceFilePath, bufplugindocker.SourceFileAlternatePath} {
-		var dockerfile storage.ReadObjectCloser
-		if dockerfile, err = bucket.Get(ctx, path); err == nil {
-			return dockerfile, nil
-		}
+func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64, bucket storage.ReadWriteBucket) (retErr error) {
+	f, err := os.Open(pluginZip)
+	if err != nil {
+		return err
 	}
+	defer func() {
+		retErr = multierr.Append(retErr, f.Close())
+	}()
+	return storagearchive.Unzip(ctx, f, size, bucket, nil, 0)
+}
+
+func loadDockerImage(ctx context.Context, bucket storage.ReadBucket) (storage.ReadObjectCloser, error) {
+	image, err := bucket.Get(ctx, bufplugindocker.ImagePath)
 	if storage.IsNotExist(err) {
-		return nil, fmt.Errorf(
-			"please define a %s or %s plugin source file in the target directory",
-			bufplugindocker.SourceFilePath,
-			bufplugindocker.SourceFileAlternatePath,
-		)
+		return nil, fmt.Errorf("unable to find a %s plugin image: %w", bufplugindocker.ImagePath, err)
 	}
-	return nil, err
+	return image, nil
 }

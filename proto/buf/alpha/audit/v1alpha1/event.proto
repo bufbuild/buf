@@ -48,7 +48,8 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
-  RESOURCE_TYPE_PLUGIN = 7;
+  RESOURCE_TYPE_PLUGIN = 7 [deprecated = true];
+  RESOURCE_TYPE_CURATED_PLUGIN = 8;
 }
 
 // Resource is the affected resource by the audited event.
@@ -76,13 +77,14 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED = 10;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
-  EVENT_TYPE_PLUGIN_CREATED = 13;
-  EVENT_TYPE_PLUGIN_DELETED = 14;
+  EVENT_TYPE_PLUGIN_CREATED = 13 [deprecated = true];
+  EVENT_TYPE_PLUGIN_DELETED = 14 [deprecated = true];
   EVENT_TYPE_USER_CREATED = 15;
   EVENT_TYPE_USER_DELETED = 16;
   EVENT_TYPE_USER_DEACTIVATED = 17;
   EVENT_TYPE_USER_LOGGED_IN = 18;
   EVENT_TYPE_USER_LOGGED_OUT = 19;
+  EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -125,13 +127,14 @@ message Event {
     PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 16;
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
-    PayloadPluginCreated plugin_created = 19;
-    PayloadPluginDeleted plugin_deleted = 20;
+    PayloadPluginCreated plugin_created = 19 [deprecated = true];
+    PayloadPluginDeleted plugin_deleted = 20 [deprecated = true];
     PayloadUserCreated user_created = 21;
     PayloadUserDeactivated user_deactivated = 22;
     PayloadUserDeleted user_deleted = 23;
     PayloadUserLoggedIn user_logged_in = 24;
     PayloadUserLoggedOut user_logged_out = 25;
+    PayloadCuratedPluginCreated curated_plugin_created = 26;
   }
 }
 
@@ -254,6 +257,7 @@ message PayloadRepositoryVisibilityChanged {
 }
 
 message PayloadPluginCreated {
+  option deprecated = true;
   // owner_id is the id of the owner of the plugin.
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
@@ -263,6 +267,7 @@ message PayloadPluginCreated {
 }
 
 message PayloadPluginDeleted {
+  option deprecated = true;
   // owner_id is the id of the owner of the plugin.
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
@@ -280,3 +285,10 @@ message PayloadUserDeleted {}
 message PayloadUserLoggedIn {}
 
 message PayloadUserLoggedOut {}
+
+message PayloadCuratedPluginCreated {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+}
