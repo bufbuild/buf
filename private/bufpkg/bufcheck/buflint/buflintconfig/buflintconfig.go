@@ -21,8 +21,8 @@ import (
 	"sort"
 	"strings"
 
+	lintv1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/lint/v1"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 )
 
 const (

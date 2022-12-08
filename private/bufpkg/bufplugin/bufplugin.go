@@ -19,9 +19,9 @@ import (
 	"sort"
 	"strings"
 
+	registryv1alpha1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 // Plugin represents a plugin defined by a buf.plugin.yaml.
