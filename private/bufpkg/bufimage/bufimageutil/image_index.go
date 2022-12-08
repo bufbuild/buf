@@ -86,7 +86,7 @@ func newImageIndexForImage(image bufimage.Image, opts *imageFilterOptions) (*ima
 		fileDescriptorProto := file.Proto()
 		index.Files[fileName] = fileDescriptorProto
 		err := walk.DescriptorProtos(fileDescriptorProto, func(name protoreflect.FullName, msg proto.Message) error {
-			if _, ok := index.ByName[string(name)]; ok {
+			if existing := index.ByName[string(name)]; existing != nil {
 				return fmt.Errorf("duplicate for %q", name)
 			}
 			descriptor, ok := msg.(namedDescriptor)
