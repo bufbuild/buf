@@ -246,3 +246,20 @@ pregenerate:: updategitignores
 __checknodiffgeneratedinternal:
 	@echo bash $(MAKEGO)/scripts/checknodiffgenerated.bash make generate
 	@bash $(MAKEGO)/scripts/checknodiffgenerated.bash $(MAKE) generate
+
+BUF_BUILD_PROTO_GO=buf.build\/gen\/go\/bufbuild\/buf\/protocolbuffers\/go
+GITHUB_GEN_PROTO_GO=github.com\/bufbuild\/buf\/private\/gen\/proto\/go
+BUF_BUILD_PROTO_CONNECT=buf.build\/gen\/go\/bufbuild\/buf\/bufbuild\/connect-go
+GITHUB_GEN_PROTO_CONNECT=github.com\/bufbuild\/buf\/private\/gen\/proto\/connect
+.PHONY: localimports
+localimports: generate
+	find private -type f -exec $(SED_I) 's/$(BUF_BUILD_PROTO_GO)/$(GITHUB_GEN_PROTO_GO)/g' {} \;
+	find private -type f -exec $(SED_I) 's/$(BUF_BUILD_PROTO_CONNECT)/$(GITHUB_GEN_PROTO_CONNECT)/g' {} \;
+	goimports -w -l private
+	@$(MAKE) upgrade
+
+.PHONY: remoteimports
+remoteimports: bufgeneratecleango
+	find private -type f -exec $(SED_I) 's/$(GITHUB_GEN_PROTO_GO)/$(BUF_BUILD_PROTO_GO)/g' {} \;
+	find private -type f -exec $(SED_I) 's/$(GITHUB_GEN_PROTO_CONNECT)/$(BUF_BUILD_PROTO_CONNECT)/g' {} \;
+	goimports -w -l private

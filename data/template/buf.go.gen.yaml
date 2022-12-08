@@ -1,0 +1,10 @@
+# This template is for go only for OSS types.
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/bufbuild/buf/private/gen/proto/go
+plugins:
+  - name: go
+    out: private/gen/proto/go
+    opt: paths=source_relative
