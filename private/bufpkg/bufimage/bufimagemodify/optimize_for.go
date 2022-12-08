@@ -80,7 +80,7 @@ func optimizeFor(
 			}
 			for moduleIdentityString := range overrideModuleIdentityStrings {
 				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
-					logger.Sugar().Warnf("%s override for %q was unused", moduleIdentityString)
+					logger.Sugar().Warnf("optimize_for override for %q was unused", moduleIdentityString)
 				}
 			}
 			for overrideFile := range overrides {
