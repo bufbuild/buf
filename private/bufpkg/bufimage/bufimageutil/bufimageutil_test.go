@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"sort"
 	"testing"
 
@@ -257,49 +256,37 @@ func imageIsDependencyOrdered(image bufimage.Image) bool {
 	return true
 }
 
-var benchmarkCases = []*struct {
-	folder string
-	image  bufimage.Image
-	types  []string
-}{
-	{
-		folder: "testdata/extensions",
-		types:  []string{"pkg.Foo"},
-	},
-	{
-		folder: "testdata/importmods",
-		types:  []string{"ImportRegular", "ImportWeak", "ImportPublic", "NoImports"},
-	},
-	{
-		folder: "testdata/nesting",
-		types:  []string{"pkg.Foo", "pkg.Foo.NestedFoo.NestedNestedFoo", "pkg.Baz", "pkg.FooEnum"},
-	},
-	{
-		folder: "testdata/options",
-		types:  []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "pkg.FooService.Do"},
-	},
-}
-
-func TestMain(m *testing.M) {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "failed to create logger: %v", err)
-		os.Exit(1)
+func BenchmarkFilterImage(b *testing.B) {
+	benchmarkCases := []*struct {
+		folder string
+		image  bufimage.Image
+		types  []string
+	}{
+		{
+			folder: "testdata/extensions",
+			types:  []string{"pkg.Foo"},
+		},
+		{
+			folder: "testdata/importmods",
+			types:  []string{"ImportRegular", "ImportWeak", "ImportPublic", "NoImports"},
+		},
+		{
+			folder: "testdata/nesting",
+			types:  []string{"pkg.Foo", "pkg.Foo.NestedFoo.NestedNestedFoo", "pkg.Baz", "pkg.FooEnum"},
+		},
+		{
+			folder: "testdata/options",
+			types:  []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "pkg.FooService.Do"},
+		},
 	}
 	ctx := context.Background()
 	for _, benchmarkCase := range benchmarkCases {
-		_, image, err := getImage(ctx, logger, benchmarkCase.folder)
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "failed to create image for %q: %v", benchmarkCase.folder, err)
-			os.Exit(1)
-		}
+		_, image, err := getImage(ctx, zaptest.NewLogger(b), benchmarkCase.folder)
+		require.NoError(b, err)
 		benchmarkCase.image = image
 	}
-	returnCode := m.Run()
-	os.Exit(returnCode)
-}
+	b.ResetTimer()
 
-func BenchmarkFilterImage(b *testing.B) {
 	i := 0
 	for {
 		for _, benchmarkCase := range benchmarkCases {
