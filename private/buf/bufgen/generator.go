@@ -501,7 +501,7 @@ func newModifier(
 			logger,
 			sweeper,
 			managedConfig.OptimizeForConfig.Default,
-			managedConfig.JavaPackagePrefix.Except,
+			managedConfig.OptimizeForConfig.Except,
 			managedConfig.OptimizeForConfig.Override,
 			managedConfig.Override[bufimagemodify.OptimizeForID],
 		)
