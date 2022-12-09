@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -42,6 +43,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
@@ -380,6 +382,12 @@ func findExistingDigestForImageID(ctx context.Context, plugin *bufpluginconfig.C
 	}
 	tags, err := remote.List(repo, remote.WithContext(ctx), remote.WithAuth(auth))
 	if err != nil {
+		structuredErr := new(transport.Error)
+		if errors.As(err, &structuredErr) {
+			if structuredErr.StatusCode == http.StatusNotFound {
+				return "", nil
+			}
+		}
 		return "", err
 	}
 	existingImageDigest := ""
