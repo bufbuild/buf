@@ -38,6 +38,8 @@ message User {
   string url = 7;
   // verification status of the user, configurable by server admin.
   VerificationStatus verification_status = 8;
+  // user type of the user, depends on how the user was created.
+  UserType user_type = 9;
 }
 
 // TODO: #663 move this to organization service
