@@ -213,12 +213,10 @@ func (p *PluginConfig) GetRemoteHostname() string {
 	if p == nil {
 		return ""
 	}
-	identity, err := bufpluginref.PluginIdentityForString(p.Plugin)
-	if err == nil {
+	if identity, err := bufpluginref.PluginIdentityForString(p.Plugin); err == nil {
 		return identity.Remote()
 	}
-	reference, err := bufpluginref.PluginReferenceForString(p.Plugin, 0)
-	if err == nil {
+	if reference, err := bufpluginref.PluginReferenceForString(p.Plugin, 0); err == nil {
 		return reference.Remote()
 	}
 	return p.Remote

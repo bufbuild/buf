@@ -117,7 +117,6 @@ func (g *generator) generate(
 	responses, err := g.execPlugins(
 		ctx,
 		container,
-		g.appprotoexecGenerator,
 		config,
 		image,
 		includeImports,
@@ -158,7 +157,6 @@ func (g *generator) generate(
 func (g *generator) execPlugins(
 	ctx context.Context,
 	container app.EnvStdioContainer,
-	appprotoexecGenerator appprotoexec.Generator,
 	config *Config,
 	image bufimage.Image,
 	includeImports bool,
@@ -169,24 +167,24 @@ func (g *generator) execPlugins(
 	jobs := make([]func(context.Context) error, 0, len(config.PluginConfigs))
 	responses := make([]*pluginpb.CodeGeneratorResponse, len(config.PluginConfigs))
 	requiredFeatures := computeRequiredFeatures(image)
-	remotePluginConfigTable := make(map[string]map[int]*PluginConfig, len(config.PluginConfigs))
+	remotePluginConfigTable := make(map[string][]*remotePluginExecArgs, len(config.PluginConfigs))
 	for i, pluginConfig := range config.PluginConfigs {
 		index := i
 		currentPluginConfig := pluginConfig
 		remote := currentPluginConfig.GetRemoteHostname()
 		if remote != "" {
-			pluginConfigSet, ok := remotePluginConfigTable[remote]
-			if !ok {
-				pluginConfigSet = make(map[int]*PluginConfig, len(config.PluginConfigs))
-				remotePluginConfigTable[remote] = pluginConfigSet
-			}
-			pluginConfigSet[index] = currentPluginConfig
+			remotePluginConfigTable[remote] = append(
+				remotePluginConfigTable[remote],
+				&remotePluginExecArgs{
+					Index:        index,
+					PluginConfig: currentPluginConfig,
+				},
+			)
 		} else {
 			jobs = append(jobs, func(ctx context.Context) error {
 				response, err := g.execLocalPlugin(
 					ctx,
 					container,
-					g.appprotoexecGenerator,
 					imageProvider,
 					currentPluginConfig,
 					includeImports,
@@ -201,52 +199,52 @@ func (g *generator) execPlugins(
 		}
 	}
 	// Batch for each remote.
-	for remote, pluginConfigSet := range remotePluginConfigTable {
-		v1PluginConfigSet := make(map[int]*PluginConfig, len(pluginConfigSet))
-		v2PluginConfigSet := make(map[int]*PluginConfig, len(pluginConfigSet))
-		for i, pluginConfig := range pluginConfigSet {
-			if pluginConfig.Plugin == "" {
-				v1PluginConfigSet[i] = pluginConfig
+	for remote, indexedPluginConfigs := range remotePluginConfigTable {
+		v1Args := make([]*remotePluginExecArgs, 0, len(indexedPluginConfigs))
+		v2Args := make([]*remotePluginExecArgs, 0, len(indexedPluginConfigs))
+		for _, param := range indexedPluginConfigs {
+			if param.PluginConfig.Plugin == "" {
+				v1Args = append(v1Args, param)
 			} else {
-				v2PluginConfigSet[i] = pluginConfig
+				v2Args = append(v2Args, param)
 			}
 		}
-		if len(v1PluginConfigSet) > 0 {
+		if len(v1Args) > 0 {
 			jobs = append(jobs, func(ctx context.Context) error {
-				responseSet, err := g.executeRemotePlugins(
+				results, err := g.executeRemotePlugins(
 					ctx,
 					container,
 					image,
 					remote,
-					v1PluginConfigSet,
+					v1Args,
 					includeImports,
 					includeWellKnownTypes,
 				)
 				if err != nil {
 					return err
 				}
-				for i, response := range responseSet {
-					responses[i] = response
+				for _, result := range results {
+					responses[result.Index] = result.CodeGeneratorResponse
 				}
 				return nil
 			})
 		}
-		if len(v2PluginConfigSet) > 0 {
+		if len(v2Args) > 0 {
 			jobs = append(jobs, func(ctx context.Context) error {
-				responseSet, err := g.execRemotePluginsV2(
+				results, err := g.execRemotePluginsV2(
 					ctx,
 					container,
 					image,
 					remote,
-					v2PluginConfigSet,
+					v2Args,
 					includeImports,
 					includeWellKnownTypes,
 				)
 				if err != nil {
 					return err
 				}
-				for i, response := range responseSet {
-					responses[i] = response
+				for _, result := range results {
+					responses[result.Index] = result.CodeGeneratorResponse
 				}
 				return nil
 			})
@@ -286,7 +284,6 @@ func (g *generator) execPlugins(
 func (g *generator) execLocalPlugin(
 	ctx context.Context,
 	container app.EnvStdioContainer,
-	appprotoexecGenerator appprotoexec.Generator,
 	imageProvider *imageProvider,
 	pluginConfig *PluginConfig,
 	includeImports bool,
@@ -296,7 +293,7 @@ func (g *generator) execLocalPlugin(
 	if err != nil {
 		return nil, err
 	}
-	response, err := appprotoexecGenerator.Generate(
+	response, err := g.appprotoexecGenerator.Generate(
 		ctx,
 		container,
 		pluginConfig.PluginName(),
@@ -315,24 +312,32 @@ func (g *generator) execLocalPlugin(
 	return response, nil
 }
 
+type remotePluginExecArgs struct {
+	Index        int
+	PluginConfig *PluginConfig
+}
+
+type remotePluginExecutionResult struct {
+	CodeGeneratorResponse *pluginpb.CodeGeneratorResponse
+	Index                 int
+}
+
 func (g *generator) executeRemotePlugins(
 	ctx context.Context,
 	container app.EnvStdioContainer,
 	image bufimage.Image,
 	remote string,
-	pluginConfigSet map[int]*PluginConfig,
+	pluginConfigs []*remotePluginExecArgs,
 	includeImports bool,
 	includeWellKnownTypes bool,
-) (map[int]*pluginpb.CodeGeneratorResponse, error) {
-	pluginReferences := make([]*registryv1alpha1.PluginReference, 0, len(pluginConfigSet))
-	indexes := make([]int, 0, len(pluginConfigSet))
-	for index, pluginConfig := range pluginConfigSet {
-		pluginReference, err := getPluginReference(pluginConfig)
+) ([]*remotePluginExecutionResult, error) {
+	pluginReferences := make([]*registryv1alpha1.PluginReference, len(pluginConfigs))
+	for i, pluginConfig := range pluginConfigs {
+		pluginReference, err := getPluginReference(pluginConfig.PluginConfig)
 		if err != nil {
 			return nil, err
 		}
-		indexes = append(indexes, index)
-		pluginReferences = append(pluginReferences, pluginReference)
+		pluginReferences[i] = pluginReference
 	}
 	generateService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewGenerateServiceClient)
 	response, err := generateService.GeneratePlugins(
@@ -354,9 +359,12 @@ func (g *generator) executeRemotePlugins(
 		return nil, fmt.Errorf("unexpected number of responses, got %d, wanted: %d", len(responses), len(pluginReferences))
 	}
 	pluginService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewPluginServiceClient)
-	responseSet := make(map[int]*pluginpb.CodeGeneratorResponse, len(pluginReferences))
+	result := make([]*remotePluginExecutionResult, 0, len(pluginReferences))
 	for i, pluginReference := range pluginReferences {
-		responseSet[indexes[i]] = responses[i]
+		result = append(result, &remotePluginExecutionResult{
+			Index:                 pluginConfigs[i].Index,
+			CodeGeneratorResponse: responses[i],
+		})
 		resp, err := pluginService.GetPlugin(
 			ctx,
 			connect.NewRequest(
@@ -378,7 +386,7 @@ func (g *generator) executeRemotePlugins(
 			g.logger.Sugar().Warn(warnMsg)
 		}
 	}
-	return responseSet, nil
+	return result, nil
 }
 
 func (g *generator) execRemotePluginsV2(
@@ -386,19 +394,17 @@ func (g *generator) execRemotePluginsV2(
 	container app.EnvStdioContainer,
 	image bufimage.Image,
 	remote string,
-	pluginConfigSet map[int]*PluginConfig,
+	pluginConfigs []*remotePluginExecArgs,
 	includeImports bool,
 	includeWellKnownTypes bool,
-) (map[int]*pluginpb.CodeGeneratorResponse, error) {
-	requests := make([]*registryv1alpha1.PluginGenerationRequest, 0, len(pluginConfigSet))
-	indexes := make([]int, 0, len(pluginConfigSet))
-	for index, pluginConfig := range pluginConfigSet {
-		request, err := getPluginGenerationRequest(pluginConfig)
+) ([]*remotePluginExecutionResult, error) {
+	requests := make([]*registryv1alpha1.PluginGenerationRequest, len(pluginConfigs))
+	for i, pluginConfig := range pluginConfigs {
+		request, err := getPluginGenerationRequest(pluginConfig.PluginConfig)
 		if err != nil {
 			return nil, err
 		}
-		indexes = append(indexes, index)
-		requests = append(requests, request)
+		requests[i] = request
 	}
 	codeGenerationService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewCodeGenerationServiceClient)
 	response, err := codeGenerationService.GenerateCode(
@@ -419,15 +425,18 @@ func (g *generator) execRemotePluginsV2(
 	if len(responses) != len(requests) {
 		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), len(requests))
 	}
-	responseSet := make(map[int]*pluginpb.CodeGeneratorResponse, len(responses))
+	result := make([]*remotePluginExecutionResult, len(responses))
 	for i := range requests {
 		codeGeneratorResponse := responses[i].GetResponse()
 		if codeGeneratorResponse == nil {
 			return nil, errors.New("expected code generator response")
 		}
-		responseSet[indexes[i]] = codeGeneratorResponse
+		result = append(result, &remotePluginExecutionResult{
+			CodeGeneratorResponse: codeGeneratorResponse,
+			Index:                 pluginConfigs[i].Index,
+		})
 	}
-	return responseSet, nil
+	return result, nil
 }
 
 func getPluginGenerationRequest(
