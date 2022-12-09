@@ -236,7 +236,6 @@ func run(
 		}),
 	)
 	var nextRevision uint32
-	var imageDigest string
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err
@@ -244,14 +243,10 @@ func run(
 		nextRevision = 1
 	} else {
 		nextRevision = latestPluginResp.Msg.Plugin.Revision + 1
-		if imageID != "" {
-			// plugin already exists - see if the imageID already exists in registry
-			imageDigest, err = findExistingDigestForImageID(ctx, pluginConfig, imageID)
-			if err != nil {
-				// This isn't fatal - we'll just push a new image
-				container.Logger().Warn("failed to lookup existing image digest for image", zap.Error(err))
-			}
-		}
+	}
+	imageDigest, err := findExistingDigestForImageID(ctx, pluginConfig, imageID)
+	if err != nil {
+		return err
 	}
 	if imageDigest == "" {
 		imageDigest, err = pushImage(ctx, container, client, pluginConfig, imageID)
