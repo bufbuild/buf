@@ -205,13 +205,23 @@ func (p *PluginConfig) PluginName() string {
 
 // IsRemote returns true if the PluginConfig uses a remotely executed plugin.
 func (p *PluginConfig) IsRemote() bool {
+	return p.GetRemoteHostname() != ""
+}
+
+// GetRemoteHostname returns the hostname of the remote plugin.
+func (p *PluginConfig) GetRemoteHostname() string {
 	if p == nil {
-		return false
+		return ""
 	}
-	if bufpluginref.IsPluginReferenceOrIdentity(p.Plugin) {
-		return true
+	identity, err := bufpluginref.PluginIdentityForString(p.Plugin)
+	if err == nil {
+		return identity.Remote()
 	}
-	return p.Remote != ""
+	reference, err := bufpluginref.PluginReferenceForString(p.Plugin, 0)
+	if err == nil {
+		return reference.Remote()
+	}
+	return p.Remote
 }
 
 // ManagedConfig is the managed mode configuration.
