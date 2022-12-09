@@ -165,13 +165,9 @@ func (g *generator) execPlugins(
 	includeWellKnownTypes bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
 	imageProvider := newImageProvider(image)
-	type indexedResponse struct {
-		Index    int
-		Response *pluginpb.CodeGeneratorResponse
-	}
 	// Collect all of the plugin jobs so that they can be executed in parallel.
 	jobs := make([]func(context.Context) error, 0, len(config.PluginConfigs))
-	responseC := make(chan indexedResponse, len(config.PluginConfigs))
+	responses := make([]*pluginpb.CodeGeneratorResponse, len(config.PluginConfigs))
 	requiredFeatures := computeRequiredFeatures(image)
 	remotePluginConfigTable := make(map[string]map[int]*PluginConfig, len(config.PluginConfigs))
 	for i, pluginConfig := range config.PluginConfigs {
@@ -199,7 +195,7 @@ func (g *generator) execPlugins(
 				if err != nil {
 					return err
 				}
-				responseC <- indexedResponse{Response: response, Index: index}
+				responses[index] = response
 				return nil
 			})
 		}
@@ -230,7 +226,7 @@ func (g *generator) execPlugins(
 					return err
 				}
 				for i, response := range responseSet {
-					responseC <- indexedResponse{Response: response, Index: i}
+					responses[i] = response
 				}
 				return nil
 			})
@@ -250,7 +246,7 @@ func (g *generator) execPlugins(
 					return err
 				}
 				for i, response := range responseSet {
-					responseC <- indexedResponse{Response: response, Index: i}
+					responses[i] = response
 				}
 				return nil
 			})
@@ -279,11 +275,6 @@ func (g *generator) execPlugins(
 			return nil, errs[0]
 		}
 		return nil, err
-	}
-	close(responseC)
-	responses := make([]*pluginpb.CodeGeneratorResponse, len(config.PluginConfigs))
-	for indexedResponse := range responseC {
-		responses[indexedResponse.Index] = indexedResponse.Response
 	}
 	if err := validateResponses(responses, config.PluginConfigs); err != nil {
 		return nil, err
