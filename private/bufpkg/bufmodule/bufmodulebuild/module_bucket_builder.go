@@ -78,7 +78,7 @@ func (b *moduleBucketBuilder) BuildForBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	config *bufmoduleconfig.Config,
-) (builtModule BuiltModule, err error) {
+) (*BuiltModule, error) {
 	// proxy plain files
 	externalPaths := []string{
 		buflock.ExternalConfigFilePath,
@@ -90,7 +90,7 @@ func (b *moduleBucketBuilder) BuildForBucket(
 	for _, path := range externalPaths {
 		bucket, err := getFileReadBucket(ctx, readBucket, path)
 		if err != nil {
-			return builtModule, err
+			return nil, err
 		}
 		if bucket != nil {
 			rootBuckets = append(rootBuckets, bucket)
@@ -140,7 +140,7 @@ func (b *moduleBucketBuilder) BuildForBucket(
 		),
 	)
 	if err != nil {
-		return builtModule, err
+		return nil, err
 	}
 	appliedModule, err := applyModulePaths(
 		module,
@@ -151,11 +151,12 @@ func (b *moduleBucketBuilder) BuildForBucket(
 		normalpath.Relative,
 	)
 	if err != nil {
-		return builtModule, err
+		return nil, err
 	}
-	builtModule.Module = appliedModule
-	builtModule.Bucket = bucket
-	return builtModule, nil
+	return &BuiltModule{
+		Module: appliedModule,
+		Bucket: bucket,
+	}, nil
 }
 
 // may return nil.
