@@ -2,7 +2,7 @@
 
 ## [UNRELEASED]
 
-- `buf generate` now batches to remote plugins calls.
+- `buf generate` now batches remote plugins calls.
 
 ## [v1.10.0] - 2022-12-07
 
