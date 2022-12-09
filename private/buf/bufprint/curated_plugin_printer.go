@@ -94,17 +94,19 @@ func (p *curatedPluginPrinter) printCuratedPluginsText(plugins ...*registryv1alp
 }
 
 type outputCuratedPlugin struct {
-	Owner    string `json:"owner"`
-	Name     string `json:"name"`
-	Version  string `json:"version"`
-	Revision uint32 `json:"revision"`
+	Owner       string `json:"owner"`
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Revision    uint32 `json:"revision"`
+	ImageDigest string `json:"image_digest"`
 }
 
 func registryCuratedPluginToOutputCuratedPlugin(plugin *registryv1alpha1.CuratedPlugin) outputCuratedPlugin {
 	return outputCuratedPlugin{
-		Owner:    plugin.Owner,
-		Name:     plugin.Name,
-		Version:  plugin.Version,
-		Revision: plugin.Revision,
+		Owner:       plugin.Owner,
+		Name:        plugin.Name,
+		Version:     plugin.Version,
+		Revision:    plugin.Revision,
+		ImageDigest: plugin.ContainerImageDigest,
 	}
 }
