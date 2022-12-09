@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
@@ -38,6 +39,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/connect-go"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
@@ -183,11 +187,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	outputLanguages, err := bufplugin.OutputLanguagesToProtoLanguages(pluginConfig.OutputLanguages)
-	if err != nil {
-		return err
-	}
-
 	client, err := bufplugindocker.NewClient(container.Logger())
 	if err != nil {
 		return err
@@ -195,10 +194,13 @@ func run(
 	defer func() {
 		retErr = multierr.Append(retErr, client.Close())
 	}()
-
-	var imageToTag string
+	var imageID string
 	if flags.Image != "" {
-		imageToTag = flags.Image
+		inspectResponse, err := client.Inspect(ctx, flags.Image)
+		if err != nil {
+			return nil
+		}
+		imageID = inspectResponse.ImageID
 	} else {
 		image, err := loadDockerImage(ctx, sourceBucket)
 		if err != nil {
@@ -213,50 +215,7 @@ func run(
 				retErr = multierr.Append(retErr, err)
 			}
 		}()
-		imageToTag = loadResponse.ImageID
-	}
-	tagResponse, err := client.Tag(ctx, imageToTag, pluginConfig)
-	if err != nil {
-		return err
-	}
-	createdImage := tagResponse.Image
-
-	// We tag a Docker image using a unique ID label each time.
-	// After we're done publishing the image, we delete it to not leave a lot of images left behind.
-	defer func() {
-		if _, err := client.Delete(ctx, createdImage); err != nil {
-			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", createdImage))
-		}
-	}()
-
-	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
-	if err != nil {
-		return err
-	}
-	authConfig := &bufplugindocker.RegistryAuthConfig{}
-	if machine != nil {
-		authConfig.ServerAddress = machine.Name()
-		authConfig.Username = machine.Login()
-		authConfig.Password = machine.Password()
-	}
-	pushResponse, err := client.Push(ctx, createdImage, authConfig)
-	if err != nil {
-		return err
-	}
-	plugin, err := bufplugin.NewPlugin(
-		pluginConfig.PluginVersion,
-		pluginConfig.Dependencies,
-		pluginConfig.Registry,
-		pushResponse.Digest,
-		pluginConfig.SourceURL,
-		pluginConfig.Description,
-	)
-	if err != nil {
-		return err
-	}
-	protoRegistryConfig, err := bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry())
-	if err != nil {
-		return err
+		imageID = loadResponse.ImageID
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
@@ -267,7 +226,6 @@ func run(
 		pluginConfig.Name.Remote(),
 		registryv1alpha1connect.NewPluginCurationServiceClient,
 	)
-	var nextRevision uint32
 	latestPluginResp, err := service.GetLatestCuratedPlugin(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.GetLatestCuratedPluginRequest{
@@ -277,6 +235,8 @@ func run(
 			Revision: 0, // get latest revision for the plugin version.
 		}),
 	)
+	var nextRevision uint32
+	var imageDigest string
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeNotFound {
 			return err
@@ -284,26 +244,40 @@ func run(
 		nextRevision = 1
 	} else {
 		nextRevision = latestPluginResp.Msg.Plugin.Revision + 1
+		if imageID != "" {
+			// plugin already exists - see if the imageID already exists in registry
+			imageDigest, err = findExistingDigestForImageID(ctx, pluginConfig, imageID)
+			if err != nil {
+				// This isn't fatal - we'll just push a new image
+				container.Logger().Warn("failed to lookup existing image digest for image", zap.Error(err))
+			}
+		}
+	}
+	if imageDigest == "" {
+		imageDigest, err = pushImage(ctx, container, client, pluginConfig, imageID)
+		if err != nil {
+			return err
+		}
+	} else {
+		container.Logger().Info("image found in registry - skipping push")
+	}
+	plugin, err := bufplugin.NewPlugin(
+		pluginConfig.PluginVersion,
+		pluginConfig.Dependencies,
+		pluginConfig.Registry,
+		imageDigest,
+		pluginConfig.SourceURL,
+		pluginConfig.Description,
+	)
+	if err != nil {
+		return err
+	}
+	createRequest, err := createCuratedPluginRequest(pluginConfig, plugin, nextRevision)
+	if err != nil {
+		return err
 	}
 	var curatedPlugin *registryv1alpha1.CuratedPlugin
-	createPluginResp, err := service.CreateCuratedPlugin(
-		ctx,
-		connect.NewRequest(&registryv1alpha1.CreateCuratedPluginRequest{
-			Owner:                pluginConfig.Name.Owner(),
-			Name:                 pluginConfig.Name.Plugin(),
-			RegistryType:         bufplugin.PluginToProtoPluginRegistryType(plugin),
-			Version:              plugin.Version(),
-			ContainerImageDigest: plugin.ContainerImageDigest(),
-			Dependencies:         bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
-			SourceUrl:            plugin.SourceURL(),
-			Description:          plugin.Description(),
-			RegistryConfig:       protoRegistryConfig,
-			Revision:             nextRevision,
-			OutputLanguages:      outputLanguages,
-			SpdxLicenseId:        pluginConfig.SPDXLicenseID,
-			LicenseUrl:           pluginConfig.LicenseURL,
-		}),
-	)
+	createPluginResp, err := service.CreateCuratedPlugin(ctx, connect.NewRequest(createRequest))
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {
 			return err
@@ -319,6 +293,121 @@ func run(
 		curatedPlugin = createPluginResp.Msg.Configuration
 	}
 	return bufprint.NewCuratedPluginPrinter(container.Stdout()).PrintCuratedPlugin(ctx, format, curatedPlugin)
+}
+
+func createCuratedPluginRequest(
+	pluginConfig *bufpluginconfig.Config,
+	plugin bufplugin.Plugin,
+	nextRevision uint32,
+) (*registryv1alpha1.CreateCuratedPluginRequest, error) {
+	outputLanguages, err := bufplugin.OutputLanguagesToProtoLanguages(pluginConfig.OutputLanguages)
+	if err != nil {
+		return nil, err
+	}
+	protoRegistryConfig, err := bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry())
+	if err != nil {
+		return nil, err
+	}
+	return &registryv1alpha1.CreateCuratedPluginRequest{
+		Owner:                pluginConfig.Name.Owner(),
+		Name:                 pluginConfig.Name.Plugin(),
+		RegistryType:         bufplugin.PluginToProtoPluginRegistryType(plugin),
+		Version:              plugin.Version(),
+		ContainerImageDigest: plugin.ContainerImageDigest(),
+		Dependencies:         bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
+		SourceUrl:            plugin.SourceURL(),
+		Description:          plugin.Description(),
+		RegistryConfig:       protoRegistryConfig,
+		Revision:             nextRevision,
+		OutputLanguages:      outputLanguages,
+		SpdxLicenseId:        pluginConfig.SPDXLicenseID,
+		LicenseUrl:           pluginConfig.LicenseURL,
+	}, nil
+}
+
+func pushImage(
+	ctx context.Context,
+	container app.EnvContainer,
+	client bufplugindocker.Client,
+	plugin *bufpluginconfig.Config,
+	image string,
+) (_ string, retErr error) {
+	tagResponse, err := client.Tag(ctx, image, plugin)
+	if err != nil {
+		return "", err
+	}
+	createdImage := tagResponse.Image
+	// We tag a Docker image using a unique ID label each time.
+	// After we're done publishing the image, we delete it to not leave a lot of images left behind.
+	defer func() {
+		if _, err := client.Delete(ctx, createdImage); err != nil {
+			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", createdImage))
+		}
+	}()
+	machine, err := netrc.GetMachineForName(container, plugin.Name.Remote())
+	if err != nil {
+		return "", err
+	}
+	authConfig := &bufplugindocker.RegistryAuthConfig{}
+	if machine != nil {
+		authConfig.ServerAddress = machine.Name()
+		authConfig.Username = machine.Login()
+		authConfig.Password = machine.Password()
+	}
+	pushResponse, err := client.Push(ctx, createdImage, authConfig)
+	if err != nil {
+		return "", err
+	}
+	return pushResponse.Digest, nil
+}
+
+// findExistingDigestForImageID will query the OCI registry to see if the imageID already exists.
+// If an image is found with the same imageID, its digest will be returned (and we'll skip pushing to OCI registry).
+//
+// It performs the following search:
+//
+// - GET /v2/{owner}/{plugin}/tags/list
+// - For each tag:
+//   - Fetch image: GET /v2/{owner}/{plugin}/manifests/{tag}
+//   - If image manifest matches imageID, we can use the image digest for the image.
+func findExistingDigestForImageID(ctx context.Context, plugin *bufpluginconfig.Config, imageID string) (string, error) {
+	pluginsRemote := plugin.Name.Remote()
+	if !strings.HasPrefix(pluginsRemote, bufplugindocker.PluginsImagePrefix) {
+		pluginsRemote = bufplugindocker.PluginsImagePrefix + pluginsRemote
+	}
+	repo, err := name.NewRepository(fmt.Sprintf("%s/%s/%s", pluginsRemote, plugin.Name.Owner(), plugin.Name.Plugin()))
+	if err != nil {
+		return "", err
+	}
+	auth, err := authn.DefaultKeychain.Resolve(repo.Registry)
+	if err != nil {
+		return "", err
+	}
+	tags, err := remote.List(repo, remote.WithContext(ctx), remote.WithAuth(auth))
+	if err != nil {
+		return "", err
+	}
+	existingImageDigest := ""
+	for _, tag := range tags {
+		image, err := remote.Image(repo.Tag(tag), remote.WithContext(ctx), remote.WithAuth(auth))
+		if err != nil {
+			return "", err
+		}
+		manifest, err := image.Manifest()
+		if err != nil {
+			return "", err
+		}
+		remoteImageID := manifest.Config.Digest.String()
+		if remoteImageID == imageID {
+			imageDigest, err := image.Digest()
+			if err != nil {
+				return "", err
+			}
+			existingImageDigest = imageDigest.String()
+			break
+		}
+	}
+	return existingImageDigest, nil
 }
 
 func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64, bucket storage.ReadWriteBucket) (retErr error) {
