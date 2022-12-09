@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -192,6 +193,7 @@ type flags struct {
 	IncludeWKT      bool
 	ExcludePaths    []string
 	DisableSymlinks bool
+	IncludeTypes    []string
 	// special
 	InputHashtag string
 }
@@ -247,6 +249,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		configFlagName,
 		"",
 		`The file or data to use for configuration.`,
+	)
+	flagSet.StringSliceVar(
+		&f.IncludeTypes,
+		"include-types",
+		nil,
+		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
 	)
 }
 
@@ -347,6 +355,20 @@ func run(
 			generateOptions,
 			bufgen.GenerateWithIncludeWellKnownTypes(),
 		)
+	}
+	typesConfig := genConfig.TypesConfig
+	if typesConfig != nil {
+		types := typesConfig.Include
+		if len(flags.IncludeTypes) > 0 {
+			// override buf.gen.yaml with flag value
+			types = flags.IncludeTypes
+		}
+		if len(types) > 0 {
+			image, err = bufimageutil.ImageFilteredByTypes(image, types...)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return bufgen.NewGenerator(
 		logger,

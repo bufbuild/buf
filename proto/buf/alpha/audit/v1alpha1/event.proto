@@ -49,6 +49,7 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
   RESOURCE_TYPE_PLUGIN = 7 [deprecated = true];
+  RESOURCE_TYPE_CURATED_PLUGIN = 8;
 }
 
 // Resource is the affected resource by the audited event.
@@ -83,6 +84,7 @@ enum EventType {
   EVENT_TYPE_USER_DEACTIVATED = 17;
   EVENT_TYPE_USER_LOGGED_IN = 18;
   EVENT_TYPE_USER_LOGGED_OUT = 19;
+  EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -132,6 +134,7 @@ message Event {
     PayloadUserDeleted user_deleted = 23;
     PayloadUserLoggedIn user_logged_in = 24;
     PayloadUserLoggedOut user_logged_out = 25;
+    PayloadCuratedPluginCreated curated_plugin_created = 26;
   }
 }
 
@@ -282,3 +285,10 @@ message PayloadUserDeleted {}
 message PayloadUserLoggedIn {}
 
 message PayloadUserLoggedOut {}
+
+message PayloadCuratedPluginCreated {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+}

@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.10.0] - 2022-12-07
 
 - When using managed mode, setting `enabled: false` now no longer fails `buf generate` 
   and instead prints a warning log and ignores managed mode options.
@@ -9,6 +9,9 @@
   per module, overriding the default value. By default, when managed mode is enabled, 
   `csharp_namespace` is set to the package name with each package sub-name capitalized.
 - Promote `buf convert` to stable, keep `buf beta convert` aliased in the beta command.
+- Add `Types` filter to `buf generate` command to specify types (message, enum, 
+  service) that should be included in the image. When specified, the resulting 
+  image will only include descriptors to describe the requested types.
 
 ## [v1.9.0] - 2022-10-19
 
