@@ -30,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
@@ -246,12 +245,22 @@ func run(
 	} else {
 		nextRevision = latestPluginResp.Msg.Plugin.Revision + 1
 	}
-	imageDigest, err := findExistingDigestForImageID(ctx, pluginConfig, imageID)
+	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
+	if err != nil {
+		return err
+	}
+	authConfig := &bufplugindocker.RegistryAuthConfig{}
+	if machine != nil {
+		authConfig.ServerAddress = machine.Name()
+		authConfig.Username = machine.Login()
+		authConfig.Password = machine.Password()
+	}
+	imageDigest, err := findExistingDigestForImageID(ctx, pluginConfig, authConfig, imageID)
 	if err != nil {
 		return err
 	}
 	if imageDigest == "" {
-		imageDigest, err = pushImage(ctx, container, client, pluginConfig, imageID)
+		imageDigest, err = pushImage(ctx, client, authConfig, pluginConfig, imageID)
 		if err != nil {
 			return err
 		}
@@ -324,8 +333,8 @@ func createCuratedPluginRequest(
 
 func pushImage(
 	ctx context.Context,
-	container app.EnvContainer,
 	client bufplugindocker.Client,
+	authConfig *bufplugindocker.RegistryAuthConfig,
 	plugin *bufpluginconfig.Config,
 	image string,
 ) (_ string, retErr error) {
@@ -341,16 +350,6 @@ func pushImage(
 			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", createdImage))
 		}
 	}()
-	machine, err := netrc.GetMachineForName(container, plugin.Name.Remote())
-	if err != nil {
-		return "", err
-	}
-	authConfig := &bufplugindocker.RegistryAuthConfig{}
-	if machine != nil {
-		authConfig.ServerAddress = machine.Name()
-		authConfig.Username = machine.Login()
-		authConfig.Password = machine.Password()
-	}
 	pushResponse, err := client.Push(ctx, createdImage, authConfig)
 	if err != nil {
 		return "", err
@@ -367,7 +366,7 @@ func pushImage(
 // - For each tag:
 //   - Fetch image: GET /v2/{owner}/{plugin}/manifests/{tag}
 //   - If image manifest matches imageID, we can use the image digest for the image.
-func findExistingDigestForImageID(ctx context.Context, plugin *bufpluginconfig.Config, imageID string) (string, error) {
+func findExistingDigestForImageID(ctx context.Context, plugin *bufpluginconfig.Config, authConfig *bufplugindocker.RegistryAuthConfig, imageID string) (string, error) {
 	pluginsRemote := plugin.Name.Remote()
 	if !strings.HasPrefix(pluginsRemote, bufplugindocker.PluginsImagePrefix) {
 		pluginsRemote = bufplugindocker.PluginsImagePrefix + pluginsRemote
@@ -376,10 +375,7 @@ func findExistingDigestForImageID(ctx context.Context, plugin *bufpluginconfig.C
 	if err != nil {
 		return "", err
 	}
-	auth, err := authn.DefaultKeychain.Resolve(repo.Registry)
-	if err != nil {
-		return "", err
-	}
+	auth := &authn.Basic{Username: authConfig.Username, Password: authConfig.Password}
 	tags, err := remote.List(repo, remote.WithContext(ctx), remote.WithAuth(auth))
 	if err != nil {
 		structuredErr := new(transport.Error)
