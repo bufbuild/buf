@@ -147,16 +147,16 @@ func TestPush(t *testing.T) {
 	)
 }
 
-func TestPushIsMinimal(t *testing.T) {
-	// Assert push only manifests the minimal amount of files needed to build
-	// the module.
+func TestPushIsSmallerBucket(t *testing.T) {
+	// Assert push only manifests with only the files needed to build the
+	// module as described by configuration and file extension.
 	t.Parallel()
 	server, mock := pushService(t)
 	t.Cleanup(func() {
 		server.Close()
 		mock.assertAllCallbacksCalled()
 	})
-	const owner = "minimal"
+	const owner = "smallerbucket"
 	mock.respond(
 		owner,
 		&registryv1alpha1.PushResponse{
