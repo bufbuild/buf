@@ -1,5 +1,9 @@
 # Changelog
 
+## [UNRELEASED]
+
+- `buf generate` now batches remote plugin generation calls for improved performance.
+
 ## [v1.10.0] - 2022-12-07
 
 - When using managed mode, setting `enabled: false` now no longer fails `buf generate` 
