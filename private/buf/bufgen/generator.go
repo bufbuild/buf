@@ -425,7 +425,7 @@ func (g *generator) execRemotePluginsV2(
 	if len(responses) != len(requests) {
 		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), len(requests))
 	}
-	result := make([]*remotePluginExecutionResult, len(responses))
+	result := make([]*remotePluginExecutionResult, 0, len(responses))
 	for i := range requests {
 		codeGeneratorResponse := responses[i].GetResponse()
 		if codeGeneratorResponse == nil {
