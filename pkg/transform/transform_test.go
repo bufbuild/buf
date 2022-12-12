@@ -17,17 +17,21 @@ package transform
 import (
 	"context"
 	"fmt"
-	"github.com/bufbuild/buf/pkg/internal/cache"
+	"testing"
+
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/connect-go"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
-	"testing"
 )
 
 type fakeSchemaService struct {
@@ -39,19 +43,7 @@ func (s fakeSchemaService) GetSchema(ctx context.Context, req *connect.Request[r
 	return s.getSchemaFunc(ctx, req)
 }
 
-type clientBuilder func(*Client)
-
-func newClient(_ *testing.T, opts ...clientBuilder) *Client {
-	out := &Client{
-		cache: cache.NewCache(),
-	}
-	for _, apply := range opts {
-		apply(out)
-	}
-	return out
-}
-
-func withGetSchemaResponse(version string, descriptor *descriptorpb.FileDescriptorSet) clientBuilder {
+func withGetSchemaResponse(version string, descriptor *descriptorpb.FileDescriptorSet) ClientBuilder {
 	return func(c *Client) {
 		c.client = &fakeSchemaService{
 			getSchemaFunc: func(ctx context.Context, req *connect.Request[registryv1alpha1.GetSchemaRequest]) (*connect.Response[registryv1alpha1.GetSchemaResponse], error) {
@@ -64,17 +56,8 @@ func withGetSchemaResponse(version string, descriptor *descriptorpb.FileDescript
 	}
 }
 
-func withGetSchemaError(err error) clientBuilder {
-	return func(c *Client) {
-		c.client = &fakeSchemaService{
-			getSchemaFunc: func(ctx context.Context, req *connect.Request[registryv1alpha1.GetSchemaRequest]) (*connect.Response[registryv1alpha1.GetSchemaResponse], error) {
-				return nil, err
-			},
-		}
-	}
-}
-
-func TestClient_Transform(t *testing.T) {
+func TestSchemaService_ConvertMessage(t *testing.T) {
+	// create schema for message to convert
 	sourceFile := &descriptorpb.FileDescriptorProto{
 		Name:    proto.String("test.proto"),
 		Syntax:  proto.String("proto2"),
@@ -154,6 +137,7 @@ func TestClient_Transform(t *testing.T) {
 			},
 		},
 	}
+
 	// create test message
 	fd, err := protodesc.NewFile(sourceFile, nil)
 	require.NoError(t, err)
@@ -166,22 +150,82 @@ func TestClient_Transform(t *testing.T) {
 	list.Append(protoreflect.ValueOfMessage(msg.New()))
 	list.Append(protoreflect.ValueOfMessage(msg.New()))
 	msg.Set(md.Fields().ByNumber(4), protoreflect.ValueOfEnum(3))
-	inputData, err := proto.Marshal(msg)
-	require.NoError(t, err)
-	sourceFiles := &descriptorpb.FileDescriptorSet{File: []*descriptorpb.FileDescriptorProto{sourceFile}}
-	c := newClient(t, withGetSchemaResponse("123456789", sourceFiles))
-	got, err := c.Transform(
-		context.Background(),
-		"foo",
-		"bar",
-		"baz",
-		"123456789",
-		false,
-		false,
-		"foo.bar.Message",
-		registryv1alpha1.Format_FORMAT_BINARY,
-		inputData,
-	)
-	require.NoError(t, err)
-	fmt.Println(string(got))
+
+	inputFormats := []struct {
+		format    registryv1alpha1.Format
+		marshaler func(proto.Message) ([]byte, error)
+	}{
+		{
+			format:    registryv1alpha1.Format_FORMAT_BINARY,
+			marshaler: proto.Marshal,
+		},
+		{
+			format:    registryv1alpha1.Format_FORMAT_JSON,
+			marshaler: protojson.Marshal,
+		},
+		{
+			format:    registryv1alpha1.Format_FORMAT_TEXT,
+			marshaler: prototext.Marshal,
+		},
+	}
+
+	outputFormats := []struct {
+		format      registryv1alpha1.Format
+		unmarshaler func([]byte, proto.Message) error
+	}{
+		{
+			format:      registryv1alpha1.Format_FORMAT_BINARY,
+			unmarshaler: proto.Unmarshal,
+		},
+		{
+			format:      registryv1alpha1.Format_FORMAT_JSON,
+			unmarshaler: protojson.Unmarshal,
+		},
+		{
+			format:      registryv1alpha1.Format_FORMAT_TEXT,
+			unmarshaler: prototext.Unmarshal,
+		},
+	}
+
+	for _, inputFormat := range inputFormats {
+		for _, outputFormat := range outputFormats {
+			t.Run(fmt.Sprintf("%v_to_%v", inputFormat.format, outputFormat.format), func(t *testing.T) {
+				data, err := inputFormat.marshaler(msg)
+				require.NoError(t, err)
+				sourceFiles := &descriptorpb.FileDescriptorSet{
+					File: []*descriptorpb.FileDescriptorProto{
+						sourceFile,
+					},
+				}
+				builders := []ClientBuilder{
+					withGetSchemaResponse("baz", sourceFiles),
+					WithBufModule("foo", "bar", "baz"),
+					FromFormat(inputFormat.format, false),
+					WithCache(),
+				}
+				switch outputFormat.format {
+				case registryv1alpha1.Format_FORMAT_BINARY:
+					builders = append(builders, ToBinaryOutput())
+				case registryv1alpha1.Format_FORMAT_JSON:
+					builders = append(builders, ToJSONOutput(false, false))
+				case registryv1alpha1.Format_FORMAT_TEXT:
+					builders = append(builders, ToTextOutput())
+				default:
+					t.Fatalf("unknown output format %v", outputFormat.format)
+				}
+
+				s, err := NewClient(builders...)
+				require.NoError(t, err)
+				resp, err := s.ConvertMessage(context.Background(), "foo.bar.Message", data)
+				require.NoError(t, err)
+				clone := msg.New().Interface()
+				err = outputFormat.unmarshaler(resp, clone)
+				require.NoError(t, err)
+				diff := cmp.Diff(msg, clone, protocmp.Transform())
+				if diff != "" {
+					t.Errorf("round-trip failure (-want +got):\n%s", diff)
+				}
+			})
+		}
+	}
 }
