@@ -236,6 +236,7 @@ func run(
 			Revision: 0, // get latest revision for the plugin version.
 		}),
 	)
+	var currentImageDigest string
 	var nextRevision uint32
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeNotFound {
@@ -244,6 +245,7 @@ func run(
 		nextRevision = 1
 	} else {
 		nextRevision = latestPluginResp.Msg.Plugin.Revision + 1
+		currentImageDigest = latestPluginResp.Msg.Plugin.ContainerImageDigest
 	}
 	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
 	if err != nil {
@@ -255,7 +257,7 @@ func run(
 		authConfig.Username = machine.Login()
 		authConfig.Password = machine.Password()
 	}
-	imageDigest, err := findExistingDigestForImageID(ctx, pluginConfig, authConfig, imageID)
+	imageDigest, err := findExistingDigestForImageID(ctx, pluginConfig, authConfig, imageID, currentImageDigest)
 	if err != nil {
 		return err
 	}
@@ -366,7 +368,13 @@ func pushImage(
 // - For each tag:
 //   - Fetch image: GET /v2/{owner}/{plugin}/manifests/{tag}
 //   - If image manifest matches imageID, we can use the image digest for the image.
-func findExistingDigestForImageID(ctx context.Context, plugin *bufpluginconfig.Config, authConfig *bufplugindocker.RegistryAuthConfig, imageID string) (string, error) {
+func findExistingDigestForImageID(
+	ctx context.Context,
+	plugin *bufpluginconfig.Config,
+	authConfig *bufplugindocker.RegistryAuthConfig,
+	imageID string,
+	currentImageDigest string,
+) (string, error) {
 	pluginsRemote := plugin.Name.Remote()
 	if !strings.HasPrefix(pluginsRemote, bufplugindocker.PluginsImagePrefix) {
 		pluginsRemote = bufplugindocker.PluginsImagePrefix + pluginsRemote
@@ -376,7 +384,19 @@ func findExistingDigestForImageID(ctx context.Context, plugin *bufpluginconfig.C
 		return "", err
 	}
 	auth := &authn.Basic{Username: authConfig.Username, Password: authConfig.Password}
-	tags, err := remote.List(repo, remote.WithContext(ctx), remote.WithAuth(auth))
+	remoteOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuth(auth)}
+	// First attempt to see if the current image digest matches the image ID
+	if currentImageDigest != "" {
+		remoteImageID, _, err := getImageIDAndDigestFromReference(repo.Digest(currentImageDigest), remoteOpts...)
+		if err != nil {
+			return "", err
+		}
+		if remoteImageID == imageID {
+			return currentImageDigest, nil
+		}
+	}
+	// List all tags and check for a match
+	tags, err := remote.List(repo, remoteOpts...)
 	if err != nil {
 		structuredErr := new(transport.Error)
 		if errors.As(err, &structuredErr) {
@@ -388,25 +408,32 @@ func findExistingDigestForImageID(ctx context.Context, plugin *bufpluginconfig.C
 	}
 	existingImageDigest := ""
 	for _, tag := range tags {
-		image, err := remote.Image(repo.Tag(tag), remote.WithContext(ctx), remote.WithAuth(auth))
+		remoteImageID, imageDigest, err := getImageIDAndDigestFromReference(repo.Tag(tag), remoteOpts...)
 		if err != nil {
 			return "", err
 		}
-		manifest, err := image.Manifest()
-		if err != nil {
-			return "", err
-		}
-		remoteImageID := manifest.Config.Digest.String()
 		if remoteImageID == imageID {
-			imageDigest, err := image.Digest()
-			if err != nil {
-				return "", err
-			}
-			existingImageDigest = imageDigest.String()
+			existingImageDigest = imageDigest
 			break
 		}
 	}
 	return existingImageDigest, nil
+}
+
+func getImageIDAndDigestFromReference(ref name.Reference, options ...remote.Option) (string, string, error) {
+	image, err := remote.Image(ref, options...)
+	if err != nil {
+		return "", "", err
+	}
+	imageDigest, err := image.Digest()
+	if err != nil {
+		return "", "", err
+	}
+	manifest, err := image.Manifest()
+	if err != nil {
+		return "", "", err
+	}
+	return manifest.Config.Digest.String(), imageDigest.String(), nil
 }
 
 func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64, bucket storage.ReadWriteBucket) (retErr error) {
