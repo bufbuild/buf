@@ -38,6 +38,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	connect_go "github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
@@ -146,6 +147,46 @@ func TestPush(t *testing.T) {
 	)
 }
 
+func TestPushIsSmallerBucket(t *testing.T) {
+	// Assert push only manifests with only the files needed to build the
+	// module as described by configuration and file extension.
+	t.Parallel()
+	server, mock := pushService(t)
+	t.Cleanup(func() {
+		server.Close()
+		mock.assertAllCallbacksCalled()
+	})
+	const owner = "smallerbucket"
+	mock.respond(
+		owner,
+		&registryv1alpha1.PushResponse{
+			LocalModulePin: &registryv1alpha1.LocalModulePin{},
+		},
+	)
+	mock.callback(owner, func(req *registryv1alpha1.PushRequest) {
+		blob, err := manifest.NewBlobFromProto(req.Manifest)
+		require.NoError(t, err)
+		ctx := context.Background()
+		reader, err := blob.Open(ctx)
+		require.NoError(t, err)
+		defer reader.Close()
+		m, err := manifest.NewFromReader(reader)
+		require.NoError(t, err)
+		_, ok := m.DigestFor("baz.file")
+		assert.False(t, ok, "baz.file should not be pushed")
+	})
+	err := appRun(
+		t,
+		map[string][]byte{
+			"buf.yaml":  bufYAML(t, server.URL, owner, "repo"),
+			"foo.proto": nil,
+			"bar.proto": nil,
+			"baz.file":  nil,
+		},
+	)
+	require.NoError(t, err)
+}
+
 func TestBucketBlobs(t *testing.T) {
 	t.Parallel()
 	bucket, err := storagemem.NewReadBucket(
@@ -181,6 +222,36 @@ func pushService(t *testing.T) (*httptest.Server, *mockPushService) {
 	return httptest.NewServer(mux), mock
 }
 
+func appRun(
+	t *testing.T,
+	files map[string][]byte,
+) error {
+	const appName = "test"
+	return appcmd.Run(
+		context.Background(),
+		app.NewContainer(
+			ammendEnv(
+				internaltesting.NewEnvFunc(t),
+				func(env map[string]string) map[string]string {
+					env["BUF_TOKEN"] = "invalid"
+					buftransport.SetDisableAPISubdomain(env)
+					injectConfig(t, appName, env)
+					return env
+				},
+			)(appName),
+			tarball(files),
+			os.Stdout,
+			os.Stderr,
+			appName,        // push ran as appName, aka "test"
+			"-#format=tar", // using stdin as a tar
+		),
+		NewCommand(
+			appName,
+			appflag.NewBuilder(appName),
+		),
+	)
+}
+
 func testPush(
 	t *testing.T,
 	desc string,
@@ -199,33 +270,13 @@ func testPush(
 	})
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		const appName = "test"
-		err := appcmd.Run(
-			context.Background(),
-			app.NewContainer(
-				ammendEnv(
-					internaltesting.NewEnvFunc(t),
-					func(env map[string]string) map[string]string {
-						env["BUF_TOKEN"] = "invalid"
-						buftransport.SetDisableAPISubdomain(env)
-						injectConfig(t, appName, env)
-						return env
-					},
-				)(appName),
-				tarball(map[string][]byte{
-					"buf.yaml":  bufYAML(t, URL, owner, "repo"),
-					"foo.proto": nil,
-					"bar.proto": nil,
-				}),
-				os.Stdout,
-				os.Stderr,
-				appName,        // push ran as appName, aka "test"
-				"-#format=tar", // using stdin as a tar
-			),
-			NewCommand(
-				appName,
-				appflag.NewBuilder(appName),
-			),
+		err := appRun(
+			t,
+			map[string][]byte{
+				"buf.yaml":  bufYAML(t, URL, owner, "repo"),
+				"foo.proto": nil,
+				"bar.proto": nil,
+			},
 		)
 		if errorMsg == "" {
 			assert.NoError(t, err)

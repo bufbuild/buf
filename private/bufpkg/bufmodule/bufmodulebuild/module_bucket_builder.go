@@ -21,55 +21,64 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	"go.uber.org/zap"
 )
 
+// BuiltModule ties a bufmodule.Module with the configuration and a bucket
+// containing just the files required to build it.
+type BuiltModule struct {
+	Module bufmodule.Module
+	Bucket storage.ReadBucket
+}
+
 type moduleBucketBuilder struct {
-	logger *zap.Logger
+	opt buildOptions
 }
 
 func newModuleBucketBuilder(
-	logger *zap.Logger,
+	options ...BuildOption,
 ) *moduleBucketBuilder {
-	return &moduleBucketBuilder{
-		logger: logger,
+	opt := buildOptions{}
+	for _, option := range options {
+		option(&opt)
 	}
+	return &moduleBucketBuilder{opt: opt}
 }
 
-func (b *moduleBucketBuilder) BuildForBucket(
+// BuildForBucket is an alternative constructor of NewModuleBucketBuilder
+// followed by calling the BuildForBucket method.
+func BuildForBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	config *bufmoduleconfig.Config,
 	options ...BuildOption,
 ) (bufmodule.Module, error) {
-	buildOptions := &buildOptions{}
-	for _, option := range options {
-		option(buildOptions)
-	}
-	return b.buildForBucket(
+	builder := newModuleBucketBuilder(options...)
+	bm, err := builder.BuildForBucket(
 		ctx,
 		readBucket,
 		config,
-		buildOptions.moduleIdentity,
-		buildOptions.paths,
-		buildOptions.excludePaths,
-		buildOptions.pathsAllowNotExist,
 	)
+	if err != nil {
+		return nil, err
+	}
+	return bm.Module, nil
 }
 
-func (b *moduleBucketBuilder) buildForBucket(
+// BuildForBucket constructs a minimal bucket from the passed readBucket and
+// builds a module from it.
+//
+// config's value is used even if the bucket contains configuration (buf.yaml).
+// This means the module is built differently than described in storage, which
+// may cause building to fail or succeed when it shouldn't. For your own
+// sanity, you should pass a config value read from the provided bucket.
+func (b *moduleBucketBuilder) BuildForBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	config *bufmoduleconfig.Config,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	bucketRelPaths *[]string,
-	excludeRelPaths []string,
-	bucketRelPathsAllowNotExist bool,
-) (bufmodule.Module, error) {
+) (*BuiltModule, error) {
 	// proxy plain files
 	externalPaths := []string{
 		buflock.ExternalConfigFilePath,
@@ -122,22 +131,32 @@ func (b *moduleBucketBuilder) buildForBucket(
 			),
 		)
 	}
+	bucket := storage.MultiReadBucket(rootBuckets...)
 	module, err := bufmodule.NewModuleForBucket(
 		ctx,
-		storage.MultiReadBucket(rootBuckets...),
-		bufmodule.ModuleWithModuleIdentity(moduleIdentity /* This may be nil */),
+		bucket,
+		bufmodule.ModuleWithModuleIdentity(
+			b.opt.moduleIdentity, // This may be nil
+		),
 	)
 	if err != nil {
 		return nil, err
 	}
-	return applyModulePaths(
+	appliedModule, err := applyModulePaths(
 		module,
 		roots,
-		bucketRelPaths,
-		excludeRelPaths,
-		bucketRelPathsAllowNotExist,
+		b.opt.paths,
+		b.opt.excludePaths,
+		b.opt.pathsAllowNotExist,
 		normalpath.Relative,
 	)
+	if err != nil {
+		return nil, err
+	}
+	return &BuiltModule{
+		Module: appliedModule,
+		Bucket: bucket,
+	}, nil
 }
 
 // may return nil.

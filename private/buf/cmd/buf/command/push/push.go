@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -158,20 +159,19 @@ func run(
 		return err
 	}
 	moduleIdentity := sourceConfig.ModuleIdentity
-	module, err := bufcli.ReadModule(
+	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
-		container.Logger(),
 		sourceBucket,
-		sourceConfig,
+		sourceConfig.Build,
 	)
 	if err != nil {
 		return err
 	}
-	protoModule, err := bufmodule.ModuleToProtoModule(ctx, module)
+	protoModule, err := bufmodule.ModuleToProtoModule(ctx, builtModule.Module)
 	if err != nil {
 		return err
 	}
-	manifest, blobs, err := manifestAndFilesBlobs(ctx, sourceBucket)
+	manifest, blobs, err := manifestAndFilesBlobs(ctx, builtModule.Bucket)
 	if err != nil {
 		return err
 	}
