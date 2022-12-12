@@ -1,0 +1,14 @@
+version: v1
+managed:  
+  enabled: true
+  optimize_for:
+    default: INVALID
+    except:
+      - someremote.com/owner/repo
+      - someremote.com/owner/foo
+    override:
+      someremote.com/owner/bar: INVALID
+      someremote.com/owner/baz: LITE_RUNTIME
+plugins:
+  - remote: someremote.com/owner/plugins/myplugin
+    out: gen/go
