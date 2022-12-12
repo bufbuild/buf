@@ -3,9 +3,6 @@
 ## [UNRELEASED]
 
 - `buf generate` now batches remote plugin generation calls for improved performance.
-
-## [Unreleased]
-
 - Update `optimize_for` option in managed mode, allowing a `default` value for `optimize_for`
   for all files, `except` and `override`, which both behave similarly to other `except` 
   and `override` options. Specifying an `optimize_for` value in the earlier versions is
