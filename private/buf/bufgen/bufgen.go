@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
@@ -219,7 +220,13 @@ func (p *PluginConfig) GetRemoteHostname() string {
 	if reference, err := bufpluginref.PluginReferenceForString(p.Plugin, 0); err == nil {
 		return reference.Remote()
 	}
-	return p.Remote
+	if p.Remote == "" {
+		return ""
+	}
+	if remote, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(p.Remote); err == nil {
+		return remote
+	}
+	return ""
 }
 
 // ManagedConfig is the managed mode configuration.
