@@ -1,5 +1,9 @@
 # Changelog
 
+## [UNRELEASED]
+
+- `buf generate` now batches remote plugin generation calls for improved performance.
+
 ## [Unreleased]
 
 - Update `optimize_for` option in managed mode, allowing a `default` value for `optimize_for`

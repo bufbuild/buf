@@ -33,8 +33,8 @@ import (
 )
 
 const (
-	// pluginsImagePrefix is used to prefix all image names with the correct path for pushing to the OCI registry.
-	pluginsImagePrefix = "plugins."
+	// PluginsImagePrefix is used to prefix all image names with the correct path for pushing to the OCI registry.
+	PluginsImagePrefix = "plugins."
 )
 
 // Client is a small abstraction over a Docker API client, providing the basic APIs we need to build plugins.
@@ -48,6 +48,8 @@ type Client interface {
 	Delete(ctx context.Context, image string) (*DeleteResponse, error)
 	// Tag creates a Docker image tag from an existing image and plugin config.
 	Tag(ctx context.Context, image string, config *bufpluginconfig.Config) (*TagResponse, error)
+	// Inspect inspects an image and returns the image id.
+	Inspect(ctx context.Context, image string) (*InspectResponse, error)
 	// Close releases any resources used by the underlying Docker client.
 	Close() error
 }
@@ -75,6 +77,12 @@ type TagResponse struct {
 
 // DeleteResponse is a placeholder for data to be returned from a successful image delete call.
 type DeleteResponse struct{}
+
+// InspectResponse returns the image id for a given image.
+type InspectResponse struct {
+	// ImageID contains the Docker image's ID.
+	ImageID string
+}
 
 type dockerAPIClient struct {
 	cli    *client.Client
@@ -125,8 +133,8 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 func (d *dockerAPIClient) Tag(ctx context.Context, image string, config *bufpluginconfig.Config) (*TagResponse, error) {
 	buildID := stringid.GenerateRandomID()
 	imageName := config.Name.IdentityString() + ":" + buildID
-	if !strings.HasPrefix(imageName, pluginsImagePrefix) {
-		imageName = pluginsImagePrefix + imageName
+	if !strings.HasPrefix(imageName, PluginsImagePrefix) {
+		imageName = PluginsImagePrefix + imageName
 	}
 	if err := d.cli.ImageTag(ctx, image, imageName); err != nil {
 		return nil, err
@@ -180,6 +188,14 @@ func (d *dockerAPIClient) Delete(ctx context.Context, image string) (*DeleteResp
 		return nil, err
 	}
 	return &DeleteResponse{}, nil
+}
+
+func (d *dockerAPIClient) Inspect(ctx context.Context, image string) (*InspectResponse, error) {
+	inspect, _, err := d.cli.ImageInspectWithRaw(ctx, image)
+	if err != nil {
+		return nil, err
+	}
+	return &InspectResponse{ImageID: inspect.ID}, nil
 }
 
 func (d *dockerAPIClient) Close() error {
