@@ -26,7 +26,7 @@ DOCKERMAKETARGET ?= all
 
 .PHONY: dockerbuildworkspace
 dockerbuildworkspace:
-	docker build \
+	docker buildx build \
 		$(DOCKER_BUILD_EXTRA_FLAGS) \
 		--build-arg PROJECT=$(PROJECT) \
 		--build-arg GO_MODULE=$(GO_MODULE) \
@@ -47,7 +47,7 @@ dockerbuilddeps$(1)::
 
 .PHONY: dockerbuild$(1)
 dockerbuild$(1): dockerbuilddeps$(1)
-	docker build $(DOCKER_BUILD_EXTRA_FLAGS) -t $(DOCKER_ORG)/$(1):latest -f Dockerfile.$(1) .
+	docker buildx build $(DOCKER_BUILD_EXTRA_FLAGS) -t $(DOCKER_ORG)/$(1):latest -f Dockerfile.$(1) .
 ifdef EXTRA_DOCKER_ORG
 	docker tag $(DOCKER_ORG)/$(1):latest $(EXTRA_DOCKER_ORG)/$(1):latest
 endif
