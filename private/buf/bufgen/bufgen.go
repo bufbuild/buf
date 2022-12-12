@@ -229,7 +229,7 @@ type ManagedConfig struct {
 	JavaStringCheckUtf8   *bool
 	JavaPackagePrefix     *JavaPackagePrefixConfig
 	CsharpNameSpaceConfig *CsharpNameSpaceConfig
-	OptimizeFor           *descriptorpb.FileOptions_OptimizeMode
+	OptimizeForConfig     *OptimizeForConfig
 	GoPackagePrefixConfig *GoPackagePrefixConfig
 	Override              map[string]map[string]string
 }
@@ -240,6 +240,13 @@ type JavaPackagePrefixConfig struct {
 	Except  []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> java_package prefix.
 	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+type OptimizeForConfig struct {
+	Default descriptorpb.FileOptions_OptimizeMode
+	Except  []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> optimize_for.
+	Override map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode
 }
 
 // GoPackagePrefixConfig is the go_package prefix configuration.
@@ -332,7 +339,7 @@ type ExternalManagedConfigV1 struct {
 	JavaStringCheckUtf8 *bool                             `json:"java_string_check_utf8,omitempty" yaml:"java_string_check_utf8,omitempty"`
 	JavaPackagePrefix   ExternalJavaPackagePrefixConfigV1 `json:"java_package_prefix,omitempty" yaml:"java_package_prefix,omitempty"`
 	CsharpNamespace     ExternalCsharpNamespaceConfigV1   `json:"csharp_namespace,omitempty" yaml:"csharp_namespace,omitempty"`
-	OptimizeFor         string                            `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
+	OptimizeFor         ExternalOptimizeForConfigV1       `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 	GoPackagePrefix     ExternalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
 	Override            map[string]map[string]string      `json:"override,omitempty" yaml:"override,omitempty"`
 }
@@ -343,7 +350,7 @@ func (e ExternalManagedConfigV1) IsEmpty() bool {
 		e.JavaMultipleFiles == nil &&
 		e.JavaStringCheckUtf8 == nil &&
 		e.JavaPackagePrefix.IsEmpty() &&
-		e.OptimizeFor == "" &&
+		e.OptimizeFor.IsEmpty() &&
 		e.GoPackagePrefix.IsEmpty() &&
 		len(e.Override) == 0
 }
@@ -388,6 +395,52 @@ func (e *ExternalJavaPackagePrefixConfigV1) unmarshalWith(unmarshal func(interfa
 
 	type rawExternalJavaPackagePrefixConfigV1 ExternalJavaPackagePrefixConfigV1
 	if err := unmarshal((*rawExternalJavaPackagePrefixConfigV1)(e)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ExternalOptimizeForConfigV1 is the external optimize_for configuration.
+type ExternalOptimizeForConfigV1 struct {
+	Default  string            `json:"default,omitempty" yaml:"default,omitempty"`
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// IsEmpty returns true if the config is empty
+func (e ExternalOptimizeForConfigV1) IsEmpty() bool {
+	return e.Default == "" &&
+		len(e.Except) == 0 &&
+		len(e.Override) == 0
+}
+
+// UnmarshalYAML satisfies the yaml.Unmarshaler interface. This is done to maintain backward compatibility
+// of accepting a plain string value for optimize_for.
+func (e *ExternalOptimizeForConfigV1) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	return e.unmarshalWith(unmarshal)
+}
+
+// UnmarshalJSON satisfies the json.Unmarshaler interface. This is done to maintain backward compatibility
+// of accepting a plain string value for optimize_for.
+func (e *ExternalOptimizeForConfigV1) UnmarshalJSON(data []byte) error {
+	unmarshal := func(v interface{}) error {
+		return json.Unmarshal(data, v)
+	}
+
+	return e.unmarshalWith(unmarshal)
+}
+
+// unmarshalWith is used to unmarshal into json/yaml. See https://abhinavg.net/posts/flexible-yaml for details.
+func (e *ExternalOptimizeForConfigV1) unmarshalWith(unmarshal func(interface{}) error) error {
+	var optimizeFor string
+	if err := unmarshal(&optimizeFor); err == nil {
+		e.Default = optimizeFor
+		return nil
+	}
+
+	type rawExternalOptimizeForConfigV1 ExternalOptimizeForConfigV1
+	if err := unmarshal((*rawExternalOptimizeForConfigV1)(e)); err != nil {
 		return err
 	}
 

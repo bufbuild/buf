@@ -589,11 +589,13 @@ func newModifier(
 		managedConfig.Override[bufimagemodify.CsharpNamespaceID],
 	)
 	modifier = bufimagemodify.Merge(modifier, csharpNamespaceModifier)
-	if managedConfig.OptimizeFor != nil {
+	if managedConfig.OptimizeForConfig != nil {
 		optimizeFor, err := bufimagemodify.OptimizeFor(
 			logger,
 			sweeper,
-			*managedConfig.OptimizeFor,
+			managedConfig.OptimizeForConfig.Default,
+			managedConfig.OptimizeForConfig.Except,
+			managedConfig.OptimizeForConfig.Override,
 			managedConfig.Override[bufimagemodify.OptimizeForID],
 		)
 		if err != nil {
