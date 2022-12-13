@@ -23,6 +23,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -35,6 +36,15 @@ import (
 const (
 	// PluginsImagePrefix is used to prefix all image names with the correct path for pushing to the OCI registry.
 	PluginsImagePrefix = "plugins."
+
+	// Setting this value on the buf docker client allows us to propagate a custom
+	// value to the OCI registry. This is a useful property that enables registries
+	// to differentiate between the buf cli vs other tools like docker cli.
+	// Note, this does not override the final User-Agent entirely, but instead adds
+	// the value to the final outgoing User-Agent value in the form: [docker client's UA] UpstreamClient(buf-cli-1.11.0)
+	//
+	// Example: User-Agent = [docker/20.10.21 go/go1.18.7 git-commit/3056208 kernel/5.15.49-linuxkit os/linux arch/arm64 UpstreamClient(buf-cli-1.11.0)]
+	BufUpstreamClientUserAgent = "buf-cli-" + bufcli.Version
 )
 
 // Client is a small abstraction over a Docker API client, providing the basic APIs we need to build plugins.
@@ -211,7 +221,12 @@ func NewClient(logger *zap.Logger, options ...ClientOption) (Client, error) {
 	for _, option := range options {
 		option(opts)
 	}
-	dockerClientOpts := []client.Opt{client.FromEnv}
+	dockerClientOpts := []client.Opt{
+		client.FromEnv,
+		client.WithHTTPHeaders(map[string]string{
+			"User-Agent": BufUpstreamClientUserAgent,
+		}),
+	}
 	if len(opts.host) > 0 {
 		dockerClientOpts = append(dockerClientOpts, client.WithHost(opts.host))
 	}
