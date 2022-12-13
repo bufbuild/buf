@@ -1,0 +1,103 @@
+-- a.proto --
+syntax = "proto2";
+package pkg;
+import "options.proto";
+option (UsedOption.file_baz) = "str";
+option (UsedOption.file_foo) = { foo:"str" };
+message Empty {
+}
+service FooService {
+  option (service_baz) = "str";
+  option (service_foo) = { foo:"str" };
+  rpc Do ( Empty ) returns ( Empty ) {
+    option (method_baz) = "str";
+    option (method_foo) = { foo:"str" };
+  }
+}
+-- google/protobuf/descriptor.proto --
+syntax = "proto2";
+package google.protobuf;
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Protobuf.Reflection";
+option go_package = "google.golang.org/protobuf/types/descriptorpb";
+option java_outer_classname = "DescriptorProtos";
+option java_package = "com.google.protobuf";
+option objc_class_prefix = "GPB";
+option optimize_for = SPEED;
+message FileOptions {
+  optional string java_package = 1;
+  optional string java_outer_classname = 8;
+  optional OptimizeMode optimize_for = 9 [default = SPEED];
+  optional bool java_multiple_files = 10 [default = false];
+  optional string go_package = 11;
+  optional bool cc_generic_services = 16 [default = false];
+  optional bool java_generic_services = 17 [default = false];
+  optional bool py_generic_services = 18 [default = false];
+  optional bool java_generate_equals_and_hash = 20 [deprecated = true];
+  optional bool deprecated = 23 [default = false];
+  optional bool java_string_check_utf8 = 27 [default = false];
+  optional bool cc_enable_arenas = 31 [default = true];
+  optional string objc_class_prefix = 36;
+  optional string csharp_namespace = 37;
+  optional string swift_prefix = 39;
+  optional string php_class_prefix = 40;
+  optional string php_namespace = 41;
+  optional bool php_generic_services = 42 [default = false];
+  optional string php_metadata_namespace = 44;
+  optional string ruby_package = 45;
+  repeated UninterpretedOption uninterpreted_option = 999;
+  enum OptimizeMode {
+    SPEED = 1;
+    CODE_SIZE = 2;
+    LITE_RUNTIME = 3;
+  }
+  extensions 1000 to max;
+  reserved 38;
+}
+message MethodOptions {
+  optional bool deprecated = 33 [default = false];
+  optional IdempotencyLevel idempotency_level = 34 [default = IDEMPOTENCY_UNKNOWN];
+  repeated UninterpretedOption uninterpreted_option = 999;
+  enum IdempotencyLevel {
+    IDEMPOTENCY_UNKNOWN = 0;
+    NO_SIDE_EFFECTS = 1;
+    IDEMPOTENT = 2;
+  }
+  extensions 1000 to max;
+}
+message ServiceOptions {
+  optional bool deprecated = 33 [default = false];
+  repeated UninterpretedOption uninterpreted_option = 999;
+  extensions 1000 to max;
+}
+message UninterpretedOption {
+  repeated NamePart name = 2;
+  optional string identifier_value = 3;
+  optional uint64 positive_int_value = 4;
+  optional int64 negative_int_value = 5;
+  optional double double_value = 6;
+  optional bytes string_value = 7;
+  optional string aggregate_value = 8;
+  message NamePart {
+    required string name_part = 1;
+    required bool is_extension = 2;
+  }
+}
+-- options.proto --
+syntax = "proto3";
+import "google/protobuf/descriptor.proto";
+message UsedOption {
+  string foo = 1;
+  extend google.protobuf.FileOptions {
+    optional UsedOption file_foo = 50000;
+    optional string file_baz = 50002;
+  }
+}
+extend google.protobuf.MethodOptions {
+  optional UsedOption method_foo = 50000;
+  optional string method_baz = 50002;
+}
+extend google.protobuf.ServiceOptions {
+  optional UsedOption service_foo = 50000;
+  optional string service_baz = 50002;
+}

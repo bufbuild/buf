@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
@@ -163,6 +164,8 @@ type Config struct {
 	PluginConfigs []*PluginConfig
 	// Optional
 	ManagedConfig *ManagedConfig
+	// Optional
+	TypesConfig *TypesConfig
 }
 
 // PluginConfig is a plugin configuration.
@@ -203,13 +206,27 @@ func (p *PluginConfig) PluginName() string {
 
 // IsRemote returns true if the PluginConfig uses a remotely executed plugin.
 func (p *PluginConfig) IsRemote() bool {
+	return p.GetRemoteHostname() != ""
+}
+
+// GetRemoteHostname returns the hostname of the remote plugin.
+func (p *PluginConfig) GetRemoteHostname() string {
 	if p == nil {
-		return false
+		return ""
 	}
-	if bufpluginref.IsPluginReferenceOrIdentity(p.Plugin) {
-		return true
+	if identity, err := bufpluginref.PluginIdentityForString(p.Plugin); err == nil {
+		return identity.Remote()
 	}
-	return p.Remote != ""
+	if reference, err := bufpluginref.PluginReferenceForString(p.Plugin, 0); err == nil {
+		return reference.Remote()
+	}
+	if p.Remote == "" {
+		return ""
+	}
+	if remote, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(p.Remote); err == nil {
+		return remote
+	}
+	return ""
 }
 
 // ManagedConfig is the managed mode configuration.
@@ -219,7 +236,7 @@ type ManagedConfig struct {
 	JavaStringCheckUtf8   *bool
 	JavaPackagePrefix     *JavaPackagePrefixConfig
 	CsharpNameSpaceConfig *CsharpNameSpaceConfig
-	OptimizeFor           *descriptorpb.FileOptions_OptimizeMode
+	OptimizeForConfig     *OptimizeForConfig
 	GoPackagePrefixConfig *GoPackagePrefixConfig
 	ObjcClassPrefixConfig *ObjcClassPrefixConfig
 	Override              map[string]map[string]string
@@ -231,6 +248,13 @@ type JavaPackagePrefixConfig struct {
 	Except  []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> java_package prefix.
 	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+type OptimizeForConfig struct {
+	Default descriptorpb.FileOptions_OptimizeMode
+	Except  []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> optimize_for.
+	Override map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode
 }
 
 // GoPackagePrefixConfig is the go_package prefix configuration.
@@ -254,6 +278,11 @@ type CsharpNameSpaceConfig struct {
 	Except []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> csharp_namespace prefix.
 	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// TypesConfig is a types configuration
+type TypesConfig struct {
+	Include []string
 }
 
 // ReadConfig reads the configuration from the OS or an override, if any.
@@ -301,6 +330,7 @@ type ExternalConfigV1 struct {
 	Version string                   `json:"version,omitempty" yaml:"version,omitempty"`
 	Plugins []ExternalPluginConfigV1 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 	Managed ExternalManagedConfigV1  `json:"managed,omitempty" yaml:"managed,omitempty"`
+	Types   *ExternalTypesConfigV1   `json:"types,omitempty" yaml:"types,omitempty"`
 }
 
 // ExternalPluginConfigV1 is an external plugin configuration.
@@ -325,7 +355,7 @@ type ExternalManagedConfigV1 struct {
 	JavaStringCheckUtf8 *bool                             `json:"java_string_check_utf8,omitempty" yaml:"java_string_check_utf8,omitempty"`
 	JavaPackagePrefix   ExternalJavaPackagePrefixConfigV1 `json:"java_package_prefix,omitempty" yaml:"java_package_prefix,omitempty"`
 	CsharpNamespace     ExternalCsharpNamespaceConfigV1   `json:"csharp_namespace,omitempty" yaml:"csharp_namespace,omitempty"`
-	OptimizeFor         string                            `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
+	OptimizeFor         ExternalOptimizeForConfigV1       `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 	GoPackagePrefix     ExternalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
 	ObjcClassPrefix     ExternalObjcClassPrefixConfigV1   `json:"objc_class_prefix,omitempty" yaml:"objc_class_prefix,omitempty"`
 	Override            map[string]map[string]string      `json:"override,omitempty" yaml:"override,omitempty"`
@@ -337,7 +367,7 @@ func (e ExternalManagedConfigV1) IsEmpty() bool {
 		e.JavaMultipleFiles == nil &&
 		e.JavaStringCheckUtf8 == nil &&
 		e.JavaPackagePrefix.IsEmpty() &&
-		e.OptimizeFor == "" &&
+		e.OptimizeFor.IsEmpty() &&
 		e.GoPackagePrefix.IsEmpty() &&
 		len(e.Override) == 0
 }
@@ -382,6 +412,52 @@ func (e *ExternalJavaPackagePrefixConfigV1) unmarshalWith(unmarshal func(interfa
 
 	type rawExternalJavaPackagePrefixConfigV1 ExternalJavaPackagePrefixConfigV1
 	if err := unmarshal((*rawExternalJavaPackagePrefixConfigV1)(e)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ExternalOptimizeForConfigV1 is the external optimize_for configuration.
+type ExternalOptimizeForConfigV1 struct {
+	Default  string            `json:"default,omitempty" yaml:"default,omitempty"`
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// IsEmpty returns true if the config is empty
+func (e ExternalOptimizeForConfigV1) IsEmpty() bool {
+	return e.Default == "" &&
+		len(e.Except) == 0 &&
+		len(e.Override) == 0
+}
+
+// UnmarshalYAML satisfies the yaml.Unmarshaler interface. This is done to maintain backward compatibility
+// of accepting a plain string value for optimize_for.
+func (e *ExternalOptimizeForConfigV1) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	return e.unmarshalWith(unmarshal)
+}
+
+// UnmarshalJSON satisfies the json.Unmarshaler interface. This is done to maintain backward compatibility
+// of accepting a plain string value for optimize_for.
+func (e *ExternalOptimizeForConfigV1) UnmarshalJSON(data []byte) error {
+	unmarshal := func(v interface{}) error {
+		return json.Unmarshal(data, v)
+	}
+
+	return e.unmarshalWith(unmarshal)
+}
+
+// unmarshalWith is used to unmarshal into json/yaml. See https://abhinavg.net/posts/flexible-yaml for details.
+func (e *ExternalOptimizeForConfigV1) unmarshalWith(unmarshal func(interface{}) error) error {
+	var optimizeFor string
+	if err := unmarshal(&optimizeFor); err == nil {
+		e.Default = optimizeFor
+		return nil
+	}
+
+	type rawExternalOptimizeForConfigV1 ExternalOptimizeForConfigV1
+	if err := unmarshal((*rawExternalOptimizeForConfigV1)(e)); err != nil {
 		return err
 	}
 
@@ -455,4 +531,9 @@ type ExternalOptionsConfigV1Beta1 struct {
 // file versions that is used to determine the configuration version.
 type ExternalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+// ExternalTypesConfigV1 is an external types configuration.
+type ExternalTypesConfigV1 struct {
+	Include []string `json:"include,omitempty" yaml:"include"`
 }

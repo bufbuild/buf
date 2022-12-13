@@ -17,12 +17,10 @@ package bufplugindocker
 import (
 	"bufio"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
@@ -30,79 +28,34 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
-	controlapi "github.com/moby/buildkit/api/services/control"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
-	// DefaultTarget is the default target architecture for Docker images.
-	DefaultTarget = "linux/amd64"
-
-	// pluginsImagePrefix is used to prefix all image names with the correct path for pushing to the OCI registry.
-	pluginsImagePrefix = "plugins."
+	// PluginsImagePrefix is used to prefix all image names with the correct path for pushing to the OCI registry.
+	PluginsImagePrefix = "plugins."
 )
 
 // Client is a small abstraction over a Docker API client, providing the basic APIs we need to build plugins.
 // It ensures that we pass the appropriate parameters to build images (i.e. platform 'linux/amd64').
 type Client interface {
-	// Build creates a Docker image for the plugin using the Dockerfile.plugin and plugin config.
-	Build(ctx context.Context, dockerfile io.Reader, config *bufpluginconfig.Config, options ...BuildOption) (*BuildResponse, error)
+	// Load imports a Docker image into the local Docker Engine.
+	Load(ctx context.Context, image io.Reader) (*LoadResponse, error)
 	// Push the Docker image to the remote registry.
 	Push(ctx context.Context, image string, auth *RegistryAuthConfig) (*PushResponse, error)
 	// Delete removes the Docker image from local Docker Engine.
 	Delete(ctx context.Context, image string) (*DeleteResponse, error)
 	// Tag creates a Docker image tag from an existing image and plugin config.
 	Tag(ctx context.Context, image string, config *bufpluginconfig.Config) (*TagResponse, error)
+	// Inspect inspects an image and returns the image id.
+	Inspect(ctx context.Context, image string) (*InspectResponse, error)
 	// Close releases any resources used by the underlying Docker client.
 	Close() error
 }
 
-// BuildOption defines options for the image build call.
-type BuildOption func(*buildOptions)
-
-// WithConfigDirPath is a BuildOption which enables node ID persistence to the specified configuration directory.
-// If not set, a new node ID will be generated with each build call.
-func WithConfigDirPath(path string) BuildOption {
-	return func(options *buildOptions) {
-		options.configDirPath = path
-	}
-}
-
-// WithTarget is a BuildOption which sets the target architecture (used for local testing on arm64).
-func WithTarget(target string) BuildOption {
-	return func(options *buildOptions) {
-		options.target = target
-	}
-}
-
-// WithCacheFrom is a BuildOption which allows using images published to an OCI registry to be used as cached state during build.
-func WithCacheFrom(cacheFrom []string) BuildOption {
-	return func(options *buildOptions) {
-		options.cacheFrom = cacheFrom
-	}
-}
-
-// WithPullParent configures whether the build will attempt to pull the latest parent images (FROM ...) prior to build.
-func WithPullParent(pullParent bool) BuildOption {
-	return func(options *buildOptions) {
-		options.pullParent = pullParent
-	}
-}
-
-// WithBuildArgs allows specifying additional Docker build args.
-func WithBuildArgs(args []string) BuildOption {
-	return func(options *buildOptions) {
-		options.buildArgs = args
-	}
-}
-
-// BuildResponse returns details of a successful image build call.
-type BuildResponse struct {
-	// Image contains the Docker image name in the local Docker engine including the tag (i.e. plugins.buf.build/library/some-plugin:<id>, where <id> is a random id).
-	// It is created from the bufpluginconfig.Config's Name.IdentityString() and a unique id.
-	Image string
+// LoadResponse returns details of a successful load image call.
+type LoadResponse struct {
 	// ImageID specifies the Docker image id in the format <hash_algorithm>:<hash>.
 	// Example: sha256:65001659f150f085e0b37b697a465a95cbfd885d9315b61960883b9ac588744e
 	ImageID string
@@ -125,6 +78,12 @@ type TagResponse struct {
 // DeleteResponse is a placeholder for data to be returned from a successful image delete call.
 type DeleteResponse struct{}
 
+// InspectResponse returns the image id for a given image.
+type InspectResponse struct {
+	// ImageID contains the Docker image's ID.
+	ImageID string
+}
+
 type dockerAPIClient struct {
 	cli    *client.Client
 	logger *zap.Logger
@@ -132,132 +91,50 @@ type dockerAPIClient struct {
 
 var _ Client = (*dockerAPIClient)(nil)
 
-func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, pluginConfig *bufpluginconfig.Config, options ...BuildOption) (*BuildResponse, error) {
-	params := &buildOptions{}
-	for _, option := range options {
-		option(params)
-	}
-	// TODO: Need to determine how contextDir parameter is used in Docker engine.
-	buildkitSession, err := createSession(ctx, zap.L(), fmt.Sprintf("%s/%s", pluginConfig.Name.Owner(), pluginConfig.Name.Plugin()), params.configDirPath)
+func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadResponse, retErr error) {
+	response, err := d.cli.ImageLoad(ctx, image, true)
 	if err != nil {
 		return nil, err
 	}
-
-	dockerContext, err := createDockerContext(dockerfile)
-	if err != nil {
-		return nil, err
-	}
-
-	// Use errgroup here over pkg.Thread - we aren't using concurrency here for performance reasons.
-	// We want both the buildkit session initialization to run alongside with the image build operation.
-	eg, errGroupCtx := errgroup.WithContext(ctx)
-	eg.Go(func() error {
-		// This links a buildkit session with an active Docker client.
-		// Behind the scenes, the session upgrades the connection to HTTP/2 and provides a gRPC server with services for advanced buildkit features (credentials, SSH, etc.).
-		// We don't currently require this to build any of our plugins.
-		// See https://pkg.go.dev/github.com/moby/buildkit/session#Session.Allow for more details.
-		return buildkitSession.Run(errGroupCtx, func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
-			return d.cli.DialHijack(ctx, "/session", proto, meta)
-		})
-	})
-
-	buildID := stringid.GenerateRandomID()
-	imageName := pluginConfig.Name.IdentityString() + ":" + buildID
-	if !strings.HasPrefix(imageName, pluginsImagePrefix) {
-		imageName = pluginsImagePrefix + imageName
-	}
-	eg.Go(func() (retErr error) {
-		defer func() {
-			if err := buildkitSession.Close(); err != nil {
-				retErr = multierr.Append(retErr, err)
-			}
-		}()
-
-		target := params.target
-		if len(target) == 0 {
-			target = DefaultTarget
+	defer func(Body io.ReadCloser) {
+		if err := Body.Close(); err != nil {
+			retErr = multierr.Append(retErr, err)
 		}
-		buildArgs := make(map[string]*string)
-		for _, arg := range params.buildArgs {
-			name, val, _ := strings.Cut(arg, "=")
-			buildArgs[name] = &val
-		}
-		buildArgs["PLUGIN_VERSION"] = &pluginConfig.PluginVersion
-		response, err := d.cli.ImageBuild(ctx, dockerContext, types.ImageBuildOptions{
-			Tags:     []string{imageName},
-			Platform: target,
-			Labels: map[string]string{
-				"build.buf.plugins.config.owner": pluginConfig.Name.Owner(),
-				"build.buf.plugins.config.name":  pluginConfig.Name.Plugin(),
-			},
-			Version:    types.BuilderBuildKit, // DOCKER_BUILDKIT=1
-			SessionID:  buildkitSession.ID(),
-			BuildArgs:  buildArgs,
-			CacheFrom:  params.cacheFrom,
-			PullParent: params.pullParent,
-		})
-		if err != nil {
-			return err
-		}
-		defer func() {
-			if err := response.Body.Close(); err != nil {
-				retErr = multierr.Append(retErr, err)
-			}
-		}()
-		scanner := bufio.NewScanner(response.Body)
-		for scanner.Scan() {
-			var message jsonmessage.JSONMessage
-			if err := json.Unmarshal([]byte(scanner.Text()), &message); err != nil {
-				d.logger.Debug(scanner.Text())
+	}(response.Body)
+	imageID := ""
+	responseScanner := bufio.NewScanner(response.Body)
+	for responseScanner.Scan() {
+		var jsonMessage jsonmessage.JSONMessage
+		if err := json.Unmarshal(responseScanner.Bytes(), &jsonMessage); err == nil {
+			_, loadedImageID, found := strings.Cut(strings.TrimSpace(jsonMessage.Stream), "Loaded image ID: ")
+			if !found {
 				continue
 			}
-			if message.Error != nil {
-				return message.Error
+			if !strings.HasPrefix(loadedImageID, "sha256:") {
+				d.logger.Warn("Unsupported image digest", zap.String("imageID", loadedImageID))
+				continue
 			}
-			handled := false
-			if message.ID == "moby.buildkit.trace" && message.Aux != nil {
-				b64Aux := string(*message.Aux)
-				b64Aux = strings.TrimPrefix(b64Aux, `"`)
-				b64Aux = strings.TrimSuffix(b64Aux, `"`)
-				bdec := base64.NewDecoder(base64.StdEncoding, strings.NewReader(b64Aux))
-				if protoBytes, err := io.ReadAll(bdec); err == nil {
-					var status controlapi.StatusResponse
-					if err := status.Unmarshal(protoBytes); err == nil {
-						d.logger.Debug("trace", zap.Any("status", status))
-						handled = true
-					}
-				}
+			if err := stringid.ValidateID(strings.TrimPrefix(loadedImageID, "sha256:")); err != nil {
+				d.logger.Warn("Invalid image id", zap.String("imageID", loadedImageID))
+				continue
 			}
-			// If we fail to interpret a line of output, log the raw format
-			if !handled {
-				d.logger.Debug(scanner.Text())
-			}
+			imageID = loadedImageID
 		}
-		if err := scanner.Err(); err != nil {
-			return err
-		}
-		return nil
-	})
-
-	if err := eg.Wait(); err != nil {
+	}
+	if err := responseScanner.Err(); err != nil {
 		return nil, err
 	}
-
-	imageInfo, _, err := d.cli.ImageInspectWithRaw(ctx, imageName)
-	if err != nil {
-		return nil, err
+	if imageID == "" {
+		return nil, fmt.Errorf("failed to determine image ID of loaded image")
 	}
-	return &BuildResponse{
-		Image:   imageName,
-		ImageID: imageInfo.ID,
-	}, nil
+	return &LoadResponse{ImageID: imageID}, nil
 }
 
 func (d *dockerAPIClient) Tag(ctx context.Context, image string, config *bufpluginconfig.Config) (*TagResponse, error) {
 	buildID := stringid.GenerateRandomID()
 	imageName := config.Name.IdentityString() + ":" + buildID
-	if !strings.HasPrefix(imageName, pluginsImagePrefix) {
-		imageName = pluginsImagePrefix + imageName
+	if !strings.HasPrefix(imageName, PluginsImagePrefix) {
+		imageName = PluginsImagePrefix + imageName
 	}
 	if err := d.cli.ImageTag(ctx, image, imageName); err != nil {
 		return nil, err
@@ -313,6 +190,14 @@ func (d *dockerAPIClient) Delete(ctx context.Context, image string) (*DeleteResp
 	return &DeleteResponse{}, nil
 }
 
+func (d *dockerAPIClient) Inspect(ctx context.Context, image string) (*InspectResponse, error) {
+	inspect, _, err := d.cli.ImageInspectWithRaw(ctx, image)
+	if err != nil {
+		return nil, err
+	}
+	return &InspectResponse{ImageID: inspect.ID}, nil
+}
+
 func (d *dockerAPIClient) Close() error {
 	return d.cli.Close()
 }
@@ -365,12 +250,4 @@ func WithVersion(version string) ClientOption {
 	return func(options *clientOptions) {
 		options.version = version
 	}
-}
-
-type buildOptions struct {
-	configDirPath string
-	target        string
-	cacheFrom     []string
-	pullParent    bool
-	buildArgs     []string
 }
