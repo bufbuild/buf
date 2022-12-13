@@ -518,6 +518,8 @@ func errorUnsupportedFilterType(descriptor namedDescriptor, fullName string) err
 }
 
 func (t *transitiveClosure) addEnclosing(descriptor namedDescriptor, enclosingFile string, imageIndex *imageIndex, opts *imageFilterOptions) error {
+	// loop through all enclosing parents since nesting level
+	// could be arbitrarily deep
 	for descriptor != nil {
 		_, isMsg := descriptor.(*descriptorpb.DescriptorProto)
 		_, isSvc := descriptor.(*descriptorpb.ServiceDescriptorProto)
