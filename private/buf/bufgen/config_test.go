@@ -45,12 +45,20 @@ func TestReadConfigV1Beta1(t *testing.T) {
 			CcEnableArenas:      &truth,
 			JavaMultipleFiles:   &truth,
 			JavaStringCheckUtf8: nil,
-			OptimizeFor:         optimizeModePtr(descriptorpb.FileOptions_CODE_SIZE),
+			OptimizeForConfig: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_CODE_SIZE,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 		},
 	}
 	successConfig2 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_SPEED),
+			OptimizeForConfig: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_SPEED,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 		},
 		PluginConfigs: []*PluginConfig{
 			{
@@ -64,7 +72,11 @@ func TestReadConfigV1Beta1(t *testing.T) {
 	}
 	successConfig3 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_LITE_RUNTIME),
+			OptimizeForConfig: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 		},
 		PluginConfigs: []*PluginConfig{
 			{
@@ -164,7 +176,11 @@ func TestReadConfigV1(t *testing.T) {
 				Except:   make([]bufmoduleref.ModuleIdentity, 0),
 				Override: make(map[bufmoduleref.ModuleIdentity]string),
 			},
-			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_CODE_SIZE),
+			OptimizeForConfig: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_CODE_SIZE,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 			Override: map[string]map[string]string{
 				bufimagemodify.JavaPackageID: {"a.proto": "override"},
 			},
@@ -177,7 +193,11 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	successConfig2 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_SPEED),
+			OptimizeForConfig: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_SPEED,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 		},
 		PluginConfigs: []*PluginConfig{
 			{
@@ -191,7 +211,11 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	successConfig3 := &Config{
 		ManagedConfig: &ManagedConfig{
-			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_LITE_RUNTIME),
+			OptimizeForConfig: &OptimizeForConfig{
+				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			},
 		},
 		PluginConfigs: []*PluginConfig{
 			{
@@ -284,6 +308,48 @@ func TestReadConfigV1(t *testing.T) {
 						"owner",
 						"baz",
 					): "c",
+				},
+			},
+		},
+		PluginConfigs: []*PluginConfig{
+			{
+				Remote:   "someremote.com/owner/plugins/myplugin",
+				Out:      "gen/go",
+				Strategy: StrategyAll,
+			},
+		},
+	}
+	successConfig9 := &Config{
+		ManagedConfig: &ManagedConfig{
+			OptimizeForConfig: &OptimizeForConfig{
+				Default: descriptorpb.FileOptions_CODE_SIZE,
+				Except: []bufmoduleref.ModuleIdentity{
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"repo",
+					),
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"foo",
+					),
+				},
+				Override: map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"bar",
+					): descriptorpb.FileOptions_SPEED,
+					mustCreateModuleIdentity(
+						t,
+						"someremote.com",
+						"owner",
+						"baz",
+					): descriptorpb.FileOptions_LITE_RUNTIME,
 				},
 			},
 		},
@@ -478,6 +544,30 @@ func TestReadConfigV1(t *testing.T) {
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yaml")))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success9.yaml"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride((string(data))))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.json")))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success9.json"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yml")))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success9.yml"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
+	require.NoError(t, err)
+	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
 
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error1.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error2.yaml"))
@@ -488,6 +578,9 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error7.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error8.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error9.yaml"))
+	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error10.yaml"))
+	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error11.yaml"))
+	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error12.yaml"))
 
 	successConfig = &Config{
 		PluginConfigs: []*PluginConfig{
@@ -566,10 +659,23 @@ func assertConfigsWithEqualCsharpnamespace(t *testing.T, successConfig *Config, 
 	assertEqualModuleIdentityKeyedMaps(t, successCsharpConfig.Override, csharpConfig.Override)
 }
 
-func assertEqualModuleIdentityKeyedMaps(t *testing.T, m1 map[bufmoduleref.ModuleIdentity]string, m2 map[bufmoduleref.ModuleIdentity]string) {
+func assertConfigsWithEqualOptimizeFor(t *testing.T, successConfig *Config, config *Config) {
+	require.Equal(t, successConfig.PluginConfigs, config.PluginConfigs)
+	require.NotNil(t, successConfig.ManagedConfig)
+	require.NotNil(t, config.ManagedConfig)
+	successOptimizeForConfig := successConfig.ManagedConfig.OptimizeForConfig
+	require.NotNil(t, successOptimizeForConfig)
+	optimizeForConfig := config.ManagedConfig.OptimizeForConfig
+	require.NotNil(t, optimizeForConfig)
+	require.Equal(t, successOptimizeForConfig.Default, optimizeForConfig.Default)
+	require.Equal(t, successOptimizeForConfig.Except, optimizeForConfig.Except)
+	assertEqualModuleIdentityKeyedMaps(t, optimizeForConfig.Override, optimizeForConfig.Override)
+}
+
+func assertEqualModuleIdentityKeyedMaps[V any](t *testing.T, m1 map[bufmoduleref.ModuleIdentity]V, m2 map[bufmoduleref.ModuleIdentity]V) {
 	require.Equal(t, len(m1), len(m2))
-	keyedM1 := make(map[string]string, len(m1))
-	keyedM2 := make(map[string]string, len(m2))
+	keyedM1 := make(map[string]V, len(m1))
+	keyedM2 := make(map[string]V, len(m2))
 	for k, v := range m1 {
 		keyedM1[k.IdentityString()] = v
 	}
