@@ -564,6 +564,7 @@ func TestReadConfigV1(t *testing.T) {
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yaml")))
 	require.NoError(t, err)
 	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
@@ -588,7 +589,6 @@ func TestReadConfigV1(t *testing.T) {
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
-	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error1.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error2.yaml"))
@@ -599,11 +599,11 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error7.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error8.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error9.yaml"))
-	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_errorx.yaml"))
-	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_errory.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error10.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error11.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error12.yaml"))
+	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error13.yaml"))
+	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error14.yaml"))
 
 	successConfig = &Config{
 		PluginConfigs: []*PluginConfig{

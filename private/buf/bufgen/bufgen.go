@@ -367,8 +367,10 @@ func (e ExternalManagedConfigV1) IsEmpty() bool {
 		e.JavaMultipleFiles == nil &&
 		e.JavaStringCheckUtf8 == nil &&
 		e.JavaPackagePrefix.IsEmpty() &&
+		e.CsharpNamespace.IsEmpty() &&
 		e.OptimizeFor.IsEmpty() &&
 		e.GoPackagePrefix.IsEmpty() &&
+		e.ObjcClassPrefix.IsEmpty() &&
 		len(e.Override) == 0
 }
 
