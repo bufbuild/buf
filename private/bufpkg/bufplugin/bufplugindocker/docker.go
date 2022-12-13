@@ -23,7 +23,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -44,7 +43,7 @@ const (
 	// the value to the final outgoing User-Agent value in the form: [docker client's UA] UpstreamClient(buf-cli-1.11.0)
 	//
 	// Example: User-Agent = [docker/20.10.21 go/go1.18.7 git-commit/3056208 kernel/5.15.49-linuxkit os/linux arch/arm64 UpstreamClient(buf-cli-1.11.0)]
-	BufUpstreamClientUserAgent = "buf-cli-" + bufcli.Version
+	BufUpstreamClientUserAgentPrefix = "buf-cli-"
 )
 
 // Client is a small abstraction over a Docker API client, providing the basic APIs we need to build plugins.
@@ -213,7 +212,7 @@ func (d *dockerAPIClient) Close() error {
 }
 
 // NewClient creates a new Client to use to build Docker plugins.
-func NewClient(logger *zap.Logger, options ...ClientOption) (Client, error) {
+func NewClient(logger *zap.Logger, cliVersion string, options ...ClientOption) (Client, error) {
 	if logger == nil {
 		return nil, errors.New("logger required")
 	}
@@ -224,7 +223,7 @@ func NewClient(logger *zap.Logger, options ...ClientOption) (Client, error) {
 	dockerClientOpts := []client.Opt{
 		client.FromEnv,
 		client.WithHTTPHeaders(map[string]string{
-			"User-Agent": BufUpstreamClientUserAgent,
+			"User-Agent": BufUpstreamClientUserAgentPrefix + cliVersion,
 		}),
 	}
 	if len(opts.host) > 0 {
