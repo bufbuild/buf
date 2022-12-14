@@ -20,7 +20,7 @@ import "github.com/bufbuild/buf/private/pkg/app/appfeature"
 // Available feature flags for the Buf CLI.
 const (
 	// TamperProofing enables the Buf CLI tamper proofing feature.
-	// This enables sending of a manifest and blobs in the PushService Push method.
-	// Additionally, it enables CLI caching support for manifest and blobs in the DownloadService.
+	// This enables sending of a manifest and blobs when pushing modules.
+	// Additionally, it enables support for consuming a manifest and blobs when downloading modules.
 	TamperProofing appfeature.FeatureFlag = "BUF_FEATURE_TAMPER_PROOFING"
 )

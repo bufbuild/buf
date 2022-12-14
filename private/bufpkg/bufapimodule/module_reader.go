@@ -32,7 +32,7 @@ type moduleReader struct {
 }
 
 // WithTamperProofing configures whether the module reader supports tamper proofing.
-// If false, when downloading modules the manifest and blobs will we ignored.
+// If false, when downloading modules the manifest and blobs will be ignored.
 func WithTamperProofing(enabled bool) ModuleReaderOption {
 	return func(reader *moduleReader) {
 		reader.tamperProofingEnabled = enabled
