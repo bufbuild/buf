@@ -17,9 +17,9 @@ package cache
 import (
 	"testing"
 
-	auditv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/audit/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	auditv1alpha1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/audit/v1alpha1"
+	"github.com/bufbuild/buf/pkg/transform/internal/protodescriptor"
+	"github.com/bufbuild/buf/pkg/transform/internal/protoencoding"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/reflect/protodesc"

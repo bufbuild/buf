@@ -3,6 +3,8 @@ module github.com/bufbuild/buf
 go 1.18
 
 require (
+	buf.build/gen/go/bufbuild/buf/bufbuild/connect-go v1.4.0-20221212203008-4922383c97f6.1
+	buf.build/gen/go/bufbuild/buf/protocolbuffers/go v1.28.1-20221212203008-4922383c97f6.4
 	github.com/bufbuild/connect-go v1.4.0
 	github.com/bufbuild/protocompile v0.1.0
 	github.com/docker/docker v20.10.21+incompatible

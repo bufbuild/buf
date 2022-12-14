@@ -17,7 +17,7 @@ package cache
 import (
 	"sync"
 
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/pkg/transform/internal/protoencoding"
 )
 
 var (

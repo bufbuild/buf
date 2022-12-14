@@ -1,3 +1,7 @@
+buf.build/gen/go/bufbuild/buf/bufbuild/connect-go v1.4.0-20221212203008-4922383c97f6.1 h1:/rCHRx4d4R/6JTDL8w69tT4sdqyXWngtwDWjt7yUbLI=
+buf.build/gen/go/bufbuild/buf/bufbuild/connect-go v1.4.0-20221212203008-4922383c97f6.1/go.mod h1:NKpuL3locWft1SBdtiTi5SKmM65kR12+MwDyAXk0+Go=
+buf.build/gen/go/bufbuild/buf/protocolbuffers/go v1.28.1-20221212203008-4922383c97f6.4 h1:9j0DfxOrC+NdvVdGtmeC5uNWGACT9hhNtI6ZNmuKkog=
+buf.build/gen/go/bufbuild/buf/protocolbuffers/go v1.28.1-20221212203008-4922383c97f6.4/go.mod h1:ggApdy0oOC/JdqOeUTeRD5x0gx9eZmdn+4T1yd6B8Co=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 h1:UQHMgLO+TxOElx5B5HZ4hJQsoJ/PvUvKRhJHDQXO8P8=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
@@ -259,6 +263,7 @@ google.golang.org/protobuf v1.23.1-0.20200526195155-81db48ad09cc/go.mod h1:EGpAD
 google.golang.org/protobuf v1.25.0/go.mod h1:9JNX74DMeImyA3h4bdi1ymwjUzf21/xIlbajtzgsN7c=
 google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp09yW+WbY/TyQbw=
 google.golang.org/protobuf v1.26.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
+google.golang.org/protobuf v1.28.1/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8 h1:KR8+MyP7/qOlV+8Af01LtjL04bu7on42eVsxT4EyBQk=
 google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=

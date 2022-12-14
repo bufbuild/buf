@@ -23,7 +23,7 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/pkg/transform"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	registryv1alpha1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/registry/v1alpha1"
 )
 
 const (
@@ -80,13 +80,7 @@ import (
 
 	"github.com/bufbuild/buf/pkg/transform"
 	"github.com/bufbuild/buf/pkg/transform/internal/cache"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-)
-
-const (
-	useEnumNumbers  = false
-	includeDefaults = false
-	discardUnknown  = false
+	registryv1alpha1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/registry/v1alpha1"
 )
 
 // ConvertBinaryToJSON receives a typical protobuf encoded bag of 
