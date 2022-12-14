@@ -32,7 +32,7 @@ import (
 // ConvertMessage allows the caller to convert a given message data blob from
 // one format to another by referring to a type schema for the blob.
 func (c *Client) ConvertMessage(ctx context.Context, messageName string, inputData []byte) ([]byte, error) {
-	if !contains(c.types, messageName) {
+	if len(c.types) > 0 && !contains(c.types, messageName) {
 		return nil, fmt.Errorf("message_name '%s' is not found in filtered types %v", messageName, c.types)
 	}
 	// First step: get descriptors for the requested message
