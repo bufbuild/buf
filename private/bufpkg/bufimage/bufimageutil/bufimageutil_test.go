@@ -62,6 +62,12 @@ func TestOptions(t *testing.T) {
 	t.Run("exclude-options", func(t *testing.T) {
 		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all-exclude-options.txtar", WithExcludeCustomOptions())
 	})
+	t.Run("files", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"Files"}, "Files.txtar")
+	})
+	t.Run("all-with-files", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "Files"}, "all-with-Files.txtar")
+	})
 }
 
 func TestNesting(t *testing.T) {
