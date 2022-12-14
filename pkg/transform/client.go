@@ -162,16 +162,12 @@ func FromFormat(
 // When filtering the schema based on the given element names, options on all
 // encountered elements are usually examined as well. But that is not the case
 // if excluding custom options.
+// `excludeKnownExtensions` - If true, the returned schema will not include
+// known extensions for extendable messages for schema elements. If
+// exclude_custom_options is true, such extensions may still be returned if the
+// applicable descriptor options type is part of the requested schema.
 //
-// This flag is ignored if element_names is empty as the entire schema is always
-// returned in that case.
-//
-// `excludeKnownExtensions` - If true, the returned schema will not include known
-// extensions for extendable messages for schema elements. If
-// `exclude_custom_options` is true, such extensions may still be returned if
-// the applicable descriptor options type is part of the requested schema.
-//
-// This flag is ignored if `IncludeTypes()` is empty as the entire schema is
+// These flags are ignored if `IncludeTypes()` is empty as the entire schema is
 // always returned in that case.
 func Exclude(excludeCustomOptions, excludeKnownExtensions bool) ClientBuilder {
 	return func(c *Client) {
