@@ -13,6 +13,10 @@ service FooService {
     option (method_baz) = "str";
     option (method_foo) = { foo:"str" };
   }
+  rpc DoNot ( Empty ) returns ( Empty ) {
+    option (method_baz) = "str";
+    option (method_foo) = { foo:"str" };
+  }
 }
 -- google/protobuf/descriptor.proto --
 syntax = "proto2";
