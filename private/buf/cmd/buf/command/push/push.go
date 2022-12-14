@@ -18,10 +18,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/buffeature"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -176,7 +176,7 @@ func run(
 		bucketManifest *modulev1alpha1.Blob
 		blobs          []*modulev1alpha1.Blob
 	)
-	if container.FeatureEnabled(buffeature.TamperProofing) {
+	if enabled, err := strconv.ParseBool(container.Env(bufcli.BetaEnableTamperProofingEnvKey)); err == nil && enabled {
 		bucketManifest, blobs, err = manifestAndFilesBlobs(ctx, builtModule.Bucket)
 		if err != nil {
 			return err

@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufapp"
@@ -32,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
-	"github.com/bufbuild/buf/private/bufpkg/buffeature"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -73,6 +73,9 @@ const (
 
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
+
+	// BetaEnableTamperProofingEnvKey is an env var which if non-empty will enable tamper proofing
+	BetaEnableTamperProofingEnvKey = "BUF_BETA_ENABLE_TAMPER_PROOFING"
 
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
@@ -540,7 +543,7 @@ func NewModuleReaderAndCreateCacheDirsWithExternalPaths(
 func newModuleReaderAndCreateCacheDirs(
 	container appflag.Container,
 	clientConfig *connectclient.Config,
-	moduleReaderOptions ...bufmodulecache.ModuleReaderOption,
+	cacheModuleReaderOpts ...bufmodulecache.ModuleReaderOption,
 ) (bufmodule.ModuleReader, error) {
 	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
 	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
@@ -576,6 +579,10 @@ func newModuleReaderAndCreateCacheDirs(
 	if err != nil {
 		return nil, err
 	}
+	var moduleReaderOpts []bufapimodule.ModuleReaderOption
+	if enabled, err := strconv.ParseBool(container.Env(BetaEnableTamperProofingEnvKey)); err == nil && enabled {
+		moduleReaderOpts = append(moduleReaderOpts, bufapimodule.WithTamperProofing())
+	}
 	moduleReader := bufmodulecache.NewModuleReader(
 		container.Logger(),
 		container.VerbosePrinter(),
@@ -584,10 +591,10 @@ func newModuleReaderAndCreateCacheDirs(
 		sumReadWriteBucket,
 		bufapimodule.NewModuleReader(
 			bufapimodule.NewDownloadServiceClientFactory(clientConfig),
-			bufapimodule.WithTamperProofing(container.FeatureEnabled(buffeature.TamperProofing)),
+			moduleReaderOpts...,
 		),
 		bufmodulecache.NewRepositoryServiceClientFactory(clientConfig),
-		moduleReaderOptions...,
+		cacheModuleReaderOpts...,
 	)
 	return moduleReader, nil
 }

@@ -136,26 +136,6 @@ func NewArgContainerForOS() ArgContainer {
 	return newArgContainer(os.Args)
 }
 
-// FeatureFlag represents an application feature flag.
-type FeatureFlag struct {
-	// Name is the feature flag's name.
-	// Should be non-empty and use snake case with all caps.
-	Name string
-	// Default specifies the default value for the flag if not found in the environment.
-	Default bool
-}
-
-// FeatureContainer is a simple feature flagging interface.
-type FeatureContainer interface {
-	// FeatureEnabled returns whether the specified feature flag is enabled.
-	FeatureEnabled(flag FeatureFlag) bool
-}
-
-// NewFeatureContainer creates a new FeatureContainer from the Environment.
-func NewFeatureContainer(env EnvContainer) FeatureContainer {
-	return newFeatureContainer(env)
-}
-
 // Container contains environment variables, args, and stdio.
 type Container interface {
 	EnvContainer
@@ -163,7 +143,6 @@ type Container interface {
 	StdoutContainer
 	StderrContainer
 	ArgContainer
-	FeatureContainer
 }
 
 // NewContainer returns a new Container.

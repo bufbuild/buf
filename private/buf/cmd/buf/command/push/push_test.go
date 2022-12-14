@@ -30,8 +30,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
-	"github.com/bufbuild/buf/private/bufpkg/buffeature"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -254,7 +254,7 @@ func appRun(
 					buftransport.SetDisableAPISubdomain(env)
 					injectConfig(t, appName, env)
 					if tamperProofingEnabled {
-						env[buffeature.TamperProofing.Name] = "1"
+						env[bufcli.BetaEnableTamperProofingEnvKey] = "1"
 					}
 					return env
 				},
