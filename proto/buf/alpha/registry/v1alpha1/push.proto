@@ -22,14 +22,20 @@ import "buf/alpha/registry/v1alpha1/module.proto";
 // PushService is the Push service.
 service PushService {
   // Push pushes.
+  // Soon to be deprecated.
   rpc Push(PushRequest) returns (PushResponse);
+  // PushManifest pushes modules encoding it in a manifest+blobs form. This
+  // allows for Tamper Proofing abilities.
+  rpc PushManifest(PushManifestRequest) returns (PushManifestResponse);
 }
 
+// PushRequest holds the pushed module.
+// Soon to be deprecated.
 message PushRequest {
   string owner = 1;
   string repository = 2;
   string branch = 3 [deprecated = true];
-  buf.alpha.module.v1alpha1.Module module = 4 [deprecated = true];
+  buf.alpha.module.v1alpha1.Module module = 4;
   // Optional; if provided, the provided tags
   // are created for the pushed commit.
   repeated string tags = 5;
@@ -39,12 +45,33 @@ message PushRequest {
   repeated string tracks = 6 [deprecated = true];
   // If non-empty, the push creates a draft commit with this name.
   string draft_name = 7;
-  // If set, `module` is ignored and the module's manifest is used instead.
-  buf.alpha.module.v1alpha1.Blob manifest = 8;
-  // blobs to close on the manifest
-  repeated buf.alpha.module.v1alpha1.Blob blobs = 9;
 }
 
+// PushResponse is the pushed module pin, local to the used remote.
+// Soon to be deprecated.
 message PushResponse {
   LocalModulePin local_module_pin = 5;
+}
+
+// PushManifestRequest holds the pushed module in the manifest+blobs encoding
+// format.
+message PushManifestRequest {
+  string owner = 1;
+  string repository = 2;
+  // Manifest with all the module files being pushed.
+  buf.alpha.module.v1alpha1.Blob manifest = 3;
+  // Referenced blobs in the manifest. Keep in mind not necesarily you need one
+  // blob per file, but one blob per digest, so for files with exactly the same
+  // content, you can send just one blob.
+  repeated buf.alpha.module.v1alpha1.Blob blobs = 4;
+  // Optional; if provided, the provided tags
+  // are created for the pushed commit.
+  repeated string tags = 5;
+  // If non-empty, the push creates a draft commit with this name.
+  string draft_name = 6;
+}
+
+// PushManifestResponse is the pushed module pin, local to the used remote.
+message PushManifestResponse {
+  LocalModulePin local_module_pin = 1;
 }
