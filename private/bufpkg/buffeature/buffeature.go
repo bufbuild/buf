@@ -18,9 +18,9 @@ package buffeature
 import "github.com/bufbuild/buf/private/pkg/app"
 
 // Available Buf feature flags.
-const (
+var (
 	// TamperProofing enables the Buf tamper proofing feature.
 	// This enables sending of a manifest and blobs when pushing modules.
 	// Additionally, it enables support for consuming a manifest and blobs when downloading modules.
-	TamperProofing app.FeatureFlag = "BUF_FEATURE_TAMPER_PROOFING"
+	TamperProofing = app.FeatureFlag{Name: "BUF_FEATURE_TAMPER_PROOFING", Default: false}
 )

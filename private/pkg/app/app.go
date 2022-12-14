@@ -137,14 +137,15 @@ func NewArgContainerForOS() ArgContainer {
 }
 
 // FeatureFlag represents an application feature flag.
-type FeatureFlag string
+type FeatureFlag struct {
+	Name    string
+	Default bool
+}
 
 // FeatureContainer is a simple feature flagging interface.
 type FeatureContainer interface {
 	// FeatureEnabled returns whether the specified feature flag is enabled.
 	FeatureEnabled(flag FeatureFlag) bool
-	// SetFeatureDefault sets the default value for the feature flag.
-	SetFeatureDefault(flag FeatureFlag, defaultValue bool)
 }
 
 // NewFeatureContainer creates a new FeatureContainer from the Environment.

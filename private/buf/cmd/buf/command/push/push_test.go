@@ -254,7 +254,7 @@ func appRun(
 					buftransport.SetDisableAPISubdomain(env)
 					injectConfig(t, appName, env)
 					if tamperProofingEnabled {
-						env[string(buffeature.TamperProofing)] = "1"
+						env[buffeature.TamperProofing.Name] = "1"
 					}
 					return env
 				},

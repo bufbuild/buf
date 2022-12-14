@@ -17,39 +17,24 @@ package app
 import (
 	"strconv"
 	"strings"
-	"sync"
 )
 
 func newFeatureContainer(env EnvContainer) FeatureContainer {
 	return &featureContainer{
-		env:      env,
-		defaults: map[FeatureFlag]bool{
-			// Set default feature flag values
-		},
+		env: env,
 	}
 }
 
 type featureContainer struct {
 	env EnvContainer
-	// Protects defaults
-	mu       sync.RWMutex
-	defaults map[FeatureFlag]bool
 }
 
 var _ FeatureContainer = (*featureContainer)(nil)
 
 func (f *featureContainer) FeatureEnabled(flag FeatureFlag) bool {
-	envVar := strings.TrimSpace(f.env.Env(string(flag)))
+	envVar := strings.TrimSpace(f.env.Env(flag.Name))
 	if b, err := strconv.ParseBool(envVar); err == nil {
 		return b
 	}
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.defaults[flag]
-}
-
-func (f *featureContainer) SetFeatureDefault(flag FeatureFlag, defaultValue bool) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.defaults[flag] = defaultValue
+	return flag.Default
 }
