@@ -94,7 +94,7 @@ const (
 func ConvertBinaryToJSON(ctx context.Context, inputData []byte) error {
 	client, err := transform.NewClient(
 		// Buf Schema Registry location where the protobuf schema is stored 
-		transform.WithSchemaService(http.DefaultClient, "buf.build"),
+		transform.WithNewSchemaService(http.DefaultClient, "buf.build"),
 		// Add a cache to save on network call overhead
 		transform.WithCache(),
 		// Supplying the Buf module which describes the inputData

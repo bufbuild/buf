@@ -73,6 +73,7 @@ func (c *Client) getProtoEncodingPack(ctx context.Context) (protoencoding.Resolv
 		Owner:                  c.owner,
 		Repository:             c.repository,
 		Version:                c.version,
+		Types:                  c.types,
 		IfNotCommit:            c.ifNotCommit,
 		ExcludeCustomOptions:   c.excludeCustomOptions,
 		ExcludeKnownExtensions: c.excludeKnownExtensions,

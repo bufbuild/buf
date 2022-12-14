@@ -34,34 +34,34 @@ func TestNewClient_errors(t *testing.T) {
 		},
 		{
 			builders: []ClientBuilder{
-				WithSchemaService(http.DefaultClient, "localhost:4567"),
+				WithNewSchemaService(http.DefaultClient, "localhost:4567"),
 			},
 			wantErr: "buf module owner not provided",
 		},
 		{
 			builders: []ClientBuilder{
-				WithSchemaService(http.DefaultClient, "localhost:4567"),
+				WithNewSchemaService(http.DefaultClient, "localhost:4567"),
 				WithBufModule("foo", "", ""),
 			},
 			wantErr: "buf module repository not provided",
 		},
 		{
 			builders: []ClientBuilder{
-				WithSchemaService(http.DefaultClient, "localhost:4567"),
+				WithNewSchemaService(http.DefaultClient, "localhost:4567"),
 				WithBufModule("foo", "bar", ""),
 			},
 			wantErr: "buf module version not provided",
 		},
 		{
 			builders: []ClientBuilder{
-				WithSchemaService(http.DefaultClient, "localhost:4567"),
+				WithNewSchemaService(http.DefaultClient, "localhost:4567"),
 				WithBufModule("foo", "bar", "baz"),
 			},
 			wantErr: "input_format value FORMAT_UNSPECIFIED is not valid",
 		},
 		{
 			builders: []ClientBuilder{
-				WithSchemaService(http.DefaultClient, "localhost:4567"),
+				WithNewSchemaService(http.DefaultClient, "localhost:4567"),
 				WithBufModule("foo", "bar", "baz"),
 				FromFormat(registryv1alpha1.Format_FORMAT_BINARY, false),
 			},
@@ -87,7 +87,7 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "client from binary to json",
 			builders: []ClientBuilder{
-				WithSchemaService(http.DefaultClient, "localhost:4567"),
+				WithNewSchemaService(http.DefaultClient, "localhost:4567"),
 				WithBufModule("foo", "bar", "baz"),
 				FromFormat(registryv1alpha1.Format_FORMAT_BINARY, false),
 				ToJSONOutput(false, false),
@@ -96,7 +96,7 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "client from binary to text",
 			builders: []ClientBuilder{
-				WithSchemaService(http.DefaultClient, "localhost:4567"),
+				WithNewSchemaService(http.DefaultClient, "localhost:4567"),
 				WithBufModule("foo", "bar", "baz"),
 				FromFormat(registryv1alpha1.Format_FORMAT_BINARY, false),
 				ToTextOutput(),
@@ -105,7 +105,7 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "client from json to binary",
 			builders: []ClientBuilder{
-				WithSchemaService(http.DefaultClient, "localhost:4567"),
+				WithNewSchemaService(http.DefaultClient, "localhost:4567"),
 				WithBufModule("foo", "bar", "baz"),
 				FromFormat(registryv1alpha1.Format_FORMAT_JSON, false),
 				ToBinaryOutput(),
@@ -124,7 +124,7 @@ func TestNewClient(t *testing.T) {
 
 func TestWithSchemaService(t *testing.T) {
 	c := &Client{}
-	WithSchemaService(http.DefaultClient, "")(c)
+	WithNewSchemaService(http.DefaultClient, "")(c)
 	assert.NotNil(t, c.client)
 }
 

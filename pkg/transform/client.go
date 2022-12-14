@@ -69,9 +69,9 @@ func DefaultClient(
 	)
 }
 
-// WithSchemaService configures the remote Buf Schema Registry. Accepting a
+// WithNewSchemaService configures the remote Buf Schema Registry. Accepting a
 // HTTPClient, baseURL and connect client options.
-func WithSchemaService(
+func WithNewSchemaService(
 	httpClient connect.HTTPClient,
 	baseURL string,
 	opts ...connect.ClientOption,
@@ -86,7 +86,15 @@ func WithSchemaService(
 }
 
 func WithDefaultSchemaService() ClientBuilder {
-	return WithSchemaService(http.DefaultClient, "buf.build")
+	return WithNewSchemaService(http.DefaultClient, "buf.build")
+}
+
+func WithSchemaService(
+	client registryv1alpha1connect.SchemaServiceHandler,
+) ClientBuilder {
+	return func(c *Client) {
+		c.client = client
+	}
 }
 
 // WithCache provided a default expiration duration and cleanup
@@ -266,4 +274,24 @@ func validateOutputFormat(outputFormat interface{}) error {
 	default:
 		return fmt.Errorf("output_format has unrecognized type: %T", outputFormat)
 	}
+}
+
+func GetOutputFormat(request *registryv1alpha1.ConvertMessageRequest) (ClientBuilder, error) {
+	var output ClientBuilder
+	switch outputFormat := request.OutputFormat.(type) {
+	case *registryv1alpha1.ConvertMessageRequest_OutputBinary:
+		output = ToBinaryOutput()
+	case *registryv1alpha1.ConvertMessageRequest_OutputJson:
+		opts := outputFormat.OutputJson
+		output = ToJSONOutput(opts.UseEnumNumbers, opts.IncludeDefaults)
+	case *registryv1alpha1.ConvertMessageRequest_OutputText:
+		output = ToTextOutput()
+	default:
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("unknown output_format provided %s", outputFormat))
+	}
+	return output, nil
+}
+
+func (c *Client) Commit() string {
+	return c.version
 }

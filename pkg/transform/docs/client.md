@@ -6,12 +6,12 @@
 let us discover some of those options. This will allow you to further control
 transform behaviour to suit your needs.
 
-`WithSchemaService` configures the remote Buf Schema Registry. Accepting a
+`WithNewSchemaService` configures the remote Buf Schema Registry. Accepting a
 `HTTPClient`, `baseURL` and connect client options.
 
 ```diff
 transform.NewClient(
-+   transform.WithSchemaService(http.DefaultClient, "buf.build"),
++   transform.WithNewSchemaService(http.DefaultClient, "buf.build"),
 )
 ```
 
@@ -22,7 +22,7 @@ without it the package will fetch the schema before every message conversion.
 
 ```diff
 transform.NewClient(
-    transform.WithSchemaService(http.DefaultClient, "buf.build"),
+    transform.WithNewSchemaService(http.DefaultClient, "buf.build"),
 +   transform.WithCache(),
 )
 ```
@@ -36,7 +36,7 @@ If version is unspecified, defaults to the latest version on the repo's
 
 ```diff
 transform.NewClient(
-    transform.WithSchemaService(http.DefaultClient, "buf.build"),
+    transform.WithNewSchemaService(http.DefaultClient, "buf.build"),
     transform.WithCache(),
 +   transform.WithBufModule("bufbuild", "registry", "01b54e71e6b84514a9141323afdb95a1"),
 )
@@ -49,7 +49,7 @@ will be returned.
 
 ```diff
 transform.NewClient(
-    transform.WithSchemaService(http.DefaultClient, "buf.build"),
+    transform.WithNewSchemaService(http.DefaultClient, "buf.build"),
     transform.WithCache(),
     transform.WithBufModule("bufbuild", "registry", "01b54e71e6b84514a9141323afdb95a1"),
 +   transform.IncludeTypes("foo.bar.Baz", "fizz.buzz.FizzBuzz"),
@@ -71,7 +71,7 @@ output (depending on the requested output format).
 
 ```diff
 transform.NewClient(
-    transform.WithSchemaService(http.DefaultClient, "buf.build"),
+    transform.WithNewSchemaService(http.DefaultClient, "buf.build"),
     transform.WithCache(),
     transform.WithBufModule("bufbuild", "registry", "01b54e71e6b84514a9141323afdb95a1"),
     transform.IncludeTypes("foo.bar.Baz", "fizz.buzz.FizzBuzz"),
@@ -85,7 +85,7 @@ providing 2 configurable options:
 
 ```diff
 transform.NewClient(
-    transform.WithSchemaService(http.DefaultClient, "buf.build"),
+    transform.WithNewSchemaService(http.DefaultClient, "buf.build"),
     transform.WithCache(),
     transform.WithBufModule("bufbuild", "registry", "01b54e71e6b84514a9141323afdb95a1"),
     transform.IncludeTypes("foo.bar.Baz", "fizz.buzz.FizzBuzz"),
@@ -117,7 +117,7 @@ resolved commit changes.
 
 ```diff
 transform.NewClient(
-    transform.WithSchemaService(http.DefaultClient, "buf.build"),
+    transform.WithNewSchemaService(http.DefaultClient, "buf.build"),
     transform.WithCache(),
     transform.WithBufModule("bufbuild", "registry", "01b54e71e6b84514a9141323afdb95a1"),
     transform.IncludeTypes("foo.bar.Baz", "fizz.buzz.FizzBuzz"),
@@ -131,7 +131,7 @@ transform.NewClient(
 
 ```diff
 transform.NewClient(
-    transform.WithSchemaService(http.DefaultClient, "buf.build"),
+    transform.WithNewSchemaService(http.DefaultClient, "buf.build"),
     transform.WithCache(),
     transform.WithBufModule("bufbuild", "registry", "01b54e71e6b84514a9141323afdb95a1"),
     transform.IncludeTypes("foo.bar.Baz", "fizz.buzz.FizzBuzz"),
@@ -151,7 +151,7 @@ keyword. Other optional fields will be included if present in the input data.
 
 ```diff
 transform.NewClient(
-    transform.WithSchemaService(http.DefaultClient, "buf.build"),
+    transform.WithNewSchemaService(http.DefaultClient, "buf.build"),
     transform.WithCache(),
     transform.WithBufModule("bufbuild", "registry", "01b54e71e6b84514a9141323afdb95a1"),
     transform.IncludeTypes("foo.bar.Baz", "fizz.buzz.FizzBuzz"),
@@ -166,7 +166,7 @@ transform.NewClient(
 
 ```diff
 transform.NewClient(
-    transform.WithSchemaService(http.DefaultClient, "buf.build"),
+    transform.WithNewSchemaService(http.DefaultClient, "buf.build"),
     transform.WithCache(),
     transform.WithBufModule("bufbuild", "registry", "01b54e71e6b84514a9141323afdb95a1"),
     transform.IncludeTypes("foo.bar.Baz", "fizz.buzz.FizzBuzz"),
