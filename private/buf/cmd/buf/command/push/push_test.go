@@ -126,6 +126,7 @@ func TestPush(t *testing.T) {
 		&registryv1alpha1.PushResponse{
 			LocalModulePin: &registryv1alpha1.LocalModulePin{},
 		},
+		true,
 		"",
 	)
 	testPush(
@@ -136,6 +137,7 @@ func TestPush(t *testing.T) {
 		&registryv1alpha1.PushResponse{
 			LocalModulePin: nil,
 		},
+		true,
 		"Missing local module pin",
 	)
 	testPush(
@@ -144,7 +146,19 @@ func TestPush(t *testing.T) {
 		server.URL,
 		mock,
 		nil,
+		true,
 		"bad request",
+	)
+	testPush(
+		t,
+		"success tamper proofing disabled",
+		server.URL,
+		mock,
+		&registryv1alpha1.PushResponse{
+			LocalModulePin: &registryv1alpha1.LocalModulePin{},
+		},
+		false,
+		"",
 	)
 }
 
@@ -184,6 +198,7 @@ func TestPushIsSmallerBucket(t *testing.T) {
 			"bar.proto": nil,
 			"baz.file":  nil,
 		},
+		true,
 	)
 	require.NoError(t, err)
 }
@@ -226,6 +241,7 @@ func pushService(t *testing.T) (*httptest.Server, *mockPushService) {
 func appRun(
 	t *testing.T,
 	files map[string][]byte,
+	tamperProofingEnabled bool,
 ) error {
 	const appName = "test"
 	return appcmd.Run(
@@ -237,7 +253,9 @@ func appRun(
 					env["BUF_TOKEN"] = "invalid"
 					buftransport.SetDisableAPISubdomain(env)
 					injectConfig(t, appName, env)
-					env[string(buffeature.TamperProofing)] = "1"
+					if tamperProofingEnabled {
+						env[string(buffeature.TamperProofing)] = "1"
+					}
 					return env
 				},
 			)(appName),
@@ -260,6 +278,7 @@ func testPush(
 	URL string,
 	mock *mockPushService,
 	resp *registryv1alpha1.PushResponse,
+	tamperProofingEnabled bool,
 	errorMsg string,
 ) {
 	t.Helper()
@@ -267,8 +286,13 @@ func testPush(
 	mock.respond(owner, resp)
 	mock.callback(owner, func(req *registryv1alpha1.PushRequest) {
 		assert.NotNil(t, req.Module, "missing module")
-		assert.NotNil(t, req.Manifest, "missing manifest")
-		assert.NotNil(t, req.Blobs, "missing blobs")
+		if tamperProofingEnabled {
+			assert.NotNil(t, req.Manifest, "missing manifest")
+			assert.NotNil(t, req.Blobs, "missing blobs")
+		} else {
+			assert.Nil(t, req.Manifest, "found manifest")
+			assert.Nil(t, req.Blobs, "found blobs")
+		}
 	})
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
@@ -279,6 +303,7 @@ func testPush(
 				"foo.proto": nil,
 				"bar.proto": nil,
 			},
+			tamperProofingEnabled,
 		)
 		if errorMsg == "" {
 			assert.NoError(t, err)
