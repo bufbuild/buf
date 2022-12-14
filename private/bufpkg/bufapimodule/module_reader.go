@@ -70,8 +70,11 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		moduleIdentity,
 		modulePin.Commit(),
 	)
-	if m.tamperProofingEnabled && resp.Manifest != nil {
-		// prefer and use manifest and blobs
+	if m.tamperProofingEnabled {
+		if resp.Manifest == nil {
+			return nil, errors.New("expected non-nil manifest with tamper proofing enabled")
+		}
+		// use manifest and blobs
 		bucket, err := manifest.NewBucketFromManifestBlobs(
 			ctx,
 			resp.Manifest,
