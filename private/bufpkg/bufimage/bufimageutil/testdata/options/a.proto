@@ -48,6 +48,11 @@ service FooService {
 		option (method_foo).foo = "str";
 		option (method_baz) = "str";
 	};
+
+	rpc DoNot(Empty) returns (Empty) {
+		option (method_foo).foo = "str";
+		option (method_baz) = "str";
+	};
 }
 
 extend Foo {
