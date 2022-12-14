@@ -74,7 +74,7 @@ const (
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
 
-	// BetaEnableTamperProofingEnvKey is an env var which if non-empty will enable tamper proofing
+	// BetaEnableTamperProofingEnvKey is an env var to enable tamper proofing (using strconv.ParseBool)
 	BetaEnableTamperProofingEnvKey = "BUF_BETA_ENABLE_TAMPER_PROOFING"
 
 	inputHashtagFlagName      = "__hashtag__"
