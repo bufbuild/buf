@@ -20,6 +20,7 @@ type container struct {
 	StdoutContainer
 	StderrContainer
 	ArgContainer
+	FeatureContainer
 }
 
 func newContainer(
@@ -30,10 +31,11 @@ func newContainer(
 	argContainer ArgContainer,
 ) *container {
 	return &container{
-		EnvContainer:    envContainer,
-		StdinContainer:  stdinContainer,
-		StdoutContainer: stdoutContainer,
-		StderrContainer: stderrContainer,
-		ArgContainer:    argContainer,
+		EnvContainer:     envContainer,
+		StdinContainer:   stdinContainer,
+		StdoutContainer:  stdoutContainer,
+		StderrContainer:  stderrContainer,
+		ArgContainer:     argContainer,
+		FeatureContainer: NewFeatureContainer(envContainer),
 	}
 }

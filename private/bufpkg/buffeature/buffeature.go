@@ -15,12 +15,12 @@
 // Package buffeature provides known feature flags for the Buf CLI.
 package buffeature
 
-import "github.com/bufbuild/buf/private/pkg/app/appfeature"
+import "github.com/bufbuild/buf/private/pkg/app"
 
-// Available feature flags for the Buf CLI.
+// Available Buf feature flags.
 const (
-	// TamperProofing enables the Buf CLI tamper proofing feature.
+	// TamperProofing enables the Buf tamper proofing feature.
 	// This enables sending of a manifest and blobs when pushing modules.
 	// Additionally, it enables support for consuming a manifest and blobs when downloading modules.
-	TamperProofing appfeature.FeatureFlag = "BUF_FEATURE_TAMPER_PROOFING"
+	TamperProofing app.FeatureFlag = "BUF_FEATURE_TAMPER_PROOFING"
 )

@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appfeature"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/app/appname"
 	"github.com/bufbuild/buf/private/pkg/app/appverbose"
@@ -33,7 +32,6 @@ type Container interface {
 	appname.Container
 	applog.Container
 	appverbose.Container
-	appfeature.Container
 }
 
 // Interceptor intercepts and adapts the request or response of run functions.

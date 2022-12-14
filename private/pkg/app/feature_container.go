@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package appfeature
+package app
 
 import (
 	"strconv"
@@ -20,8 +20,8 @@ import (
 	"sync"
 )
 
-func newContainer(env Environment) Container {
-	return &features{
+func newFeatureContainer(env EnvContainer) FeatureContainer {
+	return &featureContainer{
 		env:      env,
 		defaults: map[FeatureFlag]bool{
 			// Set default feature flag values
@@ -29,16 +29,16 @@ func newContainer(env Environment) Container {
 	}
 }
 
-type features struct {
-	env Environment
+type featureContainer struct {
+	env EnvContainer
 	// Protects defaults
 	mu       sync.RWMutex
 	defaults map[FeatureFlag]bool
 }
 
-var _ Container = (*features)(nil)
+var _ FeatureContainer = (*featureContainer)(nil)
 
-func (f *features) FeatureEnabled(flag FeatureFlag) bool {
+func (f *featureContainer) FeatureEnabled(flag FeatureFlag) bool {
 	envVar := strings.TrimSpace(f.env.Env(string(flag)))
 	if b, err := strconv.ParseBool(envVar); err == nil {
 		return b
@@ -48,7 +48,7 @@ func (f *features) FeatureEnabled(flag FeatureFlag) bool {
 	return f.defaults[flag]
 }
 
-func (f *features) SetFeatureDefault(flag FeatureFlag, defaultValue bool) {
+func (f *featureContainer) SetFeatureDefault(flag FeatureFlag, defaultValue bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.defaults[flag] = defaultValue

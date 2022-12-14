@@ -12,39 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package appfeature_test
+package app_test
 
 import (
 	"os"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/app/appfeature"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-const testFeatureFlag appfeature.FeatureFlag = "BUF_FEATURE_TEST"
+const testFeatureFlag app.FeatureFlag = "BUF_FEATURE_TEST"
 
-func TestFeatureFlags(t *testing.T) {
+func TestFeatureContainer(t *testing.T) {
 	t.Parallel()
-	t.Cleanup(func() {
-		if err := os.Unsetenv(string(testFeatureFlag)); err != nil {
-			t.Errorf("failed to unset env var: %v", err)
-		}
-	})
-	flags := appfeature.NewContainer(appfeature.EnvironmentFunc(os.Getenv))
-	verifyFlag := func(valueToSet string, expected bool) {
+	verifyFlag := func(valueToSet string, expected bool, configureFunc func(features app.FeatureContainer)) {
 		t.Helper()
+		env := map[string]string{
+			string(testFeatureFlag): valueToSet,
+		}
+		flags := app.NewFeatureContainer(app.NewEnvContainer(env))
+		if configureFunc != nil {
+			configureFunc(flags)
+		}
 		require.NoError(t, os.Setenv(string(testFeatureFlag), valueToSet))
 		assert.Equalf(t, expected, flags.FeatureEnabled(testFeatureFlag), "expected %q to equal %v", valueToSet, expected)
 	}
-	verifyFlag(" 1 ", true)
-	verifyFlag("true", true)
-	verifyFlag(" T\t", true)
-	verifyFlag("0", false)
-	verifyFlag("false", false)
+	verifyFlag(" 1 ", true, nil)
+	verifyFlag("true", true, nil)
+	verifyFlag(" T\t", true, nil)
+	verifyFlag("0", false, nil)
+	verifyFlag("false", false, nil)
 	// No default specified
-	verifyFlag("", false)
-	flags.SetFeatureDefault(testFeatureFlag, true)
-	verifyFlag("", true)
+	verifyFlag("", false, nil)
+	verifyFlag("", true, func(features app.FeatureContainer) {
+		features.SetFeatureDefault(testFeatureFlag, true)
+	})
 }

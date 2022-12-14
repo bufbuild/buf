@@ -136,6 +136,22 @@ func NewArgContainerForOS() ArgContainer {
 	return newArgContainer(os.Args)
 }
 
+// FeatureFlag represents an application feature flag.
+type FeatureFlag string
+
+// FeatureContainer is a simple feature flagging interface.
+type FeatureContainer interface {
+	// FeatureEnabled returns whether the specified feature flag is enabled.
+	FeatureEnabled(flag FeatureFlag) bool
+	// SetFeatureDefault sets the default value for the feature flag.
+	SetFeatureDefault(flag FeatureFlag, defaultValue bool)
+}
+
+// NewFeatureContainer creates a new FeatureContainer from the Environment.
+func NewFeatureContainer(env EnvContainer) FeatureContainer {
+	return newFeatureContainer(env)
+}
+
 // Container contains environment variables, args, and stdio.
 type Container interface {
 	EnvContainer
@@ -143,6 +159,7 @@ type Container interface {
 	StdoutContainer
 	StderrContainer
 	ArgContainer
+	FeatureContainer
 }
 
 // NewContainer returns a new Container.
