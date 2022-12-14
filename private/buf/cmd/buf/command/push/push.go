@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/buffeature"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -171,9 +172,13 @@ func run(
 	if err != nil {
 		return err
 	}
-	manifest, blobs, err := manifestAndFilesBlobs(ctx, builtModule.Bucket)
-	if err != nil {
-		return err
+	var bucketManifest *modulev1alpha1.Blob
+	var blobs []*modulev1alpha1.Blob
+	if container.FeatureEnabled(buffeature.TamperProofing) {
+		bucketManifest, blobs, err = manifestAndFilesBlobs(ctx, builtModule.Bucket)
+		if err != nil {
+			return err
+		}
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
@@ -188,7 +193,7 @@ func run(
 			Module:     protoModule,
 			Tags:       flags.Tags,
 			DraftName:  flags.Draft,
-			Manifest:   manifest,
+			Manifest:   bucketManifest,
 			Blobs:      blobs,
 		}),
 	)

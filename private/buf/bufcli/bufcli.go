@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
+	"github.com/bufbuild/buf/private/bufpkg/buffeature"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -581,7 +582,10 @@ func newModuleReaderAndCreateCacheDirs(
 		fileLocker,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
-		bufapimodule.NewModuleReader(bufapimodule.NewDownloadServiceClientFactory(clientConfig)),
+		bufapimodule.NewModuleReader(
+			bufapimodule.NewDownloadServiceClientFactory(clientConfig),
+			bufapimodule.WithTamperProofing(container.FeatureEnabled(buffeature.TamperProofing)),
+		),
 		bufmodulecache.NewRepositoryServiceClientFactory(clientConfig),
 		moduleReaderOptions...,
 	)

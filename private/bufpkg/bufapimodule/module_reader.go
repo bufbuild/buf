@@ -28,14 +28,28 @@ import (
 
 type moduleReader struct {
 	downloadClientFactory DownloadServiceClientFactory
+	tamperProofingEnabled bool
+}
+
+// WithTamperProofing configures whether the module reader supports tamper proofing.
+// If false, when downloading modules the manifest and blobs will we ignored.
+func WithTamperProofing(enabled bool) ModuleReaderOption {
+	return func(reader *moduleReader) {
+		reader.tamperProofingEnabled = enabled
+	}
 }
 
 func newModuleReader(
 	downloadClientFactory DownloadServiceClientFactory,
+	opts ...ModuleReaderOption,
 ) *moduleReader {
-	return &moduleReader{
+	reader := &moduleReader{
 		downloadClientFactory: downloadClientFactory,
 	}
+	for _, opt := range opts {
+		opt(reader)
+	}
+	return reader
 }
 
 func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
@@ -56,7 +70,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		moduleIdentity,
 		modulePin.Commit(),
 	)
-	if resp.Manifest != nil {
+	if m.tamperProofingEnabled && resp.Manifest != nil {
 		// prefer and use manifest and blobs
 		bucket, err := manifest.NewBucketFromManifestBlobs(
 			ctx,
@@ -67,7 +81,8 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 			return nil, err
 		}
 		return bufmodule.NewModuleForBucket(ctx, bucket, identityAndCommitOpt)
-	} else if resp.Module != nil {
+	}
+	if resp.Module != nil {
 		// build proto module instead
 		return bufmodule.NewModuleForProto(ctx, resp.Module, identityAndCommitOpt)
 	}

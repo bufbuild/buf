@@ -109,7 +109,7 @@ func testDownload(
 	t.Helper()
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		moduleReader := newModuleReader(mock.factory)
+		moduleReader := newModuleReader(mock.factory, WithTamperProofing(true))
 		ctx := context.Background()
 		pin, err := bufmoduleref.NewModulePin(
 			"remote",

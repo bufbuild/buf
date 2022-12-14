@@ -31,6 +31,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
+	"github.com/bufbuild/buf/private/bufpkg/buffeature"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -230,12 +231,13 @@ func appRun(
 	return appcmd.Run(
 		context.Background(),
 		app.NewContainer(
-			ammendEnv(
+			amendEnv(
 				internaltesting.NewEnvFunc(t),
 				func(env map[string]string) map[string]string {
 					env["BUF_TOKEN"] = "invalid"
 					buftransport.SetDisableAPISubdomain(env)
 					injectConfig(t, appName, env)
+					env[string(buffeature.TamperProofing)] = "1"
 					return env
 				},
 			)(appName),
@@ -335,9 +337,9 @@ tls:
 	require.NoError(t, err)
 }
 
-// ammendEnv calls sideEffects after the env generator function constructs an
+// amendEnv calls sideEffects after the env generator function constructs an
 // environment. The environment from the last sideEffect call is returned.
-func ammendEnv(
+func amendEnv(
 	envGen func(string) map[string]string,
 	sideEffects ...func(map[string]string) map[string]string,
 ) func(string) map[string]string {

@@ -351,7 +351,7 @@ type ExternalManagedConfigV1 struct {
 	Override            map[string]map[string]string      `json:"override,omitempty" yaml:"override,omitempty"`
 }
 
-// IsEmpty returns true if the config is empty, excluding the 'Enabled' setting.
+// IsEmpty returns true if the config is empty, excluding the 'FeatureEnabled' setting.
 func (e ExternalManagedConfigV1) IsEmpty() bool {
 	return e.CcEnableArenas == nil &&
 		e.JavaMultipleFiles == nil &&

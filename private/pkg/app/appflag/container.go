@@ -16,6 +16,7 @@ package appflag
 
 import (
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/appfeature"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/app/appname"
 	"github.com/bufbuild/buf/private/pkg/app/appverbose"
@@ -28,6 +29,7 @@ type container struct {
 	nameContainer    appname.Container
 	logContainer     applog.Container
 	verboseContainer appverbose.Container
+	featureContainer appfeature.Container
 }
 
 func newContainer(
@@ -45,6 +47,7 @@ func newContainer(
 		nameContainer:    nameContainer,
 		logContainer:     applog.NewContainer(logger),
 		verboseContainer: appverbose.NewContainer(verbosePrinter),
+		featureContainer: appfeature.NewContainer(baseContainer),
 	}, nil
 }
 
@@ -74,4 +77,12 @@ func (c *container) Logger() *zap.Logger {
 
 func (c *container) VerbosePrinter() verbose.Printer {
 	return c.verboseContainer.VerbosePrinter()
+}
+
+func (c *container) FeatureEnabled(flag appfeature.FeatureFlag) bool {
+	return c.featureContainer.FeatureEnabled(flag)
+}
+
+func (c *container) SetFeatureDefault(flag appfeature.FeatureFlag, defaultValue bool) {
+	c.featureContainer.SetFeatureDefault(flag, defaultValue)
 }
