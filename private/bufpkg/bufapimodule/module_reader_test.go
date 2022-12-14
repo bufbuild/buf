@@ -35,33 +35,56 @@ func TestDownload(t *testing.T) {
 	testDownload(
 		t,
 		"does-not-exist error",
+		true,
 		newMockDownloadService(
 			t,
 			withError(connect.NewError(connect.CodeNotFound, nil)),
 		),
-		true,
 		"does not exist",
 	)
 	testDownload(
 		t,
 		"unexpected download service error",
+		true,
 		newMockDownloadService(
 			t,
 			withError(errors.New("internal")),
 		),
-		true,
 		"internal",
 	)
 	testDownload(
 		t,
 		"success but response has all empty fields",
-		newMockDownloadService(t),
 		true,
-		"no module in response",
+		newMockDownloadService(t),
+		"expected non-nil manifest with tamper proofing enabled",
 	)
 	testDownload(
 		t,
-		"success",
+		"success with empty manifest module",
+		true,
+		newMockDownloadService(
+			t,
+			withBlobsFromMap(map[string][]byte{}),
+		),
+		"",
+	)
+	testDownload(
+		t,
+		"manifest module with invalid lock file",
+		true,
+		newMockDownloadService(
+			t,
+			withBlobsFromMap(map[string][]byte{
+				"buf.lock": []byte("invalid lock file"),
+			}),
+		),
+		"failed to decode lock file",
+	)
+	testDownload(
+		t,
+		"tamper proofing enabled no manifest",
+		true,
 		newMockDownloadService(
 			t,
 			withModule(&modulev1alpha1.Module{
@@ -72,44 +95,48 @@ func TestDownload(t *testing.T) {
 				},
 			}),
 		),
-		false,
-		"",
+		"expected non-nil manifest with tamper proofing enabled",
 	)
 	testDownload(
 		t,
-		"success with empty manifest module",
-		newMockDownloadService(
-			t,
-			withBlobsFromMap(map[string][]byte{}),
-		),
+		"tamper proofing disabled",
 		false,
-		"",
-	)
-	testDownload(
-		t,
-		"manifest module with invalid lock file",
 		newMockDownloadService(
 			t,
-			withBlobsFromMap(map[string][]byte{
-				"buf.lock": []byte("invalid lock file"),
+			withModule(&modulev1alpha1.Module{
+				Files: []*modulev1alpha1.ModuleFile{
+					{
+						Path: "foo.proto",
+					},
+				},
 			}),
 		),
-		true,
-		"failed to decode lock file",
+		"",
+	)
+	testDownload(
+		t,
+		"tamper proofing disabled no image",
+		false,
+		newMockDownloadService(t),
+		"no module in response",
 	)
 }
 
 func testDownload(
 	t *testing.T,
 	desc string,
+	tamperProofingEnabled bool,
 	mock *mockDownloadService,
-	expectError bool,
 	errorContains string,
 ) {
 	t.Helper()
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		moduleReader := newModuleReader(mock.factory)
+		var moduleReaderOpts []ModuleReaderOption
+		if tamperProofingEnabled {
+			moduleReaderOpts = append(moduleReaderOpts, WithTamperProofing())
+		}
+		moduleReader := newModuleReader(mock.factory, moduleReaderOpts...)
 		ctx := context.Background()
 		pin, err := bufmoduleref.NewModulePin(
 			"remote",
@@ -122,11 +149,8 @@ func testDownload(
 		)
 		require.NoError(t, err)
 		module, err := moduleReader.GetModule(ctx, pin)
-		if expectError {
-			assert.Error(t, err)
-			if errorContains != "" {
-				assert.ErrorContains(t, err, errorContains)
-			}
+		if errorContains != "" {
+			assert.ErrorContains(t, err, errorContains)
 		} else {
 			assert.NotNil(t, module)
 			assert.NoError(t, err)
@@ -221,8 +245,8 @@ func (m *mockDownloadService) factory(_ string) registryv1alpha1connect.Download
 }
 
 func (m *mockDownloadService) Download(
-	ctx context.Context,
-	req *connect.Request[registryv1alpha1.DownloadRequest],
+	context.Context,
+	*connect.Request[registryv1alpha1.DownloadRequest],
 ) (*connect.Response[registryv1alpha1.DownloadResponse], error) {
 	if m.err != nil {
 		return nil, m.err

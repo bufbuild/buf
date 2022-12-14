@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -171,9 +172,15 @@ func run(
 	if err != nil {
 		return err
 	}
-	manifest, blobs, err := manifestAndFilesBlobs(ctx, builtModule.Bucket)
-	if err != nil {
-		return err
+	var (
+		bucketManifest *modulev1alpha1.Blob
+		blobs          []*modulev1alpha1.Blob
+	)
+	if enabled, err := strconv.ParseBool(container.Env(bufcli.BetaEnableTamperProofingEnvKey)); err == nil && enabled {
+		bucketManifest, blobs, err = manifestAndFilesBlobs(ctx, builtModule.Bucket)
+		if err != nil {
+			return err
+		}
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
@@ -188,7 +195,7 @@ func run(
 			Module:     protoModule,
 			Tags:       flags.Tags,
 			DraftName:  flags.Draft,
-			Manifest:   manifest,
+			Manifest:   bucketManifest,
 			Blobs:      blobs,
 		}),
 	)

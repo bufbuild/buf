@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufapp"
@@ -72,6 +73,9 @@ const (
 
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
+
+	// BetaEnableTamperProofingEnvKey is an env var to enable tamper proofing
+	BetaEnableTamperProofingEnvKey = "BUF_BETA_ENABLE_TAMPER_PROOFING"
 
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
@@ -539,7 +543,7 @@ func NewModuleReaderAndCreateCacheDirsWithExternalPaths(
 func newModuleReaderAndCreateCacheDirs(
 	container appflag.Container,
 	clientConfig *connectclient.Config,
-	moduleReaderOptions ...bufmodulecache.ModuleReaderOption,
+	cacheModuleReaderOpts ...bufmodulecache.ModuleReaderOption,
 ) (bufmodule.ModuleReader, error) {
 	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
 	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
@@ -575,15 +579,22 @@ func newModuleReaderAndCreateCacheDirs(
 	if err != nil {
 		return nil, err
 	}
+	var moduleReaderOpts []bufapimodule.ModuleReaderOption
+	if enabled, err := strconv.ParseBool(container.Env(BetaEnableTamperProofingEnvKey)); err == nil && enabled {
+		moduleReaderOpts = append(moduleReaderOpts, bufapimodule.WithTamperProofing())
+	}
 	moduleReader := bufmodulecache.NewModuleReader(
 		container.Logger(),
 		container.VerbosePrinter(),
 		fileLocker,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
-		bufapimodule.NewModuleReader(bufapimodule.NewDownloadServiceClientFactory(clientConfig)),
+		bufapimodule.NewModuleReader(
+			bufapimodule.NewDownloadServiceClientFactory(clientConfig),
+			moduleReaderOpts...,
+		),
 		bufmodulecache.NewRepositoryServiceClientFactory(clientConfig),
-		moduleReaderOptions...,
+		cacheModuleReaderOpts...,
 	)
 	return moduleReader, nil
 }
