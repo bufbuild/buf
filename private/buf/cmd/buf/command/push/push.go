@@ -172,8 +172,10 @@ func run(
 	if err != nil {
 		return err
 	}
-	var bucketManifest *modulev1alpha1.Blob
-	var blobs []*modulev1alpha1.Blob
+	var (
+		bucketManifest *modulev1alpha1.Blob
+		blobs          []*modulev1alpha1.Blob
+	)
 	if container.FeatureEnabled(buffeature.TamperProofing) {
 		bucketManifest, blobs, err = manifestAndFilesBlobs(ctx, builtModule.Bucket)
 		if err != nil {
