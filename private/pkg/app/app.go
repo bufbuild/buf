@@ -138,7 +138,10 @@ func NewArgContainerForOS() ArgContainer {
 
 // FeatureFlag represents an application feature flag.
 type FeatureFlag struct {
-	Name    string
+	// Name is the feature flag's name.
+	// Should be non-empty and use snake case with all caps.
+	Name string
+	// Default specifies the default value for the flag if not found in the environment.
 	Default bool
 }
 
