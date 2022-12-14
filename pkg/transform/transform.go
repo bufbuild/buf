@@ -32,9 +32,11 @@ import (
 // ConvertMessage allows the caller to convert a given message data blob from
 // one format to another by referring to a type schema for the blob.
 func (c *Client) ConvertMessage(ctx context.Context, messageName string, inputData []byte) ([]byte, error) {
-	// TODO: validate messageName is in types
+	if !contains(c.types, messageName) {
+		return nil, fmt.Errorf("message_name '%s' is not found in filtered types %v", messageName, c.types)
+	}
 	// First step: get descriptors for the requested message
-	resolver, err := c.getProtoEncodingPack(ctx)
+	resolver, err := c.getProtoEncodingResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +63,9 @@ func (c *Client) ConvertMessage(ctx context.Context, messageName string, inputDa
 	return data, nil
 }
 
-// getProtoEncodingPack allows the caller to download a schema for one or more requested
+// getProtoEncodingResolver allows the caller to download a schema for one or more requested
 // types, RPC services, or RPC methods.
-func (c *Client) getProtoEncodingPack(ctx context.Context) (protoencoding.Resolver, error) {
+func (c *Client) getProtoEncodingResolver(ctx context.Context) (protoencoding.Resolver, error) {
 	if c.cache != nil {
 		if out, ok := c.cache.Load(c.moduleName()); ok {
 			return out, nil
@@ -152,4 +154,13 @@ func getUnmarshaler(
 		}
 	}
 	return unmarshaler
+}
+
+func contains[T comparable](elems []T, want T) bool {
+	for _, elem := range elems {
+		if elem == want {
+			return true
+		}
+	}
+	return false
 }

@@ -15,6 +15,7 @@
 package transform
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -71,7 +72,7 @@ func TestNewClient_errors(t *testing.T) {
 	for _, tt := range tests {
 		test := tt
 		t.Run(test.wantErr, func(t *testing.T) {
-			got, err := NewClient(test.builders...)
+			got, err := NewClient(context.Background(), test.builders...)
 			require.Error(t, err)
 			require.Nil(t, got)
 			assert.EqualError(t, err, test.wantErr)
@@ -115,7 +116,7 @@ func TestNewClient(t *testing.T) {
 	for _, tt := range tests {
 		test := tt
 		t.Run(test.name, func(t *testing.T) {
-			got, err := NewClient(test.builders...)
+			got, err := NewClient(context.Background(), test.builders...)
 			require.NoError(t, err)
 			require.NotNil(t, got)
 		})

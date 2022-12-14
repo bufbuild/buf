@@ -214,7 +214,7 @@ func TestSchemaService_ConvertMessage(t *testing.T) {
 					t.Fatalf("unknown output format %v", outputFormat.format)
 				}
 
-				s, err := NewClient(builders...)
+				s, err := NewClient(context.Background(), builders...)
 				require.NoError(t, err)
 				resp, err := s.ConvertMessage(context.Background(), "foo.bar.Message", data)
 				require.NoError(t, err)

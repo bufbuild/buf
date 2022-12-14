@@ -15,6 +15,7 @@
 package transform
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -44,23 +45,31 @@ type Client struct {
 type ClientBuilder func(*Client)
 
 // NewClient builds a transform client, processing various configurable options
-func NewClient(builders ...ClientBuilder) (*Client, error) {
-	c := &Client{}
+func NewClient(ctx context.Context, builders ...ClientBuilder) (*Client, error) {
+	client := &Client{}
 	for _, apply := range builders {
-		apply(c)
+		apply(client)
 	}
-	if err := c.validate(); err != nil {
+	if err := client.validate(); err != nil {
 		return nil, err
 	}
-	return c, nil
+	if client.cache != nil {
+		// pre-load proto encoding resolver into cache
+		if _, err := client.getProtoEncodingResolver(ctx); err != nil {
+			return nil, err
+		}
+	}
+	return client, nil
 }
 
 func DefaultClient(
+	ctx context.Context,
 	owner, repository, version string,
 	inputFormat registryv1alpha1.Format,
 	outputFormat ClientBuilder,
 ) (*Client, error) {
 	return NewClient(
+		ctx,
 		WithDefaultSchemaService(),
 		WithDefaultCache(),
 		WithBufModule(owner, repository, version),

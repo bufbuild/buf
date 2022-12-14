@@ -15,7 +15,6 @@ transform.NewClient(
 )
 ```
 
-[//]: # (TODO: expose delete expired to make this statement true)
 `WithCache` To keep the file descriptor for the requested Buf Module in memory,
 avoid unnecessary network calls we recommend you initialize the cache,
 without it the package will fetch the schema before every message conversion.
@@ -79,7 +78,6 @@ transform.NewClient(
 )
 ```
 
-[//]: # (TODO: supply logic in constructor or support the user through this flow)
 `Exclude` configures the schema that is fetched from the schema service,
 providing 2 configurable options:
 
