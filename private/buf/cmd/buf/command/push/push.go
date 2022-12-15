@@ -24,14 +24,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/bufbuild/buf/private/pkg/manifest"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
@@ -204,29 +201,4 @@ func run(
 		return err
 	}
 	return nil
-}
-
-func manifestAndFilesBlobs(ctx context.Context, sourceBucket storage.ReadBucket) (*modulev1alpha1.Blob, []*modulev1alpha1.Blob, error) {
-	m, blobs, err := manifest.NewFromBucket(ctx, sourceBucket)
-	if err != nil {
-		return nil, nil, err
-	}
-	manifestBlob, err := m.Blob()
-	if err != nil {
-		return nil, nil, err
-	}
-	manifestProtoBlob, err := manifest.AsProtoBlob(ctx, manifestBlob)
-	if err != nil {
-		return nil, nil, err
-	}
-	filesBlobs := blobs.Blobs()
-	filesProtoBlobs := make([]*modulev1alpha1.Blob, 0, len(filesBlobs))
-	for _, b := range filesBlobs {
-		pb, err := manifest.AsProtoBlob(ctx, b)
-		if err != nil {
-			return nil, nil, err
-		}
-		filesProtoBlobs = append(filesProtoBlobs, pb)
-	}
-	return manifestProtoBlob, filesProtoBlobs, nil
 }
