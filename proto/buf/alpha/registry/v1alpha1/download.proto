@@ -23,8 +23,8 @@ service DownloadService {
   // Download downloads.
   // Soon to be deprecated.
   rpc Download(DownloadRequest) returns (DownloadResponse);
-  // DownloadManifest downloads a module in the manifest+blobs encoding format.
-  rpc DownloadManifest(DownloadManifestRequest) returns (DownloadManifestResponse);
+  // DownloadCAS downloads a module in the manifest+blobs encoding format.
+  rpc DownloadCAS(DownloadCASRequest) returns (DownloadCASResponse);
 }
 
 // DownloadRequest holds the module reference to be downloaded.
@@ -41,15 +41,15 @@ message DownloadResponse {
   buf.alpha.module.v1alpha1.Module module = 1;
 }
 
-// DownloadManifestRequest holds the module reference to be downloaded.
-message DownloadManifestRequest {
+// DownloadCASRequest holds the module reference to be downloaded.
+message DownloadCASRequest {
   string owner = 1;
   string repository = 2;
   string reference = 3;
 }
 
-// DownloadManifestResponse is the returned resolved remote module.
-message DownloadManifestResponse {
+// DownloadCASResponse is the returned resolved remote module.
+message DownloadCASResponse {
   // manifest is the manifest of the module's content.
   buf.alpha.module.v1alpha1.Blob manifest = 1;
   // blobs is a set of blobs that closes on the module's manifest to form the

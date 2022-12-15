@@ -24,9 +24,9 @@ service PushService {
   // Push pushes.
   // Soon to be deprecated.
   rpc Push(PushRequest) returns (PushResponse);
-  // PushManifest pushes modules encoding it in a manifest+blobs form. This
-  // allows for Tamper Proofing abilities.
-  rpc PushManifest(PushManifestRequest) returns (PushManifestResponse);
+  // PushCAS pushes modules encoding it in a manifest+blobs form. This allows
+  // for Tamper Proofing abilities.
+  rpc PushCAS(PushCASRequest) returns (PushCASResponse);
 }
 
 // PushRequest holds the pushed module.
@@ -53,9 +53,8 @@ message PushResponse {
   LocalModulePin local_module_pin = 5;
 }
 
-// PushManifestRequest holds the pushed module in the manifest+blobs encoding
-// format.
-message PushManifestRequest {
+// PushCASRequest holds the pushed module in the manifest+blobs encoding format.
+message PushCASRequest {
   string owner = 1;
   string repository = 2;
   // Manifest with all the module files being pushed.
@@ -71,7 +70,7 @@ message PushManifestRequest {
   string draft_name = 6;
 }
 
-// PushManifestResponse is the pushed module pin, local to the used remote.
-message PushManifestResponse {
+// PushCASResponse is the pushed module pin, local to the used remote.
+message PushCASResponse {
   LocalModulePin local_module_pin = 1;
 }
