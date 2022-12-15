@@ -171,10 +171,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	manifest, blobs, err := manifestAndFilesBlobs(ctx, builtModule.Bucket)
-	if err != nil {
-		return err
-	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
@@ -188,8 +184,6 @@ func run(
 			Module:     protoModule,
 			Tags:       flags.Tags,
 			DraftName:  flags.Draft,
-			Manifest:   manifest,
-			Blobs:      blobs,
 		}),
 	)
 	if err != nil {

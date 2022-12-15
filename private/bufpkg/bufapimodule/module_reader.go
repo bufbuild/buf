@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/connect-go"
 )
@@ -56,18 +55,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		moduleIdentity,
 		modulePin.Commit(),
 	)
-	if resp.Manifest != nil {
-		// prefer and use manifest and blobs
-		bucket, err := manifest.NewBucketFromManifestBlobs(
-			ctx,
-			resp.Manifest,
-			resp.Blobs,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return bufmodule.NewModuleForBucket(ctx, bucket, identityAndCommitOpt)
-	} else if resp.Module != nil {
+	if resp.Module != nil {
 		// build proto module instead
 		return bufmodule.NewModuleForProto(ctx, resp.Module, identityAndCommitOpt)
 	}
