@@ -7,6 +7,8 @@
   for all files, `except` and `override`, which both behave similarly to other `except` 
   and `override` options. Specifying an `optimize_for` value in the earlier versions is
   equivalent to having a `optimize_for` with that value as default.
+- Add `objc_class_prefix` option in managed mode, allowing `default`, `except` and `override`
+  in the manner as `optimize_for`.
 
 ## [v1.10.0] - 2022-12-07
 
