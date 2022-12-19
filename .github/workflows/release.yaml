@@ -177,7 +177,7 @@ jobs:
       - name: Set NEXT VERSION variable from tag
         run: |
           NEXT_VERSION=$(echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}')
-          echo "NEXT_VERSION=$NEXT_VERSION-dev" >> $GITHUB_ENV
+          echo "NEXT_VERSION=${NEXT_VERSION:1}-dev" >> $GITHUB_ENV
       - name: update version
         run: make updateversion VERSION=${{env.NEXT_VERSION}}
       - name: update home brew badge
