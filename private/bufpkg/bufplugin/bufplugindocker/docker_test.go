@@ -113,7 +113,7 @@ func createClient(t testing.TB, options ...ClientOption) Client {
 	t.Helper()
 	logger, err := zap.NewDevelopment()
 	require.Nilf(t, err, "failed to create zap logger")
-	dockerClient, err := NewClient(logger, options...)
+	dockerClient, err := NewClient(logger, "buf-cli-1.11.0", options...)
 	require.Nilf(t, err, "failed to create client")
 	t.Cleanup(func() {
 		if err := dockerClient.Close(); err != nil {
