@@ -119,8 +119,8 @@ message ListUsersRequest {
   bool reverse = 3;
   // If the user_state_filter is unspecified, users of all states are included.
   UserState user_state_filter = 4;
-  // If the user_type_filter is unspecified, users of all types are included.
-  UserType user_type_filter = 5;
+  // If the user_type_filters is empty, users of all types are included.
+  repeated UserType user_type_filters = 5;
 }
 
 message ListUsersResponse {
