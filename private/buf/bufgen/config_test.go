@@ -278,36 +278,51 @@ func TestReadConfigV1(t *testing.T) {
 		},
 		ManagedConfig: nil,
 	}
+	moduleIdentity1 := mustCreateModuleIdentity(
+		t,
+		"someremote.com",
+		"owner",
+		"repo",
+	)
+	moduleIdentity2 := mustCreateModuleIdentity(
+		t,
+		"someremote.com",
+		"owner",
+		"foo",
+	)
+	moduleIdentity3 := mustCreateModuleIdentity(
+		t,
+		"someremote.com",
+		"owner",
+		"bar",
+	)
+	moduleIdentity4 := mustCreateModuleIdentity(
+		t,
+		"someremote.com",
+		"owner",
+		"baz",
+	)
 	successConfig8 := &Config{
 		ManagedConfig: &ManagedConfig{
 			CsharpNameSpaceConfig: &CsharpNameSpaceConfig{
 				Except: []bufmoduleref.ModuleIdentity{
-					mustCreateModuleIdentity(
-						t,
-						"someremote.com",
-						"owner",
-						"repo",
-					),
+					moduleIdentity1,
 				},
 				Override: map[bufmoduleref.ModuleIdentity]string{
-					mustCreateModuleIdentity(
-						t,
-						"someremote.com",
-						"owner",
-						"foo",
-					): "a",
-					mustCreateModuleIdentity(
-						t,
-						"someremote.com",
-						"owner",
-						"bar",
-					): "b",
-					mustCreateModuleIdentity(
-						t,
-						"someremote.com",
-						"owner",
-						"baz",
-					): "c",
+					moduleIdentity2: "a",
+					moduleIdentity3: "b",
+					moduleIdentity4: "c",
+				},
+			},
+			ObjcClassPrefixConfig: &ObjcClassPrefixConfig{
+				Default: "default",
+				Except: []bufmoduleref.ModuleIdentity{
+					moduleIdentity1,
+				},
+				Override: map[bufmoduleref.ModuleIdentity]string{
+					moduleIdentity2: "a",
+					moduleIdentity3: "b",
+					moduleIdentity4: "c",
 				},
 			},
 		},
@@ -523,27 +538,33 @@ func TestReadConfigV1(t *testing.T) {
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.yaml")))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.yaml"))
 	require.NoError(t, err)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride((string(data))))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.json")))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.json"))
 	require.NoError(t, err)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.yml")))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.yml"))
 	require.NoError(t, err)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
+	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yaml")))
 	require.NoError(t, err)
 	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
@@ -581,6 +602,8 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error10.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error11.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error12.yaml"))
+	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error13.yaml"))
+	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error14.yaml"))
 
 	successConfig = &Config{
 		PluginConfigs: []*PluginConfig{
@@ -645,6 +668,19 @@ func mustCreateModuleIdentity(
 	moduleIdentity, err := bufmoduleref.NewModuleIdentity(remote, owner, repository)
 	require.NoError(t, err)
 	return moduleIdentity
+}
+
+func assertConfigsWithEqualObjcPrefix(t *testing.T, successConfig *Config, config *Config) {
+	require.Equal(t, successConfig.PluginConfigs, config.PluginConfigs)
+	require.NotNil(t, successConfig.ManagedConfig)
+	require.NotNil(t, config.ManagedConfig)
+	require.NotNil(t, successConfig.ManagedConfig.ObjcClassPrefixConfig)
+	require.NotNil(t, config.ManagedConfig.ObjcClassPrefixConfig)
+	successObjcPrefixConfig := successConfig.ManagedConfig.ObjcClassPrefixConfig
+	objcPrefixConfig := config.ManagedConfig.ObjcClassPrefixConfig
+	require.Equal(t, successObjcPrefixConfig.Default, objcPrefixConfig.Default)
+	require.Equal(t, successObjcPrefixConfig.Except, objcPrefixConfig.Except)
+	assertEqualModuleIdentityKeyedMaps(t, successObjcPrefixConfig.Override, objcPrefixConfig.Override)
 }
 
 func assertConfigsWithEqualCsharpnamespace(t *testing.T, successConfig *Config, config *Config) {
