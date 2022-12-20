@@ -42,7 +42,10 @@ const (
 // PushServiceClient is a client for the buf.alpha.registry.v1alpha1.PushService service.
 type PushServiceClient interface {
 	// Push pushes.
+	// NOTE: Newer clients should use PushManifestAndBlobs.
 	Push(context.Context, *connect_go.Request[v1alpha1.PushRequest]) (*connect_go.Response[v1alpha1.PushResponse], error)
+	// PushManifestAndBlobs pushes a module by encoding it in a manifest and blobs format.
+	PushManifestAndBlobs(context.Context, *connect_go.Request[v1alpha1.PushManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.PushManifestAndBlobsResponse], error)
 }
 
 // NewPushServiceClient constructs a client for the buf.alpha.registry.v1alpha1.PushService service.
@@ -60,12 +63,18 @@ func NewPushServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+"/buf.alpha.registry.v1alpha1.PushService/Push",
 			opts...,
 		),
+		pushManifestAndBlobs: connect_go.NewClient[v1alpha1.PushManifestAndBlobsRequest, v1alpha1.PushManifestAndBlobsResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.PushService/PushManifestAndBlobs",
+			opts...,
+		),
 	}
 }
 
 // pushServiceClient implements PushServiceClient.
 type pushServiceClient struct {
-	push *connect_go.Client[v1alpha1.PushRequest, v1alpha1.PushResponse]
+	push                 *connect_go.Client[v1alpha1.PushRequest, v1alpha1.PushResponse]
+	pushManifestAndBlobs *connect_go.Client[v1alpha1.PushManifestAndBlobsRequest, v1alpha1.PushManifestAndBlobsResponse]
 }
 
 // Push calls buf.alpha.registry.v1alpha1.PushService.Push.
@@ -73,10 +82,18 @@ func (c *pushServiceClient) Push(ctx context.Context, req *connect_go.Request[v1
 	return c.push.CallUnary(ctx, req)
 }
 
+// PushManifestAndBlobs calls buf.alpha.registry.v1alpha1.PushService.PushManifestAndBlobs.
+func (c *pushServiceClient) PushManifestAndBlobs(ctx context.Context, req *connect_go.Request[v1alpha1.PushManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.PushManifestAndBlobsResponse], error) {
+	return c.pushManifestAndBlobs.CallUnary(ctx, req)
+}
+
 // PushServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.PushService service.
 type PushServiceHandler interface {
 	// Push pushes.
+	// NOTE: Newer clients should use PushManifestAndBlobs.
 	Push(context.Context, *connect_go.Request[v1alpha1.PushRequest]) (*connect_go.Response[v1alpha1.PushResponse], error)
+	// PushManifestAndBlobs pushes a module by encoding it in a manifest and blobs format.
+	PushManifestAndBlobs(context.Context, *connect_go.Request[v1alpha1.PushManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.PushManifestAndBlobsResponse], error)
 }
 
 // NewPushServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -91,6 +108,11 @@ func NewPushServiceHandler(svc PushServiceHandler, opts ...connect_go.HandlerOpt
 		svc.Push,
 		opts...,
 	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.PushService/PushManifestAndBlobs", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.PushService/PushManifestAndBlobs",
+		svc.PushManifestAndBlobs,
+		opts...,
+	))
 	return "/buf.alpha.registry.v1alpha1.PushService/", mux
 }
 
@@ -99,4 +121,8 @@ type UnimplementedPushServiceHandler struct{}
 
 func (UnimplementedPushServiceHandler) Push(context.Context, *connect_go.Request[v1alpha1.PushRequest]) (*connect_go.Response[v1alpha1.PushResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PushService.Push is not implemented"))
+}
+
+func (UnimplementedPushServiceHandler) PushManifestAndBlobs(context.Context, *connect_go.Request[v1alpha1.PushManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.PushManifestAndBlobsResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PushService.PushManifestAndBlobs is not implemented"))
 }

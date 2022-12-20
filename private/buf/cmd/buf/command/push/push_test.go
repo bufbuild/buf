@@ -87,6 +87,27 @@ func (m *mockPushService) Push(
 	}, nil
 }
 
+func (m *mockPushService) PushManifestAndBlobs(
+	_ context.Context,
+	req *connect_go.Request[registryv1alpha1.PushManifestAndBlobsRequest],
+) (*connect_go.Response[registryv1alpha1.PushManifestAndBlobsResponse], error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	owner := req.Msg.Owner
+	cb, ok := m.callbacks[owner]
+	if ok {
+		cb(req.Msg)
+		m.called[owner] = struct{}{}
+	}
+	resp := m.resp[owner]
+	if resp == nil {
+		return nil, errors.New("bad request")
+	}
+	return &connect_go.Response[registryv1alpha1.PushManifestAndBlobsResponse]{
+		Msg: resp,
+	}, nil
+}
+
 func (m *mockPushService) respond(owner string, resp *registryv1alpha1.PushResponse) {
 	m.lock.Lock()
 	defer m.lock.Unlock()

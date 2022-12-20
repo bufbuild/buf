@@ -61,15 +61,15 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		// malformed pin
 		return nil, err
 	}
-	resp, err := m.download(ctx, modulePin)
-	if err != nil {
-		return nil, err
-	}
 	identityAndCommitOpt := bufmodule.ModuleWithModuleIdentityAndCommit(
 		moduleIdentity,
 		modulePin.Commit(),
 	)
 	if m.tamperProofingEnabled {
+		resp, err := m.downloadManifestAndBlobs(ctx, modulePin)
+		if err != nil {
+			return nil, err
+		}
 		if resp.Manifest == nil {
 			return nil, errors.New("expected non-nil manifest with tamper proofing enabled")
 		}
@@ -84,8 +84,12 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		}
 		return bufmodule.NewModuleForBucket(ctx, bucket, identityAndCommitOpt)
 	}
+	resp, err := m.download(ctx, modulePin)
+	if err != nil {
+		return nil, err
+	}
 	if resp.Module != nil {
-		// build proto module instead
+		// build proto module
 		return bufmodule.NewModuleForProto(ctx, resp.Module, identityAndCommitOpt)
 	}
 	// funny, success without a module to build
@@ -100,6 +104,29 @@ func (m *moduleReader) download(
 	resp, err := downloadService.Download(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.DownloadRequest{
+			Owner:      modulePin.Owner(),
+			Repository: modulePin.Repository(),
+			Reference:  modulePin.Commit(),
+		}),
+	)
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			// Required by ModuleReader interface spec
+			return nil, storage.NewErrNotExist(modulePin.String())
+		}
+		return nil, err
+	}
+	return resp.Msg, err
+}
+
+func (m *moduleReader) downloadManifestAndBlobs(
+	ctx context.Context,
+	modulePin bufmoduleref.ModulePin,
+) (*registryv1alpha1.DownloadManifestAndBlobsResponse, error) {
+	downloadService := m.downloadClientFactory(modulePin.Remote())
+	resp, err := downloadService.DownloadManifestAndBlobs(
+		ctx,
+		connect.NewRequest(&registryv1alpha1.DownloadManifestAndBlobsRequest{
 			Owner:      modulePin.Owner(),
 			Repository: modulePin.Repository(),
 			Reference:  modulePin.Commit(),

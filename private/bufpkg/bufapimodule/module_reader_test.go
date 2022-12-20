@@ -252,7 +252,18 @@ func (m *mockDownloadService) Download(
 		return nil, m.err
 	}
 	return connect.NewResponse(&registryv1alpha1.DownloadResponse{
-		Module:   m.module,
+		Module: m.module,
+	}), nil
+}
+
+func (m *mockDownloadService) DownloadManifestAndBlobs(
+	context.Context,
+	*connect.Request[registryv1alpha1.DownloadManifestAndBlobsRequest],
+) (*connect.Response[registryv1alpha1.DownloadManifestAndBlobsResponse], error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return connect.NewResponse(&registryv1alpha1.DownloadManifestAndBlobsResponse{
 		Manifest: m.manifestBlob,
 		Blobs:    m.blobs,
 	}), nil
