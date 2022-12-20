@@ -203,8 +203,14 @@ func push(
 	}
 	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewPushServiceClient)
 	// Check if tamper proofing env var is enabled
-	tamperProofingEnabled, err := strconv.ParseBool(container.Env(bufcli.BetaEnableTamperProofingEnvKey))
-	if err == nil && tamperProofingEnabled {
+	tamperProofingEnabled := false
+	if envVal := container.Env(bufcli.BetaEnableTamperProofingEnvKey); envVal != "" {
+		tamperProofingEnabled, err = strconv.ParseBool(envVal)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for %q: %w", bufcli.BetaEnableTamperProofingEnvKey, err)
+		}
+	}
+	if tamperProofingEnabled {
 		bucketManifest, blobs, err := manifestAndFilesBlobs(ctx, builtModule.Bucket)
 		if err != nil {
 			return nil, err

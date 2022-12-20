@@ -580,7 +580,15 @@ func newModuleReaderAndCreateCacheDirs(
 		return nil, err
 	}
 	var moduleReaderOpts []bufapimodule.ModuleReaderOption
-	if enabled, err := strconv.ParseBool(container.Env(BetaEnableTamperProofingEnvKey)); err == nil && enabled {
+	// Check if tamper proofing env var is enabled
+	tamperProofingEnabled := false
+	if envVal := container.Env(BetaEnableTamperProofingEnvKey); envVal != "" {
+		tamperProofingEnabled, err = strconv.ParseBool(envVal)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for %q: %w", BetaEnableTamperProofingEnvKey, err)
+		}
+	}
+	if tamperProofingEnabled {
 		moduleReaderOpts = append(moduleReaderOpts, bufapimodule.WithTamperProofing())
 	}
 	moduleReader := bufmodulecache.NewModuleReader(
