@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -60,13 +61,13 @@ func NewCommand(
 # Required.
 # The valid values are v1beta1, v1.
 version: v1
-# The plugins to run. One of "name" and "remote" is required.
+# The plugins to run. "plugin" is required.
 plugins:
     # The name of the plugin.
     # By default, buf generate will look for a binary named protoc-gen-NAME on your $PATH.
-    # Alternatively, use a remote reference:
-    # remote: buf.build/protocolbuffers/plugins/go:v1.27.0-1
-  - name: go
+    # Alternatively, use a remote plugin:
+    # plugin: buf.build/protocolbuffers/go:v1.28.1
+  - plugin: go
     # The the relative output directory.
     # Required.
     out: gen/go
@@ -103,11 +104,11 @@ plugins:
     # If omitted, "directory" is used. Most users should not need to set this option.
     # Optional.
     strategy: directory
-  - name: java
+  - plugin: java
     out: gen/java
-    # Use the plugin hosted at buf.build/protocolbuffers/plugins/python at version v3.17.0-1.
+    # Use the plugin hosted at buf.build/protocolbuffers/python at version v21.9.
     # If version is omitted, uses the latest version of the plugin.
-  - remote: buf.build/protocolbuffers/plugins/python:v3.17.0-1
+  - plugin: buf.build/protocolbuffers/python:v21.9
     out: gen/python
 
 As an example, here's a typical "buf.gen.yaml" go and grpc, assuming
@@ -115,10 +116,10 @@ As an example, here's a typical "buf.gen.yaml" go and grpc, assuming
 
 version: v1
 plugins:
-  - name: go
+  - plugin: go
     out: gen/go
     opt: paths=source_relative
-  - name: go-grpc
+  - plugin: go-grpc
     out: gen/go
     opt: paths=source_relative,require_unimplemented_servers=false
 
@@ -138,7 +139,7 @@ $ buf generate
 $ buf generate --template buf.gen.yaml .
 
 # --template also takes YAML or JSON data as input, so it can be used without a file
-$ buf generate --template '{"version":"v1","plugins":[{"name":"go","out":"gen/go"}]}'
+$ buf generate --template '{"version":"v1","plugins":[{"plugin":"go","out":"gen/go"}]}'
 
 # download the repository and generate code stubs per the bar.yaml template
 $ buf generate --template bar.yaml https://github.com/foo/bar.git
@@ -192,6 +193,7 @@ type flags struct {
 	IncludeWKT      bool
 	ExcludePaths    []string
 	DisableSymlinks bool
+	IncludeTypes    []string
 	// special
 	InputHashtag string
 }
@@ -247,6 +249,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		configFlagName,
 		"",
 		`The file or data to use for configuration.`,
+	)
+	flagSet.StringSliceVar(
+		&f.IncludeTypes,
+		"include-types",
+		nil,
+		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
 	)
 }
 
@@ -347,6 +355,20 @@ func run(
 			generateOptions,
 			bufgen.GenerateWithIncludeWellKnownTypes(),
 		)
+	}
+	typesConfig := genConfig.TypesConfig
+	if typesConfig != nil {
+		types := typesConfig.Include
+		if len(flags.IncludeTypes) > 0 {
+			// override buf.gen.yaml with flag value
+			types = flags.IncludeTypes
+		}
+		if len(types) > 0 {
+			image, err = bufimageutil.ImageFilteredByTypes(image, types...)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return bufgen.NewGenerator(
 		logger,
