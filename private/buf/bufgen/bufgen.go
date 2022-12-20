@@ -231,18 +231,16 @@ func (p *PluginConfig) GetRemoteHostname() string {
 
 // ManagedConfig is the managed mode configuration.
 type ManagedConfig struct {
-	CcEnableArenas      *bool
-	JavaMultipleFiles   *bool
-	JavaStringCheckUtf8 *bool
-	// TODO: rename this field to JavaPackagePrefix to stay consistent
-	// with GoPackagePrefixConfig, or rename GoPackagePrefixConfig.
-	JavaPackagePrefix     *JavaPackagePrefixConfig
-	CsharpNameSpaceConfig *CsharpNameSpaceConfig
-	OptimizeForConfig     *OptimizeForConfig
-	GoPackagePrefixConfig *GoPackagePrefixConfig
-	ObjcClassPrefixConfig *ObjcClassPrefixConfig
-	RubyPackage           *RubyPackageConfig
-	Override              map[string]map[string]string
+	CcEnableArenas          *bool
+	JavaMultipleFiles       *bool
+	JavaStringCheckUtf8     *bool
+	JavaPackagePrefixConfig *JavaPackagePrefixConfig
+	CsharpNameSpaceConfig   *CsharpNameSpaceConfig
+	OptimizeForConfig       *OptimizeForConfig
+	GoPackagePrefixConfig   *GoPackagePrefixConfig
+	ObjcClassPrefixConfig   *ObjcClassPrefixConfig
+	RubyPackageConfig       *RubyPackageConfig
+	Override                map[string]map[string]string
 }
 
 // JavaPackagePrefixConfig is the java_package prefix configuration.
@@ -276,7 +274,7 @@ type ObjcClassPrefixConfig struct {
 	Override map[bufmoduleref.ModuleIdentity]string
 }
 
-// RubyPackgeConfig is the ruby_packge configuration.
+// RubyPackgeConfig is the ruby_package configuration.
 type RubyPackageConfig struct {
 	Except []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> ruby_package.
@@ -493,17 +491,6 @@ func (e ExternalGoPackagePrefixConfigV1) IsEmpty() bool {
 		len(e.Override) == 0
 }
 
-// ExternalRubyPackageConfigV1 is the external ruby_package configuration
-type ExternalRubyPackageConfigV1 struct {
-	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
-	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
-}
-
-// IsEmpty returns true is the config is empty
-func (e ExternalRubyPackageConfigV1) IsEmpty() bool {
-	return len(e.Except) == 0 && len(e.Override) == 0
-}
-
 // ExternalCsharpNamespaceConfigV1 is the external csharp_namespace configuration.
 type ExternalCsharpNamespaceConfigV1 struct {
 	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
@@ -514,6 +501,17 @@ type ExternalCsharpNamespaceConfigV1 struct {
 func (e ExternalCsharpNamespaceConfigV1) IsEmpty() bool {
 	return len(e.Except) == 0 &&
 		len(e.Override) == 0
+}
+
+// ExternalRubyPackageConfigV1 is the external ruby_package configuration
+type ExternalRubyPackageConfigV1 struct {
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// IsEmpty returns true is the config is empty
+func (e ExternalRubyPackageConfigV1) IsEmpty() bool {
+	return len(e.Except) == 0 && len(e.Override) == 0
 }
 
 // ExternalObjcClassPrefixConfigV1 is the external objc_class_prefix configuration.

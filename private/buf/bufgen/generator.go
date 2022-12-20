@@ -515,8 +515,8 @@ func newModifier(
 		bufimagemodify.PhpMetadataNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
 	)
 	javaPackagePrefix := &JavaPackagePrefixConfig{Default: bufimagemodify.DefaultJavaPackagePrefix}
-	if managedConfig.JavaPackagePrefix != nil {
-		javaPackagePrefix = managedConfig.JavaPackagePrefix
+	if managedConfig.JavaPackagePrefixConfig != nil {
+		javaPackagePrefix = managedConfig.JavaPackagePrefixConfig
 	}
 	javaPackageModifier, err := bufimagemodify.JavaPackage(
 		logger,
@@ -647,7 +647,7 @@ func newModifier(
 		rubyPackageExcept    []bufmoduleref.ModuleIdentity
 		rubyPackageOverrides map[bufmoduleref.ModuleIdentity]string
 	)
-	if rubyPackageConfig := managedConfig.RubyPackage; rubyPackageConfig != nil {
+	if rubyPackageConfig := managedConfig.RubyPackageConfig; rubyPackageConfig != nil {
 		rubyPackageExcept = rubyPackageConfig.Except
 		rubyPackageOverrides = rubyPackageConfig.Override
 	}

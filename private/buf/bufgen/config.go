@@ -260,11 +260,11 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 	if err != nil {
 		return nil, err
 	}
-	rubyPackageConfig, err := newRubyPackageConfigV1(externalManagedConfig.RubyPackage)
+	objcClassPrefixConfig, err := newObjcClassPrefixConfigV1(externalManagedConfig.ObjcClassPrefix)
 	if err != nil {
 		return nil, err
 	}
-	objcClassPrefixConfig, err := newObjcClassPrefixConfigV1(externalManagedConfig.ObjcClassPrefix)
+	rubyPackageConfig, err := newRubyPackageConfigV1(externalManagedConfig.RubyPackage)
 	if err != nil {
 		return nil, err
 	}
@@ -289,16 +289,16 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 		}
 	}
 	return &ManagedConfig{
-		CcEnableArenas:        externalManagedConfig.CcEnableArenas,
-		JavaMultipleFiles:     externalManagedConfig.JavaMultipleFiles,
-		JavaStringCheckUtf8:   externalManagedConfig.JavaStringCheckUtf8,
-		JavaPackagePrefix:     javaPackagePrefixConfig,
-		CsharpNameSpaceConfig: csharpNamespaceConfig,
-		OptimizeForConfig:     optimizeForConfig,
-		GoPackagePrefixConfig: goPackagePrefixConfig,
-		ObjcClassPrefixConfig: objcClassPrefixConfig,
-		RubyPackage:           rubyPackageConfig,
-		Override:              override,
+		CcEnableArenas:          externalManagedConfig.CcEnableArenas,
+		JavaMultipleFiles:       externalManagedConfig.JavaMultipleFiles,
+		JavaStringCheckUtf8:     externalManagedConfig.JavaStringCheckUtf8,
+		JavaPackagePrefixConfig: javaPackagePrefixConfig,
+		CsharpNameSpaceConfig:   csharpNamespaceConfig,
+		OptimizeForConfig:       optimizeForConfig,
+		GoPackagePrefixConfig:   goPackagePrefixConfig,
+		ObjcClassPrefixConfig:   objcClassPrefixConfig,
+		RubyPackageConfig:       rubyPackageConfig,
+		Override:                override,
 	}, nil
 }
 
