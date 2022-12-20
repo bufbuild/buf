@@ -264,7 +264,8 @@ type OrganizationUser struct {
 	// The ID of the organization for which the role belongs to.
 	OrganizationId string `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
 	// The role that the user has in the organization above.
-	OrganizationRole       OrganizationRole       `protobuf:"varint,3,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
+	OrganizationRole OrganizationRole `protobuf:"varint,3,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
+	// The source of the user's role in the organization above.
 	OrganizationRoleSource OrganizationRoleSource `protobuf:"varint,4,opt,name=organization_role_source,json=organizationRoleSource,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRoleSource" json:"organization_role_source,omitempty"`
 }
 
