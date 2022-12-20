@@ -235,9 +235,12 @@ func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix s
 func ObjcClassPrefix(
 	logger *zap.Logger,
 	sweeper Sweeper,
+	defaultPrefix string,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverride map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) Modifier {
-	return objcClassPrefix(logger, sweeper, overrides)
+	return objcClassPrefix(logger, sweeper, defaultPrefix, except, moduleOverride, overrides)
 }
 
 // CsharpNamespace returns a Modifier that sets the csharp_namespace file option
