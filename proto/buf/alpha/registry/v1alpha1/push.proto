@@ -43,10 +43,6 @@ message PushRequest {
   repeated string tracks = 6 [deprecated = true];
   // If non-empty, the push creates a draft commit with this name.
   string draft_name = 7;
-  // If set, `module` is ignored and the module's manifest is used instead.
-  buf.alpha.module.v1alpha1.Blob manifest = 8;
-  // blobs to close on the manifest
-  repeated buf.alpha.module.v1alpha1.Blob blobs = 9;
 }
 
 // PushResponse is the pushed module pin, local to the used remote.
