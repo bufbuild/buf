@@ -260,6 +260,10 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 	if err != nil {
 		return nil, err
 	}
+	objcClassPrefixConfig, err := newObjcClassPrefixConfigV1(externalManagedConfig.ObjcClassPrefix)
+	if err != nil {
+		return nil, err
+	}
 	override := externalManagedConfig.Override
 	for overrideID, overrideValue := range override {
 		for importPath := range overrideValue {
@@ -288,6 +292,7 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 		CsharpNameSpaceConfig: csharpNamespaceConfig,
 		OptimizeForConfig:     optimizeForConfig,
 		GoPackagePrefixConfig: goPackagePrefixConfig,
+		ObjcClassPrefixConfig: objcClassPrefixConfig,
 		Override:              override,
 	}, nil
 }
@@ -467,6 +472,44 @@ func newCsharpNamespaceConfigV1(
 		override[moduleIdentity] = csharpNamespace
 	}
 	return &CsharpNameSpaceConfig{
+		Except:   except,
+		Override: override,
+	}, nil
+}
+
+func newObjcClassPrefixConfigV1(externalObjcClassPrefixConfig ExternalObjcClassPrefixConfigV1) (*ObjcClassPrefixConfig, error) {
+	if externalObjcClassPrefixConfig.IsEmpty() {
+		return nil, nil
+	}
+	// It's ok to have an empty default, which will have the same effect as previously enabling managed mode.
+	defaultObjcClassPrefix := externalObjcClassPrefixConfig.Default
+	seenModuleIdentities := make(map[string]struct{}, len(externalObjcClassPrefixConfig.Except))
+	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalObjcClassPrefixConfig.Except))
+	for _, moduleName := range externalObjcClassPrefixConfig.Except {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid objc_class_prefix except: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid objc_class_prefix except: %q is defined multiple times", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		except = append(except, moduleIdentity)
+	}
+	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalObjcClassPrefixConfig.Override))
+	for moduleName, objcClassPrefix := range externalObjcClassPrefixConfig.Override {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid objc_class_prefix override key: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid objc_class_prefix override: %q is already defined as an except", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		override[moduleIdentity] = objcClassPrefix
+	}
+	return &ObjcClassPrefixConfig{
+		Default:  defaultObjcClassPrefix,
 		Except:   except,
 		Override: override,
 	}, nil

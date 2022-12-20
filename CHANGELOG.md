@@ -1,7 +1,12 @@
 # Changelog
 
 ## [UNRELEASED]
+- Introduce `objc_class_prefix` option in managed mode, allowing a `default` value
+  for `objc_class_prefix` for all files, `except` and `override`, which both behave
+  similarly to other `except` and `override` options. Specifying an empty `default`
+  value is equivalent to having managed mode on in previous versions.
 
+## [v1.11.0] - 2022-12-19
 - `buf generate` now batches remote plugin generation calls for improved performance.
 - Update `optimize_for` option in managed mode, allowing a `default` value for `optimize_for`
   for all files, `except` and `override`, which both behave similarly to other `except` 
@@ -783,7 +788,9 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.11.0...HEAD
+[v1.11.0]: https://github.com/bufbuild/buf/compare/v1.10.0...v1.11.0
+[v1.10.0]: https://github.com/bufbuild/buf/compare/v1.9.0...v1.10.0
 [v1.9.0]: https://github.com/bufbuild/buf/compare/v1.8.0...v1.9.0
 [v1.8.0]: https://github.com/bufbuild/buf/compare/v1.7.0...v1.8.0
 [v1.7.0]: https://github.com/bufbuild/buf/compare/v1.6.0...v1.7.0

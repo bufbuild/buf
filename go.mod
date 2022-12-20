@@ -3,7 +3,7 @@ module github.com/bufbuild/buf
 go 1.18
 
 require (
-	github.com/bufbuild/connect-go v1.4.0
+	github.com/bufbuild/connect-go v1.4.1
 	github.com/bufbuild/protocompile v0.1.0
 	github.com/docker/docker v20.10.21+incompatible
 	github.com/go-chi/chi/v5 v5.0.8
@@ -26,7 +26,7 @@ require (
 	go.opentelemetry.io/otel/metric v0.34.0
 	go.opentelemetry.io/otel/trace v1.11.2
 	go.uber.org/atomic v1.10.0
-	go.uber.org/multierr v1.8.0
+	go.uber.org/multierr v1.9.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.1.0
 	golang.org/x/exp v0.0.0-20221211140036-ad323defaf05

@@ -238,6 +238,7 @@ type ManagedConfig struct {
 	CsharpNameSpaceConfig *CsharpNameSpaceConfig
 	OptimizeForConfig     *OptimizeForConfig
 	GoPackagePrefixConfig *GoPackagePrefixConfig
+	ObjcClassPrefixConfig *ObjcClassPrefixConfig
 	Override              map[string]map[string]string
 }
 
@@ -261,6 +262,14 @@ type GoPackagePrefixConfig struct {
 	Default string
 	Except  []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> go_package prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// ObjcClassPrefixConfig is the objc_class_prefix configuration.
+type ObjcClassPrefixConfig struct {
+	Default string
+	Except  []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> objc_class_prefix.
 	Override map[bufmoduleref.ModuleIdentity]string
 }
 
@@ -348,6 +357,7 @@ type ExternalManagedConfigV1 struct {
 	CsharpNamespace     ExternalCsharpNamespaceConfigV1   `json:"csharp_namespace,omitempty" yaml:"csharp_namespace,omitempty"`
 	OptimizeFor         ExternalOptimizeForConfigV1       `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 	GoPackagePrefix     ExternalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
+	ObjcClassPrefix     ExternalObjcClassPrefixConfigV1   `json:"objc_class_prefix,omitempty" yaml:"objc_class_prefix,omitempty"`
 	Override            map[string]map[string]string      `json:"override,omitempty" yaml:"override,omitempty"`
 }
 
@@ -357,8 +367,10 @@ func (e ExternalManagedConfigV1) IsEmpty() bool {
 		e.JavaMultipleFiles == nil &&
 		e.JavaStringCheckUtf8 == nil &&
 		e.JavaPackagePrefix.IsEmpty() &&
+		e.CsharpNamespace.IsEmpty() &&
 		e.OptimizeFor.IsEmpty() &&
 		e.GoPackagePrefix.IsEmpty() &&
+		e.ObjcClassPrefix.IsEmpty() &&
 		len(e.Override) == 0
 }
 
@@ -477,6 +489,19 @@ type ExternalCsharpNamespaceConfigV1 struct {
 // IsEmpty returns true if the config is empty.
 func (e ExternalCsharpNamespaceConfigV1) IsEmpty() bool {
 	return len(e.Except) == 0 &&
+		len(e.Override) == 0
+}
+
+// ExternalObjcClassPrefixConfigV1 is the external objc_class_prefix configuration.
+type ExternalObjcClassPrefixConfigV1 struct {
+	Default  string            `json:"default,omitempty" yaml:"default,omitempty"`
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+func (e ExternalObjcClassPrefixConfigV1) IsEmpty() bool {
+	return e.Default == "" &&
+		len(e.Except) == 0 &&
 		len(e.Override) == 0
 }
 
