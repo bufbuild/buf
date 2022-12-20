@@ -5,6 +5,9 @@
   for `objc_class_prefix` for all files, `except` and `override`, which both behave
   similarly to other `except` and `override` options. Specifying an empty `default`
   value is equivalent to having managed mode on in previous versions.
+- Introduce `ruby_package` option in managed mode, allowing `except` and `override`,
+  int the same style as `objc_class_prefix`. Leaving `ruby_package` unspecified has
+  the same effect as having simply mananged mode on in previous versions.
 
 ## [v1.11.0] - 2022-12-19
 - `buf generate` now batches remote plugin generation calls for improved performance.
