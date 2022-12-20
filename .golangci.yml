@@ -146,12 +146,3 @@ issues:
         - stylecheck
       path: private/bufpkg/bufapimodule/module_resolver_test.go
       text: "ST1003:"
-      # Module is still expected for older registries, hence should be tested.
-    - linters:
-        - staticcheck
-      path: private/buf/cmd/buf/command/push/push_test.go
-      text: "SA1019"
-    - linters:
-        - staticcheck
-      path: private/bufpkg/bufapimodule/module_reader.go
-      text: "SA1019"
