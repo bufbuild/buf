@@ -49,6 +49,7 @@ message OrganizationUser {
   string organization_id = 2;
   // The role that the user has in the organization above.
   OrganizationRole organization_role = 3;
+  OrganizationRoleSource organization_role_source = 4;
 }
 
 enum UserState {
