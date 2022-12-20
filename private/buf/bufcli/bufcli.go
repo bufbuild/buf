@@ -604,7 +604,6 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 		return nil, err
 	}
 	client := httpclient.NewClient(
-		httpclient.WithObservability(),
 		httpclient.WithTLSConfig(config.TLS),
 	)
 	options := []connectclient.ConfigOption{
