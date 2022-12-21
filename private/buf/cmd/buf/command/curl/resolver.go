@@ -150,14 +150,18 @@ func resolverFromReflection(
 	// request's user-agent header(s) get overwritten by protocol, so we stash them in the
 	// context so that underlying transport can restore them
 	ctx = withUserAgent(ctx, headers)
-	res := &reflectionResolver{
-		ctx:              ctx,
-		v1Client:         v1Client,
-		v1alphaClient:    v1alphaClient,
-		useV1Alpha:       reflectVersion == reflectVersionV1Alpha,
-		headers:          headers,
-		printer:          printer,
-		downloadedProtos: map[string]*descriptorpb.FileDescriptorProto{},
+	res := &threadSafeResolver{
+		// for implementation simplicity, reflectionResolver is not thread-safe, so we
+		// wrap it in a type that uses a mutex to prevent concurrent calls
+		res: &reflectionResolver{
+			ctx:              ctx,
+			v1Client:         v1Client,
+			v1alphaClient:    v1alphaClient,
+			useV1Alpha:       reflectVersion == reflectVersionV1Alpha,
+			headers:          headers,
+			printer:          printer,
+			downloadedProtos: map[string]*descriptorpb.FileDescriptorProto{},
+		},
 	}
 	return res, res.reset
 }
@@ -448,4 +452,51 @@ func reset(stream *reflectStream) {
 	// "cancel" errors.
 	_, _ = stream.Receive()
 	_ = stream.CloseResponse()
+}
+
+type threadSafeResolver struct {
+	mu  sync.Mutex
+	res *reflectionResolver
+}
+
+func (t *threadSafeResolver) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	return t.res.FindDescriptorByName(name)
+}
+
+func (t *threadSafeResolver) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	return t.res.FindMessageByName(message)
+}
+
+func (t *threadSafeResolver) FindMessageByURL(url string) (protoreflect.MessageType, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	return t.res.FindMessageByURL(url)
+}
+
+func (t *threadSafeResolver) FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	return t.res.FindExtensionByName(field)
+}
+
+func (t *threadSafeResolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	return t.res.FindExtensionByNumber(message, field)
+}
+
+func (t *threadSafeResolver) reset() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.res.reset()
 }
