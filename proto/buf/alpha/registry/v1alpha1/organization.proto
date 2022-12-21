@@ -45,8 +45,6 @@ message OrganizationMembership {
   OrganizationRole organization_role = 2;
 }
 
-message OrganizationIDPGroup {}
-
 // OrganizationService is the Organization service.
 service OrganizationService {
   // GetOrganization gets a organization by ID.
