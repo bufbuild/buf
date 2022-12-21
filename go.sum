@@ -1,3 +1,11 @@
+buf.build/gen/go/cncf/xds/protocolbuffers/go v1.28.1-20221129150241-9994d403088d.4/go.mod h1:wCh59Lt7cBRTaHywjACypKSOGhKco59H7VY+Xbdq9aU=
+buf.build/gen/go/envoyproxy/envoy/protocolbuffers/go v1.28.1-20221216211812-9684402c0840.4/go.mod h1:jm9Hh6jLGyW0iw+YbxRb8ufAm+Ol/mkam6aHBwDBRTY=
+buf.build/gen/go/envoyproxy/protoc-gen-validate/protocolbuffers/go v1.28.1-20221025150516-6607b10f00ed.4/go.mod h1:hY+2q+FbjbfelDKYRqA/RnrnBrAiTYatnPLx6JFklXI=
+buf.build/gen/go/grpc/grpc/protocolbuffers/go v1.28.1-20221216211832-db6e950fcfa5.4 h1:TEkrVgfGTHbepmh8yZR9lFv2Q+NzpHcAItJKmxVTNRs=
+buf.build/gen/go/grpc/grpc/protocolbuffers/go v1.28.1-20221216211832-db6e950fcfa5.4/go.mod h1:WekPWc5ZhHLT8LuJXgcLWNBifTKYrIlSgoeJptvQkAY=
+buf.build/gen/go/opencensus/opencensus/protocolbuffers/go v1.28.1-20220922204435-bc2645b08553.4/go.mod h1:VTEnMbLCIG1/BT/TiAuEI1N2l4pnCzI7SJu8RlqSKuU=
+buf.build/gen/go/opentelemetry/opentelemetry/protocolbuffers/go v1.28.1-20221109150243-4496a3de8b69.4/go.mod h1:uvu7/kAfyQqHUPbFVRQHGshuv1uNuH9QE2nlwWZixFE=
+buf.build/gen/go/prometheus/client-model/protocolbuffers/go v1.28.1-20220112145104-1d56a02d481a.4/go.mod h1:zp4CkfRdrwHURH95W9tpRKmbq2Kc4P5g1FgQMmH4L74=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 h1:UQHMgLO+TxOElx5B5HZ4hJQsoJ/PvUvKRhJHDQXO8P8=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
@@ -257,6 +265,7 @@ google.golang.org/protobuf v1.23.1-0.20200526195155-81db48ad09cc/go.mod h1:EGpAD
 google.golang.org/protobuf v1.25.0/go.mod h1:9JNX74DMeImyA3h4bdi1ymwjUzf21/xIlbajtzgsN7c=
 google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp09yW+WbY/TyQbw=
 google.golang.org/protobuf v1.26.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
+google.golang.org/protobuf v1.28.1/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8 h1:KR8+MyP7/qOlV+8Af01LtjL04bu7on42eVsxT4EyBQk=
 google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
