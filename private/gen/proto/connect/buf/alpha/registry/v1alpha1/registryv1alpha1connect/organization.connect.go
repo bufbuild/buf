@@ -68,6 +68,10 @@ type OrganizationServiceClient interface {
 	GetOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.GetOrganizationSettingsResponse], error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
 	UpdateOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationSettingsResponse], error)
+	// AddOrganizationGroup sdds an IdP Group to the organization.
+	AddOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.AddOrganizationGroupResponse], error)
+	// RemoveOrganizationGroup removes an IdP Group from the organization.
+	RemoveOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.RemoveOrganizationGroupResponse], error)
 }
 
 // NewOrganizationServiceClient constructs a client for the
@@ -146,6 +150,16 @@ func NewOrganizationServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationSettings",
 			opts...,
 		),
+		addOrganizationGroup: connect_go.NewClient[v1alpha1.AddOrganizationGroupRequest, v1alpha1.AddOrganizationGroupResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationGroup",
+			opts...,
+		),
+		removeOrganizationGroup: connect_go.NewClient[v1alpha1.RemoveOrganizationGroupRequest, v1alpha1.RemoveOrganizationGroupResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationGroup",
+			opts...,
+		),
 	}
 }
 
@@ -164,6 +178,8 @@ type organizationServiceClient struct {
 	setOrganizationMember      *connect_go.Client[v1alpha1.SetOrganizationMemberRequest, v1alpha1.SetOrganizationMemberResponse]
 	getOrganizationSettings    *connect_go.Client[v1alpha1.GetOrganizationSettingsRequest, v1alpha1.GetOrganizationSettingsResponse]
 	updateOrganizationSettings *connect_go.Client[v1alpha1.UpdateOrganizationSettingsRequest, v1alpha1.UpdateOrganizationSettingsResponse]
+	addOrganizationGroup       *connect_go.Client[v1alpha1.AddOrganizationGroupRequest, v1alpha1.AddOrganizationGroupResponse]
+	removeOrganizationGroup    *connect_go.Client[v1alpha1.RemoveOrganizationGroupRequest, v1alpha1.RemoveOrganizationGroupResponse]
 }
 
 // GetOrganization calls buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization.
@@ -240,6 +256,17 @@ func (c *organizationServiceClient) UpdateOrganizationSettings(ctx context.Conte
 	return c.updateOrganizationSettings.CallUnary(ctx, req)
 }
 
+// AddOrganizationGroup calls buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationGroup.
+func (c *organizationServiceClient) AddOrganizationGroup(ctx context.Context, req *connect_go.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.AddOrganizationGroupResponse], error) {
+	return c.addOrganizationGroup.CallUnary(ctx, req)
+}
+
+// RemoveOrganizationGroup calls
+// buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationGroup.
+func (c *organizationServiceClient) RemoveOrganizationGroup(ctx context.Context, req *connect_go.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.RemoveOrganizationGroupResponse], error) {
+	return c.removeOrganizationGroup.CallUnary(ctx, req)
+}
+
 // OrganizationServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.OrganizationService service.
 type OrganizationServiceHandler interface {
@@ -269,6 +296,10 @@ type OrganizationServiceHandler interface {
 	GetOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.GetOrganizationSettingsResponse], error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
 	UpdateOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationSettingsResponse], error)
+	// AddOrganizationGroup sdds an IdP Group to the organization.
+	AddOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.AddOrganizationGroupResponse], error)
+	// RemoveOrganizationGroup removes an IdP Group from the organization.
+	RemoveOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.RemoveOrganizationGroupResponse], error)
 }
 
 // NewOrganizationServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -343,6 +374,16 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 		svc.UpdateOrganizationSettings,
 		opts...,
 	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationGroup", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationGroup",
+		svc.AddOrganizationGroup,
+		opts...,
+	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationGroup", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationGroup",
+		svc.RemoveOrganizationGroup,
+		opts...,
+	))
 	return "/buf.alpha.registry.v1alpha1.OrganizationService/", mux
 }
 
@@ -399,4 +440,12 @@ func (UnimplementedOrganizationServiceHandler) GetOrganizationSettings(context.C
 
 func (UnimplementedOrganizationServiceHandler) UpdateOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationSettingsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings is not implemented"))
+}
+
+func (UnimplementedOrganizationServiceHandler) AddOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.AddOrganizationGroupResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationGroup is not implemented"))
+}
+
+func (UnimplementedOrganizationServiceHandler) RemoveOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.RemoveOrganizationGroupResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationGroup is not implemented"))
 }
