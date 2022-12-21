@@ -73,7 +73,7 @@ service OrganizationService {
   rpc GetOrganizationSettings(GetOrganizationSettingsRequest) returns (GetOrganizationSettingsResponse);
   // UpdateOrganizationSettings update the organization settings including base roles.
   rpc UpdateOrganizationSettings(UpdateOrganizationSettingsRequest) returns (UpdateOrganizationSettingsResponse);
-  // AddOrganizationGroup sdds an IdP Group to the organization.
+  // AddOrganizationGroup adds an IdP Group to the organization.
   rpc AddOrganizationGroup(AddOrganizationGroupRequest) returns (AddOrganizationGroupResponse);
   // RemoveOrganizationGroup removes an IdP Group from the organization.
   rpc RemoveOrganizationGroup(RemoveOrganizationGroupRequest) returns (RemoveOrganizationGroupResponse);

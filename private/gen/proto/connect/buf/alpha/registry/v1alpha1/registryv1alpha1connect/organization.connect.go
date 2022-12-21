@@ -68,7 +68,7 @@ type OrganizationServiceClient interface {
 	GetOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.GetOrganizationSettingsResponse], error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
 	UpdateOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationSettingsResponse], error)
-	// AddOrganizationGroup sdds an IdP Group to the organization.
+	// AddOrganizationGroup adds an IdP Group to the organization.
 	AddOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.AddOrganizationGroupResponse], error)
 	// RemoveOrganizationGroup removes an IdP Group from the organization.
 	RemoveOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.RemoveOrganizationGroupResponse], error)
@@ -296,7 +296,7 @@ type OrganizationServiceHandler interface {
 	GetOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.GetOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.GetOrganizationSettingsResponse], error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
 	UpdateOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationSettingsResponse], error)
-	// AddOrganizationGroup sdds an IdP Group to the organization.
+	// AddOrganizationGroup adds an IdP Group to the organization.
 	AddOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.AddOrganizationGroupResponse], error)
 	// RemoveOrganizationGroup removes an IdP Group from the organization.
 	RemoveOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.RemoveOrganizationGroupResponse], error)
