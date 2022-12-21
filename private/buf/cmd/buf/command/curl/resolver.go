@@ -53,9 +53,9 @@ func resolverFromImage(image bufimage.Image) (resolver, error) {
 }
 
 type imageResolver struct {
-	files     *protoregistry.Files
-	initTypes sync.Once
-	exts      *protoregistry.Types
+	files    *protoregistry.Files
+	initExts sync.Once
+	exts     *protoregistry.Types
 }
 
 func (i *imageResolver) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
@@ -93,11 +93,13 @@ func (i *imageResolver) FindExtensionByName(field protoreflect.FullName) (protor
 }
 
 func (i *imageResolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
-	i.initTypes.Do(i.doInitTypes)
+	// Most usages won't need to resolve extensions. So instead of proactively
+	// indexing them, we defer that work until it's actually needed.
+	i.initExts.Do(i.doInitExts)
 	return i.exts.FindExtensionByNumber(message, field)
 }
 
-func (i *imageResolver) doInitTypes() {
+func (i *imageResolver) doInitExts() {
 	var types protoregistry.Types
 	i.files.RangeFiles(func(fd protoreflect.FileDescriptor) bool {
 		registerExtensions(&types, fd)

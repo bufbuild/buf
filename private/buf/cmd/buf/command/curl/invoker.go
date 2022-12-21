@@ -110,13 +110,7 @@ func (inv *invoker) invoke(ctx context.Context, dataSource string, data io.Reade
 }
 
 func (inv *invoker) handleUnary(ctx context.Context, dataSource string, data io.Reader, headers http.Header) error {
-	var provider messageProvider
-	if data == nil {
-		// if no data provider, treat as if single empty message
-		provider = &singleEmptyMessageProvider{}
-	} else {
-		provider = newMessageProvider(dataSource, data)
-	}
+	provider := newMessageProvider(dataSource, data, inv.res)
 	msg := dynamicpb.NewMessage(inv.md.Input())
 	if err := provider.next(msg); err != nil {
 		return err
@@ -148,7 +142,7 @@ func (inv *invoker) handleUnary(ctx context.Context, dataSource string, data io.
 }
 
 func (inv *invoker) handleClientStream(ctx context.Context, dataSource string, data io.Reader, headers http.Header) (retErr error) {
-	provider := newMessageProvider(dataSource, data)
+	provider := newStreamMessageProvider(dataSource, data, inv.res)
 	msg := dynamicpb.NewMessage(inv.md.Input())
 	stream := inv.client.CallClientStream(ctx)
 	for k, v := range headers {
@@ -177,13 +171,7 @@ func (inv *invoker) handleClientStream(ctx context.Context, dataSource string, d
 }
 
 func (inv *invoker) handleServerStream(ctx context.Context, dataSource string, data io.Reader, headers http.Header) error {
-	var provider messageProvider
-	if data == nil {
-		// if no data provider, treat as if single empty message
-		provider = &singleEmptyMessageProvider{}
-	} else {
-		provider = newMessageProvider(dataSource, data)
-	}
+	provider := newMessageProvider(dataSource, data, inv.res)
 	msg := dynamicpb.NewMessage(inv.md.Input())
 	if err := provider.next(msg); err != nil {
 		return err
@@ -215,7 +203,7 @@ func (inv *invoker) handleServerStream(ctx context.Context, dataSource string, d
 
 func (inv *invoker) handleBidiStream(ctx context.Context, dataSource string, data io.Reader, headers http.Header) (retErr error) {
 	ctx, cancel := context.WithCancel(ctx)
-	provider := newMessageProvider(dataSource, data)
+	provider := newStreamMessageProvider(dataSource, data, inv.res)
 	msg := dynamicpb.NewMessage(inv.md.Input())
 	stream := inv.client.CallBidiStream(ctx)
 	for k, v := range headers {
@@ -388,12 +376,21 @@ func (inv *invoker) handleErrorResponse(connErr *connect.Error) error {
 	return app.NewError(int(connErr.Code()*8), "")
 }
 
-func newMessageProvider(dataSource string, data io.Reader) messageProvider {
+func newStreamMessageProvider(dataSource string, data io.Reader, res resolver) messageProvider {
 	if data == nil {
 		// if no data provided, treat as empty input
 		data = bytes.NewBuffer(nil)
 	}
-	return &streamMessageProvider{name: dataSource, dec: json.NewDecoder(data)}
+	return &streamMessageProvider{name: dataSource, dec: json.NewDecoder(data), res: res}
+}
+
+func newMessageProvider(dataSource string, data io.Reader, res resolver) messageProvider {
+	if data == nil {
+		// if no data provider, treat as if single empty message
+		return &singleEmptyMessageProvider{}
+	} else {
+		return newStreamMessageProvider(dataSource, data, res)
+	}
 }
 
 type messageProvider interface {
@@ -415,6 +412,7 @@ func (s *singleEmptyMessageProvider) next(_ proto.Message) error {
 type streamMessageProvider struct {
 	name string
 	dec  *json.Decoder
+	res  resolver
 }
 
 func (s *streamMessageProvider) next(msg proto.Message) error {
@@ -426,5 +424,5 @@ func (s *streamMessageProvider) next(msg proto.Message) error {
 		return fmt.Errorf("%s at offset %d: %w", s.name, s.dec.InputOffset(), err)
 	}
 	proto.Reset(msg)
-	return protojson.Unmarshal(jsonData, msg)
+	return protojson.UnmarshalOptions{Resolver: s.res}.Unmarshal(jsonData, msg)
 }
