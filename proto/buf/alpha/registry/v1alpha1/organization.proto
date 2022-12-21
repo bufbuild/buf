@@ -73,6 +73,10 @@ service OrganizationService {
   rpc GetOrganizationSettings(GetOrganizationSettingsRequest) returns (GetOrganizationSettingsResponse);
   // UpdateOrganizationSettings update the organization settings including base roles.
   rpc UpdateOrganizationSettings(UpdateOrganizationSettingsRequest) returns (UpdateOrganizationSettingsResponse);
+  // AddOrganizationGroup adds an IdP Group to the organization.
+  rpc AddOrganizationGroup(AddOrganizationGroupRequest) returns (AddOrganizationGroupResponse);
+  // RemoveOrganizationGroup removes an IdP Group from the organization.
+  rpc RemoveOrganizationGroup(RemoveOrganizationGroupRequest) returns (RemoveOrganizationGroupResponse);
 }
 
 message GetOrganizationRequest {
@@ -194,6 +198,8 @@ message GetOrganizationSettingsResponse {
   TemplateRole template_base_role = 3 [deprecated = true];
   // The number of members in the organization.
   uint32 members_count = 4;
+  // The IdP groups associated with the organization.
+  repeated string idp_groups = 5;
 }
 
 message UpdateOrganizationSettingsRequest {
@@ -212,3 +218,21 @@ message UpdateOrganizationSettingsRequest {
 }
 
 message UpdateOrganizationSettingsResponse {}
+
+message AddOrganizationGroupRequest {
+  // The ID of the organization for which to add the group.
+  string organization_id = 1;
+  // The name of the group to add.
+  string group_name = 2;
+}
+
+message AddOrganizationGroupResponse {}
+
+message RemoveOrganizationGroupRequest {
+  // The ID of the organization for which to remove the group.
+  string organization_id = 1;
+  // The name of the group to remove.
+  string group_name = 2;
+}
+
+message RemoveOrganizationGroupResponse {}
