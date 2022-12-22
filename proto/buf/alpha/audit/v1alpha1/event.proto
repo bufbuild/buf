@@ -82,12 +82,12 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_PLUGIN_CREATED = 13 [deprecated = true];
   EVENT_TYPE_PLUGIN_DELETED = 14 [deprecated = true];
+  EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
   EVENT_TYPE_USER_CREATED = 15;
   EVENT_TYPE_USER_DELETED = 16;
   EVENT_TYPE_USER_DEACTIVATED = 17;
   EVENT_TYPE_USER_LOGGED_IN = 18;
   EVENT_TYPE_USER_LOGGED_OUT = 19;
-  EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -189,10 +189,6 @@ message PayloadOrganizationIDPGroupAdded {
   string organization_id = 1;
   // organization_name is the name of the organization with the new IDP group.
   string organization_name = 2;
-  // group_id is the ID of the IDP group added to the organization.
-  string group_id = 3;
-  // group_name is the name of the IDP group added to the organization.
-  string group_name = 4;
 }
 
 message PayloadOrganizationIDPGroupRemoved {
@@ -200,10 +196,6 @@ message PayloadOrganizationIDPGroupRemoved {
   string organization_id = 1;
   // organization_name is the name of the organization with the removed IDP group.
   string organization_name = 2;
-  // group_id is the ID of the IDP group removed from the organization.
-  string group_id = 3;
-  // group_name is the name of the IDP group removed from the organization.
-  string group_name = 4;
 }
 
 message PayloadRepositoryCreated {
