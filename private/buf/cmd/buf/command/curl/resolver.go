@@ -195,7 +195,9 @@ func (r *reflectionResolver) FindDescriptorByName(name protoreflect.FullName) (p
 	// if not found in existing files, fetch more
 	fileDescriptorProtos, err := r.fileContainingSymbolLocked(name)
 	if err != nil {
-		return nil, err
+		// intentionally not using "%w" because, depending on the code, the bufcli
+		// app framework might incorrectly interpret it and report a bad error message.
+		return nil, fmt.Errorf("failed to resolve symbol %q: %v", name, err)
 	}
 	if err := r.cacheFilesLocked(fileDescriptorProtos); err != nil {
 		return nil, err
@@ -248,7 +250,9 @@ func (r *reflectionResolver) FindExtensionByNumber(message protoreflect.FullName
 	// if not found in existing files, fetch more
 	fileDescriptorProtos, err := r.fileContainingExtensionLocked(message, field)
 	if err != nil {
-		return nil, err
+		// intentionally not using "%w" because, depending on the code, the bufcli
+		// app framework might incorrectly interpret it and report a bad error message.
+		return nil, fmt.Errorf("failed to resolve extension %d for %q: %v", field, message, err)
 	}
 	if err := r.cacheFilesLocked(fileDescriptorProtos); err != nil {
 		return nil, err
@@ -411,10 +415,14 @@ func isNotImplemented(err error) bool {
 }
 
 func send(stream *reflectStream, req *reflectionv1.ServerReflectionRequest) (*reflectionv1.ServerReflectionResponse, error) {
-	if err := stream.Send(req); err != nil {
-		return nil, err
+	sendErr := stream.Send(req)
+	// even if sendErr != nil, we still call Receive because Send will typically return
+	// io.EOF and caller is expected to use Receive to get the RPC error result.
+	resp, recvErr := stream.Receive()
+	if sendErr != nil && recvErr == nil {
+		return nil, sendErr
 	}
-	return stream.Receive()
+	return resp, recvErr
 }
 
 func (r *reflectionResolver) getStreamLocked() (*reflectStream, bool) {

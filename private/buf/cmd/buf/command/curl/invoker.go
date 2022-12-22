@@ -153,7 +153,15 @@ func (inv *invoker) handleClientStream(ctx context.Context, dataSource string, d
 			}
 		}
 	}()
-	if err, _ := inv.handleStreamRequest(provider, msg, stream); err != nil {
+	if err, isStreamError := inv.handleStreamRequest(provider, msg, stream); err != nil {
+		if isStreamError {
+			_, recvErr := stream.CloseAndReceive()
+			// stream.Send should return io.EOF on error, and caller is expected to call
+			// stream.Receive to get the actual RPC error.
+			if recvErr != nil {
+				return recvErr
+			}
+		}
 		return err
 	}
 	resp, err := stream.CloseAndReceive()

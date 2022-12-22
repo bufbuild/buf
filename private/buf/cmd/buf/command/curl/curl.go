@@ -711,7 +711,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 	if err == protoregistry.NotFound {
 		return fmt.Errorf("failed to find service named %q in schema", service)
 	} else if err != nil {
-		return fmt.Errorf("failed to resolve service descriptor for service %q: %w", service, err)
+		return err
 	}
 	serviceDescriptor, ok := descriptor.(protoreflect.ServiceDescriptor)
 	if !ok {
