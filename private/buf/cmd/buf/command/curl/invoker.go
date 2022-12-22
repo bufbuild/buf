@@ -94,6 +94,7 @@ func newInvoker(container appflag.Container, md protoreflect.MethodDescriptor, r
 }
 
 func (inv *invoker) invoke(ctx context.Context, dataSource string, data io.Reader, headers http.Header) error {
+	inv.printer.Printf("* Invoking RPC %s\n", inv.md.FullName())
 	// request's user-agent header(s) get overwritten by protocol, so we stash them in the
 	// context so that underlying transport can restore them
 	ctx = withUserAgent(ctx, headers)
@@ -134,10 +135,7 @@ func (inv *invoker) handleUnary(ctx context.Context, dataSource string, data io.
 		err := inv.handleErrorResponse(connErr)
 		return err
 	}
-	if err := inv.handleResponse(resp.Msg.data, nil); err != nil {
-		return err
-	}
-	return nil
+	return inv.handleResponse(resp.Msg.data, nil)
 }
 
 func (inv *invoker) handleClientStream(ctx context.Context, dataSource string, data io.Reader, headers http.Header) (retErr error) {
@@ -162,13 +160,10 @@ func (inv *invoker) handleClientStream(ctx context.Context, dataSource string, d
 	if err != nil {
 		return err
 	}
-	if err := inv.handleResponse(resp.Msg.data, nil); err != nil {
-		return err
-	}
-	return nil
+	return inv.handleResponse(resp.Msg.data, nil)
 }
 
-func (inv *invoker) handleServerStream(ctx context.Context, dataSource string, data io.Reader, headers http.Header) error {
+func (inv *invoker) handleServerStream(ctx context.Context, dataSource string, data io.Reader, headers http.Header) (retErr error) {
 	provider := newMessageProvider(dataSource, data, inv.res)
 	msg := dynamicpb.NewMessage(inv.md.Input())
 	if err := provider.next(msg); err != nil {
@@ -184,19 +179,20 @@ func (inv *invoker) handleServerStream(ctx context.Context, dataSource string, d
 	for k, v := range headers {
 		req.Header()[k] = v
 	}
+	defer func() {
+		if retErr != nil {
+			var connErr *connect.Error
+			if errors.As(retErr, &connErr) {
+				retErr = inv.handleErrorResponse(connErr)
+			}
+		}
+	}()
+
 	stream, err := inv.client.CallServerStream(ctx, req)
 	if err != nil {
-		var connErr *connect.Error
-		if !errors.As(err, &connErr) {
-			return err
-		}
-		err := inv.handleErrorResponse(connErr)
 		return err
 	}
-	if err := inv.handleStreamResponse(&serverStreamAdapter{stream: stream}); err != nil {
-		return err
-	}
-	return nil
+	return inv.handleStreamResponse(&serverStreamAdapter{stream: stream})
 }
 
 func (inv *invoker) handleBidiStream(ctx context.Context, dataSource string, data io.Reader, headers http.Header) (retErr error) {

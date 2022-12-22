@@ -336,7 +336,7 @@ func (r *reflectionResolver) cacheFilesLocked(files []*descriptorpb.FileDescript
 }
 
 func (r *reflectionResolver) cacheFileLocked(name string, seen []string) error {
-	if _, err := r.cachedFiles.FindDescriptorByName(protoreflect.FullName(name)); err == nil {
+	if _, err := r.cachedFiles.FindFileByPath(name); err == nil {
 		return nil // already processed this file
 	}
 	for i, alreadySeen := range seen {

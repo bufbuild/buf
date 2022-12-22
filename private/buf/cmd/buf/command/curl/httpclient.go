@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"sort"
@@ -49,7 +50,10 @@ func newHTTPClient(transport http.RoundTripper, printer verbose.Printer) connect
 type verboseClient struct {
 	transport http.RoundTripper
 	printer   verbose.Printer
+	reqNum    atomic.Int32
 }
+
+type reqNumAddrKey struct{}
 
 func (v *verboseClient) Do(req *http.Request) (*http.Response, error) {
 	if host := req.Header.Get("Host"); host != "" {
@@ -64,6 +68,10 @@ func (v *verboseClient) Do(req *http.Request) (*http.Response, error) {
 		}
 	}
 
+	reqNum := v.reqNum.Add(1)
+	if reqNumAddr, _ := req.Context().Value(reqNumAddrKey{}).(*int32); reqNumAddr != nil {
+		*reqNumAddr = reqNum
+	}
 	rawBody := req.Body
 	if rawBody == nil {
 		rawBody = io.NopCloser(bytes.NewBuffer(nil))
@@ -72,31 +80,35 @@ func (v *verboseClient) Do(req *http.Request) (*http.Response, error) {
 	if skip, _ := req.Context().Value(skipUploadFinishedMessageKey{}).(bool); !skip {
 		atEnd = func(err error) {
 			if errors.Is(err, io.EOF) {
-				v.printer.Printf("* Finished upload")
+				v.printer.Printf("* (#%d) Finished upload", reqNum)
 			}
 		}
 	}
 	req.Body = &verboseReader{
 		ReadCloser: rawBody,
-		callback:   v.traceWriteRequestBytes,
-		whenDone:   atEnd,
+		callback: func(count int) {
+			v.traceWriteRequestBytes(reqNum, count)
+		},
+		whenDone: atEnd,
 		whenStart: func() {
 			// we defer this until body is read so that our HTTP client's dialer and TLS
 			// config can potentially log useful things about connection setup *before*
 			// we print the request info.
-			v.traceRequest(req)
+			v.traceRequest(req, reqNum)
 		},
 	}
 	resp, err := v.transport.RoundTrip(req)
 	if resp != nil {
-		v.traceResponse(resp)
+		v.traceResponse(resp, reqNum)
 		if resp.Body != nil {
 			resp.Body = &verboseReader{
 				ReadCloser: resp.Body,
-				callback:   v.traceReadResponseBytes,
+				callback: func(count int) {
+					v.traceReadResponseBytes(reqNum, count)
+				},
 				whenDone: func(err error) {
-					traceTrailers(v.printer, resp.Trailer, false)
-					v.printer.Printf("* Call complete")
+					traceTrailers(v.printer, resp.Trailer, false, reqNum)
+					v.printer.Printf("* (#%d) Call complete", reqNum)
 				},
 			}
 		}
@@ -105,7 +117,7 @@ func (v *verboseClient) Do(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-func (v *verboseClient) traceRequest(r *http.Request) {
+func (v *verboseClient) traceRequest(r *http.Request, reqNum int32) {
 	// we look at the *raw* http headers, in case any get added by the
 	// Connect client impl or an interceptor after we could otherwise
 	// inspect them from an interceptor
@@ -115,23 +127,23 @@ func (v *verboseClient) traceRequest(r *http.Request) {
 	} else if r.URL.ForceQuery {
 		queryString = "?"
 	}
-	v.printer.Printf("> %s %s%s\n", r.Method, r.URL.Path, queryString)
-	traceMetadata(v.printer, r.Header, "> ")
-	v.printer.Printf(">\n")
+	v.printer.Printf("> (#%d) %s %s%s\n", reqNum, r.Method, r.URL.Path, queryString)
+	traceMetadata(v.printer, r.Header, fmt.Sprintf("> (#%d) ", reqNum))
+	v.printer.Printf("> (#%d)\n", reqNum)
 }
 
-func (v *verboseClient) traceWriteRequestBytes(count int) {
-	v.printer.Printf("} [%d bytes data]", count)
+func (v *verboseClient) traceWriteRequestBytes(reqNum int32, count int) {
+	v.printer.Printf("} (#%d) [%d bytes data]", reqNum, count)
 }
 
-func (v *verboseClient) traceResponse(r *http.Response) {
-	v.printer.Printf("< %s %s\n", r.Proto, r.Status)
-	traceMetadata(v.printer, r.Header, "< ")
-	v.printer.Printf("<\n")
+func (v *verboseClient) traceResponse(r *http.Response, reqNum int32) {
+	v.printer.Printf("< (#%d) %s %s\n", reqNum, r.Proto, r.Status)
+	traceMetadata(v.printer, r.Header, fmt.Sprintf("< (#%d) ", reqNum))
+	v.printer.Printf("< (#%d)\n", reqNum)
 }
 
-func (v *verboseClient) traceReadResponseBytes(count int) {
-	v.printer.Printf("{ [%d bytes data]", count)
+func (v *verboseClient) traceReadResponseBytes(reqNum int32, count int) {
+	v.printer.Printf("{ (#%d) [%d bytes data]", reqNum, count)
 }
 
 func traceMetadata(printer verbose.Printer, meta http.Header, prefix string) {
@@ -148,15 +160,15 @@ func traceMetadata(printer verbose.Printer, meta http.Header, prefix string) {
 	}
 }
 
-func traceTrailers(printer verbose.Printer, trailers http.Header, synthetic bool) {
+func traceTrailers(printer verbose.Printer, trailers http.Header, synthetic bool, reqNum int32) {
 	if len(trailers) == 0 {
 		return
 	}
-	printer.Printf("<\n")
-	prefix := "< "
+	printer.Printf("< (#%d)\n", reqNum)
+	prefix := fmt.Sprintf("< (#%d) ", reqNum)
 	if synthetic {
 		// mark synthetic trailers with an asterisk
-		prefix = "< [*] "
+		prefix += "[*] "
 	}
 	traceMetadata(printer, trailers, prefix)
 }
@@ -208,7 +220,9 @@ func (t traceTrailersInterceptor) WrapUnary(unaryFunc connect.UnaryFunc) connect
 
 func (t traceTrailersInterceptor) WrapStreamingClient(clientFunc connect.StreamingClientFunc) connect.StreamingClientFunc {
 	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
-		return &traceTrailersStream{StreamingClientConn: clientFunc(ctx, spec), printer: t.printer}
+		var reqNum int32
+		ctx = context.WithValue(ctx, reqNumAddrKey{}, &reqNum)
+		return &traceTrailersStream{StreamingClientConn: clientFunc(ctx, spec), reqNum: &reqNum, printer: t.printer}
 	}
 }
 
@@ -218,6 +232,7 @@ func (t traceTrailersInterceptor) WrapStreamingHandler(handlerFunc connect.Strea
 
 type traceTrailersStream struct {
 	connect.StreamingClientConn
+	reqNum  *int32
 	printer verbose.Printer
 	done    atomic.Bool
 }
@@ -225,7 +240,7 @@ type traceTrailersStream struct {
 func (s *traceTrailersStream) Receive(msg any) error {
 	err := s.StreamingClientConn.Receive(msg)
 	if err != nil && s.done.CompareAndSwap(false, true) {
-		traceTrailers(s.printer, s.ResponseTrailer(), true)
+		traceTrailers(s.printer, s.ResponseTrailer(), true, *s.reqNum)
 	}
 	return err
 }
