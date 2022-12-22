@@ -319,45 +319,45 @@ no limit if this flag is not present.`,
 		&f.Key,
 		keyFlagName,
 		"",
-		`Path to a PEM-encoded X509 private key file, for using client certificates with TLS. This `+
-			`option is only valid when the URL uses the https scheme. A --cert flag must also be `+
-			`present to provide tha certificate and public key that corresponds to the given `+
-			`private key.`,
+		`Path to a PEM-encoded X509 private key file, for using client certificates with TLS. This
+option is only valid when the URL uses the https scheme. A --cert flag must also be
+present to provide tha certificate and public key that corresponds to the given
+private key.`,
 	)
 	flagSet.StringVarP(
 		&f.Cert,
 		certFlagName,
 		"E",
 		"",
-		`Path to a PEM-encoded X509 certificate file, for using client certificates with TLS. This `+
-			`option is only valid when the URL uses the https scheme. A --key flag must also be `+
-			`present to provide tha private key that corresponds to the given certificate.`,
+		`Path to a PEM-encoded X509 certificate file, for using client certificates with TLS. This
+option is only valid when the URL uses the https scheme. A --key flag must also be
+present to provide tha private key that corresponds to the given certificate.`,
 	)
 	flagSet.StringVar(
 		&f.CACert,
 		caCertFlagName,
 		"",
-		`Path to a PEM-encoded X509 certificate pool file that contains the set of trusted `+
-			`certificate authorities/issuers. If omitted, the system's default set of trusted `+
-			`certificates are used to verify the server's certificate. This option is only valid `+
-			`when the URL uses the https scheme. It is not applicable if --insecure flag is used.`,
+		`Path to a PEM-encoded X509 certificate pool file that contains the set of trusted
+certificate authorities/issuers. If omitted, the system's default set of trusted
+certificates are used to verify the server's certificate. This option is only valid
+when the URL uses the https scheme. It is not applicable if --insecure flag is used.`,
 	)
 	flagSet.BoolVarP(
 		&f.Insecure,
 		insecureFlagName,
 		"k",
 		false,
-		`If set, the TLS connection will be insecure and the server's certificate will NOT be `+
-			`verified. This is generally discouraged. This option is only valid when the URL uses `+
-			`the https scheme.`,
+		`If set, the TLS connection will be insecure and the server's certificate will NOT be
+verified. This is generally discouraged. This option is only valid when the URL uses
+the https scheme.`,
 	)
 	flagSet.StringVar(
 		&f.ServerName,
 		serverNameFlagName,
 		"",
-		`The server name to use in TLS handshakes (for SNI) if the URL scheme is https. If not `+
-			`specified, the default is the origin host in the URL or the value in a "Host" header if `+
-			`one is provided.`,
+		`The server name to use in TLS handshakes (for SNI) if the URL scheme is https. If not
+specified, the default is the origin host in the URL or the value in a "Host" header if
+one is provided.`,
 	)
 
 	flagSet.StringVarP(
@@ -372,27 +372,26 @@ no limit if this flag is not present.`,
 		headerFlagName,
 		"H",
 		nil,
-		`Request headers to include with the RPC invocation. This flag may be specified more `+
-			`than once to indicate multiple headers. Each flag value should have the form key=value. `+
-			`A special value of '@<path>' means to read headers from the file at <path>. If the path `+
-			`is "-" then headers are read from stdin. If the same file is indicated as used with the `+
-			`request data flag (--data or -d), the file must contain all headers, then a blank line, `+
-			`and then the request body. It is not allowed to indicate stdin if the schema is expected `+
-			`to be provided via stdin as a file descriptor set or image.`,
+		`Request headers to include with the RPC invocation. This flag may be specified more
+than once to indicate multiple headers. Each flag value should have the form key=value.
+A special value of '@<path>' means to read headers from the file at <path>. If the path
+is "-" then headers are read from stdin. If the same file is indicated as used with the
+request data flag (--data or -d), the file must contain all headers, then a blank line,
+and then the request body. It is not allowed to indicate stdin if the schema is expected
+to be provided via stdin as a file descriptor set or image.`,
 	)
 	flagSet.StringVarP(
 		&f.Data,
 		dataFlagName,
 		"d",
 		"",
-		`Request data. This should be zero or more JSON documents, each indicating a request `+
-			`message. For unary RPCs, there should be exactly one JSON document. Documents should be `+
-			`separated by whitespace and may optionally be separated by ASCII separator characters `+
-			`(FS, GS, or RS). A special value of '@<path>' means to read the data from the file at `+
-			`<path>. If the path is "-" then the request data is read from stdin. If the same file is `+
-			`indicated as used with the request headers flags (--header or -H), the file must contain `+
-			`all headers, then a blank line, and then the request body. It is not allowed to indicate `+
-			`stdin if the schema is expected to be provided via stdin as a file descriptor set or image.`,
+		`Request data. This should be zero or more JSON documents, each indicating a request
+message. For unary RPCs, there should be exactly one JSON document. A special value of
+'@<path>' means to read the data from the file at <path>. If the path is "-" then the
+request data is read from stdin. If the same file is indicated as used with the request
+headers flags (--header or -H), the file must contain all headers, then a blank line, and
+then the request body. It is not allowed to indicate stdin if the schema is expected to be
+provided via stdin as a file descriptor set or image.`,
 	)
 	flagSet.StringVarP(
 		&f.Output,
