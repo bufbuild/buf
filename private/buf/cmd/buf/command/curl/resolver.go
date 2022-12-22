@@ -390,14 +390,14 @@ func (r *reflectionResolver) sendLocked(req *reflectionv1.ServerReflectionReques
 	stream, isNew := r.getStreamLocked()
 	resp, err := send(stream, req)
 	if isNotImplemented(err) && !r.useV1Alpha && r.v1alphaClient != nil {
-		r.Reset()
+		r.resetLocked()
 		r.useV1Alpha = true
 		stream, isNew = r.getStreamLocked()
 		resp, err = send(stream, req)
 	}
 	if err != nil && !isNew {
 		// the existing stream broke; try again with a new stream
-		r.Reset()
+		r.resetLocked()
 		stream, _ = r.getStreamLocked()
 		resp, err = send(stream, req)
 	}
@@ -440,7 +440,10 @@ func (r *reflectionResolver) maybeCreateStreamLocked(client *reflectClient, stre
 func (r *reflectionResolver) Reset() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	r.resetLocked()
+}
 
+func (r *reflectionResolver) resetLocked() {
 	if r.v1Stream != nil {
 		reset(r.v1Stream)
 		r.v1Stream = nil

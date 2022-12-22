@@ -92,8 +92,8 @@ func makeTLSConfig(f *flags, authority string, printer verbose.Printer) (*tls.Co
 		if err != nil {
 			return nil, errorHasFilename(err, f.CACert)
 		}
-		conf.ClientCAs = x509.NewCertPool()
-		conf.ClientCAs.AppendCertsFromPEM(caCert)
+		conf.RootCAs = x509.NewCertPool()
+		conf.RootCAs.AppendCertsFromPEM(caCert)
 	}
 
 	if f.Key != "" && f.Cert != "" {

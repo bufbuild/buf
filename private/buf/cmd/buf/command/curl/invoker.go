@@ -137,7 +137,6 @@ func (inv *invoker) handleUnary(ctx context.Context, dataSource string, data io.
 	if err := inv.handleResponse(resp.Msg.data, nil); err != nil {
 		return err
 	}
-	traceTrailers(inv.printer, resp.Trailer(), true)
 	return nil
 }
 
@@ -166,7 +165,6 @@ func (inv *invoker) handleClientStream(ctx context.Context, dataSource string, d
 	if err := inv.handleResponse(resp.Msg.data, nil); err != nil {
 		return err
 	}
-	traceTrailers(inv.printer, resp.Trailer(), true)
 	return nil
 }
 
