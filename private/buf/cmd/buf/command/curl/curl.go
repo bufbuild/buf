@@ -213,11 +213,11 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Schema,
 		schemaFlagName,
 		"",
-		`The module to use for the RPC schema. This is necessary if the server does not support `+
-			`server reflection. The format of this argument is the same as for the <input> arguments to `+
-			`other buf sub-commands such as build and generate. It can indicate a directory, a file, a `+
-			`remote module in the Buf Schema Registry, or even standard in ("-") for feeding an image or `+
-			`file descriptor set to the command in a shell pipeline.`,
+		`The module to use for the RPC schema. This is necessary if the server does not support
+server reflection. The format of this argument is the same as for the <input> arguments to
+other buf sub-commands such as build and generate. It can indicate a directory, a file, a
+remote module in the Buf Schema Registry, or even standard in ("-") for feeding an image or
+file descriptor set to the command in a shell pipeline.`,
 	)
 	flagSet.StringVar(
 		&f.Config,
@@ -239,36 +239,36 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.ReflectHeaders,
 		reflectHeaderFlagName,
 		nil,
-		`Request headers to include with reflection requests. This flag may only be used `+
-			`when --reflect is also set. This flag may be specified more than once to indicate `+
-			`multiple headers. Each flag value should have the form key=value. But a special value `+
-			`of '*' may be used to indicate that all normal request headers (from --header and -H `+
-			`flags) should also be included with reflection requests. A special value of '@<path>' `+
-			`means to read headers from the file at <path>. If the path is "-" then headers are `+
-			`read from stdin. It is not allowed to indicate a file with the same path as used with `+
-			`the request data flag (--data or -d). Furthermore, it is not allowed to indicate stdin `+
-			`if the schema is expected to be provided via stdin as a file descriptor set or image.`,
+		`Request headers to include with reflection requests. This flag may only be used
+when --reflect is also set. This flag may be specified more than once to indicate
+multiple headers. Each flag value should have the form key=value. But a special value
+of '*' may be used to indicate that all normal request headers (from --header and -H
+flags) should also be included with reflection requests. A special value of '@<path>'
+means to read headers from the file at <path>. If the path is "-" then headers are
+read from stdin. It is not allowed to indicate a file with the same path as used with
+the request data flag (--data or -d). Furthermore, it is not allowed to indicate stdin
+if the schema is expected to be provided via stdin as a file descriptor set or image.`,
 	)
 	flagSet.StringVar(
 		&f.ReflectBaseURL,
 		reflectBaseURLFlagName,
 		"",
-		`The base URL to use for reflection requests. This flag may only be used when --reflect is `+
-			`also set. By default, the base URL is the same as the target URL but without the last `+
-			`two path elements (the service and method name). The service and method name for `+
-			`server reflection are appended to this base URL in order to then issue reflection `+
-			`calls. This flag can be used to point the reflection requests to an alternate URL.`,
+		`The base URL to use for reflection requests. This flag may only be used when --reflect is
+also set. By default, the base URL is the same as the target URL but without the last
+two path elements (the service and method name). The service and method name for
+server reflection are appended to this base URL in order to then issue reflection
+calls. This flag can be used to point the reflection requests to an alternate URL.`,
 	)
 	flagSet.StringVar(
 		&f.ReflectVersion,
 		reflectVersionFlagName,
 		reflectVersionAuto,
-		`The version of the gRPC reflection protocol to use. This flag may only be used when `+
-			`--reflect is also set. The default value of this flag is "auto", wherein v1 will be `+
-			`tried first, and if it results a "Not Implemented" error then v1alpha will be used. `+
-			`The other valid values for this flag are "v1" and "v1alpha". These correspond to services `+
-			`named "grpc.reflection.v1.ServerReflection" and "grpc.reflection.v1alpha.ServerReflection" `+
-			`respectively.`,
+		`The version of the gRPC reflection protocol to use. This flag may only be used when
+--reflect is also set. The default value of this flag is "auto", wherein v1 will be
+tried first, and if it results a "Not Implemented" error then v1alpha will be used.
+The other valid values for this flag are "v1" and "v1alpha". These correspond to services
+named "grpc.reflection.v1.ServerReflection" and "grpc.reflection.v1alpha.ServerReflection"
+respectively.`,
 	)
 
 	flagSet.StringVar(
@@ -281,25 +281,25 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.UnixSocket,
 		unixSocketFlagName,
 		"",
-		`The path to a unix socket that will be used instead of opening a TCP socket to the host `+
-			`and port indicated in the URL.`,
+		`The path to a unix socket that will be used instead of opening a TCP socket to the host
+and port indicated in the URL.`,
 	)
 	flagSet.BoolVar(
 		&f.HTTP2PriorKnowledge,
 		http2PriorKnowledgeFlagName,
 		false,
-		`This flag can be used with URLs that use the http scheme (as opposed to http) to indicate `+
-			`that HTTP/2 should be used. Without this, HTTP 1.1 will be used with URLs with an http `+
-			`scheme. For https scheme, HTTP/2 will be negotiate during the TLS handshake if the server `+
-			`supports it (otherwise HTTP 1.1 is used).`,
+		`This flag can be used with URLs that use the http scheme (as opposed to http) to indicate
+that HTTP/2 should be used. Without this, HTTP 1.1 will be used with URLs with an http
+scheme. For https scheme, HTTP/2 will be negotiate during the TLS handshake if the server
+supports it (otherwise HTTP 1.1 is used).`,
 	)
 
 	flagSet.BoolVar(
 		&f.NoKeepAlive,
 		noKeepAliveFlagName,
 		false,
-		`By default, connections are created using TCP keepalive. If this flag is present, they `+
-			`will be disabled.`,
+		`By default, connections are created using TCP keepalive. If this flag is present, they
+will be disabled.`,
 	)
 	flagSet.Float64Var(
 		&f.KeepAliveTimeSeconds,
@@ -311,8 +311,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.ConnectTimeoutSeconds,
 		connectTimeoutFlagName,
 		0,
-		`The time limit, in seconds, for a connection to be established with the server. There is `+
-			`no limit if this flag is not present.`,
+		`The time limit, in seconds, for a connection to be established with the server. There is
+no limit if this flag is not present.`,
 	)
 
 	flagSet.StringVar(
