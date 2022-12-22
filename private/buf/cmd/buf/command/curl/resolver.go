@@ -34,6 +34,8 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
+// NB: resolvers must be thread-safe because they could be used
+// by two goroutines concurrently during bidi streaming calls
 type resolver interface {
 	FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error)
 	protoregistry.MessageTypeResolver
@@ -150,20 +152,16 @@ func resolverFromReflection(
 	// request's user-agent header(s) get overwritten by protocol, so we stash them in the
 	// context so that underlying transport can restore them
 	ctx = withUserAgent(ctx, headers)
-	res := &threadSafeResolver{
-		// for implementation simplicity, reflectionResolver is not thread-safe, so we
-		// wrap it in a type that uses a mutex to prevent concurrent calls
-		res: &reflectionResolver{
-			ctx:              ctx,
-			v1Client:         v1Client,
-			v1alphaClient:    v1alphaClient,
-			useV1Alpha:       reflectVersion == reflectVersionV1Alpha,
-			headers:          headers,
-			printer:          printer,
-			downloadedProtos: map[string]*descriptorpb.FileDescriptorProto{},
-		},
+	res := &reflectionResolver{
+		ctx:              ctx,
+		v1Client:         v1Client,
+		v1alphaClient:    v1alphaClient,
+		useV1Alpha:       reflectVersion == reflectVersionV1Alpha,
+		headers:          headers,
+		printer:          printer,
+		downloadedProtos: map[string]*descriptorpb.FileDescriptorProto{},
 	}
-	return res, res.reset
+	return res, res.Reset
 }
 
 type reflectClient = connect.Client[reflectionv1.ServerReflectionRequest, reflectionv1.ServerReflectionResponse]
@@ -175,6 +173,7 @@ type reflectionResolver struct {
 	printer                 verbose.Printer
 	v1Client, v1alphaClient *reflectClient
 
+	mu                      sync.Mutex
 	useV1Alpha              bool
 	v1Stream, v1alphaStream *reflectStream
 	downloadedProtos        map[string]*descriptorpb.FileDescriptorProto
@@ -183,6 +182,9 @@ type reflectionResolver struct {
 }
 
 func (r *reflectionResolver) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	d, err := r.cachedFiles.FindDescriptorByName(name)
 	if d != nil {
 		return d, nil
@@ -191,11 +193,11 @@ func (r *reflectionResolver) FindDescriptorByName(name protoreflect.FullName) (p
 		return nil, err
 	}
 	// if not found in existing files, fetch more
-	fileDescriptorProtos, err := r.fileContainingSymbol(name)
+	fileDescriptorProtos, err := r.fileContainingSymbolLocked(name)
 	if err != nil {
 		return nil, err
 	}
-	if err := r.cacheFiles(fileDescriptorProtos); err != nil {
+	if err := r.cacheFilesLocked(fileDescriptorProtos); err != nil {
 		return nil, err
 	}
 	// now it should definitely be in there!
@@ -233,6 +235,9 @@ func (r *reflectionResolver) FindExtensionByName(field protoreflect.FullName) (p
 }
 
 func (r *reflectionResolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	ext, err := r.cachedExts.FindExtensionByNumber(message, field)
 	if ext != nil {
 		return ext, nil
@@ -241,20 +246,20 @@ func (r *reflectionResolver) FindExtensionByNumber(message protoreflect.FullName
 		return nil, err
 	}
 	// if not found in existing files, fetch more
-	fileDescriptorProtos, err := r.fileContainingExtension(message, field)
+	fileDescriptorProtos, err := r.fileContainingExtensionLocked(message, field)
 	if err != nil {
 		return nil, err
 	}
-	if err := r.cacheFiles(fileDescriptorProtos); err != nil {
+	if err := r.cacheFilesLocked(fileDescriptorProtos); err != nil {
 		return nil, err
 	}
 	// now it should definitely be in there!
 	return r.cachedExts.FindExtensionByNumber(message, field)
 }
 
-func (r *reflectionResolver) fileContainingSymbol(name protoreflect.FullName) ([]*descriptorpb.FileDescriptorProto, error) {
+func (r *reflectionResolver) fileContainingSymbolLocked(name protoreflect.FullName) ([]*descriptorpb.FileDescriptorProto, error) {
 	r.printer.Printf("* Using server reflection to resolve %q\n", name)
-	resp, err := r.send(&reflectionv1.ServerReflectionRequest{
+	resp, err := r.sendLocked(&reflectionv1.ServerReflectionRequest{
 		MessageRequest: &reflectionv1.ServerReflectionRequest_FileContainingSymbol{
 			FileContainingSymbol: string(name),
 		},
@@ -265,9 +270,9 @@ func (r *reflectionResolver) fileContainingSymbol(name protoreflect.FullName) ([
 	return descriptorsInResponse(resp)
 }
 
-func (r *reflectionResolver) fileContainingExtension(message protoreflect.FullName, field protoreflect.FieldNumber) ([]*descriptorpb.FileDescriptorProto, error) {
+func (r *reflectionResolver) fileContainingExtensionLocked(message protoreflect.FullName, field protoreflect.FieldNumber) ([]*descriptorpb.FileDescriptorProto, error) {
 	r.printer.Printf("* Using server reflection to retrieve extension %d for %q\n", field, message)
-	resp, err := r.send(&reflectionv1.ServerReflectionRequest{
+	resp, err := r.sendLocked(&reflectionv1.ServerReflectionRequest{
 		MessageRequest: &reflectionv1.ServerReflectionRequest_FileContainingExtension{
 			FileContainingExtension: &reflectionv1.ExtensionRequest{
 				ContainingType:  string(message),
@@ -281,9 +286,9 @@ func (r *reflectionResolver) fileContainingExtension(message protoreflect.FullNa
 	return descriptorsInResponse(resp)
 }
 
-func (r *reflectionResolver) fileByName(name string) ([]*descriptorpb.FileDescriptorProto, error) {
+func (r *reflectionResolver) fileByNameLocked(name string) ([]*descriptorpb.FileDescriptorProto, error) {
 	r.printer.Printf("* Using server reflection to download file %q\n", name)
-	resp, err := r.send(&reflectionv1.ServerReflectionRequest{
+	resp, err := r.sendLocked(&reflectionv1.ServerReflectionRequest{
 		MessageRequest: &reflectionv1.ServerReflectionRequest_FileByFilename{
 			FileByFilename: name,
 		},
@@ -315,7 +320,7 @@ func descriptorsInResponse(resp *reflectionv1.ServerReflectionResponse) ([]*desc
 	}
 }
 
-func (r *reflectionResolver) cacheFiles(files []*descriptorpb.FileDescriptorProto) error {
+func (r *reflectionResolver) cacheFilesLocked(files []*descriptorpb.FileDescriptorProto) error {
 	for _, file := range files {
 		if _, ok := r.downloadedProtos[file.GetName()]; ok {
 			continue // already downloaded, don't bother overwriting
@@ -323,14 +328,14 @@ func (r *reflectionResolver) cacheFiles(files []*descriptorpb.FileDescriptorProt
 		r.downloadedProtos[file.GetName()] = file
 	}
 	for _, file := range files {
-		if err := r.cacheFile(file.GetName(), nil); err != nil {
+		if err := r.cacheFileLocked(file.GetName(), nil); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *reflectionResolver) cacheFile(name string, seen []string) error {
+func (r *reflectionResolver) cacheFileLocked(name string, seen []string) error {
 	if _, err := r.cachedFiles.FindDescriptorByName(protoreflect.FullName(name)); err == nil {
 		return nil // already processed this file
 	}
@@ -346,7 +351,7 @@ func (r *reflectionResolver) cacheFile(name string, seen []string) error {
 	file := r.downloadedProtos[name]
 	if file == nil {
 		// download missing file(s)
-		moreFiles, err := r.fileByName(name)
+		moreFiles, err := r.fileByNameLocked(name)
 		if err != nil {
 			return err
 		}
@@ -363,7 +368,7 @@ func (r *reflectionResolver) cacheFile(name string, seen []string) error {
 
 	// make sure imports have been downloaded and cached
 	for _, dep := range file.Dependency {
-		if err := r.cacheFile(dep, append(seen, name)); err != nil {
+		if err := r.cacheFileLocked(dep, append(seen, name)); err != nil {
 			return err
 		}
 	}
@@ -381,19 +386,19 @@ func (r *reflectionResolver) cacheFile(name string, seen []string) error {
 	return nil
 }
 
-func (r *reflectionResolver) send(req *reflectionv1.ServerReflectionRequest) (*reflectionv1.ServerReflectionResponse, error) {
-	stream, isNew := r.getStream()
+func (r *reflectionResolver) sendLocked(req *reflectionv1.ServerReflectionRequest) (*reflectionv1.ServerReflectionResponse, error) {
+	stream, isNew := r.getStreamLocked()
 	resp, err := send(stream, req)
 	if isNotImplemented(err) && !r.useV1Alpha && r.v1alphaClient != nil {
-		r.reset()
+		r.Reset()
 		r.useV1Alpha = true
-		stream, isNew = r.getStream()
+		stream, isNew = r.getStreamLocked()
 		resp, err = send(stream, req)
 	}
 	if err != nil && !isNew {
 		// the existing stream broke; try again with a new stream
-		r.reset()
-		stream, _ = r.getStream()
+		r.Reset()
+		stream, _ = r.getStreamLocked()
 		resp, err = send(stream, req)
 	}
 	return resp, err
@@ -412,16 +417,16 @@ func send(stream *reflectStream, req *reflectionv1.ServerReflectionRequest) (*re
 	return stream.Receive()
 }
 
-func (r *reflectionResolver) getStream() (*reflectStream, bool) {
+func (r *reflectionResolver) getStreamLocked() (*reflectStream, bool) {
 	if r.useV1Alpha {
-		isNew := r.maybeCreateStream(r.v1alphaClient, &r.v1alphaStream)
+		isNew := r.maybeCreateStreamLocked(r.v1alphaClient, &r.v1alphaStream)
 		return r.v1alphaStream, isNew
 	}
-	isNew := r.maybeCreateStream(r.v1Client, &r.v1Stream)
+	isNew := r.maybeCreateStreamLocked(r.v1Client, &r.v1Stream)
 	return r.v1Stream, isNew
 }
 
-func (r *reflectionResolver) maybeCreateStream(client *reflectClient, stream **reflectStream) bool {
+func (r *reflectionResolver) maybeCreateStreamLocked(client *reflectClient, stream **reflectStream) bool {
 	if *stream != nil {
 		return false // already created
 	}
@@ -432,7 +437,10 @@ func (r *reflectionResolver) maybeCreateStream(client *reflectClient, stream **r
 	return true
 }
 
-func (r *reflectionResolver) reset() {
+func (r *reflectionResolver) Reset() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if r.v1Stream != nil {
 		reset(r.v1Stream)
 		r.v1Stream = nil
@@ -452,51 +460,4 @@ func reset(stream *reflectStream) {
 	// "cancel" errors.
 	_, _ = stream.Receive()
 	_ = stream.CloseResponse()
-}
-
-type threadSafeResolver struct {
-	mu  sync.Mutex
-	res *reflectionResolver
-}
-
-func (t *threadSafeResolver) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	return t.res.FindDescriptorByName(name)
-}
-
-func (t *threadSafeResolver) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	return t.res.FindMessageByName(message)
-}
-
-func (t *threadSafeResolver) FindMessageByURL(url string) (protoreflect.MessageType, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	return t.res.FindMessageByURL(url)
-}
-
-func (t *threadSafeResolver) FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	return t.res.FindExtensionByName(field)
-}
-
-func (t *threadSafeResolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	return t.res.FindExtensionByNumber(message, field)
-}
-
-func (t *threadSafeResolver) reset() {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	t.res.reset()
 }
