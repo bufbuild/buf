@@ -45,6 +45,7 @@ enum ResourceType {
   RESOURCE_TYPE_USER = 1;
   RESOURCE_TYPE_ORGANIZATION = 2;
   RESOURCE_TYPE_ORGANIZATION_MEMBER = 3;
+  RESOURCE_TYPE_ORGANIZATION_IDP_GROUP = 9;
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
@@ -70,6 +71,8 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_MEMBER_ADDED = 3;
   EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED = 4;
   EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED = 5;
+  EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED = 21;
+  EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED = 22;
   EVENT_TYPE_REPOSITORY_CREATED = 6;
   EVENT_TYPE_REPOSITORY_DELETED = 7;
   EVENT_TYPE_REPOSITORY_COMMIT_PUSHED = 8;
@@ -79,12 +82,12 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
   EVENT_TYPE_PLUGIN_CREATED = 13 [deprecated = true];
   EVENT_TYPE_PLUGIN_DELETED = 14 [deprecated = true];
+  EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
   EVENT_TYPE_USER_CREATED = 15;
   EVENT_TYPE_USER_DELETED = 16;
   EVENT_TYPE_USER_DEACTIVATED = 17;
   EVENT_TYPE_USER_LOGGED_IN = 18;
   EVENT_TYPE_USER_LOGGED_OUT = 19;
-  EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -135,6 +138,8 @@ message Event {
     PayloadUserLoggedIn user_logged_in = 24;
     PayloadUserLoggedOut user_logged_out = 25;
     PayloadCuratedPluginCreated curated_plugin_created = 26;
+    PayloadOrganizationIDPGroupAdded idp_group_added = 27;
+    PayloadOrganizationIDPGroupRemoved idp_group_removed = 28;
   }
 }
 
@@ -177,6 +182,20 @@ message PayloadOrganizationMemberRemoved {
   buf.alpha.registry.v1alpha1.OrganizationRole member_role = 3;
   // member_role_source is the source of the role granted to the member.
   buf.alpha.registry.v1alpha1.OrganizationRoleSource member_role_source = 4;
+}
+
+message PayloadOrganizationIDPGroupAdded {
+  // organization_id is the id of the organization with the new IDP group.
+  string organization_id = 1;
+  // organization_name is the name of the organization with the new IDP group.
+  string organization_name = 2;
+}
+
+message PayloadOrganizationIDPGroupRemoved {
+  // organization_id is the id of the organization with the removed IDP group.
+  string organization_id = 1;
+  // organization_name is the name of the organization with the removed IDP group.
+  string organization_name = 2;
 }
 
 message PayloadRepositoryCreated {
