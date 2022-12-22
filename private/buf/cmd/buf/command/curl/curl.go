@@ -76,15 +76,12 @@ const (
 	noKeepAliveFlagName    = "no-keepalive"
 	keepAliveFlagName      = "keepalive-time"
 	connectTimeoutFlagName = "connect-timeout"
-	maxTimeFlagName        = "max-time"
 
 	// Header and request body flags
-	userAgentFlagName    = "user-agent"
-	headerFlagName       = "header"
-	dataFlagName         = "data"
-	outputFlagName       = "output"
-	failFlagName         = "fail"
-	failWithBodyFlagName = "fail-with-body"
+	userAgentFlagName = "user-agent"
+	headerFlagName    = "header"
+	dataFlagName      = "data"
+	outputFlagName    = "output"
 )
 
 const (
@@ -192,7 +189,6 @@ type flags struct {
 	NoKeepAlive           bool
 	KeepAliveTimeSeconds  float64
 	ConnectTimeoutSeconds float64
-	MaxTimeSeconds        float64
 
 	// Handling request and response data and metadata
 	UserAgent string
@@ -317,15 +313,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		0,
 		`The time limit, in seconds, for a connection to be established with the server. There is `+
 			`no limit if this flag is not present.`,
-	)
-	flagSet.Float64VarP(
-		&f.MaxTimeSeconds,
-		maxTimeFlagName,
-		"m",
-		0,
-		`The time limit, in seconds, for the entire RPC operation to complete. This includes the `+
-			`connection setup time, time to send request data, and time to fully receive all response `+
-			`data and trailers.`,
 	)
 
 	flagSet.StringVar(
@@ -467,9 +454,6 @@ func (f *flags) validate(isSecure bool) error {
 	if f.ConnectTimeoutSeconds < 0 || (f.ConnectTimeoutSeconds == 0 && f.flagSet.Changed(connectTimeoutFlagName)) {
 		return fmt.Errorf("--%s value must be positive", connectTimeoutFlagName)
 	}
-	if f.MaxTimeSeconds < 0 || (f.MaxTimeSeconds == 0 && f.flagSet.Changed(maxTimeFlagName)) {
-		return fmt.Errorf("--%s value must be positive", maxTimeFlagName)
-	}
 
 	if f.Schema != "" && f.Reflect && f.flagSet.Changed(reflectFlagName) {
 		return fmt.Errorf("cannot specify both --%s and --%s", schemaFlagName, reflectFlagName)
@@ -587,12 +571,6 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 	isSecure := endpointURL.Scheme == "https"
 	if err := f.validate(isSecure); err != nil {
 		return err
-	}
-
-	if f.MaxTimeSeconds > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, secondsToDuration(f.MaxTimeSeconds))
-		defer cancel()
 	}
 
 	var clientOptions []connect.ClientOption
