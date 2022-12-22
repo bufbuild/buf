@@ -58,7 +58,7 @@ const (
 	reflectFlagName        = "reflect"
 	reflectHeaderFlagName  = "reflect-header"
 	reflectBaseURLFlagName = "reflect-base-url"
-	reflectVersionFlagName = "reflect-protocol-version"
+	reflectVersionFlagName = "reflect-version"
 
 	// Protocol/transport flags
 	protocolFlagName            = "protocol"
@@ -103,52 +103,45 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <url>",
 		Short: "Invoke an RPC endpoint, a la 'cURL'.",
-		Long: `This command helps you invoke HTTP RPC endpoints on a server that uses gRPC
-or Connect.
+		Long: `This command helps you invoke HTTP RPC endpoints on a server that uses gRPC or Connect.
 
-By default, server reflection is used, unless the --reflect flag is set to
-false. Without server reflection, a --schema flag must be provided to indicate
-the Protobuf schema for the method being invoked.
+By default, server reflection is used, unless the --reflect flag is set to false. Without server
+reflection, a --schema flag must be provided to indicate the Protobuf schema for the method being
+invoked.
 
-The only positional argument is the URL of the RPC method to invoke. The name of
-the method to invoke comes from the last two path components of the URL, which
-should be the fully-qualified service name and method name, respectively.
+The only positional argument is the URL of the RPC method to invoke. The name of the method to
+invoke comes from the last two path components of the URL, which should be the fully-qualified
+service name and method name, respectively.
 
-The input request is specified via the -d or --data flag. If absent, an empty
-request is sent. If the flag value starts with an at-sign (@), then the rest of
-the flag value is interpreted as a filename from which to read the request body.
-If that filename is just a dash (-), then the request body is read from stdin.
-The request body is a JSON document that contains the JSON formatted request
-message. If the RPC method being invoked is a client-streaming method, the
-request body may consist of multiple JSON values, appended to one another.
-Multiple JSON documents should usually be separated by whitespace, though this
-is not strictly required unless the request message type has a custom JSON
-representation that is not a JSON object.
+The input request is specified via the -d or --data flag. If absent, an empty request is sent. If
+the flag value starts with an at-sign (@), then the rest of the flag value is interpreted as a
+filename from which to read the request body. If that filename is just a dash (-), then the request
+body is read from stdin. The request body is a JSON document that contains the JSON formatted
+request message. If the RPC method being invoked is a client-streaming method, the request body may
+consist of multiple JSON values, appended to one another. Multiple JSON documents should usually be
+separated by whitespace, though this is not strictly required unless the request message type has a
+custom JSON representation that is not a JSON object.
 
-Request metadata (i.e. headers) are defined using -H or --header flags. The flag
-value is in "name: value" format. But if it starts with an at-sign (@), the rest
-of the value is interpreted as a filename from which headers are read, each on a
-separate line. If the filename is just a dash (-), then the headers are read
-from stdin.
+Request metadata (i.e. headers) are defined using -H or --header flags. The flag value is in
+"name: value" format. But if it starts with an at-sign (@), the rest of the value is interpreted as
+a filename from which headers are read, each on a separate line. If the filename is just a dash (-),
+then the headers are read from stdin.
 
-If headers and the request body are both to be read from the same file (or both
-read from stdin), the file must include headers first, then a blank line, and
-then the request body.
+If headers and the request body are both to be read from the same file (or both read from stdin),
+the file must include headers first, then a blank line, and then the request body.
 
-The URL can use either http or https as the scheme. If http is used then HTTP
-1.1 will be used unless the --http2-prior-knowledge flag is set. If https is
-used then HTTP/2 will be preferred during protocol negotiation and HTTP 1.1 used
-only if the server does not support HTTP/2.
+The URL can use either http or https as the scheme. If http is used then HTTP 1.1 will be used
+unless the --http2-prior-knowledge flag is set. If https is used then HTTP/2 will be preferred
+during protocol negotiation and HTTP 1.1 used only if the server does not support HTTP/2.
 
-The default RPC protocol used will be gRPC. However this protocol cannot work
-with HTTP 1.1. To use a different protocol (gRPC Web or Connect, both of which
-work with HTTP 1.1), use the --protocol flag.
+The default RPC protocol used will be gRPC. However this protocol cannot work with HTTP 1.1. To use
+a different protocol (gRPC Web or Connect, both of which work with HTTP 1.1), use the --protocol
+flag.
 
-Note that server reflection (i.e. use of the --reflect flag) also does not work
-with HTTP 1.1. If server reflection is used, the assumed URL for the endpoint is
-the same as the given URL, but with the last two elements removed and replaced
-with the service and method name for server reflection. (This can be overridden
-via command-line flag.)
+Note that server reflection (i.e. use of the --reflect flag) also does not work with HTTP 1.1. If
+server reflection is used, the assumed URL for the endpoint is the same as the given URL, but with
+the last two elements removed and replaced with the service and method name for server reflection.
+(This can be overridden via command-line flag.)
 `,
 		Args: checkPositionalArgs,
 		Run: builder.NewRunFunc(
