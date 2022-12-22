@@ -234,7 +234,7 @@ file descriptor set to the command in a shell pipeline.`,
 		nil,
 		`Request headers to include with reflection requests. This flag may only be used
 when --reflect is also set. This flag may be specified more than once to indicate
-multiple headers. Each flag value should have the form key=value. But a special value
+multiple headers. Each flag value should have the form "name: value". But a special value
 of '*' may be used to indicate that all normal request headers (from --header and -H
 flags) should also be included with reflection requests. A special value of '@<path>'
 means to read headers from the file at <path>. If the path is "-" then headers are
@@ -366,7 +366,7 @@ one is provided.`,
 		"H",
 		nil,
 		`Request headers to include with the RPC invocation. This flag may be specified more
-than once to indicate multiple headers. Each flag value should have the form key=value.
+than once to indicate multiple headers. Each flag value should have the form "name: value".
 A special value of '@<path>' means to read headers from the file at <path>. If the path
 is "-" then headers are read from stdin. If the same file is indicated as used with the
 request data flag (--data or -d), the file must contain all headers, then a blank line,
