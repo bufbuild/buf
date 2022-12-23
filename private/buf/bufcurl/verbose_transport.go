@@ -25,7 +25,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/connect-go"
 	"go.uber.org/atomic"
@@ -47,14 +46,14 @@ func withUserAgent(ctx context.Context, headers http.Header) context.Context {
 }
 
 // DefaultUserAgent returns the default user agent for the given protocol.
-func DefaultUserAgent(protocol string) string {
+func DefaultUserAgent(protocol string, bufVersion string) string {
 	// mirror the default user agent for the Connect client library, but
 	// add "buf/<version>" in front of it.
 	libUserAgent := "connect-go"
 	if strings.Contains(protocol, "grpc") {
 		libUserAgent = "grpc-go-connect"
 	}
-	return fmt.Sprintf("buf/%s %s/%s (%s)", bufcli.Version, libUserAgent, connect.Version, runtime.Version())
+	return fmt.Sprintf("buf/%s %s/%s (%s)", bufVersion, libUserAgent, connect.Version, runtime.Version())
 }
 
 // NewVerboseHTTPClient creates a new HTTP client with the given transport and

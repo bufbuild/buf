@@ -594,7 +594,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 	if len(requestHeaders.Values("user-agent")) == 0 {
 		userAgent := f.UserAgent
 		if userAgent == "" {
-			userAgent = bufcurl.DefaultUserAgent(f.Protocol)
+			userAgent = bufcurl.DefaultUserAgent(f.Protocol, bufcli.Version)
 		}
 		requestHeaders.Set("user-agent", userAgent)
 	}
