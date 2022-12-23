@@ -81,6 +81,9 @@ All rights reserved.`,
 		".tsx":   "//",
 		".bazel": "#",
 		".bzl":   "#",
+		".kt":    "//",
+		".swift": "//",
+		".java":  "//",
 	}
 )
 
