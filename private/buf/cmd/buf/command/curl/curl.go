@@ -122,9 +122,8 @@ The URL can use either http or https as the scheme. If http is used then HTTP 1.
 unless the --http2-prior-knowledge flag is set. If https is used then HTTP/2 will be preferred
 during protocol negotiation and HTTP 1.1 used only if the server does not support HTTP/2.
 
-The default RPC protocol used will be gRPC. However this protocol cannot work with HTTP 1.1. To use
-a different protocol (gRPC Web or Connect, both of which work with HTTP 1.1), use the --protocol
-flag.
+The default RPC protocol used will be Connect. To use a different protocol (gRPC or gRPC-Web),
+use the --protocol flag. Note that the gRPC protocol cannot be used with HTTP 1.1.
 
 Note that server reflection (i.e. use of the --reflect flag) also does not work with HTTP 1.1. If
 server reflection is used, the assumed URL for the endpoint is the same as the given URL, but with
@@ -255,7 +254,7 @@ respectively.`,
 	flagSet.StringVar(
 		&f.Protocol,
 		protocolFlagName,
-		connect.ProtocolGRPC,
+		connect.ProtocolConnect,
 		`The RPC protocol to use. This can be one of "grpc", "grpcweb", or "connect".`,
 	)
 	flagSet.StringVar(
