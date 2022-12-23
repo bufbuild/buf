@@ -143,11 +143,7 @@ the last two elements removed and replaced with the service and method name for 
 
 type flags struct {
 	// Flags for defining input schema
-	Schema          string
-	Config          string
-	Paths           []string
-	ExcludePaths    []string
-	DisableSymlinks bool
+	Schema string
 
 	// Flags for server reflection
 	Reflect        bool
@@ -199,16 +195,6 @@ other buf sub-commands such as build and generate. It can indicate a directory, 
 remote module in the Buf Schema Registry, or even standard in ("-") for feeding an image or
 file descriptor set to the command in a shell pipeline.`,
 	)
-	flagSet.StringVar(
-		&f.Config,
-		configFlagName,
-		"",
-		`Path to file (e.g. buf.yaml) to use for configuration.`,
-	)
-	bufcli.BindPaths(flagSet, &f.Paths, pathFlagName)
-	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathFlagName)
-	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
-
 	flagSet.BoolVar(
 		&f.Reflect,
 		reflectFlagName,
@@ -648,7 +634,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		if err != nil {
 			return err
 		}
-		storageosProvider := bufcli.NewStorageosProvider(f.DisableSymlinks)
+		storageosProvider := bufcli.NewStorageosProvider(false)
 		// TODO: Ideally, we'd use our verbose client for this Connect client, so we can see the same
 		//   kind of output in verbose mode as we see for reflection requests.
 		clientConfig, err := bufcli.NewConnectClientConfig(container)
@@ -668,11 +654,11 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 			ctx,
 			container,
 			ref,
-			f.Config,
-			f.Paths,        // we filter on files
-			f.ExcludePaths, // we exclude these paths
-			false,          // input files must exist
-			false,          // we must include source info for generation
+			"",
+			nil,
+			nil,
+			false, // input files must exist
+			false, // we must include source info for generation
 		)
 		if err != nil {
 			return err
