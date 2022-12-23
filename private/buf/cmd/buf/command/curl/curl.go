@@ -148,7 +148,7 @@ headers and request data are both in a heredoc:
 	   <<EOM
 	Custom-Header-1: foo-bar-baz
 	Authorization: token jas8374hgnkvje9wpkerebncjqol4
-	
+
 	{"sentence": "Hi, doc. I feel hungry."}
 	{"sentence": "What is the answer to life, the universe, and everything?"}
 	{"sentence": "If you were a fish, what of fish would you be?."}
@@ -221,17 +221,21 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Schema,
 		schemaFlagName,
 		"",
-		`The module to use for the RPC schema. This is necessary if the server does not support
+		fmt.Sprintf(
+			`The module to use for the RPC schema. This is necessary if the server does not support
 server reflection. The format of this argument is the same as for the <input> arguments to
 other buf sub-commands such as build and generate. It can indicate a directory, a file, a
 remote module in the Buf Schema Registry, or even standard in ("-") for feeding an image or
-file descriptor set to the command in a shell pipeline.`,
+file descriptor set to the command in a shell pipeline.
+Setting this flags implies --%s=false.`,
+			reflectFlagName,
+		),
 	)
 	flagSet.BoolVar(
 		&f.Reflect,
 		reflectFlagName,
 		true,
-		`If true, user gRPC server reflection protocol to determine the schema.`,
+		`If true, use server reflection to determine the schema.`,
 	)
 	flagSet.StringSliceVar(
 		&f.ReflectHeaders,
