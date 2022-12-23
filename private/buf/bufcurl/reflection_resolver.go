@@ -33,12 +33,12 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
-type ReflectVersion string
+type ReflectProtocol string
 
 const (
-	ReflectVersionV1      = ReflectVersion("v1")
-	ReflectVersionV1Alpha = ReflectVersion("v1alpha")
-	ReflectVersionAuto    = ReflectVersion("auto")
+	ReflectProtocolGRPCv1      = ReflectProtocol("grpc-v1")
+	ReflectProtocolGRPCv1alpha = ReflectProtocol("grpc-v1alpha")
+	ReflectProtocolAuto        = ReflectProtocol("auto")
 )
 
 // NewServerReflectionResolver creates a new resolver using the given details to
@@ -48,16 +48,16 @@ func NewServerReflectionResolver(
 	httpClient connect.HTTPClient,
 	opts []connect.ClientOption,
 	baseURL string,
-	reflectVersion ReflectVersion,
+	reflectVersion ReflectProtocol,
 	headers http.Header,
 	printer verbose.Printer,
 ) (r Resolver, closeResolver func()) {
 	baseURL = strings.TrimSuffix(baseURL, "/")
 	var v1Client, v1alphaClient *reflectClient
-	if reflectVersion != ReflectVersionV1 {
+	if reflectVersion != ReflectProtocolGRPCv1 {
 		v1alphaClient = connect.NewClient[reflectionv1.ServerReflectionRequest, reflectionv1.ServerReflectionResponse](httpClient, baseURL+"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo", opts...)
 	}
-	if reflectVersion != ReflectVersionV1Alpha {
+	if reflectVersion != ReflectProtocolGRPCv1alpha {
 		v1Client = connect.NewClient[reflectionv1.ServerReflectionRequest, reflectionv1.ServerReflectionResponse](httpClient, baseURL+"/grpc.reflection.v1.ServerReflection/ServerReflectionInfo", opts...)
 	}
 	// if version is neither "v1" nor "v1alpha", then we have both clients and
@@ -74,7 +74,7 @@ func NewServerReflectionResolver(
 		ctx:              ctx,
 		v1Client:         v1Client,
 		v1alphaClient:    v1alphaClient,
-		useV1Alpha:       reflectVersion == ReflectVersionV1Alpha,
+		useV1Alpha:       reflectVersion == ReflectProtocolGRPCv1alpha,
 		headers:          headers,
 		printer:          printer,
 		downloadedProtos: map[string]*descriptorpb.FileDescriptorProto{},

@@ -46,17 +46,12 @@ import (
 
 const (
 	// Input schema flags
-	schemaFlagName          = "schema"
-	configFlagName          = "config"
-	pathFlagName            = "path"
-	excludePathFlagName     = "exclude-path"
-	disableSymlinksFlagName = "disable-symlinks"
+	schemaFlagName = "schema"
 
 	// Reflection flags
-	reflectFlagName        = "reflect"
-	reflectHeaderFlagName  = "reflect-header"
-	reflectBaseURLFlagName = "reflect-base-url"
-	reflectVersionFlagName = "reflect-version"
+	reflectFlagName         = "reflect"
+	reflectHeaderFlagName   = "reflect-header"
+	reflectProtocolFlagName = "reflect-protocol"
 
 	// Protocol/transport flags
 	protocolFlagName            = "protocol"
@@ -101,6 +96,13 @@ The only positional argument is the URL of the RPC method to invoke. The name of
 invoke comes from the last two path components of the URL, which should be the fully-qualified
 service name and method name, respectively.
 
+The URL can use either http or https as the scheme. If http is used then HTTP 1.1 will be used
+unless the --http2-prior-knowledge flag is set. If https is used then HTTP/2 will be preferred
+during protocol negotiation and HTTP 1.1 used only if the server does not support HTTP/2.
+
+The default RPC protocol used will be Connect. To use a different protocol (gRPC or gRPC-Web),
+use the --protocol flag. Note that the gRPC protocol cannot be used with HTTP 1.1.
+
 The input request is specified via the -d or --data flag. If absent, an empty request is sent. If
 the flag value starts with an at-sign (@), then the rest of the flag value is interpreted as a
 filename from which to read the request body. If that filename is just a dash (-), then the request
@@ -118,17 +120,48 @@ then the headers are read from stdin.
 If headers and the request body are both to be read from the same file (or both read from stdin),
 the file must include headers first, then a blank line, and then the request body.
 
-The URL can use either http or https as the scheme. If http is used then HTTP 1.1 will be used
-unless the --http2-prior-knowledge flag is set. If https is used then HTTP/2 will be preferred
-during protocol negotiation and HTTP 1.1 used only if the server does not support HTTP/2.
+Examples:
 
-The default RPC protocol used will be Connect. To use a different protocol (gRPC or gRPC-Web),
-use the --protocol flag. Note that the gRPC protocol cannot be used with HTTP 1.1.
+Issue a unary RPC to a plain-text (i.e. "h2c") gRPC server, where the schema for the service is
+in a Buf module in the current directory, using an empty request message:
 
-Note that server reflection (i.e. use of the --reflect flag) also does not work with HTTP 1.1. If
-server reflection is used, the assumed URL for the endpoint is the same as the given URL, but with
-the last two elements removed and replaced with the service and method name for server reflection.
-(This can be overridden via command-line flag.)
+	buf curl --schema . --protocol grpc --http2-prior-knowledge  \
+	   http://localhost:20202/foo.bar.v1.FooService/DoSomething
+
+Issue an RPC to a Connect server, where the schema comes from the Buf Schema Registry, using
+a request that is defined as a command-line argument:
+
+	buf curl --schema buf.build/bufbuild/eliza  \
+	   --data '{"name": "Bob Loblaw"}'          \
+	   https://demo.connect.build/buf.connect.demo.eliza.v1.ElizaService/Introduce
+
+Issue a unary RPC to a server that supports reflection, with verbose output:
+
+	buf curl --data '{"sentence": "I am not feeling well."}' -v  \
+	   https://demo.connect.build/buf.connect.demo.eliza.v1.ElizaService/Say
+
+Issue a client-streaming RPC to a gRPC-web server that supports reflection, where custom
+headers and request data are both in a heredoc:
+
+	buf curl --data @- --header @- --protocol grpcweb                              \
+	   https://demo.connect.build/buf.connect.demo.eliza.v1.ElizaService/Converse  \
+	   <<EOM
+	Custom-Header-1: foo-bar-baz
+	Authorization: token jas8374hgnkvje9wpkerebncjqol4
+	
+	{"sentence": "Hi, doc. I feel hungry."}
+	{"sentence": "What is the answer to life, the universe, and everything?"}
+	{"sentence": "If you were a fish, what of fish would you be?."}
+	EOM
+
+Note that server reflection (i.e. use of the --reflect flag) does not work with HTTP 1.1 since the
+protocol relies on bidirectional streaming. If server reflection is used, the assumed URL for the
+reflection service is the same as the given URL, but with the last two elements removed and
+replaced with the service and method name for server reflection.
+
+If an error occurs that is due to incorrect usage or other unexpected error, this program will
+return an exit code that is less than 8. If the RPC fails otherwise, this program will return an
+exit code that is the gRPC code, shifted three bits to the left.
 `,
 		Args: checkPositionalArgs,
 		Run: builder.NewRunFunc(
@@ -146,10 +179,9 @@ type flags struct {
 	Schema string
 
 	// Flags for server reflection
-	Reflect        bool
-	ReflectHeaders []string
-	ReflectBaseURL string
-	ReflectVersion bufcurl.ReflectVersion
+	Reflect         bool
+	ReflectHeaders  []string
+	ReflectProtocol bufcurl.ReflectProtocol
 
 	// Protocol details
 	Protocol            string
@@ -216,25 +248,18 @@ the request data flag (--data or -d). Furthermore, it is not allowed to indicate
 if the schema is expected to be provided via stdin as a file descriptor set or image.`,
 	)
 	flagSet.StringVar(
-		&f.ReflectBaseURL,
-		reflectBaseURLFlagName,
-		"",
-		`The base URL to use for reflection requests. This flag may only be used when --reflect is
-also set. By default, the base URL is the same as the target URL but without the last
-two path elements (the service and method name). The service and method name for
-server reflection are appended to this base URL in order to then issue reflection
-calls. This flag can be used to point the reflection requests to an alternate URL.`,
-	)
-	flagSet.StringVar(
-		(*string)(&f.ReflectVersion),
-		reflectVersionFlagName,
-		string(bufcurl.ReflectVersionAuto),
-		`The version of the gRPC reflection protocol to use. This flag may only be used when
---reflect is also set. The default value of this flag is "auto", wherein v1 will be
-tried first, and if it results a "Not Implemented" error then v1alpha will be used.
-The other valid values for this flag are "v1" and "v1alpha". These correspond to services
-named "grpc.reflection.v1.ServerReflection" and "grpc.reflection.v1alpha.ServerReflection"
-respectively.`,
+		(*string)(&f.ReflectProtocol),
+		reflectProtocolFlagName,
+		string(bufcurl.ReflectProtocolAuto),
+		`The reflection protocol to use for downloading information from the server. This flag
+may only be used when --reflect is also set. The default value of this flag is "auto",
+which means the newest relevant protocol will be tried first. If this results in a
+"Not Implemented" error then older protocols will be used. In practice, this means that
+"grpc-v1" is used first and "grpc-v1alpha" is used if it doesn't work. If newer reflection
+protocols are introduced, they may be preferred (but "auto" will still fallback to earlier
+ones). The valid values for this flag are "auto", "grpc-v1" and "grpc-v1alpha". The latter
+two correspond to services named "grpc.reflection.v1.ServerReflection" and
+"grpc.reflection.v1alpha.ServerReflection" respectively.`,
 	)
 
 	flagSet.StringVar(
@@ -389,17 +414,17 @@ func (f *flags) validate(isSecure bool) error {
 		return fmt.Errorf("grpc protocol cannot be used with plain-text URLs (http) unless --%s flag is set", http2PriorKnowledgeFlagName)
 	}
 
-	if (len(f.ReflectHeaders) > 0 || f.ReflectBaseURL != "" || f.flagSet.Changed(reflectVersionFlagName)) && !f.Reflect {
+	if (len(f.ReflectHeaders) > 0 || f.flagSet.Changed(reflectProtocolFlagName)) && !f.Reflect {
 		return fmt.Errorf(
-			"reflection flags (--%s, --%s, --%s) should not be used if --%s is false",
-			reflectHeaderFlagName, reflectBaseURLFlagName, reflectVersionFlagName, reflectFlagName)
+			"reflection flags (--%s, --%s) should not be used if --%s is false",
+			reflectHeaderFlagName, reflectProtocolFlagName, reflectFlagName)
 	}
-	switch f.ReflectVersion {
-	case bufcurl.ReflectVersionAuto, bufcurl.ReflectVersionV1, bufcurl.ReflectVersionV1Alpha:
+	switch f.ReflectProtocol {
+	case bufcurl.ReflectProtocolAuto, bufcurl.ReflectProtocolGRPCv1, bufcurl.ReflectProtocolGRPCv1alpha:
 	default:
 		return fmt.Errorf(
 			"--%s value must be one of %q, %q, or %q",
-			reflectVersionFlagName, bufcurl.ReflectVersionAuto, bufcurl.ReflectVersionV1, bufcurl.ReflectVersionV1Alpha)
+			reflectProtocolFlagName, bufcurl.ReflectProtocolAuto, bufcurl.ReflectProtocolGRPCv1, bufcurl.ReflectProtocolGRPCv1alpha)
 	}
 	switch f.Protocol {
 	case connect.ProtocolConnect, connect.ProtocolGRPC, connect.ProtocolGRPCWeb:
@@ -618,16 +643,12 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 
 	var res bufcurl.Resolver
 	if f.Reflect {
-		reflectBaseURL := baseURL
-		if f.ReflectBaseURL != "" {
-			reflectBaseURL = f.ReflectBaseURL
-		}
 		reflectHeaders, _, err := bufcurl.LoadHeaders(f.ReflectHeaders, "", requestHeaders)
 		if err != nil {
 			return err
 		}
 		var closeRes func()
-		res, closeRes = bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, reflectBaseURL, f.ReflectVersion, reflectHeaders, container.VerbosePrinter())
+		res, closeRes = bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, baseURL, f.ReflectProtocol, reflectHeaders, container.VerbosePrinter())
 		defer closeRes()
 	} else {
 		ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, f.Schema)
