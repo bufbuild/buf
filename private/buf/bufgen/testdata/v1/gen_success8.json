@@ -22,6 +22,16 @@
             "someremote.com/owner/bar": "b",
             "someremote.com/owner/baz": "c"
         }
+      },
+      "ruby_package": {
+        "except": [
+          "someremote.com/owner/repo"
+        ],
+        "override": {
+            "someremote.com/owner/foo": "x",
+            "someremote.com/owner/bar": "y",
+            "someremote.com/owner/baz": "z"
+        }
       }
     },
     "plugins": [
