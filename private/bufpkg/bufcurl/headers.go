@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package curl
+package bufcurl
 
 import (
 	"bufio"
@@ -27,6 +27,14 @@ import (
 	"go.uber.org/multierr"
 )
 
+// headersBlockList contains disallowed headers. These are headers that are part
+// of the Connect or gRPC protocol and set by the protocol implementations, so
+// should not be set otherwise. It also includes "transfer-encoding", which is
+// not part of either protocol, but is unsafe for users to set as it handled
+// by the user agent.
+//
+// In addition to these headers, header names that start with "Connect-" and
+// "Grpc-" are also reserved for use by protocol implementations.
 var headerBlockList = map[string]struct{}{
 	"accept":            {},
 	"accept-encoding":   {},
@@ -36,7 +44,13 @@ var headerBlockList = map[string]struct{}{
 	"transfer-encoding": {},
 }
 
-func getAuthority(url *url.URL, headers http.Header) string {
+// GetAuthority determines the authority for a request with the given URL and
+// request headers. If headers include a "Host" header, that is used. (If the
+// request contains more than one, that is usually not valid or acceptable to
+// servers, but this function will look at only the first.) If there is no
+// such header, the authority is the host portion of the URL (both the domain
+// name/IP address and port).
+func GetAuthority(url *url.URL, headers http.Header) string {
 	header := headers.Get("host")
 	if header != "" {
 		return header
@@ -44,7 +58,22 @@ func getAuthority(url *url.URL, headers http.Header) string {
 	return url.Host
 }
 
-func loadHeaders(headerFlags []string, dataFile string, others http.Header) (http.Header, io.ReadCloser, error) {
+// LoadHeaders computes the set of request headers from the given flag values,
+// loading from file(s) if so instructed. A header flag is usually in the form
+// "name: value", but it may start with "@" to indicate a filename from which
+// headers are loaded. It may also be "*", to indicate that the given others
+// are included in full.
+//
+// If the filename following an "@" header flag is "-", it means to read from
+// stdin.
+//
+// The given dataFile is the name of a file from which request data is read. If
+// a "@" header flag indicates to read from the same file, then the headers must
+// be at the start of the file, following by a blank line, followed by the
+// actual request body. In such a case, the returned ReadCloser will be non-nil
+// and correspond to that point in the file (after headers and blank line), so
+// the request body can be read from it.
+func LoadHeaders(headerFlags []string, dataFile string, others http.Header) (http.Header, io.ReadCloser, error) {
 	var dataReader io.ReadCloser
 	headers := http.Header{}
 	for _, headerFlag := range headerFlags {
@@ -89,14 +118,14 @@ func readHeadersFile(headerFile string, stopAtBlankLine bool, headers http.Heade
 	} else {
 		f, err = os.Open(headerFile)
 		if err != nil {
-			return nil, errorHasFilename(err, headerFile)
+			return nil, ErrorHasFilename(err, headerFile)
 		}
 	}
 	defer func() {
 		if f != nil {
 			closeErr := f.Close()
 			if closeErr != nil {
-				err = multierr.Append(err, errorHasFilename(closeErr, headerFile))
+				err = multierr.Append(err, ErrorHasFilename(closeErr, headerFile))
 			}
 		}
 	}()
@@ -107,11 +136,11 @@ func readHeadersFile(headerFile string, stopAtBlankLine bool, headers http.Heade
 		if err == io.EOF {
 			if stopAtBlankLine {
 				// never hit a blank line
-				return nil, errorHasFilename(io.ErrUnexpectedEOF, headerFile)
+				return nil, ErrorHasFilename(io.ErrUnexpectedEOF, headerFile)
 			}
 			return nil, nil
 		} else if err != nil {
-			return nil, errorHasFilename(err, headerFile)
+			return nil, ErrorHasFilename(err, headerFile)
 		}
 		if line == "" && stopAtBlankLine {
 			closer := f

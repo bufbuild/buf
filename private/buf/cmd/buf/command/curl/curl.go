@@ -25,13 +25,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcurl"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -42,8 +42,6 @@ import (
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 	"golang.org/x/net/http2"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 const (
@@ -82,16 +80,6 @@ const (
 	headerFlagName    = "header"
 	dataFlagName      = "data"
 	outputFlagName    = "output"
-)
-
-const (
-	protocolConnect = "connect"
-	protocolGRPC    = "grpc"
-	protocolGRPCWeb = "grpcweb"
-
-	reflectVersionAuto    = "auto"
-	reflectVersionV1      = "v1"
-	reflectVersionV1Alpha = "v1alpha"
 )
 
 // NewCommand returns a new Command.
@@ -166,7 +154,7 @@ type flags struct {
 	Reflect        bool
 	ReflectHeaders []string
 	ReflectBaseURL string
-	ReflectVersion string
+	ReflectVersion bufcurl.ReflectVersion
 
 	// Protocol details
 	Protocol            string
@@ -253,9 +241,9 @@ server reflection are appended to this base URL in order to then issue reflectio
 calls. This flag can be used to point the reflection requests to an alternate URL.`,
 	)
 	flagSet.StringVar(
-		&f.ReflectVersion,
+		(*string)(&f.ReflectVersion),
 		reflectVersionFlagName,
-		reflectVersionAuto,
+		string(bufcurl.ReflectVersionAuto),
 		`The version of the gRPC reflection protocol to use. This flag may only be used when
 --reflect is also set. The default value of this flag is "auto", wherein v1 will be
 tried first, and if it results a "Not Implemented" error then v1alpha will be used.
@@ -267,7 +255,7 @@ respectively.`,
 	flagSet.StringVar(
 		&f.Protocol,
 		protocolFlagName,
-		protocolGRPC,
+		connect.ProtocolGRPC,
 		`The RPC protocol to use. This can be one of "grpc", "grpcweb", or "connect".`,
 	)
 	flagSet.StringVar(
@@ -412,7 +400,7 @@ func (f *flags) validate(isSecure bool) error {
 	if f.HTTP2PriorKnowledge && isSecure {
 		return fmt.Errorf("--%s flag is not for use with secure URLs (https) since http/2 can be negotiated during TLS handshake", http2PriorKnowledgeFlagName)
 	}
-	if !isSecure && !f.HTTP2PriorKnowledge && f.Protocol == protocolGRPC {
+	if !isSecure && !f.HTTP2PriorKnowledge && f.Protocol == connect.ProtocolGRPC {
 		return fmt.Errorf("grpc protocol cannot be used with plain-text URLs (http) unless --%s flag is set", http2PriorKnowledgeFlagName)
 	}
 
@@ -422,18 +410,18 @@ func (f *flags) validate(isSecure bool) error {
 			reflectHeaderFlagName, reflectBaseURLFlagName, reflectVersionFlagName, reflectFlagName)
 	}
 	switch f.ReflectVersion {
-	case reflectVersionAuto, reflectVersionV1, reflectVersionV1Alpha:
+	case bufcurl.ReflectVersionAuto, bufcurl.ReflectVersionV1, bufcurl.ReflectVersionV1Alpha:
 	default:
 		return fmt.Errorf(
 			"--%s value must be one of %q, %q, or %q",
-			reflectVersionFlagName, reflectVersionAuto, reflectVersionV1, reflectVersionV1Alpha)
+			reflectVersionFlagName, bufcurl.ReflectVersionAuto, bufcurl.ReflectVersionV1, bufcurl.ReflectVersionV1Alpha)
 	}
 	switch f.Protocol {
-	case protocolConnect, protocolGRPC, protocolGRPCWeb:
+	case connect.ProtocolConnect, connect.ProtocolGRPC, connect.ProtocolGRPCWeb:
 	default:
 		return fmt.Errorf(
 			"--%s value must be one of %q, %q, or %q",
-			protocolFlagName, protocolConnect, protocolGRPC, protocolGRPCWeb)
+			protocolFlagName, connect.ProtocolConnect, connect.ProtocolGRPC, connect.ProtocolGRPCWeb)
 	}
 
 	if f.NoKeepAlive && f.flagSet.Changed(keepAliveFlagName) {
@@ -447,8 +435,13 @@ func (f *flags) validate(isSecure bool) error {
 		return fmt.Errorf("--%s value must be positive", connectTimeoutFlagName)
 	}
 
-	if f.Schema != "" && f.Reflect && f.flagSet.Changed(reflectFlagName) {
-		return fmt.Errorf("cannot specify both --%s and --%s", schemaFlagName, reflectFlagName)
+	if f.Schema != "" && f.Reflect {
+		if f.flagSet.Changed(reflectFlagName) {
+			// explicitly enabled both
+			return fmt.Errorf("cannot specify both --%s and --%s", schemaFlagName, reflectFlagName)
+		}
+		// Reflect just has default value; unset it since we're going to use --schema instead
+		f.Reflect = false
 	}
 	if !f.Reflect && f.Schema == "" {
 		return fmt.Errorf("must specify --%s if --%s is false", schemaFlagName, reflectFlagName)
@@ -567,18 +560,18 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 
 	var clientOptions []connect.ClientOption
 	switch f.Protocol {
-	case protocolGRPC:
+	case connect.ProtocolGRPC:
 		clientOptions = []connect.ClientOption{connect.WithGRPC()}
-	case protocolGRPCWeb:
+	case connect.ProtocolGRPCWeb:
 		clientOptions = []connect.ClientOption{connect.WithGRPCWeb()}
 	}
-	if f.Protocol != protocolGRPC {
+	if f.Protocol != connect.ProtocolGRPC {
 		// The transport will log trailers to the verbose printer. But if
 		// we're not using standard grpc protocol, trailers are actually encoded
 		// in an end-of-stream message for streaming calls. So this interceptor
 		// will print the trailers for streaming calls when the response stream
 		// is drained.
-		clientOptions = append(clientOptions, connect.WithInterceptors(traceTrailersInterceptor{printer: container.VerbosePrinter()}))
+		clientOptions = append(clientOptions, connect.WithInterceptors(bufcurl.TraceTrailersInterceptor(container.VerbosePrinter())))
 	}
 
 	dataSource := "(argument)"
@@ -594,14 +587,14 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 			}
 		}
 	}
-	requestHeaders, dataReader, err := loadHeaders(f.Headers, dataFileReference, nil)
+	requestHeaders, dataReader, err := bufcurl.LoadHeaders(f.Headers, dataFileReference, nil)
 	if err != nil {
 		return err
 	}
 	if len(requestHeaders.Values("user-agent")) == 0 {
 		userAgent := f.UserAgent
 		if userAgent == "" {
-			userAgent = defaultUserAgent(f.Protocol)
+			userAgent = bufcurl.DefaultUserAgent(f.Protocol)
 		}
 		requestHeaders.Set("user-agent", userAgent)
 	}
@@ -611,7 +604,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		} else if dataFileReference != "" {
 			f, err := os.Open(dataFileReference)
 			if err != nil {
-				return errorHasFilename(err, dataFileReference)
+				return bufcurl.ErrorHasFilename(err, dataFileReference)
 			}
 			dataReader = f
 		} else if f.Data != "" {
@@ -625,7 +618,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		}
 	}()
 
-	transport, err := makeHTTPClient(f, isSecure, getAuthority(endpointURL, requestHeaders), container.VerbosePrinter())
+	transport, err := makeHTTPClient(f, isSecure, bufcurl.GetAuthority(endpointURL, requestHeaders), container.VerbosePrinter())
 	if err != nil {
 		return err
 	}
@@ -634,23 +627,22 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 	if f.Output != "" {
 		output, err = os.Create(f.Output)
 		if err != nil {
-			return errorHasFilename(err, f.Output)
+			return bufcurl.ErrorHasFilename(err, f.Output)
 		}
 	}
 
-	var res resolver
-	closeRes := func() {}
-
+	var res bufcurl.Resolver
 	if f.Reflect {
 		reflectBaseURL := baseURL
 		if f.ReflectBaseURL != "" {
 			reflectBaseURL = f.ReflectBaseURL
 		}
-		reflectHeaders, _, err := loadHeaders(f.ReflectHeaders, "", requestHeaders)
+		reflectHeaders, _, err := bufcurl.LoadHeaders(f.ReflectHeaders, "", requestHeaders)
 		if err != nil {
 			return err
 		}
-		res, closeRes = resolverFromReflection(ctx, transport, clientOptions, reflectBaseURL, f.ReflectVersion, reflectHeaders, container.VerbosePrinter())
+		var closeRes func()
+		res, closeRes = bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, reflectBaseURL, f.ReflectVersion, reflectHeaders, container.VerbosePrinter())
 		defer closeRes()
 	} else {
 		ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, f.Schema)
@@ -700,31 +692,20 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		if err != nil {
 			return err
 		}
-		res, err = resolverFromImage(image)
+		res, err = bufcurl.NewImageResolver(image)
 		if err != nil {
 			return err
 		}
 	}
 
-	descriptor, err := res.FindDescriptorByName(protoreflect.FullName(service))
-	closeRes() // done with resolver
-	if err == protoregistry.NotFound {
-		return fmt.Errorf("failed to find service named %q in schema", service)
-	} else if err != nil {
+	methodDescriptor, err := bufcurl.ResolveMethodDescriptor(res, service, method)
+	if err != nil {
 		return err
-	}
-	serviceDescriptor, ok := descriptor.(protoreflect.ServiceDescriptor)
-	if !ok {
-		return fmt.Errorf("URL indicates service name %q, but that name is a %s", service, descriptorKind(descriptor))
-	}
-	methodDescriptor := serviceDescriptor.Methods().ByName(protoreflect.Name(method))
-	if methodDescriptor == nil {
-		return fmt.Errorf("URL indicates method name %q, but service %q contains no such method", method, service)
 	}
 
 	// Now we can finally issue the RPC
-	invoker := newInvoker(container, methodDescriptor, res, transport, clientOptions, container.Arg(0), output)
-	return invoker.invoke(ctx, dataSource, dataReader, requestHeaders)
+	invoker := bufcurl.NewInvoker(container, methodDescriptor, res, transport, clientOptions, container.Arg(0), output)
+	return invoker.Invoke(ctx, dataSource, dataReader, requestHeaders)
 }
 
 func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.Printer) (connect.HTTPClient, error) {
@@ -767,7 +748,13 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 		var tlsConfig *tls.Config
 		if isSecure {
 			var err error
-			tlsConfig, err = makeTLSConfig(f, authority, printer)
+			tlsConfig, err = bufcurl.MakeVerboseTLSConfig(&bufcurl.TLSSettings{
+				KeyFile:    f.Key,
+				CertFile:   f.Cert,
+				CACertFile: f.CACert,
+				ServerName: f.ServerName,
+				Insecure:   f.Insecure,
+			}, authority, printer)
 			if err != nil {
 				return nil, err
 			}
@@ -780,45 +767,9 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 			TLSClientConfig:   tlsConfig,
 		}
 	}
-	return newHTTPClient(transport, printer), nil
+	return bufcurl.NewVerboseHTTPClient(transport, printer), nil
 }
 
 func secondsToDuration(secs float64) time.Duration {
 	return time.Duration(float64(time.Second) * secs)
-}
-
-func descriptorKind(d protoreflect.Descriptor) string {
-	switch d := d.(type) {
-	case protoreflect.FileDescriptor:
-		return "file"
-	case protoreflect.MessageDescriptor:
-		return "message"
-	case protoreflect.FieldDescriptor:
-		if d.IsExtension() {
-			return "extension"
-		}
-		return "field"
-	case protoreflect.OneofDescriptor:
-		return "oneof"
-	case protoreflect.EnumDescriptor:
-		return "enum"
-	case protoreflect.EnumValueDescriptor:
-		return "enum value"
-	case protoreflect.ServiceDescriptor:
-		return "service"
-	case protoreflect.MethodDescriptor:
-		return "method"
-	default:
-		return fmt.Sprintf("%T", d)
-	}
-}
-
-func defaultUserAgent(protocol string) string {
-	// mirror the default user agent for the Connect client library, but
-	// add "buf/<version>" in front of it.
-	libUserAgent := "connect-go"
-	if strings.Contains(protocol, "grpc") {
-		libUserAgent = "grpc-go-connect"
-	}
-	return fmt.Sprintf("buf/%s %s/%s (%s)", bufcli.Version, libUserAgent, connect.Version, runtime.Version())
 }

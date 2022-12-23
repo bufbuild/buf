@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package curl
+package bufcurl
 
 import (
 	"bytes"
@@ -71,14 +71,19 @@ type invokeClient = connect.Client[dynamicpb.Message, deferredMessage]
 
 type invoker struct {
 	md        protoreflect.MethodDescriptor
-	res       resolver
+	res       Resolver
 	client    *invokeClient
 	output    io.Writer
 	errOutput io.Writer
 	printer   verbose.Printer
 }
 
-func newInvoker(container appflag.Container, md protoreflect.MethodDescriptor, res resolver, httpClient connect.HTTPClient, opts []connect.ClientOption, url string, out io.Writer) *invoker {
+// NewInvoker creates a new invoker for invoking the method described by the
+// given descriptor. The given writer is used to write the output response(s)
+// in JSON format. The given resolver is used to resolve Any messages and
+// extensions that appear in the input or output. Other parameters are used
+// to create a Connect client, for issuing the RPC.
+func NewInvoker(container appflag.Container, md protoreflect.MethodDescriptor, res Resolver, httpClient connect.HTTPClient, opts []connect.ClientOption, url string, out io.Writer) Invoker {
 	opts = append(opts, connect.WithCodec(protoCodec{}))
 	// TODO: could also provide custom compressor implementations that could give us
 	//  optics into when request and response messages are compressed (which could be
@@ -93,7 +98,7 @@ func newInvoker(container appflag.Container, md protoreflect.MethodDescriptor, r
 	}
 }
 
-func (inv *invoker) invoke(ctx context.Context, dataSource string, data io.Reader, headers http.Header) error {
+func (inv *invoker) Invoke(ctx context.Context, dataSource string, data io.Reader, headers http.Header) error {
 	inv.printer.Printf("* Invoking RPC %s\n", inv.md.FullName())
 	// request's user-agent header(s) get overwritten by protocol, so we stash them in the
 	// context so that underlying transport can restore them
@@ -378,7 +383,7 @@ func (inv *invoker) handleErrorResponse(connErr *connect.Error) error {
 	return app.NewError(int(connErr.Code()*8), "")
 }
 
-func newStreamMessageProvider(dataSource string, data io.Reader, res resolver) messageProvider {
+func newStreamMessageProvider(dataSource string, data io.Reader, res Resolver) messageProvider {
 	if data == nil {
 		// if no data provided, treat as empty input
 		data = bytes.NewBuffer(nil)
@@ -386,7 +391,7 @@ func newStreamMessageProvider(dataSource string, data io.Reader, res resolver) m
 	return &streamMessageProvider{name: dataSource, dec: json.NewDecoder(data), res: res}
 }
 
-func newMessageProvider(dataSource string, data io.Reader, res resolver) messageProvider {
+func newMessageProvider(dataSource string, data io.Reader, res Resolver) messageProvider {
 	if data == nil {
 		// if no data provider, treat as if single empty message
 		return &singleEmptyMessageProvider{}
@@ -414,7 +419,7 @@ func (s *singleEmptyMessageProvider) next(_ proto.Message) error {
 type streamMessageProvider struct {
 	name string
 	dec  *json.Decoder
-	res  resolver
+	res  Resolver
 }
 
 func (s *streamMessageProvider) next(msg proto.Message) error {

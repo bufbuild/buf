@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package curl
+package bufcurl
 
 import (
 	"crypto/tls"
@@ -25,7 +25,19 @@ import (
 	"github.com/bufbuild/buf/private/pkg/verbose"
 )
 
-func makeTLSConfig(f *flags, authority string, printer verbose.Printer) (*tls.Config, error) {
+// TLSSettings contains settings related to creating a TLS client.
+type TLSSettings struct {
+	// Filenames for a private key, certificate, and CA certificate pool.
+	KeyFile, CertFile, CACertFile string
+	// Override server name, for SNI.
+	ServerName string
+	// If true, the server's certificate is not verified.
+	Insecure bool
+}
+
+// MakeVerboseTLSConfig constructs a *tls.Config that logs information to the
+// given printer as a TLS connection is negotiated.
+func MakeVerboseTLSConfig(settings *TLSSettings, authority string, printer verbose.Printer) (*tls.Config, error) {
 	var conf tls.Config
 	// we verify manually so that we can emit verbose output while doing so
 	conf.InsecureSkipVerify = true
@@ -54,7 +66,7 @@ func makeTLSConfig(f *flags, authority string, printer verbose.Printer) (*tls.Co
 		printer.Printf("*   issuer: %s", state.PeerCertificates[0].Issuer.String())
 
 		// now we do verification
-		if !f.Insecure {
+		if !settings.Insecure {
 			opts := x509.VerifyOptions{
 				Roots:         conf.RootCAs,
 				CurrentTime:   time.Now(),
@@ -76,8 +88,8 @@ func makeTLSConfig(f *flags, authority string, printer verbose.Printer) (*tls.Co
 		}
 		return nil
 	}
-	if f.ServerName != "" {
-		conf.ServerName = f.ServerName
+	if settings.ServerName != "" {
+		conf.ServerName = settings.ServerName
 	} else if authority != "" {
 		// strip port if present
 		host, _, err := net.SplitHostPort(authority)
@@ -87,29 +99,40 @@ func makeTLSConfig(f *flags, authority string, printer verbose.Printer) (*tls.Co
 		conf.ServerName = authority
 	}
 
-	if f.CACert != "" {
-		caCert, err := os.ReadFile(f.CACert)
+	if settings.CACertFile != "" {
+		caCert, err := os.ReadFile(settings.CACertFile)
 		if err != nil {
-			return nil, errorHasFilename(err, f.CACert)
+			return nil, ErrorHasFilename(err, settings.CACertFile)
 		}
 		conf.RootCAs = x509.NewCertPool()
 		conf.RootCAs.AppendCertsFromPEM(caCert)
 	}
 
-	if f.Key != "" && f.Cert != "" {
-		cert, err := os.ReadFile(f.Cert)
+	if settings.KeyFile != "" && settings.CertFile != "" {
+		cert, err := os.ReadFile(settings.CertFile)
 		if err != nil {
-			return nil, errorHasFilename(err, f.Cert)
+			return nil, ErrorHasFilename(err, settings.CertFile)
 		}
-		key, err := os.ReadFile(f.Key)
+		key, err := os.ReadFile(settings.KeyFile)
 		if err != nil {
-			return nil, errorHasFilename(err, f.Key)
+			return nil, ErrorHasFilename(err, settings.KeyFile)
 		}
 		certPair, err := tls.X509KeyPair(cert, key)
 		if err != nil {
 			return nil, err
 		}
-		conf.Certificates = []tls.Certificate{certPair}
+		certPair.Leaf, err = x509.ParseCertificate(certPair.Certificate[0])
+		if err != nil {
+			return nil, err
+		}
+		conf.GetClientCertificate = func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			printer.Printf("* Offering client cert:")
+			printer.Printf("*   subject: %s", certPair.Leaf.Subject.String())
+			printer.Printf("*   start date: %s", certPair.Leaf.NotBefore)
+			printer.Printf("*   end date: %s", certPair.Leaf.NotAfter)
+			printer.Printf("*   issuer: %s", certPair.Leaf.Issuer.String())
+			return &certPair, nil
+		}
 	}
 
 	return &conf, nil

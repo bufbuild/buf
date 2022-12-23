@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package curl
+package bufcurl
 
 import (
 	"bytes"
@@ -21,8 +21,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"runtime"
 	"sort"
+	"strings"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/connect-go"
 	"go.uber.org/atomic"
@@ -43,8 +46,31 @@ func withUserAgent(ctx context.Context, headers http.Header) context.Context {
 	return ctx // no change
 }
 
-func newHTTPClient(transport http.RoundTripper, printer verbose.Printer) connect.HTTPClient {
+// DefaultUserAgent returns the default user agent for the given protocol.
+func DefaultUserAgent(protocol string) string {
+	// mirror the default user agent for the Connect client library, but
+	// add "buf/<version>" in front of it.
+	libUserAgent := "connect-go"
+	if strings.Contains(protocol, "grpc") {
+		libUserAgent = "grpc-go-connect"
+	}
+	return fmt.Sprintf("buf/%s %s/%s (%s)", bufcli.Version, libUserAgent, connect.Version, runtime.Version())
+}
+
+// NewVerboseHTTPClient creates a new HTTP client with the given transport and
+// printing verbose trace information to the given printer.
+func NewVerboseHTTPClient(transport http.RoundTripper, printer verbose.Printer) connect.HTTPClient {
 	return &verboseClient{transport: transport, printer: printer}
+}
+
+// TraceTrailersInterceptor returns an interceptor that will print information
+// about trailers for streaming calls to the given printer. This is used with
+// the Connect and gRPC-web protocols since these protocols include trailers in
+// the request body, instead of using actual HTTP trailers. (For the gRPC
+// protocol, which uses actual HTTP trailers, the verbose HTTP client suffices
+// since it already prints information about the trailers.)
+func TraceTrailersInterceptor(printer verbose.Printer) connect.Interceptor {
+	return traceTrailersInterceptor{printer: printer}
 }
 
 type verboseClient struct {

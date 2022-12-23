@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package curl
+package bufcurl
 
 import (
 	"context"
@@ -23,7 +23,6 @@ import (
 	"sync"
 
 	reflectionv1 "buf.build/gen/go/grpc/grpc/protocolbuffers/go/grpc/reflection/v1"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/connect-go"
 	"google.golang.org/protobuf/proto"
@@ -34,113 +33,31 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
-// NB: resolvers must be thread-safe because they could be used
-// by two goroutines concurrently during bidi streaming calls
-type resolver interface {
-	FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error)
-	protoregistry.MessageTypeResolver
-	protoregistry.ExtensionTypeResolver
-}
+type ReflectVersion string
 
-func resolverFromImage(image bufimage.Image) (resolver, error) {
-	files, err := protodesc.NewFiles(&descriptorpb.FileDescriptorSet{
-		File: bufimage.ImageToFileDescriptorProtos(image),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &imageResolver{
-		files: files,
-	}, nil
-}
+const (
+	ReflectVersionV1      = ReflectVersion("v1")
+	ReflectVersionV1Alpha = ReflectVersion("v1alpha")
+	ReflectVersionAuto    = ReflectVersion("auto")
+)
 
-type imageResolver struct {
-	files    *protoregistry.Files
-	initExts sync.Once
-	exts     *protoregistry.Types
-}
-
-func (i *imageResolver) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
-	return i.files.FindDescriptorByName(name)
-}
-
-func (i *imageResolver) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
-	d, err := i.files.FindDescriptorByName(message)
-	if err != nil {
-		return nil, err
-	}
-	md, ok := d.(protoreflect.MessageDescriptor)
-	if !ok {
-		return nil, fmt.Errorf("element %s is a %s, not a message", message, descriptorKind(d))
-	}
-	return dynamicpb.NewMessageType(md), nil
-}
-
-func (i *imageResolver) FindMessageByURL(url string) (protoreflect.MessageType, error) {
-	pos := strings.LastIndexByte(url, '/')
-	typeName := url[pos+1:]
-	return i.FindMessageByName(protoreflect.FullName(typeName))
-}
-
-func (i *imageResolver) FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error) {
-	d, err := i.files.FindDescriptorByName(field)
-	if err != nil {
-		return nil, err
-	}
-	fd, ok := d.(protoreflect.FieldDescriptor)
-	if !ok || !fd.IsExtension() {
-		return nil, fmt.Errorf("element %s is a %s, not an extension", field, descriptorKind(d))
-	}
-	return dynamicpb.NewExtensionType(fd), nil
-}
-
-func (i *imageResolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
-	// Most usages won't need to resolve extensions. So instead of proactively
-	// indexing them, we defer that work until it's actually needed.
-	i.initExts.Do(i.doInitExts)
-	return i.exts.FindExtensionByNumber(message, field)
-}
-
-func (i *imageResolver) doInitExts() {
-	var types protoregistry.Types
-	i.files.RangeFiles(func(fd protoreflect.FileDescriptor) bool {
-		registerExtensions(&types, fd)
-		return true
-	})
-	i.exts = &types
-}
-
-type extensionContainer interface {
-	Messages() protoreflect.MessageDescriptors
-	Extensions() protoreflect.ExtensionDescriptors
-}
-
-func registerExtensions(reg *protoregistry.Types, descriptor extensionContainer) {
-	exts := descriptor.Extensions()
-	for i := 0; i < exts.Len(); i++ {
-		extType := dynamicpb.NewExtensionType(exts.Get(i))
-		_ = reg.RegisterExtension(extType)
-	}
-	msgs := descriptor.Messages()
-	for i := 0; i < msgs.Len(); i++ {
-		registerExtensions(reg, msgs.Get(i))
-	}
-}
-
-func resolverFromReflection(
+// NewServerReflectionResolver creates a new resolver using the given details to
+// create an RPC reflection client, to ask the server for descriptors.
+func NewServerReflectionResolver(
 	ctx context.Context,
 	httpClient connect.HTTPClient,
 	opts []connect.ClientOption,
-	baseURL, reflectVersion string,
+	baseURL string,
+	reflectVersion ReflectVersion,
 	headers http.Header,
 	printer verbose.Printer,
-) (r resolver, closeResolver func()) {
+) (r Resolver, closeResolver func()) {
 	baseURL = strings.TrimSuffix(baseURL, "/")
 	var v1Client, v1alphaClient *reflectClient
-	if reflectVersion != reflectVersionV1 {
+	if reflectVersion != ReflectVersionV1 {
 		v1alphaClient = connect.NewClient[reflectionv1.ServerReflectionRequest, reflectionv1.ServerReflectionResponse](httpClient, baseURL+"/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo", opts...)
 	}
-	if reflectVersion != reflectVersionV1Alpha {
+	if reflectVersion != ReflectVersionV1Alpha {
 		v1Client = connect.NewClient[reflectionv1.ServerReflectionRequest, reflectionv1.ServerReflectionResponse](httpClient, baseURL+"/grpc.reflection.v1.ServerReflection/ServerReflectionInfo", opts...)
 	}
 	// if version is neither "v1" nor "v1alpha", then we have both clients and
@@ -152,11 +69,12 @@ func resolverFromReflection(
 	// request's user-agent header(s) get overwritten by protocol, so we stash them in the
 	// context so that underlying transport can restore them
 	ctx = withUserAgent(ctx, headers)
+
 	res := &reflectionResolver{
 		ctx:              ctx,
 		v1Client:         v1Client,
 		v1alphaClient:    v1alphaClient,
-		useV1Alpha:       reflectVersion == reflectVersionV1Alpha,
+		useV1Alpha:       reflectVersion == ReflectVersionV1Alpha,
 		headers:          headers,
 		printer:          printer,
 		downloadedProtos: map[string]*descriptorpb.FileDescriptorProto{},
@@ -213,7 +131,7 @@ func (r *reflectionResolver) FindMessageByName(message protoreflect.FullName) (p
 	}
 	md, ok := d.(protoreflect.MessageDescriptor)
 	if !ok {
-		return nil, fmt.Errorf("element %s is a %s, not a message", message, descriptorKind(d))
+		return nil, fmt.Errorf("element %s is a %s, not a message", message, DescriptorKind(d))
 	}
 	return dynamicpb.NewMessageType(md), nil
 }
@@ -231,7 +149,7 @@ func (r *reflectionResolver) FindExtensionByName(field protoreflect.FullName) (p
 	}
 	fd, ok := d.(protoreflect.FieldDescriptor)
 	if !ok || !fd.IsExtension() {
-		return nil, fmt.Errorf("element %s is a %s, not an extension", field, descriptorKind(d))
+		return nil, fmt.Errorf("element %s is a %s, not an extension", field, DescriptorKind(d))
 	}
 	return dynamicpb.NewExtensionType(fd), nil
 }

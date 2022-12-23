@@ -156,4 +156,4 @@ issues:
       # Type must implement an interface whose methods do not accept context. But this
       # implementation makes RPC calls, which need a context. So we allow creator of the
       # type to provide a context at value creation (instead of using context.Background()).
-      path: private/buf/cmd/buf/command/curl/resolver.go
+      path: private/bufpkg/bufcurl/reflection_resolver.go

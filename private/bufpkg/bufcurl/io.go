@@ -12,32 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package curl
+package bufcurl
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"strings"
 )
 
-func errorHasFilename(err error, filename string) error {
+// ErrorHasFilename makes sure that the given error includes a reference to the
+// given filename. If not, it wraps the given error and adds the filename. This
+// is to make sure errors are useful -- an error related to file I/O is not very
+// helpful if it doesn't indicate the name of the file.
+func ErrorHasFilename(err error, filename string) error {
 	if strings.Contains(err.Error(), filename) {
 		return err
 	}
-	return &errorWithFilename{err: err, filename: filename}
-}
-
-type errorWithFilename struct {
-	err      error
-	filename string
-}
-
-func (e *errorWithFilename) Error() string {
-	return e.filename + ": " + e.err.Error()
-}
-
-func (e *errorWithFilename) Unwrap() error {
-	return e.err
+	return fmt.Errorf("%s: %w", filename, err)
 }
 
 type readerWithClose struct {
@@ -45,6 +37,8 @@ type readerWithClose struct {
 	io.Closer
 }
 
+// lineReader wraps a *bufio.Reader, making it easier to read a file one line
+// at a time.
 type lineReader struct {
 	r   *bufio.Reader
 	err error
