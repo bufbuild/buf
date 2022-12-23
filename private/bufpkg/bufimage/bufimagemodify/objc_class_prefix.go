@@ -78,7 +78,7 @@ func objcClassPrefix(
 			}
 			for moduleIdentityString := range overrideModuleIdentityStrings {
 				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
-					logger.Sugar().Warnf("%s override for %q was unused", ObjcClassPrefixID, moduleIdentityString)
+					logger.Sugar().Warnf("objc_class_prefix override for %q was unused", moduleIdentityString)
 				}
 			}
 			for overrideFile := range overrides {
