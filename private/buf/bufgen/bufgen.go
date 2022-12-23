@@ -386,7 +386,6 @@ func (e ExternalManagedConfigV1) IsEmpty() bool {
 		e.JavaStringCheckUtf8 == nil &&
 		e.JavaPackagePrefix.IsEmpty() &&
 		e.CsharpNamespace.IsEmpty() &&
-		e.CsharpNamespace.IsEmpty() &&
 		e.OptimizeFor.IsEmpty() &&
 		e.GoPackagePrefix.IsEmpty() &&
 		e.ObjcClassPrefix.IsEmpty() &&
