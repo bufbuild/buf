@@ -63,7 +63,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.10.0-dev"
+	Version = "1.11.1-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -604,7 +604,6 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 		return nil, err
 	}
 	client := httpclient.NewClient(
-		httpclient.WithObservability(),
 		httpclient.WithTLSConfig(config.TLS),
 	)
 	options := []connectclient.ConfigOption{

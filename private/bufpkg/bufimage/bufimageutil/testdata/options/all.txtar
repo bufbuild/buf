@@ -39,6 +39,10 @@ service FooService {
     option (method_baz) = "str";
     option (method_foo) = { foo:"str" };
   }
+  rpc DoNot ( Empty ) returns ( Empty ) {
+    option (method_baz) = "str";
+    option (method_foo) = { foo:"str" };
+  }
 }
 extend Foo {
   optional string extension = 11 [(field_baz) = "str", (field_foo) = { foo:"str" }];

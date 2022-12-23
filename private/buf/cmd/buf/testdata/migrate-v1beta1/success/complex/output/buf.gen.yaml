@@ -7,4 +7,5 @@ plugins:
     opt: paths=source_relative
 managed:
   enabled: true
-  optimize_for: CODE_SIZE
+  optimize_for:
+    default: CODE_SIZE

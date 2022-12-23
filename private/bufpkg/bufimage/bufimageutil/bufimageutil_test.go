@@ -17,6 +17,7 @@ package bufimageutil
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"sort"
 	"testing"
@@ -32,8 +33,11 @@ import (
 	"github.com/jhump/protoreflect/desc/protoprint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 	"golang.org/x/tools/txtar"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const shouldUpdateExpectations = false
@@ -57,6 +61,12 @@ func TestOptions(t *testing.T) {
 	})
 	t.Run("exclude-options", func(t *testing.T) {
 		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all-exclude-options.txtar", WithExcludeCustomOptions())
+	})
+	t.Run("files", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"Files"}, "Files.txtar")
+	})
+	t.Run("all-with-files", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "Files"}, "all-with-Files.txtar")
 	})
 }
 
@@ -164,23 +174,37 @@ func TestTypesFromMainModule(t *testing.T) {
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
 
-func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
-	ctx := context.Background()
+func getImage(ctx context.Context, logger *zap.Logger, testdataDir string) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, nil, err
+	}
 	module, err := bufmodule.NewModuleForBucket(
 		ctx,
 		storage.MapReadBucket(bucket, storage.MatchPathExt(".proto")),
 	)
-	require.NoError(t, err)
-	builder := bufimagebuild.NewBuilder(zaptest.NewLogger(t))
+	if err != nil {
+		return nil, nil, err
+	}
+	builder := bufimagebuild.NewBuilder(logger)
 	image, analysis, err := builder.Build(
 		ctx,
 		bufmodule.NewModuleFileSet(module, nil),
 		bufimagebuild.WithExcludeSourceCodeInfo(),
 	)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(analysis) > 0 {
+		return nil, nil, fmt.Errorf("%d errors in source when building", len(analysis))
+	}
+	return bucket, image, nil
+}
+
+func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
+	ctx := context.Background()
+	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), testdataDir)
 	require.NoError(t, err)
-	require.Empty(t, analysis)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
 	require.NoError(t, err)
@@ -236,4 +260,64 @@ func imageIsDependencyOrdered(image bufimage.Image) bool {
 		seen[file.Path()] = struct{}{}
 	}
 	return true
+}
+
+func BenchmarkFilterImage(b *testing.B) {
+	benchmarkCases := []*struct {
+		folder string
+		image  bufimage.Image
+		types  []string
+	}{
+		{
+			folder: "testdata/extensions",
+			types:  []string{"pkg.Foo"},
+		},
+		{
+			folder: "testdata/importmods",
+			types:  []string{"ImportRegular", "ImportWeak", "ImportPublic", "NoImports"},
+		},
+		{
+			folder: "testdata/nesting",
+			types:  []string{"pkg.Foo", "pkg.Foo.NestedFoo.NestedNestedFoo", "pkg.Baz", "pkg.FooEnum"},
+		},
+		{
+			folder: "testdata/options",
+			types:  []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "pkg.FooService.Do"},
+		},
+	}
+	ctx := context.Background()
+	for _, benchmarkCase := range benchmarkCases {
+		_, image, err := getImage(ctx, zaptest.NewLogger(b), benchmarkCase.folder)
+		require.NoError(b, err)
+		benchmarkCase.image = image
+	}
+	b.ResetTimer()
+
+	i := 0
+	for {
+		for _, benchmarkCase := range benchmarkCases {
+			for _, typeName := range benchmarkCase.types {
+				// filtering is destructive, so we have to make a copy
+				b.StopTimer()
+				imageFiles := make([]bufimage.ImageFile, len(benchmarkCase.image.Files()))
+				for j, file := range benchmarkCase.image.Files() {
+					clone, ok := proto.Clone(file.Proto()).(*descriptorpb.FileDescriptorProto)
+					require.True(b, ok)
+					var err error
+					imageFiles[j], err = bufimage.NewImageFile(clone, nil, "", "", false, false, nil)
+					require.NoError(b, err)
+				}
+				image, err := bufimage.NewImage(imageFiles)
+				require.NoError(b, err)
+				b.StartTimer()
+
+				_, err = ImageFilteredByTypes(image, typeName)
+				require.NoError(b, err)
+				i++
+				if i == b.N {
+					return
+				}
+			}
+		}
+	}
 }
