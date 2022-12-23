@@ -236,11 +236,11 @@ type ManagedConfig struct {
 	JavaStringCheckUtf8     *bool
 	JavaPackagePrefixConfig *JavaPackagePrefixConfig
 	CsharpNameSpaceConfig   *CsharpNameSpaceConfig
-	PhpNamespaceConfig      *PhpNamespaceConfig
 	OptimizeForConfig       *OptimizeForConfig
 	GoPackagePrefixConfig   *GoPackagePrefixConfig
 	ObjcClassPrefixConfig   *ObjcClassPrefixConfig
 	RubyPackageConfig       *RubyPackageConfig
+	PhpNamespaceConfig      *PhpNamespaceConfig
 	Override                map[string]map[string]string
 }
 
@@ -285,20 +285,20 @@ type RubyPackageConfig struct {
 // CsharpNameSpaceConfig is the csharp_namespace configuration.
 type CsharpNameSpaceConfig struct {
 	Except []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> csharp_namespace prefix.
+	// bufmoduleref.ModuleIdentity -> csharp_namespace.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// PhpNamespaceConfig is the php_namespace configuration.
+type PhpNamespaceConfig struct {
+	Except []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> php_namespace.
 	Override map[bufmoduleref.ModuleIdentity]string
 }
 
 // TypesConfig is a types configuration
 type TypesConfig struct {
 	Include []string
-}
-
-// PhpNamespaceConfig is the csharp_namespace configuration.
-type PhpNamespaceConfig struct {
-	Except []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> php_namespace prefix.
-	Override map[bufmoduleref.ModuleIdentity]string
 }
 
 // ReadConfig reads the configuration from the OS or an override, if any.
@@ -370,12 +370,12 @@ type ExternalManagedConfigV1 struct {
 	JavaMultipleFiles   *bool                             `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
 	JavaStringCheckUtf8 *bool                             `json:"java_string_check_utf8,omitempty" yaml:"java_string_check_utf8,omitempty"`
 	JavaPackagePrefix   ExternalJavaPackagePrefixConfigV1 `json:"java_package_prefix,omitempty" yaml:"java_package_prefix,omitempty"`
-	PhpNamespace        ExternalPhpNamespaceConfigV1      `json:"php_namespace,omitempty" yaml:"php_namespace,omitempty"`
 	CsharpNamespace     ExternalCsharpNamespaceConfigV1   `json:"csharp_namespace,omitempty" yaml:"csharp_namespace,omitempty"`
 	OptimizeFor         ExternalOptimizeForConfigV1       `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 	GoPackagePrefix     ExternalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
 	ObjcClassPrefix     ExternalObjcClassPrefixConfigV1   `json:"objc_class_prefix,omitempty" yaml:"objc_class_prefix,omitempty"`
 	RubyPackage         ExternalRubyPackageConfigV1       `json:"ruby_package,omitempty" yaml:"ruby_package,omitempty"`
+	PhpNamespace        ExternalPhpNamespaceConfigV1      `json:"php_namespace,omitempty" yaml:"php_namespace,omitempty"`
 	Override            map[string]map[string]string      `json:"override,omitempty" yaml:"override,omitempty"`
 }
 
@@ -391,6 +391,7 @@ func (e ExternalManagedConfigV1) IsEmpty() bool {
 		e.GoPackagePrefix.IsEmpty() &&
 		e.ObjcClassPrefix.IsEmpty() &&
 		e.RubyPackage.IsEmpty() &&
+		e.PhpNamespace.IsEmpty() &&
 		len(e.Override) == 0
 }
 

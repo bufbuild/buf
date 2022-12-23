@@ -32,6 +32,16 @@
             "someremote.com/owner/bar": "y",
             "someremote.com/owner/baz": "z"
         }
+      },
+      "php_namespace": {
+        "except": [
+          "someremote.com/owner/repo"
+        ],
+        "override": {
+            "someremote.com/owner/foo": "m",
+            "someremote.com/owner/bar": "n",
+            "someremote.com/owner/baz": "k"
+        }
       }
     },
     "plugins": [

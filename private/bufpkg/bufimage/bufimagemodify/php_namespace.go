@@ -147,8 +147,8 @@ func phpNamespace(
 		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
 	}
 	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
-	for moduleIdentity, csharpNamespace := range moduleOverrides {
-		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = csharpNamespace
+	for moduleIdentity, phpNamespace := range moduleOverrides {
+		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = phpNamespace
 	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {

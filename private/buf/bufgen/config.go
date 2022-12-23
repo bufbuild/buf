@@ -268,6 +268,10 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 	if err != nil {
 		return nil, err
 	}
+	phpNamespaceConfig, err := newPhpNamespaceConfigV1(externalManagedConfig.PhpNamespace)
+	if err != nil {
+		return nil, err
+	}
 	override := externalManagedConfig.Override
 	for overrideID, overrideValue := range override {
 		for importPath := range overrideValue {
@@ -298,6 +302,7 @@ func newManagedConfigV1(logger *zap.Logger, externalManagedConfig ExternalManage
 		GoPackagePrefixConfig:   goPackagePrefixConfig,
 		ObjcClassPrefixConfig:   objcClassPrefixConfig,
 		RubyPackageConfig:       rubyPackageConfig,
+		PhpNamespaceConfig:      phpNamespaceConfig,
 		Override:                override,
 	}, nil
 }
@@ -552,6 +557,41 @@ func newObjcClassPrefixConfigV1(externalObjcClassPrefixConfig ExternalObjcClassP
 	}
 	return &ObjcClassPrefixConfig{
 		Default:  defaultObjcClassPrefix,
+		Except:   except,
+		Override: override,
+	}, nil
+}
+
+func newPhpNamespaceConfigV1(externalPhpNamespaceConfigV1 ExternalPhpNamespaceConfigV1) (*PhpNamespaceConfig, error) {
+	if externalPhpNamespaceConfigV1.IsEmpty() {
+		return nil, nil
+	}
+	seenModuleIdentities := make(map[string]struct{}, len(externalPhpNamespaceConfigV1.Except))
+	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalPhpNamespaceConfigV1.Except))
+	for _, moduleName := range externalPhpNamespaceConfigV1.Except {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid php_namespace except: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid php_namespace except: %q is defined multiple times", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		except = append(except, moduleIdentity)
+	}
+	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalPhpNamespaceConfigV1.Override))
+	for moduleName, phpNamespace := range externalPhpNamespaceConfigV1.Override {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid php_namespace override key: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid php_namespace override: %q is already defined as an except", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		override[moduleIdentity] = phpNamespace
+	}
+	return &PhpNamespaceConfig{
 		Except:   except,
 		Override: override,
 	}, nil

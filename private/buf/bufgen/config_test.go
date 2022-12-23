@@ -335,6 +335,16 @@ func TestReadConfigV1(t *testing.T) {
 					moduleIdentity4: "z",
 				},
 			},
+			PhpNamespaceConfig: &PhpNamespaceConfig{
+				Except: []bufmoduleref.ModuleIdentity{
+					moduleIdentity1,
+				},
+				Override: map[bufmoduleref.ModuleIdentity]string{
+					moduleIdentity2: "m",
+					moduleIdentity3: "n",
+					moduleIdentity4: "k",
+				},
+			},
 		},
 		PluginConfigs: []*PluginConfig{
 			{
@@ -550,6 +560,7 @@ func TestReadConfigV1(t *testing.T) {
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
+	assertConfigsWithEqualPhpNamespace(t, successConfig8, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.yaml"))
 	require.NoError(t, err)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride((string(data))))
@@ -557,11 +568,13 @@ func TestReadConfigV1(t *testing.T) {
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
+	assertConfigsWithEqualPhpNamespace(t, successConfig8, config)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.json")))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
+	assertConfigsWithEqualPhpNamespace(t, successConfig8, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.json"))
 	require.NoError(t, err)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
@@ -569,11 +582,13 @@ func TestReadConfigV1(t *testing.T) {
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
+	assertConfigsWithEqualPhpNamespace(t, successConfig8, config)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.yml")))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
+	assertConfigsWithEqualPhpNamespace(t, successConfig8, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.yml"))
 	require.NoError(t, err)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(string(data)))
@@ -581,6 +596,7 @@ func TestReadConfigV1(t *testing.T) {
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
+	assertConfigsWithEqualPhpNamespace(t, successConfig8, config)
 	config, err = ReadConfig(ctx, nopLogger, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yaml")))
 	require.NoError(t, err)
 	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
@@ -721,6 +737,18 @@ func assertConfigsWithEqualRubyPackage(t *testing.T, successConfig *Config, conf
 	rubyConfig := config.ManagedConfig.RubyPackageConfig
 	require.Equal(t, successRubyConfig.Except, rubyConfig.Except)
 	assertEqualModuleIdentityKeyedMaps(t, successRubyConfig.Override, rubyConfig.Override)
+}
+
+func assertConfigsWithEqualPhpNamespace(t *testing.T, successConfig *Config, config *Config) {
+	require.Equal(t, successConfig.PluginConfigs, config.PluginConfigs)
+	require.NotNil(t, successConfig.ManagedConfig)
+	require.NotNil(t, config.ManagedConfig)
+	require.NotNil(t, successConfig.ManagedConfig.PhpNamespaceConfig)
+	require.NotNil(t, config.ManagedConfig.PhpNamespaceConfig)
+	successPhpNamespace := successConfig.ManagedConfig.PhpNamespaceConfig
+	phpNamespace := config.ManagedConfig.PhpNamespaceConfig
+	require.Equal(t, successPhpNamespace.Except, phpNamespace.Except)
+	assertEqualModuleIdentityKeyedMaps(t, successPhpNamespace.Override, phpNamespace.Override)
 }
 
 func assertConfigsWithEqualOptimizeFor(t *testing.T, successConfig *Config, config *Config) {
