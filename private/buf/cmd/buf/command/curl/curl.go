@@ -253,7 +253,7 @@ the request data flag (--data or -d). Furthermore, it is not allowed to indicate
 if the schema is expected to be provided via stdin as a file descriptor set or image.`,
 	)
 	flagSet.StringVar(
-		(*string)(&f.ReflectProtocol),
+		&f.ReflectProtocol,
 		reflectProtocolFlagName,
 		"",
 		`The reflection protocol to use for downloading information from the server. This flag
