@@ -316,7 +316,7 @@ If no argument is specified, defaults to ".".`,
 // Also parses the special input hashtag flag that deals with the situation "buf build -#format=json".
 // The existence of 0 or 1 args should be handled by the Args field on Command.
 func GetInputValue(
-	container appflag.Container,
+	container app.ArgContainer,
 	inputHashtag string,
 	defaultValue string,
 ) (string, error) {

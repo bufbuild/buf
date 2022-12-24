@@ -1,6 +1,8 @@
 # Changelog
 
 ## [UNRELEASED]
+- Add `buf curl` command to invoke RPCs via [Connect](https://connect-build),
+  [gRPC](https://grpc.io/), or [gRPC-Web](https://github.com/grpc/grpc-web.)
 - Introduce `objc_class_prefix` option in managed mode, allowing a `default` value
   for `objc_class_prefix` for all files, `except` and `override`, which both behave
   similarly to other `except` and `override` options. Specifying an empty `default`
@@ -13,21 +15,21 @@
 ## [v1.11.0] - 2022-12-19
 - `buf generate` now batches remote plugin generation calls for improved performance.
 - Update `optimize_for` option in managed mode, allowing a `default` value for `optimize_for`
-  for all files, `except` and `override`, which both behave similarly to other `except` 
+  for all files, `except` and `override`, which both behave similarly to other `except`
   and `override` options. Specifying an `optimize_for` value in the earlier versions is
   equivalent to having a `optimize_for` with that value as default.
 
 ## [v1.10.0] - 2022-12-07
 
-- When using managed mode, setting `enabled: false` now no longer fails `buf generate` 
+- When using managed mode, setting `enabled: false` now no longer fails `buf generate`
   and instead prints a warning log and ignores managed mode options.
-- Add `csharp_namespace` option to managed mode, allowing `except`, which excludes 
-  modules from managed mode, and `override`, which specifies `csharp_namespace` values 
-  per module, overriding the default value. By default, when managed mode is enabled, 
+- Add `csharp_namespace` option to managed mode, allowing `except`, which excludes
+  modules from managed mode, and `override`, which specifies `csharp_namespace` values
+  per module, overriding the default value. By default, when managed mode is enabled,
   `csharp_namespace` is set to the package name with each package sub-name capitalized.
 - Promote `buf convert` to stable, keep `buf beta convert` aliased in the beta command.
-- Add `Types` filter to `buf generate` command to specify types (message, enum, 
-  service) that should be included in the image. When specified, the resulting 
+- Add `Types` filter to `buf generate` command to specify types (message, enum,
+  service) that should be included in the image. When specified, the resulting
   image will only include descriptors to describe the requested types.
 
 ## [v1.9.0] - 2022-10-19
