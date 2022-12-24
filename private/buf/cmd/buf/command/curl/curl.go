@@ -261,7 +261,7 @@ may only be used when server reflection is used. By default, this command will t
 reflection protocols from newest to oldest. If this results in a "Not Implemented" error,
 then older protocols will be used. In practice, this means that "grpc-v1" is tried first,
 and "grpc-v1alpha" is used if it doesn't work. If newer reflection protocols are introduced,
-they may be preferred in the absense of this flag being explicitly set to a specific protocol.
+they may be preferred in the absence of this flag being explicitly set to a specific protocol.
 The valid values for this flag are "grpc-v1" and "grpc-v1alpha". These correspond to services
 named "grpc.reflection.v1.ServerReflection" and "grpc.reflection.v1alpha.ServerReflection"
 respectively.`,
