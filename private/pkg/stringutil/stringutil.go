@@ -191,6 +191,34 @@ func SliceToHumanStringQuoted(s []string) string {
 	}
 }
 
+// SliceToHumanStringOr prints the slice as "e1, e2, or e3".
+func SliceToHumanStringOr(s []string) string {
+	switch len(s) {
+	case 0:
+		return ""
+	case 1:
+		return s[0]
+	case 2:
+		return s[0] + " or " + s[1]
+	default:
+		return strings.Join(s[:len(s)-1], ", ") + ", or " + s[len(s)-1]
+	}
+}
+
+// SliceToHumanStringOrQuoted prints the slice as `"e1", "e2", or "e3"`.
+func SliceToHumanStringOrQuoted(s []string) string {
+	switch len(s) {
+	case 0:
+		return ""
+	case 1:
+		return `"` + s[0] + `"`
+	case 2:
+		return `"` + s[0] + `" or "` + s[1] + `"`
+	default:
+		return `"` + strings.Join(s[:len(s)-1], `", "`) + `", or "` + s[len(s)-1] + `"`
+	}
+}
+
 // SnakeCaseOption is an option for snake_case conversions.
 type SnakeCaseOption func(*snakeCaseOptions)
 

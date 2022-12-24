@@ -204,6 +204,24 @@ func TestSliceToHumanStringQuoted(t *testing.T) {
 	assert.Equal(t, `"a", "b", and "c"`, SliceToHumanStringQuoted([]string{"a", "b", "c"}))
 }
 
+func TestSliceToHumanStringOr(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, ``, SliceToHumanStringOr(nil))
+	assert.Equal(t, ``, SliceToHumanStringOr([]string{}))
+	assert.Equal(t, `a`, SliceToHumanStringOr([]string{"a"}))
+	assert.Equal(t, `a or b`, SliceToHumanStringOr([]string{"a", "b"}))
+	assert.Equal(t, `a, b, or c`, SliceToHumanStringOr([]string{"a", "b", "c"}))
+}
+
+func TestSliceToHumanStringOrQuoted(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, ``, SliceToHumanStringOrQuoted(nil))
+	assert.Equal(t, ``, SliceToHumanStringOrQuoted([]string{}))
+	assert.Equal(t, `"a"`, SliceToHumanStringOrQuoted([]string{"a"}))
+	assert.Equal(t, `"a" or "b"`, SliceToHumanStringOrQuoted([]string{"a", "b"}))
+	assert.Equal(t, `"a", "b", or "c"`, SliceToHumanStringOrQuoted([]string{"a", "b", "c"}))
+}
+
 func TestSliceToUniqueSortedSlice(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t, []string{}, SliceToUniqueSortedSlice(nil))
