@@ -47,7 +47,7 @@ jobs:
         run: make updateversion
       - name: Create PR
         id: cpr
-        uses: peter-evans/create-pull-request@331d02c7e2104af23ad5974d4d5cbc58a3e6dc77
+        uses: peter-evans/create-pull-request@2b011faafdcbc9ceb11414d64d0573f37c774b04
         with:
           add-paths: .
           commit-message: "Update version to v${{env.VERSION}}"
@@ -144,9 +144,6 @@ jobs:
         run: |
           unset RELEASE_MINISIGN_PRIVATE_KEY
           unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD
-      - name: Set FILES variable from tag
-        run: |
-          echo "FILES=$(find ${{github.workspace}}/.build/release/buf/assets -type f)" >> $GITHUB_ENV
       - name: Release
         id: ghr
         uses: softprops/action-gh-release@v1
@@ -154,7 +151,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
           generate_release_notes: true # change to the CHANGELOG somehow
           files: |
-            ${{env.FILES}}
+            ${{github.workspace}}/.build/release/buf/assets/*
       - name: Slack Notification
         run: |
           jq --null-input '{ text: "BufCLI Release v${{env.VERSION}} is complete: ${{ steps.ghr.outputs.url }}" }' \
@@ -180,13 +177,13 @@ jobs:
       - name: Set NEXT VERSION variable from tag
         run: |
           NEXT_VERSION=$(echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}')
-          echo "NEXT_VERSION=$NEXT_VERSION-dev" >> $GITHUB_ENV
+          echo "NEXT_VERSION=${NEXT_VERSION:1}-dev" >> $GITHUB_ENV
       - name: update version
         run: make updateversion VERSION=${{env.NEXT_VERSION}}
       - name: update home brew badge
         run: make updatehomebrewbadge
       - name: create PR
-        uses: peter-evans/create-pull-request@331d02c7e2104af23ad5974d4d5cbc58a3e6dc77
+        uses: peter-evans/create-pull-request@2b011faafdcbc9ceb11414d64d0573f37c774b04
         with:
           add-paths: .
           commit-message: "Back to development"

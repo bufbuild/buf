@@ -44,10 +44,11 @@ linters:
     - exportloopref
     - forbidigo
     - forcetypeassert
+    - gci
     - gochecknoinits
     - gofmt
     - goheader
-    - goimports
+    # - goimports
     - gomodguard
     - goprintffuncname
     - gosec
@@ -141,3 +142,18 @@ issues:
         - gosec
       path: private/pkg/git/git_test.go
       text: "G504:"
+    - linters:
+        - stylecheck
+      path: private/bufpkg/bufapimodule/module_resolver_test.go
+      text: "ST1003:"
+    - linters:
+        - dogsled
+      # One function call doesn't care about most of the returned destructured values. The
+      # dogsled linter complains about it. (Value of this linter is unclear...)
+      path: private/buf/cmd/buf/command/curl/curl.go
+    - linters:
+        - containedctx
+      # Type must implement an interface whose methods do not accept context. But this
+      # implementation makes RPC calls, which need a context. So we allow creator of the
+      # type to provide a context at value creation (instead of using context.Background()).
+      path: private/buf/bufcurl/reflection_resolver.go

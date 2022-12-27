@@ -63,7 +63,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.10.0-dev"
+	Version = "1.11.1-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -316,7 +316,7 @@ If no argument is specified, defaults to ".".`,
 // Also parses the special input hashtag flag that deals with the situation "buf build -#format=json".
 // The existence of 0 or 1 args should be handled by the Args field on Command.
 func GetInputValue(
-	container appflag.Container,
+	container app.ArgContainer,
 	inputHashtag string,
 	defaultValue string,
 ) (string, error) {
@@ -604,7 +604,6 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 		return nil, err
 	}
 	client := httpclient.NewClient(
-		httpclient.WithObservability(),
 		httpclient.WithTLSConfig(config.TLS),
 	)
 	options := []connectclient.ConfigOption{

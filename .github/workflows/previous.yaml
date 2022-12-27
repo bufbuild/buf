@@ -12,12 +12,10 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: setup-go
-        if: success()
         uses: actions/setup-go@v3
         with:
           go-version: 1.18.5
       - name: cache
-        if: success()
         uses: actions/cache@v3
         with:
           path: |
@@ -29,5 +27,4 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buf-
       - name: make-test
-        if: success()
         run: make test

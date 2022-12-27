@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	connect "github.com/bufbuild/connect-go"
 	"google.golang.org/protobuf/proto"
 )
@@ -44,7 +45,7 @@ func (b *bufferCodec) Marshal(src any) ([]byte, error) {
 		// may also be used to unmarshal the errors in the
 		// grpc-status-details-bin trailer. The type used is not
 		// exported so we match against the general proto.Message.
-		return proto.Marshal(typedSrc)
+		return protoencoding.NewWireMarshaler().Marshal(typedSrc)
 	default:
 		return nil, fmt.Errorf("marshal unexpected type %T", src)
 	}
@@ -61,7 +62,7 @@ func (b *bufferCodec) Unmarshal(src []byte, dst any) error {
 		// may also be used to unmarshal the errors in the
 		// grpc-status-details-bin trailer. The type used is not
 		// exported so we match against the general proto.Message.
-		return proto.Unmarshal(src, destination)
+		return protoencoding.NewWireUnmarshaler(nil).Unmarshal(src, destination)
 	default:
 		return fmt.Errorf("unmarshal unexpected type %T", dst)
 	}

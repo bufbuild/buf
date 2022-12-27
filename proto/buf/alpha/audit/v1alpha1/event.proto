@@ -45,10 +45,12 @@ enum ResourceType {
   RESOURCE_TYPE_USER = 1;
   RESOURCE_TYPE_ORGANIZATION = 2;
   RESOURCE_TYPE_ORGANIZATION_MEMBER = 3;
+  RESOURCE_TYPE_ORGANIZATION_IDP_GROUP = 9;
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
-  RESOURCE_TYPE_PLUGIN = 7;
+  RESOURCE_TYPE_PLUGIN = 7 [deprecated = true];
+  RESOURCE_TYPE_CURATED_PLUGIN = 8;
 }
 
 // Resource is the affected resource by the audited event.
@@ -69,6 +71,8 @@ enum EventType {
   EVENT_TYPE_ORGANIZATION_MEMBER_ADDED = 3;
   EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED = 4;
   EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED = 5;
+  EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED = 21;
+  EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED = 22;
   EVENT_TYPE_REPOSITORY_CREATED = 6;
   EVENT_TYPE_REPOSITORY_DELETED = 7;
   EVENT_TYPE_REPOSITORY_COMMIT_PUSHED = 8;
@@ -76,8 +80,9 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED = 10;
   EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
   EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
-  EVENT_TYPE_PLUGIN_CREATED = 13;
-  EVENT_TYPE_PLUGIN_DELETED = 14;
+  EVENT_TYPE_PLUGIN_CREATED = 13 [deprecated = true];
+  EVENT_TYPE_PLUGIN_DELETED = 14 [deprecated = true];
+  EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
   EVENT_TYPE_USER_CREATED = 15;
   EVENT_TYPE_USER_DELETED = 16;
   EVENT_TYPE_USER_DEACTIVATED = 17;
@@ -125,13 +130,16 @@ message Event {
     PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 16;
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
-    PayloadPluginCreated plugin_created = 19;
-    PayloadPluginDeleted plugin_deleted = 20;
+    PayloadPluginCreated plugin_created = 19 [deprecated = true];
+    PayloadPluginDeleted plugin_deleted = 20 [deprecated = true];
     PayloadUserCreated user_created = 21;
     PayloadUserDeactivated user_deactivated = 22;
     PayloadUserDeleted user_deleted = 23;
     PayloadUserLoggedIn user_logged_in = 24;
     PayloadUserLoggedOut user_logged_out = 25;
+    PayloadCuratedPluginCreated curated_plugin_created = 26;
+    PayloadOrganizationIDPGroupAdded idp_group_added = 27;
+    PayloadOrganizationIDPGroupRemoved idp_group_removed = 28;
   }
 }
 
@@ -146,6 +154,8 @@ message PayloadOrganizationMemberAdded {
   string organization_name = 2;
   // member_role is the role granted to the member added to the organization.
   buf.alpha.registry.v1alpha1.OrganizationRole member_role = 3;
+  // member_role_source is the source of the role granted to the member.
+  buf.alpha.registry.v1alpha1.OrganizationRoleSource member_role_source = 4;
 }
 
 message PayloadOrganizationMemberRoleChanged {
@@ -157,6 +167,10 @@ message PayloadOrganizationMemberRoleChanged {
   buf.alpha.registry.v1alpha1.OrganizationRole old_role = 3;
   // new_role is the new role of the member whose role was changed.
   buf.alpha.registry.v1alpha1.OrganizationRole new_role = 4;
+  // old_member_role_source is the old source of the role granted to the member.
+  buf.alpha.registry.v1alpha1.OrganizationRoleSource old_member_role_source = 5;
+  // new_member_role_source is the new source of the role granted to the member.
+  buf.alpha.registry.v1alpha1.OrganizationRoleSource new_member_role_source = 6;
 }
 
 message PayloadOrganizationMemberRemoved {
@@ -166,6 +180,22 @@ message PayloadOrganizationMemberRemoved {
   string organization_name = 2;
   // member_role is the role that the member had when removed from the organization.
   buf.alpha.registry.v1alpha1.OrganizationRole member_role = 3;
+  // member_role_source is the source of the role granted to the member.
+  buf.alpha.registry.v1alpha1.OrganizationRoleSource member_role_source = 4;
+}
+
+message PayloadOrganizationIDPGroupAdded {
+  // organization_id is the id of the organization with the new IDP group.
+  string organization_id = 1;
+  // organization_name is the name of the organization with the new IDP group.
+  string organization_name = 2;
+}
+
+message PayloadOrganizationIDPGroupRemoved {
+  // organization_id is the id of the organization with the removed IDP group.
+  string organization_id = 1;
+  // organization_name is the name of the organization with the removed IDP group.
+  string organization_name = 2;
 }
 
 message PayloadRepositoryCreated {
@@ -254,6 +284,7 @@ message PayloadRepositoryVisibilityChanged {
 }
 
 message PayloadPluginCreated {
+  option deprecated = true;
   // owner_id is the id of the owner of the plugin.
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
@@ -263,6 +294,7 @@ message PayloadPluginCreated {
 }
 
 message PayloadPluginDeleted {
+  option deprecated = true;
   // owner_id is the id of the owner of the plugin.
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
@@ -280,3 +312,10 @@ message PayloadUserDeleted {}
 message PayloadUserLoggedIn {}
 
 message PayloadUserLoggedOut {}
+
+message PayloadCuratedPluginCreated {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+}

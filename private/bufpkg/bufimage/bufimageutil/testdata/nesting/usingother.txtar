@@ -2,8 +2,6 @@
 syntax = "proto3";
 package pkg;
 message Bar {
-  FooEnum foo_enum = 1;
-  Foo.NestedFoo nested_foo = 2;
   enum NestedBarEnum {
     NESTED_BAR_ENUM_X = 0;
     NESTED_BAR_ENUM_Y = 1;
@@ -11,15 +9,4 @@ message Bar {
 }
 message Baz {
   Bar.NestedBarEnum nested_bar_enum = 1;
-}
-message Foo {
-  string x = 1;
-  NestedFoo nested_foo = 2;
-  message NestedFoo {
-    string nested_x = 1;
-  }
-}
-enum FooEnum {
-  FOO_ENUM_X = 0;
-  FOO_ENUM_Y = 1;
 }
