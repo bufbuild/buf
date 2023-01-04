@@ -40,7 +40,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/plugin[:version]>",
 		Short: "Delete a plugin from the registry.",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -70,6 +70,11 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
+	if version != "" {
+		if err := bufpluginref.ValidatePluginVersion(version); err != nil {
+			return err
+		}
+	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
@@ -91,9 +96,6 @@ func run(
 			return fmt.Errorf("the plugin %s does not exist", container.Arg(0))
 		}
 		return err
-	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Plugin deleted."); err != nil {
-		return bufcli.NewInternalError(err)
 	}
 	return nil
 }
