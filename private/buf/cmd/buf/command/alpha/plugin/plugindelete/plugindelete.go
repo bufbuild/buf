@@ -72,7 +72,7 @@ func run(
 	}
 	if version != "" {
 		if err := bufpluginref.ValidatePluginVersion(version); err != nil {
-			return err
+			return appcmd.NewInvalidArgumentError(err.Error())
 		}
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
