@@ -56,15 +56,11 @@ func (r *runner) Run(ctx context.Context, name string, options ...RunOption) err
 	if runOptions.stdin == nil {
 		runOptions.stdin = ioextended.DiscardReader
 	}
-	if runOptions.stdout == nil {
-		runOptions.stdout = io.Discard
-	}
-	if runOptions.stderr == nil {
-		runOptions.stderr = io.Discard
-	}
 	cmd := exec.CommandContext(ctx, name, runOptions.args...)
 	cmd.Env = envSlice(runOptions.env)
 	cmd.Stdin = runOptions.stdin
+	// If Stdout or Stderr are nil, os/exec connects the process output directly
+	// to the null device.
 	cmd.Stdout = runOptions.stdout
 	cmd.Stderr = runOptions.stderr
 	// The default behavior for dir is what we want already, i.e. the current
