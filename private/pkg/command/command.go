@@ -70,7 +70,7 @@ func RunWithStdin(stdin io.Reader) RunOption {
 
 // RunWithStdout returns a new RunOption that sets the stdout.
 //
-// The default is io.Discard.
+// The default is the null device (os.DevNull).
 func RunWithStdout(stdout io.Writer) RunOption {
 	return func(runOptions *runOptions) {
 		runOptions.stdout = stdout
@@ -79,7 +79,7 @@ func RunWithStdout(stdout io.Writer) RunOption {
 
 // RunWithStderr returns a new RunOption that sets the stderr.
 //
-// The default is io.Discard.
+// The default is the null device (os.DevNull).
 func RunWithStderr(stderr io.Writer) RunOption {
 	return func(runOptions *runOptions) {
 		runOptions.stderr = stderr
