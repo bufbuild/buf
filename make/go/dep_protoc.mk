@@ -10,8 +10,8 @@ $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf/releases 20221214 checked 20230104
-# NOTE: Overridden for E2E test compatibility with genproto.
+# https://github.com/protocolbuffers/protobuf/releases 20220929 checked 20230104
+# NOTE: Set to version compatible with genproto source code (only used in tests).
 PROTOC_VERSION ?= 21.7
 
 ifeq ($(UNAME_OS),Darwin)
