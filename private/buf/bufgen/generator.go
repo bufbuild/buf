@@ -42,6 +42,8 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+const remotePluginsLimit = 10
+
 type generator struct {
 	logger                *zap.Logger
 	storageosProvider     storageos.Provider
@@ -211,7 +213,7 @@ func (g *generator) execPlugins(
 		}
 		if len(v1Args) > 0 {
 			jobs = append(jobs, func(ctx context.Context) error {
-				results, err := g.executeRemotePlugins(
+				results, err := g.executeRemotePluginsBatched(
 					ctx,
 					container,
 					image,
@@ -219,6 +221,8 @@ func (g *generator) execPlugins(
 					v1Args,
 					includeImports,
 					includeWellKnownTypes,
+					g.executeRemotePlugins,
+					remotePluginsLimit,
 				)
 				if err != nil {
 					return err
@@ -231,7 +235,7 @@ func (g *generator) execPlugins(
 		}
 		if len(v2Args) > 0 {
 			jobs = append(jobs, func(ctx context.Context) error {
-				results, err := g.execRemotePluginsV2(
+				results, err := g.executeRemotePluginsBatched(
 					ctx,
 					container,
 					image,
@@ -239,6 +243,8 @@ func (g *generator) execPlugins(
 					v2Args,
 					includeImports,
 					includeWellKnownTypes,
+					g.execRemotePluginsV2,
+					remotePluginsLimit,
 				)
 				if err != nil {
 					return err
@@ -437,6 +443,41 @@ func (g *generator) execRemotePluginsV2(
 		})
 	}
 	return result, nil
+}
+
+type remoteExecutor func(ctx context.Context,
+	container app.EnvStdioContainer,
+	image bufimage.Image,
+	remote string,
+	pluginConfigs []*remotePluginExecArgs,
+	includeImports bool,
+	includeWellKnownTypes bool) ([]*remotePluginExecutionResult, error)
+
+func (g *generator) executeRemotePluginsBatched(
+	ctx context.Context,
+	container app.EnvStdioContainer,
+	image bufimage.Image,
+	remote string,
+	pluginConfigs []*remotePluginExecArgs,
+	includeImports bool,
+	includeWellKnownTypes bool,
+	executor remoteExecutor,
+	batchSize int) ([]*remotePluginExecutionResult, error) {
+
+	var res []*remotePluginExecutionResult
+	for len(pluginConfigs) > 0 {
+		batch := pluginConfigs
+		if len(pluginConfigs) > batchSize {
+			batch = pluginConfigs[:batchSize]
+		}
+		results, err := executor(ctx, container, image, remote, batch, includeImports, includeWellKnownTypes)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, results...)
+		pluginConfigs = pluginConfigs[len(batch):]
+	}
+	return res, nil
 }
 
 func getPluginGenerationRequest(
