@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ func newPluginIdentity(
 		owner:  owner,
 		plugin: plugin,
 	}
-	if err := validatePluginIdentity(pluginIdentity); err != nil {
+	if err := ValidatePluginIdentity(pluginIdentity); err != nil {
 		return nil, err
 	}
 	return pluginIdentity, nil
@@ -61,11 +61,11 @@ func (m *pluginIdentity) IdentityString() string {
 
 func (*pluginIdentity) isPluginIdentity() {}
 
-func validatePluginIdentity(pluginIdentity PluginIdentity) error {
+func ValidatePluginIdentity(pluginIdentity PluginIdentity) error {
 	if pluginIdentity == nil {
 		return errors.New("plugin identity is required")
 	}
-	if err := validateRemote(pluginIdentity.Remote()); err != nil {
+	if err := ValidateRemote(pluginIdentity.Remote()); err != nil {
 		return err
 	}
 	if pluginIdentity.Owner() == "" {
@@ -77,7 +77,7 @@ func validatePluginIdentity(pluginIdentity PluginIdentity) error {
 	return nil
 }
 
-func validateRemote(remote string) error {
+func ValidateRemote(remote string) error {
 	if remote == "" {
 		return errors.New("remote name is required")
 	}

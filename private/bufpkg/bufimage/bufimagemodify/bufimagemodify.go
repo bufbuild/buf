@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -288,9 +288,17 @@ func PhpMetadataNamespace(
 func RubyPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) Modifier {
-	return rubyPackage(logger, sweeper, overrides)
+	return rubyPackage(
+		logger,
+		sweeper,
+		except,
+		moduleOverrides,
+		overrides,
+	)
 }
 
 // isWellKnownType returns true if the given path is one of the well-known types.
