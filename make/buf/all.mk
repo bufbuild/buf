@@ -29,7 +29,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	private/pkg/storage/storageos/tmp/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
-LICENSE_HEADER_YEAR_RANGE := 2020-2022
+LICENSE_HEADER_YEAR_RANGE := 2020-2023
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf
@@ -107,6 +107,7 @@ bufgenerateclean:: bufgeneratecleango
 .PHONY: bufgenerateprotogo
 bufgenerateprotogo:
 	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
+	$(BUF_BIN) generate buf.build/grpc/grpc --include-types grpc.reflection.v1.ServerReflection --template data/template/buf.go.gen.yaml
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:

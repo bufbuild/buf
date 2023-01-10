@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -356,18 +356,17 @@ func run(
 			bufgen.GenerateWithIncludeWellKnownTypes(),
 		)
 	}
-	typesConfig := genConfig.TypesConfig
-	if typesConfig != nil {
-		types := typesConfig.Include
-		if len(flags.IncludeTypes) > 0 {
-			// override buf.gen.yaml with flag value
-			types = flags.IncludeTypes
-		}
-		if len(types) > 0 {
-			image, err = bufimageutil.ImageFilteredByTypes(image, types...)
-			if err != nil {
-				return err
-			}
+	var includedTypes []string
+	if len(flags.IncludeTypes) > 0 {
+		// command-line flags take precedence
+		includedTypes = flags.IncludeTypes
+	} else if genConfig.TypesConfig != nil {
+		includedTypes = genConfig.TypesConfig.Include
+	}
+	if len(includedTypes) > 0 {
+		image, err = bufimageutil.ImageFilteredByTypes(image, includedTypes...)
+		if err != nil {
+			return err
 		}
 	}
 	return bufgen.NewGenerator(

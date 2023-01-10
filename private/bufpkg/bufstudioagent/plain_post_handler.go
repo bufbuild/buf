@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import (
 	"net/url"
 
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/connect-go"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -118,7 +119,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	envelopeRequest := &studiov1alpha1.InvokeRequest{}
-	if err := proto.Unmarshal(bodyBytes, envelopeRequest); err != nil {
+	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(bodyBytes, envelopeRequest); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -238,7 +239,7 @@ func connectClientOptionsFromContentType(contentType string) ([]connect.ClientOp
 }
 
 func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message proto.Message) {
-	responseProtoBytes, err := proto.Marshal(message)
+	responseProtoBytes, err := protoencoding.NewWireMarshaler().Marshal(message)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	curatedplugindelete "github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencreate"
@@ -273,6 +274,7 @@ func NewRootCommand(name string) *appcmd.Command {
 						Short: "Manage plugins on the Buf Schema Registry.",
 						SubCommands: []*appcmd.Command{
 							pluginpush.NewCommand("push", builder),
+							curatedplugindelete.NewCommand("delete", builder),
 						},
 					},
 				},

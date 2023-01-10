@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
@@ -181,7 +182,7 @@ type flags struct {
 	// Flags for server reflection
 	Reflect         bool
 	ReflectHeaders  []string
-	ReflectProtocol bufcurl.ReflectProtocol
+	ReflectProtocol string
 
 	// Protocol details
 	Protocol            string
@@ -252,18 +253,18 @@ the request data flag (--data or -d). Furthermore, it is not allowed to indicate
 if the schema is expected to be provided via stdin as a file descriptor set or image.`,
 	)
 	flagSet.StringVar(
-		(*string)(&f.ReflectProtocol),
+		&f.ReflectProtocol,
 		reflectProtocolFlagName,
-		string(bufcurl.ReflectProtocolAuto),
+		"",
 		`The reflection protocol to use for downloading information from the server. This flag
-may only be used when --reflect is also set. The default value of this flag is "auto",
-which means the newest relevant protocol will be tried first. If this results in a
-"Not Implemented" error then older protocols will be used. In practice, this means that
-"grpc-v1" is used first and "grpc-v1alpha" is used if it doesn't work. If newer reflection
-protocols are introduced, they may be preferred (but "auto" will still fallback to earlier
-ones). The valid values for this flag are "auto", "grpc-v1" and "grpc-v1alpha". The latter
-two correspond to services named "grpc.reflection.v1.ServerReflection" and
-"grpc.reflection.v1alpha.ServerReflection" respectively.`,
+may only be used when server reflection is used. By default, this command will try all known
+reflection protocols from newest to oldest. If this results in a "Not Implemented" error,
+then older protocols will be used. In practice, this means that "grpc-v1" is tried first,
+and "grpc-v1alpha" is used if it doesn't work. If newer reflection protocols are introduced,
+they may be preferred in the absence of this flag being explicitly set to a specific protocol.
+The valid values for this flag are "grpc-v1" and "grpc-v1alpha". These correspond to services
+named "grpc.reflection.v1.ServerReflection" and "grpc.reflection.v1alpha.ServerReflection"
+respectively.`,
 	)
 
 	flagSet.StringVar(
@@ -423,12 +424,12 @@ func (f *flags) validate(isSecure bool) error {
 			"reflection flags (--%s, --%s) should not be used if --%s is false",
 			reflectHeaderFlagName, reflectProtocolFlagName, reflectFlagName)
 	}
-	switch f.ReflectProtocol {
-	case bufcurl.ReflectProtocolAuto, bufcurl.ReflectProtocolGRPCv1, bufcurl.ReflectProtocolGRPCv1alpha:
-	default:
+	if _, err := bufcurl.ParseReflectProtocol(f.ReflectProtocol); err != nil {
 		return fmt.Errorf(
-			"--%s value must be one of %q, %q, or %q",
-			reflectProtocolFlagName, bufcurl.ReflectProtocolAuto, bufcurl.ReflectProtocolGRPCv1, bufcurl.ReflectProtocolGRPCv1alpha)
+			"--%s value must be one of %s",
+			reflectProtocolFlagName,
+			stringutil.SliceToHumanStringOrQuoted(bufcurl.AllKnownReflectProtocolStrings),
+		)
 	}
 	switch f.Protocol {
 	case connect.ProtocolConnect, connect.ProtocolGRPC, connect.ProtocolGRPCWeb:
@@ -651,8 +652,12 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		if err != nil {
 			return err
 		}
+		reflectProtocol, err := bufcurl.ParseReflectProtocol(f.ReflectProtocol)
+		if err != nil {
+			return err
+		}
 		var closeRes func()
-		res, closeRes = bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, baseURL, f.ReflectProtocol, reflectHeaders, container.VerbosePrinter())
+		res, closeRes = bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, baseURL, reflectProtocol, reflectHeaders, container.VerbosePrinter())
 		defer closeRes()
 	} else {
 		ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, f.Schema)
