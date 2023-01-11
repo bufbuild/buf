@@ -150,7 +150,7 @@ func (m *Manifest) Paths() []string {
 // Paths is nil and ok is false if no paths are found.
 func (m *Manifest) PathsFor(digest string) ([]string, bool) {
 	paths, ok := m.digestToPaths[digest]
-	if !ok {
+	if !ok || len(paths) == 0 {
 		return nil, false
 	}
 	return paths, true
