@@ -201,7 +201,7 @@ func (s *BlobSet) BlobFor(digest string) (Blob, bool) {
 	return blob, true
 }
 
-// Blobs returns the blobs in the set as an array.
+// Blobs returns a slice of the blobs in the set.
 func (s *BlobSet) Blobs() []Blob {
 	blobs := make([]Blob, 0, len(s.digestToBlob))
 	for _, b := range s.digestToBlob {

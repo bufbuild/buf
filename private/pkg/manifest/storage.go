@@ -92,7 +92,7 @@ type BucketOption func(*bucketOptions)
 
 // BucketWithAllManifestBlobsValidation validates that all manifest digests in
 // have a corresponding blob in the blob set. If this option is not passed, then
-// buckets with partial/incomplete blobs is allowed.
+// buckets with partial/incomplete blobs are allowed.
 func BucketWithAllManifestBlobsValidation() BucketOption {
 	return func(opts *bucketOptions) {
 		opts.allManifestBlobs = true
