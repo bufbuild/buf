@@ -24,9 +24,9 @@ import (
 	"sync"
 
 	reflectionv1 "github.com/bufbuild/buf/private/gen/proto/go/grpc/reflection/v1"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/connect-go"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -281,7 +281,7 @@ func descriptorsInResponse(resp *reflectionv1.ServerReflectionResponse) ([]*desc
 		files := make([]*descriptorpb.FileDescriptorProto, len(response.FileDescriptorResponse.FileDescriptorProto))
 		for i, data := range response.FileDescriptorResponse.FileDescriptorProto {
 			var file descriptorpb.FileDescriptorProto
-			if err := proto.Unmarshal(data, &file); err != nil {
+			if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, &file); err != nil {
 				return nil, err
 			}
 			files[i] = &file
