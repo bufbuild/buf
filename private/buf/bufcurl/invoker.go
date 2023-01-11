@@ -27,9 +27,9 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/connect-go"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -50,7 +50,7 @@ func (p protoCodec) Marshal(a any) ([]byte, error) {
 	if !ok {
 		return nil, fmt.Errorf("cannot marshal: %T does not implement proto.Message", a)
 	}
-	return proto.Marshal(protoMessage)
+	return protoencoding.NewWireMarshaler().Marshal(protoMessage)
 }
 
 func (p protoCodec) Unmarshal(bytes []byte, a any) error {
@@ -64,7 +64,7 @@ func (p protoCodec) Unmarshal(bytes []byte, a any) error {
 	if !ok {
 		return fmt.Errorf("cannot unmarshal: %T does not implement proto.Message", a)
 	}
-	return proto.Unmarshal(bytes, protoMessage)
+	return protoencoding.NewWireUnmarshaler(nil).Unmarshal(bytes, protoMessage)
 }
 
 type invokeClient = connect.Client[dynamicpb.Message, deferredMessage]
@@ -276,18 +276,16 @@ func (inv *invoker) handleResponse(data []byte, msg *dynamicpb.Message) error {
 	if msg == nil {
 		msg = dynamicpb.NewMessage(inv.md.Output())
 	}
-	if err := (proto.UnmarshalOptions{Resolver: inv.res}).Unmarshal(data, msg); err != nil {
+	if err := protoencoding.NewWireUnmarshaler(inv.res).Unmarshal(data, msg); err != nil {
 		return err
 	}
-	outputBytes, err := (protojson.MarshalOptions{Resolver: inv.res}).Marshal(msg)
+	// If we want to add a pretty-print option, we should perhaps make this a flag
+	// and use protoencoding.NewJSONMarshalerIndent
+	outputBytes, err := protoencoding.NewJSONMarshaler(inv.res).Marshal(msg)
 	if err != nil {
 		return err
 	}
-	var prettyPrinted bytes.Buffer
-	if err := json.Indent(&prettyPrinted, outputBytes, "", "   "); err != nil {
-		return err
-	}
-	_, err = fmt.Fprintf(inv.output, "%s\n", prettyPrinted.Bytes())
+	_, err = fmt.Fprintf(inv.output, "%s\n", outputBytes)
 	return err
 }
 
@@ -431,5 +429,5 @@ func (s *streamMessageProvider) next(msg proto.Message) error {
 		return fmt.Errorf("%s at offset %d: %w", s.name, s.dec.InputOffset(), err)
 	}
 	proto.Reset(msg)
-	return protojson.UnmarshalOptions{Resolver: s.res}.Unmarshal(jsonData, msg)
+	return protoencoding.NewJSONUnmarshaler(s.res).Unmarshal(jsonData, msg)
 }
