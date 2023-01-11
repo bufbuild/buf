@@ -124,7 +124,7 @@ type ExternalConfigDependencyV1Beta1 struct {
 	CreateTime time.Time `json:"create_time,omitempty" yaml:"create_time,omitempty"`
 }
 
-// DepedencyForExternalConfigDependencyV1Beta1 returns the Dependency representation of a ExternalConfigDependencyV1Beta1.
+// DependencyForExternalConfigDependencyV1Beta1 returns the Dependency representation of a ExternalConfigDependencyV1Beta1.
 func DependencyForExternalConfigDependencyV1Beta1(dep ExternalConfigDependencyV1Beta1) Dependency {
 	return Dependency{
 		Remote:     dep.Remote,

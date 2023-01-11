@@ -103,14 +103,12 @@ func NewFromReader(manifest io.Reader) (*Manifest, error) {
 			return nil, newErrorWrapped(lineno, err)
 		}
 	}
-	err := scanner.Err()
-	if err == errNoFinalNewline {
-		return nil, newError(lineno, "partial record")
-	}
-	if err != nil {
+	if err := scanner.Err(); err != nil {
+		if err == errNoFinalNewline {
+			return nil, newError(lineno, "partial record")
+		}
 		return nil, err
 	}
-
 	return m, nil
 }
 
