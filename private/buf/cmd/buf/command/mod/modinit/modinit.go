@@ -33,7 +33,6 @@ const (
 	documentationCommentsFlagName = "doc"
 	outDirPathFlagName            = "output"
 	outDirPathFlagShortName       = "o"
-	moduleNameFlagName            = "name"
 	uncommentFlagName             = "uncomment"
 )
 
