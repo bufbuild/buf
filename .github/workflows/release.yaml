@@ -149,7 +149,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           token: ${{ steps.generate_token.outputs.token }}
-          generate_release_notes: true # change to the CHANGELOG somehow
           files: |
             ${{github.workspace}}/.build/release/buf/assets/*
       - name: Slack Notification
