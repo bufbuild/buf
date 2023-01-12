@@ -68,19 +68,19 @@ func NewCommand(
 		Long: `
 By default, the input is the current directory and the formatted content is written to stdout. For example,
 
-# Write the current directory's formatted content to stdout
+Write the current directory's formatted content to stdout
 $ buf format
 
 Rewrite the file(s) in-place with -w. For example,
 
-# Rewrite the files defined in the current directory in-place
+Rewrite the files defined in the current directory in-place
 $ buf format -w
 
 Most people will want to use 'buf format -w'.
 
 Display a diff between the original and formatted content with -d. For example,
 
-# Write a diff instead of the formatted file
+Write a diff instead of the formatted file
 $ buf format simple/simple.proto -d
 diff -u simple/simple.proto.orig simple/simple.proto
 --- simple/simple.proto.orig	2022-03-24 09:44:10.000000000 -0700
@@ -105,7 +105,7 @@ $ buf format -d --exit-code
 
 Format a file, directory, or module reference by specifying an input. For example,
 
-# Write the formatted file to stdout
+Write the formatted file to stdout
 $ buf format simple/simple.proto
 syntax = "proto3";
 
@@ -116,34 +116,34 @@ message Object {
   bytes value = 2;
 }
 
-# Write the formatted directory to stdout
+Write the formatted directory to stdout
 $ buf format simple
 ...
 
-# Write the formatted module reference to stdout
+Write the formatted module reference to stdout
 $ buf format buf.build/acme/petapis
 ...
 
 Write the result to a specified output file or directory with -o. For example,
 
-# Write the formatted file to another file
+Write the formatted file to another file
 $ buf format simple/simple.proto -o simple/simple.formatted.proto
 
-# Write the formatted directory to another directory, creating it if it doesn't exist
+Write the formatted directory to another directory, creating it if it doesn't exist
 $ buf format proto -o formatted
 
-# This also works with module references
+This also works with module references
 $ buf format buf.build/acme/weather -o formatted
 
 Rewrite the file(s) in-place with -w. For example,
 
-# Rewrite a single file in-place
+Rewrite a single file in-place
 $ buf format simple.proto -w
 
-# Rewrite an entire directory in-place
+Rewrite an entire directory in-place
 $ buf format proto -w
 
-# Write a diff and rewrite the file(s) in-place
+Write a diff and rewrite the file(s) in-place
 $ buf format simple -d -w
 diff -u simple/simple.proto.orig simple/simple.proto
 ...
