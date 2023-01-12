@@ -59,8 +59,6 @@ func NewCommand(
 type flags struct {
 	DocumentationComments bool
 	OutDirPath            string
-	// Special
-	InputHashtag string
 
 	// Hidden.
 	// Just used for generating docs.buf.build.
@@ -117,11 +115,8 @@ func run(
 	if existingConfigFilePath != "" {
 		return appcmd.NewInvalidArgumentErrorf("%s already exists, not overwriting", existingConfigFilePath)
 	}
-	name, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
-	if err != nil {
-		return err
-	}
 	var writeConfigOptions []bufconfig.WriteConfigOption
+	name := container.Arg(1)
 	if name != "" {
 		writeConfigWithName, err := bufconfig.WriteConfigWithName(name)
 		if err != nil {
