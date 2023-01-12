@@ -59,6 +59,8 @@ func NewCommand(
 type flags struct {
 	DocumentationComments bool
 	OutDirPath            string
+	// Special
+	InputHashtag string
 
 	// Hidden.
 	// Just used for generating docs.buf.build.
