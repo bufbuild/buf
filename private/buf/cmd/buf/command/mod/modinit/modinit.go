@@ -17,6 +17,7 @@ package modinit
 import (
 	"context"
 	"fmt"
+
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
@@ -59,7 +60,6 @@ func NewCommand(
 type flags struct {
 	DocumentationComments bool
 	OutDirPath            string
-	Name                  string
 	// Special
 	InputHashtag string
 
@@ -85,12 +85,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outDirPathFlagShortName,
 		".",
 		`The directory to write the configuration file to.`,
-	)
-	flagSet.StringVar(
-		&f.Name,
-		moduleNameFlagName,
-		"",
-		`The name of this module to init with.`,
 	)
 	flagSet.BoolVar(
 		&f.Uncomment,
@@ -124,11 +118,7 @@ func run(
 	if existingConfigFilePath != "" {
 		return appcmd.NewInvalidArgumentErrorf("%s already exists, not overwriting", existingConfigFilePath)
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
-	if err != nil {
-		return err
-	}
-	name, err := getModuleName(input, flags.Name)
+	name, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
 	if err != nil {
 		return err
 	}
@@ -181,14 +171,4 @@ func run(
 		readWriteBucket,
 		writeConfigOptions...,
 	)
-}
-
-func getModuleName(name1, name2 string) (string, error) {
-	if name1 != "" && name2 != "" && name1 != name2 {
-		return "", fmt.Errorf("two different module name was supplied: %s and %s", name1, name2)
-	}
-	if name1 == "" {
-		return name2, nil
-	}
-	return name1, nil
 }
