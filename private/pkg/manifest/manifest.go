@@ -50,6 +50,7 @@ func newError(lineno int, msg string) *Error {
 		msg:    msg,
 	}
 }
+
 func newErrorWrapped(lineno int, err error) *Error {
 	return &Error{
 		lineno:  lineno,

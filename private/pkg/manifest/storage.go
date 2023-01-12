@@ -68,10 +68,7 @@ func NewFromBucket(
 			return err
 		}
 		blobs = append(blobs, blob)
-		if err := m.AddEntry(path, *blob.Digest()); err != nil {
-			return err
-		}
-		return nil
+		return m.AddEntry(path, *blob.Digest())
 	}); walkErr != nil {
 		return nil, nil, walkErr
 	}
@@ -128,7 +125,7 @@ func NewBucket(m Manifest, blobs BlobSet, opts ...BucketOption) (storage.ReadBuc
 	}
 	if config.noExtraBlobs {
 		for digestStr := range blobs.digestToBlob {
-			if _, ok := m.digestToPaths[digestStr]; !ok {
+			if _, ok := m.PathsFor(digestStr); !ok {
 				return nil, fmt.Errorf("blob with digest %q is not present in the manifest", digestStr)
 			}
 		}

@@ -96,7 +96,7 @@ func (b *memoryBlob) Open(context.Context) (io.ReadCloser, error) {
 }
 
 // AsProtoBlob returns the passed blob as a proto module blob.
-func AsProtoBlob(ctx context.Context, b Blob) (*modulev1alpha1.Blob, error) {
+func AsProtoBlob(ctx context.Context, b Blob) (_ *modulev1alpha1.Blob, retErr error) {
 	hashKind, ok := digestTypeToHashKind[b.Digest().Type()]
 	if !ok {
 		return nil, fmt.Errorf("digest type %q not supported by module proto", b.Digest().Type())
@@ -105,12 +105,12 @@ func AsProtoBlob(ctx context.Context, b Blob) (*modulev1alpha1.Blob, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot open blob: %w", err)
 	}
+	defer func() {
+		retErr = multierr.Append(retErr, rc.Close())
+	}()
 	content, err := io.ReadAll(rc)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read blob contents: %w", err)
-	}
-	if err := rc.Close(); err != nil {
-		return nil, fmt.Errorf("cannot close blob: %w", err)
 	}
 	return &modulev1alpha1.Blob{
 		Hash: &modulev1alpha1.Hash{
@@ -256,7 +256,7 @@ func NewMemoryBlobFromReaderWithDigester(content io.Reader, digester Digester) (
 // An error is returned if an unexpected I/O error occurred when opening,
 // reading, or closing either blob.
 func BlobEqual(ctx context.Context, a, b Blob) (_ bool, retErr error) {
-	const blockSize = 4098
+	const blockSize = 4096
 	if !a.Digest().Equal(*b.Digest()) {
 		// digests don't match
 		return false, nil
@@ -293,9 +293,8 @@ func BlobEqual(ctx context.Context, a, b Blob) (_ bool, retErr error) {
 			return false, bErr
 		}
 		if !bytes.Equal(aBlock[:aN], bBlock[:bN]) {
-			// Read content doesn't match. Don't forget to forward any errors
-			// returned.
-			return false, multierr.Append(nilEOF(aErr), nilEOF(bErr))
+			// Read content doesn't match.
+			return false, nil
 		}
 		if aErr == io.EOF || bErr == io.EOF {
 			// EOF
