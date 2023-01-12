@@ -17,7 +17,6 @@ package modinit
 import (
 	"context"
 	"fmt"
-
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
@@ -33,6 +32,7 @@ const (
 	documentationCommentsFlagName = "doc"
 	outDirPathFlagName            = "output"
 	outDirPathFlagShortName       = "o"
+	moduleNameFlagName            = "name"
 	uncommentFlagName             = "uncomment"
 )
 
@@ -43,9 +43,9 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
+		Use:   name + " <input>",
 		Short: fmt.Sprintf("Initializes and writes a new %s configuration file.", bufconfig.ExternalConfigV1FilePath),
-		Args:  cobra.NoArgs,
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -59,6 +59,9 @@ func NewCommand(
 type flags struct {
 	DocumentationComments bool
 	OutDirPath            string
+	Name                  string
+	// Special
+	InputHashtag string
 
 	// Hidden.
 	// Just used for generating docs.buf.build.
@@ -82,6 +85,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outDirPathFlagShortName,
 		".",
 		`The directory to write the configuration file to.`,
+	)
+	flagSet.StringVar(
+		&f.Name,
+		moduleNameFlagName,
+		"",
+		`The name of this module to init with.`,
 	)
 	flagSet.BoolVar(
 		&f.Uncomment,
@@ -115,7 +124,22 @@ func run(
 	if existingConfigFilePath != "" {
 		return appcmd.NewInvalidArgumentErrorf("%s already exists, not overwriting", existingConfigFilePath)
 	}
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
+	if err != nil {
+		return err
+	}
+	name, err := getModuleName(input, flags.Name)
+	if err != nil {
+		return err
+	}
 	var writeConfigOptions []bufconfig.WriteConfigOption
+	if name != "" {
+		writeConfigWithName, err := bufconfig.WriteConfigWithName(name)
+		if err != nil {
+			return err
+		}
+		writeConfigOptions = append(writeConfigOptions, writeConfigWithName)
+	}
 	if flags.DocumentationComments {
 		writeConfigOptions = append(
 			writeConfigOptions,
@@ -157,4 +181,14 @@ func run(
 		readWriteBucket,
 		writeConfigOptions...,
 	)
+}
+
+func getModuleName(name1, name2 string) (string, error) {
+	if name1 != "" && name2 != "" && name1 != name2 {
+		return "", fmt.Errorf("two different module name was supplied: %s and %s", name1, name2)
+	}
+	if name1 == "" {
+		return name2, nil
+	}
+	return name1, nil
 }
