@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,6 +59,38 @@ func TestModuleReferenceForString(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleReference, commitModuleReference)
 	require.True(t, IsCommitModuleReference(commitModuleReference))
+
+	expectedModuleReference, err = NewModuleReference("foo.com", "barr", "baz", "some/draft")
+	require.NoError(t, err)
+	require.Equal(t, "foo.com/barr/baz:some/draft", expectedModuleReference.String())
+	moduleReference, err = ModuleReferenceForString("foo.com/barr/baz:some/draft")
+	require.NoError(t, err)
+	require.Equal(t, expectedModuleReference, moduleReference)
+	require.False(t, IsCommitModuleReference(moduleReference))
+
+	expectedModuleReference, err = NewModuleReference("localhost:8080", "barr", "baz", "some/draft")
+	require.NoError(t, err)
+	require.Equal(t, "localhost:8080/barr/baz:some/draft", expectedModuleReference.String())
+	moduleReference, err = ModuleReferenceForString("localhost:8080/barr/baz:some/draft")
+	require.NoError(t, err)
+	require.Equal(t, expectedModuleReference, moduleReference)
+	require.False(t, IsCommitModuleReference(moduleReference))
+
+	expectedModuleReference, err = NewModuleReference("localhost:8080", "barr", "baz", "ref")
+	require.NoError(t, err)
+	require.Equal(t, "localhost:8080/barr/baz:ref", expectedModuleReference.String())
+	moduleReference, err = ModuleReferenceForString("localhost:8080/barr/baz:ref")
+	require.NoError(t, err)
+	require.Equal(t, expectedModuleReference, moduleReference)
+	require.False(t, IsCommitModuleReference(moduleReference))
+
+	expectedModuleReference, err = NewModuleReference("localhost:8080", "barr", "baz", "main")
+	require.NoError(t, err)
+	require.Equal(t, "localhost:8080/barr/baz", expectedModuleReference.String())
+	moduleReference, err = ModuleReferenceForString("localhost:8080/barr/baz")
+	require.NoError(t, err)
+	require.Equal(t, expectedModuleReference, moduleReference)
+	require.False(t, IsCommitModuleReference(moduleReference))
 }
 
 func TestModuleReferenceForStringError(t *testing.T) {

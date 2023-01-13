@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,6 +60,8 @@ type UserServiceClient interface {
 	UpdateUserServerRole(context.Context, *connect_go.Request[v1alpha1.UpdateUserServerRoleRequest]) (*connect_go.Response[v1alpha1.UpdateUserServerRoleResponse], error)
 	// CountUsers returns the number of users in the server by the user state provided.
 	CountUsers(context.Context, *connect_go.Request[v1alpha1.CountUsersRequest]) (*connect_go.Response[v1alpha1.CountUsersResponse], error)
+	// UpdateUserSettings update the user settings including description.
+	UpdateUserSettings(context.Context, *connect_go.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect_go.Response[v1alpha1.UpdateUserSettingsResponse], error)
 }
 
 // NewUserServiceClient constructs a client for the buf.alpha.registry.v1alpha1.UserService service.
@@ -117,6 +119,11 @@ func NewUserServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+"/buf.alpha.registry.v1alpha1.UserService/CountUsers",
 			opts...,
 		),
+		updateUserSettings: connect_go.NewClient[v1alpha1.UpdateUserSettingsRequest, v1alpha1.UpdateUserSettingsResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.UserService/UpdateUserSettings",
+			opts...,
+		),
 	}
 }
 
@@ -131,6 +138,7 @@ type userServiceClient struct {
 	deactivateUser        *connect_go.Client[v1alpha1.DeactivateUserRequest, v1alpha1.DeactivateUserResponse]
 	updateUserServerRole  *connect_go.Client[v1alpha1.UpdateUserServerRoleRequest, v1alpha1.UpdateUserServerRoleResponse]
 	countUsers            *connect_go.Client[v1alpha1.CountUsersRequest, v1alpha1.CountUsersResponse]
+	updateUserSettings    *connect_go.Client[v1alpha1.UpdateUserSettingsRequest, v1alpha1.UpdateUserSettingsResponse]
 }
 
 // CreateUser calls buf.alpha.registry.v1alpha1.UserService.CreateUser.
@@ -178,6 +186,11 @@ func (c *userServiceClient) CountUsers(ctx context.Context, req *connect_go.Requ
 	return c.countUsers.CallUnary(ctx, req)
 }
 
+// UpdateUserSettings calls buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings.
+func (c *userServiceClient) UpdateUserSettings(ctx context.Context, req *connect_go.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect_go.Response[v1alpha1.UpdateUserSettingsResponse], error) {
+	return c.updateUserSettings.CallUnary(ctx, req)
+}
+
 // UserServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.UserService service.
 type UserServiceHandler interface {
 	// CreateUser creates a new user with the given username.
@@ -199,6 +212,8 @@ type UserServiceHandler interface {
 	UpdateUserServerRole(context.Context, *connect_go.Request[v1alpha1.UpdateUserServerRoleRequest]) (*connect_go.Response[v1alpha1.UpdateUserServerRoleResponse], error)
 	// CountUsers returns the number of users in the server by the user state provided.
 	CountUsers(context.Context, *connect_go.Request[v1alpha1.CountUsersRequest]) (*connect_go.Response[v1alpha1.CountUsersResponse], error)
+	// UpdateUserSettings update the user settings including description.
+	UpdateUserSettings(context.Context, *connect_go.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect_go.Response[v1alpha1.UpdateUserSettingsResponse], error)
 }
 
 // NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -253,6 +268,11 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect_go.HandlerOpt
 		svc.CountUsers,
 		opts...,
 	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.UserService/UpdateUserSettings", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.UserService/UpdateUserSettings",
+		svc.UpdateUserSettings,
+		opts...,
+	))
 	return "/buf.alpha.registry.v1alpha1.UserService/", mux
 }
 
@@ -293,4 +313,8 @@ func (UnimplementedUserServiceHandler) UpdateUserServerRole(context.Context, *co
 
 func (UnimplementedUserServiceHandler) CountUsers(context.Context, *connect_go.Request[v1alpha1.CountUsersRequest]) (*connect_go.Response[v1alpha1.CountUsersResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.CountUsers is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) UpdateUserSettings(context.Context, *connect_go.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect_go.Response[v1alpha1.UpdateUserSettingsResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.UserService.UpdateUserSettings is not implemented"))
 }

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,14 +21,15 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
-	"github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/connect-go"
@@ -112,16 +113,16 @@ func run(
 		return err
 	}
 
-	remote := bufrpc.DefaultRemote
+	remote := bufconnect.DefaultRemote
 	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
 		remote = moduleConfig.ModuleIdentity.Remote()
 	} else {
 		for _, moduleReference := range moduleConfig.Build.DependencyModuleReferences {
-			if strings.HasSuffix(moduleReference.Remote(), bufTeamsRemote) && !strings.HasSuffix(bufrpc.DefaultRemote, bufTeamsRemote) {
+			if strings.HasSuffix(moduleReference.Remote(), bufTeamsRemote) && !strings.HasSuffix(bufconnect.DefaultRemote, bufTeamsRemote) {
 				warnMsg := fmt.Sprintf(
 					`%q does not specify a "name", so Buf is defaulting to using remote %q for dependency resolution. This remote may be unable to resolve %q if it's an enterprise BSR module. Did you mean to specify a "name: %s/..." on this module?`,
 					existingConfigFilePath,
-					bufrpc.DefaultRemote,
+					bufconnect.DefaultRemote,
 					moduleReference.IdentityString(),
 					moduleReference.Remote(),
 				)
@@ -180,14 +181,11 @@ func getDependencies(
 	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
 		return nil, nil
 	}
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return nil, err
 	}
-	service, err := apiProvider.NewResolveService(ctx, remote)
-	if err != nil {
-		return nil, err
-	}
+	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
 	var protoDependencyModuleReferences []*modulev1alpha1.ModuleReference
 	var currentProtoModulePins []*modulev1alpha1.ModulePin
 	if len(flags.Only) > 0 {
@@ -212,31 +210,29 @@ func getDependencies(
 			moduleConfig.Build.DependencyModuleReferences...,
 		)
 	}
-	protoDependencyModulePins, err := service.GetModulePins(
+	resp, err := service.GetModulePins(
 		ctx,
-		protoDependencyModuleReferences,
-		currentProtoModulePins,
+		connect.NewRequest(&registryv1alpha1.GetModulePinsRequest{
+			ModuleReferences:  protoDependencyModuleReferences,
+			CurrentModulePins: currentProtoModulePins,
+		}),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeUnimplemented && remote != bufrpc.DefaultRemote {
+		if connect.CodeOf(err) == connect.CodeUnimplemented && remote != bufconnect.DefaultRemote {
 			return nil, bufcli.NewUnimplementedRemoteError(err, remote, moduleConfig.ModuleIdentity.IdentityString())
 		}
 		return nil, err
 	}
-	dependencyModulePins, err := bufmoduleref.NewModulePinsForProtos(protoDependencyModulePins...)
+	dependencyModulePins, err := bufmoduleref.NewModulePinsForProtos(resp.Msg.ModulePins...)
 	if err != nil {
 		return nil, bufcli.NewInternalError(err)
 	}
 	// We want to create one repository service per relevant remote.
-	remoteToRepositoryService := make(map[string]registryv1alpha1api.RepositoryService)
+	remoteToRepositoryService := make(map[string]registryv1alpha1connect.RepositoryServiceClient)
 	remoteToDependencyModulePins := make(map[string][]bufmoduleref.ModulePin)
 	for _, pin := range dependencyModulePins {
 		if _, ok := remoteToRepositoryService[pin.Remote()]; !ok {
-			repositoryService, err := apiProvider.NewRepositoryService(ctx, pin.Remote())
-			if err != nil {
-				return nil, err
-			}
-			remoteToRepositoryService[pin.Remote()] = repositoryService
+			remoteToRepositoryService[pin.Remote()] = connectclient.Make(clientConfig, pin.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
 		}
 		remoteToDependencyModulePins[pin.Remote()] = append(remoteToDependencyModulePins[pin.Remote()], pin)
 	}
@@ -250,7 +246,10 @@ func getDependencies(
 		for i, pin := range dependencyModulePins {
 			dependencyFullNames[i] = fmt.Sprintf("%s/%s", pin.Owner(), pin.Repository())
 		}
-		dependencyRepos, err := repositoryService.GetRepositoriesByFullName(ctx, dependencyFullNames)
+		resp, err := repositoryService.GetRepositoriesByFullName(ctx,
+			connect.NewRequest(&registryv1alpha1.GetRepositoriesByFullNameRequest{
+				FullNames: dependencyFullNames,
+			}))
 		if err != nil {
 			return nil, err
 		}
@@ -258,7 +257,7 @@ func getDependencies(
 		for i, modulePin := range dependencyModulePins {
 			pinnedRepositories[i] = &pinnedRepository{
 				modulePin:  modulePin,
-				repository: dependencyRepos[i],
+				repository: resp.Msg.Repositories[i],
 			}
 		}
 		allPinnedRepositories = append(allPinnedRepositories, pinnedRepositories...)

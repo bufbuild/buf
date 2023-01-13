@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,5 +51,15 @@ type ReadWriteBucketOption func(*readWriteBucketOptions)
 func ReadWriteBucketWithSymlinksIfSupported() ReadWriteBucketOption {
 	return func(readWriteBucketOptions *readWriteBucketOptions) {
 		readWriteBucketOptions.symlinksIfSupported = true
+	}
+}
+
+// ProviderWithSymlinks returns a ProviderOption that results in symlink support.
+//
+// Note that ReadWriteBucketWithSymlinksEnabled still needs to be passed for a given
+// ReadWriteBucket to have symlinks followed.
+func ProviderWithSymlinks() ProviderOption {
+	return func(provider *provider) {
+		provider.symlinks = true
 	}
 }

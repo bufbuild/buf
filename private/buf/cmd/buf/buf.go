@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,15 +19,18 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	curatedplugindelete "github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/plugindelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
@@ -53,9 +56,14 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversioncreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/format"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
@@ -89,6 +97,10 @@ func NewRootCommand(name string) *appcmd.Command {
 		appflag.BuilderWithTimeout(120*time.Second),
 		appflag.BuilderWithTracing(),
 	)
+	noTimeoutBuilder := appflag.NewBuilder(
+		name,
+		appflag.BuilderWithTracing(),
+	)
 	globalFlags := bufcli.NewGlobalFlags()
 	return &appcmd.Command{
 		Use:                 name,
@@ -105,6 +117,8 @@ func NewRootCommand(name string) *appcmd.Command {
 			generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
 			push.NewCommand("push", builder),
+			convert.NewCommand("convert", builder),
+			curl.NewCommand("curl", builder),
 			{
 				Use:   "mod",
 				Short: "Manage Buf modules.",
@@ -132,7 +146,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					convert.NewCommand("convert", builder),
 					migratev1beta1.NewCommand("migrate-v1beta1", builder),
-					studioagent.NewCommand("studio-agent", builder),
+					studioagent.NewCommand("studio-agent", noTimeoutBuilder),
 					{
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry.",
@@ -176,6 +190,14 @@ func NewRootCommand(name string) *appcmd.Command {
 								},
 							},
 							{
+								Use:   "draft",
+								Short: "Manage a repository's drafts.",
+								SubCommands: []*appcmd.Command{
+									draftdelete.NewCommand("delete", builder),
+									draftlist.NewCommand("list", builder),
+								},
+							},
+							{
 								Use:   "plugin",
 								Short: "Manage Protobuf plugins.",
 								SubCommands: []*appcmd.Command{
@@ -212,6 +234,15 @@ func NewRootCommand(name string) *appcmd.Command {
 									},
 								},
 							},
+							{
+								Use:   "webhook",
+								Short: "Manage webhooks for a repository on the Buf Schema Registry.",
+								SubCommands: []*appcmd.Command{
+									webhookcreate.NewCommand("create", builder),
+									webhookdelete.NewCommand("delete", builder),
+									webhooklist.NewCommand("list", builder),
+								},
+							},
 						},
 					},
 				},
@@ -236,6 +267,14 @@ func NewRootCommand(name string) *appcmd.Command {
 									tokendelete.NewCommand("delete", builder),
 								},
 							},
+						},
+					},
+					{
+						Use:   "plugin",
+						Short: "Manage plugins on the Buf Schema Registry.",
+						SubCommands: []*appcmd.Command{
+							pluginpush.NewCommand("push", builder),
+							curatedplugindelete.NewCommand("delete", builder),
 						},
 					},
 				},

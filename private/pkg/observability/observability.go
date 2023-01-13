@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats/view"
+	"go.opencensus.io/tag"
 	"go.opencensus.io/trace"
+	otelmetric "go.opentelemetry.io/otel/metric"
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 // TraceExportCloser describes the interface used to export OpenCensus traces
@@ -42,6 +45,16 @@ type ViewExportCloser interface {
 type TraceViewExportCloser interface {
 	ViewExportCloser
 	TraceExportCloser
+}
+
+type TracerProviderCloser interface {
+	oteltrace.TracerProvider
+	io.Closer
+}
+
+type MeterProviderCloser interface {
+	otelmetric.MeterProvider
+	io.Closer
 }
 
 // Start initializes tracing.
@@ -78,6 +91,14 @@ func Start(options ...StartOption) io.Closer {
 		view.RegisterExporter(traceViewExportCloser)
 		closers = append(closers, traceViewExportCloser)
 	}
+	for _, tracerProviderCloser := range startOptions.tracerProviderClosers {
+		tracerProviderCloser := tracerProviderCloser
+		closers = append(closers, tracerProviderCloser)
+	}
+	for _, meterProviderCloser := range startOptions.meterProviderClosers {
+		meterProviderCloser := meterProviderCloser
+		closers = append(closers, meterProviderCloser)
+	}
 	return ioextended.ChainCloser(closers...)
 }
 
@@ -105,11 +126,26 @@ func StartWithTraceViewExportCloser(traceViewExportCloser TraceViewExportCloser)
 	}
 }
 
+func StartWithTracerProviderCloser(tracerProviderCloser TracerProviderCloser) StartOption {
+	return func(startOptions *startOptions) {
+		startOptions.tracerProviderClosers = append(startOptions.tracerProviderClosers, tracerProviderCloser)
+	}
+}
+
+func StartWithMeterProviderCloser(meterProviderCloser MeterProviderCloser) StartOption {
+	return func(startOptions *startOptions) {
+		startOptions.meterProviderClosers = append(startOptions.meterProviderClosers, meterProviderCloser)
+	}
+}
+
 // NewHTTPTransport returns a HTTP transport instrumented with OpenCensus traces and metrics.
-func NewHTTPTransport(base http.RoundTripper) http.RoundTripper {
-	return &ochttp.Transport{
-		NewClientTrace: ochttp.NewSpanAnnotatingClientTrace,
-		Base:           base,
+func NewHTTPTransport(base http.RoundTripper, tags ...tag.Mutator) http.RoundTripper {
+	return &wrappedRoundTripper{
+		Base: &ochttp.Transport{
+			NewClientTrace: ochttp.NewSpanAnnotatingClientTrace,
+			Base:           base,
+		},
+		Tags: tags,
 	}
 }
 
@@ -124,6 +160,8 @@ type startOptions struct {
 	traceExportClosers     []TraceExportCloser
 	viewExportClosers      []ViewExportCloser
 	traceViewExportClosers []TraceViewExportCloser
+	tracerProviderClosers  []TracerProviderCloser
+	meterProviderClosers   []MeterProviderCloser
 }
 
 func newStartOptions() *startOptions {

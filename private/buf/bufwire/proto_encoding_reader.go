@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ func (p *protoEncodingReader) GetMessage(
 	case bufconvert.MessageEncodingJSON:
 		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
 	default:
-		return nil, fmt.Errorf("unknown message encoding type")
+		return nil, errors.New("unknown message encoding type")
 	}
 	readCloser := io.NopCloser(container.Stdin())
 	if messageRef.Path() != "-" {

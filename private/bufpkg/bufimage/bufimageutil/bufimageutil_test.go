@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package bufimageutil
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"sort"
 	"testing"
@@ -32,8 +33,11 @@ import (
 	"github.com/jhump/protoreflect/desc/protoprint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 	"golang.org/x/tools/txtar"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const shouldUpdateExpectations = false
@@ -49,8 +53,20 @@ func TestOptions(t *testing.T) {
 	t.Run("service", func(t *testing.T) {
 		runDiffTest(t, "testdata/options", []string{"pkg.FooService"}, "pkg.FooService.txtar")
 	})
+	t.Run("method", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.FooService.Do"}, "pkg.FooService.Do.txtar")
+	})
 	t.Run("all", func(t *testing.T) {
 		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all.txtar")
+	})
+	t.Run("exclude-options", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all-exclude-options.txtar", WithExcludeCustomOptions())
+	})
+	t.Run("files", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"Files"}, "Files.txtar")
+	})
+	t.Run("all-with-files", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "Files"}, "all-with-Files.txtar")
 	})
 }
 
@@ -89,9 +105,10 @@ func TestImportModifiers(t *testing.T) {
 func TestExtensions(t *testing.T) {
 	t.Parallel()
 	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions.txtar")
+	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions-excluded.txtar", WithExcludeKnownExtensions())
 }
 
-func TestTransitivePublicFail(t *testing.T) {
+func TestTransitivePublic(t *testing.T) {
 	ctx := context.Background()
 	bucket, err := storagemem.NewReadBucket(map[string][]byte{
 		"a.proto": []byte(`syntax = "proto3";package a;message Foo{}`),
@@ -112,18 +129,8 @@ func TestTransitivePublicFail(t *testing.T) {
 	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
 	require.NoError(t, err)
 
-	// This filtered image won't be usable as c.proto doesn't have a import
-	// for `a.Foo`. There's two ways to resolve this:
-	//
-	//  1. generate a b.proto with only a public import for a.proto and no other types.
-	//  2. import a.proto directly in c.proto
-	//
-	// Both have some pro's and cons, given that we lint against public
-	// imports I'm currently inclined to defer this decision until we have a
-	// customer need for picking either.
 	_, err = desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unresolvable reference")
+	require.NoError(t, err)
 }
 
 func TestTypesFromMainModule(t *testing.T) {
@@ -157,32 +164,52 @@ func TestTypesFromMainModule(t *testing.T) {
 	_, err = ImageFilteredByTypes(image, "dependency.Dep")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeIsImport)
+
+	// allowed if we specify option
+	_, err = ImageFilteredByTypesWithOptions(image, []string{"dependency.Dep"}, WithAllowFilterByImportedType())
+	require.NoError(t, err)
+
 	_, err = ImageFilteredByTypes(image, "nonexisting")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
 
-func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string) {
-	ctx := context.Background()
+func getImage(ctx context.Context, logger *zap.Logger, testdataDir string) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, nil, err
+	}
 	module, err := bufmodule.NewModuleForBucket(
 		ctx,
 		storage.MapReadBucket(bucket, storage.MatchPathExt(".proto")),
 	)
-	require.NoError(t, err)
-	builder := bufimagebuild.NewBuilder(zaptest.NewLogger(t))
+	if err != nil {
+		return nil, nil, err
+	}
+	builder := bufimagebuild.NewBuilder(logger)
 	image, analysis, err := builder.Build(
 		ctx,
 		bufmodule.NewModuleFileSet(module, nil),
 		bufimagebuild.WithExcludeSourceCodeInfo(),
 	)
-	require.NoError(t, err)
-	require.Empty(t, analysis)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(analysis) > 0 {
+		return nil, nil, fmt.Errorf("%d errors in source when building", len(analysis))
+	}
+	return bucket, image, nil
+}
 
-	filteredImage, err := ImageFilteredByTypes(image, typenames...)
+func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
+	ctx := context.Background()
+	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), testdataDir)
+	require.NoError(t, err)
+
+	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
 	require.NoError(t, err)
 	assert.NotNil(t, image)
+	assert.True(t, imageIsDependencyOrdered(filteredImage), "image files not in dependency order")
 
 	reflectDescriptors, err := desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
@@ -219,5 +246,78 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 		_, err = writer.Write(generated)
 		require.NoError(t, err)
 		require.NoError(t, writer.Close())
+	}
+}
+
+func imageIsDependencyOrdered(image bufimage.Image) bool {
+	seen := make(map[string]struct{})
+	for _, file := range image.Files() {
+		for _, importName := range file.Proto().Dependency {
+			if _, ok := seen[importName]; !ok {
+				return false
+			}
+		}
+		seen[file.Path()] = struct{}{}
+	}
+	return true
+}
+
+func BenchmarkFilterImage(b *testing.B) {
+	benchmarkCases := []*struct {
+		folder string
+		image  bufimage.Image
+		types  []string
+	}{
+		{
+			folder: "testdata/extensions",
+			types:  []string{"pkg.Foo"},
+		},
+		{
+			folder: "testdata/importmods",
+			types:  []string{"ImportRegular", "ImportWeak", "ImportPublic", "NoImports"},
+		},
+		{
+			folder: "testdata/nesting",
+			types:  []string{"pkg.Foo", "pkg.Foo.NestedFoo.NestedNestedFoo", "pkg.Baz", "pkg.FooEnum"},
+		},
+		{
+			folder: "testdata/options",
+			types:  []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "pkg.FooService.Do"},
+		},
+	}
+	ctx := context.Background()
+	for _, benchmarkCase := range benchmarkCases {
+		_, image, err := getImage(ctx, zaptest.NewLogger(b), benchmarkCase.folder)
+		require.NoError(b, err)
+		benchmarkCase.image = image
+	}
+	b.ResetTimer()
+
+	i := 0
+	for {
+		for _, benchmarkCase := range benchmarkCases {
+			for _, typeName := range benchmarkCase.types {
+				// filtering is destructive, so we have to make a copy
+				b.StopTimer()
+				imageFiles := make([]bufimage.ImageFile, len(benchmarkCase.image.Files()))
+				for j, file := range benchmarkCase.image.Files() {
+					clone, ok := proto.Clone(file.Proto()).(*descriptorpb.FileDescriptorProto)
+					require.True(b, ok)
+					var err error
+					imageFiles[j], err = bufimage.NewImageFile(clone, nil, "", "", false, false, nil)
+					require.NoError(b, err)
+				}
+				image, err := bufimage.NewImage(imageFiles)
+				require.NoError(b, err)
+				b.StartTimer()
+
+				_, err = ImageFilteredByTypes(image, typeName)
+				require.NoError(b, err)
+				i++
+				if i == b.N {
+					return
+				}
+			}
+		}
 	}
 }

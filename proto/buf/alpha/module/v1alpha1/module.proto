@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,6 +40,10 @@ message Module {
   buf.alpha.breaking.v1.Config breaking_config = 4;
   // lint_config is the lint configuration set for the module.
   buf.alpha.lint.v1.Config lint_config = 5;
+  // license is the string representation of the contents of the `LICENSE` file.
+  //
+  // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
+  string license = 6;
 }
 
 // ModuleFile is a file within a FileSet.
@@ -56,17 +60,19 @@ message ModuleReference {
   string remote = 1;
   string owner = 2;
   string repository = 3;
-  // either branch, tag, or commit
+  // either tag, or commit
   string reference = 4;
 }
 
 // ModulePin is a module pin.
 message ModulePin {
+  reserved 6;
+  reserved "digest";
+
   string remote = 1;
   string owner = 2;
   string repository = 3;
   string branch = 4;
   string commit = 5;
-  string digest = 6;
   google.protobuf.Timestamp create_time = 7;
 }

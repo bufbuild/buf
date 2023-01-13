@@ -1,0 +1,302 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/image/v1/image.proto";
+import "google/protobuf/compiler/plugin.proto";
+import "google/protobuf/timestamp.proto";
+
+// The supported plugin registries for curated plugins.
+enum PluginRegistryType {
+  PLUGIN_REGISTRY_TYPE_UNSPECIFIED = 0;
+  PLUGIN_REGISTRY_TYPE_GO = 1;
+  PLUGIN_REGISTRY_TYPE_NPM = 2;
+}
+
+// PluginLanguage is used to specify the output languages a plugin supports.
+enum PluginLanguage {
+  PLUGIN_LANGUAGE_UNSPECIFIED = 0;
+  PLUGIN_LANGUAGE_GO = 1;
+  PLUGIN_LANGUAGE_JAVASCRIPT = 2;
+  PLUGIN_LANGUAGE_TYPESCRIPT = 3;
+  PLUGIN_LANGUAGE_SWIFT = 4;
+  PLUGIN_LANGUAGE_CPP = 5;
+  PLUGIN_LANGUAGE_JAVA = 6;
+  PLUGIN_LANGUAGE_DART = 7;
+  PLUGIN_LANGUAGE_RUST = 8;
+  PLUGIN_LANGUAGE_PYTHON = 9;
+  PLUGIN_LANGUAGE_RUBY = 10;
+  PLUGIN_LANGUAGE_KOTLIN = 11;
+  PLUGIN_LANGUAGE_OBJECTIVE_C = 12;
+  PLUGIN_LANGUAGE_PHP = 13;
+  PLUGIN_LANGUAGE_CSHARP = 14;
+  PLUGIN_LANGUAGE_SCALA = 15;
+}
+
+// NPMImportStyle is used to specify the import style the plugin supports.
+enum NPMImportStyle {
+  NPM_IMPORT_STYLE_UNSPECIFIED = 0;
+  NPM_IMPORT_STYLE_MODULE = 1;
+  NPM_IMPORT_STYLE_COMMONJS = 2;
+}
+
+// GoConfig is the configuration for a Go plugin.
+message GoConfig {
+  // RuntimeLibrary describes the runtime library dependency of the generated code.
+  message RuntimeLibrary {
+    // The name of the runtime library module, i.e. "google.golang.org/protobuf".
+    string module = 1;
+    // The version of the runtime library, i.e. "v1.27.1".
+    string version = 2;
+  }
+  // Optionally define the runtime libraries for the plugin.
+  repeated RuntimeLibrary runtime_libraries = 1;
+  // The minimum Go version required by the plugin.
+  string minimum_version = 2;
+}
+
+// NPMConfig is the configuration for a JavaScript NPM plugin.
+message NPMConfig {
+  // RuntimeLibrary describes the runtime library dependency of the generated code.
+  message RuntimeLibrary {
+    // The name of the runtime library package, i.e. "@grpc/grpc-js".
+    string package = 1;
+    // The version of the runtime library, i.e. "^1.27.1".
+    string version = 2;
+  }
+  // Optionally define the runtime libraries for the plugin.
+  repeated RuntimeLibrary runtime_libraries = 1;
+  // Optionally define a configuration for rewriting import paths, a feature mainly
+  // used for remote code generation in the BSR npm registry, which makes it possible
+  // to serve the output of a BSR module and a plugin in an individual package.
+  //
+  // All plugins based on @bufbuild/protoplugin support the option "rewrite_imports".
+  // Setting this value, i.e. "connectweb.js" or "pb.js", informs the BSR npm registry
+  // that the plugin supports import rewrites with the given import suffix.
+  string rewrite_import_path_suffix = 2;
+  // The import style used for the "type" field in the package.json file.
+  // This exists to support legacy plugins that require "commonjs" support.
+  NPMImportStyle import_style = 3;
+}
+
+// RegistryConfig is the configuration for the remote registry of a plugin.
+message RegistryConfig {
+  oneof registry_config {
+    GoConfig go_config = 1;
+    NPMConfig npm_config = 2;
+  }
+  // Reserved for future remote registry types.
+  reserved 3 to 9;
+  // The options to pass to the plugin. These will
+  // be merged into a single, comma-separated string.
+  repeated string options = 10;
+}
+
+message CuratedPluginReference {
+  // The owner of the plugin, i.e. "library".
+  string owner = 1;
+  // The name of the plugin, i.e. "connect-go".
+  string name = 2;
+  // Semver-formatted plugin version.
+  string version = 3;
+  // The revision for this plugin version.
+  uint32 revision = 4;
+}
+
+// CuratedPlugin represents a protoc plugin curated by Buf, such as protoc-gen-go.
+message CuratedPlugin {
+  // The ID of the plugin, which uniquely identifies the plugin.
+  string id = 1;
+  // The owner of the plugin, i.e. "library".
+  string owner = 2;
+  // The name of the plugin, i.e. "connect-go".
+  string name = 3;
+  // The optional registry type of the plugin.
+  PluginRegistryType registry_type = 4;
+  // Semver-formatted plugin version.
+  string version = 5;
+  // The full container image digest associated with this plugin version including
+  // the algorithm.
+  // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
+  string container_image_digest = 6;
+  // The creation time of the plugin.
+  google.protobuf.Timestamp create_time = 8;
+  // List of plugin dependencies.
+  repeated CuratedPluginReference dependencies = 9;
+  // Optionally specify the URL leading to the source code of the plugin, if available.
+  string source_url = 10;
+  // Optionally specify a brief description of the plugin functionality.
+  string description = 11;
+  // The configuration for the remote registry of the plugin.
+  RegistryConfig registry_config = 12;
+  // The revision for this plugin version.
+  uint32 revision = 13;
+  // The output languages supported by the plugin.
+  repeated PluginLanguage output_languages = 14;
+  // spdx_license_id is the license of the plugin, which should be one of the identifiers
+  // defined in https://spdx.org/licenses
+  string spdx_license_id = 15;
+  // license_url specifies an optional URL for the plugin's license (if not using a standard spdx_license_id).
+  string license_url = 16;
+  // verified indicates the plugin has been verified. Verification is a property
+  // of the BSR and cannot be set by end-users.
+  bool verified = 17;
+}
+
+// PluginCurationService manages curated plugins.
+service PluginCurationService {
+  // ListCuratedPlugins returns all the curated plugins available.
+  rpc ListCuratedPlugins(ListCuratedPluginsRequest) returns (ListCuratedPluginsResponse);
+  // CreateCuratedPlugin creates a new curated plugin.
+  rpc CreateCuratedPlugin(CreateCuratedPluginRequest) returns (CreateCuratedPluginResponse);
+  // GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
+  rpc GetLatestCuratedPlugin(GetLatestCuratedPluginRequest) returns (GetLatestCuratedPluginResponse);
+  // DeleteCuratedPlugin deletes a curated plugin based on the given parameters.
+  rpc DeleteCuratedPlugin(DeleteCuratedPluginRequest) returns (DeleteCuratedPluginResponse);
+}
+
+// CodeGenerationService generates code using remote plugins.
+service CodeGenerationService {
+  // GenerateCode generates code using the specified remote plugins.
+  rpc GenerateCode(GenerateCodeRequest) returns (GenerateCodeResponse);
+}
+
+message GenerateCodeRequest {
+  // The image to run plugins against to generate the desired file outputs.
+  //
+  // All image files that are not imports and not well-known types will be generated.
+  // If you want to filter what files are generated, modify the image.
+  // If you want to include imports, set include_imports.
+  buf.alpha.image.v1.Image image = 1;
+  repeated PluginGenerationRequest requests = 2;
+  // Include imports from the Image in generation.
+  bool include_imports = 3;
+  // Include Well-Known Types from the Image in generation.
+  //
+  // include_imports must be set if include_well_known_types is set.
+  bool include_well_known_types = 4;
+}
+
+message GenerateCodeResponse {
+  // Responses from each plugin execution.
+  // The order of each response matches the order in the GenerateCodeRequest.
+  repeated PluginGenerationResponse responses = 1;
+}
+
+// Request for performing code generation using the specified plugin.
+message PluginGenerationRequest {
+  // The plugin to execute.
+  CuratedPluginReference plugin_reference = 1;
+  // The options to pass to the plugin. These will
+  // be merged into a single, comma-separated string.
+  repeated string options = 2;
+}
+
+// Response from code generation for a given plugin.
+message PluginGenerationResponse {
+  // Generated code from the plugin.
+  google.protobuf.compiler.CodeGeneratorResponse response = 1;
+}
+
+message DeleteCuratedPluginRequest {
+  // The owner of the plugin to delete.
+  string owner = 1;
+  // The name of the plugin to delete.
+  string name = 2;
+  // Version is the plugin version and is optional. If this field is not set then delete all versions,
+  // otherwise delete only the specified version which includes all revisions.
+  string version = 3;
+}
+
+message DeleteCuratedPluginResponse {}
+
+message CreateCuratedPluginRequest {
+  // The owner of the plugin, i.e. "library".
+  string owner = 1;
+  // The name of the plugin, i.e. "connect-go".
+  string name = 2;
+  // The optional registry type of the plugin.
+  PluginRegistryType registry_type = 3;
+  // Semver-formatted plugin version.
+  string version = 4;
+  // The full container image digest associated with this plugin version including
+  // the algorithm.
+  // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
+  string container_image_digest = 5;
+  // List of plugin dependencies.
+  repeated CuratedPluginReference dependencies = 7;
+  // The URL leading to the source code of the plugin, if available.
+  string source_url = 8;
+  // A brief description of the plugin functionality.
+  string description = 9;
+  // The configuration for the remote registry of the plugin.
+  RegistryConfig registry_config = 12;
+  // The revision for this plugin version.
+  uint32 revision = 13;
+  // The output languages supported by the plugin.
+  repeated PluginLanguage output_languages = 14;
+  // spdx_license_id is the license of the plugin, which should be one of the identifiers
+  // defined in https://spdx.org/licenses
+  string spdx_license_id = 15;
+  // license_url specifies an optional URL for the plugin's license (if not using a standard spdx_license_id).
+  string license_url = 16;
+}
+
+message CreateCuratedPluginResponse {
+  // The created plugin.
+  CuratedPlugin configuration = 1;
+}
+
+message ListCuratedPluginsRequest {
+  uint32 page_size = 1;
+  // The first page is returned if this is empty.
+  string page_token = 2;
+  bool reverse = 3;
+}
+
+message ListCuratedPluginsResponse {
+  repeated CuratedPlugin plugins = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message GetLatestCuratedPluginRequest {
+  // The owner of the plugin, i.e. "library".
+  string owner = 1;
+  // The name of the plugin, i.e. "connect-go".
+  string name = 2;
+  // Both version (semver-formatted) and revision are optional, which means
+  // return the latest plugin.
+  // If version is set, but revision is omitted, then return the latest
+  // revision for that version.
+  // If version and revision are both set, return specific plugin.
+  // It is an error to set a revision without a corresponding version.
+  string version = 3;
+  uint32 revision = 4;
+}
+
+message GetLatestCuratedPluginResponse {
+  CuratedPlugin plugin = 1;
+  // versions is a semver-sorted list in descending order.
+  repeated CuratedPluginVersionRevisions versions = 2;
+}
+
+message CuratedPluginVersionRevisions {
+  string version = 1;
+  // revisions is a sorted list in descending order.
+  repeated uint32 revisions = 2;
+}

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ type modulePin struct {
 	repository string
 	branch     string
 	commit     string
-	digest     string
 	createTime time.Time
 }
 
@@ -38,7 +37,6 @@ func newModulePin(
 	repository string,
 	branch string,
 	commit string,
-	digest string,
 	createTime time.Time,
 ) (*modulePin, error) {
 	protoCreateTime, err := prototime.NewTimestamp(createTime)
@@ -52,7 +50,6 @@ func newModulePin(
 			Repository: repository,
 			Branch:     branch,
 			Commit:     commit,
-			Digest:     digest,
 			CreateTime: protoCreateTime,
 		},
 	)
@@ -70,7 +67,6 @@ func newModulePinForProto(
 		repository: protoModulePin.Repository,
 		branch:     protoModulePin.Branch,
 		commit:     protoModulePin.Commit,
-		digest:     protoModulePin.Digest,
 		createTime: protoModulePin.CreateTime.AsTime(),
 	}, nil
 }
@@ -84,7 +80,6 @@ func newProtoModulePinForModulePin(
 		Repository: modulePin.Repository(),
 		Branch:     modulePin.Branch(),
 		Commit:     modulePin.Commit(),
-		Digest:     modulePin.Digest(),
 		// no need to validate as we already know this is valid
 		CreateTime: timestamppb.New(modulePin.CreateTime()),
 	}
@@ -108,10 +103,6 @@ func (m *modulePin) Branch() string {
 
 func (m *modulePin) Commit() string {
 	return m.commit
-}
-
-func (m *modulePin) Digest() string {
-	return m.digest
 }
 
 func (m *modulePin) CreateTime() time.Time {

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,29 +16,45 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/repository_branch.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
-import "buf/alpha/registry/v1alpha1/repository_track.proto";
 
 message Reference {
+  reserved 1, 4;
+  reserved "branch", "track";
+
   oneof reference {
-    // The requested reference is a branch.
-    RepositoryBranch branch = 1;
     // The requested reference is a tag.
     RepositoryTag tag = 2;
     // The requested reference is a commit.
     RepositoryCommit commit = 3;
-    // The requested reference is a track.
-    RepositoryTrack track = 4;
+    // The requested reference is the default reference.
+    RepositoryMainReference main = 5;
+    // The requested reference is a draft commit.
+    RepositoryDraft draft = 6;
   }
+}
+
+message RepositoryMainReference {
+  // Name is always 'main'.
+  string name = 1;
+  // The latest commit in this repository. If the repository has no commits,
+  // this will be empty.
+  RepositoryCommit commit = 2;
+}
+
+message RepositoryDraft {
+  // The name of the draft
+  string name = 1;
+  // The commit this draft points to.
+  RepositoryCommit commit = 2;
 }
 
 // ReferenceService is a service that provides RPCs that allow the BSR to query
 // for reference information.
 service ReferenceService {
   // GetReferenceByName takes a reference name and returns the
-  // reference either as a tag, branch, track or commit.
+  // reference either as 'main', a tag, or commit.
   rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse);
 }
 

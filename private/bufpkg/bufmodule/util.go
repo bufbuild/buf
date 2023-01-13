@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,18 +58,19 @@ func moduleFileToProto(ctx context.Context, module Module, path string) (_ *modu
 	return protoModuleFile, nil
 }
 
-func getDocumentationForBucket(
+func getFileContentForBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
+	path string,
 ) (string, error) {
-	documentationData, err := storage.ReadPath(ctx, readBucket, DocumentationFilePath)
+	data, err := storage.ReadPath(ctx, readBucket, path)
 	if err != nil {
 		if storage.IsNotExist(err) {
 			return "", nil
 		}
 		return "", err
 	}
-	return string(documentationData), nil
+	return string(data), nil
 }
 
 func copyModulePinsSortedByOnlyCommit(modulePins []bufmoduleref.ModulePin) []bufmoduleref.ModulePin {

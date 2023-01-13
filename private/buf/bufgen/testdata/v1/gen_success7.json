@@ -1,0 +1,17 @@
+{
+    "version": "v1",
+    "managed": {
+      "go_package_prefix": {
+        "default": "github.com/foo/bar/gen/go"
+      }
+    },
+    "plugins": [
+      {
+        "name": "go",
+        "out": "gen/go",
+        "opt": "plugins=connect",
+        "path": "/path/to/foo",
+        "strategy": "all"
+      }
+    ]
+  }

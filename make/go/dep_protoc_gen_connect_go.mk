@@ -7,8 +7,11 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/bufbuild/connect-go 20220531 checked 20220601
-CONNECT_VERSION ?= v0.1.0
+# https://github.com/bufbuild/connect-go 20221220 checked 20221220
+CONNECT_VERSION ?= v1.4.1
+
+GO_GET_PKGS := $(GO_GET_PKGS) \
+	github.com/bufbuild/connect-go@$(CONNECT_VERSION)
 
 PROTOC_GEN_CONNECT_GO := $(CACHE_VERSIONS)/connect-go/$(CONNECT_VERSION)
 $(PROTOC_GEN_CONNECT_GO):

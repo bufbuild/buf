@@ -5,8 +5,8 @@ import "custom.proto";
 message Foo {
   // Leading comment on deprecated.
   option deprecated = false;
-  option/* Comment before the custom option name */ (custom.message_thing_option).foo = /* Comment on the bar value of the option */1;
-  option/* Comment before the custom option name */ (custom.message_thing_option)/* Comment between the name and the field */.bar = /* Comment on the foo value of the option */2;
+  option /* Comment before the custom option name */ (custom.message_thing_option).foo = /* Comment on the bar value of the option */ 1;
+  option /* Comment before the custom option name */ (custom.message_thing_option)/* Comment between the name and the field */.bar = /* Comment on the foo value of the option */ 2;
   option (custom.message_thing_option) = {
     // This should be a trailing comment block on the message literal.
     // It's spread across multiple lines.
@@ -19,7 +19,47 @@ message Foo {
     truth: false
   };
 
+  option (custom.message_thing_option) = {
+    /*leading*/
+    foo: 1
+    /*trailing*/
+  } /*leading*/; /*trailing*/
+
   // This is attached to the optional label.
   optional string name = 1 [deprecated = true];
-  repeated int64 values = 2;
+  repeated int64 values = 2 [
+    /* leading comment */
+    packed = false
+    /* trailing comment */
+  ];
+
+  option (custom.message_thing_option) = {
+    foo: 1
+    bar: 2
+    baz: 3
+    buzz: <
+      a: "abc"
+      b: "xyz"
+      c: [
+        /*lead*/
+        "foo",
+        "bar",
+        "baz"
+        /*trail*/
+      ]
+      d [
+        <foo: 99>,
+        <foo: 98>,
+        <
+          /*lead*/
+          foo: 97
+          /*trail*/
+        >
+      ]
+      e []
+      f {}
+      g: [1]
+    >
+    frobnitz: <foo: 1>
+  };
 }

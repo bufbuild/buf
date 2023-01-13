@@ -16,9 +16,8 @@ extend Foo {
     optional int64 five = 5;
   } // Trailing comment on Additional.
 
-// Leading comment on '}'.
+  // Leading comment on '}'.
 } // Trailing comment on '}'.
-
 // Another trailing comment on '}'.
 
 // Comment on EOF.

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -194,14 +194,16 @@ func JavaStringCheckUtf8(
 func OptimizeFor(
 	logger *zap.Logger,
 	sweeper Sweeper,
-	value descriptorpb.FileOptions_OptimizeMode,
+	defaultOptimizeFor descriptorpb.FileOptions_OptimizeMode,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode,
 	overrides map[string]string,
 ) (Modifier, error) {
 	validatedOverrides, err := stringOverridesToOptimizeModeOverrides(overrides)
 	if err != nil {
 		return nil, fmt.Errorf("invalid override for %s: %w", OptimizeForID, err)
 	}
-	return optimizeFor(logger, sweeper, value, validatedOverrides), nil
+	return optimizeFor(logger, sweeper, defaultOptimizeFor, except, moduleOverrides, validatedOverrides), nil
 }
 
 // GoPackageImportPathForFile returns the go_package import path for the given
@@ -233,9 +235,12 @@ func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix s
 func ObjcClassPrefix(
 	logger *zap.Logger,
 	sweeper Sweeper,
+	defaultPrefix string,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverride map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) Modifier {
-	return objcClassPrefix(logger, sweeper, overrides)
+	return objcClassPrefix(logger, sweeper, defaultPrefix, except, moduleOverride, overrides)
 }
 
 // CsharpNamespace returns a Modifier that sets the csharp_namespace file option
@@ -243,9 +248,17 @@ func ObjcClassPrefix(
 func CsharpNamespace(
 	logger *zap.Logger,
 	sweeper Sweeper,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) Modifier {
-	return csharpNamespace(logger, sweeper, overrides)
+	return csharpNamespace(
+		logger,
+		sweeper,
+		except,
+		moduleOverrides,
+		overrides,
+	)
 }
 
 // PhpNamespace returns a Modifier that sets the php_namespace file option
@@ -275,9 +288,17 @@ func PhpMetadataNamespace(
 func RubyPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) Modifier {
-	return rubyPackage(logger, sweeper, overrides)
+	return rubyPackage(
+		logger,
+		sweeper,
+		except,
+		moduleOverrides,
+		overrides,
+	)
 }
 
 // isWellKnownType returns true if the given path is one of the well-known types.

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/tagrangeutil"
 )
 
 // CheckEnumNoDelete is a check function.
@@ -474,12 +475,21 @@ func addFieldChangedType(add addFunc, previousField protosource.Field, field pro
 			combinedExtraMessage = " " + joined
 		}
 	}
+	var fieldLocation protosource.Location
+	switch field.Type() {
+	case protosource.FieldDescriptorProtoTypeMessage,
+		protosource.FieldDescriptorProtoTypeEnum,
+		protosource.FieldDescriptorProtoTypeGroup:
+		fieldLocation = field.TypeNameLocation()
+	default:
+		fieldLocation = field.TypeLocation()
+	}
 	// otherwise prints as hex
 	previousNumberString := strconv.FormatInt(int64(previousField.Number()), 10)
 	add(
 		field,
 		nil,
-		field.TypeLocation(),
+		fieldLocation,
 		`Field %q on message %q changed type from %q to %q.%s`,
 		previousNumberString,
 		field.Message().Name(),
@@ -951,11 +961,11 @@ func checkPackageServiceNoDelete(add addFunc, corpus *corpus) error {
 var CheckReservedEnumNoDelete = newEnumPairCheckFunc(checkReservedEnumNoDelete)
 
 func checkReservedEnumNoDelete(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
-	previousStringToReservedRange := protosource.StringToReservedTagRange(previousEnum)
-	stringToReservedRange := protosource.StringToReservedTagRange(enum)
-	for previousString := range previousStringToReservedRange {
-		if _, ok := stringToReservedRange[previousString]; !ok {
-			add(enum, nil, enum.Location(), `Previously present reserved range %q on enum %q was deleted.`, previousString, enum.Name())
+	previousRanges := previousEnum.ReservedTagRanges()
+	ranges := enum.ReservedTagRanges()
+	if isSubset, missing := tagrangeutil.CheckIsSubset(ranges, previousRanges); !isSubset {
+		for _, tagRange := range missing {
+			add(enum, nil, enum.Location(), `Previously present reserved range %q on enum %q was deleted.`, protosource.TagRangeString(tagRange), enum.Name())
 		}
 	}
 	previousValueToReservedName := protosource.ValueToReservedName(previousEnum)
@@ -972,11 +982,11 @@ func checkReservedEnumNoDelete(add addFunc, corpus *corpus, previousEnum protoso
 var CheckReservedMessageNoDelete = newMessagePairCheckFunc(checkReservedMessageNoDelete)
 
 func checkReservedMessageNoDelete(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
-	previousStringToReservedRange := protosource.StringToReservedTagRange(previousMessage)
-	stringToReservedRange := protosource.StringToReservedTagRange(message)
-	for previousString := range previousStringToReservedRange {
-		if _, ok := stringToReservedRange[previousString]; !ok {
-			add(message, nil, message.Location(), `Previously present reserved range %q on message %q was deleted.`, previousString, message.Name())
+	previousRanges := previousMessage.ReservedTagRanges()
+	ranges := message.ReservedTagRanges()
+	if isSubset, missing := tagrangeutil.CheckIsSubset(ranges, previousRanges); !isSubset {
+		for _, tagRange := range missing {
+			add(message, nil, message.Location(), `Previously present reserved range %q on message %q was deleted.`, protosource.TagRangeString(tagRange), message.Name())
 		}
 	}
 	previousValueToReservedName := protosource.ValueToReservedName(previousMessage)

@@ -1,0 +1,321 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.audit.v1alpha1;
+
+import "buf/alpha/registry/v1alpha1/plugin.proto";
+import "buf/alpha/registry/v1alpha1/repository.proto";
+import "buf/alpha/registry/v1alpha1/role.proto";
+import "google/protobuf/timestamp.proto";
+
+// ActorType is the type of actor that caused the audited event.
+enum ActorType {
+  ACTOR_TYPE_UNSPECIFIED = 0;
+  ACTOR_TYPE_USER = 1;
+  ACTOR_TYPE_SYSTEM = 2;
+}
+
+// Actor is the actor who caused the audited event.
+message Actor {
+  // Type of actor who caused the audited event.
+  ActorType type = 1;
+  // Id of the actor who caused the audited event.
+  string id = 2;
+  // Name of the actor who caused the audited event.
+  string name = 3;
+}
+
+// ResourceType is the type of the resource that was affected by the audited
+// event.
+enum ResourceType {
+  RESOURCE_TYPE_UNSPECIFIED = 0;
+  RESOURCE_TYPE_USER = 1;
+  RESOURCE_TYPE_ORGANIZATION = 2;
+  RESOURCE_TYPE_ORGANIZATION_MEMBER = 3;
+  RESOURCE_TYPE_ORGANIZATION_IDP_GROUP = 9;
+  RESOURCE_TYPE_REPOSITORY = 4;
+  RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
+  RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
+  RESOURCE_TYPE_PLUGIN = 7 [deprecated = true];
+  RESOURCE_TYPE_CURATED_PLUGIN = 8;
+}
+
+// Resource is the affected resource by the audited event.
+message Resource {
+  // Type of resource that was affected by the audited event.
+  ResourceType type = 1;
+  // Id of the affected resource by the audited event.
+  string id = 2;
+  // Name of the affected resource by the audited event.
+  string name = 3;
+}
+
+// EventType is the type of audited event.
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_ORGANIZATION_CREATED = 1;
+  EVENT_TYPE_ORGANIZATION_DELETED = 2;
+  EVENT_TYPE_ORGANIZATION_MEMBER_ADDED = 3;
+  EVENT_TYPE_ORGANIZATION_MEMBER_ROLE_CHANGED = 4;
+  EVENT_TYPE_ORGANIZATION_MEMBER_REMOVED = 5;
+  EVENT_TYPE_ORGANIZATION_IDP_GROUP_ADDED = 21;
+  EVENT_TYPE_ORGANIZATION_IDP_GROUP_REMOVED = 22;
+  EVENT_TYPE_REPOSITORY_CREATED = 6;
+  EVENT_TYPE_REPOSITORY_DELETED = 7;
+  EVENT_TYPE_REPOSITORY_COMMIT_PUSHED = 8;
+  EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ADDED = 9;
+  EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED = 10;
+  EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED = 11;
+  EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED = 12;
+  EVENT_TYPE_PLUGIN_CREATED = 13 [deprecated = true];
+  EVENT_TYPE_PLUGIN_DELETED = 14 [deprecated = true];
+  EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
+  EVENT_TYPE_USER_CREATED = 15;
+  EVENT_TYPE_USER_DELETED = 16;
+  EVENT_TYPE_USER_DEACTIVATED = 17;
+  EVENT_TYPE_USER_LOGGED_IN = 18;
+  EVENT_TYPE_USER_LOGGED_OUT = 19;
+}
+
+// EventMetadata provides additional details about the audited event.
+message EventMetadata {
+  // UserAgent is the User-Agent header associated with the request that triggered the audited event, if any.
+  string user_agent = 1;
+  // IP is the IP address associated with the request that triggered the audited event, if any.
+  string ip = 2;
+  // TraceID is the ID of the trace associated with the audited event, if any.
+  string trace_id = 3;
+}
+
+// Event is an audited action that happened in the BSR, with the information of
+// what happened, when it happened, who did it, which resource was affected, and
+// more contextual information on the event.
+message Event {
+  // Unique id of the audited event.
+  string event_id = 1;
+  // Type of the audited event. It specifies "what" happened.
+  EventType type = 2;
+  // Actor of the audited event. It specifies "who" did it.
+  Actor actor = 3;
+  // Resource of the audited event. It specifies "which resource" was affected.
+  Resource resource = 4;
+  // Time of the audited event. It specifies "when" it happened.
+  google.protobuf.Timestamp event_time = 5;
+  // Metadata about the audited event. It specifies any additional details about the audited event.
+  EventMetadata metadata = 6;
+  // Payload of the audited event. It specifies additional context on the event.
+  oneof payload {
+    PayloadOrganizationCreated organization_created = 7;
+    PayloadOrganizationDeleted organization_deleted = 8;
+    PayloadOrganizationMemberAdded organization_member_added = 9;
+    PayloadOrganizationMemberRoleChanged organization_member_role_changed = 10;
+    PayloadOrganizationMemberRemoved organization_member_removed = 11;
+    PayloadRepositoryCreated repository_created = 12;
+    PayloadRepositoryDeleted repository_deleted = 13;
+    PayloadRepositoryCommitPushed repository_commit_pushed = 14;
+    PayloadRepositoryContributorAdded repository_contributor_added = 15;
+    PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 16;
+    PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
+    PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
+    PayloadPluginCreated plugin_created = 19 [deprecated = true];
+    PayloadPluginDeleted plugin_deleted = 20 [deprecated = true];
+    PayloadUserCreated user_created = 21;
+    PayloadUserDeactivated user_deactivated = 22;
+    PayloadUserDeleted user_deleted = 23;
+    PayloadUserLoggedIn user_logged_in = 24;
+    PayloadUserLoggedOut user_logged_out = 25;
+    PayloadCuratedPluginCreated curated_plugin_created = 26;
+    PayloadOrganizationIDPGroupAdded idp_group_added = 27;
+    PayloadOrganizationIDPGroupRemoved idp_group_removed = 28;
+  }
+}
+
+message PayloadOrganizationCreated {}
+
+message PayloadOrganizationDeleted {}
+
+message PayloadOrganizationMemberAdded {
+  // organization_id is the id of the organization with the new member.
+  string organization_id = 1;
+  // organization_name is the name of the organization with the new member.
+  string organization_name = 2;
+  // member_role is the role granted to the member added to the organization.
+  buf.alpha.registry.v1alpha1.OrganizationRole member_role = 3;
+  // member_role_source is the source of the role granted to the member.
+  buf.alpha.registry.v1alpha1.OrganizationRoleSource member_role_source = 4;
+}
+
+message PayloadOrganizationMemberRoleChanged {
+  // organization_id is the id of the organization within which the role was changed.
+  string organization_id = 1;
+  // organization_name is the name of the organization within which the role was changed.
+  string organization_name = 2;
+  // old_role is the old role of the member whose role was changed.
+  buf.alpha.registry.v1alpha1.OrganizationRole old_role = 3;
+  // new_role is the new role of the member whose role was changed.
+  buf.alpha.registry.v1alpha1.OrganizationRole new_role = 4;
+  // old_member_role_source is the old source of the role granted to the member.
+  buf.alpha.registry.v1alpha1.OrganizationRoleSource old_member_role_source = 5;
+  // new_member_role_source is the new source of the role granted to the member.
+  buf.alpha.registry.v1alpha1.OrganizationRoleSource new_member_role_source = 6;
+}
+
+message PayloadOrganizationMemberRemoved {
+  // organization_id is the id of the organization that the member was removed from.
+  string organization_id = 1;
+  // organization_name is the name of the organization that the member was removed from.
+  string organization_name = 2;
+  // member_role is the role that the member had when removed from the organization.
+  buf.alpha.registry.v1alpha1.OrganizationRole member_role = 3;
+  // member_role_source is the source of the role granted to the member.
+  buf.alpha.registry.v1alpha1.OrganizationRoleSource member_role_source = 4;
+}
+
+message PayloadOrganizationIDPGroupAdded {
+  // organization_id is the id of the organization with the new IDP group.
+  string organization_id = 1;
+  // organization_name is the name of the organization with the new IDP group.
+  string organization_name = 2;
+}
+
+message PayloadOrganizationIDPGroupRemoved {
+  // organization_id is the id of the organization with the removed IDP group.
+  string organization_id = 1;
+  // organization_name is the name of the organization with the removed IDP group.
+  string organization_name = 2;
+}
+
+message PayloadRepositoryCreated {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // visibility is the visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadRepositoryDeleted {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // visibility is the visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+}
+
+message PayloadRepositoryCommitPushed {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // repository_id is the id of the repository within which the commit was created.
+  string repository_id = 3;
+  // repository_name is the name of the repository within which the commit was created.
+  string repository_name = 4;
+  // tags are the tags included in the push. Optional.
+  repeated string tags = 5;
+  // draft_name is the name of the draft. Optional.
+  string draft_name = 6;
+}
+
+message PayloadRepositoryContributorAdded {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // repository_id is the id of the repository with the new contributor.
+  string repository_id = 3;
+  // repository_name is the name of the repository with the new contributor.
+  string repository_name = 4;
+  // contributor_role is the role granted to the contributor added to the repository.
+  buf.alpha.registry.v1alpha1.RepositoryRole contributor_role = 5;
+}
+
+message PayloadRepositoryContributorRoleChanged {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // repository_id is the id of the repository within which the role was changed.
+  string repository_id = 3;
+  // repository_name is the name of the repository within which the role was changed.
+  string repository_name = 4;
+  // old_role is the old role of the contributor whose role was changed.
+  buf.alpha.registry.v1alpha1.RepositoryRole old_role = 5;
+  // new_role is the new role of the contributor whose role was changed.
+  buf.alpha.registry.v1alpha1.RepositoryRole new_role = 6;
+}
+
+message PayloadRepositoryContributorRemoved {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // repository_id is the id of the repository that the contributor was removed from.
+  string repository_id = 3;
+  // repository_name is the name of the repository that the contributor was removed from.
+  string repository_name = 4;
+  // contributor_role is the role that the contributor had when removed from the repository.
+  buf.alpha.registry.v1alpha1.RepositoryRole contributor_role = 5;
+}
+
+message PayloadRepositoryVisibilityChanged {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // old_visibility is the old visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility old_visibility = 3;
+  // new_visibility is the new visibility of the repository.
+  buf.alpha.registry.v1alpha1.Visibility new_visibility = 4;
+}
+
+message PayloadPluginCreated {
+  option deprecated = true;
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.PluginVisibility visibility = 3;
+}
+
+message PayloadPluginDeleted {
+  option deprecated = true;
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+  // visibility is the visibility of the plugin.
+  buf.alpha.registry.v1alpha1.PluginVisibility visibility = 3;
+}
+
+message PayloadUserCreated {}
+
+message PayloadUserDeactivated {}
+
+message PayloadUserDeleted {}
+
+message PayloadUserLoggedIn {}
+
+message PayloadUserLoggedOut {}
+
+message PayloadCuratedPluginCreated {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+}

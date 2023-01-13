@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -108,34 +111,38 @@ func run(
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	repositoryService, err := apiProvider.NewRepositoryService(ctx, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
-	repository, _, err := repositoryService.GetRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Repository())
+	repositoryService := connectclient.Make(
+		clientConfig,
+		moduleIdentity.Remote(),
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
+	resp, err := repositoryService.GetRepositoryByFullName(ctx,
+		connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
+			FullName: moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),
+		}),
+	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	repositoryTagService, err := apiProvider.NewRepositoryTagService(ctx, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
-	repositoryTags, nextPageToken, err := repositoryTagService.ListRepositoryTags(
+	repositoryTagService := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryTagServiceClient)
+	tagsResp, err := repositoryTagService.ListRepositoryTags(
 		ctx,
-		repository.Id,
-		flags.PageSize,
-		flags.PageToken,
-		flags.Reverse,
+		connect.NewRequest(&registryv1alpha1.ListRepositoryTagsRequest{
+			RepositoryId: resp.Msg.Repository.Id,
+			PageSize:     flags.PageSize,
+			PageToken:    flags.PageToken,
+			Reverse:      flags.Reverse,
+		}),
 	)
 	if err != nil {
 		return err
 	}
-	return bufprint.NewRepositoryTagPrinter(container.Stdout()).PrintRepositoryTags(ctx, format, nextPageToken, repositoryTags...)
+	return bufprint.NewRepositoryTagPrinter(container.Stdout()).PrintRepositoryTags(ctx, format, tagsResp.Msg.NextPageToken, tagsResp.Msg.RepositoryTags...)
 }

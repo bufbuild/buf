@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ message RepositoryCommit {
   // Unique, immutable.
   string name = 4;
   // The branch on which this commit was created.
-  string branch = 5;
+  string branch = 5 [deprecated = true];
   // The commit sequence ID for this commit. This
   // is essentially what number commit this is on
   // the branch.
@@ -40,25 +40,38 @@ message RepositoryCommit {
   string author = 7;
   // The tags associated with this commit
   repeated buf.alpha.registry.v1alpha1.RepositoryTag tags = 8;
+  // The commit's draft name, if it is a draft commit.
+  string draft_name = 9;
+  // spdx_license_id is the license of the commit, based on the
+  // license file pushed, which should be one of the identifier defined in
+  // https://spdx.org/licenses, and will be not set if the license file is not
+  // presented or cannot be classified into a known license.
+  string spdx_license_id = 10;
 }
 
 // RepositoryCommitService is the Repository commit service.
 service RepositoryCommitService {
   // ListRepositoryCommitsByBranch lists the repository commits associated
   // with a repository branch on a repository, ordered by their create time.
-  rpc ListRepositoryCommitsByBranch(ListRepositoryCommitsByBranchRequest) returns (ListRepositoryCommitsByBranchResponse);
+  rpc ListRepositoryCommitsByBranch(ListRepositoryCommitsByBranchRequest) returns (ListRepositoryCommitsByBranchResponse) {
+    // ListRepositoryCommitsByBranch has been deprecated, use
+    // ListRepositoryCommitsByReference instead.
+    option deprecated = true;
+  }
+
   // ListRepositoryCommitsByReference returns repository commits up-to and including
   // the provided reference.
   rpc ListRepositoryCommitsByReference(ListRepositoryCommitsByReferenceRequest) returns (ListRepositoryCommitsByReferenceResponse);
-  // ListRepositoryCommitsOnTrack returns repository commits up-to and including
-  // the provided reference.
-  rpc ListRepositoryCommitsOnTrack(ListRepositoryCommitsOnTrackRequest) returns (ListRepositoryCommitsOnTrackResponse);
   // GetRepositoryCommitByReference returns the repository commit matching
   // the provided reference, if it exists.
   rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse);
   // GetRepositoryCommitBySequenceId returns the repository commit matching
   // the provided sequence ID and branch, if it exists.
   rpc GetRepositoryCommitBySequenceId(GetRepositoryCommitBySequenceIdRequest) returns (GetRepositoryCommitBySequenceIdResponse);
+  // ListRepositoryDraftCommits lists draft commits in a repository.
+  rpc ListRepositoryDraftCommits(ListRepositoryDraftCommitsRequest) returns (ListRepositoryDraftCommitsResponse);
+  // DeleteRepositoryDraftCommit deletes a draft.
+  rpc DeleteRepositoryDraftCommit(DeleteRepositoryDraftCommitRequest) returns (DeleteRepositoryDraftCommitResponse);
 }
 
 message ListRepositoryCommitsByBranchRequest {
@@ -82,35 +95,12 @@ message ListRepositoryCommitsByBranchResponse {
   string next_page_token = 2;
 }
 
-message ListRepositoryCommitsOnTrackRequest {
-  // The owner of the repository which the repository reference belongs to.
-  string repository_owner = 1;
-  // The name of the repository which the repository reference belongs to.
-  string repository_name = 2;
-  // The name of the track which to list commits from.
-  string repository_track_name = 3;
-  // The reference used to resolve track commits. Can be a track, tag or commit name.
-  // Commits will be returned starting at reference.
-  // Using a track as a reference will return results if the reference track head
-  // is in the queried track's history.
-  // Returns the entire commit history of the track when reference is empty.
-  string reference = 4;
-  uint32 page_size = 5;
-  string page_token = 6;
-  bool reverse = 7;
-}
-
-message ListRepositoryCommitsOnTrackResponse {
-  repeated RepositoryCommit repository_commits = 1;
-  string next_page_token = 2;
-}
-
 message ListRepositoryCommitsByReferenceRequest {
   // The owner of the repository which the repository reference belongs to.
   string repository_owner = 1;
   // The name of the repository which the repository reference belongs to.
   string repository_name = 2;
-  // The reference used to resolve repository commits. Can be a track, tag or commit.
+  // The reference used to resolve repository commits. Can be a tag or commit.
   string reference = 3;
   uint32 page_size = 4;
   string page_token = 5;
@@ -123,11 +113,11 @@ message ListRepositoryCommitsByReferenceResponse {
 }
 
 message GetRepositoryCommitByReferenceRequest {
-  // The owner of the repository which the repository branch belongs to.
+  // The owner of the repository which the reference belongs to.
   string repository_owner = 1;
-  // The name of the repository which the repository branch belongs to.
+  // The name of the repository which the reference belongs to.
   string repository_name = 2;
-  // The reference that should be resolved to a commit. Can be a branch, tag or commit.
+  // The reference that should be resolved to a commit. Can be a tag or commit.
   string reference = 3;
 }
 
@@ -149,3 +139,32 @@ message GetRepositoryCommitBySequenceIdRequest {
 message GetRepositoryCommitBySequenceIdResponse {
   RepositoryCommit repository_commit = 1;
 }
+
+message ListRepositoryDraftCommitsRequest {
+  // The owner of the repository which the repository branch belongs to.
+  string repository_owner = 1;
+  // The name of the repository which the repository branch belongs to.
+  string repository_name = 2;
+  uint32 page_size = 3;
+  string page_token = 4;
+  // By default, draft commits are ordered by last update time descending.
+  // Reverse orders them ascending.
+  bool reverse = 5;
+}
+
+message ListRepositoryDraftCommitsResponse {
+  // Each commit will have draft_name set.
+  repeated RepositoryCommit repository_commits = 1;
+  string next_page_token = 2;
+}
+
+message DeleteRepositoryDraftCommitRequest {
+  // The owner of the repository which the repository branch belongs to.
+  string repository_owner = 1;
+  // The name of the repository which the repository branch belongs to.
+  string repository_name = 2;
+  // The name of the draft to delete.
+  string draft_name = 3;
+}
+
+message DeleteRepositoryDraftCommitResponse {}

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -117,10 +118,10 @@ func NewRepositoryNameAlreadyExistsError(name string) error {
 	return fmt.Errorf("a repository named %q already exists", name)
 }
 
-// NewBranchOrTagNameAlreadyExistsError informs the user that a branch
-// or tag with that name already exists.
-func NewBranchOrTagNameAlreadyExistsError(name string) error {
-	return fmt.Errorf("a branch or tag named %q already exists", name)
+// NewTagOrDraftNameAlreadyExistsError informs the user that a tag
+// or draft with that name already exists.
+func NewTagOrDraftNameAlreadyExistsError(name string) error {
+	return fmt.Errorf("a tag or draft named %q already exists", name)
 }
 
 // NewOrganizationNotFoundError informs the user that an organization with
@@ -181,6 +182,9 @@ func wrapError(err error) error {
 		connectCode := connectErr.Code()
 		switch {
 		case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
+			if authErr, ok := bufconnect.AsAuthError(err); ok && authErr.TokenEnvKey() != "" {
+				return fmt.Errorf(`Failure: the %[1]s environment variable is set, but is not valid. Set %[1]s to a valid Buf API key, or unset it. For details, visit https://docs.buf.build/bsr/authentication`, authErr.TokenEnvKey())
+			}
 			return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
 		case connectCode == connect.CodeUnavailable:
 			msg := `Failure: the server hosted at that remote is unavailable.`
@@ -191,7 +195,7 @@ func wrapError(err error) error {
 				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, strings.TrimPrefix(dnsError.Name, buftransport.APISubdomain+"."))
 			}
 
-			return fmt.Errorf(msg)
+			return errors.New(msg)
 		}
 		return fmt.Errorf("Failure: %s", connectErr.Message())
 	}

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,27 +16,99 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "google/protobuf/timestamp.proto";
+
 // WebhookService exposes the functionality for a caller to
-// subscribe to or unsubscribe to a Webhook for a given repository.
+// create/delete/list Webhooks for a given repository event.
 service WebhookService {
-  // SubscribeToRepository for subscribing to a specific repository.
-  rpc SubscribeToRepository(SubscribeToRepositoryRequest) returns (SubscribeToRepositoryResponse) {}
-  // UnsubscribeToRepository for unsubscribing to a specific repository.
-  rpc UnsubscribeToRepository(UnsubscribeToRepositoryRequest) returns (UnsubscribeToRepositoryResponse) {}
+  // Create a webhook, subscribes to a given repository event for a callback URL
+  // invocation.
+  rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse) {}
+  // Delete a webhook removes the event subscription.
+  rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse) {}
+  // Lists the webhooks subscriptions for a given repository.
+  rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse) {}
 }
 
-// SubscribeToRepositoryRequest is the proto request representation of a
-// webhook request body to subscribe.
-message SubscribeToRepositoryRequest {}
+// CreateWebhookRequest is the proto request representation of a
+// webhook request body.
+message CreateWebhookRequest {
+  // The event to subscribe to for the given repository.
+  WebhookEvent webhook_event = 1;
+  // The owner name of the repository in the corresponding subscription request.
+  string owner_name = 2;
+  // The repository name that the subscriber wishes create a subscription for.
+  string repository_name = 3;
+  // The subscriber's callback URL where notifications should be delivered.
+  string callback_url = 4;
+}
 
-// CreateRepositoryResponse is the proto repsonse representation
-// of a webhook request to subscribe.
-message SubscribeToRepositoryResponse {}
+// WebhookEvent contains the currently supported webhook event types.
+enum WebhookEvent {
+  // WEBHOOK_EVENT_UNSPECIFIED is a safe noop default for webhook events
+  // subscription. It will trigger an error if trying to register a webhook with
+  // this event.
+  WEBHOOK_EVENT_UNSPECIFIED = 0;
+  // WEBHOOK_EVENT_REPOSITORY_PUSH is emitted whenever a successful buf push is
+  // completed for a specific repository.
+  WEBHOOK_EVENT_REPOSITORY_PUSH = 1;
+}
 
-// UnsubscribeToRepositoryRequest is the proto request representation of a
-// webhook request body to unsubscribe.
-message UnsubscribeToRepositoryRequest {}
+// CreateWebhookResponse is the proto response representation
+// of a webhook request.
+message CreateWebhookResponse {
+  // Created webhook subscription.
+  Webhook webhook = 1;
+}
 
-// UnsubscribeToRepositoryResponse is the proto response representation
-// of a webhook request to unsubscribe.
-message UnsubscribeToRepositoryResponse {}
+// DeleteWebhookRequest is the request for unsubscribing to a webhook.
+message DeleteWebhookRequest {
+  // The id of the webhook subscription to delete.
+  string webhook_id = 1;
+}
+
+// DeleteWebhookResponse is the response for unsubscribing
+// from a webhook.
+message DeleteWebhookResponse {}
+
+// ListWebhooksRequest is the request to get the
+// list of subscribed webhooks for a given repository.
+message ListWebhooksRequest {
+  // The repository name given in the corresponding subscription request.
+  string repository_name = 1;
+  // The owner associated with the repository.
+  string owner_name = 2;
+  // The page token for paginating.
+  string page_token = 3;
+}
+
+// ListWebhooksResponse is the response for the list of
+// subscribed webhooks for a given repository.
+message ListWebhooksResponse {
+  // The list of subscribed webhooks for a given repository.
+  repeated Webhook webhooks = 1;
+  // The next page token for paginating.
+  string next_page_token = 2;
+}
+
+// Webhook is the representation of a webhook repository event subscription.
+message Webhook {
+  // The event associated with the subscription id.
+  WebhookEvent event = 1;
+  // The id of the associated subscription.
+  string webhook_id = 2;
+  // The webhook creation timestamp.
+  google.protobuf.Timestamp create_time = 3;
+  // The webhook last updated timestamp.
+  google.protobuf.Timestamp update_time = 4;
+  // The webhook repository name.
+  string repository_name = 5;
+  // The webhook repository owner name.
+  string owner_name = 6;
+  // The subscriber's callback URL where notifications are delivered. Currently
+  // we only support Connect-powered backends with application/proto as the
+  // content type. Make sure that your URL ends with
+  // "/buf.alpha.webhook.v1alpha1.EventService/Event". For more information
+  // about Connect, see https://connect.build.
+  string callback_url = 7;
+}

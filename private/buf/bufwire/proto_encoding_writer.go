@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ package bufwire
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufconvert"
@@ -66,7 +66,7 @@ func (p *protoEncodingWriter) PutMessage(
 	case bufconvert.MessageEncodingJSON:
 		marshaler = protoencoding.NewJSONMarshalerIndent(resolver)
 	default:
-		return fmt.Errorf("unknown message encoding type")
+		return errors.New("unknown message encoding type")
 	}
 	data, err := marshaler.Marshal(message)
 	if err != nil {

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,8 +56,30 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input>",
 		Short: "Export the files from the input location to an output location.",
-		Long:  bufcli.GetInputLong(`the source or module to export`),
-		Args:  cobra.MaximumNArgs(1),
+		Long: bufcli.GetInputLong(`the source or module to export`) + `
+
+Examples:
+
+$ buf export <input> --output=<output-dir>
+
+input can be of the format [dir,git,mod,protofile,tar,targz,zip].
+
+output will be a directory with all of the .proto files in the <input>.
+
+# Export current directory to another local directory. 
+$ buf export . --output=<output-dir>
+
+# Export the latest remote module to a local directory.
+$ buf export buf.build/<owner>/<repo> --output=<output-dir>
+
+# Export a specific version of a remote module to a local directory.
+$ buf export buf.build/<owner>/<repo>:<version> --output=<output-dir>
+
+# Export a git repo to a local directory.
+$ buf export https://<git-server>/<owner>/<repo>.git --output=<output-dir>
+
+`,
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -121,11 +143,11 @@ func run(
 	}
 	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return err
 	}
@@ -133,7 +155,7 @@ func run(
 		container,
 		storageosProvider,
 		runner,
-		registryProvider,
+		clientConfig,
 		moduleReader,
 	)
 	if err != nil {
@@ -222,7 +244,7 @@ func run(
 			container,
 			storageosProvider,
 			runner,
-			registryProvider,
+			clientConfig,
 		)
 		if err != nil {
 			return err

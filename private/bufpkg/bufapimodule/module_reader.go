@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,33 +19,32 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/connect-go"
 )
 
 type moduleReader struct {
-	downloadServiceProvider registryv1alpha1apiclient.DownloadServiceProvider
+	downloadClientFactory DownloadServiceClientFactory
 }
 
 func newModuleReader(
-	downloadServiceProvider registryv1alpha1apiclient.DownloadServiceProvider,
+	downloadClientFactory DownloadServiceClientFactory,
 ) *moduleReader {
 	return &moduleReader{
-		downloadServiceProvider: downloadServiceProvider,
+		downloadClientFactory: downloadClientFactory,
 	}
 }
 
 func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
-	downloadService, err := m.downloadServiceProvider.NewDownloadService(ctx, modulePin.Remote())
-	if err != nil {
-		return nil, err
-	}
-	module, err := downloadService.Download(
+	downloadService := m.downloadClientFactory(modulePin.Remote())
+	resp, err := downloadService.Download(
 		ctx,
-		modulePin.Owner(),
-		modulePin.Repository(),
-		modulePin.Commit(),
+		connect.NewRequest(&registryv1alpha1.DownloadRequest{
+			Owner:      modulePin.Owner(),
+			Repository: modulePin.Repository(),
+			Reference:  modulePin.Commit(),
+		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -63,7 +62,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		return nil, err
 	}
 	return bufmodule.NewModuleForProto(
-		ctx, module,
+		ctx, resp.Msg.Module,
 		bufmodule.ModuleWithModuleIdentityAndCommit(moduleIdentity, modulePin.Commit()),
 	)
 }

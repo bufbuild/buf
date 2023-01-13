@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ package appprotoexec
 import (
 	"context"
 	"fmt"
-	"os/exec"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
@@ -41,7 +40,7 @@ const (
 	// DefaultMinorVersion is the default minor version.
 	defaultMinorVersion = 21
 	// DefaultPatchVersion is the default patch version.
-	defaultPatchVersion = 0
+	defaultPatchVersion = 7
 	// DefaultSuffixVersion is the default suffix version.
 	defaultSuffixVersion = ""
 )
@@ -127,13 +126,13 @@ func NewHandler(
 		option(handlerOptions)
 	}
 	if handlerOptions.pluginPath != "" {
-		pluginPath, err := exec.LookPath(handlerOptions.pluginPath)
+		pluginPath, err := unsafeLookPath(handlerOptions.pluginPath)
 		if err != nil {
 			return nil, err
 		}
 		return newBinaryHandler(logger, runner, pluginPath), nil
 	}
-	pluginPath, err := exec.LookPath("protoc-gen-" + pluginName)
+	pluginPath, err := unsafeLookPath("protoc-gen-" + pluginName)
 	if err == nil {
 		return newBinaryHandler(logger, runner, pluginPath), nil
 	}
@@ -142,13 +141,17 @@ func NewHandler(
 		if handlerOptions.protocPath == "" {
 			handlerOptions.protocPath = "protoc"
 		}
-		protocPath, err := exec.LookPath(handlerOptions.protocPath)
+		protocPath, err := unsafeLookPath(handlerOptions.protocPath)
 		if err != nil {
 			return nil, err
 		}
 		return newProtocProxyHandler(logger, storageosProvider, runner, protocPath, pluginName), nil
 	}
-	return nil, fmt.Errorf("could not find protoc plugin for name %s", pluginName)
+	return nil, fmt.Errorf(
+		"could not find protoc plugin for name %s - please make sure protoc-gen-%s is installed and present on your $PATH",
+		pluginName,
+		pluginName,
+	)
 }
 
 // HandlerOption is an option for a new Handler.

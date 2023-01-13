@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,12 +20,19 @@ import "buf/alpha/registry/v1alpha1/organization.proto";
 import "buf/alpha/registry/v1alpha1/plugin.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
+import "buf/alpha/registry/v1alpha1/verification_status.proto";
 
 // AdminService is the Admin service.
 service AdminService {
   // ForceDeleteUser forces to delete a user. Resources and organizations that are
   // solely owned by the user will also be deleted.
   rpc ForceDeleteUser(ForceDeleteUserRequest) returns (ForceDeleteUserResponse);
+  // Update a user's verification status.
+  rpc UpdateUserVerificationStatus(UpdateUserVerificationStatusRequest) returns (UpdateUserVerificationStatusResponse);
+  // Update a organization's verification.
+  rpc UpdateOrganizationVerificationStatus(UpdateOrganizationVerificationStatusRequest) returns (UpdateOrganizationVerificationStatusResponse);
+  // Create a new machine user on the server.
+  rpc CreateMachineUser(CreateMachineUserRequest) returns (CreateMachineUserResponse);
 }
 
 message ForceDeleteUserRequest {
@@ -40,7 +47,29 @@ message ForceDeleteUserResponse {
   // The deleted repositories.
   repeated Repository repositories = 3;
   // The deleted plugins.
-  repeated Plugin plugins = 4;
+  repeated Plugin plugins = 4 [deprecated = true];
   // The deleted templates.
-  repeated Template templates = 5;
+  repeated Template templates = 5 [deprecated = true];
+}
+
+message UpdateUserVerificationStatusRequest {
+  string user_id = 1;
+  VerificationStatus verification_status = 2;
+}
+
+message UpdateUserVerificationStatusResponse {}
+
+message UpdateOrganizationVerificationStatusRequest {
+  string organization_id = 1;
+  VerificationStatus verification_status = 2;
+}
+
+message UpdateOrganizationVerificationStatusResponse {}
+
+message CreateMachineUserRequest {
+  string username = 1;
+}
+
+message CreateMachineUserResponse {
+  User user = 1;
 }

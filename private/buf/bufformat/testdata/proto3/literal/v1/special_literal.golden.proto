@@ -3,10 +3,10 @@ syntax = "proto3";
 import "custom.proto";
 
 message Foo {
-  string key = 1 [(custom.float_field_option) = /* Before */nan/* Trailing */];
+  string key = 1 [(custom.float_field_option) = /* Before */ nan /* Trailing */];
   string value = 2 [
-    (custom.float_field_option) = /* Before */inf/* After */, // Trailing
+    (custom.float_field_option) = /* Before */ inf /* After */, // Trailing
     (custom.bool_field_option) = false
   ];
-  string another = 3 [(custom.float_field_option) =/* Before */ -/* Between */inf/* Trailing */];
+  string another = 3 [(custom.float_field_option) = /* Before */ - /* Between */ inf /* Trailing */];
 }

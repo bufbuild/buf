@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -113,6 +113,9 @@ func (b *builder) run(
 	if err != nil {
 		return err
 	}
+	defer func() {
+		retErr = multierr.Append(retErr, logger.Sync())
+	}()
 	verbosePrinter := appverbose.NewVerbosePrinter(appContainer.Stderr(), b.appName, b.verbose)
 	container, err := newContainer(appContainer, b.appName, logger, verbosePrinter)
 	if err != nil {

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,6 +41,11 @@ var (
 	//
 	// This does not include deprecated formats.
 	ImageFormatsString = stringutil.SliceToString(imageFormatsNotDeprecated)
+	// SourceDirFormatsString is the string representation of all source directory formats.
+	// This includes all of the formats in SourceFormatsString except the protofile format.
+	//
+	// This does not include deprecated formats.
+	SourceDirFormatsString = stringutil.SliceToString(sourceDirFormatsNotDeprecated)
 	// SourceFormatsString is the string representation of all source formats.
 	//
 	// This does not include deprecated formats.
@@ -217,7 +222,7 @@ type ReadBucketCloser internal.ReadBucketCloser
 // declaration to do so.
 type ReadWriteBucketCloser internal.ReadWriteBucketCloser
 
-// ReadBucketCloserWithTerminateFileProvider is a ReadWriteBucketCloser with a TerminateFileProvider.
+// ReadBucketCloserWithTerminateFileProvider is a ReadBucketCloser with a TerminateFileProvider.
 type ReadBucketCloserWithTerminateFileProvider internal.ReadBucketCloserWithTerminateFileProvider
 
 // ImageReader is an image reader.

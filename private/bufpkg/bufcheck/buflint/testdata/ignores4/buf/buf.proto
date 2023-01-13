@@ -6,10 +6,10 @@ message Foo {
   int64 oneTwo = 1;
 }
 
-message bar {
+message biz {
   int64 three = 3;
 }
 
-enum baz {
+enum buz {
   BAZ_UNSPECIFIED = 0;
 }

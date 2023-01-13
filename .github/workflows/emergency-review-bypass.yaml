@@ -1,0 +1,12 @@
+name: Bypass review in case of emergency
+on:
+  pull_request:
+    types:
+      - labeled
+permissions:
+  pull-requests: write
+jobs:
+  approve:
+    if: github.event.label.name == 'Emergency Bypass Review'
+    uses: bufbuild/base-workflows/.github/workflows/emergency-review-bypass.yaml@main
+    secrets: inherit

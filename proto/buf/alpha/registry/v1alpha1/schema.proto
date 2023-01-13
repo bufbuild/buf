@@ -1,0 +1,175 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "google/protobuf/descriptor.proto";
+
+// Provides endpoints for downloading dynamic schemas and for using schemas
+// in validation and data transformation functions.
+service SchemaService {
+  // GetSchema allows the caller to download a schema for one or more requested
+  // types, RPC services, or RPC methods.
+  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse);
+
+  // ConvertMessage allows the caller to convert a given message data blob from
+  // one format to another by referring to a type schema for the blob.
+  rpc ConvertMessage(ConvertMessageRequest) returns (ConvertMessageResponse);
+  // TODO: move this to ConvertService and remove its existing, unused endpoint.
+
+  // TODO: batch or streaming endpoint, for more efficient conversion of many messages
+}
+
+message GetSchemaRequest {
+  // The owner of the repo that contains the schema to retrieve (a user name or
+  // organization name).
+  string owner = 1;
+  // The name of the repo that contains the schema to retrieve.
+  string repository = 2;
+  // Optional version of the repo. If unspecified, defaults to latest version on
+  // the repo's "main" branch.
+  string version = 3;
+
+  // Zero or more types names. The names may refer to messages, enums, services,
+  // methods, or extensions. All names must be fully-qualified. If any name
+  // is unknown, the request will fail and no schema will be returned.
+  //
+  // If no names are provided, the full schema for the module is returned.
+  // Otherwise, the resulting schema contains only the named elements and all of
+  // their dependencies. This is enough information for the caller to construct
+  // a dynamic message for any requested message types or to dynamically invoke
+  // an RPC for any requested methods or services.
+  repeated string types = 4;
+
+  // If present, this is a commit that the client already has cached. So if the
+  // given module version resolves to this same commit, the server should not
+  // send back any descriptors since the client already has them.
+  //
+  // This allows a client to efficiently poll for updates: after the initial RPC
+  // to get a schema, the client can cache the descriptors and the resolved
+  // commit. It then includes that commit in subsequent requests in this field,
+  // and the server will only reply with a schema (and new commit) if/when the
+  // resolved commit changes.
+  string if_not_commit = 5;
+
+  // If true, the returned schema will not include extension definitions for custom
+  // options that appear on schema elements. When filtering the schema based on the
+  // given element names, options on all encountered elements are usually examined
+  // as well. But that is not the case if excluding custom options.
+  //
+  // This flag is ignored if element_names is empty as the entire schema is always
+  // returned in that case.
+  bool exclude_custom_options = 6;
+
+  // If true, the returned schema will not include known extensions for extendable
+  // messages for schema elements. If exclude_custom_options is true, such extensions
+  // may still be returned if the applicable descriptor options type is part of the
+  // requested schema.
+  //
+  // This flag is ignored if element_names is empty as the entire schema is always
+  // returned in that case.
+  bool exclude_known_extensions = 7;
+
+  // TODO: consider providing a way for client to indicate what files the server
+  //   can exclude, to reduce response size when caller already knows things
+  //   (for example, usually no need to include google/protobuf/descriptor.proto)
+}
+
+message GetSchemaResponse {
+  // The resolved version of the schema. If the requested version was a commit,
+  // this value is the same as that. If the requested version referred to a tag
+  // or branch, this is the commit for that tag or latest commit for that
+  // branch. If the request did not include any version, this is the latest
+  // version for the module's main branch.
+  string commit = 1;
+  // The schema, which is a set of file descriptors that include the requested elements
+  // and their dependencies.
+  google.protobuf.FileDescriptorSet schema_files = 2;
+}
+
+message ConvertMessageRequest {
+  // The owner of the repo that contains the schema to retrieve (a user name or
+  // organization name).
+  string owner = 1;
+  // The name of the repo that contains the schema to retrieve.
+  string repository = 2;
+  // Optional version of the repo. This can be a tag or branch name or a commit.
+  // If unspecified, defaults to latest version on the repo's "main" branch.
+  string version = 3;
+
+  // The fully-qualified name of the message. Required.
+  string message_name = 4;
+
+  // The format of the input data. Required.
+  Format input_format = 5;
+
+  // The input data that is to be converted. Required. This must be
+  // a valid encoding of type indicated by message_name in the format
+  // indicated by input_format.
+  bytes input_data = 6;
+
+  // If true, any unresolvable fields in the input are discarded. For
+  // formats other than FORMAT_BINARY, this means that the operation
+  // will fail if the input contains unrecognized field names. For
+  // FORMAT_BINARY, unrecognized fields can be retained and possibly
+  // included in the reformatted output (depending on the requested
+  // output format).
+  bool discard_unknown = 7;
+
+  oneof output_format {
+    BinaryOutputOptions output_binary = 8;
+    JSONOutputOptions output_json = 9;
+    TextOutputOptions output_text = 10;
+  }
+}
+
+enum Format {
+  FORMAT_UNSPECIFIED = 0;
+
+  FORMAT_BINARY = 1;
+  FORMAT_JSON = 2;
+  FORMAT_TEXT = 3;
+}
+
+message BinaryOutputOptions {}
+
+message JSONOutputOptions {
+  // Enum fields will be emitted as numeric values. If false (the dafault), enum
+  // fields are emitted as strings that are the enum values' names.
+  bool use_enum_numbers = 3;
+  // Includes fields that have their default values. This applies only to fields
+  // defined in proto3 syntax that have no explicit "optional" keyword. Other
+  // optional fields will be included if present in the input data.
+  bool include_defaults = 4;
+}
+
+message TextOutputOptions {
+  // If true and the input data includes unrecognized fields, the unrecognized
+  // fields will be preserved in the text output (using field numbers and raw
+  // values).
+  bool include_unrecognized = 2;
+}
+
+message ConvertMessageResponse {
+  // The resolved version of the schema. If the requested version was a commit,
+  // this value is the same as that. If the requested version referred to a tag
+  // or branch, this is the commit for that tag or latest commit for that
+  // branch. If the request did not include any version, this is the latest
+  // version for the module's main branch.
+  string commit = 1;
+  // The reformatted data.
+  bytes output_data = 2;
+}

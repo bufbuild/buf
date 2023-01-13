@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import (
 	"testing"
 
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -68,34 +69,69 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 	)
 	defer agentServer.Close()
 
-	requestProto := &studiov1alpha1.InvokeRequest{
-		Target: upstreamServer.URL + echoPath,
-		Headers: goHeadersToProtoHeaders(http.Header{
-			"Content-Type": []string{"application/grpc+proto"},
-		}),
-		Body: []byte("echothis"),
-	}
-	requestBytes := protoMarshalBase64(t, requestProto)
-	request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
-	require.NoError(t, err)
-	request.Header.Set("Content-Type", "text/plain")
-	request.Header.Set("Origin", "https://example.buf.build")
-	request.Header.Set("Foo", "foo-value")
-	response, err := agentServer.Client().Do(request)
-	require.NoError(t, err)
+	t.Run("content_type_grpc_proto", func(t *testing.T) {
+		requestProto := &studiov1alpha1.InvokeRequest{
+			Target: upstreamServer.URL + echoPath,
+			Headers: goHeadersToProtoHeaders(http.Header{
+				"Content-Type": []string{"application/grpc+proto"},
+			}),
+			Body: []byte("echothis"),
+		}
+		requestBytes := protoMarshalBase64(t, requestProto)
+		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
+		require.NoError(t, err)
+		request.Header.Set("Content-Type", "text/plain")
+		request.Header.Set("Origin", "https://example.buf.build")
+		request.Header.Set("Foo", "foo-value")
+		response, err := agentServer.Client().Do(request)
+		require.NoError(t, err)
+		defer response.Body.Close()
 
-	assert.Equal(t, http.StatusOK, response.StatusCode)
-	assert.Equal(t, "https://example.buf.build", response.Header.Get("Access-Control-Allow-Origin"))
-	responseBytes, err := io.ReadAll(response.Body)
-	assert.NoError(t, err)
-	invokeResponse := &studiov1alpha1.InvokeResponse{}
-	protoUnmarshalBase64(t, responseBytes, invokeResponse)
-	upstreamResponseHeaders := make(http.Header)
-	addProtoHeadersToGoHeader(invokeResponse.Headers, upstreamResponseHeaders)
-	addProtoHeadersToGoHeader(invokeResponse.Trailers, upstreamResponseHeaders)
-	assert.Equal(t, "0", upstreamResponseHeaders.Get("grpc-status"))
-	assert.Equal(t, []byte("echo: echothis"), invokeResponse.Body)
-	assert.Equal(t, "foo-value", upstreamResponseHeaders.Get("Echo-Bar"))
+		assert.Equal(t, http.StatusOK, response.StatusCode)
+		assert.Equal(t, "https://example.buf.build", response.Header.Get("Access-Control-Allow-Origin"))
+		responseBytes, err := io.ReadAll(response.Body)
+		assert.NoError(t, err)
+		invokeResponse := &studiov1alpha1.InvokeResponse{}
+		protoUnmarshalBase64(t, responseBytes, invokeResponse)
+		upstreamResponseHeaders := make(http.Header)
+		addProtoHeadersToGoHeader(invokeResponse.Headers, upstreamResponseHeaders)
+		addProtoHeadersToGoHeader(invokeResponse.Trailers, upstreamResponseHeaders)
+		assert.Equal(t, "0", upstreamResponseHeaders.Get("grpc-status"))
+		assert.Equal(t, []byte("echo: echothis"), invokeResponse.Body)
+		assert.Equal(t, "foo-value", upstreamResponseHeaders.Get("Echo-Bar"))
+	})
+
+	t.Run("content_type_application_proto", func(t *testing.T) {
+		requestProto := &studiov1alpha1.InvokeRequest{
+			Target: upstreamServer.URL + echoPath,
+			Headers: goHeadersToProtoHeaders(http.Header{
+				"Content-Type": []string{"application/proto"},
+			}),
+			Body: []byte("echothis"),
+		}
+		requestBytes := protoMarshalBase64(t, requestProto)
+		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
+		require.NoError(t, err)
+		request.Header.Set("Content-Type", "text/plain")
+		request.Header.Set("Origin", "https://example.buf.build")
+		request.Header.Set("Foo", "foo-value")
+		response, err := agentServer.Client().Do(request)
+		require.NoError(t, err)
+		defer response.Body.Close()
+
+		assert.Equal(t, http.StatusOK, response.StatusCode)
+		assert.Equal(t, "https://example.buf.build", response.Header.Get("Access-Control-Allow-Origin"))
+		responseBytes, err := io.ReadAll(response.Body)
+		assert.NoError(t, err)
+		invokeResponse := &studiov1alpha1.InvokeResponse{}
+		protoUnmarshalBase64(t, responseBytes, invokeResponse)
+		upstreamResponseHeaders := make(http.Header)
+		addProtoHeadersToGoHeader(invokeResponse.Headers, upstreamResponseHeaders)
+		addProtoHeadersToGoHeader(invokeResponse.Trailers, upstreamResponseHeaders)
+		assert.Equal(t, "", upstreamResponseHeaders.Get("grpc-status"))
+		assert.Equal(t, []byte("echo: echothis"), invokeResponse.Body)
+		assert.Equal(t, "foo-value", upstreamResponseHeaders.Get("Echo-Bar"))
+	})
 }
 
 func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
@@ -123,6 +159,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request.Header.Set("Content-Type", "text/plain")
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
+		defer response.Body.Close()
 		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
 	})
 
@@ -140,6 +177,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request.Header.Set("Content-Type", "text/plain")
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
+		defer response.Body.Close()
 		assert.Equal(t, http.StatusOK, response.StatusCode)
 		responseBytes, err := io.ReadAll(response.Body)
 		assert.NoError(t, err)
@@ -164,6 +202,9 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 
 		requestProto := &studiov1alpha1.InvokeRequest{
 			Target: "http://" + listener.Addr().String(),
+			Headers: goHeadersToProtoHeaders(http.Header{
+				"Content-Type": []string{"application/grpc"},
+			}),
 		}
 		requestBytes := protoMarshalBase64(t, requestProto)
 		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
@@ -171,6 +212,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		request.Header.Set("Content-Type", "text/plain")
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
+		defer response.Body.Close()
 		assert.Equal(t, http.StatusBadGateway, response.StatusCode)
 	})
 }
@@ -213,7 +255,7 @@ func newTestConnectServer(t *testing.T, tls bool) *httptest.Server {
 }
 
 func protoMarshalBase64(t *testing.T, message proto.Message) []byte {
-	protoBytes, err := proto.Marshal(message)
+	protoBytes, err := protoencoding.NewWireMarshaler().Marshal(message)
 	require.NoError(t, err)
 	base64Bytes := make([]byte, base64.StdEncoding.EncodedLen(len(protoBytes)))
 	base64.StdEncoding.Encode(base64Bytes, protoBytes)
@@ -225,7 +267,7 @@ func protoUnmarshalBase64(t *testing.T, base64Bytes []byte, message proto.Messag
 	actualLen, err := base64.StdEncoding.Decode(protoBytes, base64Bytes)
 	require.NoError(t, err)
 	protoBytes = protoBytes[:actualLen]
-	require.NoError(t, proto.Unmarshal(protoBytes, message))
+	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(protoBytes, message))
 }
 
 func addProtoHeadersToGoHeader(fromHeaders []*studiov1alpha1.Headers, toHeaders http.Header) {

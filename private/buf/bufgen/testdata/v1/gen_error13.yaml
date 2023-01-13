@@ -1,0 +1,8 @@
+version: v1
+managed:  
+  objc_class_prefix:
+    default: default
+    except:
+      - someremote.com/owner/repo
+    override:
+      someremote.com/owner/repo: a

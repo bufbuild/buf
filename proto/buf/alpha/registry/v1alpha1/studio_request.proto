@@ -1,0 +1,162 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "google/protobuf/timestamp.proto";
+
+// StudioRequestService exposes the functionality to manage favorited Requests
+// from Studio.
+service StudioRequestService {
+  // CreateStudioRequest registers a favorite Studio Requests to the caller's
+  // BSR profile.
+  rpc CreateStudioRequest(CreateStudioRequestRequest) returns (CreateStudioRequestResponse) {}
+  // RenameStudioRequest renames an existing Studio Request.
+  rpc RenameStudioRequest(RenameStudioRequestRequest) returns (RenameStudioRequestResponse) {}
+  // DeleteStudioRequest removes a favorite Studio Request from the caller's BSR
+  // profile.
+  rpc DeleteStudioRequest(DeleteStudioRequestRequest) returns (DeleteStudioRequestResponse) {}
+  // ListStudioRequests shows the caller's favorited Studio Requests.
+  rpc ListStudioRequests(ListStudioRequestsRequest) returns (ListStudioRequestsResponse) {}
+}
+
+// StudioProtocol are the supported protocols for Studio Requests.
+enum StudioProtocol {
+  // STUDIO_PROTOCOL_UNSPECIFIED is a safe default for requests with no protocol
+  // defined.
+  STUDIO_PROTOCOL_UNSPECIFIED = 0;
+  // STUDIO_PROTOCOL_CONNECT is the Connect protocol in Studio.
+  STUDIO_PROTOCOL_CONNECT = 1;
+  // STUDIO_PROTOCOL_GRPC is the gRPC protocol in Studio.
+  STUDIO_PROTOCOL_GRPC = 2;
+  // STUDIO_PROTOCOL_GRPC_WEB is the gRPC-web protocol in Studio.
+  STUDIO_PROTOCOL_GRPC_WEB = 3;
+}
+
+// CreateStudioRequestRequest is the proto request representation of the
+// CreateStudioRequest method.
+message CreateStudioRequestRequest {
+  // The linked BSR repository owner name (user or organization).
+  string repository_owner = 1;
+  // The linked BSR repository name.
+  string repository_name = 2;
+  // The friendly name of this request.
+  string name = 3;
+  // The target base URL of this request.
+  string target_base_url = 4;
+  // The target service name as defined in the BSR repository.
+  string service = 5;
+  // The target RPC method name as defined in the BSR repository.
+  string method = 6;
+  // The request body as defined in Studio.
+  string body = 7;
+  // The request headers as defined in Studio.
+  map<string, string> headers = 8;
+  // Should this request include cookies from the Studio current session?
+  bool include_cookies = 9;
+  // The protocol that Studio uses to send this request.
+  StudioProtocol protocol = 10;
+  // The agent url (if any) used by Studio to send the request. See
+  // https://docs.buf.build/bsr/studio#via-buf-studio-agent for details.
+  string agent_url = 11;
+}
+
+// CreateStudioRequestResponse returns the created StudioRequest.
+message CreateStudioRequestResponse {
+  // Created Studio Request.
+  StudioRequest created_request = 1;
+}
+
+// RenameStudioRequestRequest is the proto request representation of the
+// RenameStudioRequest method.
+message RenameStudioRequestRequest {
+  // The Studio Request ID that will be renamed.
+  string id = 1;
+  // The new name for the request.
+  string new_name = 2;
+}
+
+// RenameStudioRequestResponse returns empty on successful renaming.
+message RenameStudioRequestResponse {}
+
+// DeleteStudioRequestRequest is the proto request representation of the
+// DeleteStudioRequest method.
+message DeleteStudioRequestRequest {
+  // The Studio Request ID that will be deleted.
+  string id = 1;
+}
+
+// DeleteStudioRequestResponse returns empty on successful deletions.
+message DeleteStudioRequestResponse {}
+
+// ListStudioRequestsRequest is the proto request representation of the
+// ListStudioRequests method.
+message ListStudioRequestsRequest {
+  // The page size for listing studio requests, values between 1-250.
+  uint32 page_size = 1;
+  // The page token for paginating. The first page is returned if this is empty.
+  string page_token = 2;
+  // The listed studio requests are order by created time in ascending order.
+  // You can reverse that order setting this value to true.
+  bool reverse = 3;
+}
+
+// ListStudioRequestsResponse is the proto response representation of the
+// ListStudioRequests method.
+message ListStudioRequestsResponse {
+  // The list of requests in the current page.
+  repeated StudioRequest requests = 1;
+  // The requests' next page token. There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+// StudioRequest represents a saved request in Studio, that is synced to a BSR
+// user's profile.
+message StudioRequest {
+  // The ID of this Studio Request.
+  string id = 1;
+  // The request creation timestamp.
+  google.protobuf.Timestamp create_time = 2;
+  // The request last updated timestamp.
+  google.protobuf.Timestamp update_time = 3;
+  // User ID who created and saved this request.
+  string author_user_id = 4;
+  // BSR repository ID this request is linked to.
+  string repository_id = 5;
+  // The friendly name of this request.
+  string name = 6;
+  // The target base URL of this request.
+  string target_base_url = 7;
+  // The BSR repository owner name (user or organization).
+  string repository_owner = 8;
+  // The BSR repository name.
+  string repository_name = 9;
+  // The target service name as defined in the BSR repository.
+  string service = 10;
+  // The target RPC method name as defined in the BSR repository.
+  string method = 11;
+  // The request body as defined in Studio.
+  string body = 12;
+  // The request headers as defined in Studio.
+  map<string, string> headers = 13;
+  // Should this request include cookies from the Studio current session?
+  bool include_cookies = 14;
+  // The protocol that Studio uses to send this request.
+  StudioProtocol protocol = 15;
+  // The agent url (if any) used by Studio to send the request. See
+  // https://docs.buf.build/bsr/studio#via-buf-studio-agent for details.
+  string agent_url = 16;
+}

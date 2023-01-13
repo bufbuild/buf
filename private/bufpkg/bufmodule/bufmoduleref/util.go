@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,25 +20,32 @@ import (
 )
 
 // parseModuleReferenceComponents parses and returns the remote, owner, repository,
-// and ref (branch or commit) from the given path.
+// and ref (branch, commit, draft, or tag) from the given path.
 func parseModuleReferenceComponents(path string) (remote string, owner string, repository string, ref string, err error) {
-	remote, owner, rest, err := parseModuleIdentityComponents(path)
-	if err != nil {
+	// split by the first "/" to separate the remote and remaining part
+	slashSplit := strings.SplitN(path, "/", 2)
+	if len(slashSplit) != 2 {
 		return "", "", "", "", newInvalidModuleReferenceStringError(path)
 	}
-	restSplit := strings.Split(rest, ":")
-	repository = strings.TrimSpace(restSplit[0])
-	if len(restSplit) == 1 {
-		return remote, owner, repository, "", nil
-	}
-	if len(restSplit) == 2 {
-		ref := strings.TrimSpace(restSplit[1])
+	remote, rest := slashSplit[0], slashSplit[1]
+	// split the remaining part by ":" to separate the reference
+	colonSplit := strings.Split(rest, ":")
+	switch len(colonSplit) {
+	case 1:
+		// path excluding remote has no colon, no need to handle its ref
+	case 2:
+		ref = strings.TrimSpace(colonSplit[1])
 		if ref == "" {
 			return "", "", "", "", newInvalidModuleReferenceStringError(path)
 		}
-		return remote, owner, repository, ref, nil
+	default:
+		return "", "", "", "", newInvalidModuleReferenceStringError(path)
 	}
-	return "", "", "", "", newInvalidModuleReferenceStringError(path)
+	remote, owner, repository, err = parseModuleIdentityComponents(remote + "/" + colonSplit[0])
+	if err != nil {
+		return "", "", "", "", newInvalidModuleReferenceStringError(path)
+	}
+	return remote, owner, repository, ref, nil
 }
 
 func parseModuleIdentityComponents(path string) (remote string, owner string, repository string, err error) {
@@ -108,12 +115,6 @@ func modulePinCompareTo(a ModulePin, b ModulePin) int {
 	if a.Commit() > b.Commit() {
 		return 1
 	}
-	if a.Digest() < b.Digest() {
-		return -1
-	}
-	if a.Digest() > b.Digest() {
-		return 1
-	}
 	if a.CreateTime().Before(b.CreateTime()) {
 		return -1
 	}
@@ -132,5 +133,5 @@ func newInvalidModuleIdentityStringError(s string) error {
 }
 
 func newInvalidModuleReferenceStringError(s string) error {
-	return fmt.Errorf("module reference %q is invalid: must be in the form remote/owner/repository:branch or remote/owner/repository:commit", s)
+	return fmt.Errorf("module reference %q is invalid: must be in the form remote/owner/repository:reference", s)
 }

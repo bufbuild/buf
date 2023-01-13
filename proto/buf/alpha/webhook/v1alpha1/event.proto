@@ -1,0 +1,59 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.webhook.v1alpha1;
+
+import "buf/alpha/registry/v1alpha1/repository.proto";
+import "buf/alpha/registry/v1alpha1/repository_commit.proto";
+import "buf/alpha/registry/v1alpha1/webhook.proto";
+import "google/protobuf/timestamp.proto";
+
+// EventService is the service which receives webhook events from Buf.
+service EventService {
+  // Event is the rpc which receives webhook events.
+  rpc Event(EventRequest) returns (EventResponse);
+}
+
+// EventRequest is the request payload that will be sent to the customer
+// that is subscribed to webhook events in the BSR.
+message EventRequest {
+  // The webhook event that was triggered. This event is the same one that is
+  // registered when creating a webhook in the BSR.
+  buf.alpha.registry.v1alpha1.WebhookEvent event = 1;
+  // The event payload of the event was triggered.
+  EventPayload payload = 2;
+}
+
+// EventPayload contains the actual event payload for all possible
+// webhook event types.
+message EventPayload {
+  oneof payload {
+    RepositoryPushEvent repository_push = 1;
+  }
+}
+
+// EventResponse is the empty response payload from the customer to Buf.
+message EventResponse {}
+
+// Payload for the event WEBHOOK_EVENT_REPOSITORY_PUSH.
+message RepositoryPushEvent {
+  // The timestamp of the commit push.
+  google.protobuf.Timestamp event_time = 1;
+  // The repository commit that was pushed.
+  buf.alpha.registry.v1alpha1.RepositoryCommit repository_commit = 2;
+  // The repository that was pushed.
+  buf.alpha.registry.v1alpha1.Repository repository = 3;
+}

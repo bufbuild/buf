@@ -11,12 +11,12 @@ extend google.protobuf.FieldOptions {
 }
 
 message Foo {
-  option (/* One */something/* Two */) = 1;
+  option (/* One */ something /* Two */) = 1;
 
   string name = 1 [
     // Leading comment on deprecated.
-    deprecated/* After deprecated */ = true,
+    deprecated /* After deprecated */ = true,
     // Leading comment on another.
-    (/* One */another/* Two */) = 2
+    (/* One */ another /* Two */) = 2
   ];
 }

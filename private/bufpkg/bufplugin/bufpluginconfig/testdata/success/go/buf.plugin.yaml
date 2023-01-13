@@ -1,0 +1,19 @@
+version: v1
+name: buf.build/library/go-grpc
+plugin_version: v1.2.0
+source_url: https://github.com/grpc/grpc-go
+description: Generates Go language bindings of services in protobuf definition files for gRPC.
+deps:
+  - plugin: buf.build/library/go:v1.28.0
+    revision: 1
+output_languages: [go]
+registry:
+  go:
+    min_version: 1.18
+    deps:
+      - module: google.golang.org/grpc
+        version: v1.32.0
+  opts:
+    - separate_package=true
+spdx_license_id: Apache-2.0
+license_url: https://github.com/grpc/grpc-go/blob/master/LICENSE

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package bufmodulebuild
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
@@ -69,22 +70,25 @@ func (b *moduleBucketBuilder) buildForBucket(
 	excludeRelPaths []string,
 	bucketRelPathsAllowNotExist bool,
 ) (bufmodule.Module, error) {
+	// proxy plain files
+	externalPaths := []string{
+		buflock.ExternalConfigFilePath,
+		bufmodule.DocumentationFilePath,
+		bufmodule.LicenseFilePath,
+	}
+	externalPaths = append(externalPaths, bufconfig.AllConfigFilePaths...)
+	rootBuckets := make([]storage.ReadBucket, 0, len(externalPaths))
+	for _, path := range externalPaths {
+		bucket, err := getFileReadBucket(ctx, readBucket, path)
+		if err != nil {
+			return nil, err
+		}
+		if bucket != nil {
+			rootBuckets = append(rootBuckets, bucket)
+		}
+	}
+
 	roots := make([]string, 0, len(config.RootToExcludes))
-	var rootBuckets []storage.ReadBucket
-	lockFileReadBucket, err := getFileReadBucket(ctx, readBucket, buflock.ExternalConfigFilePath)
-	if err != nil {
-		return nil, err
-	}
-	docFileReadBucket, err := getFileReadBucket(ctx, readBucket, bufmodule.DocumentationFilePath)
-	if err != nil {
-		return nil, err
-	}
-	if lockFileReadBucket != nil {
-		rootBuckets = append(rootBuckets, lockFileReadBucket)
-	}
-	if docFileReadBucket != nil {
-		rootBuckets = append(rootBuckets, docFileReadBucket)
-	}
 	for root, excludes := range config.RootToExcludes {
 		roots = append(roots, root)
 		mappers := []storage.Mapper{

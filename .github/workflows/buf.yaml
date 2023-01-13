@@ -8,20 +8,20 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.5.0
-        if: success()
-      - uses: bufbuild/buf-lint-action@v1.0.0
-        if: success()
+      - uses: bufbuild/buf-setup-action@v1.11.0
+        with:
+          github_token: ${{ github.token }}
+      - uses: bufbuild/buf-lint-action@v1.0.3
         with:
           buf_token: ${{ secrets.BUF_TOKEN }}
   breaking:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.5.0
-        if: success()
-      - uses: bufbuild/buf-breaking-action@v1.0.0
-        if: success()
+      - uses: bufbuild/buf-setup-action@v1.11.0
+        with:
+          github_token: ${{ github.token }}
+      - uses: bufbuild/buf-breaking-action@v1.1.2
         with:
           against: buf.build/bufbuild/buf
           buf_token: ${{ secrets.BUF_TOKEN }}
@@ -33,10 +33,10 @@ jobs:
       - breaking
     steps:
       - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.5.0
-        if: success()
-      - uses: bufbuild/buf-push-action@v1.0.1
-        if: success()
+      - uses: bufbuild/buf-setup-action@v1.11.0
+        with:
+          github_token: ${{ github.token }}
+      - uses: bufbuild/buf-push-action@v1.1.1
         with:
           input: 'proto'
           buf_token: ${{ secrets.BUF_TOKEN }}

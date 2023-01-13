@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ type module struct {
 	moduleIdentity       bufmoduleref.ModuleIdentity
 	commit               string
 	documentation        string
+	license              string
 	breakingConfig       *bufbreakingconfig.Config
 	lintConfig           *buflintconfig.Config
 }
@@ -73,6 +74,7 @@ func newModuleForProto(
 		dependencyModulePins,
 		nil, // The module identity is not stored on the proto. We rely on the layer above, (e.g. `ModuleReader`) to set this as needed.
 		protoModule.GetDocumentation(),
+		protoModule.GetLicense(),
 		breakingConfig,
 		lintConfig,
 		options...,
@@ -139,7 +141,11 @@ func newModuleForBucket(
 	if err != nil {
 		return nil, err
 	}
-	documentation, err := getDocumentationForBucket(ctx, sourceReadBucket)
+	documentation, err := getFileContentForBucket(ctx, sourceReadBucket, DocumentationFilePath)
+	if err != nil {
+		return nil, err
+	}
+	license, err := getFileContentForBucket(ctx, sourceReadBucket, LicenseFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +164,7 @@ func newModuleForBucket(
 		dependencyModulePins,
 		moduleIdentity,
 		documentation,
+		license,
 		moduleConfig.Breaking,
 		moduleConfig.Lint,
 		options...,
@@ -172,6 +179,7 @@ func newModule(
 	dependencyModulePins []bufmoduleref.ModulePin,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	documentation string,
+	license string,
 	breakingConfig *bufbreakingconfig.Config,
 	lintConfig *buflintconfig.Config,
 	options ...ModuleOption,
@@ -186,6 +194,7 @@ func newModule(
 		dependencyModulePins: dependencyModulePins,
 		moduleIdentity:       moduleIdentity,
 		documentation:        documentation,
+		license:              license,
 		breakingConfig:       breakingConfig,
 		lintConfig:           lintConfig,
 	}
@@ -254,6 +263,10 @@ func (m *module) DependencyModulePins() []bufmoduleref.ModulePin {
 
 func (m *module) Documentation() string {
 	return m.documentation
+}
+
+func (m *module) License() string {
+	return m.license
 }
 
 func (m *module) BreakingConfig() *bufbreakingconfig.Config {
