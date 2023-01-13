@@ -102,16 +102,6 @@ func WriteConfig(
 // WriteConfigOption is an option for WriteConfig.
 type WriteConfigOption func(*writeConfigOptions)
 
-func WriteConfigWithName(name string) (WriteConfigOption, error) {
-	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(name)
-	if err != nil {
-		return nil, err
-	}
-	return func(writeConfigOptions *writeConfigOptions) {
-		writeConfigOptions.moduleIdentity = moduleIdentity
-	}, nil
-}
-
 // WriteConfigWithDocumentationComments returns a new WriteConfigOption that documents the resulting configuration file.
 func WriteConfigWithDocumentationComments() WriteConfigOption {
 	return func(writeConfigOptions *writeConfigOptions) {

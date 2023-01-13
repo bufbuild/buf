@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -116,16 +117,19 @@ func run(
 		return appcmd.NewInvalidArgumentErrorf("%s already exists, not overwriting", existingConfigFilePath)
 	}
 	var writeConfigOptions []bufconfig.WriteConfigOption
-	name := ""
+	moduleName := ""
 	if container.NumArgs() > 0 {
-		name = container.Arg(0)
+		moduleName = container.Arg(0)
 	}
-	if name != "" {
-		writeConfigWithName, err := bufconfig.WriteConfigWithName(name)
+	if moduleName != "" {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
 		if err != nil {
 			return err
 		}
-		writeConfigOptions = append(writeConfigOptions, writeConfigWithName)
+		writeConfigOptions = append(
+			writeConfigOptions,
+			bufconfig.WriteConfigWithModuleIdentity(moduleIdentity),
+		)
 	}
 	if flags.DocumentationComments {
 		writeConfigOptions = append(
