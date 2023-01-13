@@ -43,7 +43,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
+		Use:   name + " <module-name>",
 		Short: fmt.Sprintf("Initializes and writes a new %s configuration file.", bufconfig.ExternalConfigV1FilePath),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
