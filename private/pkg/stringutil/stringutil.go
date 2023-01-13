@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -188,6 +188,34 @@ func SliceToHumanStringQuoted(s []string) string {
 		return `"` + s[0] + `" and "` + s[1] + `"`
 	default:
 		return `"` + strings.Join(s[:len(s)-1], `", "`) + `", and "` + s[len(s)-1] + `"`
+	}
+}
+
+// SliceToHumanStringOr prints the slice as "e1, e2, or e3".
+func SliceToHumanStringOr(s []string) string {
+	switch len(s) {
+	case 0:
+		return ""
+	case 1:
+		return s[0]
+	case 2:
+		return s[0] + " or " + s[1]
+	default:
+		return strings.Join(s[:len(s)-1], ", ") + ", or " + s[len(s)-1]
+	}
+}
+
+// SliceToHumanStringOrQuoted prints the slice as `"e1", "e2", or "e3"`.
+func SliceToHumanStringOrQuoted(s []string) string {
+	switch len(s) {
+	case 0:
+		return ""
+	case 1:
+		return `"` + s[0] + `"`
+	case 2:
+		return `"` + s[0] + `" or "` + s[1] + `"`
+	default:
+		return `"` + strings.Join(s[:len(s)-1], `", "`) + `", or "` + s[len(s)-1] + `"`
 	}
 }
 

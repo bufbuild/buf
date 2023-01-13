@@ -1,6 +1,10 @@
 # Changelog
 
-## [UNRELEASED]
+## [Unreleased]
+
+- No changes yet.
+
+## [v1.12.0] - 2023-01-12
 - Add `buf curl` command to invoke RPCs via [Connect](https://connect-build),
   [gRPC](https://grpc.io/), or [gRPC-Web](https://github.com/grpc/grpc-web.)
 - Introduce `objc_class_prefix` option in managed mode, allowing a `default` value
@@ -794,7 +798,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.11.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.12.0...HEAD]
+[v1.12.0]: https://github.com/bufbuild/buf/compare/v1.11.0...v1.12.0
 [v1.11.0]: https://github.com/bufbuild/buf/compare/v1.10.0...v1.11.0
 [v1.10.0]: https://github.com/bufbuild/buf/compare/v1.9.0...v1.10.0
 [v1.9.0]: https://github.com/bufbuild/buf/compare/v1.8.0...v1.9.0
