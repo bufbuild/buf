@@ -195,7 +195,7 @@ func wrapError(err error) error {
 				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, strings.TrimPrefix(dnsError.Name, buftransport.APISubdomain+"."))
 			}
 
-			return fmt.Errorf(msg)
+			return errors.New(msg)
 		}
 		return fmt.Errorf("Failure: %s", connectErr.Message())
 	}
