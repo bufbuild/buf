@@ -144,12 +144,14 @@ jobs:
         run: |
           unset RELEASE_MINISIGN_PRIVATE_KEY
           unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD
+      - name: Fetch Changelog
+        run: .github/actions/changelog-action/entrypoint.sh > ${{env.VERSION}}-CHANGELOG.md
       - name: Release
         id: ghr
         uses: softprops/action-gh-release@v1
         with:
           token: ${{ steps.generate_token.outputs.token }}
-          generate_release_notes: true # change to the CHANGELOG somehow
+          body_path: ${{env.VERSION}}-CHANGELOG.md
           files: |
             ${{github.workspace}}/.build/release/buf/assets/*
       - name: Slack Notification
