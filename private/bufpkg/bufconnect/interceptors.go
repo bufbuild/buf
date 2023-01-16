@@ -17,6 +17,7 @@ package bufconnect
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/netrc"
@@ -43,64 +44,120 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 }
 
 // NewAuthorizationInterceptorProvider returns a new provider function which, when invoked, returns an interceptor
-// which will look up an auth token by address and set it into the request header.  This is used for registry providers
-// where the token is looked up by the client address at the time of client construction (i.e. for clients where a
-// user is already authenticated and the token is stored in .netrc)
+// which will set the auth token into the request header by the provided option.
 //
 // Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
 // a client.
-func NewAuthorizationInterceptorProvider(container app.EnvContainer) func(string) connect.UnaryInterceptorFunc {
+func NewAuthorizationInterceptorProvider(option SetAuthTokenOption) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
 				ctx context.Context,
 				req connect.AnyRequest,
 			) (connect.AnyResponse, error) {
-				envKey := tokenEnvKey
-				token := container.Env(envKey)
-				if token == "" {
-					envKey = ""
-					machine, err := netrc.GetMachineForName(container, address)
-					if err != nil {
-						return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
-					}
-					if machine != nil {
-						token = machine.Password()
-					}
-				}
-				if token != "" {
-					req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
-				}
-				response, err := next(ctx, req)
-				if err != nil {
-					err = &ErrAuth{cause: err, tokenEnvKey: envKey}
-				}
-				return response, err
+				return option(req, ctx, next, address)
 			})
 		}
 		return interceptor
 	}
 }
 
-// NewAuthorizationInterceptorProviderWithToken returns a new provider function which, when invoked, returns an
-// interceptor which sets the provided auth token into the request header.  This is used for registry providers where
-// the token is known at provider creation (i.e. when logging in and explicitly pasting a token into stdin
-//
-// Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
-// a client.
-func NewAuthorizationInterceptorProviderWithToken(token string) func(string) connect.UnaryInterceptorFunc {
-	return func(address string) connect.UnaryInterceptorFunc {
-		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-			return connect.UnaryFunc(func(
-				ctx context.Context,
-				req connect.AnyRequest,
-			) (connect.AnyResponse, error) {
-				if token != "" {
-					req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
-				}
-				return next(ctx, req)
-			})
+// SetAuthTokenOption is an option for NewAuthorizationInterceptorProvider
+type SetAuthTokenOption func(connect.AnyRequest, context.Context, connect.UnaryFunc, string) (connect.AnyResponse, error)
+
+// SetAuthTokenWithProvidedToken returns a new SetAuthTokenOption that will set the
+// provided token into the request header This is used for registry providers where the token is known at provider
+// creation (i.e. when logging in and explicitly pasting a token into stdin
+func SetAuthTokenWithProvidedToken(token string) SetAuthTokenOption {
+	return func(req connect.AnyRequest, ctx context.Context, next connect.UnaryFunc, address string) (connect.AnyResponse, error) {
+		if token != "" {
+			req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
 		}
-		return interceptor
+		return next(ctx, req)
 	}
+}
+
+// SetAuthTokenWithAddress returns a new SetAuthTokenOption that will loop up an auth token
+// and set it into the request header
+func SetAuthTokenWithAddress(container app.EnvContainer) SetAuthTokenOption {
+	return func(req connect.AnyRequest, ctx context.Context, next connect.UnaryFunc, address string) (connect.AnyResponse, error) {
+		envKey := tokenEnvKey
+		token := container.Env(envKey)
+		authorizationToken := ""
+		if token == "" {
+			envKey = ""
+			machine, err := netrc.GetMachineForName(container, address)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
+			}
+			if machine != nil {
+				authorizationToken = machine.Password()
+			}
+		}
+		if token != "" {
+			tokenSet, err := newTokenSetFromString(token)
+			if err != nil {
+				return nil, err
+			}
+			authorizationToken = tokenSet.getRemoteToken(address)
+		}
+		if authorizationToken != "" {
+			req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+authorizationToken)
+		}
+		response, err := next(ctx, req)
+		if err != nil {
+			err = &ErrAuth{cause: err, tokenEnvKey: envKey}
+		}
+		return response, err
+	}
+}
+
+type tokenSet struct {
+	bufToken        string
+	remoteUsernames map[string]string
+	remoteTokens    map[string]string
+}
+
+func newTokenSetFromString(token string) (*tokenSet, error) {
+	tokenSet := &tokenSet{
+		remoteUsernames: make(map[string]string),
+		remoteTokens:    make(map[string]string),
+	}
+	tokens := strings.Split(token, ",")
+	for _, u := range tokens {
+		if contain := strings.ContainsAny(u, "@"); contain {
+			keyPairsAndRemoteAddress := strings.Split(u, "@")
+			if len(keyPairsAndRemoteAddress) != 2 {
+				return nil, fmt.Errorf("cannot parse token: %s, invalid remote token: %s", token, u)
+			}
+			keyPairs := strings.Split(keyPairsAndRemoteAddress[0], ":")
+			if len(keyPairs) != 2 {
+				return nil, fmt.Errorf("cannot parse token: %s, invalid remote token: %s", token, u)
+			}
+			remoteAddress := keyPairsAndRemoteAddress[1]
+			username := keyPairs[0]
+			remoteToken := keyPairs[1]
+			if _, ok := tokenSet.remoteTokens[remoteAddress]; ok {
+				return nil, fmt.Errorf("cannot parse token: %s, repeated token for same BSR remote: %s", remoteToken, remoteAddress)
+			}
+			if _, ok := tokenSet.remoteUsernames[remoteAddress]; ok {
+				return nil, fmt.Errorf("cannot parse token: %s, repeated token for same BSR remote: %s", remoteToken, remoteAddress)
+			}
+			tokenSet.remoteTokens[remoteAddress] = remoteToken
+			tokenSet.remoteUsernames[remoteAddress] = username
+		} else {
+			if tokenSet.bufToken != "" {
+				return nil, fmt.Errorf("cannot parse token: %s, two buf token provided: %s and %s", token, u, tokenSet.bufToken)
+			}
+			tokenSet.bufToken = u
+		}
+	}
+	return tokenSet, nil
+}
+
+func (t *tokenSet) getRemoteToken(remoteAddress string) string {
+	if remoteToken, ok := t.remoteTokens[remoteAddress]; ok {
+		return remoteToken
+	}
+	return t.bufToken
 }
