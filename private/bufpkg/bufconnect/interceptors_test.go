@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -47,7 +46,6 @@ func TestAuthorizationInterceptorProviderTokenErr(t *testing.T) {
 	})
 	_, err = NewAuthorizationInterceptorProvider(SetAuthTokenWithAddress(container))("remote")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"token" {
-			fmt.Println("auth token:", req.Header().Get(AuthenticationHeader))
 			return nil, errors.New("error auth token found")
 		}
 		return nil, nil
@@ -59,7 +57,6 @@ func TestAuthorizationInterceptorProviderTokenErr(t *testing.T) {
 	})
 	_, err = NewAuthorizationInterceptorProvider(SetAuthTokenWithAddress(container))("fake")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"buftoken" {
-			fmt.Println("auth token:", req.Header().Get(AuthenticationHeader))
 			return nil, errors.New("error auth token found")
 		}
 		return nil, nil
