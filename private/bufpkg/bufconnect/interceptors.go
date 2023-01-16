@@ -48,7 +48,7 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 //
 // Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
 // a client.
-func NewAuthorizationInterceptorProvider(option SetAuthTokenOption) func(string) connect.UnaryInterceptorFunc {
+func NewAuthorizationInterceptorProvider(option AuthorizeOption) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
@@ -62,13 +62,13 @@ func NewAuthorizationInterceptorProvider(option SetAuthTokenOption) func(string)
 	}
 }
 
-// SetAuthTokenOption is an option for NewAuthorizationInterceptorProvider
-type SetAuthTokenOption func(connect.AnyRequest, context.Context, connect.UnaryFunc, string) (connect.AnyResponse, error)
+// AuthorizeOption is an option for NewAuthorizationInterceptorProvider
+type AuthorizeOption func(connect.AnyRequest, context.Context, connect.UnaryFunc, string) (connect.AnyResponse, error)
 
-// SetAuthTokenWithProvidedToken returns a new SetAuthTokenOption that will set the
+// AuthorizeWithProvidedToken returns a new SetAuthTokenOption that will set the
 // provided token into the request header This is used for registry providers where the token is known at provider
 // creation (i.e. when logging in and explicitly pasting a token into stdin
-func SetAuthTokenWithProvidedToken(token string) SetAuthTokenOption {
+func AuthorizeWithProvidedToken(token string) AuthorizeOption {
 	return func(req connect.AnyRequest, ctx context.Context, next connect.UnaryFunc, address string) (connect.AnyResponse, error) {
 		if token != "" {
 			req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
@@ -77,16 +77,19 @@ func SetAuthTokenWithProvidedToken(token string) SetAuthTokenOption {
 	}
 }
 
-// SetAuthTokenWithAddress returns a new SetAuthTokenOption that will loop up an auth token
+// stubbed for testing
+var getMachineForName = netrc.GetMachineForName
+
+// AuthorizeWithAddress returns a new SetAuthTokenOption that will loop up an auth token
 // and set it into the request header
-func SetAuthTokenWithAddress(container app.EnvContainer) SetAuthTokenOption {
+func AuthorizeWithAddress(container app.EnvContainer) AuthorizeOption {
 	return func(req connect.AnyRequest, ctx context.Context, next connect.UnaryFunc, address string) (connect.AnyResponse, error) {
 		envKey := tokenEnvKey
 		token := container.Env(envKey)
 		authorizationToken := ""
 		if token == "" {
 			envKey = ""
-			machine, err := netrc.GetMachineForName(container, address)
+			machine, err := getMachineForName(container, address)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
 			}
