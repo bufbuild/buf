@@ -21,7 +21,7 @@ jobs:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           title-regex: "^[A-Z].*[^.]$"
           on-failed-regex-fail-action: true
-          on-failed-regex-create-review: true
-          on-failed-regex-request-changes: true
+          on-failed-regex-create-review: false
+          on-failed-regex-request-changes: false
           on-failed-regex-comment: "PRs must start with a capital letter and not end with a period."
           on-succeeded-regex-dismiss-review-comment: "Thanks for helping keep our PR titles consistent!"
