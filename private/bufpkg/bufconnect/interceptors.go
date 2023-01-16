@@ -62,7 +62,7 @@ func NewAuthorizationInterceptorProvider(option AuthorizeOption) func(string) co
 	}
 }
 
-// AuthorizeOption is an option for NewAuthorizationInterceptorProvider
+// AuthorizeOption is an option for NewAuthorizationInterceptorProvider.
 type AuthorizeOption func(connect.AnyRequest, context.Context, connect.UnaryFunc, string) (connect.AnyResponse, error)
 
 // AuthorizeWithProvidedToken returns a new SetAuthTokenOption that will set the
@@ -150,7 +150,7 @@ func newTokenSetFromString(token string) (*tokenSet, error) {
 			tokenSet.remoteUsernames[remoteAddress] = username
 		} else {
 			if tokenSet.bufToken != "" {
-				return nil, fmt.Errorf("cannot parse token: %s, two buf token provided: %s and %s", token, u, tokenSet.bufToken)
+				return nil, fmt.Errorf("cannot parse token: %s, two buf token provided: %q and %q", token, u, tokenSet.bufToken)
 			}
 			tokenSet.bufToken = u
 		}

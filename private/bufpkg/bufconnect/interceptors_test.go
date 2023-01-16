@@ -18,10 +18,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/bufbuild/buf/private/pkg/netrc"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 )
@@ -66,6 +66,7 @@ func TestAuthorizationInterceptorProviderTokenErr(t *testing.T) {
 		}
 		return nil, nil
 	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	assert.NoError(t, err)
 	getMachineForName = netrc.GetMachineForName
 }
 
