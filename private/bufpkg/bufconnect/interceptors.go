@@ -99,7 +99,7 @@ func SetAuthTokenWithAddress(container app.EnvContainer) SetAuthTokenOption {
 			if err != nil {
 				return nil, err
 			}
-			authorizationToken = tokenSet.getRemoteToken(address)
+			_, authorizationToken = tokenSet.getRemoteUsernameAndToken(address)
 		}
 		if authorizationToken != "" {
 			req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+authorizationToken)
@@ -155,9 +155,9 @@ func newTokenSetFromString(token string) (*tokenSet, error) {
 	return tokenSet, nil
 }
 
-func (t *tokenSet) getRemoteToken(remoteAddress string) string {
+func (t *tokenSet) getRemoteUsernameAndToken(remoteAddress string) (user string, token string) {
 	if remoteToken, ok := t.remoteTokens[remoteAddress]; ok {
-		return remoteToken
+		return t.remoteUsernames[remoteAddress], remoteToken
 	}
-	return t.bufToken
+	return "", t.bufToken
 }
