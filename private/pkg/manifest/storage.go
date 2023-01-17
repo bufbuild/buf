@@ -87,7 +87,7 @@ type bucketOptions struct {
 // BucketOption are options passed when creating a new manifest bucket.
 type BucketOption func(*bucketOptions)
 
-// BucketWithAllManifestBlobsValidation validates that all manifest digests in
+// BucketWithAllManifestBlobsValidation validates that all manifest digests
 // have a corresponding blob in the blob set. If this option is not passed, then
 // buckets with partial/incomplete blobs are allowed.
 func BucketWithAllManifestBlobsValidation() BucketOption {
