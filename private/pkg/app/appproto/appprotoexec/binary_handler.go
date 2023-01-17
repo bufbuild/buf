@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"path/filepath"
+	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
@@ -60,14 +61,17 @@ func (h *binaryHandler) Handle(
 		return err
 	}
 	responseBuffer := bytes.NewBuffer(nil)
-	if err := h.runner.Run(
-		ctx,
-		h.pluginPath,
+	runOptions := []command.RunOption{
 		command.RunWithEnv(app.EnvironMap(container)),
 		command.RunWithStdin(bytes.NewReader(requestData)),
 		command.RunWithStdout(responseBuffer),
-		command.RunWithStderr(container.Stderr()),
-	); err != nil {
+	}
+	// https://github.com/bufbuild/buf/issues/1736
+	// Swallowing stderr for protoc-gen-swift as protoc-gen-swift, see issue
+	if !strings.HasSuffix(h.pluginPath, "protoc-gen-swift") {
+		runOptions = append(runOptions, command.RunWithStderr(container.Stderr()))
+	}
+	if err := h.runner.Run(ctx, h.pluginPath, runOptions...); err != nil {
 		// TODO: strip binary path as well?
 		return handlePotentialTooManyFilesError(err)
 	}
