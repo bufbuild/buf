@@ -19,7 +19,6 @@ import (
 	"context"
 	"io"
 	"path/filepath"
-	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
@@ -65,7 +64,8 @@ func (h *binaryHandler) Handle(
 	// https://github.com/bufbuild/buf/issues/1736
 	// Swallowing specfic stderr message for protoc-gen-swift as protoc-gen-swift, see issue.
 	// This is all disgusting code but its simple and it works.
-	isProtocGenSwift := strings.HasSuffix(h.pluginPath, "protoc-gen-swift")
+	// We did not document if pluginPath is normalized or not, so
+	isProtocGenSwift := filepath.Base(h.pluginPath) == "protoc-gen-swift"
 	// protocGenSwiftStderrBuffer will be non-nil if isProtocGenSwift is true
 	var protocGenSwiftStderrBuffer *bytes.Buffer
 	// stderr is what we pass to Run regardless
@@ -91,17 +91,28 @@ func (h *binaryHandler) Handle(
 		// If we had any stderr, then let's process it and print it.
 		// protocGenSwiftStderrBuffer will always be non-nil if isProtocGenSwift is true
 		if stderrData := protocGenSwiftStderrBuffer.Bytes(); len(stderrData) > 0 {
-			if _, err := container.Stderr().Write(
-				bytes.ReplaceAll(
-					stderrData,
-					// If swift-protobuf changes their error message, this may not longer filter properly
-					// but this is OK - this filtering should be treated as non-critical.
-					// https://github.com/apple/swift-protobuf/blob/c3d060478fcf1f564be0a3876bde8c04247793ae/Sources/protoc-gen-swift/main.swift#L244
-					[]byte("WARNING: unknown version of protoc, use 3.2.x or later to ensure JSON support is correct.\n"),
-					nil,
-				),
-			); err != nil {
-				return err
+			// Just being extra careful to not initiate a Write call if we have len == 0, even though
+			// in almost all io.Writer cases, this should have no side-effect (and this may even be
+			// the documented behavior of io.Writer).
+			if newStderrData := bytes.ReplaceAll(
+				stderrData,
+				// If swift-protobuf changes their error message, this may not longer filter properly
+				// but this is OK - this filtering should be treated as non-critical.
+				// https://github.com/apple/swift-protobuf/blob/c3d060478fcf1f564be0a3876bde8c04247793ae/Sources/protoc-gen-swift/main.swift#L244
+				//
+				// Note that our heuristic as to whether this is protoc-gen-swift or not for isProtocGenSwift
+				// is that the binary is named protoc-gen-swift, and buf/protoc will print the binary name
+				// before any message to stderr, so given our protoc-gen-swift heuristic, this is the
+				// error message that will be printed.
+				//
+				// Tested manually on Mac.
+				// TODO: Test manually on Windows.
+				[]byte("protoc-gen-swift: WARNING: unknown version of protoc, use 3.2.x or later to ensure JSON support is correct.\n"),
+				nil,
+			); len(newStderrData) > 0 {
+				if _, err := container.Stderr().Write(newStderrData); err != nil {
+					return err
+				}
 			}
 		}
 	}

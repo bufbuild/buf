@@ -160,6 +160,7 @@ type HandlerOption func(*handlerOptions)
 // HandlerWithProtocPath returns a new HandlerOption that sets the path to the protoc binary.
 //
 // The default is to do exec.LookPath on "protoc".
+// protocPath is expected to be unnormalized.
 func HandlerWithProtocPath(protocPath string) HandlerOption {
 	return func(handlerOptions *handlerOptions) {
 		handlerOptions.protocPath = protocPath
@@ -169,6 +170,7 @@ func HandlerWithProtocPath(protocPath string) HandlerOption {
 // HandlerWithPluginPath returns a new HandlerOption that sets the path to the plugin binary.
 //
 // The default is to do exec.LookPath on "protoc-gen-" + pluginName.
+// pluginPath is expected to be unnormalized.
 func HandlerWithPluginPath(pluginPath string) HandlerOption {
 	return func(handlerOptions *handlerOptions) {
 		handlerOptions.pluginPath = pluginPath
