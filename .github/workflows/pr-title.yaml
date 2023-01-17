@@ -16,10 +16,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: morrisoncole/pr-lint-action@v1.7.0
+      - uses: morrisoncole/pr-lint-action@327d08270eeda69f390c2073935506556987b9a1 # v1.7.0
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          title-regex: "^[A-Z].*[^.?!]$"
+          title-regex: "^[A-Z].*[^.?!,-;:]$"
           on-failed-regex-fail-action: true
           on-failed-regex-create-review: false
           on-failed-regex-request-changes: false
