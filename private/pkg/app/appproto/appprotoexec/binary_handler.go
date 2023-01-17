@@ -17,7 +17,6 @@ package appprotoexec
 import (
 	"bytes"
 	"context"
-	"io"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -62,14 +61,14 @@ func (h *binaryHandler) Handle(
 	}
 	responseBuffer := bytes.NewBuffer(nil)
 	// https://github.com/bufbuild/buf/issues/1736
-	// Swallowing specfic stderr message for protoc-gen-swift as protoc-gen-swift, see issue.
+	// Swallowing specific stderr message for protoc-gen-swift as protoc-gen-swift, see issue.
 	// This is all disgusting code but its simple and it works.
 	// We did not document if pluginPath is normalized or not, so
 	isProtocGenSwift := filepath.Base(h.pluginPath) == "protoc-gen-swift"
 	// protocGenSwiftStderrBuffer will be non-nil if isProtocGenSwift is true
 	var protocGenSwiftStderrBuffer *bytes.Buffer
 	// stderr is what we pass to Run regardless
-	var stderr io.Writer = container.Stderr()
+	stderr := container.Stderr()
 	if isProtocGenSwift {
 		// If protoc-gen-swift, we want to capture all the stderr so we can process it.
 		// Otherwise, we write stderr directly to the container.Stderr() as it is produced.
