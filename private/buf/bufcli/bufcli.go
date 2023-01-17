@@ -581,12 +581,9 @@ func newModuleReaderAndCreateCacheDirs(
 	}
 	var moduleReaderOpts []bufapimodule.ModuleReaderOption
 	// Check if tamper proofing env var is enabled
-	tamperProofingEnabled := false
-	if envVal := container.Env(BetaEnableTamperProofingEnvKey); envVal != "" {
-		tamperProofingEnabled, err = strconv.ParseBool(envVal)
-		if err != nil {
-			return nil, fmt.Errorf("invalid value for %q: %w", BetaEnableTamperProofingEnvKey, err)
-		}
+	tamperProofingEnabled, err := IsBetaTamperProofingEnabled(container)
+	if err != nil {
+		return nil, err
 	}
 	if tamperProofingEnabled {
 		moduleReaderOpts = append(moduleReaderOpts, bufapimodule.WithTamperProofing())
@@ -881,6 +878,20 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1al
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s", visibility)
 	}
+}
+
+// IsBetaTamperProofingEnabled returns if BUF_BETA_ENABLE_TAMPER_PROOFING is set to true.
+func IsBetaTamperProofingEnabled(container app.EnvContainer) (bool, error) {
+	// Check if tamper proofing env var is enabled
+	tamperProofingEnabled := false
+	if envVal := container.Env(BetaEnableTamperProofingEnvKey); envVal != "" {
+		var err error
+		tamperProofingEnabled, err = strconv.ParseBool(envVal)
+		if err != nil {
+			return false, fmt.Errorf("invalid value for %q: %w", BetaEnableTamperProofingEnvKey, err)
+		}
+	}
+	return tamperProofingEnabled, nil
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.
