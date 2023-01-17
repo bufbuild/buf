@@ -88,12 +88,12 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 	if err != nil {
 		return nil, err
 	}
-	if resp.Module != nil {
-		// build proto module
-		return bufmodule.NewModuleForProto(ctx, resp.Module, identityAndCommitOpt)
+	if resp.Module == nil {
+		// funny, success without a module to build
+		return nil, errors.New("no module in response")
 	}
-	// funny, success without a module to build
-	return nil, errors.New("no module in response")
+	// build proto module
+	return bufmodule.NewModuleForProto(ctx, resp.Module, identityAndCommitOpt)
 }
 
 func (m *moduleReader) download(

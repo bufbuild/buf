@@ -266,13 +266,13 @@ func manifestAndFilesBlobs(ctx context.Context, sourceBucket storage.ReadBucket)
 		return nil, nil, err
 	}
 	filesBlobs := blobs.Blobs()
-	filesProtoBlobs := make([]*modulev1alpha1.Blob, 0, len(filesBlobs))
-	for _, b := range filesBlobs {
+	filesProtoBlobs := make([]*modulev1alpha1.Blob, len(filesBlobs))
+	for i, b := range filesBlobs {
 		pb, err := manifest.AsProtoBlob(ctx, b)
 		if err != nil {
 			return nil, nil, err
 		}
-		filesProtoBlobs = append(filesProtoBlobs, pb)
+		filesProtoBlobs[i] = pb
 	}
 	return manifestProtoBlob, filesProtoBlobs, nil
 }
