@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package foo.bar.baz;
+
+import "nopackage.proto";
+
+message Empty {}
+
+enum AlmostEmpty {
+  UNSET = 0;
+}
+
+service NoOp {
+  option (svc_option_str) = "blah";
+  rpc Nothing(Empty) returns (Empty);
+}

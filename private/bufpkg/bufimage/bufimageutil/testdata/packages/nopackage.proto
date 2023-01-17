@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+import "google/protobuf/descriptor.proto";
+import public "options.proto";
+
+option (file_option_str) = "foo";
+
+message Foo {
+  option (msg_option_str) = "foo";
+  oneof x {
+    string bar = 1;
+    string baz = 2;
+  }
+}
+
+extend google.protobuf.ExtensionRangeOptions {
+  int64 rand = 30000;
+}
