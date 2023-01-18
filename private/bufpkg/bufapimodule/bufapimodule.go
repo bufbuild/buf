@@ -51,6 +51,13 @@ func NewModuleReader(
 // ModuleReaderOption allows configuration of a module reader.
 type ModuleReaderOption func(reader *moduleReader)
 
+// WithTamperProofing enables tamper proofing support (use of manifest/blobs).
+func WithTamperProofing() ModuleReaderOption {
+	return func(reader *moduleReader) {
+		reader.tamperProofingEnabled = true
+	}
+}
+
 // NewModuleResolver returns a new ModuleResolver backed by the resolve service.
 func NewModuleResolver(
 	logger *zap.Logger,
