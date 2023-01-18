@@ -20,15 +20,15 @@ import "buf/alpha/breaking/v1/config.proto";
 import "buf/alpha/lint/v1/config.proto";
 import "google/protobuf/timestamp.proto";
 
-enum HashKind {
-  HASH_KIND_UNSPECIFIED = 0;
-  HASH_KIND_SHAKE256 = 1;
+enum DigestType {
+  DIGEST_TYPE_UNSPECIFIED = 0;
+  DIGEST_TYPE_SHAKE256 = 1;
 }
 
 // Hash represents a hash function's value.
 message Hash {
-  // kind describes the hash algorithm. e.g. "SHAKE256"
-  HashKind kind = 1;
+  // digest_type describes the hash algorithm. e.g. "SHAKE256"
+  DigestType digest_type = 1;
   // digest is the hash's output without encoding.
   bytes digest = 2;
 }

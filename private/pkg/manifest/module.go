@@ -25,11 +25,11 @@ import (
 )
 
 var (
-	hashKindToDigestType = map[modulev1alpha1.HashKind]DigestType{
-		modulev1alpha1.HashKind_HASH_KIND_SHAKE256: DigestTypeShake256,
+	protoDigestTypeToDigestType = map[modulev1alpha1.DigestType]DigestType{
+		modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256: DigestTypeShake256,
 	}
-	digestTypeToHashKind = map[DigestType]modulev1alpha1.HashKind{
-		DigestTypeShake256: modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
+	digestTypeToProtoDigestType = map[DigestType]modulev1alpha1.DigestType{
+		DigestTypeShake256: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 	}
 )
 
@@ -97,7 +97,7 @@ func (b *memoryBlob) Open(context.Context) (io.ReadCloser, error) {
 
 // AsProtoBlob returns the passed blob as a proto module blob.
 func AsProtoBlob(ctx context.Context, b Blob) (_ *modulev1alpha1.Blob, retErr error) {
-	hashKind, ok := digestTypeToHashKind[b.Digest().Type()]
+	hashKind, ok := digestTypeToProtoDigestType[b.Digest().Type()]
 	if !ok {
 		return nil, fmt.Errorf("digest type %q not supported by module proto", b.Digest().Type())
 	}
@@ -114,8 +114,8 @@ func AsProtoBlob(ctx context.Context, b Blob) (_ *modulev1alpha1.Blob, retErr er
 	}
 	return &modulev1alpha1.Blob{
 		Hash: &modulev1alpha1.Hash{
-			Kind:   hashKind,
-			Digest: b.Digest().Bytes(),
+			DigestType: hashKind,
+			Digest:     b.Digest().Bytes(),
 		},
 		Content: content,
 	}, nil
@@ -165,7 +165,7 @@ func BlobSetWithContentValidation() BlobSetOption {
 	}
 }
 
-// NewBlobSet receives an slice of blobs, and deduplicates them into a BlobSet.
+// NewBlobSet receives a slice of blobs, and de-duplicates them into a BlobSet.
 func NewBlobSet(ctx context.Context, blobs []Blob, opts ...BlobSetOption) (*BlobSet, error) {
 	var config blobSetOptions
 	for _, option := range opts {
@@ -215,9 +215,9 @@ func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
 	if hash == nil {
 		return nil, fmt.Errorf("nil hash")
 	}
-	dType, ok := hashKindToDigestType[hash.Kind]
+	dType, ok := protoDigestTypeToDigestType[hash.DigestType]
 	if !ok {
-		return nil, fmt.Errorf("unsupported hash kind: %s", hash.Kind.String())
+		return nil, fmt.Errorf("unsupported digest kind: %s", hash.DigestType.String())
 	}
 	return NewDigestFromBytes(dType, hash.Digest)
 }

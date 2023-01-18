@@ -134,8 +134,8 @@ func TestBucketBlobs(t *testing.T) {
 	for _, blob := range blobs {
 		assert.Equal(
 			t,
-			modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
-			blob.Hash.Kind,
+			modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
+			blob.Hash.DigestType,
 		)
 		hexDigest := hex.EncodeToString(blob.Hash.Digest)
 		assert.NotContains(t, digests, hexDigest, "duplicated blob")

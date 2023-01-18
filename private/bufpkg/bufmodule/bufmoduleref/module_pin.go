@@ -65,7 +65,7 @@ func newModulePinForProto(
 	if err := ValidateProtoModulePin(protoModulePin); err != nil {
 		return nil, err
 	}
-	// Zero out any b digest values. These cannot describe a module pin as they
+	// Don't consume old buf digests. These cannot describe a module pin as they
 	// don't hash all content. This prevents consumption of old digests
 	// processed as a valid pin.
 	digest := protoModulePin.Digest

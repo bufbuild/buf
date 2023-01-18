@@ -15,9 +15,9 @@
 // Manifests are a list of paths and their hash digests, canonically ordered by
 // path in increasing lexographical order. Manifests are encoded as:
 //
-//	<hash type>:<digest>[SP][SP]<path>[LF]
+//	<digest type>:<digest>[SP][SP]<path>[LF]
 //
-// "shake256" is the only supported hash type. The digest is 64 bytes of hex
+// "shake256" is the only supported digest type. The digest is 64 bytes of hex
 // encoded output of SHAKE256. See golang.org/x/crypto/sha3 and FIPS 202 for
 // details on the SHAKE hash.
 package manifest
@@ -35,36 +35,12 @@ import (
 
 var errNoFinalNewline = errors.New("partial record: missing newline")
 
-// Error occurs when a manifest is malformed.
-type Error struct {
-	lineno  int
-	msg     string
-	wrapped error
+func newError(lineno int, msg string) error {
+	return fmt.Errorf("invalid manifest: %d: %s", lineno, msg)
 }
 
-var _ error = (*Error)(nil)
-
-func newError(lineno int, msg string) *Error {
-	return &Error{
-		lineno: lineno,
-		msg:    msg,
-	}
-}
-
-func newErrorWrapped(lineno int, err error) *Error {
-	return &Error{
-		lineno:  lineno,
-		msg:     err.Error(),
-		wrapped: err,
-	}
-}
-
-func (e *Error) Error() string {
-	return fmt.Sprintf("invalid manifest: %d: %s", e.lineno, e.msg)
-}
-
-func (e *Error) Unwrap() error {
-	return e.wrapped
+func newErrorWrapped(lineno int, err error) error {
+	return fmt.Errorf("invalid manifest: %d: %w", lineno, err)
 }
 
 // Manifest represents a list of paths and their digests.
@@ -174,7 +150,9 @@ func (m *Manifest) MarshalText() ([]byte, error) {
 	sort.Strings(paths)
 	for _, path := range paths {
 		digest := m.pathToDigest[path]
-		fmt.Fprintf(&coded, "%s  %s\n", &digest, path)
+		if _, err := fmt.Fprintf(&coded, "%s  %s\n", &digest, path); err != nil {
+			return nil, err
+		}
 	}
 	return coded.Bytes(), nil
 }

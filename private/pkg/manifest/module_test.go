@@ -33,7 +33,6 @@ import (
 func TestDigestFromBlobHash(t *testing.T) {
 	t.Parallel()
 	const (
-		filePath    = "path/to/file"
 		fileContent = "one line\nanother line\nyet another one\n"
 	)
 	digestFromContent, err := manifest.NewDigestFromBytes(
@@ -43,8 +42,8 @@ func TestDigestFromBlobHash(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, manifest.DigestTypeShake256, digestFromContent.Type())
 	blobHash := modulev1alpha1.Hash{
-		Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
-		Digest: digestFromContent.Bytes(),
+		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
+		Digest:     digestFromContent.Bytes(),
 	}
 	digestFromBlobHash, err := manifest.NewDigestFromBlobHash(&blobHash)
 	require.NoError(t, err)
@@ -94,8 +93,8 @@ func TestNewDigestFromBlobHash(t *testing.T) {
 	t.Parallel()
 	digest := mustDigestShake256(t, []byte("my content"))
 	retDigest, err := manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
-		Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
-		Digest: digest.Bytes(),
+		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
+		Digest:     digest.Bytes(),
 	})
 	require.NoError(t, err)
 	assert.True(t, digest.Equal(*retDigest))
@@ -106,12 +105,12 @@ func TestInvalidNewDigestFromBlobHash(t *testing.T) {
 	_, err := manifest.NewDigestFromBlobHash(nil)
 	assert.Error(t, err)
 	_, err = manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
-		Kind: modulev1alpha1.HashKind_HASH_KIND_UNSPECIFIED,
+		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_UNSPECIFIED,
 	})
 	assert.Error(t, err)
 	_, err = manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
-		Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
-		Digest: []byte("invalid digest"),
+		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
+		Digest:     []byte("invalid digest"),
 	})
 	assert.Error(t, err)
 }
@@ -401,8 +400,8 @@ func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
 	require.NoError(t, err)
 	expect := &modulev1alpha1.Blob{
 		Hash: &modulev1alpha1.Hash{
-			Kind:   modulev1alpha1.HashKind_HASH_KIND_SHAKE256,
-			Digest: digest,
+			DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
+			Digest:     digest,
 		},
 		Content: content,
 	}
