@@ -41,6 +41,6 @@ message LocalModulePin {
   string commit = 4;
   google.protobuf.Timestamp create_time = 7;
   string draft_name = 8;
-  // Module's digest (SHAKE256). Replacement for previous b1/b3 digests.
-  string module_digest = 9;
+  // Module's manifest digest. Replacement for previous b1/b3 digests.
+  string manifest_digest = 9;
 }

@@ -96,6 +96,6 @@ message ModulePin {
   string branch = 4;
   string commit = 5;
   google.protobuf.Timestamp create_time = 7;
-  // Module's digest (SHAKE256). Replacement for previous b1/b3 digests.
-  string module_digest = 8;
+  // Module's manifest digest. Replacement for previous b1/b3 digests.
+  string manifest_digest = 8;
 }
