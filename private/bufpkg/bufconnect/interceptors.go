@@ -61,7 +61,7 @@ func NewAuthorizationInterceptorProvider(tokenSet *TokenSet) func(string) connec
 					}
 				}
 				response, err := next(ctx, req)
-				if err != nil {
+				if err != nil && tokenSet != nil && tokenSet.envKey != "" {
 					err = &ErrAuth{cause: err, tokenEnvKey: tokenEnvKey}
 				}
 				return response, err
@@ -73,6 +73,7 @@ func NewAuthorizationInterceptorProvider(tokenSet *TokenSet) func(string) connec
 
 // TokenSet is used to provide authentication token in NewAuthorizationInterceptorProvider
 type TokenSet struct {
+	envKey          string
 	bufToken        string
 	remoteUsernames map[string]string
 	remoteTokens    map[string]string
@@ -81,7 +82,12 @@ type TokenSet struct {
 // NewTokenSetFromContainer creates a TokenSet from the BUF_TOKEN environment variable
 func NewTokenSetFromContainer(container app.EnvContainer) (*TokenSet, error) {
 	bufToken := container.Env(tokenEnvKey)
-	return NewTokenSetFromString(bufToken)
+	tokenSet, err := NewTokenSetFromString(bufToken)
+	if err != nil {
+		return nil, err
+	}
+	tokenSet.envKey = tokenEnvKey
+	return tokenSet, nil
 }
 
 // NewTokenSetFromString creates a TokenSet by the token provided
