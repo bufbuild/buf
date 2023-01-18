@@ -21,70 +21,34 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAuthorizationInterceptorProviderTokenErr(t *testing.T) {
-	// test setting auth token with provided token
-	_, err := NewAuthorizationInterceptorProvider(AuthorizeWithProvidedToken("test1234"))("fake")(func(context.Context, connect.AnyRequest) (connect.AnyResponse, error) {
-		return nil, errors.New("underlying cause")
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
-	assert.Error(t, err)
-
-	// test on using remote token
-	container := app.NewEnvContainer(map[string]string{
-		tokenEnvKey: "username:token@remote,buftoken",
-	})
-	_, err = NewAuthorizationInterceptorProvider(AuthorizeWithAddress(container))("remote")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+func TestNewAuthorizationInterceptorProvider(t *testing.T) {
+	tokenSet, err := NewTokenSetFromString("user1:token1@remote1,token")
+	assert.NoError(t, err)
+	_, err = NewAuthorizationInterceptorProvider(tokenSet)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"token" {
-			return nil, errors.New("error auth token found")
+			return nil, errors.New("error auth token")
 		}
 		return nil, nil
 	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
+}
 
-	// test on using default token
-	container = app.NewEnvContainer(map[string]string{
-		tokenEnvKey: "username:token@remote,buftoken",
-	})
-	_, err = NewAuthorizationInterceptorProvider(AuthorizeWithAddress(container))("fake")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"buftoken" {
-			return nil, errors.New("error auth token found")
-		}
-		return nil, nil
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+func TestNewTokenSetFromEnv(t *testing.T) {
+	_, err := NewTokenSetFromContainer(app.NewEnvContainer(map[string]string{}))
 	assert.NoError(t, err)
-
-	// test on zero value
-	getMachineForName = newGetMachineForName
-	container = app.NewEnvContainer(map[string]string{})
-	_, err = NewAuthorizationInterceptorProvider(AuthorizeWithAddress(container))("fake")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"password" {
-			return nil, errors.New("error auth token found")
-		}
-		return nil, nil
-	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
-	assert.NoError(t, err)
-	getMachineForName = netrc.GetMachineForName
 }
 
-// machine is implementation of netrc.Machine for testing
-type machine struct{}
-
-func (m machine) Name() string {
-	return "name"
-}
-
-func (m machine) Login() string {
-	return "login"
-}
-
-func (m machine) Password() string {
-	return "password"
-}
-
-func newGetMachineForName(container app.EnvContainer, name string) (netrc.Machine, error) {
-	return machine{}, nil
+func TestNewTokenSetFromString(t *testing.T) {
+	_, err := NewTokenSetFromString("default1,default2")
+	assert.Error(t, err)
+	_, err = NewTokenSetFromString("invalid@invalid@invalid")
+	assert.Error(t, err)
+	_, err = NewTokenSetFromString("invalid:invalid:invalid@remote")
+	assert.Error(t, err)
+	_, err = NewTokenSetFromString("user1:token1@remote,user2:token2@remote")
+	assert.Error(t, err)
 }

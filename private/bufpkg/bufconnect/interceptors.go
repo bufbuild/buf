@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
 )
 
@@ -48,81 +47,43 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 //
 // Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
 // a client.
-func NewAuthorizationInterceptorProvider(option AuthorizeOption) func(string) connect.UnaryInterceptorFunc {
+func NewAuthorizationInterceptorProvider(tokenSet *TokenSet) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
 				ctx context.Context,
 				req connect.AnyRequest,
 			) (connect.AnyResponse, error) {
-				return option(req, ctx, next, address)
+				if tokenSet != nil {
+					req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+tokenSet.obtainTokenFromRemoteAddress(address))
+				}
+				response, err := next(ctx, req)
+				if err != nil {
+					err = &ErrAuth{cause: err, tokenEnvKey: tokenEnvKey}
+				}
+				return response, err
 			})
 		}
 		return interceptor
 	}
 }
 
-// AuthorizeOption is an option for NewAuthorizationInterceptorProvider.
-type AuthorizeOption func(connect.AnyRequest, context.Context, connect.UnaryFunc, string) (connect.AnyResponse, error)
-
-// AuthorizeWithProvidedToken returns a new SetAuthTokenOption that will set the
-// provided token into the request header This is used for registry providers where the token is known at provider
-// creation (i.e. when logging in and explicitly pasting a token into stdin
-func AuthorizeWithProvidedToken(token string) AuthorizeOption {
-	return func(req connect.AnyRequest, ctx context.Context, next connect.UnaryFunc, address string) (connect.AnyResponse, error) {
-		if token != "" {
-			req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
-		}
-		return next(ctx, req)
-	}
-}
-
-// stubbed for testing
-var getMachineForName = netrc.GetMachineForName
-
-// AuthorizeWithAddress returns a new SetAuthTokenOption that will loop up an auth token
-// and set it into the request header
-func AuthorizeWithAddress(container app.EnvContainer) AuthorizeOption {
-	return func(req connect.AnyRequest, ctx context.Context, next connect.UnaryFunc, address string) (connect.AnyResponse, error) {
-		envKey := tokenEnvKey
-		token := container.Env(envKey)
-		authorizationToken := ""
-		if token == "" {
-			envKey = ""
-			machine, err := getMachineForName(container, address)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
-			}
-			if machine != nil {
-				authorizationToken = machine.Password()
-			}
-		}
-		if token != "" {
-			tokenSet, err := newTokenSetFromString(token)
-			if err != nil {
-				return nil, err
-			}
-			_, authorizationToken = tokenSet.getRemoteUsernameAndToken(address)
-		}
-		if authorizationToken != "" {
-			req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+authorizationToken)
-		}
-		response, err := next(ctx, req)
-		if err != nil {
-			err = &ErrAuth{cause: err, tokenEnvKey: envKey}
-		}
-		return response, err
-	}
-}
-
-type tokenSet struct {
+// TokenSet is used to provide authentication token in NewAuthorizationInterceptorProvider
+type TokenSet struct {
 	bufToken        string
 	remoteUsernames map[string]string
 	remoteTokens    map[string]string
 }
 
-func newTokenSetFromString(token string) (*tokenSet, error) {
-	tokenSet := &tokenSet{
+// NewTokenSetFromContainer creates a TokenSet from the BUF_TOKEN environment variable
+func NewTokenSetFromContainer(container app.EnvContainer) (*TokenSet, error) {
+	bufToken := container.Env(tokenEnvKey)
+	return NewTokenSetFromString(bufToken)
+}
+
+// NewTokenSetFromString creates a TokenSet by the token provided
+func NewTokenSetFromString(token string) (*TokenSet, error) {
+	tokenSet := &TokenSet{
 		remoteUsernames: make(map[string]string),
 		remoteTokens:    make(map[string]string),
 	}
@@ -158,9 +119,9 @@ func newTokenSetFromString(token string) (*tokenSet, error) {
 	return tokenSet, nil
 }
 
-func (t *tokenSet) getRemoteUsernameAndToken(remoteAddress string) (user string, token string) {
+func (t *TokenSet) obtainTokenFromRemoteAddress(remoteAddress string) (token string) {
 	if remoteToken, ok := t.remoteTokens[remoteAddress]; ok {
-		return t.remoteUsernames[remoteAddress], remoteToken
+		return remoteToken
 	}
-	return "", t.bufToken
+	return t.bufToken
 }
