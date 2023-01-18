@@ -31,8 +31,6 @@ func TestNewModulePin(t *testing.T) {
 	require.NoError(t, err)
 	testNewModulePin(t, "no digest", "", true)
 	testNewModulePin(t, "nominal digest", nullDigest.String(), false)
-	testNewModulePin(t, "b1 digest", "b1-11223344", true)
-	testNewModulePin(t, "b3 digest", "b3-11223344", true)
 }
 
 func testNewModulePin(

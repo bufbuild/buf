@@ -87,11 +87,15 @@ message ModuleReference {
 
 // ModulePin is a module pin.
 message ModulePin {
+  reserved 6;
+  reserved "digest";
+
   string remote = 1;
   string owner = 2;
   string repository = 3;
   string branch = 4;
   string commit = 5;
-  string digest = 6;
   google.protobuf.Timestamp create_time = 7;
+  // Module's digest (SHAKE256). Replacement for previous b1/b3 digests.
+  string module_digest = 8;
 }

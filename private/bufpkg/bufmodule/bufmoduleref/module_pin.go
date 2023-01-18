@@ -18,7 +18,6 @@ import (
 	"time"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/prototime"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -48,13 +47,13 @@ func newModulePin(
 	}
 	return newModulePinForProto(
 		&modulev1alpha1.ModulePin{
-			Remote:     remote,
-			Owner:      owner,
-			Repository: repository,
-			Branch:     branch,
-			Commit:     commit,
-			Digest:     digest,
-			CreateTime: protoCreateTime,
+			Remote:       remote,
+			Owner:        owner,
+			Repository:   repository,
+			Branch:       branch,
+			Commit:       commit,
+			ModuleDigest: digest,
+			CreateTime:   protoCreateTime,
 		},
 	)
 }
@@ -65,20 +64,13 @@ func newModulePinForProto(
 	if err := ValidateProtoModulePin(protoModulePin); err != nil {
 		return nil, err
 	}
-	// Don't consume old buf digests. These cannot describe a module pin as they
-	// don't hash all content. This prevents consumption of old digests
-	// processed as a valid pin.
-	digest := protoModulePin.Digest
-	if !isValidDigest(digest) {
-		digest = ""
-	}
 	return &modulePin{
 		remote:     protoModulePin.Remote,
 		owner:      protoModulePin.Owner,
 		repository: protoModulePin.Repository,
 		branch:     protoModulePin.Branch,
 		commit:     protoModulePin.Commit,
-		digest:     digest,
+		digest:     protoModulePin.ModuleDigest,
 		createTime: protoModulePin.CreateTime.AsTime(),
 	}, nil
 }
@@ -87,12 +79,12 @@ func newProtoModulePinForModulePin(
 	modulePin ModulePin,
 ) *modulev1alpha1.ModulePin {
 	return &modulev1alpha1.ModulePin{
-		Remote:     modulePin.Remote(),
-		Owner:      modulePin.Owner(),
-		Repository: modulePin.Repository(),
-		Branch:     modulePin.Branch(),
-		Commit:     modulePin.Commit(),
-		Digest:     modulePin.Digest(),
+		Remote:       modulePin.Remote(),
+		Owner:        modulePin.Owner(),
+		Repository:   modulePin.Repository(),
+		Branch:       modulePin.Branch(),
+		Commit:       modulePin.Commit(),
+		ModuleDigest: modulePin.Digest(),
 		// no need to validate as we already know this is valid
 		CreateTime: timestamppb.New(modulePin.CreateTime()),
 	}
@@ -137,10 +129,3 @@ func (m *modulePin) IdentityString() string {
 func (*modulePin) isModuleOwner()    {}
 func (*modulePin) isModuleIdentity() {}
 func (*modulePin) isModulePin()      {}
-
-// isValidDigest returns true when the digest string is successfully parsed
-// by the `manifest` pkg. Older buf digests are not considered valid (b1/b3).
-func isValidDigest(digest string) bool {
-	_, err := manifest.NewDigestFromString(digest)
-	return err == nil
-}
