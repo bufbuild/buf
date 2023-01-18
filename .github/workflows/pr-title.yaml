@@ -1,7 +1,8 @@
-name: pr-title
+name: Lint PR Title
 # Prevent writing to the repository using the CI token.
 # Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
-permissions: read-all
+permissions:
+  pull-requests: read
 on:
   pull_request:
     # By default, a workflow only runs when a pull_request's activity type is opened,
@@ -14,14 +15,4 @@ on:
       - synchronize
 jobs:
   lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: morrisoncole/pr-lint-action@327d08270eeda69f390c2073935506556987b9a1 # v1.7.0
-        with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          title-regex: "^[A-Z].*[^.?!,-;:]$"
-          on-failed-regex-fail-action: true
-          on-failed-regex-create-review: false
-          on-failed-regex-request-changes: false
-          on-failed-regex-comment: "PR titles must start with a capital letter and not end with punctuation."
-          on-succeeded-regex-dismiss-review-comment: "Thanks for helping keep our PR titles consistent!"
+    uses: bufbuild/base-workflows/.github/workflows/pr-title.yaml@main
