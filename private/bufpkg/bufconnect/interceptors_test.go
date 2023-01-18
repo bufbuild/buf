@@ -51,4 +51,6 @@ func TestNewTokenSetFromString(t *testing.T) {
 	assert.Error(t, err)
 	_, err = NewTokenSetFromString("user1:token1@remote,user2:token2@remote")
 	assert.Error(t, err)
+	_, err = NewTokenSetFromString("")
+	assert.NoError(t, err)
 }

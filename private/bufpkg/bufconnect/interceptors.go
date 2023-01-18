@@ -55,7 +55,10 @@ func NewAuthorizationInterceptorProvider(tokenSet *TokenSet) func(string) connec
 				req connect.AnyRequest,
 			) (connect.AnyResponse, error) {
 				if tokenSet != nil {
-					req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+tokenSet.obtainTokenFromRemoteAddress(address))
+					token := tokenSet.obtainTokenFromRemoteAddress(address)
+					if token != "" {
+						req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
+					}
 				}
 				response, err := next(ctx, req)
 				if err != nil {
