@@ -17,11 +17,13 @@ package appprotoexec
 import (
 	"bytes"
 	"context"
+	"io"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
@@ -60,60 +62,20 @@ func (h *binaryHandler) Handle(
 		return err
 	}
 	responseBuffer := bytes.NewBuffer(nil)
-	// https://github.com/bufbuild/buf/issues/1736
-	// Swallowing specific stderr message for protoc-gen-swift as protoc-gen-swift, see issue.
-	// This is all disgusting code but it's simple and it works.
-	// We did not document if pluginPath is normalized or not, so
-	isProtocGenSwift := filepath.Base(h.pluginPath) == "protoc-gen-swift"
-	// protocGenSwiftStderrBuffer will be non-nil if isProtocGenSwift is true
-	var protocGenSwiftStderrBuffer *bytes.Buffer
-	// stderr is what we pass to Run regardless
-	stderr := container.Stderr()
-	if isProtocGenSwift {
-		// If protoc-gen-swift, we want to capture all the stderr so we can process it.
-		// Otherwise, we write stderr directly to the container.Stderr() as it is produced.
-		protocGenSwiftStderrBuffer = bytes.NewBuffer(nil)
-		stderr = protocGenSwiftStderrBuffer
-	}
+	stderrWriteCloser := newStderrWriteCloser(container.Stderr(), h.pluginPath)
 	if err := h.runner.Run(
 		ctx,
 		h.pluginPath,
 		command.RunWithEnv(app.EnvironMap(container)),
 		command.RunWithStdin(bytes.NewReader(requestData)),
 		command.RunWithStdout(responseBuffer),
-		command.RunWithStderr(stderr),
+		command.RunWithStderr(stderrWriteCloser),
 	); err != nil {
 		// TODO: strip binary path as well?
 		return handlePotentialTooManyFilesError(err)
 	}
-	if isProtocGenSwift {
-		// If we had any stderr, then let's process it and print it.
-		// protocGenSwiftStderrBuffer will always be non-nil if isProtocGenSwift is true
-		if stderrData := protocGenSwiftStderrBuffer.Bytes(); len(stderrData) > 0 {
-			// Just being extra careful to not initiate a Write call if we have len == 0, even though
-			// in almost all io.Writer cases, this should have no side-effect (and this may even be
-			// the documented behavior of io.Writer).
-			if newStderrData := bytes.ReplaceAll(
-				stderrData,
-				// If swift-protobuf changes their error message, this may not longer filter properly
-				// but this is OK - this filtering should be treated as non-critical.
-				// https://github.com/apple/swift-protobuf/blob/c3d060478fcf1f564be0a3876bde8c04247793ae/Sources/protoc-gen-swift/main.swift#L244
-				//
-				// Note that our heuristic as to whether this is protoc-gen-swift or not for isProtocGenSwift
-				// is that the binary is named protoc-gen-swift, and buf/protoc will print the binary name
-				// before any message to stderr, so given our protoc-gen-swift heuristic, this is the
-				// error message that will be printed.
-				//
-				// Tested manually on Mac.
-				// TODO: Test manually on Windows.
-				[]byte("protoc-gen-swift: WARNING: unknown version of protoc, use 3.2.x or later to ensure JSON support is correct.\n"),
-				nil,
-			); len(newStderrData) > 0 {
-				if _, err := container.Stderr().Write(newStderrData); err != nil {
-					return err
-				}
-			}
-		}
+	if err := stderrWriteCloser.Close(); err != nil {
+		return err
 	}
 	response := &pluginpb.CodeGeneratorResponse{}
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(responseBuffer.Bytes(), response); err != nil {
@@ -138,4 +100,17 @@ func (h *binaryHandler) Handle(
 		responseWriter.AddError(response.GetError())
 	}
 	return nil
+}
+
+func newStderrWriteCloser(delegate io.Writer, pluginPath string) io.WriteCloser {
+	switch filepath.Base(pluginPath) {
+	case "protoc-gen-swift":
+		// https://github.com/bufbuild/buf/issues/1736
+		// Swallowing specific stderr message for protoc-gen-swift as protoc-gen-swift, see issue.
+		// This is all disgusting code but it's simple and it works.
+		// We did not document if pluginPath is normalized or not, so
+		return newProtocGenSwiftStderrWriteCloser(delegate)
+	default:
+		return ioextended.NopWriteCloser(delegate)
+	}
 }
