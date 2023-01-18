@@ -138,9 +138,9 @@ func TestBucketBlobs(t *testing.T) {
 		assert.Equal(
 			t,
 			modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
-			blob.Hash.DigestType,
+			blob.Digest.DigestType,
 		)
-		hexDigest := hex.EncodeToString(blob.Hash.Digest)
+		hexDigest := hex.EncodeToString(blob.Digest.Digest)
 		assert.NotContains(t, digests, hexDigest, "duplicated blob")
 		digests[hexDigest] = struct{}{}
 	}

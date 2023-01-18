@@ -47,16 +47,16 @@ type memoryBlob struct {
 var _ Blob = (*memoryBlob)(nil)
 
 type memoryBlobOptions struct {
-	validateHash bool
+	validateDigest bool
 }
 
 // MemoryBlobOption are options passed when creating a new memory blob.
 type MemoryBlobOption func(*memoryBlobOptions)
 
-// MemoryBlobWithHashValidation checks that the passed content and digest match.
-func MemoryBlobWithHashValidation() MemoryBlobOption {
+// MemoryBlobWithDigestValidation checks that the passed content and digest match.
+func MemoryBlobWithDigestValidation() MemoryBlobOption {
 	return func(opts *memoryBlobOptions) {
-		opts.validateHash = true
+		opts.validateDigest = true
 	}
 }
 
@@ -68,7 +68,7 @@ func NewMemoryBlob(digest Digest, content []byte, opts ...MemoryBlobOption) (Blo
 	for _, option := range opts {
 		option(&config)
 	}
-	if config.validateHash {
+	if config.validateDigest {
 		digester, err := NewDigester(digest.Type())
 		if err != nil {
 			return nil, err
@@ -97,7 +97,7 @@ func (b *memoryBlob) Open(context.Context) (io.ReadCloser, error) {
 
 // AsProtoBlob returns the passed blob as a proto module blob.
 func AsProtoBlob(ctx context.Context, b Blob) (_ *modulev1alpha1.Blob, retErr error) {
-	hashKind, ok := digestTypeToProtoDigestType[b.Digest().Type()]
+	digestType, ok := digestTypeToProtoDigestType[b.Digest().Type()]
 	if !ok {
 		return nil, fmt.Errorf("digest type %q not supported by module proto", b.Digest().Type())
 	}
@@ -113,8 +113,8 @@ func AsProtoBlob(ctx context.Context, b Blob) (_ *modulev1alpha1.Blob, retErr er
 		return nil, fmt.Errorf("cannot read blob contents: %w", err)
 	}
 	return &modulev1alpha1.Blob{
-		Hash: &modulev1alpha1.Hash{
-			DigestType: hashKind,
+		Digest: &modulev1alpha1.Digest{
+			DigestType: digestType,
 			Digest:     b.Digest().Bytes(),
 		},
 		Content: content,
@@ -127,14 +127,14 @@ func NewBlobFromProto(b *modulev1alpha1.Blob) (Blob, error) {
 	if b == nil {
 		return nil, fmt.Errorf("nil blob")
 	}
-	hashDigest, err := NewDigestFromBlobHash(b.Hash)
+	digest, err := NewDigestFromProtoDigest(b.Digest)
 	if err != nil {
-		return nil, fmt.Errorf("digest from hash: %w", err)
+		return nil, fmt.Errorf("digest from proto digest: %w", err)
 	}
 	memBlob, err := NewMemoryBlob(
-		*hashDigest,
+		*digest,
 		b.Content,
-		MemoryBlobWithHashValidation(),
+		MemoryBlobWithDigestValidation(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("new memory blob: %w", err)
@@ -210,16 +210,16 @@ func (s *BlobSet) Blobs() []Blob {
 	return blobs
 }
 
-// NewDigestFromBlobHash maps a module Hash to a digest.
-func NewDigestFromBlobHash(hash *modulev1alpha1.Hash) (*Digest, error) {
-	if hash == nil {
-		return nil, fmt.Errorf("nil hash")
+// NewDigestFromProtoDigest maps a modulev1alpha1.Digest to a Digest.
+func NewDigestFromProtoDigest(digest *modulev1alpha1.Digest) (*Digest, error) {
+	if digest == nil {
+		return nil, fmt.Errorf("nil digest")
 	}
-	dType, ok := protoDigestTypeToDigestType[hash.DigestType]
+	dType, ok := protoDigestTypeToDigestType[digest.DigestType]
 	if !ok {
-		return nil, fmt.Errorf("unsupported digest kind: %s", hash.DigestType.String())
+		return nil, fmt.Errorf("unsupported digest kind: %s", digest.DigestType.String())
 	}
-	return NewDigestFromBytes(dType, hash.Digest)
+	return NewDigestFromBytes(dType, digest.Digest)
 }
 
 // NewMemoryBlobFromReader creates a memory blob from content, which is read

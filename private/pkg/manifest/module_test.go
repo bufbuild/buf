@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDigestFromBlobHash(t *testing.T) {
+func TestDigestFromProtoDigest(t *testing.T) {
 	t.Parallel()
 	const (
 		fileContent = "one line\nanother line\nyet another one\n"
@@ -41,13 +41,13 @@ func TestDigestFromBlobHash(t *testing.T) {
 	)
 	require.NoError(t, err)
 	assert.Equal(t, manifest.DigestTypeShake256, digestFromContent.Type())
-	blobHash := modulev1alpha1.Hash{
+	protoDigest := modulev1alpha1.Digest{
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 		Digest:     digestFromContent.Bytes(),
 	}
-	digestFromBlobHash, err := manifest.NewDigestFromBlobHash(&blobHash)
+	digest, err := manifest.NewDigestFromProtoDigest(&protoDigest)
 	require.NoError(t, err)
-	assert.Equal(t, digestFromContent.String(), digestFromBlobHash.String())
+	assert.Equal(t, digestFromContent.String(), digest.String())
 }
 
 func TestNewMemoryBlob(t *testing.T) {
@@ -57,7 +57,7 @@ func TestNewMemoryBlob(t *testing.T) {
 	blob, err := manifest.NewMemoryBlob(
 		*digest,
 		[]byte(content),
-		manifest.MemoryBlobWithHashValidation(),
+		manifest.MemoryBlobWithDigestValidation(),
 	)
 	require.NoError(t, err)
 	assert.True(t, blob.Digest().Equal(*digest))
@@ -73,26 +73,26 @@ func TestInvalidMemoryBlob(t *testing.T) {
 	const content = "some file content"
 	digest := mustDigestShake256(t, []byte(content))
 
-	t.Run("NoValidateHash", func(t *testing.T) {
+	t.Run("NoValidateDigest", func(t *testing.T) {
 		t.Parallel()
 		_, err := manifest.NewMemoryBlob(*digest, []byte("different content"))
 		assert.NoError(t, err)
 	})
-	t.Run("ValidatingHash", func(t *testing.T) {
+	t.Run("ValidatingDigest", func(t *testing.T) {
 		t.Parallel()
 		_, err := manifest.NewMemoryBlob(
 			*digest,
 			[]byte("different content"),
-			manifest.MemoryBlobWithHashValidation(),
+			manifest.MemoryBlobWithDigestValidation(),
 		)
 		assert.Error(t, err)
 	})
 }
 
-func TestNewDigestFromBlobHash(t *testing.T) {
+func TestNewDigestFromProtoDigest(t *testing.T) {
 	t.Parallel()
 	digest := mustDigestShake256(t, []byte("my content"))
-	retDigest, err := manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
+	retDigest, err := manifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 		Digest:     digest.Bytes(),
 	})
@@ -100,15 +100,15 @@ func TestNewDigestFromBlobHash(t *testing.T) {
 	assert.True(t, digest.Equal(*retDigest))
 }
 
-func TestInvalidNewDigestFromBlobHash(t *testing.T) {
+func TestInvalidNewDigestFromProtoDigest(t *testing.T) {
 	t.Parallel()
-	_, err := manifest.NewDigestFromBlobHash(nil)
+	_, err := manifest.NewDigestFromProtoDigest(nil)
 	assert.Error(t, err)
-	_, err = manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
+	_, err = manifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_UNSPECIFIED,
 	})
 	assert.Error(t, err)
-	_, err = manifest.NewDigestFromBlobHash(&modulev1alpha1.Hash{
+	_, err = manifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 		Digest:     []byte("invalid digest"),
 	})
@@ -399,7 +399,7 @@ func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
 	protoBlob, err := manifest.AsProtoBlob(context.Background(), blob)
 	require.NoError(t, err)
 	expect := &modulev1alpha1.Blob{
-		Hash: &modulev1alpha1.Hash{
+		Digest: &modulev1alpha1.Digest{
 			DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 			Digest:     digest,
 		},
@@ -415,7 +415,7 @@ func newBlobsArray(t *testing.T) []manifest.Blob {
 		digest := mustDigestShake256(t, []byte(content))
 		blob, err := manifest.NewMemoryBlob(
 			*digest, []byte(content),
-			manifest.MemoryBlobWithHashValidation(),
+			manifest.MemoryBlobWithDigestValidation(),
 		)
 		require.NoError(t, err)
 		blobs = append(blobs, blob)

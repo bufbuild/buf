@@ -71,11 +71,11 @@ func NewFromReader(manifest io.Reader) (*Manifest, error) {
 	lineno := 0
 	for scanner.Scan() {
 		lineno++
-		hash, path, found := strings.Cut(scanner.Text(), "  ")
+		encodedDigest, path, found := strings.Cut(scanner.Text(), "  ")
 		if !found {
 			return nil, newError(lineno, "invalid entry")
 		}
-		digest, err := NewDigestFromString(hash)
+		digest, err := NewDigestFromString(encodedDigest)
 		if err != nil {
 			return nil, newErrorWrapped(lineno, err)
 		}

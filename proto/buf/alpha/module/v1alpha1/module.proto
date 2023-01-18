@@ -25,8 +25,8 @@ enum DigestType {
   DIGEST_TYPE_SHAKE256 = 1;
 }
 
-// Hash represents a hash function's value.
-message Hash {
+// Digest represents a hash function's value.
+message Digest {
   // digest_type describes the hash algorithm. e.g. "SHAKE256"
   DigestType digest_type = 1;
   // digest is the hash's output without encoding.
@@ -35,8 +35,8 @@ message Hash {
 
 // Blob represents some module content with an associated hash.
 message Blob {
-  // Hash of the content.
-  Hash hash = 1;
+  // Digest of the content.
+  Digest digest = 1;
   // Content of the blob. Optional when Blob is used as a content pointer.
   bytes content = 2;
 }

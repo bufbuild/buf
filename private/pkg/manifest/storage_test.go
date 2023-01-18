@@ -81,7 +81,7 @@ func TestNewBucket(t *testing.T) {
 		blob, err := manifest.NewMemoryBlob(
 			*digest,
 			content,
-			manifest.MemoryBlobWithHashValidation(),
+			manifest.MemoryBlobWithDigestValidation(),
 		)
 		require.NoError(t, err)
 		blobs = append(blobs, blob)
