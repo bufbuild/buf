@@ -18,9 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
@@ -53,22 +51,13 @@ func WithWorkspace(workspace bufmodule.Workspace) BuildModuleFileSetOption {
 }
 
 // ModuleBucketBuilder builds modules for buckets.
-type ModuleBucketBuilder interface {
-	// BuildForBucket builds a module for the given bucket.
-	//
-	// If paths is empty, all files are built.
-	// Paths should be relative to the bucket, not the roots.
-	BuildForBucket(
-		ctx context.Context,
-		readBucket storage.ReadBucket,
-		config *bufmoduleconfig.Config,
-		options ...BuildOption,
-	) (bufmodule.Module, error)
-}
+type ModuleBucketBuilder = *moduleBucketBuilder
 
 // NewModuleBucketBuilder returns a new BucketBuilder.
-func NewModuleBucketBuilder(logger *zap.Logger) ModuleBucketBuilder {
-	return newModuleBucketBuilder(logger)
+func NewModuleBucketBuilder(
+	options ...BuildOption,
+) ModuleBucketBuilder {
+	return newModuleBucketBuilder(options...)
 }
 
 // ModuleIncludeBuilder builds modules for includes.

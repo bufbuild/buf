@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
@@ -82,27 +81,6 @@ func TestBucketAndConfigForSource(t *testing.T) {
 		ErrNoModuleName,
 		"",
 	)
-}
-
-func TestReadModule(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-	logger := zap.NewNop()
-	sourceBucket, sourceConfig, err := bucketAndConfig(
-		ctx,
-		logger,
-		moduleFiles("remote/owner/repository"),
-		".",
-	)
-	require.NoError(t, err)
-	module, err := ReadModule(
-		ctx,
-		logger,
-		sourceBucket,
-		sourceConfig,
-	)
-	assert.NotNil(t, module)
-	assert.NoError(t, err)
 }
 
 func moduleFiles(name string) map[string][]byte {

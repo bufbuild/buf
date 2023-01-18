@@ -40,10 +40,22 @@ func NewRepositoryCommitServiceClientFactory(clientConfig *connectclient.Config)
 // NewModuleReader returns a new ModuleReader backed by the download service.
 func NewModuleReader(
 	downloadClientFactory DownloadServiceClientFactory,
+	opts ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
 		downloadClientFactory,
+		opts...,
 	)
+}
+
+// ModuleReaderOption allows configuration of a module reader.
+type ModuleReaderOption func(reader *moduleReader)
+
+// WithTamperProofing enables tamper proofing support (use of manifest/blobs).
+func WithTamperProofing() ModuleReaderOption {
+	return func(reader *moduleReader) {
+		reader.tamperProofingEnabled = true
+	}
 }
 
 // NewModuleResolver returns a new ModuleResolver backed by the resolve service.

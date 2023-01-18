@@ -49,7 +49,7 @@ const (
 
 // ResponseBuilder builds CodeGeneratorResponses.
 type ResponseBuilder interface {
-	// Add adds the file to the response.
+	// AddFile adds the file to the response.
 	//
 	// Returns error if nil or the name is empty.
 	// Warns to stderr if the name is already added or the name is not normalized.

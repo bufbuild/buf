@@ -20,16 +20,37 @@ import "buf/alpha/module/v1alpha1/module.proto";
 
 // DownloadService is the download service.
 service DownloadService {
-  // Download downloads.
+  // Download downloads a BSR module.
+  // NOTE: Newer clients should use DownloadManifestAndBlobs instead.
   rpc Download(DownloadRequest) returns (DownloadResponse);
+  // DownloadManifestAndBlobs downloads a module in the manifest+blobs encoding format.
+  rpc DownloadManifestAndBlobs(DownloadManifestAndBlobsRequest) returns (DownloadManifestAndBlobsResponse);
 }
 
+// DownloadRequest specifies the module to download.
 message DownloadRequest {
   string owner = 1;
   string repository = 2;
   string reference = 3;
 }
 
+// DownloadResponse contains the remote module.
 message DownloadResponse {
   buf.alpha.module.v1alpha1.Module module = 1;
+}
+
+// DownloadManifestAndBlobsRequest specifies the module to download.
+message DownloadManifestAndBlobsRequest {
+  string owner = 1;
+  string repository = 2;
+  string reference = 3;
+}
+
+// DownloadManifestAndBlobsResponse is the returned resolved remote module.
+message DownloadManifestAndBlobsResponse {
+  // manifest is the manifest of the module's content.
+  buf.alpha.module.v1alpha1.Blob manifest = 1;
+  // blobs is a set of blobs that closes on the module's manifest to form the
+  // complete module's content.
+  repeated buf.alpha.module.v1alpha1.Blob blobs = 2;
 }
