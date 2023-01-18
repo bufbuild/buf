@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufapp"
@@ -72,6 +73,9 @@ const (
 
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
+
+	// BetaEnableTamperProofingEnvKey is an env var to enable tamper proofing
+	BetaEnableTamperProofingEnvKey = "BUF_BETA_ENABLE_TAMPER_PROOFING"
 
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
@@ -388,7 +392,7 @@ func NewWireImageConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
 	), nil
@@ -414,7 +418,7 @@ func NewWireModuleConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
 
@@ -436,7 +440,7 @@ func NewWireModuleConfigReaderForModuleReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
 
@@ -460,7 +464,7 @@ func NewWireFileLister(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
 	), nil
@@ -539,7 +543,7 @@ func NewModuleReaderAndCreateCacheDirsWithExternalPaths(
 func newModuleReaderAndCreateCacheDirs(
 	container appflag.Container,
 	clientConfig *connectclient.Config,
-	moduleReaderOptions ...bufmodulecache.ModuleReaderOption,
+	cacheModuleReaderOpts ...bufmodulecache.ModuleReaderOption,
 ) (bufmodule.ModuleReader, error) {
 	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
 	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
@@ -575,15 +579,27 @@ func newModuleReaderAndCreateCacheDirs(
 	if err != nil {
 		return nil, err
 	}
+	var moduleReaderOpts []bufapimodule.ModuleReaderOption
+	// Check if tamper proofing env var is enabled
+	tamperProofingEnabled, err := IsBetaTamperProofingEnabled(container)
+	if err != nil {
+		return nil, err
+	}
+	if tamperProofingEnabled {
+		moduleReaderOpts = append(moduleReaderOpts, bufapimodule.WithTamperProofing())
+	}
 	moduleReader := bufmodulecache.NewModuleReader(
 		container.Logger(),
 		container.VerbosePrinter(),
 		fileLocker,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
-		bufapimodule.NewModuleReader(bufapimodule.NewDownloadServiceClientFactory(clientConfig)),
+		bufapimodule.NewModuleReader(
+			bufapimodule.NewDownloadServiceClientFactory(clientConfig),
+			moduleReaderOpts...,
+		),
 		bufmodulecache.NewRepositoryServiceClientFactory(clientConfig),
-		moduleReaderOptions...,
+		cacheModuleReaderOpts...,
 	)
 	return moduleReader, nil
 }
@@ -750,20 +766,6 @@ func BucketAndConfigForSource(
 	return sourceBucket, sourceConfig, nil
 }
 
-// ReadModule gets a module from a source bucket and its config.
-func ReadModule(
-	ctx context.Context,
-	logger *zap.Logger,
-	sourceBucket storage.ReadBucketCloser,
-	sourceConfig *bufconfig.Config,
-) (bufmodule.Module, error) {
-	return bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
-		ctx,
-		sourceBucket,
-		sourceConfig.Build,
-	)
-}
-
 // NewImageForSource resolves a single bufimage.Image from the user-provided source with the build options.
 func NewImageForSource(
 	ctx context.Context,
@@ -836,7 +838,7 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType s
 	if err != nil {
 		return nil, err
 	}
-	module, err := bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
+	module, err := bufmodulebuild.BuildForBucket(
 		ctx,
 		datawkt.ReadBucket,
 		sourceConfig.Build,
@@ -876,6 +878,20 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1al
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s", visibility)
 	}
+}
+
+// IsBetaTamperProofingEnabled returns if BUF_BETA_ENABLE_TAMPER_PROOFING is set to true.
+func IsBetaTamperProofingEnabled(container app.EnvContainer) (bool, error) {
+	// Check if tamper proofing env var is enabled
+	tamperProofingEnabled := false
+	if envVal := container.Env(BetaEnableTamperProofingEnvKey); envVal != "" {
+		var err error
+		tamperProofingEnabled, err = strconv.ParseBool(envVal)
+		if err != nil {
+			return false, fmt.Errorf("invalid value for %q: %w", BetaEnableTamperProofingEnvKey, err)
+		}
+	}
+	return tamperProofingEnabled, nil
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.

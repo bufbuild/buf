@@ -22,9 +22,13 @@ import "buf/alpha/registry/v1alpha1/module.proto";
 // PushService is the Push service.
 service PushService {
   // Push pushes.
+  // NOTE: Newer clients should use PushManifestAndBlobs.
   rpc Push(PushRequest) returns (PushResponse);
+  // PushManifestAndBlobs pushes a module by encoding it in a manifest and blobs format.
+  rpc PushManifestAndBlobs(PushManifestAndBlobsRequest) returns (PushManifestAndBlobsResponse);
 }
 
+// PushRequest specifies the module to push to the BSR.
 message PushRequest {
   string owner = 1;
   string repository = 2;
@@ -41,6 +45,31 @@ message PushRequest {
   string draft_name = 7;
 }
 
+// PushResponse is the pushed module pin, local to the used remote.
 message PushResponse {
   LocalModulePin local_module_pin = 5;
+}
+
+// PushManifestAndBlobsRequest holds the module to push in the manifest+blobs
+// encoding format.
+message PushManifestAndBlobsRequest {
+  string owner = 1;
+  string repository = 2;
+  // Manifest with all the module files being pushed.
+  buf.alpha.module.v1alpha1.Blob manifest = 3;
+  // Referenced blobs in the manifest. Keep in mind there is not necessarily one
+  // blob per file, but one blob per digest, so for files with exactly the same
+  // content, you can send just one blob.
+  repeated buf.alpha.module.v1alpha1.Blob blobs = 4;
+  // Optional; if provided, the provided tags
+  // are created for the pushed commit.
+  repeated string tags = 5;
+  // If non-empty, the push creates a draft commit with this name.
+  string draft_name = 6;
+}
+
+// PushManifestAndBlobsResponse is the pushed module pin, local to the used
+// remote.
+message PushManifestAndBlobsResponse {
+  LocalModulePin local_module_pin = 1;
 }

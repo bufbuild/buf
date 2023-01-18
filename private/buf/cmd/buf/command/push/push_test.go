@@ -17,6 +17,7 @@ package push
 import (
 	"archive/tar"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -29,95 +30,26 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	connect_go "github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-type mockPushService struct {
-	t         *testing.T
-	lock      sync.Mutex
-	callbacks map[string]func(*registryv1alpha1.PushRequest)
-	called    map[string]struct{}
-	resp      map[string]*registryv1alpha1.PushResponse
-}
-
-var _ registryv1alpha1connect.PushServiceHandler = (*mockPushService)(nil)
-
-func newMockPushService(t *testing.T) *mockPushService {
-	return &mockPushService{
-		t:         t,
-		callbacks: make(map[string]func(*registryv1alpha1.PushRequest)),
-		called:    make(map[string]struct{}),
-		resp:      make(map[string]*registryv1alpha1.PushResponse),
-	}
-}
-
-// Push pushes.
-func (m *mockPushService) Push(
-	_ context.Context,
-	req *connect_go.Request[registryv1alpha1.PushRequest],
-) (*connect_go.Response[registryv1alpha1.PushResponse], error) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	owner := req.Msg.Owner
-	cb, ok := m.callbacks[owner]
-	if ok {
-		cb(req.Msg)
-		m.called[owner] = struct{}{}
-	}
-	resp := m.resp[owner]
-	if resp == nil {
-		return nil, errors.New("bad request")
-	}
-	return &connect_go.Response[registryv1alpha1.PushResponse]{
-		Msg: resp,
-	}, nil
-}
-
-func (m *mockPushService) respond(owner string, resp *registryv1alpha1.PushResponse) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	m.resp[owner] = resp
-}
-
-func (m *mockPushService) callback(
-	owner string,
-	cb func(*registryv1alpha1.PushRequest),
-) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	m.callbacks[owner] = cb
-}
-
-func (m *mockPushService) assertAllCallbacksCalled() {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	for k := range m.callbacks {
-		_, ok := m.called[k]
-		assert.True(m.t, ok)
-	}
-}
-
 func TestPush(t *testing.T) {
-	server, mock := pushService(t)
-	t.Cleanup(func() {
-		server.Close()
-		mock.assertAllCallbacksCalled()
-	})
-
 	testPush(
 		t,
 		"success",
-		server.URL,
-		mock,
 		&registryv1alpha1.PushResponse{
 			LocalModulePin: &registryv1alpha1.LocalModulePin{},
 		},
@@ -126,8 +58,6 @@ func TestPush(t *testing.T) {
 	testPush(
 		t,
 		"missing local module pin",
-		server.URL,
-		mock,
 		&registryv1alpha1.PushResponse{
 			LocalModulePin: nil,
 		},
@@ -136,65 +66,248 @@ func TestPush(t *testing.T) {
 	testPush(
 		t,
 		"registry error",
-		server.URL,
-		mock,
 		nil,
 		"bad request",
 	)
 }
 
-func pushService(t *testing.T) (*httptest.Server, *mockPushService) {
+func TestPushManifest(t *testing.T) {
+	testPushManifest(
+		t,
+		"success tamper proofing enabled",
+		&registryv1alpha1.PushManifestAndBlobsResponse{
+			LocalModulePin: &registryv1alpha1.LocalModulePin{},
+		},
+		"",
+	)
+}
+
+func TestPushManifestIsSmallerBucket(t *testing.T) {
+	// Assert push only manifests with only the files needed to build the
+	// module as described by configuration and file extension.
+	t.Parallel()
 	mock := newMockPushService(t)
+	mock.pushManifestResponse = &registryv1alpha1.PushManifestAndBlobsResponse{
+		LocalModulePin: &registryv1alpha1.LocalModulePin{},
+	}
+	server := createServer(t, mock)
+	err := appRun(
+		t,
+		map[string][]byte{
+			"buf.yaml":  bufYAML(t, server.URL, "owner", "repo"),
+			"foo.proto": nil,
+			"bar.proto": nil,
+			"baz.file":  nil,
+		},
+		true, // tamperProofingEnabled
+	)
+	require.NoError(t, err)
+	request := mock.PushManifestRequest()
+	require.NotNil(t, request)
+	requestManifest := request.Manifest
+	blob, err := manifest.NewBlobFromProto(requestManifest)
+	require.NoError(t, err)
+	ctx := context.Background()
+	reader, err := blob.Open(ctx)
+	require.NoError(t, err)
+	defer reader.Close()
+	m, err := manifest.NewFromReader(reader)
+	require.NoError(t, err)
+	_, ok := m.DigestFor("baz.file")
+	assert.False(t, ok, "baz.file should not be pushed")
+}
+
+func TestBucketBlobs(t *testing.T) {
+	t.Parallel()
+	bucket, err := storagemem.NewReadBucket(
+		map[string][]byte{
+			"buf.yaml":  bufYAML(t, "foo", "bar", "repo"),
+			"foo.proto": nil,
+			"bar.proto": nil,
+		},
+	)
+	require.NoError(t, err)
+	ctx := context.Background()
+	m, blobSet, err := manifest.NewFromBucket(ctx, bucket)
+	require.NoError(t, err)
+	_, blobs, err := manifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(blobs))
+	digests := make(map[string]struct{})
+	for _, blob := range blobs {
+		assert.Equal(
+			t,
+			modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
+			blob.Digest.DigestType,
+		)
+		hexDigest := hex.EncodeToString(blob.Digest.Digest)
+		assert.NotContains(t, digests, hexDigest, "duplicated blob")
+		digests[hexDigest] = struct{}{}
+	}
+}
+
+type mockPushService struct {
+	t *testing.T
+
+	// protects pushRequest / pushManifestRequest
+	sync.RWMutex
+
+	// for testing with tamper proofing disabled
+	pushRequest  *registryv1alpha1.PushRequest
+	pushResponse *registryv1alpha1.PushResponse
+
+	// for testing with tamper proofing enabled
+	pushManifestRequest  *registryv1alpha1.PushManifestAndBlobsRequest
+	pushManifestResponse *registryv1alpha1.PushManifestAndBlobsResponse
+}
+
+var _ registryv1alpha1connect.PushServiceHandler = (*mockPushService)(nil)
+
+func newMockPushService(t *testing.T) *mockPushService {
+	return &mockPushService{
+		t: t,
+	}
+}
+
+// Push pushes.
+func (m *mockPushService) Push(
+	_ context.Context,
+	req *connect_go.Request[registryv1alpha1.PushRequest],
+) (*connect_go.Response[registryv1alpha1.PushResponse], error) {
+	m.Lock()
+	defer m.Unlock()
+	m.pushRequest = req.Msg
+	assert.NotNil(m.t, req.Msg.Module, "missing module")
+	resp := m.pushResponse
+	if resp == nil {
+		return nil, errors.New("bad request")
+	}
+	return connect_go.NewResponse(resp), nil
+}
+
+func (m *mockPushService) PushRequest() *registryv1alpha1.PushRequest {
+	m.RLock()
+	defer m.RUnlock()
+	return m.pushRequest
+}
+
+func (m *mockPushService) PushManifestAndBlobs(
+	_ context.Context,
+	req *connect_go.Request[registryv1alpha1.PushManifestAndBlobsRequest],
+) (*connect_go.Response[registryv1alpha1.PushManifestAndBlobsResponse], error) {
+	m.Lock()
+	defer m.Unlock()
+	m.pushManifestRequest = req.Msg
+	assert.NotNil(m.t, req.Msg.Manifest, "missing manifest")
+	resp := m.pushManifestResponse
+	if resp == nil {
+		return nil, errors.New("bad request")
+	}
+	return connect_go.NewResponse(resp), nil
+}
+
+func (m *mockPushService) PushManifestRequest() *registryv1alpha1.PushManifestAndBlobsRequest {
+	m.RLock()
+	defer m.RUnlock()
+	return m.pushManifestRequest
+}
+
+func createServer(t *testing.T, mock *mockPushService) *httptest.Server {
+	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(
 		registryv1alpha1connect.NewPushServiceHandler(mock),
 	)
-	return httptest.NewServer(mux), mock
+	server := httptest.NewServer(mux)
+	t.Cleanup(func() {
+		server.Close()
+	})
+	return server
+}
+
+func appRun(
+	t *testing.T,
+	files map[string][]byte,
+	tamperProofingEnabled bool,
+) error {
+	const appName = "test"
+	return appcmd.Run(
+		context.Background(),
+		app.NewContainer(
+			amendEnv(
+				internaltesting.NewEnvFunc(t),
+				func(env map[string]string) map[string]string {
+					env["BUF_TOKEN"] = "invalid"
+					buftransport.SetDisableAPISubdomain(env)
+					injectConfig(t, appName, env)
+					if tamperProofingEnabled {
+						env[bufcli.BetaEnableTamperProofingEnvKey] = "1"
+					}
+					return env
+				},
+			)(appName),
+			tarball(files),
+			os.Stdout,
+			os.Stderr,
+			appName,        // push ran as appName, aka "test"
+			"-#format=tar", // using stdin as a tar
+		),
+		NewCommand(
+			appName,
+			appflag.NewBuilder(appName),
+		),
+	)
 }
 
 func testPush(
 	t *testing.T,
 	desc string,
-	URL string,
-	mock *mockPushService,
 	resp *registryv1alpha1.PushResponse,
 	errorMsg string,
 ) {
 	t.Helper()
-	owner := strings.ReplaceAll(desc, " ", "_")
-	mock.respond(owner, resp)
-	mock.callback(owner, func(req *registryv1alpha1.PushRequest) {
-		assert.NotNil(t, req.Module, "missing module")
-	})
+	mock := newMockPushService(t)
+	mock.pushResponse = resp
+	server := createServer(t, mock)
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		const appName = "test"
-		err := appcmd.Run(
-			context.Background(),
-			app.NewContainer(
-				ammendEnv(
-					internaltesting.NewEnvFunc(t),
-					func(env map[string]string) map[string]string {
-						env["BUF_TOKEN"] = "invalid"
-						buftransport.SetDisableAPISubdomain(env)
-						injectConfig(t, appName, env)
-						return env
-					},
-				)(appName),
-				tarball(map[string][]byte{
-					"buf.yaml":  bufYAML(t, URL, owner, "repo"),
-					"foo.proto": nil,
-					"bar.proto": nil,
-				}),
-				os.Stdout,
-				os.Stderr,
-				appName,        // push ran as appName, aka "test"
-				"-#format=tar", // using stdin as a tar
-			),
-			NewCommand(
-				appName,
-				appflag.NewBuilder(appName),
-			),
+		err := appRun(
+			t,
+			map[string][]byte{
+				"buf.yaml":  bufYAML(t, server.URL, "owner", "repo"),
+				"foo.proto": nil,
+				"bar.proto": nil,
+			},
+			false, // tamperProofingEnabled
+		)
+		if errorMsg == "" {
+			assert.NoError(t, err)
+		} else {
+			assert.ErrorContains(t, err, errorMsg)
+		}
+	})
+}
+
+func testPushManifest(
+	t *testing.T,
+	desc string,
+	resp *registryv1alpha1.PushManifestAndBlobsResponse,
+	errorMsg string,
+) {
+	t.Helper()
+	mock := newMockPushService(t)
+	mock.pushManifestResponse = resp
+	server := createServer(t, mock)
+	t.Run(desc, func(t *testing.T) {
+		t.Parallel()
+		err := appRun(
+			t,
+			map[string][]byte{
+				"buf.yaml":  bufYAML(t, server.URL, "owner", "repo"),
+				"foo.proto": nil,
+				"bar.proto": nil,
+			},
+			true,
 		)
 		if errorMsg == "" {
 			assert.NoError(t, err)
@@ -253,9 +366,9 @@ tls:
 	require.NoError(t, err)
 }
 
-// ammendEnv calls sideEffects after the env generator function constructs an
+// amendEnv calls sideEffects after the env generator function constructs an
 // environment. The environment from the last sideEffect call is returned.
-func ammendEnv(
+func amendEnv(
 	envGen func(string) map[string]string,
 	sideEffects ...func(map[string]string) map[string]string,
 ) func(string) map[string]string {
