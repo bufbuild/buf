@@ -62,7 +62,7 @@ func (h *binaryHandler) Handle(
 	responseBuffer := bytes.NewBuffer(nil)
 	// https://github.com/bufbuild/buf/issues/1736
 	// Swallowing specific stderr message for protoc-gen-swift as protoc-gen-swift, see issue.
-	// This is all disgusting code but its simple and it works.
+	// This is all disgusting code but it's simple and it works.
 	// We did not document if pluginPath is normalized or not, so
 	isProtocGenSwift := filepath.Base(h.pluginPath) == "protoc-gen-swift"
 	// protocGenSwiftStderrBuffer will be non-nil if isProtocGenSwift is true
