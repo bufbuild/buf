@@ -85,7 +85,6 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		// funny, success without a module to build
 		return nil, errors.New("no module in response")
 	}
-	// build proto module
 	return bufmodule.NewModuleForProto(ctx, resp.Module, identityAndCommitOpt)
 }
 
