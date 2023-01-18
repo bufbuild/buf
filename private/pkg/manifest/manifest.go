@@ -34,7 +34,6 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 var errNoFinalNewline = errors.New("partial record: missing newline")
@@ -198,13 +197,9 @@ func splitManifest(data []byte, atEOF bool) (int, []byte, error) {
 	return 0, nil, nil
 }
 
-// BucketToManifestAndFileBlobs converts a storage.ReadBucket to a proto Blob and file Blob(s).
-func BucketToManifestAndFileBlobs(ctx context.Context, sourceBucket storage.ReadBucket) (*modulev1alpha1.Blob, []*modulev1alpha1.Blob, error) {
-	m, blobs, err := NewFromBucket(ctx, sourceBucket)
-	if err != nil {
-		return nil, nil, err
-	}
-	manifestBlob, err := m.Blob()
+// ToProtoManifestAndBlobs converts a Manifest and BlobSet to the protobuf types.
+func ToProtoManifestAndBlobs(ctx context.Context, manifest *Manifest, blobs *BlobSet) (*modulev1alpha1.Blob, []*modulev1alpha1.Blob, error) {
+	manifestBlob, err := manifest.Blob()
 	if err != nil {
 		return nil, nil, err
 	}

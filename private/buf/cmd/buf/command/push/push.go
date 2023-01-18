@@ -205,7 +205,11 @@ func push(
 		return nil, err
 	}
 	if tamperProofingEnabled {
-		bucketManifest, blobs, err := manifest.BucketToManifestAndFileBlobs(ctx, builtModule.Bucket)
+		m, blobSet, err := manifest.NewFromBucket(ctx, builtModule.Bucket)
+		if err != nil {
+			return nil, err
+		}
+		bucketManifest, blobs, err := manifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
 		if err != nil {
 			return nil, err
 		}

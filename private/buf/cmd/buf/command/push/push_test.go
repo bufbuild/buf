@@ -127,7 +127,10 @@ func TestBucketBlobs(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	_, blobs, err := manifest.BucketToManifestAndFileBlobs(context.Background(), bucket)
+	ctx := context.Background()
+	m, blobSet, err := manifest.NewFromBucket(ctx, bucket)
+	require.NoError(t, err)
+	_, blobs, err := manifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(blobs))
 	digests := make(map[string]struct{})
