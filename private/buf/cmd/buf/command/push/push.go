@@ -160,7 +160,7 @@ func run(
 		return err
 	}
 	moduleIdentity := sourceConfig.ModuleIdentity
-	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+	builtModule, err := bufmodulebuild.BuildForBucket(
 		ctx,
 		sourceBucket,
 		sourceConfig.Build,

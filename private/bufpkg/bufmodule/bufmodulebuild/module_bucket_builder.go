@@ -29,7 +29,7 @@ import (
 // BuiltModule ties a bufmodule.Module with the configuration and a bucket
 // containing just the files required to build it.
 type BuiltModule struct {
-	Module bufmodule.Module
+	bufmodule.Module
 	Bucket storage.ReadBucket
 }
 
@@ -54,7 +54,7 @@ func BuildForBucket(
 	readBucket storage.ReadBucket,
 	config *bufmoduleconfig.Config,
 	options ...BuildOption,
-) (bufmodule.Module, error) {
+) (*BuiltModule, error) {
 	builder := newModuleBucketBuilder(options...)
 	bm, err := builder.BuildForBucket(
 		ctx,
@@ -64,7 +64,7 @@ func BuildForBucket(
 	if err != nil {
 		return nil, err
 	}
-	return bm.Module, nil
+	return bm, nil
 }
 
 // BuildForBucket constructs a minimal bucket from the passed readBucket and
