@@ -39,8 +39,8 @@ message LocalModulePin {
   string repository = 2;
   string branch = 3;
   string commit = 4;
+  // Module's manifest digest. Replacement for previous b1/b3 digests.
+  string manifest_digest = 6;
   google.protobuf.Timestamp create_time = 7;
   string draft_name = 8;
-  // Module's manifest digest. Replacement for previous b1/b3 digests.
-  string manifest_digest = 9;
 }
