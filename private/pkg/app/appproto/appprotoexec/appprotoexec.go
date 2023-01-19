@@ -115,7 +115,6 @@ func GenerateWithPluginPath(pluginPath string) GenerateOption {
 //   - Else, if the name is in ProtocProxyPluginNames, this returns a new protoc proxy handler.
 //   - Else, this returns error.
 func NewHandler(
-	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	pluginName string,
@@ -130,11 +129,11 @@ func NewHandler(
 		if err != nil {
 			return nil, err
 		}
-		return newBinaryHandler(logger, runner, pluginPath), nil
+		return newBinaryHandler(runner, pluginPath), nil
 	}
 	pluginPath, err := unsafeLookPath("protoc-gen-" + pluginName)
 	if err == nil {
-		return newBinaryHandler(logger, runner, pluginPath), nil
+		return newBinaryHandler(runner, pluginPath), nil
 	}
 	// we always look for protoc-gen-X first, but if not, check the builtins
 	if _, ok := ProtocProxyPluginNames[pluginName]; ok {
@@ -145,7 +144,7 @@ func NewHandler(
 		if err != nil {
 			return nil, err
 		}
-		return newProtocProxyHandler(logger, storageosProvider, runner, protocPath, pluginName), nil
+		return newProtocProxyHandler(storageosProvider, runner, protocPath, pluginName), nil
 	}
 	return nil, fmt.Errorf(
 		"could not find protoc plugin for name %s - please make sure protoc-gen-%s is installed and present on your $PATH",
@@ -160,6 +159,7 @@ type HandlerOption func(*handlerOptions)
 // HandlerWithProtocPath returns a new HandlerOption that sets the path to the protoc binary.
 //
 // The default is to do exec.LookPath on "protoc".
+// protocPath is expected to be unnormalized.
 func HandlerWithProtocPath(protocPath string) HandlerOption {
 	return func(handlerOptions *handlerOptions) {
 		handlerOptions.protocPath = protocPath
@@ -169,10 +169,23 @@ func HandlerWithProtocPath(protocPath string) HandlerOption {
 // HandlerWithPluginPath returns a new HandlerOption that sets the path to the plugin binary.
 //
 // The default is to do exec.LookPath on "protoc-gen-" + pluginName.
+// pluginPath is expected to be unnormalized.
 func HandlerWithPluginPath(pluginPath string) HandlerOption {
 	return func(handlerOptions *handlerOptions) {
 		handlerOptions.pluginPath = pluginPath
 	}
+}
+
+// NewBinaryHandler returns a new Handler that invokes the specific plugin
+// specified by pluginPath.
+//
+// Used by other repositories.
+func NewBinaryHandler(runner command.Runner, pluginPath string) (appproto.Handler, error) {
+	pluginPath, err := unsafeLookPath(pluginPath)
+	if err != nil {
+		return nil, err
+	}
+	return newBinaryHandler(runner, pluginPath), nil
 }
 
 type handlerOptions struct {

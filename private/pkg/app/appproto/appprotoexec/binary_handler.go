@@ -17,30 +17,28 @@ package appprotoexec
 import (
 	"bytes"
 	"context"
+	"io"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.opencensus.io/trace"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type binaryHandler struct {
-	logger     *zap.Logger
 	runner     command.Runner
 	pluginPath string
 }
 
 func newBinaryHandler(
-	logger *zap.Logger,
 	runner command.Runner,
 	pluginPath string,
 ) *binaryHandler {
 	return &binaryHandler{
-		logger:     logger.Named("appprotoexec"),
 		runner:     runner,
 		pluginPath: pluginPath,
 	}
@@ -60,16 +58,16 @@ func (h *binaryHandler) Handle(
 		return err
 	}
 	responseBuffer := bytes.NewBuffer(nil)
+	stderrWriteCloser := newStderrWriteCloser(container.Stderr(), h.pluginPath)
 	if err := h.runner.Run(
 		ctx,
 		h.pluginPath,
 		command.RunWithEnv(app.EnvironMap(container)),
 		command.RunWithStdin(bytes.NewReader(requestData)),
 		command.RunWithStdout(responseBuffer),
-		command.RunWithStderr(container.Stderr()),
+		command.RunWithStderr(stderrWriteCloser),
 	); err != nil {
-		// TODO: strip binary path as well?
-		return handlePotentialTooManyFilesError(err)
+		return err
 	}
 	response := &pluginpb.CodeGeneratorResponse{}
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(responseBuffer.Bytes(), response); err != nil {
@@ -94,4 +92,17 @@ func (h *binaryHandler) Handle(
 		responseWriter.AddError(response.GetError())
 	}
 	return nil
+}
+
+func newStderrWriteCloser(delegate io.Writer, pluginPath string) io.WriteCloser {
+	switch filepath.Base(pluginPath) {
+	case "protoc-gen-swift":
+		// https://github.com/bufbuild/buf/issues/1736
+		// Swallowing specific stderr message for protoc-gen-swift as protoc-gen-swift, see issue.
+		// This is all disgusting code but it's simple and it works.
+		// We did not document if pluginPath is normalized or not, so
+		return newProtocGenSwiftStderrWriteCloser(delegate)
+	default:
+		return ioextended.NopWriteCloser(delegate)
+	}
 }
