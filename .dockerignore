@@ -12,6 +12,7 @@ private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-rec
 private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 private/buf/cmd/buf/command/alpha/protoc/test.txt
 private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/
+private/bufpkg/bufstrategy/cmd/protoc-gen-strategy-all-to-strategy-directory/protoc-gen-strategy-all-to-strategy-directory
 private/bufpkg/bufstyle/cmd/bufstyle/bufstyle
 private/bufpkg/buftesting/cache/
 private/bufpkg/bufwkt/cmd/wkt-go-data/wkt-go-data
