@@ -194,6 +194,8 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 	startingDescriptors := make([]namedDescriptor, 0, len(types))
 	var startingPackages []*protoPackage
 	for _, typeName := range types {
+		// TODO: consider supporting a glob syntax of some kind, to do more advanced pattern
+		//   matching, such as ability to get a package AND all of its sub-packages.
 		startingDescriptor, ok := imageIndex.ByName[typeName]
 		if ok {
 			// It's a type name
@@ -418,11 +420,6 @@ func (t *transitiveClosure) addPackage(
 	}
 	for _, descriptor := range pkg.elements {
 		if err := t.addElement(descriptor, "", false, imageIndex, opts); err != nil {
-			return err
-		}
-	}
-	for _, subPkg := range pkg.subPackages {
-		if err := t.addPackage(subPkg, imageIndex, opts); err != nil {
 			return err
 		}
 	}
