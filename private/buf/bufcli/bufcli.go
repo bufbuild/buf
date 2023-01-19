@@ -633,10 +633,11 @@ func NewConnectClientConfig(container appflag.Container) (*connectclient.Config,
 	if err != nil {
 		return nil, err
 	}
+	machineFinder := bufconnect.NewMachineFinder(container)
 	return newConnectClientConfigWithOptions(
 		container,
 		connectclient.WithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProvider(tokenSet),
+			bufconnect.NewAuthorizationInterceptorProvider(tokenSet, machineFinder),
 		),
 	)
 }
@@ -648,10 +649,11 @@ func NewConnectClientConfigWithToken(container appflag.Container, token string) 
 	if err != nil {
 		return nil, err
 	}
+	machineFinder := bufconnect.NewMachineFinder(container)
 	return newConnectClientConfigWithOptions(
 		container,
 		connectclient.WithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProvider(tokenSet),
+			bufconnect.NewAuthorizationInterceptorProvider(tokenSet, machineFinder),
 		),
 	)
 }

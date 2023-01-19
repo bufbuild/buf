@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
 )
 
@@ -42,26 +43,57 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	return interceptor
 }
 
+// MachineFinder finds the machine by name
+type MachineFinder interface {
+	getMachineForName(name string) (netrc.Machine, error)
+}
+
+// NewMachineFinder returns a machineFinderImpl
+func NewMachineFinder(container app.EnvContainer) *machineFinderImpl {
+	return &machineFinderImpl{container: container}
+}
+
+type machineFinderImpl struct {
+	container app.EnvContainer
+}
+
+func (m *machineFinderImpl) getMachineForName(address string) (netrc.Machine, error) {
+	return netrc.GetMachineForName(m.container, address)
+}
+
 // NewAuthorizationInterceptorProvider returns a new provider function which, when invoked, returns an interceptor
 // which will set the auth token into the request header by the provided option.
 //
 // Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
 // a client.
-func NewAuthorizationInterceptorProvider(tokenSet *TokenSet) func(string) connect.UnaryInterceptorFunc {
+func NewAuthorizationInterceptorProvider(tokenSet *TokenSet, machineFinder MachineFinder) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
 				ctx context.Context,
 				req connect.AnyRequest,
 			) (connect.AnyResponse, error) {
+				authToken := ""
 				if tokenSet != nil {
-					token := tokenSet.obtainTokenFromRemoteAddress(address)
+					token := tokenSet.lookUpRemoteToken(address)
 					if token != "" {
-						req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
+						authToken = token
 					}
 				}
+				if authToken == "" && machineFinder != nil {
+					machine, err := machineFinder.getMachineForName(address)
+					if err != nil {
+						return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
+					}
+					if machine != nil {
+						authToken = machine.Password()
+					}
+				}
+				if authToken != "" {
+					req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+authToken)
+				}
 				response, err := next(ctx, req)
-				if err != nil && tokenSet != nil && tokenSet.envKey != "" {
+				if err != nil && tokenSet != nil && tokenSet.setBufToken {
 					err = &ErrAuth{cause: err, tokenEnvKey: tokenEnvKey}
 				}
 				return response, err
@@ -73,10 +105,15 @@ func NewAuthorizationInterceptorProvider(tokenSet *TokenSet) func(string) connec
 
 // TokenSet is used to provide authentication token in NewAuthorizationInterceptorProvider
 type TokenSet struct {
-	envKey          string
-	bufToken        string
-	remoteUsernames map[string]string
-	remoteTokens    map[string]string
+	// setBufToken is true when the tokenEnvKey is defined in the environment, false otherwise.
+	setBufToken  bool
+	defaultToken string
+	tokens       map[string]authKey
+}
+
+type authKey struct {
+	username string
+	token    string
 }
 
 // NewTokenSetFromContainer creates a TokenSet from the BUF_TOKEN environment variable
@@ -86,15 +123,16 @@ func NewTokenSetFromContainer(container app.EnvContainer) (*TokenSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	tokenSet.envKey = tokenEnvKey
+	if bufToken != "" {
+		tokenSet.setBufToken = true
+	}
 	return tokenSet, nil
 }
 
 // NewTokenSetFromString creates a TokenSet by the token provided
 func NewTokenSetFromString(token string) (*TokenSet, error) {
 	tokenSet := &TokenSet{
-		remoteUsernames: make(map[string]string),
-		remoteTokens:    make(map[string]string),
+		tokens: make(map[string]authKey),
 	}
 	tokens := strings.Split(token, ",")
 	for _, u := range tokens {
@@ -110,27 +148,23 @@ func NewTokenSetFromString(token string) (*TokenSet, error) {
 			remoteAddress := keyPairsAndRemoteAddress[1]
 			username := keyPairs[0]
 			remoteToken := keyPairs[1]
-			if _, ok := tokenSet.remoteTokens[remoteAddress]; ok {
+			if _, ok := tokenSet.tokens[remoteAddress]; ok {
 				return nil, fmt.Errorf("cannot parse token: %s, repeated token for same BSR remote: %s", remoteToken, remoteAddress)
 			}
-			if _, ok := tokenSet.remoteUsernames[remoteAddress]; ok {
-				return nil, fmt.Errorf("cannot parse token: %s, repeated token for same BSR remote: %s", remoteToken, remoteAddress)
-			}
-			tokenSet.remoteTokens[remoteAddress] = remoteToken
-			tokenSet.remoteUsernames[remoteAddress] = username
+			tokenSet.tokens[remoteAddress] = authKey{username: username, token: remoteToken}
 		} else {
-			if tokenSet.bufToken != "" {
-				return nil, fmt.Errorf("cannot parse token: %s, two buf token provided: %q and %q", token, u, tokenSet.bufToken)
+			if tokenSet.defaultToken != "" {
+				return nil, fmt.Errorf("cannot parse token: %s, two buf token provided: %q and %q", token, u, tokenSet.defaultToken)
 			}
-			tokenSet.bufToken = u
+			tokenSet.defaultToken = u
 		}
 	}
 	return tokenSet, nil
 }
 
-func (t *TokenSet) obtainTokenFromRemoteAddress(remoteAddress string) (token string) {
-	if remoteToken, ok := t.remoteTokens[remoteAddress]; ok {
-		return remoteToken
+func (t *TokenSet) lookUpRemoteToken(remoteAddress string) string {
+	if authKeyPair, ok := t.tokens[remoteAddress]; ok {
+		return authKeyPair.token
 	}
-	return t.bufToken
+	return t.defaultToken
 }
