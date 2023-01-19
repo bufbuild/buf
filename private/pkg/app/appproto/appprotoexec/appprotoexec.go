@@ -179,7 +179,7 @@ func HandlerWithPluginPath(pluginPath string) HandlerOption {
 // NewBinaryHandler returns a new Handler that invokes the specific plugin
 // specified by pluginPath.
 //
-// Used by other packages.
+// Used by other repositories.
 func NewBinaryHandler(runner command.Runner, pluginPath string) (appproto.Handler, error) {
 	pluginPath, err := unsafeLookPath(pluginPath)
 	if err != nil {
