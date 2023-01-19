@@ -32,14 +32,12 @@ import (
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type protocProxyHandler struct {
-	logger            *zap.Logger
 	storageosProvider storageos.Provider
 	runner            command.Runner
 	protocPath        string
@@ -47,14 +45,12 @@ type protocProxyHandler struct {
 }
 
 func newProtocProxyHandler(
-	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	protocPath string,
 	pluginName string,
 ) *protocProxyHandler {
 	return &protocProxyHandler{
-		logger:            logger.Named("appprotoexec"),
 		storageosProvider: storageosProvider,
 		runner:            runner,
 		protocPath:        protocPath,
