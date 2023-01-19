@@ -97,7 +97,7 @@ While `buf`'s [core features][features] should cover most use cases, we've inclu
 
 Once you've installed `buf`, we recommend completing the [Tour of Buf][tour], which provides a broad but hands-on overview of the core functionality of both the CLI and the [BSR]. The tour takes about 10 minutes to complete.
 
-After completing the tour, check out the remainder of the [docs] for your specific areas of interest and our [roadmap] to see what we have in store for the future.
+After completing the tour, check out the remainder of the [docs] for your specific areas of interest.
 
 ## Community
 
