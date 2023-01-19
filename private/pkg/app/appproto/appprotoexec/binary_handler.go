@@ -26,23 +26,19 @@ import (
 	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.opencensus.io/trace"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type binaryHandler struct {
-	logger     *zap.Logger
 	runner     command.Runner
 	pluginPath string
 }
 
 func newBinaryHandler(
-	logger *zap.Logger,
 	runner command.Runner,
 	pluginPath string,
 ) *binaryHandler {
 	return &binaryHandler{
-		logger:     logger.Named("appprotoexec"),
 		runner:     runner,
 		pluginPath: pluginPath,
 	}
@@ -71,10 +67,6 @@ func (h *binaryHandler) Handle(
 		command.RunWithStdout(responseBuffer),
 		command.RunWithStderr(stderrWriteCloser),
 	); err != nil {
-		// TODO: strip binary path as well?
-		return handlePotentialTooManyFilesError(err)
-	}
-	if err := stderrWriteCloser.Close(); err != nil {
 		return err
 	}
 	response := &pluginpb.CodeGeneratorResponse{}

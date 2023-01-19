@@ -55,7 +55,6 @@ func (g *generator) Generate(
 		option(generateOptions)
 	}
 	handler, err := NewHandler(
-		g.logger,
 		g.storageosProvider,
 		g.runner,
 		pluginName,
