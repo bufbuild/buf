@@ -6,7 +6,6 @@ GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
-	private/bufpkg/bufstrategy/cmd/protoc-gen-strategy-all-to-strategy-directory \
 	private/bufpkg/bufstyle/cmd/bufstyle \
 	private/bufpkg/bufwkt/cmd/wkt-go-data \
 	private/pkg/bandeps/cmd/bandeps \
