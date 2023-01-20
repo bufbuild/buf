@@ -50,6 +50,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -629,11 +630,11 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 // up the token in the container or in netrc based on the address of each individual client.
 // It is then set in the header of all outgoing requests from clients created using this config.
 func NewConnectClientConfig(container appflag.Container) (*connectclient.Config, error) {
-	tokenSet, err := bufconnect.NewTokenSetFromContainer(container)
+	tokenSet, err := bufconnect.NewTokenSetProviderFromContainer(container)
 	if err != nil {
 		return nil, err
 	}
-	netrcToken := bufconnect.NewNetrcTokens(container)
+	netrcToken := bufconnect.NewNetrcTokensProvider(container, netrc.GetMachineForName)
 	return newConnectClientConfigWithOptions(
 		container,
 		connectclient.WithAuthInterceptorProvider(
@@ -645,7 +646,7 @@ func NewConnectClientConfig(container appflag.Container) (*connectclient.Config,
 // NewConnectClientConfigWithToken creates a new connect.ClientConfig with a given token. The provided token is
 // set in the header of all outgoing requests from this provider
 func NewConnectClientConfigWithToken(container appflag.Container, token string) (*connectclient.Config, error) {
-	tokenSet, err := bufconnect.NewTokenSetFromString(token)
+	tokenSet, err := bufconnect.NewTokenSetProviderFromString(token)
 	if err != nil {
 		return nil, err
 	}

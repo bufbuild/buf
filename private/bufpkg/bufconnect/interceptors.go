@@ -43,31 +43,26 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	return interceptor
 }
 
-// TokenFinder finds the token for NewAuthorizationInterceptorProvider
-type TokenFinder interface {
+// tokenFinder finds the token for NewAuthorizationInterceptorProvider
+type tokenFinder interface {
 	// RemoteToken returns the remote token from the remote address.
 	// setFromEnvVar is true if the returned token is from the tokenEnvKey environment variable.
 	RemoteToken(address string) (token string, setFromEnvVar bool)
 }
 
-// NetrcTokens finds remote tokens from netrc machine.
-type NetrcTokens interface {
-	TokenFinder
-
-	GetMachineForName(address string) (netrc.Machine, error)
+type NetrcTokensProvider struct {
+	container         app.EnvContainer
+	getMachineForName func(app.EnvContainer, string) (netrc.Machine, error)
 }
 
-type netrcTokensImpl struct {
-	container app.EnvContainer
+// NewNetrcTokensProvider returns a NetrcTokensProvider
+func NewNetrcTokensProvider(container app.EnvContainer, getMachineForName func(app.EnvContainer, string) (netrc.Machine, error)) *NetrcTokensProvider {
+	return &NetrcTokensProvider{container: container, getMachineForName: getMachineForName}
 }
 
-// NewNetrcTokens returns a netrcTokensImpl
-func NewNetrcTokens(container app.EnvContainer) *netrcTokensImpl {
-	return &netrcTokensImpl{container: container}
-}
-
-func (nt *netrcTokensImpl) RemoteToken(address string) (string, bool) {
-	machine, err := nt.GetMachineForName(address)
+// RemoteToken finds the token from the .netrc file
+func (nt *NetrcTokensProvider) RemoteToken(address string) (string, bool) {
+	machine, err := nt.getMachineForName(nt.container, address)
 	if err != nil {
 		return "", false
 	}
@@ -77,12 +72,8 @@ func (nt *netrcTokensImpl) RemoteToken(address string) (string, bool) {
 	return "", false
 }
 
-func (nt *netrcTokensImpl) GetMachineForName(address string) (netrc.Machine, error) {
-	return netrc.GetMachineForName(nt.container, address)
-}
-
-// TokenSet is used to provide authentication token in NewAuthorizationInterceptorProvider
-type TokenSet struct {
+// TokenSetProvider is used to provide authentication token in NewAuthorizationInterceptorProvider
+type TokenSetProvider struct {
 	// true: the tokenSet is generated from environment variable tokenEnvKey
 	// false: otherwise
 	setBufTokenEnvVar bool
@@ -90,12 +81,12 @@ type TokenSet struct {
 	tokens            map[string]authKey
 }
 
-var _ TokenFinder = (*TokenSet)(nil)
+var _ tokenFinder = (*TokenSetProvider)(nil)
 
-// NewTokenSetFromContainer creates a TokenSet from the BUF_TOKEN environment variable
-func NewTokenSetFromContainer(container app.EnvContainer) (*TokenSet, error) {
+// NewTokenSetProviderFromContainer creates a TokenSetProvider from the BUF_TOKEN environment variable
+func NewTokenSetProviderFromContainer(container app.EnvContainer) (*TokenSetProvider, error) {
 	bufToken := container.Env(tokenEnvKey)
-	tokenSet, err := NewTokenSetFromString(bufToken)
+	tokenSet, err := NewTokenSetProviderFromString(bufToken)
 	if err != nil {
 		return nil, err
 	}
@@ -105,9 +96,9 @@ func NewTokenSetFromContainer(container app.EnvContainer) (*TokenSet, error) {
 	return tokenSet, nil
 }
 
-// NewTokenSetFromString creates a TokenSet by the token provided
-func NewTokenSetFromString(token string) (*TokenSet, error) {
-	tokenSet := &TokenSet{
+// NewTokenSetProviderFromString creates a TokenSetProvider by the token provided
+func NewTokenSetProviderFromString(token string) (*TokenSetProvider, error) {
+	tokenSet := &TokenSetProvider{
 		tokens: make(map[string]authKey),
 	}
 	tokens := strings.Split(token, ",")
@@ -132,7 +123,8 @@ func NewTokenSetFromString(token string) (*TokenSet, error) {
 	return tokenSet, nil
 }
 
-func (t *TokenSet) RemoteToken(address string) (string, bool) {
+// RemoteToken finds the token by the remote address
+func (t *TokenSetProvider) RemoteToken(address string) (string, bool) {
 	if authKeyPair, ok := t.tokens[address]; ok {
 		return authKeyPair.token, t.setBufTokenEnvVar
 	}
@@ -159,7 +151,7 @@ func (ak *authKey) unmarshalString(s string) error {
 //
 // Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
 // a client.
-func NewAuthorizationInterceptorProvider(tokenFinders ...TokenFinder) func(string) connect.UnaryInterceptorFunc {
+func NewAuthorizationInterceptorProvider(tokenFinders ...tokenFinder) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
