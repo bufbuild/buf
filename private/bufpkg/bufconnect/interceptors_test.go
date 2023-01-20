@@ -18,27 +18,13 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/bufbuild/buf/private/pkg/netrc"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 )
-
-type testMachineImpl struct{}
-
-func (testMachineImpl) Name() string {
-	return ""
-}
-
-func (testMachineImpl) Login() string {
-	return ""
-}
-
-func (testMachineImpl) Password() string {
-	return "password"
-}
 
 type testNetrcTokensImpl struct{}
 
