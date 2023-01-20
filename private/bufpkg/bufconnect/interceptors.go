@@ -43,8 +43,8 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	return interceptor
 }
 
-// tokenFinder finds the token for NewAuthorizationInterceptorProvider
-type tokenFinder interface {
+// TokenFinder finds the token for NewAuthorizationInterceptorProvider
+type TokenFinder interface {
 	// RemoteToken returns the remote token from the remote address.
 	// setFromEnvVar is true if the returned token is from the tokenEnvKey environment variable.
 	RemoteToken(address string) (token string, setFromEnvVar bool)
@@ -81,7 +81,7 @@ type TokenSetProvider struct {
 	tokens            map[string]authKey
 }
 
-var _ tokenFinder = (*TokenSetProvider)(nil)
+var _ TokenFinder = (*TokenSetProvider)(nil)
 
 // NewTokenSetProviderFromContainer creates a TokenSetProvider from the BUF_TOKEN environment variable
 func NewTokenSetProviderFromContainer(container app.EnvContainer) (*TokenSetProvider, error) {
@@ -151,7 +151,7 @@ func (ak *authKey) unmarshalString(s string) error {
 //
 // Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
 // a client.
-func NewAuthorizationInterceptorProvider(tokenFinders ...tokenFinder) func(string) connect.UnaryInterceptorFunc {
+func NewAuthorizationInterceptorProvider(tokenFinders ...TokenFinder) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
