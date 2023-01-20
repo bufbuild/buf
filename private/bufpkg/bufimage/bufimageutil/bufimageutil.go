@@ -192,25 +192,54 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 	}
 	// Check types exist
 	startingDescriptors := make([]namedDescriptor, 0, len(types))
+	var startingPackages []*protoPackage
 	for _, typeName := range types {
+		// TODO: consider supporting a glob syntax of some kind, to do more advanced pattern
+		//   matching, such as ability to get a package AND all of its sub-packages.
 		startingDescriptor, ok := imageIndex.ByName[typeName]
+		if ok {
+			// It's a type name
+			typeInfo := imageIndex.ByDescriptor[startingDescriptor]
+			if image.GetFile(typeInfo.file).IsImport() && !options.allowImportedTypes {
+				return nil, fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeIsImport)
+			}
+			startingDescriptors = append(startingDescriptors, startingDescriptor)
+			continue
+		}
+		// It could be a package name
+		pkg, ok := imageIndex.Packages[typeName]
 		if !ok {
+			// but it's not...
 			return nil, fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeNotFound)
 		}
-		typeInfo := imageIndex.ByDescriptor[startingDescriptor]
-		if image.GetFile(typeInfo.file).IsImport() && !options.allowImportedTypes {
-			return nil, fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeIsImport)
+		if !options.allowImportedTypes {
+			// if package includes only imported files, then reject
+			onlyImported := true
+			for _, file := range pkg.files {
+				if !file.IsImport() {
+					onlyImported = false
+					break
+				}
+			}
+			if onlyImported {
+				return nil, fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeIsImport)
+			}
 		}
-		startingDescriptors = append(startingDescriptors, startingDescriptor)
+		startingPackages = append(startingPackages, pkg)
 	}
 	// Find all types to include in filtered image.
 	closure := newTransitiveClosure()
+	for _, startingPackage := range startingPackages {
+		if err := closure.addPackage(startingPackage, imageIndex, options); err != nil {
+			return nil, err
+		}
+	}
 	for _, startingDescriptor := range startingDescriptors {
 		if err := closure.addElement(startingDescriptor, "", false, imageIndex, options); err != nil {
 			return nil, err
 		}
 	}
-	// After all typs are added, add their known extensions
+	// After all types are added, add their known extensions
 	if err := closure.addExtensions(imageIndex, options); err != nil {
 		return nil, err
 	}
@@ -259,12 +288,15 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		}
 		imageFileDescriptor.WeakDependency = imageFileDescriptor.WeakDependency[:i]
 
-		imageFileDescriptor.MessageType = trimMessageDescriptors(imageFileDescriptor.MessageType, closure.elements)
-		imageFileDescriptor.EnumType = trimSlice(imageFileDescriptor.EnumType, closure.elements)
-		imageFileDescriptor.Extension = trimSlice(imageFileDescriptor.Extension, closure.elements)
-		imageFileDescriptor.Service = trimSlice(imageFileDescriptor.Service, closure.elements)
-		for _, serviceDescriptor := range imageFileDescriptor.Service {
-			serviceDescriptor.Method = trimSlice(serviceDescriptor.Method, closure.elements)
+		if _, ok := closure.completeFiles[imageFile.Path()]; !ok {
+			// if not keeping entire file, filter contents now
+			imageFileDescriptor.MessageType = trimMessageDescriptors(imageFileDescriptor.MessageType, closure.elements)
+			imageFileDescriptor.EnumType = trimSlice(imageFileDescriptor.EnumType, closure.elements)
+			imageFileDescriptor.Extension = trimSlice(imageFileDescriptor.Extension, closure.elements)
+			imageFileDescriptor.Service = trimSlice(imageFileDescriptor.Service, closure.elements)
+			for _, serviceDescriptor := range imageFileDescriptor.Service {
+				serviceDescriptor.Method = trimSlice(serviceDescriptor.Method, closure.elements)
+			}
 		}
 
 		// TODO: With some from/to mappings, perhaps even sourcecodeinfo
@@ -316,9 +348,17 @@ func trimSlice[T namedDescriptor](in []T, toKeep map[namedDescriptor]closureIncl
 // subset of an image. When an element is added to the closure, all of its
 // dependencies are recursively added.
 type transitiveClosure struct {
+	// The elements included in the transitive closure.
 	elements map[namedDescriptor]closureInclusionMode
-	files    map[string]struct{}
-	imports  map[string]map[string]struct{}
+	// The set of files that contain all items in elements.
+	files map[string]struct{}
+	// Any files that are part of the closure in their entirety (due to an
+	// entire package being included). The above fields are used to filter the
+	// contents of files. But files named in this set will not be filtered.
+	completeFiles map[string]struct{}
+	// The set of imports for each file. This allows for re-writing imports
+	// for files whose contents have been pruned.
+	imports map[string]map[string]struct{}
 }
 
 type closureInclusionMode int
@@ -340,9 +380,10 @@ const (
 
 func newTransitiveClosure() *transitiveClosure {
 	return &transitiveClosure{
-		elements: map[namedDescriptor]closureInclusionMode{},
-		files:    map[string]struct{}{},
-		imports:  map[string]map[string]struct{}{},
+		elements:      map[namedDescriptor]closureInclusionMode{},
+		files:         map[string]struct{}{},
+		completeFiles: map[string]struct{}{},
+		imports:       map[string]map[string]struct{}{},
 	}
 }
 
@@ -364,6 +405,25 @@ func (t *transitiveClosure) addFile(file string, imageIndex *imageIndex, opts *i
 	}
 	t.files[file] = struct{}{}
 	return t.exploreCustomOptions(imageIndex.Files[file], file, imageIndex, opts)
+}
+
+func (t *transitiveClosure) addPackage(
+	pkg *protoPackage,
+	imageIndex *imageIndex,
+	opts *imageFilterOptions,
+) error {
+	for _, file := range pkg.files {
+		if err := t.addFile(file.Path(), imageIndex, opts); err != nil {
+			return err
+		}
+		t.completeFiles[file.Path()] = struct{}{}
+	}
+	for _, descriptor := range pkg.elements {
+		if err := t.addElement(descriptor, "", false, imageIndex, opts); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (t *transitiveClosure) addElement(
