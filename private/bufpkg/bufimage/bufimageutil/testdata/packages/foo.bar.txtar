@@ -1,0 +1,11 @@
+-- bar.proto --
+syntax = "proto3";
+package foo.bar;
+message MessageInBar {
+}
+enum EnumInBar {
+  UNSET = 0;
+}
+service ServiceInBar {
+  rpc Bar ( MessageInBar ) returns ( MessageInBar );
+}

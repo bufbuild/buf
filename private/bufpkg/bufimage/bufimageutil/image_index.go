@@ -46,6 +46,9 @@ type imageIndex struct {
 	// NameToOptions maps `google.protobuf.*Options` type names to their
 	// known extensions by field tag.
 	NameToOptions map[string]map[int32]*descriptorpb.FieldDescriptorProto
+
+	// Packages maps package names to package contents.
+	Packages map[string]*protoPackage
 }
 
 type namedDescriptor interface {
@@ -67,12 +70,19 @@ type elementInfo struct {
 	parent         namedDescriptor
 }
 
+type protoPackage struct {
+	files       []bufimage.ImageFile
+	elements    []namedDescriptor
+	subPackages []*protoPackage
+}
+
 // newImageIndexForImage builds an imageIndex for a given image.
 func newImageIndexForImage(image bufimage.Image, opts *imageFilterOptions) (*imageIndex, error) {
 	index := &imageIndex{
 		ByName:       make(map[string]namedDescriptor),
 		ByDescriptor: make(map[namedDescriptor]elementInfo),
 		Files:        make(map[string]*descriptorpb.FileDescriptorProto),
+		Packages:     make(map[string]*protoPackage),
 	}
 	if opts.includeCustomOptions {
 		index.NameToOptions = make(map[string]map[int32]*descriptorpb.FieldDescriptorProto)
@@ -82,6 +92,8 @@ func newImageIndexForImage(image bufimage.Image, opts *imageFilterOptions) (*ima
 	}
 
 	for _, file := range image.Files() {
+		pkg := addPackageToIndex(file.FileDescriptor().GetPackage(), index)
+		pkg.files = append(pkg.files, file)
 		fileName := file.Path()
 		fileDescriptorProto := file.Proto()
 		index.Files[fileName] = fileDescriptorProto
@@ -102,11 +114,27 @@ func newImageIndexForImage(image bufimage.Image, opts *imageFilterOptions) (*ima
 				}
 			}
 
-			index.ByName[string(name)] = descriptor
-			index.ByDescriptor[descriptor] = elementInfo{
-				fullName: string(name),
-				parent:   parent,
-				file:     fileName,
+			// certain descriptor types don't need to be indexed:
+			//  enum values, normal (non-extension) fields, and oneofs
+			var includeInIndex bool
+			switch d := descriptor.(type) {
+			case *descriptorpb.EnumValueDescriptorProto, *descriptorpb.OneofDescriptorProto:
+				// do not add to package elements; these elements are implicitly included by their enclosing type
+			case *descriptorpb.FieldDescriptorProto:
+				// only add to elements if an extension (regular fields implicitly included by containing message)
+				includeInIndex = d.Extendee != nil
+			default:
+				includeInIndex = true
+			}
+
+			if includeInIndex {
+				index.ByName[string(name)] = descriptor
+				index.ByDescriptor[descriptor] = elementInfo{
+					fullName: string(name),
+					parent:   parent,
+					file:     fileName,
+				}
+				pkg.elements = append(pkg.elements, descriptor)
 			}
 
 			ext, ok := descriptor.(*descriptorpb.FieldDescriptorProto)
@@ -133,6 +161,25 @@ func newImageIndexForImage(image bufimage.Image, opts *imageFilterOptions) (*ima
 		}
 	}
 	return index, nil
+}
+
+func addPackageToIndex(pkgName string, index *imageIndex) *protoPackage {
+	pkg := index.Packages[pkgName]
+	if pkg != nil {
+		return pkg
+	}
+	pkg = &protoPackage{}
+	index.Packages[pkgName] = pkg
+	if pkgName == "" {
+		return pkg
+	}
+	var parentPkgName string
+	if pos := strings.LastIndexByte(pkgName, '.'); pos != -1 {
+		parentPkgName = pkgName[:pos]
+	}
+	parentPkg := addPackageToIndex(parentPkgName, index)
+	parentPkg.subPackages = append(parentPkg.subPackages, pkg)
+	return pkg
 }
 
 func isOptionsTypeName(typeName string) bool {
