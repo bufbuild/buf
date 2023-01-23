@@ -64,7 +64,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
-	// testing using tokenSet over netrc tokens
+	// testing using tokenSet over netrc tokenToAuthKey
 	_, err = NewAuthorizationInterceptorProvider(tokenSet, netrcTokens)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"token" {
 			return nil, errors.New("error auth token")
@@ -73,7 +73,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
-	// testing using netrc tokens over tokenSet
+	// testing using netrc tokenToAuthKey over tokenSet
 	_, err = NewAuthorizationInterceptorProvider(netrcTokens, tokenSet)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"password" {
 			return nil, errors.New("error auth token")

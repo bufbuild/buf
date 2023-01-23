@@ -19,16 +19,14 @@ import (
 	"github.com/bufbuild/buf/private/pkg/netrc"
 )
 
-// netrcTokensProvider is used to provide remote tokens from .netrc.
+// netrcTokensProvider is used to provide remote tokenToAuthKey from .netrc.
 type netrcTokensProvider struct {
 	container         app.EnvContainer
 	getMachineForName func(app.EnvContainer, string) (netrc.Machine, error)
 }
 
-var _ TokenProvider = (*netrcTokensProvider)(nil)
-
-// NewNetrcTokensProvider returns a TokenProvider for a .netrc in a container.
-func NewNetrcTokensProvider(container app.EnvContainer, getMachineForName func(app.EnvContainer, string) (netrc.Machine, error)) TokenProvider {
+// NewNetrcTokenProvider returns a TokenProvider for a .netrc in a container.
+func NewNetrcTokenProvider(container app.EnvContainer, getMachineForName func(app.EnvContainer, string) (netrc.Machine, error)) TokenProvider {
 	return &netrcTokensProvider{container: container, getMachineForName: getMachineForName}
 }
 

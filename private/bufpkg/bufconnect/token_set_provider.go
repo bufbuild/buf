@@ -21,33 +21,31 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 )
 
-// tokenSetProvider is used to provide set of authentication tokens.
-type tokenSetProvider struct {
+// staticTokenProvider is used to provide set of authentication tokenToAuthKey.
+type staticTokenProvider struct {
 	// true: the tokenSet is generated from environment variable tokenEnvKey
 	// false: otherwise
 	setBufTokenEnvVar bool
 	defaultToken      string
-	tokens            map[string]authKey
+	tokenToAuthKey    map[string]authKey
 }
 
-var _ TokenProvider = (*tokenSetProvider)(nil)
-
-// NewTokenProviderFromContainer creates a tokenSetProvider from the BUF_TOKEN environment variable
+// NewTokenProviderFromContainer creates a staticTokenProvider from the BUF_TOKEN environment variable
 func NewTokenProviderFromContainer(container app.EnvContainer) (TokenProvider, error) {
 	return newTokenProviderFromString(container.Env(tokenEnvKey), true)
 }
 
-// NewTokenProviderFromString creates a tokenSetProvider by the token provided
+// NewTokenProviderFromString creates a staticTokenProvider by the token provided
 func NewTokenProviderFromString(token string) (TokenProvider, error) {
 	return newTokenProviderFromString(token, false)
 }
 
 func newTokenProviderFromString(token string, isFromEnvVar bool) (TokenProvider, error) {
-	tokenSet := &tokenSetProvider{
+	tokenSet := &staticTokenProvider{
 		setBufTokenEnvVar: isFromEnvVar,
-		tokens:            make(map[string]authKey),
+		tokenToAuthKey:    make(map[string]authKey),
 	}
-	// Tokens for different remotes are separated by `,`. Using strings.Split to separate the string into remote tokens.
+	// Tokens for different remotes are separated by `,`. Using strings.Split to separate the string into remote tokenToAuthKey.
 	tokens := strings.Split(token, ",")
 	for _, token := range tokens {
 		if keyPairs, remoteAddress, ok := strings.Cut(token, "@"); ok {
@@ -55,10 +53,10 @@ func newTokenProviderFromString(token string, isFromEnvVar bool) (TokenProvider,
 			if err := ak.unmarshalString(keyPairs); err != nil {
 				return nil, err
 			}
-			if _, ok = tokenSet.tokens[remoteAddress]; ok {
+			if _, ok = tokenSet.tokenToAuthKey[remoteAddress]; ok {
 				return nil, fmt.Errorf("cannot parse token: %s, repeated token for same BSR remote: %s", token, remoteAddress)
 			}
-			tokenSet.tokens[remoteAddress] = ak
+			tokenSet.tokenToAuthKey[remoteAddress] = ak
 		} else {
 			if tokenSet.defaultToken != "" {
 				return nil, fmt.Errorf("cannot parse token: two buf token provided: %q and %q", token, tokenSet.defaultToken)
@@ -70,14 +68,14 @@ func newTokenProviderFromString(token string, isFromEnvVar bool) (TokenProvider,
 }
 
 // RemoteToken finds the token by the remote address
-func (t *tokenSetProvider) RemoteToken(address string) string {
-	if authKeyPair, ok := t.tokens[address]; ok {
+func (t *staticTokenProvider) RemoteToken(address string) string {
+	if authKeyPair, ok := t.tokenToAuthKey[address]; ok {
 		return authKeyPair.token
 	}
 	return t.defaultToken
 }
 
-func (t *tokenSetProvider) IsFromEnvVar() bool {
+func (t *staticTokenProvider) IsFromEnvVar() bool {
 	return t.setBufTokenEnvVar
 }
 

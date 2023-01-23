@@ -634,11 +634,11 @@ func NewConnectClientConfig(container appflag.Container) (*connectclient.Config,
 	if err != nil {
 		return nil, err
 	}
-	netrcToken := bufconnect.NewNetrcTokensProvider(container, netrc.GetMachineForName)
+	netrcTokenProvider := bufconnect.NewNetrcTokenProvider(container, netrc.GetMachineForName)
 	return newConnectClientConfigWithOptions(
 		container,
 		connectclient.WithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProvider(envTokenProvider, netrcToken),
+			bufconnect.NewAuthorizationInterceptorProvider(envTokenProvider, netrcTokenProvider),
 		),
 	)
 }
