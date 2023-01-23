@@ -630,7 +630,7 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 // up the token in the container or in netrc based on the address of each individual client.
 // It is then set in the header of all outgoing requests from clients created using this config.
 func NewConnectClientConfig(container appflag.Container) (*connectclient.Config, error) {
-	tokenSet, err := bufconnect.NewTokenSetProviderFromContainer(container)
+	envTokenProvider, err := bufconnect.NewTokenProviderFromContainer(container)
 	if err != nil {
 		return nil, err
 	}
@@ -638,7 +638,7 @@ func NewConnectClientConfig(container appflag.Container) (*connectclient.Config,
 	return newConnectClientConfigWithOptions(
 		container,
 		connectclient.WithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProvider(tokenSet, netrcToken),
+			bufconnect.NewAuthorizationInterceptorProvider(envTokenProvider, netrcToken),
 		),
 	)
 }
@@ -646,7 +646,7 @@ func NewConnectClientConfig(container appflag.Container) (*connectclient.Config,
 // NewConnectClientConfigWithToken creates a new connect.ClientConfig with a given token. The provided token is
 // set in the header of all outgoing requests from this provider
 func NewConnectClientConfigWithToken(container appflag.Container, token string) (*connectclient.Config, error) {
-	tokenSet, err := bufconnect.NewTokenSetProviderFromString(token)
+	tokenSet, err := bufconnect.NewTokenProviderFromString(token)
 	if err != nil {
 		return nil, err
 	}

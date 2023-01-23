@@ -16,11 +16,7 @@ package bufconnect
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
 )
 
@@ -43,107 +39,12 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	return interceptor
 }
 
-// TokenFinder finds the token for NewAuthorizationInterceptorProvider
-type TokenFinder interface {
+// TokenProvider finds the token for NewAuthorizationInterceptorProvider.
+type TokenProvider interface {
 	// RemoteToken returns the remote token from the remote address.
-	// setFromEnvVar is true if the returned token is from the tokenEnvKey environment variable.
-	RemoteToken(address string) (token string, setFromEnvVar bool)
-}
-
-type NetrcTokensProvider struct {
-	container         app.EnvContainer
-	getMachineForName func(app.EnvContainer, string) (netrc.Machine, error)
-}
-
-// NewNetrcTokensProvider returns a NetrcTokensProvider
-func NewNetrcTokensProvider(container app.EnvContainer, getMachineForName func(app.EnvContainer, string) (netrc.Machine, error)) *NetrcTokensProvider {
-	return &NetrcTokensProvider{container: container, getMachineForName: getMachineForName}
-}
-
-// RemoteToken finds the token from the .netrc file
-func (nt *NetrcTokensProvider) RemoteToken(address string) (string, bool) {
-	machine, err := nt.getMachineForName(nt.container, address)
-	if err != nil {
-		return "", false
-	}
-	if machine != nil {
-		return machine.Password(), false
-	}
-	return "", false
-}
-
-// TokenSetProvider is used to provide authentication token in NewAuthorizationInterceptorProvider
-type TokenSetProvider struct {
-	// true: the tokenSet is generated from environment variable tokenEnvKey
-	// false: otherwise
-	setBufTokenEnvVar bool
-	defaultToken      string
-	tokens            map[string]authKey
-}
-
-var _ TokenFinder = (*TokenSetProvider)(nil)
-
-// NewTokenSetProviderFromContainer creates a TokenSetProvider from the BUF_TOKEN environment variable
-func NewTokenSetProviderFromContainer(container app.EnvContainer) (*TokenSetProvider, error) {
-	bufToken := container.Env(tokenEnvKey)
-	tokenSet, err := NewTokenSetProviderFromString(bufToken)
-	if err != nil {
-		return nil, err
-	}
-	if bufToken != "" {
-		tokenSet.setBufTokenEnvVar = true
-	}
-	return tokenSet, nil
-}
-
-// NewTokenSetProviderFromString creates a TokenSetProvider by the token provided
-func NewTokenSetProviderFromString(token string) (*TokenSetProvider, error) {
-	tokenSet := &TokenSetProvider{
-		tokens: make(map[string]authKey),
-	}
-	tokens := strings.Split(token, ",")
-	for _, u := range tokens {
-		if keyPairs, remoteAddress, ok := strings.Cut(u, "@"); ok {
-			ak := authKey{}
-			err := ak.unmarshalString(keyPairs)
-			if err != nil {
-				return nil, err
-			}
-			if _, ok = tokenSet.tokens[remoteAddress]; ok {
-				return nil, fmt.Errorf("cannot parse token: %s, repeated token for same BSR remote: %s", token, remoteAddress)
-			}
-			tokenSet.tokens[remoteAddress] = ak
-		} else {
-			if tokenSet.defaultToken != "" {
-				return nil, fmt.Errorf("cannot parse token: %s, two buf token provided: %q and %q", token, u, tokenSet.defaultToken)
-			}
-			tokenSet.defaultToken = u
-		}
-	}
-	return tokenSet, nil
-}
-
-// RemoteToken finds the token by the remote address
-func (t *TokenSetProvider) RemoteToken(address string) (string, bool) {
-	if authKeyPair, ok := t.tokens[address]; ok {
-		return authKeyPair.token, t.setBufTokenEnvVar
-	}
-	return t.defaultToken, t.setBufTokenEnvVar
-}
-
-type authKey struct {
-	username string
-	token    string
-}
-
-func (ak *authKey) unmarshalString(s string) error {
-	username, token, found := strings.Cut(s, ":")
-	if !found {
-		return fmt.Errorf("cannot parse remote token: %s", s)
-	}
-	ak.username = username
-	ak.token = token
-	return nil
+	RemoteToken(address string) string
+	// IsFromEnvVar returns true if the TokenProvider is generated from an environment variable.
+	IsFromEnvVar() bool
 }
 
 // NewAuthorizationInterceptorProvider returns a new provider function which, when invoked, returns an interceptor
@@ -151,7 +52,7 @@ func (ak *authKey) unmarshalString(s string) error {
 //
 // Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
 // a client.
-func NewAuthorizationInterceptorProvider(tokenFinders ...TokenFinder) func(string) connect.UnaryInterceptorFunc {
+func NewAuthorizationInterceptorProvider(tokenFinders ...TokenProvider) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
@@ -160,9 +61,9 @@ func NewAuthorizationInterceptorProvider(tokenFinders ...TokenFinder) func(strin
 			) (connect.AnyResponse, error) {
 				usingTokenEnvKey := false
 				for _, tf := range tokenFinders {
-					if token, setFromEnvVar := tf.RemoteToken(address); token != "" {
+					if token := tf.RemoteToken(address); token != "" {
 						req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
-						usingTokenEnvKey = setFromEnvVar
+						usingTokenEnvKey = tf.IsFromEnvVar()
 						break
 					}
 				}

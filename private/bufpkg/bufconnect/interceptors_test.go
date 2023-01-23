@@ -26,22 +26,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type testMachineImpl struct{}
+type testMachine struct{}
 
-func (testMachineImpl) Name() string {
+func (testMachine) Name() string {
 	return "name"
 }
 
-func (testMachineImpl) Login() string {
+func (testMachine) Login() string {
 	return "login"
 }
 
-func (testMachineImpl) Password() string {
+func (testMachine) Password() string {
 	return "password"
 }
 
 func TestNewAuthorizationInterceptorProvider(t *testing.T) {
-	tokenSet, err := NewTokenSetProviderFromString("user1:token1@remote1,token")
+	tokenSet, err := NewTokenProviderFromString("user1:token1@remote1,token")
 	assert.NoError(t, err)
 	_, err = NewAuthorizationInterceptorProvider(tokenSet)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"token" {
@@ -52,9 +52,9 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	assert.NoError(t, err)
 
 	getMachineForName := func(app.EnvContainer, string) (netrc.Machine, error) {
-		return testMachineImpl{}, nil
+		return testMachine{}, nil
 	}
-	netrcTokens := &NetrcTokensProvider{getMachineForName: getMachineForName}
+	netrcTokens := &netrcTokensProvider{getMachineForName: getMachineForName}
 	assert.NoError(t, err)
 	_, err = NewAuthorizationInterceptorProvider(netrcTokens)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"password" {
@@ -90,7 +90,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 
-	tokenSet, err = NewTokenSetProviderFromContainer(app.NewEnvContainer(map[string]string{
+	tokenSet, err = NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
 		tokenEnvKey: "default,user:token@remote",
 	}))
 	assert.NoError(t, err)
@@ -103,27 +103,26 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 }
 
 func TestNewTokenSetFromEnv(t *testing.T) {
-	tokenSet, err := NewTokenSetProviderFromContainer(app.NewEnvContainer(map[string]string{
+	tokenSet, err := NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
 		tokenEnvKey: "default,user:token@remote",
 	}))
 	assert.NoError(t, err)
-	token, setFromEnvVar := tokenSet.RemoteToken("fake")
+	token := tokenSet.RemoteToken("fake")
+	assert.True(t, tokenSet.IsFromEnvVar())
 	assert.Equal(t, "default", token)
-	assert.True(t, setFromEnvVar)
-	token, setFromEnvVar = tokenSet.RemoteToken("remote")
+	token = tokenSet.RemoteToken("remote")
 	assert.Equal(t, "token", token)
-	assert.True(t, setFromEnvVar)
 }
 
 func TestNewTokenSetFromString(t *testing.T) {
-	_, err := NewTokenSetProviderFromString("default")
+	_, err := NewTokenProviderFromString("default")
 	assert.NoError(t, err)
-	_, err = NewTokenSetProviderFromString("user1:token1@remote,user2:token2@remote")
+	_, err = NewTokenProviderFromString("user1:token1@remote,user2:token2@remote")
 	assert.Error(t, err)
-	_, err = NewTokenSetProviderFromString("default1,default2")
+	_, err = NewTokenProviderFromString("default1,default2")
 	assert.Error(t, err)
-	_, err = NewTokenSetProviderFromString("invalid@invalid@invalid")
+	_, err = NewTokenProviderFromString("invalid@invalid@invalid")
 	assert.Error(t, err)
-	_, err = NewTokenSetProviderFromString("")
+	_, err = NewTokenProviderFromString("")
 	assert.NoError(t, err)
 }
