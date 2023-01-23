@@ -54,7 +54,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	getMachineForName := func(app.EnvContainer, string) (netrc.Machine, error) {
 		return testMachine{}, nil
 	}
-	netrcTokens := &netrcTokensProvider{getMachineForName: getMachineForName}
+	netrcTokens := &netrcTokenProvider{getMachineForName: getMachineForName}
 	assert.NoError(t, err)
 	_, err = NewAuthorizationInterceptorProvider(netrcTokens)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"password" {

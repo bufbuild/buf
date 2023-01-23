@@ -41,7 +41,7 @@ func NewTokenProviderFromString(token string) (TokenProvider, error) {
 }
 
 func newTokenProviderFromString(token string, isFromEnvVar bool) (TokenProvider, error) {
-	tokenSet := &staticTokenProvider{
+	tokenProvider := &staticTokenProvider{
 		setBufTokenEnvVar: isFromEnvVar,
 		tokenToAuthKey:    make(map[string]authKey),
 	}
@@ -53,18 +53,18 @@ func newTokenProviderFromString(token string, isFromEnvVar bool) (TokenProvider,
 			if err := ak.unmarshalString(keyPairs); err != nil {
 				return nil, err
 			}
-			if _, ok = tokenSet.tokenToAuthKey[remoteAddress]; ok {
+			if _, ok = tokenProvider.tokenToAuthKey[remoteAddress]; ok {
 				return nil, fmt.Errorf("cannot parse token: %s, repeated token for same BSR remote: %s", token, remoteAddress)
 			}
-			tokenSet.tokenToAuthKey[remoteAddress] = ak
+			tokenProvider.tokenToAuthKey[remoteAddress] = ak
 		} else {
-			if tokenSet.defaultToken != "" {
-				return nil, fmt.Errorf("cannot parse token: two buf token provided: %q and %q", token, tokenSet.defaultToken)
+			if tokenProvider.defaultToken != "" {
+				return nil, fmt.Errorf("cannot parse token: two buf token provided: %q and %q", token, tokenProvider.defaultToken)
 			}
-			tokenSet.defaultToken = token
+			tokenProvider.defaultToken = token
 		}
 	}
-	return tokenSet, nil
+	return tokenProvider, nil
 }
 
 // RemoteToken finds the token by the remote address

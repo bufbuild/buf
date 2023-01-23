@@ -646,14 +646,14 @@ func NewConnectClientConfig(container appflag.Container) (*connectclient.Config,
 // NewConnectClientConfigWithToken creates a new connect.ClientConfig with a given token. The provided token is
 // set in the header of all outgoing requests from this provider
 func NewConnectClientConfigWithToken(container appflag.Container, token string) (*connectclient.Config, error) {
-	tokenSet, err := bufconnect.NewTokenProviderFromString(token)
+	tokenProvider, err := bufconnect.NewTokenProviderFromString(token)
 	if err != nil {
 		return nil, err
 	}
 	return newConnectClientConfigWithOptions(
 		container,
 		connectclient.WithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProvider(tokenSet),
+			bufconnect.NewAuthorizationInterceptorProvider(tokenProvider),
 		),
 	)
 }

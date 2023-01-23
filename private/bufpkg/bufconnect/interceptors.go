@@ -52,7 +52,7 @@ type TokenProvider interface {
 //
 // Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
 // a client.
-func NewAuthorizationInterceptorProvider(tokenFinders ...TokenProvider) func(string) connect.UnaryInterceptorFunc {
+func NewAuthorizationInterceptorProvider(tokenProviders ...TokenProvider) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
@@ -60,7 +60,7 @@ func NewAuthorizationInterceptorProvider(tokenFinders ...TokenProvider) func(str
 				req connect.AnyRequest,
 			) (connect.AnyResponse, error) {
 				usingTokenEnvKey := false
-				for _, tf := range tokenFinders {
+				for _, tf := range tokenProviders {
 					if token := tf.RemoteToken(address); token != "" {
 						req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
 						usingTokenEnvKey = tf.IsFromEnvVar()
