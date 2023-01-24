@@ -1,0 +1,16 @@
+{
+  "name": "@bufbuild/buf-darwin-arm64",
+  "description": "The buf CLI is a tool for working with Protocol Buffers.",
+  "repository": "https://github.com/bufbuild/buf",
+  "engines": {
+    "node": ">=12"
+  },
+  "preferUnplugged": true,
+  "license": "Apache-2.0",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ]
+}

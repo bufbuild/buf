@@ -1,0 +1,31 @@
+name: npm-publish
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: The version you intend to publish (eg x.y.z)
+  release:
+    types: [ created ]
+
+jobs:
+  publish:
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: setup-node
+        uses: actions/setup-node@v3
+      - name: download-release
+        run: npm pack
+      - name: package-windows-x86_64
+        working-directory: ./npm/@bufbuild/buf-windows-x86_64
+        run: npm pack
+      - name: package-buf
+        working-directory: ./npm/@bufbuild/buf
+        run: npm pack
+      - name: init
+        working-directory: ./npm/test-app
+        run: |
+          npm install
+          npm test

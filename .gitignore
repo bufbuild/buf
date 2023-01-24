@@ -8,6 +8,9 @@
 /cmd/buf/buf
 /cmd/protoc-gen-buf-breaking/protoc-gen-buf-breaking
 /cmd/protoc-gen-buf-lint/protoc-gen-buf-lint
+/**/node_modules/**
+/npm/**/bin
+/npm/**/install.js
 /private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
 /private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 /private/buf/cmd/buf/command/alpha/protoc/test.txt

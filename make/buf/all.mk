@@ -26,7 +26,10 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	private/buf/cmd/buf/command/alpha/protoc/test.txt \
 	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
 	private/bufpkg/buftesting/cache/ \
-	private/pkg/storage/storageos/tmp/
+	private/pkg/storage/storageos/tmp/ \
+	**/node_modules/** \
+	npm/**/bin \
+	npm/**/install.js
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2023
@@ -161,3 +164,9 @@ gofuzz: $(GO_FUZZ)
 	rm go.mod go.sum; mv $(TMP)/go.mod.bak go.mod; mv $(TMP)/go.sum.bak go.sum
 	cp private/bufpkg/bufimage/bufimagebuild/bufimagebuildtesting/corpus/* $(TMP)/gofuzz/corpus
 	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz $(GO_FUZZ_EXTRA_ARGS)
+
+# Downloads the binaries for the npm package.
+.PHONY: npmpublish
+npmpublish:
+	./make/buf/scripts/npmpublish.bash
+
