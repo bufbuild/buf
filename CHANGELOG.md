@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Remove the `buf beta convert` to `buf convert`. Any uses of `buf beta convert` will need to change to `buf convert` 
+- Remove `buf beta convert` in favor of the now-stable `buf convert`.
 
 ## [v1.12.0] - 2023-01-12
 - Add `buf curl` command to invoke RPCs via [Connect](https://connect-build),
