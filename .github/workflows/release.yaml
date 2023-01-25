@@ -183,7 +183,7 @@ jobs:
       - name: update version
         run: make updateversion VERSION=${{env.NEXT_VERSION}}
       - name: update home brew badge
-        run: make updatehomebrewbadge
+        run: make updatehomebrewbadge VERSION=${{github.ref_name}}
       - name: create PR
         uses: peter-evans/create-pull-request@2b011faafdcbc9ceb11414d64d0573f37c774b04
         with:
