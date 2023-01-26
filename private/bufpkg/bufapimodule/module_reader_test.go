@@ -181,7 +181,7 @@ func (fm filemap) apply(m *mockDownloadService) error {
 	if err != nil {
 		return err
 	}
-	mBlob, err := modulebufmanifest.Blob()
+	mBlob, err := moduleManifest.Blob()
 	if err != nil {
 		return err
 	}
