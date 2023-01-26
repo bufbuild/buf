@@ -38,7 +38,7 @@ func NewTokenProviderFromString(token string) (TokenProvider, error) {
 // remote addresses does not contain these characters since they are enforced by the rules in BSR.
 func newTokenProviderFromString(token string, isFromEnvVar bool) (TokenProvider, error) {
 	if token == "" {
-		return &nonTokenProvider{}, nil
+		return nopTokenProvider{}, nil
 	}
 	// Tokens for different remotes are separated by `,`. Using strings.Split to separate the string into remote tokens.
 	tokens := strings.Split(token, ",")
@@ -62,6 +62,12 @@ type singleTokenProvider struct {
 func newSingleTokenProvider(token string, isFromEnvVar bool) (*singleTokenProvider, error) {
 	if strings.Contains(token, "@") {
 		return nil, errors.New("token cannot contain special character `@`")
+	}
+	if strings.Contains(token, ",") {
+		return nil, errors.New("token cannot contain special character `,`")
+	}
+	if strings.Contains(token, ":") {
+		return nil, errors.New("token cannot contain special character `:`")
 	}
 	if token == "" {
 		return nil, errors.New("single token cannot be empty")
@@ -96,6 +102,12 @@ func newMultipleTokenProvider(tokens []string, isFromEnvVar bool) (*multipleToke
 		if split[0] == "" || split[1] == "" {
 			return nil, fmt.Errorf("invalid token: %s", token)
 		}
+		if strings.Contains(split[0], ":") {
+			return nil, fmt.Errorf("invalid token: %s, token cannot contain special character `:`", token)
+		}
+		if strings.Contains(split[0], ",") {
+			return nil, fmt.Errorf("invalid token: %s, token cannot contain special character `,`", token)
+		}
 		if _, ok := addressToToken[split[1]]; ok {
 			return nil, fmt.Errorf("invalid token: %s, repeated remote adddress: %s", token, split[1])
 		}
@@ -115,12 +127,12 @@ func (m *multipleTokenProvider) IsFromEnvVar() bool {
 	return m.isFromEnvVar
 }
 
-type nonTokenProvider struct{}
+type nopTokenProvider struct{}
 
-func (*nonTokenProvider) RemoteToken(string) string {
+func (nopTokenProvider) RemoteToken(string) string {
 	return ""
 }
 
-func (*nonTokenProvider) IsFromEnvVar() bool {
+func (nopTokenProvider) IsFromEnvVar() bool {
 	return false
 }

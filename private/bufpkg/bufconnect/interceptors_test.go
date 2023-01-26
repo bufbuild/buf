@@ -113,12 +113,16 @@ func TestNewTokenSetFromEnv(t *testing.T) {
 }
 
 func TestNewTokenSetFromString(t *testing.T) {
-	_, err := NewTokenProviderFromString("default")
+	tokenProvider, err := NewTokenProviderFromString("default")
 	assert.NoError(t, err)
-	_, err = NewTokenProviderFromString("token1@host1")
+	assert.Equal(t, "default", tokenProvider.RemoteToken("host"))
+	tokenProvider, err = NewTokenProviderFromString("token1@host1")
 	assert.NoError(t, err)
-	_, err = NewTokenProviderFromString("user1@remote1,user2@remote2")
+	assert.Equal(t, "token1", tokenProvider.RemoteToken("host1"))
+	tokenProvider, err = NewTokenProviderFromString("token1@remote1,token2@remote2")
 	assert.NoError(t, err)
+	assert.Equal(t, "token1", tokenProvider.RemoteToken("remote1"))
+	assert.Equal(t, "token2", tokenProvider.RemoteToken("remote2"))
 	_, err = NewTokenProviderFromString("user1@remote1,user2@remote1")
 	assert.Error(t, err)
 	_, err = NewTokenProviderFromString("user1@remote1,user2@remote2,")
