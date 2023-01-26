@@ -135,6 +135,12 @@ func TestNewTokenSetFromString(t *testing.T) {
 	assert.Error(t, err)
 	_, err = NewTokenProviderFromString("token1@host1,token2")
 	assert.Error(t, err)
+	_, err = NewTokenProviderFromString(",")
+	assert.Error(t, err)
+	_, err = NewTokenProviderFromString("token,")
+	assert.Error(t, err)
+	_, err = NewTokenProviderFromString(",token")
+	assert.Error(t, err)
 	_, err = NewTokenProviderFromString("")
 	assert.NoError(t, err)
 }

@@ -37,18 +37,18 @@ func NewTokenProviderFromString(token string) (TokenProvider, error) {
 // The special characters `:`, `@` and `,` are used as the splitters. The usernames, tokens, and
 // remote addresses does not contain these characters since they are enforced by the rules in BSR.
 func newTokenProviderFromString(token string, isFromEnvVar bool) (TokenProvider, error) {
+	if token == "" {
+		return &nonTokenProvider{}, nil
+	}
 	// Tokens for different remotes are separated by `,`. Using strings.Split to separate the string into remote tokens.
-	switch tokens := strings.Split(token, ","); len(tokens) {
-	case 0:
-		return nil, errors.New("invalid token")
-	case 1:
+	tokens := strings.Split(token, ",")
+	if len(tokens) == 1 {
 		if strings.Contains(tokens[0], "@") {
 			return newMultipleTokenProvider(tokens, isFromEnvVar)
 		}
 		return newSingleTokenProvider(tokens[0], isFromEnvVar)
-	default:
-		return newMultipleTokenProvider(tokens, isFromEnvVar)
 	}
+	return newMultipleTokenProvider(tokens, isFromEnvVar)
 }
 
 // singleTokenProvider is used to provide set of authentication tokenToAuthKey.
@@ -62,6 +62,9 @@ type singleTokenProvider struct {
 func newSingleTokenProvider(token string, isFromEnvVar bool) (*singleTokenProvider, error) {
 	if strings.Contains(token, "@") {
 		return nil, errors.New("token cannot contain special character `@`")
+	}
+	if token == "" {
+		return nil, errors.New("single token cannot be empty")
 	}
 	return &singleTokenProvider{
 		setBufTokenEnvVar: isFromEnvVar,
@@ -110,4 +113,14 @@ func (m *multipleTokenProvider) RemoteToken(address string) string {
 
 func (m *multipleTokenProvider) IsFromEnvVar() bool {
 	return m.isFromEnvVar
+}
+
+type nonTokenProvider struct{}
+
+func (*nonTokenProvider) RemoteToken(string) string {
+	return ""
+}
+
+func (*nonTokenProvider) IsFromEnvVar() bool {
+	return false
 }
