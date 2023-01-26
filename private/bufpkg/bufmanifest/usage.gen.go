@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package manifest
+package bufmanifest
 
 import _ "github.com/bufbuild/buf/private/usage"

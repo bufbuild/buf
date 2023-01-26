@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifest_test
+package bufmanifest_test
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,7 +36,7 @@ func Example() {
 			"foo": []byte("bar"),
 		},
 	)
-	m, _, _ := manifest.NewFromBucket(ctx, bucket)
+	m, _, _ := bufmanifest.NewFromBucket(ctx, bucket)
 	digest, _ := m.DigestFor("foo")
 	fmt.Printf("digest[:16]: %s\n", digest.Hex()[:16])
 	path, _ := m.PathsFor(digest.String())
@@ -61,7 +61,7 @@ func TestRoundTripManifest(t *testing.T) {
 		)
 	}
 	manifestContent := manifestBuilder.Bytes()
-	var m manifest.Manifest
+	var m bufmanifest.Manifest
 	err := m.UnmarshalText(manifestContent)
 	require.NoError(t, err)
 
@@ -73,21 +73,21 @@ func TestRoundTripManifest(t *testing.T) {
 
 func TestEmptyManifest(t *testing.T) {
 	t.Parallel()
-	content, err := manifest.New().MarshalText()
+	content, err := bufmanifest.New().MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(content))
 }
 
 func TestAddEntry(t *testing.T) {
 	t.Parallel()
-	m := manifest.New()
+	m := bufmanifest.New()
 	fileDigest := mustDigestShake256(t, nil)
 	const filePath = "my/path"
 	require.NoError(t, m.AddEntry(filePath, *fileDigest))
 	require.NoError(t, m.AddEntry(filePath, *fileDigest)) // adding the same entry twice is fine
 
 	require.Error(t, m.AddEntry("", *fileDigest))
-	require.Error(t, m.AddEntry("other/path", manifest.Digest{}))
+	require.Error(t, m.AddEntry("other/path", bufmanifest.Digest{}))
 	require.Error(t, m.AddEntry(filePath, *mustDigestShake256(t, []byte("other content"))))
 
 	expect := fmt.Sprintf("%s  %s\n", fileDigest, filePath)
@@ -137,20 +137,20 @@ func TestInvalidManifests(t *testing.T) {
 func TestBrokenRead(t *testing.T) {
 	t.Parallel()
 	expected := errors.New("testing error")
-	_, err := manifest.NewFromReader(iotest.ErrReader(expected))
+	_, err := bufmanifest.NewFromReader(iotest.ErrReader(expected))
 	assert.ErrorIs(t, err, expected)
 }
 
 func TestUnmarshalBrokenManifest(t *testing.T) {
 	t.Parallel()
-	var m manifest.Manifest
+	var m bufmanifest.Manifest
 	err := m.UnmarshalText([]byte("foo"))
 	assert.Error(t, err)
 }
 
 func TestDigestPaths(t *testing.T) {
 	t.Parallel()
-	m := manifest.New()
+	m := bufmanifest.New()
 	sharedDigest := mustDigestShake256(t, nil)
 	err := m.AddEntry("path/one", *sharedDigest)
 	require.NoError(t, err)
@@ -166,7 +166,7 @@ func TestDigestPaths(t *testing.T) {
 
 func TestPathDigest(t *testing.T) {
 	t.Parallel()
-	m := manifest.New()
+	m := bufmanifest.New()
 	digest := mustDigestShake256(t, nil)
 	err := m.AddEntry("my/path", *digest)
 	require.NoError(t, err)
@@ -186,14 +186,14 @@ func testInvalidManifest(
 	t.Helper()
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		_, err := manifest.NewFromReader(strings.NewReader(line))
+		_, err := bufmanifest.NewFromReader(strings.NewReader(line))
 		assert.ErrorContains(t, err, desc)
 	})
 }
 
 func TestAllPaths(t *testing.T) {
 	t.Parallel()
-	m := manifest.New()
+	m := bufmanifest.New()
 	var addedPaths []string
 	for i := 0; i < 20; i++ {
 		path := fmt.Sprintf("path/to/file%0d", i)

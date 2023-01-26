@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifest_test
+package bufmanifest_test
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +38,7 @@ func TestFromBucket(t *testing.T) {
 			"foo":  []byte("bar"),
 		})
 	require.NoError(t, err)
-	m, blobSet, err := manifest.NewFromBucket(ctx, bucket)
+	m, blobSet, err := bufmanifest.NewFromBucket(ctx, bucket)
 	require.NoError(t, err)
 	// sorted by paths
 	var (
@@ -70,26 +70,26 @@ func TestNewBucket(t *testing.T) {
 		// same "mypkg" prefix for `Walk` test purposes
 		"mypkglongername/v1/baz.proto": []byte("repeated proto content"),
 	}
-	m := manifest.New()
-	var blobs []manifest.Blob
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	m := bufmanifest.New()
+	var blobs []bufmanifest.Blob
+	digester, err := bufmanifest.NewDigester(bufmanifest.DigestTypeShake256)
 	require.NoError(t, err)
 	for path, content := range files {
 		digest, err := digester.Digest(bytes.NewReader(content))
 		require.NoError(t, err)
 		require.NoError(t, m.AddEntry(path, *digest))
-		blob, err := manifest.NewMemoryBlob(
+		blob, err := bufmanifest.NewMemoryBlob(
 			*digest,
 			content,
-			manifest.MemoryBlobWithDigestValidation(),
+			bufmanifest.MemoryBlobWithDigestValidation(),
 		)
 		require.NoError(t, err)
 		blobs = append(blobs, blob)
 	}
-	blobSet, err := manifest.NewBlobSet(
+	blobSet, err := bufmanifest.NewBlobSet(
 		context.Background(),
 		blobs,
-		manifest.BlobSetWithContentValidation(),
+		bufmanifest.BlobSetWithContentValidation(),
 	)
 	require.NoError(t, err)
 
@@ -99,19 +99,19 @@ func TestNewBucket(t *testing.T) {
 		// regardless of which blobs are sent, there will always be missing at least
 		// one.
 		const blobsToSend = 3
-		incompleteBlobSet, err := manifest.NewBlobSet(
+		incompleteBlobSet, err := bufmanifest.NewBlobSet(
 			context.Background(),
 			blobs[:blobsToSend],
 		)
 		require.NoError(t, err)
 
-		_, err = manifest.NewBucket(
+		_, err = bufmanifest.NewBucket(
 			*m, *incompleteBlobSet,
-			manifest.BucketWithAllManifestBlobsValidation(),
+			bufmanifest.BucketWithAllManifestBlobsValidation(),
 		)
 		assert.Error(t, err)
 
-		bucket, err := manifest.NewBucket(*m, *incompleteBlobSet)
+		bucket, err := bufmanifest.NewBucket(*m, *incompleteBlobSet)
 		assert.NoError(t, err)
 		assert.NotNil(t, bucket)
 		var bucketFilesCount int
@@ -126,26 +126,26 @@ func TestNewBucket(t *testing.T) {
 		t.Parallel()
 		const content = "some other file contents"
 		digest := mustDigestShake256(t, []byte(content))
-		orphanBlob, err := manifest.NewMemoryBlob(*digest, []byte(content))
+		orphanBlob, err := bufmanifest.NewMemoryBlob(*digest, []byte(content))
 		require.NoError(t, err)
-		tooLargeBlobSet, err := manifest.NewBlobSet(
+		tooLargeBlobSet, err := bufmanifest.NewBlobSet(
 			context.Background(),
 			append(blobs, orphanBlob),
 		)
 		require.NoError(t, err)
-		_, err = manifest.NewBucket(
+		_, err = bufmanifest.NewBucket(
 			*m, *tooLargeBlobSet,
-			manifest.BucketWithNoExtraBlobsValidation(),
+			bufmanifest.BucketWithNoExtraBlobsValidation(),
 		)
 		assert.Error(t, err)
 	})
 
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
-		bucket, err := manifest.NewBucket(
+		bucket, err := bufmanifest.NewBucket(
 			*m, *blobSet,
-			manifest.BucketWithAllManifestBlobsValidation(),
-			manifest.BucketWithNoExtraBlobsValidation(),
+			bufmanifest.BucketWithAllManifestBlobsValidation(),
+			bufmanifest.BucketWithNoExtraBlobsValidation(),
 		)
 		require.NoError(t, err)
 
@@ -197,8 +197,8 @@ func TestNewBucket(t *testing.T) {
 
 func TestToBucketEmpty(t *testing.T) {
 	t.Parallel()
-	m := manifest.New()
-	bucket, err := manifest.NewBucket(*m, manifest.BlobSet{})
+	m := bufmanifest.New()
+	bucket, err := bufmanifest.NewBucket(*m, bufmanifest.BlobSet{})
 	require.NoError(t, err)
 	// make sure there are no files in the bucket
 	require.NoError(t, bucket.Walk(context.Background(), "", func(obj storage.ObjectInfo) error {

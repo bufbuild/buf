@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifest_test
+package bufmanifest_test
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -44,13 +44,13 @@ func TestNewDigestBytes(t *testing.T) {
 	testInvalidDigestBytes(
 		t,
 		"invalid digest",
-		manifest.DigestTypeShake256,
+		bufmanifest.DigestTypeShake256,
 		nil,
 	)
 	testInvalidDigestBytes(
 		t,
 		"invalid digest",
-		manifest.DigestTypeShake256,
+		bufmanifest.DigestTypeShake256,
 		mustDigestShake256(t, nil).Bytes()[:10],
 	)
 }
@@ -72,19 +72,19 @@ func TestNewDigestHex(t *testing.T) {
 	testInvalidDigestHex(
 		t,
 		"invalid digest",
-		manifest.DigestTypeShake256,
+		bufmanifest.DigestTypeShake256,
 		"",
 	)
 	testInvalidDigestHex(
 		t,
 		"encoding/hex",
-		manifest.DigestTypeShake256,
+		bufmanifest.DigestTypeShake256,
 		"not-a_hex/string",
 	)
 	testInvalidDigestHex(
 		t,
 		"invalid digest",
-		manifest.DigestTypeShake256,
+		bufmanifest.DigestTypeShake256,
 		mustDigestShake256(t, nil).Hex()[:10],
 	)
 }
@@ -126,21 +126,21 @@ func TestNewDigestString(t *testing.T) {
 
 func TestNewDigester(t *testing.T) {
 	t.Parallel()
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	digester, err := bufmanifest.NewDigester(bufmanifest.DigestTypeShake256)
 	require.NoError(t, err)
 	require.NotNil(t, digester)
-	digester, err = manifest.NewDigester("some unrecognized digest type")
+	digester, err = bufmanifest.NewDigester("some unrecognized digest type")
 	require.Error(t, err)
 	require.Nil(t, digester)
 }
 
 func TestDigesterDigest(t *testing.T) {
 	t.Parallel()
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	digester, err := bufmanifest.NewDigester(bufmanifest.DigestTypeShake256)
 	require.NoError(t, err)
 	digest, err := digester.Digest(strings.NewReader("some content"))
 	require.NoError(t, err)
-	assert.Equal(t, manifest.DigestTypeShake256, digest.Type())
+	assert.Equal(t, bufmanifest.DigestTypeShake256, digest.Type())
 	assert.NotEmpty(t, digest.Bytes())
 	assert.NotEmpty(t, digest.String())
 
@@ -162,8 +162,8 @@ func TestEqualDigests(t *testing.T) {
 	assert.False(t, d1.Equal(*d3))
 }
 
-func mustDigestShake256(t *testing.T, content []byte) *manifest.Digest {
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+func mustDigestShake256(t *testing.T, content []byte) *bufmanifest.Digest {
+	digester, err := bufmanifest.NewDigester(bufmanifest.DigestTypeShake256)
 	require.NoError(t, err)
 	require.NotNil(t, digester)
 	digest, err := digester.Digest(bytes.NewReader(content))
@@ -179,7 +179,7 @@ func testInvalidDigestString(
 	t.Helper()
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		_, err := manifest.NewDigestFromString(digest)
+		_, err := bufmanifest.NewDigestFromString(digest)
 		assert.ErrorContains(t, err, desc)
 	})
 }
@@ -187,13 +187,13 @@ func testInvalidDigestString(
 func testInvalidDigestHex(
 	t *testing.T,
 	desc string,
-	dtype manifest.DigestType,
+	dtype bufmanifest.DigestType,
 	hexstr string,
 ) {
 	t.Helper()
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		_, err := manifest.NewDigestFromHex(dtype, hexstr)
+		_, err := bufmanifest.NewDigestFromHex(dtype, hexstr)
 		assert.ErrorContains(t, err, desc)
 	})
 }
@@ -201,13 +201,13 @@ func testInvalidDigestHex(
 func testInvalidDigestBytes(
 	t *testing.T,
 	desc string,
-	dtype manifest.DigestType,
+	dtype bufmanifest.DigestType,
 	digest []byte,
 ) {
 	t.Helper()
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		_, err := manifest.NewDigestFromBytes(dtype, digest)
+		_, err := bufmanifest.NewDigestFromBytes(dtype, digest)
 		assert.ErrorContains(t, err, desc)
 	})
 }

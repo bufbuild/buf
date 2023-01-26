@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -62,7 +62,7 @@ func testNewModuleForBucket(
 }
 
 func TestNewModuleForBucket(t *testing.T) {
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	digester, err := bufmanifest.NewDigester(bufmanifest.DigestTypeShake256)
 	require.NoError(t, err)
 	nullDigest, err := digester.Digest(&bytes.Buffer{})
 	require.NoError(t, err)

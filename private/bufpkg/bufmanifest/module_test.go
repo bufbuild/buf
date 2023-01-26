@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifest_test
+package bufmanifest_test
 
 import (
 	"bytes"
@@ -24,8 +24,8 @@ import (
 	"testing"
 	"testing/iotest"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -35,17 +35,17 @@ func TestDigestFromProtoDigest(t *testing.T) {
 	const (
 		fileContent = "one line\nanother line\nyet another one\n"
 	)
-	digestFromContent, err := manifest.NewDigestFromBytes(
-		manifest.DigestTypeShake256,
+	digestFromContent, err := bufmanifest.NewDigestFromBytes(
+		bufmanifest.DigestTypeShake256,
 		mustDigestShake256(t, []byte(fileContent)).Bytes(),
 	)
 	require.NoError(t, err)
-	assert.Equal(t, manifest.DigestTypeShake256, digestFromContent.Type())
+	assert.Equal(t, bufmanifest.DigestTypeShake256, digestFromContent.Type())
 	protoDigest := modulev1alpha1.Digest{
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 		Digest:     digestFromContent.Bytes(),
 	}
-	digest, err := manifest.NewDigestFromProtoDigest(&protoDigest)
+	digest, err := bufmanifest.NewDigestFromProtoDigest(&protoDigest)
 	require.NoError(t, err)
 	assert.Equal(t, digestFromContent.String(), digest.String())
 }
@@ -54,10 +54,10 @@ func TestNewMemoryBlob(t *testing.T) {
 	t.Parallel()
 	const content = "some file content"
 	digest := mustDigestShake256(t, []byte(content))
-	blob, err := manifest.NewMemoryBlob(
+	blob, err := bufmanifest.NewMemoryBlob(
 		*digest,
 		[]byte(content),
-		manifest.MemoryBlobWithDigestValidation(),
+		bufmanifest.MemoryBlobWithDigestValidation(),
 	)
 	require.NoError(t, err)
 	assert.True(t, blob.Digest().Equal(*digest))
@@ -75,15 +75,15 @@ func TestInvalidMemoryBlob(t *testing.T) {
 
 	t.Run("NoValidateDigest", func(t *testing.T) {
 		t.Parallel()
-		_, err := manifest.NewMemoryBlob(*digest, []byte("different content"))
+		_, err := bufmanifest.NewMemoryBlob(*digest, []byte("different content"))
 		assert.NoError(t, err)
 	})
 	t.Run("ValidatingDigest", func(t *testing.T) {
 		t.Parallel()
-		_, err := manifest.NewMemoryBlob(
+		_, err := bufmanifest.NewMemoryBlob(
 			*digest,
 			[]byte("different content"),
-			manifest.MemoryBlobWithDigestValidation(),
+			bufmanifest.MemoryBlobWithDigestValidation(),
 		)
 		assert.Error(t, err)
 	})
@@ -92,7 +92,7 @@ func TestInvalidMemoryBlob(t *testing.T) {
 func TestNewDigestFromProtoDigest(t *testing.T) {
 	t.Parallel()
 	digest := mustDigestShake256(t, []byte("my content"))
-	retDigest, err := manifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
+	retDigest, err := bufmanifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 		Digest:     digest.Bytes(),
 	})
@@ -102,13 +102,13 @@ func TestNewDigestFromProtoDigest(t *testing.T) {
 
 func TestInvalidNewDigestFromProtoDigest(t *testing.T) {
 	t.Parallel()
-	_, err := manifest.NewDigestFromProtoDigest(nil)
+	_, err := bufmanifest.NewDigestFromProtoDigest(nil)
 	assert.Error(t, err)
-	_, err = manifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
+	_, err = bufmanifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_UNSPECIFIED,
 	})
 	assert.Error(t, err)
-	_, err = manifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
+	_, err = bufmanifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 		Digest:     []byte("invalid digest"),
 	})
@@ -117,10 +117,10 @@ func TestInvalidNewDigestFromProtoDigest(t *testing.T) {
 
 func TestNewBlobSet(t *testing.T) {
 	t.Parallel()
-	blobSet, err := manifest.NewBlobSet(
+	blobSet, err := bufmanifest.NewBlobSet(
 		context.Background(),
 		newBlobsArray(t),
-		manifest.BlobSetWithContentValidation(),
+		bufmanifest.BlobSetWithContentValidation(),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, blobSet)
@@ -129,10 +129,10 @@ func TestNewBlobSet(t *testing.T) {
 func TestNewBlobValidDuplicates(t *testing.T) {
 	t.Parallel()
 	blobs := newBlobsArray(t)
-	blobSet, err := manifest.NewBlobSet(
+	blobSet, err := bufmanifest.NewBlobSet(
 		context.Background(),
 		append(blobs, blobs[0]), // send the first blob twice
-		manifest.BlobSetWithContentValidation(),
+		bufmanifest.BlobSetWithContentValidation(),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, blobSet)
@@ -141,16 +141,16 @@ func TestNewBlobValidDuplicates(t *testing.T) {
 func TestNewBlobInvalidDuplicates(t *testing.T) {
 	t.Parallel()
 	blobs := newBlobsArray(t)
-	incorrectBlob, err := manifest.NewMemoryBlob(
+	incorrectBlob, err := bufmanifest.NewMemoryBlob(
 		*blobs[0].Digest(),
 		[]byte("not blobs[0] content"),
 	)
 	require.NoError(t, err)
 	require.NotNil(t, incorrectBlob)
-	_, err = manifest.NewBlobSet(
+	_, err = bufmanifest.NewBlobSet(
 		context.Background(),
 		append(blobs, incorrectBlob), // send first digest twice, with diff content
-		manifest.BlobSetWithContentValidation(),
+		bufmanifest.BlobSetWithContentValidation(),
 	)
 	require.Error(t, err)
 }
@@ -171,12 +171,12 @@ func TestBlobFromReader(t *testing.T) {
 }
 
 type mockBlob struct {
-	digest  *manifest.Digest
+	digest  *bufmanifest.Digest
 	content io.Reader
 	openErr bool
 }
 
-func (mb *mockBlob) Digest() *manifest.Digest { return mb.digest }
+func (mb *mockBlob) Digest() *bufmanifest.Digest { return mb.digest }
 func (mb *mockBlob) Open(_ context.Context) (io.ReadCloser, error) {
 	if mb.openErr {
 		return nil, errors.New("open error")
@@ -296,7 +296,7 @@ func TestBlobEqual(t *testing.T) {
 func TestBlobEqualDigestMismatch(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	digester, err := bufmanifest.NewDigester(bufmanifest.DigestTypeShake256)
 	require.NoError(t, err)
 	const foo = "foo"
 	const bar = "bar"
@@ -312,7 +312,7 @@ func TestBlobEqualDigestMismatch(t *testing.T) {
 		digest:  bDigest,
 		content: strings.NewReader(""),
 	}
-	equal, err := manifest.BlobEqual(ctx, aBlob, bBlob)
+	equal, err := bufmanifest.BlobEqual(ctx, aBlob, bBlob)
 	assert.False(t, equal)
 	assert.NoError(t, err)
 }
@@ -321,23 +321,23 @@ func TestBlobEqualOpenError(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	aBlob := &mockBlob{
-		digest:  &manifest.Digest{},
+		digest:  &bufmanifest.Digest{},
 		openErr: true,
 	}
 	bBlob := &mockBlob{
-		digest: &manifest.Digest{},
+		digest: &bufmanifest.Digest{},
 	}
-	equal, err := manifest.BlobEqual(ctx, aBlob, bBlob)
+	equal, err := bufmanifest.BlobEqual(ctx, aBlob, bBlob)
 	assert.False(t, equal)
 	assert.Error(t, err)
 	aBlob = &mockBlob{
-		digest: &manifest.Digest{},
+		digest: &bufmanifest.Digest{},
 	}
 	bBlob = &mockBlob{
-		digest:  &manifest.Digest{},
+		digest:  &bufmanifest.Digest{},
 		openErr: true,
 	}
-	equal, err = manifest.BlobEqual(ctx, aBlob, bBlob)
+	equal, err = bufmanifest.BlobEqual(ctx, aBlob, bBlob)
 	assert.False(t, equal)
 	assert.Error(t, err)
 }
@@ -353,7 +353,7 @@ func testBlobEqual(
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
-		digest := &manifest.Digest{} // Avoid digest equality test.
+		digest := &bufmanifest.Digest{} // Avoid digest equality test.
 		aBlob := &mockBlob{
 			digest:  digest,
 			content: a,
@@ -362,7 +362,7 @@ func testBlobEqual(
 			digest:  digest,
 			content: b,
 		}
-		equal, err := manifest.BlobEqual(ctx, aBlob, bBlob)
+		equal, err := bufmanifest.BlobEqual(ctx, aBlob, bBlob)
 		assert.Equal(t, isEqual, equal)
 		if isError {
 			assert.Error(t, err)
@@ -375,18 +375,18 @@ func testBlobEqual(
 func TestProtoBlob(t *testing.T) {
 	t.Parallel()
 	content := []byte("hello world")
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	digester, err := bufmanifest.NewDigester(bufmanifest.DigestTypeShake256)
 	require.NoError(t, err)
 	digest, err := digester.Digest(bytes.NewReader(content))
 	require.NoError(t, err)
-	blob, err := manifest.NewMemoryBlob(*digest, content)
+	blob, err := bufmanifest.NewMemoryBlob(*digest, content)
 	require.NoError(t, err)
 	ctx := context.Background()
-	protoBlob, err := manifest.AsProtoBlob(ctx, blob)
+	protoBlob, err := bufmanifest.AsProtoBlob(ctx, blob)
 	require.NoError(t, err)
-	rtBlob, err := manifest.NewBlobFromProto(protoBlob)
+	rtBlob, err := bufmanifest.NewBlobFromProto(protoBlob)
 	require.NoError(t, err)
-	equal, err := manifest.BlobEqual(ctx, blob, rtBlob)
+	equal, err := bufmanifest.BlobEqual(ctx, blob, rtBlob)
 	require.NoError(t, err)
 	assert.True(t, equal)
 }
@@ -394,9 +394,9 @@ func TestProtoBlob(t *testing.T) {
 func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
 	t.Helper()
 	t.Parallel()
-	blob, err := manifest.NewMemoryBlobFromReader(bytes.NewReader(content))
+	blob, err := bufmanifest.NewMemoryBlobFromReader(bytes.NewReader(content))
 	require.NoError(t, err)
-	protoBlob, err := manifest.AsProtoBlob(context.Background(), blob)
+	protoBlob, err := bufmanifest.AsProtoBlob(context.Background(), blob)
 	require.NoError(t, err)
 	expect := &modulev1alpha1.Blob{
 		Digest: &modulev1alpha1.Digest{
@@ -408,14 +408,14 @@ func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
 	assert.Equal(t, expect, protoBlob)
 }
 
-func newBlobsArray(t *testing.T) []manifest.Blob {
-	var blobs []manifest.Blob
+func newBlobsArray(t *testing.T) []bufmanifest.Blob {
+	var blobs []bufmanifest.Blob
 	for i := 0; i < 10; i++ {
 		content := fmt.Sprintf("some content %d", i)
 		digest := mustDigestShake256(t, []byte(content))
-		blob, err := manifest.NewMemoryBlob(
+		blob, err := bufmanifest.NewMemoryBlob(
 			*digest, []byte(content),
-			manifest.MemoryBlobWithDigestValidation(),
+			bufmanifest.MemoryBlobWithDigestValidation(),
 		)
 		require.NoError(t, err)
 		blobs = append(blobs, blob)

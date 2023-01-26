@@ -19,7 +19,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -156,6 +156,6 @@ type ExternalConfigVersion struct {
 // isValidDigest returns true when the digest string is successfully parsed
 // by the `manifest` pkg. Older buf digests are not considered valid (b1/b3).
 func isValidDigest(digest string) bool {
-	_, err := manifest.NewDigestFromString(digest)
+	_, err := bufmanifest.NewDigestFromString(digest)
 	return err == nil
 }

@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -195,7 +195,7 @@ func TestParseIncompleteConfig(t *testing.T) {
 }
 
 func TestDependencyForExternalConfigDependencyV1(t *testing.T) {
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	digester, err := bufmanifest.NewDigester(bufmanifest.DigestTypeShake256)
 	require.NoError(t, err)
 	nullDigest, err := digester.Digest(&bytes.Buffer{})
 	require.NoError(t, err)

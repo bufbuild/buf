@@ -20,7 +20,7 @@
 // "shake256" is the only supported digest type. The digest is 64 bytes of hex
 // encoded output of SHAKE256. See golang.org/x/crypto/sha3 and FIPS 202 for
 // details on the SHAKE hash.
-package manifest
+package bufmanifest
 
 import (
 	"bufio"
