@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.13.0] - 2023-01-26
 
 - Extend the `BUF_TOKEN` environment variable to accept tokens for multiple
   BSR instances. Both `TOKEN` and `TOKEN1@BSRHOSTNAME1,TOKEN2@BSRHOSTNAME2,...`
@@ -801,7 +801,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.12.0...HEAD]
+[v1.13.0]: https://github.com/bufbuild/buf/compare/v1.12.0...v1.13.0
 [v1.12.0]: https://github.com/bufbuild/buf/compare/v1.11.0...v1.12.0
 [v1.11.0]: https://github.com/bufbuild/buf/compare/v1.10.0...v1.11.0
 [v1.10.0]: https://github.com/bufbuild/buf/compare/v1.9.0...v1.10.0
