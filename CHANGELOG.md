@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Extend the `BUF_TOKEN` environment variable to accept tokens for multiple
+  BSR instances. Both `TOKEN` and `TOKEN1@BSRHOSTNAME1,TOKEN2@BSRHOSTNAME2,...`
+  are now valid values for `BUF_TOKEN`.
 - Remove `buf beta convert` in favor of the now-stable `buf convert`.
 
 ## [v1.12.0] - 2023-01-12
