@@ -185,14 +185,14 @@ func (fm filemap) apply(m *mockDownloadService) error {
 	if err != nil {
 		return err
 	}
-	m.manifestBlob, err = manifest.AsProtoBlob(ctx, mBlob)
+	m.manifestBlob, err = AsProtoBlob(ctx, mBlob)
 	if err != nil {
 		return err
 	}
 	blobs := blobSet.Blobs()
 	m.blobs = make([]*modulev1alpha1.Blob, 0, len(blobs))
 	for _, blob := range blobs {
-		protoBlob, err := manifest.AsProtoBlob(ctx, blob)
+		protoBlob, err := AsProtoBlob(ctx, blob)
 		if err != nil {
 			return err
 		}
