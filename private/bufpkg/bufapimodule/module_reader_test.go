@@ -20,11 +20,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
@@ -177,22 +177,22 @@ func (fm filemap) apply(m *mockDownloadService) error {
 		return err
 	}
 	ctx := context.Background()
-	moduleManifest, blobSet, err := manifest.NewFromBucket(ctx, bucket)
+	moduleManifest, blobSet, err := bufmanifest.NewFromBucket(ctx, bucket)
 	if err != nil {
 		return err
 	}
-	mBlob, err := moduleManifest.Blob()
+	mBlob, err := modulebufmanifest.Blob()
 	if err != nil {
 		return err
 	}
-	m.manifestBlob, err = manifest.AsProtoBlob(ctx, mBlob)
+	m.manifestBlob, err = bufmanifest.AsProtoBlob(ctx, mBlob)
 	if err != nil {
 		return err
 	}
 	blobs := blobSet.Blobs()
 	m.blobs = make([]*modulev1alpha1.Blob, 0, len(blobs))
 	for _, blob := range blobs {
-		protoBlob, err := manifest.AsProtoBlob(ctx, blob)
+		protoBlob, err := bufmanifest.AsProtoBlob(ctx, blob)
 		if err != nil {
 			return err
 		}

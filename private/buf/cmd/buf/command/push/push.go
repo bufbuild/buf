@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -30,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
@@ -205,11 +205,11 @@ func push(
 		return nil, err
 	}
 	if tamperProofingEnabled {
-		m, blobSet, err := manifest.NewFromBucket(ctx, builtModule.Bucket)
+		m, blobSet, err := bufmanifest.NewFromBucket(ctx, builtModule.Bucket)
 		if err != nil {
 			return nil, err
 		}
-		bucketManifest, blobs, err := manifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
+		bucketManifest, blobs, err := bufmanifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
 		if err != nil {
 			return nil, err
 		}

@@ -18,10 +18,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/connect-go"
 )
@@ -67,7 +67,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 			return nil, errors.New("expected non-nil manifest with tamper proofing enabled")
 		}
 		// use manifest and blobs
-		bucket, err := manifest.NewBucketFromManifestBlobs(
+		bucket, err := bufmanifest.NewBucketFromManifestBlobs(
 			ctx,
 			resp.Manifest,
 			resp.Blobs,
