@@ -16,20 +16,20 @@ package bufconnect
 
 import "errors"
 
-// ErrAuth wraps the error returned in the auth provider to add additional context.
-type ErrAuth struct {
+// AuthError wraps the error returned in the auth provider to add additional context.
+type AuthError struct {
 	cause error
 
 	tokenEnvKey string
 }
 
 // Unwrap returns the underlying error.
-func (e *ErrAuth) Unwrap() error {
+func (e *AuthError) Unwrap() error {
 	return e.cause
 }
 
 // Error implements the error interface and returns the error message.
-func (e *ErrAuth) Error() string {
+func (e *AuthError) Error() string {
 	if e.cause == nil {
 		return "unknown error"
 	}
@@ -37,13 +37,13 @@ func (e *ErrAuth) Error() string {
 }
 
 // TokenEnvKey returns the environment variable used, if any, for authentication.
-func (e *ErrAuth) TokenEnvKey() string {
+func (e *AuthError) TokenEnvKey() string {
 	return e.tokenEnvKey
 }
 
-// AsAuthError uses errors.As to unwrap any error and look for an *ErrAuth.
-func AsAuthError(err error) (*ErrAuth, bool) {
-	var authErr *ErrAuth
+// AsAuthError uses errors.As to unwrap any error and look for an *AuthError.
+func AsAuthError(err error) (*AuthError, bool) {
+	var authErr *AuthError
 	ok := errors.As(err, &authErr)
 	return authErr, ok
 }

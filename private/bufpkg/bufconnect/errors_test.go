@@ -22,30 +22,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestErrAuthUnwrap(t *testing.T) {
+func TestAuthErrorUnwrap(t *testing.T) {
 	cause := errors.New("underlying cause")
-	err := &ErrAuth{cause: cause}
-
+	err := &AuthError{cause: cause}
 	assert.Equal(t, cause, err.Unwrap())
 }
 
-func TestErrAuthError(t *testing.T) {
+func TestAuthErrorError(t *testing.T) {
 	cause := errors.New("underlying cause")
-	err := &ErrAuth{cause: cause}
-
+	err := &AuthError{cause: cause}
 	assert.Equal(t, "underlying cause", err.Error())
 }
 
-func TestErrAuthTokenEnvKey(t *testing.T) {
+func TestAuthErrorTokenEnvKey(t *testing.T) {
 	cause := errors.New("underlying cause")
-	err := &ErrAuth{cause: cause, tokenEnvKey: "abcd"}
-
+	err := &AuthError{cause: cause, tokenEnvKey: "abcd"}
 	assert.Equal(t, "abcd", err.TokenEnvKey())
 }
 
 func TestAsAuthError(t *testing.T) {
 	cause := errors.New("underlying cause")
-	authErr := &ErrAuth{cause: cause}
+	authErr := &AuthError{cause: cause}
 	err := fmt.Errorf("wrapped error: %w", authErr)
 
 	unwrapped, ok := AsAuthError(err)
