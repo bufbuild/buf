@@ -47,8 +47,8 @@ func newLimitedWriteBucket(bucket WriteBucket, limit int64) *limitedWriteBucket 
 	}
 }
 
-func (w *limitedWriteBucket) Put(ctx context.Context, path string) (WriteObjectCloser, error) {
-	writeObjectCloser, err := w.WriteBucket.Put(ctx, path)
+func (w *limitedWriteBucket) Put(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error) {
+	writeObjectCloser, err := w.WriteBucket.Put(ctx, path, opts...)
 	if err != nil {
 		return nil, err
 	}

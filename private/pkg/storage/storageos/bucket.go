@@ -161,7 +161,7 @@ func (b *bucket) Walk(
 	return nil
 }
 
-func (b *bucket) Put(ctx context.Context, path string) (storage.WriteObjectCloser, error) {
+func (b *bucket) Put(ctx context.Context, path string, _ ...storage.PutOption) (storage.WriteObjectCloser, error) {
 	externalPath, err := b.getExternalPath(path)
 	if err != nil {
 		return nil, err

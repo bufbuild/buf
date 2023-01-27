@@ -88,7 +88,7 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectI
 	return nil
 }
 
-func (b *bucket) Put(ctx context.Context, path string) (storage.WriteObjectCloser, error) {
+func (b *bucket) Put(ctx context.Context, path string, _ ...storage.PutOption) (storage.WriteObjectCloser, error) {
 	// No need to lock as we do no modifications until close
 	path, err := storageutil.ValidatePath(path)
 	if err != nil {

@@ -81,7 +81,7 @@ type WriteBucket interface {
 	// The returned WriteObjectCloser is not thread-safe.
 	//
 	// Returns error on system error.
-	Put(ctx context.Context, path string) (WriteObjectCloser, error)
+	Put(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error)
 	// PutIfNotExists returns a WriteObjectCloser to write to the path. Writes
 	// will happen only if there is no object already in the same path.
 	//
