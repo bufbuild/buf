@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix race condition with `buf generate` when remote plugins from multiple
+  BSR instances are being used at once.
 
 ## [v1.13.0] - 2023-01-26
 
