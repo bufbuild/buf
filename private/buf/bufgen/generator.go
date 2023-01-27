@@ -200,6 +200,8 @@ func (g *generator) execPlugins(
 	}
 	// Batch for each remote.
 	for remote, indexedPluginConfigs := range remotePluginConfigTable {
+		remote := remote
+		indexedPluginConfigs := indexedPluginConfigs
 		v1Args := make([]*remotePluginExecArgs, 0, len(indexedPluginConfigs))
 		v2Args := make([]*remotePluginExecArgs, 0, len(indexedPluginConfigs))
 		for _, param := range indexedPluginConfigs {

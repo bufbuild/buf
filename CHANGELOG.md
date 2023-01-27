@@ -4,6 +4,11 @@
 
 - No changes yet.
 
+## [v1.13.1] - 2023-01-27
+
+- Fix race condition with `buf generate` when remote plugins from multiple
+  BSR instances are being used at once.
+
 ## [v1.13.0] - 2023-01-26
 
 - Extend the `BUF_TOKEN` environment variable to accept tokens for multiple
@@ -805,7 +810,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.13.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.13.1...HEAD
+[v1.13.1]: https://github.com/bufbuild/buf/compare/v1.13.0...v1.13.1
 [v1.13.0]: https://github.com/bufbuild/buf/compare/v1.12.0...v1.13.0
 [v1.12.0]: https://github.com/bufbuild/buf/compare/v1.11.0...v1.12.0
 [v1.11.0]: https://github.com/bufbuild/buf/compare/v1.10.0...v1.11.0
