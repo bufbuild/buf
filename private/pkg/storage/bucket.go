@@ -83,13 +83,11 @@ type WriteBucket interface {
 	// Returns error on system error.
 	Put(ctx context.Context, path string) (WriteObjectCloser, error)
 	// PutIfNotExists returns a WriteObjectCloser to write to the path. Writes
-	// will succeed only if there is no object already in the same path.
+	// will happen only if there is no object already in the same path.
 	//
 	// The path is truncated on close. The behavior of concurrently Getting and
 	// Putting an object is undefined. The returned WriteObjectCloser is not
 	// thread-safe.
-	//
-	// Returns error on system error.
 	PutIfNotExists(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error)
 	// PutIfNotExist(, opts ...PutOption) ChunkSize
 	// Delete deletes the object at the path.
