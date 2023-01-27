@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.13.1] - 2023-01-27
 
 - Fix race condition with `buf generate` when remote plugins from multiple
@@ -806,6 +810,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.13.1...HEAD
 [v1.13.1]: https://github.com/bufbuild/buf/compare/v1.13.0...v1.13.1
 [v1.13.0]: https://github.com/bufbuild/buf/compare/v1.12.0...v1.13.0
 [v1.12.0]: https://github.com/bufbuild/buf/compare/v1.11.0...v1.12.0
