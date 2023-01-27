@@ -15,27 +15,19 @@
 package bufconnect
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 )
 
-// staticTokenProvider is used to provide set of authentication tokenToAuthKey.
-type staticTokenProvider struct {
-	// true: the tokenSet is generated from environment variable tokenEnvKey
-	// false: otherwise
-	setBufTokenEnvVar bool
-	defaultToken      string
-	tokenToAuthKey    map[string]authKey
-}
-
-// NewTokenProviderFromContainer creates a staticTokenProvider from the BUF_TOKEN environment variable
+// NewTokenProviderFromContainer creates a singleTokenProvider from the BUF_TOKEN environment variable
 func NewTokenProviderFromContainer(container app.EnvContainer) (TokenProvider, error) {
 	return newTokenProviderFromString(container.Env(tokenEnvKey), true)
 }
 
-// NewTokenProviderFromString creates a staticTokenProvider by the token provided
+// NewTokenProviderFromString creates a singleTokenProvider by the token provided
 func NewTokenProviderFromString(token string) (TokenProvider, error) {
 	return newTokenProviderFromString(token, false)
 }
@@ -45,55 +37,102 @@ func NewTokenProviderFromString(token string) (TokenProvider, error) {
 // The special characters `:`, `@` and `,` are used as the splitters. The usernames, tokens, and
 // remote addresses does not contain these characters since they are enforced by the rules in BSR.
 func newTokenProviderFromString(token string, isFromEnvVar bool) (TokenProvider, error) {
-	tokenProvider := &staticTokenProvider{
-		setBufTokenEnvVar: isFromEnvVar,
-		tokenToAuthKey:    make(map[string]authKey),
+	if token == "" {
+		return nopTokenProvider{}, nil
 	}
-	// Tokens for different remotes are separated by `,`. Using strings.Split to separate the string into remote tokenToAuthKey.
+	// Tokens for different remotes are separated by `,`. Using strings.Split to separate the string into remote tokens.
 	tokens := strings.Split(token, ",")
-	for _, token := range tokens {
-		if keyPairs, remoteAddress, ok := strings.Cut(token, "@"); ok {
-			ak := authKey{}
-			if err := ak.unmarshalString(keyPairs); err != nil {
-				return nil, err
-			}
-			if _, ok = tokenProvider.tokenToAuthKey[remoteAddress]; ok {
-				return nil, fmt.Errorf("cannot parse token: %s, repeated token for same BSR remote: %s", token, remoteAddress)
-			}
-			tokenProvider.tokenToAuthKey[remoteAddress] = ak
-		} else {
-			if tokenProvider.defaultToken != "" {
-				return nil, fmt.Errorf("cannot parse token: two buf token provided: %q and %q", token, tokenProvider.defaultToken)
-			}
-			tokenProvider.defaultToken = token
+	if len(tokens) == 1 {
+		if strings.Contains(tokens[0], "@") {
+			return newMultipleTokenProvider(tokens, isFromEnvVar)
 		}
+		return newSingleTokenProvider(tokens[0], isFromEnvVar)
 	}
-	return tokenProvider, nil
+	return newMultipleTokenProvider(tokens, isFromEnvVar)
+}
+
+// singleTokenProvider is used to provide set of authentication tokenToAuthKey.
+type singleTokenProvider struct {
+	// true: the tokenSet is generated from environment variable tokenEnvKey
+	// false: otherwise
+	setBufTokenEnvVar bool
+	token             string
+}
+
+func newSingleTokenProvider(token string, isFromEnvVar bool) (*singleTokenProvider, error) {
+	if strings.Contains(token, "@") {
+		return nil, errors.New("token cannot contain special character `@`")
+	}
+	if strings.Contains(token, ",") {
+		return nil, errors.New("token cannot contain special character `,`")
+	}
+	if strings.Contains(token, ":") {
+		return nil, errors.New("token cannot contain special character `:`")
+	}
+	if token == "" {
+		return nil, errors.New("single token cannot be empty")
+	}
+	return &singleTokenProvider{
+		setBufTokenEnvVar: isFromEnvVar,
+		token:             token,
+	}, nil
 }
 
 // RemoteToken finds the token by the remote address
-func (t *staticTokenProvider) RemoteToken(address string) string {
-	if authKeyPair, ok := t.tokenToAuthKey[address]; ok {
-		return authKeyPair.token
-	}
-	return t.defaultToken
+func (t *singleTokenProvider) RemoteToken(address string) string {
+	return t.token
 }
 
-func (t *staticTokenProvider) IsFromEnvVar() bool {
+func (t *singleTokenProvider) IsFromEnvVar() bool {
 	return t.setBufTokenEnvVar
 }
 
-type authKey struct {
-	username string
-	token    string
+type multipleTokenProvider struct {
+	addressToToken map[string]string
+	isFromEnvVar   bool
 }
 
-func (ak *authKey) unmarshalString(s string) error {
-	username, token, found := strings.Cut(s, ":")
-	if !found {
-		return fmt.Errorf("cannot parse remote token: %s", s)
+func newMultipleTokenProvider(tokens []string, isFromEnvVar bool) (*multipleTokenProvider, error) {
+	addressToToken := make(map[string]string)
+	for _, token := range tokens {
+		split := strings.Split(token, "@")
+		if len(split) != 2 {
+			return nil, fmt.Errorf("invalid token: %s", token)
+		}
+		if split[0] == "" || split[1] == "" {
+			return nil, fmt.Errorf("invalid token: %s", token)
+		}
+		if strings.Contains(split[0], ":") {
+			return nil, fmt.Errorf("invalid token: %s, token cannot contain special character `:`", token)
+		}
+		if strings.Contains(split[0], ",") {
+			return nil, fmt.Errorf("invalid token: %s, token cannot contain special character `,`", token)
+		}
+		if _, ok := addressToToken[split[1]]; ok {
+			return nil, fmt.Errorf("invalid token: %s, repeated remote adddress: %s", token, split[1])
+		}
+		addressToToken[split[1]] = split[0]
 	}
-	ak.username = username
-	ak.token = token
-	return nil
+	return &multipleTokenProvider{
+		addressToToken: addressToToken,
+		isFromEnvVar:   isFromEnvVar,
+	}, nil
+}
+
+func (m *multipleTokenProvider) RemoteToken(address string) string {
+	return m.addressToToken[address]
+}
+
+func (m *multipleTokenProvider) IsFromEnvVar() bool {
+	return m.isFromEnvVar
+}
+
+type nopTokenProvider struct{}
+
+func (nopTokenProvider) RemoteToken(string) string {
+	return ""
+}
+
+func (nopTokenProvider) IsFromEnvVar() bool {
+	return false
 }

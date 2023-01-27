@@ -25,7 +25,6 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tagrangeutil"
 )
 
 // CheckEnumNoDelete is a check function.
@@ -963,7 +962,7 @@ var CheckReservedEnumNoDelete = newEnumPairCheckFunc(checkReservedEnumNoDelete)
 func checkReservedEnumNoDelete(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
 	previousRanges := previousEnum.ReservedTagRanges()
 	ranges := enum.ReservedTagRanges()
-	if isSubset, missing := tagrangeutil.CheckIsSubset(ranges, previousRanges); !isSubset {
+	if isSubset, missing := protosource.CheckTagRangeIsSubset(ranges, previousRanges); !isSubset {
 		for _, tagRange := range missing {
 			add(enum, nil, enum.Location(), `Previously present reserved range %q on enum %q was deleted.`, protosource.TagRangeString(tagRange), enum.Name())
 		}
@@ -984,7 +983,7 @@ var CheckReservedMessageNoDelete = newMessagePairCheckFunc(checkReservedMessageN
 func checkReservedMessageNoDelete(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
 	previousRanges := previousMessage.ReservedTagRanges()
 	ranges := message.ReservedTagRanges()
-	if isSubset, missing := tagrangeutil.CheckIsSubset(ranges, previousRanges); !isSubset {
+	if isSubset, missing := protosource.CheckTagRangeIsSubset(ranges, previousRanges); !isSubset {
 		for _, tagRange := range missing {
 			add(message, nil, message.Location(), `Previously present reserved range %q on message %q was deleted.`, protosource.TagRangeString(tagRange), message.Name())
 		}

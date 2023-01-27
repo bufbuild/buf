@@ -41,10 +41,10 @@ func (testMachine) Password() string {
 }
 
 func TestNewAuthorizationInterceptorProvider(t *testing.T) {
-	tokenSet, err := NewTokenProviderFromString("user1:token1@remote1,token")
+	tokenSet, err := NewTokenProviderFromString("token1@host1,token2@host2")
 	assert.NoError(t, err)
-	_, err = NewAuthorizationInterceptorProvider(tokenSet)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"token" {
+	_, err = NewAuthorizationInterceptorProvider(tokenSet)("host1")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"token1" {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
@@ -65,8 +65,8 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	assert.NoError(t, err)
 
 	// testing using tokenSet over netrc tokenToAuthKey
-	_, err = NewAuthorizationInterceptorProvider(tokenSet, netrcTokens)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"token" {
+	_, err = NewAuthorizationInterceptorProvider(tokenSet, netrcTokens)("host2")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		if req.Header().Get(AuthenticationHeader) != AuthenticationTokenPrefix+"token2" {
 			return nil, errors.New("error auth token")
 		}
 		return nil, nil
@@ -91,7 +91,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	assert.NoError(t, err)
 
 	tokenSet, err = NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
-		tokenEnvKey: "default,user:token@remote",
+		tokenEnvKey: "default",
 	}))
 	assert.NoError(t, err)
 	_, err = NewAuthorizationInterceptorProvider(tokenSet)("default")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -104,24 +104,46 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 
 func TestNewTokenSetFromEnv(t *testing.T) {
 	tokenSet, err := NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
-		tokenEnvKey: "default,user:token@remote",
+		tokenEnvKey: "default",
 	}))
 	assert.NoError(t, err)
 	token := tokenSet.RemoteToken("fake")
 	assert.True(t, tokenSet.IsFromEnvVar())
 	assert.Equal(t, "default", token)
-	token = tokenSet.RemoteToken("remote")
-	assert.Equal(t, "token", token)
 }
 
 func TestNewTokenSetFromString(t *testing.T) {
-	_, err := NewTokenProviderFromString("default")
+	tokenProvider, err := NewTokenProviderFromString("default")
 	assert.NoError(t, err)
-	_, err = NewTokenProviderFromString("user1:token1@remote,user2:token2@remote")
+	assert.Equal(t, "default", tokenProvider.RemoteToken("host"))
+	tokenProvider, err = NewTokenProviderFromString("token1@host1")
+	assert.NoError(t, err)
+	assert.Equal(t, "token1", tokenProvider.RemoteToken("host1"))
+	tokenProvider, err = NewTokenProviderFromString("token1@remote1,token2@remote2")
+	assert.NoError(t, err)
+	assert.Equal(t, "token1", tokenProvider.RemoteToken("remote1"))
+	assert.Equal(t, "token2", tokenProvider.RemoteToken("remote2"))
+	_, err = NewTokenProviderFromString("user1@remote1,user2@remote1")
 	assert.Error(t, err)
-	_, err = NewTokenProviderFromString("default1,default2")
+	_, err = NewTokenProviderFromString("user1@remote1,user2@remote2,")
 	assert.Error(t, err)
-	_, err = NewTokenProviderFromString("invalid@invalid@invalid")
+	_, err = NewTokenProviderFromString(",token1@host1")
+	assert.Error(t, err)
+	_, err = NewTokenProviderFromString("token1@host1,")
+	assert.Error(t, err)
+	_, err = NewTokenProviderFromString("token1@")
+	assert.Error(t, err)
+	_, err = NewTokenProviderFromString("token1@host1@")
+	assert.Error(t, err)
+	_, err = NewTokenProviderFromString("@token1")
+	assert.Error(t, err)
+	_, err = NewTokenProviderFromString("token1@host1,token2")
+	assert.Error(t, err)
+	_, err = NewTokenProviderFromString(",")
+	assert.Error(t, err)
+	_, err = NewTokenProviderFromString("token,")
+	assert.Error(t, err)
+	_, err = NewTokenProviderFromString(",token")
 	assert.Error(t, err)
 	_, err = NewTokenProviderFromString("")
 	assert.NoError(t, err)
