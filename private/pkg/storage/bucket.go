@@ -89,7 +89,6 @@ type WriteBucket interface {
 	// Putting an object is undefined. The returned WriteObjectCloser is not
 	// thread-safe.
 	PutIfNotExists(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error)
-	// PutIfNotExist(, opts ...PutOption) ChunkSize
 	// Delete deletes the object at the path.
 	//
 	// Returns ErrNotExist if the path does not exist, other error
