@@ -54,33 +54,21 @@ type ReadBucket interface {
 
 // PutOptions are the possible options that can be passed to a Put operation.
 type PutOptions struct {
-	IfNotExists      bool
-	CustomChunkSize  bool
-	ChunkSizeInBytes int
+	CustomChunkSize bool
+	ChunkSize       int64 // measured in bytes
 }
 
 // PutOption are options passed when putting an object in a bucket.
 type PutOption func(*PutOptions)
 
-// PutIfNotExists only puts the object in the bucket if there is no other object
-// already in the same bucket path. Some implementations of
-// `storage.WriteBucket.Put` that are `ReadWriteBucket` support this option.
-// Check the implementation of the bucket you're using if you're passing this
-// option.
-func PutIfNotExists() PutOption {
-	return func(opts *PutOptions) {
-		opts.IfNotExists = true
-	}
-}
-
-// PutWithChunkBytesSize sets a custom chunk size in bytes for writing the
-// object. Some implementations of `storage.WriteBucket.Put` allow multi-part
-// upload, and allow customizing the chunk size of each part upload. Check the
-// implementation of the bucket you're using if you're passing this option.
-func PutWithChunkBytesSize(sizeInBytes int) PutOption {
+// PutWithChunkSize sets a custom chunk size in bytes for writing the object.
+// Some implementations of `storage.WriteBucket.Put` allow multi-part upload,
+// and allow customizing the chunk size of each part upload. This is a suggested
+// chunk size, implementations may choose to ignore this option.
+func PutWithChunkSize(sizeInBytes int64) PutOption {
 	return func(opts *PutOptions) {
 		opts.CustomChunkSize = true
-		opts.ChunkSizeInBytes = sizeInBytes
+		opts.ChunkSize = sizeInBytes
 	}
 }
 
@@ -93,7 +81,17 @@ type WriteBucket interface {
 	// The returned WriteObjectCloser is not thread-safe.
 	//
 	// Returns error on system error.
-	Put(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error)
+	Put(ctx context.Context, path string) (WriteObjectCloser, error)
+	// PutIfNotExists returns a WriteObjectCloser to write to the path. Writes
+	// will succeed only if there is no object already in the same path.
+	//
+	// The path is truncated on close. The behavior of concurrently Getting and
+	// Putting an object is undefined. The returned WriteObjectCloser is not
+	// thread-safe.
+	//
+	// Returns error on system error.
+	PutIfNotExists(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error)
+	// PutIfNotExist(, opts ...PutOption) ChunkSize
 	// Delete deletes the object at the path.
 	//
 	// Returns ErrNotExist if the path does not exist, other error

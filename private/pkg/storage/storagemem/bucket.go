@@ -16,6 +16,7 @@ package storagemem
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -94,6 +95,10 @@ func (b *bucket) Put(ctx context.Context, path string) (storage.WriteObjectClose
 		return nil, err
 	}
 	return newWriteObjectCloser(b, path), nil
+}
+
+func (b *bucket) PutIfNotExists(context.Context, string, ...storage.PutOption) (storage.WriteObjectCloser, error) {
+	return nil, errors.New("unsupported")
 }
 
 func (b *bucket) Delete(ctx context.Context, path string) error {
