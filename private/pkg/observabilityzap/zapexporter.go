@@ -15,36 +15,40 @@
 package observabilityzap
 
 import (
-	"go.opencensus.io/trace"
+	"context"
+
+	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 )
 
-type traceExportCloser struct {
+var _ trace.SpanExporter = &zapExporter{}
+
+type zapExporter struct {
 	logger *zap.Logger
 }
 
-func newTraceExportCloser(logger *zap.Logger) *traceExportCloser {
-	return &traceExportCloser{
+func newZapExporter(logger *zap.Logger) *zapExporter {
+	return &zapExporter{
 		logger: logger,
 	}
 }
 
-// ExportSpan implements the opencensus trace.Exporter interface.
-func (t *traceExportCloser) ExportSpan(spanData *trace.SpanData) {
-	if spanData == nil || !spanData.IsSampled() {
-		return
-	}
-	if checkedEntry := t.logger.Check(zap.DebugLevel, spanData.Name); checkedEntry != nil {
-		fields := []zap.Field{
-			zap.Duration("duration", spanData.EndTime.Sub(spanData.StartTime)),
+func (z *zapExporter) ExportSpans(ctx context.Context, spans []trace.ReadOnlySpan) error {
+	for _, span := range spans {
+		if !span.SpanContext().IsSampled() {
+			continue
 		}
-		for key, value := range spanData.Attributes {
-			fields = append(fields, zap.Any(key, value))
+		if checkedEntry := z.logger.Check(zap.DebugLevel, span.Name()); checkedEntry != nil {
+			fields := make([]zap.Field, len(span.Attributes()))
+			for i, attribute := range span.Attributes() {
+				fields[i] = zap.Any(string(attribute.Key), attribute.Value)
+			}
+			checkedEntry.Write(fields...)
 		}
-		checkedEntry.Write(fields...)
 	}
+	return nil
 }
 
-func (t *traceExportCloser) Close() error {
+func (z *zapExporter) Shutdown(ctx context.Context) error {
 	return nil
 }

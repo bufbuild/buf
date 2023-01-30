@@ -23,8 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/app/appverbose"
-	"github.com/bufbuild/buf/private/pkg/observability"
-	"github.com/bufbuild/buf/private/pkg/observability/observabilityzap"
+	"github.com/bufbuild/buf/private/pkg/observabilityzap"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
 	"go.opencensus.io/trace"
@@ -129,11 +128,7 @@ func (b *builder) run(
 	}
 
 	if b.tracing {
-		closer := observability.Start(
-			observability.StartWithTraceExportCloser(
-				observabilityzap.NewTraceExportCloser(logger),
-			),
-		)
+		closer := observabilityzap.Start(logger)
 		defer func() {
 			retErr = multierr.Append(retErr, closer.Close())
 		}()
