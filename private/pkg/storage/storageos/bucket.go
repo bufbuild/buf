@@ -193,10 +193,6 @@ func (b *bucket) Put(ctx context.Context, path string, _ ...storage.PutOption) (
 	), nil
 }
 
-func (b *bucket) PutIfNotExists(context.Context, string, ...storage.PutOption) (storage.WriteObjectCloser, error) {
-	return nil, errors.New("unsupported")
-}
-
 func (b *bucket) Delete(ctx context.Context, path string) error {
 	externalPath, err := b.getExternalPath(path)
 	if err != nil {

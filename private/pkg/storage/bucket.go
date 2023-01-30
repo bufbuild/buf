@@ -61,10 +61,11 @@ type PutOptions struct {
 // PutOption are options passed when putting an object in a bucket.
 type PutOption func(*PutOptions)
 
-// PutWithChunkSize sets a custom chunk size in bytes for writing the object.
-// Some implementations of `storage.WriteBucket.Put` allow multi-part upload,
-// and allow customizing the chunk size of each part upload. This is a suggested
-// chunk size, implementations may choose to ignore this option.
+// PutWithChunkSize sets the passed size in bytes to `ChunkSize` and
+// `CustomChunkSize` to true. Some implementations of `storage.WriteBucket.Put`
+// allow multi-part upload, and allow customizing the chunk size of each part
+// upload, or even disabling multi-part upload. This is a suggested chunk size,
+// implementations may choose to ignore this option.
 func PutWithChunkSize(sizeInBytes int64) PutOption {
 	return func(opts *PutOptions) {
 		opts.CustomChunkSize = true
@@ -82,13 +83,6 @@ type WriteBucket interface {
 	//
 	// Returns error on system error.
 	Put(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error)
-	// PutIfNotExists returns a WriteObjectCloser to write to the path. Writes
-	// will happen only if there is no object already in the same path.
-	//
-	// The path is truncated on close. The behavior of concurrently Getting and
-	// Putting an object is undefined. The returned WriteObjectCloser is not
-	// thread-safe.
-	PutIfNotExists(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error)
 	// Delete deletes the object at the path.
 	//
 	// Returns ErrNotExist if the path does not exist, other error

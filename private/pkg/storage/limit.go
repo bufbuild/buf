@@ -55,14 +55,6 @@ func (w *limitedWriteBucket) Put(ctx context.Context, path string, opts ...PutOp
 	return newLimitedWriteObjectCloser(writeObjectCloser, w.currentSize, w.limit), nil
 }
 
-func (w *limitedWriteBucket) PutIfNotExists(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error) {
-	writeObjectCloser, err := w.WriteBucket.PutIfNotExists(ctx, path, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return newLimitedWriteObjectCloser(writeObjectCloser, w.currentSize, w.limit), nil
-}
-
 type limitedWriteObjectCloser struct {
 	WriteObjectCloser
 

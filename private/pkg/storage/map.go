@@ -184,19 +184,6 @@ func (w *mapWriteBucket) Put(ctx context.Context, path string, opts ...PutOption
 	return replaceWriteObjectCloserExternalPathNotSupported(writeObjectCloser), nil
 }
 
-func (w *mapWriteBucket) PutIfNotExists(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error) {
-	fullPath, err := w.getFullPath(path)
-	if err != nil {
-		return nil, err
-	}
-	writeObjectCloser, err := w.delegate.PutIfNotExists(ctx, fullPath, opts...)
-	// TODO: if this is a path error, we should replace the path
-	if err != nil {
-		return nil, err
-	}
-	return replaceWriteObjectCloserExternalPathNotSupported(writeObjectCloser), nil
-}
-
 func (w *mapWriteBucket) Delete(ctx context.Context, path string) error {
 	fullPath, err := w.getFullPath(path)
 	if err != nil {
