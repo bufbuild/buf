@@ -10,22 +10,14 @@ on:
 
 jobs:
   publish:
-    runs-on: ${{ matrix.os }}
     steps:
       - name: checkout
         uses: actions/checkout@v3
       - name: setup-node
         uses: actions/setup-node@v3
-      - name: download-release
-        run: npm pack
-      - name: package-windows-x86_64
-        working-directory: ./npm/@bufbuild/buf-windows-x86_64
-        run: npm pack
-      - name: package-buf
-        working-directory: ./npm/@bufbuild/buf
-        run: npm pack
-      - name: init
-        working-directory: ./npm/test-app
-        run: |
-          npm install
-          npm test
+      - name: npm-auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_PUBLISH_TOKEN }}" > ~/.npmrc
+      - name: publish
+        run: make npmpublish
+        env:
+          VERSION: ${{ github.event.inputs.version || github.event.release.name }}

@@ -18,8 +18,7 @@
  */
 
 import { pkgAndSubpathForCurrentPlatform } from "./platform";
-
-import child_process = require("child_process");
+import child_process from "child_process";
 
 // Input defined in prepack
 declare const CURRENT_VERSION: string;
