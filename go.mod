@@ -10,7 +10,7 @@ require (
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/google/go-cmp v0.5.9
-	github.com/google/go-containerregistry v0.12.1
+	github.com/google/go-containerregistry v0.13.0
 	github.com/jdxcode/netrc v0.0.0-20221124155335-4616370d1a84
 	github.com/jhump/protoreflect v1.14.1
 	github.com/klauspost/compress v1.15.15
