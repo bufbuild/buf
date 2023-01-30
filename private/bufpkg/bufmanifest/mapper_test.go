@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufapimodule_test
+package bufmanifest_test
 
 import (
 	"bytes"
 	"context"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +41,7 @@ func TestDigestFromProtoDigest(t *testing.T) {
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 		Digest:     digestFromContent.Bytes(),
 	}
-	digest, err := bufapimodule.NewDigestFromProtoDigest(&protoDigest)
+	digest, err := bufmanifest.NewDigestFromProtoDigest(&protoDigest)
 	require.NoError(t, err)
 	assert.Equal(t, digestFromContent.String(), digest.String())
 }
@@ -49,7 +49,7 @@ func TestDigestFromProtoDigest(t *testing.T) {
 func TestNewDigestFromProtoDigest(t *testing.T) {
 	t.Parallel()
 	digest := mustDigestShake256(t, []byte("my content"))
-	retDigest, err := bufapimodule.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
+	retDigest, err := bufmanifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 		Digest:     digest.Bytes(),
 	})
@@ -59,13 +59,13 @@ func TestNewDigestFromProtoDigest(t *testing.T) {
 
 func TestInvalidNewDigestFromProtoDigest(t *testing.T) {
 	t.Parallel()
-	_, err := bufapimodule.NewDigestFromProtoDigest(nil)
+	_, err := bufmanifest.NewDigestFromProtoDigest(nil)
 	assert.Error(t, err)
-	_, err = bufapimodule.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
+	_, err = bufmanifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_UNSPECIFIED,
 	})
 	assert.Error(t, err)
-	_, err = bufapimodule.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
+	_, err = bufmanifest.NewDigestFromProtoDigest(&modulev1alpha1.Digest{
 		DigestType: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 		Digest:     []byte("invalid digest"),
 	})
@@ -82,9 +82,9 @@ func TestProtoBlob(t *testing.T) {
 	blob, err := manifest.NewMemoryBlob(*digest, content)
 	require.NoError(t, err)
 	ctx := context.Background()
-	protoBlob, err := bufapimodule.AsProtoBlob(ctx, blob)
+	protoBlob, err := bufmanifest.AsProtoBlob(ctx, blob)
 	require.NoError(t, err)
-	rtBlob, err := bufapimodule.NewBlobFromProto(protoBlob)
+	rtBlob, err := bufmanifest.NewBlobFromProto(protoBlob)
 	require.NoError(t, err)
 	equal, err := manifest.BlobEqual(ctx, blob, rtBlob)
 	require.NoError(t, err)
@@ -111,7 +111,7 @@ func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
 	t.Parallel()
 	blob, err := manifest.NewMemoryBlobFromReader(bytes.NewReader(content))
 	require.NoError(t, err)
-	protoBlob, err := bufapimodule.AsProtoBlob(context.Background(), blob)
+	protoBlob, err := bufmanifest.AsProtoBlob(context.Background(), blob)
 	require.NoError(t, err)
 	expect := &modulev1alpha1.Blob{
 		Digest: &modulev1alpha1.Digest{

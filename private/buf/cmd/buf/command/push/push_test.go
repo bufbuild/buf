@@ -32,7 +32,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
-	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -106,7 +106,7 @@ func TestPushManifestIsSmallerBucket(t *testing.T) {
 	request := mock.PushManifestRequest()
 	require.NotNil(t, request)
 	requestManifest := request.Manifest
-	blob, err := bufapimodule.NewBlobFromProto(requestManifest)
+	blob, err := bufmanifest.NewBlobFromProto(requestManifest)
 	require.NoError(t, err)
 	ctx := context.Background()
 	reader, err := blob.Open(ctx)
@@ -131,7 +131,7 @@ func TestBucketBlobs(t *testing.T) {
 	ctx := context.Background()
 	m, blobSet, err := manifest.NewFromBucket(ctx, bucket)
 	require.NoError(t, err)
-	_, blobs, err := bufapimodule.ToProtoManifestAndBlobs(ctx, m, blobSet)
+	_, blobs, err := bufmanifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(blobs))
 	digests := make(map[string]struct{})
