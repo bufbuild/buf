@@ -27,7 +27,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
 	private/bufpkg/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/ \
-	**/node_modules/** \
+	**/node_modules \
 	npm/**/bin \
 	npm/**/install.js
 LICENSE_HEADER_LICENSE_TYPE := apache
@@ -168,5 +168,5 @@ gofuzz: $(GO_FUZZ)
 # Downloads the binaries for the npm package.
 .PHONY: npmpublish
 npmpublish:
-	./make/buf/scripts/npmpublish.bash
+	bash make/buf/scripts/npmpublish.bash
 
