@@ -143,6 +143,8 @@ message Event {
     PayloadCuratedPluginCreated curated_plugin_created = 26;
     PayloadOrganizationIDPGroupAdded idp_group_added = 27;
     PayloadOrganizationIDPGroupRemoved idp_group_removed = 28;
+    PayloadTokenCreated token_created = 29;
+    PayloadTokenDeleted token_deleted = 30;
   }
 }
 
@@ -321,4 +323,16 @@ message PayloadCuratedPluginCreated {
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
   string owner_name = 2;
+}
+
+message PayloadTokenCreated {
+  // owner_id is the id of the owner of the token.
+  string owner_id = 1;
+  // token_expiry_time is the expiry time of the token.
+  google.protobuf.Timestamp token_expiry_time = 2;
+}
+
+message PayloadTokenDeleted {
+  // owner_id is the id of the owner of the token.
+  string owner_id = 1;
 }
