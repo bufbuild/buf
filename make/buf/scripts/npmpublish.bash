@@ -6,8 +6,9 @@ set -euo pipefail
 
 # ../.. down to the root of the repository
 # this can be ommitted for truly universal scripts
-DIR="$(CDPATH= cd "$(dirname "${0}")/../.." && pwd)"
+DIR="$(CDPATH= cd "$(dirname "${0}")/../../.." && pwd)"
 cd "${DIR}"
+
 
 if [[ -z "${VERSION}" ]]; then
     echo "Must provide VERSION in environment to publish" 1>&2
@@ -16,9 +17,9 @@ fi
 
 # Allow an additional version to let us bump the version published to npm.
 
-if [[ -z "${REVISION}" ]]; then
-	NPM_VERSION="${VERSION}"
-else
+NPM_VERSION="${VERSION}"
+
+if [ -n "${REVISION-}" ]; then
 	NPM_VERSION="${VERSION}-${REVISION}"
 fi
 
