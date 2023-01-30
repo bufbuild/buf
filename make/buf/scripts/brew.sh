@@ -19,8 +19,8 @@ mkdir -p "${OUT_DIR}/share/zsh/site-functions"
 mkdir -p "${OUT_DIR}/share/man/man1"
 
 for binary in buf protoc-gen-buf-breaking protoc-gen-buf-lint; do
-  echo go build -ldflags \"-s -w\" -trimpath -o \"${OUT_DIR}/bin/${binary}\" \"./cmd/${binary}\"
-  go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/${binary}" "./cmd/${binary}"
+  echo CGO_ENABLED=0 go build -ldflags \"-s -w\" -trimpath -o \"${OUT_DIR}/bin/${binary}\" \"./cmd/${binary}\"
+  CGO_ENABLED=0 go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/${binary}" "./cmd/${binary}"
 done
 echo \"${OUT_DIR}/bin/buf\" completion bash \> \"${OUT_DIR}/etc/bash_completion.d/buf\"
 "${OUT_DIR}/bin/buf" completion bash > "${OUT_DIR}/etc/bash_completion.d/buf"
