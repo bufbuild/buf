@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import os = require("os");
+import os from "os";
+import path from "path";
 
 export const knownWindowsPackages: Record<string, string> = {
   "win32 arm64 LE": "@bufbuild/buf-win32-arm64",

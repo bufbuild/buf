@@ -56,11 +56,11 @@ async function prepare() {
       },
     });
     // Prepend the shebang to the resulting bin file.
-    prependSehbang(platformBinPath);
+    prependShebang(platformBinPath);
   }
 }
 
-function prependSehbang(file) {
+function prependShebang(file) {
   const data = fs.readFileSync(file)
   const fd = fs.openSync(file, 'w+')
   const insert = Buffer.from("#!/usr/bin/env node\n")
