@@ -51,6 +51,7 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
   RESOURCE_TYPE_PLUGIN = 7 [deprecated = true];
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
+  RESOURCE_TYPE_TOKEN = 10;
 }
 
 // Resource is the affected resource by the audited event.
@@ -88,6 +89,8 @@ enum EventType {
   EVENT_TYPE_USER_DEACTIVATED = 17;
   EVENT_TYPE_USER_LOGGED_IN = 18;
   EVENT_TYPE_USER_LOGGED_OUT = 19;
+  EVENT_TYPE_TOKEN_CREATED = 23;
+  EVENT_TYPE_TOKEN_DELETED = 24;
 }
 
 // EventMetadata provides additional details about the audited event.
