@@ -20,17 +20,7 @@ import (
 	"fmt"
 	"io"
 
-	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"go.uber.org/multierr"
-)
-
-var (
-	protoDigestTypeToDigestType = map[modulev1alpha1.DigestType]DigestType{
-		modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256: DigestTypeShake256,
-	}
-	digestTypeToProtoDigestType = map[DigestType]modulev1alpha1.DigestType{
-		DigestTypeShake256: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
-	}
 )
 
 // Blob is a blob with a digest and a content.
@@ -93,53 +83,6 @@ func (b *memoryBlob) Digest() *Digest {
 
 func (b *memoryBlob) Open(context.Context) (io.ReadCloser, error) {
 	return io.NopCloser(bytes.NewReader(b.content)), nil
-}
-
-// AsProtoBlob returns the passed blob as a proto module blob.
-func AsProtoBlob(ctx context.Context, b Blob) (_ *modulev1alpha1.Blob, retErr error) {
-	digestType, ok := digestTypeToProtoDigestType[b.Digest().Type()]
-	if !ok {
-		return nil, fmt.Errorf("digest type %q not supported by module proto", b.Digest().Type())
-	}
-	rc, err := b.Open(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("cannot open blob: %w", err)
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, rc.Close())
-	}()
-	content, err := io.ReadAll(rc)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read blob contents: %w", err)
-	}
-	return &modulev1alpha1.Blob{
-		Digest: &modulev1alpha1.Digest{
-			DigestType: digestType,
-			Digest:     b.Digest().Bytes(),
-		},
-		Content: content,
-	}, nil
-}
-
-// NewBlobFromProto returns a Blob from a proto module blob. It makes sure the
-// digest and content matches.
-func NewBlobFromProto(b *modulev1alpha1.Blob) (Blob, error) {
-	if b == nil {
-		return nil, fmt.Errorf("nil blob")
-	}
-	digest, err := NewDigestFromProtoDigest(b.Digest)
-	if err != nil {
-		return nil, fmt.Errorf("digest from proto digest: %w", err)
-	}
-	memBlob, err := NewMemoryBlob(
-		*digest,
-		b.Content,
-		MemoryBlobWithDigestValidation(),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("new memory blob: %w", err)
-	}
-	return memBlob, nil
 }
 
 // BlobSet represents a set of deduplicated blobs, by digests.
@@ -208,18 +151,6 @@ func (s *BlobSet) Blobs() []Blob {
 		blobs = append(blobs, b)
 	}
 	return blobs
-}
-
-// NewDigestFromProtoDigest maps a modulev1alpha1.Digest to a Digest.
-func NewDigestFromProtoDigest(digest *modulev1alpha1.Digest) (*Digest, error) {
-	if digest == nil {
-		return nil, fmt.Errorf("nil digest")
-	}
-	dType, ok := protoDigestTypeToDigestType[digest.DigestType]
-	if !ok {
-		return nil, fmt.Errorf("unsupported digest kind: %s", digest.DigestType.String())
-	}
-	return NewDigestFromBytes(dType, digest.Digest)
 }
 
 // NewMemoryBlobFromReader creates a memory blob from content, which is read
