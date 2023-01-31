@@ -23,7 +23,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
 
 const (
@@ -64,10 +65,12 @@ func NewMessageEncodingRef(
 	value string,
 	defaultEncoding MessageEncoding,
 ) (MessageEncodingRef, error) {
-	ctx, span := trace.StartSpan(ctx, "new_message_encoding_ref")
+	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "new_message_encoding_ref")
 	defer span.End()
 	path, messageEncoding, err := getPathAndMessageEncoding(ctx, value, defaultEncoding)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	return newMessageEncodingRef(path, messageEncoding), nil

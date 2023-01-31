@@ -25,13 +25,17 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type binaryHandler struct {
 	runner     command.Runner
 	pluginPath string
+	tracer     trace.Tracer
 }
 
 func newBinaryHandler(
@@ -41,6 +45,7 @@ func newBinaryHandler(
 	return &binaryHandler{
 		runner:     runner,
 		pluginPath: pluginPath,
+		tracer:     otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 }
 
@@ -50,11 +55,14 @@ func (h *binaryHandler) Handle(
 	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
-	ctx, span := trace.StartSpan(ctx, "plugin_proxy")
-	span.AddAttributes(trace.StringAttribute("plugin", filepath.Base(h.pluginPath)))
+	ctx, span := h.tracer.Start(ctx, "plugin_proxy", trace.WithAttributes(
+		attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
+	))
 	defer span.End()
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	responseBuffer := bytes.NewBuffer(nil)
@@ -67,14 +75,20 @@ func (h *binaryHandler) Handle(
 		command.RunWithStdout(responseBuffer),
 		command.RunWithStderr(stderrWriteCloser),
 	); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	response := &pluginpb.CodeGeneratorResponse{}
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(responseBuffer.Bytes(), response); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	response, err = normalizeCodeGeneratorResponse(response)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	if response.GetSupportedFeatures()&uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL) != 0 {
@@ -82,6 +96,8 @@ func (h *binaryHandler) Handle(
 	}
 	for _, file := range response.File {
 		if err := responseWriter.AddFile(file); err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return err
 		}
 	}
