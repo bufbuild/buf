@@ -39,9 +39,11 @@ func (z *zapExporter) ExportSpans(ctx context.Context, spans []trace.ReadOnlySpa
 			continue
 		}
 		if checkedEntry := z.logger.Check(zap.DebugLevel, span.Name()); checkedEntry != nil {
-			fields := make([]zap.Field, len(span.Attributes()))
-			for i, attribute := range span.Attributes() {
-				fields[i] = zap.Any(string(attribute.Key), attribute.Value)
+			fields := []zap.Field{
+				zap.Duration("duration", span.EndTime().Sub(span.StartTime())),
+			}
+			for _, attribute := range span.Attributes() {
+				fields = append(fields, zap.Any(string(attribute.Key), attribute.Value))
 			}
 			checkedEntry.Write(fields...)
 		}
