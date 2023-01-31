@@ -25,13 +25,16 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type binaryHandler struct {
 	runner     command.Runner
 	pluginPath string
+	tracer     trace.Tracer
 }
 
 func newBinaryHandler(
@@ -41,6 +44,7 @@ func newBinaryHandler(
 	return &binaryHandler{
 		runner:     runner,
 		pluginPath: pluginPath,
+		tracer:     otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 }
 
@@ -50,8 +54,9 @@ func (h *binaryHandler) Handle(
 	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
-	ctx, span := trace.StartSpan(ctx, "plugin_proxy")
-	span.AddAttributes(trace.StringAttribute("plugin", filepath.Base(h.pluginPath)))
+	ctx, span := h.tracer.Start(ctx, "plugin_proxy", trace.WithAttributes(
+		attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
+	))
 	defer span.End()
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
 	if err != nil {

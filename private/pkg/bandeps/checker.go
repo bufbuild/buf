@@ -21,19 +21,22 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
 type checker struct {
 	logger *zap.Logger
 	runner command.Runner
+	tracer trace.Tracer
 }
 
 func newChecker(logger *zap.Logger, runner command.Runner) *checker {
 	return &checker{
 		logger: logger,
 		runner: runner,
+		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
@@ -59,7 +62,7 @@ func (c *checker) checkBan(
 	state *state,
 	externalBanConfig ExternalBanConfig,
 ) error {
-	ctx, span := trace.StartSpan(ctx, "checkBan")
+	ctx, span := c.tracer.Start(ctx, "checkBan")
 	defer span.End()
 
 	packages, err := c.getPackages(ctx, state, externalBanConfig.Packages)
@@ -110,7 +113,7 @@ func (c *checker) getPackages(
 }
 
 func (c *checker) populateState(ctx context.Context, state *state, externalConfig ExternalConfig) error {
-	ctx, span := trace.StartSpan(ctx, "populateState")
+	ctx, span := c.tracer.Start(ctx, "populateState")
 	defer span.End()
 
 	var depPackageExpressions []string

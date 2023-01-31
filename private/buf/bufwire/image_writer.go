@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -51,7 +51,7 @@ func (i *imageWriter) PutImage(
 	asFileDescriptorSet bool,
 	excludeImports bool,
 ) (retErr error) {
-	ctx, span := trace.StartSpan(ctx, "put_image")
+	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "put_image")
 	defer span.End()
 	// stop short for performance
 	if imageRef.IsNull() {
@@ -88,7 +88,7 @@ func (i *imageWriter) imageMarshal(
 	image bufimage.Image,
 	imageEncoding buffetch.ImageEncoding,
 ) ([]byte, error) {
-	_, span := trace.StartSpan(ctx, "image_marshal")
+	_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "image_marshal")
 	defer span.End()
 	switch imageEncoding {
 	case buffetch.ImageEncodingBin:

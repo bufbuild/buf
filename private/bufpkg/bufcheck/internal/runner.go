@@ -23,7 +23,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -32,12 +34,14 @@ import (
 type Runner struct {
 	logger       *zap.Logger
 	ignorePrefix string
+	tracer       trace.Tracer
 }
 
 // NewRunner returns a new Runner.
 func NewRunner(logger *zap.Logger, options ...RunnerOption) *Runner {
 	runner := &Runner{
 		logger: logger,
+		tracer: otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 	for _, option := range options {
 		option(runner)
@@ -66,11 +70,10 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	if len(rules) == 0 {
 		return nil, nil
 	}
-	ctx, span := trace.StartSpan(ctx, "check")
-	span.AddAttributes(
-		trace.Int64Attribute("num_files", int64(len(files))),
-		trace.Int64Attribute("num_rules", int64(len(rules))),
-	)
+	ctx, span := r.tracer.Start(ctx, "check", trace.WithAttributes(
+		attribute.Key("num_files").Int(len(files)),
+		attribute.Key("num_rules").Int(len(rules)),
+	))
 	defer span.End()
 
 	ignoreFunc := r.newIgnoreFunc(config)

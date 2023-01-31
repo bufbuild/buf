@@ -28,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 )
 
@@ -240,7 +240,7 @@ func (i *imageConfigReader) buildModule(
 	moduleFileSet bufmodule.ModuleFileSet,
 	excludeSourceCodeInfo bool,
 ) (ImageConfig, []bufanalysis.FileAnnotation, error) {
-	ctx, span := trace.StartSpan(ctx, "build_module")
+	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "build_module")
 	defer span.End()
 	var options []bufimagebuild.BuildOption
 	if excludeSourceCodeInfo {

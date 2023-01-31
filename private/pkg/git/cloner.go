@@ -27,23 +27,28 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
-// bufCloneOrigin is the name for the remote. It helps distinguish the origin of
-// the repo we're cloning from the "origin" of our clone (which is the repo
-// being cloned).
-// We can fetch directly from an origin URL, but without any remote set git LFS
-// will fail to fetch so we need to pick something.
-const bufCloneOrigin = "bufCloneOrigin"
+const (
+	// bufCloneOrigin is the name for the remote. It helps distinguish the origin of
+	// the repo we're cloning from the "origin" of our clone (which is the repo
+	// being cloned).
+	// We can fetch directly from an origin URL, but without any remote set git LFS
+	// will fail to fetch so we need to pick something.
+	bufCloneOrigin = "bufCloneOrigin"
+	tracerName     = "bufbuild/buf/cloner"
+)
 
 type cloner struct {
 	logger            *zap.Logger
 	storageosProvider storageos.Provider
 	runner            command.Runner
 	options           ClonerOptions
+	tracer            trace.Tracer
 }
 
 func newCloner(
@@ -57,6 +62,7 @@ func newCloner(
 		storageosProvider: storageosProvider,
 		runner:            runner,
 		options:           options,
+		tracer:            otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
@@ -68,7 +74,7 @@ func (c *cloner) CloneToBucket(
 	writeBucket storage.WriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
-	ctx, span := trace.StartSpan(ctx, "git_clone_to_bucket")
+	ctx, span := c.tracer.Start(ctx, "git_clone_to_bucket")
 	defer span.End()
 
 	var err error
@@ -241,7 +247,7 @@ func (c *cloner) CloneToBucket(
 	if options.Mapper != nil {
 		readBucket = storage.MapReadBucket(readBucket, options.Mapper)
 	}
-	ctx, span2 := trace.StartSpan(ctx, "git_clone_to_bucket_copy")
+	ctx, span2 := c.tracer.Start(ctx, "git_clone_to_bucket_copy")
 	defer span2.End()
 	// do NOT copy external paths
 	_, err = storage.Copy(ctx, readBucket, writeBucket)

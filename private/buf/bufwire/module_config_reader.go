@@ -31,7 +31,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -41,6 +42,7 @@ type moduleConfigReader struct {
 	storageosProvider   storageos.Provider
 	fetchReader         buffetch.Reader
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
+	tracer              trace.Tracer
 }
 
 func newModuleConfigReader(
@@ -54,6 +56,7 @@ func newModuleConfigReader(
 		storageosProvider:   storageosProvider,
 		fetchReader:         fetchReader,
 		moduleBucketBuilder: moduleBucketBuilder,
+		tracer:              otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 }
 
@@ -66,7 +69,7 @@ func (m *moduleConfigReader) GetModuleConfigs(
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) ([]ModuleConfig, error) {
-	ctx, span := trace.StartSpan(ctx, "get_module_config")
+	ctx, span := m.tracer.Start(ctx, "get_module_config")
 	defer span.End()
 	// We construct a new WorkspaceBuilder here so that the cache is only used for a single call.
 	workspaceBuilder := bufwork.NewWorkspaceBuilder(m.moduleBucketBuilder)

@@ -22,12 +22,12 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/multierr"
 )
 
 func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
-	ctx, span := trace.StartSpan(ctx, "get_config")
+	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "get_config")
 	defer span.End()
 
 	// This will be in the order of precedence.
@@ -73,7 +73,7 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket) (_ *
 }
 
 func getConfigForData(ctx context.Context, data []byte) (*Config, error) {
-	_, span := trace.StartSpan(ctx, "get_config_for_data")
+	_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "get_config_for_data")
 	defer span.End()
 	return getConfigForDataInternal(
 		ctx,
