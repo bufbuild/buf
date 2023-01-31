@@ -25,15 +25,12 @@ package manifest
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"encoding"
 	"errors"
 	"fmt"
 	"io"
 	"sort"
 	"strings"
-
-	"github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 )
 
 var errNoFinalNewline = errors.New("partial record: missing newline")
@@ -195,26 +192,4 @@ func splitManifest(data []byte, atEOF bool) (int, []byte, error) {
 	}
 
 	return 0, nil, nil
-}
-
-// ToProtoManifestAndBlobs converts a Manifest and BlobSet to the protobuf types.
-func ToProtoManifestAndBlobs(ctx context.Context, manifest *Manifest, blobs *BlobSet) (*modulev1alpha1.Blob, []*modulev1alpha1.Blob, error) {
-	manifestBlob, err := manifest.Blob()
-	if err != nil {
-		return nil, nil, err
-	}
-	manifestProtoBlob, err := AsProtoBlob(ctx, manifestBlob)
-	if err != nil {
-		return nil, nil, err
-	}
-	filesBlobs := blobs.Blobs()
-	filesProtoBlobs := make([]*modulev1alpha1.Blob, len(filesBlobs))
-	for i, b := range filesBlobs {
-		pb, err := AsProtoBlob(ctx, b)
-		if err != nil {
-			return nil, nil, err
-		}
-		filesProtoBlobs[i] = pb
-	}
-	return manifestProtoBlob, filesProtoBlobs, nil
 }
