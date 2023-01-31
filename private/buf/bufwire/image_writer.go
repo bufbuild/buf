@@ -54,6 +54,12 @@ func (i *imageWriter) PutImage(
 ) (retErr error) {
 	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "put_image")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	// stop short for performance
 	if imageRef.IsNull() {
 		return nil
@@ -70,22 +76,14 @@ func (i *imageWriter) PutImage(
 	}
 	data, err := i.imageMarshal(ctx, message, image, imageRef.ImageEncoding())
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	writeCloser, err := i.fetchWriter.PutImageFile(ctx, container, imageRef)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, writeCloser.Close())
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
 	}()
 	_, err = writeCloser.Write(data)
 	return err

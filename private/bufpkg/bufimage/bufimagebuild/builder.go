@@ -36,6 +36,11 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+const (
+	loggerName = "bufimagebuild"
+	tracerName = "bufbuild/buf"
+)
+
 type builder struct {
 	logger *zap.Logger
 	tracer trace.Tracer
@@ -43,8 +48,8 @@ type builder struct {
 
 func newBuilder(logger *zap.Logger) *builder {
 	return &builder{
-		logger: logger.Named("bufimagebuild"),
-		tracer: otel.GetTracerProvider().Tracer("bufbuild/buf"),
+		logger: logger.Named(loggerName),
+		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
@@ -68,22 +73,23 @@ func (b *builder) build(
 	ctx context.Context,
 	moduleFileSet bufmodule.ModuleFileSet,
 	excludeSourceCodeInfo bool,
-) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
+) (_ bufimage.Image, _ []bufanalysis.FileAnnotation, retErr error) {
 	ctx, span := b.tracer.Start(ctx, "build")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 
 	parserAccessorHandler := bufmoduleprotocompile.NewParserAccessorHandler(ctx, moduleFileSet)
 	targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, nil, err
 	}
 	if len(targetFileInfos) == 0 {
-		err := errors.New("no input files specified")
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return nil, nil, err
+		return nil, nil, errors.New("no input files specified")
 	}
 	paths := make([]string, len(targetFileInfos))
 	for i, targetFileInfo := range targetFileInfos {
@@ -97,8 +103,6 @@ func (b *builder) build(
 		excludeSourceCodeInfo,
 	)
 	if buildResult.Err != nil {
-		span.RecordError(buildResult.Err)
-		span.SetStatus(codes.Error, buildResult.Err.Error())
 		return nil, nil, buildResult.Err
 	}
 	if len(buildResult.FileAnnotations) > 0 {
@@ -107,8 +111,6 @@ func (b *builder) build(
 
 	fileDescriptors, err := checkAndSortFileDescriptors(buildResult.FileDescriptors, paths)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, nil, err
 	}
 	image, err := getImage(
@@ -121,8 +123,6 @@ func (b *builder) build(
 		b.tracer,
 	)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, nil, err
 	}
 	return image, nil, nil

@@ -31,6 +31,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	loggerName = "bufwire"
+	tracerName = "bufbuild/buf"
+)
+
 type imageReader struct {
 	logger      *zap.Logger
 	fetchReader buffetch.ImageReader
@@ -42,9 +47,9 @@ func newImageReader(
 	fetchReader buffetch.ImageReader,
 ) *imageReader {
 	return &imageReader{
-		logger:      logger.Named("bufwire"),
+		logger:      logger.Named(loggerName),
 		fetchReader: fetchReader,
-		tracer:      otel.GetTracerProvider().Tracer("bufbuild/buf"),
+		tracer:      otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
@@ -59,18 +64,18 @@ func (i *imageReader) GetImage(
 ) (_ bufimage.Image, retErr error) {
 	ctx, span := i.tracer.Start(ctx, "get_image")
 	defer span.End()
-	readCloser, err := i.fetchReader.GetImageFile(ctx, container, imageRef)
-	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return nil, err
-	}
 	defer func() {
-		retErr = multierr.Append(retErr, readCloser.Close())
 		if retErr != nil {
 			span.RecordError(retErr)
 			span.SetStatus(codes.Error, retErr.Error())
 		}
+	}()
+	readCloser, err := i.fetchReader.GetImageFile(ctx, container, imageRef)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, readCloser.Close())
 	}()
 	data, err := io.ReadAll(readCloser)
 	if err != nil {

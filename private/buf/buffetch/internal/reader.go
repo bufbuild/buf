@@ -253,8 +253,7 @@ func (r *reader) getArchiveBucket(
 			return nil, err
 		}
 	default:
-		err := fmt.Errorf("unknown ArchiveType: %v", archiveType)
-		return nil, err
+		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
 	terminateFileProvider, err := getTerminateFileProviderForBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {

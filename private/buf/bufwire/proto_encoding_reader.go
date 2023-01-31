@@ -56,6 +56,12 @@ func (p *protoEncodingReader) GetMessage(
 ) (_ proto.Message, retErr error) {
 	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "get_message")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	// Currently, this support bin and JSON format.
 	resolver, err := protoencoding.NewResolver(
 		bufimage.ImageToFileDescriptors(
@@ -63,8 +69,6 @@ func (p *protoEncodingReader) GetMessage(
 		)...,
 	)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	var unmarshaler protoencoding.Unmarshaler
@@ -74,27 +78,18 @@ func (p *protoEncodingReader) GetMessage(
 	case bufconvert.MessageEncodingJSON:
 		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
 	default:
-		err := errors.New("unknown message encoding type")
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return nil, err
+		return nil, errors.New("unknown message encoding type")
 	}
 	readCloser := io.NopCloser(container.Stdin())
 	if messageRef.Path() != "-" {
 		var err error
 		readCloser, err = os.Open(messageRef.Path())
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readCloser.Close())
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
 	}()
 	data, err := io.ReadAll(readCloser)
 	if err != nil {

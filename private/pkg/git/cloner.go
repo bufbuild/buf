@@ -77,6 +77,12 @@ func (c *cloner) CloneToBucket(
 ) (retErr error) {
 	ctx, span := c.tracer.Start(ctx, "git_clone_to_bucket")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 
 	var err error
 	switch {
@@ -86,10 +92,7 @@ func (c *cloner) CloneToBucket(
 		strings.HasPrefix(url, "git://"),
 		strings.HasPrefix(url, "file://"):
 	default:
-		err := fmt.Errorf("invalid git url: %q", url)
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return err
+		return fmt.Errorf("invalid git url: %q", url)
 	}
 
 	if depth == 0 {
@@ -109,10 +112,6 @@ func (c *cloner) CloneToBucket(
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, bareDir.Close())
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
 	}()
 	worktreeDir, err := tmp.NewDir()
 	if err != nil {

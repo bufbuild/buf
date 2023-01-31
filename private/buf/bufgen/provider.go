@@ -42,21 +42,21 @@ func newProvider(logger *zap.Logger) *provider {
 func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
 	ctx, span := p.tracer.Start(ctx, "get_config")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 
 	readObjectCloser, err := readBucket.Get(ctx, ExternalConfigFilePath)
 	if err != nil {
 		// There is no default generate template, so we propagate all errors, including
 		// storage.ErrNotExist.
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
 	}()
 	data, err := io.ReadAll(readObjectCloser)
 	if err != nil {

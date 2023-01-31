@@ -31,6 +31,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	tracerName = "bufbuild/buf"
+)
+
 // Runner is a runner.
 type Runner struct {
 	logger       *zap.Logger
@@ -42,7 +46,7 @@ type Runner struct {
 func NewRunner(logger *zap.Logger, options ...RunnerOption) *Runner {
 	runner := &Runner{
 		logger: logger,
-		tracer: otel.GetTracerProvider().Tracer("bufbuild/buf"),
+		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 	for _, option := range options {
 		option(runner)
