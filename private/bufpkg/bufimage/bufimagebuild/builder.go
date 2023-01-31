@@ -29,18 +29,27 @@ import (
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/protoutil"
 	"github.com/bufbuild/protocompile/reporter"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+const (
+	loggerName = "bufimagebuild"
+	tracerName = "bufbuild/buf"
+)
+
 type builder struct {
 	logger *zap.Logger
+	tracer trace.Tracer
 }
 
 func newBuilder(logger *zap.Logger) *builder {
 	return &builder{
-		logger: logger.Named("bufimagebuild"),
+		logger: logger.Named(loggerName),
+		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
@@ -64,9 +73,15 @@ func (b *builder) build(
 	ctx context.Context,
 	moduleFileSet bufmodule.ModuleFileSet,
 	excludeSourceCodeInfo bool,
-) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
-	ctx, span := trace.StartSpan(ctx, "build")
+) (_ bufimage.Image, _ []bufanalysis.FileAnnotation, retErr error) {
+	ctx, span := b.tracer.Start(ctx, "build")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 
 	parserAccessorHandler := bufmoduleprotocompile.NewParserAccessorHandler(ctx, moduleFileSet)
 	targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
@@ -105,6 +120,7 @@ func (b *builder) build(
 		parserAccessorHandler,
 		buildResult.SyntaxUnspecifiedFilenames,
 		buildResult.FilenameToUnusedDependencyFilenames,
+		b.tracer,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -272,8 +288,9 @@ func getImage(
 	parserAccessorHandler bufmoduleprotocompile.ParserAccessorHandler,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
+	tracer trace.Tracer,
 ) (bufimage.Image, error) {
-	ctx, span := trace.StartSpan(ctx, "get_image")
+	ctx, span := tracer.Start(ctx, "get_image")
 	defer span.End()
 
 	// if we aren't including imports, then we need a set of file names that
@@ -305,10 +322,17 @@ func getImage(
 			imageFiles,
 		)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
 	}
-	return bufimage.NewImage(imageFiles)
+	image, err := bufimage.NewImage(imageFiles)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return image, err
 }
 
 func getImageFilesRec(

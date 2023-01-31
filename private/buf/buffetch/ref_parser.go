@@ -25,14 +25,22 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+)
+
+const (
+	loggerName = "buffetch"
+	tracerName = "bufbuild/buf"
 )
 
 type refParser struct {
 	allowProtoFileRef bool
 	logger            *zap.Logger
 	fetchRefParser    internal.RefParser
+	tracer            trace.Tracer
 }
 
 func newRefParser(logger *zap.Logger, options ...RefParserOption) *refParser {
@@ -78,7 +86,8 @@ func newRefParser(logger *zap.Logger, options ...RefParserOption) *refParser {
 	if refParser.allowProtoFileRef {
 		fetchRefParserOptions = append(fetchRefParserOptions, internal.WithProtoFileFormat(formatProtoFile))
 	}
-	refParser.logger = logger.Named("buffetch")
+	refParser.logger = logger.Named(loggerName)
+	refParser.tracer = otel.GetTracerProvider().Tracer(tracerName)
 	refParser.fetchRefParser = internal.NewRefParser(
 		logger,
 		fetchRefParserOptions...,
@@ -88,7 +97,7 @@ func newRefParser(logger *zap.Logger, options ...RefParserOption) *refParser {
 
 func newImageRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
-		logger: logger.Named("buffetch"),
+		logger: logger.Named(loggerName),
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(processRawRefImage),
@@ -107,12 +116,13 @@ func newImageRefParser(logger *zap.Logger) *refParser {
 				),
 			),
 		),
+		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
 func newSourceRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
-		logger: logger.Named("buffetch"),
+		logger: logger.Named(loggerName),
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(processRawRefSource),
@@ -134,23 +144,25 @@ func newSourceRefParser(logger *zap.Logger) *refParser {
 			internal.WithGitFormat(formatGit),
 			internal.WithDirFormat(formatDir),
 		),
+		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
 func newModuleRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
-		logger: logger.Named("buffetch"),
+		logger: logger.Named(loggerName),
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(processRawRefModule),
 			internal.WithModuleFormat(formatMod),
 		),
+		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
 func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
-		logger: logger.Named("buffetch"),
+		logger: logger.Named(loggerName),
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(processRawRefSourceOrModule),
@@ -173,15 +185,22 @@ func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
 			internal.WithDirFormat(formatDir),
 			internal.WithModuleFormat(formatMod),
 		),
+		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
 func (a *refParser) GetRef(
 	ctx context.Context,
 	value string,
-) (Ref, error) {
-	ctx, span := trace.StartSpan(ctx, "get_ref")
+) (_ Ref, retErr error) {
+	ctx, span := a.tracer.Start(ctx, "get_ref")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	parsedRef, err := a.getParsedRef(ctx, value, allFormats)
 	if err != nil {
 		return nil, err
@@ -211,16 +230,21 @@ func (a *refParser) GetRef(
 func (a *refParser) GetSourceOrModuleRef(
 	ctx context.Context,
 	value string,
-) (SourceOrModuleRef, error) {
-	ctx, span := trace.StartSpan(ctx, "get_source_or_module_ref")
+) (_ SourceOrModuleRef, retErr error) {
+	ctx, span := a.tracer.Start(ctx, "get_source_or_module_ref")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	parsedRef, err := a.getParsedRef(ctx, value, sourceOrModuleFormats)
 	if err != nil {
 		return nil, err
 	}
 	switch t := parsedRef.(type) {
 	case internal.ParsedSingleRef:
-		// this should never happen
 		return nil, fmt.Errorf("invalid ParsedRef type for source or module: %T", parsedRef)
 	case internal.ParsedArchiveRef:
 		return newSourceRef(t), nil
@@ -240,16 +264,21 @@ func (a *refParser) GetSourceOrModuleRef(
 func (a *refParser) GetImageRef(
 	ctx context.Context,
 	value string,
-) (ImageRef, error) {
-	ctx, span := trace.StartSpan(ctx, "get_image_ref")
+) (_ ImageRef, retErr error) {
+	ctx, span := a.tracer.Start(ctx, "get_image_ref")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	parsedRef, err := a.getParsedRef(ctx, value, imageFormats)
 	if err != nil {
 		return nil, err
 	}
 	parsedSingleRef, ok := parsedRef.(internal.ParsedSingleRef)
 	if !ok {
-		// this should never happen
 		return nil, fmt.Errorf("invalid ParsedRef type for image: %T", parsedRef)
 	}
 	imageEncoding, err := parseImageEncoding(parsedSingleRef.Format())
@@ -262,9 +291,15 @@ func (a *refParser) GetImageRef(
 func (a *refParser) GetSourceRef(
 	ctx context.Context,
 	value string,
-) (SourceRef, error) {
-	ctx, span := trace.StartSpan(ctx, "get_source_ref")
+) (_ SourceRef, retErr error) {
+	ctx, span := a.tracer.Start(ctx, "get_source_ref")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	parsedRef, err := a.getParsedRef(ctx, value, sourceFormats)
 	if err != nil {
 		return nil, err
@@ -280,9 +315,15 @@ func (a *refParser) GetSourceRef(
 func (a *refParser) GetModuleRef(
 	ctx context.Context,
 	value string,
-) (ModuleRef, error) {
-	ctx, span := trace.StartSpan(ctx, "get_source_ref")
+) (_ ModuleRef, retErr error) {
+	ctx, span := a.tracer.Start(ctx, "get_source_ref")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	parsedRef, err := a.getParsedRef(ctx, value, moduleFormats)
 	if err != nil {
 		return nil, err
