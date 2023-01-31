@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -69,14 +70,22 @@ func (i *imageWriter) PutImage(
 	}
 	data, err := i.imageMarshal(ctx, message, image, imageRef.ImageEncoding())
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	writeCloser, err := i.fetchWriter.PutImageFile(ctx, container, imageRef)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, writeCloser.Close())
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
 	}()
 	_, err = writeCloser.Write(data)
 	return err
@@ -87,9 +96,15 @@ func (i *imageWriter) imageMarshal(
 	message proto.Message,
 	image bufimage.Image,
 	imageEncoding buffetch.ImageEncoding,
-) ([]byte, error) {
+) (_ []byte, retErr error) {
 	_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "image_marshal")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	switch imageEncoding {
 	case buffetch.ImageEncodingBin:
 		return protoencoding.NewWireMarshaler().Marshal(message)

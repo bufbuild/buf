@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/multierr"
 )
 
@@ -37,6 +38,8 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, opti
 	for _, configFilePath := range AllConfigFilePaths {
 		exists, err := storage.Exists(ctx, readBucket, configFilePath)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
 		if exists {
@@ -50,10 +53,16 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, opti
 	case 1:
 		readObjectCloser, err := readBucket.Get(ctx, foundConfigFilePaths[0])
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
 		defer func() {
 			retErr = multierr.Append(retErr, readObjectCloser.Close())
+			if retErr != nil {
+				span.RecordError(retErr)
+				span.SetStatus(codes.Error, retErr.Error())
+			}
 		}()
 		data, err := io.ReadAll(readObjectCloser)
 		if err != nil {
@@ -75,7 +84,7 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, opti
 func getConfigForData(ctx context.Context, data []byte, options []ConfigOption) (*Config, error) {
 	_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "get_plugin_config_for_data")
 	defer span.End()
-	return getConfigForDataInternal(
+	config, err := getConfigForDataInternal(
 		ctx,
 		encoding.UnmarshalJSONOrYAMLNonStrict,
 		encoding.UnmarshalJSONOrYAMLStrict,
@@ -83,6 +92,11 @@ func getConfigForData(ctx context.Context, data []byte, options []ConfigOption) 
 		"Plugin configuration data",
 		options,
 	)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return config, err
 }
 
 func getConfigForDataInternal(

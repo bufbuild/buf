@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -191,12 +192,16 @@ func (a *refParser) GetRef(
 	defer span.End()
 	parsedRef, err := a.getParsedRef(ctx, value, allFormats)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	switch t := parsedRef.(type) {
 	case internal.ParsedSingleRef:
 		imageEncoding, err := parseImageEncoding(t.Format())
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
 		return newImageRef(t, imageEncoding), nil
@@ -211,7 +216,10 @@ func (a *refParser) GetRef(
 	case internal.ProtoFileRef:
 		return newProtoFileRef(t), nil
 	default:
-		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
+		err := fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 }
 
@@ -223,12 +231,17 @@ func (a *refParser) GetSourceOrModuleRef(
 	defer span.End()
 	parsedRef, err := a.getParsedRef(ctx, value, sourceOrModuleFormats)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	switch t := parsedRef.(type) {
 	case internal.ParsedSingleRef:
 		// this should never happen
-		return nil, fmt.Errorf("invalid ParsedRef type for source or module: %T", parsedRef)
+		err := fmt.Errorf("invalid ParsedRef type for source or module: %T", parsedRef)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	case internal.ParsedArchiveRef:
 		return newSourceRef(t), nil
 	case internal.ParsedDirRef:
@@ -240,7 +253,10 @@ func (a *refParser) GetSourceOrModuleRef(
 	case internal.ProtoFileRef:
 		return newProtoFileRef(t), nil
 	default:
-		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
+		err := fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 }
 
@@ -252,15 +268,22 @@ func (a *refParser) GetImageRef(
 	defer span.End()
 	parsedRef, err := a.getParsedRef(ctx, value, imageFormats)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	parsedSingleRef, ok := parsedRef.(internal.ParsedSingleRef)
 	if !ok {
 		// this should never happen
-		return nil, fmt.Errorf("invalid ParsedRef type for image: %T", parsedRef)
+		err := fmt.Errorf("invalid ParsedRef type for image: %T", parsedRef)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 	imageEncoding, err := parseImageEncoding(parsedSingleRef.Format())
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	return newImageRef(parsedSingleRef, imageEncoding), nil
@@ -274,12 +297,17 @@ func (a *refParser) GetSourceRef(
 	defer span.End()
 	parsedRef, err := a.getParsedRef(ctx, value, sourceFormats)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	parsedBucketRef, ok := parsedRef.(internal.ParsedBucketRef)
 	if !ok {
 		// this should never happen
-		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+		err := fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 	return newSourceRef(parsedBucketRef), nil
 }
@@ -292,12 +320,17 @@ func (a *refParser) GetModuleRef(
 	defer span.End()
 	parsedRef, err := a.getParsedRef(ctx, value, moduleFormats)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	parsedModuleRef, ok := parsedRef.(internal.ParsedModuleRef)
 	if !ok {
 		// this should never happen
-		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+		err := fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 	return newModuleRef(parsedModuleRef), nil
 }

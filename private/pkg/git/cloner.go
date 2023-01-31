@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -85,21 +86,33 @@ func (c *cloner) CloneToBucket(
 		strings.HasPrefix(url, "git://"),
 		strings.HasPrefix(url, "file://"):
 	default:
-		return fmt.Errorf("invalid git url: %q", url)
+		err := fmt.Errorf("invalid git url: %q", url)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
 	if depth == 0 {
-		return errors.New("depth must be > 0")
+		err := errors.New("depth must be > 0")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 
 	depthArg := strconv.Itoa(int(depth))
 
 	bareDir, err := tmp.NewDir()
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, bareDir.Close())
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
 	}()
 	worktreeDir, err := tmp.NewDir()
 	if err != nil {
@@ -251,6 +264,10 @@ func (c *cloner) CloneToBucket(
 	defer span2.End()
 	// do NOT copy external paths
 	_, err = storage.Copy(ctx, readBucket, writeBucket)
+	if err != nil {
+		span2.RecordError(err)
+		span2.SetStatus(codes.Error, err.Error())
+	}
 	return err
 }
 

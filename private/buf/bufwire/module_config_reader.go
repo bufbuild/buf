@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -68,9 +69,15 @@ func (m *moduleConfigReader) GetModuleConfigs(
 	externalDirOrFilePaths []string,
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
-) ([]ModuleConfig, error) {
+) (_ []ModuleConfig, retErr error) {
 	ctx, span := m.tracer.Start(ctx, "get_module_config")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	// We construct a new WorkspaceBuilder here so that the cache is only used for a single call.
 	workspaceBuilder := bufwork.NewWorkspaceBuilder(m.moduleBucketBuilder)
 	switch t := sourceOrModuleRef.(type) {

@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -46,10 +47,16 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	if err != nil {
 		// There is no default generate template, so we propagate all errors, including
 		// storage.ErrNotExist.
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
 	}()
 	data, err := io.ReadAll(readObjectCloser)
 	if err != nil {

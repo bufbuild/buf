@@ -61,10 +61,16 @@ func (i *imageReader) GetImage(
 	defer span.End()
 	readCloser, err := i.fetchReader.GetImageFile(ctx, container, imageRef)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readCloser.Close())
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
 	}()
 	data, err := io.ReadAll(readCloser)
 	if err != nil {
@@ -91,6 +97,7 @@ func (i *imageReader) GetImage(
 		if err := protoencoding.NewJSONUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
+			span.End()
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		// TODO right now, NewResolver sets AllowUnresolvable to true all the time

@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/zap"
 )
 
@@ -252,6 +253,8 @@ func (i *imageConfigReader) buildModule(
 		options...,
 	)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, nil, err
 	}
 	if len(fileAnnotations) > 0 {

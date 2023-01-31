@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -62,6 +63,8 @@ func (p *protoEncodingReader) GetMessage(
 		)...,
 	)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	var unmarshaler protoencoding.Unmarshaler
@@ -71,18 +74,27 @@ func (p *protoEncodingReader) GetMessage(
 	case bufconvert.MessageEncodingJSON:
 		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
 	default:
-		return nil, errors.New("unknown message encoding type")
+		err := errors.New("unknown message encoding type")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 	readCloser := io.NopCloser(container.Stdin())
 	if messageRef.Path() != "-" {
 		var err error
 		readCloser, err = os.Open(messageRef.Path())
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readCloser.Close())
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
 	}()
 	data, err := io.ReadAll(readCloser)
 	if err != nil {

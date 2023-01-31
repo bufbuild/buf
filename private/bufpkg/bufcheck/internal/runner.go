@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -97,6 +98,8 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 		}
 	}
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	bufanalysis.SortFileAnnotations(fileAnnotations)

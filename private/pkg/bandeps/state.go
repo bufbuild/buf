@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
@@ -167,6 +168,8 @@ func (s *state) packagesForPackageExpressionUncached(
 
 	data, err := command.RunStdout(ctx, s.envStdioContainer, s.runner, `go`, `list`, packageExpression)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	return stringutil.SliceToMap(getNonEmptyLines(string(data))), nil
@@ -227,6 +230,8 @@ func (s *state) depsForPackageUncached(
 
 	data, err := command.RunStdout(ctx, s.envStdioContainer, s.runner, `go`, `list`, `-f`, `{{join .Deps "\n"}}`, pkg)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	return stringutil.SliceToMap(getNonEmptyLines(string(data))), nil

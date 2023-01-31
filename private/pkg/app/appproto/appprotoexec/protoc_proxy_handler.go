@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"google.golang.org/protobuf/proto"
@@ -74,16 +75,23 @@ func (h *protocProxyHandler) Handle(
 	defer span.End()
 	protocVersion, err := h.getProtocVersion(ctx, container)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	if h.pluginName == "kotlin" && !getKotlinSupported(protocVersion) {
-		return fmt.Errorf("kotlin is not supported for protoc version %s", versionString(protocVersion))
+		err := fmt.Errorf("kotlin is not supported for protoc version %s", versionString(protocVersion))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
 	}
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
 		File: request.ProtoFile,
 	}
 	fileDescriptorSetData, err := protoencoding.NewWireMarshaler().Marshal(fileDescriptorSet)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	descriptorFilePath := app.DevStdinFilePath
@@ -92,6 +100,8 @@ func (h *protocProxyHandler) Handle(
 		// since we have no stdin file (i.e. Windows), we're going to have to use a temporary file
 		tmpFile, err = tmp.NewFileWithData(fileDescriptorSetData)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return err
 		}
 		defer func() {
@@ -101,10 +111,16 @@ func (h *protocProxyHandler) Handle(
 	}
 	tmpDir, err := tmp.NewDir()
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, tmpDir.Close())
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, err.Error())
+		}
 	}()
 	args := []string{
 		fmt.Sprintf("--descriptor_set_in=%s", descriptorFilePath),

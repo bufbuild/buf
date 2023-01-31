@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/protocompile/protoutil"
 	"github.com/bufbuild/protocompile/reporter"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -74,10 +75,15 @@ func (b *builder) build(
 	parserAccessorHandler := bufmoduleprotocompile.NewParserAccessorHandler(ctx, moduleFileSet)
 	targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, nil, err
 	}
 	if len(targetFileInfos) == 0 {
-		return nil, nil, errors.New("no input files specified")
+		err := errors.New("no input files specified")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, nil, err
 	}
 	paths := make([]string, len(targetFileInfos))
 	for i, targetFileInfo := range targetFileInfos {
@@ -91,6 +97,8 @@ func (b *builder) build(
 		excludeSourceCodeInfo,
 	)
 	if buildResult.Err != nil {
+		span.RecordError(buildResult.Err)
+		span.SetStatus(codes.Error, buildResult.Err.Error())
 		return nil, nil, buildResult.Err
 	}
 	if len(buildResult.FileAnnotations) > 0 {
@@ -99,6 +107,8 @@ func (b *builder) build(
 
 	fileDescriptors, err := checkAndSortFileDescriptors(buildResult.FileDescriptors, paths)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, nil, err
 	}
 	image, err := getImage(
@@ -111,6 +121,8 @@ func (b *builder) build(
 		b.tracer,
 	)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, nil, err
 	}
 	return image, nil, nil
@@ -310,10 +322,17 @@ func getImage(
 			imageFiles,
 		)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
 	}
-	return bufimage.NewImage(imageFiles)
+	image, err := bufimage.NewImage(imageFiles)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return image, err
 }
 
 func getImageFilesRec(

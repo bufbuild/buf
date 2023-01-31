@@ -38,6 +38,7 @@ import (
 	"github.com/klauspost/compress/zstd"
 	"github.com/klauspost/pgzip"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -205,12 +206,16 @@ func (r *reader) getArchiveBucket(
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, readCloser.Close())
-	}()
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	ctx, span := r.tracer.Start(ctx, "unarchive")
 	defer span.End()
+	defer func() {
+		retErr = multierr.Append(retErr, readCloser.Close())
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
 	case ArchiveTypeTar:
 		if err := storagearchive.Untar(
@@ -248,7 +253,8 @@ func (r *reader) getArchiveBucket(
 			return nil, err
 		}
 	default:
-		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
+		err := fmt.Errorf("unknown ArchiveType: %v", archiveType)
+		return nil, err
 	}
 	terminateFileProvider, err := getTerminateFileProviderForBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
