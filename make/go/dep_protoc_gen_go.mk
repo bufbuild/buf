@@ -7,7 +7,7 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf-go/releases 20220831 checked 20221004
+# https://github.com/protocolbuffers/protobuf-go/releases 20220831 checked 20230201
 # NOTE: This is temporary until the following fix is available in a release:
 #   https://github.com/protocolbuffers/protobuf-go/commit/692f4a24f8dc0d375508fc41e657920d411b5b68
 PROTOC_GEN_GO_VERSION ?= v1.28.2-0.20220831092852-f930b1dc76e8
