@@ -4,13 +4,13 @@ go 1.18
 
 require (
 	github.com/bufbuild/connect-go v1.4.1
-	github.com/bufbuild/protocompile v0.1.0
+	github.com/bufbuild/protocompile v0.2.0
 	github.com/docker/docker v20.10.23+incompatible
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/gofrs/flock v0.8.1
-	github.com/gofrs/uuid v4.3.1+incompatible
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/go-cmp v0.5.9
-	github.com/google/go-containerregistry v0.12.1
+	github.com/google/go-containerregistry v0.13.0
 	github.com/jdxcode/netrc v0.0.0-20221124155335-4616370d1a84
 	github.com/jhump/protoreflect v1.14.1
 	github.com/klauspost/compress v1.15.15
@@ -29,7 +29,7 @@ require (
 	go.uber.org/multierr v1.9.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.5.0
-	golang.org/x/exp v0.0.0-20230118134722-a68e582fa157
+	golang.org/x/exp v0.0.0-20230131160201-f062dba9d201
 	golang.org/x/mod v0.7.0
 	golang.org/x/net v0.5.0
 	golang.org/x/sync v0.1.0
@@ -40,7 +40,7 @@ require (
 )
 
 require (
-	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
+	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
@@ -55,7 +55,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/pprof v0.0.0-20230111200839-76d1ae5aea2b // indirect
+	github.com/google/pprof v0.0.0-20230131232505-5a9e8f65f08f // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
