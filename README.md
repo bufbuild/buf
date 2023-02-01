@@ -113,7 +113,7 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [badges_homebrew]: https://github.com/bufbuild/homebrew-buf
 [badges_license]: https://github.com/bufbuild/buf/blob/main/LICENSE
 [badges_release]: https://github.com/bufbuild/buf/releases
-[badges_slack]: https://join.slack.com/t/bufbuild/shared_invite/zt-f5k547ki-dW9LjSwEnl6qTzbyZtPojw
+[badges_slack]: https://buf.build/links/slack
 [bash]: https://www.gnu.org/software/bash
 [binary]: https://docs.buf.build/installation#binary
 [breaking]: https://docs.buf.build/breaking
@@ -152,7 +152,7 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [protobuf]: https://developers.google.com/protocol-buffers
 [pushing]: https://docs.buf.build/bsr/usage#push-a-module
 [releases]: https://docs.buf.build/installation#github-releases
-[repo]: ./
+[repo]: https://github.com/bufbuild/buf/
 [repositories]: https://docs.buf.build/bsr/overview#module
 [roadmap]: https://docs.buf.build/roadmap
 [source]: https://docs.buf.build/installation#from-source
