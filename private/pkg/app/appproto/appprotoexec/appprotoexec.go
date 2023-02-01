@@ -40,7 +40,7 @@ const (
 	// DefaultMinorVersion is the default minor version.
 	defaultMinorVersion = 21
 	// DefaultPatchVersion is the default patch version.
-	defaultPatchVersion = 7
+	defaultPatchVersion = 12
 	// DefaultSuffixVersion is the default suffix version.
 	defaultSuffixVersion = ""
 )

@@ -86,6 +86,9 @@ func DiffWithExternalPathPrefixes(
 //	content: the file content.
 //
 // transform returns a string that is the transformed content of filename.
+//
+// TODO: this needs to be refactored or removed, especially the implicit side enum.
+// Perhaps provide a transform function for a given bucket and apply it there.
 func DiffWithTransform(
 	transform func(side string, filename string, content []byte) []byte,
 ) DiffOption {
