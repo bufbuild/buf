@@ -60,24 +60,27 @@ func NewCommand(
 
 Examples:
 
-$ buf export <input> --output=<output-dir>
+    $ buf export <input> --output=<output-dir>
 
 input can be of the format [dir,git,mod,protofile,tar,targz,zip].
 
 output will be a directory with all of the .proto files in the <input>.
 
-# Export current directory to another local directory. 
-$ buf export . --output=<output-dir>
+Export current directory to another local directory. 
 
-# Export the latest remote module to a local directory.
-$ buf export buf.build/<owner>/<repo> --output=<output-dir>
+    $ buf export . --output=<output-dir>
 
-# Export a specific version of a remote module to a local directory.
-$ buf export buf.build/<owner>/<repo>:<version> --output=<output-dir>
+Export the latest remote module to a local directory.
 
-# Export a git repo to a local directory.
-$ buf export https://<git-server>/<owner>/<repo>.git --output=<output-dir>
+    $ buf export buf.build/<owner>/<repo> --output=<output-dir>
 
+Export a specific version of a remote module to a local directory.
+
+    $ buf export buf.build/<owner>/<repo>:<version> --output=<output-dir>
+
+Export a git repo to a local directory.
+
+    $ buf export https://<git-server>/<owner>/<repo>.git --output=<output-dir>
 `,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
