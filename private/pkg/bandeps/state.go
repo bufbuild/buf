@@ -21,7 +21,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -39,6 +42,7 @@ type state struct {
 	lock              sync.RWMutex
 	calls             int
 	cacheHits         int
+	tracer            trace.Tracer
 }
 
 func newState(
@@ -55,6 +59,7 @@ func newState(
 		packageExpressionToPackagesLock: newKeyRWLock(),
 		packageToDeps:                   make(map[string]*depsResult),
 		packageToDepsLock:               newKeyRWLock(),
+		tracer:                          otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
@@ -156,12 +161,15 @@ func (s *state) packagesForPackageExpressionUncached(
 	ctx context.Context,
 	packageExpression string,
 ) (map[string]struct{}, error) {
-	ctx, span := trace.StartSpan(ctx, "packagesForPackageExpressionUncached")
+	ctx, span := s.tracer.Start(ctx, "packagesForPackageExpressionUncached", trace.WithAttributes(
+		attribute.Key("packageExpression").String(packageExpression),
+	))
 	defer span.End()
-	span.AddAttributes(trace.StringAttribute("packageExpression", packageExpression))
 
 	data, err := command.RunStdout(ctx, s.envStdioContainer, s.runner, `go`, `list`, packageExpression)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	return stringutil.SliceToMap(getNonEmptyLines(string(data))), nil
@@ -215,12 +223,15 @@ func (s *state) depsForPackageUncached(
 	ctx context.Context,
 	pkg string,
 ) (map[string]struct{}, error) {
-	ctx, span := trace.StartSpan(ctx, "depsForPackageUncached")
+	ctx, span := s.tracer.Start(ctx, "depsForPackageUncached", trace.WithAttributes(
+		attribute.Key("package").String(pkg),
+	))
 	defer span.End()
-	span.AddAttributes(trace.StringAttribute("package", pkg))
 
 	data, err := command.RunStdout(ctx, s.envStdioContainer, s.runner, `go`, `list`, `-f`, `{{join .Deps "\n"}}`, pkg)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	return stringutil.SliceToMap(getNonEmptyLines(string(data))), nil

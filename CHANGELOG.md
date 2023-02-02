@@ -4,6 +4,18 @@
 
 - No changes yet.
 
+## [v1.13.1] - 2023-01-27
+
+- Fix race condition with `buf generate` when remote plugins from multiple
+  BSR instances are being used at once.
+
+## [v1.13.0] - 2023-01-26
+
+- Extend the `BUF_TOKEN` environment variable to accept tokens for multiple
+  BSR instances. Both `TOKEN` and `TOKEN1@BSRHOSTNAME1,TOKEN2@BSRHOSTNAME2,...`
+  are now valid values for `BUF_TOKEN`.
+- Remove `buf beta convert` in favor of the now-stable `buf convert`.
+
 ## [v1.12.0] - 2023-01-12
 - Add `buf curl` command to invoke RPCs via [Connect](https://connect-build),
   [gRPC](https://grpc.io/), or [gRPC-Web](https://github.com/grpc/grpc-web.)
@@ -798,7 +810,9 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.12.0...HEAD]
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.13.1...HEAD
+[v1.13.1]: https://github.com/bufbuild/buf/compare/v1.13.0...v1.13.1
+[v1.13.0]: https://github.com/bufbuild/buf/compare/v1.12.0...v1.13.0
 [v1.12.0]: https://github.com/bufbuild/buf/compare/v1.11.0...v1.12.0
 [v1.11.0]: https://github.com/bufbuild/buf/compare/v1.10.0...v1.11.0
 [v1.10.0]: https://github.com/bufbuild/buf/compare/v1.9.0...v1.10.0

@@ -51,6 +51,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -64,7 +65,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.12.1-dev"
+	Version = "1.13.2-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -645,10 +646,15 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 // up the token in the container or in netrc based on the address of each individual client.
 // It is then set in the header of all outgoing requests from clients created using this config.
 func NewConnectClientConfig(container appflag.Container) (*connectclient.Config, error) {
+	envTokenProvider, err := bufconnect.NewTokenProviderFromContainer(container)
+	if err != nil {
+		return nil, err
+	}
+	netrcTokenProvider := bufconnect.NewNetrcTokenProvider(container, netrc.GetMachineForName)
 	return newConnectClientConfigWithOptions(
 		container,
 		connectclient.WithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProvider(container),
+			bufconnect.NewAuthorizationInterceptorProvider(envTokenProvider, netrcTokenProvider),
 		),
 	)
 }
@@ -656,10 +662,14 @@ func NewConnectClientConfig(container appflag.Container) (*connectclient.Config,
 // NewConnectClientConfigWithToken creates a new connect.ClientConfig with a given token. The provided token is
 // set in the header of all outgoing requests from this provider
 func NewConnectClientConfigWithToken(container appflag.Container, token string) (*connectclient.Config, error) {
+	tokenProvider, err := bufconnect.NewTokenProviderFromString(token)
+	if err != nil {
+		return nil, err
+	}
 	return newConnectClientConfigWithOptions(
 		container,
 		connectclient.WithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProviderWithToken(token),
+			bufconnect.NewAuthorizationInterceptorProvider(tokenProvider),
 		),
 	)
 }

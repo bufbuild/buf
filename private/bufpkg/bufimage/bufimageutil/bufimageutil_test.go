@@ -108,6 +108,24 @@ func TestExtensions(t *testing.T) {
 	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions-excluded.txtar", WithExcludeKnownExtensions())
 }
 
+func TestPackages(t *testing.T) {
+	t.Parallel()
+	runDiffTest(t, "testdata/packages", []string{""}, "root.txtar")
+	runDiffTest(t, "testdata/packages", []string{"foo"}, "foo.txtar")
+	runDiffTest(t, "testdata/packages", []string{"foo.bar"}, "foo.bar.txtar")
+	runDiffTest(t, "testdata/packages", []string{"foo.bar.baz"}, "foo.bar.baz.txtar")
+}
+
+func TestAny(t *testing.T) {
+	t.Parallel()
+	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax"}, "c1.txtar")
+	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InField"}, "c2.txtar")
+	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InList"}, "c3.txtar")
+	runDiffTest(t, "testdata/any", []string{"ExtendedAnySyntax_InMap"}, "c4.txtar")
+	runDiffTest(t, "testdata/any", []string{"NormalMessageSyntaxValidType"}, "d.txtar")
+	runDiffTest(t, "testdata/any", []string{"NormalMessageSyntaxInvalidType"}, "e.txtar")
+}
+
 func TestTransitivePublic(t *testing.T) {
 	ctx := context.Background()
 	bucket, err := storagemem.NewReadBucket(map[string][]byte{

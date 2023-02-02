@@ -1,0 +1,61 @@
+-- a.proto --
+syntax = "proto3";
+import "google/protobuf/any.proto";
+import "google/protobuf/descriptor.proto";
+extend google.protobuf.MessageOptions {
+  google.protobuf.Any extra = 10101;
+}
+-- e.proto --
+syntax = "proto3";
+import "a.proto";
+message NormalMessageSyntaxInvalidType {
+  option (extra) = {
+    type_url: "type.googleapis.com/blah.blah.Blah"
+    value: "\001\002\003\004"
+  };
+}
+-- google/protobuf/any.proto --
+syntax = "proto3";
+package google.protobuf;
+option csharp_namespace = "Google.Protobuf.WellKnownTypes";
+option go_package = "google.golang.org/protobuf/types/known/anypb";
+option java_multiple_files = true;
+option java_outer_classname = "AnyProto";
+option java_package = "com.google.protobuf";
+option objc_class_prefix = "GPB";
+message Any {
+  string type_url = 1;
+  bytes value = 2;
+}
+-- google/protobuf/descriptor.proto --
+syntax = "proto2";
+package google.protobuf;
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Protobuf.Reflection";
+option go_package = "google.golang.org/protobuf/types/descriptorpb";
+option java_outer_classname = "DescriptorProtos";
+option java_package = "com.google.protobuf";
+option objc_class_prefix = "GPB";
+option optimize_for = SPEED;
+message MessageOptions {
+  optional bool message_set_wire_format = 1 [default = false];
+  optional bool no_standard_descriptor_accessor = 2 [default = false];
+  optional bool deprecated = 3 [default = false];
+  optional bool map_entry = 7;
+  repeated UninterpretedOption uninterpreted_option = 999;
+  extensions 1000 to max;
+  reserved 4, 5, 6, 8, 9;
+}
+message UninterpretedOption {
+  repeated NamePart name = 2;
+  optional string identifier_value = 3;
+  optional uint64 positive_int_value = 4;
+  optional int64 negative_int_value = 5;
+  optional double double_value = 6;
+  optional bytes string_value = 7;
+  optional string aggregate_value = 8;
+  message NamePart {
+    required string name_part = 1;
+    required bool is_extension = 2;
+  }
+}

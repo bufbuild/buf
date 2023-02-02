@@ -156,7 +156,7 @@ jobs:
             ${{github.workspace}}/.build/release/buf/assets/*
       - name: Slack Notification
         run: |
-          jq --null-input '{ text: "BufCLI Release v${{env.VERSION}} is complete: ${{ steps.ghr.outputs.url }}" }' \
+          jq --null-input '{ text: "BufCLI Release ${{env.VERSION}} is complete: ${{ steps.ghr.outputs.url }}" }' \
           | curl -sSL -X POST -H 'Content-Type: application/json' -d @- '${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}'
   post-release:
     runs-on: ubuntu-latest
@@ -183,7 +183,7 @@ jobs:
       - name: update version
         run: make updateversion VERSION=${{env.NEXT_VERSION}}
       - name: update home brew badge
-        run: make updatehomebrewbadge
+        run: make updatehomebrewbadge VERSION=${{github.ref_name}}
       - name: create PR
         uses: peter-evans/create-pull-request@2b011faafdcbc9ceb11414d64d0573f37c774b04
         with:

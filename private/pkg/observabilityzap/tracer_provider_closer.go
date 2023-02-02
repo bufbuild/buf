@@ -12,30 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package observabilityotel
+package observabilityzap
 
 import (
 	"context"
+	"io"
 
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 )
 
+var _ trace.TracerProvider = &tracerProviderCloser{}
+var _ io.Closer = &tracerProviderCloser{}
+
 type tracerProviderCloser struct {
-	tracerProvider TracerProvider
+	tracerProvider *sdktrace.TracerProvider
 }
 
-func newTracerProviderCloser(tracerProvider TracerProvider) *tracerProviderCloser {
+func newTracerProviderCloser(tracerProvider *sdktrace.TracerProvider) *tracerProviderCloser {
 	return &tracerProviderCloser{
 		tracerProvider: tracerProvider,
 	}
 }
 
-func (t *tracerProviderCloser) Close() error {
-	// Note: the application layer above does not pass down a context required for
-	// otelsdktrace.TracerProvider.Shutdown
-	return t.tracerProvider.Shutdown(context.Background())
+func (t *tracerProviderCloser) Tracer(name string, opts ...trace.TracerOption) trace.Tracer {
+	return t.tracerProvider.Tracer(name, opts...)
 }
 
-func (t *tracerProviderCloser) Tracer(instrumentationName string, opts ...trace.TracerOption) trace.Tracer {
-	return t.tracerProvider.Tracer(instrumentationName, opts...)
+func (t *tracerProviderCloser) Close() error {
+	return t.tracerProvider.Shutdown(context.Background())
 }

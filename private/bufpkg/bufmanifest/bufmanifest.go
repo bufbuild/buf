@@ -12,24 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package observability
-
-import (
-	"net/http"
-
-	"go.opencensus.io/tag"
-)
-
-type wrappedRoundTripper struct {
-	Base http.RoundTripper
-	Tags []tag.Mutator
-}
-
-func (w *wrappedRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	ctx, err := tag.New(req.Context(), w.Tags...)
-	if err != nil {
-		return nil, err
-	}
-	wrappedRequest := req.WithContext(ctx)
-	return w.Base.RoundTrip(wrappedRequest)
-}
+package bufmanifest

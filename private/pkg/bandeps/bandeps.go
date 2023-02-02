@@ -23,6 +23,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	tracerName = "bufbuild/buf/bandeps"
+)
+
 // Checker is a checker.
 type Checker interface {
 	// Check runs bandeps in the current directory with the configuration.

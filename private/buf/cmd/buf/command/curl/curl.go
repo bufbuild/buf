@@ -284,7 +284,7 @@ and port indicated in the URL.`,
 		&f.HTTP2PriorKnowledge,
 		http2PriorKnowledgeFlagName,
 		false,
-		`This flag can be used with URLs that use the http scheme (as opposed to http) to indicate
+		`This flag can be used with URLs that use the http scheme (as opposed to https) to indicate
 that HTTP/2 should be used. Without this, HTTP 1.1 will be used with URLs with an http
 scheme. For https scheme, HTTP/2 will be negotiate during the TLS handshake if the server
 supports it (otherwise HTTP 1.1 is used).`,
