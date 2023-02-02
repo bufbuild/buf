@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package foo.bar.baz;
+
+message Foo {
+  string name = 1;
+  int32 id = 2;
+}
