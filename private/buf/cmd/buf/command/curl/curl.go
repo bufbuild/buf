@@ -126,26 +126,26 @@ Examples:
 Issue a unary RPC to a plain-text (i.e. "h2c") gRPC server, where the schema for the service is
 in a Buf module in the current directory, using an empty request message:
 
-    buf curl --schema . --protocol grpc --http2-prior-knowledge  \
-       http://localhost:20202/foo.bar.v1.FooService/DoSomething
+    $ buf curl --schema . --protocol grpc --http2-prior-knowledge  \
+         http://localhost:20202/foo.bar.v1.FooService/DoSomething
 
 Issue an RPC to a Connect server, where the schema comes from the Buf Schema Registry, using
 a request that is defined as a command-line argument:
 
-    buf curl --schema buf.build/bufbuild/eliza  \
-       --data '{"name": "Bob Loblaw"}'          \
-       https://demo.connect.build/buf.connect.demo.eliza.v1.ElizaService/Introduce
+    $ buf curl --schema buf.build/bufbuild/eliza  \
+         --data '{"name": "Bob Loblaw"}'          \
+         https://demo.connect.build/buf.connect.demo.eliza.v1.ElizaService/Introduce
 
 Issue a unary RPC to a server that supports reflection, with verbose output:
 
-    buf curl --data '{"sentence": "I am not feeling well."}' -v  \
-       https://demo.connect.build/buf.connect.demo.eliza.v1.ElizaService/Say
+    $ buf curl --data '{"sentence": "I am not feeling well."}' -v  \
+         https://demo.connect.build/buf.connect.demo.eliza.v1.ElizaService/Say
 
 Issue a client-streaming RPC to a gRPC-web server that supports reflection, where custom
 headers and request data are both in a heredoc:
 
-    buf curl --data @- --header @- --protocol grpcweb                              \
-       https://demo.connect.build/buf.connect.demo.eliza.v1.ElizaService/Converse  \
+    $ buf curl --data @- --header @- --protocol grpcweb                              \
+         https://demo.connect.build/buf.connect.demo.eliza.v1.ElizaService/Converse  \
        <<EOM
     Custom-Header-1: foo-bar-baz
     Authorization: token jas8374hgnkvje9wpkerebncjqol4

@@ -52,31 +52,31 @@ Use an input proto to interpret a proto/json message and convert it to a differe
 
 The simplest form is:
 
-    buf convert <input> --type=<type> --from=<payload> --to=<output>
+    $ buf convert <input> --type=<type> --from=<payload> --to=<output>
 
 <input> is the same input as any other buf command. 
 It can be a local .proto file, binary output of "buf build", bsr module or local buf module.
 e.g.
 
-    buf convert example.proto --type=Foo.proto --from=payload.json --to=output.bin
+    $ buf convert example.proto --type=Foo.proto --from=payload.json --to=output.bin
 
 Other examples
 
 All of <input>, "--from" and "to" accept formatting options
 
-    buf convert example.proto#format=bin --type=buf.Foo --from=payload#format=json --to=out#format=json
+    $ buf convert example.proto#format=bin --type=buf.Foo --from=payload#format=json --to=out#format=json
 
 Both <input> and "--from" accept stdin redirecting
 
-    buf convert <(buf build -o -)#format=bin --type=foo.Bar --from=<(echo "{\"one\":\"55\"}")#format=json
+    $ buf convert <(buf build -o -)#format=bin --type=foo.Bar --from=<(echo "{\"one\":\"55\"}")#format=json
 
 Redirect from stdin to --from
 
-    echo "{\"one\":\"55\"}" | buf convert buf.proto --type buf.Foo --from -#format=json
+    $ echo "{\"one\":\"55\"}" | buf convert buf.proto --type buf.Foo --from -#format=json
 
 Redirect from stdin to <input>
 
-    buf build -o - | buf convert -#format=bin --type buf.Foo --from=payload.json
+    $ buf build -o - | buf convert -#format=bin --type buf.Foo --from=payload.json
 
 Use a module on the bsr
 

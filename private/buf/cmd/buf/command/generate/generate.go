@@ -136,23 +136,23 @@ Call with:
 
 uses buf.gen.yaml as template, current directory as input
 
-    buf generate
+    $ buf generate
 
 same as the defaults (template of "buf.gen.yaml", current directory as input)
 
-    buf generate --template buf.gen.yaml .
+    $ buf generate --template buf.gen.yaml .
 
 --template also takes YAML or JSON data as input, so it can be used without a file
 
-    buf generate --template '{"version":"v1","plugins":[{"plugin":"go","out":"gen/go"}]}'
+    $ buf generate --template '{"version":"v1","plugins":[{"plugin":"go","out":"gen/go"}]}'
 
 download the repository and generate code stubs per the bar.yaml template
 
-    buf generate --template bar.yaml https://github.com/foo/bar.git
+    $ buf generate --template bar.yaml https://github.com/foo/bar.git
 
 generate to the bar/ directory, prepending bar/ to the out directives in the template
 
-    buf generate --template bar.yaml -o bar https://github.com/foo/bar.git
+    $ buf generate --template bar.yaml -o bar https://github.com/foo/bar.git
 
 The paths in the template and the -o flag will be interpreted as relative to your
 current directory, so you can place your template files anywhere.
@@ -161,15 +161,15 @@ If you only want to generate stubs for a subset of your input, you can do so via
 
 Only generate for the files in the directories proto/foo and proto/bar
 
-    buf generate --path proto/foo --path proto/bar
+    $ buf generate --path proto/foo --path proto/bar
 
 Only generate for the files proto/foo/foo.proto and proto/foo/bar.proto
 
-    buf generate --path proto/foo/foo.proto --path proto/foo/bar.proto
+    $ buf generate --path proto/foo/foo.proto --path proto/foo/bar.proto
 
 Only generate for the files in the directory proto/foo on your GitHub repository
 
-    buf generate --template buf.gen.yaml https://github.com/foo/bar.git --path proto/foo
+    $ buf generate --template buf.gen.yaml https://github.com/foo/bar.git --path proto/foo
 
 Note that all paths must be contained within the same module. For example, if you have a
 module in "proto", you cannot specify "--path proto", however "--path proto/foo" is allowed
