@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+import "a.proto";
+import "b.proto";
+
+message ExtendedAnySyntax_InMap {
+  option (extra_in_map) = {
+    map: [
+      {
+        key: "foo"
+        value: {
+          any: {
+            [type.googleapis.com/ExtendedAnySyntax_InMap]: {}
+          }
+        }
+      },
+      {
+        key: "bar"
+        value: {
+          any: {
+            [type.googleapis.com/foo.bar.baz.Foo]: {
+              name: "Bob Loblaw"
+              id: 42
+            }
+          }
+        }
+      }
+    ]
+  };
+}
