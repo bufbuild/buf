@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package google.protobuf;
+
+// Example of if a well known type exists locally and is different to the
+// baked in well known types
+message Method {
+  string name = 1;
+  string notinoriginal = 2;
+}

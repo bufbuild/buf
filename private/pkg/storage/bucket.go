@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,6 +52,27 @@ type ReadBucket interface {
 	Walk(ctx context.Context, prefix string, f func(ObjectInfo) error) error
 }
 
+// PutOptions are the possible options that can be passed to a Put operation.
+type PutOptions struct {
+	CustomChunkSize bool
+	ChunkSize       int64 // measured in bytes
+}
+
+// PutOption are options passed when putting an object in a bucket.
+type PutOption func(*PutOptions)
+
+// PutWithChunkSize sets the passed size in bytes to `ChunkSize` and
+// `CustomChunkSize` to true. Some implementations of `storage.WriteBucket.Put`
+// allow multi-part upload, and allow customizing the chunk size of each part
+// upload, or even disabling multi-part upload. This is a suggested chunk size,
+// implementations may choose to ignore this option.
+func PutWithChunkSize(sizeInBytes int64) PutOption {
+	return func(opts *PutOptions) {
+		opts.CustomChunkSize = true
+		opts.ChunkSize = sizeInBytes
+	}
+}
+
 // WriteBucket is a write-only bucket.
 type WriteBucket interface {
 	// Put returns a WriteObjectCloser to write to the path.
@@ -61,7 +82,7 @@ type WriteBucket interface {
 	// The returned WriteObjectCloser is not thread-safe.
 	//
 	// Returns error on system error.
-	Put(ctx context.Context, path string) (WriteObjectCloser, error)
+	Put(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error)
 	// Delete deletes the object at the path.
 	//
 	// Returns ErrNotExist if the path does not exist, other error

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,12 @@ import (
 	"encoding/json"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -91,27 +95,33 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewWebhookService(ctx, flags.Remote)
+	service := connectclient.Make(clientConfig, flags.Remote, registryv1alpha1connect.NewWebhookServiceClient)
+	resp, err := service.ListWebhooks(
+		ctx,
+		connect.NewRequest(&registryv1alpha1.ListWebhooksRequest{
+			RepositoryName: flags.RepositoryName,
+			OwnerName:      flags.OwnerName,
+			// TODO: this should probably be in a loop so we can get page token from
+			//   response and query for the next page
+		}),
+	)
 	if err != nil {
 		return err
 	}
-	results, _, err := service.ListWebhooks(ctx, flags.RepositoryName, flags.OwnerName, "")
-	if err != nil {
-		return err
-	}
-	if results == nil {
+	if resp.Msg.Webhooks == nil {
 		// Ignore errors for writing to stdout.
 		_, _ = container.Stdout().Write([]byte("[]"))
+		return nil
 	}
-	response, err := json.MarshalIndent(results, "", "\t")
+	webhooksJSON, err := json.MarshalIndent(resp.Msg.Webhooks, "", "\t")
 	if err != nil {
 		return err
 	}
 	// Ignore errors for writing to stdout.
-	_, _ = container.Stdout().Write(response)
+	_, _ = container.Stdout().Write(webhooksJSON)
 	return nil
 }

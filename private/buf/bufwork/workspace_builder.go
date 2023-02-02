@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ func (w *workspaceBuilder) BuildWorkspace(
 		if err != nil {
 			return nil, err
 		}
-		module, err := w.moduleBucketBuilder.BuildForBucket(
+		module, err := bufmodulebuild.BuildForBucket(
 			ctx,
 			readBucketForDirectory,
 			moduleConfig.Build,

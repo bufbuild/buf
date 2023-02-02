@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/resource.proto";
 import "google/protobuf/timestamp.proto";
 
 // RecommendedRepository is the information about a repository needed to link to
@@ -31,22 +32,17 @@ message RecommendedRepository {
 // RecommendedTemplate is the information needed to recommend a template and link
 // to its owner page.
 message RecommendedTemplate {
+  option deprecated = true;
   string owner = 1;
   string name = 2;
   string description = 3;
   string template_id = 4;
 }
 
-// SetRecommendedRepository is the information needed to configure a repository recommendation
-message SetRecommendedRepository {
-  string repository_id = 1;
-  string description = 2;
-}
-
-// SetRecommendedTemplate is the information needed to configure a template recommendation
-message SetRecommendedTemplate {
-  string template_id = 1;
-  string description = 2;
+// SetRecommendedResource is the information needed to configure a resource recommendation
+message SetRecommendedResource {
+  string owner = 1;
+  string name = 2;
 }
 
 // RecommendationService is the recommendation service.
@@ -54,15 +50,13 @@ service RecommendationService {
   // RecommendedRepositories returns a list of recommended repositories.
   rpc RecommendedRepositories(RecommendedRepositoriesRequest) returns (RecommendedRepositoriesResponse);
   // RecommendedTemplates returns a list of recommended templates.
-  rpc RecommendedTemplates(RecommendedTemplatesRequest) returns (RecommendedTemplatesResponse);
-  // ListRecommendedRepositories returns a list of recommended repositories that user have access to.
-  rpc ListRecommendedRepositories(ListRecommendedRepositoriesRequest) returns (ListRecommendedRepositoriesResponse);
-  // ListRecommendedTemplates returns a list of recommended templates that user have access to.
-  rpc ListRecommendedTemplates(ListRecommendedTemplatesRequest) returns (ListRecommendedTemplatesResponse);
-  // SetRecommendedRepositories set the list of repository recommendations in the server.
-  rpc SetRecommendedRepositories(SetRecommendedRepositoriesRequest) returns (SetRecommendedRepositoriesResponse);
-  // SetRecommendedTemplates set the list of template recommendations in the server.
-  rpc SetRecommendedTemplates(SetRecommendedTemplatesRequest) returns (SetRecommendedTemplatesResponse);
+  rpc RecommendedTemplates(RecommendedTemplatesRequest) returns (RecommendedTemplatesResponse) {
+    option deprecated = true;
+  }
+  // ListRecommendedResources returns a list of recommended resources.
+  rpc ListRecommendedResources(ListRecommendedResourcesRequest) returns (ListRecommendedResourcesResponse);
+  // SetRecommendedResources set the list of recommended resources in the server.
+  rpc SetRecommendedResources(SetRecommendedResourcesRequest) returns (SetRecommendedResourcesResponse);
 }
 
 message RecommendedRepositoriesRequest {}
@@ -71,32 +65,23 @@ message RecommendedRepositoriesResponse {
   repeated RecommendedRepository repositories = 1;
 }
 
-message RecommendedTemplatesRequest {}
+message RecommendedTemplatesRequest {
+  option deprecated = true;
+}
 
 message RecommendedTemplatesResponse {
+  option deprecated = true;
   repeated RecommendedTemplate templates = 1;
 }
 
-message ListRecommendedRepositoriesRequest {}
+message ListRecommendedResourcesRequest {}
 
-message ListRecommendedRepositoriesResponse {
-  repeated RecommendedRepository repositories = 1;
+message ListRecommendedResourcesResponse {
+  repeated Resource resources = 1;
 }
 
-message ListRecommendedTemplatesRequest {}
-
-message ListRecommendedTemplatesResponse {
-  repeated RecommendedTemplate templates = 1;
+message SetRecommendedResourcesRequest {
+  repeated SetRecommendedResource resources = 1;
 }
 
-message SetRecommendedRepositoriesRequest {
-  repeated SetRecommendedRepository repositories = 1;
-}
-
-message SetRecommendedRepositoriesResponse {}
-
-message SetRecommendedTemplatesRequest {
-  repeated SetRecommendedTemplate templates = 1;
-}
-
-message SetRecommendedTemplatesResponse {}
+message SetRecommendedResourcesResponse {}

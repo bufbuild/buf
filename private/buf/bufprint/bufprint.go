@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/multierr"
@@ -98,11 +98,11 @@ type RepositoryPrinter interface {
 
 // NewRepositoryPrinter returns a new RepositoryPrinter.
 func NewRepositoryPrinter(
-	apiProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 	address string,
 	writer io.Writer,
 ) RepositoryPrinter {
-	return newRepositoryPrinter(apiProvider, address, writer)
+	return newRepositoryPrinter(clientConfig, address, writer)
 }
 
 // RepositoryTagPrinter is a repository tag printer.

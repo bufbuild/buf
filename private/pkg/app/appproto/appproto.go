@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ const (
 
 // ResponseBuilder builds CodeGeneratorResponses.
 type ResponseBuilder interface {
-	// Add adds the file to the response.
+	// AddFile adds the file to the response.
 	//
 	// Returns error if nil or the name is empty.
 	// Warns to stderr if the name is already added or the name is not normalized.

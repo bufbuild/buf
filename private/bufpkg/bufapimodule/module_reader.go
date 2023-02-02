@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,36 +16,90 @@ package bufapimodule
 
 import (
 	"context"
+	"errors"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/connect-go"
 )
 
 type moduleReader struct {
-	downloadServiceProvider registryv1alpha1apiclient.DownloadServiceProvider
+	downloadClientFactory DownloadServiceClientFactory
+	tamperProofingEnabled bool
 }
 
 func newModuleReader(
-	downloadServiceProvider registryv1alpha1apiclient.DownloadServiceProvider,
+	downloadClientFactory DownloadServiceClientFactory,
+	opts ...ModuleReaderOption,
 ) *moduleReader {
-	return &moduleReader{
-		downloadServiceProvider: downloadServiceProvider,
+	reader := &moduleReader{
+		downloadClientFactory: downloadClientFactory,
 	}
+	for _, opt := range opts {
+		opt(reader)
+	}
+	return reader
 }
 
 func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
-	downloadService, err := m.downloadServiceProvider.NewDownloadService(ctx, modulePin.Remote())
+	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
+		modulePin.Remote(),
+		modulePin.Owner(),
+		modulePin.Repository(),
+	)
+	if err != nil {
+		// malformed pin
+		return nil, err
+	}
+	identityAndCommitOpt := bufmodule.ModuleWithModuleIdentityAndCommit(
+		moduleIdentity,
+		modulePin.Commit(),
+	)
+	if m.tamperProofingEnabled {
+		resp, err := m.downloadManifestAndBlobs(ctx, modulePin)
+		if err != nil {
+			return nil, err
+		}
+		if resp.Manifest == nil {
+			return nil, errors.New("expected non-nil manifest with tamper proofing enabled")
+		}
+		// use manifest and blobs
+		bucket, err := bufmanifest.NewBucketFromManifestBlobs(
+			ctx,
+			resp.Manifest,
+			resp.Blobs,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return bufmodule.NewModuleForBucket(ctx, bucket, identityAndCommitOpt)
+	}
+	resp, err := m.download(ctx, modulePin)
 	if err != nil {
 		return nil, err
 	}
-	module, err := downloadService.Download(
+	if resp.Module == nil {
+		// funny, success without a module to build
+		return nil, errors.New("no module in response")
+	}
+	return bufmodule.NewModuleForProto(ctx, resp.Module, identityAndCommitOpt)
+}
+
+func (m *moduleReader) download(
+	ctx context.Context,
+	modulePin bufmoduleref.ModulePin,
+) (*registryv1alpha1.DownloadResponse, error) {
+	downloadService := m.downloadClientFactory(modulePin.Remote())
+	resp, err := downloadService.Download(
 		ctx,
-		modulePin.Owner(),
-		modulePin.Repository(),
-		modulePin.Commit(),
+		connect.NewRequest(&registryv1alpha1.DownloadRequest{
+			Owner:      modulePin.Owner(),
+			Repository: modulePin.Repository(),
+			Reference:  modulePin.Commit(),
+		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -54,16 +108,28 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		}
 		return nil, err
 	}
-	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
-		modulePin.Remote(),
-		modulePin.Owner(),
-		modulePin.Repository(),
+	return resp.Msg, err
+}
+
+func (m *moduleReader) downloadManifestAndBlobs(
+	ctx context.Context,
+	modulePin bufmoduleref.ModulePin,
+) (*registryv1alpha1.DownloadManifestAndBlobsResponse, error) {
+	downloadService := m.downloadClientFactory(modulePin.Remote())
+	resp, err := downloadService.DownloadManifestAndBlobs(
+		ctx,
+		connect.NewRequest(&registryv1alpha1.DownloadManifestAndBlobsRequest{
+			Owner:      modulePin.Owner(),
+			Repository: modulePin.Repository(),
+			Reference:  modulePin.Commit(),
+		}),
 	)
 	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			// Required by ModuleReader interface spec
+			return nil, storage.NewErrNotExist(modulePin.String())
+		}
 		return nil, err
 	}
-	return bufmodule.NewModuleForProto(
-		ctx, module,
-		bufmodule.ModuleWithModuleIdentityAndCommit(moduleIdentity, modulePin.Commit()),
-	)
+	return resp.Msg, err
 }

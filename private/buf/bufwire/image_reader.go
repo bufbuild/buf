@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,14 +24,22 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
+)
+
+const (
+	loggerName = "bufwire"
+	tracerName = "bufbuild/buf"
 )
 
 type imageReader struct {
 	logger      *zap.Logger
 	fetchReader buffetch.ImageReader
+	tracer      trace.Tracer
 }
 
 func newImageReader(
@@ -39,8 +47,9 @@ func newImageReader(
 	fetchReader buffetch.ImageReader,
 ) *imageReader {
 	return &imageReader{
-		logger:      logger.Named("bufwire"),
+		logger:      logger.Named(loggerName),
 		fetchReader: fetchReader,
+		tracer:      otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
@@ -53,8 +62,14 @@ func (i *imageReader) GetImage(
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ bufimage.Image, retErr error) {
-	ctx, span := trace.StartSpan(ctx, "get_image")
+	ctx, span := i.tracer.Start(ctx, "get_image")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	readCloser, err := i.fetchReader.GetImageFile(ctx, container, imageRef)
 	if err != nil {
 		return nil, err
@@ -67,58 +82,55 @@ func (i *imageReader) GetImage(
 		return nil, err
 	}
 	protoImage := &imagev1.Image{}
+	var imageFromProtoOptions []bufimage.NewImageForProtoOption
 	switch imageEncoding := imageRef.ImageEncoding(); imageEncoding {
 	// we have to double parse due to custom options
 	// See https://github.com/golang/protobuf/issues/1123
 	// TODO: revisit
 	case buffetch.ImageEncodingBin:
-		firstProtoImage := &imagev1.Image{}
-		_, span := trace.StartSpan(ctx, "first_wire_unmarshal")
-		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
-			return nil, fmt.Errorf("could not unmarshal image: %v", err)
-		}
-		span.End()
-		_, span = trace.StartSpan(ctx, "new_resolver")
-		// TODO right now, NewResolver sets AllowUnresolvable to true all the time
-		// we want to make this into a check, and we verify if we need this for the individual command
-		resolver, err := protoencoding.NewResolver(
-			bufimage.ProtoImageToFileDescriptors(
-				firstProtoImage,
-			)...,
-		)
-		if err != nil {
-			return nil, err
-		}
-		span.End()
-		_, span = trace.StartSpan(ctx, "second_wire_unmarshal")
-		if err := protoencoding.NewWireUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
+		_, span := i.tracer.Start(ctx, "wire_unmarshal")
+		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, protoImage); err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			span.End()
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		span.End()
 	case buffetch.ImageEncodingJSON:
 		firstProtoImage := &imagev1.Image{}
-		_, span := trace.StartSpan(ctx, "first_json_unmarshal")
+		_, span := i.tracer.Start(ctx, "first_json_unmarshal")
 		if err := protoencoding.NewJSONUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			span.End()
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		// TODO right now, NewResolver sets AllowUnresolvable to true all the time
 		// we want to make this into a check, and we verify if we need this for the individual command
 		span.End()
-		_, span = trace.StartSpan(ctx, "new_resolver")
+		_, newResolverSpan := i.tracer.Start(ctx, "new_resolver")
 		resolver, err := protoencoding.NewResolver(
 			bufimage.ProtoImageToFileDescriptors(
 				firstProtoImage,
 			)...,
 		)
 		if err != nil {
+			newResolverSpan.RecordError(err)
+			newResolverSpan.SetStatus(codes.Error, err.Error())
+			newResolverSpan.End()
 			return nil, err
 		}
-		span.End()
-		_, span = trace.StartSpan(ctx, "second_json_unmarshal")
+		newResolverSpan.End()
+		_, jsonUnmarshalSpan := i.tracer.Start(ctx, "second_json_unmarshal")
 		if err := protoencoding.NewJSONUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
+			jsonUnmarshalSpan.RecordError(err)
+			jsonUnmarshalSpan.SetStatus(codes.Error, err.Error())
+			jsonUnmarshalSpan.End()
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
-		span.End()
+		jsonUnmarshalSpan.End()
+		// we've already re-parsed, by unmarshalling 2x above
+		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	default:
 		return nil, fmt.Errorf("unknown image encoding: %v", imageEncoding)
 	}
@@ -127,7 +139,7 @@ func (i *imageReader) GetImage(
 			fileDescriptorProto.SourceCodeInfo = nil
 		}
 	}
-	image, err := bufimage.NewImageForProto(protoImage)
+	image, err := bufimage.NewImageForProto(protoImage, imageFromProtoOptions...)
 	if err != nil {
 		return nil, err
 	}

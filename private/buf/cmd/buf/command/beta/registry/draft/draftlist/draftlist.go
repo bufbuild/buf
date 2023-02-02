@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -101,21 +104,24 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewRepositoryCommitService(ctx, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
-	repositoryCommits, nextPageToken, err := service.ListRepositoryDraftCommits(
+	service := connectclient.Make(
+		clientConfig,
+		moduleIdentity.Remote(),
+		registryv1alpha1connect.NewRepositoryCommitServiceClient,
+	)
+	resp, err := service.ListRepositoryDraftCommits(
 		ctx,
-		moduleIdentity.Owner(),
-		moduleIdentity.Repository(),
-		flags.PageSize,
-		flags.PageToken,
-		flags.Reverse,
+		connect.NewRequest(&registryv1alpha1.ListRepositoryDraftCommitsRequest{
+			RepositoryOwner: moduleIdentity.Owner(),
+			RepositoryName:  moduleIdentity.Repository(),
+			PageSize:        flags.PageSize,
+			PageToken:       flags.PageToken,
+			Reverse:         flags.Reverse,
+		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -123,7 +129,6 @@ func run(
 		}
 		return err
 	}
-	return bufprint.NewRepositoryDraftPrinter(
-		container.Stdout(),
-	).PrintRepositoryDrafts(ctx, format, nextPageToken, repositoryCommits...)
+	return bufprint.NewRepositoryDraftPrinter(container.Stdout()).
+		PrintRepositoryDrafts(ctx, format, resp.Msg.NextPageToken, resp.Msg.RepositoryCommits...)
 }

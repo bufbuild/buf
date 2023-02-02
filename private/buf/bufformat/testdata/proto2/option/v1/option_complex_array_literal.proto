@@ -46,9 +46,9 @@ option (list) = {
         45 // Trailing on '45'.
       ]
 
-    // Leading on '}'.
+      // Leading on '}'.
     }
 
-  // Leading comment on ']',
+    // Leading comment on ']',
   ]
 };

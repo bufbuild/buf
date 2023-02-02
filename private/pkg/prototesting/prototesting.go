@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -120,6 +120,9 @@ func RunProtoc(
 	protocBinPath, err := getProtocBinPath()
 	if err != nil {
 		return err
+	}
+	if resolved, err := filepath.EvalSymlinks(protocBinPath); err == nil {
+		protocBinPath = resolved
 	}
 	protocIncludePath, err := getProtocIncludePath(protocBinPath)
 	if err != nil {

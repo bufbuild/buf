@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -171,12 +171,12 @@ func newMapWriteBucket(
 	}
 }
 
-func (w *mapWriteBucket) Put(ctx context.Context, path string) (WriteObjectCloser, error) {
+func (w *mapWriteBucket) Put(ctx context.Context, path string, opts ...PutOption) (WriteObjectCloser, error) {
 	fullPath, err := w.getFullPath(path)
 	if err != nil {
 		return nil, err
 	}
-	writeObjectCloser, err := w.delegate.Put(ctx, fullPath)
+	writeObjectCloser, err := w.delegate.Put(ctx, fullPath, opts...)
 	// TODO: if this is a path error, we should replace the path
 	if err != nil {
 		return nil, err

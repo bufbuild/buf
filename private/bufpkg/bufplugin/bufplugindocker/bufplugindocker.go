@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,5 @@
 // Package bufplugindocker contains utilities for building Buf plugins using the Docker API.
 package bufplugindocker
 
-// SourceFilePath is the default source file path
-// for the DockerSource.
-const SourceFilePath = "Dockerfile.plugin"
-
-// SourceFileAlternatePath is the alternate path for the DockerSource.
-const SourceFileAlternatePath = "Dockerfile"
+// ImagePath is the default location for the Docker image archive in a plugin zip file.
+const ImagePath = "image.tar"

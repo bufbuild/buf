@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@ package bufconnect
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
 )
 
@@ -31,68 +28,50 @@ const (
 // NewSetCLIVersionInterceptor returns a new Connect Interceptor that sets the Buf CLI version into all request headers
 func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-		return connect.UnaryFunc(func(
+		return func(
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
 			req.Header().Set(CliVersionHeaderName, version)
 			return next(ctx, req)
-		})
+		}
 	}
 	return interceptor
 }
 
-// NewAuthorizationInterceptorProvider returns a new provider function which, when invoked, returns an interceptor
-// which will look up an auth token by address and set it into the request header.  This is used for registry providers
-// where the token is looked up by the client address at the time of client construction (i.e. for clients where a
-// user is already authenticated and the token is stored in .netrc)
-//
-// Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
-// a client.
-func NewAuthorizationInterceptorProvider(container appflag.Container) func(string) connect.UnaryInterceptorFunc {
-	return func(address string) connect.UnaryInterceptorFunc {
-		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-			return connect.UnaryFunc(func(
-				ctx context.Context,
-				req connect.AnyRequest,
-			) (connect.AnyResponse, error) {
-				token := container.Env(tokenEnvKey)
-				if token == "" {
-					machine, err := netrc.GetMachineForName(container, address)
-					if err != nil {
-						return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
-					}
-					if machine != nil {
-						token = machine.Password()
-					}
-				}
-				if token != "" {
-					req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
-				}
-				return next(ctx, req)
-			})
-		}
-		return interceptor
-	}
+// TokenProvider finds the token for NewAuthorizationInterceptorProvider.
+type TokenProvider interface {
+	// RemoteToken returns the remote token from the remote address.
+	RemoteToken(address string) string
+	// IsFromEnvVar returns true if the TokenProvider is generated from an environment variable.
+	IsFromEnvVar() bool
 }
 
-// NewAuthorizationInterceptorProviderWithToken returns a new provider function which, when invoked, returns an
-// interceptor which sets the provided auth token into the request header.  This is used for registry providers where
-// the token is known at provider creation (i.e. when logging in and explicitly pasting a token into stdin
+// NewAuthorizationInterceptorProvider returns a new provider function which, when invoked, returns an interceptor
+// which will set the auth token into the request header by the provided option.
 //
 // Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
 // a client.
-func NewAuthorizationInterceptorProviderWithToken(token string) func(string) connect.UnaryInterceptorFunc {
+func NewAuthorizationInterceptorProvider(tokenProviders ...TokenProvider) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
 				ctx context.Context,
 				req connect.AnyRequest,
 			) (connect.AnyResponse, error) {
-				if token != "" {
-					req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
+				usingTokenEnvKey := false
+				for _, tf := range tokenProviders {
+					if token := tf.RemoteToken(address); token != "" {
+						req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
+						usingTokenEnvKey = tf.IsFromEnvVar()
+						break
+					}
 				}
-				return next(ctx, req)
+				response, err := next(ctx, req)
+				if err != nil && usingTokenEnvKey {
+					err = &AuthError{cause: err, tokenEnvKey: tokenEnvKey}
+				}
+				return response, err
 			})
 		}
 		return interceptor

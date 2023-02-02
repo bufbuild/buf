@@ -9,7 +9,7 @@ message Simple {
   optional uint64 id = 2;
 }
 
-extend .google./* identifier broken up strangely should still be accepted */protobuf.ExtensionRangeOptions {
+extend .google. /* identifier broken up strangely should still be accepted */protobuf.ExtensionRangeOptions {
   optional string label = 20000;
 }
 
@@ -20,7 +20,7 @@ message Test {
   repeated Simple r = 4;
   map<string, int32> m = 5;
 
-  optional bytes b = 6 [default = "\x00\x01\x02\x03\x04\x05\x06\afubar!"];
+  optional bytes b = 6 [default = "\0\1\2\3\4\5\6\7fubar!"];
 
   extensions 100 to 200;
 
@@ -48,12 +48,12 @@ message Test {
         // Trailing comment on '{'.
 
         // Leading comment on 'foo'.
-        foo: "goo"/* Leading comment on ',' */, // Trailing comment on foo
+        foo: "goo" /* Leading comment on ',' */, // Trailing comment on foo
 
         // Leading comment on extension name.
-        [/* One */foo.bar.Test.Nested._NestedNested._garblez/* Two */]/* Three */: "boo" // Trailing comment on extension name.
+        [/* One */ foo.bar.Test.Nested._NestedNested._garblez /* Two */] /* Three */ : "boo" // Trailing comment on extension name.
 
-      // Leading comment on '}'.
+        // Leading comment on '}'.
       };
       message NestedNestedNested {
         option (rept) = {

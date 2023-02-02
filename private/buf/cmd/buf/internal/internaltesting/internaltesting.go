@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,24 +43,14 @@ func CopyReadBucketToTempDir(
 	return tempDirPath, readWriteBucket
 }
 
-// NewEnv returns a new env map for testing.
-func NewEnv(tb testing.TB, use string) func(string) map[string]string {
-	tempDirPath := tb.TempDir()
-	return func(use string) map[string]string {
-		return map[string]string{
-			useEnvVar(use, "CACHE_DIR"): tempDirPath,
-			"PATH":                      os.Getenv("PATH"),
-		}
-	}
-}
-
 // NewEnvFunc returns a new env func for testing.
 func NewEnvFunc(tb testing.TB) func(string) map[string]string {
 	tempDirPath := tb.TempDir()
 	return func(use string) map[string]string {
 		return map[string]string{
-			useEnvVar(use, "CACHE_DIR"): tempDirPath,
-			"PATH":                      os.Getenv("PATH"),
+			useEnvVar(use, "CACHE_DIR"):  tempDirPath,
+			useEnvVar(use, "CONFIG_DIR"): tempDirPath,
+			"PATH":                       os.Getenv("PATH"),
 		}
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package git
 import (
 	"context"
 	"errors"
+	"net/http/cgi"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -173,6 +175,7 @@ func TestGitCloner(t *testing.T) {
 }
 
 func readBucketForName(ctx context.Context, t *testing.T, runner command.Runner, path string, depth uint32, name Name, recurseSubmodules bool) storage.ReadBucket {
+	t.Helper()
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	cloner := NewCloner(zap.NewNop(), storageosProvider, runner, ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
@@ -212,6 +215,21 @@ func createGitDirs(
 	require.NoError(t, os.WriteFile(filepath.Join(submodulePath, "test.proto"), []byte("// submodule"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "commit", "-m", "commit 0")
+
+	gitExecPath, err := command.RunStdout(ctx, container, runner, "git", "--exec-path")
+	require.NoError(t, err)
+	t.Log(filepath.Join(string(gitExecPath), "git-http-backend"))
+	// https://git-scm.com/docs/git-http-backend#_description
+	f, err := os.Create(filepath.Join(submodulePath, ".git", "git-daemon-export-ok"))
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+	server := httptest.NewServer(&cgi.Handler{
+		Path: filepath.Join(strings.TrimSpace(string(gitExecPath)), "git-http-backend"),
+		Dir:  submodulePath,
+		Env:  []string{"GIT_PROJECT_ROOT=" + submodulePath},
+	})
+	t.Cleanup(server.Close)
+	submodulePath = server.URL
 
 	originPath := filepath.Join(tmpDir, "origin")
 	require.NoError(t, os.MkdirAll(originPath, 0777))
@@ -257,6 +275,7 @@ func runCommand(
 	name string,
 	args ...string,
 ) {
+	t.Helper()
 	output, err := command.RunStdout(ctx, container, runner, name, args...)
 	if err != nil {
 		var exitErr *exec.ExitError

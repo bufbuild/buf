@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ package appprotoexec
 import (
 	"context"
 	"fmt"
-	"os/exec"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
@@ -41,7 +40,7 @@ const (
 	// DefaultMinorVersion is the default minor version.
 	defaultMinorVersion = 21
 	// DefaultPatchVersion is the default patch version.
-	defaultPatchVersion = 0
+	defaultPatchVersion = 12
 	// DefaultSuffixVersion is the default suffix version.
 	defaultSuffixVersion = ""
 )
@@ -116,7 +115,6 @@ func GenerateWithPluginPath(pluginPath string) GenerateOption {
 //   - Else, if the name is in ProtocProxyPluginNames, this returns a new protoc proxy handler.
 //   - Else, this returns error.
 func NewHandler(
-	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	pluginName string,
@@ -127,28 +125,32 @@ func NewHandler(
 		option(handlerOptions)
 	}
 	if handlerOptions.pluginPath != "" {
-		pluginPath, err := exec.LookPath(handlerOptions.pluginPath)
+		pluginPath, err := unsafeLookPath(handlerOptions.pluginPath)
 		if err != nil {
 			return nil, err
 		}
-		return newBinaryHandler(logger, runner, pluginPath), nil
+		return newBinaryHandler(runner, pluginPath), nil
 	}
-	pluginPath, err := exec.LookPath("protoc-gen-" + pluginName)
+	pluginPath, err := unsafeLookPath("protoc-gen-" + pluginName)
 	if err == nil {
-		return newBinaryHandler(logger, runner, pluginPath), nil
+		return newBinaryHandler(runner, pluginPath), nil
 	}
 	// we always look for protoc-gen-X first, but if not, check the builtins
 	if _, ok := ProtocProxyPluginNames[pluginName]; ok {
 		if handlerOptions.protocPath == "" {
 			handlerOptions.protocPath = "protoc"
 		}
-		protocPath, err := exec.LookPath(handlerOptions.protocPath)
+		protocPath, err := unsafeLookPath(handlerOptions.protocPath)
 		if err != nil {
 			return nil, err
 		}
-		return newProtocProxyHandler(logger, storageosProvider, runner, protocPath, pluginName), nil
+		return newProtocProxyHandler(storageosProvider, runner, protocPath, pluginName), nil
 	}
-	return nil, fmt.Errorf("could not find protoc plugin for name %s", pluginName)
+	return nil, fmt.Errorf(
+		"could not find protoc plugin for name %s - please make sure protoc-gen-%s is installed and present on your $PATH",
+		pluginName,
+		pluginName,
+	)
 }
 
 // HandlerOption is an option for a new Handler.
@@ -157,6 +159,7 @@ type HandlerOption func(*handlerOptions)
 // HandlerWithProtocPath returns a new HandlerOption that sets the path to the protoc binary.
 //
 // The default is to do exec.LookPath on "protoc".
+// protocPath is expected to be unnormalized.
 func HandlerWithProtocPath(protocPath string) HandlerOption {
 	return func(handlerOptions *handlerOptions) {
 		handlerOptions.protocPath = protocPath
@@ -166,10 +169,23 @@ func HandlerWithProtocPath(protocPath string) HandlerOption {
 // HandlerWithPluginPath returns a new HandlerOption that sets the path to the plugin binary.
 //
 // The default is to do exec.LookPath on "protoc-gen-" + pluginName.
+// pluginPath is expected to be unnormalized.
 func HandlerWithPluginPath(pluginPath string) HandlerOption {
 	return func(handlerOptions *handlerOptions) {
 		handlerOptions.pluginPath = pluginPath
 	}
+}
+
+// NewBinaryHandler returns a new Handler that invokes the specific plugin
+// specified by pluginPath.
+//
+// Used by other repositories.
+func NewBinaryHandler(runner command.Runner, pluginPath string) (appproto.Handler, error) {
+	pluginPath, err := unsafeLookPath(pluginPath)
+	if err != nil {
+		return nil, err
+	}
+	return newBinaryHandler(runner, pluginPath), nil
 }
 
 type handlerOptions struct {

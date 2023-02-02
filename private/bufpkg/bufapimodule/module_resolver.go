@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,39 +16,39 @@ package bufapimodule
 
 import (
 	"context"
+	"errors"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/connect-go"
 	"go.uber.org/zap"
 )
 
 type moduleResolver struct {
-	logger                          *zap.Logger
-	repositoryCommitServiceProvider registryv1alpha1apiclient.RepositoryCommitServiceProvider
+	logger                        *zap.Logger
+	repositoryCommitClientFactory RepositoryCommitServiceClientFactory
 }
 
 func newModuleResolver(
 	logger *zap.Logger,
-	repositoryCommitServiceProvider registryv1alpha1apiclient.RepositoryCommitServiceProvider,
+	repositoryCommitClientFactory RepositoryCommitServiceClientFactory,
 ) *moduleResolver {
 	return &moduleResolver{
-		logger:                          logger,
-		repositoryCommitServiceProvider: repositoryCommitServiceProvider,
+		logger:                        logger,
+		repositoryCommitClientFactory: repositoryCommitClientFactory,
 	}
 }
 
 func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmoduleref.ModuleReference) (bufmoduleref.ModulePin, error) {
-	repositoryCommitService, err := m.repositoryCommitServiceProvider.NewRepositoryCommitService(ctx, moduleReference.Remote())
-	if err != nil {
-		return nil, err
-	}
-	repositoryCommit, err := repositoryCommitService.GetRepositoryCommitByReference(
+	repositoryCommitService := m.repositoryCommitClientFactory(moduleReference.Remote())
+	resp, err := repositoryCommitService.GetRepositoryCommitByReference(
 		ctx,
-		moduleReference.Owner(),
-		moduleReference.Repository(),
-		moduleReference.Reference(),
+		connect.NewRequest(&registryv1alpha1.GetRepositoryCommitByReferenceRequest{
+			RepositoryOwner: moduleReference.Owner(),
+			RepositoryName:  moduleReference.Repository(),
+			Reference:       moduleReference.Reference(),
+		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -57,12 +57,16 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 		}
 		return nil, err
 	}
+	if resp.Msg.RepositoryCommit == nil {
+		return nil, errors.New("empty response")
+	}
 	return bufmoduleref.NewModulePin(
 		moduleReference.Remote(),
 		moduleReference.Owner(),
 		moduleReference.Repository(),
-		"",
-		repositoryCommit.Name,
-		repositoryCommit.CreateTime.AsTime(),
+		"", // branch
+		resp.Msg.RepositoryCommit.Name,
+		resp.Msg.RepositoryCommit.Digest,
+		resp.Msg.RepositoryCommit.CreateTime.AsTime(),
 	)
 }

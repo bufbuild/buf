@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
-	"github.com/jhump/protocompile/ast"
+	"github.com/bufbuild/protocompile/ast"
 	"go.uber.org/multierr"
 )
 
@@ -30,16 +31,38 @@ import (
 type formatter struct {
 	writer   io.Writer
 	fileNode *ast.FileNode
-	indent   int
 
-	// Used to determine how the current node's
-	// leading comments should be written.
+	// Current level of indentation.
+	indent int
+	// The last character written to writer.
+	lastWritten rune
+
+	// The last node written. This must be updated from all functions
+	// that write comments with a node. This flag informs how the next
+	// node's leading comments and whitespace should be written.
 	previousNode ast.Node
 
-	// Records all errors that occur during
-	// the formatting process. Nearly any
-	// non-nil error represents a bug in the
-	// implementation.
+	// If true, a space will be written to the output unless the next character
+	// written is a newline (don't wait errant trailing spaces).
+	pendingSpace bool
+	// If true, the formatter is in the middle of printing compact options.
+	inCompactOptions bool
+
+	// Track runes that open blocks/scopes and are expected to increase indention
+	// level. For example, when runes "{" "[" "(" ")" are written, the pending
+	// value is 2 (increment three times for "{" "[" "("; decrement once for ")").
+	// If it's greater than zero at the end of a line, we call In() so that
+	// subsequent lines are indented. If it's less than zero at the end of a line,
+	// we call Out(). This minimizes the amount of explicit indent/unindent code
+	// that is needed and makes it less error-prone.
+	pendingIndent int
+	// If true, an inline node/sequence is being written. We treat whitespace a
+	// little differently for when blocks are printed inline vs. across multiple
+	// lines. So this flag informs the logic that makes those whitespace decisions.
+	inline bool
+
+	// Records all errors that occur during the formatting process. Nearly any
+	// non-nil error represents a bug in the implementation.
 	err error
 }
 
@@ -56,7 +79,7 @@ func newFormatter(
 
 // Run runs the formatter and writes the file's content to the formatter's writer.
 func (f *formatter) Run() error {
-	f.writeFile(f.fileNode)
+	f.writeFile()
 	return f.err
 }
 
@@ -65,17 +88,24 @@ func (f *formatter) P(elements ...string) {
 	if len(elements) > 0 {
 		// We only want to write an indent if we're
 		// writing elements (not just a newline).
-		f.Indent()
-	}
-	for _, elem := range elements {
-		f.WriteString(elem)
+		f.Indent(nil)
+		for _, elem := range elements {
+			f.WriteString(elem)
+		}
 	}
 	f.WriteString("\n")
+
+	if f.pendingIndent > 0 {
+		f.In()
+	} else if f.pendingIndent < 0 {
+		f.Out()
+	}
+	f.pendingIndent = 0
 }
 
 // Space adds a space to the generated output.
 func (f *formatter) Space() {
-	f.WriteString(" ")
+	f.pendingSpace = true
 }
 
 // In increases the current level of indentation.
@@ -98,13 +128,55 @@ func (f *formatter) Out() {
 
 // Indent writes the number of spaces associated
 // with the current level of indentation.
-func (f *formatter) Indent() {
-	f.WriteString(strings.Repeat("  ", f.indent))
+func (f *formatter) Indent(nextNode ast.Node) {
+	// only indent at beginning of line
+	if f.lastWritten != '\n' {
+		return
+	}
+	indent := f.indent
+	if rn, ok := nextNode.(*ast.RuneNode); ok && indent > 0 {
+		if strings.ContainsRune("}])>", rn.Rune) {
+			indent--
+		}
+	}
+	f.WriteString(strings.Repeat("  ", indent))
 }
 
 // WriteString writes the given element to the generated output.
 func (f *formatter) WriteString(elem string) {
-	if _, err := fmt.Fprint(f.writer, elem); err != nil {
+	if f.pendingSpace {
+		f.pendingSpace = false
+		first, _ := utf8.DecodeRuneInString(elem)
+
+		// We don't want "dangling spaces" before certain characters:
+		// newlines, commas, and semicolons. Also, when writing
+		// elements inline, we don't want spaces before close parens
+		// and braces. Similarly, we don't want extra/doubled spaces
+		// or dangling spaces after certain characters when printing
+		// inline, like open parens/braces. So only print the space
+		// if the previous and next character don't match above
+		// conditions.
+
+		prevBlockList := "\x00 \t\n"
+		nextBlockList := "\n;,"
+		if f.inline {
+			prevBlockList = "\x00 \t\n<[{("
+			nextBlockList = "\n;,)]}>"
+		}
+
+		if !strings.ContainsRune(prevBlockList, f.lastWritten) &&
+			!strings.ContainsRune(nextBlockList, first) {
+			if _, err := f.writer.Write([]byte{' '}); err != nil {
+				f.err = multierr.Append(f.err, err)
+				return
+			}
+		}
+	}
+	if len(elem) == 0 {
+		return
+	}
+	f.lastWritten, _ = utf8.DecodeLastRuneInString(elem)
+	if _, err := f.writer.Write([]byte(elem)); err != nil {
 		f.err = multierr.Append(f.err, err)
 	}
 }
@@ -116,23 +188,14 @@ func (f *formatter) SetPreviousNode(node ast.Node) {
 }
 
 // writeFile writes the file node.
-func (f *formatter) writeFile(fileNode *ast.FileNode) {
-	f.writeFileHeader(fileNode)
-	f.writeFileTypes(fileNode)
-	if fileNode.EOF != nil {
-		info := f.fileNode.NodeInfo(fileNode.EOF)
-		if info.LeadingComments().Len() > 0 {
-			if !f.previousTrailingCommentsWroteNewline() {
-				// If the previous node didn't have trailing comments that
-				// wrote a newline, we need to add one here.
-				f.P()
-			}
-			f.P()
-			f.writeMultilineComments(info.LeadingComments())
-			return
-		}
+func (f *formatter) writeFile() {
+	f.writeFileHeader()
+	f.writeFileTypes()
+	if f.fileNode.EOF != nil {
+		info := f.fileNode.NodeInfo(f.fileNode.EOF)
+		f.writeMultilineComments(info.LeadingComments())
 	}
-	if f.previousNode != nil {
+	if f.lastWritten != 0 && f.lastWritten != '\n' {
 		// If anything was written, we always conclude with
 		// a newline.
 		f.P()
@@ -154,12 +217,11 @@ func (f *formatter) writeFile(fileNode *ast.FileNode) {
 //
 //	option cc_enable_arenas = true;
 //	option optimize_for = SPEED;
-func (f *formatter) writeFileHeader(fileNode *ast.FileNode) {
+func (f *formatter) writeFileHeader() {
 	var (
 		packageNode *ast.PackageNode
 		importNodes []*ast.ImportNode
 		optionNodes []*ast.OptionNode
-		typeNodes   []ast.FileElement
 	)
 	for _, fileElement := range f.fileNode.Decls {
 		switch node := fileElement.(type) {
@@ -169,10 +231,8 @@ func (f *formatter) writeFileHeader(fileNode *ast.FileNode) {
 			importNodes = append(importNodes, node)
 		case *ast.OptionNode:
 			optionNodes = append(optionNodes, node)
-		case *ast.EmptyDeclNode:
-			continue
 		default:
-			typeNodes = append(typeNodes, node)
+			continue
 		}
 	}
 	if f.fileNode.Syntax == nil && packageNode == nil && importNodes == nil && optionNodes == nil {
@@ -183,26 +243,16 @@ func (f *formatter) writeFileHeader(fileNode *ast.FileNode) {
 		f.writeSyntax(syntaxNode)
 	}
 	if packageNode != nil {
-		if f.previousNode != nil {
-			if !f.startsWithNewline(f.fileNode.NodeInfo(packageNode.Keyword)) {
-				f.P()
-			}
-			f.P()
-		}
 		f.writePackage(packageNode)
 	}
 	sort.Slice(importNodes, func(i, j int) bool {
 		return importNodes[i].Name.AsString() < importNodes[j].Name.AsString()
 	})
 	for i, importNode := range importNodes {
-		if i == 0 && f.previousNode != nil {
-			f.P()
-			f.P()
-		}
-		if i > 0 {
+		if i == 0 && f.previousNode != nil && !f.leadingCommentsContainBlankLine(importNode) {
 			f.P()
 		}
-		f.writeImport(importNode)
+		f.writeImport(importNode, i > 0)
 	}
 	sort.Slice(optionNodes, func(i, j int) bool {
 		// The default options (e.g. cc_enable_arenas) should always
@@ -222,38 +272,28 @@ func (f *formatter) writeFileHeader(fileNode *ast.FileNode) {
 		return left < right
 	})
 	for i, optionNode := range optionNodes {
-		if i == 0 && f.previousNode != nil {
-			f.P()
-			f.P()
-		}
-		if i > 0 {
+		if i == 0 && f.previousNode != nil && !f.leadingCommentsContainBlankLine(optionNode) {
 			f.P()
 		}
-		f.writeFileOption(optionNode)
-	}
-	if len(typeNodes) > 0 {
-		f.P()
+		f.writeFileOption(optionNode, i > 0)
 	}
 }
 
 // writeFileTypes writes the types defined in a .proto file. This includes the messages, enums,
 // services, etc. All other elements are ignored since they are handled by f.writeFileHeader.
-func (f *formatter) writeFileTypes(fileNode *ast.FileNode) {
-	var writeNewline bool
-	for _, fileElement := range f.fileNode.Decls {
+func (f *formatter) writeFileTypes() {
+	for i, fileElement := range f.fileNode.Decls {
 		switch node := fileElement.(type) {
 		case *ast.PackageNode, *ast.OptionNode, *ast.ImportNode, *ast.EmptyDeclNode:
 			// These elements have already been written by f.writeFileHeader.
 			continue
 		default:
-			if writeNewline {
-				// File-level nodes should be separated by a newline.
+			info := f.fileNode.NodeInfo(node)
+			wantNewline := f.previousNode != nil && (i == 0 || info.LeadingComments().Len() > 0)
+			if wantNewline && !f.leadingCommentsContainBlankLine(node) {
 				f.P()
 			}
 			f.writeNode(node)
-			// We want to start writing newlines as soon as we've written
-			// a single type.
-			writeNewline = true
 		}
 	}
 }
@@ -289,10 +329,8 @@ func (f *formatter) writePackage(packageNode *ast.PackageNode) {
 // For example,
 //
 //	import "google/protobuf/descriptor.proto";
-func (f *formatter) writeImport(importNode *ast.ImportNode) {
-	// We don't use f.writeStart here because the imports are sorted
-	// and potentially changed order.
-	f.writeBodyEndInline(importNode.Keyword)
+func (f *formatter) writeImport(importNode *ast.ImportNode, forceCompact bool) {
+	f.writeStartMaybeCompact(importNode.Keyword, forceCompact)
 	f.Space()
 	// We don't want to write the "public" and "weak" nodes
 	// if they aren't defined. One could be set, but never both.
@@ -311,10 +349,8 @@ func (f *formatter) writeImport(importNode *ast.ImportNode) {
 // writeFileOption writes a file option. This function is slightly
 // different than f.writeOption because file options are sorted at
 // the top of the file, and leading comments are adjusted accordingly.
-func (f *formatter) writeFileOption(optionNode *ast.OptionNode) {
-	// We don't use f.writeStart here because the options are sorted
-	// and potentially changed order.
-	f.writeBodyEndInline(optionNode.Keyword)
+func (f *formatter) writeFileOption(optionNode *ast.OptionNode, forceCompact bool) {
+	f.writeStartMaybeCompact(optionNode.Keyword, forceCompact)
 	f.Space()
 	f.writeNode(optionNode.Name)
 	f.Space()
@@ -323,7 +359,7 @@ func (f *formatter) writeFileOption(optionNode *ast.OptionNode) {
 		// Compound string literals are written across multiple lines
 		// immediately after the '=', so we don't need a trailing
 		// space in the option prefix.
-		f.writeCompoundStringLiteralForSingleOption(node)
+		f.writeCompoundStringLiteralIndentEndInline(node)
 		f.writeLineEnd(optionNode.Semicolon)
 		return
 	}
@@ -344,12 +380,17 @@ func (f *formatter) writeOption(optionNode *ast.OptionNode) {
 			// Compound string literals are written across multiple lines
 			// immediately after the '=', so we don't need a trailing
 			// space in the option prefix.
-			f.writeCompoundStringLiteralForSingleOption(node)
+			f.writeCompoundStringLiteralIndentEndInline(node)
 			f.writeLineEnd(optionNode.Semicolon)
 			return
 		}
 		f.writeInline(optionNode.Val)
 		f.writeLineEnd(optionNode.Semicolon)
+		return
+	}
+
+	if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
+		f.writeCompoundStringLiteralIndent(node)
 		return
 	}
 	f.writeInline(optionNode.Val)
@@ -387,12 +428,6 @@ func (f *formatter) writeOptionPrefix(optionNode *ast.OptionNode) {
 	}
 	f.Space()
 	f.writeInline(optionNode.Equals)
-	if _, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
-		// Compound string literals are written across multiple lines
-		// immediately after the '=', so we don't need a trailing
-		// space in the option prefix.
-		return
-	}
 	f.Space()
 }
 
@@ -405,10 +440,10 @@ func (f *formatter) writeOptionPrefix(optionNode *ast.OptionNode) {
 //	(custom.thing).bridge.(another.thing)
 func (f *formatter) writeOptionName(optionNameNode *ast.OptionNameNode) {
 	for i := 0; i < len(optionNameNode.Parts); i++ {
-		if i == 0 {
-			// The comments will have already been written as a multiline
-			// comment above the option name, so we need to handle this case
-			// specially.
+		if f.inCompactOptions && i == 0 {
+			// The leading comments of the first token (either open rune or the
+			// name) will have already been written, so we need to handle this
+			// case specially.
 			fieldReferenceNode := optionNameNode.Parts[0]
 			if fieldReferenceNode.Open != nil {
 				f.writeNode(fieldReferenceNode.Open)
@@ -418,14 +453,19 @@ func (f *formatter) writeOptionName(optionNameNode *ast.OptionNameNode) {
 				f.writeInline(fieldReferenceNode.Name)
 			} else {
 				f.writeNode(fieldReferenceNode.Name)
+				if info := f.fileNode.NodeInfo(fieldReferenceNode.Name); info.TrailingComments().Len() > 0 {
+					f.writeInlineComments(info.TrailingComments())
+				}
 			}
 			if fieldReferenceNode.Close != nil {
 				f.writeInline(fieldReferenceNode.Close)
 			}
 			continue
 		}
-		// The length of this slice must be exactly len(Parts)-1.
-		f.writeInline(optionNameNode.Dots[i-1])
+		if i > 0 {
+			// The length of this slice must be exactly len(Parts)-1.
+			f.writeInline(optionNameNode.Dots[i-1])
+		}
 		f.writeNode(optionNameNode.Parts[i])
 	}
 }
@@ -456,10 +496,7 @@ func (f *formatter) writeMessage(messageNode *ast.MessageNode) {
 	var elementWriterFunc func()
 	if len(messageNode.Decls) != 0 {
 		elementWriterFunc = func() {
-			for i, decl := range messageNode.Decls {
-				if i > 0 {
-					f.P()
-				}
+			for _, decl := range messageNode.Decls {
 				f.writeNode(decl)
 			}
 		}
@@ -489,6 +526,9 @@ func (f *formatter) writeMessage(messageNode *ast.MessageNode) {
 //	  >
 //	}
 func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNode) {
+	if f.maybeWriteCompactMessageLiteral(messageLiteralNode, false) {
+		return
+	}
 	var elementWriterFunc func()
 	if len(messageLiteralNode.Elements) > 0 {
 		elementWriterFunc = func() {
@@ -508,19 +548,72 @@ func (f *formatter) writeMessageLiteralForArray(
 	messageLiteralNode *ast.MessageLiteralNode,
 	lastElement bool,
 ) {
+	if f.maybeWriteCompactMessageLiteral(messageLiteralNode, true) {
+		return
+	}
 	var elementWriterFunc func()
 	if len(messageLiteralNode.Elements) > 0 {
 		elementWriterFunc = func() {
 			f.writeMessageLiteralElements(messageLiteralNode)
 		}
 	}
+	closeWriter := f.writeBodyEndInline
+	if lastElement {
+		closeWriter = f.writeBodyEnd
+	}
 	f.writeBody(
 		messageLiteralNode.Open,
 		messageLiteralNode.Close,
 		elementWriterFunc,
 		f.writeOpenBracePrefixForArray,
-		f.writeBodyEndInline,
+		closeWriter,
 	)
+}
+
+func (f *formatter) maybeWriteCompactMessageLiteral(
+	messageLiteralNode *ast.MessageLiteralNode,
+	inArrayLiteral bool,
+) bool {
+	if len(messageLiteralNode.Elements) == 0 || len(messageLiteralNode.Elements) > 1 ||
+		f.hasInteriorComments(messageLiteralNode.Children()...) ||
+		messageLiteralHasNestedMessageOrArray(messageLiteralNode) {
+		return false
+	}
+	// messages with a single scalar field and no comments can be
+	// printed all on one line
+	if inArrayLiteral {
+		f.Indent(messageLiteralNode.Open)
+	}
+	f.writeInline(messageLiteralNode.Open)
+	fieldNode := messageLiteralNode.Elements[0]
+	f.writeInline(fieldNode.Name)
+	if fieldNode.Sep != nil {
+		f.writeInline(fieldNode.Sep)
+	}
+	f.Space()
+	f.writeInline(fieldNode.Val)
+	f.writeInline(messageLiteralNode.Close)
+	return true
+}
+
+func messageLiteralHasNestedMessageOrArray(messageLiteralNode *ast.MessageLiteralNode) bool {
+	for _, elem := range messageLiteralNode.Elements {
+		switch elem.Val.(type) {
+		case *ast.ArrayLiteralNode, *ast.MessageLiteralNode:
+			return true
+		}
+	}
+	return false
+}
+
+func arrayLiteralHasNestedMessageOrArray(arrayLiteralNode *ast.ArrayLiteralNode) bool {
+	for _, elem := range arrayLiteralNode.Elements {
+		switch elem.(type) {
+		case *ast.ArrayLiteralNode, *ast.MessageLiteralNode:
+			return true
+		}
+	}
+	return false
 }
 
 // writeMessageLiteralElements writes the message literal's elements.
@@ -531,9 +624,6 @@ func (f *formatter) writeMessageLiteralForArray(
 //	foo: 2
 func (f *formatter) writeMessageLiteralElements(messageLiteralNode *ast.MessageLiteralNode) {
 	for i := 0; i < len(messageLiteralNode.Elements); i++ {
-		if i > 0 {
-			f.P()
-		}
 		if sep := messageLiteralNode.Seps[i]; sep != nil {
 			f.writeMessageFieldWithSeparator(messageLiteralNode.Elements[i])
 			f.writeLineEnd(messageLiteralNode.Seps[i])
@@ -548,6 +638,10 @@ func (f *formatter) writeMessageLiteralElements(messageLiteralNode *ast.MessageL
 // message literal.
 func (f *formatter) writeMessageField(messageFieldNode *ast.MessageFieldNode) {
 	f.writeMessageFieldPrefix(messageFieldNode)
+	if compoundStringLiteral, ok := messageFieldNode.Val.(*ast.CompoundStringLiteralNode); ok {
+		f.writeCompoundStringLiteralIndent(compoundStringLiteral)
+		return
+	}
 	f.writeLineEnd(messageFieldNode.Val)
 }
 
@@ -556,6 +650,10 @@ func (f *formatter) writeMessageField(messageFieldNode *ast.MessageFieldNode) {
 // literal.
 func (f *formatter) writeMessageFieldWithSeparator(messageFieldNode *ast.MessageFieldNode) {
 	f.writeMessageFieldPrefix(messageFieldNode)
+	if compoundStringLiteral, ok := messageFieldNode.Val.(*ast.CompoundStringLiteralNode); ok {
+		f.writeCompoundStringLiteralIndentEndInline(compoundStringLiteral)
+		return
+	}
 	f.writeInline(messageFieldNode.Val)
 }
 
@@ -583,12 +681,6 @@ func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNo
 	if messageFieldNode.Sep != nil {
 		f.writeInline(messageFieldNode.Sep)
 	}
-	if _, ok := messageFieldNode.Val.(*ast.CompoundStringLiteralNode); ok {
-		// Compound string literals are written across multiple lines
-		// immediately after the ':', so we don't need a trailing
-		// space in the option prefix.
-		return
-	}
 	f.Space()
 }
 
@@ -606,10 +698,7 @@ func (f *formatter) writeEnum(enumNode *ast.EnumNode) {
 	var elementWriterFunc func()
 	if len(enumNode.Decls) > 0 {
 		elementWriterFunc = func() {
-			for i, decl := range enumNode.Decls {
-				if i > 0 {
-					f.P()
-				}
+			for _, decl := range enumNode.Decls {
 				f.writeNode(decl)
 			}
 		}
@@ -734,10 +823,7 @@ func (f *formatter) writeExtend(extendNode *ast.ExtendNode) {
 	var elementWriterFunc func()
 	if len(extendNode.Decls) > 0 {
 		elementWriterFunc = func() {
-			for i, decl := range extendNode.Decls {
-				if i > 0 {
-					f.P()
-				}
+			for _, decl := range extendNode.Decls {
 				f.writeNode(decl)
 			}
 		}
@@ -765,10 +851,7 @@ func (f *formatter) writeService(serviceNode *ast.ServiceNode) {
 	var elementWriterFunc func()
 	if len(serviceNode.Decls) > 0 {
 		elementWriterFunc = func() {
-			for i, decl := range serviceNode.Decls {
-				if i > 0 {
-					f.P()
-				}
+			for _, decl := range serviceNode.Decls {
 				f.writeNode(decl)
 			}
 		}
@@ -796,10 +879,7 @@ func (f *formatter) writeRPC(rpcNode *ast.RPCNode) {
 	var elementWriterFunc func()
 	if len(rpcNode.Decls) > 0 {
 		elementWriterFunc = func() {
-			for i, decl := range rpcNode.Decls {
-				if i > 0 {
-					f.P()
-				}
+			for _, decl := range rpcNode.Decls {
 				f.writeNode(decl)
 			}
 		}
@@ -854,10 +934,7 @@ func (f *formatter) writeOneOf(oneOfNode *ast.OneOfNode) {
 	var elementWriterFunc func()
 	if len(oneOfNode.Decls) > 0 {
 		elementWriterFunc = func() {
-			for i, decl := range oneOfNode.Decls {
-				if i > 0 {
-					f.P()
-				}
+			for _, decl := range oneOfNode.Decls {
 				f.writeNode(decl)
 			}
 		}
@@ -888,10 +965,7 @@ func (f *formatter) writeGroup(groupNode *ast.GroupNode) {
 	var elementWriterFunc func()
 	if len(groupNode.Decls) > 0 {
 		elementWriterFunc = func() {
-			for i, decl := range groupNode.Decls {
-				if i > 0 {
-					f.P()
-				}
+			for _, decl := range groupNode.Decls {
 				f.writeNode(decl)
 			}
 		}
@@ -1009,58 +1083,53 @@ func (f *formatter) writeRange(rangeNode *ast.RangeNode) {
 //	  json_name = "something"
 //	]
 func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNode) {
-	if len(compactOptionsNode.Options) == 1 {
-		// If there's only a single compact option without comments, we can write it in-line.
-		//
-		// For example,
+	f.inCompactOptions = true
+	defer func() {
+		f.inCompactOptions = false
+	}()
+	if len(compactOptionsNode.Options) == 1 &&
+		!f.hasInteriorComments(compactOptionsNode.OpenBracket, compactOptionsNode.Options[0].Name) {
+		// If there's only a single compact scalar option without comments, we can write it
+		// in-line. For example:
 		//
 		//  [deprecated = true]
 		//
 		// However, this does not include the case when the '[' has trailing comments,
 		// or the option name has leading comments. In those cases, we write the option
-		// across multiple lines.
-		//
-		// For example,
+		// across multiple lines. For example:
 		//
 		//  [
 		//    // This type is deprecated.
-		//    deprecated = true;
+		//    deprecated = true
 		//  ]
 		//
 		optionNode := compactOptionsNode.Options[0]
-		openBracketInfo := f.fileNode.NodeInfo(compactOptionsNode.OpenBracket)
-		optionNameInfo := f.fileNode.NodeInfo(optionNode.Name)
-		if openBracketInfo.TrailingComments().Len() == 0 && optionNameInfo.LeadingComments().Len() == 0 {
-			f.writeInline(compactOptionsNode.OpenBracket)
-			f.writeInline(optionNode.Name)
-			f.Space()
-			f.writeInline(optionNode.Equals)
-			if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
-				// If there's only a single compact option, the value needs to
-				// write its comments (if any) in a way that preserves the closing ']'.
-				f.writeCompoundStringLiteralForSingleOption(node)
-				f.writeInline(compactOptionsNode.CloseBracket)
-				return
-			}
-			f.Space()
-			f.writeInline(optionNode.Val)
+		f.writeInline(compactOptionsNode.OpenBracket)
+		f.writeInline(optionNode.Name)
+		f.Space()
+		f.writeInline(optionNode.Equals)
+		if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
+			// If there's only a single compact option, the value needs to
+			// write its comments (if any) in a way that preserves the closing ']'.
+			f.writeCompoundStringLiteralNoIndentEndInline(node)
 			f.writeInline(compactOptionsNode.CloseBracket)
 			return
 		}
+		f.Space()
+		f.writeInline(optionNode.Val)
+		f.writeInline(compactOptionsNode.CloseBracket)
+		return
 	}
 	var elementWriterFunc func()
 	if len(compactOptionsNode.Options) > 0 {
 		elementWriterFunc = func() {
-			for i := 0; i < len(compactOptionsNode.Options); i++ {
-				if i > 0 {
-					f.P()
-				}
+			for i, opt := range compactOptionsNode.Options {
 				if i == len(compactOptionsNode.Options)-1 {
 					// The last element won't have a trailing comma.
-					f.writeLastCompactOption(compactOptionsNode.Options[i])
+					f.writeLastCompactOption(opt)
 					return
 				}
-				f.writeNode(compactOptionsNode.Options[i])
+				f.writeNode(opt)
 				f.writeLineEnd(compactOptionsNode.Commas[i])
 			}
 		}
@@ -1072,6 +1141,21 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 	)
 }
 
+func (f *formatter) hasInteriorComments(nodes ...ast.Node) bool {
+	for i, n := range nodes {
+		// interior comments mean we ignore leading comments on first
+		// token and trailing comments on the last one
+		info := f.fileNode.NodeInfo(n)
+		if i > 0 && info.LeadingComments().Len() > 0 {
+			return true
+		}
+		if i < len(nodes)-1 && info.TrailingComments().Len() > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // writeArrayLiteral writes an array literal across multiple lines.
 //
 // For example,
@@ -1081,13 +1165,22 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 //	  "bar"
 //	]
 func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
+	if len(arrayLiteralNode.Elements) == 1 &&
+		!f.hasInteriorComments(arrayLiteralNode.Children()...) &&
+		!arrayLiteralHasNestedMessageOrArray(arrayLiteralNode) {
+		// arrays with a single scalar value and no comments can be
+		// printed all on one line
+		valueNode := arrayLiteralNode.Elements[0]
+		f.writeInline(arrayLiteralNode.OpenBracket)
+		f.writeInline(valueNode)
+		f.writeInline(arrayLiteralNode.CloseBracket)
+		return
+	}
+
 	var elementWriterFunc func()
 	if len(arrayLiteralNode.Elements) > 0 {
 		elementWriterFunc = func() {
 			for i := 0; i < len(arrayLiteralNode.Elements); i++ {
-				if i > 0 {
-					f.P()
-				}
 				lastElement := i == len(arrayLiteralNode.Elements)-1
 				if compositeNode, ok := arrayLiteralNode.Elements[i].(ast.CompositeNode); ok {
 					f.writeCompositeValueForArrayLiteral(compositeNode, lastElement)
@@ -1098,7 +1191,7 @@ func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
 				}
 				if lastElement {
 					// The last element won't have a trailing comma.
-					f.writeBodyEnd(arrayLiteralNode.Elements[i])
+					f.writeLineElement(arrayLiteralNode.Elements[i])
 					return
 				}
 				f.writeStart(arrayLiteralNode.Elements[i])
@@ -1194,63 +1287,20 @@ func (f *formatter) writeBody(
 	closeBrace *ast.RuneNode,
 	elementWriterFunc func(),
 	openBraceWriterFunc func(ast.Node),
-	closeBraceWriterFunc func(ast.Node),
+	closeBraceWriterFunc func(ast.Node, bool),
 ) {
-	openBraceWriterFunc(openBrace)
-	info := f.fileNode.NodeInfo(openBrace)
-	if info.TrailingComments().Len() == 0 && elementWriterFunc == nil {
-		info = f.fileNode.NodeInfo(closeBrace)
-		if info.LeadingComments().Len() == 0 {
-			// This is an empty definition without any comments in
-			// the body, so we return early.
-			f.writeLineEnd(closeBrace)
-			return
-		}
-		// Writing comments in this case requires special care - we need
-		// to write all of the leading comments in an empty type body,
-		// so the comments need to be indented, but the tokens they're
-		// attached to should not be indented.
-		//
-		// For example,
-		//
-		//  message Foo {
-		//    // This message might have multiple comments.
-		//    // They're attached to the '}'.
-		//  }
-		f.P()
-		f.In()
-		f.writeMultilineComments(info.LeadingComments())
-		f.Out()
-		// The '}' should be indented on its own line but we've already handled
-		// the comments, so we manually apply it here.
-		f.Indent()
-		f.writeNode(closeBrace)
-		f.writeTrailingEndComments(info.TrailingComments())
+	if elementWriterFunc == nil && !f.hasInteriorComments(openBrace, closeBrace) {
+		// completely empty body
+		f.writeInline(openBrace)
+		closeBraceWriterFunc(closeBrace, true)
 		return
 	}
-	f.P()
-	f.In()
-	if info.TrailingComments().Len() > 0 {
-		f.writeMultilineComments(info.TrailingComments())
-		if elementWriterFunc != nil {
-			// If there are other elements to write, we need another
-			// newline after the trailing comments.
-			f.P()
-		}
-	}
+
+	openBraceWriterFunc(openBrace)
 	if elementWriterFunc != nil {
 		elementWriterFunc()
-		if !f.previousTrailingCommentsWroteNewline() {
-			// If the previous node didn't have trailing comments that
-			// wrote a newline, we need to add one here.
-			f.P()
-		}
 	}
-	f.Out()
-	if info := f.fileNode.NodeInfo(closeBrace); info.LeadingComments().Len() > 0 {
-		f.P()
-	}
-	closeBraceWriterFunc(closeBrace)
+	closeBraceWriterFunc(closeBrace, false)
 }
 
 // writeOpenBracePrefix writes the open brace with its leading comments in-line.
@@ -1261,9 +1311,16 @@ func (f *formatter) writeOpenBracePrefix(openBrace ast.Node) {
 	info := f.fileNode.NodeInfo(openBrace)
 	if info.LeadingComments().Len() > 0 {
 		f.writeInlineComments(info.LeadingComments())
-		f.Space()
+		if info.LeadingWhitespace() != "" {
+			f.Space()
+		}
 	}
 	f.writeNode(openBrace)
+	if info.TrailingComments().Len() > 0 {
+		f.writeTrailingEndComments(info.TrailingComments())
+	} else {
+		f.P()
+	}
 }
 
 // writeOpenBracePrefixForArray writes the open brace with its leading comments
@@ -1274,8 +1331,13 @@ func (f *formatter) writeOpenBracePrefixForArray(openBrace ast.Node) {
 	if info.LeadingComments().Len() > 0 {
 		f.writeMultilineComments(info.LeadingComments())
 	}
-	f.Indent()
+	f.Indent(openBrace)
 	f.writeNode(openBrace)
+	if info.TrailingComments().Len() > 0 {
+		f.writeTrailingEndComments(info.TrailingComments())
+	} else {
+		f.P()
+	}
 }
 
 // writeCompoundIdent writes a compound identifier (e.g. '.com.foo.Bar').
@@ -1329,11 +1391,6 @@ func (f *formatter) writeFieldLabel(fieldLabel ast.FieldLabel) {
 	f.WriteString(fieldLabel.Val)
 }
 
-// writeBoolLiteral writes a bool literal (e.g. 'true').
-func (f *formatter) writeBoolLiteral(boolLiteralNode *ast.BoolLiteralNode) {
-	f.WriteString(strconv.FormatBool(boolLiteralNode.Val))
-}
-
 // writeCompoundStringLiteral writes a compound string literal value.
 //
 // For example,
@@ -1341,46 +1398,44 @@ func (f *formatter) writeBoolLiteral(boolLiteralNode *ast.BoolLiteralNode) {
 //	"one,"
 //	"two,"
 //	"three"
-func (f *formatter) writeCompoundStringLiteral(compoundStringLiteralNode *ast.CompoundStringLiteralNode) {
-	f.In()
-	for _, child := range compoundStringLiteralNode.Children() {
-		if !f.previousTrailingCommentsWroteNewline() {
-			// If the previous node didn't have trailing comments that
-			// wrote a newline, we need to add one here.
-			f.P()
-		}
-		f.writeBodyEnd(child)
+func (f *formatter) writeCompoundStringLiteral(
+	compoundStringLiteralNode *ast.CompoundStringLiteralNode,
+	needsIndent bool,
+	hasTrailingPunctuation bool,
+) {
+	f.P()
+	if needsIndent {
+		f.In()
 	}
-	f.Out()
-}
-
-// writeCompoundStringLiteralForSingleOption writes a compound string literal value,
-// but writes its comments suitable for a single value option.
-//
-// The last element is written with in-line comments so that the closing ';' or ']'
-// can exist on the same line.
-//
-// For example,
-//
-//	option (custom) =
-//	  "one,"
-//	  "two,"
-//	  "three";
-func (f *formatter) writeCompoundStringLiteralForSingleOption(compoundStringLiteralNode *ast.CompoundStringLiteralNode) {
-	f.In()
 	for i, child := range compoundStringLiteralNode.Children() {
-		if !f.previousTrailingCommentsWroteNewline() {
-			// If the previous node didn't have trailing comments that
-			// wrote a newline, we need to add one here.
-			f.P()
-		}
-		if i == len(compoundStringLiteralNode.Children())-1 {
-			f.writeBodyEndInline(child)
+		if hasTrailingPunctuation && i == len(compoundStringLiteralNode.Children())-1 {
+			// inline because there may be a subsequent comma or punctuation from enclosing element
+			f.writeStart(child)
 			break
 		}
-		f.writeBodyEnd(child)
+		f.writeLineElement(child)
 	}
-	f.Out()
+	if needsIndent {
+		f.Out()
+	}
+}
+
+func (f *formatter) writeCompoundStringLiteralIndent(
+	compoundStringLiteralNode *ast.CompoundStringLiteralNode,
+) {
+	f.writeCompoundStringLiteral(compoundStringLiteralNode, true, false)
+}
+
+func (f *formatter) writeCompoundStringLiteralIndentEndInline(
+	compoundStringLiteralNode *ast.CompoundStringLiteralNode,
+) {
+	f.writeCompoundStringLiteral(compoundStringLiteralNode, true, true)
+}
+
+func (f *formatter) writeCompoundStringLiteralNoIndentEndInline(
+	compoundStringLiteralNode *ast.CompoundStringLiteralNode,
+) {
+	f.writeCompoundStringLiteral(compoundStringLiteralNode, false, true)
 }
 
 // writeCompoundStringLiteralForArray writes a compound string literal value,
@@ -1393,24 +1448,17 @@ func (f *formatter) writeCompoundStringLiteralForArray(
 	lastElement bool,
 ) {
 	for i, child := range compoundStringLiteralNode.Children() {
-		if i > 0 {
-			if !f.previousTrailingCommentsWroteNewline() {
-				// If the previous node didn't have trailing comments that
-				// wrote a newline, we need to add one here.
-				f.P()
-			}
-		}
 		if !lastElement && i == len(compoundStringLiteralNode.Children())-1 {
-			f.writeBodyEndInline(child)
+			f.writeStart(child)
 			return
 		}
-		f.writeBodyEnd(child)
+		f.writeLineElement(child)
 	}
 }
 
 // writeFloatLiteral writes a float literal value (e.g. '42.2').
 func (f *formatter) writeFloatLiteral(floatLiteralNode *ast.FloatLiteralNode) {
-	f.WriteString(strconv.FormatFloat(floatLiteralNode.Val, 'g', -1, 64))
+	f.writeRaw(floatLiteralNode)
 }
 
 // writeSignedFloatLiteral writes a signed float literal value (e.g. '-42.2').
@@ -1442,51 +1490,26 @@ func (f *formatter) writeSpecialFloatLiteral(specialFloatLiteralNode *ast.Specia
 }
 
 // writeStringLiteral writes a string literal value (e.g. "foo").
+// Note that the raw string is written as-is so that it preserves
+// the quote style used in the original source.
 func (f *formatter) writeStringLiteral(stringLiteralNode *ast.StringLiteralNode) {
-	f.writeStringWithStyle(stringLiteralNode.Val)
-}
-
-// writeStringValue writes a string value (e.g. "foo").
-func (f *formatter) writeStringValue(stringValueNode ast.StringValueNode) {
-	f.writeStringWithStyle(stringValueNode.AsString())
-}
-
-// writeStringWithStyle writes a string value with surrounding single quotes or double quotes
-// based on the string value's content. The formatter prefers double quotes, but uses single
-// quotes if the content contains any (") literals and not any (') literals.
-//
-// For example,
-//
-//  1. f"o"'o' -> "f\"o\"'o'"  (") and (') are used - surround with (")
-//  2. f"oo" -> 'f"oo"'        (") is used - surround with (')
-//  3. f'oo' -> "f'oo'"        (') is used - surround with (")
-//  4. foo -> "foo"            By default, use double quotes
-//
-func (f *formatter) writeStringWithStyle(value string) {
-	var (
-		singleQuote = strings.ContainsRune(value, '\'')
-		doubleQuote = strings.ContainsRune(value, '"')
-	)
-	var formattedString string
-	if doubleQuote && !singleQuote {
-		// Use a single quote if the content contains any (") or (\")
-		// literals, and not any (') or (\') literals.
-		formattedString = fmt.Sprintf("'%s'", value)
-	} else {
-		formattedString = fmt.Sprintf("%q", value)
-	}
-	f.WriteString(formattedString)
+	f.writeRaw(stringLiteralNode)
 }
 
 // writeUintLiteral writes a uint literal (e.g. '42').
 func (f *formatter) writeUintLiteral(uintLiteralNode *ast.UintLiteralNode) {
-	f.WriteString(strconv.FormatUint(uintLiteralNode.Val, 10))
+	f.writeRaw(uintLiteralNode)
 }
 
 // writeNegativeIntLiteral writes a negative int literal (e.g. '-42').
 func (f *formatter) writeNegativeIntLiteral(negativeIntLiteralNode *ast.NegativeIntLiteralNode) {
 	f.writeInline(negativeIntLiteralNode.Minus)
 	f.writeInline(negativeIntLiteralNode.Uint)
+}
+
+func (f *formatter) writeRaw(n ast.Node) {
+	info := f.fileNode.NodeInfo(n)
+	f.WriteString(info.RawText())
 }
 
 // writeNegativeIntLiteralForArray writes a negative int literal value, but writes
@@ -1541,6 +1564,11 @@ func (f *formatter) writeKeyword(keywordNode *ast.KeywordNode) {
 
 // writeRune writes a rune (e.g. '=').
 func (f *formatter) writeRune(runeNode *ast.RuneNode) {
+	if strings.ContainsRune("{[(<", runeNode.Rune) {
+		f.pendingIndent++
+	} else if strings.ContainsRune("}])>", runeNode.Rune) {
+		f.pendingIndent--
+	}
 	f.WriteString(string(runeNode.Rune))
 }
 
@@ -1552,14 +1580,12 @@ func (f *formatter) writeNode(node ast.Node) {
 	switch element := node.(type) {
 	case *ast.ArrayLiteralNode:
 		f.writeArrayLiteral(element)
-	case *ast.BoolLiteralNode:
-		f.writeBoolLiteral(element)
 	case *ast.CompactOptionsNode:
 		f.writeCompactOptions(element)
 	case *ast.CompoundIdentNode:
 		f.writeCompoundIdent(element)
 	case *ast.CompoundStringLiteralNode:
-		f.writeCompoundStringLiteral(element)
+		f.writeCompoundStringLiteralIndent(element)
 	case *ast.EnumNode:
 		f.writeEnum(element)
 	case *ast.EnumValueNode:
@@ -1581,7 +1607,7 @@ func (f *formatter) writeNode(node ast.Node) {
 	case *ast.IdentNode:
 		f.writeIdent(element)
 	case *ast.ImportNode:
-		f.writeImport(element)
+		f.writeImport(element, false)
 	case *ast.KeywordNode:
 		f.writeKeyword(element)
 	case *ast.MapFieldNode:
@@ -1624,8 +1650,6 @@ func (f *formatter) writeNode(node ast.Node) {
 		f.writeSpecialFloatLiteral(element)
 	case *ast.StringLiteralNode:
 		f.writeStringLiteral(element)
-	case ast.StringValueNode:
-		f.writeStringValue(element)
 	case *ast.SyntaxNode:
 		f.writeSyntax(element)
 	case *ast.UintLiteralNode:
@@ -1670,34 +1694,21 @@ func (f *formatter) writeNode(node ast.Node) {
 // controls how each node should be separated from one another and preserves
 // newlines in the original source.
 func (f *formatter) writeStart(node ast.Node) {
+	f.writeStartMaybeCompact(node, false)
+}
+
+func (f *formatter) writeStartMaybeCompact(node ast.Node, forceCompact bool) {
 	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
 	var (
-		nodeNewlineCount               = newlineCount(info.LeadingWhitespace())
-		previousNodeHasTrailingComment = f.hasTrailingComment(f.previousNode)
-		previousNodeIsOpenBrace        = isOpenBrace(f.previousNode)
+		nodeNewlineCount = newlineCount(info.LeadingWhitespace())
+		compact          = forceCompact || isOpenBrace(f.previousNode)
 	)
 	if length := info.LeadingComments().Len(); length > 0 {
 		// If leading comments are defined, the whitespace we care about
 		// is attached to the first comment.
-		firstCommentNewlineCount := newlineCount(info.LeadingComments().Index(0).LeadingWhitespace())
-		if !previousNodeIsOpenBrace && (!previousNodeHasTrailingComment && firstCommentNewlineCount > 1 ||
-			previousNodeHasTrailingComment && firstCommentNewlineCount > 0) {
-			// If the previous node is an open brace, this is the first element
-			// in the body of a composite type, so we don't want to write a
-			// newline, regardless of the previous node's comments. This makes
-			// it so that trailing newlines are removed.
-			//
-			// Otherwise, if the previous node has a trailing comment, then we
-			// expect to see one fewer newline characters.
-			f.P()
-		}
-		f.writeMultilineComments(info.LeadingComments())
-		var (
-			lastCommentIsCStyle = cStyleComment(info.LeadingComments().Index(length - 1))
-			nodeNewlineCount    = newlineCount(info.LeadingWhitespace())
-		)
-		if lastCommentIsCStyle && nodeNewlineCount > 1 || !lastCommentIsCStyle && nodeNewlineCount > 0 {
+		f.writeMultilineCommentsMaybeCompact(info.LeadingComments(), forceCompact)
+		if !forceCompact && nodeNewlineCount > 1 {
 			// At this point, we're looking at the lines between
 			// a comment and the node its attached to.
 			//
@@ -1710,8 +1721,7 @@ func (f *formatter) writeStart(node ast.Node) {
 			// a newline.
 			f.P()
 		}
-	} else if !previousNodeIsOpenBrace && (!previousNodeHasTrailingComment && nodeNewlineCount > 1 ||
-		previousNodeHasTrailingComment && nodeNewlineCount > 0) {
+	} else if !compact && nodeNewlineCount > 1 {
 		// If the previous node is an open brace, this is the first element
 		// in the body of a composite type, so we don't want to write a
 		// newline. This makes it so that trailing newlines are removed.
@@ -1730,7 +1740,7 @@ func (f *formatter) writeStart(node ast.Node) {
 		//  }
 		f.P()
 	}
-	f.Indent()
+	f.Indent(node)
 	f.writeNode(node)
 	if info.TrailingComments().Len() > 0 {
 		f.writeInlineComments(info.TrailingComments())
@@ -1747,6 +1757,10 @@ func (f *formatter) writeStart(node ast.Node) {
 //	// This is a leading comment on the syntax keyword.
 //	syntax = /* This is a leading comment on 'proto3' */" proto3";
 func (f *formatter) writeInline(node ast.Node) {
+	f.inline = true
+	defer func() {
+		f.inline = false
+	}()
 	if _, ok := node.(ast.CompositeNode); ok {
 		// We only want to write comments for terminal nodes.
 		// Otherwise comments accessible from CompositeNodes
@@ -1758,11 +1772,12 @@ func (f *formatter) writeInline(node ast.Node) {
 	info := f.fileNode.NodeInfo(node)
 	if info.LeadingComments().Len() > 0 {
 		f.writeInlineComments(info.LeadingComments())
+		if info.LeadingWhitespace() != "" {
+			f.Space()
+		}
 	}
 	f.writeNode(node)
-	if info.TrailingComments().Len() > 0 {
-		f.writeInlineComments(info.TrailingComments())
-	}
+	f.writeInlineComments(info.TrailingComments())
 }
 
 // writeBodyEnd writes the node as the end of a body.
@@ -1781,27 +1796,38 @@ func (f *formatter) writeInline(node ast.Node) {
 //
 //	message Foo {
 //	  string bar = 1;
-//
-//	// Leading comment on '}'.
+//	  // Leading comment on '}'.
 //	} // Trailing comment on '}.
-func (f *formatter) writeBodyEnd(node ast.Node) {
+func (f *formatter) writeBodyEnd(node ast.Node, leadingEndline bool) {
 	if _, ok := node.(ast.CompositeNode); ok {
 		// We only want to write comments for terminal nodes.
 		// Otherwise comments accessible from CompositeNodes
 		// will be written twice.
 		f.writeNode(node)
+		if f.lastWritten != '\n' {
+			f.P()
+		}
 		return
 	}
 	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
-	if info.LeadingComments().Len() > 0 {
+	if leadingEndline {
+		if info.LeadingComments().Len() > 0 {
+			f.writeInlineComments(info.LeadingComments())
+			if info.LeadingWhitespace() != "" {
+				f.Space()
+			}
+		}
+	} else {
 		f.writeMultilineComments(info.LeadingComments())
+		f.Indent(node)
 	}
-	f.Indent()
 	f.writeNode(node)
-	if info.TrailingComments().Len() > 0 {
-		f.writeTrailingEndComments(info.TrailingComments())
-	}
+	f.writeTrailingEndComments(info.TrailingComments())
+}
+
+func (f *formatter) writeLineElement(node ast.Node) {
+	f.writeBodyEnd(node, false)
 }
 
 // writeBodyEndInline writes the node as the end of a body.
@@ -1827,10 +1853,10 @@ func (f *formatter) writeBodyEnd(node ast.Node) {
 //	  string bar = 1 [
 //	    deprecated = true
 //
-//	  // Leading comment on ']'.
+//	    // Leading comment on ']'.
 //	  ] /* Trailing comment on ']' */ ;
 //	}
-func (f *formatter) writeBodyEndInline(node ast.Node) {
+func (f *formatter) writeBodyEndInline(node ast.Node, leadingInline bool) {
 	if _, ok := node.(ast.CompositeNode); ok {
 		// We only want to write comments for terminal nodes.
 		// Otherwise comments accessible from CompositeNodes
@@ -1840,13 +1866,19 @@ func (f *formatter) writeBodyEndInline(node ast.Node) {
 	}
 	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
-	if info.LeadingComments().Len() > 0 {
+	if leadingInline {
+		if info.LeadingComments().Len() > 0 {
+			f.writeInlineComments(info.LeadingComments())
+			if info.LeadingWhitespace() != "" {
+				f.Space()
+			}
+		}
+	} else {
 		f.writeMultilineComments(info.LeadingComments())
+		f.Indent(node)
 	}
-	f.Indent()
 	f.writeNode(node)
 	if info.TrailingComments().Len() > 0 {
-		f.Space()
 		f.writeInlineComments(info.TrailingComments())
 	}
 }
@@ -1868,17 +1900,22 @@ func (f *formatter) writeLineEnd(node ast.Node) {
 		// Otherwise comments accessible from CompositeNodes
 		// will be written twice.
 		f.writeNode(node)
+		if f.lastWritten != '\n' {
+			f.P()
+		}
 		return
 	}
 	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
 	if info.LeadingComments().Len() > 0 {
 		f.writeInlineComments(info.LeadingComments())
+		if info.LeadingWhitespace() != "" {
+			f.Space()
+		}
 	}
 	f.writeNode(node)
-	if info.TrailingComments().Len() > 0 {
-		f.writeTrailingEndComments(info.TrailingComments())
-	}
+	f.Space()
+	f.writeTrailingEndComments(info.TrailingComments())
 }
 
 // writeMultilineComments writes the given comments as a newline-delimited block.
@@ -1892,31 +1929,29 @@ func (f *formatter) writeLineEnd(node ast.Node) {
 //	// multiple lines.
 //	message Foo {}
 func (f *formatter) writeMultilineComments(comments ast.Comments) {
-	var previousComment ast.Comment
+	f.writeMultilineCommentsMaybeCompact(comments, false)
+}
+
+func (f *formatter) writeMultilineCommentsMaybeCompact(comments ast.Comments, forceCompact bool) {
+	compact := forceCompact || isOpenBrace(f.previousNode)
 	for i := 0; i < comments.Len(); i++ {
 		comment := comments.Index(i)
-		if i > 0 {
-			var (
-				previousCommentIsCStyle = cStyleComment(previousComment)
-				precedingNewlineCount   = newlineCount(comment.LeadingWhitespace())
-			)
-			if previousCommentIsCStyle && precedingNewlineCount > 1 ||
-				!previousCommentIsCStyle && precedingNewlineCount > 0 {
-				// Newlines between blocks of comments should be preserved.
-				//
-				// For example,
-				//
-				//  // This is a license header
-				//  // spread across multiple lines.
-				//
-				//  // Package pet.v1 defines a PetStore API.
-				//  package pet.v1;
-				//
-				f.P()
-			}
+		if !compact && newlineCount(comment.LeadingWhitespace()) > 1 {
+			// Newlines between blocks of comments should be preserved.
+			//
+			// For example,
+			//
+			//  // This is a license header
+			//  // spread across multiple lines.
+			//
+			//  // Package pet.v1 defines a PetStore API.
+			//  package pet.v1;
+			//
+			f.P()
 		}
-		f.P(strings.TrimSpace(comment.RawText()))
-		previousComment = comments.Index(i)
+		compact = false
+		f.writeComment(comment.RawText())
+		f.WriteString("\n")
 	}
 }
 
@@ -1941,13 +1976,20 @@ func (f *formatter) writeMultilineComments(comments ast.Comments) {
 //	}
 func (f *formatter) writeInlineComments(comments ast.Comments) {
 	for i := 0; i < comments.Len(); i++ {
-		if i > 0 {
+		if i > 0 || comments.Index(i).LeadingWhitespace() != "" || f.lastWritten == ';' || f.lastWritten == '}' {
 			f.Space()
 		}
 		text := comments.Index(i).RawText()
 		if strings.HasPrefix(text, "//") {
 			text = strings.TrimSpace(strings.TrimPrefix(text, "//"))
 			text = "/* " + text + " */"
+		} else {
+			// no multi-line comments
+			lines := strings.Split(text, "\n")
+			for i := range lines {
+				lines[i] = strings.TrimSpace(lines[i])
+			}
+			text = strings.Join(lines, " ")
 		}
 		f.WriteString(text)
 	}
@@ -1971,65 +2013,114 @@ func (f *formatter) writeInlineComments(comments ast.Comments) {
 func (f *formatter) writeTrailingEndComments(comments ast.Comments) {
 	for i := 0; i < comments.Len(); i++ {
 		comment := comments.Index(i)
-		if i == 0 && newlineCount(comment.LeadingWhitespace()) > 0 {
-			// If the first comment has a newline before it, we need to preserve
-			// the trailing comments in a block immediately under the previous
-			// node.
-			f.P()
-			f.writeMultilineComments(comments)
-			return
+		if i > 0 || comment.LeadingWhitespace() != "" {
+			f.Space()
 		}
-		f.Space()
-		f.WriteString(strings.TrimSpace(comments.Index(i).RawText()))
+		f.writeComment(comment.RawText())
+	}
+	f.P()
+}
+
+func (f *formatter) writeComment(comment string) {
+	if strings.HasPrefix(comment, "/*") && newlineCount(comment) > 0 {
+		lines := strings.Split(comment, "\n")
+		// find minimum indent, so we can make all other lines relative to that
+		minIndent := -1 // sentinel that means unset
+		// start at 1 because line at index zero starts with "/*", not whitespace
+		for i := 1; i < len(lines); i++ {
+			indent, ok := computeIndent(lines[i])
+			if ok && (minIndent == -1 || indent < minIndent) {
+				minIndent = indent
+			}
+		}
+		if minIndent < 0 {
+			// This shouldn't be necessary.
+			// But we do it just in case, to avoid possible panic
+			minIndent = 0
+		}
+		for i, line := range lines {
+			trimmedLine := strings.TrimSpace(line)
+			if trimmedLine == "" || trimmedLine == "*/" {
+				line = trimmedLine
+			} else {
+				// we only trim space from the right; for the left,
+				// we unindent based on indentation found above.
+				line = unindent(line, minIndent)
+				line = strings.TrimRightFunc(line, unicode.IsSpace)
+			}
+			if i > 0 && line != "*/" {
+				line = "   " + line
+			}
+			if i != len(lines)-1 {
+				f.P(line)
+			} else {
+				// for last line, we don't use P because we don't
+				// want to print a trailing newline
+				f.Indent(nil)
+				f.WriteString(line)
+			}
+		}
+	} else {
+		f.Indent(nil)
+		f.WriteString(strings.TrimSpace(comment))
 	}
 }
 
-// startsWithNewline returns true if the formatter needs to insert a newline
-// before the node is printed. We need to use this in special circumstances,
-// namely the file header types, when we always want to include a newline
-// between the syntax, package, and import/option blocks.
-func (f *formatter) startsWithNewline(info ast.NodeInfo) bool {
-	nodeNewlineCount := newlineCount(info.LeadingWhitespace())
-	if info.LeadingComments().Len() > 0 {
-		// If leading comments are defined, the whitespace we care about
-		// is attached to the first comment.
-		nodeNewlineCount = newlineCount(info.LeadingComments().Index(0).LeadingWhitespace())
+func unindent(s string, unindent int) string {
+	pos := 0
+	for i, r := range s {
+		if pos == unindent {
+			return s[i:]
+		}
+		if pos > unindent {
+			// removing tab-stop unindented too far, so we
+			// add back some spaces to compensate
+			return strings.Repeat(" ", pos-unindent) + s[i:]
+		}
+
+		switch r {
+		case ' ':
+			pos++
+		case '\t':
+			// jump to next tab stop
+			pos += 8 - (pos % 8)
+		default:
+			return s[i:]
+		}
 	}
-	previousNodeHasTrailingComment := f.hasTrailingComment(f.previousNode)
-	return !previousNodeHasTrailingComment && nodeNewlineCount > 1 || previousNodeHasTrailingComment && nodeNewlineCount > 0
+	// nothing but whitespace...
+	return ""
 }
 
-// hasTrailingComment returns true if the given node has a standard
-// trailing comment.
-//
-// For example,
-//
-//	message Foo {
-//	  string name = 1; // Like this.
-//	}
-func (f *formatter) hasTrailingComment(node ast.Node) bool {
-	if node == nil {
-		return false
+func computeIndent(s string) (int, bool) {
+	if strings.TrimSpace(s) == "*/" {
+		return 0, false
 	}
-	info := f.fileNode.NodeInfo(node)
-	length := info.TrailingComments().Len()
-	if length == 0 {
-		return false
+	indent := 0
+	for _, r := range s {
+		switch r {
+		case ' ':
+			indent++
+		case '\t':
+			// jump to next tab stop
+			indent += 8 - (indent % 8)
+		default:
+			return indent, true
+		}
 	}
-	lastComment := info.TrailingComments().Index(length - 1)
-	return strings.HasPrefix(lastComment.RawText(), "//")
+	// if we get here, line is nothing but whitespace
+	return 0, false
 }
 
-// previousTrailingCommentsWroteNewline returns true if the previous node's
-// trailing comments wrote a newline. We need to use this whenever we otherwise
-// need to add a newline (e.g. at the end of a composite type's body, and
-// for EOF comments).
-func (f *formatter) previousTrailingCommentsWroteNewline() bool {
-	previousTrailingComments := f.fileNode.NodeInfo(f.previousNode).TrailingComments()
-	if previousTrailingComments.Len() > 0 {
-		return newlineCount(previousTrailingComments.Index(0).LeadingWhitespace()) > 0
+func (f *formatter) leadingCommentsContainBlankLine(n ast.Node) bool {
+	info := f.fileNode.NodeInfo(n)
+	comments := info.LeadingComments()
+	for i := 0; i < comments.Len(); i++ {
+		if newlineCount(comments.Index(i).LeadingWhitespace()) > 1 {
+			return true
+		}
 	}
-	return false
+	return newlineCount(info.LeadingWhitespace()) > 1
 }
 
 // stringForOptionName returns the string representation of the given option name node.
@@ -2082,10 +2173,4 @@ func isOpenBrace(node ast.Node) bool {
 // safely ignore them.
 func newlineCount(value string) int {
 	return strings.Count(value, "\n")
-}
-
-// cStyleComment returns true if the given comment is a C-Style comment,
-// such that it starts with /*.
-func cStyleComment(comment ast.Comment) bool {
-	return strings.HasPrefix(comment.RawText(), "/*")
 }

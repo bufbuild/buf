@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import (
 type plugin struct {
 	version              string
 	dependencies         []bufpluginref.PluginReference
-	defaultOptions       map[string]string
 	registry             *bufpluginconfig.RegistryConfig
 	containerImageDigest string
 	sourceURL            string
@@ -38,7 +37,6 @@ var _ Plugin = (*plugin)(nil)
 func newPlugin(
 	version string,
 	dependencies []bufpluginref.PluginReference,
-	defaultOptions map[string]string,
 	registryConfig *bufpluginconfig.RegistryConfig,
 	containerImageDigest string,
 	sourceURL string,
@@ -60,7 +58,6 @@ func newPlugin(
 	return &plugin{
 		version:              version,
 		dependencies:         dependencies,
-		defaultOptions:       defaultOptions,
 		registry:             registryConfig,
 		containerImageDigest: containerImageDigest,
 		sourceURL:            sourceURL,
@@ -76,11 +73,6 @@ func (p *plugin) Version() string {
 // Dependencies returns the plugin's dependencies on other plugins.
 func (p *plugin) Dependencies() []bufpluginref.PluginReference {
 	return p.dependencies
-}
-
-// DefaultOptions returns the plugin's options.
-func (p *plugin) DefaultOptions() map[string]string {
-	return p.defaultOptions
 }
 
 // Registry returns the plugin's registry configuration.

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,6 +34,10 @@ const (
 	//
 	// This matches TestDataWithDocumentation.
 	TestDigestWithDocumentation = "b1-Vqi49Lw-sr3tTLQVwSJrRJnJSwV0yeg97ea957z02B0="
+	// TestDigestB3WithLicense is a valid digest.
+	//
+	// This matches TestDataWithLicense.
+	TestDigestB3WithLicense = "b3-j7iu4iVzYQUFr97mbq2PNAlM5UjEnjtwEas0q7g4DVM="
 	// TestModuleReferenceFooBarV1String is a valid module reference string.
 	TestModuleReferenceFooBarV1String = "buf.build/foob/bar:v1"
 	// TestModuleReferenceFooBarV2String is a valid module reference string.
@@ -44,6 +48,8 @@ const (
 	TestModuleReferenceFooBazV2String = "buf.build/foob/baz:v2"
 	// TestModuleDocumentation is a markdown module documentation file.
 	TestModuleDocumentation = "# Module Documentation"
+	// TestModuleLicense is a txt module license file.
+	TestModuleLicense = "Module License"
 	// TestModuleConfiguration is a configuration file with an arbitrary module name,
 	// and example lint and breaking configuration that covers every key. At least two
 	// items are included in every key (where applicable) so that we validate whether
@@ -143,6 +149,13 @@ var (
 		TestFile2Path: []byte(`syntax="proto3";`),
 		"buf.yaml":    []byte(TestModuleConfiguration),
 		"buf.md":      []byte(TestModuleDocumentation),
+	}
+	// TestDataWithLicense is the data that maps to TestDigestB3WithLicense.
+	//
+	// It includes a LICENSE file.
+	TestDataWithLicense = map[string][]byte{
+		TestFile1Path: []byte(`syntax="proto3";`),
+		"LICENSE":     []byte(TestModuleLicense),
 	}
 	// TestFile1Path is the path of file1.proto.
 	TestFile1Path = "file1.proto"

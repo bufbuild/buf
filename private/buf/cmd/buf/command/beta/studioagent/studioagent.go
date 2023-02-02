@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -187,19 +187,14 @@ func run(
 		return err
 	}
 
-	httpRunner := httpserver.NewRunner(
+	return httpserver.Run(
+		ctx,
 		container.Logger(),
-		httpserver.RunnerWithTLSConfig(
+		httpListener,
+		mux,
+		httpserver.RunWithTLSConfig(
 			serverTLSConfig,
 		),
-		httpserver.RunnerWithMaxBodySize(
-			bufstudioagent.MaxMessageSizeBytesDefault,
-		),
-	)
-	return httpRunner.Run(
-		ctx,
-		httpListener,
-		httpserver.NewHTTPHandlerMapper(mux),
 	)
 }
 

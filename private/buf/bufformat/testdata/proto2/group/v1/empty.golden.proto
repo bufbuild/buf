@@ -13,6 +13,6 @@ message Baz {
     // Trailing comment on '{'.
     // Another trailing comment on '{'.
 
-  // Leading comment on '}'.
+    // Leading comment on '}'.
   }
 }

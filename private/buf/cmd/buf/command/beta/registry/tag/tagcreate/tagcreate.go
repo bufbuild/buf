@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -87,19 +90,25 @@ func run(
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	repositoryService, err := apiProvider.NewRepositoryService(ctx, moduleReference.Remote())
-	if err != nil {
-		return err
-	}
-	repositoryTagService, err := apiProvider.NewRepositoryTagService(ctx, moduleReference.Remote())
-	if err != nil {
-		return err
-	}
-	repository, _, err := repositoryService.GetRepositoryByFullName(ctx, moduleReference.Owner()+"/"+moduleReference.Repository())
+	repositoryService := connectclient.Make(
+		clientConfig,
+		moduleReference.Remote(),
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
+	repositoryTagService := connectclient.Make(
+		clientConfig,
+		moduleReference.Remote(),
+		registryv1alpha1connect.NewRepositoryTagServiceClient,
+	)
+	resp, err := repositoryService.GetRepositoryByFullName(ctx,
+		connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
+			FullName: moduleReference.Owner() + "/" + moduleReference.Repository(),
+		}),
+	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(moduleReference.Remote() + "/" + moduleReference.Owner() + "/" + moduleReference.Repository())
@@ -108,11 +117,13 @@ func run(
 	}
 	tag := container.Arg(1)
 	commit := moduleReference.Reference()
-	repositoryTag, err := repositoryTagService.CreateRepositoryTag(
+	tagResp, err := repositoryTagService.CreateRepositoryTag(
 		ctx,
-		repository.Id,
-		tag,
-		commit,
+		connect.NewRequest(&registryv1alpha1.CreateRepositoryTagRequest{
+			RepositoryId: resp.Msg.Repository.Id,
+			Name:         tag,
+			CommitName:   commit,
+		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
@@ -123,5 +134,5 @@ func run(
 		}
 		return err
 	}
-	return bufprint.NewRepositoryTagPrinter(container.Stdout()).PrintRepositoryTag(ctx, format, repositoryTag)
+	return bufprint.NewRepositoryTagPrinter(container.Stdout()).PrintRepositoryTag(ctx, format, tagResp.Msg.RepositoryTag)
 }

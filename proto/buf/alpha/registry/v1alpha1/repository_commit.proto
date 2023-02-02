@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,6 +42,11 @@ message RepositoryCommit {
   repeated buf.alpha.registry.v1alpha1.RepositoryTag tags = 8;
   // The commit's draft name, if it is a draft commit.
   string draft_name = 9;
+  // spdx_license_id is the license of the commit, based on the
+  // license file pushed, which should be one of the identifier defined in
+  // https://spdx.org/licenses, and will be not set if the license file is not
+  // presented or cannot be classified into a known license.
+  string spdx_license_id = 10;
 }
 
 // RepositoryCommitService is the Repository commit service.

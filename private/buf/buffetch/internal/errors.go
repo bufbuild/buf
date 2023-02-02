@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,12 +40,12 @@ func NewFormatCannotBeDeterminedError(value string) error {
 
 // NewCannotSpecifyGitBranchAndTagError is a fetch error.
 func NewCannotSpecifyGitBranchAndTagError() error {
-	return fmt.Errorf(`must specify only one of "branch", "tag"`)
+	return errors.New(`must specify only one of "branch", "tag"`)
 }
 
 // NewCannotSpecifyTagWithRefError is a fetch error.
 func NewCannotSpecifyTagWithRefError() error {
-	return fmt.Errorf(`cannot specify "tag" with "ref"`)
+	return errors.New(`cannot specify "tag" with "ref"`)
 }
 
 // NewDepthParseError is a fetch error.
@@ -55,7 +55,7 @@ func NewDepthParseError(s string) error {
 
 // NewDepthZeroError is a fetch error.
 func NewDepthZeroError() error {
-	return fmt.Errorf(`"depth" must be >0 if specified`)
+	return errors.New(`"depth" must be >0 if specified`)
 }
 
 // NewPathUnknownGzError is a fetch error.

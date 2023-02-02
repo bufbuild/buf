@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,18 +19,14 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/bufbuild/buf/private/pkg/observability"
-	"go.opencensus.io/tag"
 	"golang.org/x/net/http2"
 )
 
 type clientOptions struct {
-	tlsConfig         *tls.Config
-	observability     bool
-	observabilityTags []tag.Mutator
-	proxy             Proxy
-	interceptorFunc   ClientInterceptorFunc
-	h2c               bool
+	tlsConfig       *tls.Config
+	proxy           Proxy
+	interceptorFunc ClientInterceptorFunc
+	h2c             bool
 }
 
 func newClient(options ...ClientOption) *http.Client {
@@ -57,9 +53,6 @@ func newClient(options ...ClientOption) *http.Client {
 	}
 	if opts.interceptorFunc != nil {
 		roundTripper = opts.interceptorFunc(roundTripper)
-	}
-	if opts.observability {
-		roundTripper = observability.NewHTTPTransport(roundTripper, opts.observabilityTags...)
 	}
 	return &http.Client{
 		Transport: roundTripper,

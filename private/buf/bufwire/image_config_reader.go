@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/zap"
 )
 
@@ -240,7 +241,7 @@ func (i *imageConfigReader) buildModule(
 	moduleFileSet bufmodule.ModuleFileSet,
 	excludeSourceCodeInfo bool,
 ) (ImageConfig, []bufanalysis.FileAnnotation, error) {
-	ctx, span := trace.StartSpan(ctx, "build_module")
+	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "build_module")
 	defer span.End()
 	var options []bufimagebuild.BuildOption
 	if excludeSourceCodeInfo {
@@ -252,6 +253,8 @@ func (i *imageConfigReader) buildModule(
 		options...,
 	)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, nil, err
 	}
 	if len(fileAnnotations) > 0 {

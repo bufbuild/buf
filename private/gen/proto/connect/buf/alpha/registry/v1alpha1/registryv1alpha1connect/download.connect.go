@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,8 +41,11 @@ const (
 
 // DownloadServiceClient is a client for the buf.alpha.registry.v1alpha1.DownloadService service.
 type DownloadServiceClient interface {
-	// Download downloads.
+	// Download downloads a BSR module.
+	// NOTE: Newer clients should use DownloadManifestAndBlobs instead.
 	Download(context.Context, *connect_go.Request[v1alpha1.DownloadRequest]) (*connect_go.Response[v1alpha1.DownloadResponse], error)
+	// DownloadManifestAndBlobs downloads a module in the manifest+blobs encoding format.
+	DownloadManifestAndBlobs(context.Context, *connect_go.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.DownloadManifestAndBlobsResponse], error)
 }
 
 // NewDownloadServiceClient constructs a client for the buf.alpha.registry.v1alpha1.DownloadService
@@ -60,12 +63,18 @@ func NewDownloadServiceClient(httpClient connect_go.HTTPClient, baseURL string, 
 			baseURL+"/buf.alpha.registry.v1alpha1.DownloadService/Download",
 			opts...,
 		),
+		downloadManifestAndBlobs: connect_go.NewClient[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs",
+			opts...,
+		),
 	}
 }
 
 // downloadServiceClient implements DownloadServiceClient.
 type downloadServiceClient struct {
-	download *connect_go.Client[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse]
+	download                 *connect_go.Client[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse]
+	downloadManifestAndBlobs *connect_go.Client[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse]
 }
 
 // Download calls buf.alpha.registry.v1alpha1.DownloadService.Download.
@@ -73,11 +82,20 @@ func (c *downloadServiceClient) Download(ctx context.Context, req *connect_go.Re
 	return c.download.CallUnary(ctx, req)
 }
 
+// DownloadManifestAndBlobs calls
+// buf.alpha.registry.v1alpha1.DownloadService.DownloadManifestAndBlobs.
+func (c *downloadServiceClient) DownloadManifestAndBlobs(ctx context.Context, req *connect_go.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.DownloadManifestAndBlobsResponse], error) {
+	return c.downloadManifestAndBlobs.CallUnary(ctx, req)
+}
+
 // DownloadServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.DownloadService
 // service.
 type DownloadServiceHandler interface {
-	// Download downloads.
+	// Download downloads a BSR module.
+	// NOTE: Newer clients should use DownloadManifestAndBlobs instead.
 	Download(context.Context, *connect_go.Request[v1alpha1.DownloadRequest]) (*connect_go.Response[v1alpha1.DownloadResponse], error)
+	// DownloadManifestAndBlobs downloads a module in the manifest+blobs encoding format.
+	DownloadManifestAndBlobs(context.Context, *connect_go.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.DownloadManifestAndBlobsResponse], error)
 }
 
 // NewDownloadServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -92,6 +110,11 @@ func NewDownloadServiceHandler(svc DownloadServiceHandler, opts ...connect_go.Ha
 		svc.Download,
 		opts...,
 	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs",
+		svc.DownloadManifestAndBlobs,
+		opts...,
+	))
 	return "/buf.alpha.registry.v1alpha1.DownloadService/", mux
 }
 
@@ -100,4 +123,8 @@ type UnimplementedDownloadServiceHandler struct{}
 
 func (UnimplementedDownloadServiceHandler) Download(context.Context, *connect_go.Request[v1alpha1.DownloadRequest]) (*connect_go.Response[v1alpha1.DownloadResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DownloadService.Download is not implemented"))
+}
+
+func (UnimplementedDownloadServiceHandler) DownloadManifestAndBlobs(context.Context, *connect_go.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.DownloadManifestAndBlobsResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DownloadService.DownloadManifestAndBlobs is not implemented"))
 }

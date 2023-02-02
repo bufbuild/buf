@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,25 +21,27 @@ import (
 	"io"
 	"time"
 
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/connect-go"
 )
 
 type repositoryPrinter struct {
-	apiProvider registryv1alpha1apiclient.Provider
-	address     string
-	writer      io.Writer
+	clientConfig *connectclient.Config
+	address      string
+	writer       io.Writer
 }
 
 func newRepositoryPrinter(
-	apiProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 	address string,
 	writer io.Writer,
 ) *repositoryPrinter {
 	return &repositoryPrinter{
-		apiProvider: apiProvider,
-		address:     address,
-		writer:      writer,
+		clientConfig: clientConfig,
+		address:      address,
+		writer:       writer,
 	}
 }
 
@@ -88,25 +90,29 @@ func (p *repositoryPrinter) registryRepositoriesToOutRepositories(ctx context.Co
 		var ownerName string
 		switch owner := repository.Owner.(type) {
 		case *registryv1alpha1.Repository_OrganizationId:
-			organizationService, err := p.apiProvider.NewOrganizationService(ctx, p.address)
+			organizationService := connectclient.Make(p.clientConfig, p.address, registryv1alpha1connect.NewOrganizationServiceClient)
+			resp, err := organizationService.GetOrganization(
+				ctx,
+				connect.NewRequest(&registryv1alpha1.GetOrganizationRequest{
+					Id: owner.OrganizationId,
+				}),
+			)
 			if err != nil {
 				return nil, err
 			}
-			organization, err := organizationService.GetOrganization(ctx, owner.OrganizationId)
-			if err != nil {
-				return nil, err
-			}
-			ownerName = organization.Name
+			ownerName = resp.Msg.Organization.Name
 		case *registryv1alpha1.Repository_UserId:
-			userService, err := p.apiProvider.NewUserService(ctx, p.address)
+			userService := connectclient.Make(p.clientConfig, p.address, registryv1alpha1connect.NewUserServiceClient)
+			resp, err := userService.GetUser(
+				ctx,
+				connect.NewRequest(&registryv1alpha1.GetUserRequest{
+					Id: owner.UserId,
+				}),
+			)
 			if err != nil {
 				return nil, err
 			}
-			user, err := userService.GetUser(ctx, owner.UserId)
-			if err != nil {
-				return nil, err
-			}
-			ownerName = user.Username
+			ownerName = resp.Msg.User.Username
 		default:
 			return nil, fmt.Errorf("unknown owner: %T", owner)
 		}

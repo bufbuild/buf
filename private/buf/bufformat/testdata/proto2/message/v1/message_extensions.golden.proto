@@ -1,7 +1,7 @@
 syntax = "proto2";
 
 message Foo {
-  extensions 43 to /* Comment before 100 */100;
-  extensions /* Comment before 101 */101 to max/* Comment after max */;
-  extensions 1/* After 1 */, 2/* After bar */;
+  extensions 43 to /* Comment before 100 */ 100;
+  extensions /* Comment before 101 */ 101 to max /* Comment after max */;
+  extensions 1 /* After 1 */, 2 /* After bar */;
 }

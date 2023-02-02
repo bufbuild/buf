@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,11 +23,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/app/appverbose"
-	"github.com/bufbuild/buf/private/pkg/observability"
-	"github.com/bufbuild/buf/private/pkg/observability/observabilityzap"
+	"github.com/bufbuild/buf/private/pkg/observabilityzap"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -129,16 +128,11 @@ func (b *builder) run(
 	}
 
 	if b.tracing {
-		closer := observability.Start(
-			observability.StartWithTraceExportCloser(
-				observabilityzap.NewTraceExportCloser(logger),
-			),
-		)
+		closer := observabilityzap.Start(logger)
 		defer func() {
 			retErr = multierr.Append(retErr, closer.Close())
 		}()
-		var span *trace.Span
-		ctx, span = trace.StartSpan(ctx, "command")
+		_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "command")
 		defer span.End()
 	}
 	if !b.profile {

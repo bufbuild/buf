@@ -1,0 +1,8 @@
+-- a.proto --
+syntax = "proto2";
+package pkg;
+message Foo {
+  optional string a = 1;
+  optional Foo b = 2;
+  extensions 10 to max;
+}

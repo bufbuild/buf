@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ type FileInfo interface {
 	//
 	// Example:
 	//	 Assume we had the input path /foo/bar which is a local directory.
-
 	//   Path: one/one.proto
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto
@@ -278,6 +277,7 @@ type ModulePin interface {
 	// all of these will be set
 	Branch() string
 	Commit() string
+	Digest() string
 	CreateTime() time.Time
 
 	isModulePin()
@@ -290,9 +290,10 @@ func NewModulePin(
 	repository string,
 	branch string,
 	commit string,
+	digest string,
 	createTime time.Time,
 ) (ModulePin, error) {
-	return newModulePin(remote, owner, repository, branch, commit, createTime)
+	return newModulePin(remote, owner, repository, branch, commit, digest, createTime)
 }
 
 // NewModulePinForProto returns a new ModulePin for the given proto ModulePin.
@@ -390,6 +391,7 @@ func ModulePinEqual(a ModulePin, b ModulePin) bool {
 		a.Repository() == b.Repository() &&
 		a.Branch() == b.Branch() &&
 		a.Commit() == b.Commit() &&
+		a.Digest() == b.Digest() &&
 		a.CreateTime().Equal(b.CreateTime())
 }
 
@@ -410,6 +412,7 @@ func DependencyModulePinsForBucket(
 			dep.Repository,
 			"",
 			dep.Commit,
+			dep.Digest,
 			time.Time{},
 		)
 		if err != nil {
@@ -446,6 +449,7 @@ func PutDependencyModulePinsToBucket(
 				Owner:      pin.Owner(),
 				Repository: pin.Repository(),
 				Commit:     pin.Commit(),
+				Digest:     pin.Digest(),
 			},
 		)
 	}

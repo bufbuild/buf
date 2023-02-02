@@ -15,11 +15,10 @@ message Foo {
   string one = 1 [(name) = "f\"o\"'o'"];
   string two = 2 [(name) = 'f"oo"'];
   string three = 3 [(name) = "f'oo'"];
-  string four = 4 [(name) = "f\"o\"'o'"];
-  string five = 5 [(name) = 'f"o"o'];
-  string six = 6 [(name) = "f'o'o"];
+  string four = 4 [(name) = "f\"o\"\'o\'"];
+  string five = 5 [(name) = "f\"o\"o"];
+  string six = 6 [(name) = 'f\'o\'o'];
   string seven = 7 [(name) = "foo"];
-  string eight = 8 [(foo) = {
-    something: 'something:"foo"'
-  }];
+  string eight = 8 [(foo) = {something: 'something:"foo"'}];
+  string nine = 9 [(foo) = {something: "something:\"foo\"\nanother:\"bar\""}];
 }

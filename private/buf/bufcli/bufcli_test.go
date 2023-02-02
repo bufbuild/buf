@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,43 +12,138 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcli_test
+package bufcli
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
-func TestParseSourceAndType(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-	t.Run("default", func(t *testing.T) {
-		moduleReference, typeName, err := bufcli.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo#buf.v1.Foo")
-		assert.NoError(t, err)
-		assert.Equal(t, "buf.test/testuser/testrepo", moduleReference)
-		assert.Equal(t, "buf.v1.Foo", typeName)
-	})
-	t.Run("main track", func(t *testing.T) {
-		moduleReference, typeName, err := bufcli.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo:main#buf.v1.Foo")
-		assert.NoError(t, err)
-		assert.Equal(t, "buf.test/testuser/testrepo", moduleReference)
-		assert.Equal(t, "buf.v1.Foo", typeName)
-	})
-	t.Run("dev track", func(t *testing.T) {
-		moduleReference, typeName, err := bufcli.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo:dev#buf.v1.Foo")
-		assert.NoError(t, err)
-		assert.Equal(t, "buf.test/testuser/testrepo:dev", moduleReference)
-		assert.Equal(t, "buf.v1.Foo", typeName)
-	})
-	t.Run("fail with module name", func(t *testing.T) {
-		_, _, err := bufcli.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo")
-		assert.EqualError(t, err, `if a source isn't provided, the type needs to be a fully qualified path that includes the module reference; failed to parse the type: "buf.test/testuser/testrepo" is not a valid fully qualified path`)
-	})
-	t.Run("fail with type name", func(t *testing.T) {
-		_, _, err := bufcli.ParseSourceAndType(ctx, "", "buf.v1.Foo")
-		assert.EqualError(t, err, `if a source isn't provided, the type needs to be a fully qualified path that includes the module reference; failed to parse the type: "buf.v1.Foo" is not a valid fully qualified path`)
+type mockBucketProvider struct {
+	files map[string][]byte
+}
+
+func (m *mockBucketProvider) NewReadWriteBucket(
+	_ string,
+	_ ...storageos.ReadWriteBucketOption,
+) (storage.ReadWriteBucket, error) {
+	return storagemem.NewReadWriteBucketWithOptions(storagemem.WithFiles(m.files))
+}
+
+func TestBucketAndConfigForSource(t *testing.T) {
+	testBucketAndConfigForSource(
+		t,
+		"minimal module",
+		moduleFiles("remote/owner/repository"),
+		".",
+		nil,
+		"",
+	)
+	testBucketAndConfigForSource(
+		t,
+		"bad name",
+		moduleFiles("foo"),
+		".",
+		nil,
+		"module identity",
+	)
+	testBucketAndConfigForSource(
+		t,
+		"bad path",
+		moduleFiles("remote/owner/repository"),
+		"astrangescheme://",
+		nil,
+		"invalid dir path",
+	)
+	testBucketAndConfigForSource(
+		t,
+		"no config file",
+		nil,
+		".",
+		ErrNoConfigFile,
+		"",
+	)
+	testBucketAndConfigForSource(
+		t,
+		"no module name",
+		moduleFiles(""),
+		".",
+		ErrNoModuleName,
+		"",
+	)
+}
+
+func moduleFiles(name string) map[string][]byte {
+	bufConfig := "version: v1\n"
+	if name != "" {
+		bufConfig += fmt.Sprintf("name: %s\n", name)
+	}
+	return map[string][]byte{
+		"buf.yaml": []byte(bufConfig),
+	}
+}
+
+func bucketAndConfig(
+	ctx context.Context,
+	logger *zap.Logger,
+	files map[string][]byte,
+	source string,
+) (storage.ReadBucketCloser, *bufconfig.Config, error) {
+	container := app.NewContainer(nil, nil, nil, nil)
+	bucketProvider := &mockBucketProvider{
+		files: files,
+	}
+	runner := command.NewRunner()
+	return BucketAndConfigForSource(
+		ctx,
+		logger,
+		container,
+		bucketProvider,
+		runner,
+		source,
+	)
+}
+
+func testBucketAndConfigForSource(
+	t *testing.T,
+	desc string,
+	files map[string][]byte,
+	source string,
+	expectedErr error,
+	expectedErrContains string,
+) {
+	t.Helper()
+	t.Run(desc, func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		logger := zap.NewNop()
+		sourceBucket, sourceConfig, err := bucketAndConfig(
+			ctx,
+			logger,
+			files,
+			source,
+		)
+		if expectedErr == nil && expectedErrContains == "" {
+			assert.NotNil(t, sourceBucket)
+			assert.NotNil(t, sourceConfig)
+			assert.NoError(t, err)
+			return
+		}
+		if expectedErr != nil {
+			assert.ErrorIs(t, err, expectedErr)
+		}
+		if expectedErrContains != "" {
+			assert.ErrorContains(t, err, expectedErrContains)
+		}
 	})
 }

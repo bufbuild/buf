@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@ package pluginpush
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
@@ -24,13 +28,21 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netextended"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/connect-go"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
@@ -41,8 +53,8 @@ const (
 	formatFlagName          = "format"
 	errorFormatFlagName     = "error-format"
 	disableSymlinksFlagName = "disable-symlinks"
-	targetFlagName          = "target"
 	overrideRemoteFlagName  = "override-remote"
+	imageFlagName           = "image"
 )
 
 // NewCommand returns a new Command.
@@ -54,7 +66,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <source>",
 		Short: "Push a plugin to a registry.",
-		Long:  bufcli.GetSourceDirLong(`the source to push`),
+		Long:  bufcli.GetSourceDirLong(`the source to push (directory containing buf.plugin.yaml or plugin release zip)`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -70,8 +82,8 @@ type flags struct {
 	Format          string
 	ErrorFormat     string
 	DisableSymlinks bool
-	Target          string
 	OverrideRemote  string
+	Image           string
 }
 
 func newFlags() *flags {
@@ -102,10 +114,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"Override the default remote found in buf.plugin.yaml name and dependencies.",
 	)
 	flagSet.StringVar(
-		&f.Target,
-		targetFlagName,
+		&f.Image,
+		imageFlagName,
 		"",
-		fmt.Sprintf("The target architecture for plugins (default %q).", bufplugindocker.DefaultTarget),
+		"Existing image to push.",
 	)
 }
 
@@ -131,10 +143,35 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	sourceBucket, err := storageosProvider.NewReadWriteBucket(source)
+	storageProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
+	sourceStat, err := os.Stat(source)
 	if err != nil {
 		return err
+	}
+	var sourceBucket storage.ReadWriteBucket
+	if !sourceStat.IsDir() && strings.HasSuffix(strings.ToLower(sourceStat.Name()), ".zip") {
+		// Unpack plugin release to temporary directory
+		tmpDir, err := os.MkdirTemp(os.TempDir(), "plugin-push")
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := os.RemoveAll(tmpDir); !os.IsNotExist(err) {
+				retErr = multierr.Append(retErr, err)
+			}
+		}()
+		sourceBucket, err = storageProvider.NewReadWriteBucket(tmpDir)
+		if err != nil {
+			return err
+		}
+		if err := unzipPluginToSourceBucket(ctx, source, sourceStat.Size(), sourceBucket); err != nil {
+			return err
+		}
+	} else {
+		sourceBucket, err = storageProvider.NewReadWriteBucket(source)
+		if err != nil {
+			return err
+		}
 	}
 	existingConfigFilePath, err := bufpluginconfig.ExistingConfigFilePath(ctx, sourceBucket)
 	if err != nil {
@@ -151,43 +188,65 @@ func run(
 	if err != nil {
 		return err
 	}
-	// TODO: Once we support multiple plugin source types, this could be abstracted away
-	// in the bufpluginsource package. This is much simpler for now though.
-	dockerfile, err := loadDockerfile(ctx, sourceBucket)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, dockerfile.Close())
-	}()
-
-	client, err := bufplugindocker.NewClient(container.Logger())
+	client, err := bufplugindocker.NewClient(container.Logger(), bufcli.Version)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, client.Close())
 	}()
-
-	buildResponse, err := client.Build(
-		ctx,
-		dockerfile,
-		pluginConfig,
-		bufplugindocker.WithConfigDirPath(container.ConfigDirPath()),
-		bufplugindocker.WithTarget(flags.Target),
-	)
+	var imageID string
+	if flags.Image != "" {
+		inspectResponse, err := client.Inspect(ctx, flags.Image)
+		if err != nil {
+			return nil
+		}
+		imageID = inspectResponse.ImageID
+	} else {
+		image, err := loadDockerImage(ctx, sourceBucket)
+		if err != nil {
+			return err
+		}
+		loadResponse, err := client.Load(ctx, image)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := image.Close(); !errors.Is(err, os.ErrClosed) {
+				retErr = multierr.Append(retErr, err)
+			}
+		}()
+		imageID = loadResponse.ImageID
+	}
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-
-	// We build a Docker image using a unique ID label each time.
-	// After we're done publishing the image, we delete it to not leave a lot of images left behind.
-	// buildkit maintains a separate build cache so removing the image doesn't appear to impact future rebuilds.
-	defer func() {
-		if _, err := client.Delete(ctx, buildResponse.Image); err != nil {
-			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", buildResponse.Image))
+	service := connectclient.Make(
+		clientConfig,
+		pluginConfig.Name.Remote(),
+		registryv1alpha1connect.NewPluginCurationServiceClient,
+	)
+	latestPluginResp, err := service.GetLatestCuratedPlugin(
+		ctx,
+		connect.NewRequest(&registryv1alpha1.GetLatestCuratedPluginRequest{
+			Owner:    pluginConfig.Name.Owner(),
+			Name:     pluginConfig.Name.Plugin(),
+			Version:  pluginConfig.PluginVersion,
+			Revision: 0, // get latest revision for the plugin version.
+		}),
+	)
+	var currentImageDigest string
+	var nextRevision uint32
+	if err != nil {
+		if connect.CodeOf(err) != connect.CodeNotFound {
+			return err
 		}
-	}()
+		nextRevision = 1
+	} else {
+		nextRevision = latestPluginResp.Msg.Plugin.Revision + 1
+		currentImageDigest = latestPluginResp.Msg.Plugin.ContainerImageDigest
+	}
 	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
 	if err != nil {
 		return err
@@ -198,56 +257,35 @@ func run(
 		authConfig.Username = machine.Login()
 		authConfig.Password = machine.Password()
 	}
-	pushResponse, err := client.Push(ctx, buildResponse.Image, authConfig)
+	imageDigest, err := findExistingDigestForImageID(ctx, pluginConfig, authConfig, imageID, currentImageDigest)
 	if err != nil {
 		return err
 	}
-
+	if imageDigest == "" {
+		imageDigest, err = pushImage(ctx, client, authConfig, pluginConfig, imageID)
+		if err != nil {
+			return err
+		}
+	} else {
+		container.Logger().Info("image found in registry - skipping push")
+	}
 	plugin, err := bufplugin.NewPlugin(
 		pluginConfig.PluginVersion,
 		pluginConfig.Dependencies,
-		pluginConfig.DefaultOptions,
 		pluginConfig.Registry,
-		pushResponse.Digest,
+		imageDigest,
 		pluginConfig.SourceURL,
 		pluginConfig.Description,
 	)
 	if err != nil {
 		return err
 	}
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	createRequest, err := createCuratedPluginRequest(pluginConfig, plugin, nextRevision)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewPluginCurationService(ctx, pluginConfig.Name.Remote())
-	if err != nil {
-		return err
-	}
-	var nextRevision uint32
-	// TODO: Revisit if we decide to make revision part of plugin_version
-	currentRevision, _, err := service.GetLatestCuratedPlugin(ctx, pluginConfig.Name.Owner(), pluginConfig.Name.Plugin(), pluginConfig.PluginVersion)
-	if err != nil {
-		if connect.CodeOf(err) != connect.CodeNotFound {
-			return err
-		}
-		nextRevision = 1
-	} else {
-		nextRevision = currentRevision.Revision + 1
-	}
-	curatedPlugin, err := service.CreateCuratedPlugin(
-		ctx,
-		pluginConfig.Name.Owner(),
-		pluginConfig.Name.Plugin(),
-		bufplugin.PluginToProtoPluginRegistryType(plugin),
-		plugin.Version(),
-		plugin.ContainerImageDigest(),
-		bufplugin.PluginOptionsToOptionsSlice(plugin.DefaultOptions()),
-		bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
-		plugin.SourceURL(),
-		plugin.Description(),
-		bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry()),
-		nextRevision,
-	)
+	var curatedPlugin *registryv1alpha1.CuratedPlugin
+	createPluginResp, err := service.CreateCuratedPlugin(ctx, connect.NewRequest(createRequest))
 	if err != nil {
 		if connect.CodeOf(err) != connect.CodeAlreadyExists {
 			return err
@@ -258,25 +296,161 @@ func run(
 			zap.String("name", pluginConfig.Name.IdentityString()),
 			zap.String("digest", plugin.ContainerImageDigest()),
 		)
-		curatedPlugin = currentRevision
+		curatedPlugin = latestPluginResp.Msg.Plugin
+	} else {
+		curatedPlugin = createPluginResp.Msg.Configuration
 	}
 	return bufprint.NewCuratedPluginPrinter(container.Stdout()).PrintCuratedPlugin(ctx, format, curatedPlugin)
 }
 
-func loadDockerfile(ctx context.Context, bucket storage.ReadBucket) (storage.ReadObjectCloser, error) {
-	var err error
-	for _, path := range []string{bufplugindocker.SourceFilePath, bufplugindocker.SourceFileAlternatePath} {
-		var dockerfile storage.ReadObjectCloser
-		if dockerfile, err = bucket.Get(ctx, path); err == nil {
-			return dockerfile, nil
+func createCuratedPluginRequest(
+	pluginConfig *bufpluginconfig.Config,
+	plugin bufplugin.Plugin,
+	nextRevision uint32,
+) (*registryv1alpha1.CreateCuratedPluginRequest, error) {
+	outputLanguages, err := bufplugin.OutputLanguagesToProtoLanguages(pluginConfig.OutputLanguages)
+	if err != nil {
+		return nil, err
+	}
+	protoRegistryConfig, err := bufplugin.PluginRegistryToProtoRegistryConfig(plugin.Registry())
+	if err != nil {
+		return nil, err
+	}
+	return &registryv1alpha1.CreateCuratedPluginRequest{
+		Owner:                pluginConfig.Name.Owner(),
+		Name:                 pluginConfig.Name.Plugin(),
+		RegistryType:         bufplugin.PluginToProtoPluginRegistryType(plugin),
+		Version:              plugin.Version(),
+		ContainerImageDigest: plugin.ContainerImageDigest(),
+		Dependencies:         bufplugin.PluginReferencesToCuratedProtoPluginReferences(plugin.Dependencies()),
+		SourceUrl:            plugin.SourceURL(),
+		Description:          plugin.Description(),
+		RegistryConfig:       protoRegistryConfig,
+		Revision:             nextRevision,
+		OutputLanguages:      outputLanguages,
+		SpdxLicenseId:        pluginConfig.SPDXLicenseID,
+		LicenseUrl:           pluginConfig.LicenseURL,
+	}, nil
+}
+
+func pushImage(
+	ctx context.Context,
+	client bufplugindocker.Client,
+	authConfig *bufplugindocker.RegistryAuthConfig,
+	plugin *bufpluginconfig.Config,
+	image string,
+) (_ string, retErr error) {
+	tagResponse, err := client.Tag(ctx, image, plugin)
+	if err != nil {
+		return "", err
+	}
+	createdImage := tagResponse.Image
+	// We tag a Docker image using a unique ID label each time.
+	// After we're done publishing the image, we delete it to not leave a lot of images left behind.
+	defer func() {
+		if _, err := client.Delete(ctx, createdImage); err != nil {
+			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", createdImage))
+		}
+	}()
+	pushResponse, err := client.Push(ctx, createdImage, authConfig)
+	if err != nil {
+		return "", err
+	}
+	return pushResponse.Digest, nil
+}
+
+// findExistingDigestForImageID will query the OCI registry to see if the imageID already exists.
+// If an image is found with the same imageID, its digest will be returned (and we'll skip pushing to OCI registry).
+//
+// It performs the following search:
+//
+// - GET /v2/{owner}/{plugin}/tags/list
+// - For each tag:
+//   - Fetch image: GET /v2/{owner}/{plugin}/manifests/{tag}
+//   - If image manifest matches imageID, we can use the image digest for the image.
+func findExistingDigestForImageID(
+	ctx context.Context,
+	plugin *bufpluginconfig.Config,
+	authConfig *bufplugindocker.RegistryAuthConfig,
+	imageID string,
+	currentImageDigest string,
+) (string, error) {
+	pluginsRemote := plugin.Name.Remote()
+	if !strings.HasPrefix(pluginsRemote, bufplugindocker.PluginsImagePrefix) {
+		pluginsRemote = bufplugindocker.PluginsImagePrefix + pluginsRemote
+	}
+	repo, err := name.NewRepository(fmt.Sprintf("%s/%s/%s", pluginsRemote, plugin.Name.Owner(), plugin.Name.Plugin()))
+	if err != nil {
+		return "", err
+	}
+	auth := &authn.Basic{Username: authConfig.Username, Password: authConfig.Password}
+	remoteOpts := []remote.Option{remote.WithContext(ctx), remote.WithAuth(auth)}
+	// First attempt to see if the current image digest matches the image ID
+	if currentImageDigest != "" {
+		remoteImageID, _, err := getImageIDAndDigestFromReference(repo.Digest(currentImageDigest), remoteOpts...)
+		if err != nil {
+			return "", err
+		}
+		if remoteImageID == imageID {
+			return currentImageDigest, nil
 		}
 	}
-	if storage.IsNotExist(err) {
-		return nil, fmt.Errorf(
-			"please define a %s or %s plugin source file in the target directory",
-			bufplugindocker.SourceFilePath,
-			bufplugindocker.SourceFileAlternatePath,
-		)
+	// List all tags and check for a match
+	tags, err := remote.List(repo, remoteOpts...)
+	if err != nil {
+		structuredErr := new(transport.Error)
+		if errors.As(err, &structuredErr) {
+			if structuredErr.StatusCode == http.StatusNotFound {
+				return "", nil
+			}
+		}
+		return "", err
 	}
-	return nil, err
+	existingImageDigest := ""
+	for _, tag := range tags {
+		remoteImageID, imageDigest, err := getImageIDAndDigestFromReference(repo.Tag(tag), remoteOpts...)
+		if err != nil {
+			return "", err
+		}
+		if remoteImageID == imageID {
+			existingImageDigest = imageDigest
+			break
+		}
+	}
+	return existingImageDigest, nil
+}
+
+func getImageIDAndDigestFromReference(ref name.Reference, options ...remote.Option) (string, string, error) {
+	image, err := remote.Image(ref, options...)
+	if err != nil {
+		return "", "", err
+	}
+	imageDigest, err := image.Digest()
+	if err != nil {
+		return "", "", err
+	}
+	manifest, err := image.Manifest()
+	if err != nil {
+		return "", "", err
+	}
+	return manifest.Config.Digest.String(), imageDigest.String(), nil
+}
+
+func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64, bucket storage.ReadWriteBucket) (retErr error) {
+	f, err := os.Open(pluginZip)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, f.Close())
+	}()
+	return storagearchive.Unzip(ctx, f, size, bucket, nil, 0)
+}
+
+func loadDockerImage(ctx context.Context, bucket storage.ReadBucket) (storage.ReadObjectCloser, error) {
+	image, err := bucket.Get(ctx, bufplugindocker.ImagePath)
+	if storage.IsNotExist(err) {
+		return nil, fmt.Errorf("unable to find a %s plugin image: %w", bufplugindocker.ImagePath, err)
+	}
+	return image, nil
 }

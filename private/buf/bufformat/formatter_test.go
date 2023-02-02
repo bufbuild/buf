@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package bufformat
 import (
 	"context"
 	"io"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -49,11 +48,7 @@ func testFormatProto2(t *testing.T) {
 	testFormatNoDiff(t, "testdata/proto2/message/v1")
 	testFormatNoDiff(t, "testdata/proto2/option/v1")
 	testFormatNoDiff(t, "testdata/proto2/quotes/v1")
-
-	// TODO: Temporarily skipping this test since it's
-	// due to a bug in protocompile.
-	//
-	// testFormatNoDiff(t, "testdata/proto2/utf8/v1")
+	testFormatNoDiff(t, "testdata/proto2/utf8/v1")
 }
 
 func testFormatProto3(t *testing.T) {
@@ -67,48 +62,43 @@ func testFormatProto3(t *testing.T) {
 }
 
 func testFormatNoDiff(t *testing.T, path string) {
-	ctx := context.Background()
-	runner := command.NewRunner()
-	moduleBucket, err := storageos.NewProvider().NewReadWriteBucket(path)
-	require.NoError(t, err)
-	module, err := bufmodule.NewModuleForBucket(ctx, moduleBucket)
-	require.NoError(t, err)
-	readBucket, err := Format(ctx, module)
-	require.NoError(t, err)
-	require.NoError(
-		t,
-		storage.WalkReadObjects(
-			ctx,
-			readBucket,
-			"",
-			func(formattedFile storage.ReadObject) error {
-				originalPath := formattedFile.Path()
-				if strings.HasPrefix(filepath.Base(originalPath), "option_name") {
-					// TODO: Temporarily skipping this test since it's
-					// due to a bug in protocompile.
-					//
-					// https://github.com/jhump/protocompile/pull/3
+	t.Run(path, func(t *testing.T) {
+		ctx := context.Background()
+		runner := command.NewRunner()
+		moduleBucket, err := storageos.NewProvider().NewReadWriteBucket(path)
+		require.NoError(t, err)
+		module, err := bufmodule.NewModuleForBucket(ctx, moduleBucket)
+		require.NoError(t, err)
+		readBucket, err := Format(ctx, module)
+		require.NoError(t, err)
+		require.NoError(
+			t,
+			storage.WalkReadObjects(
+				ctx,
+				readBucket,
+				"",
+				func(formattedFile storage.ReadObject) error {
+					expectedPath := formattedFile.Path()
+					t.Run(expectedPath, func(t *testing.T) {
+						// The expecetd format result is the golden file. If
+						// this file IS a golden file, it is expected to not
+						// change.
+						if !strings.HasSuffix(expectedPath, ".golden.proto") {
+							expectedPath = strings.Replace(expectedPath, ".proto", ".golden.proto", 1)
+						}
+						formattedData, err := io.ReadAll(formattedFile)
+						require.NoError(t, err)
+						expectedFile, err := moduleBucket.Get(ctx, expectedPath)
+						require.NoError(t, err)
+						expectedData, err := io.ReadAll(expectedFile)
+						require.NoError(t, err)
+						fileDiff, err := diff.Diff(ctx, runner, expectedData, formattedData, expectedPath, formattedFile.Path()+" (formatted)")
+						require.NoError(t, err)
+						require.Empty(t, string(fileDiff))
+					})
 					return nil
-				}
-				if !strings.HasSuffix(originalPath, ".golden.proto") {
-					// If the fhe current file is not a golden file,
-					// we just need to make sure that the formatted
-					// result is equivalent to its original form.
-					//
-					// This ensures that formatting is idempotent.
-					originalPath = strings.Replace(originalPath, ".proto", ".golden.proto", 1)
-				}
-				formattedData, err := io.ReadAll(formattedFile)
-				require.NoError(t, err)
-				originalFile, err := moduleBucket.Get(ctx, originalPath)
-				require.NoError(t, err)
-				originalData, err := io.ReadAll(originalFile)
-				require.NoError(t, err)
-				fileDiff, err := diff.Diff(ctx, runner, formattedData, originalData, formattedFile.Path(), originalPath)
-				require.NoError(t, err)
-				require.Empty(t, string(fileDiff))
-				return nil
-			},
-		),
-	)
+				},
+			),
+		)
+	})
 }

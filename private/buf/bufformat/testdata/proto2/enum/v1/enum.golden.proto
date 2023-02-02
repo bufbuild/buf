@@ -5,12 +5,12 @@ enum Type {
   // Another trailing comment on Type.
   // A third trailing comment on Type.
 
-  TYPE_UNSPECIFIED/* Comment before '=' */ = /* Comment after '=' */0 [deprecated = true];
+  TYPE_UNSPECIFIED /* Comment before '=' */ = /* Comment after '=' */ 0 [deprecated = true];
 
   TYPE_ONE = 1; // In-line comment on TYPE_ONE.
 
   // TYPE_TWO leading comment.
-  TYPE_TWO = 2/* Before the ';' */;
+  TYPE_TWO = 2 /* Before the ';' */;
 
-// Leading comment on '}'.
+  // Leading comment on '}'.
 } // Trailing comment on '}'.

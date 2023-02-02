@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -82,19 +85,22 @@ func run(
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewRepositoryCommitService(ctx, moduleReference.Remote())
-	if err != nil {
-		return err
-	}
-	repositoryCommit, err := service.GetRepositoryCommitByReference(
+	service := connectclient.Make(
+		clientConfig,
+		moduleReference.Remote(),
+		registryv1alpha1connect.NewRepositoryCommitServiceClient,
+	)
+	resp, err := service.GetRepositoryCommitByReference(
 		ctx,
-		moduleReference.Owner(),
-		moduleReference.Repository(),
-		moduleReference.Reference(),
+		connect.NewRequest(&registryv1alpha1.GetRepositoryCommitByReferenceRequest{
+			RepositoryOwner: moduleReference.Owner(),
+			RepositoryName:  moduleReference.Repository(),
+			Reference:       moduleReference.Reference(),
+		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -102,5 +108,6 @@ func run(
 		}
 		return err
 	}
-	return bufprint.NewRepositoryCommitPrinter(container.Stdout()).PrintRepositoryCommit(ctx, format, repositoryCommit)
+	return bufprint.NewRepositoryCommitPrinter(container.Stdout()).
+		PrintRepositoryCommit(ctx, format, resp.Msg.RepositoryCommit)
 }

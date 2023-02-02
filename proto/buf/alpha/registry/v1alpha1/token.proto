@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,6 +48,10 @@ message CreateTokenRequest {
   // The time until which the token should be valid.
   // Must be in the future. May be null for no expiry.
   google.protobuf.Timestamp expire_time = 2;
+  // The ID of the user to create a new token, can only be
+  // the user who perform this action, or a machine user.
+  // Default to the user who perform this action if this is empty.
+  string user_id = 3;
 }
 
 message CreateTokenResponse {
@@ -68,6 +72,10 @@ message ListTokensRequest {
   // The first page is returned if this is empty.
   string page_token = 2;
   bool reverse = 3;
+  // The ID of the user to list tokens, can only be
+  // the user who perform this action, or a machine user.
+  // Default to the user who perform this action if this is empty.
+  string user_id = 4;
 }
 
 message ListTokensResponse {

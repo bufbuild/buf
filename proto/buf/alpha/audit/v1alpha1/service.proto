@@ -1,0 +1,45 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.audit.v1alpha1;
+
+import "buf/alpha/audit/v1alpha1/event.proto";
+import "google/protobuf/timestamp.proto";
+
+// AuditService is the Audit service.
+service AuditService {
+  // ListAuditedEvents lists audited events recorded in the BSR instance.
+  rpc ListAuditedEvents(ListAuditedEventsRequest) returns (ListAuditedEventsResponse);
+}
+
+message ListAuditedEventsRequest {
+  // The page size for listing audited events, values between 1-250.
+  uint32 page_size = 1;
+  // The page token for paginating. The first page is returned if this is empty.
+  string page_token = 2;
+  // The start timestamp to filter events from.
+  google.protobuf.Timestamp start = 3;
+  // The end timestamp to filter events to.
+  google.protobuf.Timestamp end = 4;
+}
+
+message ListAuditedEventsResponse {
+  // The list of audited events in the current page.
+  repeated buf.alpha.audit.v1alpha1.Event events = 1;
+  // The token for the next page of audited events. There are no more pages if
+  // this is empty.
+  string next_page_token = 2;
+}

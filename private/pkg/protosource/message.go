@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,11 +25,12 @@ type message struct {
 	oneofs                           []Oneof
 	reservedMessageRanges            []MessageRange
 	reservedNames                    []ReservedName
-	extensionMessageRanges           []MessageRange
+	extensionRanges                  []ExtensionRange
 	parent                           Message
 	isMapEntry                       bool
 	messageSetWireFormat             bool
 	noStandardDescriptorAccessor     bool
+	deprecated                       bool
 	messageSetWireFormatPath         []int32
 	noStandardDescriptorAccessorPath []int32
 }
@@ -41,6 +42,7 @@ func newMessage(
 	isMapEntry bool,
 	messageSetWireFormat bool,
 	noStandardDescriptorAccessor bool,
+	deprecated bool,
 	messageSetWireFormatPath []int32,
 	noStandardDescriptorAccessorPath []int32,
 ) *message {
@@ -51,6 +53,7 @@ func newMessage(
 		isMapEntry:                       isMapEntry,
 		messageSetWireFormat:             messageSetWireFormat,
 		noStandardDescriptorAccessor:     noStandardDescriptorAccessor,
+		deprecated:                       deprecated,
 		messageSetWireFormatPath:         messageSetWireFormatPath,
 		noStandardDescriptorAccessorPath: noStandardDescriptorAccessorPath,
 	}
@@ -92,8 +95,16 @@ func (m *message) ReservedNames() []ReservedName {
 	return m.reservedNames
 }
 
+func (m *message) ExtensionRanges() []ExtensionRange {
+	return m.extensionRanges
+}
+
 func (m *message) ExtensionMessageRanges() []MessageRange {
-	return m.extensionMessageRanges
+	extMsgRanges := make([]MessageRange, len(m.extensionRanges))
+	for i, extensionRange := range m.extensionRanges {
+		extMsgRanges[i] = extensionRange
+	}
+	return extMsgRanges
 }
 
 func (m *message) Parent() Message {
@@ -110,6 +121,10 @@ func (m *message) MessageSetWireFormat() bool {
 
 func (m *message) NoStandardDescriptorAccessor() bool {
 	return m.noStandardDescriptorAccessor
+}
+
+func (m *message) Deprecated() bool {
+	return m.deprecated
 }
 
 func (m *message) MessageSetWireFormatLocation() Location {
@@ -148,6 +163,6 @@ func (m *message) addReservedName(reservedName ReservedName) {
 	m.reservedNames = append(m.reservedNames, reservedName)
 }
 
-func (m *message) addExtensionMessageRange(extensionMessageRange MessageRange) {
-	m.extensionMessageRanges = append(m.extensionMessageRanges, extensionMessageRange)
+func (m *message) addExtensionRange(extensionRange ExtensionRange) {
+	m.extensionRanges = append(m.extensionRanges, extensionRange)
 }

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ import (
 const (
 	// DocumentationFilePath defines the path to the documentation file, relative to the root of the module.
 	DocumentationFilePath = "buf.md"
+	// LicenseFilePath defines the path to the license file, relative to the root of the module.
+	LicenseFilePath = "LICENSE"
 
 	// b3DigestPrefix is the digest prefix for the third version of the digest function.
 	//
@@ -97,6 +99,9 @@ type Module interface {
 	// Documentation gets the contents of the module documentation file, buf.md and returns the string representation.
 	// This may return an empty string if the documentation file does not exist.
 	Documentation() string
+	// License gets the contents of the module license file, LICENSE and returns the string representation.
+	// This may return an empty string if the documentation file does not exist.
+	License() string
 	// BreakingConfig returns the breaking change check configuration set for the module.
 	//
 	// This may be nil, since older versions of the module would not have this stored.
@@ -323,6 +328,7 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 		Documentation:  module.Documentation(),
 		BreakingConfig: protoBreakingConfig,
 		LintConfig:     protoLintConfig,
+		License:        module.License(),
 	}
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
@@ -339,8 +345,9 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 //  2. Add the dependency's module identity and commit ID (sorted lexicographically by commit ID)
 //  3. Add the module identity if available.
 //  4. Add the module documentation if available.
-//  5. Add the breaking and lint configurations if available.
-//  6. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
+//  5. Add the module license if available.
+//  6. Add the breaking and lint configurations if available.
+//  7. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
 func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	hash := sha256.New()
 	// We do not want to change the sort order as the rest of the codebase relies on it,
@@ -377,6 +384,11 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	}
 	if docs := module.Documentation(); docs != "" {
 		if _, err := hash.Write([]byte(docs)); err != nil {
+			return "", err
+		}
+	}
+	if license := module.License(); license != "" {
+		if _, err := hash.Write([]byte(license)); err != nil {
 			return "", err
 		}
 	}
@@ -421,6 +433,11 @@ func ModuleToBucket(
 	}
 	if docs := module.Documentation(); docs != "" {
 		if err := storage.PutPath(ctx, writeBucket, DocumentationFilePath, []byte(docs)); err != nil {
+			return err
+		}
+	}
+	if license := module.License(); license != "" {
+		if err := storage.PutPath(ctx, writeBucket, LicenseFilePath, []byte(license)); err != nil {
 			return err
 		}
 	}

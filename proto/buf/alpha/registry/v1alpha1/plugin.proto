@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import "buf/alpha/registry/v1alpha1/generate.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
 import "google/protobuf/timestamp.proto";
+
+option deprecated = true;
 
 // Plugin represents a protoc plugin, such as protoc-gen-go.
 message Plugin {

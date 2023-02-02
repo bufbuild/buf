@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ package bufpluginconfig
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/gen/data/dataspdx"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/semver"
 )
@@ -39,39 +39,6 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 	}
 	if !semver.IsValid(pluginVersion) {
 		return nil, fmt.Errorf("plugin_version %q must be a valid semantic version", externalConfig.PluginVersion)
-	}
-	var defaultOptions map[string]string
-	if len(externalConfig.DefaultOpts) > 0 {
-		// We only want to create a non-nil map if the user
-		// actually specified any options.
-		defaultOptions = make(map[string]string)
-	}
-	for _, option := range externalConfig.DefaultOpts {
-		split := strings.Split(option, "=")
-		if len(split) > 2 {
-			return nil, errors.New(`plugin default_options must be specified as "<key>=<value>" strings`)
-		}
-		if len(split) == 1 {
-			// Some plugins don't actually specify the '=' delimiter
-			// (e.g. protoc-gen-java's java_opt=annotate_code). To
-			// support these legacy options, we map the key to an empty
-			// string value.
-			//
-			// This means that plugin options with an explicit
-			// 'something=""' option are actually passed in as
-			// --something (omitting the explicit "" entirely).
-			//
-			// This behavior might need to change depending on if
-			// there are valid use cases here, but we eventually
-			// want to support structured options as key, value
-			// pairs, so we enforce this implicit behavior for now.
-			split = append(split, "")
-		}
-		key, value := split[0], split[1]
-		if _, ok := defaultOptions[key]; ok {
-			return nil, fmt.Errorf("plugin default option %q was specified more than once", key)
-		}
-		defaultOptions[key] = value
 	}
 	var dependencies []bufpluginref.PluginReference
 	if len(externalConfig.Deps) > 0 {
@@ -95,21 +62,31 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 	if err != nil {
 		return nil, err
 	}
+	spdxLicenseID := externalConfig.SPDXLicenseID
+	if spdxLicenseID != "" {
+		if licenseInfo, ok := dataspdx.GetLicenseInfo(spdxLicenseID); ok {
+			spdxLicenseID = licenseInfo.ID()
+		} else {
+			return nil, fmt.Errorf("unknown SPDX License ID %q", spdxLicenseID)
+		}
+	}
 	return &Config{
-		Name:           pluginIdentity,
-		PluginVersion:  pluginVersion,
-		DefaultOptions: defaultOptions,
-		Dependencies:   dependencies,
-		Registry:       registryConfig,
-		SourceURL:      externalConfig.SourceURL,
-		Description:    externalConfig.Description,
+		Name:            pluginIdentity,
+		PluginVersion:   pluginVersion,
+		Dependencies:    dependencies,
+		Registry:        registryConfig,
+		SourceURL:       externalConfig.SourceURL,
+		Description:     externalConfig.Description,
+		OutputLanguages: externalConfig.OutputLanguages,
+		SPDXLicenseID:   spdxLicenseID,
+		LicenseURL:      externalConfig.LicenseURL,
 	}, nil
 }
 
 func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*RegistryConfig, error) {
 	var (
-		isGoEmpty  = externalRegistryConfig.Go.IsEmpty()
-		isNPMEmpty = externalRegistryConfig.NPM.IsEmpty()
+		isGoEmpty  = externalRegistryConfig.Go == nil
+		isNPMEmpty = externalRegistryConfig.NPM == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
@@ -129,13 +106,15 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		// It's possible that the plugin doesn't have any runtime dependencies.
 		return nil, nil
 	}
+	options := OptionsSliceToPluginOptions(externalRegistryConfig.Opts)
 	if !isNPMEmpty {
 		npmRegistryConfig, err := newNPMRegistryConfig(externalRegistryConfig.NPM)
 		if err != nil {
 			return nil, err
 		}
 		return &RegistryConfig{
-			NPM: npmRegistryConfig,
+			NPM:     npmRegistryConfig,
+			Options: options,
 		}, nil
 	}
 	// At this point, the Go runtime is guaranteed to be specified. Note
@@ -145,11 +124,15 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		return nil, err
 	}
 	return &RegistryConfig{
-		Go: goRegistryConfig,
+		Go:      goRegistryConfig,
+		Options: options,
 	}, nil
 }
 
-func newNPMRegistryConfig(externalNPMRegistryConfig ExternalNPMRegistryConfig) (*NPMRegistryConfig, error) {
+func newNPMRegistryConfig(externalNPMRegistryConfig *ExternalNPMRegistryConfig) (*NPMRegistryConfig, error) {
+	if externalNPMRegistryConfig == nil {
+		return nil, nil
+	}
 	var dependencies []*NPMRegistryDependencyConfig
 	for _, dep := range externalNPMRegistryConfig.Deps {
 		if dep.Package == "" {
@@ -175,12 +158,22 @@ func newNPMRegistryConfig(externalNPMRegistryConfig ExternalNPMRegistryConfig) (
 			},
 		)
 	}
+	switch externalNPMRegistryConfig.ImportStyle {
+	case "module", "commonjs":
+	default:
+		return nil, errors.New(`npm registry config import_style must be one of: "module" or "commonjs"`)
+	}
 	return &NPMRegistryConfig{
-		Deps: dependencies,
+		RewriteImportPathSuffix: externalNPMRegistryConfig.RewriteImportPathSuffix,
+		Deps:                    dependencies,
+		ImportStyle:             externalNPMRegistryConfig.ImportStyle,
 	}, nil
 }
 
-func newGoRegistryConfig(externalGoRegistryConfig ExternalGoRegistryConfig) (*GoRegistryConfig, error) {
+func newGoRegistryConfig(externalGoRegistryConfig *ExternalGoRegistryConfig) (*GoRegistryConfig, error) {
+	if externalGoRegistryConfig == nil {
+		return nil, nil
+	}
 	if externalGoRegistryConfig.MinVersion != "" && !modfile.GoVersionRE.MatchString(externalGoRegistryConfig.MinVersion) {
 		return nil, fmt.Errorf("the go minimum version %q must be a valid semantic version in the form of <major>.<minor>", externalGoRegistryConfig.MinVersion)
 	}

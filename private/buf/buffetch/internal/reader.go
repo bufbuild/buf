@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,7 +37,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/klauspost/compress/zstd"
 	"github.com/klauspost/pgzip"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -59,6 +61,7 @@ type reader struct {
 	moduleEnabled  bool
 	moduleReader   bufmodule.ModuleReader
 	moduleResolver bufmodule.ModuleResolver
+	tracer         trace.Tracer
 }
 
 func newReader(
@@ -69,6 +72,7 @@ func newReader(
 	reader := &reader{
 		logger:            logger,
 		storageosProvider: storageosProvider,
+		tracer:            otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 	for _, option := range options {
 		option(reader)
@@ -202,12 +206,16 @@ func (r *reader) getArchiveBucket(
 	if err != nil {
 		return nil, err
 	}
+	readWriteBucket := storagemem.NewReadWriteBucket()
+	ctx, span := r.tracer.Start(ctx, "unarchive")
+	defer span.End()
 	defer func() {
 		retErr = multierr.Append(retErr, readCloser.Close())
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
 	}()
-	readWriteBucket := storagemem.NewReadWriteBucket()
-	ctx, span := trace.StartSpan(ctx, "unarchive")
-	defer span.End()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
 	case ArchiveTypeTar:
 		if err := storagearchive.Untar(

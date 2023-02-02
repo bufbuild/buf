@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -89,11 +89,8 @@ message RenameStudioRequestRequest {
   string new_name = 2;
 }
 
-// RenameStudioRequestResponse returns the renamed StudioRequest.
-message RenameStudioRequestResponse {
-  // Renamed Studio Request.
-  StudioRequest renamed_request = 1;
-}
+// RenameStudioRequestResponse returns empty on successful renaming.
+message RenameStudioRequestResponse {}
 
 // DeleteStudioRequestRequest is the proto request representation of the
 // DeleteStudioRequest method.

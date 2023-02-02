@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ const (
 	FormatJSON
 	// FormatMSVS is the MSVS format for FileAnnotations.
 	FormatMSVS
+	// FormatJUnit is the JUnit format for FileAnnotations.
+	FormatJUnit
 )
 
 var (
@@ -40,6 +42,7 @@ var (
 		"text",
 		"json",
 		"msvs",
+		"junit",
 	}
 	// AllFormatStringsWithAliases is all format strings with aliases.
 	//
@@ -49,19 +52,22 @@ var (
 		"gcc",
 		"json",
 		"msvs",
+		"junit",
 	}
 
 	stringToFormat = map[string]Format{
 		"text": FormatText,
 		// alias for text
-		"gcc":  FormatText,
-		"json": FormatJSON,
-		"msvs": FormatMSVS,
+		"gcc":   FormatText,
+		"json":  FormatJSON,
+		"msvs":  FormatMSVS,
+		"junit": FormatJUnit,
 	}
 	formatToString = map[Format]string{
-		FormatText: "text",
-		FormatJSON: "json",
-		FormatMSVS: "msvs",
+		FormatText:  "text",
+		FormatJSON:  "json",
+		FormatMSVS:  "msvs",
+		FormatJUnit: "junit",
 	}
 )
 
@@ -201,6 +207,8 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, fo
 		return printAsJSON(writer, fileAnnotations)
 	case FormatMSVS:
 		return printAsMSVS(writer, fileAnnotations)
+	case FormatJUnit:
+		return printAsJUnit(writer, fileAnnotations)
 	default:
 		return fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}

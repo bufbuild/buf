@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -356,7 +356,7 @@ func (m *v1beta1Migrator) maybeMigrateGenTemplate(dirPath string) (bool, error) 
 			Enabled:           v1beta1GenTemplate.Managed,
 			CcEnableArenas:    v1beta1GenTemplate.Options.CcEnableArenas,
 			JavaMultipleFiles: v1beta1GenTemplate.Options.JavaMultipleFiles,
-			OptimizeFor:       v1beta1GenTemplate.Options.OptimizeFor,
+			OptimizeFor:       bufgen.ExternalOptimizeForConfigV1{Default: v1beta1GenTemplate.Options.OptimizeFor},
 		},
 	}
 	for _, plugin := range v1beta1GenTemplate.Plugins {

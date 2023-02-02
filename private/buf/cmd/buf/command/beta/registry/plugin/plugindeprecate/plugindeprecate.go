@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,11 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -77,7 +80,7 @@ func run(
 	if pluginPath == "" {
 		return appcmd.NewInvalidArgumentError("you must specify a plugin path")
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
@@ -85,11 +88,15 @@ func run(
 	if err != nil {
 		return err
 	}
-	pluginService, err := registryProvider.NewPluginService(ctx, remote)
-	if err != nil {
-		return err
-	}
-	if err := pluginService.DeprecatePlugin(ctx, owner, name, flags.Message); err != nil {
+	pluginService := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewPluginServiceClient)
+	if _, err := pluginService.DeprecatePlugin(
+		ctx,
+		connect.NewRequest(&registryv1alpha1.DeprecatePluginRequest{
+			Owner:   owner,
+			Name:    name,
+			Message: flags.Message,
+		}),
+	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewPluginNotFoundError(owner, name)
 		}

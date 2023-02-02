@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import (
 	"testing"
 
 	studiov1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/studio/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -190,19 +191,6 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 	})
 
 	t.Run("invalid_upstream", func(t *testing.T) {
-		// TODO: unskip this test. This is flaky because of two reasons:
-		//
-		// 1. When a connection is closed, the underlying HTTP client does not
-		// always knows it, since the http handler implementation in go has no way
-		// of changing the connection timeout. See:
-		// https://github.com/golang/go/issues/16100
-		//
-		// 2. The expected status code is `StatusBadGateway` since the issue
-		// happened client-side (a response never came back from the server). This
-		// is not deterministic in the business logic because we're based on the
-		// connect error code that's returned. See
-		// https://linear.app/bufbuild/issue/BSR-383/flaky-test-in-bufstudioagent-testgo
-		t.SkipNow()
 		listener, err := net.Listen("tcp", "127.0.0.1:")
 		require.NoError(t, err)
 		go func() {
@@ -267,7 +255,7 @@ func newTestConnectServer(t *testing.T, tls bool) *httptest.Server {
 }
 
 func protoMarshalBase64(t *testing.T, message proto.Message) []byte {
-	protoBytes, err := proto.Marshal(message)
+	protoBytes, err := protoencoding.NewWireMarshaler().Marshal(message)
 	require.NoError(t, err)
 	base64Bytes := make([]byte, base64.StdEncoding.EncodedLen(len(protoBytes)))
 	base64.StdEncoding.Encode(base64Bytes, protoBytes)
@@ -279,7 +267,7 @@ func protoUnmarshalBase64(t *testing.T, base64Bytes []byte, message proto.Messag
 	actualLen, err := base64.StdEncoding.Decode(protoBytes, base64Bytes)
 	require.NoError(t, err)
 	protoBytes = protoBytes[:actualLen]
-	require.NoError(t, proto.Unmarshal(protoBytes, message))
+	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(protoBytes, message))
 }
 
 func addProtoHeadersToGoHeader(fromHeaders []*studiov1alpha1.Headers, toHeaders http.Header) {

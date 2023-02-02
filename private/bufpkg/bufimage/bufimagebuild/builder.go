@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,29 +18,38 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"runtime/debug"
-	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleprotoparse"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleprotocompile"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/desc/protoparse"
-	"go.opencensus.io/trace"
-	"go.uber.org/multierr"
+	"github.com/bufbuild/protocompile"
+	"github.com/bufbuild/protocompile/linker"
+	"github.com/bufbuild/protocompile/parser"
+	"github.com/bufbuild/protocompile/protoutil"
+	"github.com/bufbuild/protocompile/reporter"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/reflect/protoreflect"
+)
+
+const (
+	loggerName = "bufimagebuild"
+	tracerName = "bufbuild/buf"
 )
 
 type builder struct {
 	logger *zap.Logger
+	tracer trace.Tracer
 }
 
 func newBuilder(logger *zap.Logger) *builder {
 	return &builder{
-		logger: logger.Named("bufimagebuild"),
+		logger: logger.Named(loggerName),
+		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
@@ -64,11 +73,17 @@ func (b *builder) build(
 	ctx context.Context,
 	moduleFileSet bufmodule.ModuleFileSet,
 	excludeSourceCodeInfo bool,
-) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
-	ctx, span := trace.StartSpan(ctx, "build")
+) (_ bufimage.Image, _ []bufanalysis.FileAnnotation, retErr error) {
+	ctx, span := b.tracer.Start(ctx, "build")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 
-	parserAccessorHandler := bufmoduleprotoparse.NewParserAccessorHandler(ctx, moduleFileSet)
+	parserAccessorHandler := bufmoduleprotocompile.NewParserAccessorHandler(ctx, moduleFileSet)
 	targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -81,38 +96,31 @@ func (b *builder) build(
 		paths[i] = targetFileInfo.Path()
 	}
 
-	buildResults := getBuildResults(
+	buildResult := getBuildResult(
 		ctx,
 		parserAccessorHandler,
 		paths,
 		excludeSourceCodeInfo,
 	)
-	var buildResultErr error
-	for _, buildResult := range buildResults {
-		buildResultErr = multierr.Append(buildResultErr, buildResult.Err)
+	if buildResult.Err != nil {
+		return nil, nil, buildResult.Err
 	}
-	if buildResultErr != nil {
-		return nil, nil, buildResultErr
-	}
-	var fileAnnotations []bufanalysis.FileAnnotation
-	for _, buildResult := range buildResults {
-		fileAnnotations = append(fileAnnotations, buildResult.FileAnnotations...)
-	}
-	if len(fileAnnotations) > 0 {
-		return nil, bufanalysis.DeduplicateAndSortFileAnnotations(fileAnnotations), nil
+	if len(buildResult.FileAnnotations) > 0 {
+		return nil, bufanalysis.DeduplicateAndSortFileAnnotations(buildResult.FileAnnotations), nil
 	}
 
-	descFileDescriptors, err := getDescFileDescriptorsFromBuildResults(buildResults, paths)
+	fileDescriptors, err := checkAndSortFileDescriptors(buildResult.FileDescriptors, paths)
 	if err != nil {
 		return nil, nil, err
 	}
 	image, err := getImage(
 		ctx,
 		excludeSourceCodeInfo,
-		descFileDescriptors,
+		fileDescriptors,
 		parserAccessorHandler,
-		getSyntaxUnspecifiedFilenamesFromBuildResults(buildResults),
-		getFilenameToUnusedDependencyFilenamesFromBuildResults(buildResults),
+		buildResult.SyntaxUnspecifiedFilenames,
+		buildResult.FilenameToUnusedDependencyFilenames,
+		b.tracer,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -120,93 +128,36 @@ func (b *builder) build(
 	return image, nil, nil
 }
 
-func getBuildResults(
-	ctx context.Context,
-	parserAccessorHandler bufmoduleprotoparse.ParserAccessorHandler,
-	paths []string,
-	excludeSourceCodeInfo bool,
-) []*buildResult {
-	ctx, span := trace.StartSpan(ctx, "parse")
-	defer span.End()
-
-	chunks := chunkPaths(paths)
-	var buildResults []*buildResult
-	buildResultC := make(chan *buildResult, len(chunks))
-	for _, iPaths := range chunks {
-		iPaths := iPaths
-		go func() {
-			var buildResult *buildResult
-			defer func() {
-				select {
-				case buildResultC <- buildResult:
-				case <-ctx.Done():
-				}
-			}()
-			defer func() {
-				// Recover any panics here since we run in a goroutine
-				v := recover()
-				if v != nil {
-					buildResult = newBuildResult(
-						nil,
-						nil,
-						nil,
-						nil,
-						fmt.Errorf("panic: %v, stack:\n%s", v, string(debug.Stack())),
-					)
-				}
-			}()
-			buildResult = getBuildResult(
-				ctx,
-				parserAccessorHandler,
-				iPaths,
-				excludeSourceCodeInfo,
-			)
-		}()
-	}
-	for i := 0; i < len(chunks); i++ {
-		select {
-		case <-ctx.Done():
-			return []*buildResult{newBuildResult(nil, nil, nil, nil, ctx.Err())}
-		case buildResult := <-buildResultC:
-			buildResults = append(buildResults, buildResult)
-		}
-	}
-	return buildResults
-}
-
 func getBuildResult(
 	ctx context.Context,
-	parserAccessorHandler bufmoduleprotoparse.ParserAccessorHandler,
+	parserAccessorHandler bufmoduleprotocompile.ParserAccessorHandler,
 	paths []string,
 	excludeSourceCodeInfo bool,
 ) *buildResult {
-	var errorsWithPos []protoparse.ErrorWithPos
-	var warningErrorsWithPos []protoparse.ErrorWithPos
-	var lock sync.Mutex
-	parser := protoparse.Parser{
-		IncludeSourceCodeInfo: !excludeSourceCodeInfo,
-		Accessor:              parserAccessorHandler.Open,
-		ErrorReporter: func(errorWithPos protoparse.ErrorWithPos) error {
-			// protoparse isn't concurrent right now but just to be safe
-			// for the future
-			lock.Lock()
-			errorsWithPos = append(errorsWithPos, errorWithPos)
-			lock.Unlock()
-			// continue parsing
-			return nil
-		},
-		WarningReporter: func(errorWithPos protoparse.ErrorWithPos) {
-			// protoparse isn't concurrent right now but just to be safe
-			// for the future
-			lock.Lock()
-			warningErrorsWithPos = append(warningErrorsWithPos, errorWithPos)
-			lock.Unlock()
-		},
+	var errorsWithPos []reporter.ErrorWithPos
+	var warningErrorsWithPos []reporter.ErrorWithPos
+	sourceInfoMode := protocompile.SourceInfoStandard
+	if excludeSourceCodeInfo {
+		sourceInfoMode = protocompile.SourceInfoNone
+	}
+	compiler := protocompile.Compiler{
+		MaxParallelism: thread.Parallelism(),
+		SourceInfoMode: sourceInfoMode,
+		Resolver:       &protocompile.SourceResolver{Accessor: parserAccessorHandler.Open},
+		Reporter: reporter.NewReporter(
+			func(errorWithPos reporter.ErrorWithPos) error {
+				errorsWithPos = append(errorsWithPos, errorWithPos)
+				return nil
+			},
+			func(errorWithPos reporter.ErrorWithPos) {
+				warningErrorsWithPos = append(warningErrorsWithPos, errorWithPos)
+			},
+		),
 	}
 	// fileDescriptors are in the same order as paths per the documentation
-	descFileDescriptors, err := parser.ParseFiles(paths...)
+	compiledFiles, err := compiler.Compile(ctx, paths...)
 	if err != nil {
-		if err == protoparse.ErrInvalidSource {
+		if err == reporter.ErrInvalidSource {
 			if len(errorsWithPos) == 0 {
 				return newBuildResult(
 					nil,
@@ -216,7 +167,7 @@ func getBuildResult(
 					errors.New("got invalid source error from parse but no errors reported"),
 				)
 			}
-			fileAnnotations, err := bufmoduleprotoparse.GetFileAnnotations(
+			fileAnnotations, err := bufmoduleprotocompile.GetFileAnnotations(
 				ctx,
 				parserAccessorHandler,
 				errorsWithPos,
@@ -226,11 +177,11 @@ func getBuildResult(
 			}
 			return newBuildResult(nil, nil, nil, fileAnnotations, nil)
 		}
-		if errorWithPos, ok := err.(protoparse.ErrorWithPos); ok {
-			fileAnnotations, err := bufmoduleprotoparse.GetFileAnnotations(
+		if errorWithPos, ok := err.(reporter.ErrorWithPos); ok {
+			fileAnnotations, err := bufmoduleprotocompile.GetFileAnnotations(
 				ctx,
 				parserAccessorHandler,
-				[]protoparse.ErrorWithPos{errorWithPos},
+				[]reporter.ErrorWithPos{errorWithPos},
 			)
 			if err != nil {
 				return newBuildResult(nil, nil, nil, nil, err)
@@ -248,18 +199,18 @@ func getBuildResult(
 			errors.New("got no error from parse but errors reported"),
 		)
 	}
-	if len(descFileDescriptors) != len(paths) {
+	if len(compiledFiles) != len(paths) {
 		return newBuildResult(
 			nil,
 			nil,
 			nil,
 			nil,
-			fmt.Errorf("expected FileDescriptors to be of length %d but was %d", len(paths), len(descFileDescriptors)),
+			fmt.Errorf("expected FileDescriptors to be of length %d but was %d", len(paths), len(compiledFiles)),
 		)
 	}
-	for i, descFileDescriptor := range descFileDescriptors {
+	for i, fileDescriptor := range compiledFiles {
 		path := paths[i]
-		filename := descFileDescriptor.GetName()
+		filename := fileDescriptor.Path()
 		// doing another rough verification
 		// NO LONGER NEED TO DO SUFFIX SINCE WE KNOW THE ROOT FILE NAME
 		if path != filename {
@@ -278,8 +229,12 @@ func getBuildResult(
 		maybeAddSyntaxUnspecified(syntaxUnspecifiedFilenames, warningErrorWithPos)
 		maybeAddUnusedImport(filenameToUnusedDependencyFilenames, warningErrorWithPos)
 	}
+	fileDescriptors := make([]protoreflect.FileDescriptor, len(compiledFiles))
+	for i := range compiledFiles {
+		fileDescriptors[i] = compiledFiles[i]
+	}
 	return newBuildResult(
-		descFileDescriptors,
+		fileDescriptors,
 		syntaxUnspecifiedFilenames,
 		filenameToUnusedDependencyFilenames,
 		nil,
@@ -287,103 +242,55 @@ func getBuildResult(
 	)
 }
 
-func getDescFileDescriptorsFromBuildResults(
-	buildResults []*buildResult,
-	rootRelFilePaths []string,
-) ([]*desc.FileDescriptor, error) {
-	var descFileDescriptors []*desc.FileDescriptor
-	for _, buildResult := range buildResults {
-		descFileDescriptors = append(descFileDescriptors, buildResult.DescFileDescriptors...)
-	}
-	return checkAndSortDescFileDescriptors(descFileDescriptors, rootRelFilePaths)
-}
-
 // We need to sort the FileDescriptors as they may/probably are out of order
 // relative to input order after concurrent builds. This mimics the output
 // order of protoc.
-func checkAndSortDescFileDescriptors(
-	descFileDescriptors []*desc.FileDescriptor,
+func checkAndSortFileDescriptors(
+	fileDescriptors []protoreflect.FileDescriptor,
 	rootRelFilePaths []string,
-) ([]*desc.FileDescriptor, error) {
-	if len(descFileDescriptors) != len(rootRelFilePaths) {
-		return nil, fmt.Errorf("rootRelFilePath length was %d but FileDescriptor length was %d", len(rootRelFilePaths), len(descFileDescriptors))
+) ([]protoreflect.FileDescriptor, error) {
+	if len(fileDescriptors) != len(rootRelFilePaths) {
+		return nil, fmt.Errorf("rootRelFilePath length was %d but FileDescriptor length was %d", len(rootRelFilePaths), len(fileDescriptors))
 	}
-	nameToDescFileDescriptor := make(map[string]*desc.FileDescriptor, len(descFileDescriptors))
-	for _, descFileDescriptor := range descFileDescriptors {
-		// This is equal to descFileDescriptor.AsFileDescriptorProto().GetName()
-		// but we double-check just in case
-		//
-		// https://github.com/jhump/protoreflect/blob/master/desc/descriptor.go#L82
-		name := descFileDescriptor.GetName()
+	nameToFileDescriptor := make(map[string]protoreflect.FileDescriptor, len(fileDescriptors))
+	for _, fileDescriptor := range fileDescriptors {
+		name := fileDescriptor.Path()
 		if name == "" {
 			return nil, errors.New("no name on FileDescriptor")
 		}
-		if name != descFileDescriptor.AsFileDescriptorProto().GetName() {
-			return nil, errors.New("name not equal on FileDescriptorProto")
-		}
-		if _, ok := nameToDescFileDescriptor[name]; ok {
+		if _, ok := nameToFileDescriptor[name]; ok {
 			return nil, fmt.Errorf("duplicate FileDescriptor: %s", name)
 		}
-		nameToDescFileDescriptor[name] = descFileDescriptor
+		nameToFileDescriptor[name] = fileDescriptor
 	}
 	// We now know that all FileDescriptors had unique names and the number of FileDescriptors
 	// is equal to the number of rootRelFilePaths. We also verified earlier that rootRelFilePaths
 	// has only unique values. Now we can put them in order.
-	sortedDescFileDescriptors := make([]*desc.FileDescriptor, 0, len(descFileDescriptors))
+	sortedFileDescriptors := make([]protoreflect.FileDescriptor, 0, len(fileDescriptors))
 	for _, rootRelFilePath := range rootRelFilePaths {
-		descFileDescriptor, ok := nameToDescFileDescriptor[rootRelFilePath]
+		fileDescriptor, ok := nameToFileDescriptor[rootRelFilePath]
 		if !ok {
 			return nil, fmt.Errorf("no FileDescriptor for rootRelFilePath: %q", rootRelFilePath)
 		}
-		sortedDescFileDescriptors = append(sortedDescFileDescriptors, descFileDescriptor)
+		sortedFileDescriptors = append(sortedFileDescriptors, fileDescriptor)
 	}
-	return sortedDescFileDescriptors, nil
+	return sortedFileDescriptors, nil
 }
 
-func getSyntaxUnspecifiedFilenamesFromBuildResults(
-	buildResults []*buildResult,
-) map[string]struct{} {
-	syntaxUnspecifiedFilenames := make(map[string]struct{})
-	for _, buildResult := range buildResults {
-		for path := range buildResult.SyntaxUnspecifiedFilenames {
-			syntaxUnspecifiedFilenames[path] = struct{}{}
-		}
-	}
-	return syntaxUnspecifiedFilenames
-}
-
-func getFilenameToUnusedDependencyFilenamesFromBuildResults(
-	buildResults []*buildResult,
-) map[string]map[string]struct{} {
-	resultFilenameToUnusedDependencyFilenames := make(map[string]map[string]struct{})
-	for _, buildResult := range buildResults {
-		for filename, unusedDependencyFilenames := range buildResult.FilenameToUnusedDependencyFilenames {
-			resultUnusedDependencyFilenames, ok := resultFilenameToUnusedDependencyFilenames[filename]
-			if !ok {
-				resultFilenameToUnusedDependencyFilenames[filename] = unusedDependencyFilenames
-			} else {
-				for unusedDependencyFilename := range unusedDependencyFilenames {
-					resultUnusedDependencyFilenames[unusedDependencyFilename] = struct{}{}
-				}
-			}
-		}
-	}
-	return resultFilenameToUnusedDependencyFilenames
-}
-
-// getImage gets the Image for the desc.FileDescriptors.
+// getImage gets the Image for the protoreflect.FileDescriptors.
 //
 // This mimics protoc's output order.
-// This assumes checkAndSortDescFileDescriptors was called.
+// This assumes checkAndSortFileDescriptors was called.
 func getImage(
 	ctx context.Context,
 	excludeSourceCodeInfo bool,
-	sortedFileDescriptors []*desc.FileDescriptor,
-	parserAccessorHandler bufmoduleprotoparse.ParserAccessorHandler,
+	sortedFileDescriptors []protoreflect.FileDescriptor,
+	parserAccessorHandler bufmoduleprotocompile.ParserAccessorHandler,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
+	tracer trace.Tracer,
 ) (bufimage.Image, error) {
-	ctx, span := trace.StartSpan(ctx, "get_image")
+	ctx, span := tracer.Start(ctx, "get_image")
 	defer span.End()
 
 	// if we aren't including imports, then we need a set of file names that
@@ -392,11 +299,11 @@ func getImage(
 	//
 	// if we are including imports, then we need to know what filenames
 	// are imports are what filenames are not
-	// all input desc.FileDescriptors are not imports, we derive the imports
+	// all input protoreflect.FileDescriptors are not imports, we derive the imports
 	// from GetDependencies.
 	nonImportFilenames := map[string]struct{}{}
 	for _, fileDescriptor := range sortedFileDescriptors {
-		nonImportFilenames[fileDescriptor.GetName()] = struct{}{}
+		nonImportFilenames[fileDescriptor.Path()] = struct{}{}
 	}
 
 	var imageFiles []bufimage.ImageFile
@@ -415,27 +322,34 @@ func getImage(
 			imageFiles,
 		)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
 	}
-	return bufimage.NewImage(imageFiles)
+	image, err := bufimage.NewImage(imageFiles)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return image, err
 }
 
 func getImageFilesRec(
 	ctx context.Context,
 	excludeSourceCodeInfo bool,
-	descFileDescriptor *desc.FileDescriptor,
-	parserAccessorHandler bufmoduleprotoparse.ParserAccessorHandler,
+	fileDescriptor protoreflect.FileDescriptor,
+	parserAccessorHandler bufmoduleprotocompile.ParserAccessorHandler,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
 	alreadySeen map[string]struct{},
 	nonImportFilenames map[string]struct{},
 	imageFiles []bufimage.ImageFile,
 ) ([]bufimage.ImageFile, error) {
-	if descFileDescriptor == nil {
+	if fileDescriptor == nil {
 		return nil, errors.New("nil FileDescriptor")
 	}
-	path := descFileDescriptor.GetName()
+	path := fileDescriptor.Path()
 	if _, ok := alreadySeen[path]; ok {
 		return imageFiles, nil
 	}
@@ -447,9 +361,10 @@ func getImageFilesRec(
 		unusedDependencyIndexes = make([]int32, 0, len(unusedDependencyFilenames))
 	}
 	var err error
-	for i, dependency := range descFileDescriptor.GetDependencies() {
+	for i := 0; i < fileDescriptor.Imports().Len(); i++ {
+		dependency := fileDescriptor.Imports().Get(i).FileDescriptor
 		if unusedDependencyFilenames != nil {
-			if _, ok := unusedDependencyFilenames[dependency.GetName()]; ok {
+			if _, ok := unusedDependencyFilenames[dependency.Path()]; ok {
 				unusedDependencyIndexes = append(
 					unusedDependencyIndexes,
 					int32(i),
@@ -472,7 +387,7 @@ func getImageFilesRec(
 		}
 	}
 
-	fileDescriptorProto := descFileDescriptor.AsFileDescriptorProto()
+	fileDescriptorProto := protoutil.ProtoFromFileDescriptor(fileDescriptor)
 	if fileDescriptorProto == nil {
 		return nil, errors.New("nil FileDescriptorProto")
 	}
@@ -500,71 +415,33 @@ func getImageFilesRec(
 
 func maybeAddSyntaxUnspecified(
 	syntaxUnspecifiedFilenames map[string]struct{},
-	errorWithPos protoparse.ErrorWithPos,
+	errorWithPos reporter.ErrorWithPos,
 ) {
-	if errorWithPos.Unwrap() != protoparse.ErrNoSyntax {
+	if errorWithPos.Unwrap() != parser.ErrNoSyntax {
 		return
 	}
-	if errorWithSourcePos, ok := errorWithPos.(protoparse.ErrorWithSourcePos); ok {
-		if pos := errorWithSourcePos.Pos; pos != nil {
-			syntaxUnspecifiedFilenames[pos.Filename] = struct{}{}
-		}
-	}
+	syntaxUnspecifiedFilenames[errorWithPos.GetPosition().Filename] = struct{}{}
 }
 
 func maybeAddUnusedImport(
 	filenameToUnusedImportFilenames map[string]map[string]struct{},
-	errorWithPos protoparse.ErrorWithPos,
+	errorWithPos reporter.ErrorWithPos,
 ) {
-	errorUnusedImport, ok := errorWithPos.Unwrap().(protoparse.ErrorUnusedImport)
+	errorUnusedImport, ok := errorWithPos.Unwrap().(linker.ErrorUnusedImport)
 	if !ok {
 		return
 	}
-	if errorWithSourcePos, ok := errorWithPos.(protoparse.ErrorWithSourcePos); ok {
-		if pos := errorWithSourcePos.Pos; pos != nil {
-			unusedImportFilenames, ok := filenameToUnusedImportFilenames[pos.Filename]
-			if !ok {
-				unusedImportFilenames = make(map[string]struct{})
-				filenameToUnusedImportFilenames[pos.Filename] = unusedImportFilenames
-			}
-			unusedImportFilenames[errorUnusedImport.UnusedImport()] = struct{}{}
-		}
+	pos := errorWithPos.GetPosition()
+	unusedImportFilenames, ok := filenameToUnusedImportFilenames[pos.Filename]
+	if !ok {
+		unusedImportFilenames = make(map[string]struct{})
+		filenameToUnusedImportFilenames[pos.Filename] = unusedImportFilenames
 	}
-}
-
-// We need to compile .proto files in the same directory in the same invocation.
-// If we do not, then conflicts across .proto files where the files do not import
-// each other will be undetected. See the test added in https://github.com/bufbuild/buf/pull/1072.
-//
-// Technically, you want to compile files in the same PACKAGE together, not directory,
-// but this is the best proxy you can have, and given that there is no rhyme or reason
-// to how people compile their files (do they do individual protoc invocations? do they
-// do one massive invocation?), any setup relying on more than per-directory compiles
-// is effectively undefined.
-//
-// Note the paths variable is expected to be normalized, which it is here, because
-// we pull it from TargetFileInfos.
-func chunkPaths(paths []string) [][]string {
-	return normalpath.ChunkByDir(paths, getChunkSize(paths))
-}
-
-// Get the size per chunk for the given number of paths.
-//
-// This attempts to create a number of chunks equal to thread.Parallelism().
-//
-// Example: if you have a slice of size 11, and chunk size is 2, you will end up
-// With 5 chunks of size 2, and 1 chunk of size 1.
-//
-// If we should not chunk, return 0.
-func getChunkSize(paths []string) int {
-	if parallelism := thread.Parallelism(); parallelism > 1 {
-		return len(paths) / parallelism
-	}
-	return 0
+	unusedImportFilenames[errorUnusedImport.UnusedImport()] = struct{}{}
 }
 
 type buildResult struct {
-	DescFileDescriptors                 []*desc.FileDescriptor
+	FileDescriptors                     []protoreflect.FileDescriptor
 	SyntaxUnspecifiedFilenames          map[string]struct{}
 	FilenameToUnusedDependencyFilenames map[string]map[string]struct{}
 	FileAnnotations                     []bufanalysis.FileAnnotation
@@ -572,14 +449,14 @@ type buildResult struct {
 }
 
 func newBuildResult(
-	descFileDescriptors []*desc.FileDescriptor,
+	fileDescriptors []protoreflect.FileDescriptor,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
 	fileAnnotations []bufanalysis.FileAnnotation,
 	err error,
 ) *buildResult {
 	return &buildResult{
-		DescFileDescriptors:                 descFileDescriptors,
+		FileDescriptors:                     fileDescriptors,
 		SyntaxUnspecifiedFilenames:          syntaxUnspecifiedFilenames,
 		FilenameToUnusedDependencyFilenames: filenameToUnusedDependencyFilenames,
 		FileAnnotations:                     fileAnnotations,

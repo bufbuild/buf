@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,9 +20,12 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -111,33 +114,32 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewWebhookService(ctx, flags.Remote)
-	if err != nil {
-		return err
-	}
+	service := connectclient.Make(clientConfig, flags.Remote, registryv1alpha1connect.NewWebhookServiceClient)
 	event, ok := registryv1alpha1.WebhookEvent_value[flags.WebhookEvent]
 	if !ok || event == int32(registryv1alpha1.WebhookEvent_WEBHOOK_EVENT_UNSPECIFIED) {
 		return fmt.Errorf("webhook event must be specified")
 	}
-	createWebhook, err := service.CreateWebhook(
+	resp, err := service.CreateWebhook(
 		ctx,
-		registryv1alpha1.WebhookEvent(event),
-		flags.OwnerName,
-		flags.RepositoryName,
-		flags.CallbackURL,
+		connect.NewRequest(&registryv1alpha1.CreateWebhookRequest{
+			WebhookEvent:   registryv1alpha1.WebhookEvent(event),
+			OwnerName:      flags.OwnerName,
+			RepositoryName: flags.RepositoryName,
+			CallbackUrl:    flags.CallbackURL,
+		}),
 	)
 	if err != nil {
 		return err
 	}
-	createWebhookResponse, err := json.MarshalIndent(createWebhook, "", "\t")
+	webhookJSON, err := json.MarshalIndent(resp.Msg.Webhook, "", "\t")
 	if err != nil {
 		return err
 	}
 	// Ignore errors for writing to stdout.
-	_, _ = container.Stdout().Write(createWebhookResponse)
+	_, _ = container.Stdout().Write(webhookJSON)
 	return nil
 }

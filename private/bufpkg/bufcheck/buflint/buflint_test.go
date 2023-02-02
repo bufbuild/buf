@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -818,9 +818,9 @@ func TestCommentIgnoresOff(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 64, 9, 64, 12, "ONEOF_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 66, 11, 66, 14, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 71, 9, 71, 19, "SERVICE_PASCAL_CASE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 74, 7, 74, 16, "RPC_PASCAL_CASE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 76, 7, 76, 28, "RPC_REQUEST_STANDARD_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 79, 7, 79, 28, "RPC_RESPONSE_STANDARD_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 7, 75, 16, "RPC_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 17, 75, 38, "RPC_REQUEST_STANDARD_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 49, 75, 70, "RPC_RESPONSE_STANDARD_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "b.proto", 5, 1, 5, 11, "PACKAGE_DIRECTORY_MATCH"),
 		bufanalysistesting.NewFileAnnotation(t, "b.proto", 5, 1, 5, 11, "PACKAGE_VERSION_SUFFIX"),
 		bufanalysistesting.NewFileAnnotation(t, "b.proto", 9, 26, 9, 28, "ENUM_FIRST_VALUE_ZERO"),
@@ -925,7 +925,7 @@ func testLintConfigModifier(
 		configModifier(config)
 	}
 
-	module, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	module, err := bufmodulebuild.BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config.Build,

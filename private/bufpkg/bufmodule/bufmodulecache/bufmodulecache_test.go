@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
-	"github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/filelock"
@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/verbose"
+	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -50,6 +51,7 @@ func TestReaderBasic(t *testing.T) {
 		"bar",
 		"main",
 		bufmoduletesting.TestCommit,
+		bufmoduletesting.TestDigest,
 		time.Now(),
 	)
 	require.NoError(t, err)
@@ -73,14 +75,14 @@ func TestReaderBasic(t *testing.T) {
 
 	deprecationMessage := "this is the deprecation message"
 
-	repositoryServiceProvider := &fakeRepositoryServiceProvider{
-		repositoryService: &fakeRepositoryService{
+	repositoryClientFactory := fakeRepositoryServiceClientFactory(
+		&fakeRepositoryService{
 			repository: &registryv1alpha1.Repository{
 				Deprecated:         true,
 				DeprecationMessage: deprecationMessage,
 			},
 		},
-	}
+	)
 
 	// the delegate uses the cache we just populated
 	delegateModuleReader := newModuleReader(
@@ -90,7 +92,7 @@ func TestReaderBasic(t *testing.T) {
 		delegateDataReadWriteBucket,
 		delegateSumReadWriteBucket,
 		moduleCacher,
-		repositoryServiceProvider,
+		repositoryClientFactory,
 	)
 
 	core, observedLogs := observer.New(zapcore.WarnLevel)
@@ -103,7 +105,7 @@ func TestReaderBasic(t *testing.T) {
 		mainDataReadWriteBucket,
 		mainSumReadWriteBucket,
 		delegateModuleReader,
-		repositoryServiceProvider,
+		repositoryClientFactory,
 	)
 	getModule, err := moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
@@ -196,6 +198,7 @@ func TestCacherBasic(t *testing.T) {
 		"bar",
 		"main",
 		bufmoduletesting.TestCommit,
+		bufmoduletesting.TestDigest,
 		time.Now(),
 	)
 	require.NoError(t, err)
@@ -237,6 +240,7 @@ func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 		"bar",
 		"main",
 		bufmoduletesting.TestCommit,
+		bufmoduletesting.TestDigest,
 		time.Now(),
 	)
 	require.NoError(t, err)
@@ -274,6 +278,7 @@ func TestModuleReaderCacherWithConfiguration(t *testing.T) {
 		"weather",
 		"main",
 		bufmoduletesting.TestCommit,
+		bufmoduletesting.TestDigestB3WithConfiguration,
 		time.Now(),
 	)
 	require.NoError(t, err)
@@ -308,6 +313,47 @@ func TestModuleReaderCacherWithConfiguration(t *testing.T) {
 	require.Equal(t, config.Lint, cachedConfig.Lint)
 }
 
+func TestModuleReaderCacherWithLicense(t *testing.T) {
+	ctx := context.Background()
+
+	modulePin, err := bufmoduleref.NewModulePin(
+		"buf.build",
+		"foo",
+		"bar",
+		"main",
+		bufmoduletesting.TestCommit,
+		"",
+		time.Now(),
+	)
+	require.NoError(t, err)
+	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithLicense)
+	require.NoError(t, err)
+	module, err := bufmodule.NewModuleForBucket(
+		ctx,
+		readBucket,
+		bufmodule.ModuleWithModuleIdentity(modulePin),
+	)
+	require.NoError(t, err)
+
+	dataReadWriteBucket, sumReadWriteBucket, _ := newTestDataSumBucketsAndLocker(t)
+	moduleCacher := newModuleCacher(zap.NewNop(), dataReadWriteBucket, sumReadWriteBucket, false)
+	err = moduleCacher.PutModule(
+		context.Background(),
+		modulePin,
+		module,
+	)
+	require.NoError(t, err)
+	module, err = moduleCacher.GetModule(ctx, modulePin)
+	require.NoError(t, err)
+	readWriteBucket := storagemem.NewReadWriteBucket()
+	require.NoError(t, bufmodule.ModuleToBucket(ctx, module, readWriteBucket))
+	// Verify that the license file was created.
+	exists, err := storage.Exists(ctx, readWriteBucket, bufmodule.LicenseFilePath)
+	require.NoError(t, err)
+	require.True(t, exists)
+	require.Equal(t, bufmoduletesting.TestModuleLicense, module.License())
+}
+
 func newTestDataSumBucketsAndLocker(t *testing.T) (storage.ReadWriteBucket, storage.ReadWriteBucket, filelock.Locker) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	dataReadWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
@@ -329,19 +375,22 @@ func testFile1HasNoExternalPath(t *testing.T, ctx context.Context, module bufmod
 	require.NoError(t, file1ModuleFile.Close())
 }
 
-type fakeRepositoryServiceProvider struct {
-	repositoryService registryv1alpha1api.RepositoryService
-}
-
-func (f *fakeRepositoryServiceProvider) NewRepositoryService(context.Context, string) (registryv1alpha1api.RepositoryService, error) {
-	return f.repositoryService, nil
+func fakeRepositoryServiceClientFactory(repositoryService registryv1alpha1connect.RepositoryServiceClient) RepositoryServiceClientFactory {
+	return func(string) registryv1alpha1connect.RepositoryServiceClient {
+		return repositoryService
+	}
 }
 
 type fakeRepositoryService struct {
-	registryv1alpha1api.RepositoryService
+	registryv1alpha1connect.RepositoryServiceClient
 	repository *registryv1alpha1.Repository
 }
 
-func (f *fakeRepositoryService) GetRepositoryByFullName(context.Context, string) (*registryv1alpha1.Repository, *registryv1alpha1.RepositoryCounts, error) {
-	return f.repository, nil, nil
+func (f *fakeRepositoryService) GetRepositoryByFullName(
+	_ context.Context,
+	_ *connect.Request[registryv1alpha1.GetRepositoryByFullNameRequest],
+) (*connect.Response[registryv1alpha1.GetRepositoryByFullNameResponse], error) {
+	return connect.NewResponse(&registryv1alpha1.GetRepositoryByFullNameResponse{
+		Repository: f.repository,
+	}), nil
 }

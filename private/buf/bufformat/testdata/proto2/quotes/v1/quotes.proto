@@ -22,4 +22,7 @@ message Foo {
   string eight = 8 [(foo) = {
     something: 'something:"foo"'
   }];
+  string nine = 9 [(foo) = {
+    something: "something:\"foo\"\nanother:\"bar\""
+  }];
 }

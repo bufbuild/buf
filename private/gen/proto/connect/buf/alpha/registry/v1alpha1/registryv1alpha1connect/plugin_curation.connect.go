@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,6 +50,8 @@ type PluginCurationServiceClient interface {
 	CreateCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect_go.Response[v1alpha1.CreateCuratedPluginResponse], error)
 	// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
 	GetLatestCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error)
+	// DeleteCuratedPlugin deletes a curated plugin based on the given parameters.
+	DeleteCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect_go.Response[v1alpha1.DeleteCuratedPluginResponse], error)
 }
 
 // NewPluginCurationServiceClient constructs a client for the
@@ -78,6 +80,11 @@ func NewPluginCurationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 			baseURL+"/buf.alpha.registry.v1alpha1.PluginCurationService/GetLatestCuratedPlugin",
 			opts...,
 		),
+		deleteCuratedPlugin: connect_go.NewClient[v1alpha1.DeleteCuratedPluginRequest, v1alpha1.DeleteCuratedPluginResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.PluginCurationService/DeleteCuratedPlugin",
+			opts...,
+		),
 	}
 }
 
@@ -86,6 +93,7 @@ type pluginCurationServiceClient struct {
 	listCuratedPlugins     *connect_go.Client[v1alpha1.ListCuratedPluginsRequest, v1alpha1.ListCuratedPluginsResponse]
 	createCuratedPlugin    *connect_go.Client[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse]
 	getLatestCuratedPlugin *connect_go.Client[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse]
+	deleteCuratedPlugin    *connect_go.Client[v1alpha1.DeleteCuratedPluginRequest, v1alpha1.DeleteCuratedPluginResponse]
 }
 
 // ListCuratedPlugins calls buf.alpha.registry.v1alpha1.PluginCurationService.ListCuratedPlugins.
@@ -104,6 +112,11 @@ func (c *pluginCurationServiceClient) GetLatestCuratedPlugin(ctx context.Context
 	return c.getLatestCuratedPlugin.CallUnary(ctx, req)
 }
 
+// DeleteCuratedPlugin calls buf.alpha.registry.v1alpha1.PluginCurationService.DeleteCuratedPlugin.
+func (c *pluginCurationServiceClient) DeleteCuratedPlugin(ctx context.Context, req *connect_go.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect_go.Response[v1alpha1.DeleteCuratedPluginResponse], error) {
+	return c.deleteCuratedPlugin.CallUnary(ctx, req)
+}
+
 // PluginCurationServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.PluginCurationService service.
 type PluginCurationServiceHandler interface {
@@ -113,6 +126,8 @@ type PluginCurationServiceHandler interface {
 	CreateCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect_go.Response[v1alpha1.CreateCuratedPluginResponse], error)
 	// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
 	GetLatestCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error)
+	// DeleteCuratedPlugin deletes a curated plugin based on the given parameters.
+	DeleteCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect_go.Response[v1alpha1.DeleteCuratedPluginResponse], error)
 }
 
 // NewPluginCurationServiceHandler builds an HTTP handler from the service implementation. It
@@ -137,6 +152,11 @@ func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...c
 		svc.GetLatestCuratedPlugin,
 		opts...,
 	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.PluginCurationService/DeleteCuratedPlugin", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.PluginCurationService/DeleteCuratedPlugin",
+		svc.DeleteCuratedPlugin,
+		opts...,
+	))
 	return "/buf.alpha.registry.v1alpha1.PluginCurationService/", mux
 }
 
@@ -153,6 +173,10 @@ func (UnimplementedPluginCurationServiceHandler) CreateCuratedPlugin(context.Con
 
 func (UnimplementedPluginCurationServiceHandler) GetLatestCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.GetLatestCuratedPlugin is not implemented"))
+}
+
+func (UnimplementedPluginCurationServiceHandler) DeleteCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect_go.Response[v1alpha1.DeleteCuratedPluginResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.DeleteCuratedPlugin is not implemented"))
 }
 
 // CodeGenerationServiceClient is a client for the buf.alpha.registry.v1alpha1.CodeGenerationService

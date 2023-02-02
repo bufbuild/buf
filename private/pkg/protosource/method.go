@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ type method struct {
 	outputTypeName       string
 	clientStreaming      bool
 	serverStreaming      bool
+	deprecated           bool
 	inputTypePath        []int32
 	outputTypePath       []int32
 	idempotencyLevel     MethodOptionsIdempotencyLevel
@@ -39,6 +40,7 @@ func newMethod(
 	outputTypeName string,
 	clientStreaming bool,
 	serverStreaming bool,
+	deprecated bool,
 	inputTypePath []int32,
 	outputTypePath []int32,
 	idempotencyLevel MethodOptionsIdempotencyLevel,
@@ -58,6 +60,7 @@ func newMethod(
 		outputTypeName:            outputTypeName,
 		clientStreaming:           clientStreaming,
 		serverStreaming:           serverStreaming,
+		deprecated:                deprecated,
 		inputTypePath:             inputTypePath,
 		outputTypePath:            outputTypePath,
 		idempotencyLevel:          idempotencyLevel,
@@ -83,6 +86,10 @@ func (m *method) ClientStreaming() bool {
 
 func (m *method) ServerStreaming() bool {
 	return m.serverStreaming
+}
+
+func (m *method) Deprecated() bool {
+	return m.deprecated
 }
 
 func (m *method) InputTypeLocation() Location {

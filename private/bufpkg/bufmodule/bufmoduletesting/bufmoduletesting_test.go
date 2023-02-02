@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,4 +32,14 @@ func TestModuleDigestB3(t *testing.T) {
 	digest, err := bufmodule.ModuleDigestB3(context.Background(), module)
 	require.NoError(t, err)
 	require.Equal(t, bufmoduletesting.TestDigestB3WithConfiguration, digest)
+}
+
+func TestModuleDigestB3WithLicense(t *testing.T) {
+	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithLicense)
+	require.NoError(t, err)
+	module, err := bufmodule.NewModuleForBucket(context.Background(), readBucket)
+	require.NoError(t, err)
+	digest, err := bufmodule.ModuleDigestB3(context.Background(), module)
+	require.NoError(t, err)
+	require.Equal(t, bufmoduletesting.TestDigestB3WithLicense, digest)
 }

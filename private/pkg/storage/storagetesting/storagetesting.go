@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -35,6 +37,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 )
 
 const (
@@ -1356,10 +1359,6 @@ func RunTestSuite(
 	})
 
 	t.Run("symlink_success_no_symlinks", func(t *testing.T) {
-		if runtime.GOOS == "windows" {
-			t.Skip("Skip symlink tests on Windows")
-		}
-
 		t.Parallel()
 		readBucket, _ := newReadBucket(t, symlinkSuccessDirPath, defaultProvider)
 		AssertPathToContent(
@@ -1372,10 +1371,6 @@ func RunTestSuite(
 		)
 	})
 	t.Run("symlink_success_follow_symlinks", func(t *testing.T) {
-		if runtime.GOOS == "windows" {
-			t.Skip("Skip symlink tests on Windows")
-		}
-
 		t.Parallel()
 		readBucket, _ := newReadBucket(
 			t,
@@ -1403,10 +1398,6 @@ func RunTestSuite(
 		)
 	})
 	t.Run("symlink_loop_no_symlinks", func(t *testing.T) {
-		if runtime.GOOS == "windows" {
-			t.Skip("Skip symlink tests on Windows")
-		}
-
 		t.Parallel()
 		readBucket, _ := newReadBucket(t, symlinkLoopDirPath, defaultProvider)
 		AssertPathToContent(
@@ -1419,10 +1410,6 @@ func RunTestSuite(
 		)
 	})
 	t.Run("symlink_loop_follow_symlinks", func(t *testing.T) {
-		if runtime.GOOS == "windows" {
-			t.Skip("Skip symlink tests on Windows")
-		}
-
 		t.Parallel()
 		readBucket, _ := newReadBucket(
 			t,
@@ -1495,5 +1482,67 @@ func RunTestSuite(
 			"1.proto",
 			"1.proto",
 		)
+	})
+	t.Run("limit-write-bucket", func(t *testing.T) {
+		t.Parallel()
+		writeBucket := newWriteBucket(t, defaultProvider)
+		readBucket := writeBucketToReadBucket(t, writeBucket)
+		const limit = 2048
+		limitedWriteBucket := storage.LimitWriteBucket(writeBucket, limit)
+		var (
+			wg           sync.WaitGroup
+			writtenBytes atomic.Int64
+			triedBytes   atomic.Int64
+		)
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				data := bytes.Repeat([]byte("b"), i*100)
+				path := strconv.Itoa(i)
+				triedBytes.Add(int64(len(data)))
+				err := storage.PutPath(context.Background(), limitedWriteBucket, path, data)
+				if err != nil {
+					assert.True(t, storage.IsWriteLimitReached(err))
+					return
+				}
+				readData, err := storage.ReadPath(context.Background(), readBucket, path)
+				assert.NoError(t, err)
+				assert.Equal(t, readData, data)
+				writtenBytes.Add(int64(len(data)))
+			}(i)
+		}
+		wg.Wait()
+		require.Greater(t, triedBytes.Load(), int64(limit))
+		assert.LessOrEqual(t, writtenBytes.Load(), int64(limit))
+	})
+	t.Run("limit-untar-file-size", func(t *testing.T) {
+		t.Parallel()
+		writeBucket := newWriteBucket(t, defaultProvider)
+		const limit = 2048
+		files := map[string][]byte{
+			"within":  bytes.Repeat([]byte{0}, limit-1),
+			"at":      bytes.Repeat([]byte{0}, limit),
+			"exceeds": bytes.Repeat([]byte{0}, limit+1),
+		}
+		for path, data := range files {
+			err := storage.PutPath(context.Background(), writeBucket, path, data)
+			require.NoError(t, err)
+		}
+		var buffer bytes.Buffer
+		err := storagearchive.Tar(context.Background(), writeBucketToReadBucket(t, writeBucket), &buffer)
+		require.NoError(t, err)
+		writeBucket = newWriteBucket(t, defaultProvider)
+		tarball := bytes.NewReader(buffer.Bytes())
+		err = storagearchive.Untar(context.Background(), tarball, writeBucket, nil, 0, storagearchive.WithMaxFileSizeUntarOption(limit))
+		assert.ErrorIs(t, err, storagearchive.ErrFileSizeLimit)
+		_, err = tarball.Seek(0, io.SeekStart)
+		require.NoError(t, err)
+		err = storagearchive.Untar(context.Background(), tarball, writeBucket, nil, 0)
+		assert.NoError(t, err)
+		_, err = tarball.Seek(0, io.SeekStart)
+		require.NoError(t, err)
+		err = storagearchive.Untar(context.Background(), tarball, writeBucket, nil, 0, storagearchive.WithMaxFileSizeUntarOption(limit+1))
+		assert.NoError(t, err)
 	})
 }

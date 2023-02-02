@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -32,20 +33,54 @@ var optimizeForPath = []int32{8, 9}
 func optimizeFor(
 	logger *zap.Logger,
 	sweeper Sweeper,
-	value descriptorpb.FileOptions_OptimizeMode,
+	defaultOptimizeFor descriptorpb.FileOptions_OptimizeMode,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode,
 	overrides map[string]descriptorpb.FileOptions_OptimizeMode,
 ) Modifier {
+	// Convert the bufmoduleref.ModuleIdentity types into
+	// strings so that they're comparable.
+	exceptModuleIdentityStrings := make(map[string]struct{}, len(except))
+	for _, moduleIdentity := range except {
+		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
+	}
+	overrideModuleIdentityStrings := make(
+		map[string]descriptorpb.FileOptions_OptimizeMode,
+		len(moduleOverrides),
+	)
+	for moduleIdentity, optimizeFor := range moduleOverrides {
+		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = optimizeFor
+	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				modifierValue := value
+				modifierValue := defaultOptimizeFor
+				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+					moduleIdentityString := moduleIdentity.IdentityString()
+					if optimizeForOverrdie, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
+						modifierValue = optimizeForOverrdie
+						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+					}
+				}
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					modifierValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
-				if err := optimizeForForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
+				if err := optimizeForForFile(
+					ctx,
+					sweeper,
+					imageFile,
+					modifierValue,
+					exceptModuleIdentityStrings,
+				); err != nil {
 					return err
+				}
+			}
+			for moduleIdentityString := range overrideModuleIdentityStrings {
+				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
+					logger.Sugar().Warnf("optimize_for override for %q was unused", moduleIdentityString)
 				}
 			}
 			for overrideFile := range overrides {
@@ -63,6 +98,7 @@ func optimizeForForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	value descriptorpb.FileOptions_OptimizeMode,
+	exceptModuleIdentityStrings map[string]struct{},
 ) error {
 	descriptor := imageFile.Proto()
 	options := descriptor.GetOptions()
@@ -77,6 +113,11 @@ func optimizeForForFile(
 		// The option is not set, but the value we want to set is the
 		// same as the default, don't do anything.
 		return nil
+	}
+	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+			return nil
+		}
 	}
 	if options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}

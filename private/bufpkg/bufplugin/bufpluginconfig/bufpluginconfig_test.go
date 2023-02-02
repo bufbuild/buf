@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
@@ -49,9 +50,7 @@ func TestGetConfigForBucket(t *testing.T) {
 			Dependencies: []bufpluginref.PluginReference{
 				pluginDependency,
 			},
-			DefaultOptions: map[string]string{
-				"paths": "source_relative",
-			},
+			OutputLanguages: []string{"go"},
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
@@ -62,7 +61,12 @@ func TestGetConfigForBucket(t *testing.T) {
 						},
 					},
 				},
+				Options: map[string]string{
+					"separate_package": "true",
+				},
 			},
+			SPDXLicenseID: "Apache-2.0",
+			LicenseURL:    "https://github.com/grpc/grpc-go/blob/master/LICENSE",
 		},
 		pluginConfig,
 	)
@@ -86,9 +90,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			Dependencies: []bufpluginref.PluginReference{
 				pluginDependency,
 			},
-			DefaultOptions: map[string]string{
-				"paths": "source_relative",
-			},
+			OutputLanguages: []string{"go"},
 			Registry: &RegistryConfig{
 				Go: &GoRegistryConfig{
 					MinVersion: "1.18",
@@ -99,7 +101,12 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 						},
 					},
 				},
+				Options: map[string]string{
+					"separate_package": "true",
+				},
 			},
+			SPDXLicenseID: "Apache-2.0",
+			LicenseURL:    "https://github.com/grpc/grpc-go/blob/master/LICENSE",
 		},
 		pluginConfig,
 	)
@@ -127,13 +134,12 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 	require.Equal(
 		t,
 		&Config{
-			Name:          pluginIdentity,
-			PluginVersion: "v1.0.0",
-			DefaultOptions: map[string]string{
-				"paths": "source_relative",
-			},
+			Name:            pluginIdentity,
+			PluginVersion:   "v1.0.0",
+			OutputLanguages: []string{"typescript"},
 			Registry: &RegistryConfig{
 				NPM: &NPMRegistryConfig{
+					ImportStyle: "commonjs",
 					Deps: []*NPMRegistryDependencyConfig{
 						{
 							Package: "grpc-web",
@@ -146,6 +152,7 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 					},
 				},
 			},
+			SPDXLicenseID: "BSD-3-Clause",
 		},
 		pluginConfig,
 	)
@@ -162,9 +169,6 @@ func TestParsePluginConfigOptionsYAML(t *testing.T) {
 		&Config{
 			Name:          pluginIdentity,
 			PluginVersion: "v2.0.0",
-			DefaultOptions: map[string]string{
-				"annotate_code": "",
-			},
 		},
 		pluginConfig,
 	)
@@ -180,6 +184,33 @@ func TestParsePluginConfigEmptyVersionYAML(t *testing.T) {
 	t.Parallel()
 	_, err := ParseConfig(filepath.Join("testdata", "failure", "invalid-empty-version.yaml"))
 	require.Error(t, err)
+}
+
+func TestParsePluginConfigGoNoDepsOrMinVersion(t *testing.T) {
+	t.Parallel()
+	cfg, err := ParseConfig(filepath.Join("testdata", "success", "go-empty-registry", "buf.plugin.yaml"))
+	require.NoError(t, err)
+	assert.NotNil(t, cfg.Registry)
+	assert.NotNil(t, cfg.Registry.Go)
+	assert.Equal(t, &GoRegistryConfig{}, cfg.Registry.Go)
+}
+
+func TestPluginOptionsRoundTrip(t *testing.T) {
+	assertPluginOptionsRoundTrip(t, nil)
+	assertPluginOptionsRoundTrip(t, map[string]string{})
+	assertPluginOptionsRoundTrip(t, map[string]string{
+		"option-1":          "value-1",
+		"option-2":          "value-2",
+		"option-no-value-3": "",
+	})
+}
+
+func assertPluginOptionsRoundTrip(t testing.TB, options map[string]string) {
+	optionsSlice := PluginOptionsToOptionsSlice(options)
+	assert.True(t, sort.SliceIsSorted(optionsSlice, func(i, j int) bool {
+		return optionsSlice[i] < optionsSlice[j]
+	}))
+	assert.Equal(t, options, OptionsSliceToPluginOptions(optionsSlice))
 }
 
 func TestGetConfigForDataInvalidDependency(t *testing.T) {

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -121,10 +121,6 @@ type OptionExtensionDescriptor interface {
 	// OptionExtension returns the value for an options extension field.
 	//
 	// Returns false if the extension is not set.
-	// Panics if the ExtensionType does not extend the message.
-	//
-	// TODO: handle the panic by figuring out if ExtensionType extends the
-	// message before passing to HasExtension or GetExtension.
 	//
 	// See https://pkg.go.dev/google.golang.org/protobuf/proto#HasExtension
 	// See https://pkg.go.dev/google.golang.org/protobuf/proto#GetExtension
@@ -217,6 +213,7 @@ type File interface {
 	PhpMetadataNamespace() string
 	RubyPackage() string
 	SwiftPrefix() string
+	Deprecated() bool
 
 	OptimizeFor() FileOptionsOptimizeMode
 	CcGenericServices() bool
@@ -298,6 +295,12 @@ type MessageRange interface {
 	Message() Message
 }
 
+// ExtensionRange represents an extension range in Messages.
+type ExtensionRange interface {
+	MessageRange
+	OptionExtensionDescriptor
+}
+
 // Enum is an enum descriptor.
 type Enum interface {
 	NamedDescriptor
@@ -308,6 +311,7 @@ type Enum interface {
 	ReservedEnumRanges() []EnumRange
 
 	AllowAlias() bool
+	Deprecated() bool
 	AllowAliasLocation() Location
 
 	// Will return nil if this is a top-level Enum
@@ -322,6 +326,7 @@ type EnumValue interface {
 	Enum() Enum
 	Number() int
 
+	Deprecated() bool
 	NumberLocation() Location
 }
 
@@ -337,6 +342,7 @@ type Message interface {
 	Fields() []Field
 	Extensions() []Field
 	Oneofs() []Oneof
+	ExtensionRanges() []ExtensionRange
 	ExtensionMessageRanges() []MessageRange
 	ReservedMessageRanges() []MessageRange
 
@@ -346,6 +352,7 @@ type Message interface {
 
 	MessageSetWireFormat() bool
 	NoStandardDescriptorAccessor() bool
+	Deprecated() bool
 	MessageSetWireFormatLocation() Location
 	NoStandardDescriptorAccessorLocation() Location
 }
@@ -370,6 +377,7 @@ type Field interface {
 	// Set vs unset matters for packed
 	// See the comments on descriptor.proto
 	Packed() *bool
+	Deprecated() bool
 	// Empty string unless the field is part of an extension
 	Extendee() string
 
@@ -398,6 +406,7 @@ type Service interface {
 	OptionExtensionDescriptor
 
 	Methods() []Method
+	Deprecated() bool
 }
 
 // Method is a method descriptor.
@@ -413,6 +422,7 @@ type Method interface {
 	InputTypeLocation() Location
 	OutputTypeLocation() Location
 
+	Deprecated() bool
 	IdempotencyLevel() MethodOptionsIdempotencyLevel
 	IdempotencyLevelLocation() Location
 }
@@ -1075,6 +1085,90 @@ func FreeMessageRanges(message Message) []MessageRange {
 	return unused
 }
 
+// CheckTagRangeIsSubset checks if supersetRanges is a superset of subsetRanges.
+// If so, it returns true and nil. If not, it returns false with a slice of failing ranges from subsetRanges.
+func CheckTagRangeIsSubset(supersetRanges []TagRange, subsetRanges []TagRange) (bool, []TagRange) {
+	if len(subsetRanges) == 0 {
+		return true, nil
+	}
+
+	if len(supersetRanges) == 0 {
+		return false, subsetRanges
+	}
+
+	supersetTagRangeGroups := groupAdjacentTagRanges(supersetRanges)
+	subsetTagRanges := sortTagRanges(subsetRanges)
+	missingTagRanges := []TagRange{}
+
+	for i, j := 0, 0; j < len(subsetTagRanges); j++ {
+		for supersetTagRangeGroups[i].end < subsetTagRanges[j].Start() {
+			if i++; i == len(supersetTagRangeGroups) {
+				missingTagRanges = append(missingTagRanges, subsetTagRanges[j:]...)
+				return false, missingTagRanges
+			}
+		}
+		if supersetTagRangeGroups[i].start > subsetTagRanges[j].Start() ||
+			supersetTagRangeGroups[i].end < subsetTagRanges[j].End() {
+			missingTagRanges = append(missingTagRanges, subsetTagRanges[j])
+		}
+	}
+
+	if len(missingTagRanges) != 0 {
+		return false, missingTagRanges
+	}
+
+	return true, nil
+}
+
+// groupAdjacentTagRanges sorts and groups adjacent tag ranges.
+func groupAdjacentTagRanges(ranges []TagRange) []tagRangeGroup {
+	if len(ranges) == 0 {
+		return []tagRangeGroup{}
+	}
+
+	sortedTagRanges := sortTagRanges(ranges)
+
+	j := 0
+	groupedTagRanges := make([]tagRangeGroup, 1, len(ranges))
+	groupedTagRanges[j] = tagRangeGroup{
+		ranges: sortedTagRanges[0:1],
+		start:  sortedTagRanges[0].Start(),
+		end:    sortedTagRanges[0].End(),
+	}
+
+	for i := 1; i < len(sortedTagRanges); i++ {
+		if sortedTagRanges[i].Start() <= sortedTagRanges[i-1].End()+1 {
+			if sortedTagRanges[i].End() > groupedTagRanges[j].end {
+				groupedTagRanges[j].end = sortedTagRanges[i].End()
+			}
+			groupedTagRanges[j].ranges = groupedTagRanges[j].ranges[0 : len(groupedTagRanges[j].ranges)+1]
+		} else {
+			groupedTagRanges = append(groupedTagRanges, tagRangeGroup{
+				ranges: sortedTagRanges[i : i+1],
+				start:  sortedTagRanges[i].Start(),
+				end:    sortedTagRanges[i].End(),
+			})
+			j++
+		}
+	}
+
+	return groupedTagRanges
+}
+
+// sortTagRanges sorts tag ranges by their start, end components.
+func sortTagRanges(ranges []TagRange) []TagRange {
+	rangesCopy := make([]TagRange, len(ranges))
+	copy(rangesCopy, ranges)
+
+	sort.Slice(rangesCopy, func(i, j int) bool {
+		return rangesCopy[i].Start() < rangesCopy[j].Start() ||
+			(rangesCopy[i].Start() == rangesCopy[j].Start() &&
+				rangesCopy[i].End() < rangesCopy[j].End())
+	})
+
+	return rangesCopy
+}
+
 func freeMessageRangeStringSuffix(freeRange MessageRange) string {
 	start := freeRange.Start()
 	end := freeRange.End()
@@ -1121,4 +1215,10 @@ func mapToSortedFiles(keyToFileMap map[string]map[string]File) map[string][]File
 		keyToSortedFiles[key] = files
 	}
 	return keyToSortedFiles
+}
+
+type tagRangeGroup struct {
+	ranges []TagRange
+	start  int
+	end    int
 }
