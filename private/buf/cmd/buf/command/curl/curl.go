@@ -149,7 +149,7 @@ headers and request data are both in a heredoc:
 	   <<EOM
 	Custom-Header-1: foo-bar-baz
 	Authorization: token jas8374hgnkvje9wpkerebncjqol4
-	
+
 	{"sentence": "Hi, doc. I feel hungry."}
 	{"sentence": "What is the answer to life, the universe, and everything?"}
 	{"sentence": "If you were a fish, what of fish would you be?."}
