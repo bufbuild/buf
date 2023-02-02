@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+import "a.proto";
+import "b.proto";
+
+message ExtendedAnySyntax {
+  option (extra) = {
+    [type.googleapis.com/foo.bar.baz.Foo]: {
+      name: "Bob Loblaw"
+      id: 42
+    }
+  };
+}

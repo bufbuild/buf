@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "a.proto";
+
+message NormalMessageSyntaxInvalidType {
+  option (extra) = {
+    type_url: "type.googleapis.com/blah.blah.Blah"
+    value: "\x01\x02\x03\x04"
+  };
+}

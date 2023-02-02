@@ -27,6 +27,10 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+const (
+	anyFullName = "google.protobuf.Any"
+)
+
 var (
 	// ErrImageFilterTypeNotFound is returned from ImageFilteredByTypes when
 	// a specified type cannot be found in an image.
@@ -699,6 +703,13 @@ func (t *transitiveClosure) exploreCustomOptions(
 	optionsName := string(options.Descriptor().FullName())
 	var err error
 	options.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
+		// If the value contains an Any message, we should add the message type
+		// therein to the closure.
+		if err = t.exploreOptionValueForAny(fd, val, referrerFile, imageIndex, opts); err != nil {
+			return false
+		}
+
+		// Also include custom option definitions (e.g. extensions)
 		if !fd.IsExtension() {
 			return true
 		}
@@ -709,6 +720,76 @@ func (t *transitiveClosure) exploreCustomOptions(
 			return false
 		}
 		err = t.addElement(field, referrerFile, true, imageIndex, opts)
+		return err == nil
+	})
+	return err
+}
+
+func isMessageKind(k protoreflect.Kind) bool {
+	return k == protoreflect.MessageKind || k == protoreflect.GroupKind
+}
+
+func (t *transitiveClosure) exploreOptionValueForAny(
+	fd protoreflect.FieldDescriptor,
+	val protoreflect.Value,
+	referrerFile string,
+	imageIndex *imageIndex,
+	opts *imageFilterOptions,
+) error {
+	switch {
+	case fd.IsMap() && isMessageKind(fd.MapValue().Kind()):
+		var err error
+		val.Map().Range(func(_ protoreflect.MapKey, v protoreflect.Value) bool {
+			if err = t.exploreOptionScalarValueForAny(v.Message(), referrerFile, imageIndex, opts); err != nil {
+				return false
+			}
+			return true
+		})
+		return err
+	case isMessageKind(fd.Kind()):
+		if fd.IsList() {
+			listVal := val.List()
+			for i := 0; i < listVal.Len(); i++ {
+				if err := t.exploreOptionScalarValueForAny(listVal.Get(i).Message(), referrerFile, imageIndex, opts); err != nil {
+					return err
+				}
+			}
+		} else {
+			return t.exploreOptionScalarValueForAny(val.Message(), referrerFile, imageIndex, opts)
+		}
+	}
+	return nil
+}
+
+func (t *transitiveClosure) exploreOptionScalarValueForAny(
+	msg protoreflect.Message,
+	referrerFile string,
+	imageIndex *imageIndex,
+	opts *imageFilterOptions,
+) error {
+	md := msg.Descriptor()
+	if md.FullName() == anyFullName {
+		// Found one!
+		typeURLFd := md.Fields().ByNumber(1)
+		if typeURLFd.Kind() != protoreflect.StringKind {
+			// should not be possible...
+			return nil
+		}
+		typeURL := msg.Get(typeURLFd).String()
+		pos := strings.LastIndexByte(typeURL, '/')
+		msgType := typeURL[pos+1:]
+		d, _ := imageIndex.ByName[msgType].(*descriptorpb.DescriptorProto)
+		if d != nil {
+			if err := t.addElement(d, referrerFile, false, imageIndex, opts); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	// keep digging
+	var err error
+	msg.Range(func(fd protoreflect.FieldDescriptor, val protoreflect.Value) bool {
+		err = t.exploreOptionValueForAny(fd, val, referrerFile, imageIndex, opts)
 		return err == nil
 	})
 	return err
