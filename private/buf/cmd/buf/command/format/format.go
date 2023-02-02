@@ -70,98 +70,98 @@ By default, the input is the current directory and the formatted content is writ
 
 Write the current directory's formatted content to stdout
 
-	buf format
+    buf format
 
 Rewrite the file(s) in-place with -w. For example,
 
 Rewrite the files defined in the current directory in-place
 
-	buf format -w
+    buf format -w
 
 Most people will want to use 'buf format -w'.
 
 Display a diff between the original and formatted content with -d. For example,
 
 Write a diff instead of the formatted file
-	
-	buf format simple/simple.proto -d
-	
-	diff -u simple/simple.proto.orig simple/simple.proto
-	--- simple/simple.proto.orig	2022-03-24 09:44:10.000000000 -0700
-	+++ simple/simple.proto	2022-03-24 09:44:10.000000000 -0700
-	@@ -2,8 +2,7 @@
-	
-	 package simple;
-	
-	-
-	 message Object {
-	-    string key = 1;
-	-   bytes value = 2;
-	+  string key = 1;
-	+  bytes value = 2;
-	 }
+    
+    buf format simple/simple.proto -d
+    
+    diff -u simple/simple.proto.orig simple/simple.proto
+    --- simple/simple.proto.orig	2022-03-24 09:44:10.000000000 -0700
+    +++ simple/simple.proto	2022-03-24 09:44:10.000000000 -0700
+    @@ -2,8 +2,7 @@
+    
+     package simple;
+    
+    -
+     message Object {
+    -    string key = 1;
+    -   bytes value = 2;
+    +  string key = 1;
+    +  bytes value = 2;
+     }
 
 You can also use the --exit-code flag to exit with a non-zero exit code if there is a diff:
 
-	buf format --exit-code
-	buf format -w --exit-code
-	buf format -d --exit-code
+    buf format --exit-code
+    buf format -w --exit-code
+    buf format -d --exit-code
 
 Format a file, directory, or module reference by specifying an input. For example,
 
 Write the formatted file to stdout
-	
-	buf format simple/simple.proto
-	
-	syntax = "proto3";
-	
-	package simple;
-	
-	message Object {
-	  string key = 1;
-	  bytes value = 2;
-	}
+    
+    buf format simple/simple.proto
+    
+    syntax = "proto3";
+    
+    package simple;
+    
+    message Object {
+      string key = 1;
+      bytes value = 2;
+    }
 
 Write the formatted directory to stdout
 
-	buf format simple
-	...
+    buf format simple
+    ...
 
 Write the formatted module reference to stdout
 
-	buf format buf.build/acme/petapis
-	...
+    buf format buf.build/acme/petapis
+    ...
 
 Write the result to a specified output file or directory with -o. For example,
 
 Write the formatted file to another file
 
-	buf format simple/simple.proto -o simple/simple.formatted.proto
+    buf format simple/simple.proto -o simple/simple.formatted.proto
 
 Write the formatted directory to another directory, creating it if it doesn't exist
 
-	buf format proto -o formatted
+    buf format proto -o formatted
 
 This also works with module references
 
-	buf format buf.build/acme/weather -o formatted
+    buf format buf.build/acme/weather -o formatted
 
 Rewrite the file(s) in-place with -w. For example,
 
 Rewrite a single file in-place
 
-	buf format simple.proto -w
+    buf format simple.proto -w
 
 Rewrite an entire directory in-place
 
-	buf format proto -w
+    buf format proto -w
 
 Write a diff and rewrite the file(s) in-place
 
-	buf format simple -d -w
+    buf format simple -d -w
 
-	diff -u simple/simple.proto.orig simple/simple.proto
-	...
+    diff -u simple/simple.proto.orig simple/simple.proto
+    ...
 
 The -w and -o flags cannot be used together in a single invocation.
 `,
