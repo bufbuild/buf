@@ -337,6 +337,6 @@ message PayloadTokenCreated {
 message PayloadTokenDeleted {
   // owner_id is the id of the owner of the token.
   string owner_id = 1;
-    // token is the value of the token.
-    string token = 2;
+  // token is the value of the token.
+  string token = 2;
 }
