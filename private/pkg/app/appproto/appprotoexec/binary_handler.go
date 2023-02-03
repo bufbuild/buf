@@ -36,16 +36,19 @@ type binaryHandler struct {
 	runner     command.Runner
 	pluginPath string
 	tracer     trace.Tracer
+	pluginArgs []string
 }
 
 func newBinaryHandler(
 	runner command.Runner,
 	pluginPath string,
+	pluginArgs []string,
 ) *binaryHandler {
 	return &binaryHandler{
 		runner:     runner,
 		pluginPath: pluginPath,
 		tracer:     otel.GetTracerProvider().Tracer("bufbuild/buf"),
+		pluginArgs: pluginArgs,
 	}
 }
 
@@ -67,13 +70,19 @@ func (h *binaryHandler) Handle(
 	}
 	responseBuffer := bytes.NewBuffer(nil)
 	stderrWriteCloser := newStderrWriteCloser(container.Stderr(), h.pluginPath)
-	if err := h.runner.Run(
-		ctx,
-		h.pluginPath,
+	runOptions := []command.RunOption{
 		command.RunWithEnv(app.EnvironMap(container)),
 		command.RunWithStdin(bytes.NewReader(requestData)),
 		command.RunWithStdout(responseBuffer),
 		command.RunWithStderr(stderrWriteCloser),
+	}
+	if h.pluginArgs != nil {
+		runOptions = append(runOptions, command.RunWithArgs(h.pluginArgs...))
+	}
+	if err := h.runner.Run(
+		ctx,
+		h.pluginPath,
+		runOptions...,
 	); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())

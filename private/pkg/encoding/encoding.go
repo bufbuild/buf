@@ -190,3 +190,25 @@ func InterfaceSliceOrStringToCommaSepString(in interface{}) (string, error) {
 	}
 	return opt, nil
 }
+
+func InterfaceSliceOrStringToStringSlice(in interface{}) ([]string, error) {
+	if in == nil {
+		return nil, nil
+	}
+	switch t := in.(type) {
+	case string:
+		return []string{t}, nil
+	case []interface{}:
+		res := make([]string, len(t))
+		for i, elem := range t {
+			s, ok := elem.(string)
+			if !ok {
+				return nil, fmt.Errorf("could not convert element %T to a string", elem)
+			}
+			res[i] = s
+		}
+		return res, nil
+	default:
+		return nil, fmt.Errorf("could not interpret %T as string or string slice", in)
+	}
+}

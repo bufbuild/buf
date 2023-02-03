@@ -143,6 +143,10 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 		if err != nil {
 			return nil, err
 		}
+		path, err := encoding.InterfaceSliceOrStringToStringSlice(plugin.Path)
+		if err != nil {
+			return nil, err
+		}
 		pluginConfig := &PluginConfig{
 			Plugin:   plugin.Plugin,
 			Revision: plugin.Revision,
@@ -150,7 +154,7 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 			Remote:   plugin.Remote,
 			Out:      plugin.Out,
 			Opt:      opt,
-			Path:     plugin.Path,
+			Path:     path,
 			Strategy: strategy,
 		}
 		if pluginConfig.IsRemote() {
@@ -578,7 +582,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 				Name:     plugin.Name,
 				Out:      plugin.Out,
 				Opt:      opt,
-				Path:     plugin.Path,
+				Path:     []string{plugin.Path},
 				Strategy: strategy,
 			},
 		)

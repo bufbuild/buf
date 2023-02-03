@@ -99,7 +99,7 @@ type GenerateOption func(*generateOptions)
 
 // GenerateWithPluginPath returns a new GenerateOption that uses the given
 // path to the plugin.
-func GenerateWithPluginPath(pluginPath string) GenerateOption {
+func GenerateWithPluginPath(pluginPath ...string) GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.pluginPath = pluginPath
 	}
@@ -124,16 +124,16 @@ func NewHandler(
 	for _, option := range options {
 		option(handlerOptions)
 	}
-	if handlerOptions.pluginPath != "" {
-		pluginPath, err := unsafeLookPath(handlerOptions.pluginPath)
+	if handlerOptions.pluginPath != nil {
+		pluginPath, err := unsafeLookPath(handlerOptions.pluginPath[0])
 		if err != nil {
 			return nil, err
 		}
-		return newBinaryHandler(runner, pluginPath), nil
+		return newBinaryHandler(runner, pluginPath, handlerOptions.pluginPath[1:]), nil
 	}
 	pluginPath, err := unsafeLookPath("protoc-gen-" + pluginName)
 	if err == nil {
-		return newBinaryHandler(runner, pluginPath), nil
+		return newBinaryHandler(runner, pluginPath, nil), nil
 	}
 	// we always look for protoc-gen-X first, but if not, check the builtins
 	if _, ok := ProtocProxyPluginNames[pluginName]; ok {
@@ -170,7 +170,7 @@ func HandlerWithProtocPath(protocPath string) HandlerOption {
 //
 // The default is to do exec.LookPath on "protoc-gen-" + pluginName.
 // pluginPath is expected to be unnormalized.
-func HandlerWithPluginPath(pluginPath string) HandlerOption {
+func HandlerWithPluginPath(pluginPath ...string) HandlerOption {
 	return func(handlerOptions *handlerOptions) {
 		handlerOptions.pluginPath = pluginPath
 	}
@@ -180,17 +180,17 @@ func HandlerWithPluginPath(pluginPath string) HandlerOption {
 // specified by pluginPath.
 //
 // Used by other repositories.
-func NewBinaryHandler(runner command.Runner, pluginPath string) (appproto.Handler, error) {
+func NewBinaryHandler(runner command.Runner, pluginPath string, pluginArgs []string) (appproto.Handler, error) {
 	pluginPath, err := unsafeLookPath(pluginPath)
 	if err != nil {
 		return nil, err
 	}
-	return newBinaryHandler(runner, pluginPath), nil
+	return newBinaryHandler(runner, pluginPath, pluginArgs), nil
 }
 
 type handlerOptions struct {
 	protocPath string
-	pluginPath string
+	pluginPath []string
 }
 
 func newHandlerOptions() *handlerOptions {

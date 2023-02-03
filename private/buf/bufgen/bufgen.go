@@ -181,7 +181,7 @@ type PluginConfig struct {
 	// Optional
 	Opt string
 	// Optional, exclusive with Remote
-	Path string
+	Path []string
 	// Required
 	Strategy Strategy
 }
@@ -349,7 +349,7 @@ type ExternalPluginConfigV1 struct {
 	Remote   string      `json:"remote,omitempty" yaml:"remote,omitempty"`
 	Out      string      `json:"out,omitempty" yaml:"out,omitempty"`
 	Opt      interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
-	Path     string      `json:"path,omitempty" yaml:"path,omitempty"`
+	Path     interface{} `json:"path,omitempty" yaml:"path,omitempty"`
 	Strategy string      `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 

@@ -58,7 +58,7 @@ func (g *generator) Generate(
 		g.storageosProvider,
 		g.runner,
 		pluginName,
-		HandlerWithPluginPath(generateOptions.pluginPath),
+		HandlerWithPluginPath(generateOptions.pluginPath...),
 	)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (g *generator) Generate(
 }
 
 type generateOptions struct {
-	pluginPath string
+	pluginPath []string
 }
 
 func newGenerateOptions() *generateOptions {
