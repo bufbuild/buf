@@ -98,11 +98,12 @@ type Lister interface {
 	// ListFilesAndUnstagedFiles lists all files checked into git except those that
 	// were deleted, and also lists unstaged files.
 	//
-	// This does not list unstaged deleted files, and does not list unignored
-	// files that were not added. This ignores regular files.
+	// This does not list unstaged deleted files
+	// This does not list unignored files that were not added.
+	// This ignores regular files.
 	//
-	// This is used for situations like license headers where we want all the potential git files
-	// during development.
+	// This is used for situations like license headers where we want all the
+	// potential git files during development.
 	//
 	// The returned paths will be unnormalized.
 	//

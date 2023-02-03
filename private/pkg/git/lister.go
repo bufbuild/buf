@@ -16,6 +16,7 @@ package git
 
 import (
 	"context"
+	"os"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -65,14 +66,16 @@ func (l *lister) ListFilesAndUnstagedFiles(
 		return nil, err
 	}
 	return stringutil.SliceToUniqueSortedSlice(
-		filterIgnorePaths(
-			stringSliceExcept(
-				// This may not work in all Windows scenarios as we only split on "\n" but
-				// this is no worse than we previously had.
-				stringutil.SplitTrimLinesNoEmpty(string(allFilesOutput)),
-				stringutil.SplitTrimLinesNoEmpty(string(deletedFilesOutput)),
+		filterNonRegularFiles(
+			filterIgnorePaths(
+				stringSliceExcept(
+					// This may not work in all Windows scenarios as we only split on "\n" but
+					// this is no worse than we previously had.
+					stringutil.SplitTrimLinesNoEmpty(string(allFilesOutput)),
+					stringutil.SplitTrimLinesNoEmpty(string(deletedFilesOutput)),
+				),
+				options.IgnorePaths,
 			),
-			options.IgnorePaths,
 		),
 	), nil
 }
@@ -126,4 +129,14 @@ func fileMatches(file string, unnormalizedMatchPaths map[string]struct{}) bool {
 		}
 	}
 	return false
+}
+
+func filterNonRegularFiles(files []string) []string {
+	filteredFiles := make([]string, 0, len(files))
+	for _, file := range files {
+		if fileInfo, err := os.Stat(file); err == nil && fileInfo.Mode().IsRegular() {
+			filteredFiles = append(filteredFiles, file)
+		}
+	}
+	return filteredFiles
 }
