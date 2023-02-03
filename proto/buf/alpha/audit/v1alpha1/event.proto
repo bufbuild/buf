@@ -330,9 +330,13 @@ message PayloadTokenCreated {
   string owner_id = 1;
   // token_expiry_time is the expiry time of the token.
   google.protobuf.Timestamp token_expiry_time = 2;
+  // token is the value of the token.
+  string token = 3;
 }
 
 message PayloadTokenDeleted {
   // owner_id is the id of the owner of the token.
   string owner_id = 1;
+    // token is the value of the token.
+    string token = 2;
 }
