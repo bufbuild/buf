@@ -205,6 +205,6 @@ jobs:
               workflow_id: "npm-publish.yaml",
               ref: "main"
               inputs: {
-                version: "${{env.NEXT_VERSION}}"
+                version: "${{github.ref_name}}".replace("v", "")
               }
             })
