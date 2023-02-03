@@ -131,6 +131,10 @@ func fileMatches(file string, unnormalizedMatchPaths map[string]struct{}) bool {
 	return false
 }
 
+// filterNonRegularFiles returns all regular files.
+//
+// This does an os.Stat call, so the files must exist for this to work.
+// Given our usage here, this is true by the time this function is called.
 func filterNonRegularFiles(files []string) []string {
 	filteredFiles := make([]string, 0, len(files))
 	for _, file := range files {
