@@ -92,3 +92,47 @@ type ClonerOptions struct {
 	SSHKeyFileEnvKey         string
 	SSHKnownHostsFilesEnvKey string
 }
+
+// Lister lists files in git repositories.
+type Lister interface {
+	// ListFilesAndUnstagedFiles lists all files checked into git except those that
+	// were deleted, and also lists unstaged files.
+	//
+	// This does not list unstaged deleted files
+	// This does not list unignored files that were not added.
+	// This ignores regular files.
+	//
+	// This is used for situations like license headers where we want all the
+	// potential git files during development.
+	//
+	// The returned paths will be unnormalized.
+	//
+	// This is the equivalent of doing:
+	//
+	//	comm -23 \
+	//		<(git ls-files --cached --modified --others --no-empty-directory --exclude-standard | sort -u | grep -v -e IGNORE_PATH1 -e IGNORE_PATH2) \
+	//		<(git ls-files --deleted | sort -u)
+	ListFilesAndUnstagedFiles(
+		ctx context.Context,
+		envContainer app.EnvStdioContainer,
+		options ListFilesAndUnstagedFilesOptions,
+	) ([]string, error)
+}
+
+// NewLister returns a new Lister.
+func NewLister(runner command.Runner) Lister {
+	return newLister(runner)
+}
+
+// ListFilesAndUnstagedFilesOptions are options for ListFilesAndUnstagedFiles.
+type ListFilesAndUnstagedFilesOptions struct {
+	// IgnorePaths are paths to ignore.
+	//
+	// A simple substring operation is done, this is not a regex.
+	// If this string appears as part of the path, the path will be ignored.
+	// These paths will be unnormalized as part of ListFilesAndUnstagedFiles.
+	//
+	// We could later make this regular expressions if we want to v1.0 any tools
+	// based on this, but keeping it simple for now.
+	IgnorePaths []string
+}
