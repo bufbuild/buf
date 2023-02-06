@@ -21,7 +21,9 @@ package bufpluginexec
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -90,8 +92,9 @@ func NewGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
+	wasmPluginExecutor *bufwasm.PluginExecutor,
 ) Generator {
-	return newGenerator(logger, storageosProvider, runner)
+	return newGenerator(logger, storageosProvider, runner, wasmPluginExecutor)
 }
 
 // GenerateOption is an option for Generate.
@@ -126,6 +129,7 @@ func GenerateWithProtocPath(protocPath string) GenerateOption {
 func NewHandler(
 	storageosProvider storageos.Provider,
 	runner command.Runner,
+	wasmPluginExecutor *bufwasm.PluginExecutor,
 	pluginName string,
 	options ...HandlerOption,
 ) (appproto.Handler, error) {
@@ -139,6 +143,14 @@ func NewHandler(
 			return nil, err
 		}
 		return newBinaryHandler(runner, pluginPath, handlerOptions.pluginPath[1:]), nil
+	}
+	if strings.HasSuffix(pluginName, ".wasm") {
+		// TODO: should check if wasm file by magic header?
+		// https://webassembly.github.io/spec/core/binary/modules.html#binary-magic
+		return newWasmHandler(
+			wasmPluginExecutor,
+			pluginName,
+		), nil
 	}
 	pluginPath, err := unsafeLookPath("protoc-gen-" + pluginName)
 	if err == nil {

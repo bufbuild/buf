@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -46,6 +47,7 @@ func executePlugin(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
+	wasmPluginExecutor *bufwasm.PluginExecutor,
 	container app.EnvStderrContainer,
 	images []bufimage.Image,
 	pluginName string,
@@ -55,6 +57,7 @@ func executePlugin(
 		logger,
 		storageosProvider,
 		runner,
+		wasmPluginExecutor,
 	)
 	var options []bufpluginexec.GenerateOption
 	if pluginInfo.Path != "" {

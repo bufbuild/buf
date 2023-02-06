@@ -1,0 +1,56 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.wasmplugin.v1;
+
+// Metadata describes buf specific extensions for a wasm plugin.  A metadata may
+// be encoded in a custom WASM section named ".bufplugin", see
+// (https://webassembly.github.io/spec/core/binary/modules.html#binary-customsec)
+// for more info.
+message Metadata {
+  // When no ABI is provided, buf will make a best effort guess based on
+  // the functions the wasm module exports.
+  WasmABI abi = 1;
+
+  // The arguments that should be passed when running this plugin. Useful
+  // for interpreted languages where the main wasm bundle is only the
+  // interpreter.
+  repeated string args = 2;
+
+  // Files that should be made available to the WASI fs when running this
+  // plugin. Useful for interpreted languages where the main wasm bundle
+  // is only the interpreter.
+  repeated File files = 3;
+}
+
+// WASM_ABI specifies the abi this module expects buf to provide.
+enum WasmABI {
+  WASM_ABI_UNSPECIFIED = 0;
+
+  // Plugins compiled against
+  // https://github.com/WebAssembly/WASI/releases/tag/snapshot-01.
+  WASM_ABI_WASI_SNAPSHOT_PREVIEW1 = 1;
+
+  // Plugins compiled with `GOOS=js` and `GOARCH=wasm`.
+  WASM_ABI_GOJS = 2;
+}
+
+// File represents a file that must be made available to the wasi plugin.
+message File {
+  // Normalized path with `/` as directory separator.
+  string path = 1;
+  bytes contents = 2;
+}

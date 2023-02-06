@@ -17,6 +17,7 @@ package protoc
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -27,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -192,6 +194,10 @@ func run(
 			}
 			span.End()
 		}
+		wasmPluginExecutor, err := bufwasm.NewPluginExecutor(ctx, filepath.Join(container.CacheDirPath(), "wasmplugins"))
+		if err != nil {
+			return err
+		}
 		pluginResponses := make([]*appproto.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
 		for _, pluginName := range env.PluginNamesSortedByOutIndex {
 			pluginInfo, ok := env.PluginNameToPluginInfo[pluginName]
@@ -203,6 +209,7 @@ func run(
 				container.Logger(),
 				storageosProvider,
 				runner,
+				wasmPluginExecutor,
 				container,
 				images,
 				pluginName,

@@ -17,6 +17,7 @@ package generate
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -24,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -390,10 +392,15 @@ func run(
 			return err
 		}
 	}
+	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(ctx, filepath.Join(container.CacheDirPath(), "wasmplugins"))
+	if err != nil {
+		return err
+	}
 	return bufgen.NewGenerator(
 		logger,
 		storageosProvider,
 		runner,
+		wasmPluginExecutor,
 		clientConfig,
 	).Generate(
 		ctx,
