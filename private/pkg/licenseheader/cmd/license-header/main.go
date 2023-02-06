@@ -109,7 +109,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		ignoreFlagShortName,
 		nil,
 		`File paths to ignore.
-If a file has any of these values as a substring, it will be ignored. This is not a regex.
+These are extended regexes in the style of egrep.
+If a file matches any of these values, it will be ignored.
 Only works if there are no arguments and license-header does its own search for files.`,
 	)
 }
