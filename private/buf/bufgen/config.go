@@ -232,7 +232,7 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 }
 
 func checkPathAndStrategyUnset(id string, plugin ExternalPluginConfigV1, pluginIdentifier string) error {
-	if plugin.Path != "" {
+	if plugin.Path != nil {
 		return fmt.Errorf("%s: remote plugin %s cannot specify a path", id, pluginIdentifier)
 	}
 	if plugin.Strategy != "" {

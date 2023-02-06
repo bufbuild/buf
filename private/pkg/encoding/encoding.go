@@ -199,6 +199,9 @@ func InterfaceSliceOrStringToStringSlice(in interface{}) ([]string, error) {
 	case string:
 		return []string{t}, nil
 	case []interface{}:
+		if len(t) == 0 {
+			return nil, nil
+		}
 		res := make([]string, len(t))
 		for i, elem := range t {
 			s, ok := elem.(string)
