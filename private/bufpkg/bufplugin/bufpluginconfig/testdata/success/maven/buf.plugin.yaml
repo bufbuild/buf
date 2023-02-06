@@ -1,0 +1,17 @@
+version: v1
+name: buf.build/grpc/java
+plugin_version: v1.0.0
+output_languages: [java]
+registry:
+  maven:
+    deps:
+      - group_id: "io.grpc"
+        artifact_id: "grpc-core"
+        version: "1.52.1"
+      - group_id: "io.grpc"
+        artifact_id: "grpc-protobuf"
+        version: "1.52.1"
+      - group_id: "io.grpc"
+        artifact_id: "grpc-stub"
+        version: "1.52.1"
+spdx_license_id: bsd-3-clause

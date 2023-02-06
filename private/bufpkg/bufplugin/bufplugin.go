@@ -72,6 +72,8 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_GO
 		} else if plugin.Registry().NPM != nil {
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM
+		} else if plugin.Registry().Maven != nil {
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN
 		}
 	}
 	return registryType
@@ -141,6 +143,15 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 			}
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_NpmConfig{NpmConfig: npmConfig}
+	} else if pluginRegistry.Maven != nil {
+		mavenConfig := &registryv1alpha1.MavenConfig{}
+		if pluginRegistry.Maven.Deps != nil {
+			mavenConfig.RuntimeLibraries = make([]*registryv1alpha1.MavenConfig_RuntimeLibrary, 0, len(pluginRegistry.Maven.Deps))
+			for _, dependency := range pluginRegistry.Maven.Deps {
+				mavenConfig.RuntimeLibraries = append(mavenConfig.RuntimeLibraries, mavenRuntimeDependencyToProtoMavenRuntimeLibrary(dependency))
+			}
+		}
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_MavenConfig{MavenConfig: mavenConfig}
 	}
 	return registryConfig, nil
 }
@@ -181,6 +192,16 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			}
 		}
 		registryConfig.NPM = npmConfig
+	} else if config.GetMavenConfig() != nil {
+		mavenConfig := &bufpluginconfig.MavenRegistryConfig{}
+		runtimeLibraries := config.GetMavenConfig().GetRuntimeLibraries()
+		if runtimeLibraries != nil {
+			mavenConfig.Deps = make([]*bufpluginconfig.MavenRegistryDependencyConfig, 0, len(runtimeLibraries))
+			for _, library := range runtimeLibraries {
+				mavenConfig.Deps = append(mavenConfig.Deps, protoMavenRuntimeLibraryToMavenRuntimeDependency(library))
+			}
+		}
+		registryConfig.Maven = mavenConfig
 	}
 	return registryConfig, nil
 }
@@ -234,6 +255,24 @@ func protoNPMRuntimeLibraryToNPMRuntimeDependency(config *registryv1alpha1.NPMCo
 	return &bufpluginconfig.NPMRegistryDependencyConfig{
 		Package: config.Package,
 		Version: config.Version,
+	}
+}
+
+// mavenRuntimeDependencyToProtoMavenRuntimeLibrary converts a bufpluginconfig.MavenRegistryDependencyConfig to a registryv1alpha1.MavenConfig_RuntimeLibrary.
+func mavenRuntimeDependencyToProtoMavenRuntimeLibrary(config *bufpluginconfig.MavenRegistryDependencyConfig) *registryv1alpha1.MavenConfig_RuntimeLibrary {
+	return &registryv1alpha1.MavenConfig_RuntimeLibrary{
+		GroupId:    config.GroupID,
+		ArtifactId: config.ArtifactID,
+		Version:    config.Version,
+	}
+}
+
+// protoMavenRuntimeLibraryToMavenRuntimeDependency converts a registryv1alpha1.MavenConfig_RuntimeLibrary to a bufpluginconfig.MavenRegistryDependencyConfig.
+func protoMavenRuntimeLibraryToMavenRuntimeDependency(config *registryv1alpha1.MavenConfig_RuntimeLibrary) *bufpluginconfig.MavenRegistryDependencyConfig {
+	return &bufpluginconfig.MavenRegistryDependencyConfig{
+		GroupID:    config.GroupId,
+		ArtifactID: config.ArtifactId,
+		Version:    config.Version,
 	}
 }
 

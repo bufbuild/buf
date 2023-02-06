@@ -158,6 +158,45 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 	)
 }
 
+func TestParsePluginConfigMavenYAML(t *testing.T) {
+	t.Parallel()
+	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "maven", "buf.plugin.yaml"))
+	require.NoError(t, err)
+	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/grpc/java")
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		&Config{
+			Name:            pluginIdentity,
+			PluginVersion:   "v1.0.0",
+			OutputLanguages: []string{"java"},
+			Registry: &RegistryConfig{
+				Maven: &MavenRegistryConfig{
+					Deps: []*MavenRegistryDependencyConfig{
+						{
+							GroupID:    "io.grpc",
+							ArtifactID: "grpc-core",
+							Version:    "1.52.1",
+						},
+						{
+							GroupID:    "io.grpc",
+							ArtifactID: "grpc-protobuf",
+							Version:    "1.52.1",
+						},
+						{
+							GroupID:    "io.grpc",
+							ArtifactID: "grpc-stub",
+							Version:    "1.52.1",
+						},
+					},
+				},
+			},
+			SPDXLicenseID: "BSD-3-Clause",
+		},
+		pluginConfig,
+	)
+}
+
 func TestParsePluginConfigOptionsYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "options", "buf.plugin.yaml"))
