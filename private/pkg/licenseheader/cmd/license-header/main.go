@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -196,11 +197,19 @@ func getFilenames(
 		}
 		return app.Args(container), nil
 	}
+	ignoreRegexps := make([]*regexp.Regexp, len(ignores))
+	for i, ignore := range ignores {
+		ignoreRegexp, err := regexp.CompilePOSIX(ignore)
+		if err != nil {
+			return nil, err
+		}
+		ignoreRegexps[i] = ignoreRegexp
+	}
 	return git.NewLister(runner).ListFilesAndUnstagedFiles(
 		ctx,
 		container,
 		git.ListFilesAndUnstagedFilesOptions{
-			IgnorePaths: ignores,
+			IgnorePathRegexps: ignoreRegexps,
 		},
 	)
 }

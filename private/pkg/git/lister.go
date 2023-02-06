@@ -17,11 +17,10 @@ package git
 import (
 	"context"
 	"os"
-	"strings"
+	"regexp"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
@@ -67,14 +66,14 @@ func (l *lister) ListFilesAndUnstagedFiles(
 	}
 	return stringutil.SliceToUniqueSortedSlice(
 		filterNonRegularFiles(
-			filterIgnorePaths(
+			stringSliceExceptMatches(
 				stringSliceExcept(
 					// This may not work in all Windows scenarios as we only split on "\n" but
 					// this is no worse than we previously had.
 					stringutil.SplitTrimLinesNoEmpty(string(allFilesOutput)),
 					stringutil.SplitTrimLinesNoEmpty(string(deletedFilesOutput)),
 				),
-				options.IgnorePaths,
+				options.IgnorePathRegexps,
 			),
 		),
 	), nil
@@ -82,10 +81,9 @@ func (l *lister) ListFilesAndUnstagedFiles(
 
 // stringSliceExcept returns all elements in source that are not in except.
 func stringSliceExcept(source []string, except []string) []string {
-	sourceMap := stringutil.SliceToMap(source)
 	exceptMap := stringutil.SliceToMap(except)
 	result := make([]string, 0, len(source))
-	for s := range sourceMap {
+	for _, s := range source {
 		if _, ok := exceptMap[s]; !ok {
 			result = append(result, s)
 		}
@@ -93,38 +91,25 @@ func stringSliceExcept(source []string, except []string) []string {
 	return result
 }
 
-// filterIgnorePaths filters the files that contain any of the ignorePaths
-// as a substring.
-func filterIgnorePaths(files []string, ignorePaths []string) []string {
-	if len(ignorePaths) == 0 {
-		return files
+// stringSliceExceptMatches returns all elements in source that do not match
+// any of the regexps.
+func stringSliceExceptMatches(source []string, regexps []*regexp.Regexp) []string {
+	if len(regexps) == 0 {
+		return source
 	}
-	unnormalizedIgnorePathMap := unnormalizedPathMap(ignorePaths)
-	filteredFiles := make([]string, 0, len(files))
-	for _, file := range files {
-		if !fileMatches(file, unnormalizedIgnorePathMap) {
-			filteredFiles = append(filteredFiles, file)
+	result := make([]string, 0, len(source))
+	for _, s := range source {
+		if !matchesAny(s, regexps) {
+			result = append(result, s)
 		}
 	}
-	return filteredFiles
+	return result
 }
 
-// unnormalizedPathMap returns a map of the paths, but unnormalised.
-//
-// We return a map to remove duplicates easily.
-func unnormalizedPathMap(paths []string) map[string]struct{} {
-	unnormalizedPaths := make(map[string]struct{}, len(paths))
-	for _, path := range paths {
-		unnormalizedPaths[normalpath.Unnormalize(path)] = struct{}{}
-	}
-	return unnormalizedPaths
-}
-
-// fileMatches returns true if any of the unnormalizedMatchPaths are
-// a substring of the file.
-func fileMatches(file string, unnormalizedMatchPaths map[string]struct{}) bool {
-	for unnormalizedMatchPath := range unnormalizedMatchPaths {
-		if strings.Contains(file, unnormalizedMatchPath) {
+// matchesAny returns true if any of regexps match.
+func matchesAny(s string, regexps []*regexp.Regexp) bool {
+	for _, regexp := range regexps {
+		if regexp.MatchString(s) {
 			return true
 		}
 	}
