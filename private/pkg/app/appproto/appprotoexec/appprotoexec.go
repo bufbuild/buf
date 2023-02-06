@@ -97,8 +97,9 @@ func NewGenerator(
 // GenerateOption is an option for Generate.
 type GenerateOption func(*generateOptions)
 
-// GenerateWithPluginPath returns a new GenerateOption that uses the given
-// path to the plugin.
+// GenerateWithPluginPath returns a new GenerateOption that uses the given path to the plugin.
+// If the path has more than one element, the first is the plugin binary and the others are
+// optional additional arguments to pass to the binary.
 func GenerateWithPluginPath(pluginPath ...string) GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.pluginPath = pluginPath
@@ -168,8 +169,9 @@ func HandlerWithProtocPath(protocPath string) HandlerOption {
 
 // HandlerWithPluginPath returns a new HandlerOption that sets the path to the plugin binary.
 //
-// The default is to do exec.LookPath on "protoc-gen-" + pluginName.
-// pluginPath is expected to be unnormalized.
+// The default is to do exec.LookPath on "protoc-gen-" + pluginName. pluginPath is expected
+// to be unnormalized. If the path has more than one element, the first is the plugin binary
+// and the others are optional additional arguments to pass to the binary
 func HandlerWithPluginPath(pluginPath ...string) HandlerOption {
 	return func(handlerOptions *handlerOptions) {
 		handlerOptions.pluginPath = pluginPath

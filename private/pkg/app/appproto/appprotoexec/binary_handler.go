@@ -76,7 +76,7 @@ func (h *binaryHandler) Handle(
 		command.RunWithStdout(responseBuffer),
 		command.RunWithStderr(stderrWriteCloser),
 	}
-	if h.pluginArgs != nil {
+	if len(h.pluginArgs) > 0 {
 		runOptions = append(runOptions, command.RunWithArgs(h.pluginArgs...))
 	}
 	if err := h.runner.Run(
