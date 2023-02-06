@@ -124,7 +124,7 @@ func NewHandler(
 	for _, option := range options {
 		option(handlerOptions)
 	}
-	if handlerOptions.pluginPath != nil {
+	if len(handlerOptions.pluginPath) > 0 {
 		pluginPath, err := unsafeLookPath(handlerOptions.pluginPath[0])
 		if err != nil {
 			return nil, err

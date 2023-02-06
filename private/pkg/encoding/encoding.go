@@ -169,26 +169,11 @@ func NewYAMLDecoderNonStrict(reader io.Reader) *yaml.Decoder {
 // used with JSON or YAML fields that need to support both string slices
 // and string literals.
 func InterfaceSliceOrStringToCommaSepString(in interface{}) (string, error) {
-	var opt string
-	switch t := in.(type) {
-	case string:
-		opt = t
-	case []interface{}:
-		opts := make([]string, len(t))
-		for i, elem := range t {
-			s, ok := elem.(string)
-			if !ok {
-				return "", fmt.Errorf("could not convert element %T to a string", elem)
-			}
-			opts[i] = s
-		}
-		opt = strings.Join(opts, ",")
-	case nil:
-		// If the variable is omitted, the value is nil
-	default:
-		return "", fmt.Errorf("unknown type %T for opt", t)
+	values, err := InterfaceSliceOrStringToStringSlice(in)
+	if err != nil {
+		return "", err
 	}
-	return opt, nil
+	return strings.Join(values, ","), nil
 }
 
 func InterfaceSliceOrStringToStringSlice(in interface{}) ([]string, error) {
