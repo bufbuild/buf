@@ -60,9 +60,9 @@ func NewCommand(
 
 Examples:
 
-    $ buf export <source> --output=<output-dir>
+Export proto files in <source> to an output directory.
 
-The output will be a directory with all of the .proto files in the <source>.
+    $ buf export <source> --output=<output-dir>
 
 Export current directory to another local directory. 
 
