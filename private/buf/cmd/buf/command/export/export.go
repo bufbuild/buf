@@ -54,17 +54,15 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
-		Short: "Export the files from the input location to an output location.",
-		Long: bufcli.GetInputLong(`the source or module to export`) + `
+		Use:   name + " <source>",
+		Short: "Export the files from the source location to an output location.",
+		Long: bufcli.GetSourceOrModuleLong(`the source or module to export`) + `
 
 Examples:
 
-    $ buf export <input> --output=<output-dir>
+Export proto files in <source> to an output directory.
 
-input can be of the format [dir,git,mod,protofile,tar,targz,zip].
-
-output will be a directory with all of the .proto files in the <input>.
+    $ buf export <source> --output=<output-dir>
 
 Export current directory to another local directory. 
 
