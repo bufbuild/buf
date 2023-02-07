@@ -86,7 +86,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <url>",
-		Short: "Invoke an RPC endpoint, a la 'cURL'.",
+		Short: "Invoke an RPC endpoint, a la 'cURL'",
 		Long: `This command helps you invoke HTTP RPC endpoints on a server that uses gRPC or Connect.
 
 By default, server reflection is used, unless the --reflect flag is set to false. Without server

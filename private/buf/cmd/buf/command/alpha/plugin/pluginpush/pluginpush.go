@@ -65,7 +65,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
-		Short: "Push a plugin to a registry.",
+		Short: "Push a plugin to a registry",
 		Long:  bufcli.GetSourceDirLong(`the source to push (directory containing buf.plugin.yaml or plugin release zip)`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(

@@ -51,7 +51,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Build all Protobuf files from the specified input and output a Buf image.",
+		Short: "Build all Protobuf files from the specified input and output a Buf image",
 		Long:  bufcli.GetInputLong(`the source or module to build or image to convert`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(

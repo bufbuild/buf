@@ -54,7 +54,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Generate stubs for protoc plugins using a template.",
+		Short: "Generate stubs for protoc plugins using a template",
 		Long: `This command uses a template file of the shape:
 
     # buf.gen.yaml

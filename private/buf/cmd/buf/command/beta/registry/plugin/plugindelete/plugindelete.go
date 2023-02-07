@@ -41,7 +41,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/" + internal.PluginsPathName + "/plugin>",
-		Short: "Delete a Protobuf plugin by name.",
+		Short: "Delete a Protobuf plugin by name",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

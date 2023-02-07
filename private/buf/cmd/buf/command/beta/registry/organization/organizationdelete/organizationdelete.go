@@ -40,7 +40,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/organization>",
-		Short: "Delete an organization by name on the BSR.",
+		Short: "Delete an organization by name on the BSR",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

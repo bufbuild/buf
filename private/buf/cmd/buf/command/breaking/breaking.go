@@ -53,7 +53,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input> --against <against-input>",
-		Short: "Verify that the input location has no breaking changes compared to the against location.",
+		Short: "Verify that the input location has no breaking changes compared to the against location",
 		Long:  bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
