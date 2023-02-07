@@ -70,15 +70,15 @@ Export current directory to another local directory.
 
 Export the latest remote module to a local directory.
 
-    $ buf export buf.build/<owner>/<repo> --output=<output-dir>
+    $ buf export <buf.build/owner/repository> --output=<output-dir>
 
 Export a specific version of a remote module to a local directory.
 
-    $ buf export buf.build/<owner>/<repo>:<version> --output=<output-dir>
+    $ buf export <buf.build/owner/repository:ref> --output=<output-dir>
 
 Export a git repo to a local directory.
 
-    $ buf export https://<git-server>/<owner>/<repo>.git --output=<output-dir>
+    $ buf export https://github.com/owner/repository.git --output=<output-dir>
 `,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(

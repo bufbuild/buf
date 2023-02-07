@@ -66,23 +66,20 @@ func NewCommand(
 		Use:   name + " <input>",
 		Short: "Format all Protobuf files from the specified input and output the result.",
 		Long: `
-By default, the input is the current directory and the formatted content is written to stdout. For example,
+By default, the input is the current directory and the formatted content is written to stdout.
 
-Write the current directory's formatted content to stdout
+Examples:
+
+Write the current directory's formatted content to stdout:
 
     $ buf format
 
-Rewrite the file(s) in-place with -w. For example,
-
-Rewrite the files defined in the current directory in-place
+Most people will want to rewrite the files defined in the current directory in-place with "-w":
 
     $ buf format -w
 
-Most people will want to use 'buf format -w'.
-
-Display a diff between the original and formatted content with -d. For example,
-
-Write a diff instead of the formatted file
+Display a diff between the original and formatted content with "-d".
+Write a diff instead of the formatted file:
     
     $ buf format simple/simple.proto -d
     
@@ -101,15 +98,14 @@ Write a diff instead of the formatted file
     +  bytes value = 2;
      }
 
-You can also use the --exit-code flag to exit with a non-zero exit code if there is a diff:
+Use the --exit-code flag to exit with a non-zero exit code if there is a diff:
 
     $ buf format --exit-code
     $ buf format -w --exit-code
     $ buf format -d --exit-code
 
-Format a file, directory, or module reference by specifying an input. For example,
-
-Write the formatted file to stdout
+Format a file, directory, or module reference by specifying an input e.g.
+Write the formatted file to stdout:
     
     $ buf format simple/simple.proto
     
@@ -122,41 +118,41 @@ Write the formatted file to stdout
       bytes value = 2;
     }
 
-Write the formatted directory to stdout
+Write the formatted directory to stdout:
 
     $ buf format simple
     ...
 
-Write the formatted module reference to stdout
+Write the formatted module reference to stdout:
 
     $ buf format buf.build/acme/petapis
     ...
 
-Write the result to a specified output file or directory with -o. For example,
+Write the result to a specified output file or directory with "-o" e.g.
 
-Write the formatted file to another file
+Write the formatted file to another file:
 
     $ buf format simple/simple.proto -o simple/simple.formatted.proto
 
-Write the formatted directory to another directory, creating it if it doesn't exist
+Write the formatted directory to another directory, creating it if it doesn't exist:
 
     $ buf format proto -o formatted
 
-This also works with module references
+This also works with module references:
 
     $ buf format buf.build/acme/weather -o formatted
 
-Rewrite the file(s) in-place with -w. For example,
+Rewrite the file(s) in-place with "-w". e.g.
 
-Rewrite a single file in-place
+Rewrite a single file in-place:
 
     $ buf format simple.proto -w
 
-Rewrite an entire directory in-place
+Rewrite an entire directory in-place:
 
     $ buf format proto -w
 
-Write a diff and rewrite the file(s) in-place
+Write a diff and rewrite the file(s) in-place:
 
     $ buf format simple -d -w
 

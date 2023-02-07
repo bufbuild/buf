@@ -215,7 +215,7 @@ func BindPaths(
 		pathsAddr,
 		pathsFlagName,
 		nil,
-		`Limit to specific files or directories, for example "proto/a/a.proto" or "proto/a".
+		`Limit to specific files or directories, e.g. "proto/a/a.proto", "proto/a".
 If specified multiple times, the union is taken.`,
 	)
 }
@@ -246,7 +246,7 @@ func BindExcludePaths(
 		excludePathsAddr,
 		excludePathsFlagName,
 		nil,
-		`Exclude specific files or directories, for example "proto/a/a.proto" or "proto/a".
+		`Exclude specific files or directories, e.g. "proto/a/a.proto", "proto/a".
 If specified multiple times, the union is taken.`,
 	)
 }
