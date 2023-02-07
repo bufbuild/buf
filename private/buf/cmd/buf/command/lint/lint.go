@@ -85,7 +85,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors or check violations printed to stdout. Must be one of %s.",
+			"The format for build errors or check violations printed to stdout. Must be one of %s",
 			stringutil.SliceToString(buflint.AllFormatStrings),
 		),
 	)
@@ -93,7 +93,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 }
 

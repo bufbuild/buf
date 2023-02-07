@@ -94,7 +94,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors or check violations printed to stdout. Must be one of %s.",
+			"The format for build errors or check violations printed to stdout. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -111,7 +111,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			`Only run breaking checks against the files in the input.
 When set, the against input contains only the files in the input.
-Overrides --%s.`,
+Overrides --%s`,
 			pathsFlagName,
 		),
 	)
@@ -119,14 +119,14 @@ Overrides --%s.`,
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 	flagSet.StringVar(
 		&f.Against,
 		againstFlagName,
 		"",
 		fmt.Sprintf(
-			`Required. The source, module, or image to check against. Must be one of format %s.`,
+			`Required. The source, module, or image to check against. Must be one of format %s`,
 			buffetch.AllFormatsString,
 		),
 	)
@@ -134,7 +134,7 @@ Overrides --%s.`,
 		&f.AgainstConfig,
 		againstConfigFlagName,
 		"",
-		`The file or data to use to configure the against source, module, or image.`,
+		`The file or data to use to configure the against source, module, or image`,
 	)
 }
 

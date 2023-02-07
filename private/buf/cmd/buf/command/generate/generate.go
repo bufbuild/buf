@@ -219,14 +219,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.IncludeImports,
 		includeImportsFlagName,
 		false,
-		"Also generate all imports except for Well-Known Types.",
+		"Also generate all imports except for Well-Known Types",
 	)
 	flagSet.BoolVar(
 		&f.IncludeWKT,
 		includeWKTFlagName,
 		false,
 		fmt.Sprintf(
-			"Also generate Well-Known Types. Cannot be set without --%s.",
+			"Also generate Well-Known Types. Cannot be set without --%s",
 			includeImportsFlagName,
 		),
 	)
@@ -234,21 +234,21 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Template,
 		templateFlagName,
 		"",
-		`The generation template file or data to use. Must be in either YAML or JSON format.`,
+		`The generation template file or data to use. Must be in either YAML or JSON format`,
 	)
 	flagSet.StringVarP(
 		&f.BaseOutDirPath,
 		baseOutDirPathFlagName,
 		baseOutDirPathFlagShortName,
 		".",
-		`The base directory to generate to. This is prepended to the out directories in the generation template.`,
+		`The base directory to generate to. This is prepended to the out directories in the generation template`,
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors, printed to stderr. Must be one of %s.",
+			"The format for build errors, printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -256,7 +256,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 	flagSet.StringSliceVar(
 		&f.IncludeTypes,

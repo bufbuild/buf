@@ -110,7 +110,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -125,7 +125,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fromFlagName,
 		"-",
 		fmt.Sprintf(
-			`The location of the payload to be converted. Supported formats are %s.`,
+			`The location of the payload to be converted. Supported formats are %s`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)
@@ -134,7 +134,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagName,
 		"-",
 		fmt.Sprintf(
-			`The output location of the conversion. Supported formats are %s.`,
+			`The output location of the conversion. Supported formats are %s`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)

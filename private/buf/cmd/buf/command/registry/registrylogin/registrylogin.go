@@ -75,13 +75,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Username,
 		usernameFlagName,
 		"",
-		"The username to use. This command prompts for a username by default.",
+		"The username to use. This command prompts for a username by default",
 	)
 	flagSet.BoolVar(
 		&f.TokenStdin,
 		tokenStdinFlagName,
 		false,
-		"Read the token from stdin. This command prompts for a token by default.",
+		"Read the token from stdin. This command prompts for a token by default",
 	)
 }
 

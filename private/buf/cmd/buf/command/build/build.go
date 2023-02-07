@@ -96,7 +96,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -106,7 +106,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagShortName,
 		app.DevNullFilePath,
 		fmt.Sprintf(
-			`The output location for the built image. Must be one of format %s.`,
+			`The output location for the built image. Must be one of format %s`,
 			buffetch.ImageFormatsString,
 		),
 	)
@@ -114,13 +114,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use to use for configuration.`,
+		`The file or data to use to use for configuration`,
 	)
 	flagSet.StringSliceVar(
 		&f.Types,
 		"type",
 		nil,
-		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types.",
+		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types",
 	)
 }
 

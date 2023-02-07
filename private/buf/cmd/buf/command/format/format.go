@@ -200,27 +200,27 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		diffFlagName,
 		diffFlagShortName,
 		false,
-		"Display diffs instead of rewriting files.",
+		"Display diffs instead of rewriting files",
 	)
 	flagSet.BoolVar(
 		&f.ExitCode,
 		exitCodeFlagName,
 		false,
-		"Exit with a non-zero exit code if files were not already formatted.",
+		"Exit with a non-zero exit code if files were not already formatted",
 	)
 	flagSet.BoolVarP(
 		&f.Write,
 		writeFlagName,
 		writeFlagShortName,
 		false,
-		"Rewrite files in-place.",
+		"Rewrite files in-place",
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -230,7 +230,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagShortName,
 		"-",
 		fmt.Sprintf(
-			`The output location for the formatted files. Must be one of format %s. If omitted, the result is written to stdout.`,
+			`The output location for the formatted files. Must be one of format %s. If omitted, the result is written to stdout`,
 			buffetch.SourceFormatsString,
 		),
 	)
@@ -238,7 +238,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 }
 

@@ -44,7 +44,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: fmt.Sprintf("Initializes and writes a new %s configuration file.", bufconfig.ExternalConfigV1FilePath),
+		Short: fmt.Sprintf("Initializes and writes a new %s configuration file", bufconfig.ExternalConfigV1FilePath),
 		Args:  cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -74,20 +74,20 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.DocumentationComments,
 		documentationCommentsFlagName,
 		false,
-		"Write inline documentation in the form of comments in the resulting configuration file.",
+		"Write inline documentation in the form of comments in the resulting configuration file",
 	)
 	flagSet.StringVarP(
 		&f.OutDirPath,
 		outDirPathFlagName,
 		outDirPathFlagShortName,
 		".",
-		`The directory to write the configuration file to.`,
+		`The directory to write the configuration file to`,
 	)
 	flagSet.BoolVar(
 		&f.Uncomment,
 		uncommentFlagName,
 		false,
-		"Uncomment examples in the resulting configuration file.",
+		"Uncomment examples in the resulting configuration file",
 	)
 	_ = flagSet.MarkHidden(uncommentFlagName)
 }
