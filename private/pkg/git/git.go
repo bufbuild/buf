@@ -16,6 +16,7 @@ package git
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -126,13 +127,9 @@ func NewLister(runner command.Runner) Lister {
 
 // ListFilesAndUnstagedFilesOptions are options for ListFilesAndUnstagedFiles.
 type ListFilesAndUnstagedFilesOptions struct {
-	// IgnorePaths are paths to ignore.
+	// IgnorePathRegexps are regexes of paths to ignore.
 	//
-	// A simple substring operation is done, this is not a regex.
-	// If this string appears as part of the path, the path will be ignored.
-	// These paths will be unnormalized as part of ListFilesAndUnstagedFiles.
-	//
-	// We could later make this regular expressions if we want to v1.0 any tools
-	// based on this, but keeping it simple for now.
-	IgnorePaths []string
+	// These must be unnormalized in the manner of the local OS that the Lister
+	// is being applied to.
+	IgnorePathRegexps []*regexp.Regexp
 }
