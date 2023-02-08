@@ -215,8 +215,8 @@ func BindPaths(
 		pathsAddr,
 		pathsFlagName,
 		nil,
-		`Limit to specific files or directories, e.g. "proto/a/a.proto", "proto/a".
-If specified multiple times, the union is taken.`,
+		`Limit to specific files or directories, e.g. "proto/a/a.proto", "proto/a"
+If specified multiple times, the union is taken`,
 	)
 }
 
@@ -246,8 +246,8 @@ func BindExcludePaths(
 		excludePathsAddr,
 		excludePathsFlagName,
 		nil,
-		`Exclude specific files or directories, e.g. "proto/a/a.proto", "proto/a".
-If specified multiple times, the union is taken.`,
+		`Exclude specific files or directories, e.g. "proto/a/a.proto", "proto/a"
+If specified multiple times, the union is taken`,
 	)
 }
 
@@ -257,8 +257,8 @@ func BindDisableSymlinks(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 		addr,
 		flagName,
 		false,
-		`Do not follow symlinks when reading sources or configuration from the local filesystem.
-By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry.`,
+		`Do not follow symlinks when reading sources or configuration from the local filesystem
+By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry`,
 	)
 }
 

@@ -361,7 +361,7 @@ one is provided`,
 		userAgentFlagName,
 		"A",
 		"",
-		`The user agent string to send.`,
+		`The user agent string to send`,
 	)
 	flagSet.StringSliceVarP(
 		&f.Headers,

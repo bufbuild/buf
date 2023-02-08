@@ -320,7 +320,7 @@ func commandToCobra(
 			&doVersion,
 			"version",
 			false,
-			"Print the version.",
+			"Print the version",
 		)
 		cobraCommand.Run = func(cmd *cobra.Command, args []string) {
 			if doVersion {

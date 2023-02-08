@@ -105,7 +105,7 @@ func NewRootCommand(name string) *appcmd.Command {
 	return &appcmd.Command{
 		Use:                 name,
 		Short:               "The Buf CLI",
-		Long:                "A tool for working with Protocol Buffers and managing resources on the Buf Schema Registry (BSR).",
+		Long:                "A tool for working with Protocol Buffers and managing resources on the Buf Schema Registry (BSR)",
 		Version:             bufcli.Version,
 		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		SubCommands: []*appcmd.Command{
@@ -248,7 +248,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			},
 			{
 				Use:    "alpha",
-				Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted.",
+				Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted",
 				Hidden: true,
 				SubCommands: []*appcmd.Command{
 					protoc.NewCommand("protoc", builder),

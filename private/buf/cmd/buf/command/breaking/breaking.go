@@ -109,8 +109,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		limitToInputFilesFlagName,
 		false,
 		fmt.Sprintf(
-			`Only run breaking checks against the files in the input.
-When set, the against input contains only the files in the input.
+			`Only run breaking checks against the files in the input
+When set, the against input contains only the files in the input
 Overrides --%s`,
 			pathsFlagName,
 		),

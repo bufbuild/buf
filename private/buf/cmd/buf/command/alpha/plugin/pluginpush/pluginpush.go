@@ -103,7 +103,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -111,13 +111,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.OverrideRemote,
 		overrideRemoteFlagName,
 		"",
-		"Override the default remote found in buf.plugin.yaml name and dependencies.",
+		"Override the default remote found in buf.plugin.yaml name and dependencies",
 	)
 	flagSet.StringVar(
 		&f.Image,
 		imageFlagName,
 		"",
-		"Existing image to push.",
+		"Existing image to push",
 	)
 }
 

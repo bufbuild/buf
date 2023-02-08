@@ -75,35 +75,35 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.WebhookEvent,
 		webhookEventFlagName,
 		"",
-		"The event type to create a webhook for. The proto enum string value is used for this input (e.g. 'WEBHOOK_EVENT_REPOSITORY_PUSH').",
+		"The event type to create a webhook for. The proto enum string value is used for this input (e.g. 'WEBHOOK_EVENT_REPOSITORY_PUSH')",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, webhookEventFlagName)
 	flagSet.StringVar(
 		&f.OwnerName,
 		ownerFlagName,
 		"",
-		`The owner name of the repository to create a webhook for.`,
+		`The owner name of the repository to create a webhook for`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, ownerFlagName)
 	flagSet.StringVar(
 		&f.RepositoryName,
 		repositoryFlagName,
 		"",
-		"The repository name to create a webhook for.",
+		"The repository name to create a webhook for",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, repositoryFlagName)
 	flagSet.StringVar(
 		&f.CallbackURL,
 		callbackURLFlagName,
 		"",
-		"The url for the webhook to callback to on a given event.",
+		"The url for the webhook to callback to on a given event",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, callbackURLFlagName)
 	flagSet.StringVar(
 		&f.Remote,
 		remoteFlagName,
 		"",
-		"The remote of the repository the created webhook will belong to.",
+		"The remote of the repository the created webhook will belong to",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
 }

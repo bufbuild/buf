@@ -68,13 +68,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Force,
 		forceFlagName,
 		false,
-		"Force deletion without confirming. Use with caution.",
+		"Force deletion without confirming. Use with caution",
 	)
 	flagSet.StringVar(
 		&f.TokenID,
 		tokenIDFlagName,
 		"",
-		"The ID of the token to delete.",
+		"The ID of the token to delete",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, tokenIDFlagName)
 }

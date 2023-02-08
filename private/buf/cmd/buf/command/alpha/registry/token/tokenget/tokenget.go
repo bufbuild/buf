@@ -76,7 +76,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.TokenID,
 		tokenIDFlagName,
 		"",
-		"The ID of the token to get.",
+		"The ID of the token to get",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, tokenIDFlagName)
 }
