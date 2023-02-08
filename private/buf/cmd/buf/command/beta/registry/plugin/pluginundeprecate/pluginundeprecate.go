@@ -35,7 +35,7 @@ func NewCommand(
 ) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/" + bufremoteplugin.PluginsPathName + "/plugin>",
-		Short: "Undeprecate a plugin by name",
+		Short: "Undeprecate a plugin",
 		Args:  cobra.ExactArgs(1),
 		Run:   builder.NewRunFunc(run, bufcli.NewErrorInterceptor()),
 	}

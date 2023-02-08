@@ -48,7 +48,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Verify that the input location passes lint checks",
+		Short: "Run linting on Protobuf files",
 		Long:  bufcli.GetInputLong(`the source, module, or Image to lint`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(

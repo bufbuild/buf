@@ -35,7 +35,7 @@ func NewCommand(
 ) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/" + bufremoteplugin.TemplatesPathName + "/template>",
-		Short: "Undeprecate a template by name",
+		Short: "Undeprecate a template",
 		Args:  cobra.ExactArgs(1),
 		Run:   builder.NewRunFunc(run, bufcli.NewErrorInterceptor()),
 	}
