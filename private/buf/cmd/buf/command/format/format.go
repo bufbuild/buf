@@ -63,10 +63,10 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
-		Short: "Format all Protobuf files from the specified input and output the result",
+		Use:   name + " <source>",
+		Short: "Format all Protobuf files from the specified source and output the result",
 		Long: `
-By default, the input is the current directory and the formatted content is written to stdout.
+By default, the source is the current directory and the formatted content is written to stdout.
 
 Examples:
 
@@ -104,7 +104,7 @@ Use the --exit-code flag to exit with a non-zero exit code if there is a diff:
     $ buf format -w --exit-code
     $ buf format -d --exit-code
 
-Format a file, directory, or module reference by specifying an input e.g.
+Format a file, directory, or module reference by specifying a source e.g.
 Write the formatted file to stdout:
     
     $ buf format simple/simple.proto
