@@ -184,7 +184,7 @@ type PluginConfig struct {
 	Path []string
 	// Required
 	Strategy Strategy
-	// Required
+	// Optional
 	ProtocPath string
 }
 

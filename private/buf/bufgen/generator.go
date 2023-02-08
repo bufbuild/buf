@@ -295,12 +295,6 @@ func (g *generator) execLocalPlugin(
 	if err != nil {
 		return nil, err
 	}
-	options := []appprotoexec.GenerateOption{
-		appprotoexec.GenerateWithPluginPath(pluginConfig.Path...),
-	}
-	if pluginConfig.ProtocPath != "" {
-		options = append(options, appprotoexec.GenerateWithProtocPath(pluginConfig.ProtocPath))
-	}
 	response, err := g.appprotoexecGenerator.Generate(
 		ctx,
 		container,
@@ -312,7 +306,8 @@ func (g *generator) execLocalPlugin(
 			includeImports,
 			includeWellKnownTypes,
 		),
-		options...,
+		appprotoexec.GenerateWithPluginPath(pluginConfig.Path...),
+		appprotoexec.GenerateWithProtocPath(pluginConfig.ProtocPath),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s: %v", pluginConfig.PluginName(), err)
