@@ -91,16 +91,10 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
 		Maven: &bufpluginconfig.MavenRegistryConfig{
-			Deps: []*bufpluginconfig.MavenRegistryDependencyConfig{
-				{
-					GAV: "io.grpc:grpc-core:1.52.1",
-				},
-				{
-					GAV: "io.grpc:grpc-protobuf:1.52.1",
-				},
-				{
-					GAV: "io.grpc:grpc-stub:1.52.1",
-				},
+			Deps: []string{
+				"io.grpc:grpc-core:1.52.1",
+				"io.grpc:grpc-protobuf:1.52.1",
+				"io.grpc:grpc-stub:1.52.1",
 			},
 		},
 	})

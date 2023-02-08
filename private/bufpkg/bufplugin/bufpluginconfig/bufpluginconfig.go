@@ -133,14 +133,10 @@ type NPMRegistryDependencyConfig struct {
 
 // MavenRegistryConfig is the registry configuration for a Maven plugin.
 type MavenRegistryConfig struct {
-	Deps []*MavenRegistryDependencyConfig
-}
-
-// MavenRegistryDependencyConfig is the maven registry dependency configuration.
-type MavenRegistryDependencyConfig struct {
-	// GAV is the groupId:artifactId:version of the dependency.
+	// Deps is a slice of GAV strings.
+	// A GAV is the groupId:artifactId:version of the dependency.
 	// See https://maven.apache.org/repositories/artifacts.html for more information.
-	GAV string
+	Deps []string
 }
 
 // ConfigOption is an optional option used when loading a Config.
@@ -297,9 +293,7 @@ type ExternalNPMRegistryConfig struct {
 
 // ExternalMavenRegistryConfig is the external registry configuration for a Maven plugin.
 type ExternalMavenRegistryConfig struct {
-	Deps []struct {
-		GAV string `json:"gav,omitempty" yaml:"gav,omitempty"`
-	} `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Deps []string `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 
 type externalConfigVersion struct {

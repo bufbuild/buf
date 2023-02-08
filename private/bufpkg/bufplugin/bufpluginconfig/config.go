@@ -217,17 +217,12 @@ func newMavenRegistryConfig(externalMavenRegistryConfig *ExternalMavenRegistryCo
 	if externalMavenRegistryConfig == nil {
 		return nil, nil
 	}
-	var dependencies []*MavenRegistryDependencyConfig
+	var dependencies []string
 	for _, dep := range externalMavenRegistryConfig.Deps {
-		if dep.GAV == "" {
-			return nil, errors.New("maven runtime dependency requires a non-empty gav")
+		if dep == "" {
+			return nil, errors.New("maven runtime dependency is required to be non-empty")
 		}
-		dependencies = append(
-			dependencies,
-			&MavenRegistryDependencyConfig{
-				GAV: dep.GAV,
-			},
-		)
+		dependencies = append(dependencies, dep)
 	}
 	return &MavenRegistryConfig{
 		Deps: dependencies,

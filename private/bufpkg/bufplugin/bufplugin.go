@@ -147,8 +147,10 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 		mavenConfig := &registryv1alpha1.MavenConfig{}
 		if pluginRegistry.Maven.Deps != nil {
 			mavenConfig.RuntimeLibraries = make([]*registryv1alpha1.MavenConfig_RuntimeLibrary, 0, len(pluginRegistry.Maven.Deps))
-			for _, dependency := range pluginRegistry.Maven.Deps {
-				mavenConfig.RuntimeLibraries = append(mavenConfig.RuntimeLibraries, mavenRuntimeDependencyToProtoMavenRuntimeLibrary(dependency))
+			for _, gav := range pluginRegistry.Maven.Deps {
+				mavenConfig.RuntimeLibraries = append(mavenConfig.RuntimeLibraries, &registryv1alpha1.MavenConfig_RuntimeLibrary{
+					Gav: gav,
+				})
 			}
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_MavenConfig{MavenConfig: mavenConfig}
@@ -196,9 +198,9 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 		mavenConfig := &bufpluginconfig.MavenRegistryConfig{}
 		runtimeLibraries := config.GetMavenConfig().GetRuntimeLibraries()
 		if runtimeLibraries != nil {
-			mavenConfig.Deps = make([]*bufpluginconfig.MavenRegistryDependencyConfig, 0, len(runtimeLibraries))
+			mavenConfig.Deps = make([]string, 0, len(runtimeLibraries))
 			for _, library := range runtimeLibraries {
-				mavenConfig.Deps = append(mavenConfig.Deps, protoMavenRuntimeLibraryToMavenRuntimeDependency(library))
+				mavenConfig.Deps = append(mavenConfig.Deps, library.Gav)
 			}
 		}
 		registryConfig.Maven = mavenConfig
@@ -255,20 +257,6 @@ func protoNPMRuntimeLibraryToNPMRuntimeDependency(config *registryv1alpha1.NPMCo
 	return &bufpluginconfig.NPMRegistryDependencyConfig{
 		Package: config.Package,
 		Version: config.Version,
-	}
-}
-
-// mavenRuntimeDependencyToProtoMavenRuntimeLibrary converts a bufpluginconfig.MavenRegistryDependencyConfig to a registryv1alpha1.MavenConfig_RuntimeLibrary.
-func mavenRuntimeDependencyToProtoMavenRuntimeLibrary(config *bufpluginconfig.MavenRegistryDependencyConfig) *registryv1alpha1.MavenConfig_RuntimeLibrary {
-	return &registryv1alpha1.MavenConfig_RuntimeLibrary{
-		Gav: config.GAV,
-	}
-}
-
-// protoMavenRuntimeLibraryToMavenRuntimeDependency converts a registryv1alpha1.MavenConfig_RuntimeLibrary to a bufpluginconfig.MavenRegistryDependencyConfig.
-func protoMavenRuntimeLibraryToMavenRuntimeDependency(config *registryv1alpha1.MavenConfig_RuntimeLibrary) *bufpluginconfig.MavenRegistryDependencyConfig {
-	return &bufpluginconfig.MavenRegistryDependencyConfig{
-		GAV: config.Gav,
 	}
 }
 

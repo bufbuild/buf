@@ -5,7 +5,7 @@ output_languages: [java]
 registry:
   maven:
     deps:
-      - gav: "io.grpc:grpc-core:1.52.1"
-      - gav: "io.grpc:grpc-protobuf:1.52.1"
-      - gav: "io.grpc:grpc-stub:1.52.1"
+      - "io.grpc:grpc-core:1.52.1"
+      - "io.grpc:grpc-protobuf:1.52.1"
+      - "io.grpc:grpc-stub:1.52.1"
 spdx_license_id: bsd-3-clause

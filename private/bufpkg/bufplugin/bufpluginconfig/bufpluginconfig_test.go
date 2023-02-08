@@ -172,16 +172,10 @@ func TestParsePluginConfigMavenYAML(t *testing.T) {
 			OutputLanguages: []string{"java"},
 			Registry: &RegistryConfig{
 				Maven: &MavenRegistryConfig{
-					Deps: []*MavenRegistryDependencyConfig{
-						{
-							GAV: "io.grpc:grpc-core:1.52.1",
-						},
-						{
-							GAV: "io.grpc:grpc-protobuf:1.52.1",
-						},
-						{
-							GAV: "io.grpc:grpc-stub:1.52.1",
-						},
+					Deps: []string{
+						"io.grpc:grpc-core:1.52.1",
+						"io.grpc:grpc-protobuf:1.52.1",
+						"io.grpc:grpc-stub:1.52.1",
 					},
 				},
 			},
