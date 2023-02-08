@@ -64,7 +64,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Message,
 		messageFlagName,
 		"",
-		`The message to display with deprecation warnings.`,
+		`The message to display with deprecation warnings`,
 	)
 }
 

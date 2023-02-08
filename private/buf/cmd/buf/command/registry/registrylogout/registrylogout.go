@@ -37,7 +37,7 @@ func NewCommand(
 		// Not documenting the first arg (remote) as this is just for testing for now.
 		// TODO: Update when we have self-hosted.
 		Use:   name,
-		Short: `Log out of the Buf Schema Registry.`,
+		Short: `Log out of the Buf Schema Registry`,
 		Long:  fmt.Sprintf(`This command removes any BSR credentials from your %s file`, netrc.Filename),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(

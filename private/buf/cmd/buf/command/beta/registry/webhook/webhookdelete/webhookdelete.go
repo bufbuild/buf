@@ -67,14 +67,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.WebhookID,
 		webhookIDFlagName,
 		"",
-		"The webhook ID to delete.",
+		"The webhook ID to delete",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, webhookIDFlagName)
 	flagSet.StringVar(
 		&f.Remote,
 		remoteFlagName,
 		"",
-		"The remote of the repository the webhook ID belongs to.",
+		"The remote of the repository the webhook ID belongs to",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
 }

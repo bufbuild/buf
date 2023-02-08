@@ -78,12 +78,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(&f.PageToken,
 		pageTokenFlagName,
 		"",
-		`The page token. If more results are available, a "next_page" key is present in the --format=json output.`,
+		`The page token. If more results are available, a "next_page" key is present in the --format=json output`,
 	)
 	flagSet.BoolVar(&f.Reverse,
 		reverseFlagName,
 		false,
-		`Reverse the results.`,
+		`Reverse the results`,
 	)
 	flagSet.StringVar(
 		&f.Format,

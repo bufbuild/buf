@@ -79,7 +79,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Visibility,
 		visibilityFlagName,
 		"",
-		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
 	flagSet.StringVar(

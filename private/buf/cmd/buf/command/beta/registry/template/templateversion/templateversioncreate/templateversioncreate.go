@@ -72,7 +72,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		"The template file or data to use for configuration. Must be in either YAML or JSON format.",
+		"The template file or data to use for configuration. Must be in either YAML or JSON format",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, configFlagName)
 	flagSet.StringVar(

@@ -70,7 +70,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.OwnerName,
 		ownerFlagName,
 		"",
-		`The owner name of the repository to list webhooks for.`,
+		`The owner name of the repository to list webhooks for`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, ownerFlagName)
 	flagSet.StringVar(
@@ -84,7 +84,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Remote,
 		remoteFlagName,
 		"",
-		"The remote of the owner and repository to list webhooks for.",
+		"The remote of the owner and repository to list webhooks for",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
 }

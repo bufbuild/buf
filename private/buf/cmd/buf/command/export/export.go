@@ -118,14 +118,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagName,
 		outputFlagShortName,
 		"",
-		`The output directory for exported files.`,
+		`The output directory for exported files`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, outputFlagName)
 	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 }
 

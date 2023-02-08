@@ -65,7 +65,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Force,
 		forceFlagName,
 		false,
-		"Force deletion without confirming. Use with caution.",
+		"Force deletion without confirming. Use with caution",
 	)
 }
 

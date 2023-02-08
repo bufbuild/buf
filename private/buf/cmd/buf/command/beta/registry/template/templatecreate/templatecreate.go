@@ -81,14 +81,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The template file or data to use for configuration. Must be in either YAML or JSON format.`,
+		`The template file or data to use for configuration. Must be in either YAML or JSON format`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, configFlagName)
 	flagSet.StringVar(
 		&f.Visibility,
 		visibilityFlagName,
 		"",
-		fmt.Sprintf(`The template's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The template's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
 	flagSet.StringVar(

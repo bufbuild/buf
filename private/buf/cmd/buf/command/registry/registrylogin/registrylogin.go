@@ -47,7 +47,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <domain>",
-		Short: `Log in to the Buf Schema Registry.`,
+		Short: `Log in to the Buf Schema Registry`,
 		Long: fmt.Sprintf(`This prompts for your BSR username and a BSR token and updates your %s file with these credentials.
 The <domain> argument will default to buf.build if not specified.`, netrc.Filename),
 		Args: cobra.MaximumNArgs(1),
