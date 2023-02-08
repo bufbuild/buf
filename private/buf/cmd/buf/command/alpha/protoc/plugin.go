@@ -51,11 +51,16 @@ func executePlugin(
 	pluginName string,
 	pluginInfo *pluginInfo,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	response, err := appprotoexec.NewGenerator(
+	generator := appprotoexec.NewGenerator(
 		logger,
 		storageosProvider,
 		runner,
-	).Generate(
+	)
+	var options []appprotoexec.GenerateOption
+	if pluginInfo.Path != "" {
+		options = append(options, appprotoexec.GenerateWithPluginPath(pluginInfo.Path))
+	}
+	response, err := generator.Generate(
 		ctx,
 		container,
 		pluginName,
@@ -66,7 +71,7 @@ func executePlugin(
 			false,
 			false,
 		),
-		appprotoexec.GenerateWithPluginPath(pluginInfo.Path),
+		options...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("--%s_out: %v", pluginName, err)
