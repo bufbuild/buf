@@ -59,6 +59,7 @@ func (g *generator) Generate(
 		g.runner,
 		pluginName,
 		HandlerWithPluginPath(generateOptions.pluginPath...),
+		HandlerWithProtocPath(generateOptions.protocPath),
 	)
 	if err != nil {
 		return nil, err
@@ -75,6 +76,7 @@ func (g *generator) Generate(
 
 type generateOptions struct {
 	pluginPath []string
+	protocPath string
 }
 
 func newGenerateOptions() *generateOptions {

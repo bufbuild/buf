@@ -148,14 +148,15 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 			return nil, err
 		}
 		pluginConfig := &PluginConfig{
-			Plugin:   plugin.Plugin,
-			Revision: plugin.Revision,
-			Name:     plugin.Name,
-			Remote:   plugin.Remote,
-			Out:      plugin.Out,
-			Opt:      opt,
-			Path:     path,
-			Strategy: strategy,
+			Plugin:     plugin.Plugin,
+			Revision:   plugin.Revision,
+			Name:       plugin.Name,
+			Remote:     plugin.Remote,
+			Out:        plugin.Out,
+			Opt:        opt,
+			Path:       path,
+			ProtocPath: plugin.ProtocPath,
+			Strategy:   strategy,
 		}
 		if pluginConfig.IsRemote() {
 			// Always use StrategyAll for remote plugins
@@ -237,6 +238,9 @@ func checkPathAndStrategyUnset(id string, plugin ExternalPluginConfigV1, pluginI
 	}
 	if plugin.Strategy != "" {
 		return fmt.Errorf("%s: remote plugin %s cannot specify a strategy", id, pluginIdentifier)
+	}
+	if plugin.ProtocPath != "" {
+		return fmt.Errorf("%s: remote plugin %s cannot specify a protoc path", id, pluginIdentifier)
 	}
 	return nil
 }

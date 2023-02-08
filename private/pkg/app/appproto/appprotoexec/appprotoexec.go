@@ -106,6 +106,14 @@ func GenerateWithPluginPath(pluginPath ...string) GenerateOption {
 	}
 }
 
+// GenerateWithProtocPath returns a new GenerateOption that uses the given protoc
+// path to the plugin.
+func GenerateWithProtocPath(protocPath string) GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.protocPath = protocPath
+	}
+}
+
 // NewHandler returns a new Handler based on the plugin name and optional path.
 //
 // protocPath and pluginPath are optional.
