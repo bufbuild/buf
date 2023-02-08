@@ -179,9 +179,9 @@ func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string
 		addr,
 		flagName,
 		false,
-		`Output as a google.protobuf.FileDescriptorSet instead of an image.
+		`Output as a google.protobuf.FileDescriptorSet instead of an image
 Note that images are wire compatible with FileDescriptorSets, but this flag strips
-the additional metadata added for Buf usage.`,
+the additional metadata added for Buf usage`,
 	)
 }
 
@@ -201,7 +201,7 @@ func BindExcludeSourceInfo(flagSet *pflag.FlagSet, addr *bool, flagName string) 
 		addr,
 		flagName,
 		false,
-		"Exclude source info.",
+		"Exclude source info",
 	)
 }
 
