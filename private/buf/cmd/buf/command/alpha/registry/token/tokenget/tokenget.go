@@ -44,7 +44,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build>",
-		Short: "Get a token by ID.",
+		Short: "Get a token by ID",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -76,7 +76,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.TokenID,
 		tokenIDFlagName,
 		"",
-		"The ID of the token to get.",
+		"The ID of the token to get",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, tokenIDFlagName)
 }

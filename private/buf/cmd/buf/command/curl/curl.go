@@ -86,7 +86,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <url>",
-		Short: "Invoke an RPC endpoint, a la 'cURL'.",
+		Short: "Invoke an RPC endpoint, a la 'cURL'",
 		Long: `This command helps you invoke HTTP RPC endpoints on a server that uses gRPC or Connect.
 
 By default, server reflection is used, unless the --reflect flag is set to false. Without server
@@ -228,7 +228,7 @@ server reflection. The format of this argument is the same as for the <input> ar
 other buf sub-commands such as build and generate. It can indicate a directory, a file, a
 remote module in the Buf Schema Registry, or even standard in ("-") for feeding an image or
 file descriptor set to the command in a shell pipeline.
-Setting this flags implies --%s=false.`,
+Setting this flags implies --%s=false`,
 			reflectFlagName,
 		),
 	)
@@ -236,7 +236,7 @@ Setting this flags implies --%s=false.`,
 		&f.Reflect,
 		reflectFlagName,
 		true,
-		`If true, use server reflection to determine the schema.`,
+		`If true, use server reflection to determine the schema`,
 	)
 	flagSet.StringSliceVar(
 		&f.ReflectHeaders,
@@ -250,7 +250,7 @@ flags) should also be included with reflection requests. A special value of '@<p
 means to read headers from the file at <path>. If the path is "-" then headers are
 read from stdin. It is not allowed to indicate a file with the same path as used with
 the request data flag (--data or -d). Furthermore, it is not allowed to indicate stdin
-if the schema is expected to be provided via stdin as a file descriptor set or image.`,
+if the schema is expected to be provided via stdin as a file descriptor set or image`,
 	)
 	flagSet.StringVar(
 		&f.ReflectProtocol,
@@ -264,21 +264,21 @@ and "grpc-v1alpha" is used if it doesn't work. If newer reflection protocols are
 they may be preferred in the absence of this flag being explicitly set to a specific protocol.
 The valid values for this flag are "grpc-v1" and "grpc-v1alpha". These correspond to services
 named "grpc.reflection.v1.ServerReflection" and "grpc.reflection.v1alpha.ServerReflection"
-respectively.`,
+respectively`,
 	)
 
 	flagSet.StringVar(
 		&f.Protocol,
 		protocolFlagName,
 		connect.ProtocolConnect,
-		`The RPC protocol to use. This can be one of "grpc", "grpcweb", or "connect".`,
+		`The RPC protocol to use. This can be one of "grpc", "grpcweb", or "connect"`,
 	)
 	flagSet.StringVar(
 		&f.UnixSocket,
 		unixSocketFlagName,
 		"",
 		`The path to a unix socket that will be used instead of opening a TCP socket to the host
-and port indicated in the URL.`,
+and port indicated in the URL`,
 	)
 	flagSet.BoolVar(
 		&f.HTTP2PriorKnowledge,
@@ -287,7 +287,7 @@ and port indicated in the URL.`,
 		`This flag can be used with URLs that use the http scheme (as opposed to https) to indicate
 that HTTP/2 should be used. Without this, HTTP 1.1 will be used with URLs with an http
 scheme. For https scheme, HTTP/2 will be negotiate during the TLS handshake if the server
-supports it (otherwise HTTP 1.1 is used).`,
+supports it (otherwise HTTP 1.1 is used)`,
 	)
 
 	flagSet.BoolVar(
@@ -295,20 +295,20 @@ supports it (otherwise HTTP 1.1 is used).`,
 		noKeepAliveFlagName,
 		false,
 		`By default, connections are created using TCP keepalive. If this flag is present, they
-will be disabled.`,
+will be disabled`,
 	)
 	flagSet.Float64Var(
 		&f.KeepAliveTimeSeconds,
 		keepAliveFlagName,
 		60,
-		`The duration, in seconds, between TCP keepalive transmissions.`,
+		`The duration, in seconds, between TCP keepalive transmissions`,
 	)
 	flagSet.Float64Var(
 		&f.ConnectTimeoutSeconds,
 		connectTimeoutFlagName,
 		0,
 		`The time limit, in seconds, for a connection to be established with the server. There is
-no limit if this flag is not present.`,
+no limit if this flag is not present`,
 	)
 
 	flagSet.StringVar(
@@ -318,7 +318,7 @@ no limit if this flag is not present.`,
 		`Path to a PEM-encoded X509 private key file, for using client certificates with TLS. This
 option is only valid when the URL uses the https scheme. A --cert flag must also be
 present to provide tha certificate and public key that corresponds to the given
-private key.`,
+private key`,
 	)
 	flagSet.StringVarP(
 		&f.Cert,
@@ -327,7 +327,7 @@ private key.`,
 		"",
 		`Path to a PEM-encoded X509 certificate file, for using client certificates with TLS. This
 option is only valid when the URL uses the https scheme. A --key flag must also be
-present to provide tha private key that corresponds to the given certificate.`,
+present to provide tha private key that corresponds to the given certificate`,
 	)
 	flagSet.StringVar(
 		&f.CACert,
@@ -336,7 +336,7 @@ present to provide tha private key that corresponds to the given certificate.`,
 		`Path to a PEM-encoded X509 certificate pool file that contains the set of trusted
 certificate authorities/issuers. If omitted, the system's default set of trusted
 certificates are used to verify the server's certificate. This option is only valid
-when the URL uses the https scheme. It is not applicable if --insecure flag is used.`,
+when the URL uses the https scheme. It is not applicable if --insecure flag is used`,
 	)
 	flagSet.BoolVarP(
 		&f.Insecure,
@@ -345,7 +345,7 @@ when the URL uses the https scheme. It is not applicable if --insecure flag is u
 		false,
 		`If set, the TLS connection will be insecure and the server's certificate will NOT be
 verified. This is generally discouraged. This option is only valid when the URL uses
-the https scheme.`,
+the https scheme`,
 	)
 	flagSet.StringVar(
 		&f.ServerName,
@@ -353,7 +353,7 @@ the https scheme.`,
 		"",
 		`The server name to use in TLS handshakes (for SNI) if the URL scheme is https. If not
 specified, the default is the origin host in the URL or the value in a "Host" header if
-one is provided.`,
+one is provided`,
 	)
 
 	flagSet.StringVarP(
@@ -361,7 +361,7 @@ one is provided.`,
 		userAgentFlagName,
 		"A",
 		"",
-		`The user agent string to send.`,
+		`The user agent string to send`,
 	)
 	flagSet.StringSliceVarP(
 		&f.Headers,
@@ -374,7 +374,7 @@ A special value of '@<path>' means to read headers from the file at <path>. If t
 is "-" then headers are read from stdin. If the same file is indicated as used with the
 request data flag (--data or -d), the file must contain all headers, then a blank line,
 and then the request body. It is not allowed to indicate stdin if the schema is expected
-to be provided via stdin as a file descriptor set or image.`,
+to be provided via stdin as a file descriptor set or image`,
 	)
 	flagSet.StringVarP(
 		&f.Data,
@@ -387,14 +387,14 @@ message. For unary RPCs, there should be exactly one JSON document. A special va
 request data is read from stdin. If the same file is indicated as used with the request
 headers flags (--header or -H), the file must contain all headers, then a blank line, and
 then the request body. It is not allowed to indicate stdin if the schema is expected to be
-provided via stdin as a file descriptor set or image.`,
+provided via stdin as a file descriptor set or image`,
 	)
 	flagSet.StringVarP(
 		&f.Output,
 		outputFlagName,
 		"o",
 		"",
-		`Path to output file to create with response data. If absent, response is printed to stdout.`,
+		`Path to output file to create with response data. If absent, response is printed to stdout`,
 	)
 }
 

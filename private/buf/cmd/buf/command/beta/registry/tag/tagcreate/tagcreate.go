@@ -41,7 +41,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository:commit> <tag>",
-		Short: "Create a tag for the specified commit.",
+		Short: "Create a tag for the specified commit",
 		Args:  cobra.ExactArgs(2),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -66,7 +66,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Format,
 		formatFlagName,
 		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
+		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
 	)
 }
 

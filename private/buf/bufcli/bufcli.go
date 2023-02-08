@@ -179,9 +179,9 @@ func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string
 		addr,
 		flagName,
 		false,
-		`Output as a google.protobuf.FileDescriptorSet instead of an image.
+		`Output as a google.protobuf.FileDescriptorSet instead of an image
 Note that images are wire compatible with FileDescriptorSets, but this flag strips
-the additional metadata added for Buf usage.`,
+the additional metadata added for Buf usage`,
 	)
 }
 
@@ -201,7 +201,7 @@ func BindExcludeSourceInfo(flagSet *pflag.FlagSet, addr *bool, flagName string) 
 		addr,
 		flagName,
 		false,
-		"Exclude source info.",
+		"Exclude source info",
 	)
 }
 
@@ -215,8 +215,8 @@ func BindPaths(
 		pathsAddr,
 		pathsFlagName,
 		nil,
-		`Limit to specific files or directories, for example "proto/a/a.proto" or "proto/a".
-If specified multiple times, the union is taken.`,
+		`Limit to specific files or directories, e.g. "proto/a/a.proto", "proto/a"
+If specified multiple times, the union is taken`,
 	)
 }
 
@@ -246,8 +246,8 @@ func BindExcludePaths(
 		excludePathsAddr,
 		excludePathsFlagName,
 		nil,
-		`Exclude specific files or directories, for example "proto/a/a.proto" or "proto/a".
-If specified multiple times, the union is taken.`,
+		`Exclude specific files or directories, e.g. "proto/a/a.proto", "proto/a"
+If specified multiple times, the union is taken`,
 	)
 }
 
@@ -257,8 +257,8 @@ func BindDisableSymlinks(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 		addr,
 		flagName,
 		false,
-		`Do not follow symlinks when reading sources or configuration from the local filesystem.
-By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry.`,
+		`Do not follow symlinks when reading sources or configuration from the local filesystem
+By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry`,
 	)
 }
 

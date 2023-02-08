@@ -43,7 +43,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: "List repository webhooks.",
+		Short: "List repository webhooks",
 		Args:  cobra.ExactArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -70,7 +70,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.OwnerName,
 		ownerFlagName,
 		"",
-		`The owner name of the repository to list webhooks for.`,
+		`The owner name of the repository to list webhooks for`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, ownerFlagName)
 	flagSet.StringVar(
@@ -84,7 +84,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Remote,
 		remoteFlagName,
 		"",
-		"The remote of the owner and repository to list webhooks for.",
+		"The remote of the owner and repository to list webhooks for",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
 }

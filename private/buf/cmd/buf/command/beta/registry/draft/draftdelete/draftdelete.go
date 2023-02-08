@@ -40,8 +40,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repo:draft>",
-		Short: "Delete a draft of a BSR repository by name.",
+		Use:   name + " <buf.build/owner/repository:draft>",
+		Short: "Delete a draft of a BSR repository by name",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -66,7 +66,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Force,
 		forceFlagName,
 		false,
-		"Force deletion without confirming. Use with caution.",
+		"Force deletion without confirming. Use with caution",
 	)
 }
 

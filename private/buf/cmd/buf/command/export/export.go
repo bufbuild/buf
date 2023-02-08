@@ -55,7 +55,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
-		Short: "Export the files from the source location to an output location.",
+		Short: "Export the files from the source location to an output location",
 		Long: bufcli.GetSourceOrModuleLong(`the source or module to export`) + `
 
 Examples:
@@ -70,15 +70,15 @@ Export current directory to another local directory.
 
 Export the latest remote module to a local directory.
 
-    $ buf export buf.build/<owner>/<repo> --output=<output-dir>
+    $ buf export <buf.build/owner/repository> --output=<output-dir>
 
 Export a specific version of a remote module to a local directory.
 
-    $ buf export buf.build/<owner>/<repo>:<version> --output=<output-dir>
+    $ buf export <buf.build/owner/repository:ref> --output=<output-dir>
 
 Export a git repo to a local directory.
 
-    $ buf export https://<git-server>/<owner>/<repo>.git --output=<output-dir>
+    $ buf export https://github.com/owner/repository.git --output=<output-dir>
 `,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -118,14 +118,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagName,
 		outputFlagShortName,
 		"",
-		`The output directory for exported files.`,
+		`The output directory for exported files`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, outputFlagName)
 	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 }
 

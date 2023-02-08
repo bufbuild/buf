@@ -48,7 +48,7 @@ func NewCommand(
 	flagsBuilder := newFlagsBuilder()
 	return &appcmd.Command{
 		Use:   name + " <proto_file1> <proto_file2> ...",
-		Short: "High-performance protoc replacement.",
+		Short: "High-performance protoc replacement",
 		Long: `This command replaces protoc using Buf's internal compiler.
 
 The implementation is in progress. Although it outperforms mainline protoc,
