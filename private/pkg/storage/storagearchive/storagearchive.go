@@ -109,15 +109,15 @@ func Untar(
 		if tarHeader.Size < 0 {
 			return fmt.Errorf("invalid size for tar file %s: %d", tarHeader.Name, tarHeader.Size)
 		}
-		if tarHeader.Size > options.maxFileSize {
-			return fmt.Errorf("%w %s:%d", ErrFileSizeLimit, tarHeader.Name, tarHeader.Size)
-		}
 		path, ok, err := unmapArchivePath(tarHeader.Name, mapper, stripComponentCount)
 		if err != nil {
 			return err
 		}
 		if !ok || !tarHeader.FileInfo().Mode().IsRegular() {
 			continue
+		}
+		if tarHeader.Size > options.maxFileSize {
+			return fmt.Errorf("%w %s:%d", ErrFileSizeLimit, tarHeader.Name, tarHeader.Size)
 		}
 		if err := storage.CopyReader(ctx, writeBucket, tarReader, path); err != nil {
 			return err
