@@ -138,9 +138,9 @@ type MavenRegistryConfig struct {
 
 // MavenRegistryDependencyConfig is the maven registry dependency configuration.
 type MavenRegistryDependencyConfig struct {
-	GroupID    string
-	ArtifactID string
-	Version    string
+	// GAV is the groupId:artifactId:version of the dependency.
+	// See https://maven.apache.org/repositories/artifacts.html for more information.
+	GAV string
 }
 
 // ConfigOption is an optional option used when loading a Config.
@@ -298,9 +298,7 @@ type ExternalNPMRegistryConfig struct {
 // ExternalMavenRegistryConfig is the external registry configuration for a Maven plugin.
 type ExternalMavenRegistryConfig struct {
 	Deps []struct {
-		GroupID    string `json:"group_id,omitempty" yaml:"group_id,omitempty"`
-		ArtifactID string `json:"artifact_id,omitempty" yaml:"artifact_id,omitempty"`
-		Version    string `json:"version,omitempty" yaml:"version,omitempty"`
+		GAV string `json:"gav,omitempty" yaml:"gav,omitempty"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 

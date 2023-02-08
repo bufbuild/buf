@@ -174,19 +174,13 @@ func TestParsePluginConfigMavenYAML(t *testing.T) {
 				Maven: &MavenRegistryConfig{
 					Deps: []*MavenRegistryDependencyConfig{
 						{
-							GroupID:    "io.grpc",
-							ArtifactID: "grpc-core",
-							Version:    "1.52.1",
+							GAV: "io.grpc:grpc-core:1.52.1",
 						},
 						{
-							GroupID:    "io.grpc",
-							ArtifactID: "grpc-protobuf",
-							Version:    "1.52.1",
+							GAV: "io.grpc:grpc-protobuf:1.52.1",
 						},
 						{
-							GroupID:    "io.grpc",
-							ArtifactID: "grpc-stub",
-							Version:    "1.52.1",
+							GAV: "io.grpc:grpc-stub:1.52.1",
 						},
 					},
 				},

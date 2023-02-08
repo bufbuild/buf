@@ -261,18 +261,14 @@ func protoNPMRuntimeLibraryToNPMRuntimeDependency(config *registryv1alpha1.NPMCo
 // mavenRuntimeDependencyToProtoMavenRuntimeLibrary converts a bufpluginconfig.MavenRegistryDependencyConfig to a registryv1alpha1.MavenConfig_RuntimeLibrary.
 func mavenRuntimeDependencyToProtoMavenRuntimeLibrary(config *bufpluginconfig.MavenRegistryDependencyConfig) *registryv1alpha1.MavenConfig_RuntimeLibrary {
 	return &registryv1alpha1.MavenConfig_RuntimeLibrary{
-		GroupId:    config.GroupID,
-		ArtifactId: config.ArtifactID,
-		Version:    config.Version,
+		Gav: config.GAV,
 	}
 }
 
 // protoMavenRuntimeLibraryToMavenRuntimeDependency converts a registryv1alpha1.MavenConfig_RuntimeLibrary to a bufpluginconfig.MavenRegistryDependencyConfig.
 func protoMavenRuntimeLibraryToMavenRuntimeDependency(config *registryv1alpha1.MavenConfig_RuntimeLibrary) *bufpluginconfig.MavenRegistryDependencyConfig {
 	return &bufpluginconfig.MavenRegistryDependencyConfig{
-		GroupID:    config.GroupId,
-		ArtifactID: config.ArtifactId,
-		Version:    config.Version,
+		GAV: config.Gav,
 	}
 }
 

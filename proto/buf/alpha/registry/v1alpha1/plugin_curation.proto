@@ -98,12 +98,9 @@ message NPMConfig {
 message MavenConfig {
   // RuntimeLibrary describes the runtime library dependency of the generated code.
   message RuntimeLibrary {
-    // The GroupId of the runtime library package, i.e. "com.google.protobuf".
-    string group_id = 1;
-    // The ArtifactId of the runtime library package, i.e. "protobuf-java".
-    string artifact_id = 2;
-    // The version of the runtime library, i.e. "3.21.12".
-    string version = 3;
+    // gav is the GAV (groupId:artifactId:version) of the dependency.
+    // See https://maven.apache.org/repositories/artifacts.html for more information.
+    string gav = 1;
   }
   // Optionally define the runtime libraries for the plugin.
   repeated RuntimeLibrary runtime_libraries = 1;

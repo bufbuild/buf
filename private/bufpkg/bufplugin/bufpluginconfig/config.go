@@ -219,22 +219,13 @@ func newMavenRegistryConfig(externalMavenRegistryConfig *ExternalMavenRegistryCo
 	}
 	var dependencies []*MavenRegistryDependencyConfig
 	for _, dep := range externalMavenRegistryConfig.Deps {
-		if dep.GroupID == "" {
-			return nil, errors.New("maven runtime dependency requires a non-empty group_id")
+		if dep.GAV == "" {
+			return nil, errors.New("maven runtime dependency requires a non-empty gav")
 		}
-		if dep.ArtifactID == "" {
-			return nil, errors.New("maven runtime dependency requires a non-empty artifact_id")
-		}
-		if dep.Version == "" {
-			return nil, errors.New("maven runtime dependency requires a non-empty version name")
-		}
-		// TODO: Should we / can we validate versions?
 		dependencies = append(
 			dependencies,
 			&MavenRegistryDependencyConfig{
-				GroupID:    dep.GroupID,
-				ArtifactID: dep.ArtifactID,
-				Version:    dep.Version,
+				GAV: dep.GAV,
 			},
 		)
 	}

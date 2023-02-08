@@ -5,13 +5,7 @@ output_languages: [java]
 registry:
   maven:
     deps:
-      - group_id: "io.grpc"
-        artifact_id: "grpc-core"
-        version: "1.52.1"
-      - group_id: "io.grpc"
-        artifact_id: "grpc-protobuf"
-        version: "1.52.1"
-      - group_id: "io.grpc"
-        artifact_id: "grpc-stub"
-        version: "1.52.1"
+      - gav: "io.grpc:grpc-core:1.52.1"
+      - gav: "io.grpc:grpc-protobuf:1.52.1"
+      - gav: "io.grpc:grpc-stub:1.52.1"
 spdx_license_id: bsd-3-clause
