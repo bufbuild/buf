@@ -25,6 +25,7 @@ enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_UNSPECIFIED = 0;
   PLUGIN_REGISTRY_TYPE_GO = 1;
   PLUGIN_REGISTRY_TYPE_NPM = 2;
+  PLUGIN_REGISTRY_TYPE_MAVEN = 3;
 }
 
 // PluginLanguage is used to specify the output languages a plugin supports.
@@ -93,14 +94,27 @@ message NPMConfig {
   NPMImportStyle import_style = 3;
 }
 
+// MavenConfig is the configuration for a Maven plugin.
+message MavenConfig {
+  // RuntimeLibrary describes the runtime library dependency of the generated code.
+  message RuntimeLibrary {
+    // gav is the GAV (groupId:artifactId:version) of the dependency.
+    // See https://maven.apache.org/repositories/artifacts.html for more information.
+    string gav = 1;
+  }
+  // Optionally define the runtime libraries for the plugin.
+  repeated RuntimeLibrary runtime_libraries = 1;
+}
+
 // RegistryConfig is the configuration for the remote registry of a plugin.
 message RegistryConfig {
   oneof registry_config {
     GoConfig go_config = 1;
     NPMConfig npm_config = 2;
+    MavenConfig maven_config = 3;
   }
   // Reserved for future remote registry types.
-  reserved 3 to 9;
+  reserved 4 to 9;
   // The options to pass to the plugin. These will
   // be merged into a single, comma-separated string.
   repeated string options = 10;

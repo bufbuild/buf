@@ -85,13 +85,15 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 
 func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*RegistryConfig, error) {
 	var (
-		isGoEmpty  = externalRegistryConfig.Go == nil
-		isNPMEmpty = externalRegistryConfig.NPM == nil
+		isGoEmpty    = externalRegistryConfig.Go == nil
+		isNPMEmpty   = externalRegistryConfig.NPM == nil
+		isMavenEmpty = externalRegistryConfig.Maven == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
 		isGoEmpty,
 		isNPMEmpty,
+		isMavenEmpty,
 	} {
 		if !isEmpty {
 			registryCount++
@@ -114,6 +116,15 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		}
 		return &RegistryConfig{
 			NPM:     npmRegistryConfig,
+			Options: options,
+		}, nil
+	} else if !isMavenEmpty {
+		mavenRegistryConfig, err := newMavenRegistryConfig(externalRegistryConfig.Maven)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Maven:   mavenRegistryConfig,
 			Options: options,
 		}, nil
 	}
@@ -199,6 +210,22 @@ func newGoRegistryConfig(externalGoRegistryConfig *ExternalGoRegistryConfig) (*G
 	return &GoRegistryConfig{
 		MinVersion: externalGoRegistryConfig.MinVersion,
 		Deps:       dependencies,
+	}, nil
+}
+
+func newMavenRegistryConfig(externalMavenRegistryConfig *ExternalMavenRegistryConfig) (*MavenRegistryConfig, error) {
+	if externalMavenRegistryConfig == nil {
+		return nil, nil
+	}
+	var dependencies []string
+	for _, dep := range externalMavenRegistryConfig.Deps {
+		if dep == "" {
+			return nil, errors.New("maven runtime dependency is required to be non-empty")
+		}
+		dependencies = append(dependencies, dep)
+	}
+	return &MavenRegistryConfig{
+		Deps: dependencies,
 	}, nil
 }
 
