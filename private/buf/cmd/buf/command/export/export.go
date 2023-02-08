@@ -55,7 +55,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
-		Short: "Export the files from the source location to an output location",
+		Short: "Export proto files from one location to another",
 		Long: bufcli.GetSourceOrModuleLong(`the source or module to export`) + `
 
 Examples:
