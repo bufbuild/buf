@@ -56,7 +56,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
-		Short: "Push a module to a registry.",
+		Short: "Push a module to a registry",
 		Long:  bufcli.GetSourceLong(`the source to push`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -93,7 +93,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		tagFlagShortName,
 		nil,
 		fmt.Sprintf(
-			"Create a tag for the pushed commit. Multiple tags are created if specified multiple times. Cannot be used together with --%s.",
+			"Create a tag for the pushed commit. Multiple tags are created if specified multiple times. Cannot be used together with --%s",
 			draftFlagName,
 		),
 	)
@@ -102,7 +102,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		draftFlagName,
 		"",
 		fmt.Sprintf(
-			"Make the pushed commit a draft with the specified name. Cannot be used together with --%s (-%s).",
+			"Make the pushed commit a draft with the specified name. Cannot be used together with --%s (-%s)",
 			tagFlagName,
 			tagFlagShortName,
 		),
@@ -112,7 +112,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)

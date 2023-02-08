@@ -43,7 +43,7 @@ func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "List drafts for the specified repository.",
+		Short: "List drafts for the specified repository",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -70,17 +70,17 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.Uint32Var(&f.PageSize,
 		pageSizeFlagName,
 		10,
-		`The page size.`,
+		`The page size`,
 	)
 	flagSet.StringVar(&f.PageToken,
 		pageTokenFlagName,
 		"",
-		`The page token. If more results are available, a "next_page" key is present in the --format=json output.`,
+		`The page token. If more results are available, a "next_page" key is present in the --format=json output`,
 	)
 	flagSet.BoolVar(&f.Reverse,
 		reverseFlagName,
 		false,
-		`Reverse the results.`,
+		`Reverse the results`,
 	)
 	flagSet.StringVar(
 		&f.Format,

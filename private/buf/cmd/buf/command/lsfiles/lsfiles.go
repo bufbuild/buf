@@ -46,7 +46,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "List all Protobuf files for the input.",
+		Short: "List all Protobuf files for the input",
 		Long:  bufcli.GetInputLong(`the source, module, or image to list from`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -80,20 +80,20 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.AsImportPaths,
 		asImportPathsFlagName,
 		false,
-		"Strip local directory paths and print filepaths as they are imported.",
+		"Strip local directory paths and print filepaths as they are imported",
 	)
 	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -101,7 +101,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.IncludeImports,
 		includeImportsFlagName,
 		false,
-		"Include imports.",
+		"Include imports",
 	)
 }
 

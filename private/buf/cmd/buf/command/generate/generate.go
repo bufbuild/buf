@@ -54,7 +54,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Generate stubs for protoc plugins using a template.",
+		Short: "Generate stubs for protoc plugins using a template",
 		Long: `This command uses a template file of the shape:
 
     # buf.gen.yaml
@@ -132,42 +132,40 @@ for the set of plugins you want to invoke.
 The first argument is the source, module, or image to generate from.
 If no argument is specified, defaults to ".".
 
-Call with:
-
-uses buf.gen.yaml as template, current directory as input
+Use buf.gen.yaml as template, current directory as input:
 
     $ buf generate
 
-same as the defaults (template of "buf.gen.yaml", current directory as input)
+Same as the defaults (template of "buf.gen.yaml", current directory as input):
 
     $ buf generate --template buf.gen.yaml .
 
---template also takes YAML or JSON data as input, so it can be used without a file
+The --template flag also takes YAML or JSON data as input, so it can be used without a file:
 
     $ buf generate --template '{"version":"v1","plugins":[{"plugin":"go","out":"gen/go"}]}'
 
-download the repository and generate code stubs per the bar.yaml template
+Download the repository and generate code stubs per the bar.yaml template:
 
     $ buf generate --template bar.yaml https://github.com/foo/bar.git
 
-generate to the bar/ directory, prepending bar/ to the out directives in the template
+Generate to the bar/ directory, prepending bar/ to the out directives in the template:
 
     $ buf generate --template bar.yaml -o bar https://github.com/foo/bar.git
 
-The paths in the template and the -o flag will be interpreted as relative to your
+The paths in the template and the -o flag will be interpreted as relative to the
 current directory, so you can place your template files anywhere.
 
-If you only want to generate stubs for a subset of your input, you can do so via the --path flag:
+If you only want to generate stubs for a subset of your input, you can do so via the --path. e.g.
 
-Only generate for the files in the directories proto/foo and proto/bar
+Only generate for the files in the directories proto/foo and proto/bar:
 
     $ buf generate --path proto/foo --path proto/bar
 
-Only generate for the files proto/foo/foo.proto and proto/foo/bar.proto
+Only generate for the files proto/foo/foo.proto and proto/foo/bar.proto:
 
     $ buf generate --path proto/foo/foo.proto --path proto/foo/bar.proto
 
-Only generate for the files in the directory proto/foo on your GitHub repository
+Only generate for the files in the directory proto/foo on your git repository:
 
     $ buf generate --template buf.gen.yaml https://github.com/foo/bar.git --path proto/foo
 
@@ -221,14 +219,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.IncludeImports,
 		includeImportsFlagName,
 		false,
-		"Also generate all imports except for Well-Known Types.",
+		"Also generate all imports except for Well-Known Types",
 	)
 	flagSet.BoolVar(
 		&f.IncludeWKT,
 		includeWKTFlagName,
 		false,
 		fmt.Sprintf(
-			"Also generate Well-Known Types. Cannot be set without --%s.",
+			"Also generate Well-Known Types. Cannot be set without --%s",
 			includeImportsFlagName,
 		),
 	)
@@ -236,21 +234,21 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Template,
 		templateFlagName,
 		"",
-		`The generation template file or data to use. Must be in either YAML or JSON format.`,
+		`The generation template file or data to use. Must be in either YAML or JSON format`,
 	)
 	flagSet.StringVarP(
 		&f.BaseOutDirPath,
 		baseOutDirPathFlagName,
 		baseOutDirPathFlagShortName,
 		".",
-		`The base directory to generate to. This is prepended to the out directories in the generation template.`,
+		`The base directory to generate to. This is prepended to the out directories in the generation template`,
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors, printed to stderr. Must be one of %s.",
+			"The format for build errors, printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -258,7 +256,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 	flagSet.StringSliceVar(
 		&f.IncludeTypes,

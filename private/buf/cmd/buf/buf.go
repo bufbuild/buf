@@ -105,7 +105,7 @@ func NewRootCommand(name string) *appcmd.Command {
 	return &appcmd.Command{
 		Use:                 name,
 		Short:               "The Buf CLI",
-		Long:                "A tool for working with Protocol Buffers and managing resources on the Buf Schema Registry (BSR).",
+		Long:                "A tool for working with Protocol Buffers and managing resources on the Buf Schema Registry (BSR)",
 		Version:             bufcli.Version,
 		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		SubCommands: []*appcmd.Command{
@@ -121,7 +121,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			curl.NewCommand("curl", builder),
 			{
 				Use:   "mod",
-				Short: "Manage Buf modules.",
+				Short: "Manage Buf modules",
 				SubCommands: []*appcmd.Command{
 					modinit.NewCommand("init", builder),
 					modprune.NewCommand("prune", builder),
@@ -134,7 +134,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			},
 			{
 				Use:   "registry",
-				Short: "Manage assets on the Buf Schema Registry.",
+				Short: "Manage assets on the Buf Schema Registry",
 				SubCommands: []*appcmd.Command{
 					registrylogin.NewCommand("login", builder),
 					registrylogout.NewCommand("logout", builder),
@@ -142,17 +142,17 @@ func NewRootCommand(name string) *appcmd.Command {
 			},
 			{
 				Use:   "beta",
-				Short: "Beta commands. Unstable and likely to change.",
+				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
 					migratev1beta1.NewCommand("migrate-v1beta1", builder),
 					studioagent.NewCommand("studio-agent", noTimeoutBuilder),
 					{
 						Use:   "registry",
-						Short: "Manage assets on the Buf Schema Registry.",
+						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
 							{
 								Use:   "organization",
-								Short: "Manage organizations.",
+								Short: "Manage organizations",
 								SubCommands: []*appcmd.Command{
 									organizationcreate.NewCommand("create", builder),
 									organizationget.NewCommand("get", builder),
@@ -161,7 +161,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "repository",
-								Short: "Manage repositories.",
+								Short: "Manage repositories",
 								SubCommands: []*appcmd.Command{
 									repositorycreate.NewCommand("create", builder),
 									repositoryget.NewCommand("get", builder),
@@ -174,7 +174,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "tag",
-								Short: "Manage a repository's tags.",
+								Short: "Manage a repository's tags",
 								SubCommands: []*appcmd.Command{
 									tagcreate.NewCommand("create", builder),
 									taglist.NewCommand("list", builder),
@@ -182,7 +182,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "commit",
-								Short: "Manage a repository's commits.",
+								Short: "Manage a repository's commits",
 								SubCommands: []*appcmd.Command{
 									commitget.NewCommand("get", builder),
 									commitlist.NewCommand("list", builder),
@@ -190,7 +190,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "draft",
-								Short: "Manage a repository's drafts.",
+								Short: "Manage a repository's drafts",
 								SubCommands: []*appcmd.Command{
 									draftdelete.NewCommand("delete", builder),
 									draftlist.NewCommand("list", builder),
@@ -198,7 +198,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "plugin",
-								Short: "Manage Protobuf plugins.",
+								Short: "Manage Protobuf plugins",
 								SubCommands: []*appcmd.Command{
 									plugincreate.NewCommand("create", builder),
 									pluginlist.NewCommand("list", builder),
@@ -207,7 +207,7 @@ func NewRootCommand(name string) *appcmd.Command {
 									pluginundeprecate.NewCommand("undeprecate", builder),
 									{
 										Use:   "version",
-										Short: "Manage Protobuf plugin versions.",
+										Short: "Manage Protobuf plugin versions",
 										SubCommands: []*appcmd.Command{
 											pluginversionlist.NewCommand("list", builder),
 										},
@@ -216,7 +216,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "template",
-								Short: "Manage Protobuf templates on the Buf Schema Registry.",
+								Short: "Manage Protobuf templates on the Buf Schema Registry",
 								SubCommands: []*appcmd.Command{
 									templatecreate.NewCommand("create", builder),
 									templatelist.NewCommand("list", builder),
@@ -225,7 +225,7 @@ func NewRootCommand(name string) *appcmd.Command {
 									templateundeprecate.NewCommand("undeprecate", builder),
 									{
 										Use:   "version",
-										Short: "Manage Protobuf template versions.",
+										Short: "Manage Protobuf template versions",
 										SubCommands: []*appcmd.Command{
 											templateversioncreate.NewCommand("create", builder),
 											templateversionlist.NewCommand("list", builder),
@@ -235,7 +235,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "webhook",
-								Short: "Manage webhooks for a repository on the Buf Schema Registry.",
+								Short: "Manage webhooks for a repository on the Buf Schema Registry",
 								SubCommands: []*appcmd.Command{
 									webhookcreate.NewCommand("create", builder),
 									webhookdelete.NewCommand("delete", builder),
@@ -248,17 +248,17 @@ func NewRootCommand(name string) *appcmd.Command {
 			},
 			{
 				Use:    "alpha",
-				Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted.",
+				Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted",
 				Hidden: true,
 				SubCommands: []*appcmd.Command{
 					protoc.NewCommand("protoc", builder),
 					{
 						Use:   "registry",
-						Short: "Manage assets on the Buf Schema Registry.",
+						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
 							{
 								Use:   "token",
-								Short: "Manage user tokens.",
+								Short: "Manage user tokens",
 								SubCommands: []*appcmd.Command{
 									tokencreate.NewCommand("create", builder),
 									tokenget.NewCommand("get", builder),
@@ -270,7 +270,7 @@ func NewRootCommand(name string) *appcmd.Command {
 					},
 					{
 						Use:   "plugin",
-						Short: "Manage plugins on the Buf Schema Registry.",
+						Short: "Manage plugins on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
 							pluginpush.NewCommand("push", builder),
 							curatedplugindelete.NewCommand("delete", builder),

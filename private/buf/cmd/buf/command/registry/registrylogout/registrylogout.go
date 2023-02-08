@@ -37,8 +37,8 @@ func NewCommand(
 		// Not documenting the first arg (remote) as this is just for testing for now.
 		// TODO: Update when we have self-hosted.
 		Use:   name,
-		Short: `Log out of the Buf Schema Registry.`,
-		Long:  fmt.Sprintf(`This command removes any BSR credentials from your %s file.`, netrc.Filename),
+		Short: `Log out of the Buf Schema Registry`,
+		Long:  fmt.Sprintf(`This command removes any BSR credentials from your %s file`, netrc.Filename),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -79,9 +79,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	loggedOutMessage := fmt.Sprintf("All existing BSR credentials removed from %s.\n", netrcFilePath)
+	loggedOutMessage := fmt.Sprintf("All existing BSR credentials removed from %s\n", netrcFilePath)
 	if !modified1 && !modified2 {
-		loggedOutMessage = fmt.Sprintf("No BSR credentials found in %s; you are already logged out.\n", netrcFilePath)
+		loggedOutMessage = fmt.Sprintf("No BSR credentials found in %s; you are already logged out\n", netrcFilePath)
 	}
 	if _, err := container.Stdout().Write([]byte(loggedOutMessage)); err != nil {
 		return err
