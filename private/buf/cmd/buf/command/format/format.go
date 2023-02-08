@@ -74,11 +74,11 @@ Write the current directory's formatted content to stdout:
 
     $ buf format
 
-Most people will want to rewrite the files defined in the current directory in-place with "-w":
+Most people will want to rewrite the files defined in the current directory in-place with -w:
 
     $ buf format -w
 
-Display a diff between the original and formatted content with "-d".
+Display a diff between the original and formatted content with -d
 Write a diff instead of the formatted file:
     
     $ buf format simple/simple.proto -d
@@ -128,7 +128,7 @@ Write the formatted module reference to stdout:
     $ buf format buf.build/acme/petapis
     ...
 
-Write the result to a specified output file or directory with "-o" e.g.
+Write the result to a specified output file or directory with -o e.g.
 
 Write the formatted file to another file:
 
@@ -142,7 +142,7 @@ This also works with module references:
 
     $ buf format buf.build/acme/weather -o formatted
 
-Rewrite the file(s) in-place with "-w". e.g.
+Rewrite the file(s) in-place with -w. e.g.
 
 Rewrite a single file in-place:
 
