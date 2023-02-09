@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.14.0] - 2023-02-09
 
 - Replace `buf generate --include-types` with `buf generate --type` for consistency. `--include-types`
   is now deprecated but continues to work, consistent with our compability guarantee.
@@ -820,7 +820,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.13.1...HEAD
+[v1.14.0]: https://github.com/bufbuild/buf/compare/v1.13.1...v1.14.0
 [v1.13.1]: https://github.com/bufbuild/buf/compare/v1.13.0...v1.13.1
 [v1.13.0]: https://github.com/bufbuild/buf/compare/v1.12.0...v1.13.0
 [v1.12.0]: https://github.com/bufbuild/buf/compare/v1.11.0...v1.12.0
