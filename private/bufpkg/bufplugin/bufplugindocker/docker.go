@@ -225,6 +225,7 @@ func NewClient(logger *zap.Logger, cliVersion string, options ...ClientOption) (
 		client.WithHTTPHeaders(map[string]string{
 			"User-Agent": BufUpstreamClientUserAgentPrefix + cliVersion,
 		}),
+		client.WithAPIVersionNegotiation(),
 	}
 	if len(opts.host) > 0 {
 		dockerClientOpts = append(dockerClientOpts, client.WithHost(opts.host))
