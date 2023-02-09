@@ -199,7 +199,7 @@ func run(
 	if flags.Image != "" {
 		inspectResponse, err := client.Inspect(ctx, flags.Image)
 		if err != nil {
-			return nil
+			return err
 		}
 		imageID = inspectResponse.ImageID
 	} else {

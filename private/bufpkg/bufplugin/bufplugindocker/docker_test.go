@@ -56,11 +56,7 @@ func TestPushSuccess(t *testing.T) {
 	t.Parallel()
 	server := newDockerServer(t, dockerVersion)
 	listenerAddr := server.httpServer.Listener.Addr().String()
-	dockerClient := createClient(
-		t,
-		WithHost("tcp://"+listenerAddr),
-		WithVersion(dockerVersion),
-	)
+	dockerClient := createClient(t, WithHost("tcp://"+listenerAddr), WithVersion(dockerVersion))
 	image, err := buildDockerPlugin(t, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotEmpty(t, image)
@@ -76,11 +72,7 @@ func TestPushError(t *testing.T) {
 	// Send back an error on ImagePush (still return 200 OK).
 	server.pushErr = errors.New("failed to push image")
 	listenerAddr := server.httpServer.Listener.Addr().String()
-	dockerClient := createClient(
-		t,
-		WithHost("tcp://"+listenerAddr),
-		WithVersion(dockerVersion),
-	)
+	dockerClient := createClient(t, WithHost("tcp://"+listenerAddr), WithVersion(dockerVersion))
 	image, err := buildDockerPlugin(t, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotEmpty(t, image)
@@ -91,7 +83,7 @@ func TestPushError(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	var dockerEnabled bool
-	if cli, err := client.NewClientWithOpts(client.FromEnv); err == nil {
+	if cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 		if _, err := cli.Ping(ctx); err == nil {
@@ -184,6 +176,12 @@ func newDockerServer(t testing.TB, version string) *dockerServer {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc(versionPrefix+"/images/", dockerServer.imagesHandler)
+	mux.HandleFunc("/_ping", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(&types.Ping{APIVersion: version}); err != nil {
+			t.Fatalf("failed to encode response: %v", err)
+		}
+	})
 	dockerServer.h2Server = &http2.Server{}
 	dockerServer.h2Handler = h2c.NewHandler(mux, dockerServer.h2Server)
 	dockerServer.httpServer = httptest.NewUnstartedServer(dockerServer.h2Handler)
