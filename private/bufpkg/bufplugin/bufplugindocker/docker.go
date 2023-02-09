@@ -225,6 +225,10 @@ func NewClient(logger *zap.Logger, cliVersion string, options ...ClientOption) (
 		client.WithHTTPHeaders(map[string]string{
 			"User-Agent": BufUpstreamClientUserAgentPrefix + cliVersion,
 		}),
+		// NOTE: This setting is not safe when a client is called from multiple goroutines:
+		// - https://github.com/moby/moby/issues/43729#issuecomment-1174446640
+		//
+		// Our usage is for the CLI with a single goroutine so we're ok to enable for compatibility.
 		client.WithAPIVersionNegotiation(),
 	}
 	if len(opts.host) > 0 {
