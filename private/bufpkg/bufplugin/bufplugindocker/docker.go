@@ -225,12 +225,6 @@ func NewClient(ctx context.Context, logger *zap.Logger, cliVersion string, optio
 		client.WithHTTPHeaders(map[string]string{
 			"User-Agent": BufUpstreamClientUserAgentPrefix + cliVersion,
 		}),
-		// NOTE: This setting is not safe when a client is called from multiple goroutines:
-		// - https://github.com/moby/moby/issues/43729#issuecomment-1174446640
-		//
-		// Our usage is for the CLI with a single goroutine, so we're ok to enable for compatibility.
-		// We also force version negotiation below to ensure the client is in a consistent state prior to use.
-		client.WithAPIVersionNegotiation(),
 	}
 	if len(opts.host) > 0 {
 		dockerClientOpts = append(dockerClientOpts, client.WithHost(opts.host))
