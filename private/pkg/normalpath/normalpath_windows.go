@@ -83,10 +83,17 @@ func EqualsOrContainsPath(value string, path string, pathType PathType) bool {
 
 	// Walk up the path and compare at each directory level until there is a
 	// match or the path reaches its root (either `/` or `.`).
-	for curPath := path; !strings.EqualFold(curPath, pathRoot); curPath = Dir(curPath) {
+	curPath := path
+	var lastSeen string
+	for {
 		if strings.EqualFold(value, curPath) {
 			return true
 		}
+		curPath = Dir(curPath)
+		if lastSeen == curPath {
+			break
+		}
+		lastSeen = curPath
 	}
 	return false
 }
