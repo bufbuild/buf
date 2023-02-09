@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -43,9 +44,9 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
-		Short: fmt.Sprintf("Initialize and writes a new %s configuration file", bufconfig.ExternalConfigV1FilePath),
-		Args:  cobra.NoArgs,
+		Use:   name + " [buf.build/owner/foobar]",
+		Short: fmt.Sprintf("Initializes and writes a new %s configuration file.", bufconfig.ExternalConfigV1FilePath),
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -116,6 +117,16 @@ func run(
 		return appcmd.NewInvalidArgumentErrorf("%s already exists, not overwriting", existingConfigFilePath)
 	}
 	var writeConfigOptions []bufconfig.WriteConfigOption
+	if container.NumArgs() > 0 {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
+		if err != nil {
+			return err
+		}
+		writeConfigOptions = append(
+			writeConfigOptions,
+			bufconfig.WriteConfigWithModuleIdentity(moduleIdentity),
+		)
+	}
 	if flags.DocumentationComments {
 		writeConfigOptions = append(
 			writeConfigOptions,
