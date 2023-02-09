@@ -11,7 +11,7 @@ COPY private /workspace/private
 ARG TARGETOS
 ARG TARGETARCH
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-  go build -ldflags "-s -w" -trimpath -o /go/bin/buf ./cmd/buf
+  go build -ldflags "-s -w" -trimpath -buildvcs=false -o /go/bin/buf ./cmd/buf
 
 FROM --platform=${TARGETPLATFORM} alpine:3.17.1
 
