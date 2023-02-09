@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "a.proto";
+
+message NormalMessageSyntaxValidType {
+  option (extra) = {
+    type_url: "type.googleapis.com/foo.bar.baz.Foo"
+    value: "\x0a\x0a\x42\x6f\x62\x20\x4c\x6f\x62\x6c\x61\x77\x10\x2a"
+  };
+}

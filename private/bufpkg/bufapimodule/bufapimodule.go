@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,23 +17,51 @@ package bufapimodule
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"go.uber.org/zap"
 )
 
+type DownloadServiceClientFactory func(address string) registryv1alpha1connect.DownloadServiceClient
+type RepositoryCommitServiceClientFactory func(address string) registryv1alpha1connect.RepositoryCommitServiceClient
+
+func NewDownloadServiceClientFactory(clientConfig *connectclient.Config) DownloadServiceClientFactory {
+	return func(address string) registryv1alpha1connect.DownloadServiceClient {
+		return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewDownloadServiceClient)
+	}
+}
+
+func NewRepositoryCommitServiceClientFactory(clientConfig *connectclient.Config) RepositoryCommitServiceClientFactory {
+	return func(address string) registryv1alpha1connect.RepositoryCommitServiceClient {
+		return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryCommitServiceClient)
+	}
+}
+
 // NewModuleReader returns a new ModuleReader backed by the download service.
 func NewModuleReader(
-	downloadServiceProvider registryv1alpha1apiclient.DownloadServiceProvider,
+	downloadClientFactory DownloadServiceClientFactory,
+	opts ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
-		downloadServiceProvider,
+		downloadClientFactory,
+		opts...,
 	)
+}
+
+// ModuleReaderOption allows configuration of a module reader.
+type ModuleReaderOption func(reader *moduleReader)
+
+// WithTamperProofing enables tamper proofing support (use of manifest/blobs).
+func WithTamperProofing() ModuleReaderOption {
+	return func(reader *moduleReader) {
+		reader.tamperProofingEnabled = true
+	}
 }
 
 // NewModuleResolver returns a new ModuleResolver backed by the resolve service.
 func NewModuleResolver(
 	logger *zap.Logger,
-	resolveServiceProvider registryv1alpha1apiclient.ResolveServiceProvider,
+	repositoryCommitClientFactory RepositoryCommitServiceClientFactory,
 ) bufmodule.ModuleResolver {
-	return newModuleResolver(logger, resolveServiceProvider)
+	return newModuleResolver(logger, repositoryCommitClientFactory)
 }

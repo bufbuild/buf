@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,20 +26,23 @@ import (
 )
 
 type moduleCacher struct {
-	logger              *zap.Logger
-	dataReadWriteBucket storage.ReadWriteBucket
-	sumReadWriteBucket  storage.ReadWriteBucket
+	logger                  *zap.Logger
+	dataReadWriteBucket     storage.ReadWriteBucket
+	sumReadWriteBucket      storage.ReadWriteBucket
+	allowCacheExternalPaths bool
 }
 
 func newModuleCacher(
 	logger *zap.Logger,
 	dataReadWriteBucket storage.ReadWriteBucket,
 	sumReadWriteBucket storage.ReadWriteBucket,
+	allowCacheExternalPaths bool,
 ) *moduleCacher {
 	return &moduleCacher{
-		logger:              logger,
-		dataReadWriteBucket: dataReadWriteBucket,
-		sumReadWriteBucket:  sumReadWriteBucket,
+		logger:                  logger,
+		dataReadWriteBucket:     dataReadWriteBucket,
+		sumReadWriteBucket:      sumReadWriteBucket,
+		allowCacheExternalPaths: allowCacheExternalPaths,
 	}
 }
 
@@ -48,13 +51,17 @@ func (m *moduleCacher) GetModule(
 	modulePin bufmoduleref.ModulePin,
 ) (bufmodule.Module, error) {
 	modulePath := newCacheKey(modulePin)
-	// We do not want the external path of the cache to be propagated to the user.
-	dataReadWriteBucket := storage.NoExternalPathReadBucket(
-		storage.MapReadWriteBucket(
-			m.dataReadWriteBucket,
-			storage.MapOnPrefix(modulePath),
-		),
+	// Explicitly assign the variable as a storage.ReadBucket so
+	// that we can easily transform it with storage.NoExternalPathReadBucket
+	// below.
+	var dataReadWriteBucket storage.ReadBucket = storage.MapReadWriteBucket(
+		m.dataReadWriteBucket,
+		storage.MapOnPrefix(modulePath),
 	)
+	if !m.allowCacheExternalPaths {
+		// In general, we do not want the external path of the cache to be propagated to the user.
+		dataReadWriteBucket = storage.NoExternalPathReadBucket(dataReadWriteBucket)
+	}
 	exists, err := storage.Exists(ctx, dataReadWriteBucket, buflock.ExternalConfigFilePath)
 	if err != nil {
 		return nil, err

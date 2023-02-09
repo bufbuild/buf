@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +20,11 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -36,7 +39,7 @@ func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "Update a BSR repository settings.",
+		Short: "Update BSR repository settings",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -48,6 +51,7 @@ func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	}
 }
 
+// TODO: add Description and Url field if it's desired to udpate them from the CLI
 type flags struct {
 	Visibility string
 }
@@ -74,19 +78,23 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewRepositoryService(ctx, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
-	if err = service.UpdateRepositorySettingsByName(
+	service := connectclient.Make(
+		clientConfig,
+		moduleIdentity.Remote(),
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
+	if _, err := service.UpdateRepositorySettingsByName(
 		ctx,
-		moduleIdentity.Owner(),
-		moduleIdentity.Repository(),
-		visibility,
+		connect.NewRequest(&registryv1alpha1.UpdateRepositorySettingsByNameRequest{
+			OwnerName:      moduleIdentity.Owner(),
+			RepositoryName: moduleIdentity.Repository(),
+			Visibility:     visibility,
+			// TODO: pass description and url
+		}),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,15 +45,13 @@ type RecommendationServiceClient interface {
 	// RecommendedRepositories returns a list of recommended repositories.
 	RecommendedRepositories(context.Context, *connect_go.Request[v1alpha1.RecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.RecommendedRepositoriesResponse], error)
 	// RecommendedTemplates returns a list of recommended templates.
+	//
+	// Deprecated: do not use.
 	RecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.RecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.RecommendedTemplatesResponse], error)
-	// ListRecommendedRepositories returns a list of recommended repositories that user have access to.
-	ListRecommendedRepositories(context.Context, *connect_go.Request[v1alpha1.ListRecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedRepositoriesResponse], error)
-	// ListRecommendedTemplates returns a list of recommended templates that user have access to.
-	ListRecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.ListRecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedTemplatesResponse], error)
-	// SetRecommendedRepositories set the list of repository recommendations in the server.
-	SetRecommendedRepositories(context.Context, *connect_go.Request[v1alpha1.SetRecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedRepositoriesResponse], error)
-	// SetRecommendedTemplates set the list of template recommendations in the server.
-	SetRecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.SetRecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedTemplatesResponse], error)
+	// ListRecommendedResources returns a list of recommended resources.
+	ListRecommendedResources(context.Context, *connect_go.Request[v1alpha1.ListRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedResourcesResponse], error)
+	// SetRecommendedResources set the list of recommended resources in the server.
+	SetRecommendedResources(context.Context, *connect_go.Request[v1alpha1.SetRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedResourcesResponse], error)
 }
 
 // NewRecommendationServiceClient constructs a client for the
@@ -77,24 +75,14 @@ func NewRecommendationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 			baseURL+"/buf.alpha.registry.v1alpha1.RecommendationService/RecommendedTemplates",
 			opts...,
 		),
-		listRecommendedRepositories: connect_go.NewClient[v1alpha1.ListRecommendedRepositoriesRequest, v1alpha1.ListRecommendedRepositoriesResponse](
+		listRecommendedResources: connect_go.NewClient[v1alpha1.ListRecommendedResourcesRequest, v1alpha1.ListRecommendedResourcesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedRepositories",
+			baseURL+"/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedResources",
 			opts...,
 		),
-		listRecommendedTemplates: connect_go.NewClient[v1alpha1.ListRecommendedTemplatesRequest, v1alpha1.ListRecommendedTemplatesResponse](
+		setRecommendedResources: connect_go.NewClient[v1alpha1.SetRecommendedResourcesRequest, v1alpha1.SetRecommendedResourcesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedTemplates",
-			opts...,
-		),
-		setRecommendedRepositories: connect_go.NewClient[v1alpha1.SetRecommendedRepositoriesRequest, v1alpha1.SetRecommendedRepositoriesResponse](
-			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedRepositories",
-			opts...,
-		),
-		setRecommendedTemplates: connect_go.NewClient[v1alpha1.SetRecommendedTemplatesRequest, v1alpha1.SetRecommendedTemplatesResponse](
-			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedTemplates",
+			baseURL+"/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedResources",
 			opts...,
 		),
 	}
@@ -102,12 +90,10 @@ func NewRecommendationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 
 // recommendationServiceClient implements RecommendationServiceClient.
 type recommendationServiceClient struct {
-	recommendedRepositories     *connect_go.Client[v1alpha1.RecommendedRepositoriesRequest, v1alpha1.RecommendedRepositoriesResponse]
-	recommendedTemplates        *connect_go.Client[v1alpha1.RecommendedTemplatesRequest, v1alpha1.RecommendedTemplatesResponse]
-	listRecommendedRepositories *connect_go.Client[v1alpha1.ListRecommendedRepositoriesRequest, v1alpha1.ListRecommendedRepositoriesResponse]
-	listRecommendedTemplates    *connect_go.Client[v1alpha1.ListRecommendedTemplatesRequest, v1alpha1.ListRecommendedTemplatesResponse]
-	setRecommendedRepositories  *connect_go.Client[v1alpha1.SetRecommendedRepositoriesRequest, v1alpha1.SetRecommendedRepositoriesResponse]
-	setRecommendedTemplates     *connect_go.Client[v1alpha1.SetRecommendedTemplatesRequest, v1alpha1.SetRecommendedTemplatesResponse]
+	recommendedRepositories  *connect_go.Client[v1alpha1.RecommendedRepositoriesRequest, v1alpha1.RecommendedRepositoriesResponse]
+	recommendedTemplates     *connect_go.Client[v1alpha1.RecommendedTemplatesRequest, v1alpha1.RecommendedTemplatesResponse]
+	listRecommendedResources *connect_go.Client[v1alpha1.ListRecommendedResourcesRequest, v1alpha1.ListRecommendedResourcesResponse]
+	setRecommendedResources  *connect_go.Client[v1alpha1.SetRecommendedResourcesRequest, v1alpha1.SetRecommendedResourcesResponse]
 }
 
 // RecommendedRepositories calls
@@ -118,32 +104,22 @@ func (c *recommendationServiceClient) RecommendedRepositories(ctx context.Contex
 
 // RecommendedTemplates calls
 // buf.alpha.registry.v1alpha1.RecommendationService.RecommendedTemplates.
+//
+// Deprecated: do not use.
 func (c *recommendationServiceClient) RecommendedTemplates(ctx context.Context, req *connect_go.Request[v1alpha1.RecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.RecommendedTemplatesResponse], error) {
 	return c.recommendedTemplates.CallUnary(ctx, req)
 }
 
-// ListRecommendedRepositories calls
-// buf.alpha.registry.v1alpha1.RecommendationService.ListRecommendedRepositories.
-func (c *recommendationServiceClient) ListRecommendedRepositories(ctx context.Context, req *connect_go.Request[v1alpha1.ListRecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedRepositoriesResponse], error) {
-	return c.listRecommendedRepositories.CallUnary(ctx, req)
+// ListRecommendedResources calls
+// buf.alpha.registry.v1alpha1.RecommendationService.ListRecommendedResources.
+func (c *recommendationServiceClient) ListRecommendedResources(ctx context.Context, req *connect_go.Request[v1alpha1.ListRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedResourcesResponse], error) {
+	return c.listRecommendedResources.CallUnary(ctx, req)
 }
 
-// ListRecommendedTemplates calls
-// buf.alpha.registry.v1alpha1.RecommendationService.ListRecommendedTemplates.
-func (c *recommendationServiceClient) ListRecommendedTemplates(ctx context.Context, req *connect_go.Request[v1alpha1.ListRecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedTemplatesResponse], error) {
-	return c.listRecommendedTemplates.CallUnary(ctx, req)
-}
-
-// SetRecommendedRepositories calls
-// buf.alpha.registry.v1alpha1.RecommendationService.SetRecommendedRepositories.
-func (c *recommendationServiceClient) SetRecommendedRepositories(ctx context.Context, req *connect_go.Request[v1alpha1.SetRecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedRepositoriesResponse], error) {
-	return c.setRecommendedRepositories.CallUnary(ctx, req)
-}
-
-// SetRecommendedTemplates calls
-// buf.alpha.registry.v1alpha1.RecommendationService.SetRecommendedTemplates.
-func (c *recommendationServiceClient) SetRecommendedTemplates(ctx context.Context, req *connect_go.Request[v1alpha1.SetRecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedTemplatesResponse], error) {
-	return c.setRecommendedTemplates.CallUnary(ctx, req)
+// SetRecommendedResources calls
+// buf.alpha.registry.v1alpha1.RecommendationService.SetRecommendedResources.
+func (c *recommendationServiceClient) SetRecommendedResources(ctx context.Context, req *connect_go.Request[v1alpha1.SetRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedResourcesResponse], error) {
+	return c.setRecommendedResources.CallUnary(ctx, req)
 }
 
 // RecommendationServiceHandler is an implementation of the
@@ -152,15 +128,13 @@ type RecommendationServiceHandler interface {
 	// RecommendedRepositories returns a list of recommended repositories.
 	RecommendedRepositories(context.Context, *connect_go.Request[v1alpha1.RecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.RecommendedRepositoriesResponse], error)
 	// RecommendedTemplates returns a list of recommended templates.
+	//
+	// Deprecated: do not use.
 	RecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.RecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.RecommendedTemplatesResponse], error)
-	// ListRecommendedRepositories returns a list of recommended repositories that user have access to.
-	ListRecommendedRepositories(context.Context, *connect_go.Request[v1alpha1.ListRecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedRepositoriesResponse], error)
-	// ListRecommendedTemplates returns a list of recommended templates that user have access to.
-	ListRecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.ListRecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedTemplatesResponse], error)
-	// SetRecommendedRepositories set the list of repository recommendations in the server.
-	SetRecommendedRepositories(context.Context, *connect_go.Request[v1alpha1.SetRecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedRepositoriesResponse], error)
-	// SetRecommendedTemplates set the list of template recommendations in the server.
-	SetRecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.SetRecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedTemplatesResponse], error)
+	// ListRecommendedResources returns a list of recommended resources.
+	ListRecommendedResources(context.Context, *connect_go.Request[v1alpha1.ListRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedResourcesResponse], error)
+	// SetRecommendedResources set the list of recommended resources in the server.
+	SetRecommendedResources(context.Context, *connect_go.Request[v1alpha1.SetRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedResourcesResponse], error)
 }
 
 // NewRecommendationServiceHandler builds an HTTP handler from the service implementation. It
@@ -180,24 +154,14 @@ func NewRecommendationServiceHandler(svc RecommendationServiceHandler, opts ...c
 		svc.RecommendedTemplates,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedRepositories", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedRepositories",
-		svc.ListRecommendedRepositories,
+	mux.Handle("/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedResources", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedResources",
+		svc.ListRecommendedResources,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedTemplates", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedTemplates",
-		svc.ListRecommendedTemplates,
-		opts...,
-	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedRepositories", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedRepositories",
-		svc.SetRecommendedRepositories,
-		opts...,
-	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedTemplates", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedTemplates",
-		svc.SetRecommendedTemplates,
+	mux.Handle("/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedResources", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedResources",
+		svc.SetRecommendedResources,
 		opts...,
 	))
 	return "/buf.alpha.registry.v1alpha1.RecommendationService/", mux
@@ -214,18 +178,10 @@ func (UnimplementedRecommendationServiceHandler) RecommendedTemplates(context.Co
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RecommendationService.RecommendedTemplates is not implemented"))
 }
 
-func (UnimplementedRecommendationServiceHandler) ListRecommendedRepositories(context.Context, *connect_go.Request[v1alpha1.ListRecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedRepositoriesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RecommendationService.ListRecommendedRepositories is not implemented"))
+func (UnimplementedRecommendationServiceHandler) ListRecommendedResources(context.Context, *connect_go.Request[v1alpha1.ListRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedResourcesResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RecommendationService.ListRecommendedResources is not implemented"))
 }
 
-func (UnimplementedRecommendationServiceHandler) ListRecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.ListRecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedTemplatesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RecommendationService.ListRecommendedTemplates is not implemented"))
-}
-
-func (UnimplementedRecommendationServiceHandler) SetRecommendedRepositories(context.Context, *connect_go.Request[v1alpha1.SetRecommendedRepositoriesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedRepositoriesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RecommendationService.SetRecommendedRepositories is not implemented"))
-}
-
-func (UnimplementedRecommendationServiceHandler) SetRecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.SetRecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedTemplatesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RecommendationService.SetRecommendedTemplates is not implemented"))
+func (UnimplementedRecommendationServiceHandler) SetRecommendedResources(context.Context, *connect_go.Request[v1alpha1.SetRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedResourcesResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RecommendationService.SetRecommendedResources is not implemented"))
 }

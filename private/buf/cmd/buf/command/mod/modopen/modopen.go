@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ func NewCommand(
 ) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <directory>",
-		Short: "Open the module's homepage in a web browser.",
+		Short: "Open the module's homepage in a web browser",
 		Long:  `The first argument is the directory of the local module to open. If no argument is specified, defaults to "."`,
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,12 +21,20 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 	"github.com/klauspost/compress/zip"
 	"go.uber.org/multierr"
+)
+
+var (
+	// ErrFileSizeLimit is returned when file read limit is reached.
+	//
+	// See [WithMaxFileSizeUntarOption]
+	ErrFileSizeLimit = errors.New("file size exceeded read limit")
 )
 
 // Tar tars the given bucket to the writer.
@@ -81,7 +89,14 @@ func Untar(
 	writeBucket storage.WriteBucket,
 	mapper storage.Mapper,
 	stripComponentCount uint32,
+	opts ...UntarOption,
 ) error {
+	options := &untarOptions{
+		maxFileSize: math.MaxInt64,
+	}
+	for _, opt := range opts {
+		opt.applyUntar(options)
+	}
 	tarReader := tar.NewReader(reader)
 	walkChecker := storageutil.NewWalkChecker()
 	for tarHeader, err := tarReader.Next(); err != io.EOF; tarHeader, err = tarReader.Next() {
@@ -91,23 +106,34 @@ func Untar(
 		if err := walkChecker.Check(ctx); err != nil {
 			return err
 		}
+		if tarHeader.Size < 0 {
+			return fmt.Errorf("invalid size for tar file %s: %d", tarHeader.Name, tarHeader.Size)
+		}
 		path, ok, err := unmapArchivePath(tarHeader.Name, mapper, stripComponentCount)
 		if err != nil {
 			return err
 		}
-		if !ok {
+		if !ok || !tarHeader.FileInfo().Mode().IsRegular() {
 			continue
 		}
-		if tarHeader.FileInfo().Mode().IsRegular() {
-			if tarHeader.Size < 0 {
-				return fmt.Errorf("invalid size for tar file %s: %d", tarHeader.Name, tarHeader.Size)
-			}
-			if err := storage.CopyReader(ctx, writeBucket, tarReader, path); err != nil {
-				return err
-			}
+		if tarHeader.Size > options.maxFileSize {
+			return fmt.Errorf("%w %s:%d", ErrFileSizeLimit, tarHeader.Name, tarHeader.Size)
+		}
+		if err := storage.CopyReader(ctx, writeBucket, tarReader, path); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+// UntarOption is an option for [Untar].
+type UntarOption interface {
+	applyUntar(*untarOptions)
+}
+
+// WithMaxFileSizeUntarOption returns an option that limits the maximum size
+func WithMaxFileSizeUntarOption(size int) UntarOption {
+	return &withMaxFileSizeUntarOption{maxFileSize: int64(size)}
 }
 
 // Zip zips the given bucket to the writer.

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,24 +20,34 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
 type provider struct {
 	logger *zap.Logger
+	tracer trace.Tracer
 }
 
 func newProvider(logger *zap.Logger) *provider {
 	return &provider{
 		logger: logger,
+		tracer: otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 }
 
 func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
-	ctx, span := trace.StartSpan(ctx, "get_config")
+	ctx, span := p.tracer.Start(ctx, "get_config")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 
 	readObjectCloser, err := readBucket.Get(ctx, ExternalConfigFilePath)
 	if err != nil {
@@ -53,6 +63,7 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 		return nil, err
 	}
 	return getConfig(
+		p.logger,
 		encoding.UnmarshalYAMLNonStrict,
 		encoding.UnmarshalYAMLStrict,
 		data,

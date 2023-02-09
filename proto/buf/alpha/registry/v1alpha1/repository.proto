@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
+import "buf/alpha/registry/v1alpha1/verification_status.proto";
 import "google/protobuf/timestamp.proto";
 
 enum Visibility {
@@ -46,11 +47,22 @@ message Repository {
   bool deprecated = 8;
   // deprecation_message is the message shown if the repository is deprecated.
   string deprecation_message = 9;
+  // owner_name is the name of the owner of the repository,
+  // either a username or organization name.
+  string owner_name = 10;
+  // description is the user configurable description of the repository.
+  string description = 11;
+  // url is the user configurable URL in the description of the repository,
+  // always included the scheme and will not have a #fragment suffix.
+  string url = 12;
 }
 
 message RepositoryCounts {
+  reserved 2;
+  reserved "tracks_count";
+
   uint32 tags_count = 1;
-  uint32 tracks_count = 2;
+  uint32 drafts_count = 3;
 }
 
 message RepositoryContributor {
@@ -62,6 +74,21 @@ message RepositoryContributor {
   // Optionally defines the role that the user has implicitly against the repository through the owning organization.
   // If the repository does not belong to an organization or the user is not part of the owning organization, this is unset.
   RepositoryRole implicit_role = 4;
+}
+
+message RepositoryMetadata {
+  // The ID of the repository.
+  string id = 1;
+  // The name of the repository.
+  string name = 2;
+  // The owner name of the repository.
+  string owner_name = 3;
+  // The verification status of the owner of the repository.
+  VerificationStatus owner_verification_status = 4;
+  // The commit time of the latest main commit in the repository.
+  google.protobuf.Timestamp latest_commit_time = 5;
+  // The SPDX license ID of the latest main commit in the repository.
+  string latest_spdx_license_id = 6;
 }
 
 // RepositoryService is the Repository service.
@@ -103,6 +130,10 @@ service RepositoryService {
   rpc GetRepositorySettings(GetRepositorySettingsRequest) returns (GetRepositorySettingsResponse);
   // UpdateRepositorySettingsByName updates the settings of a repository.
   rpc UpdateRepositorySettingsByName(UpdateRepositorySettingsByNameRequest) returns (UpdateRepositorySettingsByNameResponse);
+  // GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
+  // request should match the length of the metadata in the response, and the order of repositories in the response
+  // should match the order of the metadata in the request.
+  rpc GetRepositoriesMetadata(GetRepositoriesMetadataRequest) returns (GetRepositoriesMetadataResponse);
 }
 
 message GetRepositoriesByFullNameRequest {
@@ -284,8 +315,21 @@ message GetRepositorySettingsResponse {
 message UpdateRepositorySettingsByNameRequest {
   string owner_name = 1;
   string repository_name = 2;
-  // Changes are only made to specified values. Unspecified ones are left unchanged.
+  // optional, update to visibility will only be made if this is specified.
   Visibility visibility = 3;
+  // optional, update to description will only be made when this is present
+  optional string description = 4;
+  // optional, update to url will only be made when this is present
+  optional string url = 5;
 }
 
 message UpdateRepositorySettingsByNameResponse {}
+
+message GetRepositoriesMetadataRequest {
+  // The list of repository IDs to request the metadata.
+  repeated string ids = 1;
+}
+
+message GetRepositoriesMetadataResponse {
+  repeated RepositoryMetadata metadata = 1;
+}

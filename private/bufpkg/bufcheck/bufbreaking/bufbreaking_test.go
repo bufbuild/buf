@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -173,29 +173,29 @@ func TestRunBreakingFieldSameJSONName(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 7, 18, 7, 35, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 20, 8, 37, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 27, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 28, 10, 45, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 27, 11, 44, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 28, 10, 46, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 27, 11, 45, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 31, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 32, 13, 49, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 14, 31, 14, 48, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 32, 13, 50, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 14, 31, 14, 49, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 21, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 22, 21, 39, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 24, 22, 41, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 31, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 32, 24, 49, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 25, 31, 25, 48, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 32, 24, 50, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 25, 31, 25, 49, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 26, 7, 26, 35, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 27, 36, 27, 53, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 28, 35, 28, 52, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 27, 36, 27, 54, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 28, 35, 28, 53, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 5, 43, 19, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 20, 44, 37, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 22, 45, 39, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 46, 5, 46, 29, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 47, 30, 47, 47, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 48, 29, 48, 46, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 47, 30, 47, 48, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 48, 29, 48, 47, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 49, 5, 49, 33, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 50, 34, 50, 51, "FIELD_SAME_JSON_NAME"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 51, 33, 51, 50, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 50, 34, 50, 52, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 51, 33, 51, 51, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 92, 5, 92, 19, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 93, 20, 93, 37, "FIELD_SAME_JSON_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 94, 22, 94, 39, "FIELD_SAME_JSON_NAME"),
@@ -670,6 +670,45 @@ func TestRunBreakingIgnoreUnstablePackagesDeleteFile(t *testing.T) {
 	)
 }
 
+func TestRunBreakingIntEnum(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_int_enum",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 0, 0, 0, 0, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 8, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_TYPE"),
+	)
+}
+
+func TestRunBreakingMessageEnum(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_message_enum",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 0, 0, 0, 0, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_TYPE"),
+	)
+}
+
+func TestRunBreakingMessageInt(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_message_int",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 8, "FIELD_SAME_TYPE"),
+	)
+}
+
+func TestRunBreakingMessageMessage(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_message_message",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 8, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 0, 0, 0, 0, "MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_TYPE"),
+	)
+}
+
 func testBreaking(
 	t *testing.T,
 	relDirPath string,
@@ -698,7 +737,7 @@ func testBreaking(
 	previousConfig := testGetConfig(t, previousReadWriteBucket)
 	config := testGetConfig(t, readWriteBucket)
 
-	previousModule, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	previousModule, err := bufmodulebuild.BuildForBucket(
 		context.Background(),
 		previousReadWriteBucket,
 		previousConfig.Build,
@@ -721,7 +760,7 @@ func testBreaking(
 	require.Empty(t, previousFileAnnotations)
 	previousImage = bufimage.ImageWithoutImports(previousImage)
 
-	module, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	module, err := bufmodulebuild.BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config.Build,

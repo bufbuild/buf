@@ -1,0 +1,18 @@
+name: Lint PR Title
+# Prevent writing to the repository using the CI token.
+# Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
+permissions:
+  pull-requests: read
+on:
+  pull_request:
+    # By default, a workflow only runs when a pull_request's activity type is opened,
+    # synchronize, or reopened. We explicity override here so that PR titles are
+    # re-linted when the PR text content is edited.
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+jobs:
+  lint:
+    uses: bufbuild/base-workflows/.github/workflows/pr-title.yaml@main

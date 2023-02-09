@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -47,7 +48,7 @@ func NewCommand(
 	flagsBuilder := newFlagsBuilder()
 	return &appcmd.Command{
 		Use:   name + " <proto_file1> <proto_file2> ...",
-		Short: "High-performance protoc replacement.",
+		Short: "High-performance protoc replacement",
 		Long: `This command replaces protoc using Buf's internal compiler.
 
 The implementation is in progress. Although it outperforms mainline protoc,
@@ -116,11 +117,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return err
 	}
@@ -181,9 +182,12 @@ func run(
 	if len(env.PluginNameToPluginInfo) > 0 {
 		images := []bufimage.Image{image}
 		if env.ByDir {
-			_, span := trace.StartSpan(ctx, "image_by_dir")
+			_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "image_by_dir")
 			images, err = bufimage.ImageByDir(image)
 			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, err.Error())
+				span.End()
 				return err
 			}
 			span.End()

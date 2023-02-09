@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -42,8 +45,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repo[:ref]>",
-		Short: "List commits.",
+		Use:   name + " <buf.build/owner/repository[:ref]>",
+		Short: "List repository commits",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -70,17 +73,17 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.Uint32Var(&f.PageSize,
 		pageSizeFlagName,
 		10,
-		`The page size.`,
+		`The page size`,
 	)
 	flagSet.StringVar(&f.PageToken,
 		pageTokenFlagName,
 		"",
-		`The page token. If more results are available, a "next_page" key is present in the --format=json output.`,
+		`The page token. If more results are available, a "next_page" key is present in the --format=json output`,
 	)
 	flagSet.BoolVar(&f.Reverse,
 		reverseFlagName,
 		false,
-		`Reverse the results.`,
+		`Reverse the results`,
 	)
 	flagSet.StringVar(
 		&f.Format,
@@ -105,28 +108,31 @@ func run(
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewRepositoryCommitService(ctx, moduleReference.Remote())
-	if err != nil {
-		return err
-	}
+	service := connectclient.Make(
+		clientConfig,
+		moduleReference.Remote(),
+		registryv1alpha1connect.NewRepositoryCommitServiceClient,
+	)
 
 	reference := moduleReference.Reference()
 	if reference == "" {
 		reference = bufmoduleref.Main
 	}
 
-	repositoryCommits, nextPageToken, err := service.ListRepositoryCommitsByReference(
+	resp, err := service.ListRepositoryCommitsByReference(
 		ctx,
-		moduleReference.Owner(),
-		moduleReference.Repository(),
-		reference,
-		flags.PageSize,
-		flags.PageToken,
-		flags.Reverse,
+		connect.NewRequest(&registryv1alpha1.ListRepositoryCommitsByReferenceRequest{
+			RepositoryOwner: moduleReference.Owner(),
+			RepositoryName:  moduleReference.Repository(),
+			Reference:       reference,
+			PageSize:        flags.PageSize,
+			PageToken:       flags.PageToken,
+			Reverse:         flags.Reverse,
+		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -134,7 +140,6 @@ func run(
 		}
 		return err
 	}
-	return bufprint.NewRepositoryCommitPrinter(
-		container.Stdout(),
-	).PrintRepositoryCommits(ctx, format, nextPageToken, repositoryCommits...)
+	return bufprint.NewRepositoryCommitPrinter(container.Stdout()).
+		PrintRepositoryCommits(ctx, format, resp.Msg.NextPageToken, resp.Msg.RepositoryCommits...)
 }

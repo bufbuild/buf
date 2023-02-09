@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,10 +32,15 @@ message LocalModuleReference {
 //
 // It does not include a remote.
 message LocalModulePin {
+  reserved 5;
+  reserved "digest";
+
   string owner = 1;
   string repository = 2;
   string branch = 3;
   string commit = 4;
-  string digest = 5;
+  // Module's manifest digest. Replacement for previous b1/b3 digests.
+  string manifest_digest = 6;
   google.protobuf.Timestamp create_time = 7;
+  string draft_name = 8;
 }

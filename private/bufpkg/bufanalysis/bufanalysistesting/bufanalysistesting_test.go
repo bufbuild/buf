@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -73,6 +73,23 @@ path/to/file.proto:2:1:Hello.
 	assert.Equal(t,
 		`path/to/file.proto(1) : error FOO : Hello.
 path/to/file.proto(2,1) : error FOO : Hello.
+`,
+		sb.String(),
+	)
+	sb.Reset()
+	err = bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "junit")
+	require.NoError(t, err)
+	assert.Equal(t,
+		`<testsuites>
+  <testsuite name="path/to/file" tests="2" failures="2" errors="0">
+    <testcase name="FOO_1">
+      <failure message="path/to/file.proto:1:1:Hello." type="FOO"></failure>
+    </testcase>
+    <testcase name="FOO_2_1">
+      <failure message="path/to/file.proto:2:1:Hello." type="FOO"></failure>
+    </testcase>
+  </testsuite>
+</testsuites>
 `,
 		sb.String(),
 	)

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ type field struct {
 	jsType         FieldOptionsJSType
 	cType          FieldOptionsCType
 	packed         *bool
+	deprecated     bool
 	numberPath     []int32
 	typePath       []int32
 	typeNamePath   []int32
@@ -58,6 +59,7 @@ func newField(
 	jsType FieldOptionsJSType,
 	cType FieldOptionsCType,
 	packed *bool,
+	deprecated bool,
 	numberPath []int32,
 	typePath []int32,
 	typeNamePath []int32,
@@ -82,6 +84,7 @@ func newField(
 		jsType:                    jsType,
 		cType:                     cType,
 		packed:                    packed,
+		deprecated:                deprecated,
 		numberPath:                numberPath,
 		typePath:                  typePath,
 		typeNamePath:              typeNamePath,
@@ -144,6 +147,10 @@ func (f *field) CType() FieldOptionsCType {
 
 func (f *field) Packed() *bool {
 	return f.packed
+}
+
+func (f *field) Deprecated() bool {
+	return f.deprecated
 }
 
 func (f *field) NumberLocation() Location {

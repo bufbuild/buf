@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -173,7 +174,16 @@ func MergeImages(images ...Image) (Image, error) {
 // TODO: Consider checking the above, and if not, reordering the Files.
 //
 // TODO: do we want to add the ability to do external path resolution here?
-func NewImageForProto(protoImage *imagev1.Image) (Image, error) {
+func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOption) (Image, error) {
+	var newImageOptions newImageForProtoOptions
+	for _, option := range options {
+		option(&newImageOptions)
+	}
+	if !newImageOptions.noReparse {
+		if err := reparseImageProto(protoImage); err != nil {
+			return nil, err
+		}
+	}
 	if err := validateProtoImage(protoImage); err != nil {
 		return nil, err
 	}
@@ -225,7 +235,7 @@ func NewImageForProto(protoImage *imagev1.Image) (Image, error) {
 //
 // The input Files are expected to be in correct DAG order!
 // TODO: Consider checking the above, and if not, reordering the Files.
-func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) (Image, error) {
+func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest, options ...NewImageForProtoOption) (Image, error) {
 	if err := protodescriptor.ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
 		return nil, err
 	}
@@ -239,6 +249,7 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) (Im
 		&imagev1.Image{
 			File: protoImageFiles,
 		},
+		options...,
 	)
 	if err != nil {
 		return nil, err
@@ -248,6 +259,18 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) (Im
 		request.GetFileToGenerate(),
 		nil,
 	)
+}
+
+// NewImageForProtoOption is an option for use with NewImageForProto.
+type NewImageForProtoOption func(*newImageForProtoOptions)
+
+// WithNoReparse instructs NewImageForProto to skip the reparse step. The reparse
+// step is usually needed when unmarshalling the image from bytes. It reconstitutes
+// custom options, from unrecognized bytes to known extension fields.
+func WithNoReparse() NewImageForProtoOption {
+	return func(options *newImageForProtoOptions) {
+		options.noReparse = true
+	}
 }
 
 // ImageWithoutImports returns a copy of the Image without imports.
@@ -297,7 +320,7 @@ func ImageWithOnlyPathsAllowNotExist(
 // ImageByDir returns multiple images that have non-imports split
 // by directory.
 //
-// That is, each Image will only contain a single directoy's files
+// That is, each Image will only contain a single directory's files
 // as it's non-imports, along with all required imports for the
 // files in that directory.
 func ImageByDir(image Image) ([]Image, error) {
@@ -445,4 +468,22 @@ func ImagesToCodeGeneratorRequests(
 // ProtoImageToFileDescriptors returns the FileDescriptors for the proto Image.
 func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.FileDescriptor {
 	return protoImageFilesToFileDescriptors(protoImage.File)
+}
+
+type newImageForProtoOptions struct {
+	noReparse bool
+}
+
+func reparseImageProto(protoImage *imagev1.Image) error {
+	// TODO right now, NewResolver sets AllowUnresolvable to true all the time
+	// we want to make this into a check, and we verify if we need this for the individual command
+	resolver := protoencoding.NewLazyResolver(
+		ProtoImageToFileDescriptors(
+			protoImage,
+		)...,
+	)
+	if err := protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {
+		return fmt.Errorf("could not reparse image: %v", err)
+	}
+	return nil
 }

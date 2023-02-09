@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ type FileInfo interface {
 	//
 	// Example:
 	//	 Assume we had the input path /foo/bar which is a local directory.
-
 	//   Path: one/one.proto
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto
@@ -234,9 +233,9 @@ func NewProtoModuleReferencesForModuleReferences(moduleReferences ...ModuleRefer
 }
 
 // ModuleReferenceForString returns a new ModuleReference for the given string.
-// If a branch or commit is not provided, the "main" branch is used.
+// If a branch, commit, draft, or tag is not provided, the "main" branch is used.
 //
-// This parses the path in the form remote/owner/repository{:branch,:commit}.
+// This parses the path in the form remote/owner/repository{:branch,:commit,:draft,:tag}.
 func ModuleReferenceForString(path string) (ModuleReference, error) {
 	remote, owner, repository, reference, err := parseModuleReferenceComponents(path)
 	if err != nil {
@@ -413,7 +412,7 @@ func DependencyModulePinsForBucket(
 			dep.Repository,
 			"",
 			dep.Commit,
-			"",
+			dep.Digest,
 			time.Time{},
 		)
 		if err != nil {
@@ -450,6 +449,7 @@ func PutDependencyModulePinsToBucket(
 				Owner:      pin.Owner(),
 				Repository: pin.Repository(),
 				Commit:     pin.Commit(),
+				Digest:     pin.Digest(),
 			},
 		)
 	}

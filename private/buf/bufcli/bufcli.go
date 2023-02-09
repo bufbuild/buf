@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,41 +22,42 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufapp"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufapiclient"
 	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
-	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/app/appname"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/transport/http2client"
+	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -64,17 +65,18 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.6.0-dev"
+	Version = "1.13.2-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
 	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
 
-	tokenEnvKey = "BUF_TOKEN"
-
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
+
+	// BetaEnableTamperProofingEnvKey is an env var to enable tamper proofing
+	BetaEnableTamperProofingEnvKey = "BUF_BETA_ENABLE_TAMPER_PROOFING"
 
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
@@ -177,9 +179,9 @@ func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string
 		addr,
 		flagName,
 		false,
-		`Output as a google.protobuf.FileDescriptorSet instead of an image.
+		`Output as a google.protobuf.FileDescriptorSet instead of an image
 Note that images are wire compatible with FileDescriptorSets, but this flag strips
-the additional metadata added for Buf usage.`,
+the additional metadata added for Buf usage`,
 	)
 }
 
@@ -199,7 +201,7 @@ func BindExcludeSourceInfo(flagSet *pflag.FlagSet, addr *bool, flagName string) 
 		addr,
 		flagName,
 		false,
-		"Exclude source info.",
+		"Exclude source info",
 	)
 }
 
@@ -213,8 +215,8 @@ func BindPaths(
 		pathsAddr,
 		pathsFlagName,
 		nil,
-		`Limit to specific files or directories, for example "proto/a/a.proto" or "proto/a".
-If specified multiple times, the union is taken.`,
+		`Limit to specific files or directories, e.g. "proto/a/a.proto", "proto/a"
+If specified multiple times, the union is taken`,
 	)
 }
 
@@ -244,8 +246,8 @@ func BindExcludePaths(
 		excludePathsAddr,
 		excludePathsFlagName,
 		nil,
-		`Exclude specific files or directories, for example "proto/a/a.proto" or "proto/a".
-If specified multiple times, the union is taken.`,
+		`Exclude specific files or directories, e.g. "proto/a/a.proto", "proto/a"
+If specified multiple times, the union is taken`,
 	)
 }
 
@@ -255,9 +257,8 @@ func BindDisableSymlinks(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 		addr,
 		flagName,
 		false,
-		`Do not follow symlinks when reading sources or configuration from the local filesystem.
-By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry.
-Symlinks are never followed in Windows.`,
+		`Do not follow symlinks when reading sources or configuration from the local filesystem
+By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry`,
 	)
 }
 
@@ -293,6 +294,17 @@ If no argument is specified, defaults to ".".`,
 	)
 }
 
+// GetSourceDirLong gets the long command description for a directory-based command.
+func GetSourceDirLong(inputArgDescription string) string {
+	return fmt.Sprintf(
+		`The first argument is %s.
+The first argument must be one of format %s.
+If no argument is specified, defaults to ".".`,
+		inputArgDescription,
+		buffetch.SourceDirFormatsString,
+	)
+}
+
 // GetSourceOrModuleLong gets the long command description for an input-based command.
 func GetSourceOrModuleLong(inputArgDescription string) string {
 	return fmt.Sprintf(
@@ -309,7 +321,7 @@ If no argument is specified, defaults to ".".`,
 // Also parses the special input hashtag flag that deals with the situation "buf build -#format=json".
 // The existence of 0 or 1 args should be handled by the Args field on Command.
 func GetInputValue(
-	container appflag.Container,
+	container app.ArgContainer,
 	inputHashtag string,
 	defaultValue string,
 ) (string, error) {
@@ -366,11 +378,14 @@ func NewWireImageConfigReader(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 ) (bufwire.ImageConfigReader, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
-	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
+	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +393,7 @@ func NewWireImageConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
 	), nil
@@ -389,11 +404,14 @@ func NewWireModuleConfigReader(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 ) (bufwire.ModuleConfigReader, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
-	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
+	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +419,7 @@ func NewWireModuleConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
 
@@ -411,16 +429,19 @@ func NewWireModuleConfigReaderForModuleReader(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 	moduleReader bufmodule.ModuleReader,
 ) (bufwire.ModuleConfigReader, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
 
@@ -429,11 +450,14 @@ func NewWireFileLister(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 ) (bufwire.FileLister, error) {
 	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
-	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	moduleResolver := bufapimodule.NewModuleResolver(
+		logger,
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+	)
+	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -441,7 +465,7 @@ func NewWireFileLister(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
 	), nil
@@ -493,7 +517,34 @@ func NewWireProtoEncodingWriter(
 // required cache directories.
 func NewModuleReaderAndCreateCacheDirs(
 	container appflag.Container,
-	registryProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
+) (bufmodule.ModuleReader, error) {
+	return newModuleReaderAndCreateCacheDirs(
+		container,
+		clientConfig,
+	)
+}
+
+// NewModuleReaderAndCreateCacheDirsWithExternalPaths returns a new ModuleReader while creating the
+// required cache directories, and configures the cache to preserve external paths.
+//
+// WARNING - this should only be used by systems like the LSP - leaking external paths from the module
+// cache is otherwise dangerous and requires manager approval.
+func NewModuleReaderAndCreateCacheDirsWithExternalPaths(
+	container appflag.Container,
+	clientConfig *connectclient.Config,
+) (bufmodule.ModuleReader, error) {
+	return newModuleReaderAndCreateCacheDirs(
+		container,
+		clientConfig,
+		bufmodulecache.ModuleReaderWithExternalPaths(),
+	)
+}
+
+func newModuleReaderAndCreateCacheDirs(
+	container appflag.Container,
+	clientConfig *connectclient.Config,
+	cacheModuleReaderOpts ...bufmodulecache.ModuleReaderOption,
 ) (bufmodule.ModuleReader, error) {
 	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
 	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
@@ -529,14 +580,27 @@ func NewModuleReaderAndCreateCacheDirs(
 	if err != nil {
 		return nil, err
 	}
+	var moduleReaderOpts []bufapimodule.ModuleReaderOption
+	// Check if tamper proofing env var is enabled
+	tamperProofingEnabled, err := IsBetaTamperProofingEnabled(container)
+	if err != nil {
+		return nil, err
+	}
+	if tamperProofingEnabled {
+		moduleReaderOpts = append(moduleReaderOpts, bufapimodule.WithTamperProofing())
+	}
 	moduleReader := bufmodulecache.NewModuleReader(
 		container.Logger(),
 		container.VerbosePrinter(),
 		fileLocker,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
-		bufapimodule.NewModuleReader(registryProvider),
-		registryProvider,
+		bufapimodule.NewModuleReader(
+			bufapimodule.NewDownloadServiceClientFactory(clientConfig),
+			moduleReaderOpts...,
+		),
+		bufmodulecache.NewRepositoryServiceClientFactory(clientConfig),
+		cacheModuleReaderOpts...,
 	)
 	return moduleReader, nil
 }
@@ -550,50 +614,64 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 	return bufapp.NewConfig(container, externalConfig)
 }
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
-func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
+// Returns a registry provider with the given options applied in addition to default ones for all providers
+func newConnectClientConfigWithOptions(container appflag.Container, opts ...connectclient.ConfigOption) (*connectclient.Config, error) {
 	config, err := NewConfig(container)
 	if err != nil {
 		return nil, err
 	}
-	client := http2client.NewClient(
-		http2client.WithObservability(),
-		http2client.WithTLSConfig(config.TLS),
+	client := httpclient.NewClient(
+		httpclient.WithTLSConfig(config.TLS),
 	)
-	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
-		bufapiclient.RegistryProviderWithAddressMapper(func(address string) string {
+	options := []connectclient.ConfigOption{
+		connectclient.WithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {
 				address = buftransport.PrependAPISubdomain(address)
 			}
+			if config.TLS == nil {
+				return buftransport.PrependHTTP(address)
+			}
 			return buftransport.PrependHTTPS(address)
 		}),
+		connectclient.WithInterceptors(
+			[]connect.Interceptor{bufconnect.NewSetCLIVersionInterceptor(Version)},
+		),
 	}
-	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
+	options = append(options, opts...)
+
+	return connectclient.NewConfig(client, options...), nil
 }
 
-// NewContextModifierProvider returns a new context modifier provider for API providers.
-//
-// Public for use in other packages that provide API provider constructors.
-func NewContextModifierProvider(
-	container appflag.Container,
-) func(string) (func(context.Context) context.Context, error) {
-	return func(address string) (func(context.Context) context.Context, error) {
-		token := container.Env(tokenEnvKey)
-		if token == "" {
-			machine, err := netrc.GetMachineForName(container, address)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
-			}
-			if machine != nil {
-				token = machine.Password()
-			}
-		}
-		return func(ctx context.Context) context.Context {
-			ctx = bufrpc.WithOutgoingCLIVersionHeader(ctx, Version)
-			return rpcauth.WithTokenIfNoneSet(ctx, token)
-		}, nil
+// NewConnectClientConfig creates a new connect.ClientConfig which uses a token reader to look
+// up the token in the container or in netrc based on the address of each individual client.
+// It is then set in the header of all outgoing requests from clients created using this config.
+func NewConnectClientConfig(container appflag.Container) (*connectclient.Config, error) {
+	envTokenProvider, err := bufconnect.NewTokenProviderFromContainer(container)
+	if err != nil {
+		return nil, err
 	}
+	netrcTokenProvider := bufconnect.NewNetrcTokenProvider(container, netrc.GetMachineForName)
+	return newConnectClientConfigWithOptions(
+		container,
+		connectclient.WithAuthInterceptorProvider(
+			bufconnect.NewAuthorizationInterceptorProvider(envTokenProvider, netrcTokenProvider),
+		),
+	)
+}
+
+// NewConnectClientConfigWithToken creates a new connect.ClientConfig with a given token. The provided token is
+// set in the header of all outgoing requests from this provider
+func NewConnectClientConfigWithToken(container appflag.Container, token string) (*connectclient.Config, error) {
+	tokenProvider, err := bufconnect.NewTokenProviderFromString(token)
+	if err != nil {
+		return nil, err
+	}
+	return newConnectClientConfigWithOptions(
+		container,
+		connectclient.WithAuthInterceptorProvider(
+			bufconnect.NewAuthorizationInterceptorProvider(tokenProvider),
+		),
+	)
 }
 
 // PromptUserForDelete is used to receieve user confirmation that a specific
@@ -640,18 +718,22 @@ func PromptUserForPassword(container app.Container, prompt string) (string, erro
 	return promptUser(container, prompt, true)
 }
 
-// ReadModuleWithWorkspacesDisabled gets a module from a source ref.
+// BucketAndConfigForSource returns a bucket and config. The bucket contains
+// just the files that constitute a module. It also checks if config
+// exists and defines a module identity, returning ErrNoConfigFile and
+// ErrNoModuleName respectfully.
 //
-// Workspaces are disabled for this function.
-func ReadModuleWithWorkspacesDisabled(
+// Workspaces are disabled when fetching the source.
+func BucketAndConfigForSource(
 	ctx context.Context,
-	container appflag.Container,
+	logger *zap.Logger,
+	container app.EnvStdinContainer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	source string,
-) (bufmodule.Module, bufmoduleref.ModuleIdentity, error) {
+) (storage.ReadBucketCloser, *bufconfig.Config, error) {
 	sourceRef, err := buffetch.NewSourceRefParser(
-		container.Logger(),
+		logger,
 	).GetSourceRef(
 		ctx,
 		source,
@@ -660,7 +742,7 @@ func ReadModuleWithWorkspacesDisabled(
 		return nil, nil, err
 	}
 	sourceBucket, err := newFetchSourceReader(
-		container.Logger(),
+		logger,
 		storageosProvider,
 		runner,
 	).GetSourceBucket(
@@ -687,19 +769,11 @@ func ReadModuleWithWorkspacesDisabled(
 	if err != nil {
 		return nil, nil, err
 	}
-	moduleIdentity := sourceConfig.ModuleIdentity
-	if moduleIdentity == nil {
+	if sourceConfig.ModuleIdentity == nil {
 		return nil, nil, ErrNoModuleName
 	}
-	module, err := bufmodulebuild.NewModuleBucketBuilder(container.Logger()).BuildForBucket(
-		ctx,
-		sourceBucket,
-		sourceConfig.Build,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	return module, moduleIdentity, err
+
+	return sourceBucket, sourceConfig, nil
 }
 
 // NewImageForSource resolves a single bufimage.Image from the user-provided source with the build options.
@@ -721,7 +795,7 @@ func NewImageForSource(
 	}
 	storageosProvider := NewStorageosProvider(disableSymlinks)
 	runner := command.NewRunner()
-	registryProvider, err := NewRegistryProvider(ctx, container)
+	clientConfig, err := NewConnectClientConfig(container)
 	if err != nil {
 		return nil, err
 	}
@@ -729,7 +803,7 @@ func NewImageForSource(
 		container,
 		storageosProvider,
 		runner,
-		registryProvider,
+		clientConfig,
 	)
 	if err != nil {
 		return nil, err
@@ -765,28 +839,28 @@ func NewImageForSource(
 	return bufimage.MergeImages(images...)
 }
 
-// ParseSourceAndType returns the moduleReference and typeName from the source and type provided by the user.
-// When source is not provided, we assume the type is a fully qualified path to the type and try to parse it.
-// Otherwise, if both source and type are provided, the type must be a valid Protobuf identifier (e.g. weather.v1.Units).
-func ParseSourceAndType(
-	ctx context.Context,
-	source string,
-	typeName string,
-) (string, string, error) {
-	if source != "" && typeName != "" {
-		if err := bufreflect.ValidateTypeName(typeName); err != nil {
-			return "", "", err
-		}
-		return source, typeName, nil
-	}
-	if typeName == "" {
-		return "", "", appcmd.NewInvalidArgumentError("type is required")
-	}
-	moduleReference, moduleTypeName, err := parseFullyQualifiedPath(typeName)
+// WellKnownTypeImage returns the image for the well known type (google.protobuf.Duration for example).
+func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType string) (bufimage.Image, error) {
+	sourceConfig, err := bufconfig.GetConfigForBucket(
+		ctx,
+		storage.NopReadBucketCloser(datawkt.ReadBucket),
+	)
 	if err != nil {
-		return "", "", appcmd.NewInvalidArgumentErrorf("if a source isn't provided, the type needs to be a fully qualified path that includes the module reference; failed to parse the type: %v", err)
+		return nil, err
 	}
-	return moduleReference, moduleTypeName, nil
+	module, err := bufmodulebuild.BuildForBucket(
+		ctx,
+		datawkt.ReadBucket,
+		sourceConfig.Build,
+	)
+	if err != nil {
+		return nil, err
+	}
+	image, _, err := bufimagebuild.NewBuilder(logger).Build(ctx, bufmodule.NewModuleFileSet(module, nil))
+	if err != nil {
+		return nil, err
+	}
+	return bufimageutil.ImageFilteredByTypes(image, wellKnownType)
 }
 
 // VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
@@ -814,6 +888,20 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1al
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s", visibility)
 	}
+}
+
+// IsBetaTamperProofingEnabled returns if BUF_BETA_ENABLE_TAMPER_PROOFING is set to true.
+func IsBetaTamperProofingEnabled(container app.EnvContainer) (bool, error) {
+	// Check if tamper proofing env var is enabled
+	tamperProofingEnabled := false
+	if envVal := container.Env(BetaEnableTamperProofingEnvKey); envVal != "" {
+		var err error
+		tamperProofingEnabled, err = strconv.ParseBool(envVal)
+		if err != nil {
+			return false, fmt.Errorf("invalid value for %q: %w", BetaEnableTamperProofingEnvKey, err)
+		}
+	}
+	return tamperProofingEnabled, nil
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.
@@ -980,26 +1068,4 @@ func createCacheDirs(dirPaths ...string) error {
 		}
 	}
 	return nil
-}
-
-// parseFullyQualifiedPath parse a string in <buf.build/owner/repository#fully-qualified-type> or
-// <buf.build/owner/repository:reference#fully-qualified-type> format into a module reference and a type name
-func parseFullyQualifiedPath(
-	fullyQualifiedPath string,
-) (moduleRef string, typeName string, _ error) {
-	if fullyQualifiedPath == "" {
-		return "", "", appcmd.NewInvalidArgumentError("you must specify a fully qualified path")
-	}
-	components := strings.Split(fullyQualifiedPath, "#")
-	if len(components) != 2 {
-		return "", "", appcmd.NewInvalidArgumentErrorf("%q is not a valid fully qualified path", fullyQualifiedPath)
-	}
-	moduleReference, err := bufmoduleref.ModuleReferenceForString(components[0])
-	if err != nil {
-		return "", "", err
-	}
-	if err := bufreflect.ValidateTypeName(components[1]); err != nil {
-		return "", "", err
-	}
-	return moduleReference.String(), components[1], nil
 }

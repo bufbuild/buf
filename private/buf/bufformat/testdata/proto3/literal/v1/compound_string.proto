@@ -43,7 +43,7 @@ message Foo {
         "Two"
         "Three"
       repeated_baz: [
-        // Firt element.
+        // First element.
         "this"
         // Second element.
         "is a"
@@ -64,7 +64,7 @@ message Foo {
           "Two"
           "Three"
         repeated_baz: [
-          // Firt element.
+          // First element.
           "this"
           // Second element.
           "is a"

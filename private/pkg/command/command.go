@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ func RunWithStdin(stdin io.Reader) RunOption {
 
 // RunWithStdout returns a new RunOption that sets the stdout.
 //
-// The default is io.Discard.
+// The default is the null device (os.DevNull).
 func RunWithStdout(stdout io.Writer) RunOption {
 	return func(runOptions *runOptions) {
 		runOptions.stdout = stdout
@@ -79,7 +79,7 @@ func RunWithStdout(stdout io.Writer) RunOption {
 
 // RunWithStderr returns a new RunOption that sets the stderr.
 //
-// The default is io.Discard.
+// The default is the null device (os.DevNull).
 func RunWithStderr(stderr io.Writer) RunOption {
 	return func(runOptions *runOptions) {
 		runOptions.stderr = stderr

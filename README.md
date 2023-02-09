@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/bufbuild/buf?include_prereleases)][badges_release]
 [![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)][badges_ci]
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)][badges_docker]
-[![Homebrew](https://img.shields.io/badge/homebrew-v1.5.0-blue)][badges_homebrew]
+[![Homebrew](https://img.shields.io/badge/homebrew-v1.13.1-blue)][badges_homebrew]
 [![AUR](https://img.shields.io/aur/version/buf)][badges_aur]
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges_slack]
 
@@ -14,7 +14,7 @@ The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf].
 
 <a id="features"></a>
 
-- The ability to manage Protobuf assets, including [plugins] and [templates], on the [Buf Schema Registry][bsr] (BSR).
+- The ability to manage Protobuf assets on the [Buf Schema Registry][bsr] (BSR).
 - A [linter][lint_usage] that enforces good API design choices and structure.
 - A [breaking change detector][breaking_usage] that enforces compatibility at the source code or wire level.
 - A [generator][generate_usage] that invokes your plugins based on configurable [templates][templates].
@@ -78,7 +78,7 @@ While we intend to incrementally improve on the `buf` CLI and the [BSR](#the-buf
 
 ## The Buf Schema Registry
 
-The [Buf Schema Registry][bsr] (BSR) is a SaaS platform for managing your Protobuf APIs. It provides a centralized registry and a single source of truth for all of your Protobuf assets, including not just your `.proto` files but also [plugins] and code generation [templates]. Although the BSR provides an intuitive browser UI, `buf` enables you to perform most BSR-related tasks from the command line, such as [pushing] Protobuf sources to the registry and managing [users] and [repositories]. The BSR is currently in [**beta**][bsr_post].
+The [Buf Schema Registry][bsr] (BSR) is a SaaS platform for managing your Protobuf APIs. It provides a centralized registry and a single source of truth for all of your Protobuf assets, including not just your `.proto` files but also [remote plugins][bsr_plugins]. Although the BSR provides an intuitive browser UI, `buf` enables you to perform most BSR-related tasks from the command line, such as [pushing] Protobuf sources to the registry and managing [users] and [repositories]. The BSR is currently in [**beta**][bsr_post].
 
 > The BSR is not required to use `buf`. We've made the core [features] of the `buf` CLI available to _all_ Protobuf users.
 
@@ -91,13 +91,13 @@ While `buf`'s [core features][features] should cover most use cases, we've inclu
 * **Configurable error formats** for CLI output. `buf` outputs information in `file:line:column:message` form by default for each lint error and breaking change it encounters, but you can also select JSON and, in the near future, JUnit output.
 * **Editor integration** driven by `buf`'s granular error output. We currently provide linting integrations for both [Vim and Visual Studio Code][ide] but we plan to support other editors, such as Emacs and [JetBrains IDEs][jetbrains] like IntelliJ and GoLand, in the future.
 * **Universal Input targeting**. Buf enables you to perform actions like linting and breaking change detection not just against local `.proto` files but also against a broad range of other [Inputs], such as tarballs and ZIP files, remote Git repositories, and pre-built [image][images] files.
-* **Speed**. Buf's internal Protobuf compiler compiles your Protobuf sources using all available cores without compromising deterministic output, which is considerably faster than `protoc`. This allows for near-instantaneous feedback, which is of special importance for features like [editor integration][id].
+* **Speed**. Buf's internal Protobuf compiler compiles your Protobuf sources using all available cores without compromising deterministic output, which is considerably faster than `protoc`. This allows for near-instantaneous feedback, which is of special importance for features like [editor integration][ide].
 
 ## Next steps
 
 Once you've installed `buf`, we recommend completing the [Tour of Buf][tour], which provides a broad but hands-on overview of the core functionality of both the CLI and the [BSR]. The tour takes about 10 minutes to complete.
 
-After completing the tour, check out the remainder of the [docs] for your specific areas of interest and our [roadmap] to see what we have in store for the future.
+After completing the tour, check out the remainder of the [docs] for your specific areas of interest.
 
 ## Community
 
@@ -113,7 +113,7 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [badges_homebrew]: https://github.com/bufbuild/homebrew-buf
 [badges_license]: https://github.com/bufbuild/buf/blob/main/LICENSE
 [badges_release]: https://github.com/bufbuild/buf/releases
-[badges_slack]: https://join.slack.com/t/bufbuild/shared_invite/zt-f5k547ki-dW9LjSwEnl6qTzbyZtPojw
+[badges_slack]: https://buf.build/links/slack
 [bash]: https://www.gnu.org/software/bash
 [binary]: https://docs.buf.build/installation#binary
 [breaking]: https://docs.buf.build/breaking
@@ -121,6 +121,7 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [breaking_usage]: https://docs.buf.build/breaking/usage
 [brew]: https://brew.sh
 [bsr]: https://docs.buf.build/bsr
+[bsr_plugins]: https://buf.build/plugins
 [bsr_post]: https://buf.build/blog/announcing-bsr
 [bsr_usage]: https://docs.buf.build/bsr/usage
 [buf]: https://buf.build
@@ -147,17 +148,16 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [lint_rules]: https://docs.buf.build/lint/rules
 [lint_usage]: https://docs.buf.build/lint/usage
 [minisign]: https://github.com/jedisct1/minisign
-[plugins]: https://docs.buf.build/bsr/remote-generation/concepts#plugin
 [powershell]: https://docs.microsoft.com/en-us/powershell
 [protobuf]: https://developers.google.com/protocol-buffers
 [pushing]: https://docs.buf.build/bsr/usage#push-a-module
 [releases]: https://docs.buf.build/installation#github-releases
-[repo]: ./
+[repo]: https://github.com/bufbuild/buf/
 [repositories]: https://docs.buf.build/bsr/overview#module
 [roadmap]: https://docs.buf.build/roadmap
 [source]: https://docs.buf.build/installation#from-source
 [tarball]: https://docs.buf.build/installation#tarball
-[templates]: https://docs.buf.build/bsr/remote-generation/concepts#template
+[templates]: https://docs.buf.build/configuration/v1/buf-gen-yaml
 [tour]: https://docs.buf.build/tour/introduction
 [users]: https://docs.buf.build/bsr/user-management#organization-roles
 [verifying]: https://docs.buf.build/installation#verifying-a-release

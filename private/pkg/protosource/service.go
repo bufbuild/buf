@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,16 +18,19 @@ type service struct {
 	namedDescriptor
 	optionExtensionDescriptor
 
-	methods []Method
+	methods    []Method
+	deprecated bool
 }
 
 func newService(
 	namedDescriptor namedDescriptor,
 	optionExtensionDescriptor optionExtensionDescriptor,
+	deprecated bool,
 ) *service {
 	return &service{
 		namedDescriptor:           namedDescriptor,
 		optionExtensionDescriptor: optionExtensionDescriptor,
+		deprecated:                deprecated,
 	}
 }
 
@@ -37,4 +40,8 @@ func (m *service) Methods() []Method {
 
 func (m *service) addMethod(method Method) {
 	m.methods = append(m.methods, method)
+}
+
+func (m *service) Deprecated() bool {
+	return m.deprecated
 }

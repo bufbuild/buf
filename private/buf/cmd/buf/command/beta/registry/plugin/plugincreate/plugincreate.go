@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,10 +21,13 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -50,7 +53,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/" + bufremoteplugin.PluginsPathName + "/plugin>",
-		Short: "Create a new Protobuf plugin.",
+		Short: "Create a Protobuf plugin",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -76,7 +79,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Visibility,
 		visibilityFlagName,
 		"",
-		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
 	flagSet.StringVar(
@@ -102,7 +105,7 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
@@ -110,15 +113,19 @@ func run(
 	if err != nil {
 		return err
 	}
-	pluginService, err := registryProvider.NewPluginService(ctx, remote)
+	pluginService := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewPluginServiceClient)
+	resp, err := pluginService.CreatePlugin(
+		ctx,
+		connect.NewRequest(&registryv1alpha1.CreatePluginRequest{
+			Owner:      owner,
+			Name:       name,
+			Visibility: visibility,
+		}),
+	)
 	if err != nil {
 		return err
 	}
-	plugin, err := pluginService.CreatePlugin(ctx, owner, name, visibility)
-	if err != nil {
-		return err
-	}
-	return bufprint.NewPluginPrinter(container.Stdout()).PrintPlugin(ctx, format, plugin)
+	return bufprint.NewPluginPrinter(container.Stdout()).PrintPlugin(ctx, format, resp.Msg.Plugin)
 }
 
 // visibilityFlagToVisibility parses the given string as a registryv1alpha1.PluginVisibility.

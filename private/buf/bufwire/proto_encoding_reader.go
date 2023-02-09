@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -53,8 +54,14 @@ func (p *protoEncodingReader) GetMessage(
 	typeName string,
 	messageRef bufconvert.MessageEncodingRef,
 ) (_ proto.Message, retErr error) {
-	ctx, span := trace.StartSpan(ctx, "get_message")
+	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "get_message")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	// Currently, this support bin and JSON format.
 	resolver, err := protoencoding.NewResolver(
 		bufimage.ImageToFileDescriptors(
@@ -71,7 +78,7 @@ func (p *protoEncodingReader) GetMessage(
 	case bufconvert.MessageEncodingJSON:
 		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
 	default:
-		return nil, fmt.Errorf("unknown message encoding type")
+		return nil, errors.New("unknown message encoding type")
 	}
 	readCloser := io.NopCloser(container.Stdin())
 	if messageRef.Path() != "-" {

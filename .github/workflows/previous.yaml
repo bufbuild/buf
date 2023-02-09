@@ -1,0 +1,30 @@
+name: previous
+on: push
+# Prevent writing to the repository using the CI token.
+# Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
+permissions: read-all
+env:
+  MAKEFLAGS: "-j 2"
+jobs:
+  test-previous:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: setup-go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18.5
+      - name: cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/buf/${{ runner.os }}/x86_64/bin
+            ~/.cache/buf/${{ runner.os }}/x86_64/go/pkg/mod
+            ~/.cache/buf/${{ runner.os }}/x86_64/include
+            ~/.cache/buf/${{ runner.os }}/x86_64/versions
+          key: ${{ runner.os }}-buf-${{ hashFiles('**/go.sum', 'make/**') }}
+          restore-keys: |
+            ${{ runner.os }}-buf-
+      - name: make-test
+        run: make test

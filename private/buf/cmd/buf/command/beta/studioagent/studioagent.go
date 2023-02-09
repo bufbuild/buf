@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: "Run an HTTP(S) server as the Studio agent.",
+		Short: "Run an HTTP(S) server as the Studio agent",
 		Args:  cobra.ExactArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -86,61 +86,61 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.BindAddress,
 		bindFlagName,
 		"127.0.0.1",
-		"The address to be exposed to accept HTTP requests.",
+		"The address to be exposed to accept HTTP requests",
 	)
 	flagSet.StringVar(
 		&f.Port,
 		portFlagName,
 		"8080",
-		"The port to be exposed to accept HTTP requests.",
+		"The port to be exposed to accept HTTP requests",
 	)
 	flagSet.StringVar(
 		&f.Origin,
 		originFlagName,
-		"studio.buf.build",
-		"The allowed origin for CORS options.",
+		"https://studio.buf.build",
+		"The allowed origin for CORS options",
 	)
 	flagSet.StringSliceVar(
 		&f.DisallowedHeaders,
 		disallowedHeadersFlagName,
 		nil,
-		`The header names that are disallowed by this agent. When the agent receives an enveloped request with these headers set, it will return an error rather than forward the request to the target server. Multiple headers are appended if specified multiple times.`,
+		`The header names that are disallowed by this agent. When the agent receives an enveloped request with these headers set, it will return an error rather than forward the request to the target server. Multiple headers are appended if specified multiple times`,
 	)
 	flagSet.StringToStringVar(
 		&f.ForwardHeaders,
 		forwardHeadersFlagName,
 		nil,
-		`The headers to be forwarded via the agent to the target server. Must be an equals sign separated key-value pair (like --forward-header=fromHeader1=toHeader1). Multiple header pairs are appended if specified multiple times.`,
+		`The headers to be forwarded via the agent to the target server. Must be an equals sign separated key-value pair (like --forward-header=fromHeader1=toHeader1). Multiple header pairs are appended if specified multiple times`,
 	)
 	flagSet.StringVar(
 		&f.CACert,
 		caCertFlagName,
 		"",
-		"The CA cert to be used in the client and server TLS configuration.",
+		"The CA cert to be used in the client and server TLS configuration",
 	)
 	flagSet.StringVar(
 		&f.ClientCert,
 		clientCertFlagName,
 		"",
-		"The cert to be used in the client TLS configuration.",
+		"The cert to be used in the client TLS configuration",
 	)
 	flagSet.StringVar(
 		&f.ClientKey,
 		clientKeyFlagName,
 		"",
-		"The key to be used in the client TLS configuration.",
+		"The key to be used in the client TLS configuration",
 	)
 	flagSet.StringVar(
 		&f.ServerCert,
 		serverCertFlagName,
 		"",
-		"The cert to be used in the server TLS configuration.",
+		"The cert to be used in the server TLS configuration",
 	)
 	flagSet.StringVar(
 		&f.ServerKey,
 		serverKeyFlagName,
 		"",
-		"The key to be used in the server TLS configuration.",
+		"The key to be used in the server TLS configuration",
 	)
 }
 
@@ -187,19 +187,14 @@ func run(
 		return err
 	}
 
-	httpRunner := httpserver.NewRunner(
+	return httpserver.Run(
+		ctx,
 		container.Logger(),
-		httpserver.RunnerWithTLSConfig(
+		httpListener,
+		mux,
+		httpserver.RunWithTLSConfig(
 			serverTLSConfig,
 		),
-		httpserver.RunnerWithMaxBodySize(
-			bufstudioagent.MaxMessageSizeBytesDefault,
-		),
-	)
-	return httpRunner.Run(
-		ctx,
-		httpListener,
-		httpserver.NewHTTPHandlerMapper(mux),
 	)
 }
 

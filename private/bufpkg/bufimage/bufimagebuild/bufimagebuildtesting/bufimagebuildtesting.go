@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ func fuzzGetModuleFileSet(ctx context.Context, dirPath string) (bufmodule.Module
 	if err != nil {
 		return nil, err
 	}
-	module, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	module, err := bufmodulebuild.BuildForBucket(
 		ctx,
 		readWriteBucket,
 		config,

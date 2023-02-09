@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/multierr"
@@ -69,6 +69,17 @@ func (f Format) String() string {
 	}
 }
 
+// CuratedPluginPrinter is a printer for curated plugins.
+type CuratedPluginPrinter interface {
+	PrintCuratedPlugin(ctx context.Context, format Format, plugin *registryv1alpha1.CuratedPlugin) error
+	PrintCuratedPlugins(ctx context.Context, format Format, nextPageToken string, plugins ...*registryv1alpha1.CuratedPlugin) error
+}
+
+// NewCuratedPluginPrinter returns a new CuratedPluginPrinter.
+func NewCuratedPluginPrinter(writer io.Writer) CuratedPluginPrinter {
+	return newCuratedPluginPrinter(writer)
+}
+
 // OrganizationPrinter is an organization printer.
 type OrganizationPrinter interface {
 	PrintOrganization(ctx context.Context, format Format, organization *registryv1alpha1.Organization) error
@@ -87,21 +98,11 @@ type RepositoryPrinter interface {
 
 // NewRepositoryPrinter returns a new RepositoryPrinter.
 func NewRepositoryPrinter(
-	apiProvider registryv1alpha1apiclient.Provider,
+	clientConfig *connectclient.Config,
 	address string,
 	writer io.Writer,
 ) RepositoryPrinter {
-	return newRepositoryPrinter(apiProvider, address, writer)
-}
-
-// RepositoryBranchPrinter is a repository branch printer.
-type RepositoryBranchPrinter interface {
-	PrintRepositoryBranch(ctx context.Context, format Format, repositoryBranch *registryv1alpha1.RepositoryBranch) error
-}
-
-// NewRepositoryBranchPrinter returns a new RepositoryBranchPrinter.
-func NewRepositoryBranchPrinter(writer io.Writer) RepositoryBranchPrinter {
-	return newRepositoryBranchPrinter(writer)
+	return newRepositoryPrinter(clientConfig, address, writer)
 }
 
 // RepositoryTagPrinter is a repository tag printer.
@@ -124,6 +125,17 @@ type RepositoryCommitPrinter interface {
 // NewRepositoryCommitPrinter returns a new RepositoryCommitPrinter.
 func NewRepositoryCommitPrinter(writer io.Writer) RepositoryCommitPrinter {
 	return newRepositoryCommitPrinter(writer)
+}
+
+// RepositoryDraftPrinter is a repository draft printer.
+type RepositoryDraftPrinter interface {
+	PrintRepositoryDraft(ctx context.Context, format Format, repositoryCommit *registryv1alpha1.RepositoryCommit) error
+	PrintRepositoryDrafts(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*registryv1alpha1.RepositoryCommit) error
+}
+
+// NewRepositoryDraftPrinter returns a new RepositoryDraftPrinter.
+func NewRepositoryDraftPrinter(writer io.Writer) RepositoryDraftPrinter {
+	return newRepositoryDraftPrinter(writer)
 }
 
 // PluginPrinter is a printer for plugins.

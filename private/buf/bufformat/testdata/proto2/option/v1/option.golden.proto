@@ -13,7 +13,7 @@ message Foo {
     // Leading comment on extension_range_option.
     (custom.extension_range_option) = true
 
-  // Leading comment on ']'.
+    // Leading comment on ']'.
   ];
 
   // Leading comment on deprecated.
@@ -61,7 +61,7 @@ message Foo {
     required string five = 7 [(custom.field_value_thing) = {
       // Trailing comment on '{'.
 
-    // Leading comment on '}'.
+      // Leading comment on '}'.
     }];
   }
 }

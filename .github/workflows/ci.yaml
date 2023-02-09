@@ -12,12 +12,10 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: setup-go
-        if: success()
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18.3
+          go-version: 1.19.5
       - name: cache
-        if: success()
         uses: actions/cache@v3
         with:
           path: |
@@ -29,7 +27,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buf-lint-
       - name: make-lint
-        if: success()
         run: make lint
         env:
           BUF_BREAKING_AGAINST_INPUT: 'https://github.com/bufbuild/buf.git#branch=main'
@@ -41,12 +38,10 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: setup-go
-        if: success()
         uses: actions/setup-go@v3
         with:
-          go-version: 1.18.3
+          go-version: 1.19.5
       - name: cache
-        if: success()
         uses: actions/cache@v3
         with:
           path: |
@@ -58,7 +53,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buf-test-
       - name: make-test
-        if: success()
         run: make test
   docker:
     runs-on: ubuntu-20.04
@@ -70,7 +64,7 @@ jobs:
     # 2. The repository is not a fork, i.e. it will only run on the official bufbuild/buf
     # 3. The workflow run is trigged by main branch OR a tag with v prefix
     # See https://github.com/bufbuild/buf/pull/289/files#r596207623 for the discussion
-    if:  ${{ success() && github.repository == 'bufbuild/buf' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v')) }}
+    if:  ${{ github.repository == 'bufbuild/buf' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v')) }}
     steps:
       # qemu is used when executing things like `apk` in the final build
       # stage which must execute on the target platform. We currently do
@@ -96,12 +90,12 @@ jobs:
         id: tag
         run: |
           if echo "${GITHUB_REF}" | grep ^refs/heads/main$ >/dev/null; then
-            echo ::set-output name=tag::latest
+            echo "tag=latest" >> $GITHUB_OUTPUT
           elif echo "${GITHUB_REF}" | grep ^refs/tags/v >/dev/null; then
-            echo ::set-output name=tag::"$(echo "${GITHUB_REF}" | sed "s/refs\/tags\/v//")"
+            echo "tag=${GITHUB_REF}" | sed "s|refs/tags/v||" >> $GITHUB_OUTPUT
           fi
       - name: docker-build-push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: Dockerfile.buf
           platforms: ${{ steps.qemu.outputs.platforms }}

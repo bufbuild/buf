@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -79,9 +79,11 @@ message GetLocalModulePinsRequest {
 enum ResolvedReferenceType {
   RESOLVED_REFERENCE_TYPE_UNSPECIFIED = 0;
   RESOLVED_REFERENCE_TYPE_COMMIT = 1;
-  RESOLVED_REFERENCE_TYPE_BRANCH = 2;
   RESOLVED_REFERENCE_TYPE_TAG = 3;
-  RESOLVED_REFERENCE_TYPE_TRACK = 4;
+  RESOLVED_REFERENCE_TYPE_DRAFT = 5;
+
+  reserved 2, 4;
+  reserved "RESOLVED_REFERENCE_TYPE_BRANCH", "RESOLVED_REFERENCE_TYPE_TRACK";
 }
 
 message LocalModuleResolveResult {

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,11 +51,16 @@ func executePlugin(
 	pluginName string,
 	pluginInfo *pluginInfo,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	response, err := appprotoexec.NewGenerator(
+	generator := appprotoexec.NewGenerator(
 		logger,
 		storageosProvider,
 		runner,
-	).Generate(
+	)
+	var options []appprotoexec.GenerateOption
+	if pluginInfo.Path != "" {
+		options = append(options, appprotoexec.GenerateWithPluginPath(pluginInfo.Path))
+	}
+	response, err := generator.Generate(
 		ctx,
 		container,
 		pluginName,
@@ -66,7 +71,7 @@ func executePlugin(
 			false,
 			false,
 		),
-		appprotoexec.GenerateWithPluginPath(pluginInfo.Path),
+		options...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("--%s_out: %v", pluginName, err)

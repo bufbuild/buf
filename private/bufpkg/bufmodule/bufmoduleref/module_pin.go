@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,13 +47,13 @@ func newModulePin(
 	}
 	return newModulePinForProto(
 		&modulev1alpha1.ModulePin{
-			Remote:     remote,
-			Owner:      owner,
-			Repository: repository,
-			Branch:     branch,
-			Commit:     commit,
-			Digest:     digest,
-			CreateTime: protoCreateTime,
+			Remote:         remote,
+			Owner:          owner,
+			Repository:     repository,
+			Branch:         branch,
+			Commit:         commit,
+			ManifestDigest: digest,
+			CreateTime:     protoCreateTime,
 		},
 	)
 }
@@ -70,7 +70,7 @@ func newModulePinForProto(
 		repository: protoModulePin.Repository,
 		branch:     protoModulePin.Branch,
 		commit:     protoModulePin.Commit,
-		digest:     protoModulePin.Digest,
+		digest:     protoModulePin.ManifestDigest,
 		createTime: protoModulePin.CreateTime.AsTime(),
 	}, nil
 }
@@ -79,12 +79,12 @@ func newProtoModulePinForModulePin(
 	modulePin ModulePin,
 ) *modulev1alpha1.ModulePin {
 	return &modulev1alpha1.ModulePin{
-		Remote:     modulePin.Remote(),
-		Owner:      modulePin.Owner(),
-		Repository: modulePin.Repository(),
-		Branch:     modulePin.Branch(),
-		Commit:     modulePin.Commit(),
-		Digest:     modulePin.Digest(),
+		Remote:         modulePin.Remote(),
+		Owner:          modulePin.Owner(),
+		Repository:     modulePin.Repository(),
+		Branch:         modulePin.Branch(),
+		Commit:         modulePin.Commit(),
+		ManifestDigest: modulePin.Digest(),
 		// no need to validate as we already know this is valid
 		CreateTime: timestamppb.New(modulePin.CreateTime()),
 	}

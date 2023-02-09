@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,12 +20,15 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
@@ -38,8 +41,8 @@ func NewCommand(
 ) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <directory>",
-		Short: "Prunes unused dependencies from the " + buflock.ExternalConfigFilePath + " file.",
-		Long:  `The first argument is the directory of the local module to prune. Defaults to "." if no argument is specified.`,
+		Short: "Prune unused dependencies from the" + buflock.ExternalConfigFilePath + " file",
+		Long:  `The first argument is the directory of the local module to prune. Defaults to "." if no argument is specified`,
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -78,18 +81,15 @@ func run(
 	if err != nil {
 		return err
 	}
-	remote := bufrpc.DefaultRemote
+	remote := bufconnect.DefaultRemote
 	if config.ModuleIdentity != nil && config.ModuleIdentity.Remote() != "" {
 		remote = config.ModuleIdentity.Remote()
 	}
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewResolveService(ctx, remote)
-	if err != nil {
-		return err
-	}
+	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
 
 	module, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
 	if err != nil {
@@ -102,14 +102,19 @@ func run(
 	}
 	var dependencyModulePins []bufmoduleref.ModulePin
 	if len(requestReferences) > 0 {
-		protoDependencyModulePins, err := service.GetModulePins(ctx, bufmoduleref.NewProtoModuleReferencesForModuleReferences(requestReferences...), nil)
+		resp, err := service.GetModulePins(
+			ctx,
+			connect.NewRequest(&registryv1alpha1.GetModulePinsRequest{
+				ModuleReferences: bufmoduleref.NewProtoModuleReferencesForModuleReferences(requestReferences...),
+			}),
+		)
 		if err != nil {
-			if connect.CodeOf(err) == connect.CodeUnimplemented && remote != bufrpc.DefaultRemote {
+			if connect.CodeOf(err) == connect.CodeUnimplemented && remote != bufconnect.DefaultRemote {
 				return bufcli.NewUnimplementedRemoteError(err, remote, config.ModuleIdentity.IdentityString())
 			}
 			return err
 		}
-		dependencyModulePins, err = bufmoduleref.NewModulePinsForProtos(protoDependencyModulePins...)
+		dependencyModulePins, err = bufmoduleref.NewModulePinsForProtos(resp.Msg.ModulePins...)
 		if err != nil {
 			return bufcli.NewInternalError(err)
 		}

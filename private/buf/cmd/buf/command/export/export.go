@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,10 +54,33 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
-		Short: "Export the files from the input location to an output location.",
-		Long:  bufcli.GetInputLong(`the source or module to export`),
-		Args:  cobra.MaximumNArgs(1),
+		Use:   name + " <source>",
+		Short: "Export proto files from one location to another",
+		Long: bufcli.GetSourceOrModuleLong(`the source or module to export`) + `
+
+Examples:
+
+Export proto files in <source> to an output directory.
+
+    $ buf export <source> --output=<output-dir>
+
+Export current directory to another local directory. 
+
+    $ buf export . --output=<output-dir>
+
+Export the latest remote module to a local directory.
+
+    $ buf export <buf.build/owner/repository> --output=<output-dir>
+
+Export a specific version of a remote module to a local directory.
+
+    $ buf export <buf.build/owner/repository:ref> --output=<output-dir>
+
+Export a git repo to a local directory.
+
+    $ buf export https://github.com/owner/repository.git --output=<output-dir>
+`,
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -95,14 +118,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagName,
 		outputFlagShortName,
 		"",
-		`The output directory for exported files.`,
+		`The output directory for exported files`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, outputFlagName)
 	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 }
 
@@ -121,11 +144,11 @@ func run(
 	}
 	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return err
 	}
@@ -133,7 +156,7 @@ func run(
 		container,
 		storageosProvider,
 		runner,
-		registryProvider,
+		clientConfig,
 		moduleReader,
 	)
 	if err != nil {
@@ -222,7 +245,7 @@ func run(
 			container,
 			storageosProvider,
 			runner,
-			registryProvider,
+			clientConfig,
 		)
 		if err != nil {
 			return err

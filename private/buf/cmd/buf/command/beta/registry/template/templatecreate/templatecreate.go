@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,10 +21,13 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -51,7 +54,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/" + bufremoteplugin.TemplatesPathName + "/template>",
-		Short: "Create a new Buf template.",
+		Short: "Create a Buf template",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -78,14 +81,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The template file or data to use for configuration. Must be in either YAML or JSON format.`,
+		`The template file or data to use for configuration. Must be in either YAML or JSON format`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, configFlagName)
 	flagSet.StringVar(
 		&f.Visibility,
 		visibilityFlagName,
 		"",
-		fmt.Sprintf(`The template's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The template's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
 	flagSet.StringVar(
@@ -115,7 +118,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
@@ -123,21 +126,20 @@ func run(
 	if err != nil {
 		return err
 	}
-	pluginService, err := registryProvider.NewPluginService(ctx, remote)
-	if err != nil {
-		return err
-	}
-	template, err := pluginService.CreateTemplate(
+	pluginService := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewPluginServiceClient)
+	resp, err := pluginService.CreateTemplate(
 		ctx,
-		owner,
-		name,
-		visibility,
-		bufremoteplugin.TemplateConfigToProtoPluginConfigs(templateConfig),
+		connect.NewRequest(&registryv1alpha1.CreateTemplateRequest{
+			Owner:         owner,
+			Name:          name,
+			Visibility:    visibility,
+			PluginConfigs: bufremoteplugin.TemplateConfigToProtoPluginConfigs(templateConfig),
+		}),
 	)
 	if err != nil {
 		return err
 	}
-	return bufprint.NewTemplatePrinter(container.Stdout()).PrintTemplate(ctx, format, template)
+	return bufprint.NewTemplatePrinter(container.Stdout()).PrintTemplate(ctx, format, resp.Msg.Template)
 }
 
 // visibilityFlagToVisibility parses the given string as a registryv1alpha1.PluginVisibility.

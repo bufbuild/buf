@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FileOptions {
+  string file_option_str = 30000;
+}
+
+extend google.protobuf.MessageOptions {
+  string msg_option_str = 30000;
+}
+
+extend google.protobuf.ServiceOptions {
+  string svc_option_str = 30000;
+}

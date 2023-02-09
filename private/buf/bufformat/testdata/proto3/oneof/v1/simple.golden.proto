@@ -2,12 +2,12 @@ syntax = "proto3";
 
 message Foo {
   /* Leading comment on oneof */
-  oneof /* Comment between oneof and 'bar' */bar/* Comment before '{' */ {
+  oneof /* Comment between oneof and 'bar' */ bar /* Comment before '{' */ {
     // This is a trailing comment on the oneof's '{'.
     // This is another trailing comment.
 
     // This is a leading comment on name.
     string name = 1; // In-line comment on name.
-    float /* Comment after float */value = 2;
+    float /* Comment after float */ value = 2;
   } // Trailing comment on oneof's '}'.
 }

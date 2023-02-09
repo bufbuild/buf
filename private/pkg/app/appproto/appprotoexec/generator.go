@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,11 +55,11 @@ func (g *generator) Generate(
 		option(generateOptions)
 	}
 	handler, err := NewHandler(
-		g.logger,
 		g.storageosProvider,
 		g.runner,
 		pluginName,
-		HandlerWithPluginPath(generateOptions.pluginPath),
+		HandlerWithPluginPath(generateOptions.pluginPath...),
+		HandlerWithProtocPath(generateOptions.protocPath),
 	)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,8 @@ func (g *generator) Generate(
 }
 
 type generateOptions struct {
-	pluginPath string
+	pluginPath []string
+	protocPath string
 }
 
 func newGenerateOptions() *generateOptions {

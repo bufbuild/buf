@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -58,6 +59,15 @@ func IsExistsMultipleLocations(err error) bool {
 	return errors.As(err, &asErr)
 }
 
+// IsWriteLimitReached returns true if the error is of writes exceeding the limit of the bucket.
+func IsWriteLimitReached(err error) bool {
+	if err == nil {
+		return false
+	}
+	asErr := &errWriteLimitReached{}
+	return errors.As(err, &asErr)
+}
+
 // errorExistsMultipleLocations is the error returned if a path exists in multiple locations.
 type errorExistsMultipleLocations struct {
 	Path          string
@@ -67,4 +77,17 @@ type errorExistsMultipleLocations struct {
 // Error implements error.
 func (e *errorExistsMultipleLocations) Error() string {
 	return e.Path + " exists in multiple locations: " + strings.Join(e.ExternalPaths, " ")
+}
+
+// errWriteLimitReached is the error returned if the write limit is reached.
+//
+// See [LimitWriteBucket].
+type errWriteLimitReached struct {
+	Limit       int64
+	ExceedingBy int64
+}
+
+// Error implements error.
+func (e *errWriteLimitReached) Error() string {
+	return fmt.Sprintf("write limit reached: limit: %d, exceeding by: %d", e.Limit, e.ExceedingBy)
 }

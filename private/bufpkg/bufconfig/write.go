@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 
 const (
 	exampleName = "buf.build/acme/weather"
-	// This is only used for `buf config init`.
+	// This is only used for `buf mod init`.
 	tmplDocumentationCommentsData = `{{$top := .}}# This specifies the configuration file version.
 #
 # This controls the configuration file layout, defaults, and lint/breaking

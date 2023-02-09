@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ type enumValue struct {
 
 	enum       Enum
 	number     int
+	deprecated bool
 	numberPath []int32
 }
 
@@ -28,6 +29,7 @@ func newEnumValue(
 	optionExtensionDescriptor optionExtensionDescriptor,
 	enum Enum,
 	number int,
+	deprecated bool,
 	numberPath []int32,
 ) *enumValue {
 	return &enumValue{
@@ -35,6 +37,7 @@ func newEnumValue(
 		optionExtensionDescriptor: optionExtensionDescriptor,
 		enum:                      enum,
 		number:                    number,
+		deprecated:                deprecated,
 		numberPath:                numberPath,
 	}
 }
@@ -45,6 +48,10 @@ func (e *enumValue) Enum() Enum {
 
 func (e *enumValue) Number() int {
 	return e.number
+}
+
+func (e *enumValue) Deprecated() bool {
+	return e.deprecated
 }
 
 func (e *enumValue) NumberLocation() Location {

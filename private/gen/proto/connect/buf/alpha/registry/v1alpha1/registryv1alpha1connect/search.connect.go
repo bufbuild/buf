@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,6 +43,10 @@ const (
 type SearchServiceClient interface {
 	// Search searches the BSR.
 	Search(context.Context, *connect_go.Request[v1alpha1.SearchRequest]) (*connect_go.Response[v1alpha1.SearchResponse], error)
+	// SearchTag searches for tags in a repository
+	SearchTag(context.Context, *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error)
+	// SearchDraft searches for drafts in a repository
+	SearchDraft(context.Context, *connect_go.Request[v1alpha1.SearchDraftRequest]) (*connect_go.Response[v1alpha1.SearchDraftResponse], error)
 }
 
 // NewSearchServiceClient constructs a client for the buf.alpha.registry.v1alpha1.SearchService
@@ -60,12 +64,24 @@ func NewSearchServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 			baseURL+"/buf.alpha.registry.v1alpha1.SearchService/Search",
 			opts...,
 		),
+		searchTag: connect_go.NewClient[v1alpha1.SearchTagRequest, v1alpha1.SearchTagResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.SearchService/SearchTag",
+			opts...,
+		),
+		searchDraft: connect_go.NewClient[v1alpha1.SearchDraftRequest, v1alpha1.SearchDraftResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.SearchService/SearchDraft",
+			opts...,
+		),
 	}
 }
 
 // searchServiceClient implements SearchServiceClient.
 type searchServiceClient struct {
-	search *connect_go.Client[v1alpha1.SearchRequest, v1alpha1.SearchResponse]
+	search      *connect_go.Client[v1alpha1.SearchRequest, v1alpha1.SearchResponse]
+	searchTag   *connect_go.Client[v1alpha1.SearchTagRequest, v1alpha1.SearchTagResponse]
+	searchDraft *connect_go.Client[v1alpha1.SearchDraftRequest, v1alpha1.SearchDraftResponse]
 }
 
 // Search calls buf.alpha.registry.v1alpha1.SearchService.Search.
@@ -73,11 +89,25 @@ func (c *searchServiceClient) Search(ctx context.Context, req *connect_go.Reques
 	return c.search.CallUnary(ctx, req)
 }
 
+// SearchTag calls buf.alpha.registry.v1alpha1.SearchService.SearchTag.
+func (c *searchServiceClient) SearchTag(ctx context.Context, req *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error) {
+	return c.searchTag.CallUnary(ctx, req)
+}
+
+// SearchDraft calls buf.alpha.registry.v1alpha1.SearchService.SearchDraft.
+func (c *searchServiceClient) SearchDraft(ctx context.Context, req *connect_go.Request[v1alpha1.SearchDraftRequest]) (*connect_go.Response[v1alpha1.SearchDraftResponse], error) {
+	return c.searchDraft.CallUnary(ctx, req)
+}
+
 // SearchServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.SearchService
 // service.
 type SearchServiceHandler interface {
 	// Search searches the BSR.
 	Search(context.Context, *connect_go.Request[v1alpha1.SearchRequest]) (*connect_go.Response[v1alpha1.SearchResponse], error)
+	// SearchTag searches for tags in a repository
+	SearchTag(context.Context, *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error)
+	// SearchDraft searches for drafts in a repository
+	SearchDraft(context.Context, *connect_go.Request[v1alpha1.SearchDraftRequest]) (*connect_go.Response[v1alpha1.SearchDraftResponse], error)
 }
 
 // NewSearchServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -92,6 +122,16 @@ func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect_go.Handle
 		svc.Search,
 		opts...,
 	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.SearchService/SearchTag", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.SearchService/SearchTag",
+		svc.SearchTag,
+		opts...,
+	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.SearchService/SearchDraft", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.SearchService/SearchDraft",
+		svc.SearchDraft,
+		opts...,
+	))
 	return "/buf.alpha.registry.v1alpha1.SearchService/", mux
 }
 
@@ -100,4 +140,12 @@ type UnimplementedSearchServiceHandler struct{}
 
 func (UnimplementedSearchServiceHandler) Search(context.Context, *connect_go.Request[v1alpha1.SearchRequest]) (*connect_go.Response[v1alpha1.SearchResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.Search is not implemented"))
+}
+
+func (UnimplementedSearchServiceHandler) SearchTag(context.Context, *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.SearchTag is not implemented"))
+}
+
+func (UnimplementedSearchServiceHandler) SearchDraft(context.Context, *connect_go.Request[v1alpha1.SearchDraftRequest]) (*connect_go.Response[v1alpha1.SearchDraftResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.SearchDraft is not implemented"))
 }

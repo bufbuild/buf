@@ -1,0 +1,15 @@
+version: v1
+name: buf.build/protocolbuffers/go
+plugin_version: v1.5.0
+registry:
+  npm:
+    deps:
+      - package: @types/google-protobuf
+        version: ^3.15.6
+  go:
+    min_version: 1.18
+  maven:
+    deps:
+      - group_id: "io.grpc"
+        artifact_id: "grpc-protobuf"
+        version: "1.52.1"

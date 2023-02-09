@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -52,6 +53,38 @@ func RunCommandExitCodeStdout(
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
 	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
+}
+
+// RunCommandExitCodeStdoutFile runs the command and compares the exit code and stdout output.
+func RunCommandExitCodeStdoutFile(
+	t *testing.T,
+	newCommand func(use string) *appcmd.Command,
+	expectedExitCode int,
+	expectedStdout string,
+	newEnv func(use string) map[string]string,
+	stdin io.Reader,
+	args ...string,
+) {
+	file, err := os.Open(expectedStdout)
+	require.NoError(t, err)
+	expectedstdoutConts, err := io.ReadAll(file)
+	require.NoError(t, err)
+	RunCommandExitCodeStdout(t, newCommand, expectedExitCode, string(expectedstdoutConts), newEnv, stdin, args...)
+}
+
+// RunCommandExitCodeStdoutStdinFile runs the command and allows a stdinFile to be opened and piped into the command.
+func RunCommandExitCodeStdoutStdinFile(
+	t *testing.T,
+	newCommand func(use string) *appcmd.Command,
+	expectedExitCode int,
+	expectedStdout string,
+	newEnv func(use string) map[string]string,
+	stdinFile string,
+	args ...string,
+) {
+	stdin, err := os.Open(stdinFile)
+	require.NoError(t, err)
+	RunCommandExitCodeStdout(t, newCommand, expectedExitCode, expectedStdout, newEnv, stdin, args...)
 }
 
 // RunCommandExitCodeStderr runs the command and compares the exit code and stderr output.

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
+import "buf/alpha/registry/v1alpha1/verification_status.proto";
 import "google/protobuf/timestamp.proto";
 
 message Organization {
@@ -28,6 +29,13 @@ message Organization {
   google.protobuf.Timestamp update_time = 3;
   // unique, mutable
   string name = 4;
+  // description is the user configurable description of the organization.
+  string description = 5;
+  // url is the user configurable URL in the description of the organization,
+  // always included the scheme and will not have a #fragment suffix.
+  string url = 6;
+  // verification status of the organization, configurable by server admin.
+  VerificationStatus verification_status = 7;
 }
 
 // OrganizationMembership is a nested structure that contains
@@ -65,6 +73,10 @@ service OrganizationService {
   rpc GetOrganizationSettings(GetOrganizationSettingsRequest) returns (GetOrganizationSettingsResponse);
   // UpdateOrganizationSettings update the organization settings including base roles.
   rpc UpdateOrganizationSettings(UpdateOrganizationSettingsRequest) returns (UpdateOrganizationSettingsResponse);
+  // AddOrganizationGroup adds an IdP Group to the organization.
+  rpc AddOrganizationGroup(AddOrganizationGroupRequest) returns (AddOrganizationGroupResponse);
+  // RemoveOrganizationGroup removes an IdP Group from the organization.
+  rpc RemoveOrganizationGroup(RemoveOrganizationGroupRequest) returns (RemoveOrganizationGroupResponse);
 }
 
 message GetOrganizationRequest {
@@ -182,10 +194,12 @@ message GetOrganizationSettingsRequest {
 
 message GetOrganizationSettingsResponse {
   RepositoryRole repository_base_role = 1;
-  PluginRole plugin_base_role = 2;
-  TemplateRole template_base_role = 3;
+  PluginRole plugin_base_role = 2 [deprecated = true];
+  TemplateRole template_base_role = 3 [deprecated = true];
   // The number of members in the organization.
   uint32 members_count = 4;
+  // The IdP groups associated with the organization.
+  repeated string idp_groups = 5;
 }
 
 message UpdateOrganizationSettingsRequest {
@@ -194,9 +208,31 @@ message UpdateOrganizationSettingsRequest {
   // optional, no update to this base role will be made if this is unspecified.
   RepositoryRole repository_base_role = 2;
   // optional, no update to this base role will be made if this is unspecified.
-  PluginRole plugin_base_role = 3;
+  PluginRole plugin_base_role = 3 [deprecated = true];
   // optional, no update to this base role will be made if this is unspecified.
-  TemplateRole template_base_role = 4;
+  TemplateRole template_base_role = 4 [deprecated = true];
+  // optional, update to description will only be made when this is present
+  optional string description = 5;
+  // optional, update to url will only be made when this is present
+  optional string url = 6;
 }
 
 message UpdateOrganizationSettingsResponse {}
+
+message AddOrganizationGroupRequest {
+  // The ID of the organization for which to add the group.
+  string organization_id = 1;
+  // The name of the group to add.
+  string group_name = 2;
+}
+
+message AddOrganizationGroupResponse {}
+
+message RemoveOrganizationGroupRequest {
+  // The ID of the organization for which to remove the group.
+  string organization_id = 1;
+  // The name of the group to remove.
+  string group_name = 2;
+}
+
+message RemoveOrganizationGroupResponse {}

@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,21 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-// StudioAgentPreset is the information about an agent preset in the studio.
+// The protocols supported by Studio agent.
+enum StudioAgentProtocol {
+  STUDIO_AGENT_PROTOCOL_UNSPECIFIED = 0;
+  STUDIO_AGENT_PROTOCOL_GRPC = 1;
+  STUDIO_AGENT_PROTOCOL_CONNECT = 2;
+}
+
+// StudioAgentPreset is the information about an agent preset in the Studio.
 message StudioAgentPreset {
-  // The target agent URL in the studio.
+  // The target agent URL in the Studio.
   string url = 1;
   // The optional alias of the agent URL.
   string alias = 2;
+  // The protocol the agent should use to forward requests.
+  StudioAgentProtocol protocol = 3;
 }
 
 // StudioService is the Studio service.

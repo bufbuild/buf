@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,17 +16,22 @@ package bufmodulebuild
 
 import (
 	"context"
+	"io"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestBucketGetFileInfos1(t *testing.T) {
@@ -304,6 +309,88 @@ func TestDocumentation(t *testing.T) {
 	)
 }
 
+func TestLicense(t *testing.T) {
+	testLicenseBucket(
+		t,
+		"testdata/5",
+		"Test Module License",
+		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/5/proto/1.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/5/proto/a/2.proto", false, nil, ""),
+	)
+}
+
+func TestConfigInclusion(t *testing.T) {
+	t.Run("buf.yaml", func(t *testing.T) {
+		t.Parallel()
+		testConfigInclusion(t, "buf.yaml")
+	})
+	t.Run("buf.mod", func(t *testing.T) {
+		t.Parallel()
+		testConfigInclusion(t, "buf.mod")
+	})
+}
+
+func testConfigInclusion(t *testing.T, confname string) {
+	// bucket creation
+	bufyaml := `
+version: v1
+breaking:
+  ignore_unstable_packages: true
+lint:
+  allow_comment_ignores: true
+`
+	ctx := context.Background()
+	bucket, err := memBucket(ctx,
+		confname, bufyaml,
+		"a/1.proto", "",
+	)
+	require.NoError(t, err)
+
+	// build
+	config, err := bufmoduleconfig.NewConfigV1(
+		bufmoduleconfig.ExternalConfigV1{},
+	)
+	require.NoError(t, err)
+	module, err := BuildForBucket(
+		ctx,
+		bucket,
+		config,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, module)
+
+	// assert: one proto consumed
+	fileInfos, err := module.TargetFileInfos(ctx)
+	assert.NoError(t, err)
+	assert.Len(t, fileInfos, 1)
+
+	// assert: breaking and lint configuration exists
+	zeroBreaking := bufbreakingconfig.NewConfigV1(
+		bufbreakingconfig.ExternalConfigV1{},
+	)
+	assert.NotEqual(t, zeroBreaking, module.BreakingConfig(), "empty BreakingConfig")
+	zeroLint := buflintconfig.NewConfigV1(
+		buflintconfig.ExternalConfigV1{},
+	)
+	assert.NotEqual(t, zeroLint, module.LintConfig(), "empty LintConfig")
+}
+
+func memBucket(ctx context.Context, pathcontent ...string) (storage.ReadBucket, error) {
+	membucket := storagemem.NewReadWriteBucket()
+	for i := 0; i < len(pathcontent); i += 2 {
+		fh, err := membucket.Put(ctx, pathcontent[i])
+		if err != nil {
+			return nil, err
+		}
+		_, err = io.Copy(fh, strings.NewReader(pathcontent[i+1]))
+		if err != nil {
+			return nil, err
+		}
+		fh.Close()
+	}
+	return membucket, nil
+}
+
 func testBucketGetFileInfos(
 	t *testing.T,
 	relDir string,
@@ -317,7 +404,7 @@ func testBucketGetFileInfos(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	module, err := BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -340,7 +427,7 @@ func testBucketGetFileInfos(
 			require.NoError(t, err)
 			bucketRelPaths[i] = bucketRelPath
 		}
-		module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+		module, err := BuildForBucket(
 			context.Background(),
 			readWriteBucket,
 			config,
@@ -369,7 +456,7 @@ func testBucketGetAllFileInfosError(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	module, err := BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -403,7 +490,7 @@ func testBucketGetFileInfosForExternalPathsError(
 		require.NoError(t, err)
 		bucketRelPaths[i] = bucketRelPath
 	}
-	_, err = NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	_, err = BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -427,7 +514,7 @@ func testDocumentationBucket(
 		bufmoduleconfig.ExternalConfigV1{},
 	)
 	require.NoError(t, err)
-	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	module, err := BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -435,7 +522,40 @@ func testDocumentationBucket(
 	require.NoError(t, err)
 	require.NotNil(t, module)
 	assert.NotEmpty(t, module.Documentation())
+	fileInfos, err := module.TargetFileInfos(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(
+		t,
+		expectedFileInfos,
+		fileInfos,
+	)
+}
+
+func testLicenseBucket(
+	t *testing.T,
+	relDir string,
+	expectedLicense string,
+	expectedFileInfos ...bufmoduleref.FileInfo,
+) {
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		relDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
+	config, err := bufmoduleconfig.NewConfigV1(
+		bufmoduleconfig.ExternalConfigV1{},
+	)
+	require.NoError(t, err)
+	module, err := BuildForBucket(
+		context.Background(),
+		readWriteBucket,
+		config,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, module)
+	assert.NotEmpty(t, module.License())
+	assert.Equal(t, expectedLicense, module.License())
 	fileInfos, err := module.TargetFileInfos(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(

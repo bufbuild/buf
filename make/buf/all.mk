@@ -1,15 +1,10 @@
-# https://github.com/jhump/protoreflect/commits/master 20220416 checked 20220417
-GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/jhump/protoreflect@438db461d753097fc3243323d1b0d80292dfdb53
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
-	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
-	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
-	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientconnect \
 	private/bufpkg/bufstyle/cmd/bufstyle \
+	private/bufpkg/bufwkt/cmd/wkt-go-data \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
@@ -23,13 +18,15 @@ DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
 	.ctrlp \
+	.idea/ \
 	.vscode/ \
+	private/buf/cmd/buf/command/alpha/protoc/test.txt \
 	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
 	private/bufpkg/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
-LICENSE_HEADER_YEAR_RANGE := 2020-2022
+LICENSE_HEADER_YEAR_RANGE := 2020-2023
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf
@@ -45,7 +42,6 @@ include make/go/dep_minisign.mk
 include make/go/dep_protoc.mk
 include make/go/dep_protoc_gen_go.mk
 include make/go/dep_protoc_gen_connect_go.mk
-include make/go/dep_go_fuzz.mk
 include make/go/go.mk
 include make/go/docker.mk
 include make/go/buf.mk
@@ -66,11 +62,11 @@ bandeps: installbandeps
 postlonglint:: bandeps
 
 .PHONY: godata
-godata: installspdx-go-data installstorage-go-data $(PROTOC)
+godata: installspdx-go-data installwkt-go-data $(PROTOC)
 	rm -rf private/gen/data
 	mkdir -p private/gen/data/datawkt
 	mkdir -p private/gen/data/dataspdx
-	storage-go-data $(CACHE_INCLUDE) --package datawkt > private/gen/data/datawkt/datawkt.gen.go
+	wkt-go-data $(CACHE_INCLUDE) --package datawkt > private/gen/data/datawkt/datawkt.gen.go
 	spdx-go-data --package dataspdx > private/gen/data/dataspdx/dataspdx.gen.go
 
 prepostgenerate:: godata
@@ -97,9 +93,6 @@ privateusage:
 postprepostgenerate:: privateusage
 
 bufgeneratedeps:: \
-	installprotoc-gen-go-api \
-	installprotoc-gen-go-apiclient \
-	installprotoc-gen-go-apiclientconnect \
 	$(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO)
 
 .PHONY: bufgeneratecleango
@@ -111,6 +104,7 @@ bufgenerateclean:: bufgeneratecleango
 .PHONY: bufgenerateprotogo
 bufgenerateprotogo:
 	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
+	$(BUF_BIN) generate buf.build/grpc/grpc --include-types grpc.reflection.v1.ServerReflection --template data/template/buf.go.gen.yaml
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
@@ -122,7 +116,7 @@ bufgeneratesteps:: \
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
-	DOCKER_IMAGE=golang:1.18.3-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.19.5-bullseye bash make/buf/scripts/release.bash
 
 # We have to manually set the Homebrew version on the Homebrew badge as there
 # is no badge on shields.io for Homebrew packages outside of homebrew-core
@@ -146,8 +140,8 @@ ifndef GOVERSION
 endif
 	# make sure both of these docker images exist
 	# the release of these images will lag the actual release
-	docker pull golang:$(GOVERSION)-buster
-	docker pull golang:$(GOVERSION)-alpine3.15
+	docker pull golang:$(GOVERSION)-bullseye
+	docker pull golang:$(GOVERSION)-alpine3.17
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: 1\.[0-9][0-9]*\.[0-9][0-9]*/go-version: $(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)

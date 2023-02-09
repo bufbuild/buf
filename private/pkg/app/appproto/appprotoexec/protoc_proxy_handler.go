@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,35 +30,36 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type protocProxyHandler struct {
-	logger            *zap.Logger
 	storageosProvider storageos.Provider
 	runner            command.Runner
 	protocPath        string
 	pluginName        string
+	tracer            trace.Tracer
 }
 
 func newProtocProxyHandler(
-	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	protocPath string,
 	pluginName string,
 ) *protocProxyHandler {
 	return &protocProxyHandler{
-		logger:            logger.Named("appprotoexec"),
 		storageosProvider: storageosProvider,
 		runner:            runner,
 		protocPath:        protocPath,
 		pluginName:        pluginName,
+		tracer:            otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 }
 
@@ -68,9 +69,16 @@ func (h *protocProxyHandler) Handle(
 	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) (retErr error) {
-	ctx, span := trace.StartSpan(ctx, "protoc_proxy")
-	span.AddAttributes(trace.StringAttribute("plugin", filepath.Base(h.pluginName)))
+	ctx, span := h.tracer.Start(ctx, "protoc_proxy", trace.WithAttributes(
+		attribute.Key("plugin").String(filepath.Base(h.pluginName)),
+	))
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 	protocVersion, err := h.getProtocVersion(ctx, container)
 	if err != nil {
 		return err

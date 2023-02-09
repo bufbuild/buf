@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 package protoencoding
 
 import (
+	"sync"
+
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -83,4 +85,46 @@ func addExtensionsToTypes(types *protoregistry.Types, extensionDescriptors proto
 		}
 	}
 	return nil
+}
+
+type lazyResolver struct {
+	fn       func() (Resolver, error)
+	init     sync.Once
+	resolver Resolver
+	err      error
+}
+
+func (l *lazyResolver) maybeInit() error {
+	l.init.Do(func() {
+		l.resolver, l.err = l.fn()
+	})
+	return l.err
+}
+
+func (l *lazyResolver) FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error) {
+	if err := l.maybeInit(); err != nil {
+		return nil, err
+	}
+	return l.resolver.FindExtensionByName(field)
+}
+
+func (l *lazyResolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
+	if err := l.maybeInit(); err != nil {
+		return nil, err
+	}
+	return l.resolver.FindExtensionByNumber(message, field)
+}
+
+func (l *lazyResolver) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
+	if err := l.maybeInit(); err != nil {
+		return nil, err
+	}
+	return l.resolver.FindMessageByName(message)
+}
+
+func (l *lazyResolver) FindMessageByURL(url string) (protoreflect.MessageType, error) {
+	if err := l.maybeInit(); err != nil {
+		return nil, err
+	}
+	return l.resolver.FindMessageByURL(url)
 }

@@ -11,5 +11,5 @@ message Foo {
 
   repeated int64 values = 2;
 
-// Leading comment on '}'.
+  // Leading comment on '}'.
 }

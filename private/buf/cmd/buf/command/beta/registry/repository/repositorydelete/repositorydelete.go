@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +20,11 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -37,7 +40,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "Delete a BSR repository by name.",
+		Short: "Delete a BSR repository",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -62,7 +65,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Force,
 		forceFlagName,
 		false,
-		"Force deletion without confirming. Use with caution.",
+		"Force deletion without confirming. Use with caution",
 	)
 }
 
@@ -76,20 +79,26 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewRepositoryService(ctx, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
+	service := connectclient.Make(
+		clientConfig,
+		moduleIdentity.Remote(),
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(container, "repository", moduleIdentity.Repository()); err != nil {
 			return err
 		}
 	}
-	if err := service.DeleteRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Repository()); err != nil {
+	if _, err := service.DeleteRepositoryByFullName(
+		ctx,
+		connect.NewRequest(&registryv1alpha1.DeleteRepositoryByFullNameRequest{
+			FullName: moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),
+		}),
+	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}

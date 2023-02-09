@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/jhump/protocompile/parser"
-	"github.com/jhump/protocompile/reporter"
+	"github.com/bufbuild/protocompile/parser"
+	"github.com/bufbuild/protocompile/reporter"
 	"go.uber.org/multierr"
 )
 

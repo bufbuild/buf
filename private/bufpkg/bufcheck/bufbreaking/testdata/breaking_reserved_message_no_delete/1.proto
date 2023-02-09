@@ -3,7 +3,7 @@ syntax = "proto3";
 package a;
 
 message Two {
-  reserved 100 to 200;
+  reserved 100 to 250;
   reserved 300;
   reserved "foo";
   int32 one = 1;
@@ -14,7 +14,7 @@ message Two {
 message Three {
   message Four {
     message Five {
-      reserved 100 to 200;
+      reserved 100 to 250;
       reserved 300;
       reserved "foo";
       int32 one = 1;
@@ -22,7 +22,7 @@ message Three {
       int32 three = 3;
     }
     message Six {
-      reserved 4 to 5, 100 to 200;
+      reserved 4 to 5, 100 to 250;
       reserved 300, 301, 1000 to max;
       reserved "foo", "bar";
       reserved "baz";
@@ -32,7 +32,7 @@ message Three {
     }
   }
   message Seven {
-    reserved 100 to 200;
+    reserved 100 to 250;
     reserved 300;
     reserved "foo";
     int32 one = 1;
@@ -40,7 +40,7 @@ message Three {
     int32 three = 3;
   }
   message Eight {
-    reserved 4 to 5, 100 to 200;
+    reserved 4 to 5, 100 to 250;
     reserved 300, 301, 1000 to max;
     reserved "foo", "bar";
     reserved "baz";

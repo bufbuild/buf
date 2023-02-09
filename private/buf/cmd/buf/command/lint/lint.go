@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Verify that the input location passes lint checks.",
+		Short: "Run linting on Protobuf files",
 		Long:  bufcli.GetInputLong(`the source, module, or Image to lint`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -85,7 +85,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors or check violations printed to stdout. Must be one of %s.",
+			"The format for build errors or check violations printed to stdout. Must be one of %s",
 			stringutil.SliceToString(buflint.AllFormatStrings),
 		),
 	)
@@ -93,7 +93,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 }
 
@@ -115,7 +115,7 @@ func run(
 	}
 	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func run(
 		container,
 		storageosProvider,
 		runner,
-		registryProvider,
+		clientConfig,
 	)
 	if err != nil {
 		return err

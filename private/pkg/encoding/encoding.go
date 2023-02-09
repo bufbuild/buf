@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -169,24 +169,34 @@ func NewYAMLDecoderNonStrict(reader io.Reader) *yaml.Decoder {
 // used with JSON or YAML fields that need to support both string slices
 // and string literals.
 func InterfaceSliceOrStringToCommaSepString(in interface{}) (string, error) {
-	var opt string
+	values, err := InterfaceSliceOrStringToStringSlice(in)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join(values, ","), nil
+}
+
+func InterfaceSliceOrStringToStringSlice(in interface{}) ([]string, error) {
+	if in == nil {
+		return nil, nil
+	}
 	switch t := in.(type) {
 	case string:
-		opt = t
+		return []string{t}, nil
 	case []interface{}:
-		opts := make([]string, len(t))
+		if len(t) == 0 {
+			return nil, nil
+		}
+		res := make([]string, len(t))
 		for i, elem := range t {
 			s, ok := elem.(string)
 			if !ok {
-				return "", fmt.Errorf("could not convert element %T to a string", elem)
+				return nil, fmt.Errorf("could not convert element %T to a string", elem)
 			}
-			opts[i] = s
+			res[i] = s
 		}
-		opt = strings.Join(opts, ",")
-	case nil:
-		// If the variable is omitted, the value is nil
+		return res, nil
 	default:
-		return "", fmt.Errorf("unknown type %T for opt", t)
+		return nil, fmt.Errorf("could not interpret %T as string or string slice", in)
 	}
-	return opt, nil
 }

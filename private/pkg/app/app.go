@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/interrupt"
 )
 
-// EnvContainer provides envionment variables.
+// EnvContainer provides environment variables.
 type EnvContainer interface {
 	// Env gets the environment variable value for the key.
 	//
@@ -221,7 +221,7 @@ type EnvStdioContainer interface {
 
 // Environ returns all environment variables in the form "KEY=VALUE".
 //
-// Equivalent to os.Enviorn.
+// Equivalent to os.Environ.
 //
 // Sorted.
 func Environ(envContainer EnvContainer) []string {

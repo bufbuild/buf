@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,11 +22,14 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netrc"
-	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -43,12 +46,11 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		// Not documenting the first arg (remote) as this is just for testing for now.
-		// TODO: Update when we have self-hosted.
-		Use:   name,
-		Short: `Log in to the Buf Schema Registry.`,
-		Long:  fmt.Sprintf(`This prompts for your BSR username and a BSR token and updates your %s file with these credentials.`, netrc.Filename),
-		Args:  cobra.MaximumNArgs(1),
+		Use:   name + " <domain>",
+		Short: `Log in to the Buf Schema Registry`,
+		Long: fmt.Sprintf(`This prompts for your BSR username and a BSR token and updates your %s file with these credentials.
+The <domain> argument will default to buf.build if not specified.`, netrc.Filename),
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -73,13 +75,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Username,
 		usernameFlagName,
 		"",
-		"The username to use. This command prompts for a username by default.",
+		"The username to use. This command prompts for a username by default",
 	)
 	flagSet.BoolVar(
 		&f.TokenStdin,
 		tokenStdinFlagName,
 		false,
-		"Read the token from stdin. This command prompts for a token by default.",
+		"Read the token from stdin. This command prompts for a token by default",
 	)
 }
 
@@ -130,7 +132,7 @@ func inner(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	remote := bufrpc.DefaultRemote
+	remote := bufconnect.DefaultRemote
 	if container.NumArgs() == 1 {
 		remote = container.Arg(0)
 	}
@@ -172,14 +174,6 @@ func inner(
 			return err
 		}
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
-	if err != nil {
-		return err
-	}
-	authnService, err := registryProvider.NewAuthnService(ctx, remote)
-	if err != nil {
-		return err
-	}
 	// Remove leading and trailing spaces from user-supplied token to avoid
 	// common input errors such as trailing new lines, as-is the case of using
 	// echo vs echo -n.
@@ -187,12 +181,18 @@ func inner(
 	if token == "" {
 		return errors.New("token cannot be empty string")
 	}
-	user, err := authnService.GetCurrentUser(rpcauth.WithToken(ctx, token))
+	clientConfig, err := bufcli.NewConnectClientConfigWithToken(container, token)
+	if err != nil {
+		return err
+	}
+	authnService := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewAuthnServiceClient)
+	resp, err := authnService.GetCurrentUser(ctx, connect.NewRequest(&registryv1alpha1.GetCurrentUserRequest{}))
 	if err != nil {
 		// We don't want to use the default error from wrapError here if the error
 		// an unauthenticated error.
 		return errors.New("invalid token provided")
 	}
+	user := resp.Msg.User
 	if user == nil {
 		return errors.New("no user found for provided token")
 	}

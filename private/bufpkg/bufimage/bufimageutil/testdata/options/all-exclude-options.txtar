@@ -1,0 +1,25 @@
+-- a.proto --
+syntax = "proto2";
+package pkg;
+message Empty {
+}
+message Foo {
+  optional string foo = 1 [jstype = JS_STRING];
+  oneof testOneof {
+    string bar = 2;
+    bytes baz = 3;
+  }
+  extensions 10 to max;
+}
+enum FooEnum {
+  option deprecated = true;
+  FOO_ENUM_X = 0;
+  FOO_ENUM_Y = 1;
+}
+service FooService {
+  rpc Do ( Empty ) returns ( Empty );
+  rpc DoNot ( Empty ) returns ( Empty );
+}
+extend Foo {
+  optional string extension = 11;
+}

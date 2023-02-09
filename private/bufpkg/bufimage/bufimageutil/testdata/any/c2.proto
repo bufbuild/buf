@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+import "a.proto";
+import "b.proto";
+
+message ExtendedAnySyntax_InField {
+  option (extra_in_field) = {
+    any: {
+      [type.googleapis.com/foo.bar.baz.Foo]: {
+        name: "Bob Loblaw"
+        id: 42
+      }
+    }
+  };
+}

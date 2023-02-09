@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -367,18 +367,20 @@ func (m *v1beta1Migrator) maybeMigrateGenTemplate(dirPath string) (bool, error) 
 			Enabled:           v1beta1GenTemplate.Managed,
 			CcEnableArenas:    v1beta1GenTemplate.Options.CcEnableArenas,
 			JavaMultipleFiles: v1beta1GenTemplate.Options.JavaMultipleFiles,
-			OptimizeFor:       v1beta1GenTemplate.Options.OptimizeFor,
+			OptimizeFor:       bufgen.ExternalOptimizeForConfigV1{Default: v1beta1GenTemplate.Options.OptimizeFor},
 		},
 	}
 	for _, plugin := range v1beta1GenTemplate.Plugins {
-		v1GenTemplate.Plugins = append(
-			v1GenTemplate.Plugins, bufgen.ExternalPluginConfigV1{
-				Name:     plugin.Name,
-				Out:      plugin.Out,
-				Opt:      plugin.Opt,
-				Path:     plugin.Path,
-				Strategy: plugin.Strategy,
-			})
+		pluginConfig := bufgen.ExternalPluginConfigV1{
+			Name:     plugin.Name,
+			Out:      plugin.Out,
+			Opt:      plugin.Opt,
+			Strategy: plugin.Strategy,
+		}
+		if plugin.Path != "" {
+			pluginConfig.Path = plugin.Path
+		}
+		v1GenTemplate.Plugins = append(v1GenTemplate.Plugins, pluginConfig)
 	}
 	newConfigPath := filepath.Join(dirPath, bufgen.ExternalConfigFilePath)
 	if err := m.writeV1GenTemplate(newConfigPath, v1GenTemplate); err != nil {

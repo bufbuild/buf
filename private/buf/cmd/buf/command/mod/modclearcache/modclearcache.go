@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:     name,
 		Aliases: aliases,
-		Short:   "Clears the Buf module cache.",
+		Short:   "Clear Buf module cache",
 		Args:    cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

@@ -1,3 +1,9 @@
+- id: buf-generate
+  name: buf generate
+  language: golang
+  entry: buf generate
+  types: [proto]
+  pass_filenames: false
 - id: buf-breaking
   name: buf breaking
   language: golang
