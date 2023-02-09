@@ -2,7 +2,17 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Replace `buf generate --include-types` with `buf generate --type` for consistency. `--include-types`
+  is now deprecated but continues to work, consistent with our compability guarantee.
+- Include type references in `google.protobuf.Any` messages in option values
+  when filtering on type, e.g. with `buf build --type` or `buf generate --type`.
+- Allow specifying a specific `protoc` path in `buf.gen.yaml` when using `protoc`'s built-in plugins
+  via the new `protoc_path` option.
+- Allow specifying arguments for local plugins in `buf.gen.yaml`. You can now do e.g.
+  `path: ["go, "run", ./cmd/protoc-gen-foo]` in addition to `path: protoc-gen-foo`.
+- Add optional name parameter to `buf mod init`, e.g. `buf mod init buf.build/owner/foobar`.
+- Fix issue with `php_metadata_namespace` file option in [managed mode](https://docs.buf.build/generate/managed-mode).
+- Make all help documentation much clearer. If you notice any inconsistencies, let us know.
 
 ## [v1.13.1] - 2023-01-27
 
