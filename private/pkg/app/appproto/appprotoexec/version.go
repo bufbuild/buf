@@ -135,6 +135,7 @@ func getKotlinSupportedAsBuiltin(version *pluginpb.Version) bool {
 	return true
 }
 
+// Is js supported as a builtin plugin?
 func getJSSupportedAsBuiltin(version *pluginpb.Version) bool {
 	if version.GetSuffix() == "buf" {
 		return true
