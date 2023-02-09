@@ -188,7 +188,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	client, err := bufplugindocker.NewClient(ctx, container.Logger(), bufcli.Version)
+	client, err := bufplugindocker.NewClient(container.Logger(), bufcli.Version)
 	if err != nil {
 		return err
 	}
