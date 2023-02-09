@@ -117,12 +117,8 @@ func run(
 		return appcmd.NewInvalidArgumentErrorf("%s already exists, not overwriting", existingConfigFilePath)
 	}
 	var writeConfigOptions []bufconfig.WriteConfigOption
-	moduleName := ""
 	if container.NumArgs() > 0 {
-		moduleName = container.Arg(0)
-	}
-	if moduleName != "" {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
 		if err != nil {
 			return err
 		}
