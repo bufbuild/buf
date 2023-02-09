@@ -23,6 +23,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/docker/docker/api/types"
@@ -241,6 +242,14 @@ func (d *dockerAPIClient) negotiateVersion(ctx context.Context) error {
 	if d.negotiated {
 		return nil
 	}
+	deadline := time.Now().Add(5 * time.Second)
+	if existingDeadline, ok := ctx.Deadline(); ok {
+		if existingDeadline.Before(deadline) {
+			deadline = existingDeadline
+		}
+	}
+	ctx, cancel := context.WithDeadline(context.Background(), deadline)
+	defer cancel()
 	ping, err := d.cli.Ping(ctx)
 	if err != nil {
 		return err
