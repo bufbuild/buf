@@ -44,6 +44,8 @@ const (
 	includeWKTFlagName          = "include-wkt"
 	excludePathsFlagName        = "exclude-path"
 	disableSymlinksFlagName     = "disable-symlinks"
+	typeFlagName                = "type"
+	typeDeprecatedFlagName      = "include-types"
 )
 
 // NewCommand returns a new Command.
@@ -201,7 +203,10 @@ type flags struct {
 	IncludeWKT      bool
 	ExcludePaths    []string
 	DisableSymlinks bool
-	IncludeTypes    []string
+	// We may be able to bind two flags to one string slice but I don't
+	// want to find out what will break if we do.
+	Types           []string
+	TypesDeprecated []string
 	// special
 	InputHashtag string
 }
@@ -259,11 +264,19 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		`The file or data to use for configuration`,
 	)
 	flagSet.StringSliceVar(
-		&f.IncludeTypes,
-		"include-types",
+		&f.Types,
+		typeFlagName,
 		nil,
 		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
 	)
+	flagSet.StringSliceVar(
+		&f.TypesDeprecated,
+		typeDeprecatedFlagName,
+		nil,
+		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
+	)
+	_ = flagSet.MarkDeprecated(typeDeprecatedFlagName, fmt.Sprintf("Use --%s instead", typeFlagName))
+	_ = flagSet.MarkHidden(typeDeprecatedFlagName)
 }
 
 func run(
@@ -365,9 +378,9 @@ func run(
 		)
 	}
 	var includedTypes []string
-	if len(flags.IncludeTypes) > 0 {
+	if len(flags.Types) > 0 || len(flags.TypesDeprecated) > 0 {
 		// command-line flags take precedence
-		includedTypes = flags.IncludeTypes
+		includedTypes = append(flags.Types, flags.TypesDeprecated...)
 	} else if genConfig.TypesConfig != nil {
 		includedTypes = genConfig.TypesConfig.Include
 	}
