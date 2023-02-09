@@ -19,11 +19,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/diff"
+	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/licenseheader"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -37,6 +39,8 @@ const (
 	yearRangeFlagName       = "year-range"
 	diffFlagName            = "diff"
 	exitCodeFlagName        = "exit-code"
+	ignoreFlagName          = "ignore"
+	ignoreFlagShortName     = "e"
 )
 
 func main() {
@@ -60,6 +64,7 @@ type flags struct {
 	YearRange       string
 	Diff            bool
 	ExitCode        bool
+	Ignore          []string
 }
 
 func newFlags() *flags {
@@ -98,6 +103,16 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		false,
 		fmt.Sprintf("Exit with a non-zero exit code if a diff is present. Only valid with %s.", diffFlagName),
 	)
+	flagSet.StringSliceVarP(
+		&f.Ignore,
+		ignoreFlagName,
+		ignoreFlagShortName,
+		nil,
+		`File paths to ignore.
+These are extended regexes in the style of egrep.
+If a file matches any of these values, it will be ignored.
+Only works if there are no arguments and license-header does its own search for files.`,
+	)
 }
 
 func run(ctx context.Context, container app.Container, flags *flags) error {
@@ -117,8 +132,11 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 		}
 	}
 	runner := command.NewRunner()
-	for i := 0; i < container.NumArgs(); i++ {
-		filename := container.Arg(i)
+	filenames, err := getFilenames(ctx, container, runner, flags.Ignore)
+	if err != nil {
+		return err
+	}
+	for _, filename := range filenames {
 		data, err := os.ReadFile(filename)
 		if err != nil {
 			return err
@@ -166,6 +184,35 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 		}
 	}
 	return nil
+}
+
+func getFilenames(
+	ctx context.Context,
+	container app.Container,
+	runner command.Runner,
+	ignores []string,
+) ([]string, error) {
+	if container.NumArgs() > 0 {
+		if len(ignores) > 0 {
+			return nil, appcmd.NewInvalidArgumentErrorf("cannot use flag %q with any arguments", ignoreFlagName)
+		}
+		return app.Args(container), nil
+	}
+	ignoreRegexps := make([]*regexp.Regexp, len(ignores))
+	for i, ignore := range ignores {
+		ignoreRegexp, err := regexp.CompilePOSIX(ignore)
+		if err != nil {
+			return nil, err
+		}
+		ignoreRegexps[i] = ignoreRegexp
+	}
+	return git.NewLister(runner).ListFilesAndUnstagedFiles(
+		ctx,
+		container,
+		git.ListFilesAndUnstagedFilesOptions{
+			IgnorePathRegexps: ignoreRegexps,
+		},
+	)
 }
 
 func newRequiredFlagError(flagName string) error {

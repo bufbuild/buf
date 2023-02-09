@@ -14,21 +14,16 @@
 
 // Package main implements a file lister for git that lists unstaged files.
 //
-// This does not list unstaged deleted files, and does list unignored files that are not added.
-// This ignores non-regular files.
-//
-// This is used for situations like license headers where we want all the potential git files
-// during development
+// See the documentation for git.Lister for more details.
 package main
 
 import (
 	"context"
-	"os"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/git"
 )
 
 func main() {
@@ -36,55 +31,16 @@ func main() {
 }
 
 func run(ctx context.Context, container app.Container) error {
-	runner := command.NewRunner()
-	lsFilesOutput, err := command.RunStdout(
+	files, err := git.NewLister(command.NewRunner()).ListFilesAndUnstagedFiles(
 		ctx,
 		container,
-		runner,
-		"git",
-		append(
-			[]string{
-				"ls-files",
-			},
-			app.Args(container)[1:]...,
-		)...,
+		git.ListFilesAndUnstagedFilesOptions{},
 	)
 	if err != nil {
 		return err
 	}
-	lsFilesOthersOutput, err := command.RunStdout(
-		ctx,
-		container,
-		runner,
-		"git",
-		append(
-			[]string{
-				"ls-files",
-				"--exclude-standard",
-				"--others",
-			},
-			app.Args(container)[1:]...,
-		)...,
-	)
-	if err != nil {
-		return err
-	}
-
-	var results []string
-	for _, filePath := range stringutil.SliceToUniqueSortedSlice(
-		append(
-			strings.Split(string(lsFilesOutput), "\n"),
-			strings.Split(string(lsFilesOthersOutput), "\n")...,
-		),
-	) {
-		if filePath := strings.TrimSpace(filePath); filePath != "" {
-			if fileInfo, err := os.Stat(filePath); err == nil && fileInfo.Mode().IsRegular() {
-				results = append(results, filePath)
-			}
-		}
-	}
-	if len(results) > 0 {
-		if _, err := container.Stdout().Write([]byte(strings.Join(results, "\n") + "\n")); err != nil {
+	if len(files) > 0 {
+		if _, err := container.Stdout().Write([]byte(strings.Join(files, "\n") + "\n")); err != nil {
 			return err
 		}
 	}

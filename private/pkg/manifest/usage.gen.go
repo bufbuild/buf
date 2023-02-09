@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package tagrangeutil
+package manifest
 
 import _ "github.com/bufbuild/buf/private/usage"

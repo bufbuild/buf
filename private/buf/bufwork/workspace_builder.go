@@ -143,7 +143,7 @@ func (w *workspaceBuilder) BuildWorkspace(
 		if err != nil {
 			return nil, err
 		}
-		module, err := w.moduleBucketBuilder.BuildForBucket(
+		module, err := bufmodulebuild.BuildForBucket(
 			ctx,
 			readBucketForDirectory,
 			moduleConfig.Build,

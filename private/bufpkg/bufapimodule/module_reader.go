@@ -16,7 +16,9 @@ package bufapimodule
 
 import (
 	"context"
+	"errors"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -26,17 +28,70 @@ import (
 
 type moduleReader struct {
 	downloadClientFactory DownloadServiceClientFactory
+	tamperProofingEnabled bool
 }
 
 func newModuleReader(
 	downloadClientFactory DownloadServiceClientFactory,
+	opts ...ModuleReaderOption,
 ) *moduleReader {
-	return &moduleReader{
+	reader := &moduleReader{
 		downloadClientFactory: downloadClientFactory,
 	}
+	for _, opt := range opts {
+		opt(reader)
+	}
+	return reader
 }
 
 func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
+	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
+		modulePin.Remote(),
+		modulePin.Owner(),
+		modulePin.Repository(),
+	)
+	if err != nil {
+		// malformed pin
+		return nil, err
+	}
+	identityAndCommitOpt := bufmodule.ModuleWithModuleIdentityAndCommit(
+		moduleIdentity,
+		modulePin.Commit(),
+	)
+	if m.tamperProofingEnabled {
+		resp, err := m.downloadManifestAndBlobs(ctx, modulePin)
+		if err != nil {
+			return nil, err
+		}
+		if resp.Manifest == nil {
+			return nil, errors.New("expected non-nil manifest with tamper proofing enabled")
+		}
+		// use manifest and blobs
+		bucket, err := bufmanifest.NewBucketFromManifestBlobs(
+			ctx,
+			resp.Manifest,
+			resp.Blobs,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return bufmodule.NewModuleForBucket(ctx, bucket, identityAndCommitOpt)
+	}
+	resp, err := m.download(ctx, modulePin)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Module == nil {
+		// funny, success without a module to build
+		return nil, errors.New("no module in response")
+	}
+	return bufmodule.NewModuleForProto(ctx, resp.Module, identityAndCommitOpt)
+}
+
+func (m *moduleReader) download(
+	ctx context.Context,
+	modulePin bufmoduleref.ModulePin,
+) (*registryv1alpha1.DownloadResponse, error) {
 	downloadService := m.downloadClientFactory(modulePin.Remote())
 	resp, err := downloadService.Download(
 		ctx,
@@ -53,16 +108,28 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		}
 		return nil, err
 	}
-	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
-		modulePin.Remote(),
-		modulePin.Owner(),
-		modulePin.Repository(),
+	return resp.Msg, err
+}
+
+func (m *moduleReader) downloadManifestAndBlobs(
+	ctx context.Context,
+	modulePin bufmoduleref.ModulePin,
+) (*registryv1alpha1.DownloadManifestAndBlobsResponse, error) {
+	downloadService := m.downloadClientFactory(modulePin.Remote())
+	resp, err := downloadService.DownloadManifestAndBlobs(
+		ctx,
+		connect.NewRequest(&registryv1alpha1.DownloadManifestAndBlobsRequest{
+			Owner:      modulePin.Owner(),
+			Repository: modulePin.Repository(),
+			Reference:  modulePin.Commit(),
+		}),
 	)
 	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			// Required by ModuleReader interface spec
+			return nil, storage.NewErrNotExist(modulePin.String())
+		}
 		return nil, err
 	}
-	return bufmodule.NewModuleForProto(
-		ctx, resp.Msg.Module,
-		bufmodule.ModuleWithModuleIdentityAndCommit(moduleIdentity, modulePin.Commit()),
-	)
+	return resp.Msg, err
 }

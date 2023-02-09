@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package observabilityzap
+// Generated. DO NOT EDIT.
 
-import (
-	"github.com/bufbuild/buf/private/pkg/observability"
-	"go.uber.org/zap"
-)
+package bufmanifest
 
-// NewTraceExportCloser returns a new TraceExportCloser with a zap backend.
-func NewTraceExportCloser(logger *zap.Logger) observability.TraceExportCloser {
-	return newTraceExportCloser(logger)
-}
+import _ "github.com/bufbuild/buf/private/usage"

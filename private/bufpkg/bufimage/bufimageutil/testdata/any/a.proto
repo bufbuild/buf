@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.MessageOptions {
+  google.protobuf.Any extra = 10101;
+  AnyInField extra_in_field = 10102;
+  AnyInList extra_in_list = 10103;
+  AnyInMap extra_in_map = 10104;
+}
+
+message AnyInField {
+  google.protobuf.Any any = 1;
+}
+
+message AnyInList {
+  repeated google.protobuf.Any list_any = 1;
+}
+
+message AnyInMap {
+  map<string, AnyInField> map = 1;
+}

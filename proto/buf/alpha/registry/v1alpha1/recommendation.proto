@@ -55,7 +55,7 @@ service RecommendationService {
   }
   // ListRecommendedResources returns a list of recommended resources.
   rpc ListRecommendedResources(ListRecommendedResourcesRequest) returns (ListRecommendedResourcesResponse);
-  // SetRecommendedResources set the list of recommendated resources in the server.
+  // SetRecommendedResources set the list of recommended resources in the server.
   rpc SetRecommendedResources(SetRecommendedResourcesRequest) returns (SetRecommendedResourcesResponse);
 }
 

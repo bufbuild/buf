@@ -50,11 +50,11 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <directory>",
-		Short: "Update a module's dependencies by updating the " + buflock.ExternalConfigFilePath + " file.",
+		Short: "Update a module's dependencies by updating the " + buflock.ExternalConfigFilePath + " file",
 		Long: "Fetch the latest digests for the specified references in the config file, " +
 			"and write them and their transitive dependencies to the " +
 			buflock.ExternalConfigFilePath +
-			` file. The first argument is the directory of the local module to update. Defaults to "." if no argument is specified.`,
+			` file. The first argument is the directory of the local module to update. Defaults to "." if no argument is specified`,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -79,7 +79,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Only,
 		onlyFlagName,
 		nil,
-		"The name of the dependency to update. When set, only this dependency is updated (along with any of its sub-dependencies). May be passed multiple times.",
+		"The name of the dependency to update. When set, only this dependency is updated (along with any of its sub-dependencies). May be passed multiple times",
 	)
 }
 

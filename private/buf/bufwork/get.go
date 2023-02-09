@@ -24,13 +24,20 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/multierr"
 )
 
 func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (_ *Config, retErr error) {
-	ctx, span := trace.StartSpan(ctx, "get_workspace_config")
+	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "get_workspace_config")
 	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
 
 	// This will be in the order of precedence.
 	var foundConfigFilePaths []string
@@ -77,9 +84,9 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, rela
 }
 
 func getConfigForData(ctx context.Context, data []byte) (*Config, error) {
-	_, span := trace.StartSpan(ctx, "get_workspace_config_for_data")
+	_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "get_workspace_config_for_data")
 	defer span.End()
-	return getConfigForDataInternal(
+	config, err := getConfigForDataInternal(
 		ctx,
 		encoding.UnmarshalJSONOrYAMLNonStrict,
 		encoding.UnmarshalJSONOrYAMLStrict,
@@ -87,6 +94,11 @@ func getConfigForData(ctx context.Context, data []byte) (*Config, error) {
 		data,
 		"Configuration data",
 	)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return config, err
 }
 
 func getConfigForDataInternal(

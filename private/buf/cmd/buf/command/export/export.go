@@ -54,30 +54,31 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
-		Short: "Export the files from the input location to an output location.",
-		Long: bufcli.GetInputLong(`the source or module to export`) + `
+		Use:   name + " <source>",
+		Short: "Export proto files from one location to another",
+		Long: bufcli.GetSourceOrModuleLong(`the source or module to export`) + `
 
 Examples:
 
-$ buf export <input> --output=<output-dir>
+Export proto files in <source> to an output directory.
 
-input can be of the format [dir,git,mod,protofile,tar,targz,zip].
+    $ buf export <source> --output=<output-dir>
 
-output will be a directory with all of the .proto files in the <input>.
+Export current directory to another local directory. 
 
-# Export current directory to another local directory. 
-$ buf export . --output=<output-dir>
+    $ buf export . --output=<output-dir>
 
-# Export the latest remote module to a local directory.
-$ buf export buf.build/<owner>/<repo> --output=<output-dir>
+Export the latest remote module to a local directory.
 
-# Export a specific version of a remote module to a local directory.
-$ buf export buf.build/<owner>/<repo>:<version> --output=<output-dir>
+    $ buf export <buf.build/owner/repository> --output=<output-dir>
 
-# Export a git repo to a local directory.
-$ buf export https://<git-server>/<owner>/<repo>.git --output=<output-dir>
+Export a specific version of a remote module to a local directory.
 
+    $ buf export <buf.build/owner/repository:ref> --output=<output-dir>
+
+Export a git repo to a local directory.
+
+    $ buf export https://github.com/owner/repository.git --output=<output-dir>
 `,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -117,14 +118,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagName,
 		outputFlagShortName,
 		"",
-		`The output directory for exported files.`,
+		`The output directory for exported files`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, outputFlagName)
 	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 }
 

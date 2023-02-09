@@ -360,14 +360,16 @@ func (m *v1beta1Migrator) maybeMigrateGenTemplate(dirPath string) (bool, error) 
 		},
 	}
 	for _, plugin := range v1beta1GenTemplate.Plugins {
-		v1GenTemplate.Plugins = append(
-			v1GenTemplate.Plugins, bufgen.ExternalPluginConfigV1{
-				Name:     plugin.Name,
-				Out:      plugin.Out,
-				Opt:      plugin.Opt,
-				Path:     plugin.Path,
-				Strategy: plugin.Strategy,
-			})
+		pluginConfig := bufgen.ExternalPluginConfigV1{
+			Name:     plugin.Name,
+			Out:      plugin.Out,
+			Opt:      plugin.Opt,
+			Strategy: plugin.Strategy,
+		}
+		if plugin.Path != "" {
+			pluginConfig.Path = plugin.Path
+		}
+		v1GenTemplate.Plugins = append(v1GenTemplate.Plugins, pluginConfig)
 	}
 	newConfigPath := filepath.Join(dirPath, bufgen.ExternalConfigFilePath)
 	if err := m.writeV1GenTemplate(newConfigPath, v1GenTemplate); err != nil {

@@ -200,6 +200,8 @@ func (g *generator) execPlugins(
 	}
 	// Batch for each remote.
 	for remote, indexedPluginConfigs := range remotePluginConfigTable {
+		remote := remote
+		indexedPluginConfigs := indexedPluginConfigs
 		v1Args := make([]*remotePluginExecArgs, 0, len(indexedPluginConfigs))
 		v2Args := make([]*remotePluginExecArgs, 0, len(indexedPluginConfigs))
 		for _, param := range indexedPluginConfigs {
@@ -304,7 +306,8 @@ func (g *generator) execLocalPlugin(
 			includeImports,
 			includeWellKnownTypes,
 		),
-		appprotoexec.GenerateWithPluginPath(pluginConfig.Path),
+		appprotoexec.GenerateWithPluginPath(pluginConfig.Path...),
+		appprotoexec.GenerateWithProtocPath(pluginConfig.ProtocPath),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s: %v", pluginConfig.PluginName(), err)

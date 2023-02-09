@@ -24,9 +24,11 @@ import (
 )
 
 func TestPluginToProtoPluginRegistryType(t *testing.T) {
+	t.Parallel()
 	assertPluginToPluginRegistryType(t, nil, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_UNSPECIFIED)
 	assertPluginToPluginRegistryType(t, &bufpluginconfig.RegistryConfig{Go: &bufpluginconfig.GoRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_GO)
 	assertPluginToPluginRegistryType(t, &bufpluginconfig.RegistryConfig{NPM: &bufpluginconfig.NPMRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM)
+	assertPluginToPluginRegistryType(t, &bufpluginconfig.RegistryConfig{Maven: &bufpluginconfig.MavenRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN)
 }
 
 func assertPluginToPluginRegistryType(t testing.TB, config *bufpluginconfig.RegistryConfig, registryType registryv1alpha1.PluginRegistryType) {
@@ -36,6 +38,7 @@ func assertPluginToPluginRegistryType(t testing.TB, config *bufpluginconfig.Regi
 }
 
 func TestPluginRegistryRoundTrip(t *testing.T) {
+	t.Parallel()
 	assertPluginRegistryRoundTrip(t, nil)
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
@@ -83,6 +86,18 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			"separate_package": "true",
 		},
 	})
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		Maven: &bufpluginconfig.MavenRegistryConfig{},
+	})
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		Maven: &bufpluginconfig.MavenRegistryConfig{
+			Deps: []string{
+				"io.grpc:grpc-core:1.52.1",
+				"io.grpc:grpc-protobuf:1.52.1",
+				"io.grpc:grpc-stub:1.52.1",
+			},
+		},
+	})
 }
 
 func assertPluginRegistryRoundTrip(t testing.TB, config *bufpluginconfig.RegistryConfig) {
@@ -94,6 +109,7 @@ func assertPluginRegistryRoundTrip(t testing.TB, config *bufpluginconfig.Registr
 }
 
 func TestLanguagesToProtoLanguages(t *testing.T) {
+	t.Parallel()
 	protoLanguages, err := OutputLanguagesToProtoLanguages([]string{"go"})
 	require.NoError(t, err)
 	assert.Equal(t,
@@ -108,6 +124,15 @@ func TestLanguagesToProtoLanguages(t *testing.T) {
 		[]registryv1alpha1.PluginLanguage{
 			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_JAVASCRIPT,
 			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_TYPESCRIPT,
+		},
+		protoLanguages,
+	)
+	protoLanguages, err = OutputLanguagesToProtoLanguages([]string{"java", "kotlin"})
+	require.NoError(t, err)
+	assert.Equal(t,
+		[]registryv1alpha1.PluginLanguage{
+			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_JAVA,
+			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_KOTLIN,
 		},
 		protoLanguages,
 	)

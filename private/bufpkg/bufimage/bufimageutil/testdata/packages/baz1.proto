@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package foo.bar.baz;
+
+message Foo {
+  enum Enum {
+    VALUE0 = 0; VALUE1 = 1; VALUE2 = 2;
+  }
+  Enum en = 1;
+  string name = 2;
+  oneof loc {
+    string address = 3;
+    uint32 zip_code = 4;
+    uint64 other_xref = 5;
+  }
+}
+
+message Bar {
+  map<string, int32> attributes = 1;
+}
+
+service BazService {
+  rpc GetBaz(Foo) returns (Bar);
+}

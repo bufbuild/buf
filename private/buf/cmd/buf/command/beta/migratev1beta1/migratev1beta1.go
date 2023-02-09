@@ -33,9 +33,10 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <directory>",
-		Short: `Migrate any v1beta1 configuration files in the directory to the latest version.`,
-		Long:  `Defaults to the current directory if not specified.`,
-		Args:  cobra.MaximumNArgs(1),
+		Short: `Migrate v1beta1 configuration to the latest version`,
+		Long: `Migrate any v1beta1 configuration files in the directory to the latest version
+Defaults to the current directory if not specified`,
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

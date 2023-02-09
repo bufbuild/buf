@@ -1521,9 +1521,10 @@ func RunTestSuite(
 		writeBucket := newWriteBucket(t, defaultProvider)
 		const limit = 2048
 		files := map[string][]byte{
-			"within":  bytes.Repeat([]byte{0}, limit-1),
-			"at":      bytes.Repeat([]byte{0}, limit),
-			"exceeds": bytes.Repeat([]byte{0}, limit+1),
+			"within":     bytes.Repeat([]byte{0}, limit-1),
+			"at":         bytes.Repeat([]byte{0}, limit),
+			"exceeds":    bytes.Repeat([]byte{0}, limit+1),
+			"match-file": bytes.Repeat([]byte{0}, limit-1),
 		}
 		for path, data := range files {
 			err := storage.PutPath(context.Background(), writeBucket, path, data)
@@ -1543,6 +1544,15 @@ func RunTestSuite(
 		_, err = tarball.Seek(0, io.SeekStart)
 		require.NoError(t, err)
 		err = storagearchive.Untar(context.Background(), tarball, writeBucket, nil, 0, storagearchive.WithMaxFileSizeUntarOption(limit+1))
+		assert.NoError(t, err)
+		err = storagearchive.Untar(
+			context.Background(),
+			tarball,
+			writeBucket,
+			storage.MatchPathEqual("match-file"),
+			0,
+			storagearchive.WithMaxFileSizeUntarOption(limit),
+		)
 		assert.NoError(t, err)
 	})
 }

@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufapp"
@@ -50,6 +51,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -63,7 +65,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.12.1-dev"
+	Version = "1.13.2-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -72,6 +74,9 @@ const (
 
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
+
+	// BetaEnableTamperProofingEnvKey is an env var to enable tamper proofing
+	BetaEnableTamperProofingEnvKey = "BUF_BETA_ENABLE_TAMPER_PROOFING"
 
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
@@ -174,9 +179,9 @@ func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string
 		addr,
 		flagName,
 		false,
-		`Output as a google.protobuf.FileDescriptorSet instead of an image.
+		`Output as a google.protobuf.FileDescriptorSet instead of an image
 Note that images are wire compatible with FileDescriptorSets, but this flag strips
-the additional metadata added for Buf usage.`,
+the additional metadata added for Buf usage`,
 	)
 }
 
@@ -196,7 +201,7 @@ func BindExcludeSourceInfo(flagSet *pflag.FlagSet, addr *bool, flagName string) 
 		addr,
 		flagName,
 		false,
-		"Exclude source info.",
+		"Exclude source info",
 	)
 }
 
@@ -210,8 +215,8 @@ func BindPaths(
 		pathsAddr,
 		pathsFlagName,
 		nil,
-		`Limit to specific files or directories, for example "proto/a/a.proto" or "proto/a".
-If specified multiple times, the union is taken.`,
+		`Limit to specific files or directories, e.g. "proto/a/a.proto", "proto/a"
+If specified multiple times, the union is taken`,
 	)
 }
 
@@ -241,8 +246,8 @@ func BindExcludePaths(
 		excludePathsAddr,
 		excludePathsFlagName,
 		nil,
-		`Exclude specific files or directories, for example "proto/a/a.proto" or "proto/a".
-If specified multiple times, the union is taken.`,
+		`Exclude specific files or directories, e.g. "proto/a/a.proto", "proto/a"
+If specified multiple times, the union is taken`,
 	)
 }
 
@@ -252,8 +257,8 @@ func BindDisableSymlinks(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 		addr,
 		flagName,
 		false,
-		`Do not follow symlinks when reading sources or configuration from the local filesystem.
-By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry.`,
+		`Do not follow symlinks when reading sources or configuration from the local filesystem
+By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry`,
 	)
 }
 
@@ -388,7 +393,7 @@ func NewWireImageConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
 	), nil
@@ -414,7 +419,7 @@ func NewWireModuleConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
 
@@ -436,7 +441,7 @@ func NewWireModuleConfigReaderForModuleReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
 
@@ -460,7 +465,7 @@ func NewWireFileLister(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleBucketBuilder(),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
 	), nil
@@ -539,7 +544,7 @@ func NewModuleReaderAndCreateCacheDirsWithExternalPaths(
 func newModuleReaderAndCreateCacheDirs(
 	container appflag.Container,
 	clientConfig *connectclient.Config,
-	moduleReaderOptions ...bufmodulecache.ModuleReaderOption,
+	cacheModuleReaderOpts ...bufmodulecache.ModuleReaderOption,
 ) (bufmodule.ModuleReader, error) {
 	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
 	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
@@ -575,15 +580,27 @@ func newModuleReaderAndCreateCacheDirs(
 	if err != nil {
 		return nil, err
 	}
+	var moduleReaderOpts []bufapimodule.ModuleReaderOption
+	// Check if tamper proofing env var is enabled
+	tamperProofingEnabled, err := IsBetaTamperProofingEnabled(container)
+	if err != nil {
+		return nil, err
+	}
+	if tamperProofingEnabled {
+		moduleReaderOpts = append(moduleReaderOpts, bufapimodule.WithTamperProofing())
+	}
 	moduleReader := bufmodulecache.NewModuleReader(
 		container.Logger(),
 		container.VerbosePrinter(),
 		fileLocker,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
-		bufapimodule.NewModuleReader(bufapimodule.NewDownloadServiceClientFactory(clientConfig)),
+		bufapimodule.NewModuleReader(
+			bufapimodule.NewDownloadServiceClientFactory(clientConfig),
+			moduleReaderOpts...,
+		),
 		bufmodulecache.NewRepositoryServiceClientFactory(clientConfig),
-		moduleReaderOptions...,
+		cacheModuleReaderOpts...,
 	)
 	return moduleReader, nil
 }
@@ -629,10 +646,15 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 // up the token in the container or in netrc based on the address of each individual client.
 // It is then set in the header of all outgoing requests from clients created using this config.
 func NewConnectClientConfig(container appflag.Container) (*connectclient.Config, error) {
+	envTokenProvider, err := bufconnect.NewTokenProviderFromContainer(container)
+	if err != nil {
+		return nil, err
+	}
+	netrcTokenProvider := bufconnect.NewNetrcTokenProvider(container, netrc.GetMachineForName)
 	return newConnectClientConfigWithOptions(
 		container,
 		connectclient.WithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProvider(container),
+			bufconnect.NewAuthorizationInterceptorProvider(envTokenProvider, netrcTokenProvider),
 		),
 	)
 }
@@ -640,10 +662,14 @@ func NewConnectClientConfig(container appflag.Container) (*connectclient.Config,
 // NewConnectClientConfigWithToken creates a new connect.ClientConfig with a given token. The provided token is
 // set in the header of all outgoing requests from this provider
 func NewConnectClientConfigWithToken(container appflag.Container, token string) (*connectclient.Config, error) {
+	tokenProvider, err := bufconnect.NewTokenProviderFromString(token)
+	if err != nil {
+		return nil, err
+	}
 	return newConnectClientConfigWithOptions(
 		container,
 		connectclient.WithAuthInterceptorProvider(
-			bufconnect.NewAuthorizationInterceptorProviderWithToken(token),
+			bufconnect.NewAuthorizationInterceptorProvider(tokenProvider),
 		),
 	)
 }
@@ -750,20 +776,6 @@ func BucketAndConfigForSource(
 	return sourceBucket, sourceConfig, nil
 }
 
-// ReadModule gets a module from a source bucket and its config.
-func ReadModule(
-	ctx context.Context,
-	logger *zap.Logger,
-	sourceBucket storage.ReadBucketCloser,
-	sourceConfig *bufconfig.Config,
-) (bufmodule.Module, error) {
-	return bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
-		ctx,
-		sourceBucket,
-		sourceConfig.Build,
-	)
-}
-
 // NewImageForSource resolves a single bufimage.Image from the user-provided source with the build options.
 func NewImageForSource(
 	ctx context.Context,
@@ -836,7 +848,7 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType s
 	if err != nil {
 		return nil, err
 	}
-	module, err := bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
+	module, err := bufmodulebuild.BuildForBucket(
 		ctx,
 		datawkt.ReadBucket,
 		sourceConfig.Build,
@@ -876,6 +888,20 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1al
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s", visibility)
 	}
+}
+
+// IsBetaTamperProofingEnabled returns if BUF_BETA_ENABLE_TAMPER_PROOFING is set to true.
+func IsBetaTamperProofingEnabled(container app.EnvContainer) (bool, error) {
+	// Check if tamper proofing env var is enabled
+	tamperProofingEnabled := false
+	if envVal := container.Env(BetaEnableTamperProofingEnvKey); envVal != "" {
+		var err error
+		tamperProofingEnabled, err = strconv.ParseBool(envVal)
+		if err != nil {
+			return false, fmt.Errorf("invalid value for %q: %w", BetaEnableTamperProofingEnvKey, err)
+		}
+	}
+	return tamperProofingEnabled, nil
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.

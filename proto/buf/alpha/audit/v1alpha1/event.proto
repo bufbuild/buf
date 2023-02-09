@@ -51,6 +51,7 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
   RESOURCE_TYPE_PLUGIN = 7 [deprecated = true];
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
+  RESOURCE_TYPE_TOKEN = 10;
 }
 
 // Resource is the affected resource by the audited event.
@@ -88,6 +89,8 @@ enum EventType {
   EVENT_TYPE_USER_DEACTIVATED = 17;
   EVENT_TYPE_USER_LOGGED_IN = 18;
   EVENT_TYPE_USER_LOGGED_OUT = 19;
+  EVENT_TYPE_TOKEN_CREATED = 23;
+  EVENT_TYPE_TOKEN_DELETED = 24;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -140,6 +143,8 @@ message Event {
     PayloadCuratedPluginCreated curated_plugin_created = 26;
     PayloadOrganizationIDPGroupAdded idp_group_added = 27;
     PayloadOrganizationIDPGroupRemoved idp_group_removed = 28;
+    PayloadTokenCreated token_created = 29;
+    PayloadTokenDeleted token_deleted = 30;
   }
 }
 
@@ -318,4 +323,16 @@ message PayloadCuratedPluginCreated {
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.
   string owner_name = 2;
+}
+
+message PayloadTokenCreated {
+  // owner_id is the id of the owner of the token.
+  string owner_id = 1;
+  // token_expiry_time is the expiry time of the token.
+  google.protobuf.Timestamp token_expiry_time = 2;
+}
+
+message PayloadTokenDeleted {
+  // owner_id is the id of the owner of the token.
+  string owner_id = 1;
 }

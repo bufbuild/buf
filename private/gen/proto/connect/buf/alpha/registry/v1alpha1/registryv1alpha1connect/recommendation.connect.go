@@ -50,7 +50,7 @@ type RecommendationServiceClient interface {
 	RecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.RecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.RecommendedTemplatesResponse], error)
 	// ListRecommendedResources returns a list of recommended resources.
 	ListRecommendedResources(context.Context, *connect_go.Request[v1alpha1.ListRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedResourcesResponse], error)
-	// SetRecommendedResources set the list of recommendated resources in the server.
+	// SetRecommendedResources set the list of recommended resources in the server.
 	SetRecommendedResources(context.Context, *connect_go.Request[v1alpha1.SetRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedResourcesResponse], error)
 }
 
@@ -133,7 +133,7 @@ type RecommendationServiceHandler interface {
 	RecommendedTemplates(context.Context, *connect_go.Request[v1alpha1.RecommendedTemplatesRequest]) (*connect_go.Response[v1alpha1.RecommendedTemplatesResponse], error)
 	// ListRecommendedResources returns a list of recommended resources.
 	ListRecommendedResources(context.Context, *connect_go.Request[v1alpha1.ListRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.ListRecommendedResourcesResponse], error)
-	// SetRecommendedResources set the list of recommendated resources in the server.
+	// SetRecommendedResources set the list of recommended resources in the server.
 	SetRecommendedResources(context.Context, *connect_go.Request[v1alpha1.SetRecommendedResourcesRequest]) (*connect_go.Response[v1alpha1.SetRecommendedResourcesResponse], error)
 }
 

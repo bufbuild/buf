@@ -1,6 +1,3 @@
-# https://github.com/bufbuild/protocompile/commits/main 20221013 checked 20221017
-GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/bufbuild/protocompile@e606facf2ed55d8a6b93151002c45a67efab3033
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
