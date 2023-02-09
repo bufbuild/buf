@@ -84,7 +84,8 @@ func GenerateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 		p("%s \n\n", escapeDescription(cmd.Long))
 	}
 	if cmd.Runnable() {
-		p("```\n%s\n```\n\n", cmd.UseLine())
+		p("### Usage\n")
+		p("```\n$ %s\n```\n\n", cmd.UseLine())
 	}
 	// Examples
 	if len(cmd.Example) > 0 {
