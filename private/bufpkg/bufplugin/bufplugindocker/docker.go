@@ -212,7 +212,7 @@ func (d *dockerAPIClient) Close() error {
 }
 
 // NewClient creates a new Client to use to build Docker plugins.
-func NewClient(logger *zap.Logger, cliVersion string, options ...ClientOption) (Client, error) {
+func NewClient(ctx context.Context, logger *zap.Logger, cliVersion string, options ...ClientOption) (Client, error) {
 	if logger == nil {
 		return nil, errors.New("logger required")
 	}
@@ -228,7 +228,8 @@ func NewClient(logger *zap.Logger, cliVersion string, options ...ClientOption) (
 		// NOTE: This setting is not safe when a client is called from multiple goroutines:
 		// - https://github.com/moby/moby/issues/43729#issuecomment-1174446640
 		//
-		// Our usage is for the CLI with a single goroutine so we're ok to enable for compatibility.
+		// Our usage is for the CLI with a single goroutine, so we're ok to enable for compatibility.
+		// We also force version negotiation below to ensure the client is in a consistent state prior to use.
 		client.WithAPIVersionNegotiation(),
 	}
 	if len(opts.host) > 0 {
@@ -241,6 +242,12 @@ func NewClient(logger *zap.Logger, cliVersion string, options ...ClientOption) (
 	if err != nil {
 		return nil, err
 	}
+	// Force version negotiation before returning client
+	ping, err := cli.Ping(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cli.NegotiateAPIVersionPing(ping)
 	return &dockerAPIClient{
 		cli:    cli,
 		logger: logger,

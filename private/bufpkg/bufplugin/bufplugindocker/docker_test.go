@@ -57,6 +57,7 @@ func TestPushSuccess(t *testing.T) {
 	server := newDockerServer(t, dockerVersion)
 	listenerAddr := server.httpServer.Listener.Addr().String()
 	dockerClient := createClient(
+		context.Background(),
 		t,
 		WithHost("tcp://"+listenerAddr),
 		WithVersion(dockerVersion),
@@ -77,6 +78,7 @@ func TestPushError(t *testing.T) {
 	server.pushErr = errors.New("failed to push image")
 	listenerAddr := server.httpServer.Listener.Addr().String()
 	dockerClient := createClient(
+		context.Background(),
 		t,
 		WithHost("tcp://"+listenerAddr),
 		WithVersion(dockerVersion),
@@ -109,11 +111,11 @@ func TestMain(m *testing.M) {
 	}
 }
 
-func createClient(t testing.TB, options ...ClientOption) Client {
+func createClient(ctx context.Context, t testing.TB, options ...ClientOption) Client {
 	t.Helper()
 	logger, err := zap.NewDevelopment()
 	require.Nilf(t, err, "failed to create zap logger")
-	dockerClient, err := NewClient(logger, "buf-cli-1.11.0", options...)
+	dockerClient, err := NewClient(ctx, logger, "buf-cli-1.11.0", options...)
 	require.Nilf(t, err, "failed to create client")
 	t.Cleanup(func() {
 		if err := dockerClient.Close(); err != nil {
@@ -184,6 +186,12 @@ func newDockerServer(t testing.TB, version string) *dockerServer {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc(versionPrefix+"/images/", dockerServer.imagesHandler)
+	mux.HandleFunc("/_ping", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(&types.Ping{APIVersion: version}); err != nil {
+			t.Fatalf("failed to encode response: %v", err)
+		}
+	})
 	dockerServer.h2Server = &http2.Server{}
 	dockerServer.h2Handler = h2c.NewHandler(mux, dockerServer.h2Server)
 	dockerServer.httpServer = httptest.NewUnstartedServer(dockerServer.h2Handler)
