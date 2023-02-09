@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/appcmd/docgenerator"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"github.com/spf13/pflag"
@@ -203,6 +204,26 @@ func run(
 			return err
 		}
 		cobraCommand.AddCommand(manpagesCobraCommand)
+		webpagesCobraCommand, err := commandToCobra(
+			ctx,
+			container,
+			&Command{
+				Use:    "webpages",
+				Args:   cobra.ExactArgs(1),
+				Hidden: true,
+				Run: func(ctx context.Context, container app.Container) error {
+					return docgenerator.GenerateMarkdownTree(
+						cobraCommand,
+						container.Arg(0),
+					)
+				},
+			},
+			&runErr,
+		)
+		if err != nil {
+			return err
+		}
+		cobraCommand.AddCommand(webpagesCobraCommand)
 	}
 
 	cobraCommand.SetOut(container.Stderr())
