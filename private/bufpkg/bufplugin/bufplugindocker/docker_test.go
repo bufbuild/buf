@@ -56,12 +56,7 @@ func TestPushSuccess(t *testing.T) {
 	t.Parallel()
 	server := newDockerServer(t, dockerVersion)
 	listenerAddr := server.httpServer.Listener.Addr().String()
-	dockerClient := createClient(
-		context.Background(),
-		t,
-		WithHost("tcp://"+listenerAddr),
-		WithVersion(dockerVersion),
-	)
+	dockerClient := createClient(t, WithHost("tcp://"+listenerAddr), WithVersion(dockerVersion))
 	image, err := buildDockerPlugin(t, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotEmpty(t, image)
@@ -77,12 +72,7 @@ func TestPushError(t *testing.T) {
 	// Send back an error on ImagePush (still return 200 OK).
 	server.pushErr = errors.New("failed to push image")
 	listenerAddr := server.httpServer.Listener.Addr().String()
-	dockerClient := createClient(
-		context.Background(),
-		t,
-		WithHost("tcp://"+listenerAddr),
-		WithVersion(dockerVersion),
-	)
+	dockerClient := createClient(t, WithHost("tcp://"+listenerAddr), WithVersion(dockerVersion))
 	image, err := buildDockerPlugin(t, "testdata/success/Dockerfile", listenerAddr+"/library/go")
 	require.Nilf(t, err, "failed to build docker plugin")
 	require.NotEmpty(t, image)
@@ -111,7 +101,7 @@ func TestMain(m *testing.M) {
 	}
 }
 
-func createClient(ctx context.Context, t testing.TB, options ...ClientOption) Client {
+func createClient(t testing.TB, options ...ClientOption) Client {
 	t.Helper()
 	logger, err := zap.NewDevelopment()
 	require.Nilf(t, err, "failed to create zap logger")
