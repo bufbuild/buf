@@ -91,7 +91,7 @@ func TestPushError(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	var dockerEnabled bool
-	if cli, err := client.NewClientWithOpts(client.FromEnv); err == nil {
+	if cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 		if _, err := cli.Ping(ctx); err == nil {
