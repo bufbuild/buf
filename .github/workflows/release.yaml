@@ -6,15 +6,15 @@ on:
         type: string
         description: The version you intend to release (eg x.y.z)
   pull_request:
-    types: [ closed ]
+    types: [closed]
   push:
     branches:
-      - 'release/**'
-      - 'next/**'
+      - "release/**"
+      - "next/**"
     tags:
       - v*
   release:
-    types: [ created ]
+    types: [created]
 
 env:
   VERSION: ${{ github.event.inputs.version }}
@@ -40,7 +40,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
       - uses: actions/setup-go@v3
         with:
-          go-version: '^1.19.x'
+          go-version: "^1.19.x"
       - name: Install Buf
         run: make installbuf
       - name: Update Buf Version
@@ -56,7 +56,7 @@ jobs:
           title: "Release v${{env.VERSION}}"
           body: |
             Release prepared for ${{env.VERSION}}
-            
+
             Reminder: Update the changelog
           token: ${{ steps.generate_token.outputs.token }}
       - name: Slack Notification
@@ -134,7 +134,7 @@ jobs:
           echo "VERSION=${{github.ref_name}}" >> $GITHUB_ENV
       - uses: actions/setup-go@v3
         with:
-          go-version: '^1.19.x'
+          go-version: "^1.19.x"
       - name: Create assets
         env:
           RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
@@ -195,3 +195,16 @@ jobs:
           title: "Return to development"
           body: Release complete for ${{github.ref_name}}
           token: ${{ steps.generate_token.outputs.token }}
+      - name: trigger npm publish
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.owner,
+              repo: "buf-npm-publish",
+              workflow_id: "npm-publish.yaml",
+              ref: "main"
+              inputs: {
+                version: "${{github.ref_name}}".replace("v", "")
+              }
+            })
