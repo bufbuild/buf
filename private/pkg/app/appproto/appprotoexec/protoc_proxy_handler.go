@@ -17,6 +17,7 @@ package appprotoexec
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -83,8 +84,14 @@ func (h *protocProxyHandler) Handle(
 	if err != nil {
 		return err
 	}
-	if h.pluginName == "kotlin" && !getKotlinSupported(protocVersion) {
+	if h.pluginName == "kotlin" && !getKotlinSupportedAsBuiltin(protocVersion) {
 		return fmt.Errorf("kotlin is not supported for protoc version %s", versionString(protocVersion))
+	}
+	// When we create protocProxyHandlers in NewHandler, we always prefer protoc-gen-.* plugins
+	// over builtin plugins, so we only get here if we did not find protoc-gen-js, so this
+	// is an error
+	if h.pluginName == "js" && !getJSSupportedAsBuiltin(protocVersion) {
+		return errors.New("js moved to a separate plugin hosted at https://github.com/protocolbuffers/protobuf-javascript in v21, you must install this plugin")
 	}
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
 		File: request.ProtoFile,
@@ -117,7 +124,7 @@ func (h *protocProxyHandler) Handle(
 		fmt.Sprintf("--descriptor_set_in=%s", descriptorFilePath),
 		fmt.Sprintf("--%s_out=%s", h.pluginName, tmpDir.AbsPath()),
 	}
-	if getExperimentalAllowProto3Optional(protocVersion) {
+	if getSetExperimentalAllowProto3OptionalFlag(protocVersion) {
 		args = append(
 			args,
 			"--experimental_allow_proto3_optional",
@@ -149,7 +156,7 @@ func (h *protocProxyHandler) Handle(
 		// We don't know if this is a system error or plugin error, so we assume system error
 		return handlePotentialTooManyFilesError(err)
 	}
-	if getFeatureProto3Optional(protocVersion) {
+	if getFeatureProto3OptionalSupported(protocVersion) {
 		responseWriter.SetFeatureProto3Optional()
 	}
 	// no need for symlinks here, and don't want to support
