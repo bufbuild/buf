@@ -99,8 +99,8 @@ func generateMarkdownTree(cmd *cobra.Command, dir string, slugPrefix string) err
 	if !cmd.IsAvailableCommand() {
 		return nil
 	}
-	for _, c := range cmd.Commands() {
-		if err := generateMarkdownTree(c, dir, slugPrefix); err != nil {
+	for _, command := range cmd.Commands() {
+		if err := generateMarkdownTree(command, dir, slugPrefix); err != nil {
 			return err
 		}
 	}
@@ -244,8 +244,8 @@ func pageName(cmd *cobra.Command) string {
 }
 
 func hasSubCommands(cmd *cobra.Command) bool {
-	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
+	for _, command := range cmd.Commands() {
+		if !command.IsAvailableCommand() || command.IsAdditionalHelpTopicCommand() {
 			continue
 		}
 		return true
