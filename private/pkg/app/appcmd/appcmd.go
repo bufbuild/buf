@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appdoc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"github.com/spf13/pflag"
@@ -212,7 +211,7 @@ func run(
 				Args:   cobra.ExactArgs(1),
 				Hidden: true,
 				Run: func(ctx context.Context, container app.Container) error {
-					return appdoc.GenerateMarkdownTree(
+					return generateMarkdownTree(
 						cobraCommand,
 						container.Arg(0),
 						[]string{

@@ -14,7 +14,7 @@
 
 // Package appdoc provides a markdown generator for cobra commands.
 // In the future this will need to be adapted to appcmd.Command when we remove usage of Cobra.
-package appdoc
+package appcmd
 
 import (
 	"bufio"
@@ -33,8 +33,8 @@ import (
 
 var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
 
-// GenerateMarkdownTree generates markdown for a whole command tree.
-func GenerateMarkdownTree(cmd *cobra.Command, dir string, excludes []string) error {
+// generateMarkdownTree generates markdown for a whole command tree.
+func generateMarkdownTree(cmd *cobra.Command, dir string, excludes []string) error {
 	if !cmd.IsAvailableCommand() {
 		return nil
 	}
@@ -44,7 +44,7 @@ func GenerateMarkdownTree(cmd *cobra.Command, dir string, excludes []string) err
 		}
 	}
 	for _, c := range cmd.Commands() {
-		if err := GenerateMarkdownTree(c, dir, excludes); err != nil {
+		if err := generateMarkdownTree(c, dir, excludes); err != nil {
 			return err
 		}
 	}
@@ -58,11 +58,11 @@ func GenerateMarkdownTree(cmd *cobra.Command, dir string, excludes []string) err
 		return err
 	}
 	defer f.Close()
-	return GenerateMarkdownPage(cmd, f)
+	return generateMarkdownPage(cmd, f)
 }
 
-// GenerateMarkdownPage creates custom markdown output.
-func GenerateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
+// generateMarkdownPage creates custom markdown output.
+func generateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 	var err error
 	p := func(format string, a ...any) {
 		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
