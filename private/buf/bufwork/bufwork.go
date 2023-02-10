@@ -319,19 +319,21 @@ func ExternalPathsToSubDirRelPaths(
 // Config is the workspace config.
 type Config struct {
 	// Directories are normalized and validated.
+	//
+	// Must be non-empty to be a valid configuration.
 	Directories []string
 }
 
 // GetConfigForBucket gets the Config for the YAML data at ConfigFilePath.
 //
-// If the data is of length 0, returns the default config.
+// This function expects that there is a valid non-empty configuration in the bucket. Otherwise, this errors.
 func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (*Config, error) {
 	return getConfigForBucket(ctx, readBucket, relativeRootPath)
 }
 
 // GetConfigForData gets the Config for the given JSON or YAML data.
 //
-// If the data is of length 0, returns the default config.
+// This function expects that there is a valid non-empty configuration. Otherwise, this errors.
 func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
 	return getConfigForData(ctx, data)
 }
