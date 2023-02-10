@@ -72,7 +72,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 	p("title: %s\n", cmd.CommandPath())
 	p("sidebar_label: %s\n", pageName(cmd))
 	p("sidebar_position: %d\n", order(cmd))
-	p("slug: /%s\n", slug(cmd))
+	p("slug: /reference/%s\n", slug(cmd))
 	p("---\n")
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
@@ -163,7 +163,7 @@ func commandPath(cmd *cobra.Command) string {
 		cmdDirPath = append(parentPath, strings.Join(cmdPath[:i+1], " "))
 		parentPath = cmdDirPath
 	}
-	fullPath := path.Join(cmdDirPath[1:]...)
+	fullPath := path.Join(cmdDirPath...)
 	if cmd.HasSubCommands() {
 		return path.Join(fullPath, "index.md")
 	}
