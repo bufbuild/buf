@@ -19,6 +19,7 @@ package appcmd
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"html"
 	"io"
@@ -28,23 +29,78 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
 
+const (
+	slugPrefixFlagName      = "slug-prefix"
+	excludeCommandsFlagName = "exclude-command"
+)
+
+// newWebpagesCommand returns a new Command.
+func newWebpagesCommand(
+	command *cobra.Command,
+) *Command {
+	flags := newFlags()
+	return &Command{
+		Use:    "webpages",
+		Args:   cobra.ExactArgs(1),
+		Hidden: true,
+		Run: func(ctx context.Context, container app.Container) error {
+			excludes := make(map[string]bool)
+			for _, exclude := range flags.ExcludeCommands {
+				excludes[exclude] = true
+			}
+			for _, cmd := range command.Commands() {
+				if excludes[cmd.CommandPath()] {
+					cmd.Hidden = true
+				}
+			}
+			return generateMarkdownTree(
+				command,
+				container.Arg(0),
+				flags.SlugPrefix,
+			)
+		},
+		BindFlags: flags.Bind,
+	}
+}
+
+type flags struct {
+	SlugPrefix      string
+	ExcludeCommands []string
+}
+
+func newFlags() *flags {
+	return &flags{}
+}
+
+func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(
+		&f.SlugPrefix,
+		slugPrefixFlagName,
+		"",
+		"slug prefix for front-matter slug attribute",
+	)
+	flagSet.StringSliceVar(
+		&f.ExcludeCommands,
+		excludeCommandsFlagName,
+		nil,
+		"Exclude these commands from doc generation",
+	)
+}
+
 // generateMarkdownTree generates markdown for a whole command tree.
-func generateMarkdownTree(cmd *cobra.Command, dir string, excludes []string) error {
+func generateMarkdownTree(cmd *cobra.Command, dir string, slugprefix string) error {
 	if !cmd.IsAvailableCommand() {
 		return nil
 	}
-	for _, exclude := range excludes {
-		if cmd.Name() == exclude {
-			return nil
-		}
-	}
 	for _, c := range cmd.Commands() {
-		if err := generateMarkdownTree(c, dir, excludes); err != nil {
+		if err := generateMarkdownTree(c, dir, slugprefix); err != nil {
 			return err
 		}
 	}
@@ -58,11 +114,11 @@ func generateMarkdownTree(cmd *cobra.Command, dir string, excludes []string) err
 		return err
 	}
 	defer f.Close()
-	return generateMarkdownPage(cmd, f)
+	return generateMarkdownPage(cmd, f, slugprefix)
 }
 
 // generateMarkdownPage creates custom markdown output.
-func generateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
+func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) error {
 	var err error
 	p := func(format string, a ...any) {
 		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
@@ -72,7 +128,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 	p("title: %s\n", cmd.CommandPath())
 	p("sidebar_label: %s\n", pageName(cmd))
 	p("sidebar_position: %d\n", order(cmd))
-	p("slug: /reference/%s\n", slug(cmd))
+	p("slug: /%s/%s\n", path.Join(slugprefix, slug(cmd)))
 	p("---\n")
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()

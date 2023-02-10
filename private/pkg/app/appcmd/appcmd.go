@@ -206,21 +206,7 @@ func run(
 		webpagesCobraCommand, err := commandToCobra(
 			ctx,
 			container,
-			&Command{
-				Use:    "webpages",
-				Args:   cobra.ExactArgs(1),
-				Hidden: true,
-				Run: func(ctx context.Context, container app.Container) error {
-					return generateMarkdownTree(
-						cobraCommand,
-						container.Arg(0),
-						[]string{
-							"completion",
-							"ls-files",
-						},
-					)
-				},
-			},
+			newWebpagesCommand(cobraCommand),
 			&runErr,
 		)
 		if err != nil {
