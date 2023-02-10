@@ -21,6 +21,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"html"
 	"io"
 	"os"
@@ -28,10 +31,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
+	"unicode"
 )
 
 var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
@@ -132,23 +132,19 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) er
 	p("---\n")
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
-	// Name + Version
 	if cmd.Version != "" {
 		p("version `%s`\n\n", cmd.Version)
 	}
 	p(cmd.Short)
 	p("\n\n")
-	// Usage
 	if cmd.Runnable() {
 		p("### Usage\n")
-		p("```\n$ %s\n```\n\n", cmd.UseLine())
+		p("```terminal\n$ %s\n```\n\n", cmd.UseLine())
 	}
-	// Synopsis
 	if len(cmd.Long) > 0 {
 		p("### Description\n\n")
 		p("%s \n\n", escapeDescription(cmd.Long))
 	}
-	// Examples
 	if len(cmd.Example) > 0 {
 		p("### Examples\n\n")
 		p("```\n%s\n```\n\n", escapeDescription(cmd.Example))
@@ -162,7 +158,6 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) er
 		flags.PrintDefaults()
 		p("```\n\n")
 	}
-	// Parent Flags
 	parentFlags := cmd.InheritedFlags()
 	parentFlags.SetOutput(w)
 	if parentFlags.HasAvailableFlags() {
@@ -170,7 +165,6 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) er
 		parentFlags.PrintDefaults()
 		p("```\n\n")
 	}
-	// Subcommands
 	if hasSubCommands(cmd) {
 		p("### Subcommands\n\n")
 		children := cmd.Commands()
@@ -266,16 +260,48 @@ func hasSubCommands(cmd *cobra.Command) bool {
 // html.Escape the string.
 func escapeDescription(s string) string {
 	out := &bytes.Buffer{}
-	scanner := bufio.NewScanner(strings.NewReader(s))
-	for scanner.Scan() {
-		text := scanner.Text()
+	read := bufio.NewReader(strings.NewReader(s))
+	var inCodeBlock bool
+	for {
+		line, _, err := read.ReadLine()
+		if err == io.EOF {
+			break
+		}
+		text := string(line)
+		// Convert indented code blocks into terminal code blocks so the
+		// $ isn't copied when using the copy button
 		if codeBlockRegex.MatchString(text) {
+			if !inCodeBlock {
+				out.WriteString("```terminal\n")
+				inCodeBlock = true
+			}
+			// this removed the indentation level from the indented code block
+			text = codeBlockRegex.ReplaceAllString(text, "")
 			out.WriteString(text)
 			out.WriteString("\n")
 			continue
 		}
+		// indented code blocks can have blank lines in them so
+		// if the next line is a whitespace then we don't want to
+		// terminate the code block
+		if inCodeBlock && text == "" {
+			if b, err := read.Peek(1); err == nil && unicode.IsSpace(rune(b[0])) {
+				out.WriteString(text)
+				out.WriteString("\n")
+				continue
+			}
+		}
+		// terminate the fenced code block with ```
+		if inCodeBlock {
+			out.WriteString("```\n")
+			inCodeBlock = false
+		}
 		out.WriteString(html.EscapeString(text))
 		out.WriteString("\n")
+	}
+	if inCodeBlock {
+		out.WriteString("```\n")
+		inCodeBlock = false
 	}
 	return out.String()
 }
