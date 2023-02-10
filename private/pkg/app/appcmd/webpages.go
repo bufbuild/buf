@@ -33,12 +33,12 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
-
 const (
 	slugPrefixFlagName      = "slug-prefix"
 	excludeCommandsFlagName = "exclude-command"
 )
+
+var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
 
 type flags struct {
 	SlugPrefix      string
