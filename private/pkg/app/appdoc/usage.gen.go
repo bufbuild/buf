@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package docgenerator
+package appdoc
 
 import _ "github.com/bufbuild/buf/private/usage"

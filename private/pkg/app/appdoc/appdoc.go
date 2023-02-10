@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package docgenerator
+// Package appdoc provides a markdown generator for cobra commands.
+// In the future this will need to be adapted to appcmd.Command when we remove usage of Cobra.
+package appdoc
 
 import (
 	"bufio"
@@ -29,22 +31,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
+
 // GenerateMarkdownTree generates markdown for a whole command tree.
-func GenerateMarkdownTree(cmd *cobra.Command, dir string) error {
+func GenerateMarkdownTree(cmd *cobra.Command, dir string, excludes []string) error {
 	if !cmd.IsAvailableCommand() {
 		return nil
 	}
+	for _, exclude := range excludes {
+		if cmd.Name() == exclude {
+			return nil
+		}
+	}
 	for _, c := range cmd.Commands() {
-		if err := GenerateMarkdownTree(c, dir); err != nil {
+		if err := GenerateMarkdownTree(c, dir, excludes); err != nil {
 			return err
 		}
 	}
-	cmdPath := strings.ReplaceAll(cmd.CommandPath(), " ", "/")
-	if cmd.HasSubCommands() {
-		cmdPath = path.Join(cmdPath, "index.md")
-	} else {
-		cmdPath += ".md"
-	}
+	cmdPath := commandPath(cmd)
 	filename := filepath.Join(dir, cmdPath)
 	if err := os.MkdirAll(path.Dir(filename), os.ModePerm); err != nil {
 		return err
@@ -68,6 +72,7 @@ func GenerateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 	p("title: %s\n", cmd.CommandPath())
 	p("sidebar_label: %s\n", pageName(cmd))
 	p("sidebar_position: %d\n", order(cmd))
+	p("slug: /%s\n", slug(cmd))
 	p("---\n")
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
@@ -78,14 +83,15 @@ func GenerateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 	}
 	p(cmd.Short)
 	p("\n\n")
-	// Synopsis
-	if len(cmd.Long) > 0 {
-		p("### Synopsis\n\n")
-		p("%s \n\n", escapeDescription(cmd.Long))
-	}
+	// Usage
 	if cmd.Runnable() {
 		p("### Usage\n")
 		p("```\n$ %s\n```\n\n", cmd.UseLine())
+	}
+	// Synopsis
+	if len(cmd.Long) > 0 {
+		p("### Description\n\n")
+		p("%s \n\n", escapeDescription(cmd.Long))
 	}
 	// Examples
 	if len(cmd.Example) > 0 {
@@ -145,6 +151,32 @@ func GenerateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 	return err
 }
 
+// commandPath converts a cobra command to a path. It stutters the folders and paths
+// in order to allow for rendering of the full command in Docusaurus: "buf/buf beta" for example.
+// Spaces are used in paths because the current version of Docusaurus
+// does not allow for configuring category index pages.
+// This function should be removed when migration off docusaurus occurs.
+func commandPath(cmd *cobra.Command) string {
+	cmdPath := strings.ReplaceAll(cmd.CommandPath(), " ", "/")
+	var allPath string
+	var previousPath string
+	for _, elem := range strings.Split(cmdPath, "/") {
+		if allPath != "" {
+			allPath += " " + elem
+		} else {
+			allPath = elem
+		}
+		cmdPath = path.Join(previousPath, allPath)
+		previousPath = cmdPath
+	}
+	if cmd.HasSubCommands() {
+		cmdPath = path.Join(cmdPath, "index.md")
+	} else {
+		cmdPath += ".md"
+	}
+	return cmdPath
+}
+
 func order(cmd *cobra.Command) int {
 	var i int
 	if !cmd.HasParent() {
@@ -165,6 +197,10 @@ func order(cmd *cobra.Command) int {
 	return -1
 }
 
+func slug(cmd *cobra.Command) string {
+	return strings.ReplaceAll(cmd.CommandPath(), " ", "/")
+}
+
 func pageID(cmd *cobra.Command) string {
 	if hasSubCommands(cmd) {
 		return "index"
@@ -173,10 +209,7 @@ func pageID(cmd *cobra.Command) string {
 }
 
 func pageName(cmd *cobra.Command) string {
-	if hasSubCommands(cmd) {
-		return "Overview"
-	}
-	return cmd.Name()
+	return cmd.CommandPath()
 }
 
 func hasSubCommands(cmd *cobra.Command) bool {
@@ -188,8 +221,6 @@ func hasSubCommands(cmd *cobra.Command) bool {
 	}
 	return false
 }
-
-var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
 
 // escapeDescription is a bit of a hack because docusaurus markdown rendering is a bit weird.
 // If the code block is indented then escaping html characters is skipped, otherwise it will
