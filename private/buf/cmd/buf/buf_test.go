@@ -405,11 +405,11 @@ func TestFailCheckBreaking1(t *testing.T) {
 		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1: FIELD_NO_DELETE: Previously present field "3" with name "three" on message "Two" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1: FIELD_NO_DELETE: Previously present field "3" with name "three" on message "Three" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5: FIELD_NO_DELETE: Previously present field "3" with name "three" on message "Five" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3: FIELD_NO_DELETE: Previously present field "3" with name "three" on message "Seven" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1: FIELD_NO_DELETE: Previously present field "3" with name "three" on message "Nine" was deleted.
 		`),
 		"", // stderr should be empty
 		"breaking",
@@ -426,7 +426,7 @@ func TestFailCheckBreaking2(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".`),
+		filepath.FromSlash(`testdata/protofileref/breaking/a/foo.proto:7:3: FIELD_SAME_TYPE: Field "2" on message "Foo" changed type from "int32" to "string".`),
 		"breaking",
 		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
 		"--against",
@@ -441,8 +441,8 @@ func TestFailCheckBreaking3(t *testing.T) {
 		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		<input>:1:1:Previously present file "bar.proto" was deleted.
-		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		<input>:1:1: FILE_NO_DELETE: Previously present file "bar.proto" was deleted.
+		testdata/protofileref/breaking/a/foo.proto:7:3: FIELD_SAME_TYPE: Field "2" on message "Foo" changed type from "int32" to "string".
 		`),
 		"breaking",
 		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
@@ -458,8 +458,8 @@ func TestFailCheckBreaking4(t *testing.T) {
 		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		testdata/protofileref/breaking/a/bar.proto:5:1:Previously present field "2" with name "value" on message "Bar" was deleted.
-		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		testdata/protofileref/breaking/a/bar.proto:5:1: FIELD_NO_DELETE: Previously present field "2" with name "value" on message "Bar" was deleted.
+		testdata/protofileref/breaking/a/foo.proto:7:3: FIELD_SAME_TYPE: Field "2" on message "Foo" changed type from "int32" to "string".
 		`),
 		"breaking",
 		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto")),
@@ -475,8 +475,8 @@ func TestFailCheckBreaking5(t *testing.T) {
 		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-    <input>:1:1:Previously present file "bar.proto" was deleted.
-		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+    <input>:1:1: FILE_NO_DELETE: Previously present file "bar.proto" was deleted.
+		testdata/protofileref/breaking/a/foo.proto:7:3: FIELD_SAME_TYPE: Field "2" on message "Foo" changed type from "int32" to "string".
 		`),
 		"breaking",
 		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
@@ -1497,9 +1497,9 @@ func TestBreakingWithPaths(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`a/v3/a.proto:6:3:Field "1" on message "Foo" changed type from "string" to "int32".
-a/v3/a.proto:7:3:Field "2" with name "Value" on message "Foo" changed option "json_name" from "value" to "Value".
-a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value".`,
+		`a/v3/a.proto:6:3: FIELD_SAME_TYPE: Field "1" on message "Foo" changed type from "string" to "int32".
+a/v3/a.proto:7:3: FIELD_SAME_JSON_NAME: Field "2" with name "Value" on message "Foo" changed option "json_name" from "value" to "Value".
+a/v3/a.proto:7:10: FIELD_SAME_NAME: Field "2" on message "Foo" changed name from "value" to "Value".`,
 		"",
 		"breaking",
 		filepath.Join(tempDir, "current.bin"),

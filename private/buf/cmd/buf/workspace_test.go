@@ -153,9 +153,9 @@ func TestWorkspaceDir(t *testing.T) {
 			t,
 			nil,
 			bufcli.ExitCodeFileAnnotation,
-			filepath.FromSlash(`testdata/workspace/success/breaking/other/proto/request.proto:5:1:Previously present field "1" with name "name" on message "Request" was deleted.
-		    testdata/workspace/success/breaking/proto/rpc.proto:8:5:Field "1" with name "request" on message "RPC" changed option "json_name" from "req" to "request".
-		    testdata/workspace/success/breaking/proto/rpc.proto:8:21:Field "1" on message "RPC" changed name from "req" to "request".`),
+			filepath.FromSlash(`testdata/workspace/success/breaking/other/proto/request.proto:5:1: FIELD_NO_DELETE: Previously present field "1" with name "name" on message "Request" was deleted.
+		    testdata/workspace/success/breaking/proto/rpc.proto:8:5: FIELD_SAME_JSON_NAME: Field "1" with name "request" on message "RPC" changed option "json_name" from "req" to "request".
+		    testdata/workspace/success/breaking/proto/rpc.proto:8:21: FIELD_SAME_NAME: Field "1" on message "RPC" changed name from "req" to "request".`),
 			"breaking",
 			filepath.Join("testdata", "workspace", "success", "breaking"),
 			"--against",
