@@ -157,24 +157,17 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 // does not allow for configuring category index pages.
 // This function should be removed when migration off docusaurus occurs.
 func commandPath(cmd *cobra.Command) string {
-	cmdPath := strings.ReplaceAll(cmd.CommandPath(), " ", "/")
-	var allPath string
-	var previousPath string
-	for _, elem := range strings.Split(cmdPath, "/") {
-		if allPath != "" {
-			allPath += " " + elem
-		} else {
-			allPath = elem
-		}
-		cmdPath = path.Join(previousPath, allPath)
-		previousPath = cmdPath
+	cmdPath := strings.Split(cmd.CommandPath(), " ")
+	var parentPath, cmdDirPath []string
+	for i := range cmdPath {
+		cmdDirPath = append(parentPath, strings.Join(cmdPath[:i+1], " "))
+		parentPath = cmdDirPath
 	}
+	fullPath := path.Join(cmdDirPath[1:]...)
 	if cmd.HasSubCommands() {
-		cmdPath = path.Join(cmdPath, "index.md")
-	} else {
-		cmdPath += ".md"
+		return path.Join(fullPath, "index.md")
 	}
-	return cmdPath
+	return fullPath + ".md"
 }
 
 func order(cmd *cobra.Command) int {
