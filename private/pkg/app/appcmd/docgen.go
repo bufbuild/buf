@@ -76,7 +76,6 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 	p("---\n")
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
-	name := cmd.CommandPath()
 	// Name + Version
 	if cmd.Version != "" {
 		p("version `%s`\n\n", cmd.Version)
@@ -123,12 +122,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
 				continue
 			}
-			commandName := name + " " + child.Name()
-			childLink := child.Name()
-			if hasSubCommands(child) {
-				childLink = child.Name() + "/index"
-			}
-			p("* [%s](%s)\t - %s\n", commandName, childLink, child.Short)
+			p("* [%s](%s/%s)\t - %s\n", child.CommandPath(), cmd.Name(), child.Name(), child.Short)
 		}
 		p("\n")
 	}
@@ -137,11 +131,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 		p("### Parent Command\n\n")
 		parent := cmd.Parent()
 		parentName := parent.CommandPath()
-		link := "index"
-		if hasSubCommands(cmd) {
-			link = "../" + link
-		}
-		p("* [%s](%s)\t - %s\n", parentName, link, parent.Short)
+		p("* [%s](../%s)\t - %s\n", parentName, parent.Name(), parent.Short)
 		cmd.VisitParents(func(c *cobra.Command) {
 			if c.DisableAutoGenTag {
 				cmd.DisableAutoGenTag = c.DisableAutoGenTag
