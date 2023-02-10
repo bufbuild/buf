@@ -42,6 +42,30 @@ const (
 	excludeCommandsFlagName = "exclude-command"
 )
 
+type flags struct {
+	SlugPrefix      string
+	ExcludeCommands []string
+}
+
+func newFlags() *flags {
+	return &flags{}
+}
+
+func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(
+		&f.SlugPrefix,
+		slugPrefixFlagName,
+		"",
+		"The slug prefix for front-matter slug attribute",
+	)
+	flagSet.StringSliceVar(
+		&f.ExcludeCommands,
+		excludeCommandsFlagName,
+		nil,
+		"Exclude these commands from doc generation",
+	)
+}
+
 // newWebpagesCommand returns a new Command.
 func newWebpagesCommand(
 	command *cobra.Command,
@@ -71,51 +95,27 @@ func newWebpagesCommand(
 	}
 }
 
-type flags struct {
-	SlugPrefix      string
-	ExcludeCommands []string
-}
-
-func newFlags() *flags {
-	return &flags{}
-}
-
-func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.SlugPrefix,
-		slugPrefixFlagName,
-		"",
-		"slug prefix for front-matter slug attribute",
-	)
-	flagSet.StringSliceVar(
-		&f.ExcludeCommands,
-		excludeCommandsFlagName,
-		nil,
-		"Exclude these commands from doc generation",
-	)
-}
-
 // generateMarkdownTree generates markdown for a whole command tree.
-func generateMarkdownTree(cmd *cobra.Command, dir string, slugprefix string) error {
+func generateMarkdownTree(cmd *cobra.Command, dir string, slugPrefix string) error {
 	if !cmd.IsAvailableCommand() {
 		return nil
 	}
 	for _, c := range cmd.Commands() {
-		if err := generateMarkdownTree(c, dir, slugprefix); err != nil {
+		if err := generateMarkdownTree(c, dir, slugPrefix); err != nil {
 			return err
 		}
 	}
-	cmdPath := commandPath(cmd)
-	filename := filepath.Join(dir, cmdPath)
+	commandPath := commandFilePath(cmd)
+	filename := filepath.Join(dir, commandPath)
 	if err := os.MkdirAll(path.Dir(filename), os.ModePerm); err != nil {
 		return err
 	}
-	f, err := os.Create(filename)
+	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-	return generateMarkdownPage(cmd, f, slugprefix)
+	defer file.Close()
+	return generateMarkdownPage(cmd, file, slugPrefix)
 }
 
 // generateMarkdownPage creates custom markdown output.
@@ -150,20 +150,19 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) er
 		p("### Examples\n\n")
 		p("```\n%s\n```\n\n", escapeDescription(cmd.Example))
 	}
-	// Flags
-	flags := cmd.NonInheritedFlags()
-	flags.SetOutput(w)
-	if flags.HasAvailableFlags() {
+	commandFlags := cmd.NonInheritedFlags()
+	commandFlags.SetOutput(w)
+	if commandFlags.HasAvailableFlags() {
 		p("### Flags\n\n")
 		p("```\n")
-		flags.PrintDefaults()
+		commandFlags.PrintDefaults()
 		p("```\n\n")
 	}
-	parentFlags := cmd.InheritedFlags()
-	parentFlags.SetOutput(w)
-	if parentFlags.HasAvailableFlags() {
+	inheritedFlags := cmd.InheritedFlags()
+	inheritedFlags.SetOutput(w)
+	if inheritedFlags.HasAvailableFlags() {
 		p("### Flags inherited from parent commands\n\n```\n")
-		parentFlags.PrintDefaults()
+		inheritedFlags.PrintDefaults()
 		p("```\n\n")
 	}
 	if hasSubCommands(cmd) {
@@ -177,7 +176,6 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) er
 		}
 		p("\n")
 	}
-	// Parent Command
 	if cmd.HasParent() {
 		p("### Parent Command\n\n")
 		parent := cmd.Parent()
@@ -192,19 +190,19 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) er
 	return err
 }
 
-// commandPath converts a cobra command to a path. It stutters the folders and paths
+// commandFilePath converts a cobra command to a path. It stutters the folders and paths
 // in order to allow for rendering of the full command in Docusaurus: "buf/buf beta" for example.
 // Spaces are used in paths because the current version of Docusaurus
 // does not allow for configuring category index pages.
 // This function should be removed when migration off docusaurus occurs.
-func commandPath(cmd *cobra.Command) string {
-	cmdPath := strings.Split(cmd.CommandPath(), " ")
-	var parentPath, cmdDirPath []string
-	for i := range cmdPath {
-		cmdDirPath = append(parentPath, strings.Join(cmdPath[:i+1], " "))
-		parentPath = cmdDirPath
+func commandFilePath(cmd *cobra.Command) string {
+	commandPath := strings.Split(cmd.CommandPath(), " ")
+	var parentPath, currentPath []string
+	for i := range commandPath {
+		currentPath = append(parentPath, strings.Join(commandPath[:i+1], " "))
+		parentPath = currentPath
 	}
-	fullPath := path.Join(cmdDirPath...)
+	fullPath := path.Join(currentPath...)
 	if cmd.HasSubCommands() {
 		return path.Join(fullPath, "index.md")
 	}
@@ -269,14 +267,14 @@ func escapeDescription(s string) string {
 			break
 		}
 		text := string(line)
-		// Convert indented code blocks into terminal code blocks so the
+		// convert indented code blocks into terminal code blocks so the
 		// $ isn't copied when using the copy button
 		if codeBlockRegex.MatchString(text) {
 			if !inCodeBlock {
 				out.WriteString("```terminal\n")
 				inCodeBlock = true
 			}
-			// this removed the indentation level from the indented code block
+			// remove the indentation level from the indented code block
 			text = codeBlockRegex.ReplaceAllString(text, "")
 			out.WriteString(text)
 			out.WriteString("\n")
