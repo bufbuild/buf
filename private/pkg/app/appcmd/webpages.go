@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package appdoc provides a markdown generator for cobra commands.
-// In the future this will need to be adapted to appcmd.Command when we remove usage of Cobra.
 package appcmd
 
 import (
@@ -66,7 +64,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 }
 
-// newWebpagesCommand returns a new Command.
+// newWebpagesCommand returns a "webpages" command that generates docusaurus markdown for cobra commands.
+// In the future this will need to be adapted to accept a Command when cobra.Command is removed.
 func newWebpagesCommand(
 	command *cobra.Command,
 ) *Command {
