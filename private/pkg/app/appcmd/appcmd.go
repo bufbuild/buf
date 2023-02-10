@@ -49,9 +49,9 @@ type Command struct {
 	Deprecated string
 	// Hidden says to hide this command.
 	Hidden bool
-	// BindFlags allows binding of flags on build.
+	// BindFlags allows binding of webpagesFlags on build.
 	BindFlags func(*pflag.FlagSet)
-	// BindPersistentFlags allows binding of flags on build.
+	// BindPersistentFlags allows binding of webpagesFlags on build.
 	BindPersistentFlags func(*pflag.FlagSet)
 	// NormalizeFlag allows for normalization of flag names.
 	NormalizeFlag func(*pflag.FlagSet, string) string

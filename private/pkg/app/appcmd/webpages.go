@@ -40,16 +40,16 @@ const (
 
 var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
 
-type flags struct {
+type webpagesFlags struct {
 	SlugPrefix      string
 	ExcludeCommands []string
 }
 
-func newFlags() *flags {
-	return &flags{}
+func newFlags() *webpagesFlags {
+	return &webpagesFlags{}
 }
 
-func (f *flags) Bind(flagSet *pflag.FlagSet) {
+func (f *webpagesFlags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
 		&f.SlugPrefix,
 		slugPrefixFlagName,
