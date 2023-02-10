@@ -126,11 +126,11 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) er
 		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
 	}
 	p("---\n")
-	p("id: %s\n", pageID(cmd))
+	p("id: %s\n", websitePageID(cmd))
 	p("title: %s\n", cmd.CommandPath())
-	p("sidebar_label: %s\n", pageName(cmd))
-	p("sidebar_position: %d\n", order(cmd))
-	p("slug: /%s\n", path.Join(slugprefix, slug(cmd)))
+	p("sidebar_label: %s\n", websitePageName(cmd))
+	p("sidebar_position: %d\n", websiteSidebarPosition(cmd))
+	p("slug: /%s\n", path.Join(slugprefix, websiteSlug(cmd)))
 	p("---\n")
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
@@ -210,7 +210,7 @@ func commandFilePath(cmd *cobra.Command) string {
 	return fullPath + ".md"
 }
 
-func order(cmd *cobra.Command) int {
+func websiteSidebarPosition(cmd *cobra.Command) int {
 	var i int
 	if !cmd.HasParent() {
 		return 0
@@ -230,18 +230,18 @@ func order(cmd *cobra.Command) int {
 	return -1
 }
 
-func slug(cmd *cobra.Command) string {
+func websiteSlug(cmd *cobra.Command) string {
 	return strings.ReplaceAll(cmd.CommandPath(), " ", "/")
 }
 
-func pageID(cmd *cobra.Command) string {
+func websitePageID(cmd *cobra.Command) string {
 	if hasSubCommands(cmd) {
 		return "index"
 	}
 	return cmd.Name()
 }
 
-func pageName(cmd *cobra.Command) string {
+func websitePageName(cmd *cobra.Command) string {
 	return cmd.CommandPath()
 }
 
