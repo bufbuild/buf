@@ -32,37 +32,49 @@ func TestVersionString(t *testing.T) {
 	assert.Equal(t, "21.1.1-rc-1", versionString(newVersion(21, 1, 1, "rc-1")))
 }
 
-func TestGetExperimentalAllowProto3Optional(t *testing.T) {
+func TestGetSetExperimentalAllowProto3OptionalFlag(t *testing.T) {
 	t.Parallel()
-	assert.False(t, getExperimentalAllowProto3Optional(newVersion(2, 12, 4, "")))
-	assert.False(t, getExperimentalAllowProto3Optional(newVersion(3, 11, 1, "buf")))
-	assert.False(t, getExperimentalAllowProto3Optional(newVersion(3, 11, 4, "")))
-	assert.True(t, getExperimentalAllowProto3Optional(newVersion(3, 12, 1, "")))
-	assert.True(t, getExperimentalAllowProto3Optional(newVersion(3, 14, 1, "")))
-	assert.False(t, getExperimentalAllowProto3Optional(newVersion(3, 14, 1, "buf")))
-	assert.False(t, getExperimentalAllowProto3Optional(newVersion(3, 15, 0, "")))
-	assert.False(t, getExperimentalAllowProto3Optional(newVersion(21, 0, 0, "")))
+	assert.False(t, getSetExperimentalAllowProto3OptionalFlag(newVersion(2, 12, 4, "")))
+	assert.False(t, getSetExperimentalAllowProto3OptionalFlag(newVersion(3, 11, 1, "buf")))
+	assert.False(t, getSetExperimentalAllowProto3OptionalFlag(newVersion(3, 11, 4, "")))
+	assert.True(t, getSetExperimentalAllowProto3OptionalFlag(newVersion(3, 12, 1, "")))
+	assert.True(t, getSetExperimentalAllowProto3OptionalFlag(newVersion(3, 14, 1, "")))
+	assert.False(t, getSetExperimentalAllowProto3OptionalFlag(newVersion(3, 14, 1, "buf")))
+	assert.False(t, getSetExperimentalAllowProto3OptionalFlag(newVersion(3, 15, 0, "")))
+	assert.False(t, getSetExperimentalAllowProto3OptionalFlag(newVersion(21, 0, 0, "")))
 }
 
-func TestGetFeatureProto3Optional(t *testing.T) {
+func TestGetFeatureProto3OptionalSupported(t *testing.T) {
 	t.Parallel()
-	assert.False(t, getFeatureProto3Optional(newVersion(2, 12, 4, "")))
-	assert.False(t, getFeatureProto3Optional(newVersion(3, 11, 4, "")))
-	assert.True(t, getFeatureProto3Optional(newVersion(3, 11, 1, "buf")))
-	assert.True(t, getFeatureProto3Optional(newVersion(3, 12, 1, "")))
-	assert.True(t, getFeatureProto3Optional(newVersion(3, 14, 1, "")))
-	assert.True(t, getFeatureProto3Optional(newVersion(3, 15, 0, "")))
-	assert.True(t, getFeatureProto3Optional(newVersion(21, 0, 0, "")))
+	assert.False(t, getFeatureProto3OptionalSupported(newVersion(2, 12, 4, "")))
+	assert.False(t, getFeatureProto3OptionalSupported(newVersion(3, 11, 4, "")))
+	assert.True(t, getFeatureProto3OptionalSupported(newVersion(3, 11, 1, "buf")))
+	assert.True(t, getFeatureProto3OptionalSupported(newVersion(3, 12, 1, "")))
+	assert.True(t, getFeatureProto3OptionalSupported(newVersion(3, 14, 1, "")))
+	assert.True(t, getFeatureProto3OptionalSupported(newVersion(3, 15, 0, "")))
+	assert.True(t, getFeatureProto3OptionalSupported(newVersion(21, 0, 0, "")))
 }
 
-func TestGetKotlinSupported(t *testing.T) {
+func TestGetKotlinSupportedAsBuiltin(t *testing.T) {
 	t.Parallel()
-	assert.True(t, getKotlinSupported(newVersion(3, 11, 1, "buf")))
-	assert.True(t, getKotlinSupported(newVersion(3, 17, 4, "")))
-	assert.True(t, getKotlinSupported(newVersion(21, 1, 0, "")))
-	assert.True(t, getKotlinSupported(newVersion(21, 1, 0, "buf")))
-	assert.False(t, getKotlinSupported(newVersion(3, 12, 1, "")))
-	assert.False(t, getKotlinSupported(newVersion(3, 14, 1, "")))
+	assert.True(t, getKotlinSupportedAsBuiltin(newVersion(3, 11, 1, "buf")))
+	assert.True(t, getKotlinSupportedAsBuiltin(newVersion(3, 17, 4, "")))
+	assert.True(t, getKotlinSupportedAsBuiltin(newVersion(21, 1, 0, "")))
+	assert.True(t, getKotlinSupportedAsBuiltin(newVersion(21, 1, 0, "buf")))
+	assert.False(t, getKotlinSupportedAsBuiltin(newVersion(3, 12, 1, "")))
+	assert.False(t, getKotlinSupportedAsBuiltin(newVersion(3, 14, 1, "")))
+}
+
+func TestGetJSSupportedAsBuiltin(t *testing.T) {
+	t.Parallel()
+	assert.False(t, getJSSupportedAsBuiltin(newVersion(2, 11, 1, "")))
+	assert.True(t, getJSSupportedAsBuiltin(newVersion(3, 11, 1, "buf")))
+	assert.True(t, getJSSupportedAsBuiltin(newVersion(3, 17, 4, "")))
+	assert.True(t, getJSSupportedAsBuiltin(newVersion(3, 20, 1, "")))
+	assert.False(t, getJSSupportedAsBuiltin(newVersion(3, 21, 1, "")))
+	assert.False(t, getJSSupportedAsBuiltin(newVersion(3, 22, 1, "")))
+	assert.False(t, getJSSupportedAsBuiltin(newVersion(21, 1, 0, "")))
+	assert.True(t, getJSSupportedAsBuiltin(newVersion(21, 1, 0, "buf")))
 }
 
 func TestParseVersionForCLIVersion(t *testing.T) {
