@@ -23,12 +23,6 @@ import (
 )
 
 func newConfigV1(externalConfig ExternalConfigV1, workspaceID string) (*Config, error) {
-	if len(externalConfig.Directories) == 0 {
-		return nil, fmt.Errorf(
-			`%s has no directories set. Please add "directories: [...]"`,
-			workspaceID,
-		)
-	}
 	directorySet := make(map[string]struct{}, len(externalConfig.Directories))
 	for _, directory := range externalConfig.Directories {
 		normalizedDirectory, err := normalpath.NormalizeAndValidate(directory)

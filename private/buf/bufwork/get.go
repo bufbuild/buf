@@ -120,7 +120,20 @@ func getConfigForDataInternal(
 	if err := unmarshalStrict(data, &externalConfigV1); err != nil {
 		return nil, err
 	}
+	if err := validateDirectories(externalConfigV1, workspaceID); err != nil {
+		return nil, err
+	}
 	return newConfigV1(externalConfigV1, workspaceID)
+}
+
+func validateDirectories(externalConfig ExternalConfigV1, workspaceID string) error {
+	if len(externalConfig.Directories) == 0 {
+		return fmt.Errorf(
+			`%s has no directories set. Please add "directories: [...]"`,
+			workspaceID,
+		)
+	}
+	return nil
 }
 
 func validateExternalConfigVersion(externalConfigVersion externalConfigVersion, id string) error {
