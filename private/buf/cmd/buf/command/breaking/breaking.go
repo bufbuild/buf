@@ -261,6 +261,7 @@ func run(
 			container.Stdout(),
 			bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations),
 			flags.ErrorFormat,
+			bufanalysis.PrintWithRuleName(),
 		); err != nil {
 			return err
 		}

@@ -24,31 +24,34 @@ import (
 	"strings"
 )
 
-func printAsText(writer io.Writer, fileAnnotations []FileAnnotation) error {
+func printAsText(writer io.Writer, fileAnnotations []FileAnnotation, options ...PrintOption) error {
 	return printEachAnnotationOnNewLine(
 		writer,
 		fileAnnotations,
 		printFileAnnotationAsText,
+		options...,
 	)
 }
 
-func printAsMSVS(writer io.Writer, fileAnnotations []FileAnnotation) error {
+func printAsMSVS(writer io.Writer, fileAnnotations []FileAnnotation, options ...PrintOption) error {
 	return printEachAnnotationOnNewLine(
 		writer,
 		fileAnnotations,
 		printFileAnnotationAsMSVS,
+		options...,
 	)
 }
 
-func printAsJSON(writer io.Writer, fileAnnotations []FileAnnotation) error {
+func printAsJSON(writer io.Writer, fileAnnotations []FileAnnotation, options ...PrintOption) error {
 	return printEachAnnotationOnNewLine(
 		writer,
 		fileAnnotations,
 		printFileAnnotationAsJSON,
+		options...,
 	)
 }
 
-func printAsJUnit(writer io.Writer, fileAnnotations []FileAnnotation) error {
+func printAsJUnit(writer io.Writer, fileAnnotations []FileAnnotation, options ...PrintOption) error {
 	encoder := xml.NewEncoder(writer)
 	encoder.Indent("", "  ")
 	testsuites := xml.StartElement{Name: xml.Name{Local: "testsuites"}}
@@ -146,12 +149,20 @@ func groupAnnotationsByPath(annotations []FileAnnotation) [][]FileAnnotation {
 	return annotationsByPath
 }
 
-func printFileAnnotationAsText(buffer *bytes.Buffer, f FileAnnotation) error {
-	_, _ = buffer.WriteString(f.String())
+func printFileAnnotationAsText(buffer *bytes.Buffer, f FileAnnotation, options ...PrintOption) error {
+	printOption := newPrintOptions()
+	for _, option := range options {
+		option(printOption)
+	}
+	if printOption.printRuleName {
+		_, _ = buffer.WriteString(f.StringWithRuleName())
+	} else {
+		_, _ = buffer.WriteString(f.String())
+	}
 	return nil
 }
 
-func printFileAnnotationAsMSVS(buffer *bytes.Buffer, f FileAnnotation) error {
+func printFileAnnotationAsMSVS(buffer *bytes.Buffer, f FileAnnotation, options ...PrintOption) error {
 	// This will work as long as f != (*fileAnnotation)(nil)
 	if f == nil {
 		return nil
@@ -192,7 +203,7 @@ func printFileAnnotationAsMSVS(buffer *bytes.Buffer, f FileAnnotation) error {
 	return nil
 }
 
-func printFileAnnotationAsJSON(buffer *bytes.Buffer, f FileAnnotation) error {
+func printFileAnnotationAsJSON(buffer *bytes.Buffer, f FileAnnotation, options ...PrintOption) error {
 	data, err := json.Marshal(newExternalFileAnnotation(f))
 	if err != nil {
 		return err
@@ -227,15 +238,32 @@ func newExternalFileAnnotation(f FileAnnotation) externalFileAnnotation {
 	}
 }
 
+type printOptions struct {
+	printRuleName bool
+}
+
+func newPrintOptions() *printOptions {
+	return &printOptions{}
+}
+
+type PrintOption func(options *printOptions)
+
+func PrintWithRuleName() PrintOption {
+	return func(options *printOptions) {
+		options.printRuleName = true
+	}
+}
+
 func printEachAnnotationOnNewLine(
 	writer io.Writer,
 	fileAnnotations []FileAnnotation,
-	fileAnnotationPrinter func(writer *bytes.Buffer, fileAnnotation FileAnnotation) error,
+	fileAnnotationPrinter func(writer *bytes.Buffer, fileAnnotation FileAnnotation, options ...PrintOption) error,
+	options ...PrintOption,
 ) error {
 	buffer := bytes.NewBuffer(nil)
 	for _, fileAnnotation := range fileAnnotations {
 		buffer.Reset()
-		if err := fileAnnotationPrinter(buffer, fileAnnotation); err != nil {
+		if err := fileAnnotationPrinter(buffer, fileAnnotation, options...); err != nil {
 			return err
 		}
 		_, _ = buffer.WriteString("\n")

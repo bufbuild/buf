@@ -108,7 +108,9 @@ type FileInfo interface {
 type FileAnnotation interface {
 	// Stringer returns the string representation of this annotation.
 	fmt.Stringer
-
+	// StringWithRuleName returns the string representation of this
+	// annotation with Rule Name.
+	StringWithRuleName() string
 	// FileInfo is the FileInfo for this annotation.
 	//
 	// This may be nil.
@@ -194,7 +196,7 @@ func DeduplicateAndSortFileAnnotations(fileAnnotations []FileAnnotation) []FileA
 }
 
 // PrintFileAnnotations prints the file annotations separated by newlines.
-func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, formatString string) error {
+func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, formatString string, options ...PrintOption) error {
 	format, err := ParseFormat(formatString)
 	if err != nil {
 		return err
@@ -202,13 +204,13 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, fo
 
 	switch format {
 	case FormatText:
-		return printAsText(writer, fileAnnotations)
+		return printAsText(writer, fileAnnotations, options...)
 	case FormatJSON:
-		return printAsJSON(writer, fileAnnotations)
+		return printAsJSON(writer, fileAnnotations, options...)
 	case FormatMSVS:
-		return printAsMSVS(writer, fileAnnotations)
+		return printAsMSVS(writer, fileAnnotations, options...)
 	case FormatJUnit:
-		return printAsJUnit(writer, fileAnnotations)
+		return printAsJUnit(writer, fileAnnotations, options...)
 	default:
 		return fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}
