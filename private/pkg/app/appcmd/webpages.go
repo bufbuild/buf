@@ -113,8 +113,10 @@ func generateMarkdownTree(cmd *cobra.Command, dir string, slugPrefix string) err
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	return generateMarkdownPage(cmd, file, slugPrefix)
+	if err := generateMarkdownPage(cmd, file, slugPrefix); err != nil {
+		return err
+	}
+	return file.Close()
 }
 
 // generateMarkdownPage creates custom markdown output.
