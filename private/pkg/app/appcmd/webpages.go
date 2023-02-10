@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -95,7 +96,7 @@ func newWebpagesCommand(
 }
 
 // generateMarkdownTree generates markdown for a whole command tree.
-func generateMarkdownTree(cmd *cobra.Command, dir string, slugPrefix string) error {
+func generateMarkdownTree(cmd *cobra.Command, dir string, slugPrefix string) (retErr error) {
 	if !cmd.IsAvailableCommand() {
 		return nil
 	}
@@ -113,10 +114,10 @@ func generateMarkdownTree(cmd *cobra.Command, dir string, slugPrefix string) err
 	if err != nil {
 		return err
 	}
-	if err := generateMarkdownPage(cmd, file, slugPrefix); err != nil {
-		return err
-	}
-	return file.Close()
+	defer func() {
+		retErr = multierr.Append(retErr, file.Close())
+	}()
+	return generateMarkdownPage(cmd, file, slugPrefix)
 }
 
 // generateMarkdownPage creates custom markdown output.
