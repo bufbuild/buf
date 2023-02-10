@@ -282,6 +282,11 @@ func commandToCobra(
 		Hidden:     command.Hidden,
 		Short:      strings.TrimSpace(command.Short),
 	}
+	cobraCommand.SetHelpTemplate(`{{.Short}}
+
+{{with .Long}}{{. | trimTrailingWhitespaces}}
+
+{{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`)
 	cobraCommand.SetHelpFunc(
 		func(c *cobra.Command, _ []string) {
 			if err := tmpl(container.Stdout(), c.HelpTemplate(), c); err != nil {
@@ -290,7 +295,7 @@ func commandToCobra(
 		},
 	)
 	if command.Long != "" {
-		cobraCommand.Long = cobraCommand.Short + "\n\n" + strings.TrimSpace(command.Long)
+		cobraCommand.Long = strings.TrimSpace(command.Long)
 	}
 	if command.BindFlags != nil {
 		command.BindFlags(cobraCommand.Flags())
