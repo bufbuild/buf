@@ -54,39 +54,17 @@ func NormalizeAndValidate(path string) (string, error) {
 // The path and value are expected to be normalized and validated if Relative is used.
 // The path and value are expected to be normalized and absolute if Absolute is used.
 func EqualsOrContainsPath(value string, path string, pathType PathType) bool {
-	pathRoot := "."
-	if pathType == Absolute {
-		// To check an absolute path on Windows we must first determine
-		// the root volume. This can appear in one of 3 forms (examples are after Normalize())
-		// c.f. https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file?redirectedfrom=MSDN#fully-qualified-vs-relative-paths
-		// * A disk designator: `C:/`
-		// * A UNC Path: `//servername/share/`
-		//   c.f. https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dfsc/149a3039-98ce-491a-9268-2f5ddef08192
-		// * A "current volume absolute path" `/`
-		//   This refers to the root of the current volume
-		//
-		// We do not support paths with string parsing disabled such as
-		// `\\?\path`
-		volumeName := filepath.VolumeName(path)
-
-		// If value has a disk designator or is a UNC path, we'll get a volume name with no trailing separator.
-		// However, filepath.Dir() will return a path component with a trailing separator so we need to add one.
-		// If value is a current volume absolute path, volumeName will be "".
-		// Therefore, we unconditionally add `/` to the volume name to get to the root path component
-		// at which we should stop iterating
-		pathRoot = volumeName + "/"
-	}
-
-	if pathRoot == value {
-		return true
-	}
-
-	// Walk up the path and compare at each directory level until there is a
-	// match or the path reaches its root (either `/` or `.`).
-	for curPath := path; !strings.EqualFold(curPath, pathRoot); curPath = Dir(curPath) {
+	curPath := path
+	var lastSeen string
+	for {
 		if strings.EqualFold(value, curPath) {
 			return true
 		}
+		curPath = Dir(curPath)
+		if lastSeen == curPath {
+			break
+		}
+		lastSeen = curPath
 	}
 	return false
 }

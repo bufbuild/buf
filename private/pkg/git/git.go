@@ -16,6 +16,7 @@ package git
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -91,4 +92,44 @@ type ClonerOptions struct {
 	HTTPSPasswordEnvKey      string
 	SSHKeyFileEnvKey         string
 	SSHKnownHostsFilesEnvKey string
+}
+
+// Lister lists files in git repositories.
+type Lister interface {
+	// ListFilesAndUnstagedFiles lists all files checked into git except those that
+	// were deleted, and also lists unstaged files.
+	//
+	// This does not list unstaged deleted files
+	// This does not list unignored files that were not added.
+	// This ignores regular files.
+	//
+	// This is used for situations like license headers where we want all the
+	// potential git files during development.
+	//
+	// The returned paths will be unnormalized.
+	//
+	// This is the equivalent of doing:
+	//
+	//	comm -23 \
+	//		<(git ls-files --cached --modified --others --no-empty-directory --exclude-standard | sort -u | grep -v -e IGNORE_PATH1 -e IGNORE_PATH2) \
+	//		<(git ls-files --deleted | sort -u)
+	ListFilesAndUnstagedFiles(
+		ctx context.Context,
+		envContainer app.EnvStdioContainer,
+		options ListFilesAndUnstagedFilesOptions,
+	) ([]string, error)
+}
+
+// NewLister returns a new Lister.
+func NewLister(runner command.Runner) Lister {
+	return newLister(runner)
+}
+
+// ListFilesAndUnstagedFilesOptions are options for ListFilesAndUnstagedFiles.
+type ListFilesAndUnstagedFilesOptions struct {
+	// IgnorePathRegexps are regexes of paths to ignore.
+	//
+	// These must be unnormalized in the manner of the local OS that the Lister
+	// is being applied to.
+	IgnorePathRegexps []*regexp.Regexp
 }

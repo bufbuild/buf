@@ -84,8 +84,9 @@ type Config struct {
 //
 // Only one field will be set.
 type RegistryConfig struct {
-	Go  *GoRegistryConfig
-	NPM *NPMRegistryConfig
+	Go    *GoRegistryConfig
+	NPM   *NPMRegistryConfig
+	Maven *MavenRegistryConfig
 	// Options is the set of options passed into the plugin for the
 	// remote registry.
 	//
@@ -128,6 +129,14 @@ type NPMRegistryConfig struct {
 type NPMRegistryDependencyConfig struct {
 	Package string
 	Version string
+}
+
+// MavenRegistryConfig is the registry configuration for a Maven plugin.
+type MavenRegistryConfig struct {
+	// Deps is a slice of GAV strings.
+	// A GAV is the groupId:artifactId:version of the dependency.
+	// See https://maven.apache.org/repositories/artifacts.html for more information.
+	Deps []string
 }
 
 // ConfigOption is an optional option used when loading a Config.
@@ -254,9 +263,10 @@ type ExternalDependency struct {
 // ExternalRegistryConfig is the external configuration for the registry
 // of a plugin.
 type ExternalRegistryConfig struct {
-	Go   *ExternalGoRegistryConfig  `json:"go,omitempty" yaml:"go,omitempty"`
-	NPM  *ExternalNPMRegistryConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
-	Opts []string                   `json:"opts,omitempty" yaml:"opts,omitempty"`
+	Go    *ExternalGoRegistryConfig    `json:"go,omitempty" yaml:"go,omitempty"`
+	NPM   *ExternalNPMRegistryConfig   `json:"npm,omitempty" yaml:"npm,omitempty"`
+	Maven *ExternalMavenRegistryConfig `json:"maven,omitempty" yaml:"maven,omitempty"`
+	Opts  []string                     `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
 // ExternalGoRegistryConfig is the external registry configuration for a Go plugin.
@@ -279,6 +289,11 @@ type ExternalNPMRegistryConfig struct {
 	// The import style used for the "type" field in the package.json file.
 	// Must be one of "module" or "commonjs".
 	ImportStyle string `json:"import_style,omitempty" yaml:"import_style,omitempty"`
+}
+
+// ExternalMavenRegistryConfig is the external registry configuration for a Maven plugin.
+type ExternalMavenRegistryConfig struct {
+	Deps []string `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 
 type externalConfigVersion struct {

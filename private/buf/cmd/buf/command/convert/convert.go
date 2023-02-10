@@ -50,36 +50,33 @@ func NewCommand(
 		Long: `
 Use an input proto to interpret a proto/json message and convert it to a different format.
 
-The simplest form is:
+Examples:
 
-$ buf convert <input> --type=<type> --from=<payload> --to=<output>
+    $ buf convert <input> --type=<type> --from=<payload> --to=<output>
 
-<input> is the same input as any other buf command. 
-It can be a local .proto file, binary output of "buf build", bsr module or local buf module.
-e.g.
-$ buf convert example.proto --type=Foo.proto --from=payload.json --to=output.bin
+The <input> can be a local .proto file, binary output of "buf build", bsr module or local buf module:
 
-# Other examples
+    $ buf convert example.proto --type=Foo.proto --from=payload.json --to=output.bin
 
-# All of <input>, "--from" and "to" accept formatting options
+All of <input>, "--from" and "to" accept formatting options:
 
-$ buf convert example.proto#format=bin --type=buf.Foo --from=payload#format=json --to=out#format=json
+    $ buf convert example.proto#format=bin --type=buf.Foo --from=payload#format=json --to=out#format=json
 
-# Both <input> and "--from" accept stdin redirecting
+Both <input> and "--from" accept stdin redirecting:
 
-$ buf convert <(buf build -o -)#format=bin --type=foo.Bar --from=<(echo "{\"one\":\"55\"}")#format=json
+    $ buf convert <(buf build -o -)#format=bin --type=foo.Bar --from=<(echo "{\"one\":\"55\"}")#format=json
 
-# Redirect from stdin to --from
+Redirect from stdin to --from:
 
-$ echo "{\"one\":\"55\"}" | buf convert buf.proto --type buf.Foo --from -#format=json
+    $ echo "{\"one\":\"55\"}" | buf convert buf.proto --type buf.Foo --from -#format=json
 
-# Redirect from stdin to <input>
+Redirect from stdin to <input>:
 
-$ buf build -o - | buf convert -#format=bin --type buf.Foo --from=payload.json
+    $ buf build -o - | buf convert -#format=bin --type buf.Foo --from=payload.json
 
-# Use a module on the bsr
+Use a module on the bsr:
 
-buf convert buf.build/<org>/<repo> --type buf.Foo --from=payload.json
+    $ buf convert <buf.build/owner/repository> --type buf.Foo --from=payload.json
 `,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -113,7 +110,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -128,7 +125,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fromFlagName,
 		"-",
 		fmt.Sprintf(
-			`The location of the payload to be converted. Supported formats are %s.`,
+			`The location of the payload to be converted. Supported formats are %s`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)
@@ -137,7 +134,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagName,
 		"-",
 		fmt.Sprintf(
-			`The output location of the conversion. Supported formats are %s.`,
+			`The output location of the conversion. Supported formats are %s`,
 			bufconvert.MessageEncodingFormatsString,
 		),
 	)

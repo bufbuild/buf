@@ -181,9 +181,11 @@ type PluginConfig struct {
 	// Optional
 	Opt string
 	// Optional, exclusive with Remote
-	Path string
+	Path []string
 	// Required
 	Strategy Strategy
+	// Optional
+	ProtocPath string
 }
 
 // PluginName returns this PluginConfig's plugin name.
@@ -343,14 +345,15 @@ type ExternalConfigV1 struct {
 
 // ExternalPluginConfigV1 is an external plugin configuration.
 type ExternalPluginConfigV1 struct {
-	Plugin   string      `json:"plugin,omitempty" yaml:"plugin,omitempty"`
-	Revision int         `json:"revision,omitempty" yaml:"revision,omitempty"`
-	Name     string      `json:"name,omitempty" yaml:"name,omitempty"`
-	Remote   string      `json:"remote,omitempty" yaml:"remote,omitempty"`
-	Out      string      `json:"out,omitempty" yaml:"out,omitempty"`
-	Opt      interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
-	Path     string      `json:"path,omitempty" yaml:"path,omitempty"`
-	Strategy string      `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	Plugin     string      `json:"plugin,omitempty" yaml:"plugin,omitempty"`
+	Revision   int         `json:"revision,omitempty" yaml:"revision,omitempty"`
+	Name       string      `json:"name,omitempty" yaml:"name,omitempty"`
+	Remote     string      `json:"remote,omitempty" yaml:"remote,omitempty"`
+	Out        string      `json:"out,omitempty" yaml:"out,omitempty"`
+	Opt        interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
+	Path       interface{} `json:"path,omitempty" yaml:"path,omitempty"`
+	ProtocPath string      `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
+	Strategy   string      `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 
 // ExternalManagedConfigV1 is an external managed mode configuration.

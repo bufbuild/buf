@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/docker/docker/api/types"
@@ -94,13 +96,18 @@ type InspectResponse struct {
 }
 
 type dockerAPIClient struct {
-	cli    *client.Client
-	logger *zap.Logger
+	cli        *client.Client
+	logger     *zap.Logger
+	lock       sync.RWMutex // protects negotiated
+	negotiated bool
 }
 
 var _ Client = (*dockerAPIClient)(nil)
 
 func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadResponse, retErr error) {
+	if err := d.negotiateVersion(ctx); err != nil {
+		return nil, err
+	}
 	response, err := d.cli.ImageLoad(ctx, image, true)
 	if err != nil {
 		return nil, err
@@ -140,6 +147,9 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 }
 
 func (d *dockerAPIClient) Tag(ctx context.Context, image string, config *bufpluginconfig.Config) (*TagResponse, error) {
+	if err := d.negotiateVersion(ctx); err != nil {
+		return nil, err
+	}
 	buildID := stringid.GenerateRandomID()
 	imageName := config.Name.IdentityString() + ":" + buildID
 	if !strings.HasPrefix(imageName, PluginsImagePrefix) {
@@ -152,6 +162,9 @@ func (d *dockerAPIClient) Tag(ctx context.Context, image string, config *bufplug
 }
 
 func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *RegistryAuthConfig) (response *PushResponse, retErr error) {
+	if err := d.negotiateVersion(ctx); err != nil {
+		return nil, err
+	}
 	registryAuth, err := auth.ToHeader()
 	if err != nil {
 		return nil, err
@@ -192,6 +205,9 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 }
 
 func (d *dockerAPIClient) Delete(ctx context.Context, image string) (*DeleteResponse, error) {
+	if err := d.negotiateVersion(ctx); err != nil {
+		return nil, err
+	}
 	_, err := d.cli.ImageRemove(ctx, image, types.ImageRemoveOptions{})
 	if err != nil {
 		return nil, err
@@ -200,6 +216,9 @@ func (d *dockerAPIClient) Delete(ctx context.Context, image string) (*DeleteResp
 }
 
 func (d *dockerAPIClient) Inspect(ctx context.Context, image string) (*InspectResponse, error) {
+	if err := d.negotiateVersion(ctx); err != nil {
+		return nil, err
+	}
 	inspect, _, err := d.cli.ImageInspectWithRaw(ctx, image)
 	if err != nil {
 		return nil, err
@@ -209,6 +228,35 @@ func (d *dockerAPIClient) Inspect(ctx context.Context, image string) (*InspectRe
 
 func (d *dockerAPIClient) Close() error {
 	return d.cli.Close()
+}
+
+func (d *dockerAPIClient) negotiateVersion(ctx context.Context) error {
+	d.lock.RLock()
+	negotiated := d.negotiated
+	d.lock.RUnlock()
+	if negotiated {
+		return nil
+	}
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	if d.negotiated {
+		return nil
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	if existingDeadline, ok := ctx.Deadline(); ok {
+		if existingDeadline.Before(deadline) {
+			deadline = existingDeadline
+		}
+	}
+	ctx, cancel := context.WithDeadline(context.Background(), deadline)
+	defer cancel()
+	ping, err := d.cli.Ping(ctx)
+	if err != nil {
+		return err
+	}
+	d.cli.NegotiateAPIVersionPing(ping)
+	d.negotiated = true
+	return nil
 }
 
 // NewClient creates a new Client to use to build Docker plugins.

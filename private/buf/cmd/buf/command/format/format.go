@@ -64,89 +64,100 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Format all Protobuf files from the specified input and output the result.",
+		Short: "Format Protobuf files",
 		Long: `
-By default, the input is the current directory and the formatted content is written to stdout. For example,
+By default, the source is the current directory and the formatted content is written to stdout.
 
-# Write the current directory's formatted content to stdout
-$ buf format
+Examples:
 
-Rewrite the file(s) in-place with -w. For example,
+Write the current directory's formatted content to stdout:
 
-# Rewrite the files defined in the current directory in-place
-$ buf format -w
+    $ buf format
 
-Most people will want to use 'buf format -w'.
+Most people will want to rewrite the files defined in the current directory in-place with -w:
 
-Display a diff between the original and formatted content with -d. For example,
+    $ buf format -w
 
-# Write a diff instead of the formatted file
-$ buf format simple/simple.proto -d
-diff -u simple/simple.proto.orig simple/simple.proto
---- simple/simple.proto.orig	2022-03-24 09:44:10.000000000 -0700
-+++ simple/simple.proto	2022-03-24 09:44:10.000000000 -0700
-@@ -2,8 +2,7 @@
+Display a diff between the original and formatted content with -d
+Write a diff instead of the formatted file:
+    
+    $ buf format simple/simple.proto -d
+    
+    $ diff -u simple/simple.proto.orig simple/simple.proto
+    --- simple/simple.proto.orig	2022-03-24 09:44:10.000000000 -0700
+    +++ simple/simple.proto	2022-03-24 09:44:10.000000000 -0700
+    @@ -2,8 +2,7 @@
+    
+     package simple;
+    
+    -
+     message Object {
+    -    string key = 1;
+    -   bytes value = 2;
+    +  string key = 1;
+    +  bytes value = 2;
+     }
 
- package simple;
+Use the --exit-code flag to exit with a non-zero exit code if there is a diff:
 
--
- message Object {
--    string key = 1;
--   bytes value = 2;
-+  string key = 1;
-+  bytes value = 2;
- }
+    $ buf format --exit-code
+    $ buf format -w --exit-code
+    $ buf format -d --exit-code
 
-You can also use the --exit-code flag to exit with a non-zero exit code if there is a diff:
+Format a file, directory, or module reference by specifying a source e.g.
+Write the formatted file to stdout:
+    
+    $ buf format simple/simple.proto
+    
+    syntax = "proto3";
+    
+    package simple;
+    
+    message Object {
+      string key = 1;
+      bytes value = 2;
+    }
 
-$ buf format --exit-code
-$ buf format -w --exit-code
-$ buf format -d --exit-code
+Write the formatted directory to stdout:
 
-Format a file, directory, or module reference by specifying an input. For example,
+    $ buf format simple
+    ...
 
-# Write the formatted file to stdout
-$ buf format simple/simple.proto
-syntax = "proto3";
+Write the formatted module reference to stdout:
 
-package simple;
+    $ buf format buf.build/acme/petapis
+    ...
 
-message Object {
-  string key = 1;
-  bytes value = 2;
-}
+Write the result to a specified output file or directory with -o e.g.
 
-# Write the formatted directory to stdout
-$ buf format simple
-...
+Write the formatted file to another file:
 
-# Write the formatted module reference to stdout
-$ buf format buf.build/acme/petapis
-...
+    $ buf format simple/simple.proto -o simple/simple.formatted.proto
 
-Write the result to a specified output file or directory with -o. For example,
+Write the formatted directory to another directory, creating it if it doesn't exist:
 
-# Write the formatted file to another file
-$ buf format simple/simple.proto -o simple/simple.formatted.proto
+    $ buf format proto -o formatted
 
-# Write the formatted directory to another directory, creating it if it doesn't exist
-$ buf format proto -o formatted
+This also works with module references:
 
-# This also works with module references
-$ buf format buf.build/acme/weather -o formatted
+    $ buf format buf.build/acme/weather -o formatted
 
-Rewrite the file(s) in-place with -w. For example,
+Rewrite the file(s) in-place with -w. e.g.
 
-# Rewrite a single file in-place
-$ buf format simple.proto -w
+Rewrite a single file in-place:
 
-# Rewrite an entire directory in-place
-$ buf format proto -w
+    $ buf format simple.proto -w
 
-# Write a diff and rewrite the file(s) in-place
-$ buf format simple -d -w
-diff -u simple/simple.proto.orig simple/simple.proto
-...
+Rewrite an entire directory in-place:
+
+    $ buf format proto -w
+
+Write a diff and rewrite the file(s) in-place:
+
+    $ buf format simple -d -w
+
+    $ diff -u simple/simple.proto.orig simple/simple.proto
+    ...
 
 The -w and -o flags cannot be used together in a single invocation.
 `,
@@ -189,27 +200,27 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		diffFlagName,
 		diffFlagShortName,
 		false,
-		"Display diffs instead of rewriting files.",
+		"Display diffs instead of rewriting files",
 	)
 	flagSet.BoolVar(
 		&f.ExitCode,
 		exitCodeFlagName,
 		false,
-		"Exit with a non-zero exit code if files were not already formatted.",
+		"Exit with a non-zero exit code if files were not already formatted",
 	)
 	flagSet.BoolVarP(
 		&f.Write,
 		writeFlagName,
 		writeFlagShortName,
 		false,
-		"Rewrite files in-place.",
+		"Rewrite files in-place",
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -219,7 +230,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagShortName,
 		"-",
 		fmt.Sprintf(
-			`The output location for the formatted files. Must be one of format %s. If omitted, the result is written to stdout.`,
+			`The output location for the formatted files. Must be one of format %s. If omitted, the result is written to stdout`,
 			buffetch.SourceFormatsString,
 		),
 	)
@@ -227,7 +238,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 }
 

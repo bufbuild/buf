@@ -95,7 +95,7 @@ jobs:
             echo "tag=${GITHUB_REF}" | sed "s|refs/tags/v||" >> $GITHUB_OUTPUT
           fi
       - name: docker-build-push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: Dockerfile.buf
           platforms: ${{ steps.qemu.outputs.platforms }}

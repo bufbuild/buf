@@ -42,7 +42,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build>",
-		Short: "Delete a token by ID.",
+		Short: "Delete a token by ID",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -68,13 +68,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Force,
 		forceFlagName,
 		false,
-		"Force deletion without confirming. Use with caution.",
+		"Force deletion without confirming. Use with caution",
 	)
 	flagSet.StringVar(
 		&f.TokenID,
 		tokenIDFlagName,
 		"",
-		"The ID of the token to delete.",
+		"The ID of the token to delete",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, tokenIDFlagName)
 }

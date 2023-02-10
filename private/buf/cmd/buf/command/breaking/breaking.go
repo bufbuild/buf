@@ -53,9 +53,10 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input> --against <against-input>",
-		Short: "Verify that the input location has no breaking changes compared to the against location.",
-		Long:  bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
-		Args:  cobra.MaximumNArgs(1),
+		Short: "Verify no breaking changes have been made",
+		Long: `buf breaking makes sure that the <input> location has no breaking changes compared to the <against-input> location` +
+			bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -94,7 +95,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors or check violations printed to stdout. Must be one of %s.",
+			"The format for build errors or check violations printed to stdout. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -109,9 +110,9 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		limitToInputFilesFlagName,
 		false,
 		fmt.Sprintf(
-			`Only run breaking checks against the files in the input.
-When set, the against input contains only the files in the input.
-Overrides --%s.`,
+			`Only run breaking checks against the files in the input
+When set, the against input contains only the files in the input
+Overrides --%s`,
 			pathsFlagName,
 		),
 	)
@@ -119,14 +120,14 @@ Overrides --%s.`,
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration.`,
+		`The file or data to use for configuration`,
 	)
 	flagSet.StringVar(
 		&f.Against,
 		againstFlagName,
 		"",
 		fmt.Sprintf(
-			`Required. The source, module, or image to check against. Must be one of format %s.`,
+			`Required. The source, module, or image to check against. Must be one of format %s`,
 			buffetch.AllFormatsString,
 		),
 	)
@@ -134,7 +135,7 @@ Overrides --%s.`,
 		&f.AgainstConfig,
 		againstConfigFlagName,
 		"",
-		`The file or data to use to configure the against source, module, or image.`,
+		`The file or data to use to configure the against source, module, or image`,
 	)
 }
 

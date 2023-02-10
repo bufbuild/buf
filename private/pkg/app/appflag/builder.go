@@ -63,26 +63,26 @@ func newBuilder(appName string, options ...BuilderOption) *builder {
 }
 
 func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
-	flagSet.BoolVarP(&b.verbose, "verbose", "v", false, "Turn on verbose mode.")
-	flagSet.BoolVar(&b.debug, "debug", false, "Turn on debug logging.")
-	flagSet.StringVar(&b.logFormat, "log-format", "color", "The log format [text,color,json].")
+	flagSet.BoolVarP(&b.verbose, "verbose", "v", false, "Turn on verbose mode")
+	flagSet.BoolVar(&b.debug, "debug", false, "Turn on debug logging")
+	flagSet.StringVar(&b.logFormat, "log-format", "color", "The log format [text,color,json]")
 	if b.defaultTimeout > 0 {
-		flagSet.DurationVar(&b.timeout, "timeout", b.defaultTimeout, `The duration until timing out.`)
+		flagSet.DurationVar(&b.timeout, "timeout", b.defaultTimeout, `The duration until timing out`)
 	}
 
-	flagSet.BoolVar(&b.profile, "profile", false, "Run profiling.")
+	flagSet.BoolVar(&b.profile, "profile", false, "Run profiling")
 	_ = flagSet.MarkHidden("profile")
-	flagSet.StringVar(&b.profilePath, "profile-path", "", "The profile base directory path.")
+	flagSet.StringVar(&b.profilePath, "profile-path", "", "The profile base directory path")
 	_ = flagSet.MarkHidden("profile-path")
-	flagSet.IntVar(&b.profileLoops, "profile-loops", 1, "The number of loops to run.")
+	flagSet.IntVar(&b.profileLoops, "profile-loops", 1, "The number of loops to run")
 	_ = flagSet.MarkHidden("profile-loops")
-	flagSet.StringVar(&b.profileType, "profile-type", "cpu", "The profile type [cpu,mem,block,mutex].")
+	flagSet.StringVar(&b.profileType, "profile-type", "cpu", "The profile type [cpu,mem,block,mutex]")
 	_ = flagSet.MarkHidden("profile-type")
-	flagSet.BoolVar(&b.profileAllowError, "profile-allow-error", false, "Allow errors for profiled commands.")
+	flagSet.BoolVar(&b.profileAllowError, "profile-allow-error", false, "Allow errors for profiled commands")
 	_ = flagSet.MarkHidden("profile-allow-error")
 
 	// We do not officially support this flag, this is for testing, where we need warnings turned off.
-	flagSet.BoolVar(&b.noWarn, "no-warn", false, "Turn off warn logging.")
+	flagSet.BoolVar(&b.noWarn, "no-warn", false, "Turn off warn logging")
 	_ = flagSet.MarkHidden("no-warn")
 }
 

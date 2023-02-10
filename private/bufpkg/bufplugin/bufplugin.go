@@ -72,6 +72,8 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_GO
 		} else if plugin.Registry().NPM != nil {
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM
+		} else if plugin.Registry().Maven != nil {
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN
 		}
 	}
 	return registryType
@@ -141,6 +143,17 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 			}
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_NpmConfig{NpmConfig: npmConfig}
+	} else if pluginRegistry.Maven != nil {
+		mavenConfig := &registryv1alpha1.MavenConfig{}
+		if pluginRegistry.Maven.Deps != nil {
+			mavenConfig.RuntimeLibraries = make([]*registryv1alpha1.MavenConfig_RuntimeLibrary, 0, len(pluginRegistry.Maven.Deps))
+			for _, gav := range pluginRegistry.Maven.Deps {
+				mavenConfig.RuntimeLibraries = append(mavenConfig.RuntimeLibraries, &registryv1alpha1.MavenConfig_RuntimeLibrary{
+					Gav: gav,
+				})
+			}
+		}
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_MavenConfig{MavenConfig: mavenConfig}
 	}
 	return registryConfig, nil
 }
@@ -181,6 +194,16 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			}
 		}
 		registryConfig.NPM = npmConfig
+	} else if config.GetMavenConfig() != nil {
+		mavenConfig := &bufpluginconfig.MavenRegistryConfig{}
+		runtimeLibraries := config.GetMavenConfig().GetRuntimeLibraries()
+		if runtimeLibraries != nil {
+			mavenConfig.Deps = make([]string, 0, len(runtimeLibraries))
+			for _, library := range runtimeLibraries {
+				mavenConfig.Deps = append(mavenConfig.Deps, library.Gav)
+			}
+		}
+		registryConfig.Maven = mavenConfig
 	}
 	return registryConfig, nil
 }

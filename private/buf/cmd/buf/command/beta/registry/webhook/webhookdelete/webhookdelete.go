@@ -41,7 +41,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: "Delete a repository webhook.",
+		Short: "Delete a repository webhook",
 		Args:  cobra.ExactArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -67,14 +67,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.WebhookID,
 		webhookIDFlagName,
 		"",
-		"The webhook ID to delete.",
+		"The webhook ID to delete",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, webhookIDFlagName)
 	flagSet.StringVar(
 		&f.Remote,
 		remoteFlagName,
 		"",
-		"The remote of the repository the webhook ID belongs to.",
+		"The remote of the repository the webhook ID belongs to",
 	)
 	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
 }
