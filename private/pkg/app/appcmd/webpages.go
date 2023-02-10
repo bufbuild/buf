@@ -21,9 +21,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"html"
 	"io"
 	"os"
@@ -32,6 +29,10 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
@@ -301,7 +302,6 @@ func escapeDescription(s string) string {
 	}
 	if inCodeBlock {
 		out.WriteString("```\n")
-		inCodeBlock = false
 	}
 	return out.String()
 }
