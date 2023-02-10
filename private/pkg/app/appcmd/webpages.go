@@ -128,7 +128,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) er
 	p("title: %s\n", cmd.CommandPath())
 	p("sidebar_label: %s\n", pageName(cmd))
 	p("sidebar_position: %d\n", order(cmd))
-	p("slug: /%s/%s\n", path.Join(slugprefix, slug(cmd)))
+	p("slug: /%s\n", path.Join(slugprefix, slug(cmd)))
 	p("---\n")
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
