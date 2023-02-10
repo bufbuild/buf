@@ -95,7 +95,7 @@ func versionString(version *pluginpb.Version) string {
 }
 
 // Should I set the --experimental_allow_proto3_optional flag?
-func getExperimentalAllowProto3Optional(version *pluginpb.Version) bool {
+func getSetExperimentalAllowProto3OptionalFlag(version *pluginpb.Version) bool {
 	if version.GetSuffix() == "buf" {
 		return false
 	}
@@ -106,7 +106,7 @@ func getExperimentalAllowProto3Optional(version *pluginpb.Version) bool {
 }
 
 // Should I notify that I am OK with the proto3 optional feature?
-func getFeatureProto3Optional(version *pluginpb.Version) bool {
+func getFeatureProto3OptionalSupported(version *pluginpb.Version) bool {
 	if version.GetSuffix() == "buf" {
 		return true
 	}
@@ -120,7 +120,8 @@ func getFeatureProto3Optional(version *pluginpb.Version) bool {
 	return true
 }
 
-func getKotlinSupported(version *pluginpb.Version) bool {
+// Is kotlin supported as a builtin plugin?
+func getKotlinSupportedAsBuiltin(version *pluginpb.Version) bool {
 	if version.GetSuffix() == "buf" {
 		return true
 	}
@@ -132,4 +133,22 @@ func getKotlinSupported(version *pluginpb.Version) bool {
 	}
 	// version.GetMajor() > 3
 	return true
+}
+
+// Is js supported as a builtin plugin?
+func getJSSupportedAsBuiltin(version *pluginpb.Version) bool {
+	if version.GetSuffix() == "buf" {
+		return true
+	}
+	if version.GetMajor() < 3 {
+		return false
+	}
+	if version.GetMajor() == 3 {
+		// v21 and above of protoc still returns "3.MAJOR.Z" for version
+		return version.GetMinor() < 21
+	}
+	// version.GetMajor() > 3
+	// This will catch if they ever change protoc's returned version
+	// to the proper major version
+	return false
 }
