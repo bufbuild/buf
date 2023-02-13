@@ -40,11 +40,12 @@ This installs:
 
 For other installation methods, see our [official documentation][install], which covers:
 
+- Installing `buf` via [npm]
 - Installing `buf` on [Windows]
 - Using `buf` as a [Docker image][docker]
 - Installing as a [binary], from a [tarball], and from [source] through [GitHub Releases][releases]
 - [Verifying] releases using a [minisign] public key
-- Installing `buf` via [npm]
+
 
 ## Usage
 
