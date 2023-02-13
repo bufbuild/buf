@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/bufbuild/connect-go v1.5.0
 	github.com/bufbuild/protocompile v0.2.0
-	github.com/docker/docker v23.0.0+incompatible
+	github.com/docker/docker v23.0.1+incompatible
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid v4.4.0+incompatible
