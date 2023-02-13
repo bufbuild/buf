@@ -46,7 +46,7 @@ type webpagesFlags struct {
 	ExcludeCommands []string
 }
 
-func newFlags() *webpagesFlags {
+func newWebpagesFlags() *webpagesFlags {
 	return &webpagesFlags{}
 }
 
@@ -70,7 +70,7 @@ func (f *webpagesFlags) Bind(flagSet *pflag.FlagSet) {
 func newWebpagesCommand(
 	command *cobra.Command,
 ) *Command {
-	flags := newFlags()
+	flags := newWebpagesFlags()
 	return &Command{
 		Use:    "webpages",
 		Args:   cobra.ExactArgs(1),
