@@ -44,6 +44,7 @@ For other installation methods, see our [official documentation][install], which
 - Using `buf` as a [Docker image][docker]
 - Installing as a [binary], from a [tarball], and from [source] through [GitHub Releases][releases]
 - [Verifying] releases using a [minisign] public key
+- Installing `buf` via [npm]
 
 ## Usage
 
@@ -147,6 +148,7 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [lint]: https://docs.buf.build/lint
 [lint_rules]: https://docs.buf.build/lint/rules
 [lint_usage]: https://docs.buf.build/lint/usage
+[npm]: https://docs.buf.build/installation#npm
 [minisign]: https://github.com/jedisct1/minisign
 [powershell]: https://docs.microsoft.com/en-us/powershell
 [protobuf]: https://developers.google.com/protocol-buffers
