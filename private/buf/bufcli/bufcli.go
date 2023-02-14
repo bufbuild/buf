@@ -277,7 +277,7 @@ func GetInputLong(inputArgDescription string) string {
 	return fmt.Sprintf(
 		`The first argument is %s.
 The first argument must be one of format %s.
-If no argument is specified, defaults to ".".`,
+Defaults to "." if no argument is specified.`,
 		inputArgDescription,
 		buffetch.AllFormatsString,
 	)
@@ -288,7 +288,7 @@ func GetSourceLong(inputArgDescription string) string {
 	return fmt.Sprintf(
 		`The first argument is %s.
 The first argument must be one of format %s.
-If no argument is specified, defaults to ".".`,
+Defaults to "." if no argument is specified.`,
 		inputArgDescription,
 		buffetch.SourceFormatsString,
 	)
@@ -299,7 +299,7 @@ func GetSourceDirLong(inputArgDescription string) string {
 	return fmt.Sprintf(
 		`The first argument is %s.
 The first argument must be one of format %s.
-If no argument is specified, defaults to ".".`,
+Defaults to "." if no argument is specified.`,
 		inputArgDescription,
 		buffetch.SourceDirFormatsString,
 	)
@@ -310,7 +310,7 @@ func GetSourceOrModuleLong(inputArgDescription string) string {
 	return fmt.Sprintf(
 		`The first argument is %s.
 The first argument must be one of format %s.
-If no argument is specified, defaults to ".".`,
+Defaults to "." if no argument is specified.`,
 		inputArgDescription,
 		buffetch.SourceOrModuleFormatsString,
 	)

@@ -35,7 +35,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <directory>",
 		Short: "Open the module's homepage in a web browser",
-		Long:  `The first argument is the directory of the local module to open. If no argument is specified, defaults to "."`,
+		Long:  `The first argument is the directory of the local module to open. Defaults to "." if no argument is specified.`,
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
