@@ -101,7 +101,7 @@ func NewServerReflectionResolver(
 	reflectProtocol ReflectProtocol,
 	headers http.Header,
 	printer verbose.Printer,
-) (r Resolver, closeResolver func()) {
+) (r protoencoding.Resolver, closeResolver func()) {
 	baseURL = strings.TrimSuffix(baseURL, "/")
 	var v1Client, v1alphaClient *reflectClient
 	if reflectProtocol != ReflectProtocolGRPCV1 {
@@ -149,6 +149,31 @@ type reflectionResolver struct {
 	cachedExts              protoregistry.Types
 }
 
+func (r *reflectionResolver) FindFileByPath(path string) (protoreflect.FileDescriptor, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	d, err := r.cachedFiles.FindFileByPath(path)
+	if d != nil {
+		return d, nil
+	}
+	if err != protoregistry.NotFound {
+		return nil, err
+	}
+	// if not found in existing files, fetch more
+	fileDescriptorProtos, err := r.fileByNameLocked(path)
+	if err != nil {
+		// intentionally not using "%w" because, depending on the code, the bufcli
+		// app framework might incorrectly interpret it and report a bad error message.
+		return nil, fmt.Errorf("failed to resolve filename %q: %v", path, err)
+	}
+	if err := r.cacheFilesLocked(fileDescriptorProtos); err != nil {
+		return nil, err
+	}
+	// now it should definitely be in there!
+	return r.cachedFiles.FindFileByPath(path)
+}
+
 func (r *reflectionResolver) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -174,6 +199,18 @@ func (r *reflectionResolver) FindDescriptorByName(name protoreflect.FullName) (p
 	return r.cachedFiles.FindDescriptorByName(name)
 }
 
+func (r *reflectionResolver) FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error) {
+	d, err := r.FindDescriptorByName(enum)
+	if err != nil {
+		return nil, err
+	}
+	ed, ok := d.(protoreflect.EnumDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("element %s is a %s, not an enum", enum, descriptorKind(d))
+	}
+	return dynamicpb.NewEnumType(ed), nil
+}
+
 func (r *reflectionResolver) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
 	d, err := r.FindDescriptorByName(message)
 	if err != nil {
@@ -181,7 +218,7 @@ func (r *reflectionResolver) FindMessageByName(message protoreflect.FullName) (p
 	}
 	md, ok := d.(protoreflect.MessageDescriptor)
 	if !ok {
-		return nil, fmt.Errorf("element %s is a %s, not a message", message, DescriptorKind(d))
+		return nil, fmt.Errorf("element %s is a %s, not a message", message, descriptorKind(d))
 	}
 	return dynamicpb.NewMessageType(md), nil
 }
@@ -199,7 +236,7 @@ func (r *reflectionResolver) FindExtensionByName(field protoreflect.FullName) (p
 	}
 	fd, ok := d.(protoreflect.FieldDescriptor)
 	if !ok || !fd.IsExtension() {
-		return nil, fmt.Errorf("element %s is a %s, not an extension", field, DescriptorKind(d))
+		return nil, fmt.Errorf("element %s is a %s, not an extension", field, descriptorKind(d))
 	}
 	return dynamicpb.NewExtensionType(fd), nil
 }
@@ -439,4 +476,48 @@ func reset(stream *reflectStream) {
 	// "cancel" errors.
 	_, _ = stream.Receive()
 	_ = stream.CloseResponse()
+}
+
+type extensionContainer interface {
+	Messages() protoreflect.MessageDescriptors
+	Extensions() protoreflect.ExtensionDescriptors
+}
+
+func registerExtensions(reg *protoregistry.Types, descriptor extensionContainer) {
+	exts := descriptor.Extensions()
+	for i := 0; i < exts.Len(); i++ {
+		extType := dynamicpb.NewExtensionType(exts.Get(i))
+		_ = reg.RegisterExtension(extType)
+	}
+	msgs := descriptor.Messages()
+	for i := 0; i < msgs.Len(); i++ {
+		registerExtensions(reg, msgs.Get(i))
+	}
+}
+
+// descriptorKind returns a succinct description of the type of the given descriptor.
+func descriptorKind(d protoreflect.Descriptor) string {
+	switch d := d.(type) {
+	case protoreflect.FileDescriptor:
+		return "file"
+	case protoreflect.MessageDescriptor:
+		return "message"
+	case protoreflect.FieldDescriptor:
+		if d.IsExtension() {
+			return "extension"
+		}
+		return "field"
+	case protoreflect.OneofDescriptor:
+		return "oneof"
+	case protoreflect.EnumDescriptor:
+		return "enum"
+	case protoreflect.EnumValueDescriptor:
+		return "enum value"
+	case protoreflect.ServiceDescriptor:
+		return "service"
+	case protoreflect.MethodDescriptor:
+		return "method"
+	default:
+		return fmt.Sprintf("%T", d)
+	}
 }

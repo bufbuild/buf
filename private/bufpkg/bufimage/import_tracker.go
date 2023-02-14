@@ -1,10 +1,24 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package bufimage
 
 import (
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"strings"
 
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -177,8 +191,8 @@ func (t *importTracker) findUsedImportsInOptionValue(file *imagev1.ImageFile, op
 
 func (t *importTracker) findUsedImportsInMessageValue(file *imagev1.ImageFile, msg protoreflect.Message) {
 	if msg.Descriptor().FullName() == anyMessageName {
-		typeUrlField := msg.Descriptor().Fields().ByNumber(1)
-		if typeUrlField == nil || typeUrlField.Kind() != protoreflect.StringKind || typeUrlField.IsList() {
+		typeURLField := msg.Descriptor().Fields().ByNumber(1)
+		if typeURLField == nil || typeURLField.Kind() != protoreflect.StringKind || typeURLField.IsList() {
 			// ruh-roh... this should not happen
 			return
 		}
@@ -188,8 +202,8 @@ func (t *importTracker) findUsedImportsInMessageValue(file *imagev1.ImageFile, m
 			return
 		}
 
-		typeUrl := msg.Get(typeUrlField).String()
-		msgType, err := t.resolver.FindMessageByURL(typeUrl)
+		typeURL := msg.Get(typeURLField).String()
+		msgType, err := t.resolver.FindMessageByURL(typeURL)
 		if err != nil {
 			// message is not present in the image
 			return
