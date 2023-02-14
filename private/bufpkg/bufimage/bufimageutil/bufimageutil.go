@@ -771,7 +771,7 @@ func (t *transitiveClosure) exploreOptionScalarValueForAny(
 	if md.FullName() == anyFullName {
 		// Found one!
 		typeURLFd := md.Fields().ByNumber(1)
-		if typeURLFd.Kind() != protoreflect.StringKind {
+		if typeURLFd.Kind() != protoreflect.StringKind || typeURLFd.IsList() {
 			// should not be possible...
 			return nil
 		}
@@ -784,6 +784,7 @@ func (t *transitiveClosure) exploreOptionScalarValueForAny(
 				return err
 			}
 		}
+		// TODO: unmarshal the bytes to see if there are any nested Any messages
 		return nil
 	}
 	// keep digging

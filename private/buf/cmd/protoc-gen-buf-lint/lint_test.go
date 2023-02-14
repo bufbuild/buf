@@ -174,6 +174,46 @@ func TestRunLint7(t *testing.T) {
 	)
 }
 
+func TestRunLint_UnusedImports(t *testing.T) {
+	unusedImportsFiles := []string{
+		filepath.Join("buf", "v1", "a.proto"),
+		filepath.Join("buf", "v1", "b.proto"),
+		filepath.Join("buf", "v1", "c.proto"),
+		filepath.Join("buf", "v1", "d.proto"),
+		filepath.Join("buf", "v1", "e.proto"),
+		filepath.Join("buf", "v1", "f.proto"),
+		filepath.Join("buf", "v1", "file_option.proto"),
+		filepath.Join("buf", "v1", "msg_option.proto"),
+		filepath.Join("buf", "v1", "field_option.proto"),
+		filepath.Join("buf", "v1", "oneof_option.proto"),
+		filepath.Join("buf", "v1", "extrange_option.proto"),
+		filepath.Join("buf", "v1", "enum_option.proto"),
+		filepath.Join("buf", "v1", "enumvalue_option.proto"),
+		filepath.Join("buf", "v1", "service_option.proto"),
+		filepath.Join("buf", "v1", "method_option.proto"),
+	}
+	unusedImportFilesWithFullPath := make([]string, len(unusedImportsFiles))
+	for i, imp := range unusedImportsFiles {
+		unusedImportFilesWithFullPath[i] = filepath.Join("testdata", "unused-imports", imp)
+	}
+	testRunLint(
+		t,
+		filepath.Join("testdata", "unused-imports"),
+		unusedImportFilesWithFullPath,
+		``,
+		unusedImportsFiles,
+		0,
+		`
+		buf/v1/a.proto:13:1:Import "buf/v1/f.proto" is unused.
+		buf/v1/a.proto:14:1:Import "buf/v1/extrange_option.proto" is unused.
+		buf/v1/b.proto:5:1:Import "buf/v1/c.proto" must not be public.
+		buf/v1/c.proto:9:1:Import "buf/v1/e.proto" is unused.
+		buf/v1/c.proto:10:1:Import "buf/v1/f.proto" is unused.
+		buf/v1/d.proto:8:1:Import "buf/v1/f.proto" is unused.
+		`,
+	)
+}
+
 func testRunLint(
 	t *testing.T,
 	root string,

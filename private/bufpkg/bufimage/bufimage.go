@@ -180,7 +180,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 		option(&newImageOptions)
 	}
 	if !newImageOptions.noReparse {
-		if err := reparseImageProto(protoImage); err != nil {
+		if err := reparseImageProto(protoImage, newImageOptions.computeUnusedImports); err != nil {
 			return nil, err
 		}
 	}
@@ -270,6 +270,19 @@ type NewImageForProtoOption func(*newImageForProtoOptions)
 func WithNoReparse() NewImageForProtoOption {
 	return func(options *newImageForProtoOptions) {
 		options.noReparse = true
+	}
+}
+
+// WithUnusedImportsComputation instructs NewImageForProto to compute unused imports
+// for the files. These are usually computed by the compiler and stored in the image.
+// But some sources of images may not include this information, so this option can be
+// used to ensure that information is present in the image and accurate.
+//
+// This option is NOT compatible with WithNoReparse: the image must be re-parsed for
+// there to be adequate information for computing unused imports.
+func WithUnusedImportsComputation() NewImageForProtoOption {
+	return func(options *newImageForProtoOptions) {
+		options.computeUnusedImports = true
 	}
 }
 
@@ -471,10 +484,11 @@ func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.Fi
 }
 
 type newImageForProtoOptions struct {
-	noReparse bool
+	noReparse            bool
+	computeUnusedImports bool
 }
 
-func reparseImageProto(protoImage *imagev1.Image) error {
+func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) error {
 	// TODO right now, NewResolver sets AllowUnresolvable to true all the time
 	// we want to make this into a check, and we verify if we need this for the individual command
 	resolver := protoencoding.NewLazyResolver(
@@ -484,6 +498,38 @@ func reparseImageProto(protoImage *imagev1.Image) error {
 	)
 	if err := protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {
 		return fmt.Errorf("could not reparse image: %v", err)
+	}
+	if computeUnusedImports {
+		tracker := &importTracker{
+			resolver: resolver,
+			used:     map[string]map[string]struct{}{},
+		}
+		tracker.findUsedImports(protoImage)
+		// Now we can populated list of unused dependencies
+		for _, file := range protoImage.File {
+			bufExt := file.BufExtension
+			if bufExt == nil {
+				bufExt = &imagev1.ImageFileExtension{}
+				file.BufExtension = bufExt
+			}
+			bufExt.UnusedDependency = nil // reset
+			usedImports := tracker.used[file.GetName()]
+			for i, dep := range file.Dependency {
+				if _, ok := usedImports[dep]; !ok {
+					// it's fine if it's public
+					isPublic := false
+					for _, publicDepIndex := range file.PublicDependency {
+						if i == int(publicDepIndex) {
+							isPublic = true
+							break
+						}
+					}
+					if !isPublic {
+						bufExt.UnusedDependency = append(bufExt.UnusedDependency, int32(i))
+					}
+				}
+			}
+		}
 	}
 	return nil
 }
