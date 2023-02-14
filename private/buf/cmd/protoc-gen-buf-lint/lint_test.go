@@ -175,33 +175,37 @@ func TestRunLint7(t *testing.T) {
 }
 
 func TestRunLint_UnusedImports(t *testing.T) {
-	unusedImportsFiles := []string{
-		filepath.Join("buf", "v1", "a.proto"),
-		filepath.Join("buf", "v1", "b.proto"),
-		filepath.Join("buf", "v1", "c.proto"),
-		filepath.Join("buf", "v1", "d.proto"),
-		filepath.Join("buf", "v1", "e.proto"),
-		filepath.Join("buf", "v1", "f.proto"),
-		filepath.Join("buf", "v1", "file_option.proto"),
-		filepath.Join("buf", "v1", "msg_option.proto"),
-		filepath.Join("buf", "v1", "field_option.proto"),
-		filepath.Join("buf", "v1", "oneof_option.proto"),
-		filepath.Join("buf", "v1", "extrange_option.proto"),
-		filepath.Join("buf", "v1", "enum_option.proto"),
-		filepath.Join("buf", "v1", "enumvalue_option.proto"),
-		filepath.Join("buf", "v1", "service_option.proto"),
-		filepath.Join("buf", "v1", "method_option.proto"),
+	unusedImportsFileComponents := [][]string{
+		{"buf", "v1", "a.proto"},
+		{"buf", "v1", "b.proto"},
+		{"buf", "v1", "c.proto"},
+		{"buf", "v1", "d.proto"},
+		{"buf", "v1", "e.proto"},
+		{"buf", "v1", "f.proto"},
+		{"buf", "v1", "file_option.proto"},
+		{"buf", "v1", "msg_option.proto"},
+		{"buf", "v1", "field_option.proto"},
+		{"buf", "v1", "oneof_option.proto"},
+		{"buf", "v1", "extrange_option.proto"},
+		{"buf", "v1", "enum_option.proto"},
+		{"buf", "v1", "enumvalue_option.proto"},
+		{"buf", "v1", "service_option.proto"},
+		{"buf", "v1", "method_option.proto"},
 	}
-	unusedImportFilesWithFullPath := make([]string, len(unusedImportsFiles))
-	for i, imp := range unusedImportsFiles {
-		unusedImportFilesWithFullPath[i] = filepath.Join("testdata", "unused-imports", imp)
+	unusedImportFiles := make([]string, len(unusedImportsFileComponents))
+	for i, components := range unusedImportsFileComponents {
+		unusedImportFiles[i] = filepath.Join(components...)
+	}
+	unusedImportFilesWithFullPath := make([]string, len(unusedImportsFileComponents))
+	for i, components := range unusedImportsFileComponents {
+		unusedImportFilesWithFullPath[i] = filepath.Join(append([]string{"testdata", "unused-imports"}, components...)...)
 	}
 	testRunLint(
 		t,
 		filepath.Join("testdata", "unused-imports"),
 		unusedImportFilesWithFullPath,
 		``,
-		unusedImportsFiles,
+		unusedImportFiles,
 		0,
 		`
 		buf/v1/a.proto:13:1:Import "buf/v1/f.proto" is unused.
