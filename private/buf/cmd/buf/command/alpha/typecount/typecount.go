@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package messagecount
+package typecount
 
 import (
 	"context"
@@ -43,8 +43,8 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Count messages",
-		Long:  bufcli.GetInputLong(`the source or module to get the message count for`),
+		Short: "Count messages, enums, and methods",
+		Long:  bufcli.GetInputLong(`the source or module to get the count for`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -115,24 +115,30 @@ func run(
 	if err != nil {
 		return err
 	}
-	_, err = container.Stdout().Write([]byte(fmt.Sprintf("%d\n", messageCountForImage(image))))
+	_, err = container.Stdout().Write([]byte(fmt.Sprintf("%d\n", countForImage(image))))
 	return err
 }
 
-func messageCountForImage(image bufimage.Image) int {
+func countForImage(image bufimage.Image) int {
 	count := 0
 	for _, imageFile := range image.Files() {
-		for _, descriptorProto := range imageFile.FileDescriptor().GetMessageType() {
-			count += messageCountForDescriptorProto(descriptorProto)
+		fileDescriptor := imageFile.FileDescriptor()
+		for _, descriptorProto := range fileDescriptor.GetMessageType() {
+			count += countForDescriptorProto(descriptorProto)
+		}
+		count += len(fileDescriptor.GetEnumType())
+		for _, serviceDescriptorProto := range fileDescriptor.GetService() {
+			count += len(serviceDescriptorProto.GetMethod())
 		}
 	}
 	return count
 }
 
-func messageCountForDescriptorProto(descriptorProto *descriptorpb.DescriptorProto) int {
+func countForDescriptorProto(descriptorProto *descriptorpb.DescriptorProto) int {
 	count := 1
 	for _, nestedDescriptorProto := range descriptorProto.GetNestedType() {
-		count += messageCountForDescriptorProto(nestedDescriptorProto)
+		count += countForDescriptorProto(nestedDescriptorProto)
 	}
+	count += len(descriptorProto.GetEnumType())
 	return count
 }

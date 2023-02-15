@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package messagecount
+package typecount
 
 import _ "github.com/bufbuild/buf/private/usage"
