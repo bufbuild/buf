@@ -12,21 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !go1.19
+//go:build !darwin
+// +build !darwin
 
-package appprotoexec
+package bufpluginexec
 
-import (
-	"os/exec"
-)
-
-// unsafeLookPath is a wrapper around exec.LookPath that restores the original
-// pre-Go 1.19 behavior of resolving queries that would use relative PATH
-// entries. We consider it acceptable for the use case of locating plugins.
-//
-// On Go 1.18 and below, this function is just a direct call to exec.LookPath.
-//
-// https://pkg.go.dev/os/exec#hdr-Executables_in_the_current_directory
-func unsafeLookPath(file string) (string, error) {
-	return exec.LookPath(file)
-}
+const tooManyFilesHelpMessage = `This is commonly caused by the maximum file limit being too low. Run "ulimit -n" to check your file limit. If this happened on generation, setting "strategy: all" for each configured plugin in your buf.gen.yaml can mitigate the issue if you are unable to change your file limit.`
