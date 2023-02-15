@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/messagecount"
 	curatedplugindelete "github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
@@ -252,6 +253,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Hidden: true,
 				SubCommands: []*appcmd.Command{
 					protoc.NewCommand("protoc", builder),
+					messagecount.NewCommand("message-count", builder),
 					{
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
