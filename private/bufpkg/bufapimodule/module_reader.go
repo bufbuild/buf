@@ -75,7 +75,12 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		if err != nil {
 			return nil, err
 		}
-		return bufmodule.NewModuleForBucket(ctx, bucket, identityAndCommitOpt)
+		return bufmodule.NewModuleForBucket(
+			ctx,
+			bucket,
+			identityAndCommitOpt,
+			bufmodule.ModuleWithManifestAndBlobs(bucket.Manifest(), bucket.Blobs()),
+		)
 	}
 	resp, err := m.download(ctx, modulePin)
 	if err != nil {

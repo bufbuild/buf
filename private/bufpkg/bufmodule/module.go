@@ -25,6 +25,7 @@ import (
 	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
 	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -39,6 +40,8 @@ type module struct {
 	license              string
 	breakingConfig       *bufbreakingconfig.Config
 	lintConfig           *buflintconfig.Config
+	manifest             manifest.Manifest
+	blobs                manifest.BlobSet
 }
 
 func newModuleForProto(
@@ -275,6 +278,14 @@ func (m *module) BreakingConfig() *bufbreakingconfig.Config {
 
 func (m *module) LintConfig() *buflintconfig.Config {
 	return m.lintConfig
+}
+
+func (m *module) Manifest() manifest.Manifest {
+	return m.manifest
+}
+
+func (m *module) Blobs() manifest.BlobSet {
+	return m.blobs
 }
 
 func (m *module) getModuleIdentity() bufmoduleref.ModuleIdentity {

@@ -70,7 +70,7 @@ func TestNewBucket(t *testing.T) {
 		// same "mypkg" prefix for `Walk` test purposes
 		"mypkglongername/v1/baz.proto": []byte("repeated proto content"),
 	}
-	m := manifest.New()
+	var m manifest.Manifest
 	var blobs []manifest.Blob
 	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
 	require.NoError(t, err)
@@ -106,12 +106,12 @@ func TestNewBucket(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = manifest.NewBucket(
-			*m, *incompleteBlobSet,
+			m, *incompleteBlobSet,
 			manifest.BucketWithAllManifestBlobsValidation(),
 		)
 		assert.Error(t, err)
 
-		bucket, err := manifest.NewBucket(*m, *incompleteBlobSet)
+		bucket, err := manifest.NewBucket(m, *incompleteBlobSet)
 		assert.NoError(t, err)
 		assert.NotNil(t, bucket)
 		var bucketFilesCount int
@@ -134,7 +134,7 @@ func TestNewBucket(t *testing.T) {
 		)
 		require.NoError(t, err)
 		_, err = manifest.NewBucket(
-			*m, *tooLargeBlobSet,
+			m, *tooLargeBlobSet,
 			manifest.BucketWithNoExtraBlobsValidation(),
 		)
 		assert.Error(t, err)
@@ -143,7 +143,7 @@ func TestNewBucket(t *testing.T) {
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
 		bucket, err := manifest.NewBucket(
-			*m, *blobSet,
+			m, *blobSet,
 			manifest.BucketWithAllManifestBlobsValidation(),
 			manifest.BucketWithNoExtraBlobsValidation(),
 		)
@@ -197,8 +197,8 @@ func TestNewBucket(t *testing.T) {
 
 func TestToBucketEmpty(t *testing.T) {
 	t.Parallel()
-	m := manifest.New()
-	bucket, err := manifest.NewBucket(*m, manifest.BlobSet{})
+	var m manifest.Manifest
+	bucket, err := manifest.NewBucket(m, manifest.BlobSet{})
 	require.NoError(t, err)
 	// make sure there are no files in the bucket
 	require.NoError(t, bucket.Walk(context.Background(), "", func(obj storage.ObjectInfo) error {

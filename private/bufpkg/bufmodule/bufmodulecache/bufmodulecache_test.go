@@ -127,8 +127,8 @@ func TestReaderBasic(t *testing.T) {
 	getModule, err = moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
 	testFile1HasNoExternalPath(t, ctx, getModule)
-	require.Equal(t, 2, moduleReader.getCount())
-	require.Equal(t, 1, moduleReader.getCacheHits())
+	require.Equal(t, 2, moduleReader.stats.Count())
+	require.Equal(t, 1, moduleReader.stats.Hits())
 
 	// put some data that will not match the sum and make sure that we have a cache miss
 	require.NoError(t, storage.PutPath(ctx, mainDataReadWriteBucket, normalpath.Join(newCacheKey(modulePin), "1234.proto"), []byte("foo")))
@@ -142,13 +142,13 @@ func TestReaderBasic(t *testing.T) {
 	diff, err = storage.DiffBytes(ctx, runner, readBucket, filteredReadBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
-	require.Equal(t, 3, moduleReader.getCount())
-	require.Equal(t, 1, moduleReader.getCacheHits())
+	require.Equal(t, 3, moduleReader.stats.Count())
+	require.Equal(t, 1, moduleReader.stats.Hits())
 
 	_, err = moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
-	require.Equal(t, 4, moduleReader.getCount())
-	require.Equal(t, 2, moduleReader.getCacheHits())
+	require.Equal(t, 4, moduleReader.stats.Count())
+	require.Equal(t, 2, moduleReader.stats.Hits())
 
 	// overwrite the sum file and make sure that we have a cache miss
 	require.NoError(t, storage.PutPath(ctx, mainSumReadWriteBucket, newCacheKey(modulePin), []byte("foo")))
@@ -162,13 +162,13 @@ func TestReaderBasic(t *testing.T) {
 	diff, err = storage.DiffBytes(ctx, runner, readBucket, filteredReadBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
-	require.Equal(t, 5, moduleReader.getCount())
-	require.Equal(t, 2, moduleReader.getCacheHits())
+	require.Equal(t, 5, moduleReader.stats.Count())
+	require.Equal(t, 2, moduleReader.stats.Hits())
 
 	_, err = moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
-	require.Equal(t, 6, moduleReader.getCount())
-	require.Equal(t, 3, moduleReader.getCacheHits())
+	require.Equal(t, 6, moduleReader.stats.Count())
+	require.Equal(t, 3, moduleReader.stats.Hits())
 
 	// delete the sum file and make sure that we have a cache miss
 	require.NoError(t, mainSumReadWriteBucket.Delete(ctx, newCacheKey(modulePin)))
@@ -182,8 +182,8 @@ func TestReaderBasic(t *testing.T) {
 	diff, err = storage.DiffBytes(ctx, runner, readBucket, filteredReadBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
-	require.Equal(t, 7, moduleReader.getCount())
-	require.Equal(t, 3, moduleReader.getCacheHits())
+	require.Equal(t, 7, moduleReader.stats.Count())
+	require.Equal(t, 3, moduleReader.stats.Hits())
 	require.Equal(t, 4, observedLogs.Filter(func(entry observer.LoggedEntry) bool {
 		return strings.Contains(entry.Message, deprecationMessage)
 	}).Len())

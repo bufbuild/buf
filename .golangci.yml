@@ -83,6 +83,10 @@ issues:
       # this is the one file we want to allow exec.Cmd functions in
       path: private/pkg/command/runner.go
     - linters:
+        - forbidigo
+        # we use os.Rename here to rename files in the same directory
+      path: private/bufpkg/bufmodule/bufmodulecache/cas_module_cacher.go
+    - linters:
         - stylecheck
       text: "ST1005:"
     - linters:

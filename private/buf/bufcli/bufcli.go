@@ -118,6 +118,7 @@ var (
 	AllCacheModuleRelDirPaths = []string{
 		v1beta1CacheModuleDataRelDirPath,
 		v1beta1CacheModuleLockRelDirPath,
+		v1CacheModuleCASRelDirPath,
 		v1CacheModuleDataRelDirPath,
 		v1CacheModuleLockRelDirPath,
 		v1CacheModuleSumRelDirPath,
@@ -154,6 +155,12 @@ var (
 	// These digests are used to make sure that the data written is actually what we expect, and if it is not,
 	// we clear an entry from the cache, i.e. delete the relevant data directory.
 	v1CacheModuleSumRelDirPath = normalpath.Join("v1", "module", "sum")
+	// v1CacheModuleCASRelDirPath is the relative path to the cache directory for content addressable storage.
+	//
+	// Normalized.
+	// This directory replaces the use of v1CacheModuleDataRelDirPath, v1CacheModuleLockRelDirPath, and
+	// v1CacheModuleSumRelDirPath for modules which support tamper proofing.
+	v1CacheModuleCASRelDirPath = normalpath.Join("v1", "module", "cas")
 
 	// allVisibiltyStrings are the possible options that a user can set the visibility flag with.
 	allVisibiltyStrings = []string{
@@ -546,12 +553,14 @@ func newModuleReaderAndCreateCacheDirs(
 	clientConfig *connectclient.Config,
 	cacheModuleReaderOpts ...bufmodulecache.ModuleReaderOption,
 ) (bufmodule.ModuleReader, error) {
+	cacheModuleCASDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleCASRelDirPath)
 	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
 	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
 	cacheModuleSumDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleSumRelDirPath)
 	if err := checkExistingCacheDirs(
 		container.CacheDirPath(),
 		container.CacheDirPath(),
+		cacheModuleCASDirPath,
 		cacheModuleDataDirPath,
 		cacheModuleLockDirPath,
 		cacheModuleSumDirPath,
@@ -562,6 +571,7 @@ func newModuleReaderAndCreateCacheDirs(
 		cacheModuleDataDirPath,
 		cacheModuleLockDirPath,
 		cacheModuleSumDirPath,
+		cacheModuleCASDirPath,
 	); err != nil {
 		return nil, err
 	}
@@ -589,19 +599,32 @@ func newModuleReaderAndCreateCacheDirs(
 	if tamperProofingEnabled {
 		moduleReaderOpts = append(moduleReaderOpts, bufapimodule.WithTamperProofing())
 	}
-	moduleReader := bufmodulecache.NewModuleReader(
-		container.Logger(),
-		container.VerbosePrinter(),
-		fileLocker,
-		dataReadWriteBucket,
-		sumReadWriteBucket,
-		bufapimodule.NewModuleReader(
-			bufapimodule.NewDownloadServiceClientFactory(clientConfig),
-			moduleReaderOpts...,
-		),
-		bufmodulecache.NewRepositoryServiceClientFactory(clientConfig),
-		cacheModuleReaderOpts...,
+	repositoryClientFactory := bufmodulecache.NewRepositoryServiceClientFactory(clientConfig)
+	delegateReader := bufapimodule.NewModuleReader(
+		bufapimodule.NewDownloadServiceClientFactory(clientConfig),
+		moduleReaderOpts...,
 	)
+	var moduleReader bufmodule.ModuleReader
+	if tamperProofingEnabled {
+		moduleReader = bufmodulecache.NewCASModuleReader(
+			cacheModuleCASDirPath,
+			delegateReader,
+			repositoryClientFactory,
+			container.Logger(),
+			container.VerbosePrinter(),
+		)
+	} else {
+		moduleReader = bufmodulecache.NewModuleReader(
+			container.Logger(),
+			container.VerbosePrinter(),
+			fileLocker,
+			dataReadWriteBucket,
+			sumReadWriteBucket,
+			delegateReader,
+			repositoryClientFactory,
+			cacheModuleReaderOpts...,
+		)
+	}
 	return moduleReader, nil
 }
 

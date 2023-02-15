@@ -28,6 +28,7 @@ import (
 	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
 	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 )
@@ -110,6 +111,10 @@ type Module interface {
 	//
 	// This may be nil, since older versions of the module would not have this stored.
 	LintConfig() *buflintconfig.Config
+	// Manifest returns the manifest for the module (possibly empty).
+	Manifest() manifest.Manifest
+	// Blobs return the raw data for the module (possibly empty).
+	Blobs() manifest.BlobSet
 
 	getSourceReadBucket() storage.ReadBucket
 	// Note this *can* be nil if we did not build from a named module.
@@ -146,7 +151,15 @@ func ModuleWithModuleIdentityAndCommit(moduleIdentity bufmoduleref.ModuleIdentit
 	}
 }
 
-// NewModuleForBucket returns a new Module. It attempts reads dependencies
+// ModuleWithManifestAndBlobs is used to create a Module with a manifest.Manifest and blobs to support tamper proofing.
+func ModuleWithManifestAndBlobs(manifest manifest.Manifest, blobs manifest.BlobSet) ModuleOption {
+	return func(module *module) {
+		module.manifest = manifest
+		module.blobs = blobs
+	}
+}
+
+// NewModuleForBucket returns a new Module. It attempts to read dependencies
 // from a lock file in the read bucket.
 func NewModuleForBucket(
 	ctx context.Context,
@@ -237,7 +250,7 @@ func NewNopModuleResolver() ModuleResolver {
 type ModuleReader interface {
 	// GetModule gets the Module for the ModulePin.
 	//
-	// Returns an error that fufills storage.IsNotExist if the Module does not exist.
+	// Returns an error that fulfills storage.IsNotExist if the Module does not exist.
 	GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (Module, error)
 }
 

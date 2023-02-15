@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 
 	"go.uber.org/multierr"
 )
@@ -78,10 +79,16 @@ func NewMemoryBlob(digest Digest, content []byte, opts ...MemoryBlobOption) (Blo
 }
 
 func (b *memoryBlob) Digest() *Digest {
+	if b == nil {
+		return nil
+	}
 	return &b.digest
 }
 
 func (b *memoryBlob) Open(context.Context) (io.ReadCloser, error) {
+	if b == nil {
+		return nil, os.ErrNotExist
+	}
 	return io.NopCloser(bytes.NewReader(b.content)), nil
 }
 

@@ -67,6 +67,25 @@ func ModuleReaderWithExternalPaths() ModuleReaderOption {
 	}
 }
 
+// NewCASModuleReader creates a new module reader using content addressable storage.
+// This doesn't require file locking and enables support for tamper proofing.
+// If the module pin doesn't specify a supported digest, the delegate is called.
+func NewCASModuleReader(
+	basedir string,
+	delegate bufmodule.ModuleReader,
+	repositoryClientFactory RepositoryServiceClientFactory,
+	logger *zap.Logger,
+	verbosePrinter verbose.Printer,
+) bufmodule.ModuleReader {
+	return newCASModuleReader(
+		basedir,
+		delegate,
+		repositoryClientFactory,
+		logger,
+		verbosePrinter,
+	)
+}
+
 type moduleReaderOptions struct {
 	allowCacheExternalPaths bool
 }

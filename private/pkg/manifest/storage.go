@@ -48,7 +48,7 @@ func NewFromBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 ) (*Manifest, *BlobSet, error) {
-	m := New()
+	var m Manifest
 	digester, err := NewDigester(DigestTypeShake256)
 	if err != nil {
 		return nil, nil, err
@@ -74,7 +74,7 @@ func NewFromBucket(
 	if err != nil {
 		return nil, nil, err
 	}
-	return m, blobSet, nil
+	return &m, blobSet, nil
 }
 
 type bucketOptions struct {
@@ -102,9 +102,19 @@ func BucketWithNoExtraBlobsValidation() BucketOption {
 	}
 }
 
+// ReadBucket extends the storage.ReadBucket interface to add an accessor for the Manifest.
+type ReadBucket interface {
+	storage.ReadBucket
+	// Manifest returns the bucket's manifest.
+	// No mutations should be made to the returned manifest.
+	Manifest() Manifest
+	// Blobs returns the raw data stored in the bucket.
+	Blobs() BlobSet
+}
+
 // NewBucket takes a manifest and a blob set and builds a readable storage
 // bucket that contains the files in the manifest.
-func NewBucket(m Manifest, blobs BlobSet, opts ...BucketOption) (storage.ReadBucket, error) {
+func NewBucket(m Manifest, blobs BlobSet, opts ...BucketOption) (ReadBucket, error) {
 	var config bucketOptions
 	for _, option := range opts {
 		option(&config)
@@ -192,4 +202,12 @@ func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage
 		}
 	}
 	return nil
+}
+
+func (m *manifestBucket) Manifest() Manifest {
+	return m.manifest
+}
+
+func (m *manifestBucket) Blobs() BlobSet {
+	return m.blobs
 }

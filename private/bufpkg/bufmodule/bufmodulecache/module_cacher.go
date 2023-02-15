@@ -25,12 +25,24 @@ import (
 	"go.uber.org/zap"
 )
 
+type moduleCache interface {
+	bufmodule.ModuleReader
+	// PutModule stores the module in the cache.
+	PutModule(
+		ctx context.Context,
+		modulePin bufmoduleref.ModulePin,
+		module bufmodule.Module,
+	) error
+}
+
 type moduleCacher struct {
 	logger                  *zap.Logger
 	dataReadWriteBucket     storage.ReadWriteBucket
 	sumReadWriteBucket      storage.ReadWriteBucket
 	allowCacheExternalPaths bool
 }
+
+var _ moduleCache = (*moduleCacher)(nil)
 
 func newModuleCacher(
 	logger *zap.Logger,

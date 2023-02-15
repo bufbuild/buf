@@ -21,7 +21,6 @@ import (
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/manifest"
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 // NewBucketFromManifestBlobs builds a storage bucket from a manifest blob and a
@@ -33,7 +32,7 @@ func NewBucketFromManifestBlobs(
 	ctx context.Context,
 	manifestBlob *modulev1alpha1.Blob,
 	blobs []*modulev1alpha1.Blob,
-) (storage.ReadBucket, error) {
+) (manifest.ReadBucket, error) {
 	if _, err := NewBlobFromProto(manifestBlob); err != nil {
 		return nil, fmt.Errorf("invalid manifest: %w", err)
 	}
