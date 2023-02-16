@@ -66,7 +66,7 @@ func run(
 		func(name string) (bufstat.File, error) {
 			return os.Open(name)
 		},
-		app.Args(container)[1:]...,
+		app.Args(container)...,
 	)
 	if err != nil {
 		return err
