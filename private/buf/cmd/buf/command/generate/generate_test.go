@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -400,7 +399,7 @@ func testCompareGeneratedStubs(
 		runner,
 		actualReadWriteBucket,
 		bufReadWriteBucket,
-		transformProtocVersionToUnknown(t),
+		transformGolangProtocVersionToUnknown(t),
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))
@@ -486,7 +485,7 @@ func testCompareGeneratedStubsArchive(
 		runner,
 		actualReadWriteBucket,
 		bufReadWriteBucket,
-		transformProtocVersionToUnknown(t),
+		transformGolangProtocVersionToUnknown(t),
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))
@@ -550,13 +549,17 @@ type testPluginInfo struct {
 	opt  string
 }
 
-func transformProtocVersionToUnknown(t *testing.T) storage.DiffOption {
-	protocVersion, err := prototesting.GetProtocVersion(context.Background())
-	require.NoError(t, err)
-	return storage.DiffWithTransform(func(side, _ string, content []byte) []byte {
-		if side != "one" {
-			return content
+func transformGolangProtocVersionToUnknown(t *testing.T) storage.DiffOption {
+	return storage.DiffWithTransform(func(_, _ string, content []byte) []byte {
+		lines := bytes.Split(content, []byte("\n"))
+		filteredLines := make([][]byte, 0, len(lines))
+		commentPrefix := []byte("//")
+		protocVersionIndicator := []byte("protoc")
+		for _, line := range lines {
+			if !(bytes.HasPrefix(line, commentPrefix) && bytes.Contains(line, protocVersionIndicator)) {
+				filteredLines = append(filteredLines, line)
+			}
 		}
-		return bytes.ReplaceAll(content, []byte("v"+protocVersion), []byte("(unknown)"))
+		return bytes.Join(filteredLines, []byte("\n"))
 	})
 }
