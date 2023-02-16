@@ -37,7 +37,7 @@ func ComputeStats(ctx context.Context, module Module) (*Stats, error) {
 		nil,
 	))
 	var errs error
-	stats := &Stats{}
+	stats := &Stats{packages: map[ast.Identifier]struct{}{}}
 	for _, info := range infos {
 		file, err := module.GetModuleFile(ctx, info.Path())
 		if err != nil {
@@ -67,6 +67,9 @@ func ComputeStats(ctx context.Context, module Module) (*Stats, error) {
 			errs = multierr.Append(errs, err)
 		}
 	}
+	stats.NumPackages = len(stats.packages)
+	stats.packages = nil
+
 	if stats.NumFiles == 0 && errs != nil {
 		return nil, errs
 	}
@@ -76,6 +79,7 @@ func ComputeStats(ctx context.Context, module Module) (*Stats, error) {
 // Stats represents some statistics/metrics about a module.
 type Stats struct {
 	NumFiles                 int
+	NumPackages              int
 	NumFilesWithSyntaxErrors int
 	NumMessages              int
 	NumFields                int
@@ -84,12 +88,16 @@ type Stats struct {
 	NumExtensions            int
 	NumServices              int
 	NumMethods               int
+
+	packages map[ast.Identifier]struct{}
 }
 
 func examineFile(f *ast.FileNode, stats *Stats) {
 	stats.NumFiles++
 	for _, decl := range f.Decls {
 		switch decl := decl.(type) {
+		case *ast.PackageNode:
+			stats.packages[decl.Name.AsIdentifier()] = struct{}{}
 		case *ast.MessageNode:
 			examineMessage(&decl.MessageBody, stats)
 		case *ast.EnumNode:
