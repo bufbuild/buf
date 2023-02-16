@@ -140,7 +140,9 @@ func countForImage(stats *stats, image bufimage.Image) {
 }
 
 func countForDescriptorProto(stats *stats, descriptorProto *descriptorpb.DescriptorProto) {
-	stats.NumMessages++
+	if !descriptorProto.GetOptions().GetMapEntry() {
+		stats.NumMessages++
+	}
 	for _, nestedDescriptorProto := range descriptorProto.GetNestedType() {
 		countForDescriptorProto(stats, nestedDescriptorProto)
 	}
