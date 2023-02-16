@@ -148,9 +148,9 @@ func countForDescriptorProto(stats *stats, descriptorProto *descriptorpb.Descrip
 }
 
 type stats struct {
-	NumMessages int `json:"num_messages,omitemity" yaml:"num_messages,omitemity"`
-	NumEnums    int `json:"num_enums,omitemity" yaml:"num_enums,omitemity"`
-	NumMethods  int `json:"num_methods,omitemity" yaml:"num_methods,omitemity"`
+	NumMessages int `json:"num_messages,omitempty" yaml:"num_messages,omitempty"`
+	NumEnums    int `json:"num_enums,omitempty" yaml:"num_enums,omitempty"`
+	NumMethods  int `json:"num_methods,omitempty" yaml:"num_methods,omitempty"`
 }
 
 func newStats() *stats {
