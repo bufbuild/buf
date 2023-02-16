@@ -101,7 +101,7 @@ func run(
 	typeCount := float64(stats.NumMethods + stats.NumEnums + stats.NumMessages)
 	_, err = container.Stdout().Write(
 		[]byte(
-			fmt.Sprintf("Teams: $%.2f/month\nPro:$%.2f/month\n", typeCount/2.0, typeCount),
+			fmt.Sprintf("Teams: $%.2f/month\nPro: $%.2f/month\n", typeCount/2.0, typeCount),
 		),
 	)
 	return err
