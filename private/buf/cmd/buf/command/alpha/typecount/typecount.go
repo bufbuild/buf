@@ -128,6 +128,9 @@ func run(
 
 func countForImage(stats *stats, image bufimage.Image) {
 	for _, imageFile := range image.Files() {
+		if imageFile.IsImport() {
+			continue
+		}
 		fileDescriptor := imageFile.FileDescriptor()
 		for _, descriptorProto := range fileDescriptor.GetMessageType() {
 			countForDescriptorProto(stats, descriptorProto)
