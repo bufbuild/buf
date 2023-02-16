@@ -24,15 +24,6 @@ import (
 	"go.uber.org/multierr"
 )
 
-// File is a file that stats can be computed for.
-//
-// *os.File implements File.
-type File interface {
-	io.ReadCloser
-
-	Name() string
-}
-
 // Stats represents some statistics about one or more Protobuf files.
 type Stats struct {
 	NumFiles                 int `json:"num_files,omitempty" yaml:"num_files,omitempty"`
@@ -45,13 +36,15 @@ type Stats struct {
 	NumExtensions            int `json:"num_extensions,omitempty" yaml:"num_extensions,omitempty"`
 	NumServices              int `json:"num_services,omitempty" yaml:"num_services,omitempty"`
 	NumMethods               int `json:"num_methods,omitempty" yaml:"num_methods,omitempty"`
+	// Just a convenience thing for now, this should be removed later.
+	NumMessagesEnumsAndMethods int `yaml:"num_messages_enums_and_methods,omitempty" json:"num_messages_enums_and_methods,omitempty"`
 }
 
 // GetStats gathers some simple statistics about a set of Protobuf files.
 func GetStats(
 	ctx context.Context,
-	fileProvider func(name string) (File, error),
-	filenames ...string,
+	fileProvider func(filePath string) (io.ReadCloser, error),
+	filePaths ...string,
 ) (*Stats, error) {
 	handler := reporter.NewHandler(
 		reporter.NewReporter(
@@ -63,8 +56,8 @@ func GetStats(
 		),
 	)
 	statsBuilder := newStatsBuilder()
-	for _, filename := range filenames {
-		file, err := fileProvider(filename)
+	for _, filePath := range filePaths {
+		file, err := fileProvider(filePath)
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +66,8 @@ func GetStats(
 				retErr = multierr.Append(retErr, file.Close())
 			}()
 			// This can return an error and non-nil AST.
-			astRoot, err := parser.Parse(file.Name(), file, handler)
+			// We do not need the filePath because we do not report errors.
+			astRoot, err := parser.Parse("", file, handler)
 			if astRoot == nil {
 				// No AST implies an I/O error trying to read the
 				// file contents. No stats to collect.
@@ -91,6 +85,7 @@ func GetStats(
 		}
 	}
 	statsBuilder.NumPackages = len(statsBuilder.packages)
+	statsBuilder.NumMessagesEnumsAndMethods = statsBuilder.NumMessages + statsBuilder.NumEnums + statsBuilder.NumMethods
 	return statsBuilder.Stats, nil
 }
 

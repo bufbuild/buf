@@ -17,14 +17,17 @@ package stats
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufstat"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/spf13/cobra"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/pflag"
 )
 
@@ -37,7 +40,25 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " files...",
 		Short: "Get statistics for a list of Protobuf files",
-		Args:  cobra.MinimumNArgs(1),
+		Long: `The input to this command is different than other buf commands:
+
+- If no arguments are provided, this command searches for all .proto files under the current
+  directory and uses them as inputs. This may include vendored files, test files, etc.
+- If you want to check specific files, input them as arguments.
+
+Examples:
+
+Use all .proto files under the current directory:
+
+    $ buf alpha stats
+
+Use all .proto files in the module in the ./proto directory:
+
+    $ buf alpha stats $(buf ls-files)
+
+Use all .proto files in the current directory that do not include "foo" in the name:
+
+    $ buf alpha stats $(find . -name '*.proto' | grep -v foo )`,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -61,13 +82,41 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	stats, err := bufstat.GetStats(
-		ctx,
-		func(name string) (bufstat.File, error) {
-			return os.Open(name)
-		},
-		app.Args(container)...,
-	)
+	var filePaths []string
+	var fileProvider func(filePath string) (io.ReadCloser, error)
+	var err error
+	if container.NumArgs() == 0 {
+		storageosProvider := bufcli.NewStorageosProvider(false)
+		readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+			".",
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		if err != nil {
+			return err
+		}
+		readBucket := storage.MapReadBucket(
+			readWriteBucket,
+			storage.MatchPathExt(".proto"),
+		)
+		filePaths, err = storage.AllPaths(ctx, readBucket, "")
+		if err != nil {
+			return err
+		}
+		fileProvider = func(filePath string) (io.ReadCloser, error) {
+			return readBucket.Get(ctx, filePath)
+		}
+	} else {
+		filePaths = app.Args(container)
+		for _, filePath := range filePaths {
+			if filepath.Ext(filePath) != ".proto" {
+				return appcmd.NewInvalidArgumentErrorf("All files must be .proto files but %q was included", filePath)
+			}
+		}
+		fileProvider = func(filePath string) (io.ReadCloser, error) {
+			return os.Open(filePath)
+		}
+	}
+	stats, err := bufstat.GetStats(ctx, fileProvider, filePaths...)
 	if err != nil {
 		return err
 	}
