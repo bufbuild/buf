@@ -41,6 +41,9 @@ message FieldOptions {
   optional JSType jstype = 6 [default = JS_NORMAL];
   optional bool weak = 10 [default = false];
   optional bool unverified_lazy = 15 [default = false];
+  optional bool debug_redact = 16 [default = false];
+  optional OptionRetention retention = 17;
+  optional OptionTargetType target = 18;
   repeated UninterpretedOption uninterpreted_option = 999;
   enum CType {
     STRING = 0;
@@ -51,6 +54,23 @@ message FieldOptions {
     JS_NORMAL = 0;
     JS_STRING = 1;
     JS_NUMBER = 2;
+  }
+  enum OptionRetention {
+    RETENTION_UNKNOWN = 0;
+    RETENTION_RUNTIME = 1;
+    RETENTION_SOURCE = 2;
+  }
+  enum OptionTargetType {
+    TARGET_TYPE_UNKNOWN = 0;
+    TARGET_TYPE_FILE = 1;
+    TARGET_TYPE_EXTENSION_RANGE = 2;
+    TARGET_TYPE_MESSAGE = 3;
+    TARGET_TYPE_FIELD = 4;
+    TARGET_TYPE_ONEOF = 5;
+    TARGET_TYPE_ENUM = 6;
+    TARGET_TYPE_ENUM_ENTRY = 7;
+    TARGET_TYPE_SERVICE = 8;
+    TARGET_TYPE_METHOD = 9;
   }
   extensions 1000 to max;
   reserved 4;
@@ -90,6 +110,7 @@ message MessageOptions {
   optional bool no_standard_descriptor_accessor = 2 [default = false];
   optional bool deprecated = 3 [default = false];
   optional bool map_entry = 7;
+  optional bool deprecated_legacy_json_field_conflicts = 11 [deprecated = true];
   repeated UninterpretedOption uninterpreted_option = 999;
   extensions 1000 to max;
   reserved 4, 5, 6, 8, 9;
