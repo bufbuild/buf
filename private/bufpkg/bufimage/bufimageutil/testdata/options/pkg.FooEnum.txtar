@@ -27,6 +27,7 @@ option optimize_for = SPEED;
 message EnumOptions {
   optional bool allow_alias = 2;
   optional bool deprecated = 3 [default = false];
+  optional bool deprecated_legacy_json_field_conflicts = 6 [deprecated = true];
   repeated UninterpretedOption uninterpreted_option = 999;
   extensions 1000 to max;
   reserved 5;

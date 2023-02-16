@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Update built-in Well-Known Types to v22.0.
 
 
 ## [v1.14.0] - 2023-02-09
