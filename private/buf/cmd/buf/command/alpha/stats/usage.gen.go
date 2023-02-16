@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package typecount
+package stats
 
 import _ "github.com/bufbuild/buf/private/usage"

@@ -35,16 +35,16 @@ type File interface {
 
 // Stats represents some statistics about one or more Protobuf files.
 type Stats struct {
-	NumFiles                 int
-	NumPackages              int
-	NumFilesWithSyntaxErrors int
-	NumMessages              int
-	NumFields                int
-	NumEnums                 int
-	NumEnumValues            int
-	NumExtensions            int
-	NumServices              int
-	NumMethods               int
+	NumFiles                 int `json:"num_files,omitemity" yaml:"num_files,omitemity"`
+	NumPackages              int `json:"num_packages,omitemity" yaml:"num_packages,omitemity"`
+	NumFilesWithSyntaxErrors int `json:"num_files_with_syntax_errors,omitemity" yaml:"num_files_with_syntax_errors,omitemity"`
+	NumMessages              int `json:"num_messages,omitemity" yaml:"num_messages,omitemity"`
+	NumFields                int `json:"num_fields,omitemity" yaml:"num_fields,omitemity"`
+	NumEnums                 int `json:"num_enums,omitemity" yaml:"num_enums,omitemity"`
+	NumEnumValues            int `json:"num_enum_values,omitemity" yaml:"num_enum_values,omitemity"`
+	NumExtensions            int `json:"num_extensions,omitemity" yaml:"num_extensions,omitemity"`
+	NumServices              int `json:"num_services,omitemity" yaml:"num_services,omitemity"`
+	NumMethods               int `json:"num_methods,omitemity" yaml:"num_methods,omitemity"`
 }
 
 // GetStats gathers some simple statistics about a set of Protobuf files.
