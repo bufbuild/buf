@@ -35,16 +35,16 @@ type File interface {
 
 // Stats represents some statistics about one or more Protobuf files.
 type Stats struct {
-	NumFiles                 int `json:"num_files,omitemity" yaml:"num_files,omitemity"`
-	NumPackages              int `json:"num_packages,omitemity" yaml:"num_packages,omitemity"`
-	NumFilesWithSyntaxErrors int `json:"num_files_with_syntax_errors,omitemity" yaml:"num_files_with_syntax_errors,omitemity"`
-	NumMessages              int `json:"num_messages,omitemity" yaml:"num_messages,omitemity"`
-	NumFields                int `json:"num_fields,omitemity" yaml:"num_fields,omitemity"`
-	NumEnums                 int `json:"num_enums,omitemity" yaml:"num_enums,omitemity"`
-	NumEnumValues            int `json:"num_enum_values,omitemity" yaml:"num_enum_values,omitemity"`
-	NumExtensions            int `json:"num_extensions,omitemity" yaml:"num_extensions,omitemity"`
-	NumServices              int `json:"num_services,omitemity" yaml:"num_services,omitemity"`
-	NumMethods               int `json:"num_methods,omitemity" yaml:"num_methods,omitemity"`
+	NumFiles                 int `json:"num_files,omitempty" yaml:"num_files,omitempty"`
+	NumPackages              int `json:"num_packages,omitempty" yaml:"num_packages,omitempty"`
+	NumFilesWithSyntaxErrors int `json:"num_files_with_syntax_errors,omitempty" yaml:"num_files_with_syntax_errors,omitempty"`
+	NumMessages              int `json:"num_messages,omitempty" yaml:"num_messages,omitempty"`
+	NumFields                int `json:"num_fields,omitempty" yaml:"num_fields,omitempty"`
+	NumEnums                 int `json:"num_enums,omitempty" yaml:"num_enums,omitempty"`
+	NumEnumValues            int `json:"num_enum_values,omitempty" yaml:"num_enum_values,omitempty"`
+	NumExtensions            int `json:"num_extensions,omitempty" yaml:"num_extensions,omitempty"`
+	NumServices              int `json:"num_services,omitempty" yaml:"num_services,omitempty"`
+	NumMethods               int `json:"num_methods,omitempty" yaml:"num_methods,omitempty"`
 }
 
 // GetStats gathers some simple statistics about a set of Protobuf files.
