@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/stats"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
@@ -252,6 +253,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Hidden: true,
 				SubCommands: []*appcmd.Command{
 					protoc.NewCommand("protoc", builder),
+					stats.NewCommand("stats", builder),
 					{
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
