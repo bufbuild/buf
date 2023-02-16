@@ -17,16 +17,14 @@ package stats
 import (
 	"context"
 	"encoding/json"
-	"io"
-	"os"
-	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufstat"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/protostat"
+	"github.com/bufbuild/buf/private/pkg/protostat/protostatos"
+	"github.com/bufbuild/buf/private/pkg/protostat/protostatstorage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/pflag"
 )
@@ -82,9 +80,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	var filePaths []string
-	var fileProvider func(filePath string) (io.ReadCloser, error)
-	var err error
+	var fileWalker protostat.FileWalker
 	if container.NumArgs() == 0 {
 		storageosProvider := bufcli.NewStorageosProvider(false)
 		readWriteBucket, err := storageosProvider.NewReadWriteBucket(
@@ -94,29 +90,11 @@ func run(
 		if err != nil {
 			return err
 		}
-		readBucket := storage.MapReadBucket(
-			readWriteBucket,
-			storage.MatchPathExt(".proto"),
-		)
-		filePaths, err = storage.AllPaths(ctx, readBucket, "")
-		if err != nil {
-			return err
-		}
-		fileProvider = func(filePath string) (io.ReadCloser, error) {
-			return readBucket.Get(ctx, filePath)
-		}
+		fileWalker = protostatstorage.NewFileWalker(readWriteBucket)
 	} else {
-		filePaths = app.Args(container)
-		for _, filePath := range filePaths {
-			if filepath.Ext(filePath) != ".proto" {
-				return appcmd.NewInvalidArgumentErrorf("All files must be .proto files but %q was included", filePath)
-			}
-		}
-		fileProvider = func(filePath string) (io.ReadCloser, error) {
-			return os.Open(filePath)
-		}
+		fileWalker = protostatos.NewFileWalker(app.Args(container)...)
 	}
-	stats, err := bufstat.GetStats(ctx, fileProvider, filePaths...)
+	stats, err := protostat.GetStats(ctx, fileWalker)
 	if err != nil {
 		return err
 	}

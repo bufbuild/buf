@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufstat
+package protostat
 
 import (
 	"context"
@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
-	"go.uber.org/multierr"
 )
 
 // Stats represents some statistics about one or more Protobuf files.
@@ -36,16 +35,19 @@ type Stats struct {
 	NumExtensions            int `json:"num_extensions,omitempty" yaml:"num_extensions,omitempty"`
 	NumServices              int `json:"num_services,omitempty" yaml:"num_services,omitempty"`
 	NumMethods               int `json:"num_methods,omitempty" yaml:"num_methods,omitempty"`
-	// Just a convenience thing for now, this should be removed later.
-	NumMessagesEnumsAndMethods int `yaml:"num_messages_enums_and_methods,omitempty" json:"num_messages_enums_and_methods,omitempty"`
+}
+
+// FileWalker goes through all .proto files for GetStats.
+type FileWalker interface {
+	// Walk will invoke f for all .proto files for GetStats.
+	Walk(ctx context.Context, f func(io.Reader) error) error
 }
 
 // GetStats gathers some simple statistics about a set of Protobuf files.
-func GetStats(
-	ctx context.Context,
-	fileProvider func(filePath string) (io.ReadCloser, error),
-	filePaths ...string,
-) (*Stats, error) {
+//
+// See the packages protostatos and protostatstorage for helpers for the
+// os and storage packages.
+func GetStats(ctx context.Context, fileWalker FileWalker) (*Stats, error) {
 	handler := reporter.NewHandler(
 		reporter.NewReporter(
 			func(reporter.ErrorWithPos) error {
@@ -56,15 +58,9 @@ func GetStats(
 		),
 	)
 	statsBuilder := newStatsBuilder()
-	for _, filePath := range filePaths {
-		file, err := fileProvider(filePath)
-		if err != nil {
-			return nil, err
-		}
-		if err := func() (retErr error) {
-			defer func() {
-				retErr = multierr.Append(retErr, file.Close())
-			}()
+	if err := fileWalker.Walk(
+		ctx,
+		func(file io.Reader) error {
 			// This can return an error and non-nil AST.
 			// We do not need the filePath because we do not report errors.
 			astRoot, err := parser.Parse("", file, handler)
@@ -80,12 +76,11 @@ func GetStats(
 			}
 			examineFile(statsBuilder, astRoot)
 			return nil
-		}(); err != nil {
-			return nil, err
-		}
+		},
+	); err != nil {
+		return nil, err
 	}
 	statsBuilder.NumPackages = len(statsBuilder.packages)
-	statsBuilder.NumMessagesEnumsAndMethods = statsBuilder.NumMessages + statsBuilder.NumEnums + statsBuilder.NumMethods
 	return statsBuilder.Stats, nil
 }
 
