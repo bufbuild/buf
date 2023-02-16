@@ -42,17 +42,30 @@ func ComputeStats(ctx context.Context, module Module) (*Stats, error) {
 		file, err := module.GetModuleFile(ctx, info.Path())
 		if err != nil {
 			errs = multierr.Append(errs, err)
+			continue
 		}
-		func() {
+		err = func() error {
 			defer func() {
 				errs = multierr.Append(errs, file.Close())
 			}()
+			// This can return an error and non-nil AST.
 			astRoot, err := parser.Parse(info.Path(), file, handler)
+			if astRoot == nil {
+				// No AST implies an I/O error trying to read the
+				// file contents. No stats to collect.
+				return err
+			}
 			if err != nil {
+				// There was a syntax error, but we still have a partial
+				// AST we can examine.
 				stats.NumFilesWithSyntaxErrors++
 			}
 			examineFile(astRoot, stats)
+			return nil
 		}()
+		if err != nil {
+			errs = multierr.Append(errs, err)
+		}
 	}
 	if stats.NumFiles == 0 && errs != nil {
 		return nil, errs
