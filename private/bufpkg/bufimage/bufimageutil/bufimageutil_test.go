@@ -40,6 +40,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// IF YOU HAVE ANY FAILING TESTS IN HERE, ESPECIALLY AFTER A PROTOC UPGRADE,
+// SWITCH THIS TO TRUE, RE-RUN THE TESTS ***TWICE***, AND THEN SWITCH BACK TO FALSE
 const shouldUpdateExpectations = false
 
 func TestOptions(t *testing.T) {
