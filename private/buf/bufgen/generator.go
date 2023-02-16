@@ -25,12 +25,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
-	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
@@ -45,7 +45,7 @@ import (
 type generator struct {
 	logger                *zap.Logger
 	storageosProvider     storageos.Provider
-	appprotoexecGenerator appprotoexec.Generator
+	appprotoexecGenerator bufpluginexec.Generator
 	clientConfig          *connectclient.Config
 }
 
@@ -58,7 +58,7 @@ func newGenerator(
 	return &generator{
 		logger:                logger,
 		storageosProvider:     storageosProvider,
-		appprotoexecGenerator: appprotoexec.NewGenerator(logger, storageosProvider, runner),
+		appprotoexecGenerator: bufpluginexec.NewGenerator(logger, storageosProvider, runner),
 		clientConfig:          clientConfig,
 	}
 }
@@ -306,8 +306,8 @@ func (g *generator) execLocalPlugin(
 			includeImports,
 			includeWellKnownTypes,
 		),
-		appprotoexec.GenerateWithPluginPath(pluginConfig.Path...),
-		appprotoexec.GenerateWithProtocPath(pluginConfig.ProtocPath),
+		bufpluginexec.GenerateWithPluginPath(pluginConfig.Path...),
+		bufpluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s: %v", pluginConfig.PluginName(), err)
