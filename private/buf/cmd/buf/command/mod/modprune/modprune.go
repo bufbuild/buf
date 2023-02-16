@@ -41,7 +41,7 @@ func NewCommand(
 ) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <directory>",
-		Short: "Prune unused dependencies from the" + buflock.ExternalConfigFilePath + " file",
+		Short: fmt.Sprintf("Prune unused dependencies from the %s file", buflock.ExternalConfigFilePath),
 		Long:  `The first argument is the directory of the local module to prune. Defaults to "." if no argument is specified.`,
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(

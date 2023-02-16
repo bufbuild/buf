@@ -211,53 +211,52 @@ jobs:
       - name: trigger homebrew-buf release
         uses: actions/github-script@v6
         with:
-        script: |
-          github.rest.actions.createWorkflowDispatch({
-            owner: context.owner,
-            repo: "homebrew-buf",
-            workflow_id: "release.yaml",
-            ref: "main"
-            inputs: {
-              version: "${{github.ref_name}}".replace("v", "")
-            }
-          })
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.owner,
+              repo: "homebrew-buf",
+              workflow_id: "release.yaml",
+              ref: "main"
+              inputs: {
+                version: "${{github.ref_name}}".replace("v", "")
+              }
+            })
       - name: trigger vim-buf release
         uses: actions/github-script@v6
         with:
-        script: |
-          github.rest.actions.createWorkflowDispatch({
-            owner: context.owner,
-            repo: "vim-buf",
-            workflow_id: "release.yaml",
-            ref: "main"
-            inputs: {
-              version: "${{github.ref_name}}".replace("v", "")
-            }
-          })
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.owner,
+              repo: "vim-buf",
+              workflow_id: "release.yaml",
+              ref: "main"
+              inputs: {
+                version: "${{github.ref_name}}".replace("v", "")
+              }
+            })
       - name: trigger docs.buf.build release
         uses: actions/github-script@v6
         with:
-        script: |
-          github.rest.actions.createWorkflowDispatch({
-            owner: context.owner,
-            repo: "docs.buf.build",
-            workflow_id: "release.yaml",
-            ref: "main"
-            inputs: {
-              version: "${{github.ref_name}}".replace("v", "")
-            }
-          })
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.owner,
+              repo: "docs.buf.build",
+              workflow_id: "release.yaml",
+              ref: "main"
+              inputs: {
+                version: "${{github.ref_name}}".replace("v", "")
+              }
+            })
       - name: trigger buf-setup-action release
         uses: actions/github-script@v6
         with:
-        script: |
-          github.rest.actions.createWorkflowDispatch({
-            owner: context.owner,
-            repo: "buf-setup-action",
-            workflow_id: "release.yaml",
-            ref: "main"
-            inputs: {
-              version: "${{github.ref_name}}".replace("v", "")
-            }
-          })
-
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.owner,
+              repo: "buf-setup-action",
+              workflow_id: "release.yaml",
+              ref: "main"
+              inputs: {
+                version: "${{github.ref_name}}".replace("v", "")
+              }
+            })
