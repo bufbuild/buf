@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	curatedplugindelete "github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/pluginpush"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
@@ -247,6 +248,7 @@ func NewRootCommand(name string) *appcmd.Command {
 					},
 				},
 			},
+			price.NewCommand("price", builder),
 			{
 				Use:    "alpha",
 				Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted",
