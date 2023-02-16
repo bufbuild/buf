@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build go1.19
+//go:build !go1.19
 
-package appprotoexec
+package bufpluginexec
 
 import (
-	"errors"
 	"os/exec"
 )
 
@@ -29,9 +28,5 @@ import (
 //
 // https://pkg.go.dev/os/exec#hdr-Executables_in_the_current_directory
 func unsafeLookPath(file string) (string, error) {
-	path, err := exec.LookPath(file)
-	if errors.Is(err, exec.ErrDot) {
-		err = nil
-	}
-	return path, err
+	return exec.LookPath(file)
 }
