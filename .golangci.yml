@@ -84,7 +84,8 @@ issues:
       path: private/pkg/command/runner.go
     - linters:
         - forbidigo
-        # we use os.Rename here to rename files in the same directory
+      # we use os.Rename here to rename files in the same directory
+      # This is safe (we aren't traversing filesystem boundaries).
       path: private/bufpkg/bufmodule/bufmodulecache/cas_module_cacher.go
     - linters:
         - stylecheck

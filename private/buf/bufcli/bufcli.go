@@ -57,7 +57,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
-	"github.com/bufbuild/connect-go"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -607,11 +606,11 @@ func newModuleReaderAndCreateCacheDirs(
 	var moduleReader bufmodule.ModuleReader
 	if tamperProofingEnabled {
 		moduleReader = bufmodulecache.NewCASModuleReader(
+			container.Logger(),
+			container.VerbosePrinter(),
 			cacheModuleCASDirPath,
 			delegateReader,
 			repositoryClientFactory,
-			container.Logger(),
-			container.VerbosePrinter(),
 		)
 	} else {
 		moduleReader = bufmodulecache.NewModuleReader(
