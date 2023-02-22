@@ -165,6 +165,10 @@ issues:
     - linters:
         - staticcheck
       text: "buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated"
+    # We need to handle this field in descriptor.proto.
+    - linters:
+        - staticcheck
+      text: "GetDeprecatedLegacyJsonFieldConflicts is deprecated"
     # We verify manually so that we can emit verbose output while doing so.
     - linters:
         - gosec
