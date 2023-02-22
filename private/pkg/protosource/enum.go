@@ -18,30 +18,33 @@ type enum struct {
 	namedDescriptor
 	optionExtensionDescriptor
 
-	values             []EnumValue
-	allowAlias         bool
-	deprecated         bool
-	allowAliasPath     []int32
-	reservedEnumRanges []EnumRange
-	reservedNames      []ReservedName
-	parent             Message
+	values                             []EnumValue
+	allowAlias                         bool
+	deprecatedLegacyJSONFieldConflicts bool
+	deprecated                         bool
+	allowAliasPath                     []int32
+	reservedEnumRanges                 []EnumRange
+	reservedNames                      []ReservedName
+	parent                             Message
 }
 
 func newEnum(
 	namedDescriptor namedDescriptor,
 	optionExtensionDescriptor optionExtensionDescriptor,
 	allowAlias bool,
+	deprecatedLegacyJSONFieldConflicts bool,
 	deprecated bool,
 	allowAliasPath []int32,
 	parent Message,
 ) *enum {
 	return &enum{
-		namedDescriptor:           namedDescriptor,
-		optionExtensionDescriptor: optionExtensionDescriptor,
-		allowAlias:                allowAlias,
-		deprecated:                deprecated,
-		allowAliasPath:            allowAliasPath,
-		parent:                    parent,
+		namedDescriptor:                    namedDescriptor,
+		optionExtensionDescriptor:          optionExtensionDescriptor,
+		allowAlias:                         allowAlias,
+		deprecatedLegacyJSONFieldConflicts: deprecatedLegacyJSONFieldConflicts,
+		deprecated:                         deprecated,
+		allowAliasPath:                     allowAliasPath,
+		parent:                             parent,
 	}
 }
 
@@ -51,6 +54,10 @@ func (e *enum) Values() []EnumValue {
 
 func (e *enum) AllowAlias() bool {
 	return e.allowAlias
+}
+
+func (e *enum) DeprecatedLegacyJSONFieldConflicts() bool {
+	return e.deprecatedLegacyJSONFieldConflicts
 }
 
 func (e *enum) Deprecated() bool {

@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -44,6 +45,8 @@ const (
 	SyntaxProto2
 	// SyntaxProto3 represents the proto3 syntax.
 	SyntaxProto3
+	// SyntaxEditions represents the editions syntax.
+	SyntaxEditions
 )
 
 // Syntax is the syntax of a file.
@@ -58,6 +61,8 @@ func (s Syntax) String() string {
 		return "proto2"
 	case SyntaxProto3:
 		return "proto3"
+	case SyntaxEditions:
+		return "editions"
 	default:
 		return strconv.Itoa(int(s))
 	}
@@ -216,7 +221,7 @@ type File interface {
 	SwiftPrefix() string
 	Deprecated() bool
 
-	OptimizeFor() FileOptionsOptimizeMode
+	OptimizeFor() descriptorpb.FileOptions_OptimizeMode
 	CcGenericServices() bool
 	JavaGenericServices() bool
 	PyGenericServices() bool
@@ -312,6 +317,7 @@ type Enum interface {
 	ReservedEnumRanges() []EnumRange
 
 	AllowAlias() bool
+	DeprecatedLegacyJSONFieldConflicts() bool
 	Deprecated() bool
 	AllowAliasLocation() Location
 
@@ -353,6 +359,7 @@ type Message interface {
 
 	MessageSetWireFormat() bool
 	NoStandardDescriptorAccessor() bool
+	DeprecatedLegacyJSONFieldConflicts() bool
 	Deprecated() bool
 	MessageSetWireFormatLocation() Location
 	NoStandardDescriptorAccessorLocation() Location
@@ -366,15 +373,18 @@ type Field interface {
 	// May be nil if this is attached to a file.
 	Message() Message
 	Number() int
-	Label() FieldDescriptorProtoLabel
-	Type() FieldDescriptorProtoType
+	Label() descriptorpb.FieldDescriptorProto_Label
+	Type() descriptorpb.FieldDescriptorProto_Type
 	TypeName() string
 	// may be nil
 	Oneof() Oneof
 	Proto3Optional() bool
 	JSONName() string
-	JSType() FieldOptionsJSType
-	CType() FieldOptionsCType
+	JSType() descriptorpb.FieldOptions_JSType
+	CType() descriptorpb.FieldOptions_CType
+	Retention() descriptorpb.FieldOptions_OptionRetention
+	Target() descriptorpb.FieldOptions_OptionTargetType
+	DebugRedact() bool
 	// Set vs unset matters for packed
 	// See the comments on descriptor.proto
 	Packed() *bool
@@ -424,7 +434,7 @@ type Method interface {
 	OutputTypeLocation() Location
 
 	Deprecated() bool
-	IdempotencyLevel() MethodOptionsIdempotencyLevel
+	IdempotencyLevel() descriptorpb.MethodOptions_IdempotencyLevel
 	IdempotencyLevelLocation() Location
 }
 
@@ -771,7 +781,7 @@ func NumberToMessageField(message Message) (map[int]Field, error) {
 //
 // Returns error if the Fields do not have unique numbers within the Message,
 // which should generally never happen for properly-formed Messages.
-func NumberToMessageFieldForLabel(message Message, label FieldDescriptorProtoLabel) (map[int]Field, error) {
+func NumberToMessageFieldForLabel(message Message, label descriptorpb.FieldDescriptorProto_Label) (map[int]Field, error) {
 	numberToField, err := NumberToMessageField(message)
 	if err != nil {
 		return nil, err
