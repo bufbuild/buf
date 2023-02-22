@@ -1359,9 +1359,9 @@ type GetOrganizationSettingsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	RepositoryBaseRole RepositoryRole `protobuf:"varint,1,opt,name=repository_base_role,json=repositoryBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"repository_base_role,omitempty"`
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/organization.proto.
 	PluginBaseRole PluginRole `protobuf:"varint,2,opt,name=plugin_base_role,json=pluginBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.PluginRole" json:"plugin_base_role,omitempty"`
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/organization.proto.
 	TemplateBaseRole TemplateRole `protobuf:"varint,3,opt,name=template_base_role,json=templateBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"template_base_role,omitempty"`
 	// The number of members in the organization.
 	MembersCount uint32 `protobuf:"varint,4,opt,name=members_count,json=membersCount,proto3" json:"members_count,omitempty"`
@@ -1408,7 +1408,7 @@ func (x *GetOrganizationSettingsResponse) GetRepositoryBaseRole() RepositoryRole
 	return RepositoryRole_REPOSITORY_ROLE_UNSPECIFIED
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/organization.proto.
 func (x *GetOrganizationSettingsResponse) GetPluginBaseRole() PluginRole {
 	if x != nil {
 		return x.PluginBaseRole
@@ -1416,7 +1416,7 @@ func (x *GetOrganizationSettingsResponse) GetPluginBaseRole() PluginRole {
 	return PluginRole_PLUGIN_ROLE_UNSPECIFIED
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/organization.proto.
 func (x *GetOrganizationSettingsResponse) GetTemplateBaseRole() TemplateRole {
 	if x != nil {
 		return x.TemplateBaseRole
@@ -1449,11 +1449,11 @@ type UpdateOrganizationSettingsRequest struct {
 	RepositoryBaseRole RepositoryRole `protobuf:"varint,2,opt,name=repository_base_role,json=repositoryBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"repository_base_role,omitempty"`
 	// optional, no update to this base role will be made if this is unspecified.
 	//
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/organization.proto.
 	PluginBaseRole PluginRole `protobuf:"varint,3,opt,name=plugin_base_role,json=pluginBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.PluginRole" json:"plugin_base_role,omitempty"`
 	// optional, no update to this base role will be made if this is unspecified.
 	//
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/organization.proto.
 	TemplateBaseRole TemplateRole `protobuf:"varint,4,opt,name=template_base_role,json=templateBaseRole,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"template_base_role,omitempty"`
 	// optional, update to description will only be made when this is present
 	Description *string `protobuf:"bytes,5,opt,name=description,proto3,oneof" json:"description,omitempty"`
@@ -1507,7 +1507,7 @@ func (x *UpdateOrganizationSettingsRequest) GetRepositoryBaseRole() RepositoryRo
 	return RepositoryRole_REPOSITORY_ROLE_UNSPECIFIED
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/organization.proto.
 func (x *UpdateOrganizationSettingsRequest) GetPluginBaseRole() PluginRole {
 	if x != nil {
 		return x.PluginBaseRole
@@ -1515,7 +1515,7 @@ func (x *UpdateOrganizationSettingsRequest) GetPluginBaseRole() PluginRole {
 	return PluginRole_PLUGIN_ROLE_UNSPECIFIED
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/organization.proto.
 func (x *UpdateOrganizationSettingsRequest) GetTemplateBaseRole() TemplateRole {
 	if x != nil {
 		return x.TemplateBaseRole

@@ -114,7 +114,7 @@ func run(
 		return err
 	}
 	if existingConfigFilePath != "" {
-		return appcmd.NewInvalidArgumentErrorf("%s already exists, not overwriting", existingConfigFilePath)
+		return fmt.Errorf("%s already exists, not overwriting", existingConfigFilePath)
 	}
 	var writeConfigOptions []bufconfig.WriteConfigOption
 	if container.NumArgs() > 0 {

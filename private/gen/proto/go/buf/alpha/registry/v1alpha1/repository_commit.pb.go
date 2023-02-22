@@ -52,7 +52,7 @@ type RepositoryCommit struct {
 	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
 	// The branch on which this commit was created.
 	//
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/repository_commit.proto.
 	Branch string `protobuf:"bytes,5,opt,name=branch,proto3" json:"branch,omitempty"`
 	// The commit sequence ID for this commit. This
 	// is essentially what number commit this is on
@@ -131,7 +131,7 @@ func (x *RepositoryCommit) GetName() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/repository_commit.proto.
 func (x *RepositoryCommit) GetBranch() string {
 	if x != nil {
 		return x.Branch
