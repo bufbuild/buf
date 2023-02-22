@@ -157,3 +157,16 @@ issues:
       # implementation makes RPC calls, which need a context. So we allow creator of the
       # type to provide a context at value creation (instead of using context.Background()).
       path: private/buf/bufcurl/reflection_resolver.go
+    # We deprecated all the definitions in plugin.proto but we still implement them.
+    - linters:
+        - staticcheck
+      text: "buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated"
+    # We deprecated all the definitions in generate.proto but we still implement them.
+    - linters:
+        - staticcheck
+      text: "buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated"
+    # We verify manually so that we can emit verbose output while doing so.
+    - linters:
+        - gosec
+      text: "G402:"
+      path: private/buf/bufcurl/tls.go
