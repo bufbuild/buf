@@ -119,7 +119,7 @@ func (x *RecommendedRepository) GetRepositoryId() string {
 // RecommendedTemplate is the information needed to recommend a template and link
 // to its owner page.
 //
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/recommendation.proto.
 type RecommendedTemplate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -332,7 +332,7 @@ func (x *RecommendedRepositoriesResponse) GetRepositories() []*RecommendedReposi
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/recommendation.proto.
 type RecommendedTemplatesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -371,7 +371,7 @@ func (*RecommendedTemplatesRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_recommendation_proto_rawDescGZIP(), []int{5}
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/recommendation.proto.
 type RecommendedTemplatesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

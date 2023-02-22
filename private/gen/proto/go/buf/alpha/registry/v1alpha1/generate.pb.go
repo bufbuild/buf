@@ -37,6 +37,8 @@ const (
 )
 
 // File defines a file with a path and some content.
+//
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 type File struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -44,8 +46,12 @@ type File struct {
 
 	// path is the relative path of the file.
 	// Path can only use '/' as the separator character, and includes no ".." components.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// content is the content of the file.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Content []byte `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
 }
 
@@ -81,6 +87,7 @@ func (*File) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_generate_proto_rawDescGZIP(), []int{0}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *File) GetPath() string {
 	if x != nil {
 		return x.Path
@@ -88,6 +95,7 @@ func (x *File) GetPath() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *File) GetContent() []byte {
 	if x != nil {
 		return x.Content
@@ -96,6 +104,8 @@ func (x *File) GetContent() []byte {
 }
 
 // RuntimeLibrary describes a pinned runtime library dependency of the generated code.
+//
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 type RuntimeLibrary struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -105,12 +115,16 @@ type RuntimeLibrary struct {
 	// format used for dependencies in the dependency management tooling of the
 	// associated language ecosystem. This is set by the user using Dockerfile Labels.
 	// For example, for the plugin "protoc-gen-go", this might be "google.golang.org/protobuf".
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The version of the runtime library dependency associated with the generated
 	// code. The format should match the format used for dependency versions in the
 	// dependency management tooling of the associated language ecosystem.
 	// This is set by the user using Dockerfile Labels.
 	// For example, for the plugin "protoc-gen-go", this might be "v1.26.0".
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -146,6 +160,7 @@ func (*RuntimeLibrary) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_generate_proto_rawDescGZIP(), []int{1}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *RuntimeLibrary) GetName() string {
 	if x != nil {
 		return x.Name
@@ -153,6 +168,7 @@ func (x *RuntimeLibrary) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *RuntimeLibrary) GetVersion() string {
 	if x != nil {
 		return x.Version
@@ -160,6 +176,7 @@ func (x *RuntimeLibrary) GetVersion() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 type PluginReference struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -167,14 +184,22 @@ type PluginReference struct {
 
 	// The owner of the plugin which identifies the
 	// plugins to use with this generation.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the plugin which identifies the
 	// plugins to use with this generation.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The plugin version to use with this generation.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
 	// The parameters to pass to the plugin. These will
 	// be merged into a single, comma-separated string.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Parameters []string `protobuf:"bytes,4,rep,name=parameters,proto3" json:"parameters,omitempty"`
 }
 
@@ -210,6 +235,7 @@ func (*PluginReference) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_generate_proto_rawDescGZIP(), []int{2}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *PluginReference) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -217,6 +243,7 @@ func (x *PluginReference) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *PluginReference) GetName() string {
 	if x != nil {
 		return x.Name
@@ -224,6 +251,7 @@ func (x *PluginReference) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *PluginReference) GetVersion() string {
 	if x != nil {
 		return x.Version
@@ -231,6 +259,7 @@ func (x *PluginReference) GetVersion() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *PluginReference) GetParameters() []string {
 	if x != nil {
 		return x.Parameters
@@ -238,6 +267,7 @@ func (x *PluginReference) GetParameters() []string {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 type GeneratePluginsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -248,14 +278,22 @@ type GeneratePluginsRequest struct {
 	// All image files that are not imports and not well-known types will be generated.
 	// If you want to filter what files are generated, modify the image.
 	// If you want to include imports, set include_imports.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Image *v1.Image `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
 	// The array of plugins to use.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Plugins []*PluginReference `protobuf:"bytes,2,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	// Include imports from the Image in generation.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	IncludeImports bool `protobuf:"varint,3,opt,name=include_imports,json=includeImports,proto3" json:"include_imports,omitempty"`
 	// Include Well-Known Types from the Image in generation.
 	//
 	// include_imports must be set if include_well_known_types is set.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	IncludeWellKnownTypes bool `protobuf:"varint,4,opt,name=include_well_known_types,json=includeWellKnownTypes,proto3" json:"include_well_known_types,omitempty"`
 }
 
@@ -291,6 +329,7 @@ func (*GeneratePluginsRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_generate_proto_rawDescGZIP(), []int{3}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GeneratePluginsRequest) GetImage() *v1.Image {
 	if x != nil {
 		return x.Image
@@ -298,6 +337,7 @@ func (x *GeneratePluginsRequest) GetImage() *v1.Image {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GeneratePluginsRequest) GetPlugins() []*PluginReference {
 	if x != nil {
 		return x.Plugins
@@ -305,6 +345,7 @@ func (x *GeneratePluginsRequest) GetPlugins() []*PluginReference {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GeneratePluginsRequest) GetIncludeImports() bool {
 	if x != nil {
 		return x.IncludeImports
@@ -312,6 +353,7 @@ func (x *GeneratePluginsRequest) GetIncludeImports() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GeneratePluginsRequest) GetIncludeWellKnownTypes() bool {
 	if x != nil {
 		return x.IncludeWellKnownTypes
@@ -319,6 +361,7 @@ func (x *GeneratePluginsRequest) GetIncludeWellKnownTypes() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 type GeneratePluginsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -326,6 +369,8 @@ type GeneratePluginsResponse struct {
 
 	// Contains all the responses from the generated plugins. The order
 	// is defined by the order of the plugins in the request.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Responses []*pluginpb.CodeGeneratorResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
 	// An optional array defining runtime libraries that the generated code
 	// requires to run, as specified by the plugin author. This may contain
@@ -333,6 +378,8 @@ type GeneratePluginsResponse struct {
 	// each of which declares its own runtime library dependencies. The libraries
 	// returned are lexicographically ordered by their name, but not deduplicated.
 	// How to handle duplicate libraries is left to the user.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	RuntimeLibraries []*RuntimeLibrary `protobuf:"bytes,2,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
 }
 
@@ -368,6 +415,7 @@ func (*GeneratePluginsResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_generate_proto_rawDescGZIP(), []int{4}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GeneratePluginsResponse) GetResponses() []*pluginpb.CodeGeneratorResponse {
 	if x != nil {
 		return x.Responses
@@ -375,6 +423,7 @@ func (x *GeneratePluginsResponse) GetResponses() []*pluginpb.CodeGeneratorRespon
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GeneratePluginsResponse) GetRuntimeLibraries() []*RuntimeLibrary {
 	if x != nil {
 		return x.RuntimeLibraries
@@ -382,6 +431,7 @@ func (x *GeneratePluginsResponse) GetRuntimeLibraries() []*RuntimeLibrary {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 type GenerateTemplateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -392,21 +442,33 @@ type GenerateTemplateRequest struct {
 	// All image files that are not imports and not well-known types will be generated.
 	// If you want to filter what files are generated, modify the image.
 	// If you want to include imports, set include_imports.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Image *v1.Image `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
 	// The owner of the template which identifies the
 	// plugins to use with this generation.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	TemplateOwner string `protobuf:"bytes,2,opt,name=template_owner,json=templateOwner,proto3" json:"template_owner,omitempty"`
 	// The name of the template which identifies the
 	// plugins to use with this generation.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	TemplateName string `protobuf:"bytes,3,opt,name=template_name,json=templateName,proto3" json:"template_name,omitempty"`
 	// The template version to use to determine the
 	// plugin versions in the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	TemplateVersion string `protobuf:"bytes,4,opt,name=template_version,json=templateVersion,proto3" json:"template_version,omitempty"`
 	// Include imports from the Image in generation.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	IncludeImports bool `protobuf:"varint,5,opt,name=include_imports,json=includeImports,proto3" json:"include_imports,omitempty"`
 	// Include Well-Known Types from the Image in generation.
 	//
 	// include_imports must be set if include_well_known_types is set.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	IncludeWellKnownTypes bool `protobuf:"varint,6,opt,name=include_well_known_types,json=includeWellKnownTypes,proto3" json:"include_well_known_types,omitempty"`
 }
 
@@ -442,6 +504,7 @@ func (*GenerateTemplateRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_generate_proto_rawDescGZIP(), []int{5}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GenerateTemplateRequest) GetImage() *v1.Image {
 	if x != nil {
 		return x.Image
@@ -449,6 +512,7 @@ func (x *GenerateTemplateRequest) GetImage() *v1.Image {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GenerateTemplateRequest) GetTemplateOwner() string {
 	if x != nil {
 		return x.TemplateOwner
@@ -456,6 +520,7 @@ func (x *GenerateTemplateRequest) GetTemplateOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GenerateTemplateRequest) GetTemplateName() string {
 	if x != nil {
 		return x.TemplateName
@@ -463,6 +528,7 @@ func (x *GenerateTemplateRequest) GetTemplateName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GenerateTemplateRequest) GetTemplateVersion() string {
 	if x != nil {
 		return x.TemplateVersion
@@ -470,6 +536,7 @@ func (x *GenerateTemplateRequest) GetTemplateVersion() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GenerateTemplateRequest) GetIncludeImports() bool {
 	if x != nil {
 		return x.IncludeImports
@@ -477,6 +544,7 @@ func (x *GenerateTemplateRequest) GetIncludeImports() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GenerateTemplateRequest) GetIncludeWellKnownTypes() bool {
 	if x != nil {
 		return x.IncludeWellKnownTypes
@@ -484,6 +552,7 @@ func (x *GenerateTemplateRequest) GetIncludeWellKnownTypes() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 type GenerateTemplateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -491,11 +560,15 @@ type GenerateTemplateResponse struct {
 
 	// files contains all the files output by the generation,
 	// in lexicographical order.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	Files []*File `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
 	// An optional array defining runtime libraries that the generated code
 	// requires to run. This may contain duplicate entries as the generation
 	// can be the result of multiple plugins, each of which declares its own
 	// runtime library dependencies.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 	RuntimeLibraries []*RuntimeLibrary `protobuf:"bytes,2,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
 }
 
@@ -531,6 +604,7 @@ func (*GenerateTemplateResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_generate_proto_rawDescGZIP(), []int{6}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GenerateTemplateResponse) GetFiles() []*File {
 	if x != nil {
 		return x.Files
@@ -538,6 +612,7 @@ func (x *GenerateTemplateResponse) GetFiles() []*File {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated.
 func (x *GenerateTemplateResponse) GetRuntimeLibraries() []*RuntimeLibrary {
 	if x != nil {
 		return x.RuntimeLibraries

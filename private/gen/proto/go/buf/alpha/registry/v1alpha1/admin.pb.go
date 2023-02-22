@@ -94,11 +94,11 @@ type ForceDeleteUserResponse struct {
 	Repositories []*Repository `protobuf:"bytes,3,rep,name=repositories,proto3" json:"repositories,omitempty"`
 	// The deleted plugins.
 	//
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/admin.proto.
 	Plugins []*Plugin `protobuf:"bytes,4,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	// The deleted templates.
 	//
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/admin.proto.
 	Templates []*Template `protobuf:"bytes,5,rep,name=templates,proto3" json:"templates,omitempty"`
 }
 
@@ -155,7 +155,7 @@ func (x *ForceDeleteUserResponse) GetRepositories() []*Repository {
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/admin.proto.
 func (x *ForceDeleteUserResponse) GetPlugins() []*Plugin {
 	if x != nil {
 		return x.Plugins
@@ -163,7 +163,7 @@ func (x *ForceDeleteUserResponse) GetPlugins() []*Plugin {
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/admin.proto.
 func (x *ForceDeleteUserResponse) GetTemplates() []*Template {
 	if x != nil {
 		return x.Templates

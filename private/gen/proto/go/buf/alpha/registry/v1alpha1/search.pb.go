@@ -41,9 +41,9 @@ const (
 	SearchFilter_SEARCH_FILTER_USER         SearchFilter = 1
 	SearchFilter_SEARCH_FILTER_ORGANIZATION SearchFilter = 2
 	SearchFilter_SEARCH_FILTER_REPOSITORY   SearchFilter = 3
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/search.proto.
 	SearchFilter_SEARCH_FILTER_PLUGIN SearchFilter = 4
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/search.proto.
 	SearchFilter_SEARCH_FILTER_TEMPLATE       SearchFilter = 5
 	SearchFilter_SEARCH_FILTER_TEAM           SearchFilter = 6
 	SearchFilter_SEARCH_FILTER_CURATED_PLUGIN SearchFilter = 7
@@ -415,7 +415,7 @@ func (x *TeamSearchResult) GetOrganizationName() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/search.proto.
 type PluginSearchResult struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -563,7 +563,7 @@ func (x *CuratedPluginSearchResult) GetOwner() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/search.proto.
 type TemplateSearchResult struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -730,7 +730,7 @@ func (x *SearchResult) GetTeam() *TeamSearchResult {
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/search.proto.
 func (x *SearchResult) GetPlugin() *PluginSearchResult {
 	if x, ok := x.GetItem().(*SearchResult_Plugin); ok {
 		return x.Plugin
@@ -738,7 +738,7 @@ func (x *SearchResult) GetPlugin() *PluginSearchResult {
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/search.proto.
 func (x *SearchResult) GetTemplate() *TemplateSearchResult {
 	if x, ok := x.GetItem().(*SearchResult_Template); ok {
 		return x.Template
@@ -774,12 +774,12 @@ type SearchResult_Team struct {
 }
 
 type SearchResult_Plugin struct {
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/search.proto.
 	Plugin *PluginSearchResult `protobuf:"bytes,5,opt,name=plugin,proto3,oneof"`
 }
 
 type SearchResult_Template struct {
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/search.proto.
 	Template *TemplateSearchResult `protobuf:"bytes,6,opt,name=template,proto3,oneof"`
 }
 

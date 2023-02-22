@@ -92,11 +92,11 @@ type DisplayOrganizationElementsResponse struct {
 	CreateRepository bool `protobuf:"varint,1,opt,name=create_repository,json=createRepository,proto3" json:"create_repository,omitempty"`
 	// Display create organization plugin element if true.
 	//
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 	CreatePlugin bool `protobuf:"varint,2,opt,name=create_plugin,json=createPlugin,proto3" json:"create_plugin,omitempty"`
 	// Display create organization template element if true.
 	//
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 	CreateTemplate bool `protobuf:"varint,3,opt,name=create_template,json=createTemplate,proto3" json:"create_template,omitempty"`
 	// Display organization settings element if true.
 	Settings bool `protobuf:"varint,4,opt,name=settings,proto3" json:"settings,omitempty"`
@@ -145,7 +145,7 @@ func (x *DisplayOrganizationElementsResponse) GetCreateRepository() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 func (x *DisplayOrganizationElementsResponse) GetCreatePlugin() bool {
 	if x != nil {
 		return x.CreatePlugin
@@ -153,7 +153,7 @@ func (x *DisplayOrganizationElementsResponse) GetCreatePlugin() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 func (x *DisplayOrganizationElementsResponse) GetCreateTemplate() bool {
 	if x != nil {
 		return x.CreateTemplate
@@ -297,7 +297,7 @@ func (x *DisplayRepositoryElementsResponse) GetWrite() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type DisplayPluginElementsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -347,7 +347,7 @@ func (x *DisplayPluginElementsRequest) GetPluginId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type DisplayPluginElementsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -414,7 +414,7 @@ func (x *DisplayPluginElementsResponse) GetDelete() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type DisplayTemplateElementsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -464,7 +464,7 @@ func (x *DisplayTemplateElementsRequest) GetTemplateId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type DisplayTemplateElementsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -909,7 +909,7 @@ func (x *ListManageableUserRepositoryRolesResponse) GetRoles() []RepositoryRole 
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type ListManageablePluginRolesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -959,7 +959,7 @@ func (x *ListManageablePluginRolesRequest) GetPluginId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type ListManageablePluginRolesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1009,7 +1009,7 @@ func (x *ListManageablePluginRolesResponse) GetRoles() []PluginRole {
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type ListManageableUserPluginRolesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1069,7 +1069,7 @@ func (x *ListManageableUserPluginRolesRequest) GetUserId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type ListManageableUserPluginRolesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1119,7 +1119,7 @@ func (x *ListManageableUserPluginRolesResponse) GetRoles() []PluginRole {
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type ListManageableTemplateRolesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1169,7 +1169,7 @@ func (x *ListManageableTemplateRolesRequest) GetTemplateId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type ListManageableTemplateRolesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1219,7 +1219,7 @@ func (x *ListManageableTemplateRolesResponse) GetRoles() []TemplateRole {
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type ListManageableUserTemplateRolesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1279,7 +1279,7 @@ func (x *ListManageableUserTemplateRolesRequest) GetUserId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/display.proto.
 type ListManageableUserTemplateRolesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
