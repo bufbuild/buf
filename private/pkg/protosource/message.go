@@ -18,21 +18,22 @@ type message struct {
 	namedDescriptor
 	optionExtensionDescriptor
 
-	fields                           []Field
-	extensions                       []Field
-	nestedMessages                   []Message
-	nestedEnums                      []Enum
-	oneofs                           []Oneof
-	reservedMessageRanges            []MessageRange
-	reservedNames                    []ReservedName
-	extensionRanges                  []ExtensionRange
-	parent                           Message
-	isMapEntry                       bool
-	messageSetWireFormat             bool
-	noStandardDescriptorAccessor     bool
-	deprecated                       bool
-	messageSetWireFormatPath         []int32
-	noStandardDescriptorAccessorPath []int32
+	fields                             []Field
+	extensions                         []Field
+	nestedMessages                     []Message
+	nestedEnums                        []Enum
+	oneofs                             []Oneof
+	reservedMessageRanges              []MessageRange
+	reservedNames                      []ReservedName
+	extensionRanges                    []ExtensionRange
+	parent                             Message
+	isMapEntry                         bool
+	messageSetWireFormat               bool
+	noStandardDescriptorAccessor       bool
+	deprecatedLegacyJSONFieldConflicts bool
+	deprecated                         bool
+	messageSetWireFormatPath           []int32
+	noStandardDescriptorAccessorPath   []int32
 }
 
 func newMessage(
@@ -42,20 +43,22 @@ func newMessage(
 	isMapEntry bool,
 	messageSetWireFormat bool,
 	noStandardDescriptorAccessor bool,
+	deprecatedLegacyJSONFieldConflicts bool,
 	deprecated bool,
 	messageSetWireFormatPath []int32,
 	noStandardDescriptorAccessorPath []int32,
 ) *message {
 	return &message{
-		namedDescriptor:                  namedDescriptor,
-		optionExtensionDescriptor:        optionExtensionDescriptor,
-		parent:                           parent,
-		isMapEntry:                       isMapEntry,
-		messageSetWireFormat:             messageSetWireFormat,
-		noStandardDescriptorAccessor:     noStandardDescriptorAccessor,
-		deprecated:                       deprecated,
-		messageSetWireFormatPath:         messageSetWireFormatPath,
-		noStandardDescriptorAccessorPath: noStandardDescriptorAccessorPath,
+		namedDescriptor:                    namedDescriptor,
+		optionExtensionDescriptor:          optionExtensionDescriptor,
+		parent:                             parent,
+		isMapEntry:                         isMapEntry,
+		messageSetWireFormat:               messageSetWireFormat,
+		noStandardDescriptorAccessor:       noStandardDescriptorAccessor,
+		deprecatedLegacyJSONFieldConflicts: deprecatedLegacyJSONFieldConflicts,
+		deprecated:                         deprecated,
+		messageSetWireFormatPath:           messageSetWireFormatPath,
+		noStandardDescriptorAccessorPath:   noStandardDescriptorAccessorPath,
 	}
 }
 
@@ -121,6 +124,10 @@ func (m *message) MessageSetWireFormat() bool {
 
 func (m *message) NoStandardDescriptorAccessor() bool {
 	return m.noStandardDescriptorAccessor
+}
+
+func (m *message) DeprecatedLegacyJSONFieldConflicts() bool {
+	return m.deprecatedLegacyJSONFieldConflicts
 }
 
 func (m *message) Deprecated() bool {

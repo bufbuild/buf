@@ -14,7 +14,11 @@
 
 package protosource
 
-import "fmt"
+import (
+	"fmt"
+
+	"google.golang.org/protobuf/types/descriptorpb"
+)
 
 type method struct {
 	namedDescriptor
@@ -28,7 +32,7 @@ type method struct {
 	deprecated           bool
 	inputTypePath        []int32
 	outputTypePath       []int32
-	idempotencyLevel     MethodOptionsIdempotencyLevel
+	idempotencyLevel     descriptorpb.MethodOptions_IdempotencyLevel
 	idempotencyLevelPath []int32
 }
 
@@ -43,7 +47,7 @@ func newMethod(
 	deprecated bool,
 	inputTypePath []int32,
 	outputTypePath []int32,
-	idempotencyLevel MethodOptionsIdempotencyLevel,
+	idempotencyLevel descriptorpb.MethodOptions_IdempotencyLevel,
 	idempotencyLevelPath []int32,
 ) (*method, error) {
 	if inputTypeName == "" {
@@ -100,7 +104,7 @@ func (m *method) OutputTypeLocation() Location {
 	return m.getLocation(m.outputTypePath)
 }
 
-func (m *method) IdempotencyLevel() MethodOptionsIdempotencyLevel {
+func (m *method) IdempotencyLevel() descriptorpb.MethodOptions_IdempotencyLevel {
 	return m.idempotencyLevel
 }
 
