@@ -72,12 +72,12 @@ func ModuleReaderWithExternalPaths() ModuleReaderOption {
 func NewCASModuleReader(
 	logger *zap.Logger,
 	verbosePrinter verbose.Printer,
-	basedir string,
+	bucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
 	repositoryClientFactory RepositoryServiceClientFactory,
 ) bufmodule.ModuleReader {
 	return newCASModuleReader(
-		basedir,
+		bucket,
 		delegate,
 		repositoryClientFactory,
 		logger,

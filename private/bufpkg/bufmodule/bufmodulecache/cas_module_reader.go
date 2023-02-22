@@ -39,7 +39,7 @@ type casModuleReader struct {
 var _ bufmodule.ModuleReader = (*casModuleReader)(nil)
 
 func newCASModuleReader(
-	baseDir string,
+	bucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
 	repositoryClientFactory RepositoryServiceClientFactory,
 	logger *zap.Logger,
@@ -51,8 +51,8 @@ func newCASModuleReader(
 		logger:                  logger,
 		verbosePrinter:          verbosePrinter,
 		cache: &casModuleCacher{
-			logger:  logger,
-			baseDir: baseDir,
+			logger: logger,
+			bucket: bucket,
 		},
 		stats: &cacheStats{},
 	}
@@ -66,9 +66,6 @@ func (c *casModuleReader) GetModule(
 	if err == nil {
 		c.stats.MarkHit()
 		return module, nil
-	}
-	if !storage.IsNotExist(err) {
-		return nil, err
 	}
 	c.stats.MarkMiss()
 	module, err = c.delegate.GetModule(ctx, modulePin)

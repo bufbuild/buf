@@ -19,8 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -39,8 +37,8 @@ const (
 )
 
 type casModuleCacher struct {
-	logger  *zap.Logger
-	baseDir string
+	logger *zap.Logger
+	bucket storage.ReadWriteBucket
 }
 
 var _ moduleCache = (*casModuleCacher)(nil)
@@ -49,7 +47,7 @@ func (c *casModuleCacher) GetModule(
 	ctx context.Context,
 	modulePin bufmoduleref.ModulePin,
 ) (_ bufmodule.Module, retErr error) {
-	moduleBasedir := normalpath.Join(c.baseDir, modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
+	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
 	var manifestHexDigest string
 	if modulePinDigestEncoded := modulePin.Digest(); modulePinDigestEncoded != "" {
 		modulePinDigest, err := manifest.NewDigestFromString(modulePinDigestEncoded)
@@ -60,24 +58,21 @@ func (c *casModuleCacher) GetModule(
 	} else {
 		// Attempt to look up manifest digest from commit
 		commitPath := normalpath.Join(moduleBasedir, commitsDir, modulePin.Commit())
-		manifestDigestBytes, err := os.ReadFile(commitPath)
+		manifestDigest, err := c.bucket.Get(ctx, commitPath)
 		if err != nil {
-			if os.IsNotExist(err) {
-				return nil, storage.NewErrNotExist(commitPath)
-			}
+			return nil, err
+		}
+		manifestDigestBytes, err := io.ReadAll(manifestDigest)
+		if err != nil {
 			return nil, err
 		}
 		manifestHexDigest = strings.TrimSpace(string(manifestDigestBytes))
 		if manifestHexDigest == "" {
-			return nil, storage.NewErrNotExist(commitPath)
+			return nil, fmt.Errorf("invalid manifest digest found in %s", commitPath)
 		}
 	}
-	manifestPath := normalpath.Join(moduleBasedir, manifestsDir, manifestHexDigest[:2], manifestHexDigest[2:])
-	f, err := os.Open(manifestPath)
+	f, err := c.bucket.Get(ctx, normalpath.Join(moduleBasedir, manifestsDir, manifestHexDigest[:2], manifestHexDigest[2:]))
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, storage.NewErrNotExist(manifestPath)
-		}
 		return nil, err
 	}
 	defer func() {
@@ -108,11 +103,12 @@ func (c *casModuleCacher) GetModule(
 			continue
 		}
 		blobPath := normalpath.Join(blobBasedir, hexDigest[:2], hexDigest[2:])
-		contents, err := os.ReadFile(blobPath)
+		f, err := c.bucket.Get(ctx, blobPath)
 		if err != nil {
-			if os.IsNotExist(err) {
-				return nil, storage.NewErrNotExist(path)
-			}
+			return nil, err
+		}
+		contents, err := io.ReadAll(f)
+		if err != nil {
 			return nil, err
 		}
 		blob, err := manifest.NewMemoryBlob(*digest, contents, manifest.MemoryBlobWithDigestValidation())
@@ -123,7 +119,7 @@ func (c *casModuleCacher) GetModule(
 	}
 	blobSet, err := manifest.NewBlobSet(ctx, blobs)
 	if err != nil {
-		return nil, storage.NewErrNotExist(manifestPath)
+		return nil, err
 	}
 	bucket, err := manifest.NewBucket(
 		*cacheManifest,
@@ -132,7 +128,7 @@ func (c *casModuleCacher) GetModule(
 		manifest.BucketWithNoExtraBlobsValidation(),
 	)
 	if err != nil {
-		return nil, storage.NewErrNotExist(manifestPath)
+		return nil, err
 	}
 	return bufmodule.NewModuleForBucket(ctx, bucket, bufmodule.ModuleWithManifestAndBlobs(*cacheManifest, *blobSet))
 }
@@ -160,11 +156,8 @@ func (c *casModuleCacher) PutModule(
 			return fmt.Errorf("manifest digest mismatch: expected=%q, found=%q", modulePinDigest.Hex(), digest.Hex())
 		}
 	}
-	moduleBasedir := normalpath.Join(c.baseDir, modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
-	if err := os.MkdirAll(moduleBasedir, 0755); err != nil {
-		return err
-	}
-	if err := c.atomicWrite(strings.NewReader(manifestBlob.Digest().Hex()), normalpath.Join(moduleBasedir, commitsDir, modulePin.Commit())); err != nil {
+	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
+	if err := c.atomicWrite(ctx, strings.NewReader(manifestBlob.Digest().Hex()), normalpath.Join(moduleBasedir, commitsDir, modulePin.Commit())); err != nil {
 		return err
 	}
 	manifestsParentDir := normalpath.Join(moduleBasedir, manifestsDir)
@@ -206,39 +199,24 @@ func (c *casModuleCacher) writeBlob(
 		return err
 	}
 	defer func() {
-		if err := contents.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
+		if err := contents.Close(); err != nil {
 			retErr = multierr.Append(retErr, err)
 		}
 	}()
 	hexDigest := blob.Digest().Hex()
-	return c.atomicWrite(contents, normalpath.Join(parentDir, hexDigest[:2], hexDigest[2:]))
+	return c.atomicWrite(ctx, contents, normalpath.Join(parentDir, hexDigest[:2], hexDigest[2:]))
 }
 
-func (c *casModuleCacher) atomicWrite(contents io.Reader, path string) (retErr error) {
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
-	tmpFile, err := os.CreateTemp(dir, "."+filepath.Base(path)+"*")
+func (c *casModuleCacher) atomicWrite(ctx context.Context, contents io.Reader, path string) (retErr error) {
+	f, err := c.bucket.Put(ctx, path, storage.PutAtomic())
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if err := tmpFile.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
-			retErr = multierr.Append(retErr, err)
-		}
-		if err := os.Remove(tmpFile.Name()); err != nil && !os.IsNotExist(err) {
-			retErr = multierr.Append(retErr, err)
-		}
+		retErr = multierr.Append(retErr, f.Close())
 	}()
-	if err := tmpFile.Chmod(0644); err != nil {
+	if _, err := io.Copy(f, contents); err != nil {
 		return err
 	}
-	if _, err := io.Copy(tmpFile, contents); err != nil {
-		return err
-	}
-	if err := tmpFile.Close(); err != nil {
-		return err
-	}
-	return os.Rename(tmpFile.Name(), normalpath.Join(dir, filepath.Base(path)))
+	return nil
 }

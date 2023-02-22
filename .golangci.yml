@@ -86,7 +86,8 @@ issues:
         - forbidigo
       # we use os.Rename here to rename files in the same directory
       # This is safe (we aren't traversing filesystem boundaries).
-      path: private/bufpkg/bufmodule/bufmodulecache/cas_module_cacher.go
+      path: private/pkg/storage/storageos/bucket.go
+      text: "os.Rename"
     - linters:
         - stylecheck
       text: "ST1005:"

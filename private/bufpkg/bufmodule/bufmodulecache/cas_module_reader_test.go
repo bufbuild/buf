@@ -18,9 +18,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/fs"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -31,6 +28,8 @@ import (
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
@@ -66,8 +65,11 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 	require.NoError(t, err)
 	testModule, err := bufmodule.NewModuleForBucket(context.Background(), bucket, bufmodule.ModuleWithManifestAndBlobs(*moduleManifest, *blobs))
 	require.NoError(t, err)
-	tmpdir := t.TempDir()
-	moduleReader := newCASModuleReader(tmpdir, &testModuleReader{module: testModule}, func(_ string) registryv1alpha1connect.RepositoryServiceClient {
+	storageProvider := storageos.NewProvider()
+	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())
+	require.NoError(t, err)
+
+	moduleReader := newCASModuleReader(storageBucket, &testModuleReader{module: testModule}, func(_ string) registryv1alpha1connect.RepositoryServiceClient {
 		return &testRepositoryServiceClient{}
 	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
 	pin, err := bufmoduleref.NewModulePin(
@@ -84,13 +86,13 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, moduleReader.stats.Count())
 	assert.Equal(t, 0, moduleReader.stats.Hits())
-	verifyCache(t, tmpdir, pin, moduleManifest, blobs)
+	verifyCache(t, storageBucket, pin, moduleManifest, blobs)
 
 	_, err = moduleReader.GetModule(context.Background(), pin)
 	require.NoError(t, err)
 	assert.Equal(t, 2, moduleReader.stats.Count())
 	assert.Equal(t, 1, moduleReader.stats.Hits()) // We should have a cache hit the second time
-	verifyCache(t, tmpdir, pin, moduleManifest, blobs)
+	verifyCache(t, storageBucket, pin, moduleManifest, blobs)
 }
 
 func TestCASModuleReaderNoDigest(t *testing.T) {
@@ -100,8 +102,10 @@ func TestCASModuleReaderNoDigest(t *testing.T) {
 	require.NoError(t, err)
 	testModule, err := bufmodule.NewModuleForBucket(context.Background(), bucket, bufmodule.ModuleWithManifestAndBlobs(*moduleManifest, *blobs))
 	require.NoError(t, err)
-	tmpdir := t.TempDir()
-	moduleReader := newCASModuleReader(tmpdir, &testModuleReader{module: testModule}, func(_ string) registryv1alpha1connect.RepositoryServiceClient {
+	storageProvider := storageos.NewProvider()
+	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())
+	require.NoError(t, err)
+	moduleReader := newCASModuleReader(storageBucket, &testModuleReader{module: testModule}, func(_ string) registryv1alpha1connect.RepositoryServiceClient {
 		return &testRepositoryServiceClient{}
 	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
 	pin, err := bufmoduleref.NewModulePin(
@@ -118,7 +122,7 @@ func TestCASModuleReaderNoDigest(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, moduleReader.stats.Count())
 	assert.Equal(t, 0, moduleReader.stats.Hits())
-	verifyCache(t, tmpdir, pin, moduleManifest, blobs)
+	verifyCache(t, storageBucket, pin, moduleManifest, blobs)
 }
 
 func TestCASModuleReaderDigestMismatch(t *testing.T) {
@@ -128,8 +132,10 @@ func TestCASModuleReaderDigestMismatch(t *testing.T) {
 	require.NoError(t, err)
 	testModule, err := bufmodule.NewModuleForBucket(context.Background(), bucket, bufmodule.ModuleWithManifestAndBlobs(*moduleManifest, *blobs))
 	require.NoError(t, err)
-	tmpdir := t.TempDir()
-	moduleReader := newCASModuleReader(tmpdir, &testModuleReader{module: testModule}, func(_ string) registryv1alpha1connect.RepositoryServiceClient {
+	storageProvider := storageos.NewProvider()
+	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())
+	require.NoError(t, err)
+	moduleReader := newCASModuleReader(storageBucket, &testModuleReader{module: testModule}, func(_ string) registryv1alpha1connect.RepositoryServiceClient {
 		return &testRepositoryServiceClient{}
 	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
 	pin, err := bufmoduleref.NewModulePin(
@@ -145,13 +151,8 @@ func TestCASModuleReaderDigestMismatch(t *testing.T) {
 	_, err = moduleReader.GetModule(context.Background(), pin)
 	require.Error(t, err)
 	numFiles := 0
-	err = filepath.WalkDir(tmpdir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() {
-			numFiles++
-		}
+	err = storageBucket.Walk(context.Background(), "", func(info storage.ObjectInfo) error {
+		numFiles++
 		return nil
 	})
 	require.NoError(t, err)
@@ -160,26 +161,30 @@ func TestCASModuleReaderDigestMismatch(t *testing.T) {
 
 func verifyCache(
 	t *testing.T,
-	tmpdir string,
+	bucket storage.ReadWriteBucket,
 	pin bufmoduleref.ModulePin,
 	moduleManifest *manifest.Manifest,
 	blobs *manifest.BlobSet,
 ) {
 	t.Helper()
-	moduleCacheDir := normalpath.Join(tmpdir, pin.Remote(), pin.Owner(), pin.Repository())
+	ctx := context.Background()
+	moduleCacheDir := normalpath.Join(pin.Remote(), pin.Owner(), pin.Repository())
 	// {remote}/{owner}/{repo}/manifests/{..}/{....} => should return manifest contents
 	moduleBlob, err := moduleManifest.Blob()
 	require.NoError(t, err)
-	verifyBlobContents(t, normalpath.Join(moduleCacheDir, manifestsDir), moduleBlob)
+	verifyBlobContents(t, bucket, normalpath.Join(moduleCacheDir, manifestsDir), moduleBlob)
 	for _, path := range moduleManifest.Paths() {
 		protoDigest, found := moduleManifest.DigestFor(path)
 		require.True(t, found)
 		protoBlob, found := blobs.BlobFor(protoDigest.String())
 		require.True(t, found)
 		// {remote}/{owner}/{repo}/blobs/{..}/{....} => should return proto blob contents
-		verifyBlobContents(t, normalpath.Join(moduleCacheDir, blobsDir), protoBlob)
+		verifyBlobContents(t, bucket, normalpath.Join(moduleCacheDir, blobsDir), protoBlob)
 	}
-	commitContents, err := os.ReadFile(normalpath.Join(moduleCacheDir, commitsDir, pin.Commit()))
+	f, err := bucket.Get(ctx, normalpath.Join(moduleCacheDir, commitsDir, pin.Commit()))
+	require.NoError(t, err)
+	defer f.Close()
+	commitContents, err := io.ReadAll(f)
 	require.NoError(t, err)
 	// {remote}/{owner}/{repo}/commits/{commit} => should return digest hex
 	assert.Equal(t, []byte(moduleBlob.Digest().Hex()), commitContents)
@@ -197,7 +202,7 @@ func createSampleManifestAndBlobs(t *testing.T) (*manifest.Manifest, *manifest.B
 	return &moduleManifest, blobSet
 }
 
-func verifyBlobContents(t *testing.T, basedir string, blob manifest.Blob) {
+func verifyBlobContents(t *testing.T, bucket storage.ReadWriteBucket, basedir string, blob manifest.Blob) {
 	t.Helper()
 	moduleHexDigest := blob.Digest().Hex()
 	r, err := blob.Open(context.Background())
@@ -205,7 +210,10 @@ func verifyBlobContents(t *testing.T, basedir string, blob manifest.Blob) {
 	var bb bytes.Buffer
 	_, err = io.Copy(&bb, r)
 	require.NoError(t, err)
-	cachedModule, err := os.ReadFile(normalpath.Join(basedir, moduleHexDigest[:2], moduleHexDigest[2:]))
+	f, err := bucket.Get(context.Background(), normalpath.Join(basedir, moduleHexDigest[:2], moduleHexDigest[2:]))
+	require.NoError(t, err)
+	defer f.Close()
+	cachedModule, err := io.ReadAll(f)
 	require.NoError(t, err)
 	assert.Equal(t, bb.Bytes(), cachedModule)
 }
