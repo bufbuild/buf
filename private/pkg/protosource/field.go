@@ -14,14 +14,16 @@
 
 package protosource
 
+import "google.golang.org/protobuf/types/descriptorpb"
+
 type field struct {
 	namedDescriptor
 	optionExtensionDescriptor
 
 	message  Message
 	number   int
-	label    FieldDescriptorProtoLabel
-	typ      FieldDescriptorProtoType
+	label    descriptorpb.FieldDescriptorProto_Label
+	typ      descriptorpb.FieldDescriptorProto_Type
 	typeName string
 	// if the field is an extension, this is the type being extended
 	extendee string
@@ -30,10 +32,10 @@ type field struct {
 	oneof          *oneof
 	proto3Optional bool
 	jsonName       string
-	jsType         FieldOptionsJSType
-	cType          FieldOptionsCType
-	retention      FieldOptionsOptionRetention
-	target         FieldOptionsOptionTargetType
+	jsType         descriptorpb.FieldOptions_JSType
+	cType          descriptorpb.FieldOptions_CType
+	retention      descriptorpb.FieldOptions_OptionRetention
+	target         descriptorpb.FieldOptions_OptionTargetType
 	debugRedact    bool
 	packed         *bool
 	deprecated     bool
@@ -52,17 +54,17 @@ func newField(
 	optionExtensionDescriptor optionExtensionDescriptor,
 	message Message,
 	number int,
-	label FieldDescriptorProtoLabel,
-	typ FieldDescriptorProtoType,
+	label descriptorpb.FieldDescriptorProto_Label,
+	typ descriptorpb.FieldDescriptorProto_Type,
 	typeName string,
 	extendee string,
 	oneof *oneof,
 	proto3Optional bool,
 	jsonName string,
-	jsType FieldOptionsJSType,
-	cType FieldOptionsCType,
-	retention FieldOptionsOptionRetention,
-	target FieldOptionsOptionTargetType,
+	jsType descriptorpb.FieldOptions_JSType,
+	cType descriptorpb.FieldOptions_CType,
+	retention descriptorpb.FieldOptions_OptionRetention,
+	target descriptorpb.FieldOptions_OptionTargetType,
 	debugRedact bool,
 	packed *bool,
 	deprecated bool,
@@ -113,11 +115,11 @@ func (f *field) Number() int {
 	return f.number
 }
 
-func (f *field) Label() FieldDescriptorProtoLabel {
+func (f *field) Label() descriptorpb.FieldDescriptorProto_Label {
 	return f.label
 }
 
-func (f *field) Type() FieldDescriptorProtoType {
+func (f *field) Type() descriptorpb.FieldDescriptorProto_Type {
 	return f.typ
 }
 
@@ -146,19 +148,19 @@ func (f *field) JSONName() string {
 	return f.jsonName
 }
 
-func (f *field) JSType() FieldOptionsJSType {
+func (f *field) JSType() descriptorpb.FieldOptions_JSType {
 	return f.jsType
 }
 
-func (f *field) CType() FieldOptionsCType {
+func (f *field) CType() descriptorpb.FieldOptions_CType {
 	return f.cType
 }
 
-func (f *field) Retention() FieldOptionsOptionRetention {
+func (f *field) Retention() descriptorpb.FieldOptions_OptionRetention {
 	return f.retention
 }
 
-func (f *field) Target() FieldOptionsOptionTargetType {
+func (f *field) Target() descriptorpb.FieldOptions_OptionTargetType {
 	return f.target
 }
 
