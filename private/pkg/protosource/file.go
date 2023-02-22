@@ -348,11 +348,6 @@ func newFile(inputFile InputFile) (*file, error) {
 		}
 		f.extensions = append(f.extensions, extension)
 	}
-	//optimizeMode, err := getFileOptionsOptimizeMode(f.fileDescriptor.GetOptions().GetOptimizeFor())
-	//if err != nil {
-	//return nil, err
-	//}
-	//f.optimizeMode = optimizeMode
 	f.optimizeMode = f.fileDescriptor.GetOptions().GetOptimizeFor()
 	return f, nil
 }
