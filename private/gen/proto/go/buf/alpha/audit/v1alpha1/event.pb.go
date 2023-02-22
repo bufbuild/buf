@@ -99,7 +99,7 @@ const (
 	ResourceType_RESOURCE_TYPE_REPOSITORY             ResourceType = 4
 	ResourceType_RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR ResourceType = 5
 	ResourceType_RESOURCE_TYPE_REPOSITORY_COMMIT      ResourceType = 6
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 	ResourceType_RESOURCE_TYPE_PLUGIN         ResourceType = 7
 	ResourceType_RESOURCE_TYPE_CURATED_PLUGIN ResourceType = 8
 	ResourceType_RESOURCE_TYPE_TOKEN          ResourceType = 10
@@ -181,9 +181,9 @@ const (
 	EventType_EVENT_TYPE_REPOSITORY_CONTRIBUTOR_ROLE_CHANGED EventType = 10
 	EventType_EVENT_TYPE_REPOSITORY_CONTRIBUTOR_REMOVED      EventType = 11
 	EventType_EVENT_TYPE_REPOSITORY_VISIBILITY_CHANGED       EventType = 12
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 	EventType_EVENT_TYPE_PLUGIN_CREATED EventType = 13
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 	EventType_EVENT_TYPE_PLUGIN_DELETED         EventType = 14
 	EventType_EVENT_TYPE_CURATED_PLUGIN_CREATED EventType = 20
 	EventType_EVENT_TYPE_USER_CREATED           EventType = 15
@@ -697,7 +697,7 @@ func (x *Event) GetRepositoryVisibilityChanged() *PayloadRepositoryVisibilityCha
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 func (x *Event) GetPluginCreated() *PayloadPluginCreated {
 	if x, ok := x.GetPayload().(*Event_PluginCreated); ok {
 		return x.PluginCreated
@@ -705,7 +705,7 @@ func (x *Event) GetPluginCreated() *PayloadPluginCreated {
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 func (x *Event) GetPluginDeleted() *PayloadPluginDeleted {
 	if x, ok := x.GetPayload().(*Event_PluginDeleted); ok {
 		return x.PluginDeleted
@@ -836,12 +836,12 @@ type Event_RepositoryVisibilityChanged struct {
 }
 
 type Event_PluginCreated struct {
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 	PluginCreated *PayloadPluginCreated `protobuf:"bytes,19,opt,name=plugin_created,json=pluginCreated,proto3,oneof"`
 }
 
 type Event_PluginDeleted struct {
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 	PluginDeleted *PayloadPluginDeleted `protobuf:"bytes,20,opt,name=plugin_deleted,json=pluginDeleted,proto3,oneof"`
 }
 
@@ -1927,7 +1927,7 @@ func (x *PayloadRepositoryVisibilityChanged) GetNewVisibility() v1alpha1.Visibil
 	return v1alpha1.Visibility(0)
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 type PayloadPluginCreated struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1994,7 +1994,7 @@ func (x *PayloadPluginCreated) GetVisibility() v1alpha1.PluginVisibility {
 	return v1alpha1.PluginVisibility(0)
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/audit/v1alpha1/event.proto.
 type PayloadPluginDeleted struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

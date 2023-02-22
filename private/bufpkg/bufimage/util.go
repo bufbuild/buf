@@ -358,6 +358,7 @@ func fileDescriptorProtoToProtoImageFile(
 		Extension:        fileDescriptorProto.GetExtension(),
 		Options:          fileDescriptorProto.GetOptions(),
 		SourceCodeInfo:   fileDescriptorProto.GetSourceCodeInfo(),
+		Edition:          fileDescriptorProto.Edition,
 		BufExtension: &imagev1.ImageFileExtension{
 			// we might actually want to differentiate between unset and false
 			IsImport: proto.Bool(isImport),

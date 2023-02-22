@@ -34,6 +34,7 @@ type file struct {
 	enums          []Enum
 	services       []Service
 	extensions     []Field
+	edition        string
 	optimizeMode   FileOptionsOptimizeMode
 }
 
@@ -63,6 +64,10 @@ func (f *file) Services() []Service {
 
 func (f *file) Extensions() []Field {
 	return f.extensions
+}
+
+func (f *file) Edition() string {
+	return f.edition
 }
 
 func (f *file) CsharpNamespace() string {
@@ -230,6 +235,7 @@ func newFile(inputFile InputFile) (*file, error) {
 		optionExtensionDescriptor: newOptionExtensionDescriptor(
 			inputFile.FileDescriptor().GetOptions(),
 		),
+		edition: inputFile.FileDescriptor().GetEdition(),
 	}
 	descriptor := newDescriptor(
 		f,

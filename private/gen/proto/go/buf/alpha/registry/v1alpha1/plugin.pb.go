@@ -37,12 +37,17 @@ const (
 
 // PluginVisibility defines the visibility options available
 // for Plugins and Templates.
+//
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type PluginVisibility int32
 
 const (
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginVisibility_PLUGIN_VISIBILITY_UNSPECIFIED PluginVisibility = 0
-	PluginVisibility_PLUGIN_VISIBILITY_PUBLIC      PluginVisibility = 1
-	PluginVisibility_PLUGIN_VISIBILITY_PRIVATE     PluginVisibility = 2
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	PluginVisibility_PLUGIN_VISIBILITY_PUBLIC PluginVisibility = 1
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	PluginVisibility_PLUGIN_VISIBILITY_PRIVATE PluginVisibility = 2
 )
 
 // Enum value maps for PluginVisibility.
@@ -87,27 +92,45 @@ func (PluginVisibility) EnumDescriptor() ([]byte, []int) {
 }
 
 // Plugin represents a protoc plugin, such as protoc-gen-go.
+//
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type Plugin struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The ID of the plugin, which uniquely identifies the plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The name of the plugin, i.e. "protoc-gen-go".
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The name of the owner of the plugin. Either a username or
 	// organization name.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The visibility of the plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Visibility PluginVisibility `protobuf:"varint,4,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.PluginVisibility" json:"visibility,omitempty"`
 	// deprecated means this plugin is deprecated.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Deprecated bool `protobuf:"varint,5,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
 	// deprecation_message is the message shown if the plugin is deprecated.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	DeprecationMessage string `protobuf:"bytes,6,opt,name=deprecation_message,json=deprecationMessage,proto3" json:"deprecation_message,omitempty"`
 	// The creation time of the plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	CreateTime *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// The last update time of the plugin object.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 }
 
@@ -143,6 +166,7 @@ func (*Plugin) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{0}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Plugin) GetId() string {
 	if x != nil {
 		return x.Id
@@ -150,6 +174,7 @@ func (x *Plugin) GetId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Plugin) GetName() string {
 	if x != nil {
 		return x.Name
@@ -157,6 +182,7 @@ func (x *Plugin) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Plugin) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -164,6 +190,7 @@ func (x *Plugin) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Plugin) GetVisibility() PluginVisibility {
 	if x != nil {
 		return x.Visibility
@@ -171,6 +198,7 @@ func (x *Plugin) GetVisibility() PluginVisibility {
 	return PluginVisibility_PLUGIN_VISIBILITY_UNSPECIFIED
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Plugin) GetDeprecated() bool {
 	if x != nil {
 		return x.Deprecated
@@ -178,6 +206,7 @@ func (x *Plugin) GetDeprecated() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Plugin) GetDeprecationMessage() string {
 	if x != nil {
 		return x.DeprecationMessage
@@ -185,6 +214,7 @@ func (x *Plugin) GetDeprecationMessage() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Plugin) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreateTime
@@ -192,6 +222,7 @@ func (x *Plugin) GetCreateTime() *timestamppb.Timestamp {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Plugin) GetUpdateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.UpdateTime
@@ -201,6 +232,8 @@ func (x *Plugin) GetUpdateTime() *timestamppb.Timestamp {
 
 // PluginVersion represents a specific build of a plugin,
 // such as protoc-gen-go v1.4.0.
+//
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type PluginVersion struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -208,18 +241,30 @@ type PluginVersion struct {
 
 	// The ID of the plugin version, which uniquely identifies the plugin version.
 	// Mostly used for pagination.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The name of the version, i.e. "v1.4.0".
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The name of the plugin to which this version relates.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginName string `protobuf:"bytes,3,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
 	// The owner of the plugin to which this version relates.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginOwner string `protobuf:"bytes,4,opt,name=plugin_owner,json=pluginOwner,proto3" json:"plugin_owner,omitempty"`
 	// The full container image digest associated with this plugin version including
 	// the algorithm.
 	// Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	ContainerImageDigest string `protobuf:"bytes,5,opt,name=container_image_digest,json=containerImageDigest,proto3" json:"container_image_digest,omitempty"`
 	// Optionally define the runtime libraries.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	RuntimeLibraries []*RuntimeLibrary `protobuf:"bytes,6,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
 }
 
@@ -255,6 +300,7 @@ func (*PluginVersion) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{1}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginVersion) GetId() string {
 	if x != nil {
 		return x.Id
@@ -262,6 +308,7 @@ func (x *PluginVersion) GetId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginVersion) GetName() string {
 	if x != nil {
 		return x.Name
@@ -269,6 +316,7 @@ func (x *PluginVersion) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginVersion) GetPluginName() string {
 	if x != nil {
 		return x.PluginName
@@ -276,6 +324,7 @@ func (x *PluginVersion) GetPluginName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginVersion) GetPluginOwner() string {
 	if x != nil {
 		return x.PluginOwner
@@ -283,6 +332,7 @@ func (x *PluginVersion) GetPluginOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginVersion) GetContainerImageDigest() string {
 	if x != nil {
 		return x.ContainerImageDigest
@@ -290,6 +340,7 @@ func (x *PluginVersion) GetContainerImageDigest() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginVersion) GetRuntimeLibraries() []*RuntimeLibrary {
 	if x != nil {
 		return x.RuntimeLibraries
@@ -299,33 +350,53 @@ func (x *PluginVersion) GetRuntimeLibraries() []*RuntimeLibrary {
 
 // Template defines a set of plugins that should be used together
 // i.e. "go-grpc" would include protoc-gen-go and protoc-gen-go-grpc.
+//
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type Template struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The ID of the template, which uniquely identifies the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The name of the template, i.e. "grpc-go".
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The name of the owner of the template. Either a
 	// username or organization name.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
 	// Must not contain duplicate plugins. Order of plugin configs
 	// dictates insertion point order. Note that we're
 	// intentionally putting most of the plugin configuration
 	// in the template, so that template versions are
 	// less likely to cause breakages for users.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginConfigs []*PluginConfig `protobuf:"bytes,4,rep,name=plugin_configs,json=pluginConfigs,proto3" json:"plugin_configs,omitempty"`
 	// The visibility of the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Visibility PluginVisibility `protobuf:"varint,5,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.PluginVisibility" json:"visibility,omitempty"`
 	// deprecated means this template is deprecated.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Deprecated bool `protobuf:"varint,8,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
 	// deprecation_message is the message shown if the template is deprecated.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	DeprecationMessage string `protobuf:"bytes,9,opt,name=deprecation_message,json=deprecationMessage,proto3" json:"deprecation_message,omitempty"`
 	// The creation time of the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	CreateTime *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// The last update time of the template object.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 }
 
@@ -361,6 +432,7 @@ func (*Template) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{2}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Template) GetId() string {
 	if x != nil {
 		return x.Id
@@ -368,6 +440,7 @@ func (x *Template) GetId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Template) GetName() string {
 	if x != nil {
 		return x.Name
@@ -375,6 +448,7 @@ func (x *Template) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Template) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -382,6 +456,7 @@ func (x *Template) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Template) GetPluginConfigs() []*PluginConfig {
 	if x != nil {
 		return x.PluginConfigs
@@ -389,6 +464,7 @@ func (x *Template) GetPluginConfigs() []*PluginConfig {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Template) GetVisibility() PluginVisibility {
 	if x != nil {
 		return x.Visibility
@@ -396,6 +472,7 @@ func (x *Template) GetVisibility() PluginVisibility {
 	return PluginVisibility_PLUGIN_VISIBILITY_UNSPECIFIED
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Template) GetDeprecated() bool {
 	if x != nil {
 		return x.Deprecated
@@ -403,6 +480,7 @@ func (x *Template) GetDeprecated() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Template) GetDeprecationMessage() string {
 	if x != nil {
 		return x.DeprecationMessage
@@ -410,6 +488,7 @@ func (x *Template) GetDeprecationMessage() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Template) GetCreateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreateTime
@@ -417,6 +496,7 @@ func (x *Template) GetCreateTime() *timestamppb.Timestamp {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *Template) GetUpdateTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.UpdateTime
@@ -425,19 +505,29 @@ func (x *Template) GetUpdateTime() *timestamppb.Timestamp {
 }
 
 // PluginConfig defines a runtime configuration for a plugin.
+//
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type PluginConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the plugin to which this config relates.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginOwner string `protobuf:"bytes,1,opt,name=plugin_owner,json=pluginOwner,proto3" json:"plugin_owner,omitempty"`
 	// The name of the plugin to which this config relates.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginName string `protobuf:"bytes,2,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
 	// Parameters that should be provided to the plugin. These are
 	// joined with a "," before being provided to the plugin at runtime.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Parameters []string `protobuf:"bytes,3,rep,name=parameters,proto3" json:"parameters,omitempty"`
 	// True if the source plugin is inaccessible by the user.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Inaccessible bool `protobuf:"varint,5,opt,name=inaccessible,proto3" json:"inaccessible,omitempty"`
 }
 
@@ -473,6 +563,7 @@ func (*PluginConfig) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{3}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginConfig) GetPluginOwner() string {
 	if x != nil {
 		return x.PluginOwner
@@ -480,6 +571,7 @@ func (x *PluginConfig) GetPluginOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginConfig) GetPluginName() string {
 	if x != nil {
 		return x.PluginName
@@ -487,6 +579,7 @@ func (x *PluginConfig) GetPluginName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginConfig) GetParameters() []string {
 	if x != nil {
 		return x.Parameters
@@ -494,6 +587,7 @@ func (x *PluginConfig) GetParameters() []string {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginConfig) GetInaccessible() bool {
 	if x != nil {
 		return x.Inaccessible
@@ -503,6 +597,8 @@ func (x *PluginConfig) GetInaccessible() bool {
 
 // TemplateVersion defines a template at a
 // specific set of versions for the contained plugins.
+//
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type TemplateVersion struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -510,16 +606,26 @@ type TemplateVersion struct {
 
 	// The ID of the template version, which uniquely identifies the template version.
 	// Mostly used for pagination.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The name of the template version, i.e. "v1".
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The owner of the template to which this version relates.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	TemplateOwner string `protobuf:"bytes,3,opt,name=template_owner,json=templateOwner,proto3" json:"template_owner,omitempty"`
 	// The name of the template to which this version relates.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	TemplateName string `protobuf:"bytes,4,opt,name=template_name,json=templateName,proto3" json:"template_name,omitempty"`
 	// A map from plugin owner and name to version for the plugins
 	// defined in the template. Every plugin in the template
 	// must have a corresponding version in this array.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginVersions []*PluginVersionMapping `protobuf:"bytes,5,rep,name=plugin_versions,json=pluginVersions,proto3" json:"plugin_versions,omitempty"`
 }
 
@@ -555,6 +661,7 @@ func (*TemplateVersion) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{4}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *TemplateVersion) GetId() string {
 	if x != nil {
 		return x.Id
@@ -562,6 +669,7 @@ func (x *TemplateVersion) GetId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *TemplateVersion) GetName() string {
 	if x != nil {
 		return x.Name
@@ -569,6 +677,7 @@ func (x *TemplateVersion) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *TemplateVersion) GetTemplateOwner() string {
 	if x != nil {
 		return x.TemplateOwner
@@ -576,6 +685,7 @@ func (x *TemplateVersion) GetTemplateOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *TemplateVersion) GetTemplateName() string {
 	if x != nil {
 		return x.TemplateName
@@ -583,6 +693,7 @@ func (x *TemplateVersion) GetTemplateName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *TemplateVersion) GetPluginVersions() []*PluginVersionMapping {
 	if x != nil {
 		return x.PluginVersions
@@ -591,18 +702,28 @@ func (x *TemplateVersion) GetPluginVersions() []*PluginVersionMapping {
 }
 
 // PluginVersionMapping maps a plugin_id to a version.
+//
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type PluginVersionMapping struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the plugin to which this mapping relates.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginOwner string `protobuf:"bytes,1,opt,name=plugin_owner,json=pluginOwner,proto3" json:"plugin_owner,omitempty"`
 	// The name of the plugin to which this mapping relates.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginName string `protobuf:"bytes,2,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
 	// The version of the plugin to use, i.e. "v1.4.0".
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
 	// True if the source plugin is inaccessible by the user.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Inaccessible bool `protobuf:"varint,5,opt,name=inaccessible,proto3" json:"inaccessible,omitempty"`
 }
 
@@ -638,6 +759,7 @@ func (*PluginVersionMapping) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{5}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginVersionMapping) GetPluginOwner() string {
 	if x != nil {
 		return x.PluginOwner
@@ -645,6 +767,7 @@ func (x *PluginVersionMapping) GetPluginOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginVersionMapping) GetPluginName() string {
 	if x != nil {
 		return x.PluginName
@@ -652,6 +775,7 @@ func (x *PluginVersionMapping) GetPluginName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginVersionMapping) GetVersion() string {
 	if x != nil {
 		return x.Version
@@ -659,6 +783,7 @@ func (x *PluginVersionMapping) GetVersion() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginVersionMapping) GetInaccessible() bool {
 	if x != nil {
 		return x.Inaccessible
@@ -666,18 +791,26 @@ func (x *PluginVersionMapping) GetInaccessible() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type PluginContributor struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	User *User `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	// The ID of the plugin which the role belongs to.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginId string `protobuf:"bytes,2,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 	// The role that the user has been explicitly assigned against the plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	ExplicitRole PluginRole `protobuf:"varint,3,opt,name=explicit_role,json=explicitRole,proto3,enum=buf.alpha.registry.v1alpha1.PluginRole" json:"explicit_role,omitempty"`
 	// Optionally defines the role that the user has implicitly against the plugin through the owning organization.
 	// If the plugin does not belong to an organization or the user is not part of the owning organization, this is unset.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	ImplicitRole PluginRole `protobuf:"varint,4,opt,name=implicit_role,json=implicitRole,proto3,enum=buf.alpha.registry.v1alpha1.PluginRole" json:"implicit_role,omitempty"`
 }
 
@@ -713,6 +846,7 @@ func (*PluginContributor) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{6}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginContributor) GetUser() *User {
 	if x != nil {
 		return x.User
@@ -720,6 +854,7 @@ func (x *PluginContributor) GetUser() *User {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginContributor) GetPluginId() string {
 	if x != nil {
 		return x.PluginId
@@ -727,6 +862,7 @@ func (x *PluginContributor) GetPluginId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginContributor) GetExplicitRole() PluginRole {
 	if x != nil {
 		return x.ExplicitRole
@@ -734,6 +870,7 @@ func (x *PluginContributor) GetExplicitRole() PluginRole {
 	return PluginRole_PLUGIN_ROLE_UNSPECIFIED
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *PluginContributor) GetImplicitRole() PluginRole {
 	if x != nil {
 		return x.ImplicitRole
@@ -741,18 +878,26 @@ func (x *PluginContributor) GetImplicitRole() PluginRole {
 	return PluginRole_PLUGIN_ROLE_UNSPECIFIED
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type TemplateContributor struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	User *User `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	// The ID of the template which the role belongs to.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	TemplateId string `protobuf:"bytes,2,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`
 	// The role that the user has been explicitly assigned against the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	ExplicitRole TemplateRole `protobuf:"varint,3,opt,name=explicit_role,json=explicitRole,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"explicit_role,omitempty"`
 	// Optionally defines the role that the user has implicitly against the template through the owning organization.
 	// If the template does not belong to an organization or the user is not part of the owning organization, this is unset.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	ImplicitRole TemplateRole `protobuf:"varint,4,opt,name=implicit_role,json=implicitRole,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"implicit_role,omitempty"`
 }
 
@@ -788,6 +933,7 @@ func (*TemplateContributor) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{7}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *TemplateContributor) GetUser() *User {
 	if x != nil {
 		return x.User
@@ -795,6 +941,7 @@ func (x *TemplateContributor) GetUser() *User {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *TemplateContributor) GetTemplateId() string {
 	if x != nil {
 		return x.TemplateId
@@ -802,6 +949,7 @@ func (x *TemplateContributor) GetTemplateId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *TemplateContributor) GetExplicitRole() TemplateRole {
 	if x != nil {
 		return x.ExplicitRole
@@ -809,6 +957,7 @@ func (x *TemplateContributor) GetExplicitRole() TemplateRole {
 	return TemplateRole_TEMPLATE_ROLE_UNSPECIFIED
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *TemplateContributor) GetImplicitRole() TemplateRole {
 	if x != nil {
 		return x.ImplicitRole
@@ -816,15 +965,20 @@ func (x *TemplateContributor) GetImplicitRole() TemplateRole {
 	return TemplateRole_TEMPLATE_ROLE_UNSPECIFIED
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListPluginsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageSize uint32 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Reverse bool `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListPluginsRequest) Reset() {
@@ -859,6 +1013,7 @@ func (*ListPluginsRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{8}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginsRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -866,6 +1021,7 @@ func (x *ListPluginsRequest) GetPageSize() uint32 {
 	return 0
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginsRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -873,6 +1029,7 @@ func (x *ListPluginsRequest) GetPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginsRequest) GetReverse() bool {
 	if x != nil {
 		return x.Reverse
@@ -880,13 +1037,17 @@ func (x *ListPluginsRequest) GetReverse() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListPluginsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Plugins []*Plugin `protobuf:"bytes,1,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	// There are no more pages if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -922,6 +1083,7 @@ func (*ListPluginsResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{9}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginsResponse) GetPlugins() []*Plugin {
 	if x != nil {
 		return x.Plugins
@@ -929,6 +1091,7 @@ func (x *ListPluginsResponse) GetPlugins() []*Plugin {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginsResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
@@ -936,17 +1099,24 @@ func (x *ListPluginsResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListUserPluginsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner to list plugins for.
-	Owner    string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Reverse bool `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListUserPluginsRequest) Reset() {
@@ -981,6 +1151,7 @@ func (*ListUserPluginsRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{10}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserPluginsRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -988,6 +1159,7 @@ func (x *ListUserPluginsRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserPluginsRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -995,6 +1167,7 @@ func (x *ListUserPluginsRequest) GetPageSize() uint32 {
 	return 0
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserPluginsRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -1002,6 +1175,7 @@ func (x *ListUserPluginsRequest) GetPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserPluginsRequest) GetReverse() bool {
 	if x != nil {
 		return x.Reverse
@@ -1009,13 +1183,17 @@ func (x *ListUserPluginsRequest) GetReverse() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListUserPluginsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Plugins []*Plugin `protobuf:"bytes,1,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	// There are no more pages if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -1051,6 +1229,7 @@ func (*ListUserPluginsResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{11}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserPluginsResponse) GetPlugins() []*Plugin {
 	if x != nil {
 		return x.Plugins
@@ -1058,6 +1237,7 @@ func (x *ListUserPluginsResponse) GetPlugins() []*Plugin {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserPluginsResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
@@ -1065,17 +1245,24 @@ func (x *ListUserPluginsResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListOrganizationPluginsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The organization to list plugins for.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Organization string `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
-	PageSize     uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Reverse bool `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListOrganizationPluginsRequest) Reset() {
@@ -1110,6 +1297,7 @@ func (*ListOrganizationPluginsRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{12}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationPluginsRequest) GetOrganization() string {
 	if x != nil {
 		return x.Organization
@@ -1117,6 +1305,7 @@ func (x *ListOrganizationPluginsRequest) GetOrganization() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationPluginsRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -1124,6 +1313,7 @@ func (x *ListOrganizationPluginsRequest) GetPageSize() uint32 {
 	return 0
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationPluginsRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -1131,6 +1321,7 @@ func (x *ListOrganizationPluginsRequest) GetPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationPluginsRequest) GetReverse() bool {
 	if x != nil {
 		return x.Reverse
@@ -1138,13 +1329,17 @@ func (x *ListOrganizationPluginsRequest) GetReverse() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListOrganizationPluginsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Plugins []*Plugin `protobuf:"bytes,1,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	// There are no more pages if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -1180,6 +1375,7 @@ func (*ListOrganizationPluginsResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{13}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationPluginsResponse) GetPlugins() []*Plugin {
 	if x != nil {
 		return x.Plugins
@@ -1187,6 +1383,7 @@ func (x *ListOrganizationPluginsResponse) GetPlugins() []*Plugin {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationPluginsResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
@@ -1194,16 +1391,23 @@ func (x *ListOrganizationPluginsResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type GetPluginVersionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the plugin the version belongs to.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the plugin the version belongs to.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The name of the version.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -1239,6 +1443,7 @@ func (*GetPluginVersionRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{14}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetPluginVersionRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -1246,6 +1451,7 @@ func (x *GetPluginVersionRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetPluginVersionRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -1253,6 +1459,7 @@ func (x *GetPluginVersionRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetPluginVersionRequest) GetVersion() string {
 	if x != nil {
 		return x.Version
@@ -1260,11 +1467,13 @@ func (x *GetPluginVersionRequest) GetVersion() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type GetPluginVersionResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginVersion *PluginVersion `protobuf:"bytes,1,opt,name=plugin_version,json=pluginVersion,proto3" json:"plugin_version,omitempty"`
 }
 
@@ -1300,6 +1509,7 @@ func (*GetPluginVersionResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{15}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetPluginVersionResponse) GetPluginVersion() *PluginVersion {
 	if x != nil {
 		return x.PluginVersion
@@ -1307,20 +1517,30 @@ func (x *GetPluginVersionResponse) GetPluginVersion() *PluginVersion {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListPluginVersionsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the plugin to list versions for.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the plugin to list versions for.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The number of items to return.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageSize uint32 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageToken string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,5,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Reverse bool `protobuf:"varint,5,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListPluginVersionsRequest) Reset() {
@@ -1355,6 +1575,7 @@ func (*ListPluginVersionsRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{16}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginVersionsRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -1362,6 +1583,7 @@ func (x *ListPluginVersionsRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginVersionsRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -1369,6 +1591,7 @@ func (x *ListPluginVersionsRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginVersionsRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -1376,6 +1599,7 @@ func (x *ListPluginVersionsRequest) GetPageSize() uint32 {
 	return 0
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginVersionsRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -1383,6 +1607,7 @@ func (x *ListPluginVersionsRequest) GetPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginVersionsRequest) GetReverse() bool {
 	if x != nil {
 		return x.Reverse
@@ -1390,13 +1615,17 @@ func (x *ListPluginVersionsRequest) GetReverse() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListPluginVersionsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginVersions []*PluginVersion `protobuf:"bytes,1,rep,name=plugin_versions,json=pluginVersions,proto3" json:"plugin_versions,omitempty"`
 	// There are no more pages if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -1432,6 +1661,7 @@ func (*ListPluginVersionsResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{17}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginVersionsResponse) GetPluginVersions() []*PluginVersion {
 	if x != nil {
 		return x.PluginVersions
@@ -1439,6 +1669,7 @@ func (x *ListPluginVersionsResponse) GetPluginVersions() []*PluginVersion {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginVersionsResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
@@ -1446,6 +1677,7 @@ func (x *ListPluginVersionsResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type CreatePluginRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1454,12 +1686,18 @@ type CreatePluginRequest struct {
 	// The owner of the plugin. This must be either the name
 	// of the authenticated user or an organization the user is
 	// authorized to create plugins in.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the plugin, i.e. "protoc-gen-go".
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Whether the created plugin should be available to any user
 	// or only those authorized through organization membership
 	// or being the creator.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Visibility PluginVisibility `protobuf:"varint,3,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.PluginVisibility" json:"visibility,omitempty"`
 }
 
@@ -1495,6 +1733,7 @@ func (*CreatePluginRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{18}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreatePluginRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -1502,6 +1741,7 @@ func (x *CreatePluginRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreatePluginRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -1509,6 +1749,7 @@ func (x *CreatePluginRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreatePluginRequest) GetVisibility() PluginVisibility {
 	if x != nil {
 		return x.Visibility
@@ -1516,12 +1757,15 @@ func (x *CreatePluginRequest) GetVisibility() PluginVisibility {
 	return PluginVisibility_PLUGIN_VISIBILITY_UNSPECIFIED
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type CreatePluginResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The created plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Plugin *Plugin `protobuf:"bytes,1,opt,name=plugin,proto3" json:"plugin,omitempty"`
 }
 
@@ -1557,6 +1801,7 @@ func (*CreatePluginResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{19}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreatePluginResponse) GetPlugin() *Plugin {
 	if x != nil {
 		return x.Plugin
@@ -1564,14 +1809,19 @@ func (x *CreatePluginResponse) GetPlugin() *Plugin {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type GetPluginRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 }
 
@@ -1607,6 +1857,7 @@ func (*GetPluginRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{20}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetPluginRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -1614,6 +1865,7 @@ func (x *GetPluginRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetPluginRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -1621,11 +1873,13 @@ func (x *GetPluginRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type GetPluginResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Plugin *Plugin `protobuf:"bytes,1,opt,name=plugin,proto3" json:"plugin,omitempty"`
 }
 
@@ -1661,6 +1915,7 @@ func (*GetPluginResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{21}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetPluginResponse) GetPlugin() *Plugin {
 	if x != nil {
 		return x.Plugin
@@ -1668,14 +1923,19 @@ func (x *GetPluginResponse) GetPlugin() *Plugin {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type DeletePluginRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the plugin to delete.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the plugin to delete.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 }
 
@@ -1711,6 +1971,7 @@ func (*DeletePluginRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{22}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *DeletePluginRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -1718,6 +1979,7 @@ func (x *DeletePluginRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *DeletePluginRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -1725,6 +1987,7 @@ func (x *DeletePluginRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type DeletePluginResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1763,17 +2026,24 @@ func (*DeletePluginResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{23}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type SetPluginContributorRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The ID of the plugin for which the user's role will be set.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginId string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 	// The ID of the user whose role will be set.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	// The role to assign to the user.
 	// Setting UNSPECIFIED means removing the user's role.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginRole PluginRole `protobuf:"varint,3,opt,name=plugin_role,json=pluginRole,proto3,enum=buf.alpha.registry.v1alpha1.PluginRole" json:"plugin_role,omitempty"`
 }
 
@@ -1809,6 +2079,7 @@ func (*SetPluginContributorRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{24}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *SetPluginContributorRequest) GetPluginId() string {
 	if x != nil {
 		return x.PluginId
@@ -1816,6 +2087,7 @@ func (x *SetPluginContributorRequest) GetPluginId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *SetPluginContributorRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
@@ -1823,6 +2095,7 @@ func (x *SetPluginContributorRequest) GetUserId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *SetPluginContributorRequest) GetPluginRole() PluginRole {
 	if x != nil {
 		return x.PluginRole
@@ -1830,6 +2103,7 @@ func (x *SetPluginContributorRequest) GetPluginRole() PluginRole {
 	return PluginRole_PLUGIN_ROLE_UNSPECIFIED
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type SetPluginContributorResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1868,16 +2142,22 @@ func (*SetPluginContributorResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{25}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListPluginContributorsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginId string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Reverse bool `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListPluginContributorsRequest) Reset() {
@@ -1912,6 +2192,7 @@ func (*ListPluginContributorsRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{26}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginContributorsRequest) GetPluginId() string {
 	if x != nil {
 		return x.PluginId
@@ -1919,6 +2200,7 @@ func (x *ListPluginContributorsRequest) GetPluginId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginContributorsRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -1926,6 +2208,7 @@ func (x *ListPluginContributorsRequest) GetPageSize() uint32 {
 	return 0
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginContributorsRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -1933,6 +2216,7 @@ func (x *ListPluginContributorsRequest) GetPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginContributorsRequest) GetReverse() bool {
 	if x != nil {
 		return x.Reverse
@@ -1940,13 +2224,17 @@ func (x *ListPluginContributorsRequest) GetReverse() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListPluginContributorsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Users []*PluginContributor `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
 	// There are no more pages if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -1982,6 +2270,7 @@ func (*ListPluginContributorsResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{27}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginContributorsResponse) GetUsers() []*PluginContributor {
 	if x != nil {
 		return x.Users
@@ -1989,6 +2278,7 @@ func (x *ListPluginContributorsResponse) GetUsers() []*PluginContributor {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListPluginContributorsResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
@@ -1996,16 +2286,23 @@ func (x *ListPluginContributorsResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type DeprecatePluginRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// A message shown along with the deprecation warning for this plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Message string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 }
 
@@ -2041,6 +2338,7 @@ func (*DeprecatePluginRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{28}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *DeprecatePluginRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -2048,6 +2346,7 @@ func (x *DeprecatePluginRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *DeprecatePluginRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -2055,6 +2354,7 @@ func (x *DeprecatePluginRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *DeprecatePluginRequest) GetMessage() string {
 	if x != nil {
 		return x.Message
@@ -2062,6 +2362,7 @@ func (x *DeprecatePluginRequest) GetMessage() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type DeprecatePluginResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2100,14 +2401,19 @@ func (*DeprecatePluginResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{29}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type UndeprecatePluginRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the plugin.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 }
 
@@ -2143,6 +2449,7 @@ func (*UndeprecatePluginRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{30}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *UndeprecatePluginRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -2150,6 +2457,7 @@ func (x *UndeprecatePluginRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *UndeprecatePluginRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -2157,6 +2465,7 @@ func (x *UndeprecatePluginRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type UndeprecatePluginResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2195,14 +2504,19 @@ func (*UndeprecatePluginResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{31}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type GetTemplateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 }
 
@@ -2238,6 +2552,7 @@ func (*GetTemplateRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{32}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetTemplateRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -2245,6 +2560,7 @@ func (x *GetTemplateRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetTemplateRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -2252,11 +2568,13 @@ func (x *GetTemplateRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type GetTemplateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Template *Template `protobuf:"bytes,1,opt,name=template,proto3" json:"template,omitempty"`
 }
 
@@ -2292,6 +2610,7 @@ func (*GetTemplateResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{33}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetTemplateResponse) GetTemplate() *Template {
 	if x != nil {
 		return x.Template
@@ -2299,15 +2618,20 @@ func (x *GetTemplateResponse) GetTemplate() *Template {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListTemplatesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageSize uint32 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Reverse bool `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListTemplatesRequest) Reset() {
@@ -2342,6 +2666,7 @@ func (*ListTemplatesRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{34}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplatesRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -2349,6 +2674,7 @@ func (x *ListTemplatesRequest) GetPageSize() uint32 {
 	return 0
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplatesRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -2356,6 +2682,7 @@ func (x *ListTemplatesRequest) GetPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplatesRequest) GetReverse() bool {
 	if x != nil {
 		return x.Reverse
@@ -2363,13 +2690,17 @@ func (x *ListTemplatesRequest) GetReverse() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListTemplatesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Templates []*Template `protobuf:"bytes,1,rep,name=templates,proto3" json:"templates,omitempty"`
 	// There are no more pages if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -2405,6 +2736,7 @@ func (*ListTemplatesResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{35}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplatesResponse) GetTemplates() []*Template {
 	if x != nil {
 		return x.Templates
@@ -2412,6 +2744,7 @@ func (x *ListTemplatesResponse) GetTemplates() []*Template {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplatesResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
@@ -2419,15 +2752,20 @@ func (x *ListTemplatesResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListTemplatesUserCanAccessRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageSize uint32 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Reverse bool `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListTemplatesUserCanAccessRequest) Reset() {
@@ -2462,6 +2800,7 @@ func (*ListTemplatesUserCanAccessRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{36}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplatesUserCanAccessRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -2469,6 +2808,7 @@ func (x *ListTemplatesUserCanAccessRequest) GetPageSize() uint32 {
 	return 0
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplatesUserCanAccessRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -2476,6 +2816,7 @@ func (x *ListTemplatesUserCanAccessRequest) GetPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplatesUserCanAccessRequest) GetReverse() bool {
 	if x != nil {
 		return x.Reverse
@@ -2483,13 +2824,17 @@ func (x *ListTemplatesUserCanAccessRequest) GetReverse() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListTemplatesUserCanAccessResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Templates []*Template `protobuf:"bytes,1,rep,name=templates,proto3" json:"templates,omitempty"`
 	// There are no more pages if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -2525,6 +2870,7 @@ func (*ListTemplatesUserCanAccessResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{37}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplatesUserCanAccessResponse) GetTemplates() []*Template {
 	if x != nil {
 		return x.Templates
@@ -2532,6 +2878,7 @@ func (x *ListTemplatesUserCanAccessResponse) GetTemplates() []*Template {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplatesUserCanAccessResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
@@ -2539,17 +2886,24 @@ func (x *ListTemplatesUserCanAccessResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListUserTemplatesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the templates to list for.
-	Owner    string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Reverse bool `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListUserTemplatesRequest) Reset() {
@@ -2584,6 +2938,7 @@ func (*ListUserTemplatesRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{38}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserTemplatesRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -2591,6 +2946,7 @@ func (x *ListUserTemplatesRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserTemplatesRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -2598,6 +2954,7 @@ func (x *ListUserTemplatesRequest) GetPageSize() uint32 {
 	return 0
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserTemplatesRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -2605,6 +2962,7 @@ func (x *ListUserTemplatesRequest) GetPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserTemplatesRequest) GetReverse() bool {
 	if x != nil {
 		return x.Reverse
@@ -2612,13 +2970,17 @@ func (x *ListUserTemplatesRequest) GetReverse() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListUserTemplatesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Templates []*Template `protobuf:"bytes,1,rep,name=templates,proto3" json:"templates,omitempty"`
 	// There are no more pages if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -2654,6 +3016,7 @@ func (*ListUserTemplatesResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{39}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserTemplatesResponse) GetTemplates() []*Template {
 	if x != nil {
 		return x.Templates
@@ -2661,6 +3024,7 @@ func (x *ListUserTemplatesResponse) GetTemplates() []*Template {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListUserTemplatesResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
@@ -2668,16 +3032,23 @@ func (x *ListUserTemplatesResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type GetTemplateVersionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the template the version belongs to.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the template the version belongs to.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The name of the version.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -2713,6 +3084,7 @@ func (*GetTemplateVersionRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{40}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetTemplateVersionRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -2720,6 +3092,7 @@ func (x *GetTemplateVersionRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetTemplateVersionRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -2727,6 +3100,7 @@ func (x *GetTemplateVersionRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetTemplateVersionRequest) GetVersion() string {
 	if x != nil {
 		return x.Version
@@ -2734,11 +3108,13 @@ func (x *GetTemplateVersionRequest) GetVersion() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type GetTemplateVersionResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	TemplateVersion *TemplateVersion `protobuf:"bytes,1,opt,name=template_version,json=templateVersion,proto3" json:"template_version,omitempty"`
 }
 
@@ -2774,6 +3150,7 @@ func (*GetTemplateVersionResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{41}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *GetTemplateVersionResponse) GetTemplateVersion() *TemplateVersion {
 	if x != nil {
 		return x.TemplateVersion
@@ -2781,17 +3158,24 @@ func (x *GetTemplateVersionResponse) GetTemplateVersion() *TemplateVersion {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListOrganizationTemplatesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The organization of the templates to list for.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Organization string `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
-	PageSize     uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Reverse bool `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListOrganizationTemplatesRequest) Reset() {
@@ -2826,6 +3210,7 @@ func (*ListOrganizationTemplatesRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{42}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationTemplatesRequest) GetOrganization() string {
 	if x != nil {
 		return x.Organization
@@ -2833,6 +3218,7 @@ func (x *ListOrganizationTemplatesRequest) GetOrganization() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationTemplatesRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -2840,6 +3226,7 @@ func (x *ListOrganizationTemplatesRequest) GetPageSize() uint32 {
 	return 0
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationTemplatesRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -2847,6 +3234,7 @@ func (x *ListOrganizationTemplatesRequest) GetPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationTemplatesRequest) GetReverse() bool {
 	if x != nil {
 		return x.Reverse
@@ -2854,13 +3242,17 @@ func (x *ListOrganizationTemplatesRequest) GetReverse() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListOrganizationTemplatesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Templates []*Template `protobuf:"bytes,1,rep,name=templates,proto3" json:"templates,omitempty"`
 	// There are no more pages if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -2896,6 +3288,7 @@ func (*ListOrganizationTemplatesResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{43}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationTemplatesResponse) GetTemplates() []*Template {
 	if x != nil {
 		return x.Templates
@@ -2903,6 +3296,7 @@ func (x *ListOrganizationTemplatesResponse) GetTemplates() []*Template {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListOrganizationTemplatesResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
@@ -2910,20 +3304,30 @@ func (x *ListOrganizationTemplatesResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListTemplateVersionsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the template to list versions for.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the template to list versions for.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The number of items to return.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageSize uint32 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageToken string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,5,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Reverse bool `protobuf:"varint,5,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListTemplateVersionsRequest) Reset() {
@@ -2958,6 +3362,7 @@ func (*ListTemplateVersionsRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{44}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateVersionsRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -2965,6 +3370,7 @@ func (x *ListTemplateVersionsRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateVersionsRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -2972,6 +3378,7 @@ func (x *ListTemplateVersionsRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateVersionsRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -2979,6 +3386,7 @@ func (x *ListTemplateVersionsRequest) GetPageSize() uint32 {
 	return 0
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateVersionsRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -2986,6 +3394,7 @@ func (x *ListTemplateVersionsRequest) GetPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateVersionsRequest) GetReverse() bool {
 	if x != nil {
 		return x.Reverse
@@ -2993,13 +3402,17 @@ func (x *ListTemplateVersionsRequest) GetReverse() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListTemplateVersionsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	TemplateVersions []*TemplateVersion `protobuf:"bytes,1,rep,name=template_versions,json=templateVersions,proto3" json:"template_versions,omitempty"`
 	// There are no more pages if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -3035,6 +3448,7 @@ func (*ListTemplateVersionsResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{45}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateVersionsResponse) GetTemplateVersions() []*TemplateVersion {
 	if x != nil {
 		return x.TemplateVersions
@@ -3042,6 +3456,7 @@ func (x *ListTemplateVersionsResponse) GetTemplateVersions() []*TemplateVersion 
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateVersionsResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
@@ -3049,6 +3464,7 @@ func (x *ListTemplateVersionsResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type CreateTemplateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3056,15 +3472,23 @@ type CreateTemplateRequest struct {
 
 	// The owner of the template. This will be either a username
 	// or organization name.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the template version, i.e. "grpc-go".
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Whether the created template should be available to any user
 	// or only those authorized through organization membership
 	// or being the creator.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Visibility PluginVisibility `protobuf:"varint,3,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.PluginVisibility" json:"visibility,omitempty"`
 	// The plugins and associated runtime configuration that make
 	// up this template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginConfigs []*PluginConfig `protobuf:"bytes,4,rep,name=plugin_configs,json=pluginConfigs,proto3" json:"plugin_configs,omitempty"`
 }
 
@@ -3100,6 +3524,7 @@ func (*CreateTemplateRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{46}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreateTemplateRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -3107,6 +3532,7 @@ func (x *CreateTemplateRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreateTemplateRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -3114,6 +3540,7 @@ func (x *CreateTemplateRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreateTemplateRequest) GetVisibility() PluginVisibility {
 	if x != nil {
 		return x.Visibility
@@ -3121,6 +3548,7 @@ func (x *CreateTemplateRequest) GetVisibility() PluginVisibility {
 	return PluginVisibility_PLUGIN_VISIBILITY_UNSPECIFIED
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreateTemplateRequest) GetPluginConfigs() []*PluginConfig {
 	if x != nil {
 		return x.PluginConfigs
@@ -3128,12 +3556,15 @@ func (x *CreateTemplateRequest) GetPluginConfigs() []*PluginConfig {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type CreateTemplateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The created template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Template *Template `protobuf:"bytes,1,opt,name=template,proto3" json:"template,omitempty"`
 }
 
@@ -3169,6 +3600,7 @@ func (*CreateTemplateResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{47}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreateTemplateResponse) GetTemplate() *Template {
 	if x != nil {
 		return x.Template
@@ -3176,14 +3608,19 @@ func (x *CreateTemplateResponse) GetTemplate() *Template {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type DeleteTemplateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the template to delete.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the template to delete.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 }
 
@@ -3219,6 +3656,7 @@ func (*DeleteTemplateRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{48}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *DeleteTemplateRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -3226,6 +3664,7 @@ func (x *DeleteTemplateRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *DeleteTemplateRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -3233,6 +3672,7 @@ func (x *DeleteTemplateRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type DeleteTemplateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3271,20 +3711,29 @@ func (*DeleteTemplateResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{49}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type CreateTemplateVersionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The name of the template version, i.e. "v1".
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The owner of the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	TemplateOwner string `protobuf:"bytes,2,opt,name=template_owner,json=templateOwner,proto3" json:"template_owner,omitempty"`
 	// The name of the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	TemplateName string `protobuf:"bytes,3,opt,name=template_name,json=templateName,proto3" json:"template_name,omitempty"`
 	// A map from plugin owner and name to version for the plugins
 	// defined in the template. Every plugin in the template
 	// must have a corresponding version in this array.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PluginVersions []*PluginVersionMapping `protobuf:"bytes,4,rep,name=plugin_versions,json=pluginVersions,proto3" json:"plugin_versions,omitempty"`
 }
 
@@ -3320,6 +3769,7 @@ func (*CreateTemplateVersionRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{50}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreateTemplateVersionRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -3327,6 +3777,7 @@ func (x *CreateTemplateVersionRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreateTemplateVersionRequest) GetTemplateOwner() string {
 	if x != nil {
 		return x.TemplateOwner
@@ -3334,6 +3785,7 @@ func (x *CreateTemplateVersionRequest) GetTemplateOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreateTemplateVersionRequest) GetTemplateName() string {
 	if x != nil {
 		return x.TemplateName
@@ -3341,6 +3793,7 @@ func (x *CreateTemplateVersionRequest) GetTemplateName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreateTemplateVersionRequest) GetPluginVersions() []*PluginVersionMapping {
 	if x != nil {
 		return x.PluginVersions
@@ -3348,12 +3801,15 @@ func (x *CreateTemplateVersionRequest) GetPluginVersions() []*PluginVersionMappi
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type CreateTemplateVersionResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The created template version.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	TemplateVersion *TemplateVersion `protobuf:"bytes,1,opt,name=template_version,json=templateVersion,proto3" json:"template_version,omitempty"`
 }
 
@@ -3389,6 +3845,7 @@ func (*CreateTemplateVersionResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{51}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *CreateTemplateVersionResponse) GetTemplateVersion() *TemplateVersion {
 	if x != nil {
 		return x.TemplateVersion
@@ -3396,17 +3853,24 @@ func (x *CreateTemplateVersionResponse) GetTemplateVersion() *TemplateVersion {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type SetTemplateContributorRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The ID of the template for which the user's role will be set.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	TemplateId string `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`
 	// The ID of the user whose role will be set.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	// The role to assign to the user.
 	// Setting UNSPECIFIED means removing the user's role.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	TemplateRole TemplateRole `protobuf:"varint,3,opt,name=template_role,json=templateRole,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"template_role,omitempty"`
 }
 
@@ -3442,6 +3906,7 @@ func (*SetTemplateContributorRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{52}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *SetTemplateContributorRequest) GetTemplateId() string {
 	if x != nil {
 		return x.TemplateId
@@ -3449,6 +3914,7 @@ func (x *SetTemplateContributorRequest) GetTemplateId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *SetTemplateContributorRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
@@ -3456,6 +3922,7 @@ func (x *SetTemplateContributorRequest) GetUserId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *SetTemplateContributorRequest) GetTemplateRole() TemplateRole {
 	if x != nil {
 		return x.TemplateRole
@@ -3463,6 +3930,7 @@ func (x *SetTemplateContributorRequest) GetTemplateRole() TemplateRole {
 	return TemplateRole_TEMPLATE_ROLE_UNSPECIFIED
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type SetTemplateContributorResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3501,16 +3969,22 @@ func (*SetTemplateContributorResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{53}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListTemplateContributorsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	TemplateId string `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`
-	PageSize   uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	PageSize uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse   bool   `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
+	Reverse bool `protobuf:"varint,4,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListTemplateContributorsRequest) Reset() {
@@ -3545,6 +4019,7 @@ func (*ListTemplateContributorsRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{54}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateContributorsRequest) GetTemplateId() string {
 	if x != nil {
 		return x.TemplateId
@@ -3552,6 +4027,7 @@ func (x *ListTemplateContributorsRequest) GetTemplateId() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateContributorsRequest) GetPageSize() uint32 {
 	if x != nil {
 		return x.PageSize
@@ -3559,6 +4035,7 @@ func (x *ListTemplateContributorsRequest) GetPageSize() uint32 {
 	return 0
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateContributorsRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
@@ -3566,6 +4043,7 @@ func (x *ListTemplateContributorsRequest) GetPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateContributorsRequest) GetReverse() bool {
 	if x != nil {
 		return x.Reverse
@@ -3573,13 +4051,17 @@ func (x *ListTemplateContributorsRequest) GetReverse() bool {
 	return false
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type ListTemplateContributorsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Users []*TemplateContributor `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
 	// There are no more pages if this is empty.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 }
 
@@ -3615,6 +4097,7 @@ func (*ListTemplateContributorsResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{55}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateContributorsResponse) GetUsers() []*TemplateContributor {
 	if x != nil {
 		return x.Users
@@ -3622,6 +4105,7 @@ func (x *ListTemplateContributorsResponse) GetUsers() []*TemplateContributor {
 	return nil
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *ListTemplateContributorsResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
@@ -3629,16 +4113,23 @@ func (x *ListTemplateContributorsResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type DeprecateTemplateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// A message shown along with the deprecation warning for this template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Message string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 }
 
@@ -3674,6 +4165,7 @@ func (*DeprecateTemplateRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{56}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *DeprecateTemplateRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -3681,6 +4173,7 @@ func (x *DeprecateTemplateRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *DeprecateTemplateRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -3688,6 +4181,7 @@ func (x *DeprecateTemplateRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *DeprecateTemplateRequest) GetMessage() string {
 	if x != nil {
 		return x.Message
@@ -3695,6 +4189,7 @@ func (x *DeprecateTemplateRequest) GetMessage() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type DeprecateTemplateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3733,14 +4228,19 @@ func (*DeprecateTemplateResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{57}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type UndeprecateTemplateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The owner of the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the template.
+	//
+	// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 }
 
@@ -3776,6 +4276,7 @@ func (*UndeprecateTemplateRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{58}
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *UndeprecateTemplateRequest) GetOwner() string {
 	if x != nil {
 		return x.Owner
@@ -3783,6 +4284,7 @@ func (x *UndeprecateTemplateRequest) GetOwner() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 func (x *UndeprecateTemplateRequest) GetName() string {
 	if x != nil {
 		return x.Name
@@ -3790,6 +4292,7 @@ func (x *UndeprecateTemplateRequest) GetName() string {
 	return ""
 }
 
+// Deprecated: The entire proto file buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated.
 type UndeprecateTemplateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
