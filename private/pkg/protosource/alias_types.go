@@ -80,6 +80,34 @@ const (
 	// FieldOptionsJSTypeJSNumber is an alias.
 	FieldOptionsJSTypeJSNumber FieldOptionsJSType = 2
 
+	// FieldOptionsOptionRetentionUnknown is an alias.
+	FieldOptionsOptionRetentionUnknown FieldOptionsOptionRetention = 0
+	// FieldOptionsOptionRetentionRuntime is an alias.
+	FieldOptionsOptionRetentionRuntime FieldOptionsOptionRetention = 1
+	// FieldOptionsOptionRetentionSource is an alias.
+	FieldOptionsOptionRetentionSource FieldOptionsOptionRetention = 2
+
+	// FieldOptionsOptionTargetTypeUnknown is an alias.
+	FieldOptionsOptionTargetTypeUnknown FieldOptionsOptionTargetType = 0
+	// FieldOptionsOptionTargetTypeFile is an alias.
+	FieldOptionsOptionTargetTypeFile FieldOptionsOptionTargetType = 1
+	// FieldOptionsOptionTargetTypeExtensionRange is an alias.
+	FieldOptionsOptionTargetTypeExtensionRange FieldOptionsOptionTargetType = 2
+	// FieldOptionsOptionTargetTypeMessage is an alias.
+	FieldOptionsOptionTargetTypeMessage FieldOptionsOptionTargetType = 3
+	// FieldOptionsOptionTargetTypeField is an alias.
+	FieldOptionsOptionTargetTypeField FieldOptionsOptionTargetType = 4
+	// FieldOptionsOptionTargetTypeOneof is an alias.
+	FieldOptionsOptionTargetTypeOneof FieldOptionsOptionTargetType = 5
+	// FieldOptionsOptionTargetTypeEnum is an alias.
+	FieldOptionsOptionTargetTypeEnum FieldOptionsOptionTargetType = 6
+	// FieldOptionsOptionTargetTypeEnumEntry is an alias.
+	FieldOptionsOptionTargetTypeEnumEntry FieldOptionsOptionTargetType = 7
+	// FieldOptionsOptionTargetTypeService is an alias.
+	FieldOptionsOptionTargetTypeService FieldOptionsOptionTargetType = 8
+	// FieldOptionsOptionTargetTypeMethod is an alias.
+	FieldOptionsOptionTargetTypeMethod FieldOptionsOptionTargetType = 9
+
 	// FileOptionsOptimizeModeSpeed is an alias.
 	FileOptionsOptimizeModeSpeed FileOptionsOptimizeMode = 1
 	// FileOptionsOptimizeModeCodeSize is an alias.
@@ -168,6 +196,42 @@ var (
 		FieldOptionsJSTypeJSNormal: "JS_NORMAL",
 		FieldOptionsJSTypeJSString: "JS_STRING",
 		FieldOptionsJSTypeJSNumber: "JS_NUMBER",
+	}
+
+	numberToFieldOptionsOptionRetention = map[int32]FieldOptionsOptionRetention{
+		0: FieldOptionsOptionRetentionUnknown,
+		1: FieldOptionsOptionRetentionRuntime,
+		2: FieldOptionsOptionRetentionSource,
+	}
+	fieldOptionsOptionRetentionToString = map[FieldOptionsOptionRetention]string{
+		FieldOptionsOptionRetentionUnknown: "RETENTION_UNKNOWN",
+		FieldOptionsOptionRetentionRuntime: "RETENTION_RUNTIME",
+		FieldOptionsOptionRetentionSource:  "RETENTION_SOURCE",
+	}
+
+	numberToFieldOptionsOptionTargetType = map[int32]FieldOptionsOptionTargetType{
+		0: FieldOptionsOptionTargetTypeUnknown,
+		1: FieldOptionsOptionTargetTypeFile,
+		2: FieldOptionsOptionTargetTypeExtensionRange,
+		3: FieldOptionsOptionTargetTypeMessage,
+		4: FieldOptionsOptionTargetTypeField,
+		5: FieldOptionsOptionTargetTypeOneof,
+		6: FieldOptionsOptionTargetTypeEnum,
+		7: FieldOptionsOptionTargetTypeEnumEntry,
+		8: FieldOptionsOptionTargetTypeService,
+		9: FieldOptionsOptionTargetTypeMethod,
+	}
+	fieldOptionsOptionTargetTypeToString = map[FieldOptionsOptionTargetType]string{
+		FieldOptionsOptionTargetTypeUnknown:        "TARGET_TYPE_UNKNOWN",
+		FieldOptionsOptionTargetTypeFile:           "TARGET_TYPE_FILE",
+		FieldOptionsOptionTargetTypeExtensionRange: "TARGET_TYPE_EXTENSION_RANGE",
+		FieldOptionsOptionTargetTypeMessage:        "TARGET_TYPE_MESSAGE",
+		FieldOptionsOptionTargetTypeField:          "TARGET_TYPE_FIELD",
+		FieldOptionsOptionTargetTypeOneof:          "TARGET_TYPE_ONEOF",
+		FieldOptionsOptionTargetTypeEnum:           "TARGET_TYPE_ENUM",
+		FieldOptionsOptionTargetTypeEnumEntry:      "TARGET_TYPE_ENUM_ENTRY",
+		FieldOptionsOptionTargetTypeService:        "TARGET_TYPE_SERVICE",
+		FieldOptionsOptionTargetTypeMethod:         "TARGET_TYPE_METHOD",
 	}
 
 	numberToFileOptionsOptimizeMode = map[int32]FileOptionsOptimizeMode{
@@ -269,6 +333,46 @@ func getFieldOptionsJSType(v descriptorpb.FieldOptions_JSType) (FieldOptionsJSTy
 	t, ok := numberToFieldOptionsJSType[int32(v)]
 	if !ok {
 		return 0, fmt.Errorf("no FieldOptionsJSType for %v", v)
+	}
+	return t, nil
+}
+
+// FieldOptionsOptionRetention aliases descriptorpb.FieldOptions_OptionRetention.
+type FieldOptionsOptionRetention int32
+
+// String returns the string representation of the FieldOptionsOptionRetention.
+func (r FieldOptionsOptionRetention) String() string {
+	s, ok := fieldOptionsOptionRetentionToString[r]
+	if !ok {
+		return strconv.Itoa(int(r))
+	}
+	return s
+}
+
+func getFieldOptionsOptionRetention(v descriptorpb.FieldOptions_OptionRetention) (FieldOptionsOptionRetention, error) {
+	t, ok := numberToFieldOptionsOptionRetention[int32(v)]
+	if !ok {
+		return 0, fmt.Errorf("no FieldOptionsOptionRetention for %v", v)
+	}
+	return t, nil
+}
+
+// FieldOptionsOptionTargetType aliases descriptorpb.FieldOptions_OptionTargetType.
+type FieldOptionsOptionTargetType int32
+
+// String returns the string representation of the FieldOptionsOptionTargetType.
+func (y FieldOptionsOptionTargetType) String() string {
+	s, ok := fieldOptionsOptionTargetTypeToString[y]
+	if !ok {
+		return strconv.Itoa(int(y))
+	}
+	return s
+}
+
+func getFieldOptionsOptionTargetType(v descriptorpb.FieldOptions_OptionTargetType) (FieldOptionsOptionTargetType, error) {
+	t, ok := numberToFieldOptionsOptionTargetType[int32(v)]
+	if !ok {
+		return 0, fmt.Errorf("no FieldOptionsOptionTargetType for %v", v)
 	}
 	return t, nil
 }

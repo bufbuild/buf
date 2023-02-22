@@ -105,8 +105,8 @@ func featureName(feature pluginpb.CodeGeneratorResponse_Feature) string {
 }
 
 func fileHasProto3Optional(fileDescriptorProto *descriptorpb.FileDescriptorProto) bool {
-	if fileDescriptorProto.GetSyntax() != "proto3" {
-		// can't have proto3 optional unless syntax is proto3
+	if fileDescriptorProto.GetSyntax() != "proto3" && fileDescriptorProto.GetSyntax() != "editions" {
+		// can't have proto3 optional unless syntax is proto3 or editions
 		return false
 	}
 	for _, msg := range fileDescriptorProto.MessageType {

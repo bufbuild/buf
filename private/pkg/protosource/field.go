@@ -32,6 +32,9 @@ type field struct {
 	jsonName       string
 	jsType         FieldOptionsJSType
 	cType          FieldOptionsCType
+	retention      FieldOptionsOptionRetention
+	target         FieldOptionsOptionTargetType
+	debugRedact    bool
 	packed         *bool
 	deprecated     bool
 	numberPath     []int32
@@ -58,6 +61,9 @@ func newField(
 	jsonName string,
 	jsType FieldOptionsJSType,
 	cType FieldOptionsCType,
+	retention FieldOptionsOptionRetention,
+	target FieldOptionsOptionTargetType,
+	debugRedact bool,
 	packed *bool,
 	deprecated bool,
 	numberPath []int32,
@@ -83,6 +89,9 @@ func newField(
 		jsonName:                  jsonName,
 		jsType:                    jsType,
 		cType:                     cType,
+		retention:                 retention,
+		target:                    target,
+		debugRedact:               debugRedact,
 		packed:                    packed,
 		deprecated:                deprecated,
 		numberPath:                numberPath,
@@ -143,6 +152,18 @@ func (f *field) JSType() FieldOptionsJSType {
 
 func (f *field) CType() FieldOptionsCType {
 	return f.cType
+}
+
+func (f *field) Retention() FieldOptionsOptionRetention {
+	return f.retention
+}
+
+func (f *field) Target() FieldOptionsOptionTargetType {
+	return f.target
+}
+
+func (f *field) DebugRedact() bool {
+	return f.debugRedact
 }
 
 func (f *field) Packed() *bool {

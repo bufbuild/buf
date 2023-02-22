@@ -44,6 +44,8 @@ const (
 	SyntaxProto2
 	// SyntaxProto3 represents the proto3 syntax.
 	SyntaxProto3
+	// SyntaxEditions represents the editions syntax.
+	SyntaxEditions
 )
 
 // Syntax is the syntax of a file.
@@ -58,6 +60,8 @@ func (s Syntax) String() string {
 		return "proto2"
 	case SyntaxProto3:
 		return "proto3"
+	case SyntaxEditions:
+		return "editions"
 	default:
 		return strconv.Itoa(int(s))
 	}
@@ -312,6 +316,7 @@ type Enum interface {
 	ReservedEnumRanges() []EnumRange
 
 	AllowAlias() bool
+	DeprecatedLegacyJSONFieldConflicts() bool
 	Deprecated() bool
 	AllowAliasLocation() Location
 
@@ -353,6 +358,7 @@ type Message interface {
 
 	MessageSetWireFormat() bool
 	NoStandardDescriptorAccessor() bool
+	DeprecatedLegacyJSONFieldConflicts() bool
 	Deprecated() bool
 	MessageSetWireFormatLocation() Location
 	NoStandardDescriptorAccessorLocation() Location
@@ -375,6 +381,9 @@ type Field interface {
 	JSONName() string
 	JSType() FieldOptionsJSType
 	CType() FieldOptionsCType
+	Retention() FieldOptionsOptionRetention
+	Target() FieldOptionsOptionTargetType
+	DebugRedact() bool
 	// Set vs unset matters for packed
 	// See the comments on descriptor.proto
 	Packed() *bool
