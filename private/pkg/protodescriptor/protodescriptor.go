@@ -28,6 +28,7 @@ import (
 //
 // Note that a FileDescriptor is not necessarily validated, unlike other interfaces in buf.
 type FileDescriptor interface {
+	proto.Message
 	GetName() string
 	GetPackage() string
 	GetDependency() []string
@@ -94,6 +95,7 @@ func FileDescriptorProtoForFileDescriptor(fileDescriptor FileDescriptor) *descri
 	if edition := fileDescriptor.GetEdition(); edition != "" {
 		fileDescriptorProto.Edition = proto.String(edition)
 	}
+	fileDescriptorProto.ProtoReflect().SetUnknown(fileDescriptor.ProtoReflect().GetUnknown())
 	return fileDescriptorProto
 }
 

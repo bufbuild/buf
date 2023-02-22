@@ -345,7 +345,7 @@ func fileDescriptorProtoToProtoImageFile(
 	if len(unusedDependencyIndexes) == 0 {
 		unusedDependencyIndexes = nil
 	}
-	return &imagev1.ImageFile{
+	resultFile := &imagev1.ImageFile{
 		Name:             fileDescriptorProto.Name,
 		Package:          fileDescriptorProto.Package,
 		Syntax:           fileDescriptorProto.Syntax,
@@ -368,6 +368,10 @@ func fileDescriptorProtoToProtoImageFile(
 			ModuleInfo:          protoModuleInfo,
 		},
 	}
+	// TODO: What if file descriptor's unknown fields contain the image file's buf_extension?
+	//       We should probably examine the unknown fields and discard field 8042 if found.
+	resultFile.ProtoReflect().SetUnknown(fileDescriptorProto.ProtoReflect().GetUnknown())
+	return resultFile
 }
 
 func imageToCodeGeneratorRequest(
