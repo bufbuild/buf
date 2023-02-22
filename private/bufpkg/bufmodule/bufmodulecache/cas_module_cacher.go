@@ -172,7 +172,7 @@ func (c *casModuleCacher) PutModule(
 			return fmt.Errorf("failed to find digest for: %q", path)
 		}
 		blobHexDigest := blobDigest.Hex()
-		blobs := module.Blobs()
+		blobs := module.BlobSet()
 		if _, ok := writtenDigests[blobHexDigest]; ok {
 			// We've already written this blob
 			continue

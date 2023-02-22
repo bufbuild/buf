@@ -284,7 +284,7 @@ func (m *module) Manifest() manifest.Manifest {
 	return m.manifest
 }
 
-func (m *module) Blobs() manifest.BlobSet {
+func (m *module) BlobSet() manifest.BlobSet {
 	return m.blobs
 }
 

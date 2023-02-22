@@ -113,8 +113,8 @@ type Module interface {
 	LintConfig() *buflintconfig.Config
 	// Manifest returns the manifest for the module (possibly empty).
 	Manifest() manifest.Manifest
-	// Blobs return the raw data for the module (possibly empty).
-	Blobs() manifest.BlobSet
+	// BlobSet return the raw data for the module (possibly empty).
+	BlobSet() manifest.BlobSet
 
 	getSourceReadBucket() storage.ReadBucket
 	// Note this *can* be nil if we did not build from a named module.
