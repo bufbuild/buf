@@ -200,6 +200,7 @@ type File interface {
 	FileImports() []FileImport
 	Services() []Service
 	Extensions() []Field
+	Edition() string
 
 	CsharpNamespace() string
 	GoPackage() string
