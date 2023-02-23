@@ -15,12 +15,12 @@
 package bufmanifest
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 // NewBucketFromManifestBlobs builds a storage bucket from a manifest blob and a
@@ -32,25 +32,12 @@ func NewBucketFromManifestBlobs(
 	ctx context.Context,
 	manifestBlob *modulev1alpha1.Blob,
 	blobs []*modulev1alpha1.Blob,
-) (manifest.ReadBucket, error) {
-	if _, err := NewBlobFromProto(manifestBlob); err != nil {
+) (storage.ReadBucket, error) {
+	parsedManifest, err := NewManifestFromProto(ctx, manifestBlob)
+	if err != nil {
 		return nil, fmt.Errorf("invalid manifest: %w", err)
 	}
-	parsedManifest, err := manifest.NewFromReader(
-		bytes.NewReader(manifestBlob.Content),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("parse manifest content: %w", err)
-	}
-	var memBlobs []manifest.Blob
-	for i, modBlob := range blobs {
-		memBlob, err := NewBlobFromProto(modBlob)
-		if err != nil {
-			return nil, fmt.Errorf("invalid blob at index %d: %w", i, err)
-		}
-		memBlobs = append(memBlobs, memBlob)
-	}
-	blobSet, err := manifest.NewBlobSet(ctx, memBlobs)
+	blobSet, err := NewBlobSetFromProto(ctx, blobs)
 	if err != nil {
 		return nil, fmt.Errorf("invalid blobs: %w", err)
 	}

@@ -114,16 +114,7 @@ func (c *casModuleCacher) GetModule(
 	if err != nil {
 		return nil, err
 	}
-	bucket, err := manifest.NewBucket(
-		*cacheManifest,
-		*blobSet,
-		manifest.BucketWithAllManifestBlobsValidation(),
-		manifest.BucketWithNoExtraBlobsValidation(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return bufmodule.NewModuleForBucket(ctx, bucket, bufmodule.ModuleWithManifestAndBlobs(*cacheManifest, *blobSet))
+	return bufmodule.NewModuleForManifestAndBlobSet(ctx, cacheManifest, blobSet)
 }
 
 func (c *casModuleCacher) PutModule(

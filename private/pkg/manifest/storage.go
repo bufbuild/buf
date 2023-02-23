@@ -102,19 +102,9 @@ func BucketWithNoExtraBlobsValidation() BucketOption {
 	}
 }
 
-// ReadBucket extends the storage.ReadBucket interface to add an accessor for the Manifest.
-type ReadBucket interface {
-	storage.ReadBucket
-	// Manifest returns the bucket's manifest.
-	// No mutations should be made to the returned manifest.
-	Manifest() Manifest
-	// Blobs returns the raw data stored in the bucket.
-	Blobs() BlobSet
-}
-
 // NewBucket takes a manifest and a blob set and builds a readable storage
 // bucket that contains the files in the manifest.
-func NewBucket(m Manifest, blobs BlobSet, opts ...BucketOption) (ReadBucket, error) {
+func NewBucket(m Manifest, blobs BlobSet, opts ...BucketOption) (storage.ReadBucket, error) {
 	var config bucketOptions
 	for _, option := range opts {
 		option(&config)

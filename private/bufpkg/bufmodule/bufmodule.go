@@ -111,10 +111,10 @@ type Module interface {
 	//
 	// This may be nil, since older versions of the module would not have this stored.
 	LintConfig() *buflintconfig.Config
-	// Manifest returns the manifest for the module (possibly empty).
-	Manifest() manifest.Manifest
-	// BlobSet return the raw data for the module (possibly empty).
-	BlobSet() manifest.BlobSet
+	// Manifest returns the manifest for the module (possibly nil).
+	Manifest() *manifest.Manifest
+	// BlobSet returns the raw data for the module (possibly nil).
+	BlobSet() *manifest.BlobSet
 
 	getSourceReadBucket() storage.ReadBucket
 	// Note this *can* be nil if we did not build from a named module.
@@ -151,14 +151,6 @@ func ModuleWithModuleIdentityAndCommit(moduleIdentity bufmoduleref.ModuleIdentit
 	}
 }
 
-// ModuleWithManifestAndBlobs is used to create a Module with a manifest.Manifest and blobs to support tamper proofing.
-func ModuleWithManifestAndBlobs(manifest manifest.Manifest, blobs manifest.BlobSet) ModuleOption {
-	return func(module *module) {
-		module.manifest = manifest
-		module.blobs = blobs
-	}
-}
-
 // NewModuleForBucket returns a new Module. It attempts to read dependencies
 // from a lock file in the read bucket.
 func NewModuleForBucket(
@@ -176,6 +168,16 @@ func NewModuleForProto(
 	options ...ModuleOption,
 ) (Module, error) {
 	return newModuleForProto(ctx, protoModule, options...)
+}
+
+// NewModuleForManifestAndBlobSet returns a new Module given the manifest and blobs.
+func NewModuleForManifestAndBlobSet(
+	ctx context.Context,
+	manifest *manifest.Manifest,
+	blobSet *manifest.BlobSet,
+	options ...ModuleOption,
+) (Module, error) {
+	return newModuleForManifestAndBlobSet(ctx, manifest, blobSet, options...)
 }
 
 // ModuleWithTargetPaths returns a new Module that specifies specific file or directory paths to build.
