@@ -30,6 +30,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// subdirectories under ~/.cache/buf/v2/{remote}/{owner}/{repo}
 const (
 	blobsDir     = "blobs"
 	commitsDir   = "commits"
@@ -62,10 +63,11 @@ func (c *casModuleCacher) GetModule(
 		if err != nil {
 			return nil, err
 		}
-		manifestHexDigest = strings.TrimSpace(string(manifestDigestBytes))
-		if manifestHexDigest == "" {
-			return nil, fmt.Errorf("invalid manifest digest found in %s", commitPath)
+		manifestDigest, err := manifest.NewDigestFromString(strings.TrimSpace(string(manifestDigestBytes)))
+		if err != nil {
+			return nil, err
 		}
+		manifestHexDigest = manifestDigest.Hex()
 	}
 	manifestPath := normalpath.Join(moduleBasedir, manifestsDir, manifestHexDigest[:2], manifestHexDigest[2:])
 	f, err := c.bucket.Get(ctx, manifestPath)
@@ -153,8 +155,7 @@ func (c *casModuleCacher) PutModule(
 		if _, ok := writtenDigests[blobHexDigest]; ok {
 			continue
 		}
-		blobs := module.BlobSet()
-		blob, found := blobs.BlobFor(blobDigest.String())
+		blob, found := module.BlobSet().BlobFor(blobDigest.String())
 		if !found {
 			return fmt.Errorf("blob not found for path=%q, digest=%q", path, blobHexDigest)
 		}
@@ -170,7 +171,7 @@ func (c *casModuleCacher) PutModule(
 	}
 	// Write commit
 	commitPath := normalpath.Join(moduleBasedir, commitsDir, modulePin.Commit())
-	if err := c.atomicWrite(ctx, strings.NewReader(manifestBlob.Digest().Hex()), commitPath); err != nil {
+	if err := c.atomicWrite(ctx, strings.NewReader(manifestBlob.Digest().String()), commitPath); err != nil {
 		return err
 	}
 	return nil

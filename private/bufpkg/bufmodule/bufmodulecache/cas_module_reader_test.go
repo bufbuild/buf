@@ -180,8 +180,8 @@ func verifyCache(
 	defer f.Close()
 	commitContents, err := io.ReadAll(f)
 	require.NoError(t, err)
-	// {remote}/{owner}/{repo}/commits/{commit} => should return digest hex
-	assert.Equal(t, []byte(moduleBlob.Digest().Hex()), commitContents)
+	// {remote}/{owner}/{repo}/commits/{commit} => should return digest string format
+	assert.Equal(t, []byte(moduleBlob.Digest().String()), commitContents)
 }
 
 func createSampleManifestAndBlobs(t *testing.T) (*manifest.Manifest, *manifest.BlobSet) {
