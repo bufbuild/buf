@@ -115,6 +115,7 @@ type shake256Digester struct {
 	hash sha3.ShakeHash
 }
 
+// NewDigester returns a digester of the requested type.
 func NewDigester(dtype DigestType) (Digester, error) {
 	if dtype != DigestTypeShake256 {
 		return nil, fmt.Errorf("not supported digest type %q", dtype)
