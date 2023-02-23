@@ -42,8 +42,8 @@ func (o *manifestBucketObject) ExternalPath() string       { return o.path }
 func (o *manifestBucketObject) Read(p []byte) (int, error) { return o.file.Read(p) }
 func (o *manifestBucketObject) Close() error               { return o.file.Close() }
 
-// NewFromBucket creates a manifest and all its files' blobs from a storage
-// bucket, with all its digests in DigestTypeShake256.
+// NewFromBucket creates a manifest and blob set from the bucket's files. Blobs
+// in the blob set use the [DigestTypeShake256] digest.
 func NewFromBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
