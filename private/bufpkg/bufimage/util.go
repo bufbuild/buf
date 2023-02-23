@@ -31,6 +31,9 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+// Must match the tag number for ImageFile.buf_extensions defined in proto/buf/alpha/image/v1/image.proto.
+const bufExtensionFieldNumber = 8042
+
 // paths can be either files (ending in .proto) or directories
 // paths must be normalized and validated, and not duplicated
 // if a directory, all .proto files underneath will be included
@@ -370,13 +373,9 @@ func fileDescriptorProtoToProtoImageFile(
 			ModuleInfo:          protoModuleInfo,
 		},
 	}
-	// TODO: What if file descriptor's unknown fields contain the image file's buf_extension?
-	//       We should probably examine the unknown fields and discard field 8042 if found.
 	resultFile.ProtoReflect().SetUnknown(stripBufExtensionField(fileDescriptorProto.ProtoReflect().GetUnknown()))
 	return resultFile
 }
-
-const bufExtensionFieldNumber = 8042
 
 func stripBufExtensionField(unknownFields protoreflect.RawFields) protoreflect.RawFields {
 	// We accumulate the new bytes in result. However, for efficiency, we don't do any
