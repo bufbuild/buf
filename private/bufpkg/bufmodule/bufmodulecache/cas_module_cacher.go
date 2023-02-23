@@ -123,18 +123,18 @@ func (c *casModuleCacher) PutModule(
 		if !found {
 			return fmt.Errorf("failed to find digest for path=%q", path)
 		}
-		blobHexDigest := blobDigest.Hex()
-		if _, ok := writtenDigests[blobHexDigest]; ok {
+		blobDigestStr := blobDigest.String()
+		if _, ok := writtenDigests[blobDigestStr]; ok {
 			continue
 		}
-		blob, found := module.BlobSet().BlobFor(blobDigest.String())
+		blob, found := module.BlobSet().BlobFor(blobDigestStr)
 		if !found {
-			return fmt.Errorf("blob not found for path=%q, digest=%q", path, blobHexDigest)
+			return fmt.Errorf("blob not found for path=%q, digest=%q", path, blobDigestStr)
 		}
 		if err := c.writeBlob(ctx, blobsBasedir, blob); err != nil {
 			return err
 		}
-		writtenDigests[blobHexDigest] = struct{}{}
+		writtenDigests[blobDigestStr] = struct{}{}
 	}
 	// Write manifest
 	manifestsParentDir := normalpath.Join(moduleBasedir, manifestsDir)
