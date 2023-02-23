@@ -63,29 +63,22 @@ func (c *casModuleCacher) GetModule(
 	if err != nil {
 		return nil, err
 	}
-	manifestFromCache, err := c.loadManifestFromCache(ctx, moduleBasedir, manifestDigest)
+	manifestFromCache, err := c.loadManifest(ctx, moduleBasedir, manifestDigest)
 	if err != nil {
 		return nil, err
 	}
 	var blobs []manifest.Blob
-	blobBasedir := normalpath.Join(moduleBasedir, blobsDir)
 	blobDigests := make(map[string]struct{})
 	for _, path := range manifestFromCache.Paths() {
 		digest, found := manifestFromCache.DigestFor(path)
 		if !found {
 			return nil, fmt.Errorf("digest not found for path: %s", path)
 		}
-		hexDigest := digest.Hex()
-		if _, ok := blobDigests[hexDigest]; ok {
+		if _, ok := blobDigests[digest.String()]; ok {
 			// We've already loaded this blob
 			continue
 		}
-		blobPath := normalpath.Join(blobBasedir, hexDigest[:2], hexDigest[2:])
-		contents, err := c.loadPath(ctx, blobPath)
-		if err != nil {
-			return nil, err
-		}
-		blob, err := manifest.NewMemoryBlob(*digest, contents, manifest.MemoryBlobWithDigestValidation())
+		blob, err := c.loadBlob(ctx, moduleBasedir, digest)
 		if err != nil {
 			return nil, err
 		}
@@ -156,7 +149,21 @@ func (c *casModuleCacher) PutModule(
 	return nil
 }
 
-func (c *casModuleCacher) loadManifestFromCache(
+func (c *casModuleCacher) loadBlob(
+	ctx context.Context,
+	moduleBasedir string,
+	digest *manifest.Digest,
+) (_ manifest.Blob, retErr error) {
+	hexDigest := digest.Hex()
+	blobPath := normalpath.Join(moduleBasedir, blobsDir, hexDigest[:2], hexDigest[2:])
+	contents, err := c.loadPath(ctx, blobPath)
+	if err != nil {
+		return nil, err
+	}
+	return manifest.NewMemoryBlob(*digest, contents, manifest.MemoryBlobWithDigestValidation())
+}
+
+func (c *casModuleCacher) loadManifest(
 	ctx context.Context,
 	moduleBasedir string,
 	manifestDigest *manifest.Digest,
