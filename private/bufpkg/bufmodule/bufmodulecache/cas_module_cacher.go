@@ -147,13 +147,7 @@ func (c *casModuleCacher) PutModule(
 		}
 	}
 	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
-	if err := c.atomicWrite(ctx, strings.NewReader(manifestBlob.Digest().Hex()), normalpath.Join(moduleBasedir, commitsDir, modulePin.Commit())); err != nil {
-		return err
-	}
-	manifestsParentDir := normalpath.Join(moduleBasedir, manifestsDir)
-	if err := c.writeBlob(ctx, manifestBlob, manifestsParentDir); err != nil {
-		return err
-	}
+	// Write blobs
 	blobsParentDir := normalpath.Join(moduleBasedir, blobsDir)
 	writtenDigests := make(map[string]struct{})
 	for _, path := range moduleManifest.Paths() {
@@ -162,11 +156,10 @@ func (c *casModuleCacher) PutModule(
 			return fmt.Errorf("failed to find digest for path=%q", path)
 		}
 		blobHexDigest := blobDigest.Hex()
-		blobs := module.BlobSet()
 		if _, ok := writtenDigests[blobHexDigest]; ok {
-			// We've already written this blob
 			continue
 		}
+		blobs := module.BlobSet()
 		blob, found := blobs.BlobFor(blobDigest.String())
 		if !found {
 			return fmt.Errorf("blob not found for path=%q, digest=%q", path, blobHexDigest)
@@ -175,6 +168,16 @@ func (c *casModuleCacher) PutModule(
 			return err
 		}
 		writtenDigests[blobHexDigest] = struct{}{}
+	}
+	// Write manifest
+	manifestsParentDir := normalpath.Join(moduleBasedir, manifestsDir)
+	if err := c.writeBlob(ctx, manifestBlob, manifestsParentDir); err != nil {
+		return err
+	}
+	// Write commit
+	commitPath := normalpath.Join(moduleBasedir, commitsDir, modulePin.Commit())
+	if err := c.atomicWrite(ctx, strings.NewReader(manifestBlob.Digest().Hex()), commitPath); err != nil {
+		return err
 	}
 	return nil
 }
@@ -189,9 +192,7 @@ func (c *casModuleCacher) writeBlob(
 		return err
 	}
 	defer func() {
-		if err := contents.Close(); err != nil {
-			retErr = multierr.Append(retErr, err)
-		}
+		retErr = multierr.Append(retErr, contents.Close())
 	}()
 	hexDigest := blob.Digest().Hex()
 	return c.atomicWrite(ctx, contents, normalpath.Join(parentDir, hexDigest[:2], hexDigest[2:]))
