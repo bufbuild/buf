@@ -63,7 +63,7 @@ func (c *casModuleCacher) GetModule(
 	if err != nil {
 		return nil, err
 	}
-	manifestFromCache, err := c.loadManifest(ctx, moduleBasedir, manifestDigest)
+	manifestFromCache, err := c.readManifest(ctx, moduleBasedir, manifestDigest)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (c *casModuleCacher) GetModule(
 			// We've already loaded this blob
 			continue
 		}
-		blob, err := c.loadBlob(ctx, moduleBasedir, digest)
+		blob, err := c.readBlob(ctx, moduleBasedir, digest)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +116,7 @@ func (c *casModuleCacher) PutModule(
 	}
 	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
 	// Write blobs
-	blobsParentDir := normalpath.Join(moduleBasedir, blobsDir)
+	blobsBasedir := normalpath.Join(moduleBasedir, blobsDir)
 	writtenDigests := make(map[string]struct{})
 	for _, path := range moduleManifest.Paths() {
 		blobDigest, found := moduleManifest.DigestFor(path)
@@ -131,14 +131,14 @@ func (c *casModuleCacher) PutModule(
 		if !found {
 			return fmt.Errorf("blob not found for path=%q, digest=%q", path, blobHexDigest)
 		}
-		if err := c.writeBlob(ctx, blob, blobsParentDir); err != nil {
+		if err := c.writeBlob(ctx, blobsBasedir, blob); err != nil {
 			return err
 		}
 		writtenDigests[blobHexDigest] = struct{}{}
 	}
 	// Write manifest
 	manifestsParentDir := normalpath.Join(moduleBasedir, manifestsDir)
-	if err := c.writeBlob(ctx, manifestBlob, manifestsParentDir); err != nil {
+	if err := c.writeBlob(ctx, manifestsParentDir, manifestBlob); err != nil {
 		return err
 	}
 	// Write commit
@@ -149,7 +149,7 @@ func (c *casModuleCacher) PutModule(
 	return nil
 }
 
-func (c *casModuleCacher) loadBlob(
+func (c *casModuleCacher) readBlob(
 	ctx context.Context,
 	moduleBasedir string,
 	digest *manifest.Digest,
@@ -163,7 +163,7 @@ func (c *casModuleCacher) loadBlob(
 	return manifest.NewMemoryBlob(*digest, contents, manifest.MemoryBlobWithDigestValidation())
 }
 
-func (c *casModuleCacher) loadManifest(
+func (c *casModuleCacher) readManifest(
 	ctx context.Context,
 	moduleBasedir string,
 	manifestDigest *manifest.Digest,
@@ -193,8 +193,8 @@ func (c *casModuleCacher) loadManifest(
 
 func (c *casModuleCacher) writeBlob(
 	ctx context.Context,
+	basedir string,
 	blob manifest.Blob,
-	parentDir string,
 ) (retErr error) {
 	contents, err := blob.Open(ctx)
 	if err != nil {
@@ -204,7 +204,7 @@ func (c *casModuleCacher) writeBlob(
 		retErr = multierr.Append(retErr, contents.Close())
 	}()
 	hexDigest := blob.Digest().Hex()
-	return c.atomicWrite(ctx, contents, normalpath.Join(parentDir, hexDigest[:2], hexDigest[2:]))
+	return c.atomicWrite(ctx, contents, normalpath.Join(basedir, hexDigest[:2], hexDigest[2:]))
 }
 
 func (c *casModuleCacher) atomicWrite(ctx context.Context, contents io.Reader, path string) (retErr error) {
