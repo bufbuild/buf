@@ -101,6 +101,9 @@ func (c *casModuleCacher) GetModule(
 		}
 		blobPath := normalpath.Join(blobBasedir, hexDigest[:2], hexDigest[2:])
 		contents, err := c.loadPath(ctx, blobPath)
+		if err != nil {
+			return nil, err
+		}
 		blob, err := manifest.NewMemoryBlob(*digest, contents, manifest.MemoryBlobWithDigestValidation())
 		if err != nil {
 			return nil, err
