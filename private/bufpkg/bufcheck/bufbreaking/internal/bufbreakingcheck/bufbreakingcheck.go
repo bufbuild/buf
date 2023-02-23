@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -262,7 +263,7 @@ func checkFieldSameLabel(add addFunc, corpus *corpus, previousField protosource.
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
 		// TODO: specific label location
-		add(field, nil, field.Location(), `Field %q on message %q changed label from %q to %q.`, numberString, field.Message().Name(), prettyPrintFieldDescriptorProtoLabel(previousField.Label()), prettyPrintFieldDescriptorProtoLabel(field.Label()))
+		add(field, nil, field.Location(), `Field %q on message %q changed label from %q to %q.`, numberString, field.Message().Name(), protodescriptor.FieldDescriptorProtoLabelPrettyString(previousField.Label()), protodescriptor.FieldDescriptorProtoLabelPrettyString(field.Label()))
 	}
 	return nil
 }
@@ -493,8 +494,8 @@ func addFieldChangedType(add addFunc, previousField protosource.Field, field pro
 		`Field %q on message %q changed type from %q to %q.%s`,
 		previousNumberString,
 		field.Message().Name(),
-		prettyPrintFieldDescriptorProtoType(previousField.Type()),
-		prettyPrintFieldDescriptorProtoType(field.Type()),
+		protodescriptor.FieldDescriptorProtoTypePrettyString(previousField.Type()),
+		protodescriptor.FieldDescriptorProtoTypePrettyString(field.Type()),
 		combinedExtraMessage,
 	)
 }
