@@ -24,10 +24,15 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
+
+// Must match the tag number for ImageFile.buf_extensions defined in proto/buf/alpha/image/v1/image.proto.
+const bufExtensionFieldNumber = 8042
 
 // paths can be either files (ending in .proto) or directories
 // paths must be normalized and validated, and not duplicated
@@ -345,7 +350,7 @@ func fileDescriptorProtoToProtoImageFile(
 	if len(unusedDependencyIndexes) == 0 {
 		unusedDependencyIndexes = nil
 	}
-	return &imagev1.ImageFile{
+	resultFile := &imagev1.ImageFile{
 		Name:             fileDescriptorProto.Name,
 		Package:          fileDescriptorProto.Package,
 		Syntax:           fileDescriptorProto.Syntax,
@@ -368,6 +373,53 @@ func fileDescriptorProtoToProtoImageFile(
 			ModuleInfo:          protoModuleInfo,
 		},
 	}
+	resultFile.ProtoReflect().SetUnknown(stripBufExtensionField(fileDescriptorProto.ProtoReflect().GetUnknown()))
+	return resultFile
+}
+
+func stripBufExtensionField(unknownFields protoreflect.RawFields) protoreflect.RawFields {
+	// We accumulate the new bytes in result. However, for efficiency, we don't do any
+	// allocation/copying until we have to (i.e. until we actually see the field we're
+	// trying to strip). So result will be left nil and initialized lazily if-and-only-if
+	// we actually need to strip data from unknownFields.
+	var result protoreflect.RawFields
+	bytesRemaining := unknownFields
+	for len(bytesRemaining) > 0 {
+		num, wireType, n := protowire.ConsumeTag(bytesRemaining)
+		if n < 0 {
+			// shouldn't be possible unless explicitly set to invalid bytes via reflection
+			return unknownFields
+		}
+		var skip bool
+		if num == bufExtensionFieldNumber {
+			// We need to strip this field.
+			skip = true
+			if result == nil {
+				// Lazily initialize result to the preface that we've already examined.
+				result = append(
+					make(protoreflect.RawFields, 0, len(unknownFields)),
+					unknownFields[:len(unknownFields)-len(bytesRemaining)]...,
+				)
+			}
+		} else if result != nil {
+			// accumulate data in result as we go
+			result = append(result, bytesRemaining[:n]...)
+		}
+		bytesRemaining = bytesRemaining[n:]
+		n = protowire.ConsumeFieldValue(num, wireType, bytesRemaining)
+		if n < 0 {
+			return unknownFields
+		}
+		if !skip && result != nil {
+			result = append(result, bytesRemaining[:n]...)
+		}
+		bytesRemaining = bytesRemaining[n:]
+	}
+	if result == nil {
+		// we did not have to remove anything
+		return unknownFields
+	}
+	return result
 }
 
 func imageToCodeGeneratorRequest(
