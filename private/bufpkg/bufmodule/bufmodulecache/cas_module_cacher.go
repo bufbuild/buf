@@ -138,7 +138,7 @@ func (c *casModuleCacher) PutModule(
 	}
 	digest := manifestBlob.Digest()
 	if digest == nil {
-		return errors.New("invalid manifest digest")
+		return errors.New("empty manifest digest")
 	}
 	if modulePinDigestEncoded := modulePin.Digest(); modulePinDigestEncoded != "" {
 		modulePinDigest, err := manifest.NewDigestFromString(modulePinDigestEncoded)
