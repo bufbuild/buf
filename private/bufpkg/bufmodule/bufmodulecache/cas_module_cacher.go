@@ -58,11 +58,7 @@ func (c *casModuleCacher) GetModule(
 	} else {
 		// Attempt to look up manifest digest from commit
 		commitPath := normalpath.Join(moduleBasedir, commitsDir, modulePin.Commit())
-		manifestDigest, err := c.bucket.Get(ctx, commitPath)
-		if err != nil {
-			return nil, err
-		}
-		manifestDigestBytes, err := io.ReadAll(manifestDigest)
+		manifestDigestBytes, err := c.loadPath(ctx, commitPath)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +67,8 @@ func (c *casModuleCacher) GetModule(
 			return nil, fmt.Errorf("invalid manifest digest found in %s", commitPath)
 		}
 	}
-	f, err := c.bucket.Get(ctx, normalpath.Join(moduleBasedir, manifestsDir, manifestHexDigest[:2], manifestHexDigest[2:]))
+	manifestPath := normalpath.Join(moduleBasedir, manifestsDir, manifestHexDigest[:2], manifestHexDigest[2:])
+	f, err := c.bucket.Get(ctx, manifestPath)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +84,7 @@ func (c *casModuleCacher) GetModule(
 		return nil, err
 	}
 	if cacheManifestBlob.Digest().Hex() != manifestHexDigest {
-		return nil, storage.NewErrNotExist(fmt.Sprintf("digest mismatch - expected: %q, found: %q", manifestHexDigest, cacheManifestBlob.Digest().Hex()))
+		return nil, fmt.Errorf("digest mismatch - expected: %q, found: %q", manifestHexDigest, cacheManifestBlob.Digest().Hex())
 	}
 	var blobs []manifest.Blob
 	blobBasedir := normalpath.Join(moduleBasedir, blobsDir)
@@ -95,7 +92,7 @@ func (c *casModuleCacher) GetModule(
 	for _, path := range cacheManifest.Paths() {
 		digest, found := cacheManifest.DigestFor(path)
 		if !found {
-			return nil, storage.NewErrNotExist(path)
+			return nil, fmt.Errorf("digest not found for path: %s", path)
 		}
 		hexDigest := digest.Hex()
 		if _, ok := blobDigests[hexDigest]; ok {
@@ -103,14 +100,7 @@ func (c *casModuleCacher) GetModule(
 			continue
 		}
 		blobPath := normalpath.Join(blobBasedir, hexDigest[:2], hexDigest[2:])
-		f, err := c.bucket.Get(ctx, blobPath)
-		if err != nil {
-			return nil, err
-		}
-		contents, err := io.ReadAll(f)
-		if err != nil {
-			return nil, err
-		}
+		contents, err := c.loadPath(ctx, blobPath)
 		blob, err := manifest.NewMemoryBlob(*digest, contents, manifest.MemoryBlobWithDigestValidation())
 		if err != nil {
 			return nil, err
@@ -169,7 +159,7 @@ func (c *casModuleCacher) PutModule(
 	for _, path := range moduleManifest.Paths() {
 		blobDigest, found := moduleManifest.DigestFor(path)
 		if !found {
-			return fmt.Errorf("failed to find digest for: %q", path)
+			return fmt.Errorf("failed to find digest for path=%q", path)
 		}
 		blobHexDigest := blobDigest.Hex()
 		blobs := module.BlobSet()
@@ -219,4 +209,18 @@ func (c *casModuleCacher) atomicWrite(ctx context.Context, contents io.Reader, p
 		return err
 	}
 	return nil
+}
+
+func (c *casModuleCacher) loadPath(
+	ctx context.Context,
+	path string,
+) (_ []byte, retErr error) {
+	f, err := c.bucket.Get(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, f.Close())
+	}()
+	return io.ReadAll(f)
 }

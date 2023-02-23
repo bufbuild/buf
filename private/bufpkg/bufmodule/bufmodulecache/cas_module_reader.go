@@ -67,6 +67,7 @@ func (c *casModuleReader) GetModule(
 		c.stats.MarkHit()
 		return module, nil
 	}
+	c.logger.Debug("module cache miss", zap.Error(err))
 	c.stats.MarkMiss()
 	module, err = c.delegate.GetModule(ctx, modulePin)
 	if err != nil {
