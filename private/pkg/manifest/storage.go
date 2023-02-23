@@ -193,11 +193,3 @@ func (m *manifestBucket) Walk(ctx context.Context, prefix string, f func(storage
 	}
 	return nil
 }
-
-func (m *manifestBucket) Manifest() Manifest {
-	return m.manifest
-}
-
-func (m *manifestBucket) Blobs() BlobSet {
-	return m.blobs
-}
