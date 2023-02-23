@@ -74,7 +74,7 @@ func PutWithChunkSize(sizeInBytes int64) PutOption {
 	}
 }
 
-// PutAtomic ensures that the Put fully writes the file before making it
+// PutWithAtomic ensures that the Put fully writes the file before making it
 // available to readers. This happens by default for some implementations,
 // while others may need to perform a sequence of operations to ensure
 // atomic writes.
@@ -82,7 +82,7 @@ func PutWithChunkSize(sizeInBytes int64) PutOption {
 // The Put operation is complete and the path will be readable once the
 // returned WriteObjectCloser is written and closed (without an error).
 // Any errors will cause the Put to be skipped (no path will be created).
-func PutAtomic() PutOption {
+func PutWithAtomic() PutOption {
 	return func(opts *PutOptions) {
 		opts.Atomic = true
 	}

@@ -202,7 +202,7 @@ func (c *casModuleCacher) writeBlob(
 }
 
 func (c *casModuleCacher) atomicWrite(ctx context.Context, contents io.Reader, path string) (retErr error) {
-	f, err := c.bucket.Put(ctx, path, storage.PutAtomic())
+	f, err := c.bucket.Put(ctx, path, storage.PutWithAtomic())
 	if err != nil {
 		return err
 	}

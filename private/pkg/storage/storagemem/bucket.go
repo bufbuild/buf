@@ -93,7 +93,7 @@ func (b *bucket) Put(ctx context.Context, path string, _ ...storage.PutOption) (
 	if err != nil {
 		return nil, err
 	}
-	// storagemem writes are already atomic - don't need special handling for PutAtomic.
+	// storagemem writes are already atomic - don't need special handling for PutWithAtomic.
 	return newWriteObjectCloser(b, path), nil
 }
 
