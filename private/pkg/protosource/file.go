@@ -35,7 +35,7 @@ type file struct {
 	services       []Service
 	extensions     []Field
 	edition        string
-	optimizeMode   FileOptionsOptimizeMode
+	optimizeMode   descriptorpb.FileOptions_OptimizeMode
 }
 
 func (f *file) Syntax() Syntax {
@@ -122,7 +122,7 @@ func (f *file) SwiftPrefix() string {
 	return f.fileDescriptor.GetOptions().GetSwiftPrefix()
 }
 
-func (f *file) OptimizeFor() FileOptionsOptimizeMode {
+func (f *file) OptimizeFor() descriptorpb.FileOptions_OptimizeMode {
 	return f.optimizeMode
 }
 
@@ -244,16 +244,18 @@ func newFile(inputFile InputFile) (*file, error) {
 	f.descriptor = descriptor
 
 	if inputFile.IsSyntaxUnspecified() {
-		f.syntax = SyntaxUnspecified
-	} else {
-		switch syntaxString := f.fileDescriptor.GetSyntax(); syntaxString {
 		// if the syntax is "proto2", protoc and buf will not set the syntax
 		// field even if it was explicitly set, this is why we have
 		// IsSyntaxUnspecified
+		f.syntax = SyntaxUnspecified
+	} else {
+		switch syntaxString := f.fileDescriptor.GetSyntax(); syntaxString {
 		case "", "proto2":
 			f.syntax = SyntaxProto2
 		case "proto3":
 			f.syntax = SyntaxProto3
+		case "editions":
+			f.syntax = SyntaxEditions
 		default:
 			return nil, fmt.Errorf("unknown syntax: %q", syntaxString)
 		}
@@ -346,11 +348,7 @@ func newFile(inputFile InputFile) (*file, error) {
 		}
 		f.extensions = append(f.extensions, extension)
 	}
-	optimizeMode, err := getFileOptionsOptimizeMode(f.fileDescriptor.GetOptions().GetOptimizeFor())
-	if err != nil {
-		return nil, err
-	}
-	f.optimizeMode = optimizeMode
+	f.optimizeMode = f.fileDescriptor.GetOptions().GetOptimizeFor()
 	return f, nil
 }
 
@@ -381,6 +379,7 @@ func (f *file) populateEnum(
 			enumDescriptorProto.GetOptions(),
 		),
 		enumDescriptorProto.GetOptions().GetAllowAlias(),
+		enumDescriptorProto.GetOptions().GetDeprecatedLegacyJsonFieldConflicts(),
 		enumDescriptorProto.GetOptions().GetDeprecated(),
 		getEnumAllowAliasPath(enumIndex, nestedMessageIndexes...),
 		parent,
@@ -473,6 +472,7 @@ func (f *file) populateMessage(
 		descriptorProto.GetOptions().GetMapEntry(),
 		descriptorProto.GetOptions().GetMessageSetWireFormat(),
 		descriptorProto.GetOptions().GetNoStandardDescriptorAccessor(),
+		descriptorProto.GetOptions().GetDeprecatedLegacyJsonFieldConflicts(),
 		descriptorProto.GetOptions().GetDeprecated(),
 		getMessageMessageSetWireFormatPath(topLevelMessageIndex, nestedMessageIndexes...),
 		getMessageNoStandardDescriptorAccessorPath(topLevelMessageIndex, nestedMessageIndexes...),
@@ -519,22 +519,6 @@ func (f *file) populateMessage(
 		if fieldDescriptorProto.Options != nil {
 			packed = fieldDescriptorProto.GetOptions().Packed
 		}
-		label, err := getFieldDescriptorProtoLabel(fieldDescriptorProto.GetLabel())
-		if err != nil {
-			return nil, err
-		}
-		typ, err := getFieldDescriptorProtoType(fieldDescriptorProto.GetType())
-		if err != nil {
-			return nil, err
-		}
-		jsType, err := getFieldOptionsJSType(fieldDescriptorProto.GetOptions().GetJstype())
-		if err != nil {
-			return nil, err
-		}
-		cType, err := getFieldOptionsCType(fieldDescriptorProto.GetOptions().GetCtype())
-		if err != nil {
-			return nil, err
-		}
 		var oneof *oneof
 		var ok bool
 		if fieldDescriptorProto.OneofIndex != nil {
@@ -551,15 +535,18 @@ func (f *file) populateMessage(
 			),
 			message,
 			int(fieldDescriptorProto.GetNumber()),
-			label,
-			typ,
+			fieldDescriptorProto.GetLabel(),
+			fieldDescriptorProto.GetType(),
 			strings.TrimPrefix(fieldDescriptorProto.GetTypeName(), "."),
 			strings.TrimPrefix(fieldDescriptorProto.GetExtendee(), "."),
 			oneof,
 			fieldDescriptorProto.GetProto3Optional(),
 			fieldDescriptorProto.GetJsonName(),
-			jsType,
-			cType,
+			fieldDescriptorProto.GetOptions().GetJstype(),
+			fieldDescriptorProto.GetOptions().GetCtype(),
+			fieldDescriptorProto.GetOptions().GetRetention(),
+			fieldDescriptorProto.GetOptions().GetTarget(),
+			fieldDescriptorProto.GetOptions().GetDebugRedact(),
 			packed,
 			fieldDescriptorProto.GetOptions().GetDeprecated(),
 			getMessageFieldNumberPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
@@ -593,22 +580,6 @@ func (f *file) populateMessage(
 		if fieldDescriptorProto.Options != nil {
 			packed = fieldDescriptorProto.GetOptions().Packed
 		}
-		label, err := getFieldDescriptorProtoLabel(fieldDescriptorProto.GetLabel())
-		if err != nil {
-			return nil, err
-		}
-		typ, err := getFieldDescriptorProtoType(fieldDescriptorProto.GetType())
-		if err != nil {
-			return nil, err
-		}
-		jsType, err := getFieldOptionsJSType(fieldDescriptorProto.GetOptions().GetJstype())
-		if err != nil {
-			return nil, err
-		}
-		cType, err := getFieldOptionsCType(fieldDescriptorProto.GetOptions().GetCtype())
-		if err != nil {
-			return nil, err
-		}
 		var oneof *oneof
 		var ok bool
 		if fieldDescriptorProto.OneofIndex != nil {
@@ -625,15 +596,18 @@ func (f *file) populateMessage(
 			),
 			message,
 			int(fieldDescriptorProto.GetNumber()),
-			label,
-			typ,
+			fieldDescriptorProto.GetLabel(),
+			fieldDescriptorProto.GetType(),
 			strings.TrimPrefix(fieldDescriptorProto.GetTypeName(), "."),
 			strings.TrimPrefix(fieldDescriptorProto.GetExtendee(), "."),
 			oneof,
 			fieldDescriptorProto.GetProto3Optional(),
 			fieldDescriptorProto.GetJsonName(),
-			jsType,
-			cType,
+			fieldDescriptorProto.GetOptions().GetJstype(),
+			fieldDescriptorProto.GetOptions().GetCtype(),
+			fieldDescriptorProto.GetOptions().GetRetention(),
+			fieldDescriptorProto.GetOptions().GetTarget(),
+			fieldDescriptorProto.GetOptions().GetDebugRedact(),
 			packed,
 			fieldDescriptorProto.GetOptions().GetDeprecated(),
 			getMessageExtensionNumberPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
@@ -763,10 +737,6 @@ func (f *file) populateService(
 		if err != nil {
 			return nil, err
 		}
-		idempotencyLevel, err := getMethodOptionsIdempotencyLevel(methodDescriptorProto.GetOptions().GetIdempotencyLevel())
-		if err != nil {
-			return nil, err
-		}
 		method, err := newMethod(
 			methodNamedDescriptor,
 			newOptionExtensionDescriptor(
@@ -780,7 +750,7 @@ func (f *file) populateService(
 			methodDescriptorProto.GetOptions().GetDeprecated(),
 			getMethodInputTypePath(serviceIndex, methodIndex),
 			getMethodOutputTypePath(serviceIndex, methodIndex),
-			idempotencyLevel,
+			methodDescriptorProto.GetOptions().GetIdempotencyLevel(),
 			getMethodIdempotencyLevelPath(serviceIndex, methodIndex),
 		)
 		if err != nil {
@@ -811,22 +781,6 @@ func (f *file) populateExtension(
 	if fieldDescriptorProto.Options != nil {
 		packed = fieldDescriptorProto.GetOptions().Packed
 	}
-	label, err := getFieldDescriptorProtoLabel(fieldDescriptorProto.GetLabel())
-	if err != nil {
-		return nil, err
-	}
-	typ, err := getFieldDescriptorProtoType(fieldDescriptorProto.GetType())
-	if err != nil {
-		return nil, err
-	}
-	jsType, err := getFieldOptionsJSType(fieldDescriptorProto.GetOptions().GetJstype())
-	if err != nil {
-		return nil, err
-	}
-	cType, err := getFieldOptionsCType(fieldDescriptorProto.GetOptions().GetCtype())
-	if err != nil {
-		return nil, err
-	}
 	return newField(
 		fieldNamedDescriptor,
 		newOptionExtensionDescriptor(
@@ -834,15 +788,18 @@ func (f *file) populateExtension(
 		),
 		nil,
 		int(fieldDescriptorProto.GetNumber()),
-		label,
-		typ,
+		fieldDescriptorProto.GetLabel(),
+		fieldDescriptorProto.GetType(),
 		strings.TrimPrefix(fieldDescriptorProto.GetTypeName(), "."),
 		strings.TrimPrefix(fieldDescriptorProto.GetExtendee(), "."),
 		nil,
 		fieldDescriptorProto.GetProto3Optional(),
 		fieldDescriptorProto.GetJsonName(),
-		jsType,
-		cType,
+		fieldDescriptorProto.GetOptions().GetJstype(),
+		fieldDescriptorProto.GetOptions().GetCtype(),
+		fieldDescriptorProto.GetOptions().GetRetention(),
+		fieldDescriptorProto.GetOptions().GetTarget(),
+		fieldDescriptorProto.GetOptions().GetDebugRedact(),
 		packed,
 		fieldDescriptorProto.GetOptions().GetDeprecated(),
 		getFileExtensionNumberPath(fieldIndex),
