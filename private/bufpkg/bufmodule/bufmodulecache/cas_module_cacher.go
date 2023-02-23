@@ -49,56 +49,35 @@ func (c *casModuleCacher) GetModule(
 	modulePin bufmoduleref.ModulePin,
 ) (_ bufmodule.Module, retErr error) {
 	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
-	var manifestHexDigest string
-	if modulePinDigestEncoded := modulePin.Digest(); modulePinDigestEncoded != "" {
-		modulePinDigest, err := manifest.NewDigestFromString(modulePinDigestEncoded)
-		if err != nil {
-			return nil, err
-		}
-		manifestHexDigest = modulePinDigest.Hex()
-	} else {
+	manifestDigestStr := modulePin.Digest()
+	if manifestDigestStr == "" {
 		// Attempt to look up manifest digest from commit
 		commitPath := normalpath.Join(moduleBasedir, commitsDir, modulePin.Commit())
 		manifestDigestBytes, err := c.loadPath(ctx, commitPath)
 		if err != nil {
 			return nil, err
 		}
-		manifestDigest, err := manifest.NewDigestFromString(strings.TrimSpace(string(manifestDigestBytes)))
-		if err != nil {
-			return nil, err
-		}
-		manifestHexDigest = manifestDigest.Hex()
+		manifestDigestStr = strings.TrimSpace(string(manifestDigestBytes))
 	}
-	manifestPath := normalpath.Join(moduleBasedir, manifestsDir, manifestHexDigest[:2], manifestHexDigest[2:])
-	f, err := c.bucket.Get(ctx, manifestPath)
+	manifestDigest, err := manifest.NewDigestFromString(manifestDigestStr)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, f.Close())
-	}()
-	cacheManifest, err := manifest.NewFromReader(f)
+	manifestFromCache, err := c.loadManifestFromCache(ctx, moduleBasedir, manifestDigest)
 	if err != nil {
 		return nil, err
-	}
-	cacheManifestBlob, err := cacheManifest.Blob()
-	if err != nil {
-		return nil, err
-	}
-	if cacheManifestBlob.Digest().Hex() != manifestHexDigest {
-		return nil, fmt.Errorf("digest mismatch - expected: %q, found: %q", manifestHexDigest, cacheManifestBlob.Digest().Hex())
 	}
 	var blobs []manifest.Blob
 	blobBasedir := normalpath.Join(moduleBasedir, blobsDir)
 	blobDigests := make(map[string]struct{})
-	for _, path := range cacheManifest.Paths() {
-		digest, found := cacheManifest.DigestFor(path)
+	for _, path := range manifestFromCache.Paths() {
+		digest, found := manifestFromCache.DigestFor(path)
 		if !found {
 			return nil, fmt.Errorf("digest not found for path: %s", path)
 		}
 		hexDigest := digest.Hex()
 		if _, ok := blobDigests[hexDigest]; ok {
-			// We've already loaded this
+			// We've already loaded this blob
 			continue
 		}
 		blobPath := normalpath.Join(blobBasedir, hexDigest[:2], hexDigest[2:])
@@ -116,7 +95,7 @@ func (c *casModuleCacher) GetModule(
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewModuleForManifestAndBlobSet(ctx, cacheManifest, blobSet)
+	return bufmodule.NewModuleForManifestAndBlobSet(ctx, manifestFromCache, blobSet)
 }
 
 func (c *casModuleCacher) PutModule(
@@ -138,8 +117,8 @@ func (c *casModuleCacher) PutModule(
 		if err != nil {
 			return fmt.Errorf("invalid digest %q: %w", modulePinDigestEncoded, err)
 		}
-		if digest.Hex() != modulePinDigest.Hex() {
-			return fmt.Errorf("manifest digest mismatch: expected=%q, found=%q", modulePinDigest.Hex(), digest.Hex())
+		if digest.String() != modulePinDigest.String() {
+			return fmt.Errorf("manifest digest mismatch: expected=%q, found=%q", modulePinDigest.String(), digest.String())
 		}
 	}
 	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
@@ -175,6 +154,34 @@ func (c *casModuleCacher) PutModule(
 		return err
 	}
 	return nil
+}
+
+func (c *casModuleCacher) loadManifestFromCache(
+	ctx context.Context,
+	moduleBasedir string,
+	manifestDigest *manifest.Digest,
+) (_ *manifest.Manifest, retErr error) {
+	manifestHexDigest := manifestDigest.Hex()
+	manifestPath := normalpath.Join(moduleBasedir, manifestsDir, manifestHexDigest[:2], manifestHexDigest[2:])
+	f, err := c.bucket.Get(ctx, manifestPath)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, f.Close())
+	}()
+	cacheManifest, err := manifest.NewFromReader(f)
+	if err != nil {
+		return nil, err
+	}
+	cacheManifestBlob, err := cacheManifest.Blob()
+	if err != nil {
+		return nil, err
+	}
+	if cacheManifestBlob.Digest().String() != manifestDigest.String() {
+		return nil, fmt.Errorf("digest mismatch - expected: %q, found: %q", manifestDigest.String(), cacheManifestBlob.Digest().String())
+	}
+	return cacheManifest, nil
 }
 
 func (c *casModuleCacher) writeBlob(

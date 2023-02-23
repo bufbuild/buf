@@ -35,11 +35,11 @@ func NewBucketFromManifestBlobs(
 ) (storage.ReadBucket, error) {
 	parsedManifest, err := NewManifestFromProto(ctx, manifestBlob)
 	if err != nil {
-		return nil, fmt.Errorf("invalid manifest: %w", err)
+		return nil, err
 	}
 	blobSet, err := NewBlobSetFromProto(ctx, blobs)
 	if err != nil {
-		return nil, fmt.Errorf("invalid blobs: %w", err)
+		return nil, err
 	}
 	manifestBucket, err := manifest.NewBucket(
 		*parsedManifest,
