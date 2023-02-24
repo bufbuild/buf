@@ -2102,7 +2102,7 @@ func (f *formatter) writeComment(comment string) {
 				}
 			}
 			if line == "*/" && prefix == "*" {
-				// align the comment end with the other astrisks
+				// align the comment end with the other asterisks
 				line = " " + line
 			}
 
