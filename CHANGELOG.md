@@ -2,8 +2,9 @@
 
 ## [Unreleased]
 
-- Update built-in Well-Known Types to v22.0.
-
+- Update built-in Well-Known Types to Protobuf v22.0.
+- Fixes a bug in `buf format` where C-style block comments in which every
+  line includes a prefix (usually "*") would be incorrectly indented.
 
 ## [v1.14.0] - 2023-02-09
 
@@ -41,7 +42,6 @@
 - Introduce `ruby_package` option in managed mode, allowing `except` and `override`,
   in the same style as `objc_class_prefix`. Leaving `ruby_package` unspecified has
   the same effect as having mananged mode enabled in previous versions.
-
 
 ## [v1.11.0] - 2022-12-19
 - `buf generate` now batches remote plugin generation calls for improved performance.
