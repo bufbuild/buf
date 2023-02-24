@@ -16,10 +16,15 @@ syntax /* This comment is attached to the '=' */ = "proto3"; // Trailing comment
 
 package /* Leading on package name. */ header.v1 /* Leading on semicolon */; // Trailing in-line.
 
-option /* Leading on option name */ (custom.file_thing_option).truth /* Between truth and value */ = true /* After 'true' */;
-
 import /* Leading on import path */ "custom.proto";
 
+option /* Leading on option name */ (custom.file_thing_option).truth /* Between truth and value */ = true /* After 'true' */;
+
+/**
+ = Here's another block comment.
+ = But this one uses equal sign as the
+ = prefix for each line.
+*/
 message Foo {
   /*
    * This is a comment nested inside a block.

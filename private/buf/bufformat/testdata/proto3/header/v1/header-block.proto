@@ -20,6 +20,11 @@ option /* Leading on option name */ (custom.file_thing_option).truth /* Between 
 
 import /* Leading on import path */        "custom.proto";
 
+ /**
+  = Here's another block comment.
+  = But this one uses equal sign as the
+  = prefix for each line.
+  */
 message Foo {
       /*
        * This is a comment nested inside a block.
