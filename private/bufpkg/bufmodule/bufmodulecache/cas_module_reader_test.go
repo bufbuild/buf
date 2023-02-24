@@ -166,7 +166,7 @@ func verifyCache(
 	// {remote}/{owner}/{repo}/manifests/{..}/{....} => should return manifest contents
 	moduleBlob, err := moduleManifest.Blob()
 	require.NoError(t, err)
-	verifyBlobContents(t, bucket, normalpath.Join(moduleCacheDir, manifestsDir), moduleBlob)
+	verifyBlobContents(t, bucket, normalpath.Join(moduleCacheDir, blobsDir), moduleBlob)
 	for _, path := range moduleManifest.Paths() {
 		protoDigest, found := moduleManifest.DigestFor(path)
 		require.True(t, found)

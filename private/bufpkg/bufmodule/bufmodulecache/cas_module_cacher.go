@@ -32,9 +32,8 @@ import (
 
 // subdirectories under ~/.cache/buf/v2/{remote}/{owner}/{repo}
 const (
-	blobsDir     = "blobs"
-	commitsDir   = "commits"
-	manifestsDir = "manifests"
+	blobsDir   = "blobs"
+	commitsDir = "commits"
 )
 
 type casModuleCacher struct {
@@ -57,7 +56,7 @@ func (c *casModuleCacher) GetModule(
 		if err != nil {
 			return nil, err
 		}
-		manifestDigestStr = strings.TrimSpace(string(manifestDigestBytes))
+		manifestDigestStr = string(manifestDigestBytes)
 	}
 	manifestDigest, err := manifest.NewDigestFromString(manifestDigestStr)
 	if err != nil {
@@ -116,7 +115,6 @@ func (c *casModuleCacher) PutModule(
 	}
 	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
 	// Write blobs
-	blobsBasedir := normalpath.Join(moduleBasedir, blobsDir)
 	writtenDigests := make(map[string]struct{})
 	for _, path := range moduleManifest.Paths() {
 		blobDigest, found := moduleManifest.DigestFor(path)
@@ -131,14 +129,13 @@ func (c *casModuleCacher) PutModule(
 		if !found {
 			return fmt.Errorf("blob not found for path=%q, digest=%q", path, blobDigestStr)
 		}
-		if err := c.writeBlob(ctx, blobsBasedir, blob); err != nil {
+		if err := c.writeBlob(ctx, moduleBasedir, blob); err != nil {
 			return err
 		}
 		writtenDigests[blobDigestStr] = struct{}{}
 	}
 	// Write manifest
-	manifestsParentDir := normalpath.Join(moduleBasedir, manifestsDir)
-	if err := c.writeBlob(ctx, manifestsParentDir, manifestBlob); err != nil {
+	if err := c.writeBlob(ctx, moduleBasedir, manifestBlob); err != nil {
 		return err
 	}
 	// Write commit
@@ -160,7 +157,38 @@ func (c *casModuleCacher) readBlob(
 	if err != nil {
 		return nil, err
 	}
-	return manifest.NewMemoryBlob(*digest, contents, manifest.MemoryBlobWithDigestValidation())
+	blob, err := manifest.NewMemoryBlob(*digest, contents, manifest.MemoryBlobWithDigestValidation())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create blob from path %s: %w", blobPath, err)
+	}
+	return blob, nil
+}
+
+func (c *casModuleCacher) validateBlob(
+	ctx context.Context,
+	moduleBasedir string,
+	digest *manifest.Digest,
+) (bool, error) {
+	hexDigest := digest.Hex()
+	blobPath := normalpath.Join(moduleBasedir, blobsDir, hexDigest[:2], hexDigest[2:])
+	f, err := c.bucket.Get(ctx, blobPath)
+	if err != nil {
+		return false, err
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			c.logger.Debug("err closing blob", zap.Error(err))
+		}
+	}()
+	digester, err := manifest.NewDigester(digest.Type())
+	if err != nil {
+		return false, err
+	}
+	cacheDigest, err := digester.Digest(f)
+	if err != nil {
+		return false, err
+	}
+	return digest.String() == cacheDigest.String(), nil
 }
 
 func (c *casModuleCacher) readManifest(
@@ -168,34 +196,41 @@ func (c *casModuleCacher) readManifest(
 	moduleBasedir string,
 	manifestDigest *manifest.Digest,
 ) (_ *manifest.Manifest, retErr error) {
-	manifestHexDigest := manifestDigest.Hex()
-	manifestPath := normalpath.Join(moduleBasedir, manifestsDir, manifestHexDigest[:2], manifestHexDigest[2:])
-	f, err := c.bucket.Get(ctx, manifestPath)
+	blob, err := c.readBlob(ctx, moduleBasedir, manifestDigest)
+	if err != nil {
+		return nil, err
+	}
+	f, err := blob.Open(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, f.Close())
 	}()
-	cacheManifest, err := manifest.NewFromReader(f)
+	moduleManifest, err := manifest.NewFromReader(f)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read manifest %s: %w", manifestDigest.String(), err)
 	}
-	cacheManifestBlob, err := cacheManifest.Blob()
-	if err != nil {
-		return nil, err
-	}
-	if cacheManifestBlob.Digest().String() != manifestDigest.String() {
-		return nil, fmt.Errorf("digest mismatch - expected: %q, found: %q", manifestDigest.String(), cacheManifestBlob.Digest().String())
-	}
-	return cacheManifest, nil
+	return moduleManifest, nil
 }
 
 func (c *casModuleCacher) writeBlob(
 	ctx context.Context,
-	basedir string,
+	moduleBasedir string,
 	blob manifest.Blob,
 ) (retErr error) {
+	// Avoid unnecessary write if the blob is already written to disk
+	valid, err := c.validateBlob(ctx, moduleBasedir, blob.Digest())
+	if err == nil && valid {
+		return nil
+	}
+	if !storage.IsNotExist(err) {
+		c.logger.Debug(
+			"repairing cache entry",
+			zap.String("basedir", moduleBasedir),
+			zap.String("digest", blob.Digest().String()),
+		)
+	}
 	contents, err := blob.Open(ctx)
 	if err != nil {
 		return err
@@ -204,7 +239,8 @@ func (c *casModuleCacher) writeBlob(
 		retErr = multierr.Append(retErr, contents.Close())
 	}()
 	hexDigest := blob.Digest().Hex()
-	return c.atomicWrite(ctx, contents, normalpath.Join(basedir, hexDigest[:2], hexDigest[2:]))
+	blobPath := normalpath.Join(moduleBasedir, blobsDir, hexDigest[:2], hexDigest[2:])
+	return c.atomicWrite(ctx, contents, blobPath)
 }
 
 func (c *casModuleCacher) atomicWrite(ctx context.Context, contents io.Reader, path string) (retErr error) {
