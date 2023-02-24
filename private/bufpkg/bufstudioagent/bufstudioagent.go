@@ -32,14 +32,18 @@ func NewHandler(
 	forwardHeaders map[string]string,
 ) http.Handler {
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{origin},
-		AllowedMethods:   []string{http.MethodPost},
-		AllowCredentials: true,
+		AllowedOrigins:      []string{origin},
+		AllowedMethods:      []string{http.MethodPost, http.MethodOptions},
+		AllowCredentials:    true,
+		AllowPrivateNetwork: true,
 	})
 	plainHandler := corsHandler.Handler(newPlainPostHandler(logger, disallowedHeaders, forwardHeaders, tlsClientConfig))
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
+		case http.MethodOptions:
+			corsHandler.HandlerFunc(w, r)
+			return
 		case http.MethodGet:
 			// In the future we could check for an upgrade header here.
 			_, _ = w.Write([]byte("OK"))
