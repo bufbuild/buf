@@ -2027,10 +2027,29 @@ func (f *formatter) writeComment(comment string) {
 		// find minimum indent, so we can make all other lines relative to that
 		minIndent := -1 // sentinel that means unset
 		// start at 1 because line at index zero starts with "/*", not whitespace
+		var prefix string
 		for i := 1; i < len(lines); i++ {
 			indent, ok := computeIndent(lines[i])
 			if ok && (minIndent == -1 || indent < minIndent) {
 				minIndent = indent
+			}
+			if i > 1 && len(prefix) == 0 {
+				// no shared prefix
+				continue
+			}
+			line := strings.TrimSpace(lines[i])
+			if line == "*/" {
+				continue
+			}
+			var linePrefix string
+			if len(line) > 0 && isCommentPrefix(line[0]) {
+				linePrefix = line[:1]
+			}
+			if i == 1 {
+				prefix = linePrefix
+			} else if linePrefix != prefix {
+				// they do not share prefix
+				prefix = ""
 			}
 		}
 		if minIndent < 0 {
@@ -2040,7 +2059,7 @@ func (f *formatter) writeComment(comment string) {
 		}
 		for i, line := range lines {
 			trimmedLine := strings.TrimSpace(line)
-			if trimmedLine == "" || trimmedLine == "*/" {
+			if trimmedLine == "" || trimmedLine == "*/" || len(prefix) > 0 {
 				line = trimmedLine
 			} else {
 				// we only trim space from the right; for the left,
@@ -2048,9 +2067,45 @@ func (f *formatter) writeComment(comment string) {
 				line = unindent(line, minIndent)
 				line = strings.TrimRightFunc(line, unicode.IsSpace)
 			}
+			// If we have a block comment with no prefix, we'll format
+			// like so:
+
+			/*
+			   This is a multi-line comment example.
+			   It has no comment prefix on each line.
+			*/
+
+			// But if there IS a prefix, "|" for example, we'll left-align
+			// the prefix symbol under the asterisk of the comment start
+			// like this:
+
+			/*
+			 | This comment has a prefix before each line.
+			 | Usually the prefix is asterisk, but it's a
+			 | pipe in this example.
+			*/
+
+			// Finally, if the comment prefix is an asterisk, we'll left-align
+			// the comment end so its asterisk also aligns, like so:
+
+			/*
+			 * This comment has a prefix before each line.
+			 * Usually the prefix is asterisk, which is the
+			 * case in this example.
+			 */
+
 			if i > 0 && line != "*/" {
-				line = "   " + line
+				if len(prefix) == 0 {
+					line = "   " + line
+				} else {
+					line = " " + line
+				}
 			}
+			if line == "*/" && prefix == "*" {
+				// align the comment end with the other asterisks
+				line = " " + line
+			}
+
 			if i != len(lines)-1 {
 				f.P(line)
 			} else {
@@ -2064,6 +2119,18 @@ func (f *formatter) writeComment(comment string) {
 		f.Indent(nil)
 		f.WriteString(strings.TrimSpace(comment))
 	}
+}
+
+func isCommentPrefix(ch byte) bool {
+	r := rune(ch)
+	// A multi-line comment prefix is *usually* an asterisk, like in the following
+	/*
+	 * Foo
+	 * Bar
+	 * Baz
+	 */
+	// But we'll allow other prefixes. But if it's a letter or number, it's not a prefix.
+	return !unicode.IsLetter(r) && !unicode.IsNumber(r)
 }
 
 func unindent(s string, unindent int) string {
