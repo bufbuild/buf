@@ -2059,7 +2059,7 @@ func (f *formatter) writeComment(comment string) {
 		}
 		for i, line := range lines {
 			trimmedLine := strings.TrimSpace(line)
-			if trimmedLine == "" || trimmedLine == "*/" {
+			if trimmedLine == "" || trimmedLine == "*/" || len(prefix) > 0 {
 				line = trimmedLine
 			} else {
 				// we only trim space from the right; for the left,
