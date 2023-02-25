@@ -9,6 +9,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid v4.4.0+incompatible
+	github.com/golangci/revgrep v0.0.0-20220804021717-745bb2f7c2e6
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-containerregistry v0.13.0
 	github.com/jdxcode/netrc v0.0.0-20221124155335-4616370d1a84

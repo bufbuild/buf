@@ -15,8 +15,15 @@
 package lint
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"os"
+
+	"github.com/golangci/revgrep"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -28,8 +35,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 const (
@@ -38,6 +43,10 @@ const (
 	pathsFlagName           = "path"
 	excludePathsFlagName    = "exclude-path"
 	disableSymlinksFlagName = "disable-symlinks"
+	newFlagName             = "new"
+	newFromRevFlagName      = "new-from-rev"
+	newFromPatchFlagName    = "new-from-patch"
+	wholeFilesFlagName      = "whole-files"
 )
 
 // NewCommand returns a new Command.
@@ -62,11 +71,16 @@ func NewCommand(
 }
 
 type flags struct {
-	ErrorFormat     string
-	Config          string
-	Paths           []string
-	ExcludePaths    []string
-	DisableSymlinks bool
+	ErrorFormat       string
+	Config            string
+	Paths             []string
+	ExcludePaths      []string
+	DisableSymlinks   bool
+	DiffFromRevision  string
+	DiffPatchFilePath string
+	OnlyNew           bool
+	WholeFiles        bool
+
 	// special
 	InputHashtag string
 }
@@ -93,7 +107,36 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration`,
+		"The file or data to use for configuration",
+	)
+	flagSet.BoolVar(
+		&f.OnlyNew,
+		newFlagName,
+		false,
+		"Show only new issues: if there are unstaged changes or untracked files, only those changes "+
+			"are analyzed, else only changes in HEAD~ are analyzed.\nIt's a super-useful option for integration "+
+			"of buf-lint into existing large codebase.\nIt's not practical to fix all existing issues at "+
+			"the moment of integration: much better to not allow issues in new code.\nFor CI setups, prefer "+
+			"--new-from-rev=HEAD~, as --new can skip linting the current patch if any scripts generate "+
+			"unstaged files before buf-lint runs.",
+	)
+	flagSet.StringVar(
+		&f.DiffFromRevision,
+		newFromRevFlagName,
+		"",
+		"Show only new issues created after git revision `REV`",
+	)
+	flagSet.StringVar(
+		&f.DiffPatchFilePath,
+		newFromPatchFlagName,
+		"",
+		"Show only new issues created in git patch with file path `PATH`",
+	)
+	flagSet.BoolVar(
+		&f.WholeFiles,
+		wholeFilesFlagName,
+		false,
+		"Show issues in any part of update files (requires new-from-rev or new-from-patch)",
 	)
 }
 
@@ -163,6 +206,16 @@ func run(
 		}
 		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
 	}
+	allFileAnnotations, err = filterNewFileAnnotations(
+		allFileAnnotations,
+		flags.DiffFromRevision,
+		flags.DiffPatchFilePath,
+		flags.OnlyNew,
+		flags.WholeFiles,
+	)
+	if err != nil {
+		return err
+	}
 	if len(allFileAnnotations) > 0 {
 		if err := buflintconfig.PrintFileAnnotations(
 			container.Stdout(),
@@ -174,4 +227,39 @@ func run(
 		return bufcli.ErrFileAnnotation
 	}
 	return nil
+}
+
+func filterNewFileAnnotations(
+	allFileAnnotations []bufanalysis.FileAnnotation,
+	diffFromRevision, diffPatchFilePath string,
+	onlyNew, wholeFiles bool,
+) ([]bufanalysis.FileAnnotation, error) {
+	if !onlyNew && diffFromRevision == "" && diffPatchFilePath == "" {
+		return allFileAnnotations, nil
+	}
+
+	var patchReader io.Reader
+	if diffPatchFilePath != "" {
+		patch, err := os.ReadFile(diffPatchFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("can't read from patch file %s: %s", diffPatchFilePath, err)
+		}
+		patchReader = bytes.NewReader(patch)
+	}
+	checker := revgrep.Checker{
+		Patch:        patchReader,
+		RevisionFrom: diffFromRevision,
+		WholeFiles:   wholeFiles,
+	}
+	if err := checker.Prepare(); err != nil {
+		return nil, fmt.Errorf("can't prepare diff by revgrep: %s", err)
+	}
+
+	var annotations []bufanalysis.FileAnnotation
+	for _, annotation := range allFileAnnotations {
+		if _, isNew := checker.IsNewIssue(bufanalysis.NewIssue(annotation)); isNew {
+			annotations = append(annotations, annotation)
+		}
+	}
+	return annotations, nil
 }
