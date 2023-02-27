@@ -16,16 +16,12 @@ package bufmodulecache
 
 import (
 	"context"
-	"fmt"
-	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
-	"github.com/bufbuild/connect-go"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -38,9 +34,7 @@ type moduleReader struct {
 	delegate                bufmodule.ModuleReader
 	repositoryClientFactory RepositoryServiceClientFactory
 
-	count     int
-	cacheHits int
-	lock      sync.RWMutex
+	stats *cacheStats
 }
 
 func newModuleReader(
@@ -69,6 +63,7 @@ func newModuleReader(
 		),
 		delegate:                delegate,
 		repositoryClientFactory: repositoryClientFactory,
+		stats:                   &cacheStats{},
 	}
 }
 
@@ -90,10 +85,7 @@ func (m *moduleReader) GetModule(
 			"cache_hit",
 			zap.String("module_pin", modulePin.String()),
 		)
-		m.lock.Lock()
-		m.count++
-		m.cacheHits++
-		m.lock.Unlock()
+		m.stats.MarkHit()
 		return module, nil
 	}
 	if !storage.IsNotExist(err) {
@@ -118,15 +110,13 @@ func (m *moduleReader) GetModule(
 			"cache_hit",
 			zap.String("module_pin", modulePin.String()),
 		)
-		m.lock.Lock()
-		m.count++
-		m.cacheHits++
-		m.lock.Unlock()
+		m.stats.MarkHit()
 		return module, nil
 	}
 	if !storage.IsNotExist(err) {
 		return nil, err
 	}
+	m.stats.MarkMiss()
 
 	// We now had a IsNotExist error within a write lock, so go to the delegate and then put.
 	m.logger.Debug(
@@ -145,40 +135,8 @@ func (m *moduleReader) GetModule(
 	); err != nil {
 		return nil, err
 	}
-
-	repositoryService := m.repositoryClientFactory(modulePin.Remote())
-	resp, err := repositoryService.GetRepositoryByFullName(
-		ctx,
-		connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
-			FullName: fmt.Sprintf("%s/%s", modulePin.Owner(), modulePin.Repository()),
-		}),
-	)
-	if err != nil {
+	if err := warnIfDeprecated(ctx, m.repositoryClientFactory, modulePin, m.logger); err != nil {
 		return nil, err
 	}
-	repository := resp.Msg.Repository
-	if repository.Deprecated {
-		warnMsg := fmt.Sprintf(`Repository "%s" is deprecated`, modulePin.IdentityString())
-		if repository.DeprecationMessage != "" {
-			warnMsg = fmt.Sprintf("%s: %s", warnMsg, repository.DeprecationMessage)
-		}
-		m.logger.Sugar().Warn(warnMsg)
-	}
-
-	m.lock.Lock()
-	m.count++
-	m.lock.Unlock()
 	return module, nil
-}
-
-func (m *moduleReader) getCount() int {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-	return m.count
-}
-
-func (m *moduleReader) getCacheHits() int {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-	return m.cacheHits
 }

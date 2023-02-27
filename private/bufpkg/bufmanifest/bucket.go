@@ -15,7 +15,6 @@
 package bufmanifest
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 
@@ -34,26 +33,13 @@ func NewBucketFromManifestBlobs(
 	manifestBlob *modulev1alpha1.Blob,
 	blobs []*modulev1alpha1.Blob,
 ) (storage.ReadBucket, error) {
-	if _, err := NewBlobFromProto(manifestBlob); err != nil {
-		return nil, fmt.Errorf("invalid manifest: %w", err)
-	}
-	parsedManifest, err := manifest.NewFromReader(
-		bytes.NewReader(manifestBlob.Content),
-	)
+	parsedManifest, err := NewManifestFromProto(ctx, manifestBlob)
 	if err != nil {
-		return nil, fmt.Errorf("parse manifest content: %w", err)
+		return nil, err
 	}
-	var memBlobs []manifest.Blob
-	for i, modBlob := range blobs {
-		memBlob, err := NewBlobFromProto(modBlob)
-		if err != nil {
-			return nil, fmt.Errorf("invalid blob at index %d: %w", i, err)
-		}
-		memBlobs = append(memBlobs, memBlob)
-	}
-	blobSet, err := manifest.NewBlobSet(ctx, memBlobs)
+	blobSet, err := NewBlobSetFromProto(ctx, blobs)
 	if err != nil {
-		return nil, fmt.Errorf("invalid blobs: %w", err)
+		return nil, err
 	}
 	manifestBucket, err := manifest.NewBucket(
 		*parsedManifest,

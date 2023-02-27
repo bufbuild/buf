@@ -48,7 +48,7 @@ func NewFromBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 ) (*Manifest, *BlobSet, error) {
-	m := New()
+	var m Manifest
 	digester, err := NewDigester(DigestTypeShake256)
 	if err != nil {
 		return nil, nil, err
@@ -74,7 +74,7 @@ func NewFromBucket(
 	if err != nil {
 		return nil, nil, err
 	}
-	return m, blobSet, nil
+	return &m, blobSet, nil
 }
 
 type bucketOptions struct {
