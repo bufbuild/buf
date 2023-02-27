@@ -3,25 +3,25 @@ syntax = "proto2";
 package pkg;
 import "options.proto";
 option (UsedOption.file_baz) = "str";
-option (UsedOption.file_foo) = { foo:"str" };
+option (UsedOption.file_foo) = { foo: "str" };
 message Foo {
   option (message_baz) = "str";
-  option (message_foo) = { foo:"str" };
+  option (message_foo) = { foo: "str" };
   optional string foo = 1 [
     jstype = JS_STRING,
     (field_baz) = "str",
-    (field_foo) = { foo:"str" }
+    (field_foo) = { foo: "str" }
   ];
   oneof testOneof {
     option (oneof_baz) = "str";
-    option (oneof_foo) = { foo:"str" };
+    option (oneof_foo) = { foo: "str" };
     string bar = 2;
     bytes baz = 3;
   }
   extensions 10 to max;
 }
 extend Foo {
-  optional string extension = 11 [(field_baz) = "str", (field_foo) = { foo:"str" }];
+  optional string extension = 11 [(field_baz) = "str", (field_foo) = { foo: "str" }];
 }
 -- google/protobuf/descriptor.proto --
 syntax = "proto2";

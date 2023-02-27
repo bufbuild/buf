@@ -21,7 +21,14 @@ import "a.proto";
 import "b.proto";
 message ExtendedAnySyntax_InList {
   option (extra_in_list) = {
-    list_any:<type_url:"type.googleapis.com/ExtendedAnySyntax_InList" > list_any:<type_url:"type.googleapis.com/foo.bar.baz.Foo" value:"\n\nBob Loblaw\020*" >
+    list_any: [
+      {
+        [type.googleapis.com/ExtendedAnySyntax_InList]: { }
+      },
+      {
+        [type.googleapis.com/foo.bar.baz.Foo]: { name: "Bob Loblaw", id: 42 }
+      }
+    ]
   };
 }
 -- google/protobuf/any.proto --
