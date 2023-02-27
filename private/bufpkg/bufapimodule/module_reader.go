@@ -67,15 +67,15 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 			return nil, errors.New("expected non-nil manifest with tamper proofing enabled")
 		}
 		// use manifest and blobs
-		bucket, err := bufmanifest.NewBucketFromManifestBlobs(
-			ctx,
-			resp.Manifest,
-			resp.Blobs,
-		)
+		moduleManifest, err := bufmanifest.NewManifestFromProto(ctx, resp.Manifest)
 		if err != nil {
 			return nil, err
 		}
-		return bufmodule.NewModuleForBucket(ctx, bucket, identityAndCommitOpt)
+		blobSet, err := bufmanifest.NewBlobSetFromProto(ctx, resp.Blobs)
+		if err != nil {
+			return nil, err
+		}
+		return bufmodule.NewModuleForManifestAndBlobSet(ctx, moduleManifest, blobSet)
 	}
 	resp, err := m.download(ctx, modulePin)
 	if err != nil {

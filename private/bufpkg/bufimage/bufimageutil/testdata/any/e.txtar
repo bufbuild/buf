@@ -9,10 +9,7 @@ extend google.protobuf.MessageOptions {
 syntax = "proto3";
 import "a.proto";
 message NormalMessageSyntaxInvalidType {
-  option (extra) = {
-    type_url: "type.googleapis.com/blah.blah.Blah"
-    value: "\001\002\003\004"
-  };
+  option (extra) = { type_url: "type.googleapis.com/blah.blah.Blah", value: "\001\002\003\004" };
 }
 -- google/protobuf/any.proto --
 syntax = "proto3";

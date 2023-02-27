@@ -83,6 +83,12 @@ issues:
       # this is the one file we want to allow exec.Cmd functions in
       path: private/pkg/command/runner.go
     - linters:
+        - forbidigo
+      # we use os.Rename here to rename files in the same directory
+      # This is safe (we aren't traversing filesystem boundaries).
+      path: private/pkg/storage/storageos/bucket.go
+      text: "os.Rename"
+    - linters:
         - stylecheck
       text: "ST1005:"
     - linters:

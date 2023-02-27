@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/bufbuild/connect-go v1.5.2
-	github.com/bufbuild/protocompile v0.2.0
+	github.com/bufbuild/protocompile v0.2.1-0.20230123224550-da57cd758c2f
 	github.com/docker/docker v23.0.1+incompatible
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/gofrs/flock v0.8.1
@@ -12,7 +12,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-containerregistry v0.13.0
 	github.com/jdxcode/netrc v0.0.0-20221124155335-4616370d1a84
-	github.com/jhump/protoreflect v1.14.1
+	github.com/jhump/protoreflect v1.15.0
 	github.com/klauspost/compress v1.16.0
 	github.com/klauspost/pgzip v1.2.5
 	github.com/oklog/ulid/v2 v2.1.0
@@ -57,6 +57,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect

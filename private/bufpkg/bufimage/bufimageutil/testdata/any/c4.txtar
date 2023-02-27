@@ -24,7 +24,24 @@ import "a.proto";
 import "b.proto";
 message ExtendedAnySyntax_InMap {
   option (extra_in_map) = {
-    map:<key:"bar" value:<any:<type_url:"type.googleapis.com/foo.bar.baz.Foo" value:"\n\nBob Loblaw\020*" >>> map:<key:"foo" value:<any:<type_url:"type.googleapis.com/ExtendedAnySyntax_InMap" >>>
+    map: [
+      {
+        key: "bar",
+        value: {
+          any: {
+            [type.googleapis.com/foo.bar.baz.Foo]: { name: "Bob Loblaw", id: 42 }
+          }
+        }
+      },
+      {
+        key: "foo",
+        value: {
+          any: {
+            [type.googleapis.com/ExtendedAnySyntax_InMap]: { }
+          }
+        }
+      }
+    ]
   };
 }
 -- google/protobuf/any.proto --

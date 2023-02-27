@@ -65,6 +65,7 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 			upstreamServer.TLS,
 			nil,
 			map[string]string{"foo": "bar"},
+			false,
 		),
 	)
 	defer agentServer.Close()
@@ -142,6 +143,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 			upstreamServer.TLS,
 			map[string]struct{}{"forbidden-header": {}},
 			nil,
+			false,
 		),
 	)
 	defer agentServer.Close()
