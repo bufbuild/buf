@@ -5,6 +5,8 @@
 - Update built-in Well-Known Types to Protobuf v22.0.
 - Fixes a bug in `buf format` where C-style block comments in which every
   line includes a prefix (usually "*") would be incorrectly indented.
+- Add `--private-network` flag to `buf beta studio-agent` to support handling CORS requests
+  from Studio on private networks that set the `Access-Control-Request-Private-Network` header.
 
 ## [v1.14.0] - 2023-02-09
 
