@@ -13,7 +13,7 @@ require (
 	github.com/google/go-containerregistry v0.13.0
 	github.com/jdxcode/netrc v0.0.0-20221124155335-4616370d1a84
 	github.com/jhump/protoreflect v1.14.1
-	github.com/klauspost/compress v1.15.15
+	github.com/klauspost/compress v1.16.0
 	github.com/klauspost/pgzip v1.2.5
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
@@ -21,7 +21,7 @@ require (
 	github.com/rs/cors v1.8.3
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	go.opentelemetry.io/otel v1.13.0
 	go.opentelemetry.io/otel/sdk v1.13.0
 	go.opentelemetry.io/otel/trace v1.13.0
