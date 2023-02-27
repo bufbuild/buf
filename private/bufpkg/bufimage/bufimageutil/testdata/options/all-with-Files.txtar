@@ -3,20 +3,20 @@ syntax = "proto2";
 package pkg;
 import "options.proto";
 option (UsedOption.file_baz) = "str";
-option (UsedOption.file_foo) = { foo:"str" };
+option (UsedOption.file_foo) = { foo: "str" };
 message Empty {
 }
 message Foo {
   option (message_baz) = "str";
-  option (message_foo) = { foo:"str" };
+  option (message_foo) = { foo: "str" };
   optional string foo = 1 [
     jstype = JS_STRING,
     (field_baz) = "str",
-    (field_foo) = { foo:"str" }
+    (field_foo) = { foo: "str" }
   ];
   oneof testOneof {
     option (oneof_baz) = "str";
-    option (oneof_foo) = { foo:"str" };
+    option (oneof_foo) = { foo: "str" };
     string bar = 2;
     bytes baz = 3;
   }
@@ -25,27 +25,27 @@ message Foo {
 enum FooEnum {
   option deprecated = true;
   option (enum_baz) = "str";
-  option (enum_foo) = { foo:"str" };
+  option (enum_foo) = { foo: "str" };
   FOO_ENUM_X = 0;
   FOO_ENUM_Y = 1 [
     (enum_value_baz) = "str",
-    (enum_value_foo) = { foo:"str" }
+    (enum_value_foo) = { foo: "str" }
   ];
 }
 service FooService {
   option (service_baz) = "str";
-  option (service_foo) = { foo:"str" };
+  option (service_foo) = { foo: "str" };
   rpc Do ( Empty ) returns ( Empty ) {
     option (method_baz) = "str";
-    option (method_foo) = { foo:"str" };
+    option (method_foo) = { foo: "str" };
   }
   rpc DoNot ( Empty ) returns ( Empty ) {
     option (method_baz) = "str";
-    option (method_foo) = { foo:"str" };
+    option (method_foo) = { foo: "str" };
   }
 }
 extend Foo {
-  optional string extension = 11 [(field_baz) = "str", (field_foo) = { foo:"str" }];
+  optional string extension = 11 [(field_baz) = "str", (field_foo) = { foo: "str" }];
 }
 -- google/protobuf/descriptor.proto --
 syntax = "proto2";
