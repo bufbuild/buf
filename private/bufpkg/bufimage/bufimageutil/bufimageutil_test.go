@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -231,7 +232,20 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	assert.NotNil(t, image)
 	assert.True(t, imageIsDependencyOrdered(filteredImage), "image files not in dependency order")
 
-	reflectDescriptors, err := desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
+	// We may have filtered out custom options from the set in the step above. However, the options messages
+	// still contain extension fields that refer to the custom options, as a result of building the image.
+	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That
+	// way, the result will omit custom options that aren't present in the filtered set (as they will be
+	// considered unrecognized fields).
+	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptors(filteredImage)...)
+	require.NoError(t, err)
+	data, err := proto.Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
+	require.NoError(t, err)
+	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
+	err = proto.UnmarshalOptions{Resolver: resolver}.Unmarshal(data, fileDescriptorSet)
+	require.NoError(t, err)
+
+	reflectDescriptors, err := desc.CreateFileDescriptorsFromSet(fileDescriptorSet)
 	require.NoError(t, err)
 	archive := &txtar.Archive{}
 	printer := protoprint.Printer{

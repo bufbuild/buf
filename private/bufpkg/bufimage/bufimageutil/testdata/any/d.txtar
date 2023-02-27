@@ -18,8 +18,7 @@ import "a.proto";
 import "b.proto";
 message NormalMessageSyntaxValidType {
   option (extra) = {
-    type_url: "type.googleapis.com/foo.bar.baz.Foo"
-    value: "\n\nBob Loblaw\020*"
+    [type.googleapis.com/foo.bar.baz.Foo]: { name: "Bob Loblaw", id: 42 }
   };
 }
 -- google/protobuf/any.proto --
