@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"go.uber.org/zap"
@@ -62,38 +63,47 @@ func (c *casModuleReader) GetModule(
 	ctx context.Context,
 	modulePin bufmoduleref.ModulePin,
 ) (bufmodule.Module, error) {
-	module, err := c.cache.GetModule(ctx, modulePin)
+	var modulePinDigest *manifest.Digest
+	if digest := modulePin.Digest(); digest != "" {
+		var err error
+		modulePinDigest, err = manifest.NewDigestFromString(digest)
+		// Fail fast if the buf.lock file contains a malformed digest
+		if err != nil {
+			return nil, fmt.Errorf("malformed module digest %q: %w", digest, err)
+		}
+	}
+	cachedModule, err := c.cache.GetModule(ctx, modulePin)
 	if err == nil {
 		c.stats.MarkHit()
-		return module, nil
+		return cachedModule, nil
 	}
 	c.logger.Debug("module cache miss", zap.Error(err))
 	c.stats.MarkMiss()
-	module, err = c.delegate.GetModule(ctx, modulePin)
+	remoteModule, err := c.delegate.GetModule(ctx, modulePin)
 	if err != nil {
 		return nil, err
 	}
 	// Manifest and BlobSet should always be set if tamper proofing is enabled.
 	// If not, the BSR doesn't support tamper proofing while the CLI feature is enabled.
-	if module.Manifest() == nil || module.BlobSet() == nil {
+	if remoteModule.Manifest() == nil || remoteModule.BlobSet() == nil {
 		return nil, fmt.Errorf("required manifest/blobSet not set on module")
 	}
-	if modulePinDigest := modulePin.Digest(); modulePinDigest != "" {
-		manifestBlob, err := module.Manifest().Blob()
+	if modulePinDigest != nil {
+		manifestBlob, err := remoteModule.Manifest().Blob()
 		if err != nil {
 			return nil, err
 		}
-		manifestDigest := manifestBlob.Digest().String()
-		if manifestDigest != modulePinDigest {
+		manifestDigest := manifestBlob.Digest()
+		if !modulePinDigest.Equal(*manifestDigest) {
 			// buf.lock module digest and BSR module don't match - fail without overwriting cache
 			return nil, fmt.Errorf("module digest mismatch - expected: %q, found: %q", modulePinDigest, manifestDigest)
 		}
 	}
-	if err := c.cache.PutModule(ctx, modulePin, module); err != nil {
+	if err := c.cache.PutModule(ctx, modulePin, remoteModule); err != nil {
 		return nil, err
 	}
 	if err := warnIfDeprecated(ctx, c.repositoryClientFactory, modulePin, c.logger); err != nil {
 		return nil, err
 	}
-	return module, nil
+	return remoteModule, nil
 }

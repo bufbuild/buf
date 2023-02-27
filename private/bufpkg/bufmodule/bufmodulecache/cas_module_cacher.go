@@ -96,6 +96,9 @@ func (c *casModuleCacher) PutModule(
 	module bufmodule.Module,
 ) (retErr error) {
 	moduleManifest := module.Manifest()
+	if moduleManifest == nil {
+		return fmt.Errorf("manifest must be non-nil")
+	}
 	manifestBlob, err := moduleManifest.Blob()
 	if err != nil {
 		return err
@@ -109,7 +112,7 @@ func (c *casModuleCacher) PutModule(
 		if err != nil {
 			return fmt.Errorf("invalid digest %q: %w", modulePinDigestEncoded, err)
 		}
-		if digest.String() != modulePinDigest.String() {
+		if !digest.Equal(*modulePinDigest) {
 			return fmt.Errorf("manifest digest mismatch: expected=%q, found=%q", modulePinDigest.String(), digest.String())
 		}
 	}
@@ -188,7 +191,7 @@ func (c *casModuleCacher) validateBlob(
 	if err != nil {
 		return false, err
 	}
-	return digest.String() == cacheDigest.String(), nil
+	return digest.Equal(*cacheDigest), nil
 }
 
 func (c *casModuleCacher) readManifest(

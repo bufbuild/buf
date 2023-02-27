@@ -191,7 +191,7 @@ func (b *bucket) Put(ctx context.Context, path string, opts ...storage.PutOption
 		return nil, newErrNotDir(externalDir)
 	}
 	var file *os.File
-	finalPath := ""
+	var finalPath string
 	if putOptions.Atomic {
 		file, err = os.CreateTemp(externalDir, ".tmp"+filepath.Base(externalPath)+"*")
 		finalPath = externalPath

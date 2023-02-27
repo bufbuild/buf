@@ -112,8 +112,19 @@ type Module interface {
 	// This may be nil, since older versions of the module would not have this stored.
 	LintConfig() *buflintconfig.Config
 	// Manifest returns the manifest for the module (possibly nil).
+	// A manifest's contents contain a lexicographically sorted list of path names along
+	// with each path's digest. The manifest also stores a digest of its own contents which
+	// allows verification of the entire Buf module. In addition to the .proto files in
+	// the module, it also lists the buf.yaml, LICENSE, buf.md, and buf.lock files (if
+	// present).
 	Manifest() *manifest.Manifest
 	// BlobSet returns the raw data for the module (possibly nil).
+	// Each blob in the blob set is indexed by the digest of the blob's contents. For
+	// example, the buf.yaml file will be listed in the Manifest with a given digest,
+	// whose contents can be retrieved by looking up the corresponding digest in the
+	// blob set. This allows API consumers to get access to the original file contents
+	// of every file in the module, which is useful for caching or recreating a module's
+	// original files.
 	BlobSet() *manifest.BlobSet
 
 	getSourceReadBucket() storage.ReadBucket
@@ -170,7 +181,7 @@ func NewModuleForProto(
 	return newModuleForProto(ctx, protoModule, options...)
 }
 
-// NewModuleForManifestAndBlobSet returns a new Module given the manifest and blobs.
+// NewModuleForManifestAndBlobSet returns a new Module given the manifest and blob set.
 func NewModuleForManifestAndBlobSet(
 	ctx context.Context,
 	manifest *manifest.Manifest,

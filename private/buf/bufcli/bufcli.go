@@ -553,57 +553,42 @@ func newModuleReaderAndCreateCacheDirs(
 	clientConfig *connectclient.Config,
 	cacheModuleReaderOpts ...bufmodulecache.ModuleReaderOption,
 ) (bufmodule.ModuleReader, error) {
-	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
-	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
-	cacheModuleSumDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleSumRelDirPath)
+	cacheModuleDataDirPathV1 := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
+	cacheModuleLockDirPathV1 := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
+	cacheModuleSumDirPathV1 := normalpath.Join(container.CacheDirPath(), v1CacheModuleSumRelDirPath)
 	cacheModuleDirPathV2 := normalpath.Join(container.CacheDirPath(), v2CacheModuleRelDirPath)
-	if err := checkExistingCacheDirs(
-		container.CacheDirPath(),
-		container.CacheDirPath(),
-		cacheModuleDataDirPath,
-		cacheModuleLockDirPath,
-		cacheModuleSumDirPath,
-		cacheModuleDirPathV2,
-	); err != nil {
-		return nil, err
-	}
-	if err := createCacheDirs(
-		cacheModuleDataDirPath,
-		cacheModuleLockDirPath,
-		cacheModuleSumDirPath,
-		cacheModuleDirPathV2,
-	); err != nil {
-		return nil, err
-	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	// do NOT want to enable symlinks for our cache
-	dataReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDataDirPath)
-	if err != nil {
-		return nil, err
-	}
-	// do NOT want to enable symlinks for our cache
-	sumReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleSumDirPath)
-	if err != nil {
-		return nil, err
-	}
-	fileLocker, err := filelock.NewLocker(cacheModuleLockDirPath)
-	if err != nil {
-		return nil, err
-	}
-	var moduleReaderOpts []bufapimodule.ModuleReaderOption
 	// Check if tamper proofing env var is enabled
 	tamperProofingEnabled, err := IsBetaTamperProofingEnabled(container)
 	if err != nil {
 		return nil, err
 	}
+	var cacheDirsToCreate []string
+	if tamperProofingEnabled {
+		cacheDirsToCreate = append(cacheDirsToCreate, cacheModuleDirPathV2)
+	} else {
+		cacheDirsToCreate = append(
+			cacheDirsToCreate,
+			cacheModuleDataDirPathV1,
+			cacheModuleLockDirPathV1,
+			cacheModuleSumDirPathV1,
+		)
+	}
+	if err := checkExistingCacheDirs(container.CacheDirPath(), cacheDirsToCreate...); err != nil {
+		return nil, err
+	}
+	if err := createCacheDirs(cacheDirsToCreate...); err != nil {
+		return nil, err
+	}
+	var moduleReaderOpts []bufapimodule.ModuleReaderOption
 	if tamperProofingEnabled {
 		moduleReaderOpts = append(moduleReaderOpts, bufapimodule.WithTamperProofing())
 	}
-	repositoryClientFactory := bufmodulecache.NewRepositoryServiceClientFactory(clientConfig)
 	delegateReader := bufapimodule.NewModuleReader(
 		bufapimodule.NewDownloadServiceClientFactory(clientConfig),
 		moduleReaderOpts...,
 	)
+	repositoryClientFactory := bufmodulecache.NewRepositoryServiceClientFactory(clientConfig)
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	var moduleReader bufmodule.ModuleReader
 	if tamperProofingEnabled {
 		casModuleBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDirPathV2)
@@ -618,6 +603,20 @@ func newModuleReaderAndCreateCacheDirs(
 			repositoryClientFactory,
 		)
 	} else {
+		// do NOT want to enable symlinks for our cache
+		dataReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDataDirPathV1)
+		if err != nil {
+			return nil, err
+		}
+		// do NOT want to enable symlinks for our cache
+		sumReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleSumDirPathV1)
+		if err != nil {
+			return nil, err
+		}
+		fileLocker, err := filelock.NewLocker(cacheModuleLockDirPathV1)
+		if err != nil {
+			return nil, err
+		}
 		moduleReader = bufmodulecache.NewModuleReader(
 			container.Logger(),
 			container.VerbosePrinter(),
@@ -1067,7 +1066,11 @@ func newFetchImageReader(
 }
 
 func checkExistingCacheDirs(baseCacheDirPath string, dirPaths ...string) error {
-	for _, dirPath := range dirPaths {
+	dirPathsToCheck := make([]string, 0, len(dirPaths)+1)
+	// Check base cache directory in addition to subdirectories
+	dirPathsToCheck = append(dirPathsToCheck, baseCacheDirPath)
+	dirPathsToCheck = append(dirPathsToCheck, dirPaths...)
+	for _, dirPath := range dirPathsToCheck {
 		dirPath = normalpath.Unnormalize(dirPath)
 		// OK to use os.Stat instead of os.LStat here as this is CLI-only
 		fileInfo, err := os.Stat(dirPath)
