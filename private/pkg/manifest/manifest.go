@@ -70,18 +70,10 @@ type Manifest struct {
 var _ encoding.TextMarshaler = (*Manifest)(nil)
 var _ encoding.TextUnmarshaler = (*Manifest)(nil)
 
-// New creates an empty manifest.
-func New() *Manifest {
-	return &Manifest{
-		pathToDigest:  make(map[string]Digest),
-		digestToPaths: make(map[string][]string),
-	}
-}
-
 // NewFromReader builds a manifest from an encoded manifest, like one produced
 // by [Manifest.MarshalText].
 func NewFromReader(manifest io.Reader) (*Manifest, error) {
-	m := New()
+	var m Manifest
 	scanner := bufio.NewScanner(manifest)
 	scanner.Split(splitManifest)
 	lineno := 0
@@ -105,7 +97,7 @@ func NewFromReader(manifest io.Reader) (*Manifest, error) {
 		}
 		return nil, err
 	}
-	return m, nil
+	return &m, nil
 }
 
 // AddEntry adds an entry to the manifest with a path and its digest. It fails
@@ -126,8 +118,14 @@ func (m *Manifest) AddEntry(path string, digest Digest) error {
 			digest.String(), path, existingDigest.String(),
 		)
 	}
+	if m.pathToDigest == nil {
+		m.pathToDigest = make(map[string]Digest)
+	}
 	m.pathToDigest[path] = digest
 	key := digest.String()
+	if m.digestToPaths == nil {
+		m.digestToPaths = make(map[string][]string)
+	}
 	m.digestToPaths[key] = append(m.digestToPaths[key], path)
 	return nil
 }
@@ -196,6 +194,11 @@ func (m *Manifest) Blob() (Blob, error) {
 		return nil, err
 	}
 	return NewMemoryBlobFromReader(bytes.NewReader(manifestText))
+}
+
+// Empty returns true if the manifest has no entries.
+func (m *Manifest) Empty() bool {
+	return len(m.pathToDigest) == 0 && len(m.digestToPaths) == 0
 }
 
 func splitManifest(data []byte, atEOF bool) (int, []byte, error) {

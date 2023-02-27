@@ -73,14 +73,14 @@ func TestRoundTripManifest(t *testing.T) {
 
 func TestEmptyManifest(t *testing.T) {
 	t.Parallel()
-	content, err := manifest.New().MarshalText()
+	content, err := new(manifest.Manifest).MarshalText()
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(content))
 }
 
 func TestAddEntry(t *testing.T) {
 	t.Parallel()
-	m := manifest.New()
+	var m manifest.Manifest
 	fileDigest := mustDigestShake256(t, nil)
 	const filePath = "my/path"
 	require.NoError(t, m.AddEntry(filePath, *fileDigest))
@@ -150,7 +150,7 @@ func TestUnmarshalBrokenManifest(t *testing.T) {
 
 func TestDigestPaths(t *testing.T) {
 	t.Parallel()
-	m := manifest.New()
+	var m manifest.Manifest
 	sharedDigest := mustDigestShake256(t, nil)
 	err := m.AddEntry("path/one", *sharedDigest)
 	require.NoError(t, err)
@@ -166,7 +166,7 @@ func TestDigestPaths(t *testing.T) {
 
 func TestPathDigest(t *testing.T) {
 	t.Parallel()
-	m := manifest.New()
+	var m manifest.Manifest
 	digest := mustDigestShake256(t, nil)
 	err := m.AddEntry("my/path", *digest)
 	require.NoError(t, err)
@@ -193,7 +193,7 @@ func testInvalidManifest(
 
 func TestAllPaths(t *testing.T) {
 	t.Parallel()
-	m := manifest.New()
+	var m manifest.Manifest
 	var addedPaths []string
 	for i := 0; i < 20; i++ {
 		path := fmt.Sprintf("path/to/file%0d", i)
@@ -203,4 +203,29 @@ func TestAllPaths(t *testing.T) {
 	retPaths := m.Paths()
 	assert.Equal(t, len(addedPaths), len(retPaths))
 	assert.ElementsMatch(t, addedPaths, retPaths)
+}
+
+func TestManifestZeroValue(t *testing.T) {
+	t.Parallel()
+	var m manifest.Manifest
+	blob, err := m.Blob()
+	require.NoError(t, err)
+	assert.NotEmpty(t, blob.Digest().Hex())
+	assert.True(t, m.Empty())
+	assert.Empty(t, m.Paths())
+	paths, ok := m.PathsFor("anything")
+	assert.Empty(t, paths)
+	assert.False(t, ok)
+	digest, ok := m.DigestFor("anything")
+	assert.Nil(t, digest)
+	assert.False(t, ok)
+	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	require.NoError(t, err)
+	emptyDigest, err := digester.Digest(bytes.NewReader(nil))
+	require.NoError(t, err)
+	require.NoError(t, m.AddEntry("a", *emptyDigest))
+	digest, ok = m.DigestFor("a")
+	assert.True(t, ok)
+	assert.Equal(t, emptyDigest.Hex(), digest.Hex())
+	assert.False(t, m.Empty())
 }

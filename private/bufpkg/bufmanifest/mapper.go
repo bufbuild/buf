@@ -71,6 +71,37 @@ func AsProtoBlob(ctx context.Context, b manifest.Blob) (_ *modulev1alpha1.Blob, 
 	}, nil
 }
 
+// NewManifestFromProto returns a Manifest from a proto module blob. It makes sure the
+// digest and content matches.
+func NewManifestFromProto(ctx context.Context, b *modulev1alpha1.Blob) (_ *manifest.Manifest, retErr error) {
+	blob, err := NewBlobFromProto(b)
+	if err != nil {
+		return nil, fmt.Errorf("invalid manifest: %w", err)
+	}
+	r, err := blob.Open(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, r.Close())
+	}()
+	return manifest.NewFromReader(r)
+}
+
+// NewBlobSetFromProto returns a BlobSet from a slice of proto module blobs.
+// It makes sure the digest and content matches for each blob.
+func NewBlobSetFromProto(ctx context.Context, blobs []*modulev1alpha1.Blob) (*manifest.BlobSet, error) {
+	var memBlobs []manifest.Blob
+	for i, modBlob := range blobs {
+		memBlob, err := NewBlobFromProto(modBlob)
+		if err != nil {
+			return nil, fmt.Errorf("invalid blob at index %d: %w", i, err)
+		}
+		memBlobs = append(memBlobs, memBlob)
+	}
+	return manifest.NewBlobSet(ctx, memBlobs)
+}
+
 // NewBlobFromProto returns a Blob from a proto module blob. It makes sure the
 // digest and content matches.
 func NewBlobFromProto(b *modulev1alpha1.Blob) (manifest.Blob, error) {
