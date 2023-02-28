@@ -69,6 +69,13 @@ type FileInfo interface {
 	isFileInfo()
 }
 
+// InconsistentDigestError is an interface usable with errors.Is to determine
+// if module pin digests have changed unexpectedly.
+type InconsistentDigestError interface {
+	Error() string
+	inconsistentDigest()
+}
+
 // NewFileInfo returns a new FileInfo.
 //
 // TODO: we should make moduleIdentity and commit options.
@@ -364,6 +371,46 @@ func ValidateModulePinsUniqueByIdentity(modulePins []ModulePin) error {
 	return nil
 }
 
+// ValidateModulePinsConsistentDigests verifies that module pins to the same commit don't change digests.
+// This is important to avoid MITM issues, where the module digest stored in a buf.lock file doesn't match
+// the module pin returned from the BSR.
+func ValidateModulePinsConsistentDigests(
+	ctx context.Context,
+	bucket storage.ReadWriteBucket,
+	modulePins []ModulePin,
+) error {
+	currentConfig, err := buflock.ReadConfig(ctx, bucket)
+	if err != nil {
+		if storage.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if len(currentConfig.Dependencies) == 0 {
+		return nil
+	}
+	currentIdentityAndCommitToDigest := make(map[string]string, len(currentConfig.Dependencies))
+	for _, dep := range currentConfig.Dependencies {
+		key := fmt.Sprintf("%s/%s/%s:%s", dep.Remote, dep.Owner, dep.Repository, dep.Commit)
+		currentIdentityAndCommitToDigest[key] = dep.Digest
+	}
+	for _, pin := range modulePins {
+		key := fmt.Sprintf("%s/%s/%s:%s", pin.Remote(), pin.Owner(), pin.Repository(), pin.Commit())
+		currentDigest := currentIdentityAndCommitToDigest[key]
+		if currentDigest != "" && pin.Digest() != "" && currentDigest != pin.Digest() {
+			return &inconsistentDigestError{
+				wrapped: fmt.Errorf(
+					"module %s digest changed: expected=%q, found=%q",
+					pin.IdentityString(),
+					currentDigest,
+					pin.Digest(),
+				),
+			}
+		}
+	}
+	return nil
+}
+
 // ModuleReferenceEqual returns true if a equals b.
 func ModuleReferenceEqual(a ModuleReference, b ModuleReference) bool {
 	if (a == nil) != (b == nil) {
@@ -431,10 +478,13 @@ func DependencyModulePinsForBucket(
 // PutDependencyModulePinsToBucket writes the module dependencies to the write bucket in the form of a lock file.
 func PutDependencyModulePinsToBucket(
 	ctx context.Context,
-	writeBucket storage.WriteBucket,
+	readWriteBucket storage.ReadWriteBucket,
 	modulePins []ModulePin,
 ) error {
 	if err := ValidateModulePinsUniqueByIdentity(modulePins); err != nil {
+		return err
+	}
+	if err := ValidateModulePinsConsistentDigests(ctx, readWriteBucket, modulePins); err != nil {
 		return err
 	}
 	SortModulePins(modulePins)
@@ -453,7 +503,7 @@ func PutDependencyModulePinsToBucket(
 			},
 		)
 	}
-	return buflock.WriteConfig(ctx, writeBucket, lockFile)
+	return buflock.WriteConfig(ctx, readWriteBucket, lockFile)
 }
 
 // SortFileInfos sorts the FileInfos by Path.
@@ -490,3 +540,13 @@ func SortModulePins(modulePins []ModulePin) {
 		return modulePinLess(modulePins[i], modulePins[j])
 	})
 }
+
+type inconsistentDigestError struct {
+	wrapped error
+}
+
+func (e *inconsistentDigestError) Error() string {
+	return e.wrapped.Error()
+}
+
+func (e *inconsistentDigestError) inconsistentDigest() {}
