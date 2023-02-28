@@ -236,6 +236,8 @@ message PayloadRepositoryCommitPushed {
   repeated string tags = 5;
   // draft_name is the name of the draft. Optional.
   string draft_name = 6;
+  // manifest_digest is the module's manifest digest if tamper proofing is enabled.
+  string manifest_digest = 7;
 }
 
 message PayloadRepositoryContributorAdded {
