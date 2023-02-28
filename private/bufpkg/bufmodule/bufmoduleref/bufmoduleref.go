@@ -376,7 +376,7 @@ func ValidateModulePinsUniqueByIdentity(modulePins []ModulePin) error {
 // the module pin returned from the BSR.
 func ValidateModulePinsConsistentDigests(
 	ctx context.Context,
-	bucket storage.ReadWriteBucket,
+	bucket storage.ReadBucket,
 	modulePins []ModulePin,
 ) error {
 	currentConfig, err := buflock.ReadConfig(ctx, bucket)
@@ -395,7 +395,7 @@ func ValidateModulePinsConsistentDigests(
 		currentIdentityAndCommitToDigest[key] = dep.Digest
 	}
 	for _, pin := range modulePins {
-		key := fmt.Sprintf("%s/%s/%s:%s", pin.Remote(), pin.Owner(), pin.Repository(), pin.Commit())
+		key := fmt.Sprintf("%s:%s", pin.IdentityString(), pin.Commit())
 		currentDigest := currentIdentityAndCommitToDigest[key]
 		if currentDigest != "" && pin.Digest() != "" && currentDigest != pin.Digest() {
 			return &inconsistentDigestError{
