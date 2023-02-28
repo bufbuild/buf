@@ -36,7 +36,7 @@ func main() {
 	operation, filename := flag.Arg(0), flag.Arg(1)
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error: Could not read CHANGELOG.md")
+		fmt.Fprintln(os.Stderr, "Error: Could not read file")
 		os.Exit(1)
 	}
 	switch operation {
@@ -52,9 +52,9 @@ func main() {
 	default:
 		fmt.Fprintln(os.Stderr, "Error: usage: updatechangelog <release|unrelease> <filename.md>")
 	}
-	err = os.WriteFile("CHANGELOG.md", data, 0o644)
+	err = os.WriteFile(filename, data, 0600)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error: Could not write to CHANGELOG.md")
+		fmt.Fprintln(os.Stderr, "Error: Could not write to file")
 		os.Exit(1)
 	}
 }
