@@ -161,6 +161,8 @@ jobs:
   post-release:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' }}
+    outputs:
+      version: ${{ steps.output_version.outputs.version }}
     steps:
       - name: Generate token
         id: generate_token
@@ -195,6 +197,15 @@ jobs:
           title: "Return to development"
           body: Release complete for ${{github.ref_name}}
           token: ${{ steps.generate_token.outputs.token }}
+      - name: Get Version
+        uses: actions/github-script@v6
+        with:
+          script:
+            core.setOutput('version', "${{github.ref_name}}".replace("v", ""));
+  trigger-npm-publish:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
       - name: trigger npm publish
         uses: actions/github-script@v6
         with:
@@ -205,9 +216,13 @@ jobs:
               workflow_id: "npm-publish.yaml",
               ref: "main",
               inputs: {
-                version: "${{github.ref_name}}".replace("v", "")
+                version: "${{needs.post-release.outputs.version}}"
               }
             })
+  trigger-homebrew-buf-release:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
       - name: trigger homebrew-buf release
         uses: actions/github-script@v6
         with:
@@ -218,9 +233,13 @@ jobs:
               workflow_id: "release.yaml",
               ref: "main",
               inputs: {
-                version: "${{github.ref_name}}".replace("v", "")
+                version: "${{needs.post-release.outputs.version}}"
               }
             })
+  trigger-vim-buf-release:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
       - name: trigger vim-buf release
         uses: actions/github-script@v6
         with:
@@ -231,9 +250,13 @@ jobs:
               workflow_id: "release.yaml",
               ref: "main",
               inputs: {
-                version: "${{github.ref_name}}".replace("v", "")
+                version: "${{needs.post-release.outputs.version}}"
               }
             })
+  trigger-docs-buf-build-release:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
       - name: trigger docs.buf.build release
         uses: actions/github-script@v6
         with:
@@ -244,9 +267,13 @@ jobs:
               workflow_id: "release.yaml",
               ref: "main",
               inputs: {
-                version: "${{github.ref_name}}".replace("v", "")
+                version: "${{needs.post-release.outputs.version}}"
               }
             })
+  trigger-buf-setup-action-release:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
       - name: trigger buf-setup-action release
         uses: actions/github-script@v6
         with:
@@ -257,6 +284,6 @@ jobs:
               workflow_id: "release.yaml",
               ref: "main",
               inputs: {
-                version: "${{github.ref_name}}".replace("v", "")
+                version: "${{needs.post-release.outputs.version}}"
               }
             })
