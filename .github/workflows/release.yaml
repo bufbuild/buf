@@ -200,7 +200,7 @@ jobs:
       - id: output_version
         name: Output version to adjacent flows
         run: |
-          VERSION="${{github.ref_name}}".replace("v", "")
+          VERSION="${{github.ref_name:1}}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
   trigger-npm-publish:
     runs-on: ubuntu-latest
@@ -216,7 +216,7 @@ jobs:
               workflow_id: "npm-publish.yaml",
               ref: "main",
               inputs: {
-                version: ${{needs.post-release.outputs.version}}
+                version: "${{needs.post-release.outputs.version}}"
               }
             })
   trigger-homebrew-buf-release:
@@ -233,7 +233,7 @@ jobs:
               workflow_id: "release.yaml",
               ref: "main",
               inputs: {
-                version: ${{needs.post-release.outputs.version}}
+                version: "${{needs.post-release.outputs.version}}"
               }
             })
   trigger-vim-buf-release:
@@ -250,7 +250,7 @@ jobs:
               workflow_id: "release.yaml",
               ref: "main",
               inputs: {
-                version: ${{needs.post-release.outputs.version}}
+                version: "${{needs.post-release.outputs.version}}"
               }
             })
   trigger-docs-buf-build-release:
@@ -267,7 +267,7 @@ jobs:
               workflow_id: "release.yaml",
               ref: "main",
               inputs: {
-                version: ${{needs.post-release.outputs.version}}
+                version: "${{needs.post-release.outputs.version}}"
               }
             })
   trigger-buf-setup-action-release:
@@ -284,6 +284,6 @@ jobs:
               workflow_id: "release.yaml",
               ref: "main",
               inputs: {
-                version: ${{needs.post-release.outputs.version}}
+                version: "${{needs.post-release.outputs.version}}"
               }
             })
