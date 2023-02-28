@@ -40,7 +40,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
       - uses: actions/setup-go@v3
         with:
-          go-version: '^1.20.x'
+          go-version: "^1.20.x"
       - name: Install Buf
         run: make installbuf
       - name: Update Buf Version
@@ -134,7 +134,7 @@ jobs:
           echo "VERSION=${{github.ref_name}}" >> $GITHUB_ENV
       - uses: actions/setup-go@v3
         with:
-          go-version: '^1.20.x'
+          go-version: "^1.20.x"
       - name: Create assets
         env:
           RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
@@ -203,7 +203,7 @@ jobs:
               owner: context.owner,
               repo: "buf-npm-publish",
               workflow_id: "npm-publish.yaml",
-              ref: "main"
+              ref: "main",
               inputs: {
                 version: "${{github.ref_name}}".replace("v", "")
               }
@@ -216,7 +216,7 @@ jobs:
               owner: context.owner,
               repo: "homebrew-buf",
               workflow_id: "release.yaml",
-              ref: "main"
+              ref: "main",
               inputs: {
                 version: "${{github.ref_name}}".replace("v", "")
               }
@@ -229,7 +229,7 @@ jobs:
               owner: context.owner,
               repo: "vim-buf",
               workflow_id: "release.yaml",
-              ref: "main"
+              ref: "main",
               inputs: {
                 version: "${{github.ref_name}}".replace("v", "")
               }
@@ -242,7 +242,7 @@ jobs:
               owner: context.owner,
               repo: "docs.buf.build",
               workflow_id: "release.yaml",
-              ref: "main"
+              ref: "main",
               inputs: {
                 version: "${{github.ref_name}}".replace("v", "")
               }
@@ -255,7 +255,7 @@ jobs:
               owner: context.owner,
               repo: "buf-setup-action",
               workflow_id: "release.yaml",
-              ref: "main"
+              ref: "main",
               inputs: {
                 version: "${{github.ref_name}}".replace("v", "")
               }
