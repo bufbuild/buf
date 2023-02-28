@@ -197,11 +197,14 @@ jobs:
           title: "Return to development"
           body: Release complete for ${{github.ref_name}}
           token: ${{ steps.generate_token.outputs.token }}
+      - name: Get Version
+        uses: actions/github-script@v6
+        with:
+          script:
+            core.exportVariable('VERSION', "${{github.ref_name}}".replace("v", ""));
       - id: output_version
         name: Output version to adjacent flows
-        run: |
-          VERSION="${{github.ref_name:1}}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+        run: echo "version=${{env.VERSION}}" >> "$GITHUB_OUTPUT"
   trigger-npm-publish:
     runs-on: ubuntu-latest
     needs: post-release
