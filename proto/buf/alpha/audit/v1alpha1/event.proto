@@ -91,6 +91,7 @@ enum EventType {
   EVENT_TYPE_USER_LOGGED_OUT = 19;
   EVENT_TYPE_TOKEN_CREATED = 23;
   EVENT_TYPE_TOKEN_DELETED = 24;
+  EVENT_TYPE_USER_REACTIVATED = 25;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -145,6 +146,7 @@ message Event {
     PayloadOrganizationIDPGroupRemoved idp_group_removed = 28;
     PayloadTokenCreated token_created = 29;
     PayloadTokenDeleted token_deleted = 30;
+    PayloadUserReactivated user_reactivated = 31;
   }
 }
 
@@ -309,6 +311,8 @@ message PayloadPluginDeleted {
 }
 
 message PayloadUserCreated {}
+
+message PayloadUserReactivated {}
 
 message PayloadUserDeactivated {}
 
