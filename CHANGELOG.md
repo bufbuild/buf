@@ -1,6 +1,10 @@
 # Changelog
 
-## [v.1.15.0] - 2023-02-28
+## [Unreleased]
+
+- No changes yet.
+
+## [v1.15.0] - 2023-02-28
 
 - Update built-in Well-Known Types to Protobuf v22.0.
 - Fixes a bug in `buf format` where C-style block comments in which every
@@ -827,6 +831,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.15.0...HEAD
 [v1.15.0]: https://github.com/bufbuild/buf/compare/v1.14.0...v1.15.0
 [v1.14.0]: https://github.com/bufbuild/buf/compare/v1.13.1...v1.14.0
 [v1.13.1]: https://github.com/bufbuild/buf/compare/v1.13.0...v1.13.1
