@@ -40,7 +40,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:       name + " <module>",
+		Use:       name + " <directory>",
 		Short:     "Get module checksum",
 		Args:      cobra.MaximumNArgs(1),
 		BindFlags: flags.Bind,
