@@ -400,8 +400,9 @@ func ValidateModulePinsConsistentDigests(
 		if currentDigest != "" && pin.Digest() != "" && currentDigest != pin.Digest() {
 			return &inconsistentDigestError{
 				wrapped: fmt.Errorf(
-					"module %s digest changed: expected=%q, found=%q",
+					"module %s commit %q digest changed unexpectedly: expected=%q, found=%q",
 					pin.IdentityString(),
+					pin.Commit(),
 					currentDigest,
 					pin.Digest(),
 				),
