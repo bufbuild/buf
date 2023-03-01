@@ -16,6 +16,7 @@ package bufmoduleref
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -69,24 +70,6 @@ type FileInfo interface {
 	WithIsImport(isImport bool) FileInfo
 
 	isFileInfo()
-}
-
-// DigestChangedError is returned if module pin digests have changed unexpectedly.
-type DigestChangedError struct {
-	// CurrentDigest is the digest found in the buf.lock file.
-	CurrentDigest string
-	// UpdatedPin is a module pin with a different digest than CurrentDigest for the same commit.
-	UpdatedPin ModulePin
-}
-
-func (e *DigestChangedError) Error() string {
-	return fmt.Sprintf(
-		"module %s commit %q returned an unexpected digest: local buf.lock=%q, remote=%q",
-		e.UpdatedPin.IdentityString(),
-		e.UpdatedPin.Commit(),
-		e.CurrentDigest,
-		e.UpdatedPin.Digest(),
-	)
 }
 
 // NewFileInfo returns a new FileInfo.
@@ -387,7 +370,8 @@ func ValidateModulePinsUniqueByIdentity(modulePins []ModulePin) error {
 // ValidateModulePinsConsistentDigests verifies that module pins to the same commit don't change digests.
 // This is important to avoid MITM issues, where the module digest stored in a buf.lock file doesn't match
 // the module pin returned from the BSR.
-// Returns DigestChangedError if any valid digest changed from the buf.lock file for the same dependency commit.
+// Returns an error that fulfills IsDigestChanged if any valid digest changed from the buf.lock file for
+// the same dependency commit.
 func ValidateModulePinsConsistentDigests(
 	ctx context.Context,
 	bucket storage.ReadBucket,
@@ -423,9 +407,9 @@ func ValidateModulePinsConsistentDigests(
 			continue
 		}
 		if currentDigest, ok := currentIdentityAndCommitToDigest[pin.String()]; ok && currentDigest != pin.Digest() {
-			changedErrors = multierr.Append(changedErrors, &DigestChangedError{
-				CurrentDigest: currentDigest,
-				UpdatedPin:    pin,
+			changedErrors = multierr.Append(changedErrors, &digestChangedError{
+				currentDigest: currentDigest,
+				updatedPin:    pin,
 			})
 		}
 	}
@@ -560,4 +544,28 @@ func SortModulePins(modulePins []ModulePin) {
 	sort.Slice(modulePins, func(i, j int) bool {
 		return modulePinLess(modulePins[i], modulePins[j])
 	})
+}
+
+// IsDigestChanged returns true if the error indicates an unexpected digest change.
+func IsDigestChanged(err error) bool {
+	var errDigestChanged *digestChangedError
+	return errors.As(err, &errDigestChanged)
+}
+
+// digestChangedError is returned if module pin digests have changed unexpectedly.
+type digestChangedError struct {
+	// currentDigest is the digest found in the buf.lock file.
+	currentDigest string
+	// updatedPin is a module pin with a different digest than currentDigest for the same commit.
+	updatedPin ModulePin
+}
+
+func (e *digestChangedError) Error() string {
+	return fmt.Sprintf(
+		"module %s commit %q returned an unexpected digest: local buf.lock=%q, remote=%q",
+		e.updatedPin.IdentityString(),
+		e.updatedPin.Commit(),
+		e.currentDigest,
+		e.updatedPin.Digest(),
+	)
 }

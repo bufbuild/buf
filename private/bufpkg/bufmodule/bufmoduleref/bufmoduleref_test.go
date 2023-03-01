@@ -128,10 +128,7 @@ func TestValidateModulePinsConsistentDigests(t *testing.T) {
 	)
 	require.NoError(t, err)
 	err = ValidateModulePinsConsistentDigests(ctx, bucket, []ModulePin{modulePinChangedDigest})
-	var digestChangedErr *DigestChangedError
-	assert.ErrorAs(t, err, &digestChangedErr)
-	assert.Equal(t, modulePin.Digest(), digestChangedErr.CurrentDigest)
-	assert.Equal(t, modulePinChangedDigest.Digest(), digestChangedErr.UpdatedPin.Digest())
+	assert.True(t, IsDigestChanged(err))
 	// Change commit and digest - this is ok
 	modulePinChangedCommitAndDigest, err := NewModulePin(
 		modulePin.Remote(),

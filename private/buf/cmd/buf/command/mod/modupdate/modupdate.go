@@ -16,7 +16,6 @@ package modupdate
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -166,8 +165,7 @@ func run(
 	}
 
 	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
-		var inconsistentDigestErr *bufmoduleref.DigestChangedError
-		if errors.As(err, &inconsistentDigestErr) {
+		if bufmoduleref.IsDigestChanged(err) {
 			return err
 		}
 		return bufcli.NewInternalError(err)
