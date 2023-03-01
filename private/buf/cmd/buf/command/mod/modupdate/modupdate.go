@@ -166,7 +166,7 @@ func run(
 	}
 
 	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
-		var inconsistentDigestErr bufmoduleref.InconsistentDigestError
+		var inconsistentDigestErr *bufmoduleref.DigestChangedError
 		if errors.As(err, &inconsistentDigestErr) {
 			return err
 		}

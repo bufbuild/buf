@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -108,22 +109,83 @@ func TestDependencyModulePinsForBucket(t *testing.T) {
 	)
 }
 
+func TestValidateModulePinsConsistentDigests(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	modulePin := pin(t, "repo")
+	bucket := bucketWithBufLock(t, modulePin)
+	// Pin matches all fields
+	require.NoError(t, ValidateModulePinsConsistentDigests(ctx, bucket, []ModulePin{modulePin}))
+	// Change digest and nothing else
+	modulePinChangedDigest, err := NewModulePin(
+		modulePin.Remote(),
+		modulePin.Owner(),
+		modulePin.Repository(),
+		modulePin.Branch(),
+		modulePin.Commit(),
+		createDigest(t, []byte("abc")),
+		modulePin.CreateTime(),
+	)
+	err = ValidateModulePinsConsistentDigests(ctx, bucket, []ModulePin{modulePinChangedDigest})
+	var digestChangedErr *DigestChangedError
+	assert.ErrorAs(t, err, &digestChangedErr)
+	assert.Equal(t, modulePin.Digest(), digestChangedErr.CurrentDigest)
+	assert.Equal(t, modulePinChangedDigest.Digest(), digestChangedErr.UpdatedPin.Digest())
+	// Change commit and digest - this is ok
+	modulePinChangedCommitAndDigest, err := NewModulePin(
+		modulePin.Remote(),
+		modulePin.Owner(),
+		modulePin.Repository(),
+		modulePin.Branch(),
+		"updatedcommit",
+		createDigest(t, []byte("abc")),
+		modulePin.CreateTime(),
+	)
+	require.NoError(t, ValidateModulePinsConsistentDigests(ctx, bucket, []ModulePin{modulePinChangedCommitAndDigest}))
+}
+
+func bucketWithBufLock(t *testing.T, pin ModulePin) storage.ReadWriteBucket {
+	t.Helper()
+	bufLock := &buflock.Config{
+		Dependencies: []buflock.Dependency{
+			{
+				Remote:     pin.Remote(),
+				Owner:      pin.Owner(),
+				Repository: pin.Repository(),
+				Commit:     pin.Commit(),
+				Digest:     pin.Digest(),
+			},
+		},
+	}
+	bucket, err := storagemem.NewReadWriteBucketWithOptions()
+	require.NoError(t, err)
+	err = buflock.WriteConfig(context.Background(), bucket, bufLock)
+	require.NoError(t, err)
+	return bucket
+}
+
 func pin(t *testing.T, repository string) ModulePin {
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
-	require.NoError(t, err)
-	nullDigest, err := digester.Digest(&bytes.Buffer{})
-	require.NoError(t, err)
+	t.Helper()
 	pin, err := NewModulePin(
 		"remote",
 		"owner",
 		repository,
 		"branch",
 		"commit",
-		nullDigest.String(),
+		createDigest(t, []byte{}),
 		time.Now(),
 	)
 	require.NoError(t, err)
 	return pin
+}
+
+func createDigest(t *testing.T, b []byte) string {
+	t.Helper()
+	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	require.NoError(t, err)
+	digest, err := digester.Digest(bytes.NewReader(b))
+	require.NoError(t, err)
+	return digest.String()
 }
 
 func deps(

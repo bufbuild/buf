@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
@@ -69,11 +70,22 @@ type FileInfo interface {
 	isFileInfo()
 }
 
-// InconsistentDigestError is an interface usable with errors.Is to determine
-// if module pin digests have changed unexpectedly.
-type InconsistentDigestError interface {
-	Error() string
-	inconsistentDigest()
+// DigestChangedError is returned if module pin digests have changed unexpectedly.
+type DigestChangedError struct {
+	// CurrentDigest is the digest found in the buf.lock file.
+	CurrentDigest string
+	// UpdatedPin is a module pin with a different digest than CurrentDigest for the same commit.
+	UpdatedPin ModulePin
+}
+
+func (e *DigestChangedError) Error() string {
+	return fmt.Sprintf(
+		"module %s commit %q digest changed unexpectedly: expected=%q, found=%q",
+		e.UpdatedPin.IdentityString(),
+		e.UpdatedPin.Commit(),
+		e.CurrentDigest,
+		e.UpdatedPin.Digest(),
+	)
 }
 
 // NewFileInfo returns a new FileInfo.
@@ -374,6 +386,7 @@ func ValidateModulePinsUniqueByIdentity(modulePins []ModulePin) error {
 // ValidateModulePinsConsistentDigests verifies that module pins to the same commit don't change digests.
 // This is important to avoid MITM issues, where the module digest stored in a buf.lock file doesn't match
 // the module pin returned from the BSR.
+// Returns DigestChangedError if any valid digest changed from the buf.lock file for the same dependency commit.
 func ValidateModulePinsConsistentDigests(
 	ctx context.Context,
 	bucket storage.ReadBucket,
@@ -391,21 +404,27 @@ func ValidateModulePinsConsistentDigests(
 	}
 	currentIdentityAndCommitToDigest := make(map[string]string, len(currentConfig.Dependencies))
 	for _, dep := range currentConfig.Dependencies {
+		// Ignore dependencies with no digest
+		if dep.Digest == "" {
+			continue
+		}
+		// Ignore dependencies with an invalid digest.
+		// We want to replace these with a valid digest.
+		if _, err := manifest.NewDigestFromString(dep.Digest); err != nil {
+			continue
+		}
 		key := fmt.Sprintf("%s/%s/%s:%s", dep.Remote, dep.Owner, dep.Repository, dep.Commit)
 		currentIdentityAndCommitToDigest[key] = dep.Digest
 	}
 	for _, pin := range modulePins {
+		if pin.Digest() == "" {
+			continue
+		}
 		key := fmt.Sprintf("%s:%s", pin.IdentityString(), pin.Commit())
-		currentDigest := currentIdentityAndCommitToDigest[key]
-		if currentDigest != "" && pin.Digest() != "" && currentDigest != pin.Digest() {
-			return &inconsistentDigestError{
-				wrapped: fmt.Errorf(
-					"module %s commit %q digest changed unexpectedly: expected=%q, found=%q",
-					pin.IdentityString(),
-					pin.Commit(),
-					currentDigest,
-					pin.Digest(),
-				),
+		if currentDigest, ok := currentIdentityAndCommitToDigest[key]; ok && currentDigest != pin.Digest() {
+			return &DigestChangedError{
+				CurrentDigest: currentDigest,
+				UpdatedPin:    pin,
 			}
 		}
 	}
@@ -541,13 +560,3 @@ func SortModulePins(modulePins []ModulePin) {
 		return modulePinLess(modulePins[i], modulePins[j])
 	})
 }
-
-type inconsistentDigestError struct {
-	wrapped error
-}
-
-func (e *inconsistentDigestError) Error() string {
-	return e.wrapped.Error()
-}
-
-func (e *inconsistentDigestError) inconsistentDigest() {}
