@@ -163,11 +163,15 @@ func run(
 		}
 		container.Logger().Warn(warnMsg)
 	}
-
-	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
+	// Before updating buf.lock file, verify that existing dependency digests didn't change for the same commit.
+	err = bufmoduleref.ValidateModulePinsConsistentDigests(ctx, readWriteBucket, dependencyModulePins)
+	if err != nil {
 		if bufmoduleref.IsDigestChanged(err) {
 			return err
 		}
+		return bufcli.NewInternalError(err)
+	}
+	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil

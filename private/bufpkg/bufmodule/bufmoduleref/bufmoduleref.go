@@ -483,13 +483,10 @@ func DependencyModulePinsForBucket(
 // PutDependencyModulePinsToBucket writes the module dependencies to the write bucket in the form of a lock file.
 func PutDependencyModulePinsToBucket(
 	ctx context.Context,
-	readWriteBucket storage.ReadWriteBucket,
+	writeBucket storage.WriteBucket,
 	modulePins []ModulePin,
 ) error {
 	if err := ValidateModulePinsUniqueByIdentity(modulePins); err != nil {
-		return err
-	}
-	if err := ValidateModulePinsConsistentDigests(ctx, readWriteBucket, modulePins); err != nil {
 		return err
 	}
 	SortModulePins(modulePins)
@@ -508,7 +505,7 @@ func PutDependencyModulePinsToBucket(
 			},
 		)
 	}
-	return buflock.WriteConfig(ctx, readWriteBucket, lockFile)
+	return buflock.WriteConfig(ctx, writeBucket, lockFile)
 }
 
 // SortFileInfos sorts the FileInfos by Path.

@@ -446,28 +446,28 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 func ModuleToBucket(
 	ctx context.Context,
 	module Module,
-	readWriteBucket storage.ReadWriteBucket,
+	writeBucket storage.WriteBucket,
 ) error {
 	fileInfos, err := module.SourceFileInfos(ctx)
 	if err != nil {
 		return err
 	}
 	for _, fileInfo := range fileInfos {
-		if err := putModuleFileToBucket(ctx, module, fileInfo.Path(), readWriteBucket); err != nil {
+		if err := putModuleFileToBucket(ctx, module, fileInfo.Path(), writeBucket); err != nil {
 			return err
 		}
 	}
 	if docs := module.Documentation(); docs != "" {
-		if err := storage.PutPath(ctx, readWriteBucket, DocumentationFilePath, []byte(docs)); err != nil {
+		if err := storage.PutPath(ctx, writeBucket, DocumentationFilePath, []byte(docs)); err != nil {
 			return err
 		}
 	}
 	if license := module.License(); license != "" {
-		if err := storage.PutPath(ctx, readWriteBucket, LicenseFilePath, []byte(license)); err != nil {
+		if err := storage.PutPath(ctx, writeBucket, LicenseFilePath, []byte(license)); err != nil {
 			return err
 		}
 	}
-	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, module.DependencyModulePins()); err != nil {
+	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, writeBucket, module.DependencyModulePins()); err != nil {
 		return err
 	}
 	// This is the default version created by bufconfig getters. The versions should be the
@@ -496,7 +496,7 @@ func ModuleToBucket(
 		bufconfig.WriteConfigWithLintConfig(module.LintConfig()),
 		bufconfig.WriteConfigWithVersion(version),
 	}
-	return bufconfig.WriteConfig(ctx, readWriteBucket, writeConfigOptions...)
+	return bufconfig.WriteConfig(ctx, writeBucket, writeConfigOptions...)
 }
 
 // TargetModuleFilesToBucket writes the target files of the given Module to the WriteBucket.
