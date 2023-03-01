@@ -164,8 +164,7 @@ func run(
 		container.Logger().Warn(warnMsg)
 	}
 	// Before updating buf.lock file, verify that existing dependency digests didn't change for the same commit.
-	err = bufmoduleref.ValidateModulePinsConsistentDigests(ctx, readWriteBucket, dependencyModulePins)
-	if err != nil {
+	if err := bufmoduleref.ValidateModulePinsConsistentDigests(ctx, readWriteBucket, dependencyModulePins); err != nil {
 		if bufmoduleref.IsDigestChanged(err) {
 			return err
 		}
