@@ -126,6 +126,7 @@ func TestValidateModulePinsConsistentDigests(t *testing.T) {
 		createDigest(t, []byte("abc")),
 		modulePin.CreateTime(),
 	)
+	require.NoError(t, err)
 	err = ValidateModulePinsConsistentDigests(ctx, bucket, []ModulePin{modulePinChangedDigest})
 	var digestChangedErr *DigestChangedError
 	assert.ErrorAs(t, err, &digestChangedErr)
@@ -141,6 +142,7 @@ func TestValidateModulePinsConsistentDigests(t *testing.T) {
 		createDigest(t, []byte("abc")),
 		modulePin.CreateTime(),
 	)
+	require.NoError(t, err)
 	require.NoError(t, ValidateModulePinsConsistentDigests(ctx, bucket, []ModulePin{modulePinChangedCommitAndDigest}))
 }
 
