@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -80,7 +81,7 @@ type DigestChangedError struct {
 
 func (e *DigestChangedError) Error() string {
 	return fmt.Sprintf(
-		"module %s commit %q digest changed unexpectedly: expected=%q, found=%q",
+		"module %s commit %q returned an unexpected digest: local buf.lock=%q, remote=%q",
 		e.UpdatedPin.IdentityString(),
 		e.UpdatedPin.Commit(),
 		e.CurrentDigest,
@@ -416,19 +417,19 @@ func ValidateModulePinsConsistentDigests(
 		key := fmt.Sprintf("%s/%s/%s:%s", dep.Remote, dep.Owner, dep.Repository, dep.Commit)
 		currentIdentityAndCommitToDigest[key] = dep.Digest
 	}
+	var changedErrors error
 	for _, pin := range modulePins {
 		if pin.Digest() == "" {
 			continue
 		}
-		key := fmt.Sprintf("%s:%s", pin.IdentityString(), pin.Commit())
-		if currentDigest, ok := currentIdentityAndCommitToDigest[key]; ok && currentDigest != pin.Digest() {
-			return &DigestChangedError{
+		if currentDigest, ok := currentIdentityAndCommitToDigest[pin.String()]; ok && currentDigest != pin.Digest() {
+			changedErrors = multierr.Append(changedErrors, &DigestChangedError{
 				CurrentDigest: currentDigest,
 				UpdatedPin:    pin,
-			}
+			})
 		}
 	}
-	return nil
+	return changedErrors
 }
 
 // ModuleReferenceEqual returns true if a equals b.
