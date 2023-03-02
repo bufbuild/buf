@@ -349,10 +349,8 @@ message PayloadTokenDeleted {
 }
 
 message PayloadSCIMTokenCreated {
-  // creator_id is the id of the creator of the token.
-  string creator_id = 1;
   // token_expiry_time is the expiry time of the token.
-  google.protobuf.Timestamp token_expiry_time = 2;
+  google.protobuf.Timestamp token_expiry_time = 1;
 }
 
 message PayloadSCIMTokenDeleted {}
