@@ -1,0 +1,71 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "google/protobuf/timestamp.proto";
+
+message SCIMToken {
+  string id = 1;
+  google.protobuf.Timestamp create_time = 2;
+  google.protobuf.Timestamp expire_time = 3;
+}
+
+// TokenSCIMService is the SCIM Token service.
+service SCIMTokenService {
+  // CreateToken creates a new token suitable for authentication to the SCIM API.
+  //
+  // This method requires authentication.
+  rpc CreateSCIMToken(CreateSCIMTokenRequest) returns (CreateSCIMTokenResponse);
+  // ListTokens lists all active SCIM tokens.
+  //
+  // This method requires authentication.
+  rpc ListSCIMTokens(ListSCIMTokensRequest) returns (ListSCIMTokensResponse);
+  // DeleteToken deletes an existing token.
+  //
+  // This method requires authentication.
+  rpc DeleteSCIMToken(DeleteSCIMTokenRequest) returns (DeleteSCIMTokenResponse);
+}
+
+message CreateSCIMTokenRequest {
+  // The time until which the token should be valid.
+  // Must be in the future. May be null for no expiry.
+  google.protobuf.Timestamp expire_time = 1;
+}
+
+message CreateSCIMTokenResponse {
+  // The plaintext token to use for authentication.
+  string token = 1;
+}
+
+message ListSCIMTokensRequest {
+  uint32 page_size = 1;
+  // The first page is returned if this is empty.
+  string page_token = 2;
+  bool reverse = 3;
+}
+
+message ListSCIMTokensResponse {
+  repeated SCIMToken tokens = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message DeleteSCIMTokenRequest {
+  string token_id = 1;
+}
+
+message DeleteSCIMTokenResponse {}
