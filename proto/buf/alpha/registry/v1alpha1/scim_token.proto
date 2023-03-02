@@ -41,7 +41,7 @@ service SCIMTokenService {
 message CreateSCIMTokenRequest {
   // The time until which the token should be valid.
   // Must be in the future. May be null for no expiry.
-  google.protobuf.Timestamp expire_time = 2;
+  google.protobuf.Timestamp expire_time = 1;
 }
 
 message CreateSCIMTokenResponse {
