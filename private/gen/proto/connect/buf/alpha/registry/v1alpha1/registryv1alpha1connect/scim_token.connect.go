@@ -42,6 +42,8 @@ const (
 // SCIMTokenServiceClient is a client for the buf.alpha.registry.v1alpha1.SCIMTokenService service.
 type SCIMTokenServiceClient interface {
 	// CreateToken creates a new token suitable for authentication to the SCIM API.
+	//
+	// This method requires authentication.
 	CreateSCIMToken(context.Context, *connect_go.Request[v1alpha1.CreateSCIMTokenRequest]) (*connect_go.Response[v1alpha1.CreateSCIMTokenResponse], error)
 	// ListTokens lists all active SCIM tokens.
 	//
@@ -108,6 +110,8 @@ func (c *sCIMTokenServiceClient) DeleteSCIMToken(ctx context.Context, req *conne
 // service.
 type SCIMTokenServiceHandler interface {
 	// CreateToken creates a new token suitable for authentication to the SCIM API.
+	//
+	// This method requires authentication.
 	CreateSCIMToken(context.Context, *connect_go.Request[v1alpha1.CreateSCIMTokenRequest]) (*connect_go.Response[v1alpha1.CreateSCIMTokenResponse], error)
 	// ListTokens lists all active SCIM tokens.
 	//

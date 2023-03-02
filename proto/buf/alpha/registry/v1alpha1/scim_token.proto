@@ -27,6 +27,8 @@ message SCIMToken {
 // TokenSCIMService is the SCIM Token service.
 service SCIMTokenService {
   // CreateToken creates a new token suitable for authentication to the SCIM API.
+  //
+  // This method requires authentication.
   rpc CreateSCIMToken(CreateSCIMTokenRequest) returns (CreateSCIMTokenResponse);
   // ListTokens lists all active SCIM tokens.
   //
