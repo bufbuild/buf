@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// update-changelog supplies a cli that updates the CHANGELOG.md. The tool accepts two operations: "release" and "unrelease".
+// "update-changelog release" requires a filename argument (default CHANGELOG.md), a --version flag in the form vx.y.z, an optional --date flag. If no date is supplied the current date will be used.
+// "update-changelog unrelease" does not require any flags or arguments except for the optional filename and will add `Unreleased` sections to the changelog.
 package main
 
 import (
@@ -34,6 +37,9 @@ func main() {
 		os.Exit(1)
 	}
 	operation, filename := flag.Arg(0), flag.Arg(1)
+	if filename == "" {
+		filename = "CHANGELOG.md"
+	}
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error: Could not read file")
