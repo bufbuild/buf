@@ -126,12 +126,13 @@ updatehomebrewbadge:
 	$(SED_I) "s/badge\/homebrew-v.*-blue/badge\/homebrew-v$(shell bash make/buf/scripts/homebrewversion.bash)-blue/g" README.md
 
 .PHONY: updateversion
-updateversion:
+updateversion: installupdatechangelog
 ifndef VERSION
 	$(error "VERSION must be set")
 endif
 	$(SED_I) "s/Version.*=.*\"[0-9]\.[0-9][0-9]*\.[0-9][0-9]*.*\"/Version = \"$(VERSION)\"/g" private/buf/bufcli/bufcli.go
 	gofmt -s -w private/buf/bufcli/bufcli.go
+	update-changelog --version $(VERSION) release CHANGELOG.md
 
 .PHONY: updategoversion
 updategoversion: installgit-ls-files-unstaged
@@ -158,3 +159,6 @@ gofuzz: $(GO_FUZZ)
 	rm go.mod go.sum; mv $(TMP)/go.mod.bak go.mod; mv $(TMP)/go.sum.bak go.sum
 	cp private/bufpkg/bufimage/bufimagebuild/bufimagebuildtesting/corpus/* $(TMP)/gofuzz/corpus
 	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz $(GO_FUZZ_EXTRA_ARGS)
+
+installupdatechangelog:
+	go install ./private/pkg/changelog/cmd/update-changelog
