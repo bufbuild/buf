@@ -39,6 +39,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Error: Could not read file")
 		os.Exit(1)
 	}
+	repoUrl := getRepoUrl(data)
 	switch operation {
 	case "release":
 		if *versionPtr == "" {
@@ -46,9 +47,9 @@ func main() {
 			os.Exit(1)
 		}
 		version := *versionPtr
-		data = release(data, version, *datePtr)
+		data = release(data, repoUrl, version, *datePtr)
 	case "unrelease":
-		data = unrelease(data)
+		data = unrelease(data, repoUrl)
 	default:
 		fmt.Fprintln(os.Stderr, "Error: usage: updatechangelog <release|unrelease> <filename.md>")
 	}
@@ -58,25 +59,32 @@ func main() {
 		os.Exit(1)
 	}
 }
-
-func release(data []byte, version string, date string) []byte {
+func getRepoUrl(data []byte) string {
+	re := regexp.MustCompile(`\[.*?]: (.*?)\/compare`)
+	newData := re.FindStringSubmatch(string(data))
+	if len(newData) == 0 {
+		return ""
+	}
+	return newData[1]
+}
+func release(data []byte, repo string, version string, date string) []byte {
 	if date == "" {
 		date = time.Now().Format("2006-01-02")
 	}
 	re := regexp.MustCompile(`## \[Unreleased\]`)
 	newData := re.ReplaceAll(data, []byte(fmt.Sprintf("## [%s] - %s", version, date)))
-	re = regexp.MustCompile(fmt.Sprintf(`\[Unreleased\].*?%s\.\.\.HEAD`, semverRegex))
+	re = regexp.MustCompile(fmt.Sprintf(`\[Unreleased\]: (.*?)v%s\.\.\.HEAD`, semverRegex))
 	lastVersionFoo := re.FindStringSubmatch(string(newData))
 	if len(lastVersionFoo) != 0 {
-		lastVersion := lastVersionFoo[1]
+		lastVersion := lastVersionFoo[2]
 		if lastVersion != "" {
-			newData = re.ReplaceAll(newData, []byte(fmt.Sprintf("[%s]: https://github.com/bufbuild/buf/compare/v%s...%s", version, lastVersion, version)))
+			newData = re.ReplaceAll(newData, []byte(fmt.Sprintf("[%s]: %s/compare/v%s...%s", version, repo, lastVersion, version)))
 		}
 	}
 	return newData
 }
 
-func unrelease(data []byte) []byte {
+func unrelease(data []byte, repo string) []byte {
 	re := regexp.MustCompile(`# Changelog`)
 	data = re.ReplaceAll(data, []byte(`# Changelog
 
@@ -88,7 +96,7 @@ func unrelease(data []byte) []byte {
 	data = []byte(
 		strings.Replace(string(data),
 			lastVersions[0],
-			fmt.Sprintf(`[Unreleased]: https://github.com/bufbuild/buf/compare/v%s...HEAD
-%s`, lastVersions[1], lastVersions[0]), 1))
+			fmt.Sprintf(`[Unreleased]: %s/compare/v%s...HEAD
+%s`, repo, lastVersions[1], lastVersions[0]), 1))
 	return data
 }
