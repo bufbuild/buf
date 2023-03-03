@@ -30,7 +30,7 @@ func main() {
 	datePtr := flag.String("date", "", "the release date (optional, defaults to today)")
 	flag.Parse()
 	if len(flag.Args()) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: updatechangelog <release|unrelease> <filename.md>")
+		fmt.Fprintln(os.Stderr, "usage: update-changelog <release|unrelease> <filename.md>")
 		os.Exit(1)
 	}
 	operation, filename := flag.Arg(0), flag.Arg(1)
@@ -51,7 +51,7 @@ func main() {
 	case "unrelease":
 		data = unrelease(data, repoUrl)
 	default:
-		fmt.Fprintln(os.Stderr, "Error: usage: updatechangelog <release|unrelease> <filename.md>")
+		fmt.Fprintln(os.Stderr, "Error: usage: update-changelog <release|unrelease> <filename.md>")
 	}
 	err = os.WriteFile(filename, data, 0600)
 	if err != nil {
