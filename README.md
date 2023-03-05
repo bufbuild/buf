@@ -138,7 +138,7 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [filedescriptorset]: https://github.com/protocolbuffers/protobuf/blob/044c766fd4777713fef2d1a9a095e4308d770c68/src/google/protobuf/descriptor.proto#L57
 [features]: #features
 [fish]: https://fishshell.com
-[format_usage]: https://docs.buf.build/format/usage
+[format_usage]: https://docs.buf.build/lint/usage#23-automatically-format-your-proto-files
 [generate_usage]: https://docs.buf.build/generate/usage
 [ide]: https://docs.buf.build/editor-integration
 [idl]: https://en.wikipedia.org/wiki/Interface_description_language
