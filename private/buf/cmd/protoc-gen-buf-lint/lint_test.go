@@ -192,13 +192,13 @@ func TestRunLint_UnusedImports(t *testing.T) {
 		{"buf", "v1", "service_option.proto"},
 		{"buf", "v1", "method_option.proto"},
 	}
-	unusedImportFiles := make([]string, len(unusedImportsFileComponents))
-	for i, components := range unusedImportsFileComponents {
-		unusedImportFiles[i] = filepath.Join(components...)
-	}
 	unusedImportFilesWithFullPath := make([]string, len(unusedImportsFileComponents))
 	for i, components := range unusedImportsFileComponents {
 		unusedImportFilesWithFullPath[i] = filepath.Join(append([]string{"testdata", "unused-imports"}, components...)...)
+	}
+	unusedImportFiles := make([]string, len(unusedImportsFileComponents))
+	for i, components := range unusedImportsFileComponents {
+		unusedImportFiles[i] = normalpath.Join(components...)
 	}
 	testRunLint(
 		t,
