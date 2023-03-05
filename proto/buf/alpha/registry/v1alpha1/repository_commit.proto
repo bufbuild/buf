@@ -47,6 +47,8 @@ message RepositoryCommit {
   // https://spdx.org/licenses, and will be not set if the license file is not
   // presented or cannot be classified into a known license.
   string spdx_license_id = 10;
+  // The manifest digest of the commit. Populated via Tamper Proofing.
+  string manifest_digest = 11;
 }
 
 // RepositoryCommitService is the Repository commit service.

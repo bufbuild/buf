@@ -25,6 +25,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
+	"go.uber.org/atomic"
+	"go.uber.org/multierr"
 )
 
 // errNotDir is the error returned if a path is not a directory.
@@ -161,7 +163,11 @@ func (b *bucket) Walk(
 	return nil
 }
 
-func (b *bucket) Put(ctx context.Context, path string, _ ...storage.PutOption) (storage.WriteObjectCloser, error) {
+func (b *bucket) Put(ctx context.Context, path string, opts ...storage.PutOption) (storage.WriteObjectCloser, error) {
+	var putOptions storage.PutOptions
+	for _, opt := range opts {
+		opt(&putOptions)
+	}
 	externalPath, err := b.getExternalPath(path)
 	if err != nil {
 		return nil, err
@@ -184,12 +190,20 @@ func (b *bucket) Put(ctx context.Context, path string, _ ...storage.PutOption) (
 	} else if !fileInfo.IsDir() {
 		return nil, newErrNotDir(externalDir)
 	}
-	file, err := os.Create(externalPath)
+	var file *os.File
+	var finalPath string
+	if putOptions.Atomic {
+		file, err = os.CreateTemp(externalDir, ".tmp"+filepath.Base(externalPath)+"*")
+		finalPath = externalPath
+	} else {
+		file, err = os.Create(externalPath)
+	}
 	if err != nil {
 		return nil, err
 	}
 	return newWriteObjectCloser(
 		file,
+		finalPath,
 	), nil
 }
 
@@ -343,18 +357,29 @@ func (r *readObjectCloser) Close() error {
 
 type writeObjectCloser struct {
 	file *os.File
+	// path is set during atomic writes to the final path where the file should be created.
+	// If set, the file is a temp file that needs to be renamed to this path if Write/Close are successful.
+	path string
+	// writeErr contains the first non-nil error caught by a call to Write.
+	// This is returned in Close for atomic writes to prevent writing an incomplete file.
+	writeErr atomic.Error
 }
 
 func newWriteObjectCloser(
 	file *os.File,
+	path string,
 ) *writeObjectCloser {
 	return &writeObjectCloser{
 		file: file,
+		path: path,
 	}
 }
 
 func (w *writeObjectCloser) Write(p []byte) (int, error) {
 	n, err := w.file.Write(p)
+	if err != nil {
+		w.writeErr.CompareAndSwap(nil, err)
+	}
 	return n, toStorageError(err)
 }
 
@@ -364,6 +389,17 @@ func (w *writeObjectCloser) SetExternalPath(string) error {
 
 func (w *writeObjectCloser) Close() error {
 	err := toStorageError(w.file.Close())
+	// This is an atomic write operation - we need to rename to the final path
+	if w.path != "" {
+		atomicWriteErr := multierr.Append(w.writeErr.Load(), err)
+		// Failed during Write or Close - remove temporary file without rename
+		if atomicWriteErr != nil {
+			return toStorageError(multierr.Append(atomicWriteErr, os.Remove(w.file.Name())))
+		}
+		if err := os.Rename(w.file.Name(), w.path); err != nil {
+			return toStorageError(multierr.Append(err, os.Remove(w.file.Name())))
+		}
+	}
 	return err
 }
 
@@ -373,7 +409,7 @@ func newErrNotDir(path string) *normalpath.Error {
 }
 
 func toStorageError(err error) error {
-	if err == os.ErrClosed {
+	if errors.Is(err, os.ErrClosed) {
 		return storage.ErrClosed
 	}
 	return err

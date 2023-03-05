@@ -4,6 +4,13 @@
 
 - No changes yet.
 
+## [v1.15.0] - 2023-02-28
+
+- Update built-in Well-Known Types to Protobuf v22.0.
+- Fixes a bug in `buf format` where C-style block comments in which every
+  line includes a prefix (usually "*") would be incorrectly indented.
+- Add `--private-network` flag to `buf beta studio-agent` to support handling CORS requests
+  from Studio on private networks that set the `Access-Control-Request-Private-Network` header.
 
 ## [v1.14.0] - 2023-02-09
 
@@ -41,7 +48,6 @@
 - Introduce `ruby_package` option in managed mode, allowing `except` and `override`,
   in the same style as `objc_class_prefix`. Leaving `ruby_package` unspecified has
   the same effect as having mananged mode enabled in previous versions.
-
 
 ## [v1.11.0] - 2022-12-19
 - `buf generate` now batches remote plugin generation calls for improved performance.
@@ -825,7 +831,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.14.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.15.0...HEAD
+[v1.15.0]: https://github.com/bufbuild/buf/compare/v1.14.0...v1.15.0
 [v1.14.0]: https://github.com/bufbuild/buf/compare/v1.13.1...v1.14.0
 [v1.13.1]: https://github.com/bufbuild/buf/compare/v1.13.0...v1.13.1
 [v1.13.0]: https://github.com/bufbuild/buf/compare/v1.12.0...v1.13.0

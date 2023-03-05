@@ -1,0 +1,34 @@
+  /*
+    * This is a top level leading comment attached to the syntax.
+     * It uses C-style block comments.
+      */
+
+//
+//  It can be separated across multiple lines like this.
+
+//
+//      All of them should retain their newlines.
+
+// This is another leading comment on the syntax.
+syntax /* This comment is attached to the '=' */ = "proto3"; // Trailing comment on syntax.
+
+// Between syntax and package.
+
+package /* Leading on package name. */   header.v1   /* Leading on semicolon */;    // Trailing in-line.
+
+option /* Leading on option name */ (custom.file_thing_option).truth /* Between truth and value */ = true /* After 'true' */;
+
+import /* Leading on import path */        "custom.proto";
+
+ /**
+  = Here's another block comment.
+  = But this one uses equal sign as the
+    = prefix for each line.
+ */
+message Foo {
+      /*
+       * This is a comment nested inside a block.
+       * It too uses C-style block comments.
+       */
+  string name = 1;
+}

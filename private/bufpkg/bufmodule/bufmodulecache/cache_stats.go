@@ -12,8 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+package bufmodulecache
 
-package appprotoexec
+import "sync"
 
-import _ "github.com/bufbuild/buf/private/usage"
+type cacheStats struct {
+	lock  sync.RWMutex
+	count int
+	hits  int
+}
+
+func (s *cacheStats) MarkHit() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.count++
+	s.hits++
+}
+
+func (s *cacheStats) MarkMiss() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.count++
+}
+
+func (s *cacheStats) Count() int {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return s.count
+}
+
+func (s *cacheStats) Hits() int {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return s.hits
+}

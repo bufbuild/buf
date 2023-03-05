@@ -25,6 +25,7 @@ import (
 	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
 	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -39,6 +40,8 @@ type module struct {
 	license              string
 	breakingConfig       *bufbreakingconfig.Config
 	lintConfig           *buflintconfig.Config
+	manifest             *manifest.Manifest
+	blobSet              *manifest.BlobSet
 }
 
 func newModuleForProto(
@@ -171,6 +174,30 @@ func newModuleForBucket(
 	)
 }
 
+func newModuleForManifestAndBlobSet(
+	ctx context.Context,
+	moduleManifest *manifest.Manifest,
+	blobSet *manifest.BlobSet,
+	options ...ModuleOption,
+) (*module, error) {
+	bucket, err := manifest.NewBucket(
+		*moduleManifest,
+		*blobSet,
+		manifest.BucketWithAllManifestBlobsValidation(),
+		manifest.BucketWithNoExtraBlobsValidation(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	module, err := newModuleForBucket(ctx, bucket, options...)
+	if err != nil {
+		return nil, err
+	}
+	module.manifest = moduleManifest
+	module.blobSet = blobSet
+	return module, nil
+}
+
 // this should only be called by other newModule constructors
 func newModule(
 	ctx context.Context,
@@ -275,6 +302,14 @@ func (m *module) BreakingConfig() *bufbreakingconfig.Config {
 
 func (m *module) LintConfig() *buflintconfig.Config {
 	return m.lintConfig
+}
+
+func (m *module) Manifest() *manifest.Manifest {
+	return m.manifest
+}
+
+func (m *module) BlobSet() *manifest.BlobSet {
+	return m.blobSet
 }
 
 func (m *module) getModuleIdentity() bufmoduleref.ModuleIdentity {

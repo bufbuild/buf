@@ -43,7 +43,7 @@ type PushRequest struct {
 
 	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/push.proto.
 	Branch string           `protobuf:"bytes,3,opt,name=branch,proto3" json:"branch,omitempty"`
 	Module *v1alpha1.Module `protobuf:"bytes,4,opt,name=module,proto3" json:"module,omitempty"`
 	// Optional; if provided, the provided tags
@@ -53,7 +53,7 @@ type PushRequest struct {
 	// will be appended to these tracks. If the
 	// tracks do not exist, they will be created.
 	//
-	// Deprecated: Do not use.
+	// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/push.proto.
 	Tracks []string `protobuf:"bytes,6,rep,name=tracks,proto3" json:"tracks,omitempty"`
 	// If non-empty, the push creates a draft commit with this name.
 	DraftName string `protobuf:"bytes,7,opt,name=draft_name,json=draftName,proto3" json:"draft_name,omitempty"`
@@ -105,7 +105,7 @@ func (x *PushRequest) GetRepository() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/push.proto.
 func (x *PushRequest) GetBranch() string {
 	if x != nil {
 		return x.Branch
@@ -127,7 +127,7 @@ func (x *PushRequest) GetTags() []string {
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/push.proto.
 func (x *PushRequest) GetTracks() []string {
 	if x != nil {
 		return x.Tracks

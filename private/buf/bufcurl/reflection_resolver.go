@@ -43,7 +43,7 @@ const (
 	// ReflectProtocolGRPCV1 represents the gRPC server reflection protocol
 	// defined by the service grpc.reflection.v1.ServerReflection.
 	ReflectProtocolGRPCV1
-	// ReflectProtocolGRPCV1 represents the gRPC server reflection protocol
+	// ReflectProtocolGRPCV1Alpha represents the gRPC server reflection protocol
 	// defined by the service grpc.reflection.v1alpha.ServerReflection.
 	ReflectProtocolGRPCV1Alpha
 )
@@ -311,9 +311,7 @@ func (r *reflectionResolver) fileByNameLocked(name string) ([]*descriptorpb.File
 func descriptorsInResponse(resp *reflectionv1.ServerReflectionResponse) ([]*descriptorpb.FileDescriptorProto, error) {
 	switch response := resp.MessageResponse.(type) {
 	case *reflectionv1.ServerReflectionResponse_ErrorResponse:
-		// TODO: ideally, this would be a wire error
-		//   see https://github.com/bufbuild/connect-go/issues/420
-		return nil, connect.NewError(connect.Code(response.ErrorResponse.ErrorCode), errors.New(response.ErrorResponse.ErrorMessage))
+		return nil, connect.NewWireError(connect.Code(response.ErrorResponse.ErrorCode), errors.New(response.ErrorResponse.ErrorMessage))
 	case *reflectionv1.ServerReflectionResponse_FileDescriptorResponse:
 		files := make([]*descriptorpb.FileDescriptorProto, len(response.FileDescriptorResponse.FileDescriptorProto))
 		for i, data := range response.FileDescriptorResponse.FileDescriptorProto {

@@ -12,26 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build go1.19
+package protostatos
 
-package appprotoexec
+import "github.com/bufbuild/buf/private/pkg/protostat"
 
-import (
-	"errors"
-	"os/exec"
-)
-
-// unsafeLookPath is a wrapper around exec.LookPath that restores the original
-// pre-Go 1.19 behavior of resolving queries that would use relative PATH
-// entries. We consider it acceptable for the use case of locating plugins.
+// NewFileWalker returns a new FileWalker for the given filenames.
 //
-// On Go 1.18 and below, this function is just a direct call to exec.LookPath.
-//
-// https://pkg.go.dev/os/exec#hdr-Executables_in_the_current_directory
-func unsafeLookPath(file string) (string, error) {
-	path, err := exec.LookPath(file)
-	if errors.Is(err, exec.ErrDot) {
-		err = nil
-	}
-	return path, err
+// Anything without the .proto extension will be excluded.
+func NewFileWalker(filenames ...string) protostat.FileWalker {
+	return newFileWalker(filenames)
 }

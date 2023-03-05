@@ -54,7 +54,7 @@ func NewCommand(
 		Long: "Fetch the latest digests for the specified references in the config file, " +
 			"and write them and their transitive dependencies to the " +
 			buflock.ExternalConfigFilePath +
-			` file. The first argument is the directory of the local module to update. Defaults to "." if no argument is specified`,
+			` file. The first argument is the directory of the local module to update. Defaults to "." if no argument is specified.`,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -163,7 +163,13 @@ func run(
 		}
 		container.Logger().Warn(warnMsg)
 	}
-
+	// Before updating buf.lock file, verify that existing dependency digests didn't change for the same commit.
+	if err := bufmoduleref.ValidateModulePinsConsistentDigests(ctx, readWriteBucket, dependencyModulePins); err != nil {
+		if bufmoduleref.IsDigestChanged(err) {
+			return err
+		}
+		return bufcli.NewInternalError(err)
+	}
 	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
 		return bufcli.NewInternalError(err)
 	}

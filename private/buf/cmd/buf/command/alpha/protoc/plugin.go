@@ -20,8 +20,8 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -51,14 +51,14 @@ func executePlugin(
 	pluginName string,
 	pluginInfo *pluginInfo,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	generator := appprotoexec.NewGenerator(
+	generator := bufpluginexec.NewGenerator(
 		logger,
 		storageosProvider,
 		runner,
 	)
-	var options []appprotoexec.GenerateOption
+	var options []bufpluginexec.GenerateOption
 	if pluginInfo.Path != "" {
-		options = append(options, appprotoexec.GenerateWithPluginPath(pluginInfo.Path))
+		options = append(options, bufpluginexec.GenerateWithPluginPath(pluginInfo.Path))
 	}
 	response, err := generator.Generate(
 		ctx,
@@ -67,7 +67,7 @@ func executePlugin(
 		bufimage.ImagesToCodeGeneratorRequests(
 			images,
 			strings.Join(pluginInfo.Opt, ","),
-			appprotoexec.DefaultVersion,
+			bufpluginexec.DefaultVersion,
 			false,
 			false,
 		),

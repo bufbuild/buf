@@ -12,21 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !go1.19
+// Generated. DO NOT EDIT.
 
-package appprotoexec
+package protostat
 
-import (
-	"os/exec"
-)
-
-// unsafeLookPath is a wrapper around exec.LookPath that restores the original
-// pre-Go 1.19 behavior of resolving queries that would use relative PATH
-// entries. We consider it acceptable for the use case of locating plugins.
-//
-// On Go 1.18 and below, this function is just a direct call to exec.LookPath.
-//
-// https://pkg.go.dev/os/exec#hdr-Executables_in_the_current_directory
-func unsafeLookPath(file string) (string, error) {
-	return exec.LookPath(file)
-}
+import _ "github.com/bufbuild/buf/private/usage"

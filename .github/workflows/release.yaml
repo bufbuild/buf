@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -40,7 +40,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
       - uses: actions/setup-go@v3
         with:
-          go-version: '^1.20.x'
+          go-version: "^1.20.x"
       - name: Install Buf
         run: make installbuf
       - name: Update Buf Version
@@ -88,7 +88,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -117,7 +117,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -134,7 +134,7 @@ jobs:
           echo "VERSION=${{github.ref_name}}" >> $GITHUB_ENV
       - uses: actions/setup-go@v3
         with:
-          go-version: '^1.20.x'
+          go-version: "^1.20.x"
       - name: Create assets
         env:
           RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
@@ -161,10 +161,12 @@ jobs:
   post-release:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' }}
+    outputs:
+      version: ${{ steps.output_version.outputs.version }}
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -195,6 +197,15 @@ jobs:
           title: "Return to development"
           body: Release complete for ${{github.ref_name}}
           token: ${{ steps.generate_token.outputs.token }}
+      - name: Get Version
+        uses: actions/github-script@v6
+        with:
+          script:
+            core.setOutput('version', "${{github.ref_name}}".replace("v", ""));
+  trigger-npm-publish:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
       - name: trigger npm publish
         uses: actions/github-script@v6
         with:
@@ -203,61 +214,76 @@ jobs:
               owner: context.owner,
               repo: "buf-npm-publish",
               workflow_id: "npm-publish.yaml",
-              ref: "main"
+              ref: "main",
               inputs: {
-                version: "${{github.ref_name}}".replace("v", "")
+                version: "${{needs.post-release.outputs.version}}"
               }
             })
+  trigger-homebrew-buf-release:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
       - name: trigger homebrew-buf release
         uses: actions/github-script@v6
         with:
-        script: |
-          github.rest.actions.createWorkflowDispatch({
-            owner: context.owner,
-            repo: "homebrew-buf",
-            workflow_id: "release.yaml",
-            ref: "main"
-            inputs: {
-              version: "${{github.ref_name}}".replace("v", "")
-            }
-          })
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.owner,
+              repo: "homebrew-buf",
+              workflow_id: "release.yaml",
+              ref: "main",
+              inputs: {
+                version: "${{needs.post-release.outputs.version}}"
+              }
+            })
+  trigger-vim-buf-release:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
       - name: trigger vim-buf release
         uses: actions/github-script@v6
         with:
-        script: |
-          github.rest.actions.createWorkflowDispatch({
-            owner: context.owner,
-            repo: "vim-buf",
-            workflow_id: "release.yaml",
-            ref: "main"
-            inputs: {
-              version: "${{github.ref_name}}".replace("v", "")
-            }
-          })
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.owner,
+              repo: "vim-buf",
+              workflow_id: "release.yaml",
+              ref: "main",
+              inputs: {
+                version: "${{needs.post-release.outputs.version}}"
+              }
+            })
+  trigger-docs-buf-build-release:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
       - name: trigger docs.buf.build release
         uses: actions/github-script@v6
         with:
-        script: |
-          github.rest.actions.createWorkflowDispatch({
-            owner: context.owner,
-            repo: "docs.buf.build",
-            workflow_id: "release.yaml",
-            ref: "main"
-            inputs: {
-              version: "${{github.ref_name}}".replace("v", "")
-            }
-          })
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.owner,
+              repo: "docs.buf.build",
+              workflow_id: "release.yaml",
+              ref: "main",
+              inputs: {
+                version: "${{needs.post-release.outputs.version}}"
+              }
+            })
+  trigger-buf-setup-action-release:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
       - name: trigger buf-setup-action release
         uses: actions/github-script@v6
         with:
-        script: |
-          github.rest.actions.createWorkflowDispatch({
-            owner: context.owner,
-            repo: "buf-setup-action",
-            workflow_id: "release.yaml",
-            ref: "main"
-            inputs: {
-              version: "${{github.ref_name}}".replace("v", "")
-            }
-          })
-
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.owner,
+              repo: "buf-setup-action",
+              workflow_id: "release.yaml",
+              ref: "main",
+              inputs: {
+                version: "${{needs.post-release.outputs.version}}"
+              }
+            })

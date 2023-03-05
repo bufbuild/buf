@@ -42,6 +42,7 @@ const (
 	clientKeyFlagName         = "client-key"
 	serverCertFlagName        = "server-cert"
 	serverKeyFlagName         = "server-key"
+	privateNetworkFlagName    = "private-network"
 )
 
 // NewCommand returns a new Command.
@@ -75,6 +76,7 @@ type flags struct {
 	ClientKey         string
 	ServerCert        string
 	ServerKey         string
+	PrivateNetwork    bool
 }
 
 func newFlags() *flags {
@@ -142,6 +144,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The key to be used in the server TLS configuration",
 	)
+	flagSet.BoolVar(
+		&f.PrivateNetwork,
+		privateNetworkFlagName,
+		false,
+		`Use the agent with private network CORS`,
+	)
 }
 
 func run(
@@ -180,6 +188,7 @@ func run(
 		clientTLSConfig,
 		stringutil.SliceToMap(flags.DisallowedHeaders),
 		flags.ForwardHeaders,
+		flags.PrivateNetwork,
 	)
 	var httpListenConfig net.ListenConfig
 	httpListener, err := httpListenConfig.Listen(ctx, "tcp", fmt.Sprintf("%s:%s", flags.BindAddress, flags.Port))

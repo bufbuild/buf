@@ -17,6 +17,7 @@ package protodescriptor
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"google.golang.org/protobuf/proto"
@@ -28,6 +29,7 @@ import (
 //
 // Note that a FileDescriptor is not necessarily validated, unlike other interfaces in buf.
 type FileDescriptor interface {
+	proto.Message
 	GetName() string
 	GetPackage() string
 	GetDependency() []string
@@ -40,6 +42,7 @@ type FileDescriptor interface {
 	GetOptions() *descriptorpb.FileOptions
 	GetSourceCodeInfo() *descriptorpb.SourceCodeInfo
 	GetSyntax() string
+	GetEdition() string
 }
 
 // FileDescriptorsForFileDescriptorProtos is a convenience function since Go does not have generics.
@@ -90,6 +93,10 @@ func FileDescriptorProtoForFileDescriptor(fileDescriptor FileDescriptor) *descri
 	if syntax := fileDescriptor.GetSyntax(); syntax != "" {
 		fileDescriptorProto.Syntax = proto.String(syntax)
 	}
+	if edition := fileDescriptor.GetEdition(); edition != "" {
+		fileDescriptorProto.Edition = proto.String(edition)
+	}
+	fileDescriptorProto.ProtoReflect().SetUnknown(fileDescriptor.ProtoReflect().GetUnknown())
 	return fileDescriptorProto
 }
 
@@ -218,4 +225,64 @@ func ValidateProtoPaths(name string, paths []string) error {
 		}
 	}
 	return nil
+}
+
+// FieldDescriptorProtoTypePrettyString prints a pretty string
+// representation of the FieldDescriptorProto_Type.
+func FieldDescriptorProtoTypePrettyString(t descriptorpb.FieldDescriptorProto_Type) string {
+	switch t {
+	case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:
+		return "double"
+	case descriptorpb.FieldDescriptorProto_TYPE_FLOAT:
+		return "float"
+	case descriptorpb.FieldDescriptorProto_TYPE_INT64:
+		return "int64"
+	case descriptorpb.FieldDescriptorProto_TYPE_UINT64:
+		return "uint64"
+	case descriptorpb.FieldDescriptorProto_TYPE_INT32:
+		return "int32"
+	case descriptorpb.FieldDescriptorProto_TYPE_FIXED64:
+		return "fixed64"
+	case descriptorpb.FieldDescriptorProto_TYPE_FIXED32:
+		return "fixed32"
+	case descriptorpb.FieldDescriptorProto_TYPE_BOOL:
+		return "bool"
+	case descriptorpb.FieldDescriptorProto_TYPE_STRING:
+		return "string"
+	case descriptorpb.FieldDescriptorProto_TYPE_GROUP:
+		return "group"
+	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
+		return "message"
+	case descriptorpb.FieldDescriptorProto_TYPE_BYTES:
+		return "bytes"
+	case descriptorpb.FieldDescriptorProto_TYPE_UINT32:
+		return "uint32"
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
+		return "enum"
+	case descriptorpb.FieldDescriptorProto_TYPE_SFIXED32:
+		return "sfixed32"
+	case descriptorpb.FieldDescriptorProto_TYPE_SFIXED64:
+		return "sfixed64"
+	case descriptorpb.FieldDescriptorProto_TYPE_SINT32:
+		return "sint32"
+	case descriptorpb.FieldDescriptorProto_TYPE_SINT64:
+		return "sint64"
+	default:
+		return strconv.Itoa(int(t))
+	}
+}
+
+// FieldDescriptorProtoLabelPrettyString prints a pretty string
+// representation of the FieldDescriptorProto_Label.
+func FieldDescriptorProtoLabelPrettyString(l descriptorpb.FieldDescriptorProto_Label) string {
+	switch l {
+	case descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL:
+		return "optional"
+	case descriptorpb.FieldDescriptorProto_LABEL_REQUIRED:
+		return "required"
+	case descriptorpb.FieldDescriptorProto_LABEL_REPEATED:
+		return "repeated"
+	default:
+		return strconv.Itoa(int(l))
+	}
 }

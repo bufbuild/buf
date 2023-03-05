@@ -12,9 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build darwin
-// +build darwin
+package protostatstorage
 
-package appprotoexec
+import (
+	"github.com/bufbuild/buf/private/pkg/protostat"
+	"github.com/bufbuild/buf/private/pkg/storage"
+)
 
-const tooManyFilesHelpMessage = `This is commonly caused by the maximum file limit being too low. On Mac, the default is 256, which is very low. Run "ulimit -n" to check your file limit. If this happened on generation, setting "strategy: all" for each configured plugin in your buf.gen.yaml can mitigate the issue if you are unable to change your file limit.`
+// NewFileWalker returns a new FileWalker for the given ReadBucket.
+//
+// Anything without the .proto extension will be excluded.
+func NewFileWalker(readBucket storage.ReadBucket) protostat.FileWalker {
+	return newFileWalker(readBucket)
+}

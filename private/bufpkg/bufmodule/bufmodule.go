@@ -28,6 +28,7 @@ import (
 	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
 	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 )
@@ -110,6 +111,21 @@ type Module interface {
 	//
 	// This may be nil, since older versions of the module would not have this stored.
 	LintConfig() *buflintconfig.Config
+	// Manifest returns the manifest for the module (possibly nil).
+	// A manifest's contents contain a lexicographically sorted list of path names along
+	// with each path's digest. The manifest also stores a digest of its own contents which
+	// allows verification of the entire Buf module. In addition to the .proto files in
+	// the module, it also lists the buf.yaml, LICENSE, buf.md, and buf.lock files (if
+	// present).
+	Manifest() *manifest.Manifest
+	// BlobSet returns the raw data for the module (possibly nil).
+	// Each blob in the blob set is indexed by the digest of the blob's contents. For
+	// example, the buf.yaml file will be listed in the Manifest with a given digest,
+	// whose contents can be retrieved by looking up the corresponding digest in the
+	// blob set. This allows API consumers to get access to the original file contents
+	// of every file in the module, which is useful for caching or recreating a module's
+	// original files.
+	BlobSet() *manifest.BlobSet
 
 	getSourceReadBucket() storage.ReadBucket
 	// Note this *can* be nil if we did not build from a named module.
@@ -146,7 +162,7 @@ func ModuleWithModuleIdentityAndCommit(moduleIdentity bufmoduleref.ModuleIdentit
 	}
 }
 
-// NewModuleForBucket returns a new Module. It attempts reads dependencies
+// NewModuleForBucket returns a new Module. It attempts to read dependencies
 // from a lock file in the read bucket.
 func NewModuleForBucket(
 	ctx context.Context,
@@ -163,6 +179,16 @@ func NewModuleForProto(
 	options ...ModuleOption,
 ) (Module, error) {
 	return newModuleForProto(ctx, protoModule, options...)
+}
+
+// NewModuleForManifestAndBlobSet returns a new Module given the manifest and blob set.
+func NewModuleForManifestAndBlobSet(
+	ctx context.Context,
+	manifest *manifest.Manifest,
+	blobSet *manifest.BlobSet,
+	options ...ModuleOption,
+) (Module, error) {
+	return newModuleForManifestAndBlobSet(ctx, manifest, blobSet, options...)
 }
 
 // ModuleWithTargetPaths returns a new Module that specifies specific file or directory paths to build.
@@ -237,7 +263,7 @@ func NewNopModuleResolver() ModuleResolver {
 type ModuleReader interface {
 	// GetModule gets the Module for the ModulePin.
 	//
-	// Returns an error that fufills storage.IsNotExist if the Module does not exist.
+	// Returns an error that fulfills storage.IsNotExist if the Module does not exist.
 	GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (Module, error)
 }
 

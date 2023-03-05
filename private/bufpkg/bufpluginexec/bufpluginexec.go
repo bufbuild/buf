@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package appprotoexec provides protoc plugin handling and execution.
+// Package bufpluginexec provides protoc plugin handling and execution.
 //
 // Note this is currently implicitly tested through buf's protoc command.
 // If this were split out into a separate package, testing would need to be moved to this package.
-package appprotoexec
+package bufpluginexec
 
 import (
 	"context"
@@ -36,11 +36,11 @@ const (
 	// This is what we want to report here.
 
 	// DefaultMajorVersion is the default major version.
-	defaultMajorVersion = 3
+	defaultMajorVersion = 4
 	// DefaultMinorVersion is the default minor version.
-	defaultMinorVersion = 21
+	defaultMinorVersion = 22
 	// DefaultPatchVersion is the default patch version.
-	defaultPatchVersion = 12
+	defaultPatchVersion = 0
 	// DefaultSuffixVersion is the default suffix version.
 	defaultSuffixVersion = ""
 )

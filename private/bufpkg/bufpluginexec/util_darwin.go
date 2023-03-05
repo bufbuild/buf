@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !darwin
-// +build !darwin
+//go:build darwin
+// +build darwin
 
-package appprotoexec
+package bufpluginexec
 
-const tooManyFilesHelpMessage = `This is commonly caused by the maximum file limit being too low. Run "ulimit -n" to check your file limit. If this happened on generation, setting "strategy: all" for each configured plugin in your buf.gen.yaml can mitigate the issue if you are unable to change your file limit.`
+const tooManyFilesHelpMessage = `This is commonly caused by the maximum file limit being too low. On Mac, the default is 256, which is very low. Run "ulimit -n" to check your file limit. If this happened on generation, setting "strategy: all" for each configured plugin in your buf.gen.yaml can mitigate the issue if you are unable to change your file limit.`
