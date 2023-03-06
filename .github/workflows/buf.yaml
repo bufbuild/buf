@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.14.0
+      - uses: bufbuild/buf-setup-action@v1.15.0
         with:
           github_token: ${{ github.token }}
       - uses: bufbuild/buf-lint-action@v1.0.3
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.14.0
+      - uses: bufbuild/buf-setup-action@v1.15.0
         with:
           github_token: ${{ github.token }}
       - uses: bufbuild/buf-breaking-action@v1.1.2
@@ -33,7 +33,7 @@ jobs:
       - breaking
     steps:
       - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.14.0
+      - uses: bufbuild/buf-setup-action@v1.15.0
         with:
           github_token: ${{ github.token }}
       - uses: bufbuild/buf-push-action@v1.1.1
