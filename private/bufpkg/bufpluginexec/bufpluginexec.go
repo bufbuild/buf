@@ -144,9 +144,7 @@ func NewHandler(
 		}
 		return newBinaryHandler(runner, pluginPath, handlerOptions.pluginPath[1:]), nil
 	}
-	if strings.HasSuffix(pluginName, ".wasm") {
-		// TODO: should check if wasm file by magic header?
-		// https://webassembly.github.io/spec/core/binary/modules.html#binary-magic
+	if isWASM(pluginName) {
 		return newWasmHandler(
 			wasmPluginExecutor,
 			pluginName,
@@ -217,4 +215,10 @@ type handlerOptions struct {
 
 func newHandlerOptions() *handlerOptions {
 	return &handlerOptions{}
+}
+
+// TODO: should check if wasm file by magic header?
+// https://webassembly.github.io/spec/core/binary/modules.html#binary-magic
+func isWASM(pluginName string) bool {
+	return strings.HasSuffix(pluginName, ".wasm")
 }
