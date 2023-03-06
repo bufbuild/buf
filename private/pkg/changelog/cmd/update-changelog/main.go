@@ -45,7 +45,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Error: Could not read file")
 		os.Exit(1)
 	}
-	repoUrl := getRepoUrl(data)
+	repoURL := getrepoURL(data)
 	switch operation {
 	case "release":
 		if *versionPtr == "" {
@@ -53,9 +53,9 @@ func main() {
 			os.Exit(1)
 		}
 		version := *versionPtr
-		data = release(data, repoUrl, version, *datePtr)
+		data = release(data, repoURL, version, *datePtr)
 	case "unrelease":
-		data = unrelease(data, repoUrl)
+		data = unrelease(data, repoURL)
 	default:
 		fmt.Fprintln(os.Stderr, "Error: usage: update-changelog <release|unrelease> <filename.md>")
 	}
@@ -65,7 +65,7 @@ func main() {
 		os.Exit(1)
 	}
 }
-func getRepoUrl(data []byte) string {
+func getrepoURL(data []byte) string {
 	re := regexp.MustCompile(`\[.*?]: (.*?)\/compare`)
 	newData := re.FindStringSubmatch(string(data))
 	if len(newData) == 0 {
