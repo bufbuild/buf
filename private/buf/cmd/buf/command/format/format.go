@@ -183,7 +183,7 @@ type flags struct {
 	Output          string
 	Write           bool
 	// special
-	SourceHashtag string
+	InputHashtag string
 }
 
 func newFlags() *flags {
@@ -191,7 +191,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindInputHashtag(flagSet, &f.SourceHashtag)
+	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
@@ -253,7 +253,7 @@ func run(
 	if flags.Output != "-" && flags.Write {
 		return fmt.Errorf("--%s cannot be used with --%s", outputFlagName, writeFlagName)
 	}
-	source, err := bufcli.GetInputValue(container, flags.SourceHashtag, ".")
+	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
