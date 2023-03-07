@@ -63,7 +63,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
+		Use:   name + " <source>",
 		Short: "Format Protobuf files",
 		Long: `
 By default, the source is the current directory and the formatted content is written to stdout.
@@ -183,7 +183,7 @@ type flags struct {
 	Output          string
 	Write           bool
 	// special
-	InputHashtag string
+	SourceHashtag string
 }
 
 func newFlags() *flags {
@@ -191,7 +191,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindInputHashtag(flagSet, &f.SourceHashtag)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
@@ -253,7 +253,7 @@ func run(
 	if flags.Output != "-" && flags.Write {
 		return fmt.Errorf("--%s cannot be used with --%s", outputFlagName, writeFlagName)
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	source, err := bufcli.GetInputValue(container, flags.SourceHashtag, ".")
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func run(
 		container.Logger(),
 		buffetch.RefParserWithProtoFileRefAllowed(),
 	)
-	sourceOrModuleRef, err := refParser.GetSourceOrModuleRef(ctx, input)
+	sourceOrModuleRef, err := refParser.GetSourceOrModuleRef(ctx, source)
 	if err != nil {
 		return err
 	}
@@ -341,7 +341,7 @@ func run(
 	if protoFileRef, ok := sourceOrModuleRef.(buffetch.ProtoFileRef); ok {
 		// If we have a single ProtoFileRef, we only want to format that file.
 		// The file will be available from the first module (i.e. it's
-		// the target input, or the first module in a workspace).
+		// the target source, or the first module in a workspace).
 		if len(moduleConfigs) == 0 {
 			// Unreachable - we should always have at least one module.
 			return fmt.Errorf("could not build module for %s", container.Arg(0))
@@ -391,7 +391,7 @@ func run(
 			// TODO: Fix the buffetch.ProtoFileRef so that it works in
 			// these situtations.
 			return fmt.Errorf(
-				"input %s was not found - is the directory containing this file defined in your %s?",
+				"source %s was not found - is the directory containing this file defined in your %s?",
 				container.Arg(0),
 				bufwork.ExternalConfigV1FilePath,
 			)
