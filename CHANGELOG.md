@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fixes a bug in `buf generate` with `v1beta1` config files.
 
 ## [v1.15.0] - 2023-02-28
 
