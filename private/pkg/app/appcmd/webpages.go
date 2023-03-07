@@ -22,28 +22,44 @@ import (
 	"html"
 	"io"
 	"os"
-	"path"
-	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
+	"gopkg.in/yaml.v3"
 )
 
 const (
-	slugPrefixFlagName      = "slug-prefix"
-	excludeCommandsFlagName = "exclude-command"
+	webpagesConfigFlag = "config"
 )
 
 var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
 
 type webpagesFlags struct {
-	SlugPrefix      string
-	ExcludeCommands []string
+	Config string
+}
+
+// webpagesConfig configures the doc generator, example config:
+// prefix: |
+// ---
+// title: Buf CLI
+// sidebar_position: 0
+// toc_max_heading_level: 2
+// slug: /reference/cli/buf
+// ---
+// exclude_commands:
+// - buf completion
+// - buf ls-files
+// weight_commands:
+// buf beta: 1
+type webpagesConfig struct {
+	Prefix          string         `yaml:"prefix,omitempty"`
+	ExcludeCommands []string       `yaml:"exclude_commands,omitempty"`
+	WeightCommands  map[string]int `yaml:"weight_commands,omitempty"`
 }
 
 func newWebpagesFlags() *webpagesFlags {
@@ -52,16 +68,10 @@ func newWebpagesFlags() *webpagesFlags {
 
 func (f *webpagesFlags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
-		&f.SlugPrefix,
-		slugPrefixFlagName,
+		&f.Config,
+		webpagesConfigFlag,
 		"",
-		"The slug prefix for front-matter slug attribute",
-	)
-	flagSet.StringSliceVar(
-		&f.ExcludeCommands,
-		excludeCommandsFlagName,
-		nil,
-		"Exclude these commands from doc generation",
+		"Config file to use",
 	)
 }
 
@@ -73,11 +83,14 @@ func newWebpagesCommand(
 	flags := newWebpagesFlags()
 	return &Command{
 		Use:    "webpages",
-		Args:   cobra.ExactArgs(1),
 		Hidden: true,
 		Run: func(ctx context.Context, container app.Container) error {
+			cfg, err := readConfig(flags.Config)
+			if err != nil {
+				return err
+			}
 			excludes := make(map[string]bool)
-			for _, exclude := range flags.ExcludeCommands {
+			for _, exclude := range cfg.ExcludeCommands {
 				excludes[exclude] = true
 			}
 			for _, cmd := range command.Commands() {
@@ -85,10 +98,13 @@ func newWebpagesCommand(
 					cmd.Hidden = true
 				}
 			}
+			if _, err := os.Stdout.WriteString(cfg.Prefix); err != nil {
+				return err
+			}
 			return generateMarkdownTree(
 				command,
-				container.Arg(0),
-				flags.SlugPrefix,
+				os.Stdout,
+				cfg.WeightCommands,
 			)
 		},
 		BindFlags: flags.Bind,
@@ -96,43 +112,32 @@ func newWebpagesCommand(
 }
 
 // generateMarkdownTree generates markdown for a whole command tree.
-func generateMarkdownTree(cmd *cobra.Command, dir string, slugPrefix string) (retErr error) {
+func generateMarkdownTree(cmd *cobra.Command, w io.Writer, weights map[string]int) error {
 	if !cmd.IsAvailableCommand() {
 		return nil
 	}
-	for _, command := range cmd.Commands() {
-		if err := generateMarkdownTree(command, dir, slugPrefix); err != nil {
+	if err := generateMarkdownPage(cmd, w, weights); err != nil {
+		return err
+	}
+	commands := cmd.Commands()
+	orderCommands(weights, commands)
+	for _, command := range commands {
+		if err := generateMarkdownTree(command, w, weights); err != nil {
 			return err
 		}
 	}
-	commandPath := commandFilePath(cmd)
-	filename := filepath.Join(dir, commandPath)
-	if err := os.MkdirAll(path.Dir(filename), os.ModePerm); err != nil {
-		return err
-	}
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
-	}()
-	return generateMarkdownPage(cmd, file, slugPrefix)
+	return nil
 }
 
 // generateMarkdownPage creates custom markdown output.
-func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) error {
+func generateMarkdownPage(cmd *cobra.Command, w io.Writer, weights map[string]int) error {
 	var err error
 	p := func(format string, a ...any) {
 		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
 	}
-	p("---\n")
-	p("id: %s\n", websitePageID(cmd))
-	p("title: %s\n", cmd.CommandPath())
-	p("sidebar_label: %s\n", websitePageName(cmd))
-	p("sidebar_position: %d\n", websiteSidebarPosition(cmd))
-	p("slug: /%s\n", path.Join(slugprefix, websiteSlug(cmd)))
-	p("---\n")
+	id := websitePageID(cmd)
+	p("\n")
+	p("## %s {#%s}\n", cmd.CommandPath(), id)
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
 	if cmd.Version != "" {
@@ -141,21 +146,21 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) er
 	p(cmd.Short)
 	p("\n\n")
 	if cmd.Runnable() {
-		p("### Usage\n")
+		p("#### Usage {#%s-usage} \n", id)
 		p("```terminal\n$ %s\n```\n\n", cmd.UseLine())
 	}
 	if len(cmd.Long) > 0 {
-		p("### Description\n\n")
+		p("#### Description {#%s-description}\n\n", id)
 		p("%s \n\n", escapeDescription(cmd.Long))
 	}
 	if len(cmd.Example) > 0 {
-		p("### Examples\n\n")
+		p("#### Examples {#%s-examples}\n\n", id)
 		p("```\n%s\n```\n\n", escapeDescription(cmd.Example))
 	}
 	commandFlags := cmd.NonInheritedFlags()
 	commandFlags.SetOutput(w)
 	if commandFlags.HasAvailableFlags() {
-		p("### Flags\n\n")
+		p("#### Flags {#%s-flags}\n\n", id)
 		p("```\n")
 		commandFlags.PrintDefaults()
 		p("```\n\n")
@@ -163,26 +168,27 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) er
 	inheritedFlags := cmd.InheritedFlags()
 	inheritedFlags.SetOutput(w)
 	if inheritedFlags.HasAvailableFlags() {
-		p("### Flags inherited from parent commands\n\n```\n")
+		p("#### Flags inherited from parent commands {#%s-persistent-flags}\n\n```\n", id)
 		inheritedFlags.PrintDefaults()
 		p("```\n\n")
 	}
 	if hasSubCommands(cmd) {
-		p("### Subcommands\n\n")
+		p("#### Subcommands {#%s-subcommands}\n\n", id)
 		children := cmd.Commands()
+		orderCommands(weights, children)
 		for _, child := range children {
 			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
 				continue
 			}
-			p("* [%s](%s/%s)\t - %s\n", child.CommandPath(), cmd.Name(), child.Name(), child.Short)
+			p("* [%s](#%s)\t - %s\n", child.CommandPath(), websitePageID(child), child.Short)
 		}
 		p("\n")
 	}
 	if cmd.HasParent() {
-		p("### Parent Command\n\n")
+		p("#### Parent Command {#%s-parent-command}\n\n", id)
 		parent := cmd.Parent()
 		parentName := parent.CommandPath()
-		p("* [%s](../%s)\t - %s\n", parentName, parent.Name(), parent.Short)
+		p("* [%s](#%s)\t - %s\n", parentName, websitePageID(parent), parent.Short)
 		cmd.VisitParents(func(c *cobra.Command) {
 			if c.DisableAutoGenTag {
 				cmd.DisableAutoGenTag = c.DisableAutoGenTag
@@ -192,58 +198,8 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, slugprefix string) er
 	return err
 }
 
-// commandFilePath converts a cobra command to a path. It stutters the folders and paths
-// in order to allow for rendering of the full command in Docusaurus: "buf/buf beta" for example.
-// Spaces are used in paths because the current version of Docusaurus
-// does not allow for configuring category index pages.
-// This function should be removed when migration off docusaurus occurs.
-func commandFilePath(cmd *cobra.Command) string {
-	commandPath := strings.Split(cmd.CommandPath(), " ")
-	var parentPath, currentPath []string
-	for i := range commandPath {
-		currentPath = append(parentPath, strings.Join(commandPath[:i+1], " "))
-		parentPath = currentPath
-	}
-	fullPath := path.Join(currentPath...)
-	if cmd.HasSubCommands() {
-		return path.Join(fullPath, "index.md")
-	}
-	return fullPath + ".md"
-}
-
-func websiteSidebarPosition(cmd *cobra.Command) int {
-	var i int
-	if !cmd.HasParent() {
-		return 0
-	}
-	if hasSubCommands(cmd) {
-		return 0
-	}
-	for _, sibling := range cmd.Parent().Commands() {
-		if !cmd.IsAvailableCommand() || cmd.IsAdditionalHelpTopicCommand() {
-			continue
-		}
-		i++
-		if sibling.CommandPath() == cmd.CommandPath() {
-			return i
-		}
-	}
-	return -1
-}
-
-func websiteSlug(cmd *cobra.Command) string {
-	return strings.ReplaceAll(cmd.CommandPath(), " ", "/")
-}
-
 func websitePageID(cmd *cobra.Command) string {
-	if hasSubCommands(cmd) {
-		return "index"
-	}
-	return cmd.Name()
-}
-
-func websitePageName(cmd *cobra.Command) string {
-	return cmd.CommandPath()
+	return strings.ReplaceAll(cmd.CommandPath(), " ", "-")
 }
 
 func hasSubCommands(cmd *cobra.Command) bool {
@@ -304,4 +260,29 @@ func escapeDescription(s string) string {
 		out.WriteString("```\n")
 	}
 	return out.String()
+}
+
+func readConfig(filename string) (webpagesConfig, error) {
+	if filename == "" {
+		return webpagesConfig{}, nil
+	}
+	file, err := os.Open(filename)
+	if err != nil {
+		return webpagesConfig{}, err
+	}
+	yamlBytes, err := io.ReadAll(file)
+	if err != nil {
+		return webpagesConfig{}, err
+	}
+	var cfg webpagesConfig
+	if err := yaml.Unmarshal(yamlBytes, &cfg); err != nil {
+		return webpagesConfig{}, err
+	}
+	return cfg, err
+}
+
+func orderCommands(weights map[string]int, commands []*cobra.Command) {
+	sort.SliceStable(commands, func(i, j int) bool {
+		return weights[commands[i].CommandPath()] < weights[commands[j].CommandPath()]
+	})
 }
