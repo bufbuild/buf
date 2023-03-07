@@ -580,16 +580,16 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 		if err != nil {
 			return nil, err
 		}
-		pluginConfigs = append(
-			pluginConfigs,
-			&PluginConfig{
-				Name:     plugin.Name,
-				Out:      plugin.Out,
-				Opt:      opt,
-				Path:     []string{plugin.Path},
-				Strategy: strategy,
-			},
-		)
+		pluginConfig := &PluginConfig{
+			Name:     plugin.Name,
+			Out:      plugin.Out,
+			Opt:      opt,
+			Strategy: strategy,
+		}
+		if plugin.Path != "" {
+			pluginConfig.Path = []string{plugin.Path}
+		}
+		pluginConfigs = append(pluginConfigs, pluginConfig)
 	}
 	return &Config{
 		PluginConfigs: pluginConfigs,
