@@ -22,25 +22,44 @@ import (
 	"html"
 	"io"
 	"os"
-	"path"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"gopkg.in/yaml.v3"
 )
 
 const (
-	excludeCommandsFlagName = "exclude-command"
+	webpagesConfigFlag = "config"
 )
 
 var codeBlockRegex = regexp.MustCompile(`(^\s\s\s\s)|(^\t)`)
 
 type webpagesFlags struct {
-	SlugPrefix      string
-	ExcludeCommands []string
+	Config string
+}
+
+// webpagesConfig configures the doc generator, example config:
+// prefix: |
+// ---
+// title: Buf CLI
+// sidebar_position: 0
+// toc_max_heading_level: 2
+// slug: /reference/cli/buf
+// ---
+// exclude_commands:
+// - buf completion
+// - buf ls-files
+// weight_commands:
+// buf beta: 1
+type webpagesConfig struct {
+	Prefix          string         `yaml:"prefix,omitempty"`
+	ExcludeCommands []string       `yaml:"exclude_commands,omitempty"`
+	WeightCommands  map[string]int `yaml:"weight_commands,omitempty"`
 }
 
 func newWebpagesFlags() *webpagesFlags {
@@ -48,11 +67,11 @@ func newWebpagesFlags() *webpagesFlags {
 }
 
 func (f *webpagesFlags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringSliceVar(
-		&f.ExcludeCommands,
-		excludeCommandsFlagName,
-		nil,
-		"Exclude these commands from doc generation",
+	flagSet.StringVar(
+		&f.Config,
+		webpagesConfigFlag,
+		"",
+		"Config file to use",
 	)
 }
 
@@ -64,11 +83,14 @@ func newWebpagesCommand(
 	flags := newWebpagesFlags()
 	return &Command{
 		Use:    "webpages",
-		Args:   cobra.ExactArgs(1),
 		Hidden: true,
 		Run: func(ctx context.Context, container app.Container) error {
+			cfg, err := readConfig(flags.Config)
+			if err != nil {
+				return err
+			}
 			excludes := make(map[string]bool)
-			for _, exclude := range flags.ExcludeCommands {
+			for _, exclude := range cfg.ExcludeCommands {
 				excludes[exclude] = true
 			}
 			for _, cmd := range command.Commands() {
@@ -76,9 +98,13 @@ func newWebpagesCommand(
 					cmd.Hidden = true
 				}
 			}
+			if _, err := os.Stdout.WriteString(cfg.Prefix); err != nil {
+				return err
+			}
 			return generateMarkdownTree(
 				command,
 				os.Stdout,
+				cfg.WeightCommands,
 			)
 		},
 		BindFlags: flags.Bind,
@@ -86,15 +112,17 @@ func newWebpagesCommand(
 }
 
 // generateMarkdownTree generates markdown for a whole command tree.
-func generateMarkdownTree(cmd *cobra.Command, w io.Writer) error {
+func generateMarkdownTree(cmd *cobra.Command, w io.Writer, weights map[string]int) error {
 	if !cmd.IsAvailableCommand() {
 		return nil
 	}
-	if err := generateMarkdownPage(cmd, w); err != nil {
+	if err := generateMarkdownPage(cmd, w, weights); err != nil {
 		return err
 	}
-	for _, command := range cmd.Commands() {
-		if err := generateMarkdownTree(command, w); err != nil {
+	commands := cmd.Commands()
+	orderCommands(weights, commands)
+	for _, command := range commands {
+		if err := generateMarkdownTree(command, w, weights); err != nil {
 			return err
 		}
 	}
@@ -102,7 +130,7 @@ func generateMarkdownTree(cmd *cobra.Command, w io.Writer) error {
 }
 
 // generateMarkdownPage creates custom markdown output.
-func generateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
+func generateMarkdownPage(cmd *cobra.Command, w io.Writer, weights map[string]int) error {
 	var err error
 	p := func(format string, a ...any) {
 		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
@@ -147,6 +175,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 	if hasSubCommands(cmd) {
 		p("#### Subcommands {#%s-subcommands}\n\n", id)
 		children := cmd.Commands()
+		orderCommands(weights, children)
 		for _, child := range children {
 			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
 				continue
@@ -167,25 +196,6 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer) error {
 		})
 	}
 	return err
-}
-
-// commandFilePath converts a cobra command to a path. It stutters the folders and paths
-// in order to allow for rendering of the full command in Docusaurus: "buf/buf beta" for example.
-// Spaces are used in paths because the current version of Docusaurus
-// does not allow for configuring category index pages.
-// This function should be removed when migration off docusaurus occurs.
-func commandFilePath(cmd *cobra.Command) string {
-	commandPath := strings.Split(cmd.CommandPath(), " ")
-	var parentPath, currentPath []string
-	for i := range commandPath {
-		currentPath = append(parentPath, strings.Join(commandPath[:i+1], " "))
-		parentPath = currentPath
-	}
-	fullPath := path.Join(currentPath...)
-	if cmd.HasSubCommands() {
-		return path.Join(fullPath, "index.md")
-	}
-	return fullPath + ".md"
 }
 
 func websitePageID(cmd *cobra.Command) string {
@@ -250,4 +260,29 @@ func escapeDescription(s string) string {
 		out.WriteString("```\n")
 	}
 	return out.String()
+}
+
+func readConfig(filename string) (webpagesConfig, error) {
+	if filename == "" {
+		return webpagesConfig{}, nil
+	}
+	file, err := os.Open(filename)
+	if err != nil {
+		return webpagesConfig{}, err
+	}
+	yamlBytes, err := io.ReadAll(file)
+	if err != nil {
+		return webpagesConfig{}, err
+	}
+	var cfg webpagesConfig
+	if err := yaml.Unmarshal(yamlBytes, &cfg); err != nil {
+		return webpagesConfig{}, err
+	}
+	return cfg, err
+}
+
+func orderCommands(weights map[string]int, commands []*cobra.Command) {
+	sort.SliceStable(commands, func(i, j int) bool {
+		return weights[commands[i].CommandPath()] < weights[commands[j].CommandPath()]
+	})
 }
