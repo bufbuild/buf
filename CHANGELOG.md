@@ -2,8 +2,8 @@
 
 ## [v1.15.1] - 2023-03-08
 
-- Fixes a bug in `buf generate` with `v1beta1` config files.
-- Fixes a potential crash when using the `--type` flag with `buf build` or `buf generate`.
+- Fix a bug in `buf generate` with `v1beta1` config files.
+- Fix a potential crash when using the `--type` flag with `buf build` or `buf generate`.
 
 ## [v1.15.0] - 2023-02-28
 
