@@ -137,6 +137,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, weights map[string]in
 	}
 	id := websitePageID(cmd)
 	p("\n")
+	p("---\n")
 	p("## %s {#%s}\n", cmd.CommandPath(), id)
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
@@ -146,34 +147,33 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, weights map[string]in
 	p(cmd.Short)
 	p("\n\n")
 	if cmd.Runnable() {
-		p("#### Usage {#%s-usage} \n", id)
+		p("### Usage {#%s-usage} \n", id)
 		p("```terminal\n$ %s\n```\n\n", cmd.UseLine())
 	}
 	if len(cmd.Long) > 0 {
-		p("#### Description {#%s-description}\n\n", id)
+		p("### Description {#%s-description}\n\n", id)
 		p("%s \n\n", escapeDescription(cmd.Long))
 	}
 	if len(cmd.Example) > 0 {
-		p("#### Examples {#%s-examples}\n\n", id)
+		p("### Examples {#%s-examples}\n\n", id)
 		p("```\n%s\n```\n\n", escapeDescription(cmd.Example))
 	}
 	commandFlags := cmd.NonInheritedFlags()
-	commandFlags.SetOutput(w)
 	if commandFlags.HasAvailableFlags() {
-		p("#### Flags {#%s-flags}\n\n", id)
-		p("```\n")
-		commandFlags.PrintDefaults()
-		p("```\n\n")
+		p("### Flags {#%s-flags}\n\n", id)
+		if err := printFlags(cmd, commandFlags, w); err != nil {
+			return err
+		}
 	}
 	inheritedFlags := cmd.InheritedFlags()
-	inheritedFlags.SetOutput(w)
 	if inheritedFlags.HasAvailableFlags() {
-		p("#### Flags inherited from parent commands {#%s-persistent-flags}\n\n```\n", id)
-		inheritedFlags.PrintDefaults()
-		p("```\n\n")
+		p("### Flags inherited from parent commands {#%s-persistent-flags}\n", id)
+		if err := printFlags(cmd, inheritedFlags, w); err != nil {
+			return err
+		}
 	}
 	if hasSubCommands(cmd) {
-		p("#### Subcommands {#%s-subcommands}\n\n", id)
+		p("### Subcommands {#%s-subcommands}\n\n", id)
 		children := cmd.Commands()
 		orderCommands(weights, children)
 		for _, child := range children {
@@ -185,7 +185,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, weights map[string]in
 		p("\n")
 	}
 	if cmd.HasParent() {
-		p("#### Parent Command {#%s-parent-command}\n\n", id)
+		p("### Parent Command {#%s-parent-command}\n\n", id)
 		parent := cmd.Parent()
 		parentName := parent.CommandPath()
 		p("* [%s](#%s)\t - %s\n", parentName, websitePageID(parent), parent.Short)
@@ -285,4 +285,50 @@ func orderCommands(weights map[string]int, commands []*cobra.Command) {
 	sort.SliceStable(commands, func(i, j int) bool {
 		return weights[commands[i].CommandPath()] < weights[commands[j].CommandPath()]
 	})
+}
+
+func printFlags(cmd *cobra.Command, f *pflag.FlagSet, w io.Writer) error {
+	var err error
+	p := func(format string, a ...any) {
+		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
+	}
+	f.VisitAll(func(flag *pflag.Flag) {
+		if flag.Hidden {
+			return
+		}
+
+		if flag.Shorthand != "" && flag.ShorthandDeprecated == "" {
+			p("#### -%s, --%s", flag.Shorthand, flag.Name)
+		} else {
+			p("#### --%s", flag.Name)
+		}
+		varname, usage := pflag.UnquoteUsage(flag)
+		if varname != "" {
+			p(" *%s*", varname)
+		}
+		p(" {#%s-%s}", websitePageID(cmd), flag.Name)
+		p("\n")
+		p(usage)
+		if flag.NoOptDefVal != "" {
+			switch flag.Value.Type() {
+			case "string":
+				p("[=\"%s\"]", flag.NoOptDefVal)
+			case "bool":
+				if flag.NoOptDefVal != "true" {
+					p("[=%s]", flag.NoOptDefVal)
+				}
+			case "count":
+				if flag.NoOptDefVal != "+1" {
+					p("[=%s]", flag.NoOptDefVal)
+				}
+			default:
+				p("[=%s]", flag.NoOptDefVal)
+			}
+		}
+		if len(flag.Deprecated) != 0 {
+			p(" (DEPRECATED: %s)", flag.Deprecated)
+		}
+		p("\n\n")
+	})
+	return err
 }
