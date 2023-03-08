@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.15.1] - 2023-03-08
 
 - Fix a bug in `buf generate` with `v1beta1` config files.
@@ -832,6 +836,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.15.1...HEAD
 [v1.15.1]: https://github.com/bufbuild/buf/compare/v1.15.0...v1.15.1
 [v1.15.0]: https://github.com/bufbuild/buf/compare/v1.14.0...v1.15.0
 [v1.14.0]: https://github.com/bufbuild/buf/compare/v1.13.1...v1.14.0
