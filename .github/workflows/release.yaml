@@ -197,7 +197,8 @@ jobs:
           title: "Return to development"
           body: Release complete for ${{github.ref_name}}
           token: ${{ steps.generate_token.outputs.token }}
-      - name: Get Version
+      - name: Output Version
+        id: output_version
         uses: actions/github-script@v6
         with:
           script:
