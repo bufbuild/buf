@@ -147,15 +147,25 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 		mavenConfig := &registryv1alpha1.MavenConfig{}
 		if pluginRegistry.Maven.Deps != nil {
 			mavenConfig.RuntimeLibraries = make([]*registryv1alpha1.MavenConfig_RuntimeLibrary, 0, len(pluginRegistry.Maven.Deps))
-			for _, gav := range pluginRegistry.Maven.Deps {
-				mavenConfig.RuntimeLibraries = append(mavenConfig.RuntimeLibraries, &registryv1alpha1.MavenConfig_RuntimeLibrary{
-					Gav: gav,
-				})
+			for _, dependency := range pluginRegistry.Maven.Deps {
+				library := MavenDependencyConfigToProtoRuntimeLibrary(dependency)
+				mavenConfig.RuntimeLibraries = append(mavenConfig.RuntimeLibraries, library)
 			}
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_MavenConfig{MavenConfig: mavenConfig}
 	}
 	return registryConfig, nil
+}
+
+// MavenDependencyConfigToProtoRuntimeLibrary converts a bufpluginconfig.MavenDependencyConfig to an equivalent registryv1alpha1.MavenConfig_RuntimeLibrary.
+func MavenDependencyConfigToProtoRuntimeLibrary(dependency bufpluginconfig.MavenDependencyConfig) *registryv1alpha1.MavenConfig_RuntimeLibrary {
+	return &registryv1alpha1.MavenConfig_RuntimeLibrary{
+		GroupId:    dependency.GroupID,
+		ArtifactId: dependency.ArtifactID,
+		Version:    dependency.Version,
+		Classifier: dependency.Classifier,
+		Extension:  dependency.Extension,
+	}
 }
 
 // ProtoRegistryConfigToPluginRegistry converts a registryv1alpha1.RegistryConfig to a bufpluginconfig.RegistryConfig .
@@ -194,18 +204,79 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			}
 		}
 		registryConfig.NPM = npmConfig
-	} else if config.GetMavenConfig() != nil {
-		mavenConfig := &bufpluginconfig.MavenRegistryConfig{}
-		runtimeLibraries := config.GetMavenConfig().GetRuntimeLibraries()
-		if runtimeLibraries != nil {
-			mavenConfig.Deps = make([]string, 0, len(runtimeLibraries))
-			for _, library := range runtimeLibraries {
-				mavenConfig.Deps = append(mavenConfig.Deps, library.Gav)
-			}
+	} else if protoMavenConfig := config.GetMavenConfig(); protoMavenConfig != nil {
+		mavenConfig, err := ProtoMavenConfigToMavenRegistryConfig(protoMavenConfig)
+		if err != nil {
+			return nil, err
 		}
 		registryConfig.Maven = mavenConfig
 	}
 	return registryConfig, nil
+}
+
+// ProtoMavenConfigToMavenRegistryConfig converts a registryv1alpha1.MavenConfig to a bufpluginconfig.MavenRegistryConfig.
+func ProtoMavenConfigToMavenRegistryConfig(protoMavenConfig *registryv1alpha1.MavenConfig) (*bufpluginconfig.MavenRegistryConfig, error) {
+	mavenConfig := &bufpluginconfig.MavenRegistryConfig{}
+	if protoCompiler := protoMavenConfig.GetCompiler(); protoCompiler != nil {
+		mavenConfig.Compiler = bufpluginconfig.MavenCompilerConfig{}
+		if protoJavaCompiler := protoCompiler.GetJava(); protoJavaCompiler != nil {
+			mavenConfig.Compiler.Java = bufpluginconfig.MavenCompilerJavaConfig{
+				Encoding: protoJavaCompiler.GetEncoding(),
+				Release:  int(protoJavaCompiler.GetRelease()),
+				Source:   int(protoJavaCompiler.GetSource()),
+				Target:   int(protoJavaCompiler.GetTarget()),
+			}
+		}
+		if protoKotlinCompiler := protoCompiler.GetKotlin(); protoKotlinCompiler != nil {
+			mavenConfig.Compiler.Kotlin = bufpluginconfig.MavenCompilerKotlinConfig{
+				Version: protoKotlinCompiler.GetVersion(),
+			}
+		}
+	}
+	runtimeLibraries := protoMavenConfig.GetRuntimeLibraries()
+	if runtimeLibraries != nil {
+		mavenConfig.Deps = make([]bufpluginconfig.MavenDependencyConfig, len(runtimeLibraries))
+		for i, library := range runtimeLibraries {
+			mavenConfig.Deps[i] = ProtoMavenRuntimeLibraryToDependencyConfig(library)
+		}
+	}
+	additionalRuntimes := protoMavenConfig.GetAdditionalRuntimes()
+	if additionalRuntimes != nil {
+		mavenConfig.AdditionalRuntimes = make([]bufpluginconfig.MavenRuntimeConfig, len(additionalRuntimes))
+		for i, additionalRuntime := range additionalRuntimes {
+			runtime, err := MavenProtoRuntimeConfigToRuntimeConfig(additionalRuntime)
+			if err != nil {
+				return nil, err
+			}
+			mavenConfig.AdditionalRuntimes[i] = runtime
+		}
+	}
+	return mavenConfig, nil
+}
+
+// MavenProtoRuntimeConfigToRuntimeConfig converts a registryv1alpha1.MavenConfig_RuntimeConfig to a bufpluginconfig.MavenRuntimeConfig.
+func MavenProtoRuntimeConfigToRuntimeConfig(proto *registryv1alpha1.MavenConfig_RuntimeConfig) (bufpluginconfig.MavenRuntimeConfig, error) {
+	libraries := proto.GetRuntimeLibraries()
+	var dependencies []bufpluginconfig.MavenDependencyConfig
+	for _, library := range libraries {
+		dependencies = append(dependencies, ProtoMavenRuntimeLibraryToDependencyConfig(library))
+	}
+	return bufpluginconfig.MavenRuntimeConfig{
+		Name:    proto.GetName(),
+		Deps:    dependencies,
+		Options: proto.GetOptions(),
+	}, nil
+}
+
+// ProtoMavenRuntimeLibraryToDependencyConfig converts a registryv1alpha1 to a bufpluginconfig.MavenDependencyConfig.
+func ProtoMavenRuntimeLibraryToDependencyConfig(proto *registryv1alpha1.MavenConfig_RuntimeLibrary) bufpluginconfig.MavenDependencyConfig {
+	return bufpluginconfig.MavenDependencyConfig{
+		GroupID:    proto.GetGroupId(),
+		ArtifactID: proto.GetArtifactId(),
+		Version:    proto.GetVersion(),
+		Classifier: proto.GetClassifier(),
+		Extension:  proto.GetExtension(),
+	}
 }
 
 func npmImportStyleToNPMProtoImportStyle(importStyle string) (registryv1alpha1.NPMImportStyle, error) {

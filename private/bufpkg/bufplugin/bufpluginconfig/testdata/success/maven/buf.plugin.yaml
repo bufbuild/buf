@@ -2,10 +2,30 @@ version: v1
 name: buf.build/grpc/java
 plugin_version: v1.0.0
 output_languages: [java]
+deps:
+  - plugin: buf.build/protocolbuffers/java:v22.2
 registry:
   maven:
+    compiler:
+      java:
+        encoding: UTF-8
+        release: 11
+        source: 8
+        target: 17
+      kotlin:
+        version: 1.8.0
     deps:
       - "io.grpc:grpc-core:1.52.1"
       - "io.grpc:grpc-protobuf:1.52.1"
       - "io.grpc:grpc-stub:1.52.1"
+      - "io.grpc:protoc-gen-grpc-java:1.52.1:linux-x86_64@exe"
+    additional_runtimes:
+      - name: lite
+        deps:
+          - "io.grpc:grpc-core:1.52.1"
+          - "io.grpc:grpc-protobuf-lite:1.52.1"
+          - "io.grpc:grpc-stub:1.52.1"
+          - "io.grpc:protoc-gen-grpc-java:1.52.1:linux-x86_64@exe"
+        opts:
+          - lite
 spdx_license_id: bsd-3-clause

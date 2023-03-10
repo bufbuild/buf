@@ -57,7 +57,7 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
 		NPM: &bufpluginconfig.NPMRegistryConfig{
-			ImportStyle: "module",
+			ImportStyle: "commonjs",
 		},
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
@@ -91,10 +91,24 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
 		Maven: &bufpluginconfig.MavenRegistryConfig{
-			Deps: []string{
-				"io.grpc:grpc-core:1.52.1",
-				"io.grpc:grpc-protobuf:1.52.1",
-				"io.grpc:grpc-stub:1.52.1",
+			Deps: []bufpluginconfig.MavenDependencyConfig{
+				{
+					GroupID:    "io.grpc",
+					ArtifactID: "grpc-core",
+					Version:    "1.52.1",
+				},
+				{
+					GroupID:    "io.grpc",
+					ArtifactID: "grpc-protobuf",
+					Version:    "1.52.1",
+				},
+				{
+					GroupID:    "io.grpc",
+					ArtifactID: "protoc-gen-grpc-java",
+					Version:    "1.52.1",
+					Classifier: "linux-x86_64",
+					Extension:  "exe",
+				},
 			},
 		},
 	})

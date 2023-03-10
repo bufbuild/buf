@@ -96,14 +96,51 @@ message NPMConfig {
 
 // MavenConfig is the configuration for a Maven plugin.
 message MavenConfig {
-  // RuntimeLibrary describes the runtime library dependency of the generated code.
+  // RuntimeLibrary describes a runtime dependency of the generated code.
   message RuntimeLibrary {
-    // gav is the GAV (groupId:artifactId:version) of the dependency.
-    // See https://maven.apache.org/repositories/artifacts.html for more information.
-    string gav = 1;
+    string group_id = 1;
+    string artifact_id = 2;
+    string version = 3;
+    string classifier = 4;
+    string extension = 5;
   }
+  // CompilerConfig contains configuration for the Java and/or Kotlin compiler used when compiling the generated code.
+  message CompilerConfig {
+    CompilerJavaConfig java = 1;
+    CompilerKotlinConfig kotlin = 2;
+  }
+  // CompilerJavaConfig contains settings for the Java compiler.
+  message CompilerJavaConfig {
+    // File encoding (default: UTF-8).
+    string encoding = 1;
+    // Release version (default: 8).
+    int32 release = 2;
+    // Source version (default: 8).
+    int32 source = 3;
+    // Target version (default: 8).
+    int32 target = 4;
+  }
+  // CompilerKotlinConfig contains settings for the Kotlin compiler.
+  message CompilerKotlinConfig {
+    // Version of the Kotlin compiler used to commpile the generated code.
+    string version = 1;
+  }
+  // RuntimeConfig allows configuring additional runtimes (like the 'lite' runtime).
+  // They can use different runtime dependencies and plugin options.
+  message RuntimeConfig {
+    string name = 1;
+    repeated RuntimeLibrary runtime_libraries = 2;
+    // The options to pass to the plugin. These will
+    // be merged into a single, comma-separated string.
+    repeated string options = 3;
+  }
+
   // Optionally define the runtime libraries for the plugin.
   repeated RuntimeLibrary runtime_libraries = 1;
+  // Settings for the Java/Kotlin compiler used to compile the generated code.
+  CompilerConfig compiler = 2;
+  // Optional additional runtimes supported by the plugin.
+  repeated RuntimeConfig additional_runtimes = 3;
 }
 
 // RegistryConfig is the configuration for the remote registry of a plugin.
