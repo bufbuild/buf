@@ -33,13 +33,13 @@ import (
 )
 
 type wasmHandler struct {
-	wasmPluginExecutor *bufwasm.PluginExecutor
+	wasmPluginExecutor bufwasm.PluginExecutor
 	pluginPath         string
 	tracer             trace.Tracer
 }
 
 func newWasmHandler(
-	wasmPluginExecutor *bufwasm.PluginExecutor,
+	wasmPluginExecutor bufwasm.PluginExecutor,
 	pluginPath string,
 ) *wasmHandler {
 	return &wasmHandler{

@@ -30,14 +30,14 @@ type generator struct {
 	logger             *zap.Logger
 	storageosProvider  storageos.Provider
 	runner             command.Runner
-	wasmPluginExecutor *bufwasm.PluginExecutor
+	wasmPluginExecutor bufwasm.PluginExecutor
 }
 
 func newGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor *bufwasm.PluginExecutor,
+	wasmPluginExecutor bufwasm.PluginExecutor,
 ) *generator {
 	return &generator{
 		logger:             logger,

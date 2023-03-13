@@ -117,7 +117,7 @@ func NewGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor *bufwasm.PluginExecutor,
+	wasmPluginExecutor bufwasm.PluginExecutor,
 	clientConfig *connectclient.Config,
 ) Generator {
 	return newGenerator(

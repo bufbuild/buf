@@ -92,7 +92,7 @@ func NewGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor *bufwasm.PluginExecutor,
+	wasmPluginExecutor bufwasm.PluginExecutor,
 ) Generator {
 	return newGenerator(logger, storageosProvider, runner, wasmPluginExecutor)
 }
@@ -129,7 +129,7 @@ func GenerateWithProtocPath(protocPath string) GenerateOption {
 func NewHandler(
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor *bufwasm.PluginExecutor,
+	wasmPluginExecutor bufwasm.PluginExecutor,
 	pluginName string,
 	options ...HandlerOption,
 ) (appproto.Handler, error) {

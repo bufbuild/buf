@@ -47,7 +47,7 @@ func executePlugin(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor *bufwasm.PluginExecutor,
+	wasmPluginExecutor bufwasm.PluginExecutor,
 	container app.EnvStderrContainer,
 	images []bufimage.Image,
 	pluginName string,

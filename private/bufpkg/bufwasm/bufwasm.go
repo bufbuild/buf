@@ -89,17 +89,21 @@ func (c *CompiledPlugin) ABI() wasmpluginv1.WasmABI {
 }
 
 // PluginExecutorOption are options
-type PluginExecutorOption func(*PluginExecutor)
+type PluginExecutorOption func(PluginExecutor)
 
-// PluginExecutor wraps a wazero end exposes functions to compile and run wasm
-// plugins.
-type PluginExecutor struct {
+// PluginExecutor wraps a wazero end exposes functions to compile and run wasm plugins.
+type PluginExecutor interface {
+	CompilePlugin(ctx context.Context, plugin []byte) (_ *CompiledPlugin, retErr error)
+	Run(ctx context.Context, plugin *CompiledPlugin, stdin io.Reader, stdout io.Writer) (retErr error)
+}
+
+type WASMPluginExecutor struct {
 	runtimeConfig wazero.RuntimeConfig
 }
 
-// NewPluginExecutor creates a new PluginExecutor with a compilation cache dir
+// NewPluginExecutor creates a new pluginExecutor with a compilation cache dir
 // and other buf defaults.
-func NewPluginExecutor(compilationCacheDir string, options ...PluginExecutorOption) (*PluginExecutor, error) {
+func NewPluginExecutor(compilationCacheDir string, options ...PluginExecutorOption) (*WASMPluginExecutor, error) {
 	var cache wazero.CompilationCache
 	if compilationCacheDir == "" {
 		cache = wazero.NewCompilationCache()
@@ -116,18 +120,18 @@ func NewPluginExecutor(compilationCacheDir string, options ...PluginExecutorOpti
 		WithCompilationCache(cache).
 		WithCustomSections(true).
 		WithCloseOnContextDone(true)
-	pluginExecutor := &PluginExecutor{
+	executor := &WASMPluginExecutor{
 		runtimeConfig: runtimeConfig,
 	}
 	for _, opt := range options {
-		opt(pluginExecutor)
+		opt(executor)
 	}
-	return pluginExecutor, nil
+	return executor, nil
 }
 
 // CompilePlugin takes a byte slice with a valid wasm module, compiles it and
 // optionally reads out buf plugin metadata.
-func (e *PluginExecutor) CompilePlugin(ctx context.Context, plugin []byte) (_ *CompiledPlugin, retErr error) {
+func (e *WASMPluginExecutor) CompilePlugin(ctx context.Context, plugin []byte) (_ *CompiledPlugin, retErr error) {
 	runtime := wazero.NewRuntimeWithConfig(ctx, e.runtimeConfig)
 	defer func() {
 		retErr = multierr.Append(retErr, runtime.Close(ctx))
@@ -157,7 +161,7 @@ func (e *PluginExecutor) CompilePlugin(ctx context.Context, plugin []byte) (_ *C
 
 // Run executes a plugin. If the plugin exited with non-zero status, this
 // returns a *PluginExecutionError.
-func (e *PluginExecutor) Run(
+func (e *WASMPluginExecutor) Run(
 	ctx context.Context,
 	plugin *CompiledPlugin,
 	stdin io.Reader,
