@@ -48,6 +48,7 @@ const (
 	disableSymlinksFlagName     = "disable-symlinks"
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
+	wasmCompilationCacheDir     = "wasmplugins-compiled"
 )
 
 // NewCommand returns a new Command.
@@ -392,7 +393,8 @@ func run(
 			return err
 		}
 	}
-	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(filepath.Join(container.CacheDirPath(), "wasmplugins"))
+	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
+		filepath.Join(container.CacheDirPath(), wasmCompilationCacheDir))
 	if err != nil {
 		return err
 	}
