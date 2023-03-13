@@ -45,27 +45,6 @@ const customSectionID = 0
 // maxMemoryBytes wazero memory page limit
 const maxMemoryBytes = 1 << 29 // 512MB
 
-// EncodeBufSection encodes the pluginmetadata message as a custom wasm section.
-// The resulting bytes can be appended to any valid wasm file to add the new
-// section to that file.
-func EncodeBufSection(metadata *wasmpluginv1.Metadata) ([]byte, error) {
-	metadataBinary, err := protoencoding.NewWireMarshaler().Marshal(metadata)
-	if err != nil {
-		return nil, err
-	}
-	// Abusing the protowire package because the wasm file format is similar.
-	return protowire.AppendBytes(
-		[]byte{customSectionID},
-		append(
-			protowire.AppendString(
-				nil,
-				CustomSectionName,
-			),
-			metadataBinary...,
-		),
-	), nil
-}
-
 // CompiledPlugin is the compiled representation of loading wasm bytes.
 type CompiledPlugin struct {
 	Module wazero.CompiledModule
@@ -87,9 +66,6 @@ func (c *CompiledPlugin) ABI() wasmpluginv1.WasmABI {
 	}
 	return wasmpluginv1.WasmABI_WASM_ABI_UNSPECIFIED
 }
-
-// PluginExecutorOption are options
-type PluginExecutorOption func(PluginExecutor)
 
 // PluginExecutor wraps a wazero end exposes functions to compile and run wasm plugins.
 type PluginExecutor interface {
@@ -128,6 +104,9 @@ func NewPluginExecutor(compilationCacheDir string, options ...PluginExecutorOpti
 	}
 	return executor, nil
 }
+
+// PluginExecutorOption configuration options for the PluginExecutor.
+type PluginExecutorOption func(PluginExecutor)
 
 // CompilePlugin takes a byte slice with a valid wasm module, compiles it and
 // optionally reads out buf plugin metadata.
@@ -250,4 +229,25 @@ type PluginExecutionError struct {
 
 func (e *PluginExecutionError) Error() string {
 	return fmt.Sprintf("plugin exited with code %d: %s", e.Exitcode, e.Stderr)
+}
+
+// EncodeBufSection encodes the pluginmetadata message as a custom wasm section.
+// The resulting bytes can be appended to any valid wasm file to add the new
+// section to that file.
+func EncodeBufSection(metadata *wasmpluginv1.Metadata) ([]byte, error) {
+	metadataBinary, err := protoencoding.NewWireMarshaler().Marshal(metadata)
+	if err != nil {
+		return nil, err
+	}
+	// Abusing the protowire package because the wasm file format is similar.
+	return protowire.AppendBytes(
+		[]byte{customSectionID},
+		append(
+			protowire.AppendString(
+				nil,
+				CustomSectionName,
+			),
+			metadataBinary...,
+		),
+	), nil
 }
