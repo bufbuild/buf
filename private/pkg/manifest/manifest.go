@@ -12,14 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Manifests are a list of paths and their hash digests, canonically ordered by
-// path in increasing lexographical order. Manifests are encoded as:
+// A manifest is a file containing a list of paths and their hash digests,
+// canonically ordered by path in increasing lexicographical order. Manifests
+// are encoded as:
 //
 //	<digest type>:<digest>[SP][SP]<path>[LF]
 //
 // "shake256" is the only supported digest type. The digest is 64 bytes of hex
 // encoded output of SHAKE256. See golang.org/x/crypto/sha3 and FIPS 202 for
 // details on the SHAKE hash.
+//
+// [Manifest] can read and write manifest files. Canonical form is produced
+// when serialized ([Manifest.MarshalText]). Non-canonical form is a valid
+// manifest and will not produce errors when deserializing.
+//
+// Interacting with a manifest is typically by path ([Manifest.Paths],
+// [Manifest.DigestFor]) or by a [Digest] ([Manifest.PathsFor]).
+//
+// [Blob] represents file content and its digest. [BlobSet] collects related
+// blobs together into a set. [NewMemoryBlob] provides an in-memory
+// implementation. A manifest, being a file, is also a blob ([Manifest.Blob]).
+//
+// Blobs are anonymous files and a manifest gives names to anonymous files.
+// It's possible to view a manifest and its associated blobs as a file system.
+// [NewBucket] creates a storage bucket from a manifest and blob set.
+// [NewFromBucket] does the inverse: the creation of a manifest and blob set
+// from a storage bucket.
 package manifest
 
 import (
@@ -52,17 +70,10 @@ type Manifest struct {
 var _ encoding.TextMarshaler = (*Manifest)(nil)
 var _ encoding.TextUnmarshaler = (*Manifest)(nil)
 
-// New creates an empty manifest.
-func New() *Manifest {
-	return &Manifest{
-		pathToDigest:  make(map[string]Digest),
-		digestToPaths: make(map[string][]string),
-	}
-}
-
-// NewFromReader builds a manifest from an encoded manifest reader.
+// NewFromReader builds a manifest from an encoded manifest, like one produced
+// by [Manifest.MarshalText].
 func NewFromReader(manifest io.Reader) (*Manifest, error) {
-	m := New()
+	var m Manifest
 	scanner := bufio.NewScanner(manifest)
 	scanner.Split(splitManifest)
 	lineno := 0
@@ -86,7 +97,7 @@ func NewFromReader(manifest io.Reader) (*Manifest, error) {
 		}
 		return nil, err
 	}
-	return m, nil
+	return &m, nil
 }
 
 // AddEntry adds an entry to the manifest with a path and its digest. It fails
@@ -107,8 +118,14 @@ func (m *Manifest) AddEntry(path string, digest Digest) error {
 			digest.String(), path, existingDigest.String(),
 		)
 	}
+	if m.pathToDigest == nil {
+		m.pathToDigest = make(map[string]Digest)
+	}
 	m.pathToDigest[path] = digest
 	key := digest.String()
+	if m.digestToPaths == nil {
+		m.digestToPaths = make(map[string][]string)
+	}
 	m.digestToPaths[key] = append(m.digestToPaths[key], path)
 	return nil
 }
@@ -157,10 +174,9 @@ func (m *Manifest) MarshalText() ([]byte, error) {
 	return coded.Bytes(), nil
 }
 
-// UnmarshalText decodes a manifest from member.
+// UnmarshalText decodes a manifest from text.
 //
-// Use NewManifestFromReader if you have an io.Reader and want to avoid memory
-// copying.
+// See [NewFromReader] if your manifest is available in an io.Reader.
 func (m *Manifest) UnmarshalText(text []byte) error {
 	newm, err := NewFromReader(bytes.NewReader(text))
 	if err != nil {
@@ -171,13 +187,18 @@ func (m *Manifest) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Blob returns the manifest's blob.
+// Blob returns the manifest as a blob.
 func (m *Manifest) Blob() (Blob, error) {
 	manifestText, err := m.MarshalText()
 	if err != nil {
 		return nil, err
 	}
 	return NewMemoryBlobFromReader(bytes.NewReader(manifestText))
+}
+
+// Empty returns true if the manifest has no entries.
+func (m *Manifest) Empty() bool {
+	return len(m.pathToDigest) == 0 && len(m.digestToPaths) == 0
 }
 
 func splitManifest(data []byte, atEOF bool) (int, []byte, error) {

@@ -56,6 +56,7 @@ type ReadBucket interface {
 type PutOptions struct {
 	CustomChunkSize bool
 	ChunkSize       int64 // measured in bytes
+	Atomic          bool
 }
 
 // PutOption are options passed when putting an object in a bucket.
@@ -70,6 +71,20 @@ func PutWithChunkSize(sizeInBytes int64) PutOption {
 	return func(opts *PutOptions) {
 		opts.CustomChunkSize = true
 		opts.ChunkSize = sizeInBytes
+	}
+}
+
+// PutWithAtomic ensures that the Put fully writes the file before making it
+// available to readers. This happens by default for some implementations,
+// while others may need to perform a sequence of operations to ensure
+// atomic writes.
+//
+// The Put operation is complete and the path will be readable once the
+// returned WriteObjectCloser is written and closed (without an error).
+// Any errors will cause the Put to be skipped (no path will be created).
+func PutWithAtomic() PutOption {
+	return func(opts *PutOptions) {
+		opts.Atomic = true
 	}
 }
 

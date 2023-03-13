@@ -254,7 +254,7 @@ func (RepositoryRole) EnumDescriptor() ([]byte, []int) {
 
 // The roles that users can have for a Template.
 //
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/role.proto.
 type TemplateRole int32
 
 const (
@@ -312,7 +312,7 @@ func (TemplateRole) EnumDescriptor() ([]byte, []int) {
 
 // The roles that users can have for a Plugin.
 //
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/role.proto.
 type PluginRole int32
 
 const (

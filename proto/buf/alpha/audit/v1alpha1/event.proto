@@ -52,6 +52,7 @@ enum ResourceType {
   RESOURCE_TYPE_PLUGIN = 7 [deprecated = true];
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
   RESOURCE_TYPE_TOKEN = 10;
+  RESOURCE_TYPE_SCIM_TOKEN = 11;
 }
 
 // Resource is the affected resource by the audited event.
@@ -91,6 +92,9 @@ enum EventType {
   EVENT_TYPE_USER_LOGGED_OUT = 19;
   EVENT_TYPE_TOKEN_CREATED = 23;
   EVENT_TYPE_TOKEN_DELETED = 24;
+  EVENT_TYPE_USER_REACTIVATED = 25;
+  EVENT_TYPE_SCIM_TOKEN_CREATED = 26;
+  EVENT_TYPE_SCIM_TOKEN_DELETED = 27;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -145,6 +149,9 @@ message Event {
     PayloadOrganizationIDPGroupRemoved idp_group_removed = 28;
     PayloadTokenCreated token_created = 29;
     PayloadTokenDeleted token_deleted = 30;
+    PayloadUserReactivated user_reactivated = 31;
+    PayloadSCIMTokenCreated scim_token_created = 32;
+    PayloadSCIMTokenDeleted scim_token_deleted = 33;
   }
 }
 
@@ -234,6 +241,8 @@ message PayloadRepositoryCommitPushed {
   repeated string tags = 5;
   // draft_name is the name of the draft. Optional.
   string draft_name = 6;
+  // manifest_digest is the module's manifest digest if tamper proofing is enabled.
+  string manifest_digest = 7;
 }
 
 message PayloadRepositoryContributorAdded {
@@ -310,6 +319,8 @@ message PayloadPluginDeleted {
 
 message PayloadUserCreated {}
 
+message PayloadUserReactivated {}
+
 message PayloadUserDeactivated {}
 
 message PayloadUserDeleted {}
@@ -336,3 +347,10 @@ message PayloadTokenDeleted {
   // owner_id is the id of the owner of the token.
   string owner_id = 1;
 }
+
+message PayloadSCIMTokenCreated {
+  // token_expiry_time is the expiry time of the token.
+  google.protobuf.Timestamp token_expiry_time = 1;
+}
+
+message PayloadSCIMTokenDeleted {}

@@ -322,7 +322,7 @@ func (x *UserCanSeeOrganizationSettingsResponse) GetAuthorized() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanReadPluginRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -380,7 +380,7 @@ func (x *UserCanReadPluginRequest) GetName() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanReadPluginResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -428,7 +428,7 @@ func (x *UserCanReadPluginResponse) GetAuthorized() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanCreatePluginVersionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -486,7 +486,7 @@ func (x *UserCanCreatePluginVersionRequest) GetName() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanCreatePluginVersionResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -534,7 +534,7 @@ func (x *UserCanCreatePluginVersionResponse) GetAuthorized() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanCreateTemplateVersionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -592,7 +592,7 @@ func (x *UserCanCreateTemplateVersionRequest) GetName() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanCreateTemplateVersionResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -640,7 +640,7 @@ func (x *UserCanCreateTemplateVersionResponse) GetAuthorized() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanCreateOrganizationPluginRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -690,7 +690,7 @@ func (x *UserCanCreateOrganizationPluginRequest) GetOrganizationId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanCreateOrganizationPluginResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -738,7 +738,7 @@ func (x *UserCanCreateOrganizationPluginResponse) GetAuthorized() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanCreateOrganizationTemplateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -788,7 +788,7 @@ func (x *UserCanCreateOrganizationTemplateRequest) GetOrganizationId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanCreateOrganizationTemplateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -836,7 +836,7 @@ func (x *UserCanCreateOrganizationTemplateResponse) GetAuthorized() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanSeePluginSettingsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -894,7 +894,7 @@ func (x *UserCanSeePluginSettingsRequest) GetName() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanSeePluginSettingsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -942,7 +942,7 @@ func (x *UserCanSeePluginSettingsResponse) GetAuthorized() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanSeeTemplateSettingsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1000,7 +1000,7 @@ func (x *UserCanSeeTemplateSettingsRequest) GetName() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanSeeTemplateSettingsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1534,7 +1534,7 @@ func (x *UserCanDeleteRepositoryResponse) GetAuthorized() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanDeleteTemplateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1584,7 +1584,7 @@ func (x *UserCanDeleteTemplateRequest) GetTemplateId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanDeleteTemplateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1632,7 +1632,7 @@ func (x *UserCanDeleteTemplateResponse) GetAuthorized() bool {
 	return false
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanDeletePluginRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1682,7 +1682,7 @@ func (x *UserCanDeletePluginRequest) GetPluginId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanDeletePluginResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1998,7 +1998,7 @@ func (x *UserCanManageRepositoryContributorsResponse) GetAuthorizedRoles() []Rep
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanManagePluginContributorsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2048,7 +2048,7 @@ func (x *UserCanManagePluginContributorsRequest) GetPluginId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanManagePluginContributorsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2098,7 +2098,7 @@ func (x *UserCanManagePluginContributorsResponse) GetAuthorizedRoles() []PluginR
 	return nil
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanManageTemplateContributorsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2148,7 +2148,7 @@ func (x *UserCanManageTemplateContributorsRequest) GetTemplateId() string {
 	return ""
 }
 
-// Deprecated: Do not use.
+// Deprecated: Marked as deprecated in buf/alpha/registry/v1alpha1/authz.proto.
 type UserCanManageTemplateContributorsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

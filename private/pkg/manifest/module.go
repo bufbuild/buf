@@ -19,11 +19,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 
 	"go.uber.org/multierr"
 )
 
-// Blob is a blob with a digest and a content.
+// Blob is an anonymous file associated with a digest.
 type Blob interface {
 	Digest() *Digest
 	Open(context.Context) (io.ReadCloser, error)
@@ -78,14 +79,20 @@ func NewMemoryBlob(digest Digest, content []byte, opts ...MemoryBlobOption) (Blo
 }
 
 func (b *memoryBlob) Digest() *Digest {
+	if b == nil {
+		return nil
+	}
 	return &b.digest
 }
 
 func (b *memoryBlob) Open(context.Context) (io.ReadCloser, error) {
+	if b == nil {
+		return nil, os.ErrNotExist
+	}
 	return io.NopCloser(bytes.NewReader(b.content)), nil
 }
 
-// BlobSet represents a set of deduplicated blobs, by digests.
+// BlobSet represents a set of deduplicated blobs by their digests.
 type BlobSet struct {
 	digestToBlob map[string]Blob
 }

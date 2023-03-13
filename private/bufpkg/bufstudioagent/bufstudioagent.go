@@ -30,12 +30,17 @@ func NewHandler(
 	tlsClientConfig *tls.Config,
 	disallowedHeaders map[string]struct{},
 	forwardHeaders map[string]string,
+	privateNetwork bool,
 ) http.Handler {
-	corsHandler := cors.New(cors.Options{
+	corsHandlerOptions := cors.Options{
 		AllowedOrigins:   []string{origin},
-		AllowedMethods:   []string{http.MethodPost},
+		AllowedMethods:   []string{http.MethodPost, http.MethodOptions},
 		AllowCredentials: true,
-	})
+	}
+	if privateNetwork {
+		corsHandlerOptions.AllowPrivateNetwork = true
+	}
+	corsHandler := cors.New(corsHandlerOptions)
 	plainHandler := corsHandler.Handler(newPlainPostHandler(logger, disallowedHeaders, forwardHeaders, tlsClientConfig))
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +51,13 @@ func NewHandler(
 		case http.MethodPost:
 			plainHandler.ServeHTTP(w, r)
 			return
+		case http.MethodOptions:
+			if privateNetwork {
+				corsHandler.HandlerFunc(w, r)
+				return
+			}
+			// If the private network flag is not used, fall through to the default
+			fallthrough
 		default:
 			http.Error(w, "", http.StatusMethodNotAllowed)
 			return

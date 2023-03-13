@@ -23,8 +23,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // CheckEnumNoDelete is a check function.
@@ -261,7 +263,7 @@ func checkFieldSameLabel(add addFunc, corpus *corpus, previousField protosource.
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
 		// TODO: specific label location
-		add(field, nil, field.Location(), `Field %q on message %q changed label from %q to %q.`, numberString, field.Message().Name(), previousField.Label().String(), field.Label().String())
+		add(field, nil, field.Location(), `Field %q on message %q changed label from %q to %q.`, numberString, field.Message().Name(), protodescriptor.FieldDescriptorProtoLabelPrettyString(previousField.Label()), protodescriptor.FieldDescriptorProtoLabelPrettyString(field.Label()))
 	}
 	return nil
 }
@@ -341,9 +343,9 @@ func checkFieldSameType(add addFunc, corpus *corpus, previousField protosource.F
 	}
 
 	switch field.Type() {
-	case protosource.FieldDescriptorProtoTypeEnum,
-		protosource.FieldDescriptorProtoTypeGroup,
-		protosource.FieldDescriptorProtoTypeMessage:
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM,
+		descriptorpb.FieldDescriptorProto_TYPE_GROUP,
+		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
 		if previousField.TypeName() != field.TypeName() {
 			addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
 		}
@@ -368,10 +370,10 @@ func checkFieldWireCompatibleType(add addFunc, corpus *corpus, previousField pro
 			"See https://developers.google.com/protocol-buffers/docs/proto3#updating for wire compatibility rules.",
 		}
 		switch {
-		case previousField.Type() == protosource.FieldDescriptorProtoTypeString && field.Type() == protosource.FieldDescriptorProtoTypeBytes:
+		case previousField.Type() == descriptorpb.FieldDescriptorProto_TYPE_STRING && field.Type() == descriptorpb.FieldDescriptorProto_TYPE_BYTES:
 			// It is OK to evolve from string to bytes
 			return nil
-		case previousField.Type() == protosource.FieldDescriptorProtoTypeBytes && field.Type() == protosource.FieldDescriptorProtoTypeString:
+		case previousField.Type() == descriptorpb.FieldDescriptorProto_TYPE_BYTES && field.Type() == descriptorpb.FieldDescriptorProto_TYPE_STRING:
 			extraMessages = append(
 				extraMessages,
 				"Note that while string and bytes are compatible if the data is valid UTF-8, there is no way to enforce that a field is UTF-8, so these fields may be incompatible.",
@@ -381,12 +383,12 @@ func checkFieldWireCompatibleType(add addFunc, corpus *corpus, previousField pro
 		return nil
 	}
 	switch field.Type() {
-	case protosource.FieldDescriptorProtoTypeEnum:
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
 		if previousField.TypeName() != field.TypeName() {
 			return checkEnumWireCompatibleForField(add, corpus, previousField, field)
 		}
-	case protosource.FieldDescriptorProtoTypeGroup,
-		protosource.FieldDescriptorProtoTypeMessage:
+	case descriptorpb.FieldDescriptorProto_TYPE_GROUP,
+		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
 		if previousField.TypeName() != field.TypeName() {
 			addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
 			return nil
@@ -417,12 +419,12 @@ func checkFieldWireJSONCompatibleType(add addFunc, corpus *corpus, previousField
 		return nil
 	}
 	switch field.Type() {
-	case protosource.FieldDescriptorProtoTypeEnum:
+	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
 		if previousField.TypeName() != field.TypeName() {
 			return checkEnumWireCompatibleForField(add, corpus, previousField, field)
 		}
-	case protosource.FieldDescriptorProtoTypeGroup,
-		protosource.FieldDescriptorProtoTypeMessage:
+	case descriptorpb.FieldDescriptorProto_TYPE_GROUP,
+		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
 		if previousField.TypeName() != field.TypeName() {
 			addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
 			return nil
@@ -476,9 +478,9 @@ func addFieldChangedType(add addFunc, previousField protosource.Field, field pro
 	}
 	var fieldLocation protosource.Location
 	switch field.Type() {
-	case protosource.FieldDescriptorProtoTypeMessage,
-		protosource.FieldDescriptorProtoTypeEnum,
-		protosource.FieldDescriptorProtoTypeGroup:
+	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
+		descriptorpb.FieldDescriptorProto_TYPE_ENUM,
+		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
 		fieldLocation = field.TypeNameLocation()
 	default:
 		fieldLocation = field.TypeLocation()
@@ -492,8 +494,8 @@ func addFieldChangedType(add addFunc, previousField protosource.Field, field pro
 		`Field %q on message %q changed type from %q to %q.%s`,
 		previousNumberString,
 		field.Message().Name(),
-		previousField.Type().String(),
-		field.Type().String(),
+		protodescriptor.FieldDescriptorProtoTypePrettyString(previousField.Type()),
+		protodescriptor.FieldDescriptorProtoTypePrettyString(field.Type()),
 		combinedExtraMessage,
 	)
 }
@@ -742,14 +744,14 @@ var CheckMessageSameRequiredFields = newMessagePairCheckFunc(checkMessageSameReq
 func checkMessageSameRequiredFields(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
 	previousNumberToRequiredField, err := protosource.NumberToMessageFieldForLabel(
 		previousMessage,
-		protosource.FieldDescriptorProtoLabelRequired,
+		descriptorpb.FieldDescriptorProto_LABEL_REQUIRED,
 	)
 	if err != nil {
 		return err
 	}
 	numberToRequiredField, err := protosource.NumberToMessageFieldForLabel(
 		message,
-		protosource.FieldDescriptorProtoLabelRequired,
+		descriptorpb.FieldDescriptorProto_LABEL_REQUIRED,
 	)
 	if err != nil {
 		return err

@@ -22,64 +22,65 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 var (
 	// https://developers.google.com/protocol-buffers/docs/proto3#updating
-	fieldDescriptorProtoTypeToWireCompatiblityGroup = map[protosource.FieldDescriptorProtoType]int{
-		protosource.FieldDescriptorProtoTypeInt32:  1,
-		protosource.FieldDescriptorProtoTypeInt64:  1,
-		protosource.FieldDescriptorProtoTypeUint32: 1,
-		protosource.FieldDescriptorProtoTypeUint64: 1,
-		protosource.FieldDescriptorProtoTypeBool:   1,
-		protosource.FieldDescriptorProtoTypeSint32: 2,
-		protosource.FieldDescriptorProtoTypeSint64: 2,
+	fieldDescriptorProtoTypeToWireCompatiblityGroup = map[descriptorpb.FieldDescriptorProto_Type]int{
+		descriptorpb.FieldDescriptorProto_TYPE_INT32:  1,
+		descriptorpb.FieldDescriptorProto_TYPE_INT64:  1,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT32: 1,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT64: 1,
+		descriptorpb.FieldDescriptorProto_TYPE_BOOL:   1,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT32: 2,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT64: 2,
 		// While string and bytes are compatible if the bytes are valid UTF-8, we cannot
 		// determine if a field will actually be valid UTF-8, as we are concerned with the
 		// definitions and not individual messages, so we have these in different
 		// compatibility groups. We allow string to evolve to bytes, but not bytes to
 		// string, but we need them to be in different compatibility groups so that
 		// we have to manually detect this.
-		protosource.FieldDescriptorProtoTypeString:   3,
-		protosource.FieldDescriptorProtoTypeBytes:    4,
-		protosource.FieldDescriptorProtoTypeFixed32:  5,
-		protosource.FieldDescriptorProtoTypeSfixed32: 5,
-		protosource.FieldDescriptorProtoTypeFixed64:  6,
-		protosource.FieldDescriptorProtoTypeSfixed64: 6,
-		protosource.FieldDescriptorProtoTypeDouble:   7,
-		protosource.FieldDescriptorProtoTypeFloat:    8,
-		protosource.FieldDescriptorProtoTypeGroup:    9,
+		descriptorpb.FieldDescriptorProto_TYPE_STRING:   3,
+		descriptorpb.FieldDescriptorProto_TYPE_BYTES:    4,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED32:  5,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32: 5,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED64:  6,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64: 6,
+		descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:   7,
+		descriptorpb.FieldDescriptorProto_TYPE_FLOAT:    8,
+		descriptorpb.FieldDescriptorProto_TYPE_GROUP:    9,
 		// Embedded messages are compatible with bytes if the bytes are serialized versions
 		// of the message, but we have no way of verifying this.
-		protosource.FieldDescriptorProtoTypeMessage: 10,
+		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: 10,
 		// Enum is compatible with int32, uint32, int64, uint64 if the values match
 		// an enum value, but we have no way of verifying this.
-		protosource.FieldDescriptorProtoTypeEnum: 11,
+		descriptorpb.FieldDescriptorProto_TYPE_ENUM: 11,
 	}
 
 	// https://developers.google.com/protocol-buffers/docs/proto3#json
 	// this is not just JSON-compatible, but also wire-compatible, i.e. the intersection
-	fieldDescriptorProtoTypeToWireJSONCompatiblityGroup = map[protosource.FieldDescriptorProtoType]int{
+	fieldDescriptorProtoTypeToWireJSONCompatiblityGroup = map[descriptorpb.FieldDescriptorProto_Type]int{
 		// fixed32 not compatible for wire so not included
-		protosource.FieldDescriptorProtoTypeInt32:  1,
-		protosource.FieldDescriptorProtoTypeUint32: 1,
+		descriptorpb.FieldDescriptorProto_TYPE_INT32:  1,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT32: 1,
 		// fixed64 not compatible for wire so not included
-		protosource.FieldDescriptorProtoTypeInt64:    2,
-		protosource.FieldDescriptorProtoTypeUint64:   2,
-		protosource.FieldDescriptorProtoTypeFixed32:  3,
-		protosource.FieldDescriptorProtoTypeSfixed32: 3,
-		protosource.FieldDescriptorProtoTypeFixed64:  4,
-		protosource.FieldDescriptorProtoTypeSfixed64: 4,
-		protosource.FieldDescriptorProtoTypeBool:     5,
-		protosource.FieldDescriptorProtoTypeSint32:   6,
-		protosource.FieldDescriptorProtoTypeSint64:   7,
-		protosource.FieldDescriptorProtoTypeString:   8,
-		protosource.FieldDescriptorProtoTypeBytes:    9,
-		protosource.FieldDescriptorProtoTypeDouble:   10,
-		protosource.FieldDescriptorProtoTypeFloat:    11,
-		protosource.FieldDescriptorProtoTypeGroup:    12,
-		protosource.FieldDescriptorProtoTypeMessage:  14,
-		protosource.FieldDescriptorProtoTypeEnum:     15,
+		descriptorpb.FieldDescriptorProto_TYPE_INT64:    2,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT64:   2,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED32:  3,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32: 3,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED64:  4,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64: 4,
+		descriptorpb.FieldDescriptorProto_TYPE_BOOL:     5,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT32:   6,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT64:   7,
+		descriptorpb.FieldDescriptorProto_TYPE_STRING:   8,
+		descriptorpb.FieldDescriptorProto_TYPE_BYTES:    9,
+		descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:   10,
+		descriptorpb.FieldDescriptorProto_TYPE_FLOAT:    11,
+		descriptorpb.FieldDescriptorProto_TYPE_GROUP:    12,
+		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:  14,
+		descriptorpb.FieldDescriptorProto_TYPE_ENUM:     15,
 	}
 )
 

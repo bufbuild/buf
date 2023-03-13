@@ -3,15 +3,15 @@ syntax = "proto2";
 package pkg;
 import "options.proto";
 option (UsedOption.file_baz) = "str";
-option (UsedOption.file_foo) = { foo:"str" };
+option (UsedOption.file_foo) = { foo: "str" };
 enum FooEnum {
   option deprecated = true;
   option (enum_baz) = "str";
-  option (enum_foo) = { foo:"str" };
+  option (enum_foo) = { foo: "str" };
   FOO_ENUM_X = 0;
   FOO_ENUM_Y = 1 [
     (enum_value_baz) = "str",
-    (enum_value_foo) = { foo:"str" }
+    (enum_value_foo) = { foo: "str" }
   ];
 }
 -- google/protobuf/descriptor.proto --
