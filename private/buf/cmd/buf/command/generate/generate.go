@@ -392,7 +392,7 @@ func run(
 			return err
 		}
 	}
-	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(ctx, filepath.Join(container.CacheDirPath(), "wasmplugins"))
+	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(filepath.Join(container.CacheDirPath(), "wasmplugins"))
 	if err != nil {
 		return err
 	}

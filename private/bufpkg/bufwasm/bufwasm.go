@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 	"testing/fstest"
 
@@ -42,6 +41,9 @@ const CustomSectionName = ".bufplugin"
 
 // https://www.w3.org/TR/2019/REC-wasm-core-1-20191205/#sections%E2%91%A0
 const customSectionID = 0
+
+// maxMemoryBytes wazero memory page limit
+const maxMemoryBytes = 1 << 29 // 512MB
 
 // EncodeBufSection encodes the pluginmetadata message as a custom wasm section.
 // The resulting bytes can be appended to any valid wasm file to add the new
@@ -89,14 +91,6 @@ func (c *CompiledPlugin) ABI() wasmpluginv1.WasmABI {
 // PluginExecutorOption are options
 type PluginExecutorOption func(*PluginExecutor)
 
-// WithMemoryLimitPages provides a custom per memory limit for a plugin
-// executor. The default is 8192 pages for 512MB.
-func WithMemoryLimitPages(memoryLimitPages uint32) PluginExecutorOption {
-	return func(pluginExecutor *PluginExecutor) {
-		pluginExecutor.runtimeConfig = pluginExecutor.runtimeConfig.WithMemoryLimitPages(memoryLimitPages)
-	}
-}
-
 // PluginExecutor wraps a wazero end exposes functions to compile and run wasm
 // plugins.
 type PluginExecutor struct {
@@ -105,7 +99,7 @@ type PluginExecutor struct {
 
 // NewPluginExecutor creates a new PluginExecutor with a compilation cache dir
 // and other buf defaults.
-func NewPluginExecutor(_ context.Context, compilationCacheDir string, options ...PluginExecutorOption) (*PluginExecutor, error) {
+func NewPluginExecutor(compilationCacheDir string, options ...PluginExecutorOption) (*PluginExecutor, error) {
 	var cache wazero.CompilationCache
 	if compilationCacheDir == "" {
 		cache = wazero.NewCompilationCache()
@@ -116,7 +110,6 @@ func NewPluginExecutor(_ context.Context, compilationCacheDir string, options ..
 			return nil, err
 		}
 	}
-	const maxMemoryBytes = 1 << 29 // 512MB
 	runtimeConfig := wazero.NewRuntimeConfig().
 		WithCoreFeatures(api.CoreFeaturesV2).
 		WithMemoryLimitPages(maxMemoryBytes >> 16). // a page is 2^16 bytes
@@ -251,5 +244,5 @@ type PluginExecutionError struct {
 }
 
 func (e *PluginExecutionError) Error() string {
-	return "plugin exited with code " + strconv.Itoa(int(e.Exitcode))
+	return fmt.Sprintf("plugin exited with code %d: %s", e.Exitcode, e.Stderr)
 }

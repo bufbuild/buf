@@ -44,7 +44,7 @@ var echoWasm []byte
 func TestSectionEncodeDecode(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	executor, err := NewPluginExecutor(ctx, t.TempDir())
+	executor, err := NewPluginExecutor(t.TempDir())
 	require.NoError(t, err)
 	plugin, err := executor.CompilePlugin(ctx, echoWasm)
 	require.NoError(t, err)
@@ -69,7 +69,7 @@ func TestSectionEncodeDecode(t *testing.T) {
 func TestPluginExecutor(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	executor, err := NewPluginExecutor(ctx, t.TempDir())
+	executor, err := NewPluginExecutor(t.TempDir())
 	require.NoError(t, err)
 	plugin, err := executor.CompilePlugin(ctx, echoWasm)
 	require.NoError(t, err)
@@ -87,7 +87,7 @@ func TestPluginExecutor(t *testing.T) {
 func TestParallelPlugins(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	executor, err := NewPluginExecutor(ctx, t.TempDir())
+	executor, err := NewPluginExecutor(t.TempDir())
 	require.NoError(t, err)
 	plugin, err := executor.CompilePlugin(ctx, echoWasm)
 	require.NoError(t, err)
