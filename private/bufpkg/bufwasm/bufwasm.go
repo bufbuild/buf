@@ -238,6 +238,7 @@ func (e *PluginExecutor) Run(
 	return nil
 }
 
+// PluginExecutionError captures failed WASM execution state.
 type PluginExecutionError struct {
 	Stderr   string
 	Exitcode uint32
