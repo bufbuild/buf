@@ -53,6 +53,7 @@ enum ResourceType {
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
   RESOURCE_TYPE_TOKEN = 10;
   RESOURCE_TYPE_SCIM_TOKEN = 11;
+  RESOURCE_TYPE_REPOSITORY_TAG = 12;
 }
 
 // Resource is the affected resource by the audited event.
@@ -95,6 +96,7 @@ enum EventType {
   EVENT_TYPE_USER_REACTIVATED = 25;
   EVENT_TYPE_SCIM_TOKEN_CREATED = 26;
   EVENT_TYPE_SCIM_TOKEN_DELETED = 27;
+  EVENT_TYPE_REPOSITORY_TAG_CREATED = 28;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -152,6 +154,7 @@ message Event {
     PayloadUserReactivated user_reactivated = 31;
     PayloadSCIMTokenCreated scim_token_created = 32;
     PayloadSCIMTokenDeleted scim_token_deleted = 33;
+    PayloadRepositoryTagCreated repository_tag_created = 34;
   }
 }
 
@@ -354,3 +357,18 @@ message PayloadSCIMTokenCreated {
 }
 
 message PayloadSCIMTokenDeleted {}
+
+message PayloadRepositoryTagCreated {
+  // owner_id is the id of the owner of the repository for which the tag was created.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository for which the tag was created.
+  string owner_name = 2;
+  // repository_id is the id of the repository for which the tag was created.
+  string repository_id = 3;
+  // repository_name is the name of the repository for which the tag was created.
+  string repository_name = 4;
+  // repository_commit_id is the id of the repository commit for which the tag was created.
+  string repository_commit_id = 5;
+  // repository_commit_name is the name of the repository commit for which the tag was created.
+  string repository_commit_name = 6;
+}
