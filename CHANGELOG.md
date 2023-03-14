@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fixes an issue in `protoc-gen-buf-lint` that prevented it from reporting lint
+  errors for unused imports.
 
 ## [v1.15.1] - 2023-03-08
 
