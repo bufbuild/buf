@@ -48,8 +48,12 @@ Your sources have:
   - {{.NumEnums}} enums
   - {{.NumMethods}} methods
 
-This adds up to {{.NumTypes}} types.
-{{if .ChargeableIsRounded}}We bill in increments of 100 types, so this is rounded up to {{.ChargeableTypes}} types.{{end}}
+This adds up to {{.NumTypes}} types.{{if .ChargeableIsRounded}}
+
+We bill in increments of 100 types. Types are summed up across
+your whole organization (in Teams) or instance (in Pro). If these
+sources were all that were uploaded to your organization or instance,
+this would be rounded up to {{.ChargeableTypes}} types.{{end}}
 
 Based on this, these sources will cost:
 
