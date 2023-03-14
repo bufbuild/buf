@@ -368,9 +368,11 @@ type MavenConfig struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Optionally define the runtime libraries for the plugin.
-	RuntimeLibraries   []*MavenConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
-	Compiler           *MavenConfig_CompilerConfig   `protobuf:"bytes,2,opt,name=compiler,proto3" json:"compiler,omitempty"`
-	AdditionalRuntimes []*MavenConfig_RuntimeConfig  `protobuf:"bytes,3,rep,name=additional_runtimes,json=additionalRuntimes,proto3" json:"additional_runtimes,omitempty"`
+	RuntimeLibraries []*MavenConfig_RuntimeLibrary `protobuf:"bytes,1,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
+	// Settings for the Java/Kotlin compiler used to compile the generated code.
+	Compiler *MavenConfig_CompilerConfig `protobuf:"bytes,2,opt,name=compiler,proto3" json:"compiler,omitempty"`
+	// Optional additional runtimes supported by the plugin.
+	AdditionalRuntimes []*MavenConfig_RuntimeConfig `protobuf:"bytes,3,rep,name=additional_runtimes,json=additionalRuntimes,proto3" json:"additional_runtimes,omitempty"`
 }
 
 func (x *MavenConfig) Reset() {
@@ -1771,7 +1773,7 @@ func (x *NPMConfig_RuntimeLibrary) GetVersion() string {
 	return ""
 }
 
-// RuntimeLibrary describes the runtime library dependency of the generated code.
+// RuntimeLibrary describes a runtime dependency of the generated code.
 type MavenConfig_RuntimeLibrary struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1851,6 +1853,7 @@ func (x *MavenConfig_RuntimeLibrary) GetExtension() string {
 	return ""
 }
 
+// CompilerConfig contains configuration for the Java and/or Kotlin compiler used when compiling the generated code.
 type MavenConfig_CompilerConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1906,15 +1909,20 @@ func (x *MavenConfig_CompilerConfig) GetKotlin() *MavenConfig_CompilerKotlinConf
 	return nil
 }
 
+// CompilerJavaConfig contains settings for the Java compiler.
 type MavenConfig_CompilerJavaConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// File encoding (default: UTF-8).
 	Encoding string `protobuf:"bytes,1,opt,name=encoding,proto3" json:"encoding,omitempty"`
-	Release  int32  `protobuf:"varint,2,opt,name=release,proto3" json:"release,omitempty"`
-	Source   int32  `protobuf:"varint,3,opt,name=source,proto3" json:"source,omitempty"`
-	Target   int32  `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`
+	// Release version (default: 8).
+	Release int32 `protobuf:"varint,2,opt,name=release,proto3" json:"release,omitempty"`
+	// Source version (default: 8).
+	Source int32 `protobuf:"varint,3,opt,name=source,proto3" json:"source,omitempty"`
+	// Target version (default: 8).
+	Target int32 `protobuf:"varint,4,opt,name=target,proto3" json:"target,omitempty"`
 }
 
 func (x *MavenConfig_CompilerJavaConfig) Reset() {
@@ -1977,11 +1985,13 @@ func (x *MavenConfig_CompilerJavaConfig) GetTarget() int32 {
 	return 0
 }
 
+// CompilerKotlinConfig contains settings for the Kotlin compiler.
 type MavenConfig_CompilerKotlinConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Version of the Kotlin compiler used to commpile the generated code.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -2024,6 +2034,8 @@ func (x *MavenConfig_CompilerKotlinConfig) GetVersion() string {
 	return ""
 }
 
+// RuntimeConfig allows configuring additional runtimes (like the 'lite' runtime).
+// They can use different runtime dependencies and plugin options.
 type MavenConfig_RuntimeConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
