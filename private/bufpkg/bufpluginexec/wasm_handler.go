@@ -137,7 +137,7 @@ func validateWASMFilePath(path string) (string, error) {
 		return path, err
 	}
 	if info.IsDir() || info.Size() == 0 || !strings.HasSuffix(path, ".wasm") {
-		return path, errors.New(fmt.Sprintf("invalid WASM file: %s", path))
+		return path, fmt.Errorf("invalid WASM file: %s", path)
 	}
 	return path, nil
 }

@@ -16,16 +16,17 @@ package bufpluginexec
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestValidateWASMFilePath(t *testing.T) {
 	wasmPath := "/tmp/test.wasm"
 	notWasmPath := "/tmp/test.txt"
-	assert.NoError(t, os.WriteFile(wasmPath, []byte("a"), 0644))
-	assert.NoError(t, os.WriteFile(notWasmPath, []byte("a"), 0644))
+	assert.NoError(t, os.WriteFile(wasmPath, []byte("a"), 0600))
+	assert.NoError(t, os.WriteFile(notWasmPath, []byte("a"), 0600))
 	defer func() {
 		assert.NoError(t, os.Remove(wasmPath))
 		assert.NoError(t, os.Remove(notWasmPath))
