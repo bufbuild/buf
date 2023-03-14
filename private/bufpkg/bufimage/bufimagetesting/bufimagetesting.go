@@ -17,9 +17,9 @@ package bufimagetesting
 import (
 	"testing"
 
+	imagev1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

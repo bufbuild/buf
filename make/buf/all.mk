@@ -97,7 +97,8 @@ bufgeneratedeps:: \
 
 .PHONY: bufgeneratecleango
 bufgeneratecleango:
-	rm -rf private/gen/proto
+	rm -rf private/gen/proto/connect/*/
+	rm -rf private/gen/proto/go/*/
 
 bufgenerateclean:: bufgeneratecleango
 
