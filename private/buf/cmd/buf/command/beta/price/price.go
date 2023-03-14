@@ -49,7 +49,7 @@ Your sources have:
   - {{.NumMethods}} methods
 
 This adds up to {{.NumTypes}} types.
-{{if .ChargeableIsRounded}}We bill in buckets of 100 types, so this is rounded up to {{.ChargeableTypes}} types.{{end}}
+{{if .ChargeableIsRounded}}We bill in increments of 100 types, so this is rounded up to {{.ChargeableTypes}} types.{{end}}
 
 Based on this, these sources will cost:
 
