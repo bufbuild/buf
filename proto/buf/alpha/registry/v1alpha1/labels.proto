@@ -48,20 +48,20 @@ message CreateLabelRequest {
 }
 
 message CreateLabelResponse {
-  string commit_id = 1;
+  LabelValue commit_id = 1;
 }
 
 message MoveLabelRequest {
   Label label = 1;
-  LabelValue from = 2;
+  optional LabelValue from = 2;
   LabelValue to = 3;
 }
 
 message MoveLabelResponse {}
 
 message GetLabelsRequest {
-  string name = 1;
-  string module_entity_id = 2;
+  string module_entity_id = 1;
+  optional string name = 2;
   optional LabelNamespace namespace = 3;
 }
 
