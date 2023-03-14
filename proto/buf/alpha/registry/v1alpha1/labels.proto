@@ -40,8 +40,8 @@ service LabelService {
 
 message CreateLabelRequest {
   Label label = 1;
-  string author = 2;
-  google.protobuf.Timestamp create_time = 3;
+  optional string author = 2;
+  optional google.protobuf.Timestamp create_time = 3;
 }
 
 message CreateLabelResponse {
