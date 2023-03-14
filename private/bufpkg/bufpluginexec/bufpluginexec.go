@@ -121,6 +121,7 @@ func GenerateWithProtocPath(protocPath string) GenerateOption {
 //
 // protocPath and pluginPath are optional.
 //
+//   - If a WASM plugin path is specified as the plugin name, this returns a WASM handler.
 //   - If the plugin path is set, this returns a new binary handler for that path.
 //   - If the plugin path is unset, this does exec.LookPath for a binary named protoc-gen-pluginName,
 //     and if one is found, a new binary handler is returned for this.
@@ -137,33 +138,34 @@ func NewHandler(
 	for _, option := range options {
 		option(handlerOptions)
 	}
+
+	// Initialize WASM plugin handler.
+	if looksLikeWASM(pluginName) {
+		return newWasmHandler(wasmPluginExecutor, pluginName), nil
+	}
+
+	// Initialize binary plugin handler when path is specified with optional args. Return
+	// on error as something is wrong with the supplied pluginPath option.
 	if len(handlerOptions.pluginPath) > 0 {
-		pluginPath, err := unsafeLookPath(handlerOptions.pluginPath[0])
-		if err != nil {
-			return nil, err
-		}
-		return newBinaryHandler(runner, pluginPath, handlerOptions.pluginPath[1:]), nil
+		return NewBinaryHandler(runner, handlerOptions.pluginPath[0], handlerOptions.pluginPath[1:])
 	}
-	if isWASM(pluginName) {
-		return newWasmHandler(
-			wasmPluginExecutor,
-			pluginName,
-		), nil
+
+	// Initialize binary plugin handler based on plugin name.
+	if handler, err := NewBinaryHandler(runner, "protoc-gen-"+pluginName, nil); err == nil {
+		return handler, nil
 	}
-	pluginPath, err := unsafeLookPath("protoc-gen-" + pluginName)
-	if err == nil {
-		return newBinaryHandler(runner, pluginPath, nil), nil
-	}
-	// we always look for protoc-gen-X first, but if not, check the builtins
+
+	// Initialize builtin protoc plugin handler. We always look for protoc-gen-X first,
+	// but if not, check the builtins.
 	if _, ok := ProtocProxyPluginNames[pluginName]; ok {
 		if handlerOptions.protocPath == "" {
 			handlerOptions.protocPath = "protoc"
 		}
-		protocPath, err := unsafeLookPath(handlerOptions.protocPath)
-		if err != nil {
+		if protocPath, err := unsafeLookPath(handlerOptions.protocPath); err != nil {
 			return nil, err
+		} else {
+			return newProtocProxyHandler(storageosProvider, runner, protocPath, pluginName), nil
 		}
-		return newProtocProxyHandler(storageosProvider, runner, protocPath, pluginName), nil
 	}
 	return nil, fmt.Errorf(
 		"could not find protoc plugin for name %s - please make sure protoc-gen-%s is installed and present on your $PATH",
@@ -217,8 +219,8 @@ func newHandlerOptions() *handlerOptions {
 	return &handlerOptions{}
 }
 
-// TODO: should check if wasm file by magic header?
-// https://webassembly.github.io/spec/core/binary/modules.html#binary-magic
-func isWASM(pluginName string) bool {
+// looksLikeWASM is a minimal check for WASM plugins. A more stringent validation
+// of the file is done in the handlers Handle method.
+func looksLikeWASM(pluginName string) bool {
 	return strings.HasSuffix(pluginName, ".wasm")
 }

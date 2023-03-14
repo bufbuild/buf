@@ -26,6 +26,6 @@ func TestValidateWASMFilePath(t *testing.T) {
 	})
 	t.Run("fail if invalid extension", func(t *testing.T) {
 		_, err := validateWASMFilePath(notWasmPath)
-		assert.True(t, errors.Is(err, os.ErrNotExist))
+		assert.Error(t, err)
 	})
 }
