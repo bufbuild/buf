@@ -20,12 +20,9 @@ import "google/protobuf/timestamp.proto";
 
 enum LabelNamespace {
   LABEL_NAMESPACE_UNSPECIFIED = 0;
-  // This is for globs, '*', in requests. When a label is created
-  // it will be assigned to a specific namespace.
-  LABEL_NAMESPACE_ALL = 1;
-  LABEL_NAMESPACE_TAG = 2;
-  LABEL_NAMESPACE_BRANCH = 3;
-  LABEL_NAMESPACE_GITCOMMIT = 4;
+  LABEL_NAMESPACE_TAG = 1;
+  LABEL_NAMESPACE_BRANCH = 2;
+  LABEL_NAMESPACE_GITCOMMIT = 3;
 }
 
 message Label {
