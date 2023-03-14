@@ -18,8 +18,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -59,13 +61,19 @@ func (h *wasmHandler) Handle(
 		attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
 	))
 	defer span.End()
+
+	path, err := validateWASMFilePath(h.pluginPath)
+	if err != nil {
+		span.RecordError(err)
+		return err
+	}
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
-	pluginBytes, err := os.ReadFile(h.pluginPath)
+	pluginBytes, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -117,4 +125,19 @@ func (h *wasmHandler) Handle(
 		responseWriter.AddError(response.GetError())
 	}
 	return nil
+}
+
+func validateWASMFilePath(path string) (string, error) {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return path, err
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return path, err
+	}
+	if info.IsDir() || info.Size() == 0 || !strings.HasSuffix(path, ".wasm") {
+		return path, errors.New(fmt.Sprintf("invalid WASM file: %s", path))
+	}
+	return path, nil
 }
