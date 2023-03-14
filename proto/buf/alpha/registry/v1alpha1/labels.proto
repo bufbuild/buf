@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/reference.proto";
 import "google/protobuf/timestamp.proto";
 
 enum LabelNamespace {
@@ -29,13 +28,17 @@ enum LabelNamespace {
 message Label {
   LabelNamespace namespace = 1;
   string name = 2;
-  Reference reference = 3;
+  LabelValue label_value = 3;
+}
+
+message LabelValue {
+  string commit_id = 1;
 }
 
 service LabelService {
   rpc CreateLabel(CreateLabelRequest) returns (CreateLabelResponse);
   rpc MoveLabel(MoveLabelRequest) returns (MoveLabelResponse);
-  rpc GetLabel(GetLabelRequest) returns (GetLabelResponse);
+  rpc GetLabels(GetLabelsRequest) returns (GetLabelsResponse);
 }
 
 message CreateLabelRequest {
@@ -50,17 +53,18 @@ message CreateLabelResponse {
 
 message MoveLabelRequest {
   Label label = 1;
-  string from = 2;
-  string to = 3;
+  LabelValue from = 2;
+  LabelValue to = 3;
 }
 
 message MoveLabelResponse {}
 
-message GetLabelRequest {
+message GetLabelsRequest {
   string name = 1;
   string module_entity_id = 2;
+  optional LabelNamespace namespace = 3;
 }
 
-message GetLabelResponse {
-  Label label = 1;
+message GetLabelsResponse {
+  repeated Label label = 1;
 }

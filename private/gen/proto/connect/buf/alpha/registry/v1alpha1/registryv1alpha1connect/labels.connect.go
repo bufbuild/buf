@@ -43,7 +43,7 @@ const (
 type LabelServiceClient interface {
 	CreateLabel(context.Context, *connect_go.Request[v1alpha1.CreateLabelRequest]) (*connect_go.Response[v1alpha1.CreateLabelResponse], error)
 	MoveLabel(context.Context, *connect_go.Request[v1alpha1.MoveLabelRequest]) (*connect_go.Response[v1alpha1.MoveLabelResponse], error)
-	GetLabel(context.Context, *connect_go.Request[v1alpha1.GetLabelRequest]) (*connect_go.Response[v1alpha1.GetLabelResponse], error)
+	GetLabels(context.Context, *connect_go.Request[v1alpha1.GetLabelsRequest]) (*connect_go.Response[v1alpha1.GetLabelsResponse], error)
 }
 
 // NewLabelServiceClient constructs a client for the buf.alpha.registry.v1alpha1.LabelService
@@ -66,9 +66,9 @@ func NewLabelServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 			baseURL+"/buf.alpha.registry.v1alpha1.LabelService/MoveLabel",
 			opts...,
 		),
-		getLabel: connect_go.NewClient[v1alpha1.GetLabelRequest, v1alpha1.GetLabelResponse](
+		getLabels: connect_go.NewClient[v1alpha1.GetLabelsRequest, v1alpha1.GetLabelsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.LabelService/GetLabel",
+			baseURL+"/buf.alpha.registry.v1alpha1.LabelService/GetLabels",
 			opts...,
 		),
 	}
@@ -78,7 +78,7 @@ func NewLabelServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 type labelServiceClient struct {
 	createLabel *connect_go.Client[v1alpha1.CreateLabelRequest, v1alpha1.CreateLabelResponse]
 	moveLabel   *connect_go.Client[v1alpha1.MoveLabelRequest, v1alpha1.MoveLabelResponse]
-	getLabel    *connect_go.Client[v1alpha1.GetLabelRequest, v1alpha1.GetLabelResponse]
+	getLabels   *connect_go.Client[v1alpha1.GetLabelsRequest, v1alpha1.GetLabelsResponse]
 }
 
 // CreateLabel calls buf.alpha.registry.v1alpha1.LabelService.CreateLabel.
@@ -91,16 +91,16 @@ func (c *labelServiceClient) MoveLabel(ctx context.Context, req *connect_go.Requ
 	return c.moveLabel.CallUnary(ctx, req)
 }
 
-// GetLabel calls buf.alpha.registry.v1alpha1.LabelService.GetLabel.
-func (c *labelServiceClient) GetLabel(ctx context.Context, req *connect_go.Request[v1alpha1.GetLabelRequest]) (*connect_go.Response[v1alpha1.GetLabelResponse], error) {
-	return c.getLabel.CallUnary(ctx, req)
+// GetLabels calls buf.alpha.registry.v1alpha1.LabelService.GetLabels.
+func (c *labelServiceClient) GetLabels(ctx context.Context, req *connect_go.Request[v1alpha1.GetLabelsRequest]) (*connect_go.Response[v1alpha1.GetLabelsResponse], error) {
+	return c.getLabels.CallUnary(ctx, req)
 }
 
 // LabelServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.LabelService service.
 type LabelServiceHandler interface {
 	CreateLabel(context.Context, *connect_go.Request[v1alpha1.CreateLabelRequest]) (*connect_go.Response[v1alpha1.CreateLabelResponse], error)
 	MoveLabel(context.Context, *connect_go.Request[v1alpha1.MoveLabelRequest]) (*connect_go.Response[v1alpha1.MoveLabelResponse], error)
-	GetLabel(context.Context, *connect_go.Request[v1alpha1.GetLabelRequest]) (*connect_go.Response[v1alpha1.GetLabelResponse], error)
+	GetLabels(context.Context, *connect_go.Request[v1alpha1.GetLabelsRequest]) (*connect_go.Response[v1alpha1.GetLabelsResponse], error)
 }
 
 // NewLabelServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -120,9 +120,9 @@ func NewLabelServiceHandler(svc LabelServiceHandler, opts ...connect_go.HandlerO
 		svc.MoveLabel,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.LabelService/GetLabel", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.LabelService/GetLabel",
-		svc.GetLabel,
+	mux.Handle("/buf.alpha.registry.v1alpha1.LabelService/GetLabels", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.LabelService/GetLabels",
+		svc.GetLabels,
 		opts...,
 	))
 	return "/buf.alpha.registry.v1alpha1.LabelService/", mux
@@ -139,6 +139,6 @@ func (UnimplementedLabelServiceHandler) MoveLabel(context.Context, *connect_go.R
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.LabelService.MoveLabel is not implemented"))
 }
 
-func (UnimplementedLabelServiceHandler) GetLabel(context.Context, *connect_go.Request[v1alpha1.GetLabelRequest]) (*connect_go.Response[v1alpha1.GetLabelResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.LabelService.GetLabel is not implemented"))
+func (UnimplementedLabelServiceHandler) GetLabels(context.Context, *connect_go.Request[v1alpha1.GetLabelsRequest]) (*connect_go.Response[v1alpha1.GetLabelsResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.LabelService.GetLabels is not implemented"))
 }
