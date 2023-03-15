@@ -23,11 +23,14 @@ import (
 )
 
 func TestValidateWASMFilePath(t *testing.T) {
-	wasmPath := "/tmp/test.wasm"
-	notWasmPath := "/tmp/test.txt"
+	wasmPath := os.TempDir() + "/test.wasm"
+	notWasmPath := os.TempDir() + "/test.txt"
 	assert.NoError(t, os.WriteFile(wasmPath, []byte("a"), 0600))
 	assert.NoError(t, os.WriteFile(notWasmPath, []byte("a"), 0600))
-
+	defer func() {
+		assert.NoError(t, os.Remove(wasmPath))
+		assert.NoError(t, os.Remove(notWasmPath))
+	}()
 	t.Run("pass for valid wasm", func(t *testing.T) {
 		_, err := validateWASMFilePath(wasmPath)
 		assert.NoError(t, err)
