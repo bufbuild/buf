@@ -91,6 +91,20 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
 		Maven: &bufpluginconfig.MavenRegistryConfig{
+			Compiler: bufpluginconfig.MavenCompilerConfig{
+				Java: bufpluginconfig.MavenCompilerJavaConfig{
+					Encoding: "UTF-8",
+					Release:  7,
+					Source:   8,
+					Target:   9,
+				},
+				Kotlin: bufpluginconfig.MavenCompilerKotlinConfig{
+					APIVersion:      "7",
+					JVMTarget:       "8",
+					LanguageVersion: "9",
+					Version:         "1.8.0",
+				},
+			},
 			Deps: []bufpluginconfig.MavenDependencyConfig{
 				{
 					GroupID:    "io.grpc",
@@ -108,6 +122,31 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 					Version:    "1.52.1",
 					Classifier: "linux-x86_64",
 					Extension:  "exe",
+				},
+			},
+			AdditionalRuntimes: []bufpluginconfig.MavenRuntimeConfig{
+				{
+					Name: "lite",
+					Deps: []bufpluginconfig.MavenDependencyConfig{
+						{
+							GroupID:    "io.grpc",
+							ArtifactID: "grpc-core",
+							Version:    "1.52.1",
+						},
+						{
+							GroupID:    "io.grpc",
+							ArtifactID: "grpc-protobuflite",
+							Version:    "1.52.1",
+						},
+						{
+							GroupID:    "io.grpc",
+							ArtifactID: "protoc-gen-grpc-java",
+							Version:    "1.52.1",
+							Classifier: "linux-x86_64",
+							Extension:  "exe",
+						},
+					},
+					Options: []string{"lite"},
 				},
 			},
 		},
