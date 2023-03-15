@@ -158,15 +158,15 @@ func (t *importTracker) findUsedImportsInField(file *imagev1.ImageFile, field *d
 
 func (t *importTracker) findUsedImportsInOptions(file *imagev1.ImageFile, optionMessage proto.Message) {
 	optionMessage.ProtoReflect().Range(func(field protoreflect.FieldDescriptor, val protoreflect.Value) bool {
-		if field.IsExtension() {
-			t.markUsed(file, string(field.FullName()))
-		}
 		t.findUsedImportsInOptionValue(file, field, val)
 		return true
 	})
 }
 
 func (t *importTracker) findUsedImportsInOptionValue(file *imagev1.ImageFile, optionField protoreflect.FieldDescriptor, val protoreflect.Value) {
+	if optionField.IsExtension() {
+		t.markUsed(file, string(optionField.FullName()))
+	}
 	switch {
 	case optionField.IsMap():
 		if optionField.MapValue().Message() == nil {

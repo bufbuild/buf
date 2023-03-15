@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package buf.v1;
+
+import "buf/v1/f.proto";
+
+extend F {
+  optional string str = 77;
+}

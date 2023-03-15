@@ -182,6 +182,7 @@ func TestRunLint_UnusedImports(t *testing.T) {
 		{"buf", "v1", "d.proto"},
 		{"buf", "v1", "e.proto"},
 		{"buf", "v1", "f.proto"},
+		{"buf", "v1", "g.proto"},
 		{"buf", "v1", "file_option.proto"},
 		{"buf", "v1", "msg_option.proto"},
 		{"buf", "v1", "field_option.proto"},
@@ -214,6 +215,7 @@ func TestRunLint_UnusedImports(t *testing.T) {
 		buf/v1/c.proto:9:1:Import "buf/v1/e.proto" is unused.
 		buf/v1/c.proto:10:1:Import "buf/v1/f.proto" is unused.
 		buf/v1/d.proto:8:1:Import "buf/v1/f.proto" is unused.
+		buf/v1/e.proto:8:1:Import "buf/v1/g.proto" is unused.
 		`,
 	)
 }

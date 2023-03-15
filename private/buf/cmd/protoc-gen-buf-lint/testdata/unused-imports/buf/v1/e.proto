@@ -5,6 +5,7 @@ package buf.v1;
 import "buf/v1/enum_option.proto";
 import "buf/v1/enumvalue_option.proto";
 import "buf/v1/f.proto";
+import "buf/v1/g.proto"; // unused
 
 enum E {
   option (enum_option) = "foo";
