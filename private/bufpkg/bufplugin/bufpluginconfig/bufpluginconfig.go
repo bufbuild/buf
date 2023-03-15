@@ -346,9 +346,9 @@ type ExternalNPMRegistryConfig struct {
 
 // ExternalMavenRegistryConfig is the external registry configuration for a Maven plugin.
 type ExternalMavenRegistryConfig struct {
-	Compiler           ExternalMavenCompilerConfig `json:"compiler" yaml:"compiler"`
-	Deps               []string                    `json:"deps,omitempty" yaml:"deps,omitempty"`
-	AdditionalRuntimes []ExternalMavenRuntime      `json:"additional_runtimes,omitempty" yaml:"additional_runtimes,omitempty"`
+	Compiler           ExternalMavenCompilerConfig  `json:"compiler" yaml:"compiler"`
+	Deps               []string                     `json:"deps,omitempty" yaml:"deps,omitempty"`
+	AdditionalRuntimes []ExternalMavenRuntimeConfig `json:"additional_runtimes,omitempty" yaml:"additional_runtimes,omitempty"`
 }
 
 // ExternalMavenCompilerConfig configures compiler settings for Maven remote packages.
@@ -381,13 +381,13 @@ type ExternalMavenCompilerKotlinConfig struct {
 	Version string `json:"version" yaml:"version"`
 }
 
-// ExternalMavenRuntime allows configuring additional runtimes for remote packages.
+// ExternalMavenRuntimeConfig allows configuring additional runtimes for remote packages.
 // These can specify different dependencies and compiler options than the default runtime.
 // This is used to support a single plugin supporting both full and lite Protobuf runtimes.
-type ExternalMavenRuntime struct {
+type ExternalMavenRuntimeConfig struct {
 	// Name contains the Maven runtime name (e.g. 'lite').
 	Name string `json:"name" yaml:"name"`
-	// Deps contains the Maven dependencies for the runtime. Overrides ExternalMavenRuntime.Deps.
+	// Deps contains the Maven dependencies for the runtime. Overrides ExternalMavenRuntimeConfig.Deps.
 	Deps []string `json:"deps,omitempty" yaml:"deps,omitempty"`
 	// Opts contains the Maven plugin options for the runtime. Overrides ExternalRegistryConfig.Opts.
 	Opts []string `json:"opts,omitempty" yaml:"opts,omitempty"`
