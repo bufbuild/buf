@@ -28,7 +28,6 @@ enum LabelNamespace {
 message Label {
   LabelNamespace namespace = 1;
   string name = 2;
-  LabelValue label_value = 3;
 }
 
 message LabelValue {
@@ -66,5 +65,9 @@ message GetLabelsRequest {
 }
 
 message GetLabelsResponse {
-  repeated Label label = 1;
+  message LabelWithValue {
+    Label label = 1;
+    LabelValue label_value = 2;
+  }
+  repeated LabelWithValue label_with_values = 1;
 }
