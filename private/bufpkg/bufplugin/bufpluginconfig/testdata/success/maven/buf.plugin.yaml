@@ -13,6 +13,9 @@ registry:
         source: 8
         target: 17
       kotlin:
+        api_version: 1.8
+        jvm_target: 9
+        language_version: 1.7
         version: 1.8.0
     deps:
       - "io.grpc:grpc-core:1.52.1"

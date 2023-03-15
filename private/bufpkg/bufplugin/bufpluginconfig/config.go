@@ -252,7 +252,10 @@ func newMavenRegistryConfig(externalMavenRegistryConfig *ExternalMavenRegistryCo
 				Target:   externalMavenRegistryConfig.Compiler.Java.Target,
 			},
 			Kotlin: MavenCompilerKotlinConfig{
-				Version: externalMavenRegistryConfig.Compiler.Kotlin.Version,
+				APIVersion:      externalMavenRegistryConfig.Compiler.Kotlin.APIVersion,
+				JVMTarget:       externalMavenRegistryConfig.Compiler.Kotlin.JVMTarget,
+				LanguageVersion: externalMavenRegistryConfig.Compiler.Kotlin.LanguageVersion,
+				Version:         externalMavenRegistryConfig.Compiler.Kotlin.Version,
 			},
 		},
 		Deps:               dependencies,

@@ -122,8 +122,14 @@ message MavenConfig {
   }
   // CompilerKotlinConfig contains settings for the Kotlin compiler.
   message CompilerKotlinConfig {
-    // Version of the Kotlin compiler used to commpile the generated code.
+    // Version of the Kotlin compiler used to compile the generated code.
     string version = 1;
+    // Version of the Kotlin API to target.
+    string api_version = 2;
+    // Target version of the JVM bytecode (default: 1.8).
+    string jvm_target = 3;
+    // Kotlin language version used for source compatibility.
+    string language_version = 4;
   }
   // RuntimeConfig allows configuring additional runtimes (like the 'lite' runtime).
   // They can use different runtime dependencies and plugin options.

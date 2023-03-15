@@ -229,7 +229,10 @@ func ProtoMavenConfigToMavenRegistryConfig(protoMavenConfig *registryv1alpha1.Ma
 		}
 		if protoKotlinCompiler := protoCompiler.GetKotlin(); protoKotlinCompiler != nil {
 			mavenConfig.Compiler.Kotlin = bufpluginconfig.MavenCompilerKotlinConfig{
-				Version: protoKotlinCompiler.GetVersion(),
+				APIVersion:      protoKotlinCompiler.GetApiVersion(),
+				JVMTarget:       protoKotlinCompiler.GetJvmTarget(),
+				LanguageVersion: protoKotlinCompiler.GetLanguageVersion(),
+				Version:         protoKotlinCompiler.GetVersion(),
 			}
 		}
 	}

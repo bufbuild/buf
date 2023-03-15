@@ -162,6 +162,12 @@ type MavenCompilerJavaConfig struct {
 
 // MavenCompilerKotlinConfig specifies compiler settings for Kotlin code.
 type MavenCompilerKotlinConfig struct {
+	// APIVersion specifies the Kotlin API version to target.
+	APIVersion string
+	// JVMTarget specifies the target version of the JVM bytecode (default: 1.8)
+	JVMTarget string
+	// LanguageVersion is used to provide source compatibility with the specified Kotlin version.
+	LanguageVersion string
 	// Version of the Kotlin compiler to use (required for Kotlin plugins).
 	Version string
 }
@@ -365,6 +371,12 @@ type ExternalMavenCompilerJavaConfig struct {
 
 // ExternalMavenCompilerKotlinConfig configures the Kotlin compiler settings for remote packages.
 type ExternalMavenCompilerKotlinConfig struct {
+	// APIVersion specifies the Kotlin API version to target.
+	APIVersion string `json:"api_version" yaml:"api_version"`
+	// JVMTarget specifies the target version of the JVM bytecode (default: 1.8)
+	JVMTarget string `json:"jvm_target" yaml:"jvm_target"`
+	// LanguageVersion is used to provide source compatibility with the specified Kotlin version.
+	LanguageVersion string `json:"language_version" yaml:"language_version"`
 	// Version of the Kotlin compiler to use (required for Kotlin plugins).
 	Version string `json:"version" yaml:"version"`
 }

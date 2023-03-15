@@ -183,7 +183,10 @@ func TestParsePluginConfigMavenYAML(t *testing.T) {
 							Target:   17,
 						},
 						Kotlin: MavenCompilerKotlinConfig{
-							Version: "1.8.0",
+							APIVersion:      "1.8",
+							JVMTarget:       "9",
+							LanguageVersion: "1.7",
+							Version:         "1.8.0",
 						},
 					},
 					Deps: []MavenDependencyConfig{
