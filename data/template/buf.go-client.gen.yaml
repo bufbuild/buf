@@ -4,11 +4,10 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: buf.build/gen/go/bufbuild/buf/bufbuild/connect-go
-    override:
-      buf.build/bufbuild/buf: buf.build/gen/go/bufbuild/buf/protocolbuffers/go
+    default: github.com/bufbuild/buf/private/gen/proto/go
 plugins:
   - name: connect-go
     out: private/gen/proto/connect
     opt:
       - paths=source_relative
+

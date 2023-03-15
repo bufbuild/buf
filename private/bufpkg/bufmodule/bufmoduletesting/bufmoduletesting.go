@@ -15,9 +15,9 @@
 package bufmoduletesting
 
 import (
-	breakingv1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/breaking/v1"
-	lintv1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/lint/v1"
-	modulev1alpha1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/module/v1alpha1"
+	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
+	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
@@ -107,7 +107,7 @@ var (
 		TestFile1Path: []byte(`syntax="proto3";`),
 		TestFile2Path: []byte(`syntax="proto3";`),
 	}
-	// TestDataProto is the proto representation of TestData.
+	//TestDataProto is the proto representation of TestData.
 	TestDataProto = &modulev1alpha1.Module{
 		Files: []*modulev1alpha1.ModuleFile{
 			{

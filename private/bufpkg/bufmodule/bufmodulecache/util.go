@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/connect-go"
 	"go.uber.org/zap"

@@ -3,8 +3,6 @@ module github.com/bufbuild/buf
 go 1.19
 
 require (
-	buf.build/gen/go/bufbuild/buf/bufbuild/connect-go v1.29.0-20230303213111-ac270b5c02be.1
-	buf.build/gen/go/bufbuild/buf/protocolbuffers/go v1.29.0-20230303213111-ac270b5c02be.1
 	github.com/bufbuild/connect-go v1.5.2
 	github.com/bufbuild/protocompile v0.5.1
 	github.com/docker/docker v23.0.1+incompatible
@@ -37,7 +35,7 @@ require (
 	golang.org/x/sync v0.1.0
 	golang.org/x/term v0.6.0
 	golang.org/x/tools v0.7.0
-	google.golang.org/protobuf v1.29.1
+	google.golang.org/protobuf v1.29.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -71,9 +69,4 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
-)
-
-replace (
-	buf.build/gen/go/bufbuild/buf/bufbuild/connect-go => ./private/gen/proto/connect
-	buf.build/gen/go/bufbuild/buf/protocolbuffers/go => ./private/gen/proto/go
 )

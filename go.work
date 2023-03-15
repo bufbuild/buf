@@ -1,7 +1,0 @@
-go 1.20
-
-use (
-	./private/gen/proto/go
-	./private/gen/proto/connect
-	.
-)

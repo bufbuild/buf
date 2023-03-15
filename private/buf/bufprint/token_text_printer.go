@@ -19,7 +19,7 @@ import (
 	"io"
 	"time"
 
-	registryv1alpha1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/buf/alpha/registry/v1alpha1"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 type tokenTextPrinter struct {

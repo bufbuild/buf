@@ -23,7 +23,7 @@ import (
 	"strings"
 	"sync"
 
-	reflectionv1 "buf.build/gen/go/bufbuild/buf/protocolbuffers/go/grpc/reflection/v1"
+	reflectionv1 "github.com/bufbuild/buf/private/gen/proto/go/grpc/reflection/v1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/connect-go"
