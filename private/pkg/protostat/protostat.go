@@ -84,6 +84,26 @@ func GetStats(ctx context.Context, fileWalker FileWalker) (*Stats, error) {
 	return statsBuilder.Stats, nil
 }
 
+// MergeStats merged multiple stats objects into one single Stats object.
+//
+// A new object is returned.
+func MergeStats(statsSlice ...*Stats) *Stats {
+	resultStats := &Stats{}
+	for _, stats := range statsSlice {
+		resultStats.NumFiles += stats.NumFiles
+		resultStats.NumPackages += stats.NumPackages
+		resultStats.NumFilesWithSyntaxErrors += stats.NumFilesWithSyntaxErrors
+		resultStats.NumMessages += stats.NumMessages
+		resultStats.NumFields += stats.NumFields
+		resultStats.NumEnums += stats.NumEnums
+		resultStats.NumEnumValues += stats.NumEnumValues
+		resultStats.NumExtensions += stats.NumExtensions
+		resultStats.NumServices += stats.NumServices
+		resultStats.NumMethods += stats.NumMethods
+	}
+	return resultStats
+}
+
 type statsBuilder struct {
 	*Stats
 
