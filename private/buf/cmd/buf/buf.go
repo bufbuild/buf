@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/stats"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/mod/modchecksum"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete"
@@ -146,6 +147,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
+					price.NewCommand("price", builder),
 					migratev1beta1.NewCommand("migrate-v1beta1", builder),
 					{
 						Use:   "mod",

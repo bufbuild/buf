@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -88,7 +88,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -117,7 +117,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -166,7 +166,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -197,7 +197,8 @@ jobs:
           title: "Return to development"
           body: Release complete for ${{github.ref_name}}
           token: ${{ steps.generate_token.outputs.token }}
-      - name: Get Version
+      - name: Output Version
+        id: output_version
         uses: actions/github-script@v6
         with:
           script:
@@ -211,7 +212,7 @@ jobs:
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: context.owner,
+              owner: github.repository_owner,
               repo: "buf-npm-publish",
               workflow_id: "npm-publish.yaml",
               ref: "main",
@@ -228,7 +229,7 @@ jobs:
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: context.owner,
+              owner: github.repository_owner,
               repo: "homebrew-buf",
               workflow_id: "release.yaml",
               ref: "main",
@@ -245,7 +246,7 @@ jobs:
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: context.owner,
+              owner: github.repository_owner,
               repo: "vim-buf",
               workflow_id: "release.yaml",
               ref: "main",
@@ -262,7 +263,7 @@ jobs:
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: context.owner,
+              owner: github.repository_owner,
               repo: "docs.buf.build",
               workflow_id: "release.yaml",
               ref: "main",
@@ -279,7 +280,7 @@ jobs:
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: context.owner,
+              owner: github.repository_owner,
               repo: "buf-setup-action",
               workflow_id: "release.yaml",
               ref: "main",
