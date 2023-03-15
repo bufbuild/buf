@@ -92,28 +92,6 @@ privateusage:
 
 postprepostgenerate:: privateusage
 
-bufgeneratedeps:: \
-	$(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO)
-
-.PHONY: bufgeneratecleango
-bufgeneratecleango:
-	rm -rf private/gen/proto
-
-bufgenerateclean:: bufgeneratecleango
-
-.PHONY: bufgenerateprotogo
-bufgenerateprotogo:
-	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
-	$(BUF_BIN) generate buf.build/grpc/grpc --type grpc.reflection.v1.ServerReflection --template data/template/buf.go.gen.yaml
-
-.PHONY: bufgenerateprotogoclient
-bufgenerateprotogoclient:
-	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
-
-bufgeneratesteps:: \
-	bufgenerateprotogo \
-	bufgenerateprotogoclient
-
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
 	DOCKER_IMAGE=golang:1.20-bullseye bash make/buf/scripts/release.bash
