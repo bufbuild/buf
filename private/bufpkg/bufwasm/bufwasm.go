@@ -51,12 +51,12 @@ type CompiledPlugin struct {
 
 	// Metadata parsed from custom sections of the wasm file. May be nil if
 	// no buf specific sections were found.
-	Metadata *wasmpluginv1.Metadata
+	Metadata *wasmpluginv1.Meta
 }
 
 func (c *CompiledPlugin) ABI() wasmpluginv1.WasmABI {
-	if c.Metadata.GetAbi() != wasmpluginv1.WasmABI_WASM_ABI_UNSPECIFIED {
-		return c.Metadata.GetAbi()
+	if c.Metadata.GetWasmAbi() != wasmpluginv1.WasmABI_WASM_ABI_UNSPECIFIED {
+		return c.Metadata.GetWasmAbi()
 	}
 	exportedFuncs := c.Module.ExportedFunctions()
 	if _, ok := exportedFuncs["_start"]; ok {
@@ -129,7 +129,7 @@ func (e *WASMPluginExecutor) CompilePlugin(ctx context.Context, plugin []byte) (
 	}
 	compiledPlugin := &CompiledPlugin{Module: compiledModule}
 	if len(bufsectionBytes) > 0 {
-		metadata := &wasmpluginv1.Metadata{}
+		metadata := &wasmpluginv1.Meta{}
 		if err := proto.Unmarshal(bufsectionBytes, metadata); err != nil {
 			return nil, err
 		}
@@ -234,7 +234,7 @@ func (e *PluginExecutionError) Error() string {
 // EncodeBufSection encodes the pluginmetadata message as a custom wasm section.
 // The resulting bytes can be appended to any valid wasm file to add the new
 // section to that file.
-func EncodeBufSection(metadata *wasmpluginv1.Metadata) ([]byte, error) {
+func EncodeBufSection(metadata *wasmpluginv1.Meta) ([]byte, error) {
 	metadataBinary, err := protoencoding.NewWireMarshaler().Marshal(metadata)
 	if err != nil {
 		return nil, err

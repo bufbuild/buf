@@ -50,9 +50,9 @@ func TestSectionEncodeDecode(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, plugin.Metadata)
 
-	metadataProto := &wasmpluginv1.Metadata{
-		Abi:  wasmpluginv1.WasmABI_WASM_ABI_WASI_SNAPSHOT_PREVIEW1,
-		Args: []string{"some", "params"},
+	metadataProto := &wasmpluginv1.Meta{
+		WasmAbi: wasmpluginv1.WasmABI_WASM_ABI_WASI_SNAPSHOT_PREVIEW1,
+		Args:    []string{"some", "params"},
 	}
 	bufSectionBytes, err := EncodeBufSection(metadataProto)
 	require.NoError(t, err)

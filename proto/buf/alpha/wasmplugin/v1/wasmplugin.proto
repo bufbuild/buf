@@ -16,14 +16,14 @@ syntax = "proto3";
 
 package buf.alpha.wasmplugin.v1;
 
-// Metadata describes buf specific extensions for a wasm plugin.  A metadata may
+// Meta describes buf specific extensions for a wasm plugin.  A metadata may
 // be encoded in a custom WASM section named ".bufplugin", see
 // (https://webassembly.github.io/spec/core/binary/modules.html#binary-customsec)
 // for more info.
-message Metadata {
+message Meta {
   // When no ABI is provided, buf will make a best effort guess based on
   // the functions the wasm module exports.
-  WasmABI abi = 1;
+  WasmABI wasm_abi = 1;
 
   // The arguments that should be passed when running this plugin. Useful
   // for interpreted languages where the main wasm bundle is only the
