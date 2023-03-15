@@ -145,11 +145,40 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_NpmConfig{NpmConfig: npmConfig}
 	} else if pluginRegistry.Maven != nil {
 		mavenConfig := &registryv1alpha1.MavenConfig{}
+		var javaCompilerConfig *registryv1alpha1.MavenConfig_CompilerJavaConfig
+		if compiler := pluginRegistry.Maven.Compiler.Java; compiler != (bufpluginconfig.MavenCompilerJavaConfig{}) {
+			javaCompilerConfig = &registryv1alpha1.MavenConfig_CompilerJavaConfig{
+				Encoding: compiler.Encoding,
+				Release:  int32(compiler.Release),
+				Source:   int32(compiler.Source),
+				Target:   int32(compiler.Target),
+			}
+		}
+		var kotlinCompilerConfig *registryv1alpha1.MavenConfig_CompilerKotlinConfig
+		if compiler := pluginRegistry.Maven.Compiler.Kotlin; compiler != (bufpluginconfig.MavenCompilerKotlinConfig{}) {
+			kotlinCompilerConfig = &registryv1alpha1.MavenConfig_CompilerKotlinConfig{
+				Version:         compiler.Version,
+				ApiVersion:      compiler.APIVersion,
+				JvmTarget:       compiler.JVMTarget,
+				LanguageVersion: compiler.LanguageVersion,
+			}
+		}
+		if javaCompilerConfig != nil || kotlinCompilerConfig != nil {
+			mavenConfig.Compiler = &registryv1alpha1.MavenConfig_CompilerConfig{
+				Java:   javaCompilerConfig,
+				Kotlin: kotlinCompilerConfig,
+			}
+		}
 		if pluginRegistry.Maven.Deps != nil {
-			mavenConfig.RuntimeLibraries = make([]*registryv1alpha1.MavenConfig_RuntimeLibrary, 0, len(pluginRegistry.Maven.Deps))
-			for _, dependency := range pluginRegistry.Maven.Deps {
-				library := MavenDependencyConfigToProtoRuntimeLibrary(dependency)
-				mavenConfig.RuntimeLibraries = append(mavenConfig.RuntimeLibraries, library)
+			mavenConfig.RuntimeLibraries = make([]*registryv1alpha1.MavenConfig_RuntimeLibrary, len(pluginRegistry.Maven.Deps))
+			for i, dependency := range pluginRegistry.Maven.Deps {
+				mavenConfig.RuntimeLibraries[i] = MavenDependencyConfigToProtoRuntimeLibrary(dependency)
+			}
+		}
+		if pluginRegistry.Maven.AdditionalRuntimes != nil {
+			mavenConfig.AdditionalRuntimes = make([]*registryv1alpha1.MavenConfig_RuntimeConfig, len(pluginRegistry.Maven.AdditionalRuntimes))
+			for i, runtime := range pluginRegistry.Maven.AdditionalRuntimes {
+				mavenConfig.AdditionalRuntimes[i] = MavenRuntimeConfigToProtoRuntimeConfig(runtime)
 			}
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_MavenConfig{MavenConfig: mavenConfig}
@@ -269,6 +298,19 @@ func MavenProtoRuntimeConfigToRuntimeConfig(proto *registryv1alpha1.MavenConfig_
 		Deps:    dependencies,
 		Options: proto.GetOptions(),
 	}, nil
+}
+
+// MavenRuntimeConfigToProtoRuntimeConfig converts a bufpluginconfig.MavenRuntimeConfig to a registryv1alpha1.MavenConfig_RuntimeLibrary.
+func MavenRuntimeConfigToProtoRuntimeConfig(runtime bufpluginconfig.MavenRuntimeConfig) *registryv1alpha1.MavenConfig_RuntimeConfig {
+	var libraries []*registryv1alpha1.MavenConfig_RuntimeLibrary
+	for _, dependency := range runtime.Deps {
+		libraries = append(libraries, MavenDependencyConfigToProtoRuntimeLibrary(dependency))
+	}
+	return &registryv1alpha1.MavenConfig_RuntimeConfig{
+		Name:             runtime.Name,
+		RuntimeLibraries: libraries,
+		Options:          runtime.Options,
+	}
 }
 
 // ProtoMavenRuntimeLibraryToDependencyConfig converts a registryv1alpha1 to a bufpluginconfig.MavenDependencyConfig.
