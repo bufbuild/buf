@@ -3,9 +3,9 @@ syntax = "proto3";
 package block.v1;
 
 /*
-  Foo.
+   Foo.
 
-  Bar.
+   Bar.
 */
 
 message Baz {}
