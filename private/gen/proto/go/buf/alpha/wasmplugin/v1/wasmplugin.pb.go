@@ -87,7 +87,7 @@ func (WasmABI) EnumDescriptor() ([]byte, []int) {
 	return file_buf_alpha_wasmplugin_v1_wasmplugin_proto_rawDescGZIP(), []int{0}
 }
 
-// Metadata describes buf specific extensions for a wasm plugin.  A metadata may
+// Meta describes buf specific extensions for a wasm plugin.  A metadata may
 // be encoded in a custom WASM section named ".bufplugin", see
 // (https://webassembly.github.io/spec/core/binary/modules.html#binary-customsec)
 // for more info.
