@@ -3,9 +3,9 @@ syntax = "proto3";
 package block.v1;
 
 /*
-   Foo.
+   This comment has an empty line with no comment below this sentence.
 
-   Bar.
+   The formatter should not output any indentation on the above line.
 */
 
 message Baz {}
