@@ -133,10 +133,63 @@ type NPMRegistryDependencyConfig struct {
 
 // MavenRegistryConfig is the registry configuration for a Maven plugin.
 type MavenRegistryConfig struct {
-	// Deps is a slice of GAV strings.
-	// A GAV is the groupId:artifactId:version of the dependency.
-	// See https://maven.apache.org/repositories/artifacts.html for more information.
-	Deps []string
+	// Compiler specifies Java and/or Kotlin compiler settings for remote packages.
+	Compiler MavenCompilerConfig
+	// Deps are dependencies for the remote package.
+	Deps []MavenDependencyConfig
+	// AdditionalRuntimes tracks additional runtimes (like the 'lite' runtime).
+	// This is used to support multiple artifacts targeting different runtimes, plugin options, and dependencies.
+	AdditionalRuntimes []MavenRuntimeConfig
+}
+
+// MavenCompilerConfig specifies compiler settings for Java and/or Kotlin.
+type MavenCompilerConfig struct {
+	Java   MavenCompilerJavaConfig
+	Kotlin MavenCompilerKotlinConfig
+}
+
+// MavenCompilerJavaConfig specifies compiler settings for Java code.
+type MavenCompilerJavaConfig struct {
+	// Encoding specifies the encoding of the source files (default: UTF-8).
+	Encoding string
+	// Release specifies the target Java release (default: 8).
+	Release int
+	// Source specifies the source bytecode level (default: 8).
+	Source int
+	// Target specifies the target bytecode level (default: 8).
+	Target int
+}
+
+// MavenCompilerKotlinConfig specifies compiler settings for Kotlin code.
+type MavenCompilerKotlinConfig struct {
+	// APIVersion specifies the Kotlin API version to target.
+	APIVersion string
+	// JVMTarget specifies the target version of the JVM bytecode (default: 1.8)
+	JVMTarget string
+	// LanguageVersion is used to provide source compatibility with the specified Kotlin version.
+	LanguageVersion string
+	// Version of the Kotlin compiler to use (required for Kotlin plugins).
+	Version string
+}
+
+// MavenDependencyConfig defines a runtime dependency for a remote package artifact.
+type MavenDependencyConfig struct {
+	GroupID    string
+	ArtifactID string
+	Version    string
+	Classifier string
+	// Extension is the file extension, also known as the Maven type.
+	Extension string
+}
+
+// MavenRuntimeConfig is used to specify additional runtimes for a given plugin.
+type MavenRuntimeConfig struct {
+	// Name is the required, unique name for the runtime in MavenRegistryConfig.AdditionalRuntimes.
+	Name string
+	// Deps contains the Maven dependencies for the runtime. Overrides MavenRegistryConfig.Deps.
+	Deps []MavenDependencyConfig
+	// Options contains the Maven plugin options for the runtime. Overrides RegistryConfig.Options.
+	Options []string
 }
 
 // ConfigOption is an optional option used when loading a Config.
@@ -293,7 +346,51 @@ type ExternalNPMRegistryConfig struct {
 
 // ExternalMavenRegistryConfig is the external registry configuration for a Maven plugin.
 type ExternalMavenRegistryConfig struct {
+	Compiler           ExternalMavenCompilerConfig  `json:"compiler" yaml:"compiler"`
+	Deps               []string                     `json:"deps,omitempty" yaml:"deps,omitempty"`
+	AdditionalRuntimes []ExternalMavenRuntimeConfig `json:"additional_runtimes,omitempty" yaml:"additional_runtimes,omitempty"`
+}
+
+// ExternalMavenCompilerConfig configures compiler settings for Maven remote packages.
+type ExternalMavenCompilerConfig struct {
+	Java   ExternalMavenCompilerJavaConfig   `json:"java" yaml:"java"`
+	Kotlin ExternalMavenCompilerKotlinConfig `json:"kotlin" yaml:"kotlin"`
+}
+
+// ExternalMavenCompilerJavaConfig configures the Java compiler settings for remote packages.
+type ExternalMavenCompilerJavaConfig struct {
+	// Encoding specifies the encoding of the source files (default: UTF-8).
+	Encoding string `json:"encoding" yaml:"encoding"`
+	// Release specifies the target Java release (default: 8).
+	Release int `json:"release" yaml:"release"`
+	// Source specifies the source bytecode level (default: 8).
+	Source int `json:"source" yaml:"source"`
+	// Target specifies the target bytecode level (default: 8).
+	Target int `json:"target" yaml:"target"`
+}
+
+// ExternalMavenCompilerKotlinConfig configures the Kotlin compiler settings for remote packages.
+type ExternalMavenCompilerKotlinConfig struct {
+	// APIVersion specifies the Kotlin API version to target.
+	APIVersion string `json:"api_version" yaml:"api_version"`
+	// JVMTarget specifies the target version of the JVM bytecode (default: 1.8)
+	JVMTarget string `json:"jvm_target" yaml:"jvm_target"`
+	// LanguageVersion is used to provide source compatibility with the specified Kotlin version.
+	LanguageVersion string `json:"language_version" yaml:"language_version"`
+	// Version of the Kotlin compiler to use (required for Kotlin plugins).
+	Version string `json:"version" yaml:"version"`
+}
+
+// ExternalMavenRuntimeConfig allows configuring additional runtimes for remote packages.
+// These can specify different dependencies and compiler options than the default runtime.
+// This is used to support a single plugin supporting both full and lite Protobuf runtimes.
+type ExternalMavenRuntimeConfig struct {
+	// Name contains the Maven runtime name (e.g. 'lite').
+	Name string `json:"name" yaml:"name"`
+	// Deps contains the Maven dependencies for the runtime. Overrides ExternalMavenRuntimeConfig.Deps.
 	Deps []string `json:"deps,omitempty" yaml:"deps,omitempty"`
+	// Opts contains the Maven plugin options for the runtime. Overrides ExternalRegistryConfig.Opts.
+	Opts []string `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
 type externalConfigVersion struct {
