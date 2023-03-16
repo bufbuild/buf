@@ -85,13 +85,12 @@ func (f *formatter) Run() error {
 
 // P prints a line to the generated output.
 func (f *formatter) P(elements ...string) {
-	if len(elements) > 0 {
+	joined := strings.Join(elements, "")
+	if len(joined) > 0 {
 		// We only want to write an indent if we're
-		// writing elements (not just a newline).
+		// writing a non-empty string (not just a newline).
 		f.Indent(nil)
-		for _, elem := range elements {
-			f.WriteString(elem)
-		}
+		f.WriteString(joined)
 	}
 	f.WriteString("\n")
 
