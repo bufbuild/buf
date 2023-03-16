@@ -26,6 +26,11 @@ enum LabelNamespace {
 }
 
 message Label {
+  LabelName label_name = 1;
+  LabelValue label_value = 2;
+}
+
+message LabelName {
   LabelNamespace namespace = 1;
   string name = 2;
 }
@@ -41,7 +46,7 @@ service LabelService {
 }
 
 message CreateLabelRequest {
-  Label label = 1;
+  LabelName label_name = 1;
   optional string author = 2;
   optional google.protobuf.Timestamp create_time = 3;
 }
@@ -51,7 +56,7 @@ message CreateLabelResponse {
 }
 
 message MoveLabelRequest {
-  Label label = 1;
+  LabelName label_name = 1;
   optional LabelValue from = 2;
   LabelValue to = 3;
 }
@@ -60,14 +65,10 @@ message MoveLabelResponse {}
 
 message GetLabelsRequest {
   string module_entity_id = 1;
-  optional string name = 2;
-  optional LabelNamespace namespace = 3;
+  optional LabelName label_name = 2;
+  optional LabelValue label_value = 3;
 }
 
 message GetLabelsResponse {
-  message LabelWithValue {
-    Label label = 1;
-    LabelValue label_value = 2;
-  }
-  repeated LabelWithValue label_with_values = 1;
+  repeated Label labels = 1;
 }
