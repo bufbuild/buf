@@ -84,6 +84,12 @@ func (f *formatter) Run() error {
 }
 
 // P prints a line to the generated output.
+//
+// This will emit a newline and proper indentation. If you do not
+// want to emit a newline and want to write a raw string, use
+// WriteString (which P calls).
+//
+// If strings.TrimSpace(elem) is empty, no indentation is produced.
 func (f *formatter) P(elem string) {
 	if len(strings.TrimSpace(elem)) > 0 {
 		// We only want to write an indent if we're
@@ -141,6 +147,9 @@ func (f *formatter) Indent(nextNode ast.Node) {
 }
 
 // WriteString writes the given element to the generated output.
+//
+// This will not write indentation or newlines. Use P if you
+// want to emit identation or newlines.
 func (f *formatter) WriteString(elem string) {
 	if f.pendingSpace {
 		f.pendingSpace = false
