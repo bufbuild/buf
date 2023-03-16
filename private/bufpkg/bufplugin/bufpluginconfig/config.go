@@ -17,6 +17,7 @@ package bufpluginconfig
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/gen/data/dataspdx"
@@ -217,15 +218,48 @@ func newMavenRegistryConfig(externalMavenRegistryConfig *ExternalMavenRegistryCo
 	if externalMavenRegistryConfig == nil {
 		return nil, nil
 	}
-	var dependencies []string
-	for _, dep := range externalMavenRegistryConfig.Deps {
-		if dep == "" {
-			return nil, errors.New("maven runtime dependency is required to be non-empty")
+	var dependencies []MavenDependencyConfig
+	for _, externalDep := range externalMavenRegistryConfig.Deps {
+		dep, err := mavenExternalDependencyToDependencyConfig(externalDep)
+		if err != nil {
+			return nil, err
 		}
 		dependencies = append(dependencies, dep)
 	}
+	var additionalRuntimes []MavenRuntimeConfig
+	for _, runtime := range externalMavenRegistryConfig.AdditionalRuntimes {
+		var deps []MavenDependencyConfig
+		for _, externalDep := range runtime.Deps {
+			dep, err := mavenExternalDependencyToDependencyConfig(externalDep)
+			if err != nil {
+				return nil, err
+			}
+			deps = append(deps, dep)
+		}
+		config := MavenRuntimeConfig{
+			Name:    runtime.Name,
+			Deps:    deps,
+			Options: runtime.Opts,
+		}
+		additionalRuntimes = append(additionalRuntimes, config)
+	}
 	return &MavenRegistryConfig{
-		Deps: dependencies,
+		Compiler: MavenCompilerConfig{
+			Java: MavenCompilerJavaConfig{
+				Encoding: externalMavenRegistryConfig.Compiler.Java.Encoding,
+				Release:  externalMavenRegistryConfig.Compiler.Java.Release,
+				Source:   externalMavenRegistryConfig.Compiler.Java.Source,
+				Target:   externalMavenRegistryConfig.Compiler.Java.Target,
+			},
+			Kotlin: MavenCompilerKotlinConfig{
+				APIVersion:      externalMavenRegistryConfig.Compiler.Kotlin.APIVersion,
+				JVMTarget:       externalMavenRegistryConfig.Compiler.Kotlin.JVMTarget,
+				LanguageVersion: externalMavenRegistryConfig.Compiler.Kotlin.LanguageVersion,
+				Version:         externalMavenRegistryConfig.Compiler.Kotlin.Version,
+			},
+		},
+		Deps:               dependencies,
+		AdditionalRuntimes: additionalRuntimes,
 	}, nil
 }
 
@@ -257,4 +291,26 @@ func pluginReferenceForStringWithOverrideRemote(
 		return nil, err
 	}
 	return bufpluginref.NewPluginReference(overrideIdentity, reference.Version(), reference.Revision())
+}
+
+func mavenExternalDependencyToDependencyConfig(dependency string) (MavenDependencyConfig, error) {
+	// <groupId>:<artifactId>:<version>[:<classifier>][@<type>]
+	dependencyWithoutExtension, extension, _ := strings.Cut(dependency, "@")
+	components := strings.Split(dependencyWithoutExtension, ":")
+	if len(components) < 3 {
+		return MavenDependencyConfig{}, fmt.Errorf("invalid dependency %q: missing required groupId:artifactId:version fields", dependency)
+	}
+	if len(components) > 4 {
+		return MavenDependencyConfig{}, fmt.Errorf("invalid dependency %q: maximum 4 fields before optional type", dependency)
+	}
+	config := MavenDependencyConfig{
+		GroupID:    components[0],
+		ArtifactID: components[1],
+		Version:    components[2],
+		Extension:  extension,
+	}
+	if len(components) == 4 {
+		config.Classifier = components[3]
+	}
+	return config, nil
 }
