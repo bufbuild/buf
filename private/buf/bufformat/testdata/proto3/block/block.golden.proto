@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package block.v1;
+
+/*
+   Foo.
+
+   Bar.
+*/
+
+message Baz {}
