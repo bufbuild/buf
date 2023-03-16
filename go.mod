@@ -10,12 +10,11 @@ require (
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/google/go-cmp v0.5.9
-	github.com/google/go-containerregistry v0.13.0
+	github.com/google/go-containerregistry v0.14.0
 	github.com/jdxcode/netrc v0.0.0-20221124155335-4616370d1a84
 	github.com/jhump/protoreflect v1.15.1
 	github.com/klauspost/compress v1.16.3
 	github.com/klauspost/pgzip v1.2.5
-	github.com/oklog/ulid/v2 v2.1.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/profile v1.7.0
 	github.com/rs/cors v1.8.3
