@@ -85,7 +85,7 @@ func (f *formatter) Run() error {
 
 // P prints a line to the generated output.
 func (f *formatter) P(elem string) {
-	if len(elem) > 0 {
+	if len(strings.TrimSpace(elem)) > 0 {
 		// We only want to write an indent if we're
 		// writing a non-empty string (not just a newline).
 		f.Indent(nil)
