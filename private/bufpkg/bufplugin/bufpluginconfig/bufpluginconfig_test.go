@@ -164,18 +164,86 @@ func TestParsePluginConfigMavenYAML(t *testing.T) {
 	require.NoError(t, err)
 	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/grpc/java")
 	require.NoError(t, err)
+	pluginDep, err := bufpluginref.PluginReferenceForString("buf.build/protocolbuffers/java:v22.2", 0)
+	require.NoError(t, err)
 	require.Equal(
 		t,
 		&Config{
 			Name:            pluginIdentity,
+			Dependencies:    []bufpluginref.PluginReference{pluginDep},
 			PluginVersion:   "v1.0.0",
 			OutputLanguages: []string{"java"},
 			Registry: &RegistryConfig{
 				Maven: &MavenRegistryConfig{
-					Deps: []string{
-						"io.grpc:grpc-core:1.52.1",
-						"io.grpc:grpc-protobuf:1.52.1",
-						"io.grpc:grpc-stub:1.52.1",
+					Compiler: MavenCompilerConfig{
+						Java: MavenCompilerJavaConfig{
+							Encoding: "UTF-8",
+							Release:  11,
+							Source:   8,
+							Target:   17,
+						},
+						Kotlin: MavenCompilerKotlinConfig{
+							APIVersion:      "1.8",
+							JVMTarget:       "9",
+							LanguageVersion: "1.7",
+							Version:         "1.8.0",
+						},
+					},
+					Deps: []MavenDependencyConfig{
+						{
+							GroupID:    "io.grpc",
+							ArtifactID: "grpc-core",
+							Version:    "1.52.1",
+						},
+						{
+							GroupID:    "io.grpc",
+							ArtifactID: "grpc-protobuf",
+							Version:    "1.52.1",
+						},
+						{
+							GroupID:    "io.grpc",
+							ArtifactID: "grpc-stub",
+							Version:    "1.52.1",
+						},
+						{
+							GroupID:    "io.grpc",
+							ArtifactID: "protoc-gen-grpc-java",
+							Version:    "1.52.1",
+							Classifier: "linux-x86_64",
+							Extension:  "exe",
+						},
+					},
+					AdditionalRuntimes: []MavenRuntimeConfig{
+						{
+							Name: "lite",
+							Deps: []MavenDependencyConfig{
+								{
+									GroupID:    "io.grpc",
+									ArtifactID: "grpc-core",
+									Version:    "1.52.1",
+								},
+								{
+									GroupID:    "io.grpc",
+									ArtifactID: "grpc-protobuf-lite",
+									Version:    "1.52.1",
+								},
+								{
+									GroupID:    "io.grpc",
+									ArtifactID: "grpc-stub",
+									Version:    "1.52.1",
+								},
+								{
+									GroupID:    "io.grpc",
+									ArtifactID: "protoc-gen-grpc-java",
+									Version:    "1.52.1",
+									Classifier: "linux-x86_64",
+									Extension:  "exe",
+								},
+							},
+							Options: []string{
+								"lite",
+							},
+						},
 					},
 				},
 			},
