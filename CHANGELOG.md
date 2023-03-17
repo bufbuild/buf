@@ -2,13 +2,18 @@
 
 ## [Unreleased]
 
-- Fixes a bug in `buf generate` with `v1beta1` config files.
-- Fixes a potential crash when using the `--type` flag with `buf build` or `buf generate`.
+- Add `buf beta price` command to help users of the BSR figure out how much a module
+  will cost to store on the BSR under the Team or Pro plans.
+
+## [v1.15.1] - 2023-03-08
+
+- Fix a bug in `buf generate` with `v1beta1` config files.
+- Fix a potential crash when using the `--type` flag with `buf build` or `buf generate`.
 
 ## [v1.15.0] - 2023-02-28
 
 - Update built-in Well-Known Types to Protobuf v22.0.
-- Fixes a bug in `buf format` where C-style block comments in which every
+- Fix a bug in `buf format` where C-style block comments in which every
   line includes a prefix (usually "*") would be incorrectly indented.
 - Add `--private-network` flag to `buf beta studio-agent` to support handling CORS requests
   from Studio on private networks that set the `Access-Control-Request-Private-Network` header.
@@ -832,7 +837,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.15.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.15.1...HEAD
+[v1.15.1]: https://github.com/bufbuild/buf/compare/v1.15.0...v1.15.1
 [v1.15.0]: https://github.com/bufbuild/buf/compare/v1.14.0...v1.15.0
 [v1.14.0]: https://github.com/bufbuild/buf/compare/v1.13.1...v1.14.0
 [v1.13.1]: https://github.com/bufbuild/buf/compare/v1.13.0...v1.13.1

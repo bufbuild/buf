@@ -12,25 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ulidutil
+// Generated. DO NOT EDIT.
 
-import (
-	"crypto/rand"
-	"fmt"
-	"time"
+package price
 
-	"github.com/oklog/ulid/v2"
-)
-
-// New creates a new ULID for the given timestamp.
-func New(timestamp time.Time) (ulid.ULID, error) {
-	return ulid.New(ulid.Timestamp(timestamp), rand.Reader)
-}
-
-// FromString returns the ULID from the string.
-func FromString(s string) (ulid.ULID, error) {
-	if len(s) != ulid.EncodedSize {
-		return ulid.ULID{}, fmt.Errorf("expected ULID to be of length %d but was %d: %s", ulid.EncodedSize, len(s), s)
-	}
-	return ulid.ParseStrict(s)
-}
+import _ "github.com/bufbuild/buf/private/usage"
