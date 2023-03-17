@@ -120,7 +120,7 @@ Overrides --%s`,
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration`,
+		`The buf.yaml file or data to use for configuration`,
 	)
 	flagSet.StringVar(
 		&f.Against,
@@ -135,7 +135,7 @@ Overrides --%s`,
 		&f.AgainstConfig,
 		againstConfigFlagName,
 		"",
-		`The file or data to use to configure the against source, module, or image`,
+		`The buf.yaml file or data to use to configure the against source, module, or image`,
 	)
 }
 
