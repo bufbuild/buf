@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           token: ${{ steps.generate_token.outputs.token }}
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: "^1.20.x"
       - name: Install Buf
@@ -132,7 +132,7 @@ jobs:
       - name: Set VERSION variable from tag
         run: |
           echo "VERSION=${{github.ref_name}}" >> $GITHUB_ENV
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: "^1.20.x"
       - name: Create assets
