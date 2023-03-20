@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
-	gojs "github.com/tetratelabs/wazero/imports/go"
+	"github.com/tetratelabs/wazero/experimental/gojs"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	"github.com/tetratelabs/wazero/sys"
 	"go.uber.org/multierr"
@@ -188,7 +188,7 @@ func (e *WASMPluginExecutor) Run(
 		defer func() {
 			retErr = multierr.Append(retErr, module.Close(ctx))
 		}()
-		err = gojs.Run(ctx, runtime, plugin.Module, config)
+		err = gojs.Run(ctx, runtime, plugin.Module, gojs.NewConfig(config))
 	case wasmpluginv1.WasmABI_WASM_ABI_WASI_SNAPSHOT_PREVIEW1:
 		var closer api.Closer
 		closer, err = wasi_snapshot_preview1.NewBuilder(runtime).Instantiate(ctx)
