@@ -65,6 +65,7 @@ func (h *wasmHandler) Handle(
 	path, err := validateWASMFilePath(h.pluginPath)
 	if err != nil {
 		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
