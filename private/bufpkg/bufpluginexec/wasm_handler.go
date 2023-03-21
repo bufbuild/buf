@@ -75,10 +75,14 @@ func (h *wasmHandler) Handle(
 	}
 	pluginBytes, err := os.ReadFile(path)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	compiledPlugin, err := h.wasmPluginExecutor.CompilePlugin(ctx, pluginBytes)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	responseBuffer := bytes.NewBuffer(nil)
