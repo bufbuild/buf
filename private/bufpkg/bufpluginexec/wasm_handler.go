@@ -61,7 +61,6 @@ func (h *wasmHandler) Handle(
 		attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
 	))
 	defer span.End()
-
 	path, err := validateWASMFilePath(h.pluginPath)
 	if err != nil {
 		span.RecordError(err)
