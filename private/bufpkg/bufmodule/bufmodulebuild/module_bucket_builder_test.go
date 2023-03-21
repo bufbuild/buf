@@ -23,9 +23,13 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/git"
+	"github.com/bufbuild/buf/private/pkg/git/object"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -328,6 +332,42 @@ func TestConfigInclusion(t *testing.T) {
 		t.Parallel()
 		testConfigInclusion(t, "buf.mod")
 	})
+}
+
+// TestBuildFromGitIntegration checks if we can build from a git backed storage
+// bucket.
+func TestBuildFromGitIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("building from git is slow")
+	}
+	// A buildable commit on bufbuild/buf.
+	var commitref object.ID
+	err := commitref.UnmarshalText(
+		[]byte("d4d069df5747c0c2ccfa3ebf0a36a514801553bb"),
+	)
+	require.NoError(t, err)
+	// object service
+	runner := command.NewRunner()
+	objects, err := git.NewCatFile(runner)
+	defer func() { assert.NoError(t, objects.Close()) }()
+	require.NoError(t, err)
+	// locate proto tree
+	commit, err := objects.Commit(commitref)
+	require.NoError(t, err)
+	treeWalker := git.NewTreeFinder(objects, commit.Tree)
+	treeEntry, err := treeWalker.FindEntry("proto")
+	require.NoError(t, err)
+	// bucket for this tree
+	treereader := git.NewTreeReader(objects, treeEntry.ID)
+	// build it
+	ctx := context.Background()
+	config, err := bufconfig.GetConfigForBucket(ctx, treereader)
+	require.NoError(t, err)
+	module, err := BuildForBucket(ctx, treereader, config.Build)
+	require.NoError(t, err)
+	file, err := module.GetModuleFile(ctx, "buf/alpha/image/v1/image.proto")
+	require.NoError(t, err)
+	assert.Equal(t, "buf/alpha/image/v1/image.proto", file.Path())
 }
 
 func testConfigInclusion(t *testing.T, confname string) {
