@@ -48,7 +48,7 @@ const (
 	disableSymlinksFlagName     = "disable-symlinks"
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
-	wasmCompilationCacheDir     = "wasmplugins-compiled"
+	wasmCompilationCacheDir     = "wasmplugin-bin"
 )
 
 // NewCommand returns a new Command.

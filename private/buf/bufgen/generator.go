@@ -44,10 +44,10 @@ import (
 )
 
 type generator struct {
-	logger                *zap.Logger
-	storageosProvider     storageos.Provider
-	appprotoexecGenerator bufpluginexec.Generator
-	clientConfig          *connectclient.Config
+	logger              *zap.Logger
+	storageosProvider   storageos.Provider
+	pluginexecGenerator bufpluginexec.Generator
+	clientConfig        *connectclient.Config
 }
 
 func newGenerator(
@@ -58,10 +58,10 @@ func newGenerator(
 	clientConfig *connectclient.Config,
 ) *generator {
 	return &generator{
-		logger:                logger,
-		storageosProvider:     storageosProvider,
-		appprotoexecGenerator: bufpluginexec.NewGenerator(logger, storageosProvider, runner, wasmPluginExecutor),
-		clientConfig:          clientConfig,
+		logger:              logger,
+		storageosProvider:   storageosProvider,
+		pluginexecGenerator: bufpluginexec.NewGenerator(logger, storageosProvider, runner, wasmPluginExecutor),
+		clientConfig:        clientConfig,
 	}
 }
 
@@ -297,7 +297,7 @@ func (g *generator) execLocalPlugin(
 	if err != nil {
 		return nil, err
 	}
-	response, err := g.appprotoexecGenerator.Generate(
+	response, err := g.pluginexecGenerator.Generate(
 		ctx,
 		container,
 		pluginConfig.PluginName(),
