@@ -179,6 +179,9 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 	for _, option := range options {
 		option(&newImageOptions)
 	}
+	if newImageOptions.noReparse && newImageOptions.computeUnusedImports {
+		return nil, fmt.Errorf("cannot use both WithNoReparse and WithComputeUnusedImports options; they are mutually exclusive")
+	}
 	if !newImageOptions.noReparse {
 		if err := reparseImageProto(protoImage, newImageOptions.computeUnusedImports); err != nil {
 			return nil, err
