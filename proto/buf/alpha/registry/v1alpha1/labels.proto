@@ -49,6 +49,7 @@ message CreateLabelRequest {
   LabelName label_name = 1;
   optional string author = 2;
   optional google.protobuf.Timestamp create_time = 3;
+  LabelValue label_value = 4;
 }
 
 message CreateLabelResponse {
