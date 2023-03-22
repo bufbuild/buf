@@ -141,7 +141,7 @@ func NewHandler(
 
 	// Initialize WASM plugin handler.
 	if looksLikeWASM(pluginName) {
-		return newWasmHandler(wasmPluginExecutor, pluginName), nil
+		return newWasmHandler(wasmPluginExecutor, pluginName)
 	}
 
 	// Initialize binary plugin handler when path is specified with optional args. Return

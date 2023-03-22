@@ -16,6 +16,8 @@ package app
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -58,6 +60,17 @@ func newEnvContainerForEnviron(environ []string) (*envContainer, error) {
 
 func (e *envContainer) Env(key string) string {
 	return e.variables[key]
+}
+
+func (e *envContainer) GetEnvBoolValue(key string) (bool, error) {
+	var enabled bool
+	var err error
+	if val, ok := e.variables[key]; ok {
+		if enabled, err = strconv.ParseBool(val); err != nil {
+			err = fmt.Errorf("invalid value for %q: %w", key, err)
+		}
+	}
+	return enabled, err
 }
 
 func (e *envContainer) ForEachEnv(f func(string, string)) {

@@ -28,7 +28,7 @@ import (
 
 // EnvContainer provides environment variables.
 type EnvContainer interface {
-	// Env gets the environment variable value for the key.
+	// Env gets the environment variable raw string value for the key.
 	//
 	// Returns empty string if the key is not set or the value is empty.
 	Env(key string) string
@@ -36,6 +36,10 @@ type EnvContainer interface {
 	//
 	// The value will never be empty.
 	ForEachEnv(func(string, string))
+	// GetEnvBoolValue gets and parses the environment variable bool value for the key.
+	//
+	// Returns false and the parse error if the key is not set or the value is empty.
+	GetEnvBoolValue(key string) (bool, error)
 }
 
 // NewEnvContainer returns a new EnvContainer.

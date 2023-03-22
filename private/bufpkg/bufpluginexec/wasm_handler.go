@@ -34,6 +34,9 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+// AlphaEnableWasmEnvKey is an env var to enable WASM local plugin execution
+const AlphaEnableWasmEnvKey = "BUF_ALPHA_ENABLE_WASM"
+
 type wasmHandler struct {
 	wasmPluginExecutor bufwasm.PluginExecutor
 	pluginPath         string
@@ -43,11 +46,15 @@ type wasmHandler struct {
 func newWasmHandler(
 	wasmPluginExecutor bufwasm.PluginExecutor,
 	pluginPath string,
-) *wasmHandler {
-	return &wasmHandler{
-		wasmPluginExecutor: wasmPluginExecutor,
-		pluginPath:         pluginPath,
-		tracer:             otel.GetTracerProvider().Tracer("bufbuild/buf"),
+) (*wasmHandler, error) {
+	if pluginAbsPath, err := validateWASMFilePath(pluginPath); err != nil {
+		return nil, err
+	} else {
+		return &wasmHandler{
+			wasmPluginExecutor: wasmPluginExecutor,
+			pluginPath:         pluginAbsPath,
+			tracer:             otel.GetTracerProvider().Tracer("bufbuild/buf"),
+		}, nil
 	}
 }
 
@@ -61,8 +68,7 @@ func (h *wasmHandler) Handle(
 		attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
 	))
 	defer span.End()
-	path, err := validateWASMFilePath(h.pluginPath)
-	if err != nil {
+	if enabled, err := IsAlphaWasmEnabled(container); enabled == false {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
@@ -73,7 +79,7 @@ func (h *wasmHandler) Handle(
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
-	pluginBytes, err := os.ReadFile(path)
+	pluginBytes, err := os.ReadFile(h.pluginPath)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
@@ -144,4 +150,13 @@ func validateWASMFilePath(path string) (string, error) {
 		return path, fmt.Errorf("invalid WASM file: %s", path)
 	}
 	return path, nil
+}
+
+// IsAlphaWasmEnabled returns if BUF_ALPHA_ENABLE_WASM is set to true.
+func IsAlphaWasmEnabled(container app.EnvContainer) (bool, error) {
+	enabled, _ := container.GetEnvBoolValue(AlphaEnableWasmEnvKey)
+	if !enabled {
+		return false, errors.New("alpha wasm support is disabled")
+	}
+	return enabled, nil
 }

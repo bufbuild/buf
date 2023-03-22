@@ -22,7 +22,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufapp"
@@ -918,16 +917,7 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1al
 
 // IsBetaTamperProofingEnabled returns if BUF_BETA_ENABLE_TAMPER_PROOFING is set to true.
 func IsBetaTamperProofingEnabled(container app.EnvContainer) (bool, error) {
-	// Check if tamper proofing env var is enabled
-	tamperProofingEnabled := false
-	if envVal := container.Env(BetaEnableTamperProofingEnvKey); envVal != "" {
-		var err error
-		tamperProofingEnabled, err = strconv.ParseBool(envVal)
-		if err != nil {
-			return false, fmt.Errorf("invalid value for %q: %w", BetaEnableTamperProofingEnvKey, err)
-		}
-	}
-	return tamperProofingEnabled, nil
+	return container.GetEnvBoolValue(BetaEnableTamperProofingEnvKey)
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.
