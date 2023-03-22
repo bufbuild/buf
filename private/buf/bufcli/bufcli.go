@@ -84,6 +84,9 @@ const (
 
 	publicVisibility  = "public"
 	privateVisibility = "private"
+
+	// WasmCompilationCacheDir compiled WASM plugin cache directory
+	WasmCompilationCacheDir = "wasmplugin-bin"
 )
 
 var (
