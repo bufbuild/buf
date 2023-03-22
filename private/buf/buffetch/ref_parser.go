@@ -43,48 +43,45 @@ type refParser struct {
 }
 
 func newRefParser(logger *zap.Logger) *refParser {
-	fetchRefParserOptions := []internal.RefParserOption{
-		internal.WithRawRefProcessor(newRawRefProcessor()),
-		internal.WithSingleFormat(formatBin),
-		internal.WithSingleFormat(formatJSON),
-		internal.WithSingleFormat(
-			formatBingz,
-			internal.WithSingleDefaultCompressionType(
-				internal.CompressionTypeGzip,
-			),
-		),
-		internal.WithSingleFormat(
-			formatJSONGZ,
-			internal.WithSingleDefaultCompressionType(
-				internal.CompressionTypeGzip,
-			),
-		),
-		internal.WithArchiveFormat(
-			formatTar,
-			internal.ArchiveTypeTar,
-		),
-		internal.WithArchiveFormat(
-			formatTargz,
-			internal.ArchiveTypeTar,
-			internal.WithArchiveDefaultCompressionType(
-				internal.CompressionTypeGzip,
-			),
-		),
-		internal.WithArchiveFormat(
-			formatZip,
-			internal.ArchiveTypeZip,
-		),
-		internal.WithGitFormat(formatGit),
-		internal.WithDirFormat(formatDir),
-		internal.WithModuleFormat(formatMod),
-		internal.WithProtoFileFormat(formatProtoFile),
-	}
 	return &refParser{
 		logger: logger.Named(loggerName),
 		tracer: otel.GetTracerProvider().Tracer(tracerName),
 		fetchRefParser: internal.NewRefParser(
 			logger,
-			fetchRefParserOptions...,
+			internal.WithRawRefProcessor(newRawRefProcessor()),
+			internal.WithSingleFormat(formatBin),
+			internal.WithSingleFormat(formatJSON),
+			internal.WithSingleFormat(
+				formatBingz,
+				internal.WithSingleDefaultCompressionType(
+					internal.CompressionTypeGzip,
+				),
+			),
+			internal.WithSingleFormat(
+				formatJSONGZ,
+				internal.WithSingleDefaultCompressionType(
+					internal.CompressionTypeGzip,
+				),
+			),
+			internal.WithArchiveFormat(
+				formatTar,
+				internal.ArchiveTypeTar,
+			),
+			internal.WithArchiveFormat(
+				formatTargz,
+				internal.ArchiveTypeTar,
+				internal.WithArchiveDefaultCompressionType(
+					internal.CompressionTypeGzip,
+				),
+			),
+			internal.WithArchiveFormat(
+				formatZip,
+				internal.ArchiveTypeZip,
+			),
+			internal.WithGitFormat(formatGit),
+			internal.WithDirFormat(formatDir),
+			internal.WithModuleFormat(formatMod),
+			internal.WithProtoFileFormat(formatProtoFile),
 		),
 	}
 }
