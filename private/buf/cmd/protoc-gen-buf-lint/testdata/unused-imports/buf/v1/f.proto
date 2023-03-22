@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+package buf.v1;
+
+import "buf/v1/extrange_option.proto";
+
+message F {
+  optional uint64 id = 1;
+  extensions 10 to 100 [(extrange_option) = "foo"];
+}

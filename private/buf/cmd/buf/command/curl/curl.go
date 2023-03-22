@@ -36,6 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/connect-go"
@@ -646,7 +647,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		}
 	}
 
-	var res bufcurl.Resolver
+	var res protoencoding.Resolver
 	if f.Reflect {
 		reflectHeaders, _, err := bufcurl.LoadHeaders(f.ReflectHeaders, "", requestHeaders)
 		if err != nil {
@@ -707,7 +708,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		if err != nil {
 			return err
 		}
-		res, err = bufcurl.NewImageResolver(image)
+		res, err = protoencoding.NewResolver(bufimage.ImageToFileDescriptors(image)...)
 		if err != nil {
 			return err
 		}

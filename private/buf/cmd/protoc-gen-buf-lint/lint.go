@@ -99,10 +99,15 @@ func handle(
 	if err != nil {
 		return err
 	}
-	image, err := bufimage.NewImageForCodeGeneratorRequest(request)
+	// With the "buf lint" command, we build the image and then the linter can report
+	// unused imports that the compiler reports. But with a plugin, we get descriptors
+	// that are already built and no access to any possible associated compiler warnings.
+	// So we have to analyze the files to compute the unused imports.
+	image, err := bufimage.NewImageForCodeGeneratorRequest(request, bufimage.WithUnusedImportsComputation())
 	if err != nil {
 		return err
 	}
+	// We don't want to lint transitive dependencies, only the files specified.
 	image = bufimage.ImageWithoutImports(image)
 	fileAnnotations, err := buflint.NewHandler(logger).Check(
 		ctx,
