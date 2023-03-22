@@ -16,11 +16,11 @@ syntax = "proto3";
 
 package buf.alpha.wasmplugin.v1;
 
-// Meta describes buf specific extensions for a wasm plugin.  A metadata may
+// ExecConfig describes buf specific extensions for a wasm plugin.  A ExecConfig may
 // be encoded in a custom WASM section named ".bufplugin", see
 // (https://webassembly.github.io/spec/core/binary/modules.html#binary-customsec)
 // for more info.
-message Meta {
+message ExecConfig {
   // When no ABI is provided, buf will make a best effort guess based on
   // the functions the wasm module exports.
   WasmABI wasm_abi = 1;

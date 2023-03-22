@@ -48,9 +48,9 @@ func TestSectionEncodeDecode(t *testing.T) {
 	require.NoError(t, err)
 	plugin, err := executor.CompilePlugin(ctx, echoWasm)
 	require.NoError(t, err)
-	assert.Nil(t, plugin.Metadata)
+	assert.Nil(t, plugin.ExecConfig)
 
-	metadataProto := &wasmpluginv1.Meta{
+	metadataProto := &wasmpluginv1.ExecConfig{
 		WasmAbi: wasmpluginv1.WasmABI_WASM_ABI_WASI_SNAPSHOT_PREVIEW1,
 		Args:    []string{"some", "params"},
 	}
@@ -63,7 +63,7 @@ func TestSectionEncodeDecode(t *testing.T) {
 
 	plugin, err = executor.CompilePlugin(ctx, wasmFileWithBufSection)
 	require.NoError(t, err)
-	assert.Empty(t, cmp.Diff(plugin.Metadata, metadataProto, protocmp.Transform()))
+	assert.Empty(t, cmp.Diff(plugin.ExecConfig, metadataProto, protocmp.Transform()))
 }
 
 func TestPluginExecutor(t *testing.T) {
@@ -73,7 +73,7 @@ func TestPluginExecutor(t *testing.T) {
 	require.NoError(t, err)
 	plugin, err := executor.CompilePlugin(ctx, echoWasm)
 	require.NoError(t, err)
-	assert.Nil(t, plugin.Metadata)
+	assert.Nil(t, plugin.ExecConfig)
 
 	stdin := bytes.NewBufferString("foo")
 	stdout := bytes.NewBuffer(nil)
@@ -91,7 +91,7 @@ func TestParallelPlugins(t *testing.T) {
 	require.NoError(t, err)
 	plugin, err := executor.CompilePlugin(ctx, echoWasm)
 	require.NoError(t, err)
-	assert.Nil(t, plugin.Metadata)
+	assert.Nil(t, plugin.ExecConfig)
 
 	n := 2
 	errors := make([]error, n)

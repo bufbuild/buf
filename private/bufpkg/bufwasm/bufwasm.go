@@ -51,12 +51,12 @@ type CompiledPlugin struct {
 
 	// Metadata parsed from custom sections of the wasm file. May be nil if
 	// no buf specific sections were found.
-	Metadata *wasmpluginv1.Meta
+	ExecConfig *wasmpluginv1.ExecConfig
 }
 
 func (c *CompiledPlugin) ABI() wasmpluginv1.WasmABI {
-	if c.Metadata.GetWasmAbi() != wasmpluginv1.WasmABI_WASM_ABI_UNSPECIFIED {
-		return c.Metadata.GetWasmAbi()
+	if c.ExecConfig.GetWasmAbi() != wasmpluginv1.WasmABI_WASM_ABI_UNSPECIFIED {
+		return c.ExecConfig.GetWasmAbi()
 	}
 	exportedFuncs := c.Module.ExportedFunctions()
 	if _, ok := exportedFuncs["_start"]; ok {
@@ -129,11 +129,11 @@ func (e *WASMPluginExecutor) CompilePlugin(ctx context.Context, plugin []byte) (
 	}
 	compiledPlugin := &CompiledPlugin{Module: compiledModule}
 	if len(bufsectionBytes) > 0 {
-		metadata := &wasmpluginv1.Meta{}
+		metadata := &wasmpluginv1.ExecConfig{}
 		if err := proto.Unmarshal(bufsectionBytes, metadata); err != nil {
 			return nil, err
 		}
-		compiledPlugin.Metadata = metadata
+		compiledPlugin.ExecConfig = metadata
 	}
 	return compiledPlugin, nil
 }
@@ -156,13 +156,13 @@ func (e *WASMPluginExecutor) Run(
 	stderr := bytes.NewBuffer(nil)
 	config := wazero.NewModuleConfig().
 		WithName(plugin.Module.Name()).
-		WithArgs(append([]string{name}, plugin.Metadata.GetArgs()...)...).
+		WithArgs(append([]string{name}, plugin.ExecConfig.GetArgs()...)...).
 		WithStdin(stdin).
 		WithStdout(stdout).
 		WithStderr(stderr)
-	if len(plugin.Metadata.GetFiles()) > 0 {
-		mapFS := make(fstest.MapFS, len(plugin.Metadata.GetFiles()))
-		for _, file := range plugin.Metadata.Files {
+	if len(plugin.ExecConfig.GetFiles()) > 0 {
+		mapFS := make(fstest.MapFS, len(plugin.ExecConfig.GetFiles()))
+		for _, file := range plugin.ExecConfig.Files {
 			mapFS[strings.TrimPrefix(file.Path, "/")] = &fstest.MapFile{
 				Data: file.Contents,
 			}
@@ -234,8 +234,8 @@ func (e *PluginExecutionError) Error() string {
 // EncodeBufSection encodes the pluginmetadata message as a custom wasm section.
 // The resulting bytes can be appended to any valid wasm file to add the new
 // section to that file.
-func EncodeBufSection(metadata *wasmpluginv1.Meta) ([]byte, error) {
-	metadataBinary, err := protoencoding.NewWireMarshaler().Marshal(metadata)
+func EncodeBufSection(config *wasmpluginv1.ExecConfig) ([]byte, error) {
+	metadataBinary, err := protoencoding.NewWireMarshaler().Marshal(config)
 	if err != nil {
 		return nil, err
 	}
