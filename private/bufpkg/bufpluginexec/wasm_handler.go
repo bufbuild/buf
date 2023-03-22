@@ -68,7 +68,7 @@ func (h *wasmHandler) Handle(
 		attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
 	))
 	defer span.End()
-	if enabled, err := IsAlphaWasmEnabled(container); enabled == false {
+	if enabled, err := IsAlphaWasmEnabled(container); !enabled {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
