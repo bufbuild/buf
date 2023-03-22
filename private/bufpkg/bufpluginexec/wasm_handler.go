@@ -68,7 +68,7 @@ func (h *wasmHandler) Handle(
 		attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
 	))
 	defer span.End()
-	if enabled, err := IsAlphaWasmEnabled(container); !enabled {
+	if err := RequireAlphaWasm(container); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
@@ -152,11 +152,10 @@ func validateWASMFilePath(path string) (string, error) {
 	return path, nil
 }
 
-// IsAlphaWasmEnabled returns if BUF_ALPHA_ENABLE_WASM is set to true.
-func IsAlphaWasmEnabled(container app.EnvContainer) (bool, error) {
-	enabled, _ := container.GetEnvBoolValue(AlphaEnableWasmEnvKey)
-	if !enabled {
-		return false, errors.New("alpha wasm support is disabled")
+// RequireAlphaWasm returns an error unless BUF_ALPHA_ENABLE_WASM is true.
+func RequireAlphaWasm(container app.EnvContainer) error {
+	if enabled, _ := container.GetEnvBoolValue(AlphaEnableWasmEnvKey); !enabled {
+		return errors.New("alpha wasm support is disabled")
 	}
-	return enabled, nil
+	return nil
 }
