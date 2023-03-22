@@ -254,17 +254,17 @@ jobs:
                 version: "${{needs.post-release.outputs.version}}"
               }
             })
-  trigger-docs-buf-build-release:
+  trigger-buf-build-release:
     runs-on: ubuntu-latest
     needs: post-release
     steps:
-      - name: trigger docs.buf.build release
+      - name: trigger buf.build release
         uses: actions/github-script@v6
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
               owner: github.repository_owner,
-              repo: "docs.buf.build",
+              repo: "buf.build",
               workflow_id: "release.yaml",
               ref: "main",
               inputs: {
