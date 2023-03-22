@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package buf.v1;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/descriptor.proto";
+import "buf/v1/e.proto"; // used in any
+import "buf/v1/f.proto"; // unused
+import "buf/v1/g.proto"; // used in any
+
+extend google.protobuf.MessageOptions {
+  google.protobuf.Any any = 11111;
+}
+
+message D {
+  option (any) = {
+    [type.googleapis.com/buf.v1.EMsg]: {
+      f: {
+        id: 123
+        [buf.v1.str]: "abc"
+      }
+    }
+  };
+}

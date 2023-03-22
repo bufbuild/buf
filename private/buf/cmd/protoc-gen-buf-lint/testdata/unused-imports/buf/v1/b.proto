@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package buf.v1;
+
+import public "buf/v1/c.proto"; // not used, but no warning because it's public
+import "buf/v1/d.proto";
+import "buf/v1/service_option.proto";
+import "buf/v1/method_option.proto";
+
+message B {
+  D d = 1;
+}
+
+service BService {
+  option (service_option) = "foo";
+  rpc DoB(DoBRequest) returns (DoBResponse) {
+    option (method_option) = "bar";
+  }
+}
+
+message DoBRequest {
+}
+
+message DoBResponse {
+}

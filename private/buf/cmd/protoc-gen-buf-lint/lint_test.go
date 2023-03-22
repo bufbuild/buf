@@ -174,6 +174,52 @@ func TestRunLint7(t *testing.T) {
 	)
 }
 
+func TestRunLint_UnusedImports(t *testing.T) {
+	unusedImportsFileComponents := [][]string{
+		{"buf", "v1", "a.proto"},
+		{"buf", "v1", "b.proto"},
+		{"buf", "v1", "c.proto"},
+		{"buf", "v1", "d.proto"},
+		{"buf", "v1", "e.proto"},
+		{"buf", "v1", "f.proto"},
+		{"buf", "v1", "g.proto"},
+		{"buf", "v1", "file_option.proto"},
+		{"buf", "v1", "msg_option.proto"},
+		{"buf", "v1", "field_option.proto"},
+		{"buf", "v1", "oneof_option.proto"},
+		{"buf", "v1", "extrange_option.proto"},
+		{"buf", "v1", "enum_option.proto"},
+		{"buf", "v1", "enumvalue_option.proto"},
+		{"buf", "v1", "service_option.proto"},
+		{"buf", "v1", "method_option.proto"},
+	}
+	unusedImportFilesWithFullPath := make([]string, len(unusedImportsFileComponents))
+	for i, components := range unusedImportsFileComponents {
+		unusedImportFilesWithFullPath[i] = filepath.Join(append([]string{"testdata", "unused-imports"}, components...)...)
+	}
+	unusedImportFiles := make([]string, len(unusedImportsFileComponents))
+	for i, components := range unusedImportsFileComponents {
+		unusedImportFiles[i] = normalpath.Join(components...)
+	}
+	testRunLint(
+		t,
+		filepath.Join("testdata", "unused-imports"),
+		unusedImportFilesWithFullPath,
+		``,
+		unusedImportFiles,
+		0,
+		`
+		buf/v1/a.proto:13:1:Import "buf/v1/f.proto" is unused.
+		buf/v1/a.proto:14:1:Import "buf/v1/extrange_option.proto" is unused.
+		buf/v1/b.proto:5:1:Import "buf/v1/c.proto" must not be public.
+		buf/v1/c.proto:9:1:Import "buf/v1/e.proto" is unused.
+		buf/v1/c.proto:10:1:Import "buf/v1/f.proto" is unused.
+		buf/v1/d.proto:8:1:Import "buf/v1/f.proto" is unused.
+		buf/v1/e.proto:8:1:Import "buf/v1/g.proto" is unused.
+		`,
+	)
+}
+
 func testRunLint(
 	t *testing.T,
 	root string,

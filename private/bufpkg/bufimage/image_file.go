@@ -84,10 +84,14 @@ func (f *imageFile) UnusedDependencyIndexes() []int32 {
 }
 
 func (f *imageFile) withIsImport(isImport bool) ImageFile {
+	if f.IsImport() == isImport {
+		return f
+	}
 	return &imageFile{
-		FileInfo:            f.FileInfo.WithIsImport(isImport),
-		fileDescriptorProto: f.fileDescriptorProto,
-		isSyntaxUnspecified: f.isSyntaxUnspecified,
+		FileInfo:                      f.FileInfo.WithIsImport(isImport),
+		fileDescriptorProto:           f.fileDescriptorProto,
+		isSyntaxUnspecified:           f.isSyntaxUnspecified,
+		storedUnusedDependencyIndexes: f.storedUnusedDependencyIndexes,
 	}
 }
 

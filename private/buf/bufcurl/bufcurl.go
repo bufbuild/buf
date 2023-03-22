@@ -16,23 +16,14 @@ package bufcurl
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
-
-// Resolver is an interface for resolving symbols into descriptors and for
-// looking up extensions.
-//
-// Note that resolver implementations must be thread-safe because they could be
-// used by two goroutines concurrently during bidirectional streaming calls.
-type Resolver interface {
-	FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error)
-	protoregistry.MessageTypeResolver
-	protoregistry.ExtensionTypeResolver
-}
 
 // Invoker provides the ability to invoke RPCs dynamically.
 type Invoker interface {
@@ -40,4 +31,24 @@ type Invoker interface {
 	// The dataSource is a string that describes the input data (e.g. a filename).
 	// The actual contents of the request data is read from the given reader.
 	Invoke(ctx context.Context, dataSource string, data io.Reader, headers http.Header) error
+}
+
+// ResolveMethodDescriptor uses the given resolver to find a descriptor for
+// the requested service and method. The service name must be fully-qualified.
+func ResolveMethodDescriptor(res protoencoding.Resolver, service, method string) (protoreflect.MethodDescriptor, error) {
+	descriptor, err := res.FindDescriptorByName(protoreflect.FullName(service))
+	if err == protoregistry.NotFound {
+		return nil, fmt.Errorf("failed to find service named %q in schema", service)
+	} else if err != nil {
+		return nil, err
+	}
+	serviceDescriptor, ok := descriptor.(protoreflect.ServiceDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("URL indicates service name %q, but that name is a %s", service, descriptorKind(descriptor))
+	}
+	methodDescriptor := serviceDescriptor.Methods().ByName(protoreflect.Name(method))
+	if methodDescriptor == nil {
+		return nil, fmt.Errorf("URL indicates method name %q, but service %q contains no such method", method, service)
+	}
+	return methodDescriptor, nil
 }

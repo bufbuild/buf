@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package buf.v1;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/descriptor.proto";
+import "buf/v1/d.proto"; // used in deeply nested any
+// unused ones
+import "buf/v1/e.proto";
+import "buf/v1/f.proto";
+
+message C {
+  string name = 1;
+  google.protobuf.Any any = 2;
+}
+
+extend google.protobuf.FieldOptions {
+  C ext_c = 12121 [(ext_c) = {
+    any: {
+      [type.googleapis.com/buf.v1.C]: {
+        any: {
+          [type.googleapis.com/buf.v1.C]: {
+            any: {
+              [type.googleapis.com/buf.v1.D]: {}
+            }
+          }
+        }
+      }
+    }
+  }];
+}
