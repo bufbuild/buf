@@ -74,6 +74,8 @@ const (
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
 
+	// AlphaEnableWasmEnvKey is an env var to enable WASM local plugin execution
+	AlphaEnableWasmEnvKey = "BUF_ALPHA_ENABLE_WASM"
 	// BetaEnableTamperProofingEnvKey is an env var to enable tamper proofing
 	BetaEnableTamperProofingEnvKey = "BUF_BETA_ENABLE_TAMPER_PROOFING"
 

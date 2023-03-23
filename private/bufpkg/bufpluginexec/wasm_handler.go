@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,9 +34,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/pluginpb"
 )
-
-// AlphaEnableWasmEnvKey is an env var to enable WASM local plugin execution
-const AlphaEnableWasmEnvKey = "BUF_ALPHA_ENABLE_WASM"
 
 type wasmHandler struct {
 	wasmPluginExecutor bufwasm.PluginExecutor
@@ -146,7 +144,7 @@ func validateWASMFilePath(path string) (string, error) {
 	if err != nil {
 		return path, err
 	}
-	if info.IsDir() || info.Size() == 0 || !strings.HasSuffix(path, ".wasm") {
+	if info.Mode().IsRegular() || !strings.HasSuffix(path, ".wasm") {
 		return path, fmt.Errorf("invalid WASM file: %s", path)
 	}
 	return path, nil
@@ -154,7 +152,7 @@ func validateWASMFilePath(path string) (string, error) {
 
 // RequireAlphaWasm returns an error unless BUF_ALPHA_ENABLE_WASM is true.
 func RequireAlphaWasm(container app.EnvContainer) error {
-	if enabled, _ := container.GetEnvBoolValue(AlphaEnableWasmEnvKey); !enabled {
+	if enabled, _ := container.GetEnvBoolValue(bufcli.AlphaEnableWasmEnvKey); !enabled {
 		return errors.New("alpha wasm support is disabled")
 	}
 	return nil
