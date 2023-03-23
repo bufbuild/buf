@@ -922,7 +922,7 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1al
 
 // IsBetaTamperProofingEnabled returns if BUF_BETA_ENABLE_TAMPER_PROOFING is set to true.
 func IsBetaTamperProofingEnabled(container app.EnvContainer) (bool, error) {
-	return container.GetEnvBoolValue(BetaEnableTamperProofingEnvKey, false)
+	return app.EnvBool(container, BetaEnableTamperProofingEnvKey, false)
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.

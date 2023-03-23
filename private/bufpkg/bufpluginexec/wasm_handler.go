@@ -66,11 +66,6 @@ func (h *wasmHandler) Handle(
 		attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
 	))
 	defer span.End()
-	if err := RequireAlphaWasm(container); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return err
-	}
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
 	if err != nil {
 		span.RecordError(err)
@@ -152,7 +147,7 @@ func validateWASMFilePath(path string) (string, error) {
 
 // RequireAlphaWasm returns an error unless BUF_ALPHA_ENABLE_WASM is true.
 func RequireAlphaWasm(container app.EnvContainer) error {
-	if enabled, _ := container.GetEnvBoolValue(bufcli.AlphaEnableWasmEnvKey, false); !enabled {
+	if enabled, _ := app.EnvBool(container, bufcli.AlphaEnableWasmEnvKey, false); !enabled {
 		return errors.New("alpha wasm support is disabled")
 	}
 	return nil

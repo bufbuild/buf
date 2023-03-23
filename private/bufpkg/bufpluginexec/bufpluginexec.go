@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
@@ -142,7 +143,7 @@ func NewHandler(
 	// Initialize WASM plugin handler. This is the quickest check we can do in order to
 	// branch here. A more stringent check is done inside the handler initialization.
 	// In a followup we should unify the following three checks into a strategy pattern.
-	if looksLikeWASM(pluginName) {
+	if looksLikeWASM(pluginName) && handlerOptions.wasmEnabled {
 		return newWasmHandler(wasmPluginExecutor, pluginName)
 	}
 
@@ -200,6 +201,14 @@ func HandlerWithPluginPath(pluginPath ...string) HandlerOption {
 	}
 }
 
+// HandlerWithWASMCheck returns a new HandlerOption that sets wasmEnabled according to the env variable.
+func HandlerWithWASMCheck(container app.EnvContainer) HandlerOption {
+	return func(handlerOptions *handlerOptions) {
+		enabled, _ := app.EnvBool(container, bufcli.AlphaEnableWasmEnvKey, false)
+		handlerOptions.wasmEnabled = enabled
+	}
+}
+
 // NewBinaryHandler returns a new Handler that invokes the specific plugin
 // specified by pluginPath.
 //
@@ -213,8 +222,9 @@ func NewBinaryHandler(runner command.Runner, pluginPath string, pluginArgs []str
 }
 
 type handlerOptions struct {
-	protocPath string
-	pluginPath []string
+	protocPath  string
+	pluginPath  []string
+	wasmEnabled bool
 }
 
 func newHandlerOptions() *handlerOptions {

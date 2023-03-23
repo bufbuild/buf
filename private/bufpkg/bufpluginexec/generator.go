@@ -65,6 +65,7 @@ func (g *generator) Generate(
 		pluginName,
 		HandlerWithPluginPath(generateOptions.pluginPath...),
 		HandlerWithProtocPath(generateOptions.protocPath),
+		HandlerWithWASMCheck(container),
 	)
 	if err != nil {
 		return nil, err

@@ -62,17 +62,6 @@ func (e *envContainer) Env(key string) string {
 	return e.variables[key]
 }
 
-func (e *envContainer) GetEnvBoolValue(key string, defaultVal bool) (bool, error) {
-	enabled := defaultVal
-	var err error
-	if val, ok := e.variables[key]; ok {
-		if enabled, err = strconv.ParseBool(val); err != nil {
-			err = fmt.Errorf("invalid value for %q: %w", key, err)
-		}
-	}
-	return enabled, err
-}
-
 func (e *envContainer) ForEachEnv(f func(string, string)) {
 	for key, value := range e.variables {
 		// This should be done anyways but just to make sure
@@ -84,4 +73,18 @@ func (e *envContainer) ForEachEnv(f func(string, string)) {
 
 func (e *envContainer) Size() int {
 	return len(e.variables)
+}
+
+// EnvBool EnvBoolValue gets and parses the environment variable bool value for the key.
+//
+// Returns the default and the parse error if the key is not set or the value is empty.
+func EnvBool(container EnvContainer, key string, defaultVal bool) (bool, error) {
+	enabled := defaultVal
+	var err error
+	if val := container.Env(key); val != "" {
+		if enabled, err = strconv.ParseBool(val); err != nil {
+			err = fmt.Errorf("invalid value for %q: %w", key, err)
+		}
+	}
+	return enabled, err
 }
