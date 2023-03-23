@@ -632,7 +632,6 @@ func WithModuleFormat(format string, options ...ModuleFormatOption) RefParserOpt
 }
 
 // WithProtoFileFormat attaches the given format as a single file format.
-// The ProtoFileRef format is only allowed if the option for the parser is given. Otherwise this is a no-op.
 //
 // It is up to the user to not incorrectly attach a format twice.
 func WithProtoFileFormat(format string, options ...ProtoFileFormatOption) RefParserOption {

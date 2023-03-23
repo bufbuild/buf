@@ -815,7 +815,7 @@ func NewImageForSource(
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (bufimage.Image, error) {
-	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, source)
+	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, source)
 	if err != nil {
 		return nil, err
 	}

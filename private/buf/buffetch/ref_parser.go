@@ -37,62 +37,53 @@ const (
 )
 
 type refParser struct {
-	allowProtoFileRef bool
-	logger            *zap.Logger
-	fetchRefParser    internal.RefParser
-	tracer            trace.Tracer
+	logger         *zap.Logger
+	fetchRefParser internal.RefParser
+	tracer         trace.Tracer
 }
 
-func newRefParser(logger *zap.Logger, options ...RefParserOption) *refParser {
-	refParser := &refParser{}
-	for _, option := range options {
-		option(refParser)
-	}
-	fetchRefParserOptions := []internal.RefParserOption{
-		internal.WithRawRefProcessor(newRawRefProcessor(refParser.allowProtoFileRef)),
-		internal.WithSingleFormat(formatBin),
-		internal.WithSingleFormat(formatJSON),
-		internal.WithSingleFormat(
-			formatBingz,
-			internal.WithSingleDefaultCompressionType(
-				internal.CompressionTypeGzip,
+func newRefParser(logger *zap.Logger) *refParser {
+	return &refParser{
+		logger: logger.Named(loggerName),
+		tracer: otel.GetTracerProvider().Tracer(tracerName),
+		fetchRefParser: internal.NewRefParser(
+			logger,
+			internal.WithRawRefProcessor(newRawRefProcessor()),
+			internal.WithSingleFormat(formatBin),
+			internal.WithSingleFormat(formatJSON),
+			internal.WithSingleFormat(
+				formatBingz,
+				internal.WithSingleDefaultCompressionType(
+					internal.CompressionTypeGzip,
+				),
 			),
-		),
-		internal.WithSingleFormat(
-			formatJSONGZ,
-			internal.WithSingleDefaultCompressionType(
-				internal.CompressionTypeGzip,
+			internal.WithSingleFormat(
+				formatJSONGZ,
+				internal.WithSingleDefaultCompressionType(
+					internal.CompressionTypeGzip,
+				),
 			),
-		),
-		internal.WithArchiveFormat(
-			formatTar,
-			internal.ArchiveTypeTar,
-		),
-		internal.WithArchiveFormat(
-			formatTargz,
-			internal.ArchiveTypeTar,
-			internal.WithArchiveDefaultCompressionType(
-				internal.CompressionTypeGzip,
+			internal.WithArchiveFormat(
+				formatTar,
+				internal.ArchiveTypeTar,
 			),
+			internal.WithArchiveFormat(
+				formatTargz,
+				internal.ArchiveTypeTar,
+				internal.WithArchiveDefaultCompressionType(
+					internal.CompressionTypeGzip,
+				),
+			),
+			internal.WithArchiveFormat(
+				formatZip,
+				internal.ArchiveTypeZip,
+			),
+			internal.WithGitFormat(formatGit),
+			internal.WithDirFormat(formatDir),
+			internal.WithModuleFormat(formatMod),
+			internal.WithProtoFileFormat(formatProtoFile),
 		),
-		internal.WithArchiveFormat(
-			formatZip,
-			internal.ArchiveTypeZip,
-		),
-		internal.WithGitFormat(formatGit),
-		internal.WithDirFormat(formatDir),
-		internal.WithModuleFormat(formatMod),
 	}
-	if refParser.allowProtoFileRef {
-		fetchRefParserOptions = append(fetchRefParserOptions, internal.WithProtoFileFormat(formatProtoFile))
-	}
-	refParser.logger = logger.Named(loggerName)
-	refParser.tracer = otel.GetTracerProvider().Tracer(tracerName)
-	refParser.fetchRefParser = internal.NewRefParser(
-		logger,
-		fetchRefParserOptions...,
-	)
-	return refParser
 }
 
 func newImageRefParser(logger *zap.Logger) *refParser {
@@ -364,7 +355,7 @@ func (a *refParser) checkDeprecated(parsedRef internal.ParsedRef) {
 	}
 }
 
-func newRawRefProcessor(allowProtoFileRef bool) func(*internal.RawRef) error {
+func newRawRefProcessor() func(*internal.RawRef) error {
 	return func(rawRef *internal.RawRef) error {
 		// if format option is not set and path is "-", default to bin
 		var format string
@@ -413,18 +404,14 @@ func newRawRefProcessor(allowProtoFileRef bool) func(*internal.RawRef) error {
 				// This only applies if the option accept `ProtoFileRef` is passed in, otherwise
 				// it falls through to the `default` case.
 			case ".proto":
-				if allowProtoFileRef {
-					fileInfo, err := os.Stat(rawRef.Path)
-					if err != nil && !os.IsNotExist(err) {
-						return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)
-					}
-					if fileInfo != nil && fileInfo.IsDir() {
-						return fmt.Errorf("path provided is not a valid proto file: a directory named %s already exists", rawRef.Path)
-					}
-					format = formatProtoFile
-					break
+				fileInfo, err := os.Stat(rawRef.Path)
+				if err != nil && !os.IsNotExist(err) {
+					return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)
 				}
-				fallthrough
+				if fileInfo != nil && fileInfo.IsDir() {
+					return fmt.Errorf("path provided is not a valid proto file: a directory named %s already exists", rawRef.Path)
+				}
+				format = formatProtoFile
 			default:
 				var err error
 				format, err = assumeModuleOrDir(rawRef.Path)
