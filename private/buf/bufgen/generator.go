@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -43,23 +44,24 @@ import (
 )
 
 type generator struct {
-	logger                *zap.Logger
-	storageosProvider     storageos.Provider
-	appprotoexecGenerator bufpluginexec.Generator
-	clientConfig          *connectclient.Config
+	logger              *zap.Logger
+	storageosProvider   storageos.Provider
+	pluginexecGenerator bufpluginexec.Generator
+	clientConfig        *connectclient.Config
 }
 
 func newGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
+	wasmPluginExecutor bufwasm.PluginExecutor,
 	clientConfig *connectclient.Config,
 ) *generator {
 	return &generator{
-		logger:                logger,
-		storageosProvider:     storageosProvider,
-		appprotoexecGenerator: bufpluginexec.NewGenerator(logger, storageosProvider, runner),
-		clientConfig:          clientConfig,
+		logger:              logger,
+		storageosProvider:   storageosProvider,
+		pluginexecGenerator: bufpluginexec.NewGenerator(logger, storageosProvider, runner, wasmPluginExecutor),
+		clientConfig:        clientConfig,
 	}
 }
 
@@ -99,6 +101,7 @@ func (g *generator) Generate(
 		generateOptions.baseOutDirPath,
 		generateOptions.includeImports,
 		generateOptions.includeWellKnownTypes,
+		generateOptions.wasmEnabled,
 	)
 }
 
@@ -110,6 +113,7 @@ func (g *generator) generate(
 	baseOutDirPath string,
 	includeImports bool,
 	includeWellKnownTypes bool,
+	wasmEnabled bool,
 ) error {
 	if err := modifyImage(ctx, g.logger, config, image); err != nil {
 		return err
@@ -121,6 +125,7 @@ func (g *generator) generate(
 		image,
 		includeImports,
 		includeWellKnownTypes,
+		wasmEnabled,
 	)
 	if err != nil {
 		return err
@@ -161,6 +166,7 @@ func (g *generator) execPlugins(
 	image bufimage.Image,
 	includeImports bool,
 	includeWellKnownTypes bool,
+	wasmEnabled bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
 	imageProvider := newImageProvider(image)
 	// Collect all of the plugin jobs so that they can be executed in parallel.
@@ -189,6 +195,7 @@ func (g *generator) execPlugins(
 					currentPluginConfig,
 					includeImports,
 					includeWellKnownTypes,
+					wasmEnabled,
 				)
 				if err != nil {
 					return err
@@ -290,12 +297,23 @@ func (g *generator) execLocalPlugin(
 	pluginConfig *PluginConfig,
 	includeImports bool,
 	includeWellKnownTypes bool,
+	wasmEnabled bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	pluginImages, err := imageProvider.GetImages(pluginConfig.Strategy)
 	if err != nil {
 		return nil, err
 	}
-	response, err := g.appprotoexecGenerator.Generate(
+	generateOptions := []bufpluginexec.GenerateOption{
+		bufpluginexec.GenerateWithPluginPath(pluginConfig.Path...),
+		bufpluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath),
+	}
+	if wasmEnabled {
+		generateOptions = append(
+			generateOptions,
+			bufpluginexec.GenerateWithWASMEnabled(),
+		)
+	}
+	response, err := g.pluginexecGenerator.Generate(
 		ctx,
 		container,
 		pluginConfig.PluginName(),
@@ -306,8 +324,7 @@ func (g *generator) execLocalPlugin(
 			includeImports,
 			includeWellKnownTypes,
 		),
-		bufpluginexec.GenerateWithPluginPath(pluginConfig.Path...),
-		bufpluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath),
+		generateOptions...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s: %v", pluginConfig.PluginName(), err)
@@ -703,6 +720,7 @@ type generateOptions struct {
 	baseOutDirPath        string
 	includeImports        bool
 	includeWellKnownTypes bool
+	wasmEnabled           bool
 }
 
 func newGenerateOptions() *generateOptions {

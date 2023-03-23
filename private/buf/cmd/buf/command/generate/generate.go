@@ -17,6 +17,7 @@ package generate
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -24,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -377,6 +379,16 @@ func run(
 			bufgen.GenerateWithIncludeWellKnownTypes(),
 		)
 	}
+	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
+	if err != nil {
+		return err
+	}
+	if wasmEnabled {
+		generateOptions = append(
+			generateOptions,
+			bufgen.GenerateWithWASMEnabled(),
+		)
+	}
 	var includedTypes []string
 	if len(flags.Types) > 0 || len(flags.TypesDeprecated) > 0 {
 		// command-line flags take precedence
@@ -390,10 +402,16 @@ func run(
 			return err
 		}
 	}
+	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
+		filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
+	if err != nil {
+		return err
+	}
 	return bufgen.NewGenerator(
 		logger,
 		storageosProvider,
 		runner,
+		wasmPluginExecutor,
 		clientConfig,
 	).Generate(
 		ctx,

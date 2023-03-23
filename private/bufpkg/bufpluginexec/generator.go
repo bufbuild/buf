@@ -17,6 +17,7 @@ package bufpluginexec
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -26,20 +27,23 @@ import (
 )
 
 type generator struct {
-	logger            *zap.Logger
-	storageosProvider storageos.Provider
-	runner            command.Runner
+	logger             *zap.Logger
+	storageosProvider  storageos.Provider
+	runner             command.Runner
+	wasmPluginExecutor bufwasm.PluginExecutor
 }
 
 func newGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
+	wasmPluginExecutor bufwasm.PluginExecutor,
 ) *generator {
 	return &generator{
-		logger:            logger,
-		storageosProvider: storageosProvider,
-		runner:            runner,
+		logger:             logger,
+		storageosProvider:  storageosProvider,
+		runner:             runner,
+		wasmPluginExecutor: wasmPluginExecutor,
 	}
 }
 
@@ -54,12 +58,22 @@ func (g *generator) Generate(
 	for _, option := range options {
 		option(generateOptions)
 	}
+	handlerOptions := []HandlerOption{
+		HandlerWithPluginPath(generateOptions.pluginPath...),
+		HandlerWithProtocPath(generateOptions.protocPath),
+	}
+	if generateOptions.wasmEnabled {
+		handlerOptions = append(
+			handlerOptions,
+			HandlerWithWASMEnabled(),
+		)
+	}
 	handler, err := NewHandler(
 		g.storageosProvider,
 		g.runner,
+		g.wasmPluginExecutor,
 		pluginName,
-		HandlerWithPluginPath(generateOptions.pluginPath...),
-		HandlerWithProtocPath(generateOptions.protocPath),
+		handlerOptions...,
 	)
 	if err != nil {
 		return nil, err
@@ -75,8 +89,9 @@ func (g *generator) Generate(
 }
 
 type generateOptions struct {
-	pluginPath []string
-	protocPath string
+	pluginPath  []string
+	protocPath  string
+	wasmEnabled bool
 }
 
 func newGenerateOptions() *generateOptions {
