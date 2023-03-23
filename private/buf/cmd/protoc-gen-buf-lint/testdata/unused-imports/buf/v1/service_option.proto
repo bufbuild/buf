@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package buf.v1;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.ServiceOptions {
+  string service_option = 10101;
+}

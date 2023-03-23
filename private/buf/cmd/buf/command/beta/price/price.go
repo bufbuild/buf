@@ -108,7 +108,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetSourceOrModuleRef(ctx, input)
+	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger()).GetSourceOrModuleRef(ctx, input)
 	if err != nil {
 		return err
 	}

@@ -4,6 +4,8 @@
 
 - Add `buf beta price` command to help users of the BSR figure out how much a module
   will cost to store on the BSR under the Team or Pro plans.
+- Fix an issue in `protoc-gen-buf-lint` that prevented it from reporting lint
+  errors for unused imports.
 
 ## [v1.15.1] - 2023-03-08
 
