@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
@@ -143,12 +142,4 @@ func validateWASMFilePath(path string) (string, error) {
 		return path, fmt.Errorf("invalid WASM file: %s", path)
 	}
 	return path, nil
-}
-
-// RequireAlphaWasm returns an error unless BUF_ALPHA_ENABLE_WASM is true.
-func RequireAlphaWasm(container app.EnvContainer) error {
-	if enabled, _ := app.EnvBool(container, bufcli.AlphaEnableWasmEnvKey, false); !enabled {
-		return errors.New("alpha wasm support is disabled")
-	}
-	return nil
 }

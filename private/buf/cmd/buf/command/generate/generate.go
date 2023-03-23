@@ -379,6 +379,16 @@ func run(
 			bufgen.GenerateWithIncludeWellKnownTypes(),
 		)
 	}
+	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
+	if err != nil {
+		return err
+	}
+	if wasmEnabled {
+		generateOptions = append(
+			generateOptions,
+			bufgen.GenerateWithWASMEnabled(),
+		)
+	}
 	var includedTypes []string
 	if len(flags.Types) > 0 || len(flags.TypesDeprecated) > 0 {
 		// command-line flags take precedence
@@ -393,7 +403,7 @@ func run(
 		}
 	}
 	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
-		filepath.Join(container.CacheDirPath(), bufcli.WasmCompilationCacheDir))
+		filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
 	if err != nil {
 		return err
 	}

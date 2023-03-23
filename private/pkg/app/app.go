@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
 
 	"github.com/bufbuild/buf/private/pkg/interrupt"
 )
@@ -257,6 +258,17 @@ func Args(argList ArgContainer) []string {
 		args[i] = argList.Arg(i)
 	}
 	return args
+}
+
+// EnvBool EnvBoolValue gets and parses the environment variable bool value for the key.
+//
+// Returns error on parsing error.
+func EnvBool(container EnvContainer, key string, defaultValue bool) (bool, error) {
+	value := container.Env(key)
+	if value == "" {
+		return defaultValue, nil
+	}
+	return strconv.ParseBool(value)
 }
 
 // IsDevStdin returns true if the path is the equivalent of /dev/stdin.

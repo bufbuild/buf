@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
@@ -62,6 +63,13 @@ func executePlugin(
 	var options []bufpluginexec.GenerateOption
 	if pluginInfo.Path != "" {
 		options = append(options, bufpluginexec.GenerateWithPluginPath(pluginInfo.Path))
+	}
+	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
+	if err != nil {
+		return nil, err
+	}
+	if wasmEnabled {
+		options = append(options, bufpluginexec.GenerateWithWASMEnabled())
 	}
 	response, err := generator.Generate(
 		ctx,

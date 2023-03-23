@@ -195,7 +195,7 @@ func run(
 			span.End()
 		}
 		wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
-			filepath.Join(container.CacheDirPath(), bufcli.WasmCompilationCacheDir))
+			filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
 		if err != nil {
 			return err
 		}

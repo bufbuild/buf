@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
@@ -118,6 +117,13 @@ func GenerateWithProtocPath(protocPath string) GenerateOption {
 	}
 }
 
+// GenerateWithWASMEnabled returns a new GenerateOption that sets wasmEnabled according to the env variable.
+func GenerateWithWASMEnabled() GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.wasmEnabled = true
+	}
+}
+
 // NewHandler returns a new Handler based on the plugin name and optional path.
 //
 // protocPath and pluginPath are optional.
@@ -201,11 +207,10 @@ func HandlerWithPluginPath(pluginPath ...string) HandlerOption {
 	}
 }
 
-// HandlerWithWASMCheck returns a new HandlerOption that sets wasmEnabled according to the env variable.
-func HandlerWithWASMCheck(container app.EnvContainer) HandlerOption {
+// HandlerWithWASMEnabled returns a new HandlerOption that sets wasmEnabled according to the env variable.
+func HandlerWithWASMEnabled() HandlerOption {
 	return func(handlerOptions *handlerOptions) {
-		enabled, _ := app.EnvBool(container, bufcli.AlphaEnableWasmEnvKey, false)
-		handlerOptions.wasmEnabled = enabled
+		handlerOptions.wasmEnabled = true
 	}
 }
 

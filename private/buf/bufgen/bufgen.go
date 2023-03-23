@@ -161,6 +161,13 @@ func GenerateWithIncludeWellKnownTypes() GenerateOption {
 	}
 }
 
+// GenerateWithWASMEnabled says to enable WASM support.
+func GenerateWithWASMEnabled() GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.wasmEnabled = true
+	}
+}
+
 // Config is a configuration.
 type Config struct {
 	// Required

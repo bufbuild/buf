@@ -58,14 +58,22 @@ func (g *generator) Generate(
 	for _, option := range options {
 		option(generateOptions)
 	}
+	handlerOptions := []HandlerOption{
+		HandlerWithPluginPath(generateOptions.pluginPath...),
+		HandlerWithProtocPath(generateOptions.protocPath),
+	}
+	if generateOptions.wasmEnabled {
+		handlerOptions = append(
+			handlerOptions,
+			HandlerWithWASMEnabled(),
+		)
+	}
 	handler, err := NewHandler(
 		g.storageosProvider,
 		g.runner,
 		g.wasmPluginExecutor,
 		pluginName,
-		HandlerWithPluginPath(generateOptions.pluginPath...),
-		HandlerWithProtocPath(generateOptions.protocPath),
-		HandlerWithWASMCheck(container),
+		handlerOptions...,
 	)
 	if err != nil {
 		return nil, err
@@ -81,8 +89,9 @@ func (g *generator) Generate(
 }
 
 type generateOptions struct {
-	pluginPath []string
-	protocPath string
+	pluginPath  []string
+	protocPath  string
+	wasmEnabled bool
 }
 
 func newGenerateOptions() *generateOptions {
