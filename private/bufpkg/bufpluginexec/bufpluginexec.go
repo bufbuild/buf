@@ -141,6 +141,7 @@ func NewHandler(
 
 	// Initialize WASM plugin handler. This is the quickest check we can do in order to
 	// branch here. A more stringent check is done inside the handler initialization.
+	// In a followup we should unify the following three checks into a strategy pattern.
 	if looksLikeWASM(pluginName) {
 		return newWasmHandler(wasmPluginExecutor, pluginName)
 	}
