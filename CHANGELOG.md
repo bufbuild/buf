@@ -6,6 +6,7 @@
   will cost to store on the BSR under the Team or Pro plans.
 - Fix an issue in `protoc-gen-buf-lint` that prevented it from reporting lint
   errors for unused imports.
+- Remove `buf alpha registry token create` command. Tokens must be created through the BSR UI.
 
 ## [v1.15.1] - 2023-03-08
 
