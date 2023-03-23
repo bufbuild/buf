@@ -19,11 +19,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
