@@ -20,6 +20,14 @@ import "buf/alpha/image/v1/image.proto";
 import "google/protobuf/compiler/plugin.proto";
 import "google/protobuf/timestamp.proto";
 
+// CuratedPluginVisibility defines the visibility options available
+// for Curated Plugins.
+enum CuratedPluginVisibility {
+  CURATED_PLUGIN_VISIBILITY_UNSPECIFIED = 0;
+  CURATED_PLUGIN_VISIBILITY_PUBLIC = 1;
+  CURATED_PLUGIN_VISIBILITY_PRIVATE = 2;
+}
+
 // The supported plugin registries for curated plugins.
 enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_UNSPECIFIED = 0;
@@ -212,6 +220,8 @@ message CuratedPlugin {
   // verified indicates the plugin has been verified. Verification is a property
   // of the BSR and cannot be set by end-users.
   bool verified = 17;
+  // Visibility indicates whether the plugin is public or private.
+  CuratedPluginVisibility visibility = 18;
 }
 
 // PluginCurationService manages curated plugins.
@@ -311,6 +321,8 @@ message CreateCuratedPluginRequest {
   string spdx_license_id = 15;
   // license_url specifies an optional URL for the plugin's license (if not using a standard spdx_license_id).
   string license_url = 16;
+  // Visibility indicates whether the plugin is public or private.
+  CuratedPluginVisibility visibility = 17;
 }
 
 message CreateCuratedPluginResponse {
