@@ -132,7 +132,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
 		&f.Visibility,
 		visibilityFlagName,
-		"",
+		"public",
 		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 }
@@ -483,9 +483,6 @@ func visibilityFlagToVisibility(visibility string) (registryv1alpha1.CuratedPlug
 		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_PUBLIC, nil
 	case privateVisibility:
 		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_PRIVATE, nil
-	case "":
-		// TODO(mf): remove once we promote this command to beta and make visibility required.
-		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_UNSPECIFIED, nil
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
 	}
