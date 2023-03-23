@@ -661,7 +661,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		res, closeRes = bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, baseURL, reflectProtocol, reflectHeaders, container.VerbosePrinter())
 		defer closeRes()
 	} else {
-		ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, f.Schema)
+		ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, f.Schema)
 		if err != nil {
 			return err
 		}

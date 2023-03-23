@@ -257,10 +257,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	refParser := buffetch.NewRefParser(
-		container.Logger(),
-		buffetch.RefParserWithProtoFileRefAllowed(),
-	)
+	refParser := buffetch.NewRefParser(container.Logger())
 	sourceOrModuleRef, err := refParser.GetSourceOrModuleRef(ctx, source)
 	if err != nil {
 		return err
