@@ -477,13 +477,13 @@ func loadDockerImage(ctx context.Context, bucket storage.ReadBucket) (storage.Re
 	return image, nil
 }
 
-func visibilityFlagToVisibility(visibility string) (registryv1alpha1.CuratedPluginVisibility, error) {
+func visibilityFlagToVisibility(visibility string) registryv1alpha1.CuratedPluginVisibility {
 	switch visibility {
 	case publicVisibility:
-		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_PUBLIC, nil
+		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_PUBLIC
 	case privateVisibility:
-		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_PRIVATE, nil
+		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_PRIVATE
 	default:
-		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
+		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_UNSPECIFIED
 	}
 }
