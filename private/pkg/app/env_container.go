@@ -62,8 +62,8 @@ func (e *envContainer) Env(key string) string {
 	return e.variables[key]
 }
 
-func (e *envContainer) GetEnvBoolValue(key string) (bool, error) {
-	var enabled bool
+func (e *envContainer) GetEnvBoolValue(key string, defaultVal bool) (bool, error) {
+	enabled := defaultVal
 	var err error
 	if val, ok := e.variables[key]; ok {
 		if enabled, err = strconv.ParseBool(val); err != nil {

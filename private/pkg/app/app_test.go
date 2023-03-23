@@ -143,13 +143,16 @@ func TestGetEnvBoolValue(t *testing.T) {
 			"foo3": "false",
 		},
 	)
-	val, err := envContainer.GetEnvBoolValue("foo1")
+	val, err := envContainer.GetEnvBoolValue("foo1", false)
 	assert.Error(t, err)
 	assert.Equal(t, false, val)
-	val, err = envContainer.GetEnvBoolValue("foo2")
+	val, err = envContainer.GetEnvBoolValue("foo2", false)
 	assert.NoError(t, err)
 	assert.Equal(t, true, val)
-	val, err = envContainer.GetEnvBoolValue("foo3")
+	val, err = envContainer.GetEnvBoolValue("foo3", false)
 	assert.NoError(t, err)
 	assert.Equal(t, false, val)
+	val, err = envContainer.GetEnvBoolValue("notset", true)
+	assert.NoError(t, err)
+	assert.Equal(t, true, val)
 }

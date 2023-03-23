@@ -39,7 +39,7 @@ type EnvContainer interface {
 	// GetEnvBoolValue gets and parses the environment variable bool value for the key.
 	//
 	// Returns false and the parse error if the key is not set or the value is empty.
-	GetEnvBoolValue(key string) (bool, error)
+	GetEnvBoolValue(key string, defaultVal bool) (bool, error)
 }
 
 // NewEnvContainer returns a new EnvContainer.
