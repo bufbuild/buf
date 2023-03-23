@@ -55,7 +55,16 @@ const (
 	disableSymlinksFlagName = "disable-symlinks"
 	overrideRemoteFlagName  = "override-remote"
 	imageFlagName           = "image"
+	visibilityFlagName      = "visibility"
+
+	publicVisibility  = "public"
+	privateVisibility = "private"
 )
+
+var allVisibiltyStrings = []string{
+	publicVisibility,
+	privateVisibility,
+}
 
 // NewCommand returns a new Command.
 func NewCommand(
@@ -84,6 +93,7 @@ type flags struct {
 	DisableSymlinks bool
 	OverrideRemote  string
 	Image           string
+	Visibility      string
 }
 
 func newFlags() *flags {
@@ -119,6 +129,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"Existing image to push",
 	)
+	flagSet.StringVar(
+		&f.Visibility,
+		visibilityFlagName,
+		"",
+		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
+	)
+	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
 }
 
 func run(
@@ -218,6 +235,10 @@ func run(
 		}()
 		imageID = loadResponse.ImageID
 	}
+	visibility, err := visibilityFlagToVisibility(flags.Visibility)
+	if err != nil {
+		return err
+	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
@@ -280,7 +301,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	createRequest, err := createCuratedPluginRequest(pluginConfig, plugin, nextRevision)
+	createRequest, err := createCuratedPluginRequest(pluginConfig, plugin, nextRevision, visibility)
 	if err != nil {
 		return err
 	}
@@ -307,6 +328,7 @@ func createCuratedPluginRequest(
 	pluginConfig *bufpluginconfig.Config,
 	plugin bufplugin.Plugin,
 	nextRevision uint32,
+	visibility registryv1alpha1.CuratedPluginVisibility,
 ) (*registryv1alpha1.CreateCuratedPluginRequest, error) {
 	outputLanguages, err := bufplugin.OutputLanguagesToProtoLanguages(pluginConfig.OutputLanguages)
 	if err != nil {
@@ -330,6 +352,7 @@ func createCuratedPluginRequest(
 		OutputLanguages:      outputLanguages,
 		SpdxLicenseId:        pluginConfig.SPDXLicenseID,
 		LicenseUrl:           pluginConfig.LicenseURL,
+		Visibility:           visibility,
 	}, nil
 }
 
@@ -453,4 +476,15 @@ func loadDockerImage(ctx context.Context, bucket storage.ReadBucket) (storage.Re
 		return nil, fmt.Errorf("unable to find a %s plugin image: %w", bufplugindocker.ImagePath, err)
 	}
 	return image, nil
+}
+
+func visibilityFlagToVisibility(visibility string) (registryv1alpha1.CuratedPluginVisibility, error) {
+	switch visibility {
+	case publicVisibility:
+		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_PUBLIC, nil
+	case privateVisibility:
+		return registryv1alpha1.CuratedPluginVisibility_CURATED_PLUGIN_VISIBILITY_PRIVATE, nil
+	default:
+		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
+	}
 }
