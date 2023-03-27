@@ -46,13 +46,6 @@ type webpagesFlags struct {
 }
 
 // webpagesConfig configures the doc generator, example config:
-// prefix: |
-// ---
-// title: Buf CLI
-// sidebar_position: 0
-// toc_max_heading_level: 2
-// slug: /reference/cli/buf
-// ---
 // exclude_commands:
 // - buf completion
 // - buf ls-files
@@ -61,7 +54,6 @@ type webpagesFlags struct {
 // slug_prefix: /reference/cli/
 // output_dir: output/docs
 type webpagesConfig struct {
-	Prefix string `yaml:"prefix,omitempty"`
 	// ExcludeCommands will filter out these command paths from generation.
 	ExcludeCommands []string `yaml:"exclude_commands,omitempty"`
 	// WeightCommands will weight the command paths and show higher weighted commands later on the sidebar.
