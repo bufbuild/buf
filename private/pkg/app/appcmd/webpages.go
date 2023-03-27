@@ -61,11 +61,17 @@ type webpagesFlags struct {
 // slug_prefix: /reference/cli/
 // output_dir: output/docs
 type webpagesConfig struct {
-	Prefix          string         `yaml:"prefix,omitempty"`
-	ExcludeCommands []string       `yaml:"exclude_commands,omitempty"`
-	WeightCommands  map[string]int `yaml:"weight_commands,omitempty"`
-	SlugPrefix      string         `yaml:"slug_prefix,omitempty"`
-	OutputDir       string         `yaml:"output_dir,omitempty"`
+	Prefix string `yaml:"prefix,omitempty"`
+	// ExcludeCommands will filter out these command paths from generation.
+	ExcludeCommands []string `yaml:"exclude_commands,omitempty"`
+	// WeightCommands will weight the command paths and show higher weighted commands later on the sidebar.
+	WeightCommands map[string]int `yaml:"weight_commands,omitempty"`
+	SlugPrefix     string         `yaml:"slug_prefix,omitempty"`
+	OutputDir      string         `yaml:"output_dir,omitempty"`
+	// SidebarPathThreshold will dictate if the sidebar label is the full path or just the name.
+	// if the command path is longer than this then the `cobra.Command.Name()` is used,
+	// otherwise `cobra.Command.CommandPath() is used.
+	SidebarPathThreshold int `yaml:"sidebar_path_threshold,omitempty"`
 }
 
 func newWebpagesFlags() *webpagesFlags {
@@ -159,7 +165,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, config webpagesConfig
 	p("---\n")
 	p("id: %s\n", websitePageID(cmd))
 	p("title: %s\n", cmd.CommandPath())
-	p("sidebar_label: %s\n", cmd.CommandPath())
+	p("sidebar_label: %s\n", sidebarLabel(cmd, config.SidebarPathThreshold))
 	p("sidebar_position: %d\n", websiteSidebarPosition(cmd, config.WeightCommands))
 	p("slug: /%s\n", path.Join(config.SlugPrefix, websiteSlug(cmd)))
 	p("---\n")
@@ -192,7 +198,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, config webpagesConfig
 	inheritedFlags := cmd.InheritedFlags()
 	if inheritedFlags.HasAvailableFlags() {
 		p("### Flags inherited from parent commands {#%s-persistent-flags}\n", id)
-		if err := printFlags(cmd, inheritedFlags, w); err != nil {
+		if err := printFlags(inheritedFlags, w); err != nil {
 			return err
 		}
 	}
@@ -319,7 +325,7 @@ func orderCommands(weights map[string]int, commands []*cobra.Command) {
 	})
 }
 
-func printFlags(cmd *cobra.Command, f *pflag.FlagSet, w io.Writer) error {
+func printFlags(f *pflag.FlagSet, w io.Writer) error {
 	var err error
 	p := func(format string, a ...any) {
 		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
@@ -386,4 +392,11 @@ func websiteSidebarPosition(cmd *cobra.Command, weights map[string]int) int {
 
 func websiteSlug(cmd *cobra.Command) string {
 	return strings.ReplaceAll(cmd.CommandPath(), " ", "/")
+}
+
+func sidebarLabel(cmd *cobra.Command, maxSidebarLen int) string {
+	if len(strings.Split(cmd.CommandPath(), " ")) > maxSidebarLen {
+		return cmd.Name()
+	}
+	return cmd.CommandPath()
 }
