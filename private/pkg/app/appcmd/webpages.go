@@ -325,7 +325,6 @@ func printFlags(f *pflag.FlagSet, w io.Writer) error {
 		if flag.Hidden {
 			return
 		}
-
 		if flag.Shorthand != "" && flag.ShorthandDeprecated == "" {
 			p("#### -%s, --%s", flag.Shorthand, flag.Name)
 		} else {
@@ -362,23 +361,29 @@ func printFlags(f *pflag.FlagSet, w io.Writer) error {
 	return err
 }
 
+// websiteSidebarPosition calculates the position of the given command in the website sidebar.
 func websiteSidebarPosition(cmd *cobra.Command, weights map[string]int) int {
-	var i int
+	// Return 0 if the command has no parent
 	if !cmd.HasParent() {
 		return 0
 	}
 	siblings := cmd.Parent().Commands()
 	orderCommands(weights, siblings)
+	position := 0
 	for _, sibling := range siblings {
-		if !cmd.IsAvailableCommand() || cmd.IsAdditionalHelpTopicCommand() || cmd.Hidden {
-			continue
-		}
-		i++
-		if sibling.CommandPath() == cmd.CommandPath() {
-			return i
+		if isCommandVisible(sibling) {
+			position++
+			if sibling.CommandPath() == cmd.CommandPath() {
+				return position
+			}
 		}
 	}
 	return -1
+}
+
+// isCommandVisible checks if a command is visible (available, not an additional help topic, and not hidden).
+func isCommandVisible(cmd *cobra.Command) bool {
+	return cmd.IsAvailableCommand() && !cmd.IsAdditionalHelpTopicCommand() && !cmd.Hidden
 }
 
 func websiteSlug(cmd *cobra.Command) string {
