@@ -177,21 +177,21 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, config webpagesConfig
 	p(cmd.Short)
 	p("\n\n")
 	if cmd.Runnable() {
-		p("### Usage {#usage} \n")
+		p("### Usage\n")
 		p("```terminal\n$ %s\n```\n\n", cmd.UseLine())
 	}
 	if len(cmd.Long) > 0 {
-		p("### Description {#description}\n\n")
+		p("### Description\n\n")
 		p("%s \n\n", escapeDescription(cmd.Long))
 	}
 	if len(cmd.Example) > 0 {
-		p("### Examples {#examples}\n\n")
+		p("### Examples\n\n")
 		p("```\n%s\n```\n\n", escapeDescription(cmd.Example))
 	}
 	commandFlags := cmd.NonInheritedFlags()
 	if commandFlags.HasAvailableFlags() {
 		p("### Flags {#flags}\n\n")
-		if err := printFlags(cmd, commandFlags, w); err != nil {
+		if err := printFlags(commandFlags, w); err != nil {
 			return err
 		}
 	}
@@ -203,7 +203,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, config webpagesConfig
 		}
 	}
 	if hasSubCommands(cmd) {
-		p("### Subcommands {#subcommands}\n\n")
+		p("### Subcommands\n\n")
 		children := cmd.Commands()
 		orderCommands(config.WeightCommands, children)
 		for _, child := range children {
@@ -219,7 +219,7 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, config webpagesConfig
 		p("\n")
 	}
 	if cmd.HasParent() {
-		p("### Parent Command {#%s-parent-command}\n\n", id)
+		p("### Parent Command\n\n", id)
 		parent := cmd.Parent()
 		parentName := parent.CommandPath()
 		if hasSubCommands(cmd) {
