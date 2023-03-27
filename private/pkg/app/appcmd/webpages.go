@@ -22,6 +22,7 @@ import (
 	"html"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -103,7 +104,7 @@ func newWebpagesCommand(
 			}
 			return generateMarkdownTree(
 				command,
-				os.Stdout,
+				"docs",
 				cfg.WeightCommands,
 			)
 		},
@@ -112,25 +113,48 @@ func newWebpagesCommand(
 }
 
 // generateMarkdownTree generates markdown for a whole command tree.
-func generateMarkdownTree(cmd *cobra.Command, w io.Writer, weights map[string]int) error {
+func generateMarkdownTree(cmd *cobra.Command, parentDirPath string, weights map[string]int) error {
 	if !cmd.IsAvailableCommand() {
 		return nil
 	}
-	if err := generateMarkdownPage(cmd, w, weights); err != nil {
-		return err
-	}
-	commands := cmd.Commands()
-	orderCommands(weights, commands)
-	for _, command := range commands {
-		if err := generateMarkdownTree(command, w, weights); err != nil {
+
+	dirPath := parentDirPath
+	fileName := cmd.Name() + ".md"
+
+	if cmd.HasSubCommands() {
+		dirPath = filepath.Join(parentDirPath, cmd.Name())
+		if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
 			return err
 		}
+		fileName = "index.md"
 	}
+
+	filePath := filepath.Join(dirPath, fileName)
+	f, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := generateMarkdownPage(cmd, f, dirPath, weights); err != nil {
+		return err
+	}
+
+	if cmd.HasSubCommands() {
+		commands := cmd.Commands()
+		orderCommands(weights, commands)
+		for _, command := range commands {
+			if err := generateMarkdownTree(command, dirPath, weights); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
 // generateMarkdownPage creates custom markdown output.
-func generateMarkdownPage(cmd *cobra.Command, w io.Writer, weights map[string]int) error {
+func generateMarkdownPage(cmd *cobra.Command, w io.Writer, dirPath string, weights map[string]int) error {
 	var err error
 	p := func(format string, a ...any) {
 		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
@@ -180,7 +204,11 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, weights map[string]in
 			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
 				continue
 			}
-			p("* [%s](#%s)\t - %s\n", child.CommandPath(), websitePageID(child), child.Short)
+			childRelPath := child.Name() + ".md"
+			if child.HasSubCommands() {
+				childRelPath = filepath.Join(child.Name(), "index.md")
+			}
+			p("* [%s](./%s)\t - %s\n", child.CommandPath(), childRelPath, child.Short)
 		}
 		p("\n")
 	}
@@ -188,7 +216,11 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, weights map[string]in
 		p("### Parent Command {#%s-parent-command}\n\n", id)
 		parent := cmd.Parent()
 		parentName := parent.CommandPath()
-		p("* [%s](#%s)\t - %s\n", parentName, websitePageID(parent), parent.Short)
+		if hasSubCommands(cmd) {
+			p("* [%s](../index.md)\t - %s\n", parentName, parent.Short)
+		} else {
+			p("* [%s](./index.md)\t - %s\n", parentName, parent.Short)
+		}
 		cmd.VisitParents(func(c *cobra.Command) {
 			if c.DisableAutoGenTag {
 				cmd.DisableAutoGenTag = c.DisableAutoGenTag
