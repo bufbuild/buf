@@ -22,6 +22,8 @@ import (
 	"html"
 	"io"
 	"os"
+	"path"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -44,22 +46,24 @@ type webpagesFlags struct {
 }
 
 // webpagesConfig configures the doc generator, example config:
-// prefix: |
-// ---
-// title: Buf CLI
-// sidebar_position: 0
-// toc_max_heading_level: 2
-// slug: /reference/cli/buf
-// ---
 // exclude_commands:
 // - buf completion
 // - buf ls-files
 // weight_commands:
 // buf beta: 1
+// slug_prefix: /reference/cli/
+// output_dir: output/docs
 type webpagesConfig struct {
-	Prefix          string         `yaml:"prefix,omitempty"`
-	ExcludeCommands []string       `yaml:"exclude_commands,omitempty"`
-	WeightCommands  map[string]int `yaml:"weight_commands,omitempty"`
+	// ExcludeCommands will filter out these command paths from generation.
+	ExcludeCommands []string `yaml:"exclude_commands,omitempty"`
+	// WeightCommands will weight the command paths and show higher weighted commands later on the sidebar.
+	WeightCommands map[string]int `yaml:"weight_commands,omitempty"`
+	SlugPrefix     string         `yaml:"slug_prefix,omitempty"`
+	OutputDir      string         `yaml:"output_dir,omitempty"`
+	// SidebarPathThreshold will dictate if the sidebar label is the full path or just the name.
+	// if the command path is longer than this then the `cobra.Command.Name()` is used,
+	// otherwise `cobra.Command.CommandPath() is used.
+	SidebarPathThreshold int `yaml:"sidebar_path_threshold,omitempty"`
 }
 
 func newWebpagesFlags() *webpagesFlags {
@@ -98,13 +102,10 @@ func newWebpagesCommand(
 					cmd.Hidden = true
 				}
 			}
-			if _, err := os.Stdout.WriteString(cfg.Prefix); err != nil {
-				return err
-			}
 			return generateMarkdownTree(
 				command,
-				os.Stdout,
-				cfg.WeightCommands,
+				cfg,
+				cfg.OutputDir,
 			)
 		},
 		BindFlags: flags.Bind,
@@ -112,33 +113,53 @@ func newWebpagesCommand(
 }
 
 // generateMarkdownTree generates markdown for a whole command tree.
-func generateMarkdownTree(cmd *cobra.Command, w io.Writer, weights map[string]int) error {
+func generateMarkdownTree(cmd *cobra.Command, config webpagesConfig, parentDirPath string) error {
 	if !cmd.IsAvailableCommand() {
 		return nil
 	}
-	if err := generateMarkdownPage(cmd, w, weights); err != nil {
+	dirPath := parentDirPath
+	fileName := cmd.Name() + ".md"
+	if cmd.HasSubCommands() {
+		dirPath = filepath.Join(parentDirPath, cmd.Name())
+		if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
+			return err
+		}
+		fileName = "index.md"
+	}
+	filePath := filepath.Join(dirPath, fileName)
+	f, err := os.Create(filePath)
+	if err != nil {
 		return err
 	}
-	commands := cmd.Commands()
-	orderCommands(weights, commands)
-	for _, command := range commands {
-		if err := generateMarkdownTree(command, w, weights); err != nil {
-			return err
+	defer f.Close()
+	if err := generateMarkdownPage(cmd, config, f); err != nil {
+		return err
+	}
+	if cmd.HasSubCommands() {
+		commands := cmd.Commands()
+		orderCommands(config.WeightCommands, commands)
+		for _, command := range commands {
+			if err := generateMarkdownTree(command, config, dirPath); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
 // generateMarkdownPage creates custom markdown output.
-func generateMarkdownPage(cmd *cobra.Command, w io.Writer, weights map[string]int) error {
+func generateMarkdownPage(cmd *cobra.Command, config webpagesConfig, w io.Writer) error {
 	var err error
 	p := func(format string, a ...any) {
 		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
 	}
-	id := websitePageID(cmd)
-	p("\n")
 	p("---\n")
-	p("## %s {#%s}\n", cmd.CommandPath(), id)
+	p("id: %s\n", websitePageID(cmd))
+	p("title: %s\n", cmd.CommandPath())
+	p("sidebar_label: %s\n", sidebarLabel(cmd, config.SidebarPathThreshold))
+	p("sidebar_position: %d\n", websiteSidebarPosition(cmd, config.WeightCommands))
+	p("slug: /%s\n", path.Join(config.SlugPrefix, websiteSlug(cmd)))
+	p("---\n")
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
 	if cmd.Version != "" {
@@ -147,48 +168,56 @@ func generateMarkdownPage(cmd *cobra.Command, w io.Writer, weights map[string]in
 	p(cmd.Short)
 	p("\n\n")
 	if cmd.Runnable() {
-		p("### Usage {#%s-usage} \n", id)
+		p("### Usage\n")
 		p("```terminal\n$ %s\n```\n\n", cmd.UseLine())
 	}
 	if len(cmd.Long) > 0 {
-		p("### Description {#%s-description}\n\n", id)
+		p("### Description\n\n")
 		p("%s \n\n", escapeDescription(cmd.Long))
 	}
 	if len(cmd.Example) > 0 {
-		p("### Examples {#%s-examples}\n\n", id)
+		p("### Examples\n\n")
 		p("```\n%s\n```\n\n", escapeDescription(cmd.Example))
 	}
 	commandFlags := cmd.NonInheritedFlags()
 	if commandFlags.HasAvailableFlags() {
-		p("### Flags {#%s-flags}\n\n", id)
-		if err := printFlags(cmd, commandFlags, w); err != nil {
+		p("### Flags {#flags}\n\n")
+		if err := printFlags(commandFlags, w); err != nil {
 			return err
 		}
 	}
 	inheritedFlags := cmd.InheritedFlags()
 	if inheritedFlags.HasAvailableFlags() {
-		p("### Flags inherited from parent commands {#%s-persistent-flags}\n", id)
-		if err := printFlags(cmd, inheritedFlags, w); err != nil {
+		p("### Flags inherited from parent commands {#persistent-flags}\n")
+		if err := printFlags(inheritedFlags, w); err != nil {
 			return err
 		}
 	}
 	if hasSubCommands(cmd) {
-		p("### Subcommands {#%s-subcommands}\n\n", id)
+		p("### Subcommands\n\n")
 		children := cmd.Commands()
-		orderCommands(weights, children)
+		orderCommands(config.WeightCommands, children)
 		for _, child := range children {
 			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
 				continue
 			}
-			p("* [%s](#%s)\t - %s\n", child.CommandPath(), websitePageID(child), child.Short)
+			childRelPath := child.Name() + ".md"
+			if child.HasSubCommands() {
+				childRelPath = filepath.Join(child.Name(), "index.md")
+			}
+			p("* [%s](./%s)\t - %s\n", child.CommandPath(), childRelPath, child.Short)
 		}
 		p("\n")
 	}
 	if cmd.HasParent() {
-		p("### Parent Command {#%s-parent-command}\n\n", id)
+		p("### Parent Command\n\n")
 		parent := cmd.Parent()
 		parentName := parent.CommandPath()
-		p("* [%s](#%s)\t - %s\n", parentName, websitePageID(parent), parent.Short)
+		if hasSubCommands(cmd) {
+			p("* [%s](../index.md)\t - %s\n", parentName, parent.Short)
+		} else {
+			p("* [%s](./index.md)\t - %s\n", parentName, parent.Short)
+		}
 		cmd.VisitParents(func(c *cobra.Command) {
 			if c.DisableAutoGenTag {
 				cmd.DisableAutoGenTag = c.DisableAutoGenTag
@@ -287,7 +316,7 @@ func orderCommands(weights map[string]int, commands []*cobra.Command) {
 	})
 }
 
-func printFlags(cmd *cobra.Command, f *pflag.FlagSet, w io.Writer) error {
+func printFlags(f *pflag.FlagSet, w io.Writer) error {
 	var err error
 	p := func(format string, a ...any) {
 		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
@@ -296,7 +325,6 @@ func printFlags(cmd *cobra.Command, f *pflag.FlagSet, w io.Writer) error {
 		if flag.Hidden {
 			return
 		}
-
 		if flag.Shorthand != "" && flag.ShorthandDeprecated == "" {
 			p("#### -%s, --%s", flag.Shorthand, flag.Name)
 		} else {
@@ -306,7 +334,7 @@ func printFlags(cmd *cobra.Command, f *pflag.FlagSet, w io.Writer) error {
 		if varname != "" {
 			p(" *%s*", varname)
 		}
-		p(" {#%s-%s}", websitePageID(cmd), flag.Name)
+		p(" {#%s}", flag.Name)
 		p("\n")
 		p(usage)
 		if flag.NoOptDefVal != "" {
@@ -331,4 +359,40 @@ func printFlags(cmd *cobra.Command, f *pflag.FlagSet, w io.Writer) error {
 		p("\n\n")
 	})
 	return err
+}
+
+// websiteSidebarPosition calculates the position of the given command in the website sidebar.
+func websiteSidebarPosition(cmd *cobra.Command, weights map[string]int) int {
+	// Return 0 if the command has no parent
+	if !cmd.HasParent() {
+		return 0
+	}
+	siblings := cmd.Parent().Commands()
+	orderCommands(weights, siblings)
+	position := 0
+	for _, sibling := range siblings {
+		if isCommandVisible(sibling) {
+			position++
+			if sibling.CommandPath() == cmd.CommandPath() {
+				return position
+			}
+		}
+	}
+	return -1
+}
+
+// isCommandVisible checks if a command is visible (available, not an additional help topic, and not hidden).
+func isCommandVisible(cmd *cobra.Command) bool {
+	return cmd.IsAvailableCommand() && !cmd.IsAdditionalHelpTopicCommand() && !cmd.Hidden
+}
+
+func websiteSlug(cmd *cobra.Command) string {
+	return strings.ReplaceAll(cmd.CommandPath(), " ", "/")
+}
+
+func sidebarLabel(cmd *cobra.Command, maxSidebarLen int) string {
+	if len(strings.Split(cmd.CommandPath(), " ")) > maxSidebarLen {
+		return cmd.Name()
+	}
+	return cmd.CommandPath()
 }
