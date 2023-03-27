@@ -153,7 +153,6 @@ func generateMarkdownPage(cmd *cobra.Command, config webpagesConfig, w io.Writer
 	p := func(format string, a ...any) {
 		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
 	}
-	id := websitePageID(cmd)
 	p("---\n")
 	p("id: %s\n", websitePageID(cmd))
 	p("title: %s\n", cmd.CommandPath())
@@ -189,7 +188,7 @@ func generateMarkdownPage(cmd *cobra.Command, config webpagesConfig, w io.Writer
 	}
 	inheritedFlags := cmd.InheritedFlags()
 	if inheritedFlags.HasAvailableFlags() {
-		p("### Flags inherited from parent commands {#%s-persistent-flags}\n", id)
+		p("### Flags inherited from parent commands {#persistent-flags}\n")
 		if err := printFlags(inheritedFlags, w); err != nil {
 			return err
 		}
@@ -211,7 +210,7 @@ func generateMarkdownPage(cmd *cobra.Command, config webpagesConfig, w io.Writer
 		p("\n")
 	}
 	if cmd.HasParent() {
-		p("### Parent Command\n\n", id)
+		p("### Parent Command\n\n")
 		parent := cmd.Parent()
 		parentName := parent.CommandPath()
 		if hasSubCommands(cmd) {
