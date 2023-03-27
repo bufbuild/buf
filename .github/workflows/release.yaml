@@ -4,7 +4,7 @@ on:
     inputs:
       version:
         type: string
-        description: The version you intend to release (eg x.y.z)
+        description: The version you intend to release without leading 'v' (eg x.y.z and not vx.y.z)
   pull_request:
     types: [closed]
   push:
