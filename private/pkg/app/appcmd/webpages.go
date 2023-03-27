@@ -104,8 +104,8 @@ func newWebpagesCommand(
 			}
 			return generateMarkdownTree(
 				command,
-				cfg.OutputDir,
 				cfg,
+				cfg.OutputDir,
 			)
 		},
 		BindFlags: flags.Bind,
@@ -113,7 +113,7 @@ func newWebpagesCommand(
 }
 
 // generateMarkdownTree generates markdown for a whole command tree.
-func generateMarkdownTree(cmd *cobra.Command, parentDirPath string, config webpagesConfig) error {
+func generateMarkdownTree(cmd *cobra.Command, config webpagesConfig, parentDirPath string) error {
 	if !cmd.IsAvailableCommand() {
 		return nil
 	}
@@ -132,14 +132,14 @@ func generateMarkdownTree(cmd *cobra.Command, parentDirPath string, config webpa
 		return err
 	}
 	defer f.Close()
-	if err := generateMarkdownPage(cmd, f, config); err != nil {
+	if err := generateMarkdownPage(cmd, config, f); err != nil {
 		return err
 	}
 	if cmd.HasSubCommands() {
 		commands := cmd.Commands()
 		orderCommands(config.WeightCommands, commands)
 		for _, command := range commands {
-			if err := generateMarkdownTree(command, dirPath, config); err != nil {
+			if err := generateMarkdownTree(command, config, dirPath); err != nil {
 				return err
 			}
 		}
@@ -148,7 +148,7 @@ func generateMarkdownTree(cmd *cobra.Command, parentDirPath string, config webpa
 }
 
 // generateMarkdownPage creates custom markdown output.
-func generateMarkdownPage(cmd *cobra.Command, w io.Writer, config webpagesConfig) error {
+func generateMarkdownPage(cmd *cobra.Command, config webpagesConfig, w io.Writer) error {
 	var err error
 	p := func(format string, a ...any) {
 		_, err = w.Write([]byte(fmt.Sprintf(format, a...)))
