@@ -31,12 +31,12 @@ import (
 )
 
 const (
-	disableSymlinksFlagName    = "disable-symlinks"
-	teamPerTypeDollarsPerMonth = float64(0.50)
-	proPerTypeDollarsPerMonth  = float64(1)
-	tmplCopy                   = `Current BSR pricing:
+	disableSymlinksFlagName     = "disable-symlinks"
+	teamsPerTypeDollarsPerMonth = float64(0.50)
+	proPerTypeDollarsPerMonth   = float64(1)
+	tmplCopy                    = `Current BSR pricing:
 
-  - Team: $50/month per 100 types
+  - Teams: $50/month per 100 types
   - Pro: $100/month per 100 types
 
 Pricing data last updated on March 13, 2023.
@@ -51,13 +51,13 @@ Your sources have:
 This adds up to {{.NumTypes}} types.{{if .ChargeableIsRounded}}
 
 We bill in increments of 100 types. Types are totaled across
-your whole organization (Team) or instance (Pro). If these
+your whole organization (Teams) or instance (Pro). If these
 sources were all that were uploaded to your organization or instance,
 this would be rounded up to {{.ChargeableTypes}} types.{{end}}
 
 Based on this, these sources will cost:
 
-- ${{.TeamDollarsPerMonth}}/month for Team
+- ${{.TeamsDollarsPerMonth}}/month for Teams
 - ${{.ProDollarsPerMonth}}/month for Pro
 `
 )
@@ -165,11 +165,11 @@ func run(
 type tmplData struct {
 	*protostat.Stats
 
-	NumTypes            int
-	ChargeableTypes     int
-	ChargeableIsRounded bool
-	TeamDollarsPerMonth string
-	ProDollarsPerMonth  string
+	NumTypes             int
+	ChargeableTypes      int
+	ChargeableIsRounded  bool
+	TeamsDollarsPerMonth string
+	ProDollarsPerMonth   string
 }
 
 func newTmplData(stats *protostat.Stats) *tmplData {
@@ -183,7 +183,7 @@ func newTmplData(stats *protostat.Stats) *tmplData {
 		buckets++
 	}
 	tmplData.ChargeableTypes = buckets * 100
-	tmplData.TeamDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.ChargeableTypes)*teamPerTypeDollarsPerMonth)
+	tmplData.TeamsDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.ChargeableTypes)*teamsPerTypeDollarsPerMonth)
 	tmplData.ProDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.ChargeableTypes)*proPerTypeDollarsPerMonth)
 	return tmplData
 }
