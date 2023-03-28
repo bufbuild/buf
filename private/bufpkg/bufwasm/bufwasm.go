@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"testing/fstest"
 
@@ -67,6 +68,42 @@ func (c *CompiledPlugin) ABI() wasmpluginv1.WasmABI {
 	return wasmpluginv1.WasmABI_WASM_ABI_UNSPECIFIED
 }
 
+// PluginExecutionError is a wrapper for WASM plugin execution errors.
+type PluginExecutionError struct {
+	Stderr   string
+	Exitcode uint32
+}
+
+// NewPluginExecutionError constructs a new execution error.
+func NewPluginExecutionError(stderr string, exitcode uint32) *PluginExecutionError {
+	return &PluginExecutionError{Stderr: strings.ToValidUTF8(stderr, ""), Exitcode: exitcode}
+}
+
+func (e *PluginExecutionError) Error() string {
+	return "plugin exited with code " + strconv.Itoa(int(e.Exitcode))
+}
+
+// EncodeBufSection encodes the ExecConfig message as a custom wasm section.
+// The resulting bytes can be appended to any valid wasm file to add the new
+// section to that file.
+func EncodeBufSection(config *wasmpluginv1.ExecConfig) ([]byte, error) {
+	metadataBinary, err := protoencoding.NewWireMarshaler().Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+	// Abusing the protowire package because the wasm file format is similar.
+	return protowire.AppendBytes(
+		[]byte{customSectionID},
+		append(
+			protowire.AppendString(
+				nil,
+				CustomSectionName,
+			),
+			metadataBinary...,
+		),
+	), nil
+}
+
 // PluginExecutor wraps a wazero end exposes functions to compile and run wasm plugins.
 type PluginExecutor interface {
 	CompilePlugin(ctx context.Context, plugin []byte) (_ *CompiledPlugin, retErr error)
@@ -106,7 +143,15 @@ func NewPluginExecutor(compilationCacheDir string, options ...PluginExecutorOpti
 }
 
 // PluginExecutorOption configuration options for the PluginExecutor.
-type PluginExecutorOption func(PluginExecutor)
+type PluginExecutorOption func(*WASMPluginExecutor)
+
+// WithMemoryLimitPages provides a custom per memory limit for a plugin
+// executor. The default is 8192 pages for 512MB.
+func WithMemoryLimitPages(memoryLimitPages uint32) PluginExecutorOption {
+	return func(pluginExecutor *WASMPluginExecutor) {
+		pluginExecutor.runtimeConfig = pluginExecutor.runtimeConfig.WithMemoryLimitPages(memoryLimitPages)
+	}
+}
 
 // CompilePlugin takes a byte slice with a valid wasm module, compiles it and
 // optionally reads out buf plugin metadata.
@@ -200,6 +245,16 @@ func (e *WASMPluginExecutor) Run(
 		}()
 		var module api.Module
 		module, err = runtime.InstantiateModule(ctx, plugin.Module, config)
+		if err != nil {
+			if exitErr := new(sys.ExitError); errors.As(err, &exitErr) {
+				if exitErr.ExitCode() == 0 {
+					return nil
+				}
+				return NewPluginExecutionError(
+					fmt.Sprintf("error instantiating wasi module: %s", err.Error()), exitErr.ExitCode())
+			}
+			return err
+		}
 		defer func() {
 			retErr = multierr.Append(retErr, module.Close(ctx))
 		}()
@@ -211,43 +266,9 @@ func (e *WASMPluginExecutor) Run(
 			if exitErr.ExitCode() == 0 {
 				return nil
 			}
-			return &PluginExecutionError{
-				Stderr:   strings.ToValidUTF8(stderr.String(), ""),
-				Exitcode: exitErr.ExitCode(),
-			}
+			return NewPluginExecutionError(stderr.String(), exitErr.ExitCode())
 		}
 		return err
 	}
 	return nil
-}
-
-// PluginExecutionError captures failed WASM execution state.
-type PluginExecutionError struct {
-	Stderr   string
-	Exitcode uint32
-}
-
-func (e *PluginExecutionError) Error() string {
-	return fmt.Sprintf("plugin exited with code %d: %s", e.Exitcode, e.Stderr)
-}
-
-// EncodeBufSection encodes the pluginmetadata message as a custom wasm section.
-// The resulting bytes can be appended to any valid wasm file to add the new
-// section to that file.
-func EncodeBufSection(config *wasmpluginv1.ExecConfig) ([]byte, error) {
-	metadataBinary, err := protoencoding.NewWireMarshaler().Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-	// Abusing the protowire package because the wasm file format is similar.
-	return protowire.AppendBytes(
-		[]byte{customSectionID},
-		append(
-			protowire.AppendString(
-				nil,
-				CustomSectionName,
-			),
-			metadataBinary...,
-		),
-	), nil
 }
