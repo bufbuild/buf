@@ -34,6 +34,9 @@ func newModuleRef(iModuleRef internal.ModuleRef) *moduleRef {
 func (r *moduleRef) PathForExternalPath(externalPath string) (string, error) {
 	return normalpath.NormalizeAndValidate(externalPath)
 }
+func (r *moduleRef) ExternalPath() string {
+	return ""
+}
 
 func (r *moduleRef) internalRef() internal.Ref {
 	return r.iModuleRef

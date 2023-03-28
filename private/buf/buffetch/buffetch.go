@@ -92,6 +92,12 @@ type PathResolver interface {
 type Ref interface {
 	PathResolver
 
+	// ExternalPath returns a non-empty external path if the given ref represents
+	// a local directory or file.
+	//
+	// Returns empty if the ref does not represent a local directory or file.
+	ExternalPath() string
+
 	internalRef() internal.Ref
 }
 

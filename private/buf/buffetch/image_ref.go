@@ -40,6 +40,13 @@ func (r *imageRef) PathForExternalPath(externalPath string) (string, error) {
 	return normalpath.NormalizeAndValidate(externalPath)
 }
 
+func (r *imageRef) ExternalPath() string {
+	if r.fileRef.FileScheme() != internal.FileSchemeLocal {
+		return ""
+	}
+	return normalpath.Unnormalize(r.fileRef.Path())
+}
+
 func (r *imageRef) ImageEncoding() ImageEncoding {
 	return r.imageEncoding
 }

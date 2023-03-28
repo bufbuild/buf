@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconvert"
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
@@ -152,10 +153,14 @@ func run(
 	if err != nil {
 		return err
 	}
+	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
+	if err != nil {
+		return err
+	}
 	image, inputErr := bufcli.NewImageForSource(
 		ctx,
 		container,
-		input,
+		ref,
 		flags.ErrorFormat,
 		false, // disableSymlinks
 		"",    // configOverride

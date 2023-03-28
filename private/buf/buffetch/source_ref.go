@@ -59,6 +59,13 @@ func (r *sourceRef) PathForExternalPath(externalPath string) (string, error) {
 	return normalpath.NormalizeAndValidate(path)
 }
 
+func (r *sourceRef) ExternalPath() string {
+	if r.dirPath == "" {
+		return ""
+	}
+	return normalpath.Unnormalize(r.dirPath)
+}
+
 func (r *sourceRef) internalRef() internal.Ref {
 	return r.bucketRef
 }

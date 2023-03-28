@@ -41,6 +41,8 @@ const (
 	configFlagName              = "config"
 	excludePathsFlagName        = "exclude-path"
 	disableSymlinksFlagName     = "disable-symlinks"
+	watchFlagName               = "watch"
+	watchFlagShortName          = "w"
 )
 
 // NewCommand returns a new Command.
@@ -75,6 +77,7 @@ type flags struct {
 	ExcludePaths        []string
 	DisableSymlinks     bool
 	Types               []string
+	Watch               bool
 	// special
 	InputHashtag string
 }
@@ -122,13 +125,20 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types",
 	)
+	flagSet.BoolVarP(
+		&f.Watch,
+		watchFlagName,
+		watchFlagShortName,
+		false,
+		"Watch.",
+	)
 }
 
 func run(
 	ctx context.Context,
 	container appflag.Container,
 	flags *flags,
-) error {
+) (retErr error) {
 	if flags.Output == "" {
 		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outputFlagName)
 	}
@@ -139,10 +149,41 @@ func run(
 	if err != nil {
 		return err
 	}
+	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
+	if err != nil {
+		return err
+	}
+	if !flags.Watch {
+		return runForRef(ctx, container, flags, ref)
+	}
+	refPath := ref.ExternalPath()
+	if refPath == "" {
+		return appcmd.NewInvalidArgumentErrorf("cannot watch %q", refPath)
+	}
+	return bufcli.WatchProtoFiles(
+		ctx,
+		refPath,
+		func(err error) {
+			if err != nil {
+				container.Stderr().Write([]byte(err.Error() + "\n"))
+			}
+		},
+		func() error {
+			return runForRef(ctx, container, flags, ref)
+		},
+	)
+}
+
+func runForRef(
+	ctx context.Context,
+	container appflag.Container,
+	flags *flags,
+	ref buffetch.Ref,
+) error {
 	image, err := bufcli.NewImageForSource(
 		ctx,
 		container,
-		input,
+		ref,
 		flags.ErrorFormat,
 		flags.DisableSymlinks,
 		flags.Config,

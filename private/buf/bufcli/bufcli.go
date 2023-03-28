@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufapp"
@@ -57,7 +58,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"github.com/bufbuild/connect-go"
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/pflag"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"golang.org/x/term"
 )
@@ -810,7 +813,7 @@ func BucketAndConfigForSource(
 func NewImageForSource(
 	ctx context.Context,
 	container appflag.Container,
-	source string,
+	ref buffetch.Ref,
 	errorFormat string,
 	disableSymlinks bool,
 	configOverride string,
@@ -819,10 +822,6 @@ func NewImageForSource(
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (bufimage.Image, error) {
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, source)
-	if err != nil {
-		return nil, err
-	}
 	storageosProvider := NewStorageosProvider(disableSymlinks)
 	runner := command.NewRunner()
 	clientConfig, err := NewConnectClientConfig(container)
@@ -928,6 +927,59 @@ func IsBetaTamperProofingEnabled(container app.EnvContainer) (bool, error) {
 // IsAlphaWASMEnabled returns an BUF_ALPHA_ENABLE_WASM is set to true.
 func IsAlphaWASMEnabled(container app.EnvContainer) (bool, error) {
 	return app.EnvBool(container, AlphaEnableWASMEnvKey, false)
+}
+
+// WatchProtoFiles watches for .proto file changes and executes f on .proto file change.
+//
+// TODO: this doesn't actually work. The idea was to watch a directory, but fsnotify
+// does not watch directories recursively.
+func WatchProtoFiles(
+	ctx context.Context,
+	dirOrProtoFilePath string,
+	reportError func(error),
+	f func() error,
+) (retErr error) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, watcher.Close())
+	}()
+	if err := watcher.Add(dirOrProtoFilePath); err != nil {
+		return err
+	}
+	// Always run once
+	fmt.Println("RUN ONCE")
+	if err := f(); err != nil {
+		retErr = multierr.Append(retErr, err)
+		reportError(err)
+	}
+	fmt.Println("STARTING LOOP")
+	for {
+		select {
+		case event := <-watcher.Events:
+			fmt.Println("WATCHER EVENT", event)
+			if isProtoFileChange(event) {
+				fmt.Println("WATCHER EVENT PROTO FILE")
+				if err := f(); err != nil {
+					retErr = multierr.Append(retErr, err)
+					reportError(err)
+				}
+			}
+		case err := <-watcher.Errors:
+			fmt.Println("WATCHER ERRORS", err)
+			retErr = multierr.Append(retErr, err)
+			reportError(err)
+		case <-ctx.Done():
+			fmt.Println("CONTEXT DONE")
+			return ctx.Err()
+		}
+	}
+}
+
+func isProtoFileChange(event fsnotify.Event) bool {
+	return filepath.Ext(event.Name) == ".proto"
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.
