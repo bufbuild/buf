@@ -33,8 +33,8 @@ func NewTokenProviderFromString(token string) (TokenProvider, error) {
 }
 
 // newTokenProviderFromString returns a TokenProvider with auth keys from the provided token. The
-// remote token is in the format: username1:token1@remote1,username2:token2@remote2,defaultToken.
-// The special characters `:`, `@` and `,` are used as the splitters. The usernames, tokens, and
+// remote token is in the format: token1@remote1,token2@remote2.
+// The special characters `@` and `,` are used as the splitters. The usernames, tokens, and
 // remote addresses does not contain these characters since they are enforced by the rules in BSR.
 func newTokenProviderFromString(token string, isFromEnvVar bool) (TokenProvider, error) {
 	if token == "" {
@@ -65,9 +65,6 @@ func newSingleTokenProvider(token string, isFromEnvVar bool) (*singleTokenProvid
 	}
 	if strings.Contains(token, ",") {
 		return nil, errors.New("token cannot contain special character `,`")
-	}
-	if strings.Contains(token, ":") {
-		return nil, errors.New("token cannot contain special character `:`")
 	}
 	if token == "" {
 		return nil, errors.New("single token cannot be empty")
