@@ -3,45 +3,56 @@ package bufconnect
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestNewTokenProviderFromStringForSingleToken(t *testing.T) {
-	provider, err := NewTokenProviderFromString("default")
-
-	require.NoError(t, err)
-	require.False(t, provider.IsFromEnvVar())
-	require.Equal(t, "default", provider.RemoteToken("r1"))
-	require.Equal(t, "default", provider.RemoteToken("r2"))
-	require.Equal(t, "default", provider.RemoteToken("r3"))
+func TestNewTokenProviderFromContainer(t *testing.T) {
+	tokenSet, err := NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
+		tokenEnvKey: "default",
+	}))
+	assert.NoError(t, err)
+	token := tokenSet.RemoteToken("fake")
+	assert.True(t, tokenSet.IsFromEnvVar())
+	assert.Equal(t, "default", token)
 }
 
-func TestNewTokenProviderFromStringForSingleTokenWithRemote(t *testing.T) {
-	provider, err := NewTokenProviderFromString("t@r")
-
-	require.NoError(t, err)
-	require.False(t, provider.IsFromEnvVar())
-	require.Equal(t, "t", provider.RemoteToken("r"))
-	require.Equal(t, "", provider.RemoteToken("r2"))
+func TestNewTokenProviderFromString(t *testing.T) {
+	tokenProvider, err := NewTokenProviderFromString("default")
+	assert.NoError(t, err)
+	assert.Equal(t, "default", tokenProvider.RemoteToken("host"))
+	tokenProvider, err = NewTokenProviderFromString("token1@host1")
+	assert.NoError(t, err)
+	assert.Equal(t, "token1", tokenProvider.RemoteToken("host1"))
+	tokenProvider, err = NewTokenProviderFromString("token1@remote1,token2@remote2")
+	assert.NoError(t, err)
+	assert.Equal(t, "token1", tokenProvider.RemoteToken("remote1"))
+	assert.Equal(t, "token2", tokenProvider.RemoteToken("remote2"))
+	_, err = NewTokenProviderFromString("")
+	assert.NoError(t, err)
 }
 
-func TestNewTokenProviderFromStringForMultipleTokens(t *testing.T) {
-	provider, err := NewTokenProviderFromString("t1@r1,t2@r2")
-
-	require.NoError(t, err)
-	require.False(t, provider.IsFromEnvVar())
-	require.Equal(t, "t1", provider.RemoteToken("r1"))
-	require.Equal(t, "t2", provider.RemoteToken("r2"))
-	require.Equal(t, "", provider.RemoteToken("r3"))
-}
-
-func TestNewTokenProviderFromStringInvalidToken(t *testing.T) {
+func TestInvalidTokens(t *testing.T) {
 	invalidTokens := []string{
-		"t1@r1,t2@r2,default",
+		"user1@remote1,user2@remote1",
+		"user1@remote1,user2@remote2,",
+		",token1@host1",
+		"token1@host1,",
+		"token1@",
+		"token1@host1@",
+		"@token1",
+		"token1@host1,token2",
+		",",
+		"token,",
+		",token",
 	}
 
 	for _, token := range invalidTokens {
 		_, err := NewTokenProviderFromString(token)
-		require.Error(t, err, "expected %s to be an invalid token, but it wasn't", token)
+		assert.Error(t, err, "expected %s to be an invalid token, but it wasn't", token)
+		_, err = NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
+			tokenEnvKey: token,
+		}))
+		assert.Error(t, err, "expected %s to be an invalid token, but it wasn't", token)
 	}
 }
