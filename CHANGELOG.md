@@ -3,10 +3,14 @@
 ## [Unreleased]
 
 - Add `buf beta price` command to help users of the BSR figure out how much a module
-  will cost to store on the BSR under the Team or Pro plans.
+  will cost to store on the BSR under the Teams or Pro plans.
 - Fix an issue in `protoc-gen-buf-lint` that prevented it from reporting lint
   errors for unused imports.
+- Fix an issue with `buf format` where indents would be produced on certain empty lines.
 - Remove `buf alpha registry token create` command. Tokens must be created through the BSR UI.
+- Add local WASM plugin support in alpha, gated by the `BUF_ALPHA_ENABLE_WASM` environment variable.
+  This feature is under evaluation, and may change at any time. If you are interested in WASM
+  Protobuf plugins, reach out to us.
 
 ## [v1.15.1] - 2023-03-08
 
