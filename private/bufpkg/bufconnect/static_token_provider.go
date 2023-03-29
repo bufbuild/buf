@@ -34,8 +34,8 @@ func NewTokenProviderFromString(token string) (TokenProvider, error) {
 
 // newTokenProviderFromString returns a TokenProvider with auth keys from the provided token. The
 // remote token is in the format: token1@remote1,token2@remote2.
-// The special characters `@` and `,` are used as the splitters. The usernames, tokens, and
-// remote addresses does not contain these characters since they are enforced by the rules in BSR.
+// The special characters `@` and `,` are used as the splitters. The tokens and remote addresses
+// do not contain these characters since they are enforced by the rules in BSR.
 func newTokenProviderFromString(token string, isFromEnvVar bool) (TokenProvider, error) {
 	if token == "" {
 		return nopTokenProvider{}, nil
