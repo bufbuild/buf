@@ -31,6 +31,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/multierr"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -60,7 +61,7 @@ func (h *wasmHandler) Handle(
 	container app.EnvStderrContainer,
 	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
-) error {
+) (retErr error) {
 	ctx, span := h.tracer.Start(ctx, "plugin_proxy", trace.WithAttributes(
 		attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
 	))
@@ -83,7 +84,9 @@ func (h *wasmHandler) Handle(
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
-	defer compiledPlugin.Close()
+	defer func() {
+		retErr = multierr.Append(retErr, compiledPlugin.Close())
+	}()
 
 	responseBuffer := bytes.NewBuffer(nil)
 	if err := h.wasmPluginExecutor.Run(
