@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package camel;
+
+message Foo {
+  int64 one_two = 1;
+}

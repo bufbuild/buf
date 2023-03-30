@@ -174,6 +174,24 @@ func TestRunLint7(t *testing.T) {
 	)
 }
 
+func TestRunLint_CamelCase(t *testing.T) {
+	testRunLint(
+		t,
+		filepath.Join("testdata", "fail"),
+		[]string{
+			filepath.Join("testdata", "fail", "buf", "camel.proto"),
+		},
+		`{"input_config":{"version":"v1","lint":{"use":["FIELD_CAMEL_CASE"]}}}`,
+		[]string{
+			normalpath.Join("buf", "camel.proto"),
+		},
+		0,
+		`
+		buf/camel.proto:6:9:Field name "one_two" should be camelCase, such as "oneTwo".
+		`,
+	)
+}
+
 func TestRunLint_UnusedImports(t *testing.T) {
 	unusedImportsFileComponents := [][]string{
 		{"buf", "v1", "a.proto"},
