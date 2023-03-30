@@ -116,21 +116,6 @@ func UnmarshalJSONOrYAMLNonStrict(data []byte, v interface{}) error {
 	return nil
 }
 
-// GetJSONStringOrStringValue returns the JSON string for the RawMessage if the
-// RawMessage is a string, and the raw value as a string otherwise.
-//
-// If the RawMessage is empty, this returns "".
-func GetJSONStringOrStringValue(rawMessage json.RawMessage) string {
-	if len(rawMessage) == 0 {
-		return ""
-	}
-	var s string
-	if err := json.Unmarshal(rawMessage, &s); err == nil {
-		return s
-	}
-	return string(rawMessage)
-}
-
 // MarshalYAML marshals the given value into YAML.
 func MarshalYAML(v interface{}) (_ []byte, retErr error) {
 	buffer := bytes.NewBuffer(nil)
