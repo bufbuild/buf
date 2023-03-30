@@ -5,7 +5,7 @@ on:
       - 'proto/**'
 jobs:
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: bufbuild/buf-setup-action@v1.15.1
@@ -15,7 +15,7 @@ jobs:
         with:
           buf_token: ${{ secrets.BUF_TOKEN }}
   breaking:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: bufbuild/buf-setup-action@v1.15.1
@@ -26,7 +26,7 @@ jobs:
           against: buf.build/bufbuild/buf
           buf_token: ${{ secrets.BUF_TOKEN }}
   push:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs:
       - lint
