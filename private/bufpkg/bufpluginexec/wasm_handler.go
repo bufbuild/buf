@@ -83,6 +83,8 @@ func (h *wasmHandler) Handle(
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
+	defer compiledPlugin.Close()
+
 	responseBuffer := bytes.NewBuffer(nil)
 	if err := h.wasmPluginExecutor.Run(
 		ctx,
