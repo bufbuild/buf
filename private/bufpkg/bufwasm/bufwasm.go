@@ -149,27 +149,36 @@ func WithMemoryLimitPages(memoryLimitPages uint32) PluginExecutorOption {
 // CompilePlugin takes a byte slice with a valid wasm module, compiles it and
 // optionally reads out buf plugin metadata.
 func (e *WASMPluginExecutor) CompilePlugin(ctx context.Context, plugin []byte) (_ *CompiledPlugin, retErr error) {
-
 	// Configure the compilation cache, which must be closed after the runtime.
 	var cache wazero.CompilationCache
 	if e.compilationCacheDir == "" {
 		cache = wazero.NewCompilationCache()
 	} else {
-		cache, retErr = wazero.NewCompilationCacheWithDir(e.compilationCacheDir)
-		if retErr != nil {
-			return
+		var err error
+		cache, err = wazero.NewCompilationCacheWithDir(e.compilationCacheDir)
+		if err != nil {
+			return nil, err
 		}
 	}
+	defer func() {
+		if retErr != nil {
+			retErr = multierr.Append(retErr, cache.Close(ctx))
+		}
+	}()
 
 	// Create the shared runtime used for all plugin instantiations
 	runtime := wazero.NewRuntimeWithConfig(ctx, e.runtimeConfig.WithCompilationCache(cache))
+	defer func() {
+		if retErr != nil {
+			retErr = multierr.Append(retErr, runtime.Close(ctx))
+		}
+	}()
 
 	// Note: before we start accepting user plugins, we should do more
 	// validation on the metadata here: file path cleaning etc.
-	var compiledModule wazero.CompiledModule
-	compiledModule, retErr = runtime.CompileModule(ctx, plugin)
-	if retErr != nil {
-		return nil, wrapErrorAndClose(ctx, fmt.Errorf("error compiling wasm: %w", retErr), runtime, cache)
+	compiledModule, err := runtime.CompileModule(ctx, plugin)
+	if err != nil {
+		return nil, fmt.Errorf("error compiling wasm: %w", err)
 	}
 
 	compiledPlugin := &CompiledPlugin{cache: cache, runtime: runtime, module: compiledModule}
@@ -183,8 +192,8 @@ func (e *WASMPluginExecutor) CompilePlugin(ctx context.Context, plugin []byte) (
 	}
 	if len(bufsectionBytes) > 0 {
 		metadata := &wasmpluginv1.ExecConfig{}
-		if retErr = proto.Unmarshal(bufsectionBytes, metadata); retErr != nil {
-			return nil, wrapErrorAndClose(ctx, fmt.Errorf("error unmarshalling custom section: %w", retErr), runtime, cache)
+		if err := proto.Unmarshal(bufsectionBytes, metadata); err != nil {
+			return nil, fmt.Errorf("error unmarshalling custom section: %w", err)
 		}
 		compiledPlugin.ExecConfig = metadata
 	}
@@ -192,24 +201,17 @@ func (e *WASMPluginExecutor) CompilePlugin(ctx context.Context, plugin []byte) (
 	// Instantiate host functions required by the plugin guest.
 	switch compiledPlugin.ABI() {
 	case wasmpluginv1.WasmABI_WASM_ABI_GOJS:
-		if _, retErr = gojs.Instantiate(ctx, runtime); retErr != nil {
-			return nil, wrapErrorAndClose(ctx, fmt.Errorf("error instantiating gojs: %w", retErr), runtime, cache)
+		if _, err := gojs.Instantiate(ctx, runtime); err != nil {
+			return nil, fmt.Errorf("error instantiating gojs: %w", err)
 		}
 	case wasmpluginv1.WasmABI_WASM_ABI_WASI_SNAPSHOT_PREVIEW1:
-		if _, retErr = wasi_snapshot_preview1.Instantiate(ctx, runtime); retErr != nil {
-			return nil, wrapErrorAndClose(ctx, fmt.Errorf("error instantiating wasi: %w", retErr), runtime, cache)
+		if _, err := wasi_snapshot_preview1.Instantiate(ctx, runtime); err != nil {
+			return nil, fmt.Errorf("error instantiating wasi: %w", err)
 		}
 	default:
 		return nil, errors.New("unable to detect wasm abi")
 	}
-
 	return compiledPlugin, nil
-}
-
-func wrapErrorAndClose(ctx context.Context, err error, runtime, cache api.Closer) error {
-	err = multierr.Append(err, runtime.Close(ctx))
-	err = multierr.Append(err, cache.Close(ctx))
-	return err
 }
 
 // Run executes a plugin. If the plugin exited with non-zero status, this
@@ -282,7 +284,6 @@ func (e *WASMPluginExecutor) Run(
 }
 
 func (c *CompiledPlugin) Close() error {
-	err := c.runtime.Close(context.Background())
-	err = multierr.Append(err, c.cache.Close(context.Background()))
-	return err
+	ctx := context.Background()
+	return multierr.Append(c.runtime.Close(ctx), c.cache.Close(ctx))
 }
