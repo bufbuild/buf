@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"errors"
+	"io"
 	"sync"
 	"testing"
 
@@ -48,6 +50,7 @@ func TestSectionEncodeDecode(t *testing.T) {
 	require.NoError(t, err)
 	plugin, err := executor.CompilePlugin(ctx, echoWasm)
 	require.NoError(t, err)
+	defer plugin.Close()
 	assert.Nil(t, plugin.ExecConfig)
 
 	metadataProto := &wasmpluginv1.ExecConfig{
@@ -63,6 +66,7 @@ func TestSectionEncodeDecode(t *testing.T) {
 
 	plugin, err = executor.CompilePlugin(ctx, wasmFileWithBufSection)
 	require.NoError(t, err)
+	defer plugin.Close()
 	assert.Empty(t, cmp.Diff(plugin.ExecConfig, metadataProto, protocmp.Transform()))
 }
 
@@ -73,6 +77,7 @@ func TestPluginExecutor(t *testing.T) {
 	require.NoError(t, err)
 	plugin, err := executor.CompilePlugin(ctx, echoWasm)
 	require.NoError(t, err)
+	defer plugin.Close()
 	assert.Nil(t, plugin.ExecConfig)
 
 	stdin := bytes.NewBufferString("foo")
@@ -91,6 +96,7 @@ func TestParallelPlugins(t *testing.T) {
 	require.NoError(t, err)
 	plugin, err := executor.CompilePlugin(ctx, echoWasm)
 	require.NoError(t, err)
+	defer plugin.Close()
 	assert.Nil(t, plugin.ExecConfig)
 
 	n := 2
@@ -114,5 +120,30 @@ func TestParallelPlugins(t *testing.T) {
 		require.ErrorAs(t, errors[i], &pluginErr)
 		assert.Equal(t, uint32(11), pluginErr.Exitcode)
 		assert.Equal(t, "foo", stdOuts[i].String())
+	}
+}
+
+func BenchmarkPluginRun(b *testing.B) {
+	ctx := context.Background()
+	executor, err := NewPluginExecutor(b.TempDir())
+	if err != nil {
+		b.Fatal(err)
+	}
+	plugin, err := executor.CompilePlugin(ctx, echoWasm)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer plugin.Close()
+	if plugin.ExecConfig != nil {
+		b.Fatal("expected no plugin.ExecConfig")
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		err := executor.Run(ctx, plugin, bytes.NewBufferString("foo"), io.Discard)
+		pluginErr := new(PluginExecutionError)
+		if ok := errors.As(err, &pluginErr); !ok || pluginErr.Exitcode != 11 {
+			b.Fatal(err)
+		}
 	}
 }
