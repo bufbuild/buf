@@ -127,6 +127,12 @@ var (
 		"field names are lower_snake_case",
 		newAdapter(buflintcheck.CheckFieldLowerSnakeCase),
 	)
+	// FieldCamelCaseRuleBuilder is a rule builder.
+	FieldCamelCaseRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_CAMEL_CASE",
+		"field names are camelCase",
+		newAdapter(buflintcheck.CheckFieldCamelCase),
+	)
 	// FieldNoDescriptorRuleBuilder is a rule builder.
 	FieldNoDescriptorRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_NO_DESCRIPTOR",

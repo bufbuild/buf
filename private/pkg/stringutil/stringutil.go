@@ -230,6 +230,27 @@ func SnakeCaseWithNewWordOnDigits() SnakeCaseOption {
 	}
 }
 
+// ToCamelCase converts s to camelCase.
+//
+// Splits on '-', '_', ' ', '\t', '\n', '\r'.
+func ToCamelCase(s string) string {
+	output := ""
+	var previous rune
+	for i, c := range strings.TrimSpace(s) {
+		if !isDelimiter(c) {
+			if i == 0 {
+				output += string(unicode.ToLower(c))
+			} else if isDelimiter(previous) || unicode.IsUpper(c) {
+				output += string(unicode.ToUpper(c))
+			} else {
+				output += string(unicode.ToLower(c))
+			}
+		}
+		previous = c
+	}
+	return output
+}
+
 // ToLowerSnakeCase transforms s to lower_snake_case.
 func ToLowerSnakeCase(s string, options ...SnakeCaseOption) string {
 	return strings.ToLower(toSnakeCase(s, options...))

@@ -294,6 +294,38 @@ func checkFieldLowerSnakeCase(add addFunc, field protosource.Field) error {
 	return nil
 }
 
+// CheckFieldCamelCase is a check function.
+var CheckFieldCamelCase = newFieldCheckFunc(checkFieldCamelCase)
+
+func checkFieldCamelCase(add addFunc, field protosource.Field) error {
+	message := field.Message()
+	if message == nil {
+		// just a sanity check
+		return errors.New("field.Message() was nil")
+	}
+	if message.IsMapEntry() {
+		// this check should always pass anyways but just in case
+		return nil
+	}
+	name := field.Name()
+	expectedName := fieldToCamelCase(name)
+	if name != expectedName {
+		add(
+			field,
+			field.NameLocation(),
+			// also check the message for this comment ignore
+			// this allows users to set this "globally" for a message
+			[]protosource.Location{
+				field.Message().Location(),
+			},
+			"Field name %q should be camelCase, such as %q.",
+			name,
+			expectedName,
+		)
+	}
+	return nil
+}
+
 // CheckFieldNoDescriptor is a check function.
 var CheckFieldNoDescriptor = newFieldCheckFunc(checkFieldNoDescriptor)
 

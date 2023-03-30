@@ -37,6 +37,7 @@ var (
 		buflintbuild.EnumValueUpperSnakeCaseRuleBuilder,
 		buflintbuild.EnumZeroValueSuffixRuleBuilder,
 		buflintbuild.FieldLowerSnakeCaseRuleBuilder,
+		buflintbuild.FieldCamelCaseRuleBuilder,
 		buflintbuild.FileLowerSnakeCaseRuleBuilder,
 		buflintbuild.ImportNoPublicRuleBuilder,
 		buflintbuild.ImportNoWeakRuleBuilder,
@@ -128,6 +129,7 @@ var (
 		"FILE_LOWER_SNAKE_CASE": {
 			"DEFAULT",
 		},
+		"FIELD_CAMEL_CASE": {},
 		"IMPORT_NO_PUBLIC": {
 			"BASIC",
 			"DEFAULT",
