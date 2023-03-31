@@ -151,22 +151,13 @@ func (s *BlobSet) BlobFor(digest string) (Blob, bool) {
 	return blob, true
 }
 
-// Blobs returns a slice of the blobs in the set. If you want to iterate the
-// blobs consider using `IterateBlobs` instead.
+// Blobs returns a slice of the blobs in the set.
 func (s *BlobSet) Blobs() []Blob {
 	blobs := make([]Blob, 0, len(s.digestToBlob))
 	for _, b := range s.digestToBlob {
 		blobs = append(blobs, b)
 	}
 	return blobs
-}
-
-// IterateBlobs invokes a function for all the blobs in the set, passing the
-// blob. The order in which the blobs are iterated is not guaranteed.
-func (s *BlobSet) IterateBlobs(f func(Blob)) {
-	for _, b := range s.digestToBlob {
-		f(b)
-	}
 }
 
 // NewMemoryBlobFromReader creates a memory blob from content, which is read

@@ -114,11 +114,6 @@ func TestAllBlobs(t *testing.T) {
 	require.NoError(t, err)
 	retBlobs := set.Blobs()
 	assertBlobsAreEqual(t, blobs, retBlobs)
-	var iteratedBlobs []manifest.Blob
-	set.IterateBlobs(func(b manifest.Blob) {
-		iteratedBlobs = append(iteratedBlobs, b)
-	})
-	assertBlobsAreEqual(t, blobs, retBlobs)
 }
 
 type mockBlob struct {
