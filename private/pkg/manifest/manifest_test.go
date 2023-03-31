@@ -193,16 +193,25 @@ func testInvalidManifest(
 
 func TestAllPaths(t *testing.T) {
 	t.Parallel()
-	var m manifest.Manifest
-	var addedPaths []string
+	var (
+		m          manifest.Manifest
+		addedPaths []string
+		nilDigest  = mustDigestShake256(t, nil)
+	)
 	for i := 0; i < 20; i++ {
 		path := fmt.Sprintf("path/to/file%0d", i)
-		require.NoError(t, m.AddEntry(path, *mustDigestShake256(t, nil)))
+		require.NoError(t, m.AddEntry(path, *nilDigest))
 		addedPaths = append(addedPaths, path)
 	}
 	retPaths := m.Paths()
 	assert.Equal(t, len(addedPaths), len(retPaths))
 	assert.ElementsMatch(t, addedPaths, retPaths)
+	var iteratedPaths []string
+	m.IteratePaths(func(path string, digest manifest.Digest) {
+		iteratedPaths = append(iteratedPaths, path)
+		assert.True(t, digest.Equal(*nilDigest))
+	})
+	assert.ElementsMatch(t, addedPaths, iteratedPaths)
 }
 
 func TestManifestZeroValue(t *testing.T) {

@@ -107,6 +107,20 @@ func TestNewBlobInvalidDuplicates(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestAllBlobs(t *testing.T) {
+	t.Parallel()
+	blobs := newBlobsArray(t)
+	set, err := manifest.NewBlobSet(context.Background(), blobs)
+	require.NoError(t, err)
+	retBlobs := set.Blobs()
+	assertBlobsAreEqual(t, blobs, retBlobs)
+	var iteratedBlobs []manifest.Blob
+	set.IterateBlobs(func(b manifest.Blob) {
+		iteratedBlobs = append(iteratedBlobs, b)
+	})
+	assertBlobsAreEqual(t, blobs, retBlobs)
+}
+
 type mockBlob struct {
 	digest  *manifest.Digest
 	content io.Reader
@@ -323,4 +337,18 @@ func newBlobsArray(t *testing.T) []manifest.Blob {
 		blobs = append(blobs, blob)
 	}
 	return blobs
+}
+
+// assertBlobsAreEqual makes sure blobs digest are the same (assuming they're
+// correctly built), regardless the order in the passed arrays.
+func assertBlobsAreEqual(t *testing.T, expectedBlobs []manifest.Blob, actualBlobs []manifest.Blob) {
+	expectedDigests := make(map[string]struct{}, len(expectedBlobs))
+	for _, expectedBlob := range expectedBlobs {
+		expectedDigests[expectedBlob.Digest().String()] = struct{}{}
+	}
+	actualDigests := make(map[string]struct{}, len(actualBlobs))
+	for _, actualBlob := range actualBlobs {
+		actualDigests[actualBlob.Digest().String()] = struct{}{}
+	}
+	assert.Equal(t, expectedDigests, actualDigests)
 }
