@@ -60,6 +60,8 @@ message MoveLabelRequest {
   LabelName label_name = 1;
   optional LabelValue from = 2;
   LabelValue to = 3;
+  string repository_owner_name = 4;
+  string repository_name = 5;
 }
 
 message MoveLabelResponse {}
