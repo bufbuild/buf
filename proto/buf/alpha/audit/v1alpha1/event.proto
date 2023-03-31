@@ -53,7 +53,6 @@ enum ResourceType {
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
   RESOURCE_TYPE_TOKEN = 10;
   RESOURCE_TYPE_SCIM_TOKEN = 11;
-  RESOURCE_TYPE_REPOSITORY_DRAFT_COMMIT = 12;
 }
 
 // Resource is the affected resource by the audited event.
@@ -96,7 +95,7 @@ enum EventType {
   EVENT_TYPE_USER_REACTIVATED = 25;
   EVENT_TYPE_SCIM_TOKEN_CREATED = 26;
   EVENT_TYPE_SCIM_TOKEN_DELETED = 27;
-  EVENT_TYPE_DELETE_REPOSITORY_DRAFT_COMMIT = 28;
+  EVENT_TYPE_REPOSITORY_COMMIT_DELETED = 28;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -154,7 +153,7 @@ message Event {
     PayloadUserReactivated user_reactivated = 31;
     PayloadSCIMTokenCreated scim_token_created = 32;
     PayloadSCIMTokenDeleted scim_token_deleted = 33;
-    PayloadDeleteRepositoryDraftCommit delete_repository_draft_commit = 34;
+    PayloadRepositoryCommitDeleted repository_commit_deleted = 34;
   }
 }
 
@@ -358,11 +357,15 @@ message PayloadSCIMTokenCreated {
 
 message PayloadSCIMTokenDeleted {}
 
-message PayloadDeleteRepositoryDraftCommit {
-  // owner_name is the name of the owner of the repository from which the draft will be deleted.
-  string owner_name = 1;
-  // repository_name is the name of the repository from which the draft will be deleted.
-  string repository_name = 2;
-  // draft_name is the name of the draft to be deleted.
-  string draft_name = 3;
+message PayloadRepositoryCommitDeleted {
+  // owner_id is the id of the owner of the repository from which the commit will be deleted.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository from which the commit will be deleted.
+  string owner_name = 2;
+  // repository_id is the id of the repository from which the commit will be deleted.
+  string repository_id = 3;
+  // repository_name is the name of the repository from which the commit will be deleted.
+  string repository_name = 4;
+  // draft_name is the name of the draft. Optional.
+  string draft_name = 5;
 }
