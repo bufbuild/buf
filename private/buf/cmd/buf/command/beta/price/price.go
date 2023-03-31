@@ -16,50 +16,24 @@ package price
 
 import (
 	"context"
-	"fmt"
-	"text/template"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestat"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/protostat"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 const (
-	disableSymlinksFlagName     = "disable-symlinks"
-	teamsPerTypeDollarsPerMonth = float64(0.50)
-	proPerTypeDollarsPerMonth   = float64(1)
-	tmplCopy                    = `Current BSR pricing:
-
-  - Teams: $50/month per 100 types
-  - Pro: $100/month per 100 types
-
-Pricing data last updated on March 13, 2023.
-See buf.build/pricing for the latest information.
-
-Your sources have:
-
-  - {{.NumMessages}} messages
-  - {{.NumEnums}} enums
-  - {{.NumMethods}} methods
-
-This adds up to {{.NumTypes}} types.{{if .ChargeableIsRounded}}
-
-We bill in increments of 100 types. Types are totaled across
-your whole organization (Teams) or instance (Pro). If these
-sources were all that were uploaded to your organization or instance,
-this would be rounded up to {{.ChargeableTypes}} types.{{end}}
-
-Based on this, these sources will cost:
-
-- ${{.TeamsDollarsPerMonth}}/month for Teams
-- ${{.ProDollarsPerMonth}}/month for Pro
-`
+	disableSymlinksFlagName = "disable-symlinks"
 )
 
 // NewCommand returns a new Command.
@@ -144,46 +118,27 @@ func run(
 	if err != nil {
 		return err
 	}
-	statsSlice := make([]*protostat.Stats, len(moduleConfigs))
+	request := &registryv1alpha1.GetPriceEstimationTextRequest{
+		Modules: make([]*modulev1alpha1.Module, len(moduleConfigs)),
+	}
 	for i, moduleConfig := range moduleConfigs {
-		stats, err := protostat.GetStats(ctx, bufmodulestat.NewFileWalker(moduleConfig.Module()))
+		protoModule, err := bufmodule.ModuleToProtoModule(ctx, moduleConfig.Module())
 		if err != nil {
 			return err
 		}
-		statsSlice[i] = stats
+		request.Modules[i] = protoModule
 	}
-	tmpl, err := template.New("tmpl").Parse(tmplCopy)
+	service := connectclient.Make(
+		clientConfig,
+		// TODO: there must be some constant here somewhere
+		// We only want to hit the public one for this function
+		"buf.build",
+		registryv1alpha1connect.NewPriceEstimationServiceClient,
+	)
+	response, err := service.GetPriceEstimationText(ctx, connect.NewRequest(request))
 	if err != nil {
 		return err
 	}
-	return tmpl.Execute(
-		container.Stdout(),
-		newTmplData(protostat.MergeStats(statsSlice...)),
-	)
-}
-
-type tmplData struct {
-	*protostat.Stats
-
-	NumTypes             int
-	ChargeableTypes      int
-	ChargeableIsRounded  bool
-	TeamsDollarsPerMonth string
-	ProDollarsPerMonth   string
-}
-
-func newTmplData(stats *protostat.Stats) *tmplData {
-	tmplData := &tmplData{
-		Stats:    stats,
-		NumTypes: stats.NumMessages + stats.NumEnums + stats.NumMethods,
-	}
-	buckets := tmplData.NumTypes / 100
-	if tmplData.NumTypes%100 != 0 {
-		tmplData.ChargeableIsRounded = true
-		buckets++
-	}
-	tmplData.ChargeableTypes = buckets * 100
-	tmplData.TeamsDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.ChargeableTypes)*teamsPerTypeDollarsPerMonth)
-	tmplData.ProDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.ChargeableTypes)*proPerTypeDollarsPerMonth)
-	return tmplData
+	_, err = container.Stdout().Write([]byte(response.Msg.GetText()))
+	return err
 }
