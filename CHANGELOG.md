@@ -2,9 +2,9 @@
 
 ## [Unreleased]
 
-- Fix issue in with JSON marshalling of errors where line and column information
-  fields were not omitted when line and column information was empty but the
-  file path was non-empty.
+- Fix issue with JSON marshalling of errors where line and column fields were
+  omitted when line and column information was empty but the file path was non-empty.
+- Fix issue with MSVS marshalling of errors where the column could be 0.
 
 ## [v1.16.0] - 2023-03-29
 

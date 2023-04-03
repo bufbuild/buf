@@ -71,7 +71,7 @@ path/to/file.proto:2:1:Hello.
 	err = bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "msvs")
 	require.NoError(t, err)
 	assert.Equal(t,
-		`path/to/file.proto(1) : error FOO : Hello.
+		`path/to/file.proto(1,1) : error FOO : Hello.
 path/to/file.proto(2,1) : error FOO : Hello.
 `,
 		sb.String(),

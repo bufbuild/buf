@@ -158,7 +158,7 @@ func printFileAnnotationAsMSVS(buffer *bytes.Buffer, f FileAnnotation) error {
 	}
 	path := "<input>"
 	line := atLeast1(f.StartLine())
-	column := f.StartColumn()
+	column := atLeast1(f.StartColumn())
 	message := f.Message()
 	if f.FileInfo() != nil {
 		path = f.FileInfo().ExternalPath()
