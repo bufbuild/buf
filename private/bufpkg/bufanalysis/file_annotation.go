@@ -82,17 +82,11 @@ func (f *fileAnnotation) String() string {
 		return ""
 	}
 	path := "<input>"
-	line := f.startLine
-	column := f.startColumn
+	line := atLeast1(f.startLine)
+	column := atLeast1(f.startColumn)
 	message := f.message
 	if f.fileInfo != nil {
 		path = f.fileInfo.ExternalPath()
-	}
-	if line == 0 {
-		line = 1
-	}
-	if column == 0 {
-		column = 1
 	}
 	if message == "" {
 		message = f.typeString
