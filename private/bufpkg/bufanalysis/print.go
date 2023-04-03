@@ -217,6 +217,9 @@ func newExternalFileAnnotation(f FileAnnotation) externalFileAnnotation {
 	startColumn := f.StartColumn()
 	endLine := f.EndLine()
 	endColumn := f.EndColumn()
+	// If path is empty, we don't output anything
+	// This may just be exacerbating the problem in https://github.com/bufbuild/buf/issues/1930
+	// but it seems right, but not very reasoned
 	if path != "" {
 		startLine = atLeast1(startLine)
 		startColumn = atLeast1(startColumn)
