@@ -420,18 +420,36 @@ func (f *flags) validate(isSecure bool) error {
 		return fmt.Errorf("grpc protocol cannot be used with plain-text URLs (http) unless --%s flag is set", http2PriorKnowledgeFlagName)
 	}
 
+	if f.Schema != "" && f.Reflect {
+		if f.flagSet.Changed(reflectFlagName) {
+			// explicitly enabled both
+			return fmt.Errorf("cannot specify both --%s and --%s", schemaFlagName, reflectFlagName)
+		}
+		// Reflect just has default value; unset it since we're going to use --schema instead
+		f.Reflect = false
+	}
+	if !f.Reflect && f.Schema == "" {
+		return fmt.Errorf("must specify --%s if --%s is false", schemaFlagName, reflectFlagName)
+	}
+	schemaIsStdin := strings.HasPrefix(f.Schema, "-")
 	if (len(f.ReflectHeaders) > 0 || f.flagSet.Changed(reflectProtocolFlagName)) && !f.Reflect {
 		return fmt.Errorf(
 			"reflection flags (--%s, --%s) should not be used if --%s is false",
 			reflectHeaderFlagName, reflectProtocolFlagName, reflectFlagName)
 	}
-	if _, err := bufcurl.ParseReflectProtocol(f.ReflectProtocol); err != nil {
-		return fmt.Errorf(
-			"--%s value must be one of %s",
-			reflectProtocolFlagName,
-			stringutil.SliceToHumanStringOrQuoted(bufcurl.AllKnownReflectProtocolStrings),
-		)
+	if f.Reflect {
+		if !isSecure && !f.HTTP2PriorKnowledge {
+			return fmt.Errorf("--%s cannot be used with plain-text URLs (http) unless --%s flag is set", reflectFlagName, http2PriorKnowledgeFlagName)
+		}
+		if _, err := bufcurl.ParseReflectProtocol(f.ReflectProtocol); err != nil {
+			return fmt.Errorf(
+				"--%s value must be one of %s",
+				reflectProtocolFlagName,
+				stringutil.SliceToHumanStringOrQuoted(bufcurl.AllKnownReflectProtocolStrings),
+			)
+		}
 	}
+
 	switch f.Protocol {
 	case connect.ProtocolConnect, connect.ProtocolGRPC, connect.ProtocolGRPCWeb:
 	default:
@@ -450,19 +468,6 @@ func (f *flags) validate(isSecure bool) error {
 	if f.ConnectTimeoutSeconds < 0 || (f.ConnectTimeoutSeconds == 0 && f.flagSet.Changed(connectTimeoutFlagName)) {
 		return fmt.Errorf("--%s value must be positive", connectTimeoutFlagName)
 	}
-
-	if f.Schema != "" && f.Reflect {
-		if f.flagSet.Changed(reflectFlagName) {
-			// explicitly enabled both
-			return fmt.Errorf("cannot specify both --%s and --%s", schemaFlagName, reflectFlagName)
-		}
-		// Reflect just has default value; unset it since we're going to use --schema instead
-		f.Reflect = false
-	}
-	if !f.Reflect && f.Schema == "" {
-		return fmt.Errorf("must specify --%s if --%s is false", schemaFlagName, reflectFlagName)
-	}
-	schemaIsStdin := strings.HasPrefix(f.Schema, "-")
 
 	var dataFile string
 	if strings.HasPrefix(f.Data, "@") {
