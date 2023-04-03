@@ -207,10 +207,11 @@ func TestAllPaths(t *testing.T) {
 	assert.Equal(t, len(addedPaths), len(retPaths))
 	assert.ElementsMatch(t, addedPaths, retPaths)
 	var iteratedPaths []string
-	m.IteratePaths(func(path string, digest manifest.Digest) {
+	require.NoError(t, m.IteratePaths(func(path string, digest manifest.Digest) error {
 		iteratedPaths = append(iteratedPaths, path)
 		assert.True(t, digest.Equal(*nilDigest))
-	})
+		return nil
+	}))
 	assert.ElementsMatch(t, addedPaths, iteratedPaths)
 }
 

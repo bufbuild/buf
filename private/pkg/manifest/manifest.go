@@ -142,11 +142,14 @@ func (m *Manifest) Paths() []string {
 
 // IteratePaths invokes a function for all the paths in the manifest, passing
 // the path and its digest. The order in which the paths are iterated is not
-// guaranteed.
-func (m *Manifest) IteratePaths(f func(string, Digest)) {
+// guaranteed. This func will stop iterating if an error is returned.
+func (m *Manifest) IteratePaths(f func(path string, digest Digest) error) error {
 	for path, digest := range m.pathToDigest {
-		f(path, digest)
+		if err := f(path, digest); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // PathsFor returns one or more matching path for a given digest. The digest is
