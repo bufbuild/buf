@@ -68,20 +68,19 @@ func (c *casModuleCacher) GetModule(
 	}
 	var blobs []manifest.Blob
 	blobDigests := make(map[string]struct{})
-	for _, path := range manifestFromCache.Paths() {
-		digest, found := manifestFromCache.DigestFor(path)
-		if !found {
-			return nil, fmt.Errorf("digest not found for path: %s", path)
-		}
+	if err := manifestFromCache.Range(func(path string, digest manifest.Digest) error {
 		if _, ok := blobDigests[digest.String()]; ok {
 			// We've already loaded this blob
-			continue
+			return nil
 		}
-		blob, err := c.readBlob(ctx, moduleBasedir, digest)
+		blob, err := c.readBlob(ctx, moduleBasedir, &digest)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		blobs = append(blobs, blob)
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 	blobSet, err := manifest.NewBlobSet(ctx, blobs)
 	if err != nil {
@@ -119,14 +118,10 @@ func (c *casModuleCacher) PutModule(
 	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
 	// Write blobs
 	writtenDigests := make(map[string]struct{})
-	for _, path := range moduleManifest.Paths() {
-		blobDigest, found := moduleManifest.DigestFor(path)
-		if !found {
-			return fmt.Errorf("failed to find digest for path=%q", path)
-		}
-		blobDigestStr := blobDigest.String()
+	if err := moduleManifest.Range(func(path string, digest manifest.Digest) error {
+		blobDigestStr := digest.String()
 		if _, ok := writtenDigests[blobDigestStr]; ok {
-			continue
+			return nil
 		}
 		blob, found := module.BlobSet().BlobFor(blobDigestStr)
 		if !found {
@@ -136,6 +131,9 @@ func (c *casModuleCacher) PutModule(
 			return err
 		}
 		writtenDigests[blobDigestStr] = struct{}{}
+		return nil
+	}); err != nil {
+		return err
 	}
 	// Write manifest
 	if err := c.writeBlob(ctx, moduleBasedir, manifestBlob); err != nil {

@@ -39,6 +39,26 @@ const (
 	TokenServiceName = "buf.alpha.registry.v1alpha1.TokenService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// TokenServiceCreateTokenProcedure is the fully-qualified name of the TokenService's CreateToken
+	// RPC.
+	TokenServiceCreateTokenProcedure = "/buf.alpha.registry.v1alpha1.TokenService/CreateToken"
+	// TokenServiceGetTokenProcedure is the fully-qualified name of the TokenService's GetToken RPC.
+	TokenServiceGetTokenProcedure = "/buf.alpha.registry.v1alpha1.TokenService/GetToken"
+	// TokenServiceListTokensProcedure is the fully-qualified name of the TokenService's ListTokens RPC.
+	TokenServiceListTokensProcedure = "/buf.alpha.registry.v1alpha1.TokenService/ListTokens"
+	// TokenServiceDeleteTokenProcedure is the fully-qualified name of the TokenService's DeleteToken
+	// RPC.
+	TokenServiceDeleteTokenProcedure = "/buf.alpha.registry.v1alpha1.TokenService/DeleteToken"
+)
+
 // TokenServiceClient is a client for the buf.alpha.registry.v1alpha1.TokenService service.
 type TokenServiceClient interface {
 	// CreateToken creates a new token suitable for machine-to-machine authentication.
@@ -69,22 +89,22 @@ func NewTokenServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 	return &tokenServiceClient{
 		createToken: connect_go.NewClient[v1alpha1.CreateTokenRequest, v1alpha1.CreateTokenResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.TokenService/CreateToken",
+			baseURL+TokenServiceCreateTokenProcedure,
 			opts...,
 		),
 		getToken: connect_go.NewClient[v1alpha1.GetTokenRequest, v1alpha1.GetTokenResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.TokenService/GetToken",
+			baseURL+TokenServiceGetTokenProcedure,
 			opts...,
 		),
 		listTokens: connect_go.NewClient[v1alpha1.ListTokensRequest, v1alpha1.ListTokensResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.TokenService/ListTokens",
+			baseURL+TokenServiceListTokensProcedure,
 			opts...,
 		),
 		deleteToken: connect_go.NewClient[v1alpha1.DeleteTokenRequest, v1alpha1.DeleteTokenResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.TokenService/DeleteToken",
+			baseURL+TokenServiceDeleteTokenProcedure,
 			opts...,
 		),
 	}
@@ -143,23 +163,23 @@ type TokenServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewTokenServiceHandler(svc TokenServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.TokenService/CreateToken", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.TokenService/CreateToken",
+	mux.Handle(TokenServiceCreateTokenProcedure, connect_go.NewUnaryHandler(
+		TokenServiceCreateTokenProcedure,
 		svc.CreateToken,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.TokenService/GetToken", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.TokenService/GetToken",
+	mux.Handle(TokenServiceGetTokenProcedure, connect_go.NewUnaryHandler(
+		TokenServiceGetTokenProcedure,
 		svc.GetToken,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.TokenService/ListTokens", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.TokenService/ListTokens",
+	mux.Handle(TokenServiceListTokensProcedure, connect_go.NewUnaryHandler(
+		TokenServiceListTokensProcedure,
 		svc.ListTokens,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.TokenService/DeleteToken", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.TokenService/DeleteToken",
+	mux.Handle(TokenServiceDeleteTokenProcedure, connect_go.NewUnaryHandler(
+		TokenServiceDeleteTokenProcedure,
 		svc.DeleteToken,
 		opts...,
 	))

@@ -39,6 +39,18 @@ const (
 	ImageServiceName = "buf.alpha.registry.v1alpha1.ImageService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// ImageServiceGetImageProcedure is the fully-qualified name of the ImageService's GetImage RPC.
+	ImageServiceGetImageProcedure = "/buf.alpha.registry.v1alpha1.ImageService/GetImage"
+)
+
 // ImageServiceClient is a client for the buf.alpha.registry.v1alpha1.ImageService service.
 type ImageServiceClient interface {
 	// GetImage serves a compiled image for the local module. It automatically
@@ -58,7 +70,7 @@ func NewImageServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 	return &imageServiceClient{
 		getImage: connect_go.NewClient[v1alpha1.GetImageRequest, v1alpha1.GetImageResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.ImageService/GetImage",
+			baseURL+ImageServiceGetImageProcedure,
 			opts...,
 		),
 	}
@@ -88,8 +100,8 @@ type ImageServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewImageServiceHandler(svc ImageServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.ImageService/GetImage", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.ImageService/GetImage",
+	mux.Handle(ImageServiceGetImageProcedure, connect_go.NewUnaryHandler(
+		ImageServiceGetImageProcedure,
 		svc.GetImage,
 		opts...,
 	))
