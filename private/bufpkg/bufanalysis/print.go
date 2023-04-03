@@ -157,14 +157,11 @@ func printFileAnnotationAsMSVS(buffer *bytes.Buffer, f FileAnnotation) error {
 		return nil
 	}
 	path := "<input>"
-	line := f.StartLine()
+	line := atLeast1(f.StartLine())
 	column := f.StartColumn()
 	message := f.Message()
 	if f.FileInfo() != nil {
 		path = f.FileInfo().ExternalPath()
-	}
-	if line == 0 {
-		line = 1
 	}
 	typeString := f.Type()
 	if typeString == "" {
@@ -216,12 +213,22 @@ func newExternalFileAnnotation(f FileAnnotation) externalFileAnnotation {
 	if f.FileInfo() != nil {
 		path = f.FileInfo().ExternalPath()
 	}
+	startLine := f.StartLine()
+	startColumn := f.StartColumn()
+	endLine := f.EndLine()
+	endColumn := f.EndColumn()
+	if path != "" {
+		startLine = atLeast1(startLine)
+		startColumn = atLeast1(startColumn)
+		endLine = atLeast1(endLine)
+		endColumn = atLeast1(endColumn)
+	}
 	return externalFileAnnotation{
 		Path:        path,
-		StartLine:   f.StartLine(),
-		StartColumn: f.StartColumn(),
-		EndLine:     f.EndLine(),
-		EndColumn:   f.EndColumn(),
+		StartLine:   startLine,
+		StartColumn: startColumn,
+		EndLine:     endLine,
+		EndColumn:   endColumn,
 		Type:        f.Type(),
 		Message:     f.Message(),
 	}
@@ -244,4 +251,11 @@ func printEachAnnotationOnNewLine(
 		}
 	}
 	return nil
+}
+
+func atLeast1(i int) int {
+	if i <= 0 {
+		return 1
+	}
+	return i
 }

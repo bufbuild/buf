@@ -62,7 +62,7 @@ path/to/file.proto:2:1:Hello.
 	require.NoError(t, err)
 	assert.Equal(
 		t,
-		`{"path":"path/to/file.proto","start_line":1,"end_line":1,"type":"FOO","message":"Hello."}
+		`{"path":"path/to/file.proto","start_line":1,"start_column":1,"end_line":1,"end_column":1,"type":"FOO","message":"Hello."}
 {"path":"path/to/file.proto","start_line":2,"start_column":1,"end_line":2,"end_column":1,"type":"FOO","message":"Hello."}
 `,
 		sb.String(),
