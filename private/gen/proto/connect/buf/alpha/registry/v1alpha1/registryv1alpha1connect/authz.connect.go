@@ -39,6 +39,82 @@ const (
 	AuthzServiceName = "buf.alpha.registry.v1alpha1.AuthzService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// AuthzServiceUserCanCreateOrganizationRepositoryProcedure is the fully-qualified name of the
+	// AuthzService's UserCanCreateOrganizationRepository RPC.
+	AuthzServiceUserCanCreateOrganizationRepositoryProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationRepository"
+	// AuthzServiceUserCanSeeRepositorySettingsProcedure is the fully-qualified name of the
+	// AuthzService's UserCanSeeRepositorySettings RPC.
+	AuthzServiceUserCanSeeRepositorySettingsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeRepositorySettings"
+	// AuthzServiceUserCanSeeOrganizationSettingsProcedure is the fully-qualified name of the
+	// AuthzService's UserCanSeeOrganizationSettings RPC.
+	AuthzServiceUserCanSeeOrganizationSettingsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeOrganizationSettings"
+	// AuthzServiceUserCanReadPluginProcedure is the fully-qualified name of the AuthzService's
+	// UserCanReadPlugin RPC.
+	AuthzServiceUserCanReadPluginProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanReadPlugin"
+	// AuthzServiceUserCanCreatePluginVersionProcedure is the fully-qualified name of the AuthzService's
+	// UserCanCreatePluginVersion RPC.
+	AuthzServiceUserCanCreatePluginVersionProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreatePluginVersion"
+	// AuthzServiceUserCanCreateTemplateVersionProcedure is the fully-qualified name of the
+	// AuthzService's UserCanCreateTemplateVersion RPC.
+	AuthzServiceUserCanCreateTemplateVersionProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateTemplateVersion"
+	// AuthzServiceUserCanCreateOrganizationPluginProcedure is the fully-qualified name of the
+	// AuthzService's UserCanCreateOrganizationPlugin RPC.
+	AuthzServiceUserCanCreateOrganizationPluginProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationPlugin"
+	// AuthzServiceUserCanCreateOrganizationTemplateProcedure is the fully-qualified name of the
+	// AuthzService's UserCanCreateOrganizationTemplate RPC.
+	AuthzServiceUserCanCreateOrganizationTemplateProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationTemplate"
+	// AuthzServiceUserCanSeePluginSettingsProcedure is the fully-qualified name of the AuthzService's
+	// UserCanSeePluginSettings RPC.
+	AuthzServiceUserCanSeePluginSettingsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeePluginSettings"
+	// AuthzServiceUserCanSeeTemplateSettingsProcedure is the fully-qualified name of the AuthzService's
+	// UserCanSeeTemplateSettings RPC.
+	AuthzServiceUserCanSeeTemplateSettingsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeTemplateSettings"
+	// AuthzServiceUserCanAddOrganizationMemberProcedure is the fully-qualified name of the
+	// AuthzService's UserCanAddOrganizationMember RPC.
+	AuthzServiceUserCanAddOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanAddOrganizationMember"
+	// AuthzServiceUserCanUpdateOrganizationMemberProcedure is the fully-qualified name of the
+	// AuthzService's UserCanUpdateOrganizationMember RPC.
+	AuthzServiceUserCanUpdateOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanUpdateOrganizationMember"
+	// AuthzServiceUserCanRemoveOrganizationMemberProcedure is the fully-qualified name of the
+	// AuthzService's UserCanRemoveOrganizationMember RPC.
+	AuthzServiceUserCanRemoveOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanRemoveOrganizationMember"
+	// AuthzServiceUserCanDeleteOrganizationProcedure is the fully-qualified name of the AuthzService's
+	// UserCanDeleteOrganization RPC.
+	AuthzServiceUserCanDeleteOrganizationProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteOrganization"
+	// AuthzServiceUserCanDeleteRepositoryProcedure is the fully-qualified name of the AuthzService's
+	// UserCanDeleteRepository RPC.
+	AuthzServiceUserCanDeleteRepositoryProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteRepository"
+	// AuthzServiceUserCanDeleteTemplateProcedure is the fully-qualified name of the AuthzService's
+	// UserCanDeleteTemplate RPC.
+	AuthzServiceUserCanDeleteTemplateProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteTemplate"
+	// AuthzServiceUserCanDeletePluginProcedure is the fully-qualified name of the AuthzService's
+	// UserCanDeletePlugin RPC.
+	AuthzServiceUserCanDeletePluginProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeletePlugin"
+	// AuthzServiceUserCanDeleteUserProcedure is the fully-qualified name of the AuthzService's
+	// UserCanDeleteUser RPC.
+	AuthzServiceUserCanDeleteUserProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteUser"
+	// AuthzServiceUserCanSeeServerAdminPanelProcedure is the fully-qualified name of the AuthzService's
+	// UserCanSeeServerAdminPanel RPC.
+	AuthzServiceUserCanSeeServerAdminPanelProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeServerAdminPanel"
+	// AuthzServiceUserCanManageRepositoryContributorsProcedure is the fully-qualified name of the
+	// AuthzService's UserCanManageRepositoryContributors RPC.
+	AuthzServiceUserCanManageRepositoryContributorsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageRepositoryContributors"
+	// AuthzServiceUserCanManagePluginContributorsProcedure is the fully-qualified name of the
+	// AuthzService's UserCanManagePluginContributors RPC.
+	AuthzServiceUserCanManagePluginContributorsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManagePluginContributors"
+	// AuthzServiceUserCanManageTemplateContributorsProcedure is the fully-qualified name of the
+	// AuthzService's UserCanManageTemplateContributors RPC.
+	AuthzServiceUserCanManageTemplateContributorsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageTemplateContributors"
+)
+
 // AuthzServiceClient is a client for the buf.alpha.registry.v1alpha1.AuthzService service.
 type AuthzServiceClient interface {
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
@@ -142,112 +218,112 @@ func NewAuthzServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 	return &authzServiceClient{
 		userCanCreateOrganizationRepository: connect_go.NewClient[v1alpha1.UserCanCreateOrganizationRepositoryRequest, v1alpha1.UserCanCreateOrganizationRepositoryResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationRepository",
+			baseURL+AuthzServiceUserCanCreateOrganizationRepositoryProcedure,
 			opts...,
 		),
 		userCanSeeRepositorySettings: connect_go.NewClient[v1alpha1.UserCanSeeRepositorySettingsRequest, v1alpha1.UserCanSeeRepositorySettingsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeRepositorySettings",
+			baseURL+AuthzServiceUserCanSeeRepositorySettingsProcedure,
 			opts...,
 		),
 		userCanSeeOrganizationSettings: connect_go.NewClient[v1alpha1.UserCanSeeOrganizationSettingsRequest, v1alpha1.UserCanSeeOrganizationSettingsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeOrganizationSettings",
+			baseURL+AuthzServiceUserCanSeeOrganizationSettingsProcedure,
 			opts...,
 		),
 		userCanReadPlugin: connect_go.NewClient[v1alpha1.UserCanReadPluginRequest, v1alpha1.UserCanReadPluginResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanReadPlugin",
+			baseURL+AuthzServiceUserCanReadPluginProcedure,
 			opts...,
 		),
 		userCanCreatePluginVersion: connect_go.NewClient[v1alpha1.UserCanCreatePluginVersionRequest, v1alpha1.UserCanCreatePluginVersionResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreatePluginVersion",
+			baseURL+AuthzServiceUserCanCreatePluginVersionProcedure,
 			opts...,
 		),
 		userCanCreateTemplateVersion: connect_go.NewClient[v1alpha1.UserCanCreateTemplateVersionRequest, v1alpha1.UserCanCreateTemplateVersionResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateTemplateVersion",
+			baseURL+AuthzServiceUserCanCreateTemplateVersionProcedure,
 			opts...,
 		),
 		userCanCreateOrganizationPlugin: connect_go.NewClient[v1alpha1.UserCanCreateOrganizationPluginRequest, v1alpha1.UserCanCreateOrganizationPluginResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationPlugin",
+			baseURL+AuthzServiceUserCanCreateOrganizationPluginProcedure,
 			opts...,
 		),
 		userCanCreateOrganizationTemplate: connect_go.NewClient[v1alpha1.UserCanCreateOrganizationTemplateRequest, v1alpha1.UserCanCreateOrganizationTemplateResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationTemplate",
+			baseURL+AuthzServiceUserCanCreateOrganizationTemplateProcedure,
 			opts...,
 		),
 		userCanSeePluginSettings: connect_go.NewClient[v1alpha1.UserCanSeePluginSettingsRequest, v1alpha1.UserCanSeePluginSettingsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeePluginSettings",
+			baseURL+AuthzServiceUserCanSeePluginSettingsProcedure,
 			opts...,
 		),
 		userCanSeeTemplateSettings: connect_go.NewClient[v1alpha1.UserCanSeeTemplateSettingsRequest, v1alpha1.UserCanSeeTemplateSettingsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeTemplateSettings",
+			baseURL+AuthzServiceUserCanSeeTemplateSettingsProcedure,
 			opts...,
 		),
 		userCanAddOrganizationMember: connect_go.NewClient[v1alpha1.UserCanAddOrganizationMemberRequest, v1alpha1.UserCanAddOrganizationMemberResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanAddOrganizationMember",
+			baseURL+AuthzServiceUserCanAddOrganizationMemberProcedure,
 			opts...,
 		),
 		userCanUpdateOrganizationMember: connect_go.NewClient[v1alpha1.UserCanUpdateOrganizationMemberRequest, v1alpha1.UserCanUpdateOrganizationMemberResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanUpdateOrganizationMember",
+			baseURL+AuthzServiceUserCanUpdateOrganizationMemberProcedure,
 			opts...,
 		),
 		userCanRemoveOrganizationMember: connect_go.NewClient[v1alpha1.UserCanRemoveOrganizationMemberRequest, v1alpha1.UserCanRemoveOrganizationMemberResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanRemoveOrganizationMember",
+			baseURL+AuthzServiceUserCanRemoveOrganizationMemberProcedure,
 			opts...,
 		),
 		userCanDeleteOrganization: connect_go.NewClient[v1alpha1.UserCanDeleteOrganizationRequest, v1alpha1.UserCanDeleteOrganizationResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteOrganization",
+			baseURL+AuthzServiceUserCanDeleteOrganizationProcedure,
 			opts...,
 		),
 		userCanDeleteRepository: connect_go.NewClient[v1alpha1.UserCanDeleteRepositoryRequest, v1alpha1.UserCanDeleteRepositoryResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteRepository",
+			baseURL+AuthzServiceUserCanDeleteRepositoryProcedure,
 			opts...,
 		),
 		userCanDeleteTemplate: connect_go.NewClient[v1alpha1.UserCanDeleteTemplateRequest, v1alpha1.UserCanDeleteTemplateResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteTemplate",
+			baseURL+AuthzServiceUserCanDeleteTemplateProcedure,
 			opts...,
 		),
 		userCanDeletePlugin: connect_go.NewClient[v1alpha1.UserCanDeletePluginRequest, v1alpha1.UserCanDeletePluginResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeletePlugin",
+			baseURL+AuthzServiceUserCanDeletePluginProcedure,
 			opts...,
 		),
 		userCanDeleteUser: connect_go.NewClient[v1alpha1.UserCanDeleteUserRequest, v1alpha1.UserCanDeleteUserResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteUser",
+			baseURL+AuthzServiceUserCanDeleteUserProcedure,
 			opts...,
 		),
 		userCanSeeServerAdminPanel: connect_go.NewClient[v1alpha1.UserCanSeeServerAdminPanelRequest, v1alpha1.UserCanSeeServerAdminPanelResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeServerAdminPanel",
+			baseURL+AuthzServiceUserCanSeeServerAdminPanelProcedure,
 			opts...,
 		),
 		userCanManageRepositoryContributors: connect_go.NewClient[v1alpha1.UserCanManageRepositoryContributorsRequest, v1alpha1.UserCanManageRepositoryContributorsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageRepositoryContributors",
+			baseURL+AuthzServiceUserCanManageRepositoryContributorsProcedure,
 			opts...,
 		),
 		userCanManagePluginContributors: connect_go.NewClient[v1alpha1.UserCanManagePluginContributorsRequest, v1alpha1.UserCanManagePluginContributorsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanManagePluginContributors",
+			baseURL+AuthzServiceUserCanManagePluginContributorsProcedure,
 			opts...,
 		),
 		userCanManageTemplateContributors: connect_go.NewClient[v1alpha1.UserCanManageTemplateContributorsRequest, v1alpha1.UserCanManageTemplateContributorsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageTemplateContributors",
+			baseURL+AuthzServiceUserCanManageTemplateContributorsProcedure,
 			opts...,
 		),
 	}
@@ -525,113 +601,113 @@ type AuthzServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewAuthzServiceHandler(svc AuthzServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationRepository", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationRepository",
+	mux.Handle(AuthzServiceUserCanCreateOrganizationRepositoryProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanCreateOrganizationRepositoryProcedure,
 		svc.UserCanCreateOrganizationRepository,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeRepositorySettings", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeRepositorySettings",
+	mux.Handle(AuthzServiceUserCanSeeRepositorySettingsProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanSeeRepositorySettingsProcedure,
 		svc.UserCanSeeRepositorySettings,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeOrganizationSettings", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeOrganizationSettings",
+	mux.Handle(AuthzServiceUserCanSeeOrganizationSettingsProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanSeeOrganizationSettingsProcedure,
 		svc.UserCanSeeOrganizationSettings,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanReadPlugin", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanReadPlugin",
+	mux.Handle(AuthzServiceUserCanReadPluginProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanReadPluginProcedure,
 		svc.UserCanReadPlugin,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreatePluginVersion", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreatePluginVersion",
+	mux.Handle(AuthzServiceUserCanCreatePluginVersionProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanCreatePluginVersionProcedure,
 		svc.UserCanCreatePluginVersion,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateTemplateVersion", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateTemplateVersion",
+	mux.Handle(AuthzServiceUserCanCreateTemplateVersionProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanCreateTemplateVersionProcedure,
 		svc.UserCanCreateTemplateVersion,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationPlugin", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationPlugin",
+	mux.Handle(AuthzServiceUserCanCreateOrganizationPluginProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanCreateOrganizationPluginProcedure,
 		svc.UserCanCreateOrganizationPlugin,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationTemplate", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationTemplate",
+	mux.Handle(AuthzServiceUserCanCreateOrganizationTemplateProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanCreateOrganizationTemplateProcedure,
 		svc.UserCanCreateOrganizationTemplate,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeePluginSettings", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeePluginSettings",
+	mux.Handle(AuthzServiceUserCanSeePluginSettingsProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanSeePluginSettingsProcedure,
 		svc.UserCanSeePluginSettings,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeTemplateSettings", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeTemplateSettings",
+	mux.Handle(AuthzServiceUserCanSeeTemplateSettingsProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanSeeTemplateSettingsProcedure,
 		svc.UserCanSeeTemplateSettings,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanAddOrganizationMember", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanAddOrganizationMember",
+	mux.Handle(AuthzServiceUserCanAddOrganizationMemberProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanAddOrganizationMemberProcedure,
 		svc.UserCanAddOrganizationMember,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanUpdateOrganizationMember", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanUpdateOrganizationMember",
+	mux.Handle(AuthzServiceUserCanUpdateOrganizationMemberProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanUpdateOrganizationMemberProcedure,
 		svc.UserCanUpdateOrganizationMember,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanRemoveOrganizationMember", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanRemoveOrganizationMember",
+	mux.Handle(AuthzServiceUserCanRemoveOrganizationMemberProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanRemoveOrganizationMemberProcedure,
 		svc.UserCanRemoveOrganizationMember,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteOrganization", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteOrganization",
+	mux.Handle(AuthzServiceUserCanDeleteOrganizationProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanDeleteOrganizationProcedure,
 		svc.UserCanDeleteOrganization,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteRepository", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteRepository",
+	mux.Handle(AuthzServiceUserCanDeleteRepositoryProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanDeleteRepositoryProcedure,
 		svc.UserCanDeleteRepository,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteTemplate", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteTemplate",
+	mux.Handle(AuthzServiceUserCanDeleteTemplateProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanDeleteTemplateProcedure,
 		svc.UserCanDeleteTemplate,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeletePlugin", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeletePlugin",
+	mux.Handle(AuthzServiceUserCanDeletePluginProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanDeletePluginProcedure,
 		svc.UserCanDeletePlugin,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteUser", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteUser",
+	mux.Handle(AuthzServiceUserCanDeleteUserProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanDeleteUserProcedure,
 		svc.UserCanDeleteUser,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeServerAdminPanel", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeServerAdminPanel",
+	mux.Handle(AuthzServiceUserCanSeeServerAdminPanelProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanSeeServerAdminPanelProcedure,
 		svc.UserCanSeeServerAdminPanel,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageRepositoryContributors", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageRepositoryContributors",
+	mux.Handle(AuthzServiceUserCanManageRepositoryContributorsProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanManageRepositoryContributorsProcedure,
 		svc.UserCanManageRepositoryContributors,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanManagePluginContributors", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanManagePluginContributors",
+	mux.Handle(AuthzServiceUserCanManagePluginContributorsProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanManagePluginContributorsProcedure,
 		svc.UserCanManagePluginContributors,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageTemplateContributors", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageTemplateContributors",
+	mux.Handle(AuthzServiceUserCanManageTemplateContributorsProcedure, connect_go.NewUnaryHandler(
+		AuthzServiceUserCanManageTemplateContributorsProcedure,
 		svc.UserCanManageTemplateContributors,
 		opts...,
 	))

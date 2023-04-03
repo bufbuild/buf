@@ -39,6 +39,19 @@ const (
 	OwnerServiceName = "buf.alpha.registry.v1alpha1.OwnerService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// OwnerServiceGetOwnerByNameProcedure is the fully-qualified name of the OwnerService's
+	// GetOwnerByName RPC.
+	OwnerServiceGetOwnerByNameProcedure = "/buf.alpha.registry.v1alpha1.OwnerService/GetOwnerByName"
+)
+
 // OwnerServiceClient is a client for the buf.alpha.registry.v1alpha1.OwnerService service.
 type OwnerServiceClient interface {
 	// GetOwnerByName takes an owner name and returns the owner as
@@ -58,7 +71,7 @@ func NewOwnerServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 	return &ownerServiceClient{
 		getOwnerByName: connect_go.NewClient[v1alpha1.GetOwnerByNameRequest, v1alpha1.GetOwnerByNameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OwnerService/GetOwnerByName",
+			baseURL+OwnerServiceGetOwnerByNameProcedure,
 			opts...,
 		),
 	}
@@ -88,8 +101,8 @@ type OwnerServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewOwnerServiceHandler(svc OwnerServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.OwnerService/GetOwnerByName", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OwnerService/GetOwnerByName",
+	mux.Handle(OwnerServiceGetOwnerByNameProcedure, connect_go.NewUnaryHandler(
+		OwnerServiceGetOwnerByNameProcedure,
 		svc.GetOwnerByName,
 		opts...,
 	))

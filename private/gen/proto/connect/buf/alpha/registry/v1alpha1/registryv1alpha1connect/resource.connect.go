@@ -39,6 +39,19 @@ const (
 	ResourceServiceName = "buf.alpha.registry.v1alpha1.ResourceService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// ResourceServiceGetResourceByNameProcedure is the fully-qualified name of the ResourceService's
+	// GetResourceByName RPC.
+	ResourceServiceGetResourceByNameProcedure = "/buf.alpha.registry.v1alpha1.ResourceService/GetResourceByName"
+)
+
 // ResourceServiceClient is a client for the buf.alpha.registry.v1alpha1.ResourceService service.
 type ResourceServiceClient interface {
 	// GetResourceByName takes a resource name and returns the
@@ -58,7 +71,7 @@ func NewResourceServiceClient(httpClient connect_go.HTTPClient, baseURL string, 
 	return &resourceServiceClient{
 		getResourceByName: connect_go.NewClient[v1alpha1.GetResourceByNameRequest, v1alpha1.GetResourceByNameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.ResourceService/GetResourceByName",
+			baseURL+ResourceServiceGetResourceByNameProcedure,
 			opts...,
 		),
 	}
@@ -89,8 +102,8 @@ type ResourceServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewResourceServiceHandler(svc ResourceServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.ResourceService/GetResourceByName", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.ResourceService/GetResourceByName",
+	mux.Handle(ResourceServiceGetResourceByNameProcedure, connect_go.NewUnaryHandler(
+		ResourceServiceGetResourceByNameProcedure,
 		svc.GetResourceByName,
 		opts...,
 	))

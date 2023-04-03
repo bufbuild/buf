@@ -39,6 +39,34 @@ const (
 	RepositoryCommitServiceName = "buf.alpha.registry.v1alpha1.RepositoryCommitService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// RepositoryCommitServiceListRepositoryCommitsByBranchProcedure is the fully-qualified name of the
+	// RepositoryCommitService's ListRepositoryCommitsByBranch RPC.
+	RepositoryCommitServiceListRepositoryCommitsByBranchProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByBranch"
+	// RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure is the fully-qualified name of
+	// the RepositoryCommitService's ListRepositoryCommitsByReference RPC.
+	RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByReference"
+	// RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure is the fully-qualified name of the
+	// RepositoryCommitService's GetRepositoryCommitByReference RPC.
+	RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitByReference"
+	// RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure is the fully-qualified name of
+	// the RepositoryCommitService's GetRepositoryCommitBySequenceId RPC.
+	RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitBySequenceId"
+	// RepositoryCommitServiceListRepositoryDraftCommitsProcedure is the fully-qualified name of the
+	// RepositoryCommitService's ListRepositoryDraftCommits RPC.
+	RepositoryCommitServiceListRepositoryDraftCommitsProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryDraftCommits"
+	// RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure is the fully-qualified name of the
+	// RepositoryCommitService's DeleteRepositoryDraftCommit RPC.
+	RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/DeleteRepositoryDraftCommit"
+)
+
 // RepositoryCommitServiceClient is a client for the
 // buf.alpha.registry.v1alpha1.RepositoryCommitService service.
 type RepositoryCommitServiceClient interface {
@@ -75,32 +103,32 @@ func NewRepositoryCommitServiceClient(httpClient connect_go.HTTPClient, baseURL 
 	return &repositoryCommitServiceClient{
 		listRepositoryCommitsByBranch: connect_go.NewClient[v1alpha1.ListRepositoryCommitsByBranchRequest, v1alpha1.ListRepositoryCommitsByBranchResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByBranch",
+			baseURL+RepositoryCommitServiceListRepositoryCommitsByBranchProcedure,
 			opts...,
 		),
 		listRepositoryCommitsByReference: connect_go.NewClient[v1alpha1.ListRepositoryCommitsByReferenceRequest, v1alpha1.ListRepositoryCommitsByReferenceResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByReference",
+			baseURL+RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure,
 			opts...,
 		),
 		getRepositoryCommitByReference: connect_go.NewClient[v1alpha1.GetRepositoryCommitByReferenceRequest, v1alpha1.GetRepositoryCommitByReferenceResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitByReference",
+			baseURL+RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure,
 			opts...,
 		),
 		getRepositoryCommitBySequenceId: connect_go.NewClient[v1alpha1.GetRepositoryCommitBySequenceIdRequest, v1alpha1.GetRepositoryCommitBySequenceIdResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitBySequenceId",
+			baseURL+RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure,
 			opts...,
 		),
 		listRepositoryDraftCommits: connect_go.NewClient[v1alpha1.ListRepositoryDraftCommitsRequest, v1alpha1.ListRepositoryDraftCommitsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryDraftCommits",
+			baseURL+RepositoryCommitServiceListRepositoryDraftCommitsProcedure,
 			opts...,
 		),
 		deleteRepositoryDraftCommit: connect_go.NewClient[v1alpha1.DeleteRepositoryDraftCommitRequest, v1alpha1.DeleteRepositoryDraftCommitResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryCommitService/DeleteRepositoryDraftCommit",
+			baseURL+RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure,
 			opts...,
 		),
 	}
@@ -184,33 +212,33 @@ type RepositoryCommitServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewRepositoryCommitServiceHandler(svc RepositoryCommitServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByBranch", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByBranch",
+	mux.Handle(RepositoryCommitServiceListRepositoryCommitsByBranchProcedure, connect_go.NewUnaryHandler(
+		RepositoryCommitServiceListRepositoryCommitsByBranchProcedure,
 		svc.ListRepositoryCommitsByBranch,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByReference", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByReference",
+	mux.Handle(RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure, connect_go.NewUnaryHandler(
+		RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure,
 		svc.ListRepositoryCommitsByReference,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitByReference", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitByReference",
+	mux.Handle(RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure, connect_go.NewUnaryHandler(
+		RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure,
 		svc.GetRepositoryCommitByReference,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitBySequenceId", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitBySequenceId",
+	mux.Handle(RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure, connect_go.NewUnaryHandler(
+		RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure,
 		svc.GetRepositoryCommitBySequenceId,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryDraftCommits", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryDraftCommits",
+	mux.Handle(RepositoryCommitServiceListRepositoryDraftCommitsProcedure, connect_go.NewUnaryHandler(
+		RepositoryCommitServiceListRepositoryDraftCommitsProcedure,
 		svc.ListRepositoryDraftCommits,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryCommitService/DeleteRepositoryDraftCommit", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryCommitService/DeleteRepositoryDraftCommit",
+	mux.Handle(RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure, connect_go.NewUnaryHandler(
+		RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure,
 		svc.DeleteRepositoryDraftCommit,
 		opts...,
 	))

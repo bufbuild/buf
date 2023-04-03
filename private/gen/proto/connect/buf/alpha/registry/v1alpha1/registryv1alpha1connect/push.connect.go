@@ -39,6 +39,21 @@ const (
 	PushServiceName = "buf.alpha.registry.v1alpha1.PushService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// PushServicePushProcedure is the fully-qualified name of the PushService's Push RPC.
+	PushServicePushProcedure = "/buf.alpha.registry.v1alpha1.PushService/Push"
+	// PushServicePushManifestAndBlobsProcedure is the fully-qualified name of the PushService's
+	// PushManifestAndBlobs RPC.
+	PushServicePushManifestAndBlobsProcedure = "/buf.alpha.registry.v1alpha1.PushService/PushManifestAndBlobs"
+)
+
 // PushServiceClient is a client for the buf.alpha.registry.v1alpha1.PushService service.
 type PushServiceClient interface {
 	// Push pushes.
@@ -60,12 +75,12 @@ func NewPushServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 	return &pushServiceClient{
 		push: connect_go.NewClient[v1alpha1.PushRequest, v1alpha1.PushResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PushService/Push",
+			baseURL+PushServicePushProcedure,
 			opts...,
 		),
 		pushManifestAndBlobs: connect_go.NewClient[v1alpha1.PushManifestAndBlobsRequest, v1alpha1.PushManifestAndBlobsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PushService/PushManifestAndBlobs",
+			baseURL+PushServicePushManifestAndBlobsProcedure,
 			opts...,
 		),
 	}
@@ -103,13 +118,13 @@ type PushServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewPushServiceHandler(svc PushServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.PushService/Push", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PushService/Push",
+	mux.Handle(PushServicePushProcedure, connect_go.NewUnaryHandler(
+		PushServicePushProcedure,
 		svc.Push,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PushService/PushManifestAndBlobs", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PushService/PushManifestAndBlobs",
+	mux.Handle(PushServicePushManifestAndBlobsProcedure, connect_go.NewUnaryHandler(
+		PushServicePushManifestAndBlobsProcedure,
 		svc.PushManifestAndBlobs,
 		opts...,
 	))

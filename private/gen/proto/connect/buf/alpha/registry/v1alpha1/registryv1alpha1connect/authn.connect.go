@@ -39,6 +39,22 @@ const (
 	AuthnServiceName = "buf.alpha.registry.v1alpha1.AuthnService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// AuthnServiceGetCurrentUserProcedure is the fully-qualified name of the AuthnService's
+	// GetCurrentUser RPC.
+	AuthnServiceGetCurrentUserProcedure = "/buf.alpha.registry.v1alpha1.AuthnService/GetCurrentUser"
+	// AuthnServiceGetCurrentUserSubjectProcedure is the fully-qualified name of the AuthnService's
+	// GetCurrentUserSubject RPC.
+	AuthnServiceGetCurrentUserSubjectProcedure = "/buf.alpha.registry.v1alpha1.AuthnService/GetCurrentUserSubject"
+)
+
 // AuthnServiceClient is a client for the buf.alpha.registry.v1alpha1.AuthnService service.
 type AuthnServiceClient interface {
 	// GetCurrentUser gets information associated with the current user.
@@ -63,12 +79,12 @@ func NewAuthnServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 	return &authnServiceClient{
 		getCurrentUser: connect_go.NewClient[v1alpha1.GetCurrentUserRequest, v1alpha1.GetCurrentUserResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthnService/GetCurrentUser",
+			baseURL+AuthnServiceGetCurrentUserProcedure,
 			opts...,
 		),
 		getCurrentUserSubject: connect_go.NewClient[v1alpha1.GetCurrentUserSubjectRequest, v1alpha1.GetCurrentUserSubjectResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AuthnService/GetCurrentUserSubject",
+			baseURL+AuthnServiceGetCurrentUserSubjectProcedure,
 			opts...,
 		),
 	}
@@ -109,13 +125,13 @@ type AuthnServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewAuthnServiceHandler(svc AuthnServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthnService/GetCurrentUser", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthnService/GetCurrentUser",
+	mux.Handle(AuthnServiceGetCurrentUserProcedure, connect_go.NewUnaryHandler(
+		AuthnServiceGetCurrentUserProcedure,
 		svc.GetCurrentUser,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AuthnService/GetCurrentUserSubject", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AuthnService/GetCurrentUserSubject",
+	mux.Handle(AuthnServiceGetCurrentUserSubjectProcedure, connect_go.NewUnaryHandler(
+		AuthnServiceGetCurrentUserSubjectProcedure,
 		svc.GetCurrentUserSubject,
 		opts...,
 	))

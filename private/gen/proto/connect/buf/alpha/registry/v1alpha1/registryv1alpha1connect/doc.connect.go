@@ -39,6 +39,31 @@ const (
 	DocServiceName = "buf.alpha.registry.v1alpha1.DocService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// DocServiceGetSourceDirectoryInfoProcedure is the fully-qualified name of the DocService's
+	// GetSourceDirectoryInfo RPC.
+	DocServiceGetSourceDirectoryInfoProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetSourceDirectoryInfo"
+	// DocServiceGetSourceFileProcedure is the fully-qualified name of the DocService's GetSourceFile
+	// RPC.
+	DocServiceGetSourceFileProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetSourceFile"
+	// DocServiceGetModulePackagesProcedure is the fully-qualified name of the DocService's
+	// GetModulePackages RPC.
+	DocServiceGetModulePackagesProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetModulePackages"
+	// DocServiceGetModuleDocumentationProcedure is the fully-qualified name of the DocService's
+	// GetModuleDocumentation RPC.
+	DocServiceGetModuleDocumentationProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetModuleDocumentation"
+	// DocServiceGetPackageDocumentationProcedure is the fully-qualified name of the DocService's
+	// GetPackageDocumentation RPC.
+	DocServiceGetPackageDocumentationProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetPackageDocumentation"
+)
+
 // DocServiceClient is a client for the buf.alpha.registry.v1alpha1.DocService service.
 type DocServiceClient interface {
 	// GetSourceDirectoryInfo retrieves the directory and file structure for the
@@ -73,27 +98,27 @@ func NewDocServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts 
 	return &docServiceClient{
 		getSourceDirectoryInfo: connect_go.NewClient[v1alpha1.GetSourceDirectoryInfoRequest, v1alpha1.GetSourceDirectoryInfoResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DocService/GetSourceDirectoryInfo",
+			baseURL+DocServiceGetSourceDirectoryInfoProcedure,
 			opts...,
 		),
 		getSourceFile: connect_go.NewClient[v1alpha1.GetSourceFileRequest, v1alpha1.GetSourceFileResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DocService/GetSourceFile",
+			baseURL+DocServiceGetSourceFileProcedure,
 			opts...,
 		),
 		getModulePackages: connect_go.NewClient[v1alpha1.GetModulePackagesRequest, v1alpha1.GetModulePackagesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DocService/GetModulePackages",
+			baseURL+DocServiceGetModulePackagesProcedure,
 			opts...,
 		),
 		getModuleDocumentation: connect_go.NewClient[v1alpha1.GetModuleDocumentationRequest, v1alpha1.GetModuleDocumentationResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DocService/GetModuleDocumentation",
+			baseURL+DocServiceGetModuleDocumentationProcedure,
 			opts...,
 		),
 		getPackageDocumentation: connect_go.NewClient[v1alpha1.GetPackageDocumentationRequest, v1alpha1.GetPackageDocumentationResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DocService/GetPackageDocumentation",
+			baseURL+DocServiceGetPackageDocumentationProcedure,
 			opts...,
 		),
 	}
@@ -162,28 +187,28 @@ type DocServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewDocServiceHandler(svc DocServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.DocService/GetSourceDirectoryInfo", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DocService/GetSourceDirectoryInfo",
+	mux.Handle(DocServiceGetSourceDirectoryInfoProcedure, connect_go.NewUnaryHandler(
+		DocServiceGetSourceDirectoryInfoProcedure,
 		svc.GetSourceDirectoryInfo,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DocService/GetSourceFile", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DocService/GetSourceFile",
+	mux.Handle(DocServiceGetSourceFileProcedure, connect_go.NewUnaryHandler(
+		DocServiceGetSourceFileProcedure,
 		svc.GetSourceFile,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DocService/GetModulePackages", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DocService/GetModulePackages",
+	mux.Handle(DocServiceGetModulePackagesProcedure, connect_go.NewUnaryHandler(
+		DocServiceGetModulePackagesProcedure,
 		svc.GetModulePackages,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DocService/GetModuleDocumentation", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DocService/GetModuleDocumentation",
+	mux.Handle(DocServiceGetModuleDocumentationProcedure, connect_go.NewUnaryHandler(
+		DocServiceGetModuleDocumentationProcedure,
 		svc.GetModuleDocumentation,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DocService/GetPackageDocumentation", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DocService/GetPackageDocumentation",
+	mux.Handle(DocServiceGetPackageDocumentationProcedure, connect_go.NewUnaryHandler(
+		DocServiceGetPackageDocumentationProcedure,
 		svc.GetPackageDocumentation,
 		opts...,
 	))
