@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -130,9 +131,7 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		// TODO: there must be some constant here somewhere
-		// We only want to hit the public one for this function
-		"buf.build",
+		bufconnect.DefaultRemote,
 		registryv1alpha1connect.NewPriceEstimationServiceClient,
 	)
 	response, err := service.GetPriceEstimationText(ctx, connect.NewRequest(request))
