@@ -39,6 +39,19 @@ const (
 	PriceEstimationServiceName = "buf.alpha.registry.v1alpha1.PriceEstimationService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// PriceEstimationServiceGetPriceEstimationTextProcedure is the fully-qualified name of the
+	// PriceEstimationService's GetPriceEstimationText RPC.
+	PriceEstimationServiceGetPriceEstimationTextProcedure = "/buf.alpha.registry.v1alpha1.PriceEstimationService/GetPriceEstimationText"
+)
+
 // PriceEstimationServiceClient is a client for the
 // buf.alpha.registry.v1alpha1.PriceEstimationService service.
 type PriceEstimationServiceClient interface {
@@ -60,7 +73,7 @@ func NewPriceEstimationServiceClient(httpClient connect_go.HTTPClient, baseURL s
 	return &priceEstimationServiceClient{
 		getPriceEstimationText: connect_go.NewClient[v1alpha1.GetPriceEstimationTextRequest, v1alpha1.GetPriceEstimationTextResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PriceEstimationService/GetPriceEstimationText",
+			baseURL+PriceEstimationServiceGetPriceEstimationTextProcedure,
 			opts...,
 		),
 	}
@@ -92,8 +105,8 @@ type PriceEstimationServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewPriceEstimationServiceHandler(svc PriceEstimationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.PriceEstimationService/GetPriceEstimationText", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PriceEstimationService/GetPriceEstimationText",
+	mux.Handle(PriceEstimationServiceGetPriceEstimationTextProcedure, connect_go.NewUnaryHandler(
+		PriceEstimationServiceGetPriceEstimationTextProcedure,
 		svc.GetPriceEstimationText,
 		opts...,
 	))
