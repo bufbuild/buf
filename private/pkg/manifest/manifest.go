@@ -140,10 +140,10 @@ func (m *Manifest) Paths() []string {
 	return paths
 }
 
-// IteratePaths invokes a function for all the paths in the manifest, passing
-// the path and its digest. The order in which the paths are iterated is not
-// guaranteed. This func will stop iterating if an error is returned.
-func (m *Manifest) IteratePaths(f func(path string, digest Digest) error) error {
+// Range invokes a function for all the paths in the manifest, passing the path
+// and its digest. The order in which the paths are iterated is not guaranteed.
+// This func will stop iterating if an error is returned.
+func (m *Manifest) Range(f func(path string, digest Digest) error) error {
 	for path, digest := range m.pathToDigest {
 		if err := f(path, digest); err != nil {
 			return err

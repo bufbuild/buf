@@ -68,7 +68,7 @@ func (c *casModuleCacher) GetModule(
 	}
 	var blobs []manifest.Blob
 	blobDigests := make(map[string]struct{})
-	if err := manifestFromCache.IteratePaths(func(path string, digest manifest.Digest) error {
+	if err := manifestFromCache.Range(func(path string, digest manifest.Digest) error {
 		if _, ok := blobDigests[digest.String()]; ok {
 			// We've already loaded this blob
 			return nil
@@ -118,7 +118,7 @@ func (c *casModuleCacher) PutModule(
 	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
 	// Write blobs
 	writtenDigests := make(map[string]struct{})
-	if err := moduleManifest.IteratePaths(func(path string, digest manifest.Digest) error {
+	if err := moduleManifest.Range(func(path string, digest manifest.Digest) error {
 		blobDigestStr := digest.String()
 		if _, ok := writtenDigests[blobDigestStr]; ok {
 			return nil
