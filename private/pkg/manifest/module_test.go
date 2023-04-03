@@ -334,8 +334,8 @@ func newBlobsArray(t *testing.T) []manifest.Blob {
 	return blobs
 }
 
-// assertBlobsAreEqual makes sure blobs digest are the same (assuming they're
-// correctly built), regardless the order in the passed arrays.
+// assertBlobsAreEqual makes sure all the blobs digests in the array are the
+// same (assuming they're correctly built), ignoring order in the blobs arrays.
 func assertBlobsAreEqual(t *testing.T, expectedBlobs []manifest.Blob, actualBlobs []manifest.Blob) {
 	expectedDigests := make(map[string]struct{}, len(expectedBlobs))
 	for _, expectedBlob := range expectedBlobs {
