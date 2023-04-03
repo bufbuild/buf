@@ -131,7 +131,7 @@ func (m *Manifest) AddEntry(path string, digest Digest) error {
 }
 
 // Paths returns all paths in the manifest. If you want to iterate the paths and
-// their digests, consider using `IteratePaths` instead.
+// their digests, consider using `Range` instead.
 func (m *Manifest) Paths() []string {
 	paths := make([]string, 0, len(m.pathToDigest))
 	for path := range m.pathToDigest {
