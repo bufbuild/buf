@@ -39,6 +39,18 @@ const (
 	EventServiceName = "buf.alpha.webhook.v1alpha1.EventService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// EventServiceEventProcedure is the fully-qualified name of the EventService's Event RPC.
+	EventServiceEventProcedure = "/buf.alpha.webhook.v1alpha1.EventService/Event"
+)
+
 // EventServiceClient is a client for the buf.alpha.webhook.v1alpha1.EventService service.
 type EventServiceClient interface {
 	// Event is the rpc which receives webhook events.
@@ -57,7 +69,7 @@ func NewEventServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 	return &eventServiceClient{
 		event: connect_go.NewClient[v1alpha1.EventRequest, v1alpha1.EventResponse](
 			httpClient,
-			baseURL+"/buf.alpha.webhook.v1alpha1.EventService/Event",
+			baseURL+EventServiceEventProcedure,
 			opts...,
 		),
 	}
@@ -86,8 +98,8 @@ type EventServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewEventServiceHandler(svc EventServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.webhook.v1alpha1.EventService/Event", connect_go.NewUnaryHandler(
-		"/buf.alpha.webhook.v1alpha1.EventService/Event",
+	mux.Handle(EventServiceEventProcedure, connect_go.NewUnaryHandler(
+		EventServiceEventProcedure,
 		svc.Event,
 		opts...,
 	))

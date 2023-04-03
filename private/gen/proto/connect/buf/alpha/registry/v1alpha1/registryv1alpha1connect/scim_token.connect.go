@@ -39,6 +39,25 @@ const (
 	SCIMTokenServiceName = "buf.alpha.registry.v1alpha1.SCIMTokenService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// SCIMTokenServiceCreateSCIMTokenProcedure is the fully-qualified name of the SCIMTokenService's
+	// CreateSCIMToken RPC.
+	SCIMTokenServiceCreateSCIMTokenProcedure = "/buf.alpha.registry.v1alpha1.SCIMTokenService/CreateSCIMToken"
+	// SCIMTokenServiceListSCIMTokensProcedure is the fully-qualified name of the SCIMTokenService's
+	// ListSCIMTokens RPC.
+	SCIMTokenServiceListSCIMTokensProcedure = "/buf.alpha.registry.v1alpha1.SCIMTokenService/ListSCIMTokens"
+	// SCIMTokenServiceDeleteSCIMTokenProcedure is the fully-qualified name of the SCIMTokenService's
+	// DeleteSCIMToken RPC.
+	SCIMTokenServiceDeleteSCIMTokenProcedure = "/buf.alpha.registry.v1alpha1.SCIMTokenService/DeleteSCIMToken"
+)
+
 // SCIMTokenServiceClient is a client for the buf.alpha.registry.v1alpha1.SCIMTokenService service.
 type SCIMTokenServiceClient interface {
 	// CreateToken creates a new token suitable for authentication to the SCIM API.
@@ -68,17 +87,17 @@ func NewSCIMTokenServiceClient(httpClient connect_go.HTTPClient, baseURL string,
 	return &sCIMTokenServiceClient{
 		createSCIMToken: connect_go.NewClient[v1alpha1.CreateSCIMTokenRequest, v1alpha1.CreateSCIMTokenResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.SCIMTokenService/CreateSCIMToken",
+			baseURL+SCIMTokenServiceCreateSCIMTokenProcedure,
 			opts...,
 		),
 		listSCIMTokens: connect_go.NewClient[v1alpha1.ListSCIMTokensRequest, v1alpha1.ListSCIMTokensResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.SCIMTokenService/ListSCIMTokens",
+			baseURL+SCIMTokenServiceListSCIMTokensProcedure,
 			opts...,
 		),
 		deleteSCIMToken: connect_go.NewClient[v1alpha1.DeleteSCIMTokenRequest, v1alpha1.DeleteSCIMTokenResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.SCIMTokenService/DeleteSCIMToken",
+			baseURL+SCIMTokenServiceDeleteSCIMTokenProcedure,
 			opts...,
 		),
 	}
@@ -130,18 +149,18 @@ type SCIMTokenServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewSCIMTokenServiceHandler(svc SCIMTokenServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.SCIMTokenService/CreateSCIMToken", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.SCIMTokenService/CreateSCIMToken",
+	mux.Handle(SCIMTokenServiceCreateSCIMTokenProcedure, connect_go.NewUnaryHandler(
+		SCIMTokenServiceCreateSCIMTokenProcedure,
 		svc.CreateSCIMToken,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.SCIMTokenService/ListSCIMTokens", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.SCIMTokenService/ListSCIMTokens",
+	mux.Handle(SCIMTokenServiceListSCIMTokensProcedure, connect_go.NewUnaryHandler(
+		SCIMTokenServiceListSCIMTokensProcedure,
 		svc.ListSCIMTokens,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.SCIMTokenService/DeleteSCIMToken", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.SCIMTokenService/DeleteSCIMToken",
+	mux.Handle(SCIMTokenServiceDeleteSCIMTokenProcedure, connect_go.NewUnaryHandler(
+		SCIMTokenServiceDeleteSCIMTokenProcedure,
 		svc.DeleteSCIMToken,
 		opts...,
 	))

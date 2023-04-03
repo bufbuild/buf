@@ -39,6 +39,52 @@ const (
 	DisplayServiceName = "buf.alpha.registry.v1alpha1.DisplayService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// DisplayServiceDisplayOrganizationElementsProcedure is the fully-qualified name of the
+	// DisplayService's DisplayOrganizationElements RPC.
+	DisplayServiceDisplayOrganizationElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayOrganizationElements"
+	// DisplayServiceDisplayRepositoryElementsProcedure is the fully-qualified name of the
+	// DisplayService's DisplayRepositoryElements RPC.
+	DisplayServiceDisplayRepositoryElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryElements"
+	// DisplayServiceDisplayPluginElementsProcedure is the fully-qualified name of the DisplayService's
+	// DisplayPluginElements RPC.
+	DisplayServiceDisplayPluginElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayPluginElements"
+	// DisplayServiceDisplayTemplateElementsProcedure is the fully-qualified name of the
+	// DisplayService's DisplayTemplateElements RPC.
+	DisplayServiceDisplayTemplateElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayTemplateElements"
+	// DisplayServiceDisplayUserElementsProcedure is the fully-qualified name of the DisplayService's
+	// DisplayUserElements RPC.
+	DisplayServiceDisplayUserElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayUserElements"
+	// DisplayServiceDisplayServerElementsProcedure is the fully-qualified name of the DisplayService's
+	// DisplayServerElements RPC.
+	DisplayServiceDisplayServerElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayServerElements"
+	// DisplayServiceListManageableRepositoryRolesProcedure is the fully-qualified name of the
+	// DisplayService's ListManageableRepositoryRoles RPC.
+	DisplayServiceListManageableRepositoryRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableRepositoryRoles"
+	// DisplayServiceListManageableUserRepositoryRolesProcedure is the fully-qualified name of the
+	// DisplayService's ListManageableUserRepositoryRoles RPC.
+	DisplayServiceListManageableUserRepositoryRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserRepositoryRoles"
+	// DisplayServiceListManageablePluginRolesProcedure is the fully-qualified name of the
+	// DisplayService's ListManageablePluginRoles RPC.
+	DisplayServiceListManageablePluginRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageablePluginRoles"
+	// DisplayServiceListManageableUserPluginRolesProcedure is the fully-qualified name of the
+	// DisplayService's ListManageableUserPluginRoles RPC.
+	DisplayServiceListManageableUserPluginRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserPluginRoles"
+	// DisplayServiceListManageableTemplateRolesProcedure is the fully-qualified name of the
+	// DisplayService's ListManageableTemplateRoles RPC.
+	DisplayServiceListManageableTemplateRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableTemplateRoles"
+	// DisplayServiceListManageableUserTemplateRolesProcedure is the fully-qualified name of the
+	// DisplayService's ListManageableUserTemplateRoles RPC.
+	DisplayServiceListManageableUserTemplateRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserTemplateRoles"
+)
+
 // DisplayServiceClient is a client for the buf.alpha.registry.v1alpha1.DisplayService service.
 type DisplayServiceClient interface {
 	// DisplayOrganizationElements returns which organization elements should be displayed to the user.
@@ -97,62 +143,62 @@ func NewDisplayServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 	return &displayServiceClient{
 		displayOrganizationElements: connect_go.NewClient[v1alpha1.DisplayOrganizationElementsRequest, v1alpha1.DisplayOrganizationElementsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/DisplayOrganizationElements",
+			baseURL+DisplayServiceDisplayOrganizationElementsProcedure,
 			opts...,
 		),
 		displayRepositoryElements: connect_go.NewClient[v1alpha1.DisplayRepositoryElementsRequest, v1alpha1.DisplayRepositoryElementsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryElements",
+			baseURL+DisplayServiceDisplayRepositoryElementsProcedure,
 			opts...,
 		),
 		displayPluginElements: connect_go.NewClient[v1alpha1.DisplayPluginElementsRequest, v1alpha1.DisplayPluginElementsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/DisplayPluginElements",
+			baseURL+DisplayServiceDisplayPluginElementsProcedure,
 			opts...,
 		),
 		displayTemplateElements: connect_go.NewClient[v1alpha1.DisplayTemplateElementsRequest, v1alpha1.DisplayTemplateElementsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/DisplayTemplateElements",
+			baseURL+DisplayServiceDisplayTemplateElementsProcedure,
 			opts...,
 		),
 		displayUserElements: connect_go.NewClient[v1alpha1.DisplayUserElementsRequest, v1alpha1.DisplayUserElementsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/DisplayUserElements",
+			baseURL+DisplayServiceDisplayUserElementsProcedure,
 			opts...,
 		),
 		displayServerElements: connect_go.NewClient[v1alpha1.DisplayServerElementsRequest, v1alpha1.DisplayServerElementsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/DisplayServerElements",
+			baseURL+DisplayServiceDisplayServerElementsProcedure,
 			opts...,
 		),
 		listManageableRepositoryRoles: connect_go.NewClient[v1alpha1.ListManageableRepositoryRolesRequest, v1alpha1.ListManageableRepositoryRolesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/ListManageableRepositoryRoles",
+			baseURL+DisplayServiceListManageableRepositoryRolesProcedure,
 			opts...,
 		),
 		listManageableUserRepositoryRoles: connect_go.NewClient[v1alpha1.ListManageableUserRepositoryRolesRequest, v1alpha1.ListManageableUserRepositoryRolesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserRepositoryRoles",
+			baseURL+DisplayServiceListManageableUserRepositoryRolesProcedure,
 			opts...,
 		),
 		listManageablePluginRoles: connect_go.NewClient[v1alpha1.ListManageablePluginRolesRequest, v1alpha1.ListManageablePluginRolesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/ListManageablePluginRoles",
+			baseURL+DisplayServiceListManageablePluginRolesProcedure,
 			opts...,
 		),
 		listManageableUserPluginRoles: connect_go.NewClient[v1alpha1.ListManageableUserPluginRolesRequest, v1alpha1.ListManageableUserPluginRolesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserPluginRoles",
+			baseURL+DisplayServiceListManageableUserPluginRolesProcedure,
 			opts...,
 		),
 		listManageableTemplateRoles: connect_go.NewClient[v1alpha1.ListManageableTemplateRolesRequest, v1alpha1.ListManageableTemplateRolesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/ListManageableTemplateRoles",
+			baseURL+DisplayServiceListManageableTemplateRolesProcedure,
 			opts...,
 		),
 		listManageableUserTemplateRoles: connect_go.NewClient[v1alpha1.ListManageableUserTemplateRolesRequest, v1alpha1.ListManageableUserTemplateRolesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserTemplateRoles",
+			baseURL+DisplayServiceListManageableUserTemplateRolesProcedure,
 			opts...,
 		),
 	}
@@ -308,63 +354,63 @@ type DisplayServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewDisplayServiceHandler(svc DisplayServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/DisplayOrganizationElements", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/DisplayOrganizationElements",
+	mux.Handle(DisplayServiceDisplayOrganizationElementsProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceDisplayOrganizationElementsProcedure,
 		svc.DisplayOrganizationElements,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryElements", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryElements",
+	mux.Handle(DisplayServiceDisplayRepositoryElementsProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceDisplayRepositoryElementsProcedure,
 		svc.DisplayRepositoryElements,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/DisplayPluginElements", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/DisplayPluginElements",
+	mux.Handle(DisplayServiceDisplayPluginElementsProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceDisplayPluginElementsProcedure,
 		svc.DisplayPluginElements,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/DisplayTemplateElements", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/DisplayTemplateElements",
+	mux.Handle(DisplayServiceDisplayTemplateElementsProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceDisplayTemplateElementsProcedure,
 		svc.DisplayTemplateElements,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/DisplayUserElements", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/DisplayUserElements",
+	mux.Handle(DisplayServiceDisplayUserElementsProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceDisplayUserElementsProcedure,
 		svc.DisplayUserElements,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/DisplayServerElements", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/DisplayServerElements",
+	mux.Handle(DisplayServiceDisplayServerElementsProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceDisplayServerElementsProcedure,
 		svc.DisplayServerElements,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/ListManageableRepositoryRoles", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/ListManageableRepositoryRoles",
+	mux.Handle(DisplayServiceListManageableRepositoryRolesProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceListManageableRepositoryRolesProcedure,
 		svc.ListManageableRepositoryRoles,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserRepositoryRoles", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserRepositoryRoles",
+	mux.Handle(DisplayServiceListManageableUserRepositoryRolesProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceListManageableUserRepositoryRolesProcedure,
 		svc.ListManageableUserRepositoryRoles,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/ListManageablePluginRoles", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/ListManageablePluginRoles",
+	mux.Handle(DisplayServiceListManageablePluginRolesProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceListManageablePluginRolesProcedure,
 		svc.ListManageablePluginRoles,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserPluginRoles", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserPluginRoles",
+	mux.Handle(DisplayServiceListManageableUserPluginRolesProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceListManageableUserPluginRolesProcedure,
 		svc.ListManageableUserPluginRoles,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/ListManageableTemplateRoles", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/ListManageableTemplateRoles",
+	mux.Handle(DisplayServiceListManageableTemplateRolesProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceListManageableTemplateRolesProcedure,
 		svc.ListManageableTemplateRoles,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserTemplateRoles", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserTemplateRoles",
+	mux.Handle(DisplayServiceListManageableUserTemplateRolesProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceListManageableUserTemplateRolesProcedure,
 		svc.ListManageableUserTemplateRoles,
 		opts...,
 	))
