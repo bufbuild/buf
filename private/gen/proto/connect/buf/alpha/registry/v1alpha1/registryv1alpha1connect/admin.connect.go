@@ -39,6 +39,28 @@ const (
 	AdminServiceName = "buf.alpha.registry.v1alpha1.AdminService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// AdminServiceForceDeleteUserProcedure is the fully-qualified name of the AdminService's
+	// ForceDeleteUser RPC.
+	AdminServiceForceDeleteUserProcedure = "/buf.alpha.registry.v1alpha1.AdminService/ForceDeleteUser"
+	// AdminServiceUpdateUserVerificationStatusProcedure is the fully-qualified name of the
+	// AdminService's UpdateUserVerificationStatus RPC.
+	AdminServiceUpdateUserVerificationStatusProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateUserVerificationStatus"
+	// AdminServiceUpdateOrganizationVerificationStatusProcedure is the fully-qualified name of the
+	// AdminService's UpdateOrganizationVerificationStatus RPC.
+	AdminServiceUpdateOrganizationVerificationStatusProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateOrganizationVerificationStatus"
+	// AdminServiceCreateMachineUserProcedure is the fully-qualified name of the AdminService's
+	// CreateMachineUser RPC.
+	AdminServiceCreateMachineUserProcedure = "/buf.alpha.registry.v1alpha1.AdminService/CreateMachineUser"
+)
+
 // AdminServiceClient is a client for the buf.alpha.registry.v1alpha1.AdminService service.
 type AdminServiceClient interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
@@ -64,22 +86,22 @@ func NewAdminServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 	return &adminServiceClient{
 		forceDeleteUser: connect_go.NewClient[v1alpha1.ForceDeleteUserRequest, v1alpha1.ForceDeleteUserResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AdminService/ForceDeleteUser",
+			baseURL+AdminServiceForceDeleteUserProcedure,
 			opts...,
 		),
 		updateUserVerificationStatus: connect_go.NewClient[v1alpha1.UpdateUserVerificationStatusRequest, v1alpha1.UpdateUserVerificationStatusResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AdminService/UpdateUserVerificationStatus",
+			baseURL+AdminServiceUpdateUserVerificationStatusProcedure,
 			opts...,
 		),
 		updateOrganizationVerificationStatus: connect_go.NewClient[v1alpha1.UpdateOrganizationVerificationStatusRequest, v1alpha1.UpdateOrganizationVerificationStatusResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AdminService/UpdateOrganizationVerificationStatus",
+			baseURL+AdminServiceUpdateOrganizationVerificationStatusProcedure,
 			opts...,
 		),
 		createMachineUser: connect_go.NewClient[v1alpha1.CreateMachineUserRequest, v1alpha1.CreateMachineUserResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.AdminService/CreateMachineUser",
+			baseURL+AdminServiceCreateMachineUserProcedure,
 			opts...,
 		),
 	}
@@ -135,23 +157,23 @@ type AdminServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.AdminService/ForceDeleteUser", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AdminService/ForceDeleteUser",
+	mux.Handle(AdminServiceForceDeleteUserProcedure, connect_go.NewUnaryHandler(
+		AdminServiceForceDeleteUserProcedure,
 		svc.ForceDeleteUser,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AdminService/UpdateUserVerificationStatus", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AdminService/UpdateUserVerificationStatus",
+	mux.Handle(AdminServiceUpdateUserVerificationStatusProcedure, connect_go.NewUnaryHandler(
+		AdminServiceUpdateUserVerificationStatusProcedure,
 		svc.UpdateUserVerificationStatus,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AdminService/UpdateOrganizationVerificationStatus", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AdminService/UpdateOrganizationVerificationStatus",
+	mux.Handle(AdminServiceUpdateOrganizationVerificationStatusProcedure, connect_go.NewUnaryHandler(
+		AdminServiceUpdateOrganizationVerificationStatusProcedure,
 		svc.UpdateOrganizationVerificationStatus,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.AdminService/CreateMachineUser", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.AdminService/CreateMachineUser",
+	mux.Handle(AdminServiceCreateMachineUserProcedure, connect_go.NewUnaryHandler(
+		AdminServiceCreateMachineUserProcedure,
 		svc.CreateMachineUser,
 		opts...,
 	))

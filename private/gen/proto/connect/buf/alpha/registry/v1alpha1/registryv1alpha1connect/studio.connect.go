@@ -39,6 +39,22 @@ const (
 	StudioServiceName = "buf.alpha.registry.v1alpha1.StudioService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// StudioServiceListStudioAgentPresetsProcedure is the fully-qualified name of the StudioService's
+	// ListStudioAgentPresets RPC.
+	StudioServiceListStudioAgentPresetsProcedure = "/buf.alpha.registry.v1alpha1.StudioService/ListStudioAgentPresets"
+	// StudioServiceSetStudioAgentPresetsProcedure is the fully-qualified name of the StudioService's
+	// SetStudioAgentPresets RPC.
+	StudioServiceSetStudioAgentPresetsProcedure = "/buf.alpha.registry.v1alpha1.StudioService/SetStudioAgentPresets"
+)
+
 // StudioServiceClient is a client for the buf.alpha.registry.v1alpha1.StudioService service.
 type StudioServiceClient interface {
 	// ListStudioAgentPresets returns a list of agent presets in the server.
@@ -59,12 +75,12 @@ func NewStudioServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 	return &studioServiceClient{
 		listStudioAgentPresets: connect_go.NewClient[v1alpha1.ListStudioAgentPresetsRequest, v1alpha1.ListStudioAgentPresetsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.StudioService/ListStudioAgentPresets",
+			baseURL+StudioServiceListStudioAgentPresetsProcedure,
 			opts...,
 		),
 		setStudioAgentPresets: connect_go.NewClient[v1alpha1.SetStudioAgentPresetsRequest, v1alpha1.SetStudioAgentPresetsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.StudioService/SetStudioAgentPresets",
+			baseURL+StudioServiceSetStudioAgentPresetsProcedure,
 			opts...,
 		),
 	}
@@ -102,13 +118,13 @@ type StudioServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewStudioServiceHandler(svc StudioServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.StudioService/ListStudioAgentPresets", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.StudioService/ListStudioAgentPresets",
+	mux.Handle(StudioServiceListStudioAgentPresetsProcedure, connect_go.NewUnaryHandler(
+		StudioServiceListStudioAgentPresetsProcedure,
 		svc.ListStudioAgentPresets,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.StudioService/SetStudioAgentPresets", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.StudioService/SetStudioAgentPresets",
+	mux.Handle(StudioServiceSetStudioAgentPresetsProcedure, connect_go.NewUnaryHandler(
+		StudioServiceSetStudioAgentPresetsProcedure,
 		svc.SetStudioAgentPresets,
 		opts...,
 	))

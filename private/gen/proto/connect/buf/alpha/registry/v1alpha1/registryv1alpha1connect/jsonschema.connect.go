@@ -39,6 +39,19 @@ const (
 	JSONSchemaServiceName = "buf.alpha.registry.v1alpha1.JSONSchemaService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// JSONSchemaServiceGetJSONSchemaProcedure is the fully-qualified name of the JSONSchemaService's
+	// GetJSONSchema RPC.
+	JSONSchemaServiceGetJSONSchemaProcedure = "/buf.alpha.registry.v1alpha1.JSONSchemaService/GetJSONSchema"
+)
+
 // JSONSchemaServiceClient is a client for the buf.alpha.registry.v1alpha1.JSONSchemaService
 // service.
 type JSONSchemaServiceClient interface {
@@ -60,7 +73,7 @@ func NewJSONSchemaServiceClient(httpClient connect_go.HTTPClient, baseURL string
 	return &jSONSchemaServiceClient{
 		getJSONSchema: connect_go.NewClient[v1alpha1.GetJSONSchemaRequest, v1alpha1.GetJSONSchemaResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.JSONSchemaService/GetJSONSchema",
+			baseURL+JSONSchemaServiceGetJSONSchemaProcedure,
 			opts...,
 		),
 	}
@@ -91,8 +104,8 @@ type JSONSchemaServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewJSONSchemaServiceHandler(svc JSONSchemaServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.JSONSchemaService/GetJSONSchema", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.JSONSchemaService/GetJSONSchema",
+	mux.Handle(JSONSchemaServiceGetJSONSchemaProcedure, connect_go.NewUnaryHandler(
+		JSONSchemaServiceGetJSONSchemaProcedure,
 		svc.GetJSONSchema,
 		opts...,
 	))

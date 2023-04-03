@@ -39,6 +39,61 @@ const (
 	OrganizationServiceName = "buf.alpha.registry.v1alpha1.OrganizationService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// OrganizationServiceGetOrganizationProcedure is the fully-qualified name of the
+	// OrganizationService's GetOrganization RPC.
+	OrganizationServiceGetOrganizationProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganization"
+	// OrganizationServiceGetOrganizationByNameProcedure is the fully-qualified name of the
+	// OrganizationService's GetOrganizationByName RPC.
+	OrganizationServiceGetOrganizationByNameProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationByName"
+	// OrganizationServiceListOrganizationsProcedure is the fully-qualified name of the
+	// OrganizationService's ListOrganizations RPC.
+	OrganizationServiceListOrganizationsProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/ListOrganizations"
+	// OrganizationServiceListUserOrganizationsProcedure is the fully-qualified name of the
+	// OrganizationService's ListUserOrganizations RPC.
+	OrganizationServiceListUserOrganizationsProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/ListUserOrganizations"
+	// OrganizationServiceCreateOrganizationProcedure is the fully-qualified name of the
+	// OrganizationService's CreateOrganization RPC.
+	OrganizationServiceCreateOrganizationProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/CreateOrganization"
+	// OrganizationServiceDeleteOrganizationProcedure is the fully-qualified name of the
+	// OrganizationService's DeleteOrganization RPC.
+	OrganizationServiceDeleteOrganizationProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/DeleteOrganization"
+	// OrganizationServiceDeleteOrganizationByNameProcedure is the fully-qualified name of the
+	// OrganizationService's DeleteOrganizationByName RPC.
+	OrganizationServiceDeleteOrganizationByNameProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/DeleteOrganizationByName"
+	// OrganizationServiceAddOrganizationMemberProcedure is the fully-qualified name of the
+	// OrganizationService's AddOrganizationMember RPC.
+	OrganizationServiceAddOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationMember"
+	// OrganizationServiceUpdateOrganizationMemberProcedure is the fully-qualified name of the
+	// OrganizationService's UpdateOrganizationMember RPC.
+	OrganizationServiceUpdateOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationMember"
+	// OrganizationServiceRemoveOrganizationMemberProcedure is the fully-qualified name of the
+	// OrganizationService's RemoveOrganizationMember RPC.
+	OrganizationServiceRemoveOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationMember"
+	// OrganizationServiceSetOrganizationMemberProcedure is the fully-qualified name of the
+	// OrganizationService's SetOrganizationMember RPC.
+	OrganizationServiceSetOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/SetOrganizationMember"
+	// OrganizationServiceGetOrganizationSettingsProcedure is the fully-qualified name of the
+	// OrganizationService's GetOrganizationSettings RPC.
+	OrganizationServiceGetOrganizationSettingsProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationSettings"
+	// OrganizationServiceUpdateOrganizationSettingsProcedure is the fully-qualified name of the
+	// OrganizationService's UpdateOrganizationSettings RPC.
+	OrganizationServiceUpdateOrganizationSettingsProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationSettings"
+	// OrganizationServiceAddOrganizationGroupProcedure is the fully-qualified name of the
+	// OrganizationService's AddOrganizationGroup RPC.
+	OrganizationServiceAddOrganizationGroupProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationGroup"
+	// OrganizationServiceRemoveOrganizationGroupProcedure is the fully-qualified name of the
+	// OrganizationService's RemoveOrganizationGroup RPC.
+	OrganizationServiceRemoveOrganizationGroupProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationGroup"
+)
+
 // OrganizationServiceClient is a client for the buf.alpha.registry.v1alpha1.OrganizationService
 // service.
 type OrganizationServiceClient interface {
@@ -87,77 +142,77 @@ func NewOrganizationServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 	return &organizationServiceClient{
 		getOrganization: connect_go.NewClient[v1alpha1.GetOrganizationRequest, v1alpha1.GetOrganizationResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganization",
+			baseURL+OrganizationServiceGetOrganizationProcedure,
 			opts...,
 		),
 		getOrganizationByName: connect_go.NewClient[v1alpha1.GetOrganizationByNameRequest, v1alpha1.GetOrganizationByNameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationByName",
+			baseURL+OrganizationServiceGetOrganizationByNameProcedure,
 			opts...,
 		),
 		listOrganizations: connect_go.NewClient[v1alpha1.ListOrganizationsRequest, v1alpha1.ListOrganizationsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/ListOrganizations",
+			baseURL+OrganizationServiceListOrganizationsProcedure,
 			opts...,
 		),
 		listUserOrganizations: connect_go.NewClient[v1alpha1.ListUserOrganizationsRequest, v1alpha1.ListUserOrganizationsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/ListUserOrganizations",
+			baseURL+OrganizationServiceListUserOrganizationsProcedure,
 			opts...,
 		),
 		createOrganization: connect_go.NewClient[v1alpha1.CreateOrganizationRequest, v1alpha1.CreateOrganizationResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/CreateOrganization",
+			baseURL+OrganizationServiceCreateOrganizationProcedure,
 			opts...,
 		),
 		deleteOrganization: connect_go.NewClient[v1alpha1.DeleteOrganizationRequest, v1alpha1.DeleteOrganizationResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/DeleteOrganization",
+			baseURL+OrganizationServiceDeleteOrganizationProcedure,
 			opts...,
 		),
 		deleteOrganizationByName: connect_go.NewClient[v1alpha1.DeleteOrganizationByNameRequest, v1alpha1.DeleteOrganizationByNameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/DeleteOrganizationByName",
+			baseURL+OrganizationServiceDeleteOrganizationByNameProcedure,
 			opts...,
 		),
 		addOrganizationMember: connect_go.NewClient[v1alpha1.AddOrganizationMemberRequest, v1alpha1.AddOrganizationMemberResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationMember",
+			baseURL+OrganizationServiceAddOrganizationMemberProcedure,
 			opts...,
 		),
 		updateOrganizationMember: connect_go.NewClient[v1alpha1.UpdateOrganizationMemberRequest, v1alpha1.UpdateOrganizationMemberResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationMember",
+			baseURL+OrganizationServiceUpdateOrganizationMemberProcedure,
 			opts...,
 		),
 		removeOrganizationMember: connect_go.NewClient[v1alpha1.RemoveOrganizationMemberRequest, v1alpha1.RemoveOrganizationMemberResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationMember",
+			baseURL+OrganizationServiceRemoveOrganizationMemberProcedure,
 			opts...,
 		),
 		setOrganizationMember: connect_go.NewClient[v1alpha1.SetOrganizationMemberRequest, v1alpha1.SetOrganizationMemberResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/SetOrganizationMember",
+			baseURL+OrganizationServiceSetOrganizationMemberProcedure,
 			opts...,
 		),
 		getOrganizationSettings: connect_go.NewClient[v1alpha1.GetOrganizationSettingsRequest, v1alpha1.GetOrganizationSettingsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationSettings",
+			baseURL+OrganizationServiceGetOrganizationSettingsProcedure,
 			opts...,
 		),
 		updateOrganizationSettings: connect_go.NewClient[v1alpha1.UpdateOrganizationSettingsRequest, v1alpha1.UpdateOrganizationSettingsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationSettings",
+			baseURL+OrganizationServiceUpdateOrganizationSettingsProcedure,
 			opts...,
 		),
 		addOrganizationGroup: connect_go.NewClient[v1alpha1.AddOrganizationGroupRequest, v1alpha1.AddOrganizationGroupResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationGroup",
+			baseURL+OrganizationServiceAddOrganizationGroupProcedure,
 			opts...,
 		),
 		removeOrganizationGroup: connect_go.NewClient[v1alpha1.RemoveOrganizationGroupRequest, v1alpha1.RemoveOrganizationGroupResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationGroup",
+			baseURL+OrganizationServiceRemoveOrganizationGroupProcedure,
 			opts...,
 		),
 	}
@@ -309,78 +364,78 @@ type OrganizationServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganization", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganization",
+	mux.Handle(OrganizationServiceGetOrganizationProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceGetOrganizationProcedure,
 		svc.GetOrganization,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationByName", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationByName",
+	mux.Handle(OrganizationServiceGetOrganizationByNameProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceGetOrganizationByNameProcedure,
 		svc.GetOrganizationByName,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/ListOrganizations", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/ListOrganizations",
+	mux.Handle(OrganizationServiceListOrganizationsProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceListOrganizationsProcedure,
 		svc.ListOrganizations,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/ListUserOrganizations", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/ListUserOrganizations",
+	mux.Handle(OrganizationServiceListUserOrganizationsProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceListUserOrganizationsProcedure,
 		svc.ListUserOrganizations,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/CreateOrganization", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/CreateOrganization",
+	mux.Handle(OrganizationServiceCreateOrganizationProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceCreateOrganizationProcedure,
 		svc.CreateOrganization,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/DeleteOrganization", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/DeleteOrganization",
+	mux.Handle(OrganizationServiceDeleteOrganizationProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceDeleteOrganizationProcedure,
 		svc.DeleteOrganization,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/DeleteOrganizationByName", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/DeleteOrganizationByName",
+	mux.Handle(OrganizationServiceDeleteOrganizationByNameProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceDeleteOrganizationByNameProcedure,
 		svc.DeleteOrganizationByName,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationMember", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationMember",
+	mux.Handle(OrganizationServiceAddOrganizationMemberProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceAddOrganizationMemberProcedure,
 		svc.AddOrganizationMember,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationMember", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationMember",
+	mux.Handle(OrganizationServiceUpdateOrganizationMemberProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceUpdateOrganizationMemberProcedure,
 		svc.UpdateOrganizationMember,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationMember", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationMember",
+	mux.Handle(OrganizationServiceRemoveOrganizationMemberProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceRemoveOrganizationMemberProcedure,
 		svc.RemoveOrganizationMember,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/SetOrganizationMember", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/SetOrganizationMember",
+	mux.Handle(OrganizationServiceSetOrganizationMemberProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceSetOrganizationMemberProcedure,
 		svc.SetOrganizationMember,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationSettings", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationSettings",
+	mux.Handle(OrganizationServiceGetOrganizationSettingsProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceGetOrganizationSettingsProcedure,
 		svc.GetOrganizationSettings,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationSettings", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationSettings",
+	mux.Handle(OrganizationServiceUpdateOrganizationSettingsProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceUpdateOrganizationSettingsProcedure,
 		svc.UpdateOrganizationSettings,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationGroup", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationGroup",
+	mux.Handle(OrganizationServiceAddOrganizationGroupProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceAddOrganizationGroupProcedure,
 		svc.AddOrganizationGroup,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationGroup", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationGroup",
+	mux.Handle(OrganizationServiceRemoveOrganizationGroupProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceRemoveOrganizationGroupProcedure,
 		svc.RemoveOrganizationGroup,
 		opts...,
 	))

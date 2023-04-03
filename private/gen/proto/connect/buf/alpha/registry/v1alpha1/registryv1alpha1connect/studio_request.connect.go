@@ -39,6 +39,28 @@ const (
 	StudioRequestServiceName = "buf.alpha.registry.v1alpha1.StudioRequestService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// StudioRequestServiceCreateStudioRequestProcedure is the fully-qualified name of the
+	// StudioRequestService's CreateStudioRequest RPC.
+	StudioRequestServiceCreateStudioRequestProcedure = "/buf.alpha.registry.v1alpha1.StudioRequestService/CreateStudioRequest"
+	// StudioRequestServiceRenameStudioRequestProcedure is the fully-qualified name of the
+	// StudioRequestService's RenameStudioRequest RPC.
+	StudioRequestServiceRenameStudioRequestProcedure = "/buf.alpha.registry.v1alpha1.StudioRequestService/RenameStudioRequest"
+	// StudioRequestServiceDeleteStudioRequestProcedure is the fully-qualified name of the
+	// StudioRequestService's DeleteStudioRequest RPC.
+	StudioRequestServiceDeleteStudioRequestProcedure = "/buf.alpha.registry.v1alpha1.StudioRequestService/DeleteStudioRequest"
+	// StudioRequestServiceListStudioRequestsProcedure is the fully-qualified name of the
+	// StudioRequestService's ListStudioRequests RPC.
+	StudioRequestServiceListStudioRequestsProcedure = "/buf.alpha.registry.v1alpha1.StudioRequestService/ListStudioRequests"
+)
+
 // StudioRequestServiceClient is a client for the buf.alpha.registry.v1alpha1.StudioRequestService
 // service.
 type StudioRequestServiceClient interface {
@@ -67,22 +89,22 @@ func NewStudioRequestServiceClient(httpClient connect_go.HTTPClient, baseURL str
 	return &studioRequestServiceClient{
 		createStudioRequest: connect_go.NewClient[v1alpha1.CreateStudioRequestRequest, v1alpha1.CreateStudioRequestResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.StudioRequestService/CreateStudioRequest",
+			baseURL+StudioRequestServiceCreateStudioRequestProcedure,
 			opts...,
 		),
 		renameStudioRequest: connect_go.NewClient[v1alpha1.RenameStudioRequestRequest, v1alpha1.RenameStudioRequestResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.StudioRequestService/RenameStudioRequest",
+			baseURL+StudioRequestServiceRenameStudioRequestProcedure,
 			opts...,
 		),
 		deleteStudioRequest: connect_go.NewClient[v1alpha1.DeleteStudioRequestRequest, v1alpha1.DeleteStudioRequestResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.StudioRequestService/DeleteStudioRequest",
+			baseURL+StudioRequestServiceDeleteStudioRequestProcedure,
 			opts...,
 		),
 		listStudioRequests: connect_go.NewClient[v1alpha1.ListStudioRequestsRequest, v1alpha1.ListStudioRequestsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.StudioRequestService/ListStudioRequests",
+			baseURL+StudioRequestServiceListStudioRequestsProcedure,
 			opts...,
 		),
 	}
@@ -138,23 +160,23 @@ type StudioRequestServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewStudioRequestServiceHandler(svc StudioRequestServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.StudioRequestService/CreateStudioRequest", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.StudioRequestService/CreateStudioRequest",
+	mux.Handle(StudioRequestServiceCreateStudioRequestProcedure, connect_go.NewUnaryHandler(
+		StudioRequestServiceCreateStudioRequestProcedure,
 		svc.CreateStudioRequest,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.StudioRequestService/RenameStudioRequest", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.StudioRequestService/RenameStudioRequest",
+	mux.Handle(StudioRequestServiceRenameStudioRequestProcedure, connect_go.NewUnaryHandler(
+		StudioRequestServiceRenameStudioRequestProcedure,
 		svc.RenameStudioRequest,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.StudioRequestService/DeleteStudioRequest", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.StudioRequestService/DeleteStudioRequest",
+	mux.Handle(StudioRequestServiceDeleteStudioRequestProcedure, connect_go.NewUnaryHandler(
+		StudioRequestServiceDeleteStudioRequestProcedure,
 		svc.DeleteStudioRequest,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.StudioRequestService/ListStudioRequests", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.StudioRequestService/ListStudioRequests",
+	mux.Handle(StudioRequestServiceListStudioRequestsProcedure, connect_go.NewUnaryHandler(
+		StudioRequestServiceListStudioRequestsProcedure,
 		svc.ListStudioRequests,
 		opts...,
 	))

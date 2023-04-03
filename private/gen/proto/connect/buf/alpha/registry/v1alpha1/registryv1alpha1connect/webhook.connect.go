@@ -39,6 +39,25 @@ const (
 	WebhookServiceName = "buf.alpha.registry.v1alpha1.WebhookService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// WebhookServiceCreateWebhookProcedure is the fully-qualified name of the WebhookService's
+	// CreateWebhook RPC.
+	WebhookServiceCreateWebhookProcedure = "/buf.alpha.registry.v1alpha1.WebhookService/CreateWebhook"
+	// WebhookServiceDeleteWebhookProcedure is the fully-qualified name of the WebhookService's
+	// DeleteWebhook RPC.
+	WebhookServiceDeleteWebhookProcedure = "/buf.alpha.registry.v1alpha1.WebhookService/DeleteWebhook"
+	// WebhookServiceListWebhooksProcedure is the fully-qualified name of the WebhookService's
+	// ListWebhooks RPC.
+	WebhookServiceListWebhooksProcedure = "/buf.alpha.registry.v1alpha1.WebhookService/ListWebhooks"
+)
+
 // WebhookServiceClient is a client for the buf.alpha.registry.v1alpha1.WebhookService service.
 type WebhookServiceClient interface {
 	// Create a webhook, subscribes to a given repository event for a callback URL
@@ -62,17 +81,17 @@ func NewWebhookServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 	return &webhookServiceClient{
 		createWebhook: connect_go.NewClient[v1alpha1.CreateWebhookRequest, v1alpha1.CreateWebhookResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.WebhookService/CreateWebhook",
+			baseURL+WebhookServiceCreateWebhookProcedure,
 			opts...,
 		),
 		deleteWebhook: connect_go.NewClient[v1alpha1.DeleteWebhookRequest, v1alpha1.DeleteWebhookResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.WebhookService/DeleteWebhook",
+			baseURL+WebhookServiceDeleteWebhookProcedure,
 			opts...,
 		),
 		listWebhooks: connect_go.NewClient[v1alpha1.ListWebhooksRequest, v1alpha1.ListWebhooksResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.WebhookService/ListWebhooks",
+			baseURL+WebhookServiceListWebhooksProcedure,
 			opts...,
 		),
 	}
@@ -119,18 +138,18 @@ type WebhookServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewWebhookServiceHandler(svc WebhookServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.WebhookService/CreateWebhook", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.WebhookService/CreateWebhook",
+	mux.Handle(WebhookServiceCreateWebhookProcedure, connect_go.NewUnaryHandler(
+		WebhookServiceCreateWebhookProcedure,
 		svc.CreateWebhook,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.WebhookService/DeleteWebhook", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.WebhookService/DeleteWebhook",
+	mux.Handle(WebhookServiceDeleteWebhookProcedure, connect_go.NewUnaryHandler(
+		WebhookServiceDeleteWebhookProcedure,
 		svc.DeleteWebhook,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.WebhookService/ListWebhooks", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.WebhookService/ListWebhooks",
+	mux.Handle(WebhookServiceListWebhooksProcedure, connect_go.NewUnaryHandler(
+		WebhookServiceListWebhooksProcedure,
 		svc.ListWebhooks,
 		opts...,
 	))

@@ -39,6 +39,19 @@ const (
 	GithubServiceName = "buf.alpha.registry.v1alpha1.GithubService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// GithubServiceGetGithubAppConfigProcedure is the fully-qualified name of the GithubService's
+	// GetGithubAppConfig RPC.
+	GithubServiceGetGithubAppConfigProcedure = "/buf.alpha.registry.v1alpha1.GithubService/GetGithubAppConfig"
+)
+
 // GithubServiceClient is a client for the buf.alpha.registry.v1alpha1.GithubService service.
 type GithubServiceClient interface {
 	// GetGithubAppConfig returns a Github Application Configuration.
@@ -57,7 +70,7 @@ func NewGithubServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 	return &githubServiceClient{
 		getGithubAppConfig: connect_go.NewClient[v1alpha1.GetGithubAppConfigRequest, v1alpha1.GetGithubAppConfigResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.GithubService/GetGithubAppConfig",
+			baseURL+GithubServiceGetGithubAppConfigProcedure,
 			opts...,
 		),
 	}
@@ -87,8 +100,8 @@ type GithubServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewGithubServiceHandler(svc GithubServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.GithubService/GetGithubAppConfig", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.GithubService/GetGithubAppConfig",
+	mux.Handle(GithubServiceGetGithubAppConfigProcedure, connect_go.NewUnaryHandler(
+		GithubServiceGetGithubAppConfigProcedure,
 		svc.GetGithubAppConfig,
 		opts...,
 	))

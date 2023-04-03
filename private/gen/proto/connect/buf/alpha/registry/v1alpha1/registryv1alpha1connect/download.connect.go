@@ -39,6 +39,22 @@ const (
 	DownloadServiceName = "buf.alpha.registry.v1alpha1.DownloadService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// DownloadServiceDownloadProcedure is the fully-qualified name of the DownloadService's Download
+	// RPC.
+	DownloadServiceDownloadProcedure = "/buf.alpha.registry.v1alpha1.DownloadService/Download"
+	// DownloadServiceDownloadManifestAndBlobsProcedure is the fully-qualified name of the
+	// DownloadService's DownloadManifestAndBlobs RPC.
+	DownloadServiceDownloadManifestAndBlobsProcedure = "/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs"
+)
+
 // DownloadServiceClient is a client for the buf.alpha.registry.v1alpha1.DownloadService service.
 type DownloadServiceClient interface {
 	// Download downloads a BSR module.
@@ -60,12 +76,12 @@ func NewDownloadServiceClient(httpClient connect_go.HTTPClient, baseURL string, 
 	return &downloadServiceClient{
 		download: connect_go.NewClient[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DownloadService/Download",
+			baseURL+DownloadServiceDownloadProcedure,
 			opts...,
 		),
 		downloadManifestAndBlobs: connect_go.NewClient[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs",
+			baseURL+DownloadServiceDownloadManifestAndBlobsProcedure,
 			opts...,
 		),
 	}
@@ -105,13 +121,13 @@ type DownloadServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewDownloadServiceHandler(svc DownloadServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.DownloadService/Download", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DownloadService/Download",
+	mux.Handle(DownloadServiceDownloadProcedure, connect_go.NewUnaryHandler(
+		DownloadServiceDownloadProcedure,
 		svc.Download,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs",
+	mux.Handle(DownloadServiceDownloadManifestAndBlobsProcedure, connect_go.NewUnaryHandler(
+		DownloadServiceDownloadManifestAndBlobsProcedure,
 		svc.DownloadManifestAndBlobs,
 		opts...,
 	))
