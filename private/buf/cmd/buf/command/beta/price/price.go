@@ -64,6 +64,9 @@ If you sign up before October 15, 2023, these sources will cost:
 
 - ${{.TeamsDollarsPerMonthDiscounted}}/month for Teams
 - ${{.ProDollarsPerMonthDiscounted}}/month for Pro
+
+We price based on the average number of private types you have on the BSR during
+your billing period. The above prices are estimates - your actual pricing may vary.
 `
 )
 
