@@ -10,7 +10,8 @@ GO_BINS := $(GO_BINS) \
 	private/pkg/storage/cmd/ddiff \
 	private/pkg/storage/cmd/storage-go-data \
 	private/pkg/licenseheader/cmd/license-header \
-	private/pkg/spdx/cmd/spdx-go-data
+	private/pkg/spdx/cmd/spdx-go-data \
+	private/pkg/changelog/cmd/update-changelog
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer
