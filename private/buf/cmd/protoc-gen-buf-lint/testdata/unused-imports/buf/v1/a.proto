@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package buf.v1;
+
+import "buf/v1/b.proto"; // not directly used; but publicly imports c.proto which is used
+import "buf/v1/d.proto"; // message type
+import "buf/v1/e.proto"; // enum type
+import "buf/v1/file_option.proto";
+import "buf/v1/msg_option.proto";
+import "buf/v1/oneof_option.proto";
+import "buf/v1/field_option.proto";
+// unused ones
+import "buf/v1/f.proto";
+import "buf/v1/extrange_option.proto";
+
+option (file_option) = "foo";
+
+message A {
+  option (msg_option) = "bar";
+  oneof field {
+    option (oneof_option) = "baz";
+    C c = 1;
+    D d = 2 [(field_option) = "buzz"];
+    E e = 3;
+  }
+}

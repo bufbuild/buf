@@ -84,14 +84,18 @@ func (f *formatter) Run() error {
 }
 
 // P prints a line to the generated output.
-func (f *formatter) P(elements ...string) {
-	if len(elements) > 0 {
+//
+// This will emit a newline and proper indentation. If you do not
+// want to emit a newline and want to write a raw string, use
+// WriteString (which P calls).
+//
+// If strings.TrimSpace(elem) is empty, no indentation is produced.
+func (f *formatter) P(elem string) {
+	if len(strings.TrimSpace(elem)) > 0 {
 		// We only want to write an indent if we're
-		// writing elements (not just a newline).
+		// writing a non-empty string (not just a newline).
 		f.Indent(nil)
-		for _, elem := range elements {
-			f.WriteString(elem)
-		}
+		f.WriteString(elem)
 	}
 	f.WriteString("\n")
 
@@ -143,6 +147,9 @@ func (f *formatter) Indent(nextNode ast.Node) {
 }
 
 // WriteString writes the given element to the generated output.
+//
+// This will not write indentation or newlines. Use P if you
+// want to emit identation or newlines.
 func (f *formatter) WriteString(elem string) {
 	if f.pendingSpace {
 		f.pendingSpace = false
@@ -198,7 +205,7 @@ func (f *formatter) writeFile() {
 	if f.lastWritten != 0 && f.lastWritten != '\n' {
 		// If anything was written, we always conclude with
 		// a newline.
-		f.P()
+		f.P("")
 	}
 }
 
@@ -250,7 +257,7 @@ func (f *formatter) writeFileHeader() {
 	})
 	for i, importNode := range importNodes {
 		if i == 0 && f.previousNode != nil && !f.leadingCommentsContainBlankLine(importNode) {
-			f.P()
+			f.P("")
 		}
 		f.writeImport(importNode, i > 0)
 	}
@@ -273,7 +280,7 @@ func (f *formatter) writeFileHeader() {
 	})
 	for i, optionNode := range optionNodes {
 		if i == 0 && f.previousNode != nil && !f.leadingCommentsContainBlankLine(optionNode) {
-			f.P()
+			f.P("")
 		}
 		f.writeFileOption(optionNode, i > 0)
 	}
@@ -291,7 +298,7 @@ func (f *formatter) writeFileTypes() {
 			info := f.fileNode.NodeInfo(node)
 			wantNewline := f.previousNode != nil && (i == 0 || info.LeadingComments().Len() > 0)
 			if wantNewline && !f.leadingCommentsContainBlankLine(node) {
-				f.P()
+				f.P("")
 			}
 			f.writeNode(node)
 		}
@@ -1319,7 +1326,7 @@ func (f *formatter) writeOpenBracePrefix(openBrace ast.Node) {
 	if info.TrailingComments().Len() > 0 {
 		f.writeTrailingEndComments(info.TrailingComments())
 	} else {
-		f.P()
+		f.P("")
 	}
 }
 
@@ -1336,7 +1343,7 @@ func (f *formatter) writeOpenBracePrefixForArray(openBrace ast.Node) {
 	if info.TrailingComments().Len() > 0 {
 		f.writeTrailingEndComments(info.TrailingComments())
 	} else {
-		f.P()
+		f.P("")
 	}
 }
 
@@ -1403,7 +1410,7 @@ func (f *formatter) writeCompoundStringLiteral(
 	needsIndent bool,
 	hasTrailingPunctuation bool,
 ) {
-	f.P()
+	f.P("")
 	if needsIndent {
 		f.In()
 	}
@@ -1719,7 +1726,7 @@ func (f *formatter) writeStartMaybeCompact(node ast.Node, forceCompact bool) {
 			// If the last comment is a C-style comment, multiple newline
 			// characters are required because C-style comments don't consume
 			// a newline.
-			f.P()
+			f.P("")
 		}
 	} else if !compact && nodeNewlineCount > 1 {
 		// If the previous node is an open brace, this is the first element
@@ -1738,7 +1745,7 @@ func (f *formatter) writeStartMaybeCompact(node ast.Node, forceCompact bool) {
 		//  message Foo {
 		//    string bar = 1;
 		//  }
-		f.P()
+		f.P("")
 	}
 	f.Indent(node)
 	f.writeNode(node)
@@ -1805,7 +1812,7 @@ func (f *formatter) writeBodyEnd(node ast.Node, leadingEndline bool) {
 		// will be written twice.
 		f.writeNode(node)
 		if f.lastWritten != '\n' {
-			f.P()
+			f.P("")
 		}
 		return
 	}
@@ -1901,7 +1908,7 @@ func (f *formatter) writeLineEnd(node ast.Node) {
 		// will be written twice.
 		f.writeNode(node)
 		if f.lastWritten != '\n' {
-			f.P()
+			f.P("")
 		}
 		return
 	}
@@ -1947,7 +1954,7 @@ func (f *formatter) writeMultilineCommentsMaybeCompact(comments ast.Comments, fo
 			//  // Package pet.v1 defines a PetStore API.
 			//  package pet.v1;
 			//
-			f.P()
+			f.P("")
 		}
 		compact = false
 		f.writeComment(comment.RawText())
@@ -2018,7 +2025,7 @@ func (f *formatter) writeTrailingEndComments(comments ast.Comments) {
 		}
 		f.writeComment(comment.RawText())
 	}
-	f.P()
+	f.P("")
 }
 
 func (f *formatter) writeComment(comment string) {

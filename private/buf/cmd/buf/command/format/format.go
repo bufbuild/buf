@@ -63,7 +63,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
+		Use:   name + " <source>",
 		Short: "Format Protobuf files",
 		Long: `
 By default, the source is the current directory and the formatted content is written to stdout.
@@ -238,7 +238,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration`,
+		`The buf.yaml file or data to use for configuration`,
 	)
 }
 
@@ -253,15 +253,12 @@ func run(
 	if flags.Output != "-" && flags.Write {
 		return fmt.Errorf("--%s cannot be used with --%s", outputFlagName, writeFlagName)
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
-	refParser := buffetch.NewRefParser(
-		container.Logger(),
-		buffetch.RefParserWithProtoFileRefAllowed(),
-	)
-	sourceOrModuleRef, err := refParser.GetSourceOrModuleRef(ctx, input)
+	refParser := buffetch.NewRefParser(container.Logger())
+	sourceOrModuleRef, err := refParser.GetSourceOrModuleRef(ctx, source)
 	if err != nil {
 		return err
 	}
@@ -341,7 +338,7 @@ func run(
 	if protoFileRef, ok := sourceOrModuleRef.(buffetch.ProtoFileRef); ok {
 		// If we have a single ProtoFileRef, we only want to format that file.
 		// The file will be available from the first module (i.e. it's
-		// the target input, or the first module in a workspace).
+		// the target source, or the first module in a workspace).
 		if len(moduleConfigs) == 0 {
 			// Unreachable - we should always have at least one module.
 			return fmt.Errorf("could not build module for %s", container.Arg(0))
@@ -391,7 +388,7 @@ func run(
 			// TODO: Fix the buffetch.ProtoFileRef so that it works in
 			// these situtations.
 			return fmt.Errorf(
-				"input %s was not found - is the directory containing this file defined in your %s?",
+				"source %s was not found - is the directory containing this file defined in your %s?",
 				container.Arg(0),
 				bufwork.ExternalConfigV1FilePath,
 			)

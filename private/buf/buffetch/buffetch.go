@@ -169,19 +169,8 @@ type RefParser interface {
 // NewRefParser returns a new RefParser.
 //
 // This defaults to dir or module.
-func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
-	return newRefParser(logger, options...)
-}
-
-// RefParserOption is an option for NewRefParser. Ref parser options are only accepted
-// for the default RefParser constructor.
-type RefParserOption func(*refParser)
-
-// RefParserWithProtoFileRefAllowed sets the option of allowing a proto file.
-func RefParserWithProtoFileRefAllowed() RefParserOption {
-	return func(r *refParser) {
-		r.allowProtoFileRef = true
-	}
+func NewRefParser(logger *zap.Logger) RefParser {
+	return newRefParser(logger)
 }
 
 // NewImageRefParser returns a new RefParser for images only.

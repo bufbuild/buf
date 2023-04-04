@@ -17,7 +17,7 @@ package uuidutil
 import (
 	"fmt"
 
-	"github.com/gofrs/uuid"
+	"github.com/gofrs/uuid/v5"
 )
 
 // New returns a new random UUIDv4.

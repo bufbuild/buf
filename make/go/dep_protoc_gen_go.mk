@@ -7,10 +7,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf-go/commits/master 20230222 checked 20230222
-# This is needed until descriptor.proto is updated on a release.
-# https://github.com/protocolbuffers/protobuf-go/commit/bc1253ad37431ee26876db47cd8207cdec81993c
-PROTOC_GEN_GO_VERSION ?= bc1253ad37431ee26876db47cd8207cdec81993c
+# https://github.com/protocolbuffers/protobuf-go/releases 20230316 checked 20230320
+PROTOC_GEN_GO_VERSION ?= v1.30.0
 
 
 GO_GET_PKGS := $(GO_GET_PKGS) \

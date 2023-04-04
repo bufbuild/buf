@@ -86,7 +86,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration`,
+		`The buf.yaml configuration file or data to use`,
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
@@ -114,7 +114,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, input)
+	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
 	if err != nil {
 		return err
 	}

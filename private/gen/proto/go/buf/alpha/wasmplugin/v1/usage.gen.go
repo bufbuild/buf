@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package tokencreate
+package wasmpluginv1
 
 import _ "github.com/bufbuild/buf/private/usage"

@@ -52,6 +52,7 @@ enum ResourceType {
   RESOURCE_TYPE_PLUGIN = 7 [deprecated = true];
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
   RESOURCE_TYPE_TOKEN = 10;
+  RESOURCE_TYPE_SCIM_TOKEN = 11;
 }
 
 // Resource is the affected resource by the audited event.
@@ -92,6 +93,9 @@ enum EventType {
   EVENT_TYPE_TOKEN_CREATED = 23;
   EVENT_TYPE_TOKEN_DELETED = 24;
   EVENT_TYPE_USER_REACTIVATED = 25;
+  EVENT_TYPE_SCIM_TOKEN_CREATED = 26;
+  EVENT_TYPE_SCIM_TOKEN_DELETED = 27;
+  EVENT_TYPE_REPOSITORY_COMMIT_DELETED = 28;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -147,6 +151,9 @@ message Event {
     PayloadTokenCreated token_created = 29;
     PayloadTokenDeleted token_deleted = 30;
     PayloadUserReactivated user_reactivated = 31;
+    PayloadSCIMTokenCreated scim_token_created = 32;
+    PayloadSCIMTokenDeleted scim_token_deleted = 33;
+    PayloadRepositoryCommitDeleted repository_commit_deleted = 34;
   }
 }
 
@@ -341,4 +348,24 @@ message PayloadTokenCreated {
 message PayloadTokenDeleted {
   // owner_id is the id of the owner of the token.
   string owner_id = 1;
+}
+
+message PayloadSCIMTokenCreated {
+  // token_expiry_time is the expiry time of the token.
+  google.protobuf.Timestamp token_expiry_time = 1;
+}
+
+message PayloadSCIMTokenDeleted {}
+
+message PayloadRepositoryCommitDeleted {
+  // owner_id is the id of the owner of the repository from which the commit will be deleted.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository from which the commit will be deleted.
+  string owner_name = 2;
+  // repository_id is the id of the repository from which the commit will be deleted.
+  string repository_id = 3;
+  // repository_name is the name of the repository from which the commit will be deleted.
+  string repository_name = 4;
+  // draft_name is the name of the draft. Optional.
+  string draft_name = 5;
 }

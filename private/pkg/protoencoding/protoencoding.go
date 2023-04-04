@@ -17,15 +17,17 @@ package protoencoding
 import (
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
-// Resolver is a Resolver.
-//
-// This is only needed in cases where extensions may be present.
+// Resolver can resolve files, messages, enums, and extensions.
 type Resolver interface {
+	protodesc.Resolver
 	protoregistry.ExtensionTypeResolver
 	protoregistry.MessageTypeResolver
+	FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error)
 }
 
 // NewResolver creates a new Resolver.

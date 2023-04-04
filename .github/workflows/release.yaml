@@ -4,7 +4,7 @@ on:
     inputs:
       version:
         type: string
-        description: The version you intend to release (eg x.y.z)
+        description: The version you intend to release without leading 'v' (eg x.y.z and not vx.y.z)
   pull_request:
     types: [closed]
   push:
@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -38,16 +38,16 @@ jobs:
         uses: actions/checkout@v3
         with:
           token: ${{ steps.generate_token.outputs.token }}
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: "^1.20.x"
+          go-version: "1.20.x"
       - name: Install Buf
         run: make installbuf
       - name: Update Buf Version
         run: make updateversion
       - name: Create PR
         id: cpr
-        uses: peter-evans/create-pull-request@2b011faafdcbc9ceb11414d64d0573f37c774b04
+        uses: peter-evans/create-pull-request@38e0b6e68b4c852a5500a94740f0e535e0d7ba54
         with:
           add-paths: .
           commit-message: "Update version to v${{env.VERSION}}"
@@ -88,7 +88,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -117,7 +117,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -132,9 +132,9 @@ jobs:
       - name: Set VERSION variable from tag
         run: |
           echo "VERSION=${{github.ref_name}}" >> $GITHUB_ENV
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: "^1.20.x"
+          go-version: "1.20.x"
       - name: Create assets
         env:
           RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
@@ -166,7 +166,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -187,7 +187,7 @@ jobs:
       - name: update home brew badge
         run: make updatehomebrewbadge VERSION=${{github.ref_name}}
       - name: create PR
-        uses: peter-evans/create-pull-request@2b011faafdcbc9ceb11414d64d0573f37c774b04
+        uses: peter-evans/create-pull-request@38e0b6e68b4c852a5500a94740f0e535e0d7ba54
         with:
           add-paths: .
           commit-message: "Back to development"
@@ -197,7 +197,8 @@ jobs:
           title: "Return to development"
           body: Release complete for ${{github.ref_name}}
           token: ${{ steps.generate_token.outputs.token }}
-      - name: Get Version
+      - name: Output Version
+        id: output_version
         uses: actions/github-script@v6
         with:
           script:
@@ -211,7 +212,7 @@ jobs:
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: context.owner,
+              owner: github.repository_owner,
               repo: "buf-npm-publish",
               workflow_id: "npm-publish.yaml",
               ref: "main",
@@ -228,7 +229,7 @@ jobs:
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: context.owner,
+              owner: github.repository_owner,
               repo: "homebrew-buf",
               workflow_id: "release.yaml",
               ref: "main",
@@ -245,7 +246,7 @@ jobs:
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: context.owner,
+              owner: github.repository_owner,
               repo: "vim-buf",
               workflow_id: "release.yaml",
               ref: "main",
@@ -253,17 +254,17 @@ jobs:
                 version: "${{needs.post-release.outputs.version}}"
               }
             })
-  trigger-docs-buf-build-release:
+  trigger-buf-build-release:
     runs-on: ubuntu-latest
     needs: post-release
     steps:
-      - name: trigger docs.buf.build release
+      - name: trigger buf.build release
         uses: actions/github-script@v6
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: context.owner,
-              repo: "docs.buf.build",
+              owner: github.repository_owner,
+              repo: "buf.build",
               workflow_id: "release.yaml",
               ref: "main",
               inputs: {
@@ -279,7 +280,7 @@ jobs:
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: context.owner,
+              owner: github.repository_owner,
               repo: "buf-setup-action",
               workflow_id: "release.yaml",
               ref: "main",

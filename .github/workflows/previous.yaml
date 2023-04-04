@@ -7,14 +7,14 @@ env:
   MAKEFLAGS: "-j 2"
 jobs:
   test-previous:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v3
       - name: setup-go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
-          go-version: '1.19.5'
+          go-version: '1.19.x'
       - name: cache
         uses: actions/cache@v3
         with:

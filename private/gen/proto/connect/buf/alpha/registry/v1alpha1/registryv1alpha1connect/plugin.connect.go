@@ -39,6 +39,93 @@ const (
 	PluginServiceName = "buf.alpha.registry.v1alpha1.PluginService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// PluginServiceListPluginsProcedure is the fully-qualified name of the PluginService's ListPlugins
+	// RPC.
+	PluginServiceListPluginsProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListPlugins"
+	// PluginServiceListUserPluginsProcedure is the fully-qualified name of the PluginService's
+	// ListUserPlugins RPC.
+	PluginServiceListUserPluginsProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListUserPlugins"
+	// PluginServiceListOrganizationPluginsProcedure is the fully-qualified name of the PluginService's
+	// ListOrganizationPlugins RPC.
+	PluginServiceListOrganizationPluginsProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListOrganizationPlugins"
+	// PluginServiceGetPluginVersionProcedure is the fully-qualified name of the PluginService's
+	// GetPluginVersion RPC.
+	PluginServiceGetPluginVersionProcedure = "/buf.alpha.registry.v1alpha1.PluginService/GetPluginVersion"
+	// PluginServiceListPluginVersionsProcedure is the fully-qualified name of the PluginService's
+	// ListPluginVersions RPC.
+	PluginServiceListPluginVersionsProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListPluginVersions"
+	// PluginServiceCreatePluginProcedure is the fully-qualified name of the PluginService's
+	// CreatePlugin RPC.
+	PluginServiceCreatePluginProcedure = "/buf.alpha.registry.v1alpha1.PluginService/CreatePlugin"
+	// PluginServiceGetPluginProcedure is the fully-qualified name of the PluginService's GetPlugin RPC.
+	PluginServiceGetPluginProcedure = "/buf.alpha.registry.v1alpha1.PluginService/GetPlugin"
+	// PluginServiceDeletePluginProcedure is the fully-qualified name of the PluginService's
+	// DeletePlugin RPC.
+	PluginServiceDeletePluginProcedure = "/buf.alpha.registry.v1alpha1.PluginService/DeletePlugin"
+	// PluginServiceSetPluginContributorProcedure is the fully-qualified name of the PluginService's
+	// SetPluginContributor RPC.
+	PluginServiceSetPluginContributorProcedure = "/buf.alpha.registry.v1alpha1.PluginService/SetPluginContributor"
+	// PluginServiceListPluginContributorsProcedure is the fully-qualified name of the PluginService's
+	// ListPluginContributors RPC.
+	PluginServiceListPluginContributorsProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListPluginContributors"
+	// PluginServiceDeprecatePluginProcedure is the fully-qualified name of the PluginService's
+	// DeprecatePlugin RPC.
+	PluginServiceDeprecatePluginProcedure = "/buf.alpha.registry.v1alpha1.PluginService/DeprecatePlugin"
+	// PluginServiceUndeprecatePluginProcedure is the fully-qualified name of the PluginService's
+	// UndeprecatePlugin RPC.
+	PluginServiceUndeprecatePluginProcedure = "/buf.alpha.registry.v1alpha1.PluginService/UndeprecatePlugin"
+	// PluginServiceGetTemplateProcedure is the fully-qualified name of the PluginService's GetTemplate
+	// RPC.
+	PluginServiceGetTemplateProcedure = "/buf.alpha.registry.v1alpha1.PluginService/GetTemplate"
+	// PluginServiceListTemplatesProcedure is the fully-qualified name of the PluginService's
+	// ListTemplates RPC.
+	PluginServiceListTemplatesProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListTemplates"
+	// PluginServiceListTemplatesUserCanAccessProcedure is the fully-qualified name of the
+	// PluginService's ListTemplatesUserCanAccess RPC.
+	PluginServiceListTemplatesUserCanAccessProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListTemplatesUserCanAccess"
+	// PluginServiceListUserTemplatesProcedure is the fully-qualified name of the PluginService's
+	// ListUserTemplates RPC.
+	PluginServiceListUserTemplatesProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListUserTemplates"
+	// PluginServiceListOrganizationTemplatesProcedure is the fully-qualified name of the
+	// PluginService's ListOrganizationTemplates RPC.
+	PluginServiceListOrganizationTemplatesProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListOrganizationTemplates"
+	// PluginServiceGetTemplateVersionProcedure is the fully-qualified name of the PluginService's
+	// GetTemplateVersion RPC.
+	PluginServiceGetTemplateVersionProcedure = "/buf.alpha.registry.v1alpha1.PluginService/GetTemplateVersion"
+	// PluginServiceListTemplateVersionsProcedure is the fully-qualified name of the PluginService's
+	// ListTemplateVersions RPC.
+	PluginServiceListTemplateVersionsProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListTemplateVersions"
+	// PluginServiceCreateTemplateProcedure is the fully-qualified name of the PluginService's
+	// CreateTemplate RPC.
+	PluginServiceCreateTemplateProcedure = "/buf.alpha.registry.v1alpha1.PluginService/CreateTemplate"
+	// PluginServiceDeleteTemplateProcedure is the fully-qualified name of the PluginService's
+	// DeleteTemplate RPC.
+	PluginServiceDeleteTemplateProcedure = "/buf.alpha.registry.v1alpha1.PluginService/DeleteTemplate"
+	// PluginServiceCreateTemplateVersionProcedure is the fully-qualified name of the PluginService's
+	// CreateTemplateVersion RPC.
+	PluginServiceCreateTemplateVersionProcedure = "/buf.alpha.registry.v1alpha1.PluginService/CreateTemplateVersion"
+	// PluginServiceSetTemplateContributorProcedure is the fully-qualified name of the PluginService's
+	// SetTemplateContributor RPC.
+	PluginServiceSetTemplateContributorProcedure = "/buf.alpha.registry.v1alpha1.PluginService/SetTemplateContributor"
+	// PluginServiceListTemplateContributorsProcedure is the fully-qualified name of the PluginService's
+	// ListTemplateContributors RPC.
+	PluginServiceListTemplateContributorsProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListTemplateContributors"
+	// PluginServiceDeprecateTemplateProcedure is the fully-qualified name of the PluginService's
+	// DeprecateTemplate RPC.
+	PluginServiceDeprecateTemplateProcedure = "/buf.alpha.registry.v1alpha1.PluginService/DeprecateTemplate"
+	// PluginServiceUndeprecateTemplateProcedure is the fully-qualified name of the PluginService's
+	// UndeprecateTemplate RPC.
+	PluginServiceUndeprecateTemplateProcedure = "/buf.alpha.registry.v1alpha1.PluginService/UndeprecateTemplate"
+)
+
 // PluginServiceClient is a client for the buf.alpha.registry.v1alpha1.PluginService service.
 type PluginServiceClient interface {
 	// ListPlugins returns all the plugins available to the user. This includes
@@ -118,132 +205,132 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 	return &pluginServiceClient{
 		listPlugins: connect_go.NewClient[v1alpha1.ListPluginsRequest, v1alpha1.ListPluginsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/ListPlugins",
+			baseURL+PluginServiceListPluginsProcedure,
 			opts...,
 		),
 		listUserPlugins: connect_go.NewClient[v1alpha1.ListUserPluginsRequest, v1alpha1.ListUserPluginsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/ListUserPlugins",
+			baseURL+PluginServiceListUserPluginsProcedure,
 			opts...,
 		),
 		listOrganizationPlugins: connect_go.NewClient[v1alpha1.ListOrganizationPluginsRequest, v1alpha1.ListOrganizationPluginsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/ListOrganizationPlugins",
+			baseURL+PluginServiceListOrganizationPluginsProcedure,
 			opts...,
 		),
 		getPluginVersion: connect_go.NewClient[v1alpha1.GetPluginVersionRequest, v1alpha1.GetPluginVersionResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/GetPluginVersion",
+			baseURL+PluginServiceGetPluginVersionProcedure,
 			opts...,
 		),
 		listPluginVersions: connect_go.NewClient[v1alpha1.ListPluginVersionsRequest, v1alpha1.ListPluginVersionsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/ListPluginVersions",
+			baseURL+PluginServiceListPluginVersionsProcedure,
 			opts...,
 		),
 		createPlugin: connect_go.NewClient[v1alpha1.CreatePluginRequest, v1alpha1.CreatePluginResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/CreatePlugin",
+			baseURL+PluginServiceCreatePluginProcedure,
 			opts...,
 		),
 		getPlugin: connect_go.NewClient[v1alpha1.GetPluginRequest, v1alpha1.GetPluginResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/GetPlugin",
+			baseURL+PluginServiceGetPluginProcedure,
 			opts...,
 		),
 		deletePlugin: connect_go.NewClient[v1alpha1.DeletePluginRequest, v1alpha1.DeletePluginResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/DeletePlugin",
+			baseURL+PluginServiceDeletePluginProcedure,
 			opts...,
 		),
 		setPluginContributor: connect_go.NewClient[v1alpha1.SetPluginContributorRequest, v1alpha1.SetPluginContributorResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/SetPluginContributor",
+			baseURL+PluginServiceSetPluginContributorProcedure,
 			opts...,
 		),
 		listPluginContributors: connect_go.NewClient[v1alpha1.ListPluginContributorsRequest, v1alpha1.ListPluginContributorsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/ListPluginContributors",
+			baseURL+PluginServiceListPluginContributorsProcedure,
 			opts...,
 		),
 		deprecatePlugin: connect_go.NewClient[v1alpha1.DeprecatePluginRequest, v1alpha1.DeprecatePluginResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/DeprecatePlugin",
+			baseURL+PluginServiceDeprecatePluginProcedure,
 			opts...,
 		),
 		undeprecatePlugin: connect_go.NewClient[v1alpha1.UndeprecatePluginRequest, v1alpha1.UndeprecatePluginResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/UndeprecatePlugin",
+			baseURL+PluginServiceUndeprecatePluginProcedure,
 			opts...,
 		),
 		getTemplate: connect_go.NewClient[v1alpha1.GetTemplateRequest, v1alpha1.GetTemplateResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/GetTemplate",
+			baseURL+PluginServiceGetTemplateProcedure,
 			opts...,
 		),
 		listTemplates: connect_go.NewClient[v1alpha1.ListTemplatesRequest, v1alpha1.ListTemplatesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/ListTemplates",
+			baseURL+PluginServiceListTemplatesProcedure,
 			opts...,
 		),
 		listTemplatesUserCanAccess: connect_go.NewClient[v1alpha1.ListTemplatesUserCanAccessRequest, v1alpha1.ListTemplatesUserCanAccessResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/ListTemplatesUserCanAccess",
+			baseURL+PluginServiceListTemplatesUserCanAccessProcedure,
 			opts...,
 		),
 		listUserTemplates: connect_go.NewClient[v1alpha1.ListUserTemplatesRequest, v1alpha1.ListUserTemplatesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/ListUserTemplates",
+			baseURL+PluginServiceListUserTemplatesProcedure,
 			opts...,
 		),
 		listOrganizationTemplates: connect_go.NewClient[v1alpha1.ListOrganizationTemplatesRequest, v1alpha1.ListOrganizationTemplatesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/ListOrganizationTemplates",
+			baseURL+PluginServiceListOrganizationTemplatesProcedure,
 			opts...,
 		),
 		getTemplateVersion: connect_go.NewClient[v1alpha1.GetTemplateVersionRequest, v1alpha1.GetTemplateVersionResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/GetTemplateVersion",
+			baseURL+PluginServiceGetTemplateVersionProcedure,
 			opts...,
 		),
 		listTemplateVersions: connect_go.NewClient[v1alpha1.ListTemplateVersionsRequest, v1alpha1.ListTemplateVersionsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/ListTemplateVersions",
+			baseURL+PluginServiceListTemplateVersionsProcedure,
 			opts...,
 		),
 		createTemplate: connect_go.NewClient[v1alpha1.CreateTemplateRequest, v1alpha1.CreateTemplateResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/CreateTemplate",
+			baseURL+PluginServiceCreateTemplateProcedure,
 			opts...,
 		),
 		deleteTemplate: connect_go.NewClient[v1alpha1.DeleteTemplateRequest, v1alpha1.DeleteTemplateResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/DeleteTemplate",
+			baseURL+PluginServiceDeleteTemplateProcedure,
 			opts...,
 		),
 		createTemplateVersion: connect_go.NewClient[v1alpha1.CreateTemplateVersionRequest, v1alpha1.CreateTemplateVersionResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/CreateTemplateVersion",
+			baseURL+PluginServiceCreateTemplateVersionProcedure,
 			opts...,
 		),
 		setTemplateContributor: connect_go.NewClient[v1alpha1.SetTemplateContributorRequest, v1alpha1.SetTemplateContributorResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/SetTemplateContributor",
+			baseURL+PluginServiceSetTemplateContributorProcedure,
 			opts...,
 		),
 		listTemplateContributors: connect_go.NewClient[v1alpha1.ListTemplateContributorsRequest, v1alpha1.ListTemplateContributorsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/ListTemplateContributors",
+			baseURL+PluginServiceListTemplateContributorsProcedure,
 			opts...,
 		),
 		deprecateTemplate: connect_go.NewClient[v1alpha1.DeprecateTemplateRequest, v1alpha1.DeprecateTemplateResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/DeprecateTemplate",
+			baseURL+PluginServiceDeprecateTemplateProcedure,
 			opts...,
 		),
 		undeprecateTemplate: connect_go.NewClient[v1alpha1.UndeprecateTemplateRequest, v1alpha1.UndeprecateTemplateResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginService/UndeprecateTemplate",
+			baseURL+PluginServiceUndeprecateTemplateProcedure,
 			opts...,
 		),
 	}
@@ -487,133 +574,133 @@ type PluginServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/ListPlugins", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/ListPlugins",
+	mux.Handle(PluginServiceListPluginsProcedure, connect_go.NewUnaryHandler(
+		PluginServiceListPluginsProcedure,
 		svc.ListPlugins,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/ListUserPlugins", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/ListUserPlugins",
+	mux.Handle(PluginServiceListUserPluginsProcedure, connect_go.NewUnaryHandler(
+		PluginServiceListUserPluginsProcedure,
 		svc.ListUserPlugins,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/ListOrganizationPlugins", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/ListOrganizationPlugins",
+	mux.Handle(PluginServiceListOrganizationPluginsProcedure, connect_go.NewUnaryHandler(
+		PluginServiceListOrganizationPluginsProcedure,
 		svc.ListOrganizationPlugins,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/GetPluginVersion", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/GetPluginVersion",
+	mux.Handle(PluginServiceGetPluginVersionProcedure, connect_go.NewUnaryHandler(
+		PluginServiceGetPluginVersionProcedure,
 		svc.GetPluginVersion,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/ListPluginVersions", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/ListPluginVersions",
+	mux.Handle(PluginServiceListPluginVersionsProcedure, connect_go.NewUnaryHandler(
+		PluginServiceListPluginVersionsProcedure,
 		svc.ListPluginVersions,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/CreatePlugin", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/CreatePlugin",
+	mux.Handle(PluginServiceCreatePluginProcedure, connect_go.NewUnaryHandler(
+		PluginServiceCreatePluginProcedure,
 		svc.CreatePlugin,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/GetPlugin", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/GetPlugin",
+	mux.Handle(PluginServiceGetPluginProcedure, connect_go.NewUnaryHandler(
+		PluginServiceGetPluginProcedure,
 		svc.GetPlugin,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/DeletePlugin", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/DeletePlugin",
+	mux.Handle(PluginServiceDeletePluginProcedure, connect_go.NewUnaryHandler(
+		PluginServiceDeletePluginProcedure,
 		svc.DeletePlugin,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/SetPluginContributor", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/SetPluginContributor",
+	mux.Handle(PluginServiceSetPluginContributorProcedure, connect_go.NewUnaryHandler(
+		PluginServiceSetPluginContributorProcedure,
 		svc.SetPluginContributor,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/ListPluginContributors", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/ListPluginContributors",
+	mux.Handle(PluginServiceListPluginContributorsProcedure, connect_go.NewUnaryHandler(
+		PluginServiceListPluginContributorsProcedure,
 		svc.ListPluginContributors,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/DeprecatePlugin", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/DeprecatePlugin",
+	mux.Handle(PluginServiceDeprecatePluginProcedure, connect_go.NewUnaryHandler(
+		PluginServiceDeprecatePluginProcedure,
 		svc.DeprecatePlugin,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/UndeprecatePlugin", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/UndeprecatePlugin",
+	mux.Handle(PluginServiceUndeprecatePluginProcedure, connect_go.NewUnaryHandler(
+		PluginServiceUndeprecatePluginProcedure,
 		svc.UndeprecatePlugin,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/GetTemplate", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/GetTemplate",
+	mux.Handle(PluginServiceGetTemplateProcedure, connect_go.NewUnaryHandler(
+		PluginServiceGetTemplateProcedure,
 		svc.GetTemplate,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/ListTemplates", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/ListTemplates",
+	mux.Handle(PluginServiceListTemplatesProcedure, connect_go.NewUnaryHandler(
+		PluginServiceListTemplatesProcedure,
 		svc.ListTemplates,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/ListTemplatesUserCanAccess", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/ListTemplatesUserCanAccess",
+	mux.Handle(PluginServiceListTemplatesUserCanAccessProcedure, connect_go.NewUnaryHandler(
+		PluginServiceListTemplatesUserCanAccessProcedure,
 		svc.ListTemplatesUserCanAccess,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/ListUserTemplates", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/ListUserTemplates",
+	mux.Handle(PluginServiceListUserTemplatesProcedure, connect_go.NewUnaryHandler(
+		PluginServiceListUserTemplatesProcedure,
 		svc.ListUserTemplates,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/ListOrganizationTemplates", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/ListOrganizationTemplates",
+	mux.Handle(PluginServiceListOrganizationTemplatesProcedure, connect_go.NewUnaryHandler(
+		PluginServiceListOrganizationTemplatesProcedure,
 		svc.ListOrganizationTemplates,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/GetTemplateVersion", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/GetTemplateVersion",
+	mux.Handle(PluginServiceGetTemplateVersionProcedure, connect_go.NewUnaryHandler(
+		PluginServiceGetTemplateVersionProcedure,
 		svc.GetTemplateVersion,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/ListTemplateVersions", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/ListTemplateVersions",
+	mux.Handle(PluginServiceListTemplateVersionsProcedure, connect_go.NewUnaryHandler(
+		PluginServiceListTemplateVersionsProcedure,
 		svc.ListTemplateVersions,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/CreateTemplate", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/CreateTemplate",
+	mux.Handle(PluginServiceCreateTemplateProcedure, connect_go.NewUnaryHandler(
+		PluginServiceCreateTemplateProcedure,
 		svc.CreateTemplate,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/DeleteTemplate", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/DeleteTemplate",
+	mux.Handle(PluginServiceDeleteTemplateProcedure, connect_go.NewUnaryHandler(
+		PluginServiceDeleteTemplateProcedure,
 		svc.DeleteTemplate,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/CreateTemplateVersion", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/CreateTemplateVersion",
+	mux.Handle(PluginServiceCreateTemplateVersionProcedure, connect_go.NewUnaryHandler(
+		PluginServiceCreateTemplateVersionProcedure,
 		svc.CreateTemplateVersion,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/SetTemplateContributor", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/SetTemplateContributor",
+	mux.Handle(PluginServiceSetTemplateContributorProcedure, connect_go.NewUnaryHandler(
+		PluginServiceSetTemplateContributorProcedure,
 		svc.SetTemplateContributor,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/ListTemplateContributors", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/ListTemplateContributors",
+	mux.Handle(PluginServiceListTemplateContributorsProcedure, connect_go.NewUnaryHandler(
+		PluginServiceListTemplateContributorsProcedure,
 		svc.ListTemplateContributors,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/DeprecateTemplate", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/DeprecateTemplate",
+	mux.Handle(PluginServiceDeprecateTemplateProcedure, connect_go.NewUnaryHandler(
+		PluginServiceDeprecateTemplateProcedure,
 		svc.DeprecateTemplate,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginService/UndeprecateTemplate", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginService/UndeprecateTemplate",
+	mux.Handle(PluginServiceUndeprecateTemplateProcedure, connect_go.NewUnaryHandler(
+		PluginServiceUndeprecateTemplateProcedure,
 		svc.UndeprecateTemplate,
 		opts...,
 	))

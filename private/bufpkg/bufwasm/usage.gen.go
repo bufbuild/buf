@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package ulidutil
+package bufwasm
 
 import _ "github.com/bufbuild/buf/private/usage"

@@ -7,12 +7,12 @@ env:
   MAKEFLAGS: '-j 2'
 jobs:
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v3
       - name: setup-go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: '1.20.x'
       - name: cache
@@ -33,12 +33,12 @@ jobs:
           BUF_INPUT_HTTPS_USERNAME: ${{ github.actor }}
           BUF_INPUT_HTTPS_PASSWORD: ${{ github.token }}
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v3
       - name: setup-go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: '1.20.x'
       - name: cache
@@ -55,7 +55,7 @@ jobs:
       - name: make-test
         run: make test
   docker:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs:
       - lint
       - test

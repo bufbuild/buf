@@ -120,7 +120,7 @@ Overrides --%s`,
 		&f.Config,
 		configFlagName,
 		"",
-		`The file or data to use for configuration`,
+		`The buf.yaml file or data to use for configuration`,
 	)
 	flagSet.StringVar(
 		&f.Against,
@@ -135,7 +135,7 @@ Overrides --%s`,
 		&f.AgainstConfig,
 		againstConfigFlagName,
 		"",
-		`The file or data to use to configure the against source, module, or image`,
+		`The buf.yaml file or data to use to configure the against source, module, or image`,
 	)
 }
 
@@ -154,7 +154,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, input)
+	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -205,7 +205,7 @@ func run(
 			return err
 		}
 	}
-	againstRef, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, flags.Against)
+	againstRef, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, flags.Against)
 	if err != nil {
 		return err
 	}

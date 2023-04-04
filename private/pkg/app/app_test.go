@@ -134,3 +134,25 @@ func TestIsDev(t *testing.T) {
 	assert.False(t, IsDevStderr("foo"))
 	assert.False(t, IsDevNull("foo"))
 }
+
+func TestEnvBool(t *testing.T) {
+	envContainer := NewEnvContainer(
+		map[string]string{
+			"foo1": "bar1",
+			"foo2": "true",
+			"foo3": "false",
+		},
+	)
+	val, err := EnvBool(envContainer, "foo1", false)
+	assert.Error(t, err)
+	assert.Equal(t, false, val)
+	val, err = EnvBool(envContainer, "foo2", false)
+	assert.NoError(t, err)
+	assert.Equal(t, true, val)
+	val, err = EnvBool(envContainer, "foo3", false)
+	assert.NoError(t, err)
+	assert.Equal(t, false, val)
+	val, err = EnvBool(envContainer, "notset", true)
+	assert.NoError(t, err)
+	assert.Equal(t, true, val)
+}

@@ -737,15 +737,17 @@ func (t *transitiveClosure) exploreOptionValueForAny(
 	opts *imageFilterOptions,
 ) error {
 	switch {
-	case fd.IsMap() && isMessageKind(fd.MapValue().Kind()):
-		var err error
-		val.Map().Range(func(_ protoreflect.MapKey, v protoreflect.Value) bool {
-			if err = t.exploreOptionScalarValueForAny(v.Message(), referrerFile, imageIndex, opts); err != nil {
-				return false
-			}
-			return true
-		})
-		return err
+	case fd.IsMap():
+		if isMessageKind(fd.MapValue().Kind()) {
+			var err error
+			val.Map().Range(func(_ protoreflect.MapKey, v protoreflect.Value) bool {
+				if err = t.exploreOptionScalarValueForAny(v.Message(), referrerFile, imageIndex, opts); err != nil {
+					return false
+				}
+				return true
+			})
+			return err
+		}
 	case isMessageKind(fd.Kind()):
 		if fd.IsList() {
 			listVal := val.List()
@@ -771,7 +773,7 @@ func (t *transitiveClosure) exploreOptionScalarValueForAny(
 	if md.FullName() == anyFullName {
 		// Found one!
 		typeURLFd := md.Fields().ByNumber(1)
-		if typeURLFd.Kind() != protoreflect.StringKind {
+		if typeURLFd.Kind() != protoreflect.StringKind || typeURLFd.IsList() {
 			// should not be possible...
 			return nil
 		}
@@ -784,6 +786,7 @@ func (t *transitiveClosure) exploreOptionScalarValueForAny(
 				return err
 			}
 		}
+		// TODO: unmarshal the bytes to see if there are any nested Any messages
 		return nil
 	}
 	// keep digging

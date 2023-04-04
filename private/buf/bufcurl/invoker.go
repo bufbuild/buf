@@ -71,7 +71,7 @@ type invokeClient = connect.Client[dynamicpb.Message, deferredMessage]
 
 type invoker struct {
 	md        protoreflect.MethodDescriptor
-	res       Resolver
+	res       protoencoding.Resolver
 	client    *invokeClient
 	output    io.Writer
 	errOutput io.Writer
@@ -83,7 +83,7 @@ type invoker struct {
 // in JSON format. The given resolver is used to resolve Any messages and
 // extensions that appear in the input or output. Other parameters are used
 // to create a Connect client, for issuing the RPC.
-func NewInvoker(container appflag.Container, md protoreflect.MethodDescriptor, res Resolver, httpClient connect.HTTPClient, opts []connect.ClientOption, url string, out io.Writer) Invoker {
+func NewInvoker(container appflag.Container, md protoreflect.MethodDescriptor, res protoencoding.Resolver, httpClient connect.HTTPClient, opts []connect.ClientOption, url string, out io.Writer) Invoker {
 	opts = append(opts, connect.WithCodec(protoCodec{}))
 	// TODO: could also provide custom compressor implementations that could give us
 	//  optics into when request and response messages are compressed (which could be
@@ -381,7 +381,7 @@ func (inv *invoker) handleErrorResponse(connErr *connect.Error) error {
 	return app.NewError(int(connErr.Code()*8), "")
 }
 
-func newStreamMessageProvider(dataSource string, data io.Reader, res Resolver) messageProvider {
+func newStreamMessageProvider(dataSource string, data io.Reader, res protoencoding.Resolver) messageProvider {
 	if data == nil {
 		// if no data provided, treat as empty input
 		data = bytes.NewBuffer(nil)
@@ -389,7 +389,7 @@ func newStreamMessageProvider(dataSource string, data io.Reader, res Resolver) m
 	return &streamMessageProvider{name: dataSource, dec: json.NewDecoder(data), res: res}
 }
 
-func newMessageProvider(dataSource string, data io.Reader, res Resolver) messageProvider {
+func newMessageProvider(dataSource string, data io.Reader, res protoencoding.Resolver) messageProvider {
 	if data == nil {
 		// if no data provider, treat as if single empty message
 		return &singleEmptyMessageProvider{}
@@ -417,7 +417,7 @@ func (s *singleEmptyMessageProvider) next(_ proto.Message) error {
 type streamMessageProvider struct {
 	name string
 	dec  *json.Decoder
-	res  Resolver
+	res  protoencoding.Resolver
 }
 
 func (s *streamMessageProvider) next(msg proto.Message) error {
