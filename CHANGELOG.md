@@ -6,6 +6,7 @@
   omitted when line and column information was empty.
 - Fix issue with MSVS marshalling of errors where the column could be 0.
 - Add `buf beta stats` command to print statistics about a given source or module.
+- Update `buf beta price` with the latest pricing information.
 
 ## [v1.16.0] - 2023-03-29
 
