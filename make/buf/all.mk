@@ -126,7 +126,7 @@ updatehomebrewbadge:
 	$(SED_I) "s/badge\/homebrew-v.*-blue/badge\/homebrew-v$(shell bash make/buf/scripts/homebrewversion.bash)-blue/g" README.md
 
 .PHONY: updateversion
-updateversion: installupdatechangelog
+updateversion: installupdate-changelog
 ifndef VERSION
 	$(error "VERSION must be set")
 endif
@@ -159,6 +159,3 @@ gofuzz: $(GO_FUZZ)
 	rm go.mod go.sum; mv $(TMP)/go.mod.bak go.mod; mv $(TMP)/go.sum.bak go.sum
 	cp private/bufpkg/bufimage/bufimagebuild/bufimagebuildtesting/corpus/* $(TMP)/gofuzz/corpus
 	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz $(GO_FUZZ_EXTRA_ARGS)
-
-installupdatechangelog:
-	go install ./private/pkg/changelog/cmd/update-changelog
