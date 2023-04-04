@@ -31,16 +31,21 @@ import (
 )
 
 const (
-	disableSymlinksFlagName     = "disable-symlinks"
-	teamsPerTypeDollarsPerMonth = float64(0.50)
-	proPerTypeDollarsPerMonth   = float64(1)
-	tmplCopy                    = `Current BSR pricing:
+	disableSymlinksFlagName       = "disable-symlinks"
+	teamsDollarsPerType           = float64(0.50)
+	proDollarsPerType             = float64(1)
+	teamsDollarsPerTypeDiscounted = float64(0.40)
+	proDollarsPerTypeDiscounted   = float64(0.80)
+	tmplCopy                      = `Current BSR pricing:
 
-  - Teams: $50/month per 100 types
-  - Pro: $100/month per 100 types
+  - Teams: $0.50 per type (discounted to $0.40 if you sign up before October 15, 2023)
+  - Pro: $1.00 per type (discounted to $0.80 if you sign up before October 15, 2023)
 
-Pricing data last updated on March 13, 2023.
-See buf.build/pricing for the latest information.
+Pricing data last updated on April 4, 2023.
+
+Make sure you are on the latest version of the Buf CLI to get the most updated pricing
+information, and see buf.build/pricing if in doubt - this command runs completely locally
+and does not interact with our servers.
 
 Your sources have:
 
@@ -48,17 +53,17 @@ Your sources have:
   - {{.NumEnums}} enums
   - {{.NumMethods}} methods
 
-This adds up to {{.NumTypes}} types.{{if .ChargeableIsRounded}}
-
-We bill in increments of 100 types. Types are totaled across
-your whole organization (Teams) or instance (Pro). If these
-sources were all that were uploaded to your organization or instance,
-this would be rounded up to {{.ChargeableTypes}} types.{{end}}
+This adds up to {{.NumTypes}} types.
 
 Based on this, these sources will cost:
 
 - ${{.TeamsDollarsPerMonth}}/month for Teams
 - ${{.ProDollarsPerMonth}}/month for Pro
+
+If you sign up before October 15, 2023, these sources will cost:
+
+- ${{.TeamsDollarsPerMonthDiscounted}}/month for Teams
+- ${{.ProDollarsPerMonthDiscounted}}/month for Pro
 `
 )
 
@@ -165,11 +170,11 @@ func run(
 type tmplData struct {
 	*protostat.Stats
 
-	NumTypes             int
-	ChargeableTypes      int
-	ChargeableIsRounded  bool
-	TeamsDollarsPerMonth string
-	ProDollarsPerMonth   string
+	NumTypes                       int
+	TeamsDollarsPerMonth           string
+	ProDollarsPerMonth             string
+	TeamsDollarsPerMonthDiscounted string
+	ProDollarsPerMonthDiscounted   string
 }
 
 func newTmplData(stats *protostat.Stats) *tmplData {
@@ -177,13 +182,9 @@ func newTmplData(stats *protostat.Stats) *tmplData {
 		Stats:    stats,
 		NumTypes: stats.NumMessages + stats.NumEnums + stats.NumMethods,
 	}
-	buckets := tmplData.NumTypes / 100
-	if tmplData.NumTypes%100 != 0 {
-		tmplData.ChargeableIsRounded = true
-		buckets++
-	}
-	tmplData.ChargeableTypes = buckets * 100
-	tmplData.TeamsDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.ChargeableTypes)*teamsPerTypeDollarsPerMonth)
-	tmplData.ProDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.ChargeableTypes)*proPerTypeDollarsPerMonth)
+	tmplData.TeamsDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*teamsDollarsPerType)
+	tmplData.ProDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*proDollarsPerType)
+	tmplData.TeamsDollarsPerMonthDiscounted = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*teamsDollarsPerTypeDiscounted)
+	tmplData.ProDollarsPerMonthDiscounted = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*proDollarsPerTypeDiscounted)
 	return tmplData
 }
