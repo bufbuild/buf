@@ -5,6 +5,7 @@
 - Fix issue with JSON marshalling of errors where line and column fields were
   omitted when line and column information was empty.
 - Fix issue with MSVS marshalling of errors where the column could be 0.
+- Add `buf beta stats` command to print statistics about a given source or module.
 
 ## [v1.16.0] - 2023-03-29
 
