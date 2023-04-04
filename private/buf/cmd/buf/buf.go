@@ -146,6 +146,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
 					price.NewCommand("price", builder),
+					stats.NewCommand("stats", builder),
 					migratev1beta1.NewCommand("migrate-v1beta1", builder),
 					studioagent.NewCommand("studio-agent", noTimeoutBuilder),
 					{
