@@ -36,6 +36,7 @@ import (
 const (
 	semverRegex         = `((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)`
 	updateChangelogName = "update-changelog"
+	defaultChangelog    = "CHANGELOG.md"
 )
 
 var (
@@ -43,6 +44,7 @@ var (
 	headerRegexp           = regexp.MustCompile(`# Changelog`)
 	unreleasedHeaderRegexp = regexp.MustCompile(fmt.Sprintf(`\[Unreleased\]: (.*?)v%s\.\.\.HEAD`, semverRegex))
 	unreleasedLinkRegexp   = regexp.MustCompile(`## \[Unreleased\]`)
+	repoRegexp             = regexp.MustCompile(`\[.*?]: (.*?)\/compare`)
 )
 
 func main() {
@@ -164,7 +166,6 @@ func release(container appflag.Container, flags *updateChangelogReleaseFlags) er
 // [v1.99.0]: https://github.com/bufbuild/buf/compare/v1.16.0...v1.99.0
 // then this function will return "https://github.com/bufbuild/buf"
 func getRepoURL(data []byte) string {
-	repoRegexp := regexp.MustCompile(`\[.*?]: (.*?)\/compare`)
 	newData := repoRegexp.FindStringSubmatch(string(data))
 	if len(newData) == 0 {
 		return ""
@@ -172,15 +173,15 @@ func getRepoURL(data []byte) string {
 	return newData[1]
 }
 
-// changelogFile returns the contents of the changelog file from a appflag.Container.
+// changelogFile returns the contents of the changelog file from an appflag.Container.
 func changelogFile(container appflag.Container) (string, []byte, error) {
 	filename := container.Arg(0)
 	if filename == "" {
-		filename = "CHANGELOG.md"
+		filename = defaultChangelog
 	}
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return "", nil, errors.New("error: Could not read file")
+		return "", nil, err
 	}
 	return filename, data, err
 }
