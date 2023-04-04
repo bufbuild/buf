@@ -41,7 +41,7 @@ const (
   - Teams: $0.50 per type
   - Pro: $1.00 per type
 
-If you sign up before Octobet 15, 2023, we will give you a 20% discount for the first year:
+If you sign up before October 15, 2023, we will give you a 20% discount for the first year:
 
   - Teams: $0.40 per type for the first year
   - Pro: $0.80 per type for the first year
