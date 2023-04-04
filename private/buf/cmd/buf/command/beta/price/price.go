@@ -38,8 +38,13 @@ const (
 	proDollarsPerTypeDiscounted   = float64(0.80)
 	tmplCopy                      = `Current BSR pricing:
 
-  - Teams: $0.50 per type (discounted to $0.40 if you sign up before October 15, 2023)
-  - Pro: $1.00 per type (discounted to $0.80 if you sign up before October 15, 2023)
+  - Teams: $0.50 per type
+  - Pro: $1.00 per type
+
+If you sign up before Octobet 15, 2023, we will give you a 20% discount for the first year:
+
+  - Teams: $0.40 per type for the first year
+  - Pro: $0.80 per type for the first year
 
 Pricing data last updated on April 4, 2023.
 
@@ -60,13 +65,13 @@ Based on this, these sources will cost:
 - ${{.TeamsDollarsPerMonth}}/month for Teams
 - ${{.ProDollarsPerMonth}}/month for Pro
 
-If you sign up before October 15, 2023, these sources will cost:
+If you sign up before October 15, 2023, for the first year, these sources will cost:
 
 - ${{.TeamsDollarsPerMonthDiscounted}}/month for Teams
 - ${{.ProDollarsPerMonthDiscounted}}/month for Pro
 
-We price based on the average number of private types you have on the BSR during
-your billing period. The above prices are estimates - your actual pricing may vary.
+These values should be treated as an estimate - we price based on the average number
+of private types you have on the BSR during your billing period.
 `
 )
 
