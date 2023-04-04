@@ -43,7 +43,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
-		Short: "Get statistics a given source or module",
+		Short: "Get statistics for a given source or module",
 		Long:  bufcli.GetSourceOrModuleLong(`the source or module to get statistics for`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
