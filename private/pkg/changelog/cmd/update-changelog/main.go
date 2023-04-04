@@ -22,19 +22,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/spf13/pflag"
 	"os"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 const (
-	semverRegex = `((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)`
-	name        = "update-changelog"
-	timeout     = 120 * time.Second
+	semverRegex         = `((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)`
+	updateChangelogName = "update-changelog"
+)
+
+var (
+	lastLinkRegexp         = regexp.MustCompile(fmt.Sprintf(`\[v%s\].*?v%s\.\.\.v%s`, semverRegex, semverRegex, semverRegex))
+	headerRegexp           = regexp.MustCompile(`# Changelog`)
+	unreleasedHeaderRegexp = regexp.MustCompile(fmt.Sprintf(`\[Unreleased\]: (.*?)v%s\.\.\.HEAD`, semverRegex))
+	unreleasedLinkRegexp   = regexp.MustCompile(`## \[Unreleased\]`)
 )
 
 func main() {
@@ -42,24 +50,29 @@ func main() {
 }
 
 func newCommand() *appcmd.Command {
-	builder := appflag.NewBuilder(
-		name,
-		appflag.BuilderWithTimeout(timeout),
-		appflag.BuilderWithTracing(),
-	)
+	builder := appflag.NewBuilder(updateChangelogName)
 	flags := newFlags()
 	return &appcmd.Command{
-		Use: name,
+		Use: updateChangelogName,
 		SubCommands: []*appcmd.Command{
-			{Use: "unrelease", Run: builder.NewRunFunc(func(ctx context.Context, container appflag.Container) error {
-				return unrelease(ctx, container)
-			})},
-			{Use: "release", Run: builder.NewRunFunc(func(ctx context.Context, container appflag.Container) error {
-				return release(ctx, container, flags)
-			}),
+			{
+				Use:   "unrelease <changelog>",
+				Short: "Adds an Unreleased section to the changelog",
+				Run: builder.NewRunFunc(func(ctx context.Context, container appflag.Container) error {
+					return unrelease(container)
+				}),
+				Args: cobra.ExactArgs(1),
+			},
+			{
+				Use:   "release <changelog> --version=<version>",
+				Short: "Adds a new release section to the changelog",
+				Run: builder.NewRunFunc(func(_ context.Context, container appflag.Container) error {
+					return release(container, flags)
+				}),
+				BindFlags: flags.Bind,
+				Args:      cobra.ExactArgs(1),
 			},
 		},
-		BindPersistentFlags: builder.BindRoot,
 	}
 }
 
@@ -73,76 +86,101 @@ func newFlags() *updateChangelogReleaseFlags {
 }
 
 func (f *updateChangelogReleaseFlags) Bind(flagSet *pflag.FlagSet) {
-	var today = time.Now().Format("2006-01-02")
-	flagSet.StringVarP(&f.version, "version", "v", "", "the release version (required for release operation)")
-	flagSet.StringVarP(&f.date, "date", "d", today, "the release date in YYYY-MM-DD (optional, defaults to today if not supplied)")
+	today := time.Now().Format("2006-01-02")
+	flagSet.StringVarP(&f.version, "version", "", "", "The release version (required for release operation)")
+	flagSet.StringVarP(&f.date, "date", "", today, "The release date in YYYY-MM-DD (optional, defaults to today if not supplied)")
 }
 
-func unrelease(_ context.Context, container appflag.Container) error {
-	filename := container.Arg(1)
-	if filename == "" {
-		filename = "CHANGELOG.md"
-	}
-	data, err := os.ReadFile(filename)
+// unrelease adds an Unreleased section to the changelog file.
+// It also updates the Unreleased link at the bottom of the file.
+// $ update-changelog unrelease
+// +## [Unreleased]
+// +
+// +- No changes yet.
+// +
+// ...
+// +[Unreleased]: https://github.com/bufbuild/buf/compare/v1.17.0...HEAD
+func unrelease(container appflag.Container) error {
+	filename, contents, err := changelogFile(container)
 	if err != nil {
-		return errors.New("error: Could not read file")
+		return err
 	}
-	re := regexp.MustCompile(`# Changelog`)
-	repoURL := getRepoURL(data)
-	data = re.ReplaceAll(data, []byte(`# Changelog
+	repoURL := getRepoURL(contents)
+	contents = headerRegexp.ReplaceAll(contents, []byte(`# Changelog
 
 ## [Unreleased]
 
 - No changes yet.`))
-	lastLinkRegexp := regexp.MustCompile(fmt.Sprintf(`\[v%s\].*?v%s\.\.\.v%s`, semverRegex, semverRegex, semverRegex))
-	lastVersions := lastLinkRegexp.FindStringSubmatch(string(data))
-	data = []byte(
-		strings.Replace(string(data),
+	lastVersions := lastLinkRegexp.FindStringSubmatch(string(contents))
+	if len(lastVersions) < 2 {
+		return errors.New("error: Could not find last release version")
+	}
+	contents = []byte(
+		strings.Replace(string(contents),
 			lastVersions[0],
 			fmt.Sprintf(`[Unreleased]: %s/compare/v%s...HEAD
 %s`, repoURL, lastVersions[1], lastVersions[0]), 1))
-	err = os.WriteFile(filename, data, 0600)
+	err = os.WriteFile(filename, contents, 0o600)
 	if err != nil {
 		return errors.New("error: Could not write to file")
 	}
 	return nil
 }
 
-func release(_ context.Context, container appflag.Container, flags *updateChangelogReleaseFlags) error {
-	filename := container.Arg(1)
+// release adds a new release section to the changelog.
+// It updates the Unreleased section to the new version and adds a new Unreleased section.
+// It also updates the Unreleased link at the bottom of the file.
+// $ update-changelog release --version=1.17.0
+// -## [Unreleased]
+// +## [v1.17.0] - 2023-04-04
+// ...
+// -[Unreleased]: https://github.com/bufbuild/buf/compare/v1.16.0...HEAD
+// +[v1.17.0]: https://github.com/bufbuild/buf/compare/v1.16.0...v1.17.0
+func release(container appflag.Container, flags *updateChangelogReleaseFlags) error {
+	if flags.version == "" {
+		return errors.New("error: Please provide a version flag")
+	}
+	filename, oldContents, err := changelogFile(container)
+	if err != nil {
+		return err
+	}
+	repoURL := getRepoURL(oldContents)
+	newContents := unreleasedLinkRegexp.ReplaceAll(oldContents, []byte(fmt.Sprintf("## [%s] - %s", flags.version, flags.date)))
+	if lastVersionMatches := unreleasedHeaderRegexp.FindStringSubmatch(string(newContents)); len(lastVersionMatches) != 0 {
+		lastVersion := lastVersionMatches[2]
+		if lastVersion != "" {
+			newContents = unreleasedHeaderRegexp.ReplaceAll(newContents, []byte(fmt.Sprintf("[%s]: %s/compare/v%s...%s", flags.version, repoURL, lastVersion, flags.version)))
+		}
+	}
+	err = os.WriteFile(filename, newContents, 0o600)
+	if err != nil {
+		return errors.New("error: Could not write to file")
+	}
+	return nil
+}
+
+// getRepoURL returns the repo URL from the changelog file
+// for example, if the changelog file has the following line:
+// [v1.99.0]: https://github.com/bufbuild/buf/compare/v1.16.0...v1.99.0
+// then this function will return "https://github.com/bufbuild/buf"
+func getRepoURL(data []byte) string {
+	repoRegexp := regexp.MustCompile(`\[.*?]: (.*?)\/compare`)
+	newData := repoRegexp.FindStringSubmatch(string(data))
+	if len(newData) == 0 {
+		return ""
+	}
+	return newData[1]
+}
+
+// changelogFile returns the contents of the changelog file from a appflag.Container.
+func changelogFile(container appflag.Container) (string, []byte, error) {
+	filename := container.Arg(0)
 	if filename == "" {
 		filename = "CHANGELOG.md"
 	}
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return errors.New("error: Could not read file")
+		return "", nil, errors.New("error: Could not read file")
 	}
-	if flags.version == "" {
-		return errors.New("error: Please provide a version flag")
-	}
-	repoURL := getRepoURL(data)
-	re := regexp.MustCompile(`## \[Unreleased\]`)
-	newData := re.ReplaceAll(data, []byte(fmt.Sprintf("## [%s] - %s", flags.version, flags.date)))
-	re = regexp.MustCompile(fmt.Sprintf(`\[Unreleased\]: (.*?)v%s\.\.\.HEAD`, semverRegex))
-	lastVersionFoo := re.FindStringSubmatch(string(newData))
-	if len(lastVersionFoo) != 0 {
-		lastVersion := lastVersionFoo[2]
-		if lastVersion != "" {
-			newData = re.ReplaceAll(newData, []byte(fmt.Sprintf("[%s]: %s/compare/v%s...%s", flags.version, repoURL, lastVersion, flags.version)))
-		}
-	}
-	err = os.WriteFile(filename, data, 0600)
-	if err != nil {
-		return errors.New("error: Could not write to file")
-	}
-	return nil
-}
-
-func getRepoURL(data []byte) string {
-	re := regexp.MustCompile(`\[.*?]: (.*?)\/compare`)
-	newData := re.FindStringSubmatch(string(data))
-	if len(newData) == 0 {
-		return ""
-	}
-	return newData[1]
+	return filename, data, err
 }
