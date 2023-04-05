@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.17.0] - 2023-04-05
 
 - Fix issue with JSON marshalling of errors where line and column fields were
   omitted when line and column information was empty.
@@ -852,7 +852,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.16.0...HEAD
+[v1.17.0]: https://github.com/bufbuild/buf/compare/v1.16.0...v1.17.0
 [v1.16.0]: https://github.com/bufbuild/buf/compare/v1.15.1...v1.16.0
 [v1.15.1]: https://github.com/bufbuild/buf/compare/v1.15.0...v1.15.1
 [v1.15.0]: https://github.com/bufbuild/buf/compare/v1.14.0...v1.15.0
