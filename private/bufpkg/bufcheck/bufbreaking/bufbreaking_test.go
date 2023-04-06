@@ -38,9 +38,7 @@ import (
 // Hint on how to get these:
 // 1. cd ./private/bufpkg/bufcheck/bufbreaking/testdata
 // 2. cd into specific test directory name
-// 3. TEST_DIRECTORY_NAME=; buf breaking --against ../../testdata_previous/${TEST_DIRECTORY_NAME} --error-format=json | jq '[.path, .start_line, .start_column, .end_line, .end_column, .type] | @csv' --raw-output
-//      or
-//    TEST_DIRECTORY_NAME=; buf breaking --against ../../testdata_previous/${TEST_DIRECTORY_NAME} --error-format=json | jq -r '"bufanalysistesting.NewFileAnnotation(t, \"\(.path)\", \(.start_line|tostring), \(.start_column|tostring), \(.end_line|tostring), \(.end_column|tostring), \"\(.type)\"),"'
+// 3. buf breaking --against "../../testdata_previous/$(basename "$(pwd)")" --error-format=json | jq -r '"bufanalysistesting.NewFileAnnotation(t, \"\(.path)\", \(.start_line|tostring), \(.start_column|tostring), \(.end_line|tostring), \(.end_column|tostring), \"\(.type)\"),"'
 
 func TestRunBreakingEnumNoDelete(t *testing.T) {
 	testBreaking(
