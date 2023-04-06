@@ -291,11 +291,17 @@ func checkFieldSameOneof(add addFunc, corpus *corpus, previousField protosource.
 	if !previousInsideOneof && !insideOneof {
 		return nil
 	}
+	previousProto3Optional := previousOneof != nil && previousOneof.IsProto3OptionalSyntheticOneof()
+	proto3Optional := oneof != nil && oneof.IsProto3OptionalSyntheticOneof()
 	if previousInsideOneof && insideOneof {
 		if previousOneof.Name() != oneof.Name() {
-			// otherwise prints as hex
-			numberString := strconv.FormatInt(int64(field.Number()), 10)
-			add(field, nil, field.Location(), `Field %q on message %q moved from oneof %q to oneof %q.`, numberString, field.Message().Name(), previousOneof.Name(), oneof.Name())
+			// If we are inside a oneof, then this means that we renamed the field, which is
+			// a different check.
+			if !previousProto3Optional && !proto3Optional {
+				// otherwise prints as hex
+				numberString := strconv.FormatInt(int64(field.Number()), 10)
+				add(field, nil, field.Location(), `Field %q on message %q moved from oneof %q to oneof %q.`, numberString, field.Message().Name(), previousOneof.Name(), oneof.Name())
+			}
 		}
 		return nil
 	}
@@ -308,7 +314,23 @@ func checkFieldSameOneof(add addFunc, corpus *corpus, previousField protosource.
 	}
 	// otherwise prints as hex
 	numberString := strconv.FormatInt(int64(field.Number()), 10)
-	add(field, nil, field.Location(), `Field %q on message %q moved from %s to %s a oneof.`, numberString, field.Message().Name(), previous, current)
+	message := fmt.Sprintf(`Field %q on message %q moved from %s to %s a oneof.`, numberString, field.Message().Name(), previous, current)
+	// If this status changed, this means optional was added or removed. We still want to
+	// perform this check, but we want to change the messaging slightly.
+	//
+	// Note that we could, in a future version of the breaking rules, fully encapsulate the oneof
+	// breaking rules, which would also split this rule into FILE/PACKAGE rules, and WIRE/WIRE_JSON rules,
+	// but if we do do this, we need to be careful to keep the transtive property of breaking changes.
+	if previousProto3Optional != proto3Optional {
+		previous = "optional"
+		current = "non-optional"
+		if proto3Optional {
+			previous = "non-optional"
+			current = "optional"
+		}
+		message += fmt.Sprintf(` In this case, this means that the field changed from %s to %s, which is usually a breaking change.`, previous, current)
+	}
+	add(field, nil, field.Location(), message)
 	return nil
 }
 
@@ -783,9 +805,14 @@ func checkOneofNoDelete(add addFunc, corpus *corpus, previousMessage protosource
 	if err != nil {
 		return err
 	}
-	for previousName := range previousNameToOneof {
+	for previousName, previousOneof := range previousNameToOneof {
 		if _, ok := nameToOneof[previousName]; !ok {
-			add(message, nil, message.Location(), `Previously present oneof %q on message %q was deleted.`, previousName, message.Name())
+			// If this is a synthetic oneof, deleting of the oneof does not signal that a oneof was deleted,
+			// instead it signals that the field was renamed or changed to optional, which are done in
+			// different checks.
+			if !previousOneof.IsProto3OptionalSyntheticOneof() {
+				add(message, nil, message.Location(), `Previously present oneof %q on message %q was deleted.`, previousName, message.Name())
+			}
 		}
 	}
 	return nil

@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix issue where incorrect breaking change errors were produced when updating proto3 `optional` fields.
 
 ## [v1.17.0] - 2023-04-05
 

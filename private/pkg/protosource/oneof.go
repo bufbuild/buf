@@ -42,6 +42,20 @@ func (o *oneof) Fields() []Field {
 	return o.fields
 }
 
+func (o *oneof) IsProto3OptionalSyntheticOneof() bool {
+	if len(o.fields) != 1 {
+		return false
+	}
+	field := o.fields[0]
+	// We could also do this check, but the proto3_optional check should
+	// suffice, and this feels prone to error. Leaving the code commented
+	// out to demonstrate this potential check.
+	//if o.Name() != "_" + field.Name() {
+	//return false
+	//}
+	return field.Proto3Optional()
+}
+
 func (o *oneof) addField(field Field) {
 	o.fields = append(o.fields, field)
 }

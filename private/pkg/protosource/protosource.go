@@ -409,6 +409,10 @@ type Oneof interface {
 
 	Message() Message
 	Fields() []Field
+
+	// IsProto3OptionalSyntheticOneof returns true if this Oneof is actually
+	// representing a proto3 optional field via a synthetic oneof.
+	IsProto3OptionalSyntheticOneof() bool
 }
 
 // Service is a service descriptor.

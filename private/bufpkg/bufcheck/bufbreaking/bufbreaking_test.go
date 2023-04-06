@@ -35,6 +35,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// Hint on how to get these:
+// 1. cd ./private/bufpkg/bufcheck/bufbreaking/testdata
+// 2. cd into specific test directory name
+// 3. TEST_DIRECTORY_NAME=; buf breaking --against ../../testdata_previous/${TEST_DIRECTORY_NAME} --error-format=json | jq '[.path, .start_line, .start_column, .end_line, .end_column, .type] | @csv' --raw-output
+//      or
+//    TEST_DIRECTORY_NAME=; buf breaking --against ../../testdata_previous/${TEST_DIRECTORY_NAME} --error-format=json | jq -r '"bufanalysistesting.NewFileAnnotation(t, \"\(.path)\", \(.start_line|tostring), \(.start_column|tostring), \(.end_line|tostring), \(.end_column|tostring), \"\(.type)\"),"'
+
 func TestRunBreakingEnumNoDelete(t *testing.T) {
 	testBreaking(
 		t,
@@ -518,6 +525,15 @@ func TestRunBreakingPackageNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "b1.proto", "PACKAGE_ENUM_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "b1.proto", "PACKAGE_SERVICE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "b2.proto", 7, 1, 21, 2, "PACKAGE_MESSAGE_NO_DELETE"),
+	)
+}
+
+func TestRunBreakingProto3OptionalChangeFieldName(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_proto3_optional_change_field_name",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 4, 3, 4, 27, "FIELD_SAME_JSON_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 4, 19, 4, 22, "FIELD_SAME_NAME"),
 	)
 }
 

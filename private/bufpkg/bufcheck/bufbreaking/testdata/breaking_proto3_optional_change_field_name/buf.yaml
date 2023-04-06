@@ -1,0 +1,7 @@
+version: v1
+breaking:
+  use:
+    - FIELD_SAME_JSON_NAME
+    - FIELD_SAME_NAME
+    - FIELD_SAME_ONEOF
+    - ONEOF_NO_DELETE
