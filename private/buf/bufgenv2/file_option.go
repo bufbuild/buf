@@ -49,6 +49,22 @@ const (
 )
 
 var (
+	// AllFileOptions are all FileOptions.
+	AllFileOptions = []FileOption{
+		FileOptionJavaPackage,
+		FileOptionJavaOuterClassname,
+		FileOptionJavaMultipleFiles,
+		FileOptionJavaStringCheckUtf8,
+		FileOptionOptimizeFor,
+		FileOptionGoPackage,
+		FileOptionCcEnableArenas,
+		FileOptionObjcClassPrefix,
+		FileOptionCsharpNamespace,
+		FileOptionPhpNamespace,
+		FileOptionPhpMetadataNamespace,
+		FileOptionRubyPackage,
+	}
+
 	// TODO: this type vs prefix thing isn't great
 	// fill it out if we want to use it
 	fileOptionToFileOptionType = map[FileOption]FileOptionType{
