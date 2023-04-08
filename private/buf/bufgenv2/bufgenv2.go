@@ -46,6 +46,8 @@ func NewMarkSweeper(image bufimage.Image) MarkSweeper {
 }
 
 type DisabledFunc func(FileOption, bufimage.ImageFile) bool
+
+// TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
 type OverrideFunc func(bufimage.ImageFile) (string, error)
 
 type Config struct {

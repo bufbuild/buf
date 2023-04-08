@@ -152,16 +152,40 @@ func matchesPath(imageFile bufimage.ImageFile, path string) bool {
 }
 
 func mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs map[FileOption][]OverrideFunc) map[FileOption]OverrideFunc {
-	// TODO
-	return nil
+	fileOptionToOverrideFunc := make(map[FileOption]OverrideFunc, len(fileOptionToOverrideFuncs))
+	for fileOption, overrideFuncs := range fileOptionToOverrideFuncs {
+		fileOptionToOverrideFunc[fileOption] = mergeOverrideFuncs(overrideFuncs)
+	}
+	return fileOptionToOverrideFunc
 }
 
 func mergeDisabledFuncs(disabledFuncs []DisabledFunc) DisabledFunc {
-	// TODO
+	// If any disables, then we disable for this FileOption and ImageFile
+	return func(fileOption FileOption, imageFile bufimage.ImageFile) bool {
+		for _, disabledFunc := range disabledFuncs {
+			if disabledFunc(fileOption, imageFile) {
+				return true
+			}
+		}
+		return false
+	}
 	return nil
 }
 
 func mergeOverrideFuncs(overrideFuncs []OverrideFunc) OverrideFunc {
-	// TODO
-	return nil
+	// Last override listed wins
+	return func(imageFile bufimage.ImageFile) (string, error) {
+		var override string
+		for _, overrideFunc := range overrideFuncs {
+			iOverride, err := overrideFunc(imageFile)
+			if err != nil {
+				return "", err
+			}
+			// TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
+			if iOverride != "" {
+				override = iOverride
+			}
+		}
+		return override, nil
+	}
 }
