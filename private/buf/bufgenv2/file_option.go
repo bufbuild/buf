@@ -82,6 +82,7 @@ var (
 		FileOptionRubyPackage:          FileOptionTypeValue,
 	}
 	// TODO: double-check these
+	// This might stay in bufimagemodify based on how the prototype has worked out
 	fileOptionToSourceCodeInfoPath = map[FileOption][]int32{
 		FileOptionJavaPackage:          []int32{8, 1},
 		FileOptionJavaOuterClassname:   []int32{8, 8},
