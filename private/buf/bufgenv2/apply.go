@@ -20,7 +20,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 )
 
-// this is also called by override funcs
 func applyManagementForFile(
 	marker Marker,
 	imageFile bufimage.ImageFile,
