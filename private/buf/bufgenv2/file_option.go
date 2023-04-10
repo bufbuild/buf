@@ -66,9 +66,10 @@ var (
 	}
 
 	// TODO: this type vs prefix thing isn't great
-	// fill it out if we want to use it
+	// fill it out if we want to use it, this isn't filled out
+	// except for JavaPackage
 	fileOptionToFileOptionType = map[FileOption]FileOptionType{
-		FileOptionJavaPackage:          FileOptionTypeValue,
+		FileOptionJavaPackage:          FileOptionTypePrefix,
 		FileOptionJavaOuterClassname:   FileOptionTypeValue,
 		FileOptionJavaMultipleFiles:    FileOptionTypeValue,
 		FileOptionJavaStringCheckUtf8:  FileOptionTypeValue,
@@ -80,22 +81,6 @@ var (
 		FileOptionPhpNamespace:         FileOptionTypeValue,
 		FileOptionPhpMetadataNamespace: FileOptionTypeValue,
 		FileOptionRubyPackage:          FileOptionTypeValue,
-	}
-	// TODO: double-check these
-	// This might stay in bufimagemodify based on how the prototype has worked out
-	fileOptionToSourceCodeInfoPath = map[FileOption][]int32{
-		FileOptionJavaPackage:          []int32{8, 1},
-		FileOptionJavaOuterClassname:   []int32{8, 8},
-		FileOptionJavaMultipleFiles:    []int32{8, 10},
-		FileOptionJavaStringCheckUtf8:  []int32{8, 27},
-		FileOptionOptimizeFor:          []int32{8, 9},
-		FileOptionGoPackage:            []int32{8, 11},
-		FileOptionCcEnableArenas:       []int32{8, 31},
-		FileOptionObjcClassPrefix:      []int32{8, 36},
-		FileOptionCsharpNamespace:      []int32{8, 37},
-		FileOptionPhpNamespace:         []int32{8, 41},
-		FileOptionPhpMetadataNamespace: []int32{8, 44},
-		FileOptionRubyPackage:          []int32{8, 45},
 	}
 	fileOptionToString = map[FileOption]string{
 		FileOptionJavaPackage:          "java_package",
@@ -137,13 +122,6 @@ func (f FileOption) Type() FileOptionType {
 		return 0
 	}
 	return t
-}
-
-// SourceCodeInfoPath returns the SourceCodeInfo path, or nil if unknown.
-//
-// Does not return a copy! Do not modify the return value!
-func (f FileOption) SourceCodeInfoPath() []int32 {
-	return fileOptionToSourceCodeInfoPath[f]
 }
 
 // String implements fmt.Stringer.

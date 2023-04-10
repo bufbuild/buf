@@ -14,35 +14,27 @@
 
 package bufgenv2
 
-import "github.com/bufbuild/buf/private/bufpkg/bufimage"
+import (
+	"fmt"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodifyv2"
+)
+
+const (
+	defaultJavaPackagePrefix = "com"
+)
 
 // TODO this would be part of a runner or likewise
 // this is just for demonstration of bringing the management stuff into one function
 func ApplyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
-	markSweeper := NewMarkSweeper(image)
+	markSweeper := bufimagemodifyv2.NewMarkSweeper(image)
 	for _, imageFile := range image.Files() {
 		if err := applyManagementForFile(markSweeper, imageFile, managedConfig); err != nil {
 			return err
 		}
 	}
 	return markSweeper.Sweep()
-}
-
-type Marker interface {
-	Mark(bufimage.ImageFile, []int32)
-}
-
-type Sweeper interface {
-	Sweep() error
-}
-
-type MarkSweeper interface {
-	Marker
-	Sweeper
-}
-
-func NewMarkSweeper(image bufimage.Image) MarkSweeper {
-	return nil
 }
 
 type DisabledFunc func(FileOption, bufimage.ImageFile) bool
@@ -153,4 +145,39 @@ type ExternalInputConfigV2 struct {
 	// TODO: split up into Git, Module, etc
 	Path  string
 	Types []string
+}
+
+func applyManagementForFile(
+	marker bufimagemodifyv2.Marker,
+	imageFile bufimage.ImageFile,
+	managedConfig *ManagedConfig,
+) error {
+	for _, fileOption := range AllFileOptions {
+		if managedConfig.DisabledFunc(fileOption, imageFile) {
+			continue
+		}
+		var valueOrPrefix string
+		var err error
+		overrideFunc, ok := managedConfig.FileOptionToOverrideFunc[fileOption]
+		if ok {
+			valueOrPrefix, err = overrideFunc(imageFile)
+			if err != nil {
+				return err
+			}
+		}
+		// TODO do the rest
+		switch fileOption {
+		case FileOptionJavaPackage:
+			// Will need to do *string or similar for unset
+			if valueOrPrefix == "" {
+				valueOrPrefix = defaultJavaPackagePrefix
+			}
+			if err := bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, valueOrPrefix); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unknown FileOption: %q", fileOption)
+		}
+	}
+	return nil
 }
