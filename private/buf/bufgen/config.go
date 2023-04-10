@@ -656,11 +656,11 @@ func newReadConfigOptions() *readConfigOptions {
 	return &readConfigOptions{}
 }
 
-func newTypesConfigV1(in *ExternalTypesConfigV1) *TypesConfig {
-	if in == nil {
+func newTypesConfigV1(externalConfig ExternalTypesConfigV1) *TypesConfig {
+	if externalConfig.IsEmpty() {
 		return nil
 	}
 	return &TypesConfig{
-		Include: in.Include,
+		Include: externalConfig.Include,
 	}
 }
