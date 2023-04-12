@@ -33,7 +33,7 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil)
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			javaMultipleFilesModifier,
@@ -59,7 +59,7 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil)
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
 		require.NoError(t, err)
 		err = javaMultipleFilesModifier.Modify(
 			context.Background(),
@@ -81,7 +81,7 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"})
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"}, false)
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			javaMultipleFilesModifier,
@@ -107,7 +107,7 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"})
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"}, false)
 		require.NoError(t, err)
 		err = javaMultipleFilesModifier.Modify(
 			context.Background(),
@@ -133,7 +133,7 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil)
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			javaMultipleFilesModifier,
@@ -159,7 +159,7 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil)
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
 		require.NoError(t, err)
 		err = javaMultipleFilesModifier.Modify(
 			context.Background(),
@@ -180,7 +180,7 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"})
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"}, false)
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			javaMultipleFilesModifier,
@@ -210,7 +210,32 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"})
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"}, false)
+		require.NoError(t, err)
+		err = javaMultipleFilesModifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			if imageFile.Path() == "a.proto" {
+				assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
+				continue
+			}
+			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+	})
+
+	t.Run("with preserveExistingValue", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+
+		sweeper := NewFileOptionSweeper()
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, true)
 		require.NoError(t, err)
 		err = javaMultipleFilesModifier.Modify(
 			context.Background(),
@@ -239,7 +264,7 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, nil)
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, nil, false)
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			javaMultipleFilesModifier,
@@ -264,7 +289,7 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, nil)
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, nil, false)
 		require.NoError(t, err)
 		err = javaMultipleFilesModifier.Modify(
 			context.Background(),
@@ -289,7 +314,7 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, map[string]string{"override.proto": "true"})
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, map[string]string{"override.proto": "true"}, false)
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			javaMultipleFilesModifier,
@@ -317,7 +342,7 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, map[string]string{"override.proto": "true"})
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, map[string]string{"override.proto": "true"}, false)
 		require.NoError(t, err)
 		err = javaMultipleFilesModifier.Modify(
 			context.Background(),
@@ -335,6 +360,27 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 	})
+
+	t.Run("with preserveExistingValue", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+
+		sweeper := NewFileOptionSweeper()
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, nil, true)
+		require.NoError(t, err)
+		err = javaMultipleFilesModifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+	})
 }
 
 func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
@@ -345,7 +391,7 @@ func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil)
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
 		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			javaMultipleFilesModifier,
@@ -367,7 +413,7 @@ func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil)
+		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
 		require.NoError(t, err)
 		err = javaMultipleFilesModifier.Modify(
 			context.Background(),
