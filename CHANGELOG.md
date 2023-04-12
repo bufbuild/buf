@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Remove `buf beta registry {plugin,template} {deprecate,undeprecate}`.
 
 ## [v1.17.0] - 2023-04-05
 

@@ -112,12 +112,6 @@ const (
 	// PluginServiceListTemplateContributorsProcedure is the fully-qualified name of the PluginService's
 	// ListTemplateContributors RPC.
 	PluginServiceListTemplateContributorsProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListTemplateContributors"
-	// PluginServiceDeprecateTemplateProcedure is the fully-qualified name of the PluginService's
-	// DeprecateTemplate RPC.
-	PluginServiceDeprecateTemplateProcedure = "/buf.alpha.registry.v1alpha1.PluginService/DeprecateTemplate"
-	// PluginServiceUndeprecateTemplateProcedure is the fully-qualified name of the PluginService's
-	// UndeprecateTemplate RPC.
-	PluginServiceUndeprecateTemplateProcedure = "/buf.alpha.registry.v1alpha1.PluginService/UndeprecateTemplate"
 )
 
 // PluginServiceClient is a client for the buf.alpha.registry.v1alpha1.PluginService service.
@@ -177,10 +171,6 @@ type PluginServiceClient interface {
 	// This does not include users who have implicit roles against the template, unless they have also been
 	// assigned a role explicitly.
 	ListTemplateContributors(context.Context, *connect_go.Request[v1alpha1.ListTemplateContributorsRequest]) (*connect_go.Response[v1alpha1.ListTemplateContributorsResponse], error)
-	// DeprecateTemplate deprecates the template, if found.
-	DeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.DeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.DeprecateTemplateResponse], error)
-	// UndeprecateTemplate makes the template not deprecated and removes any deprecation_message.
-	UndeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.UndeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.UndeprecateTemplateResponse], error)
 }
 
 // NewPluginServiceClient constructs a client for the buf.alpha.registry.v1alpha1.PluginService
@@ -303,16 +293,6 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 			baseURL+PluginServiceListTemplateContributorsProcedure,
 			opts...,
 		),
-		deprecateTemplate: connect_go.NewClient[v1alpha1.DeprecateTemplateRequest, v1alpha1.DeprecateTemplateResponse](
-			httpClient,
-			baseURL+PluginServiceDeprecateTemplateProcedure,
-			opts...,
-		),
-		undeprecateTemplate: connect_go.NewClient[v1alpha1.UndeprecateTemplateRequest, v1alpha1.UndeprecateTemplateResponse](
-			httpClient,
-			baseURL+PluginServiceUndeprecateTemplateProcedure,
-			opts...,
-		),
 	}
 }
 
@@ -340,8 +320,6 @@ type pluginServiceClient struct {
 	createTemplateVersion      *connect_go.Client[v1alpha1.CreateTemplateVersionRequest, v1alpha1.CreateTemplateVersionResponse]
 	setTemplateContributor     *connect_go.Client[v1alpha1.SetTemplateContributorRequest, v1alpha1.SetTemplateContributorResponse]
 	listTemplateContributors   *connect_go.Client[v1alpha1.ListTemplateContributorsRequest, v1alpha1.ListTemplateContributorsResponse]
-	deprecateTemplate          *connect_go.Client[v1alpha1.DeprecateTemplateRequest, v1alpha1.DeprecateTemplateResponse]
-	undeprecateTemplate        *connect_go.Client[v1alpha1.UndeprecateTemplateRequest, v1alpha1.UndeprecateTemplateResponse]
 }
 
 // ListPlugins calls buf.alpha.registry.v1alpha1.PluginService.ListPlugins.
@@ -457,16 +435,6 @@ func (c *pluginServiceClient) ListTemplateContributors(ctx context.Context, req 
 	return c.listTemplateContributors.CallUnary(ctx, req)
 }
 
-// DeprecateTemplate calls buf.alpha.registry.v1alpha1.PluginService.DeprecateTemplate.
-func (c *pluginServiceClient) DeprecateTemplate(ctx context.Context, req *connect_go.Request[v1alpha1.DeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.DeprecateTemplateResponse], error) {
-	return c.deprecateTemplate.CallUnary(ctx, req)
-}
-
-// UndeprecateTemplate calls buf.alpha.registry.v1alpha1.PluginService.UndeprecateTemplate.
-func (c *pluginServiceClient) UndeprecateTemplate(ctx context.Context, req *connect_go.Request[v1alpha1.UndeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.UndeprecateTemplateResponse], error) {
-	return c.undeprecateTemplate.CallUnary(ctx, req)
-}
-
 // PluginServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.PluginService
 // service.
 type PluginServiceHandler interface {
@@ -525,10 +493,6 @@ type PluginServiceHandler interface {
 	// This does not include users who have implicit roles against the template, unless they have also been
 	// assigned a role explicitly.
 	ListTemplateContributors(context.Context, *connect_go.Request[v1alpha1.ListTemplateContributorsRequest]) (*connect_go.Response[v1alpha1.ListTemplateContributorsResponse], error)
-	// DeprecateTemplate deprecates the template, if found.
-	DeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.DeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.DeprecateTemplateResponse], error)
-	// UndeprecateTemplate makes the template not deprecated and removes any deprecation_message.
-	UndeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.UndeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.UndeprecateTemplateResponse], error)
 }
 
 // NewPluginServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -648,16 +612,6 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 		svc.ListTemplateContributors,
 		opts...,
 	))
-	mux.Handle(PluginServiceDeprecateTemplateProcedure, connect_go.NewUnaryHandler(
-		PluginServiceDeprecateTemplateProcedure,
-		svc.DeprecateTemplate,
-		opts...,
-	))
-	mux.Handle(PluginServiceUndeprecateTemplateProcedure, connect_go.NewUnaryHandler(
-		PluginServiceUndeprecateTemplateProcedure,
-		svc.UndeprecateTemplate,
-		opts...,
-	))
 	return "/buf.alpha.registry.v1alpha1.PluginService/", mux
 }
 
@@ -750,12 +704,4 @@ func (UnimplementedPluginServiceHandler) SetTemplateContributor(context.Context,
 
 func (UnimplementedPluginServiceHandler) ListTemplateContributors(context.Context, *connect_go.Request[v1alpha1.ListTemplateContributorsRequest]) (*connect_go.Response[v1alpha1.ListTemplateContributorsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.ListTemplateContributors is not implemented"))
-}
-
-func (UnimplementedPluginServiceHandler) DeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.DeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.DeprecateTemplateResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.DeprecateTemplate is not implemented"))
-}
-
-func (UnimplementedPluginServiceHandler) UndeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.UndeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.UndeprecateTemplateResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.UndeprecateTemplate is not implemented"))
 }
