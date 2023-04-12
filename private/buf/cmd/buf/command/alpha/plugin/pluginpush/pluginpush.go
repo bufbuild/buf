@@ -209,7 +209,9 @@ func run(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, client.Close())
+		if err := client.Close(); err != nil {
+			retErr = multierr.Append(retErr, fmt.Errorf("docker client close error: %w", err))
+		}
 	}()
 	var imageID string
 	if flags.Image != "" {
@@ -228,8 +230,8 @@ func run(
 			return err
 		}
 		defer func() {
-			if err := image.Close(); !errors.Is(err, os.ErrClosed) {
-				retErr = multierr.Append(retErr, err)
+			if err := image.Close(); err != nil && !errors.Is(err, storage.ErrClosed) {
+				retErr = multierr.Append(retErr, fmt.Errorf("docker image close error: %w", err))
 			}
 		}()
 		imageID = loadResponse.ImageID
@@ -464,7 +466,9 @@ func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, f.Close())
+		if err := f.Close(); err != nil {
+			retErr = multierr.Append(retErr, fmt.Errorf("plugin zip close error: %w", err))
+		}
 	}()
 	return storagearchive.Unzip(ctx, f, size, bucket, nil, 0)
 }
