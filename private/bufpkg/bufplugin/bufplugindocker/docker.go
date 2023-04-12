@@ -112,11 +112,11 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 	if err != nil {
 		return nil, err
 	}
-	defer func(Body io.ReadCloser) {
-		if err := Body.Close(); err != nil {
-			retErr = multierr.Append(retErr, err)
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			retErr = multierr.Append(retErr, fmt.Errorf("docker load response body close error: %w", err))
 		}
-	}(response.Body)
+	}()
 	imageID := ""
 	responseScanner := bufio.NewScanner(response.Body)
 	for responseScanner.Scan() {
