@@ -650,9 +650,7 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 	if err != nil {
 		return nil, err
 	}
-	client := httpclient.NewClient(
-		httpclient.WithTLSConfig(config.TLS),
-	)
+	client := httpclient.NewClient(config.TLS)
 	options := []connectclient.ConfigOption{
 		connectclient.WithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {
