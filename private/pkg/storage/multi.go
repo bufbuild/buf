@@ -35,41 +35,19 @@ func MultiReadBucket(readBuckets ...ReadBucket) ReadBucket {
 	case 1:
 		return readBuckets[0]
 	default:
-		return newMultiReadBucket(readBuckets, false)
-	}
-}
-
-// MultiReadBucketSkipMultipleLocations takes the union of the ReadBuckets.
-//
-// If no readBuckets are given, this returns a no-op ReadBucket.
-// If one readBucket is given, this returns the original ReadBucket.
-// Otherwise, this returns a ReadBucket that will get from all buckets.
-//
-// This allows overlap between the ReadBuckets. If there are overlapping paths,
-// the first ReadBucket given with the path is used.
-func MultiReadBucketSkipMultipleLocations(readBuckets ...ReadBucket) ReadBucket {
-	switch len(readBuckets) {
-	case 0:
-		return nopReadBucket{}
-	case 1:
-		return readBuckets[0]
-	default:
-		return newMultiReadBucket(readBuckets, true)
+		return newMultiReadBucket(readBuckets)
 	}
 }
 
 type multiReadBucket struct {
-	delegates             []ReadBucket
-	skipMultipleLocations bool
+	delegates []ReadBucket
 }
 
 func newMultiReadBucket(
 	delegates []ReadBucket,
-	skipMultipleLocations bool,
 ) *multiReadBucket {
 	return &multiReadBucket{
-		delegates:             delegates,
-		skipMultipleLocations: skipMultipleLocations,
+		delegates: delegates,
 	}
 }
 
@@ -96,10 +74,6 @@ func (m *multiReadBucket) Walk(ctx context.Context, prefix string, f func(Object
 				path := objectInfo.Path()
 				externalPath := objectInfo.ExternalPath()
 				if existingExternalPath, ok := seenPathToExternalPath[path]; ok {
-					// if we explicitly say to skip, do so
-					if m.skipMultipleLocations {
-						return nil
-					}
 					// this does not return all paths that are matching, unlike Get and Stat
 					// we do not want to continue iterating, as calling Walk on the same path could cause errors downstream
 					// as callers expect a single call per path.
@@ -138,9 +112,6 @@ func (m *multiReadBucket) getObjectInfoAndDelegateIndex(
 	case 1:
 		return objectInfos[0], delegateIndices[0], nil
 	default:
-		if m.skipMultipleLocations {
-			return objectInfos[0], delegateIndices[0], nil
-		}
 		externalPaths := make([]string, len(objectInfos))
 		for i, objectInfo := range objectInfos {
 			externalPaths[i] = objectInfo.ExternalPath()
