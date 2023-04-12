@@ -408,44 +408,6 @@ func RunTestSuite(
 		assert.True(t, storage.IsExistsMultipleLocations(err))
 	})
 
-	t.Run("multi-overlapping-files-skip-locations", func(t *testing.T) {
-		t.Parallel()
-		readBucket, _ := newReadBucket(t, twoDirPath, defaultProvider)
-		readBucketMulti := storage.MultiReadBucketSkipMultipleLocations(
-			storage.MapReadBucket(
-				readBucket,
-				storage.MapOnPrefix("root1"),
-			),
-			storage.MapReadBucket(
-				readBucket,
-				storage.MapOnPrefix("rootoverlap"),
-			),
-		)
-		AssertPathToContent(
-			t,
-			readBucketMulti,
-			"",
-			map[string]string{
-				// root1
-				"a/b/1.proto": testProtoContent,
-				"a/b/2.proto": testProtoContent,
-				"a/b/2.txt":   testTxtContent,
-				"ab/1.proto":  testProtoContent,
-				"ab/2.proto":  testProtoContent,
-				"ab/2.txt":    testTxtContent,
-				"a/1.proto":   testProtoContent,
-				"a/1.txt":     testTxtContent,
-				"a/bar.yaml":  testYAMLContent,
-				"c/1.proto":   testProtoContent,
-				"1.proto":     testProtoContent,
-				"foo.yaml":    testYAMLContent,
-				// rootoverlap only
-				"baz.yaml": testYAMLContent,
-				"bat.yaml": testYAMLContent,
-			},
-		)
-	})
-
 	// this is testing that if we have i.e. protoc -I root/a -I root
 	// that even if this is an error in our world, this is not a problem
 	// in terms of storage buckets
