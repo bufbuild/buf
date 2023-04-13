@@ -130,8 +130,8 @@ func (m *Manifest) AddEntry(path string, digest Digest) error {
 	return nil
 }
 
-// Paths returns all paths in the manifest. If you want to iterate the paths and
-// their digests, consider using `Range` instead.
+// Paths returns all unique paths in the manifest, order not guaranteed. If you want to iterate the
+// paths and their digests, consider using `Range` instead.
 func (m *Manifest) Paths() []string {
 	paths := make([]string, 0, len(m.pathToDigest))
 	for path := range m.pathToDigest {
@@ -140,9 +140,26 @@ func (m *Manifest) Paths() []string {
 	return paths
 }
 
-// Range invokes a function for all the paths in the manifest, passing the path
-// and its digest. The order in which the paths are iterated is not guaranteed.
-// This func will stop iterating if an error is returned.
+// Digests returns all unique digests in the manifest, order not guaranteed. If you want to iterate
+// the paths and their digests, consider using `Range` instead.
+func (m *Manifest) Digests() []Digest {
+	digests := make([]Digest, 0, len(m.digestToPaths))
+	addedDigests := make(map[string]struct{}, len(m.digestToPaths))
+	// iterating over `pathToDigest` instead of `digestToPaths` to avoid handling/returning/panic on
+	// error if string -> digest parsing fails. It shouldn't.
+	for _, digest := range m.pathToDigest {
+		if _, alreadyAdded := addedDigests[digest.String()]; alreadyAdded {
+			continue
+		}
+		addedDigests[digest.String()] = struct{}{}
+		digests = append(digests, digest)
+	}
+	return digests
+}
+
+// Range invokes a function for all the paths in the manifest, passing the path and its digest. The
+// order in which the paths are iterated is not guaranteed. This func will stop iterating if an
+// error is returned.
 func (m *Manifest) Range(f func(path string, digest Digest) error) error {
 	for path, digest := range m.pathToDigest {
 		if err := f(path, digest); err != nil {
