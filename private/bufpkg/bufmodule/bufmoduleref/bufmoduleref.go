@@ -101,6 +101,9 @@ type ModuleOwner interface {
 	Remote() string
 	Owner() string
 
+	// OwnerString is the string remote/owner.
+	OwnerString() string
+
 	isModuleOwner()
 }
 

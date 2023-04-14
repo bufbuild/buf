@@ -48,6 +48,10 @@ func (m *moduleIdentity) Repository() string {
 	return m.repository
 }
 
+func (m *moduleIdentity) OwnerString() string {
+	return m.remote + "/" + m.owner
+}
+
 func (m *moduleIdentity) IdentityString() string {
 	return m.remote + "/" + m.owner + "/" + m.repository
 }

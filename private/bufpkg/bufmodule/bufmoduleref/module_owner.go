@@ -41,4 +41,8 @@ func (m *moduleOwner) Owner() string {
 	return m.owner
 }
 
+func (m *moduleOwner) OwnerString() string {
+	return m.remote + "/" + m.owner
+}
+
 func (*moduleOwner) isModuleOwner() {}

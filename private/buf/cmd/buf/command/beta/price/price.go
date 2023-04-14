@@ -21,11 +21,17 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestat"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/protostat"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -52,8 +58,10 @@ Make sure you are on the latest version of the Buf CLI to get the most updated p
 information, and see buf.build/pricing if in doubt - this command runs completely locally
 and does not interact with our servers.
 
-Your sources have:
-
+{{if .IsOrganization}}Your organization has {{.NumPrivateRepositories}} private repositories that you have
+permission to access. Within these {{.NumPrivateRepositories}} private repositories, you have:
+{{else}}Your sources have:
+{{end}}
   - {{.NumMessages}} messages
   - {{.NumEnums}} enums
   - {{.NumMethods}} methods
@@ -121,16 +129,16 @@ func run(
 	if err != nil {
 		return err
 	}
-	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger()).GetSourceOrModuleRef(ctx, input)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	if err != nil {
+		return err
+	}
+	sourceOrModuleRefs, isOrganization, err := getSourceOrModuleRefsAndIsOrganization(ctx, container, clientConfig, input)
 	if err != nil {
 		return err
 	}
 	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
 	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return err
@@ -145,25 +153,27 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleConfigs, err := moduleConfigReader.GetModuleConfigs(
-		ctx,
-		container,
-		sourceOrModuleRef,
-		"",
-		nil,
-		nil,
-		false,
-	)
-	if err != nil {
-		return err
-	}
-	statsSlice := make([]*protostat.Stats, len(moduleConfigs))
-	for i, moduleConfig := range moduleConfigs {
-		stats, err := protostat.GetStats(ctx, bufmodulestat.NewFileWalker(moduleConfig.Module()))
+	var statsSlice []*protostat.Stats
+	for _, sourceOrModuleRef := range sourceOrModuleRefs {
+		moduleConfigs, err := moduleConfigReader.GetModuleConfigs(
+			ctx,
+			container,
+			sourceOrModuleRef,
+			"",
+			nil,
+			nil,
+			false,
+		)
 		if err != nil {
 			return err
 		}
-		statsSlice[i] = stats
+		for _, moduleConfig := range moduleConfigs {
+			stats, err := protostat.GetStats(ctx, bufmodulestat.NewFileWalker(moduleConfig.Module()))
+			if err != nil {
+				return err
+			}
+			statsSlice = append(statsSlice, stats)
+		}
 	}
 	tmpl, err := template.New("tmpl").Parse(tmplCopy)
 	if err != nil {
@@ -171,13 +181,152 @@ func run(
 	}
 	return tmpl.Execute(
 		container.Stdout(),
-		newTmplData(protostat.MergeStats(statsSlice...)),
+		newTmplData(protostat.MergeStats(statsSlice...), isOrganization, len(sourceOrModuleRefs)),
 	)
+}
+
+// We need a way to parse the input to see if it is a source, or an organization.
+// We don't have a clean way to do this right now, so we just try both.
+// This could could be signficantly refactored if this presents an issue down the line.
+//
+// The return values:
+//
+//   - The SourceOrModuleRefs. If the input was a source, the length will be 1. If the
+//     input was an organization, the length will be the number of private repositories
+//     that the user had access to in the org.
+//   - A bool that will be true if the input was an organization.
+func getSourceOrModuleRefsAndIsOrganization(
+	ctx context.Context,
+	container applog.Container,
+	clientConfig *connectclient.Config,
+	input string,
+) ([]buffetch.SourceOrModuleRef, bool, error) {
+	// TODO: this doesn't fail on an organization
+	//
+	// GetSourceOrModuleRef assumes you have a source or module, so when it gets to
+	// buf.build/acme, given that this isn't a module ref, it assumes this is the
+	// directory buf.build/acme.
+	//
+	// We will likely need to refactor the command to be either source-specific or
+	// organization-specific (potentially two commands?) as differentiating between
+	// sources, modules, and organizations is at best error-prone, at worst impossible
+	// without sending pings (which we don't want to do in the local case).
+	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger()).GetSourceOrModuleRef(ctx, input)
+	if err != nil {
+		moduleOwner, err := bufmoduleref.ModuleOwnerForString(input)
+		if err != nil {
+			return nil, false, appcmd.NewInvalidArgumentErrorf("could not parse %q as either a source or an organization", input)
+		}
+		sourceOrModuleRefs, err := getSourceOrModuleRefsForOrganization(ctx, container, clientConfig, moduleOwner)
+		if err != nil {
+			return nil, false, err
+		}
+		return sourceOrModuleRefs, true, nil
+	}
+	return []buffetch.SourceOrModuleRef{
+		sourceOrModuleRef,
+	}, false, nil
+}
+
+func getSourceOrModuleRefsForOrganization(
+	ctx context.Context,
+	container applog.Container,
+	clientConfig *connectclient.Config,
+	moduleOwner bufmoduleref.ModuleOwner,
+) ([]buffetch.SourceOrModuleRef, error) {
+	organizationID, err := getOrganizationID(ctx, clientConfig, moduleOwner)
+	if err != nil {
+		return nil, err
+	}
+	privateRepositoryFullNames, err := getOrganizationPrivateRepositoryFullNames(ctx, clientConfig, moduleOwner, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	sourceOrModuleRefs := make([]buffetch.SourceOrModuleRef, len(privateRepositoryFullNames))
+	for i, privateRepositoryFullName := range privateRepositoryFullNames {
+		sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger()).GetSourceOrModuleRef(ctx, privateRepositoryFullName)
+		if err != nil {
+			return nil, err
+		}
+		sourceOrModuleRefs[i] = sourceOrModuleRef
+	}
+	return sourceOrModuleRefs, nil
+}
+
+func getOrganizationID(
+	ctx context.Context,
+	clientConfig *connectclient.Config,
+	moduleOwner bufmoduleref.ModuleOwner,
+) (string, error) {
+	organizationService := connectclient.Make(
+		clientConfig,
+		moduleOwner.Remote(),
+		registryv1alpha1connect.NewOrganizationServiceClient,
+	)
+	response, err := organizationService.GetOrganizationByName(
+		ctx,
+		connect.NewRequest(
+			&registryv1alpha1.GetOrganizationByNameRequest{
+				Name: moduleOwner.Owner(),
+			},
+		),
+	)
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return "", bufcli.NewOrganizationNotFoundError(moduleOwner.OwnerString())
+		}
+		return "", err
+	}
+	return response.Msg.Organization.Id, nil
+}
+
+func getOrganizationPrivateRepositoryFullNames(
+	ctx context.Context,
+	clientConfig *connectclient.Config,
+	moduleOwner bufmoduleref.ModuleOwner,
+	organizationId string,
+) ([]string, error) {
+	repositoryService := connectclient.Make(
+		clientConfig,
+		moduleOwner.Remote(),
+		registryv1alpha1connect.NewRepositoryServiceClient,
+	)
+	var privateRepositoryFullNames []string
+	var pageToken string
+	for {
+		response, err := repositoryService.ListOrganizationRepositories(
+			ctx,
+			connect.NewRequest(
+				&registryv1alpha1.ListOrganizationRepositoriesRequest{
+					OrganizationId: organizationId,
+					PageToken:      pageToken,
+				},
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+		for _, repository := range response.Msg.Repositories {
+			if repository.Visibility == registryv1alpha1.Visibility_VISIBILITY_PRIVATE {
+				privateRepositoryFullNames = append(
+					privateRepositoryFullNames,
+					moduleOwner.OwnerString()+"/"+repository.Name,
+				)
+			}
+		}
+		if response.Msg.NextPageToken == "" {
+			break
+		}
+		pageToken = response.Msg.NextPageToken
+	}
+	return privateRepositoryFullNames, nil
 }
 
 type tmplData struct {
 	*protostat.Stats
 
+	IsOrganization                 bool
+	NumPrivateRepositories         int
 	NumTypes                       int
 	TeamsDollarsPerMonth           string
 	ProDollarsPerMonth             string
@@ -185,10 +334,12 @@ type tmplData struct {
 	ProDollarsPerMonthDiscounted   string
 }
 
-func newTmplData(stats *protostat.Stats) *tmplData {
+func newTmplData(stats *protostat.Stats, isOrganization bool, numPrivateRepositories int) *tmplData {
 	tmplData := &tmplData{
-		Stats:    stats,
-		NumTypes: stats.NumMessages + stats.NumEnums + stats.NumMethods,
+		Stats:                  stats,
+		IsOrganization:         isOrganization,
+		NumPrivateRepositories: numPrivateRepositories,
+		NumTypes:               stats.NumMessages + stats.NumEnums + stats.NumMethods,
 	}
 	tmplData.TeamsDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*teamsDollarsPerType)
 	tmplData.ProDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*proDollarsPerType)

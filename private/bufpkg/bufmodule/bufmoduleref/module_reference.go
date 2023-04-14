@@ -90,6 +90,10 @@ func (m *moduleReference) String() string {
 	return m.remote + "/" + m.owner + "/" + m.repository + ":" + m.reference
 }
 
+func (m *moduleReference) OwnerString() string {
+	return m.remote + "/" + m.owner
+}
+
 func (m *moduleReference) IdentityString() string {
 	return m.remote + "/" + m.owner + "/" + m.repository
 }
