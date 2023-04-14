@@ -530,7 +530,12 @@ func newModifier(
 	sweeper bufimagemodify.Sweeper,
 ) (bufimagemodify.Modifier, error) {
 	modifier := bufimagemodify.NewMultiModifier(
-		bufimagemodify.JavaOuterClassname(logger, sweeper, managedConfig.Override[bufimagemodify.JavaOuterClassNameID]),
+		bufimagemodify.JavaOuterClassname(
+			logger,
+			sweeper,
+			managedConfig.Override[bufimagemodify.JavaOuterClassNameID],
+			false, // preserveExistingValue
+		),
 		bufimagemodify.PhpNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpNamespaceID]),
 		bufimagemodify.PhpMetadataNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
 	)
