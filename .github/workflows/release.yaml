@@ -203,6 +203,23 @@ jobs:
         with:
           script:
             core.setOutput('version', "${{github.ref_name}}".replace("v", ""));
+  trigger-maven-update:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
+      - name: trigger maven update
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: github.repository_owner,
+              repo: "buf-maven-publish",
+              workflow_id: "update-buf-version.yml",
+              ref: "main",
+              inputs: {
+                version: "${{needs.post-release.outputs.version}}"
+              }
+            })
   trigger-npm-publish:
     runs-on: ubuntu-latest
     needs: post-release
