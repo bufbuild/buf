@@ -562,6 +562,7 @@ func newModifier(
 		sweeper,
 		javaMultipleFilesValue,
 		managedConfig.Override[bufimagemodify.JavaMultipleFilesID],
+		false, // preserveExistingValue
 	)
 	if err != nil {
 		return nil, err
