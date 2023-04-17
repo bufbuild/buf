@@ -214,7 +214,7 @@ jobs:
             github.rest.actions.createWorkflowDispatch({
               owner: github.repository_owner,
               repo: "buf-maven-publish",
-              workflow_id: "update-buf-version.yml",
+              workflow_id: "update-buf-version.yaml",
               ref: "main",
               inputs: {
                 version: "${{needs.post-release.outputs.version}}"
