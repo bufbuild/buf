@@ -53,6 +53,7 @@ enum ResourceType {
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
   RESOURCE_TYPE_TOKEN = 10;
   RESOURCE_TYPE_SCIM_TOKEN = 11;
+  RESOURCE_TYPE_REPOSITORY_LABEL = 12;
 }
 
 // Resource is the affected resource by the audited event.
@@ -96,6 +97,8 @@ enum EventType {
   EVENT_TYPE_SCIM_TOKEN_CREATED = 26;
   EVENT_TYPE_SCIM_TOKEN_DELETED = 27;
   EVENT_TYPE_REPOSITORY_COMMIT_DELETED = 28;
+  EVENT_TYPE_REPOSITORY_LABEL_CREATE = 29;
+  EVENT_TYPE_REPOSITORY_LABEL_MOVE = 30;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -154,6 +157,8 @@ message Event {
     PayloadSCIMTokenCreated scim_token_created = 32;
     PayloadSCIMTokenDeleted scim_token_deleted = 33;
     PayloadRepositoryCommitDeleted repository_commit_deleted = 34;
+    PayloadRepositoryLabelCreated repository_label_created = 35;
+    PayloadRepositoryLabelMoved repository_label_moved = 36;
   }
 }
 
@@ -368,4 +373,42 @@ message PayloadRepositoryCommitDeleted {
   string repository_name = 4;
   // draft_name is the name of the draft. Optional.
   string draft_name = 5;
+}
+
+message PayloadRepositoryLabelCreated {
+  // owner_id is the id of the owner of the repository on which the label will be created.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository on which the label will be created.
+  string owner_name = 2;
+  // repository_id is the id of the repository on which the label will be created.
+  string repository_id = 3;
+  // repository_name is the name of the repository from which the label will be created.
+  string repository_name = 4;
+  // label_id is the id of the label that was created.
+  string label_id = 5;
+  // label_name is the name of the label that was created.
+  string label_name = 6;
+  // label_namespace is the namespace of the label that was created.
+  string label_namespace = 7;
+  // commit_id is the id of the commit on which the label was created.
+  string commit_id = 8;
+}
+
+message PayloadRepositoryLabelMoved {
+  // owner_id is the id of the owner of the repository on which the label will be moved.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository on which the label will be moved.
+  string owner_name = 2;
+  // repository_id is the id of the repository on which the label will be moved.
+  string repository_id = 3;
+  // repository_name is the name of the repository from which the label will be moved.
+  string repository_name = 4;
+  // label_name is the name of the label that was moved.
+  string label_name = 5;
+  // label_namespace is the namespace of the label that was moved.
+  string label_namespace = 6;
+  // to_commit_id is the id of the commit on which the label was moved to.
+  string to_commit_id = 7;
+  // from_commit_id is the id of the commit on which the label was moved from.
+  string from_commit_id = 8;
 }
