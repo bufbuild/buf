@@ -38,13 +38,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appverbose"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/connect-go"
-	netrcparser "github.com/jdxcode/netrc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
@@ -545,7 +545,14 @@ func (f *flags) validate(isSecure bool) error {
 	return nil
 }
 
-func (f *flags) determineCredentials(ctx context.Context, container app.Container, host string) (string, error) {
+func (f *flags) determineCredentials(
+	ctx context.Context,
+	container interface {
+		app.Container
+		appverbose.Container
+	},
+	host string,
+) (string, error) {
 	if f.UserCreds != "" {
 		// this flag overrides any netrc-related flags
 		var username, password string
@@ -578,30 +585,31 @@ func (f *flags) determineCredentials(ctx context.Context, container app.Containe
 		}
 	}
 	if _, err := os.Stat(netrcFile); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			// This mirrors the behavior of curl when a netrc file does not exist ¯\_(ツ)_/¯
+			container.VerbosePrinter().Printf("* Couldn't find host %s in the file %q; using no credentials", host, netrcFile)
+			return "", nil
+		}
 		if !strings.Contains(err.Error(), netrcFile) {
 			// make sure error message contains path to file
 			return "", fmt.Errorf("could not read file: %s: %w", netrcFile, err)
 		}
 		return "", fmt.Errorf("could not read file: %w", err)
 	}
-	// NB: can't use buf/private/pkg/netrc for this because it only supports reading from $HOME/.netrc
-	netrcStruct, err := netrcparser.Parse(netrcFile)
+	machine, err := netrc.GetMachineForNameAndFilePath(host, netrcFile)
 	if err != nil {
 		return "", fmt.Errorf("could not read file: %s: %w", netrcFile, err)
 	}
-	netrcMachine := netrcStruct.Machine(host)
-	if netrcMachine == nil {
-		netrcMachine = netrcStruct.Machine("default")
-	}
-	if netrcMachine == nil {
+	if machine == nil {
 		// no creds found for this host
+		container.VerbosePrinter().Printf("* Couldn't find host %s in the file %q; using no credentials", host, netrcFile)
 		return "", nil
 	}
-	username := netrcMachine.Get("login")
+	username := machine.Login()
 	if strings.ContainsRune(username, ':') {
 		return "", fmt.Errorf("invalid credentials found for %s in %s: username %s should not contain colon", host, netrcFile, username)
 	}
-	password := netrcMachine.Get("password")
+	password := machine.Password()
 	return basicAuth(username, password), nil
 }
 
@@ -631,7 +639,7 @@ func promptForPassword(ctx context.Context, container app.Container, prompt stri
 		password, err = bufcli.PromptUserForPassword(container, prompt)
 	}()
 	select {
-	case _ = <-ch:
+	case <-ch:
 		return password, err
 	case <-ctx.Done():
 		ctxErr := ctx.Err()
@@ -837,7 +845,6 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 				if creds, err = f.determineCredentials(ctx, container, endpointURL.Host); err != nil {
 					return err
 				}
-				basicCreds = &creds
 			}
 			if creds != "" {
 				reflectHeaders.Set("authorization", creds)
