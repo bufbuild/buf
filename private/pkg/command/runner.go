@@ -17,11 +17,13 @@ package command
 import (
 	"context"
 	"io"
+	"os"
 	"os/exec"
 	"sort"
 
 	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"go.uber.org/multierr"
 )
 
 var emptyEnv = map[string]string{
@@ -46,30 +48,24 @@ func newRunner(options ...RunnerOption) *runner {
 }
 
 func (r *runner) Run(ctx context.Context, name string, options ...RunOption) error {
-	runOptions := newRunOptions()
-	for _, option := range options {
-		option(runOptions)
-	}
-	if len(runOptions.env) == 0 {
-		runOptions.env = emptyEnv
-	}
-	if runOptions.stdin == nil {
-		runOptions.stdin = ioextended.DiscardReader
-	}
+	runOptions := newRunOptions(options...)
 	cmd := exec.CommandContext(ctx, name, runOptions.args...)
-	cmd.Env = envSlice(runOptions.env)
-	cmd.Stdin = runOptions.stdin
-	// If Stdout or Stderr are nil, os/exec connects the process output directly
-	// to the null device.
-	cmd.Stdout = runOptions.stdout
-	cmd.Stderr = runOptions.stderr
-	// The default behavior for dir is what we want already, i.e. the current
-	// working directory.
-	cmd.Dir = runOptions.dir
+	runOptions.Apply(cmd)
 	r.semaphoreC <- struct{}{}
 	err := cmd.Run()
 	<-r.semaphoreC
 	return err
+}
+
+func (r *runner) Start(name string, options ...RunOption) (Process, error) {
+	runOptions := newRunOptions(options...)
+	cmd := exec.Command(name, runOptions.args...)
+	runOptions.Apply(cmd)
+	err := cmd.Start()
+	if err != nil {
+		return nil, err
+	}
+	return &terminator{process: cmd.Process}, nil
 }
 
 type runOptions struct {
@@ -84,8 +80,30 @@ type runOptions struct {
 // We set the defaults after calling any RunOptions on a runOptions struct
 // so that users cannot override the empty values, which would lead to the
 // default stdin, stdout, stderr, and environment being used.
-func newRunOptions() *runOptions {
-	return &runOptions{}
+func newRunOptions(options ...RunOption) *runOptions {
+	runOptions := &runOptions{}
+	for _, option := range options {
+		option(runOptions)
+	}
+	if len(runOptions.env) == 0 {
+		runOptions.env = emptyEnv
+	}
+	if runOptions.stdin == nil {
+		runOptions.stdin = ioextended.DiscardReader
+	}
+	return runOptions
+}
+
+func (r *runOptions) Apply(cmd *exec.Cmd) {
+	cmd.Env = envSlice(r.env)
+	cmd.Stdin = r.stdin
+	// If Stdout or Stderr are nil, os/exec connects the process output directly
+	// to the null device.
+	cmd.Stdout = r.stdout
+	cmd.Stderr = r.stderr
+	// The default behavior for dir is what we want already, i.e. the current
+	// working directory.
+	cmd.Dir = r.dir
 }
 
 func envSlice(env map[string]string) []string {
@@ -95,4 +113,32 @@ func envSlice(env map[string]string) []string {
 	}
 	sort.Strings(environ)
 	return environ
+}
+
+type terminator struct {
+	process *os.Process
+}
+
+func (t *terminator) Terminate(ctx context.Context) error {
+	if err := t.process.Signal(os.Interrupt); err == nil {
+		// Successful interrupt sent: give the process some time.
+		wait := make(chan error)
+		go func() {
+			_, err := t.process.Wait()
+			wait <- err
+		}()
+		select {
+		case err := <-wait:
+			// Process exited. We'll pass on any error.
+			return err
+		case <-ctx.Done():
+			// Timed out. Follow the no-interrupt case.
+		}
+	}
+	// No hope on this host or process. Immediately kill and release the
+	// process.
+	return multierr.Combine(
+		t.process.Kill(),
+		t.process.Release(),
+	)
 }

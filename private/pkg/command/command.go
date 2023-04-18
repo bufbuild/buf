@@ -22,6 +22,19 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 )
 
+// Process represents a background process.
+type Process interface {
+	// Terminate signals a process to exit cleanly, if it can. It'll wait for
+	// the process to exit until the context deadline is exceeded. After that a
+	// kill signal is sent and an error is returned. In both cases the process
+	// is released and left to the host operating system to deal with the
+	// zombie.
+	//
+	// On systems where clean termination is not possible (Windows), the
+	// context is ignored and the kill signal is immediately sent.
+	Terminate(ctx context.Context) error
+}
+
 // Runner runs external commands.
 //
 // A Runner will limit the number of concurrent commands, as well as explicitly
@@ -30,10 +43,15 @@ import (
 // All external commands in buf MUST use command.Runner instead of
 // exec.Command, exec.CommandContext.
 type Runner interface {
-	// Run runs the external command.
+	// Run runs the external command. It blocks until the command exits.
 	//
 	// This should be used instead of exec.CommandContext(...).Run().
 	Run(ctx context.Context, name string, options ...RunOption) error
+
+	// Start runs the external command, returning a [Process] handle.
+	//
+	// This should be used instead of exec.Command(...).Start().
+	Start(name string, options ...RunOption) (Process, error)
 }
 
 // RunOption is an option for Run.
