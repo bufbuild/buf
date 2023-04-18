@@ -15,8 +15,10 @@
 package curl
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -33,13 +35,16 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/connect-go"
+	netrcparser "github.com/jdxcode/netrc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
@@ -74,6 +79,9 @@ const (
 
 	// Header and request body flags
 	userAgentFlagName = "user-agent"
+	userCredsFlagName = "user"
+	netrcFlagName     = "netrc"
+	netrcFileFlagName = "netrc-file"
 	headerFlagName    = "header"
 	dataFlagName      = "data"
 	outputFlagName    = "output"
@@ -202,6 +210,9 @@ type flags struct {
 
 	// Handling request and response data and metadata
 	UserAgent string
+	UserCreds string
+	UseNetrc  bool
+	NetrcFile string
 	Headers   []string
 	Data      string
 	Output    string
@@ -362,7 +373,40 @@ one is provided`,
 		userAgentFlagName,
 		"A",
 		"",
-		`The user agent string to send`,
+		`The user agent string to send. This is ignored if a -H or --header flag is provided
+that sets a header named 'User-Agent'.`,
+	)
+	flagSet.StringVarP(
+		&f.UserCreds,
+		userCredsFlagName,
+		"u",
+		"",
+		`The user credentials to send, via a basic authorization header. The value should be
+in the format "username:password". If the value has no colon, it is assumed to just be
+the username, in which case you will be prompted to enter a password. This overrides
+the use of a .netrc file. This is ignored if a -H or --header flag is provided that sets
+a header named 'Authorization'.`,
+	)
+	flagSet.BoolVarP(
+		&f.UseNetrc,
+		netrcFlagName,
+		"n",
+		false,
+		`If true, a file named .netrc in the user's home directory will be examined to find
+credentials for the request. The credentials will be sent via a basic authorization header.
+The command will fail if the file does not have an entry for the hostname in the URL. This
+flag is ignored if a -u or --user flag is present. This is ignored if a -H or --header flag
+is provided that sets a header named 'Authorization'.`,
+	)
+	flagSet.StringVar(
+		&f.NetrcFile,
+		netrcFileFlagName,
+		"",
+		`This is just like use -n or --netrc, except that the named file is used instead of
+a file named .netric in the user's home directory. If a --netrc-optional flag is present,
+it will be respected and the command won't fail if no corresponding entry is found in the
+file. This flag cannot be used with the -n or --netrc flag. This is ignored if a -H or
+--header flag is provided that sets a header named 'Authorization'.`,
 	)
 	flagSet.StringSliceVarP(
 		&f.Headers,
@@ -418,6 +462,10 @@ func (f *flags) validate(isSecure bool) error {
 	}
 	if !isSecure && !f.HTTP2PriorKnowledge && f.Protocol == connect.ProtocolGRPC {
 		return fmt.Errorf("grpc protocol cannot be used with plain-text URLs (http) unless --%s flag is set", http2PriorKnowledgeFlagName)
+	}
+
+	if f.UseNetrc && f.NetrcFile != "" {
+		return fmt.Errorf("--%s and --%s flags are mutually exclusive; they may not both be specified", netrcFlagName, netrcFileFlagName)
 	}
 
 	if f.Schema != "" && f.Reflect {
@@ -495,6 +543,117 @@ func (f *flags) validate(isSecure bool) error {
 	}
 
 	return nil
+}
+
+func (f *flags) determineCredentials(ctx context.Context, container app.Container, host string) (string, error) {
+	if f.UserCreds != "" {
+		// this flag overrides any netrc-related flags
+		var username, password string
+		pos := strings.IndexByte(f.UserCreds, ':')
+		if pos == -1 {
+			username = f.UserCreds
+			var err error
+			password, err = promptForPassword(ctx, container, fmt.Sprintf("Enter host password for user %q:", username))
+			if err != nil {
+				return "", fmt.Errorf("could not prompt for password: %w", err)
+			}
+		} else {
+			username = f.UserCreds[:pos]
+			password = f.UserCreds[pos+1:]
+		}
+		return basicAuth(username, password), nil
+	}
+
+	// process netrc-related flags
+	netrcFile := f.NetrcFile
+	if netrcFile == "" {
+		if !f.UseNetrc {
+			// no netrc file usage, so no creds
+			return "", nil
+		}
+		var err error
+		netrcFile, err = netrc.GetFilePath(container)
+		if err != nil {
+			return "", fmt.Errorf("could not determine path to .netrc file: %w", err)
+		}
+	}
+	if _, err := os.Stat(netrcFile); err != nil {
+		if !strings.Contains(err.Error(), netrcFile) {
+			// make sure error message contains path to file
+			return "", fmt.Errorf("could not read file: %s: %w", netrcFile, err)
+		}
+		return "", fmt.Errorf("could not read file: %w", err)
+	}
+	// NB: can't use buf/private/pkg/netrc for this because it only supports reading from $HOME/.netrc
+	netrcStruct, err := netrcparser.Parse(netrcFile)
+	if err != nil {
+		return "", fmt.Errorf("could not read file: %s: %w", netrcFile, err)
+	}
+	netrcMachine := netrcStruct.Machine(host)
+	if netrcMachine == nil {
+		netrcMachine = netrcStruct.Machine("default")
+	}
+	if netrcMachine == nil {
+		// no creds found for this host
+		return "", nil
+	}
+	username := netrcMachine.Get("login")
+	if strings.ContainsRune(username, ':') {
+		return "", fmt.Errorf("invalid credentials found for %s in %s: username %s should not contain colon", host, netrcFile, username)
+	}
+	password := netrcMachine.Get("password")
+	return basicAuth(username, password), nil
+}
+
+func promptForPassword(ctx context.Context, container app.Container, prompt string) (string, error) {
+	// NB: The comments below and the mechanism of handling I/O async was
+	// copied from the "registry login" command.
+
+	// If a user sends a SIGINT to buf, the top-level application context is
+	// cancelled and signal masks are reset. However, during an interactive
+	// login the context is not respected; for example, it takes two SIGINTs
+	// to interrupt the process.
+
+	// Ideally we could just trigger an I/O timeout by setting the deadline on
+	// stdin, but when stdin is connected to a terminal the underlying fd is in
+	// blocking mode making it ineligible. As changing the mode of stdin is
+	// dangerous, this change takes an alternate approach of simply returning
+	// early.
+
+	// Note that this does not gracefully handle the case where the terminal is
+	// in no-echo mode, as is the case when prompting for a password
+	// interactively.
+	ch := make(chan struct{})
+	var password string
+	var err error
+	go func() {
+		defer close(ch)
+		password, err = bufcli.PromptUserForPassword(container, prompt)
+	}()
+	select {
+	case _ = <-ch:
+		return password, err
+	case <-ctx.Done():
+		ctxErr := ctx.Err()
+		// Otherwise we will print "Failure: context canceled".
+		if errors.Is(ctxErr, context.Canceled) {
+			// Otherwise the next terminal line will be on the same line as the
+			// last output from buf.
+			if _, err := fmt.Fprintln(container.Stdout()); err != nil {
+				return "", err
+			}
+			return "", errors.New("interrupted")
+		}
+		return "", ctxErr
+	}
+}
+
+func basicAuth(username, password string) string {
+	var buf bytes.Buffer
+	buf.WriteString(username)
+	buf.WriteByte(':')
+	buf.WriteString(password)
+	return base64.StdEncoding.EncodeToString(buf.Bytes())
 }
 
 func validateHeaders(flags []string, flagName string, schemaIsStdin bool, allowAsterisk bool, headerFiles map[string]struct{}) error {
@@ -619,6 +778,18 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		}
 		requestHeaders.Set("user-agent", userAgent)
 	}
+	var basicCreds *string
+	if len(requestHeaders.Values("authorization")) == 0 {
+		creds, err := f.determineCredentials(ctx, container, endpointURL.Host)
+		if err != nil {
+			return err
+		}
+		if creds != "" {
+			requestHeaders.Set("authorization", creds)
+		}
+		// set this to non-nil so we know we've already determined credentials
+		basicCreds = &creds
+	}
 	if dataReader == nil {
 		if dataFileReference == "-" {
 			dataReader = os.Stdin
@@ -657,6 +828,20 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		reflectHeaders, _, err := bufcurl.LoadHeaders(f.ReflectHeaders, "", requestHeaders)
 		if err != nil {
 			return err
+		}
+		if len(reflectHeaders.Values("authorization")) == 0 {
+			var creds string
+			if basicCreds != nil {
+				creds = *basicCreds
+			} else {
+				if creds, err = f.determineCredentials(ctx, container, endpointURL.Host); err != nil {
+					return err
+				}
+				basicCreds = &creds
+			}
+			if creds != "" {
+				reflectHeaders.Set("authorization", creds)
+			}
 		}
 		reflectProtocol, err := bufcurl.ParseReflectProtocol(f.ReflectProtocol)
 		if err != nil {
