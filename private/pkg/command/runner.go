@@ -17,13 +17,11 @@ package command
 import (
 	"context"
 	"io"
-	"os"
 	"os/exec"
 	"sort"
 
 	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.uber.org/multierr"
 )
 
 var emptyEnv = map[string]string{
@@ -61,11 +59,15 @@ func (r *runner) Start(name string, options ...RunOption) (Process, error) {
 	runOptions := newRunOptions(options...)
 	cmd := exec.Command(name, runOptions.args...)
 	runOptions.Apply(cmd)
+	r.semaphoreC <- struct{}{}
 	err := cmd.Start()
 	if err != nil {
 		return nil, err
 	}
-	return &terminator{process: cmd.Process}, nil
+	return &process{
+		osProcess: cmd.Process,
+		runner:    r,
+	}, nil
 }
 
 type runOptions struct {
@@ -113,32 +115,4 @@ func envSlice(env map[string]string) []string {
 	}
 	sort.Strings(environ)
 	return environ
-}
-
-type terminator struct {
-	process *os.Process
-}
-
-func (t *terminator) Terminate(ctx context.Context) error {
-	if err := t.process.Signal(os.Interrupt); err == nil {
-		// Successful interrupt sent: give the process some time.
-		wait := make(chan error)
-		go func() {
-			_, err := t.process.Wait()
-			wait <- err
-		}()
-		select {
-		case err := <-wait:
-			// Process exited. We'll pass on any error.
-			return err
-		case <-ctx.Done():
-			// Timed out. Follow the no-interrupt case.
-		}
-	}
-	// No hope on this host or process. Immediately kill and release the
-	// process.
-	return multierr.Combine(
-		t.process.Kill(),
-		t.process.Release(),
-	)
 }
