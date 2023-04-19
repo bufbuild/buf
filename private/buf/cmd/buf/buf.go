@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/workspace/workspacepush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
@@ -268,6 +269,13 @@ func NewRootCommand(name string) *appcmd.Command {
 						SubCommands: []*appcmd.Command{
 							pluginpush.NewCommand("push", builder),
 							curatedplugindelete.NewCommand("delete", builder),
+						},
+					},
+					{
+						Use:   "workspace",
+						Short: "Manage workspaces",
+						SubCommands: []*appcmd.Command{
+							workspacepush.NewCommand("push", builder),
 						},
 					},
 				},
