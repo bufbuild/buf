@@ -384,14 +384,10 @@ message PayloadRepositoryLabelCreated {
   string repository_id = 3;
   // repository_name is the name of the repository from which the label will be created.
   string repository_name = 4;
-  // label_id is the id of the label that was created.
-  string label_id = 5;
-  // label_name is the name of the label that was created.
-  string label_name = 6;
   // label_namespace is the namespace of the label that was created.
-  string label_namespace = 7;
+  string label_namespace = 5;
   // commit_id is the id of the commit on which the label was created.
-  string commit_id = 8;
+  string commit_id = 6;
 }
 
 message PayloadRepositoryLabelMoved {
@@ -403,12 +399,10 @@ message PayloadRepositoryLabelMoved {
   string repository_id = 3;
   // repository_name is the name of the repository from which the label will be moved.
   string repository_name = 4;
-  // label_name is the name of the label that was moved.
-  string label_name = 5;
   // label_namespace is the namespace of the label that was moved.
-  string label_namespace = 6;
+  string label_namespace = 5;
   // to_commit_id is the id of the commit on which the label was moved to.
-  string to_commit_id = 7;
+  string to_commit_id = 6;
   // from_commit_id is the id of the commit on which the label was moved from.
-  string from_commit_id = 8;
+  string from_commit_id = 7;
 }
