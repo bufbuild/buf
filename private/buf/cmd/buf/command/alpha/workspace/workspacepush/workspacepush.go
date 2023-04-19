@@ -45,7 +45,7 @@ func NewCommand(
 		Use:   name,
 		Short: "Push a workspace to a registry",
 		Long: "Push a workspace to a registry in topological order. After this command, " +
-			"buf.lock files may be updated and need to be committed and push.",
+			"buf.lock files may be updated and need to be committed and pushed.",
 		Args: cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
