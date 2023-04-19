@@ -117,13 +117,12 @@ func doDiff(
 	}
 
 	buffer := bytes.NewBuffer(nil)
-	err = runner.Run(
-		ctx,
+	err = runner.Exec(
 		binaryPath,
-		command.RunWithArgs("-u", f1, f2),
-		command.RunWithStdout(buffer),
-		command.RunWithStderr(buffer),
-	)
+		command.ExecWithArgs("-u", f1, f2),
+		command.ExecWithStdout(buffer),
+		command.ExecWithStderr(buffer),
+	).Run(ctx)
 	data := buffer.Bytes()
 	if len(data) > 0 {
 		// diff exits with a non-zero status when the files don't match.

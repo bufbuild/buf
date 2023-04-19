@@ -123,26 +123,24 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 	}
 	imageName := fmt.Sprintf("%s:%s", pluginIdentity, stringid.GenerateRandomID())
 	cmd := command.NewRunner()
-	if err := cmd.Run(
-		context.Background(),
+	if err := cmd.Exec(
 		docker,
-		command.RunWithArgs("build", "-t", imageName, "."),
-		command.RunWithDir(filepath.Dir(dockerfilePath)),
-		command.RunWithStdout(os.Stdout),
-		command.RunWithStderr(os.Stderr),
-	); err != nil {
+		command.ExecWithArgs("build", "-t", imageName, "."),
+		command.ExecWithDir(filepath.Dir(dockerfilePath)),
+		command.ExecWithStdout(os.Stdout),
+		command.ExecWithStderr(os.Stderr),
+	).Run(context.Background()); err != nil {
 		return "", err
 	}
 	t.Logf("created image: %s", imageName)
 	t.Cleanup(func() {
-		if err := cmd.Run(
-			context.Background(),
+		if err := cmd.Exec(
 			docker,
-			command.RunWithArgs("rmi", "--force", imageName),
-			command.RunWithDir(filepath.Dir(dockerfilePath)),
-			command.RunWithStdout(os.Stdout),
-			command.RunWithStderr(os.Stderr),
-		); err != nil {
+			command.ExecWithArgs("rmi", "--force", imageName),
+			command.ExecWithDir(filepath.Dir(dockerfilePath)),
+			command.ExecWithStdout(os.Stdout),
+			command.ExecWithStderr(os.Stderr),
+		).Run(context.Background()); err != nil {
 			t.Logf("failed to remove temporary docker image: %v", err)
 		}
 	})

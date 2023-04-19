@@ -145,14 +145,13 @@ func RunProtoc(
 	if stdout == nil {
 		stdout = stderr
 	}
-	if err := runner.Run(
-		ctx,
+	if err := runner.Exec(
 		protocBinPath,
-		command.RunWithArgs(args...),
-		command.RunWithEnv(env),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
-	); err != nil {
+		command.ExecWithArgs(args...),
+		command.ExecWithEnv(env),
+		command.ExecWithStdout(stdout),
+		command.ExecWithStderr(stderr),
+	).Run(ctx); err != nil {
 		return fmt.Errorf("%s returned error: %v %v", protocBinPath, err, stderr.String())
 	}
 	return nil

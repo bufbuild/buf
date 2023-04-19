@@ -122,14 +122,13 @@ func (c *cloner) CloneToBucket(
 	}()
 
 	buffer := bytes.NewBuffer(nil)
-	if err := c.runner.Run(
-		ctx,
+	if err := c.runner.Exec(
 		"git",
-		command.RunWithArgs("init", "--bare"),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
-		command.RunWithStderr(buffer),
-		command.RunWithDir(bareDir.AbsPath()),
-	); err != nil {
+		command.ExecWithArgs("init", "--bare"),
+		command.ExecWithEnv(app.EnvironMap(envContainer)),
+		command.ExecWithStderr(buffer),
+		command.ExecWithDir(bareDir.AbsPath()),
+	).Run(ctx); err != nil {
 		return newGitCommandError(err, buffer, bareDir)
 	}
 
@@ -141,13 +140,12 @@ func (c *cloner) CloneToBucket(
 		bufCloneOrigin,
 		url,
 	}
-	if err := c.runner.Run(
-		ctx,
+	if err := c.runner.Exec(
 		"git",
-		command.RunWithArgs(remoteArgs...),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
-		command.RunWithStderr(buffer),
-	); err != nil {
+		command.ExecWithArgs(remoteArgs...),
+		command.ExecWithEnv(app.EnvironMap(envContainer)),
+		command.ExecWithStderr(buffer),
+	).Run(ctx); err != nil {
 		return newGitCommandError(err, buffer, bareDir)
 	}
 
@@ -178,13 +176,12 @@ func (c *cloner) CloneToBucket(
 		}
 	}
 	buffer.Reset()
-	if err := c.runner.Run(
-		ctx,
+	if err := c.runner.Exec(
 		"git",
-		command.RunWithArgs(fetchArgs...),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
-		command.RunWithStderr(buffer),
-	); err != nil {
+		command.ExecWithArgs(fetchArgs...),
+		command.ExecWithEnv(app.EnvironMap(envContainer)),
+		command.ExecWithStderr(buffer),
+	).Run(ctx); err != nil {
 		return newGitCommandError(err, buffer, bareDir)
 	}
 
@@ -197,13 +194,12 @@ func (c *cloner) CloneToBucket(
 		worktreeDir.AbsPath(),
 		worktreeRef,
 	)
-	if err := c.runner.Run(
-		ctx,
+	if err := c.runner.Exec(
 		"git",
-		command.RunWithArgs(args...),
-		command.RunWithEnv(app.EnvironMap(envContainer)),
-		command.RunWithStderr(buffer),
-	); err != nil {
+		command.ExecWithArgs(args...),
+		command.ExecWithEnv(app.EnvironMap(envContainer)),
+		command.ExecWithStderr(buffer),
+	).Run(ctx); err != nil {
 		return newGitCommandError(err, buffer, worktreeDir)
 	}
 
@@ -214,14 +210,13 @@ func (c *cloner) CloneToBucket(
 			"checkout",
 			checkoutRef,
 		)
-		if err := c.runner.Run(
-			ctx,
+		if err := c.runner.Exec(
 			"git",
-			command.RunWithArgs(args...),
-			command.RunWithEnv(app.EnvironMap(envContainer)),
-			command.RunWithStderr(buffer),
-			command.RunWithDir(worktreeDir.AbsPath()),
-		); err != nil {
+			command.ExecWithArgs(args...),
+			command.ExecWithEnv(app.EnvironMap(envContainer)),
+			command.ExecWithStderr(buffer),
+			command.ExecWithDir(worktreeDir.AbsPath()),
+		).Run(ctx); err != nil {
 			return newGitCommandError(err, buffer, worktreeDir)
 		}
 	}
@@ -237,14 +232,13 @@ func (c *cloner) CloneToBucket(
 			depthArg,
 		)
 		buffer.Reset()
-		if err := c.runner.Run(
-			ctx,
+		if err := c.runner.Exec(
 			"git",
-			command.RunWithArgs(submoduleArgs...),
-			command.RunWithEnv(app.EnvironMap(envContainer)),
-			command.RunWithStderr(buffer),
-			command.RunWithDir(worktreeDir.AbsPath()),
-		); err != nil {
+			command.ExecWithArgs(submoduleArgs...),
+			command.ExecWithEnv(app.EnvironMap(envContainer)),
+			command.ExecWithStderr(buffer),
+			command.ExecWithDir(worktreeDir.AbsPath()),
+		).Run(ctx); err != nil {
 			// Suppress printing of temp path
 			return fmt.Errorf("%v\n%v", err, strings.Replace(buffer.String(), worktreeDir.AbsPath(), "", -1))
 		}
