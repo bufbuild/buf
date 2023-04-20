@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/git/object"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -132,4 +133,17 @@ type ListFilesAndUnstagedFilesOptions struct {
 	// These must be unnormalized in the manner of the local OS that the Lister
 	// is being applied to.
 	IgnorePathRegexps []*regexp.Regexp
+}
+
+// ObjectService represents a git object reading service, typically backed by
+// git-cat-file.
+type ObjectService interface {
+	// Commit returns a Commit object at id.
+	Commit(id object.ID) (*object.Commit, error)
+	// Tree returns a Tree object at id.
+	Tree(id object.ID) (*object.Tree, error)
+	// Commit returns a blob at id.
+	Blob(id object.ID) ([]byte, error)
+	// Close stops the service. No further calls will work.
+	Close() error
 }
