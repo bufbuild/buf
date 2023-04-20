@@ -36,6 +36,10 @@ import (
 )
 
 func TestGitCloner(t *testing.T) {
+	if testing.Short() {
+		// This test spawns a live git process.
+		t.Skip("skipping slow-running git integration test")
+	}
 	t.Parallel()
 	ctx := context.Background()
 	container, err := app.NewContainerForOS()
