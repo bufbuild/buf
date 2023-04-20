@@ -23,11 +23,15 @@ service AuthnService {
   // GetCurrentUser gets information associated with the current user.
   //
   // The user's ID is retrieved from the request's authentication header.
-  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetCurrentUserSubject gets the currently logged in users subject.
   //
   // The user's ID is retrieved from the request's authentication header.
-  rpc GetCurrentUserSubject(GetCurrentUserSubjectRequest) returns (GetCurrentUserSubjectResponse);
+  rpc GetCurrentUserSubject(GetCurrentUserSubjectRequest) returns (GetCurrentUserSubjectResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetCurrentUserRequest {}

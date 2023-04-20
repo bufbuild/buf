@@ -22,47 +22,65 @@ import "buf/alpha/registry/v1alpha1/role.proto";
 // UI element displaying based on the users roles.
 service DisplayService {
   // DisplayOrganizationElements returns which organization elements should be displayed to the user.
-  rpc DisplayOrganizationElements(DisplayOrganizationElementsRequest) returns (DisplayOrganizationElementsResponse);
+  rpc DisplayOrganizationElements(DisplayOrganizationElementsRequest) returns (DisplayOrganizationElementsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DisplayRepositoryElements returns which repository elements should be displayed to the user.
-  rpc DisplayRepositoryElements(DisplayRepositoryElementsRequest) returns (DisplayRepositoryElementsResponse);
+  rpc DisplayRepositoryElements(DisplayRepositoryElementsRequest) returns (DisplayRepositoryElementsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DisplayPluginElements returns which plugin elements should be displayed to the user.
   rpc DisplayPluginElements(DisplayPluginElementsRequest) returns (DisplayPluginElementsResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // DisplayTemplateElements returns which template elements should be displayed to the user.
   rpc DisplayTemplateElements(DisplayTemplateElementsRequest) returns (DisplayTemplateElementsResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // DisplayUserElements returns which user elements should be displayed to the user.
-  rpc DisplayUserElements(DisplayUserElementsRequest) returns (DisplayUserElementsResponse);
+  rpc DisplayUserElements(DisplayUserElementsRequest) returns (DisplayUserElementsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DisplayServerElements returns which server elements should be displayed to the user.
-  rpc DisplayServerElements(DisplayServerElementsRequest) returns (DisplayServerElementsResponse);
+  rpc DisplayServerElements(DisplayServerElementsRequest) returns (DisplayServerElementsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 
   // ListManageableRepositoryRoles returns which roles should be displayed
   // to the user when they are managing contributors on the repository.
-  rpc ListManageableRepositoryRoles(ListManageableRepositoryRolesRequest) returns (ListManageableRepositoryRolesResponse);
+  rpc ListManageableRepositoryRoles(ListManageableRepositoryRolesRequest) returns (ListManageableRepositoryRolesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListManageableUserRepositoryRoles returns which roles should be displayed
   // to the user when they are managing a specific contributor on the repository.
-  rpc ListManageableUserRepositoryRoles(ListManageableUserRepositoryRolesRequest) returns (ListManageableUserRepositoryRolesResponse);
+  rpc ListManageableUserRepositoryRoles(ListManageableUserRepositoryRolesRequest) returns (ListManageableUserRepositoryRolesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListManageablePluginRoles returns which roles should be displayed
   // to the user when they are managing contributors on the plugin.
   rpc ListManageablePluginRoles(ListManageablePluginRolesRequest) returns (ListManageablePluginRolesResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // ListManageableUserPluginRoles returns which roles should be displayed
   // to the user when they are managing a specific contributor on the plugin.
   rpc ListManageableUserPluginRoles(ListManageableUserPluginRolesRequest) returns (ListManageableUserPluginRolesResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // ListManageableTemplateRoles returns which roles should be displayed
   // to the user when they are managing contributors on the template.
   rpc ListManageableTemplateRoles(ListManageableTemplateRolesRequest) returns (ListManageableTemplateRolesResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // ListManageableUserTemplateRoles returns which roles should be displayed
   // to the user when they are managing a specific contributor on the template.
   rpc ListManageableUserTemplateRoles(ListManageableUserTemplateRolesRequest) returns (ListManageableUserTemplateRolesResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
 

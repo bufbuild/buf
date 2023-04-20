@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// PluginServiceName is the fully-qualified name of the PluginService service.
@@ -186,27 +186,32 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 		listPlugins: connect_go.NewClient[v1alpha1.ListPluginsRequest, v1alpha1.ListPluginsResponse](
 			httpClient,
 			baseURL+PluginServiceListPluginsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listUserPlugins: connect_go.NewClient[v1alpha1.ListUserPluginsRequest, v1alpha1.ListUserPluginsResponse](
 			httpClient,
 			baseURL+PluginServiceListUserPluginsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listOrganizationPlugins: connect_go.NewClient[v1alpha1.ListOrganizationPluginsRequest, v1alpha1.ListOrganizationPluginsResponse](
 			httpClient,
 			baseURL+PluginServiceListOrganizationPluginsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getPluginVersion: connect_go.NewClient[v1alpha1.GetPluginVersionRequest, v1alpha1.GetPluginVersionResponse](
 			httpClient,
 			baseURL+PluginServiceGetPluginVersionProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listPluginVersions: connect_go.NewClient[v1alpha1.ListPluginVersionsRequest, v1alpha1.ListPluginVersionsResponse](
 			httpClient,
 			baseURL+PluginServiceListPluginVersionsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		createPlugin: connect_go.NewClient[v1alpha1.CreatePluginRequest, v1alpha1.CreatePluginResponse](
 			httpClient,
@@ -216,7 +221,8 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 		getPlugin: connect_go.NewClient[v1alpha1.GetPluginRequest, v1alpha1.GetPluginResponse](
 			httpClient,
 			baseURL+PluginServiceGetPluginProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		deletePlugin: connect_go.NewClient[v1alpha1.DeletePluginRequest, v1alpha1.DeletePluginResponse](
 			httpClient,
@@ -231,42 +237,50 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 		listPluginContributors: connect_go.NewClient[v1alpha1.ListPluginContributorsRequest, v1alpha1.ListPluginContributorsResponse](
 			httpClient,
 			baseURL+PluginServiceListPluginContributorsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getTemplate: connect_go.NewClient[v1alpha1.GetTemplateRequest, v1alpha1.GetTemplateResponse](
 			httpClient,
 			baseURL+PluginServiceGetTemplateProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listTemplates: connect_go.NewClient[v1alpha1.ListTemplatesRequest, v1alpha1.ListTemplatesResponse](
 			httpClient,
 			baseURL+PluginServiceListTemplatesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listTemplatesUserCanAccess: connect_go.NewClient[v1alpha1.ListTemplatesUserCanAccessRequest, v1alpha1.ListTemplatesUserCanAccessResponse](
 			httpClient,
 			baseURL+PluginServiceListTemplatesUserCanAccessProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listUserTemplates: connect_go.NewClient[v1alpha1.ListUserTemplatesRequest, v1alpha1.ListUserTemplatesResponse](
 			httpClient,
 			baseURL+PluginServiceListUserTemplatesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listOrganizationTemplates: connect_go.NewClient[v1alpha1.ListOrganizationTemplatesRequest, v1alpha1.ListOrganizationTemplatesResponse](
 			httpClient,
 			baseURL+PluginServiceListOrganizationTemplatesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getTemplateVersion: connect_go.NewClient[v1alpha1.GetTemplateVersionRequest, v1alpha1.GetTemplateVersionResponse](
 			httpClient,
 			baseURL+PluginServiceGetTemplateVersionProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listTemplateVersions: connect_go.NewClient[v1alpha1.ListTemplateVersionsRequest, v1alpha1.ListTemplateVersionsResponse](
 			httpClient,
 			baseURL+PluginServiceListTemplateVersionsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		createTemplate: connect_go.NewClient[v1alpha1.CreateTemplateRequest, v1alpha1.CreateTemplateResponse](
 			httpClient,
@@ -291,7 +305,8 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 		listTemplateContributors: connect_go.NewClient[v1alpha1.ListTemplateContributorsRequest, v1alpha1.ListTemplateContributorsResponse](
 			httpClient,
 			baseURL+PluginServiceListTemplateContributorsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -505,27 +520,32 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 	mux.Handle(PluginServiceListPluginsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListPluginsProcedure,
 		svc.ListPlugins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListUserPluginsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListUserPluginsProcedure,
 		svc.ListUserPlugins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListOrganizationPluginsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListOrganizationPluginsProcedure,
 		svc.ListOrganizationPlugins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceGetPluginVersionProcedure, connect_go.NewUnaryHandler(
 		PluginServiceGetPluginVersionProcedure,
 		svc.GetPluginVersion,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListPluginVersionsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListPluginVersionsProcedure,
 		svc.ListPluginVersions,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceCreatePluginProcedure, connect_go.NewUnaryHandler(
 		PluginServiceCreatePluginProcedure,
@@ -535,7 +555,8 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 	mux.Handle(PluginServiceGetPluginProcedure, connect_go.NewUnaryHandler(
 		PluginServiceGetPluginProcedure,
 		svc.GetPlugin,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceDeletePluginProcedure, connect_go.NewUnaryHandler(
 		PluginServiceDeletePluginProcedure,
@@ -550,42 +571,50 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 	mux.Handle(PluginServiceListPluginContributorsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListPluginContributorsProcedure,
 		svc.ListPluginContributors,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceGetTemplateProcedure, connect_go.NewUnaryHandler(
 		PluginServiceGetTemplateProcedure,
 		svc.GetTemplate,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListTemplatesProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListTemplatesProcedure,
 		svc.ListTemplates,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListTemplatesUserCanAccessProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListTemplatesUserCanAccessProcedure,
 		svc.ListTemplatesUserCanAccess,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListUserTemplatesProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListUserTemplatesProcedure,
 		svc.ListUserTemplates,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListOrganizationTemplatesProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListOrganizationTemplatesProcedure,
 		svc.ListOrganizationTemplates,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceGetTemplateVersionProcedure, connect_go.NewUnaryHandler(
 		PluginServiceGetTemplateVersionProcedure,
 		svc.GetTemplateVersion,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListTemplateVersionsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListTemplateVersionsProcedure,
 		svc.ListTemplateVersions,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceCreateTemplateProcedure, connect_go.NewUnaryHandler(
 		PluginServiceCreateTemplateProcedure,
@@ -610,7 +639,8 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 	mux.Handle(PluginServiceListTemplateContributorsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListTemplateContributorsProcedure,
 		svc.ListTemplateContributors,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.PluginService/", mux
 }

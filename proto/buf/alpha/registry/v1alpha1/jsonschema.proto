@@ -21,7 +21,9 @@ package buf.alpha.registry.v1alpha1;
 service JSONSchemaService {
   // GetJSONSchema allows users to get an (approximate) json schema for a
   // protobuf type.
-  rpc GetJSONSchema(GetJSONSchemaRequest) returns (GetJSONSchemaResponse);
+  rpc GetJSONSchema(GetJSONSchemaRequest) returns (GetJSONSchemaResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetJSONSchemaRequest {

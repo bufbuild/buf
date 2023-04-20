@@ -22,90 +22,123 @@ import "buf/alpha/registry/v1alpha1/role.proto";
 service AuthzService {
   // UserCanCreateOrganizationRepository returns whether the user is authorized
   // to create repositories in an organization.
-  rpc UserCanCreateOrganizationRepository(UserCanCreateOrganizationRepositoryRequest) returns (UserCanCreateOrganizationRepositoryResponse);
+  rpc UserCanCreateOrganizationRepository(UserCanCreateOrganizationRepositoryRequest) returns (UserCanCreateOrganizationRepositoryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UserCanSeeRepositorySettings returns whether the user is authorized
   // to see repository settings.
-  rpc UserCanSeeRepositorySettings(UserCanSeeRepositorySettingsRequest) returns (UserCanSeeRepositorySettingsResponse);
+  rpc UserCanSeeRepositorySettings(UserCanSeeRepositorySettingsRequest) returns (UserCanSeeRepositorySettingsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UserCanSeeOrganizationSettings returns whether the user is authorized
   // to see organization settings.
-  rpc UserCanSeeOrganizationSettings(UserCanSeeOrganizationSettingsRequest) returns (UserCanSeeOrganizationSettingsResponse);
+  rpc UserCanSeeOrganizationSettings(UserCanSeeOrganizationSettingsRequest) returns (UserCanSeeOrganizationSettingsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UserCanReadPlugin returns whether the user has read access to the specified plugin.
   rpc UserCanReadPlugin(UserCanReadPluginRequest) returns (UserCanReadPluginResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // UserCanCreatePluginVersion returns whether the user is authorized
   // to create a plugin version under the specified plugin.
   rpc UserCanCreatePluginVersion(UserCanCreatePluginVersionRequest) returns (UserCanCreatePluginVersionResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // UserCanCreateTemplateVersion returns whether the user is authorized
   // to create a template version under the specified template.
   rpc UserCanCreateTemplateVersion(UserCanCreateTemplateVersionRequest) returns (UserCanCreateTemplateVersionResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
   // a plugin in an organization.
   rpc UserCanCreateOrganizationPlugin(UserCanCreateOrganizationPluginRequest) returns (UserCanCreateOrganizationPluginResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
   // a template in an organization.
   rpc UserCanCreateOrganizationTemplate(UserCanCreateOrganizationTemplateRequest) returns (UserCanCreateOrganizationTemplateResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // UserCanSeePluginSettings returns whether the user is authorized
   // to see plugin settings.
   rpc UserCanSeePluginSettings(UserCanSeePluginSettingsRequest) returns (UserCanSeePluginSettingsResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // UserCanSeeTemplateSettings returns whether the user is authorized
   // to see template settings.
   rpc UserCanSeeTemplateSettings(UserCanSeeTemplateSettingsRequest) returns (UserCanSeeTemplateSettingsResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // UserCanAddOrganizationMember returns whether the user is authorized to add
   // any members to the organization and the list of roles they can add.
-  rpc UserCanAddOrganizationMember(UserCanAddOrganizationMemberRequest) returns (UserCanAddOrganizationMemberResponse);
+  rpc UserCanAddOrganizationMember(UserCanAddOrganizationMemberRequest) returns (UserCanAddOrganizationMemberResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UserCanUpdateOrganizationMember returns whether the user is authorized to update
   // any members' membership information in the organization and the list of roles they can update.
-  rpc UserCanUpdateOrganizationMember(UserCanUpdateOrganizationMemberRequest) returns (UserCanUpdateOrganizationMemberResponse);
+  rpc UserCanUpdateOrganizationMember(UserCanUpdateOrganizationMemberRequest) returns (UserCanUpdateOrganizationMemberResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UserCanRemoveOrganizationMember returns whether the user is authorized to remove
   // any members from the organization and the list of roles they can remove.
-  rpc UserCanRemoveOrganizationMember(UserCanRemoveOrganizationMemberRequest) returns (UserCanRemoveOrganizationMemberResponse);
+  rpc UserCanRemoveOrganizationMember(UserCanRemoveOrganizationMemberRequest) returns (UserCanRemoveOrganizationMemberResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UserCanDeleteOrganization returns whether the user is authorized
   // to delete an organization.
-  rpc UserCanDeleteOrganization(UserCanDeleteOrganizationRequest) returns (UserCanDeleteOrganizationResponse);
+  rpc UserCanDeleteOrganization(UserCanDeleteOrganizationRequest) returns (UserCanDeleteOrganizationResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UserCanDeleteRepository returns whether the user is authorized
   // to delete a repository.
-  rpc UserCanDeleteRepository(UserCanDeleteRepositoryRequest) returns (UserCanDeleteRepositoryResponse);
+  rpc UserCanDeleteRepository(UserCanDeleteRepositoryRequest) returns (UserCanDeleteRepositoryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UserCanDeleteTemplate returns whether the user is authorized
   // to delete a template.
   rpc UserCanDeleteTemplate(UserCanDeleteTemplateRequest) returns (UserCanDeleteTemplateResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // UserCanDeletePlugin returns whether the user is authorized
   // to delete a plugin.
   rpc UserCanDeletePlugin(UserCanDeletePluginRequest) returns (UserCanDeletePluginResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // UserCanDeleteUser returns whether the user is authorized
   // to delete a user.
-  rpc UserCanDeleteUser(UserCanDeleteUserRequest) returns (UserCanDeleteUserResponse);
+  rpc UserCanDeleteUser(UserCanDeleteUserRequest) returns (UserCanDeleteUserResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UserCanSeeServerAdminPanel returns whether the user is authorized
   // to see server admin panel.
-  rpc UserCanSeeServerAdminPanel(UserCanSeeServerAdminPanelRequest) returns (UserCanSeeServerAdminPanelResponse);
+  rpc UserCanSeeServerAdminPanel(UserCanSeeServerAdminPanelRequest) returns (UserCanSeeServerAdminPanelResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UserCanManageRepositoryContributors returns whether the user is authorized to manage
   // any contributors to the repository and the list of roles they can manage.
-  rpc UserCanManageRepositoryContributors(UserCanManageRepositoryContributorsRequest) returns (UserCanManageRepositoryContributorsResponse);
+  rpc UserCanManageRepositoryContributors(UserCanManageRepositoryContributorsRequest) returns (UserCanManageRepositoryContributorsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UserCanManagePluginContributors returns whether the user is authorized to manage
   // any contributors to the plugin and the list of roles they can manage.
   rpc UserCanManagePluginContributors(UserCanManagePluginContributorsRequest) returns (UserCanManagePluginContributorsResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // UserCanManageTemplateContributors returns whether the user is authorized to manage
   // any contributors to the template and the list of roles they can manage.
   rpc UserCanManageTemplateContributors(UserCanManageTemplateContributorsRequest) returns (UserCanManageTemplateContributorsResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
 

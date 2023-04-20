@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// TokenServiceName is the fully-qualified name of the TokenService service.
@@ -95,12 +95,14 @@ func NewTokenServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 		getToken: connect_go.NewClient[v1alpha1.GetTokenRequest, v1alpha1.GetTokenResponse](
 			httpClient,
 			baseURL+TokenServiceGetTokenProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listTokens: connect_go.NewClient[v1alpha1.ListTokensRequest, v1alpha1.ListTokensResponse](
 			httpClient,
 			baseURL+TokenServiceListTokensProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteToken: connect_go.NewClient[v1alpha1.DeleteTokenRequest, v1alpha1.DeleteTokenResponse](
 			httpClient,
@@ -171,12 +173,14 @@ func NewTokenServiceHandler(svc TokenServiceHandler, opts ...connect_go.HandlerO
 	mux.Handle(TokenServiceGetTokenProcedure, connect_go.NewUnaryHandler(
 		TokenServiceGetTokenProcedure,
 		svc.GetToken,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(TokenServiceListTokensProcedure, connect_go.NewUnaryHandler(
 		TokenServiceListTokensProcedure,
 		svc.ListTokens,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(TokenServiceDeleteTokenProcedure, connect_go.NewUnaryHandler(
 		TokenServiceDeleteTokenProcedure,

@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// ResolveServiceName is the fully-qualified name of the ResolveService service.
@@ -82,7 +82,8 @@ func NewResolveServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 		getModulePins: connect_go.NewClient[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse](
 			httpClient,
 			baseURL+ResolveServiceGetModulePinsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -120,7 +121,8 @@ func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect_go.Hand
 	mux.Handle(ResolveServiceGetModulePinsProcedure, connect_go.NewUnaryHandler(
 		ResolveServiceGetModulePinsProcedure,
 		svc.GetModulePins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.ResolveService/", mux
 }
@@ -164,7 +166,8 @@ func NewLocalResolveServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 		getLocalModulePins: connect_go.NewClient[v1alpha1.GetLocalModulePinsRequest, v1alpha1.GetLocalModulePinsResponse](
 			httpClient,
 			baseURL+LocalResolveServiceGetLocalModulePinsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -207,7 +210,8 @@ func NewLocalResolveServiceHandler(svc LocalResolveServiceHandler, opts ...conne
 	mux.Handle(LocalResolveServiceGetLocalModulePinsProcedure, connect_go.NewUnaryHandler(
 		LocalResolveServiceGetLocalModulePinsProcedure,
 		svc.GetLocalModulePins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.LocalResolveService/", mux
 }

@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// ConvertServiceName is the fully-qualified name of the ConvertService service.
@@ -71,7 +71,8 @@ func NewConvertServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 		convert: connect_go.NewClient[v1alpha1.ConvertRequest, v1alpha1.ConvertResponse](
 			httpClient,
 			baseURL+ConvertServiceConvertProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -104,7 +105,8 @@ func NewConvertServiceHandler(svc ConvertServiceHandler, opts ...connect_go.Hand
 	mux.Handle(ConvertServiceConvertProcedure, connect_go.NewUnaryHandler(
 		ConvertServiceConvertProcedure,
 		svc.Convert,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.ConvertService/", mux
 }

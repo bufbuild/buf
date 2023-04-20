@@ -71,14 +71,22 @@ service UserService {
   // CreateUser creates a new user with the given username.
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   // GetUser gets a user by ID.
-  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetUserByUsername gets a user by username.
-  rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserByUsernameResponse);
+  rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserByUsernameResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListUsers lists all users.
-  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListOrganizationUsers lists all users for an organization.
   // TODO: #663 move this to organization service
-  rpc ListOrganizationUsers(ListOrganizationUsersRequest) returns (ListOrganizationUsersResponse);
+  rpc ListOrganizationUsers(ListOrganizationUsersRequest) returns (ListOrganizationUsersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DeleteUser deletes a user.
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   // Deactivate user deactivates a user.
@@ -86,7 +94,9 @@ service UserService {
   // UpdateUserServerRole update the role of an user in the server.
   rpc UpdateUserServerRole(UpdateUserServerRoleRequest) returns (UpdateUserServerRoleResponse);
   // CountUsers returns the number of users in the server by the user state provided.
-  rpc CountUsers(CountUsersRequest) returns (CountUsersResponse);
+  rpc CountUsers(CountUsersRequest) returns (CountUsersResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UpdateUserSettings update the user settings including description.
   rpc UpdateUserSettings(UpdateUserSettingsRequest) returns (UpdateUserSettingsResponse);
 }

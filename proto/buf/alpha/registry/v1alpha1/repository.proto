@@ -94,17 +94,29 @@ message RepositoryMetadata {
 // RepositoryService is the Repository service.
 service RepositoryService {
   // GetRepository gets a repository by ID.
-  rpc GetRepository(GetRepositoryRequest) returns (GetRepositoryResponse);
+  rpc GetRepository(GetRepositoryRequest) returns (GetRepositoryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetRepositoryByFullName gets a repository by full name.
-  rpc GetRepositoryByFullName(GetRepositoryByFullNameRequest) returns (GetRepositoryByFullNameResponse);
+  rpc GetRepositoryByFullName(GetRepositoryByFullNameRequest) returns (GetRepositoryByFullNameResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListRepositories lists all repositories.
-  rpc ListRepositories(ListRepositoriesRequest) returns (ListRepositoriesResponse);
+  rpc ListRepositories(ListRepositoriesRequest) returns (ListRepositoriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListUserRepositories lists all repositories belonging to a user.
-  rpc ListUserRepositories(ListUserRepositoriesRequest) returns (ListUserRepositoriesResponse);
+  rpc ListUserRepositories(ListUserRepositoriesRequest) returns (ListUserRepositoriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListRepositoriesUserCanAccess lists all repositories a user can access.
-  rpc ListRepositoriesUserCanAccess(ListRepositoriesUserCanAccessRequest) returns (ListRepositoriesUserCanAccessResponse);
+  rpc ListRepositoriesUserCanAccess(ListRepositoriesUserCanAccessRequest) returns (ListRepositoriesUserCanAccessResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListOrganizationRepositories lists all repositories for an organization.
-  rpc ListOrganizationRepositories(ListOrganizationRepositoriesRequest) returns (ListOrganizationRepositoriesResponse);
+  rpc ListOrganizationRepositories(ListOrganizationRepositoriesRequest) returns (ListOrganizationRepositoriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // CreateRepositoryByFullName creates a new repository by full name.
   rpc CreateRepositoryByFullName(CreateRepositoryByFullNameRequest) returns (CreateRepositoryByFullNameResponse);
   // DeleteRepository deletes a repository.
@@ -117,23 +129,33 @@ service RepositoryService {
   rpc UndeprecateRepositoryByName(UndeprecateRepositoryByNameRequest) returns (UndeprecateRepositoryByNameResponse);
   // GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
   // Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
-  rpc GetRepositoriesByFullName(GetRepositoriesByFullNameRequest) returns (GetRepositoriesByFullNameResponse);
+  rpc GetRepositoriesByFullName(GetRepositoriesByFullNameRequest) returns (GetRepositoriesByFullNameResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // SetRepositoryContributor sets the role of a user in the repository.
   rpc SetRepositoryContributor(SetRepositoryContributorRequest) returns (SetRepositoryContributorResponse);
   // ListRepositoryContributors returns the list of contributors that has an explicit role against the repository.
   // This does not include users who have implicit roles against the repository, unless they have also been
   // assigned a role explicitly.
-  rpc ListRepositoryContributors(ListRepositoryContributorsRequest) returns (ListRepositoryContributorsResponse);
+  rpc ListRepositoryContributors(ListRepositoryContributorsRequest) returns (ListRepositoryContributorsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetRepositoryContributor returns the contributor information of a user in a repository.
-  rpc GetRepositoryContributor(GetRepositoryContributorRequest) returns (GetRepositoryContributorResponse);
+  rpc GetRepositoryContributor(GetRepositoryContributorRequest) returns (GetRepositoryContributorResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetRepositorySettings gets the settings of a repository.
-  rpc GetRepositorySettings(GetRepositorySettingsRequest) returns (GetRepositorySettingsResponse);
+  rpc GetRepositorySettings(GetRepositorySettingsRequest) returns (GetRepositorySettingsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UpdateRepositorySettingsByName updates the settings of a repository.
   rpc UpdateRepositorySettingsByName(UpdateRepositorySettingsByNameRequest) returns (UpdateRepositorySettingsByNameResponse);
   // GetRepositoriesMetadata gets the metadata of the repositories in the request, the length of repositories in the
   // request should match the length of the metadata in the response, and the order of repositories in the response
   // should match the order of the metadata in the request.
-  rpc GetRepositoriesMetadata(GetRepositoriesMetadataRequest) returns (GetRepositoriesMetadataResponse);
+  rpc GetRepositoriesMetadata(GetRepositoriesMetadataRequest) returns (GetRepositoriesMetadataResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetRepositoriesByFullNameRequest {

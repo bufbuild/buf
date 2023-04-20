@@ -65,10 +65,14 @@ service GenerateService {
   // GeneratePlugins generates an array of files given the provided
   // module reference and plugin version and option tuples. No attempt
   // is made at merging insertion points.
-  rpc GeneratePlugins(GeneratePluginsRequest) returns (GeneratePluginsResponse);
+  rpc GeneratePlugins(GeneratePluginsRequest) returns (GeneratePluginsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GenerateTemplate generates an array of files given the provided
   // module reference and template version.
-  rpc GenerateTemplate(GenerateTemplateRequest) returns (GenerateTemplateResponse);
+  rpc GenerateTemplate(GenerateTemplateRequest) returns (GenerateTemplateResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GeneratePluginsRequest {

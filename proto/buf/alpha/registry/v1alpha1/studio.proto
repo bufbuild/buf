@@ -36,7 +36,9 @@ message StudioAgentPreset {
 // StudioService is the Studio service.
 service StudioService {
   // ListStudioAgentPresets returns a list of agent presets in the server.
-  rpc ListStudioAgentPresets(ListStudioAgentPresetsRequest) returns (ListStudioAgentPresetsResponse);
+  rpc ListStudioAgentPresets(ListStudioAgentPresetsRequest) returns (ListStudioAgentPresetsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // SetStudioAgentPresets sets the list of agent presets in the server.
   rpc SetStudioAgentPresets(SetStudioAgentPresetsRequest) returns (SetStudioAgentPresetsResponse);
 }

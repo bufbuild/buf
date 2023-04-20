@@ -29,7 +29,9 @@ enum ConvertFormat {
 service ConvertService {
   // Convert converts a serialized message according to
   // the provided type name using an image.
-  rpc Convert(ConvertRequest) returns (ConvertResponse);
+  rpc Convert(ConvertRequest) returns (ConvertResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message ConvertRequest {

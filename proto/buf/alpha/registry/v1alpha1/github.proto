@@ -29,5 +29,7 @@ message GetGithubAppConfigResponse {
 // GithubService is the service used to interact with Github-related information
 service GithubService {
   // GetGithubAppConfig returns a Github Application Configuration.
-  rpc GetGithubAppConfig(GetGithubAppConfigRequest) returns (GetGithubAppConfigResponse);
+  rpc GetGithubAppConfig(GetGithubAppConfigRequest) returns (GetGithubAppConfigResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }

@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// PluginCurationServiceName is the fully-qualified name of the PluginCurationService service.
@@ -93,7 +93,8 @@ func NewPluginCurationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 		listCuratedPlugins: connect_go.NewClient[v1alpha1.ListCuratedPluginsRequest, v1alpha1.ListCuratedPluginsResponse](
 			httpClient,
 			baseURL+PluginCurationServiceListCuratedPluginsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		createCuratedPlugin: connect_go.NewClient[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse](
 			httpClient,
@@ -103,7 +104,8 @@ func NewPluginCurationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 		getLatestCuratedPlugin: connect_go.NewClient[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceGetLatestCuratedPluginProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteCuratedPlugin: connect_go.NewClient[v1alpha1.DeleteCuratedPluginRequest, v1alpha1.DeleteCuratedPluginResponse](
 			httpClient,
@@ -165,7 +167,8 @@ func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...c
 	mux.Handle(PluginCurationServiceListCuratedPluginsProcedure, connect_go.NewUnaryHandler(
 		PluginCurationServiceListCuratedPluginsProcedure,
 		svc.ListCuratedPlugins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginCurationServiceCreateCuratedPluginProcedure, connect_go.NewUnaryHandler(
 		PluginCurationServiceCreateCuratedPluginProcedure,
@@ -175,7 +178,8 @@ func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...c
 	mux.Handle(PluginCurationServiceGetLatestCuratedPluginProcedure, connect_go.NewUnaryHandler(
 		PluginCurationServiceGetLatestCuratedPluginProcedure,
 		svc.GetLatestCuratedPlugin,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginCurationServiceDeleteCuratedPluginProcedure, connect_go.NewUnaryHandler(
 		PluginCurationServiceDeleteCuratedPluginProcedure,
@@ -225,7 +229,8 @@ func NewCodeGenerationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 		generateCode: connect_go.NewClient[v1alpha1.GenerateCodeRequest, v1alpha1.GenerateCodeResponse](
 			httpClient,
 			baseURL+CodeGenerationServiceGenerateCodeProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -257,7 +262,8 @@ func NewCodeGenerationServiceHandler(svc CodeGenerationServiceHandler, opts ...c
 	mux.Handle(CodeGenerationServiceGenerateCodeProcedure, connect_go.NewUnaryHandler(
 		CodeGenerationServiceGenerateCodeProcedure,
 		svc.GenerateCode,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.CodeGenerationService/", mux
 }

@@ -27,7 +27,9 @@ service WebhookService {
   // Delete a webhook removes the event subscription.
   rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse) {}
   // Lists the webhooks subscriptions for a given repository.
-  rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse) {}
+  rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 // CreateWebhookRequest is the proto request representation of a

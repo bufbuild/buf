@@ -23,11 +23,15 @@ import "google/protobuf/descriptor.proto";
 service SchemaService {
   // GetSchema allows the caller to download a schema for one or more requested
   // types, RPC services, or RPC methods.
-  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse);
+  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 
   // ConvertMessage allows the caller to convert a given message data blob from
   // one format to another by referring to a type schema for the blob.
-  rpc ConvertMessage(ConvertMessageRequest) returns (ConvertMessageResponse);
+  rpc ConvertMessage(ConvertMessageRequest) returns (ConvertMessageResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // TODO: move this to ConvertService and remove its existing, unused endpoint.
 
   // TODO: batch or streaming endpoint, for more efficient conversion of many messages
