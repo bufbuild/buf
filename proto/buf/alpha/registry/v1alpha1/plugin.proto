@@ -176,19 +176,31 @@ service PluginService {
   // ListPlugins returns all the plugins available to the user. This includes
   // public plugins, those uploaded to organizations the user is part of,
   // and any plugins uploaded directly by the user.
-  rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse);
+  rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListUserPlugins lists all plugins belonging to a user.
-  rpc ListUserPlugins(ListUserPluginsRequest) returns (ListUserPluginsResponse);
+  rpc ListUserPlugins(ListUserPluginsRequest) returns (ListUserPluginsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListOrganizationPlugins lists all plugins for an organization.
-  rpc ListOrganizationPlugins(ListOrganizationPluginsRequest) returns (ListOrganizationPluginsResponse);
+  rpc ListOrganizationPlugins(ListOrganizationPluginsRequest) returns (ListOrganizationPluginsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetPluginVersion returns the plugin version, if found.
-  rpc GetPluginVersion(GetPluginVersionRequest) returns (GetPluginVersionResponse);
+  rpc GetPluginVersion(GetPluginVersionRequest) returns (GetPluginVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListPluginVersions lists all the versions available for the specified plugin.
-  rpc ListPluginVersions(ListPluginVersionsRequest) returns (ListPluginVersionsResponse);
+  rpc ListPluginVersions(ListPluginVersionsRequest) returns (ListPluginVersionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // CreatePlugin creates a new plugin.
   rpc CreatePlugin(CreatePluginRequest) returns (CreatePluginResponse);
   // GetPlugin returns the plugin, if found.
-  rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse);
+  rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DeletePlugin deletes the plugin, if it exists. Note that deleting
   // a plugin may cause breaking changes for templates using that plugin,
   // and should be done with extreme care.
@@ -198,24 +210,40 @@ service PluginService {
   // ListPluginContributors returns the list of contributors that has an explicit role against the plugin.
   // This does not include users who have implicit roles against the plugin, unless they have also been
   // assigned a role explicitly.
-  rpc ListPluginContributors(ListPluginContributorsRequest) returns (ListPluginContributorsResponse);
+  rpc ListPluginContributors(ListPluginContributorsRequest) returns (ListPluginContributorsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetTemplate returns the template, if found.
-  rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
+  rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListTemplates returns all the templates available to the user. This includes
   // public templates, those owned by organizations the user is part of,
   // and any created directly by the user.
-  rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
+  rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListTemplatesUserCanAccess is like ListTemplates, but does not return
   // public templates.
-  rpc ListTemplatesUserCanAccess(ListTemplatesUserCanAccessRequest) returns (ListTemplatesUserCanAccessResponse);
+  rpc ListTemplatesUserCanAccess(ListTemplatesUserCanAccessRequest) returns (ListTemplatesUserCanAccessResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListUserPlugins lists all templates belonging to a user.
-  rpc ListUserTemplates(ListUserTemplatesRequest) returns (ListUserTemplatesResponse);
+  rpc ListUserTemplates(ListUserTemplatesRequest) returns (ListUserTemplatesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListOrganizationTemplates lists all templates for an organization.
-  rpc ListOrganizationTemplates(ListOrganizationTemplatesRequest) returns (ListOrganizationTemplatesResponse);
+  rpc ListOrganizationTemplates(ListOrganizationTemplatesRequest) returns (ListOrganizationTemplatesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetTemplateVersion returns the template version, if found.
-  rpc GetTemplateVersion(GetTemplateVersionRequest) returns (GetTemplateVersionResponse);
+  rpc GetTemplateVersion(GetTemplateVersionRequest) returns (GetTemplateVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListTemplateVersions lists all the template versions available for the specified template.
-  rpc ListTemplateVersions(ListTemplateVersionsRequest) returns (ListTemplateVersionsResponse);
+  rpc ListTemplateVersions(ListTemplateVersionsRequest) returns (ListTemplateVersionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // CreateTemplate creates a new template.
   rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse);
   // DeleteTemplate deletes the template, if it exists.
@@ -227,7 +255,9 @@ service PluginService {
   // ListTemplateContributors returns the list of contributors that has an explicit role against the template.
   // This does not include users who have implicit roles against the template, unless they have also been
   // assigned a role explicitly.
-  rpc ListTemplateContributors(ListTemplateContributorsRequest) returns (ListTemplateContributorsResponse);
+  rpc ListTemplateContributors(ListTemplateContributorsRequest) returns (ListTemplateContributorsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message ListPluginsRequest {

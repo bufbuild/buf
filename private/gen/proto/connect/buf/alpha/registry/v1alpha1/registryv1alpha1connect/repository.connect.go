@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// RepositoryServiceName is the fully-qualified name of the RepositoryService service.
@@ -163,32 +163,38 @@ func NewRepositoryServiceClient(httpClient connect_go.HTTPClient, baseURL string
 		getRepository: connect_go.NewClient[v1alpha1.GetRepositoryRequest, v1alpha1.GetRepositoryResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositoryProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getRepositoryByFullName: connect_go.NewClient[v1alpha1.GetRepositoryByFullNameRequest, v1alpha1.GetRepositoryByFullNameResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositoryByFullNameProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listRepositories: connect_go.NewClient[v1alpha1.ListRepositoriesRequest, v1alpha1.ListRepositoriesResponse](
 			httpClient,
 			baseURL+RepositoryServiceListRepositoriesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listUserRepositories: connect_go.NewClient[v1alpha1.ListUserRepositoriesRequest, v1alpha1.ListUserRepositoriesResponse](
 			httpClient,
 			baseURL+RepositoryServiceListUserRepositoriesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listRepositoriesUserCanAccess: connect_go.NewClient[v1alpha1.ListRepositoriesUserCanAccessRequest, v1alpha1.ListRepositoriesUserCanAccessResponse](
 			httpClient,
 			baseURL+RepositoryServiceListRepositoriesUserCanAccessProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listOrganizationRepositories: connect_go.NewClient[v1alpha1.ListOrganizationRepositoriesRequest, v1alpha1.ListOrganizationRepositoriesResponse](
 			httpClient,
 			baseURL+RepositoryServiceListOrganizationRepositoriesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		createRepositoryByFullName: connect_go.NewClient[v1alpha1.CreateRepositoryByFullNameRequest, v1alpha1.CreateRepositoryByFullNameResponse](
 			httpClient,
@@ -218,7 +224,8 @@ func NewRepositoryServiceClient(httpClient connect_go.HTTPClient, baseURL string
 		getRepositoriesByFullName: connect_go.NewClient[v1alpha1.GetRepositoriesByFullNameRequest, v1alpha1.GetRepositoriesByFullNameResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositoriesByFullNameProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		setRepositoryContributor: connect_go.NewClient[v1alpha1.SetRepositoryContributorRequest, v1alpha1.SetRepositoryContributorResponse](
 			httpClient,
@@ -228,17 +235,20 @@ func NewRepositoryServiceClient(httpClient connect_go.HTTPClient, baseURL string
 		listRepositoryContributors: connect_go.NewClient[v1alpha1.ListRepositoryContributorsRequest, v1alpha1.ListRepositoryContributorsResponse](
 			httpClient,
 			baseURL+RepositoryServiceListRepositoryContributorsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getRepositoryContributor: connect_go.NewClient[v1alpha1.GetRepositoryContributorRequest, v1alpha1.GetRepositoryContributorResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositoryContributorProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getRepositorySettings: connect_go.NewClient[v1alpha1.GetRepositorySettingsRequest, v1alpha1.GetRepositorySettingsResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositorySettingsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		updateRepositorySettingsByName: connect_go.NewClient[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse](
 			httpClient,
@@ -248,7 +258,8 @@ func NewRepositoryServiceClient(httpClient connect_go.HTTPClient, baseURL string
 		getRepositoriesMetadata: connect_go.NewClient[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse](
 			httpClient,
 			baseURL+RepositoryServiceGetRepositoriesMetadataProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -434,32 +445,38 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect_g
 	mux.Handle(RepositoryServiceGetRepositoryProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositoryProcedure,
 		svc.GetRepository,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceGetRepositoryByFullNameProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositoryByFullNameProcedure,
 		svc.GetRepositoryByFullName,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceListRepositoriesProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceListRepositoriesProcedure,
 		svc.ListRepositories,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceListUserRepositoriesProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceListUserRepositoriesProcedure,
 		svc.ListUserRepositories,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceListRepositoriesUserCanAccessProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceListRepositoriesUserCanAccessProcedure,
 		svc.ListRepositoriesUserCanAccess,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceListOrganizationRepositoriesProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceListOrganizationRepositoriesProcedure,
 		svc.ListOrganizationRepositories,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceCreateRepositoryByFullNameProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceCreateRepositoryByFullNameProcedure,
@@ -489,7 +506,8 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect_g
 	mux.Handle(RepositoryServiceGetRepositoriesByFullNameProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositoriesByFullNameProcedure,
 		svc.GetRepositoriesByFullName,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceSetRepositoryContributorProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceSetRepositoryContributorProcedure,
@@ -499,17 +517,20 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect_g
 	mux.Handle(RepositoryServiceListRepositoryContributorsProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceListRepositoryContributorsProcedure,
 		svc.ListRepositoryContributors,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceGetRepositoryContributorProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositoryContributorProcedure,
 		svc.GetRepositoryContributor,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceGetRepositorySettingsProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositorySettingsProcedure,
 		svc.GetRepositorySettings,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceUpdateRepositorySettingsByNameProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceUpdateRepositorySettingsByNameProcedure,
@@ -519,7 +540,8 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect_g
 	mux.Handle(RepositoryServiceGetRepositoriesMetadataProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositoriesMetadataProcedure,
 		svc.GetRepositoriesMetadata,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.RepositoryService/", mux
 }

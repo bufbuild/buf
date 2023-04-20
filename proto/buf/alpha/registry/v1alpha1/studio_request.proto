@@ -30,7 +30,9 @@ service StudioRequestService {
   // profile.
   rpc DeleteStudioRequest(DeleteStudioRequestRequest) returns (DeleteStudioRequestResponse) {}
   // ListStudioRequests shows the caller's favorited Studio Requests.
-  rpc ListStudioRequests(ListStudioRequestsRequest) returns (ListStudioRequestsResponse) {}
+  rpc ListStudioRequests(ListStudioRequestsRequest) returns (ListStudioRequestsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 // StudioProtocol are the supported protocols for Studio Requests.

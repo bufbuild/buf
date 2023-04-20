@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// DocServiceName is the fully-qualified name of the DocService service.
@@ -99,27 +99,32 @@ func NewDocServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts 
 		getSourceDirectoryInfo: connect_go.NewClient[v1alpha1.GetSourceDirectoryInfoRequest, v1alpha1.GetSourceDirectoryInfoResponse](
 			httpClient,
 			baseURL+DocServiceGetSourceDirectoryInfoProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getSourceFile: connect_go.NewClient[v1alpha1.GetSourceFileRequest, v1alpha1.GetSourceFileResponse](
 			httpClient,
 			baseURL+DocServiceGetSourceFileProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getModulePackages: connect_go.NewClient[v1alpha1.GetModulePackagesRequest, v1alpha1.GetModulePackagesResponse](
 			httpClient,
 			baseURL+DocServiceGetModulePackagesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getModuleDocumentation: connect_go.NewClient[v1alpha1.GetModuleDocumentationRequest, v1alpha1.GetModuleDocumentationResponse](
 			httpClient,
 			baseURL+DocServiceGetModuleDocumentationProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getPackageDocumentation: connect_go.NewClient[v1alpha1.GetPackageDocumentationRequest, v1alpha1.GetPackageDocumentationResponse](
 			httpClient,
 			baseURL+DocServiceGetPackageDocumentationProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -190,27 +195,32 @@ func NewDocServiceHandler(svc DocServiceHandler, opts ...connect_go.HandlerOptio
 	mux.Handle(DocServiceGetSourceDirectoryInfoProcedure, connect_go.NewUnaryHandler(
 		DocServiceGetSourceDirectoryInfoProcedure,
 		svc.GetSourceDirectoryInfo,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(DocServiceGetSourceFileProcedure, connect_go.NewUnaryHandler(
 		DocServiceGetSourceFileProcedure,
 		svc.GetSourceFile,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(DocServiceGetModulePackagesProcedure, connect_go.NewUnaryHandler(
 		DocServiceGetModulePackagesProcedure,
 		svc.GetModulePackages,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(DocServiceGetModuleDocumentationProcedure, connect_go.NewUnaryHandler(
 		DocServiceGetModuleDocumentationProcedure,
 		svc.GetModuleDocumentation,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(DocServiceGetPackageDocumentationProcedure, connect_go.NewUnaryHandler(
 		DocServiceGetPackageDocumentationProcedure,
 		svc.GetPackageDocumentation,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.DocService/", mux
 }

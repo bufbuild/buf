@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// LabelServiceName is the fully-qualified name of the LabelService service.
@@ -86,7 +86,8 @@ func NewLabelServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 		getLabels: connect_go.NewClient[v1alpha1.GetLabelsRequest, v1alpha1.GetLabelsResponse](
 			httpClient,
 			baseURL+LabelServiceGetLabelsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -140,7 +141,8 @@ func NewLabelServiceHandler(svc LabelServiceHandler, opts ...connect_go.HandlerO
 	mux.Handle(LabelServiceGetLabelsProcedure, connect_go.NewUnaryHandler(
 		LabelServiceGetLabelsProcedure,
 		svc.GetLabels,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.LabelService/", mux
 }
