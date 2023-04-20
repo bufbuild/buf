@@ -83,8 +83,7 @@ func NewSchemaServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 		convertMessage: connect_go.NewClient[v1alpha1.ConvertMessageRequest, v1alpha1.ConvertMessageResponse](
 			httpClient,
 			baseURL+SchemaServiceConvertMessageProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			opts...,
 		),
 	}
 }
@@ -132,8 +131,7 @@ func NewSchemaServiceHandler(svc SchemaServiceHandler, opts ...connect_go.Handle
 	mux.Handle(SchemaServiceConvertMessageProcedure, connect_go.NewUnaryHandler(
 		SchemaServiceConvertMessageProcedure,
 		svc.ConvertMessage,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		opts...,
 	))
 	return "/buf.alpha.registry.v1alpha1.SchemaService/", mux
 }

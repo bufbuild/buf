@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect_go.IsAtLeastVersion0_1_0
 
 const (
 	// GenerateServiceName is the fully-qualified name of the GenerateService service.
@@ -79,14 +79,12 @@ func NewGenerateServiceClient(httpClient connect_go.HTTPClient, baseURL string, 
 		generatePlugins: connect_go.NewClient[v1alpha1.GeneratePluginsRequest, v1alpha1.GeneratePluginsResponse](
 			httpClient,
 			baseURL+GenerateServiceGeneratePluginsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			opts...,
 		),
 		generateTemplate: connect_go.NewClient[v1alpha1.GenerateTemplateRequest, v1alpha1.GenerateTemplateResponse](
 			httpClient,
 			baseURL+GenerateServiceGenerateTemplateProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			opts...,
 		),
 	}
 }
@@ -129,14 +127,12 @@ func NewGenerateServiceHandler(svc GenerateServiceHandler, opts ...connect_go.Ha
 	mux.Handle(GenerateServiceGeneratePluginsProcedure, connect_go.NewUnaryHandler(
 		GenerateServiceGeneratePluginsProcedure,
 		svc.GeneratePlugins,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		opts...,
 	))
 	mux.Handle(GenerateServiceGenerateTemplateProcedure, connect_go.NewUnaryHandler(
 		GenerateServiceGenerateTemplateProcedure,
 		svc.GenerateTemplate,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		opts...,
 	))
 	return "/buf.alpha.registry.v1alpha1.GenerateService/", mux
 }

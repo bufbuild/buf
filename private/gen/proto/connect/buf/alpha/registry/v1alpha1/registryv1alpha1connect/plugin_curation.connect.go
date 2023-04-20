@@ -229,8 +229,7 @@ func NewCodeGenerationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 		generateCode: connect_go.NewClient[v1alpha1.GenerateCodeRequest, v1alpha1.GenerateCodeResponse](
 			httpClient,
 			baseURL+CodeGenerationServiceGenerateCodeProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			opts...,
 		),
 	}
 }
@@ -262,8 +261,7 @@ func NewCodeGenerationServiceHandler(svc CodeGenerationServiceHandler, opts ...c
 	mux.Handle(CodeGenerationServiceGenerateCodeProcedure, connect_go.NewUnaryHandler(
 		CodeGenerationServiceGenerateCodeProcedure,
 		svc.GenerateCode,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		opts...,
 	))
 	return "/buf.alpha.registry.v1alpha1.CodeGenerationService/", mux
 }
