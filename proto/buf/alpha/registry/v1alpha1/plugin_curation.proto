@@ -243,9 +243,7 @@ service PluginCurationService {
 // CodeGenerationService generates code using remote plugins.
 service CodeGenerationService {
   // GenerateCode generates code using the specified remote plugins.
-  rpc GenerateCode(GenerateCodeRequest) returns (GenerateCodeResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
+  rpc GenerateCode(GenerateCodeRequest) returns (GenerateCodeResponse);
 }
 
 message GenerateCodeRequest {

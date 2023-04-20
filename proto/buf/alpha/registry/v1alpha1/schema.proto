@@ -29,9 +29,7 @@ service SchemaService {
 
   // ConvertMessage allows the caller to convert a given message data blob from
   // one format to another by referring to a type schema for the blob.
-  rpc ConvertMessage(ConvertMessageRequest) returns (ConvertMessageResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
+  rpc ConvertMessage(ConvertMessageRequest) returns (ConvertMessageResponse);
   // TODO: move this to ConvertService and remove its existing, unused endpoint.
 
   // TODO: batch or streaming endpoint, for more efficient conversion of many messages
