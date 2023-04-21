@@ -89,12 +89,14 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isGoEmpty    = externalRegistryConfig.Go == nil
 		isNPMEmpty   = externalRegistryConfig.NPM == nil
 		isMavenEmpty = externalRegistryConfig.Maven == nil
+		isSwiftEmpty = externalRegistryConfig.Swift == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
 		isGoEmpty,
 		isNPMEmpty,
 		isMavenEmpty,
+		isSwiftEmpty,
 	} {
 		if !isEmpty {
 			registryCount++
@@ -126,6 +128,15 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		}
 		return &RegistryConfig{
 			Maven:   mavenRegistryConfig,
+			Options: options,
+		}, nil
+	} else if !isSwiftEmpty {
+		swiftRegistryConfig, err := newSwiftRegistryConfig(externalRegistryConfig.Swift)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Swift:   swiftRegistryConfig,
 			Options: options,
 		}, nil
 	}
@@ -260,6 +271,46 @@ func newMavenRegistryConfig(externalMavenRegistryConfig *ExternalMavenRegistryCo
 		},
 		Deps:               dependencies,
 		AdditionalRuntimes: additionalRuntimes,
+	}, nil
+}
+
+func newSwiftRegistryConfig(externalSwiftRegistryConfig *ExternalSwiftRegistryConfig) (*SwiftRegistryConfig, error) {
+	if externalSwiftRegistryConfig == nil {
+		return nil, nil
+	}
+	var dependencies []SwiftRegistryDependencyConfig
+	for _, externalDep := range externalSwiftRegistryConfig.Deps {
+		dep, err := swiftExternalDependencyToDependencyConfig(externalDep)
+		if err != nil {
+			return nil, err
+		}
+		dependencies = append(dependencies, dep)
+	}
+	return &SwiftRegistryConfig{
+		Deps: dependencies,
+	}, nil
+}
+
+func swiftExternalDependencyToDependencyConfig(externalDep ExternalSwiftRegistryDependencyConfig) (SwiftRegistryDependencyConfig, error) {
+	if externalDep.Module == "" {
+		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty module name")
+	}
+	if externalDep.Version == "" {
+		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty version name")
+	}
+	if !semver.IsValid(fmt.Sprintf("v%s", externalDep.Version)) {
+		return SwiftRegistryDependencyConfig{}, fmt.Errorf("swift runtime dependency %s:%s does not have a valid semantic version", externalDep.Module, externalDep.Version)
+	}
+	return SwiftRegistryDependencyConfig{
+		Module:   externalDep.Module,
+		Version:  externalDep.Version,
+		Products: externalDep.Products,
+		Platforms: SwiftRegistryDependencyPlatformConfig{
+			MacOS:   externalDep.Platforms.MacOS,
+			IOS:     externalDep.Platforms.IOS,
+			TVOS:    externalDep.Platforms.TVOS,
+			WatchOS: externalDep.Platforms.WatchOS,
+		},
 	}, nil
 }
 
