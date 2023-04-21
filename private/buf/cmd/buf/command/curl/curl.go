@@ -66,11 +66,13 @@ const (
 	http2PriorKnowledgeFlagName = "http2-prior-knowledge"
 
 	// TLS flags
-	keyFlagName        = "key"
-	certFlagName       = "cert"
-	caCertFlagName     = "cacert"
-	serverNameFlagName = "servername"
-	insecureFlagName   = "insecure"
+	keyFlagName           = "key"
+	certFlagName          = "cert"
+	certFlagShortName     = "E"
+	caCertFlagName        = "cacert"
+	serverNameFlagName    = "servername"
+	insecureFlagName      = "insecure"
+	insecureFlagShortName = "k"
 
 	// Timeout flags
 	noKeepAliveFlagName    = "no-keepalive"
@@ -78,13 +80,19 @@ const (
 	connectTimeoutFlagName = "connect-timeout"
 
 	// Header and request body flags
-	userAgentFlagName = "user-agent"
-	userCredsFlagName = "user"
-	netrcFlagName     = "netrc"
-	netrcFileFlagName = "netrc-file"
-	headerFlagName    = "header"
-	dataFlagName      = "data"
-	outputFlagName    = "output"
+	userAgentFlagName      = "user-agent"
+	userAgentFlagShortName = "A"
+	userFlagName           = "user"
+	userFlagShortName      = "u"
+	netrcFlagName          = "netrc"
+	netrcFlagShortName     = "n"
+	netrcFileFlagName      = "netrc-file"
+	headerFlagName         = "header"
+	headerFlagShortName    = "H"
+	dataFlagName           = "data"
+	dataFlagShortName      = "d"
+	outputFlagName         = "output"
+	outputFlagShortName    = "o"
 )
 
 // NewCommand returns a new Command.
@@ -210,8 +218,8 @@ type flags struct {
 
 	// Handling request and response data and metadata
 	UserAgent string
-	UserCreds string
-	UseNetrc  bool
+	User      string
+	Netrc     bool
 	NetrcFile string
 	Headers   []string
 	Data      string
@@ -254,15 +262,17 @@ Setting this flags implies --%s=false`,
 		&f.ReflectHeaders,
 		reflectHeaderFlagName,
 		nil,
-		`Request headers to include with reflection requests. This flag may only be used
-when --reflect is also set. This flag may be specified more than once to indicate
+		fmt.Sprintf(`Request headers to include with reflection requests. This flag may only be used
+when --%s is also set. This flag may be specified more than once to indicate
 multiple headers. Each flag value should have the form "name: value". But a special value
-of '*' may be used to indicate that all normal request headers (from --header and -H
+of '*' may be used to indicate that all normal request headers (from --%s and -%s
 flags) should also be included with reflection requests. A special value of '@<path>'
 means to read headers from the file at <path>. If the path is "-" then headers are
 read from stdin. It is not allowed to indicate a file with the same path as used with
-the request data flag (--data or -d). Furthermore, it is not allowed to indicate stdin
+the request data flag (--%s or -%s). Furthermore, it is not allowed to indicate stdin
 if the schema is expected to be provided via stdin as a file descriptor set or image`,
+			reflectFlagName, headerFlagName, headerFlagShortName, dataFlagName, dataFlagShortName,
+		),
 	)
 	flagSet.StringVar(
 		&f.ReflectProtocol,
@@ -327,33 +337,39 @@ no limit if this flag is not present`,
 		&f.Key,
 		keyFlagName,
 		"",
-		`Path to a PEM-encoded X509 private key file, for using client certificates with TLS. This
-option is only valid when the URL uses the https scheme. A --cert flag must also be
+		fmt.Sprintf(`Path to a PEM-encoded X509 private key file, for using client certificates with TLS. This
+option is only valid when the URL uses the https scheme. A --%s or -%s flag must also be
 present to provide tha certificate and public key that corresponds to the given
 private key`,
+			certFlagName, certFlagShortName,
+		),
 	)
 	flagSet.StringVarP(
 		&f.Cert,
 		certFlagName,
-		"E",
+		certFlagShortName,
 		"",
-		`Path to a PEM-encoded X509 certificate file, for using client certificates with TLS. This
-option is only valid when the URL uses the https scheme. A --key flag must also be
+		fmt.Sprintf(`Path to a PEM-encoded X509 certificate file, for using client certificates with TLS. This
+option is only valid when the URL uses the https scheme. A --%s flag must also be
 present to provide tha private key that corresponds to the given certificate`,
+			keyFlagName,
+		),
 	)
 	flagSet.StringVar(
 		&f.CACert,
 		caCertFlagName,
 		"",
-		`Path to a PEM-encoded X509 certificate pool file that contains the set of trusted
+		fmt.Sprintf(`Path to a PEM-encoded X509 certificate pool file that contains the set of trusted
 certificate authorities/issuers. If omitted, the system's default set of trusted
 certificates are used to verify the server's certificate. This option is only valid
-when the URL uses the https scheme. It is not applicable if --insecure flag is used`,
+when the URL uses the https scheme. It is not applicable if --%s or -%s flag is used`,
+			insecureFlagName, insecureFlagShortName,
+		),
 	)
 	flagSet.BoolVarP(
 		&f.Insecure,
 		insecureFlagName,
-		"k",
+		insecureFlagShortName,
 		false,
 		`If set, the TLS connection will be insecure and the server's certificate will NOT be
 verified. This is generally discouraged. This option is only valid when the URL uses
@@ -371,73 +387,84 @@ one is provided`,
 	flagSet.StringVarP(
 		&f.UserAgent,
 		userAgentFlagName,
-		"A",
+		userAgentFlagShortName,
 		"",
-		`The user agent string to send. This is ignored if a -H or --header flag is provided
+		fmt.Sprintf(`The user agent string to send. This is ignored if a --%s or -%s flag is provided
 that sets a header named 'User-Agent'.`,
+			headerFlagName, headerFlagShortName,
+		),
 	)
 	flagSet.StringVarP(
-		&f.UserCreds,
-		userCredsFlagName,
-		"u",
+		&f.User,
+		userFlagName,
+		userFlagShortName,
 		"",
-		`The user credentials to send, via a basic authorization header. The value should be
+		fmt.Sprintf(`The user credentials to send, via a basic authorization header. The value should be
 in the format "username:password". If the value has no colon, it is assumed to just be
 the username, in which case you will be prompted to enter a password. This overrides
-the use of a .netrc file. This is ignored if a -H or --header flag is provided that sets
+the use of a .netrc file. This is ignored if a --%s or -%s flag is provided that sets
 a header named 'Authorization'.`,
+			headerFlagName, headerFlagShortName,
+		),
 	)
 	flagSet.BoolVarP(
-		&f.UseNetrc,
+		&f.Netrc,
 		netrcFlagName,
-		"n",
+		netrcFlagShortName,
 		false,
-		`If true, a file named .netrc in the user's home directory will be examined to find
+		fmt.Sprintf(`If true, a file named .netrc in the user's home directory will be examined to find
 credentials for the request. The credentials will be sent via a basic authorization header.
 The command will fail if the file does not have an entry for the hostname in the URL. This
-flag is ignored if a -u or --user flag is present. This is ignored if a -H or --header flag
+flag is ignored if a --%s or -%s flag is present. This is ignored if a --%s or -%s flag
 is provided that sets a header named 'Authorization'.`,
+			userFlagName, userFlagShortName, headerFlagName, headerFlagShortName,
+		),
 	)
 	flagSet.StringVar(
 		&f.NetrcFile,
 		netrcFileFlagName,
 		"",
-		`This is just like use -n or --netrc, except that the named file is used instead of
-a file named .netric in the user's home directory. If a --netrc-optional flag is present,
-it will be respected and the command won't fail if no corresponding entry is found in the
-file. This flag cannot be used with the -n or --netrc flag. This is ignored if a -H or
---header flag is provided that sets a header named 'Authorization'.`,
+		fmt.Sprintf(`This is just like use --%s or -%s, except that the named file is used instead of
+a file named .netrc in the user's home directory. This flag cannot be used with the --%s
+or -%s flag. This is ignored if a --%s or -%s flag is provided that sets a header named
+'Authorization'.`,
+			netrcFlagName, netrcFlagShortName, netrcFlagName, netrcFlagShortName, headerFlagName, headerFlagShortName,
+		),
 	)
 	flagSet.StringSliceVarP(
 		&f.Headers,
 		headerFlagName,
-		"H",
+		headerFlagShortName,
 		nil,
-		`Request headers to include with the RPC invocation. This flag may be specified more
+		fmt.Sprintf(`Request headers to include with the RPC invocation. This flag may be specified more
 than once to indicate multiple headers. Each flag value should have the form "name: value".
 A special value of '@<path>' means to read headers from the file at <path>. If the path
 is "-" then headers are read from stdin. If the same file is indicated as used with the
-request data flag (--data or -d), the file must contain all headers, then a blank line,
+request data flag (--%s or -%s), the file must contain all headers, then a blank line,
 and then the request body. It is not allowed to indicate stdin if the schema is expected
 to be provided via stdin as a file descriptor set or image`,
+			dataFlagName, dataFlagShortName,
+		),
 	)
 	flagSet.StringVarP(
 		&f.Data,
 		dataFlagName,
-		"d",
+		dataFlagShortName,
 		"",
-		`Request data. This should be zero or more JSON documents, each indicating a request
+		fmt.Sprintf(`Request data. This should be zero or more JSON documents, each indicating a request
 message. For unary RPCs, there should be exactly one JSON document. A special value of
 '@<path>' means to read the data from the file at <path>. If the path is "-" then the
 request data is read from stdin. If the same file is indicated as used with the request
-headers flags (--header or -H), the file must contain all headers, then a blank line, and
+headers flags (--%s or -%s), the file must contain all headers, then a blank line, and
 then the request body. It is not allowed to indicate stdin if the schema is expected to be
 provided via stdin as a file descriptor set or image`,
+			headerFlagName, headerFlagShortName,
+		),
 	)
 	flagSet.StringVarP(
 		&f.Output,
 		outputFlagName,
-		"o",
+		outputFlagShortName,
 		"",
 		`Path to output file to create with response data. If absent, response is printed to stdout`,
 	)
@@ -464,7 +491,7 @@ func (f *flags) validate(isSecure bool) error {
 		return fmt.Errorf("grpc protocol cannot be used with plain-text URLs (http) unless --%s flag is set", http2PriorKnowledgeFlagName)
 	}
 
-	if f.UseNetrc && f.NetrcFile != "" {
+	if f.Netrc && f.NetrcFile != "" {
 		return fmt.Errorf("--%s and --%s flags are mutually exclusive; they may not both be specified", netrcFlagName, netrcFileFlagName)
 	}
 
@@ -553,20 +580,19 @@ func (f *flags) determineCredentials(
 	},
 	host string,
 ) (string, error) {
-	if f.UserCreds != "" {
+	if f.User != "" {
 		// this flag overrides any netrc-related flags
-		var username, password string
-		pos := strings.IndexByte(f.UserCreds, ':')
-		if pos == -1 {
-			username = f.UserCreds
+		parts := strings.SplitN(f.User, ":", 2)
+		username := parts[0]
+		var password string
+		if len(parts) < 2 {
 			var err error
 			password, err = promptForPassword(ctx, container, fmt.Sprintf("Enter host password for user %q:", username))
 			if err != nil {
 				return "", fmt.Errorf("could not prompt for password: %w", err)
 			}
 		} else {
-			username = f.UserCreds[:pos]
-			password = f.UserCreds[pos+1:]
+			password = parts[1]
 		}
 		return basicAuth(username, password), nil
 	}
@@ -574,7 +600,7 @@ func (f *flags) determineCredentials(
 	// process netrc-related flags
 	netrcFile := f.NetrcFile
 	if netrcFile == "" {
-		if !f.UseNetrc {
+		if !f.Netrc {
 			// no netrc file usage, so no creds
 			return "", nil
 		}
