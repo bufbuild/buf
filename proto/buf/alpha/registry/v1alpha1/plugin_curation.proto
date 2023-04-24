@@ -375,6 +375,8 @@ message ListCuratedPluginsRequest {
   // The first page is returned if this is empty.
   string page_token = 2;
   bool reverse = 3;
+  // If true, will only return plugins which support remote packages (registry_type is set).
+  bool supports_remote_packages = 4;
 }
 
 message ListCuratedPluginsResponse {
@@ -396,6 +398,8 @@ message GetLatestCuratedPluginRequest {
   // It is an error to set a revision without a corresponding version.
   string version = 3;
   uint32 revision = 4;
+  // If true, will only return versions (and revisions) which support remote packages (registry_type is set).
+  bool supports_remote_packages = 5;
 }
 
 message GetLatestCuratedPluginResponse {
