@@ -201,8 +201,8 @@ type SwiftRegistryConfig struct {
 
 // SwiftRegistryDependencyConfig is the swift registry dependency configuration.
 type SwiftRegistryDependencyConfig struct {
-	// Module is the name of the Swift package.
-	Module string
+	// Package is the name of the Swift package.
+	Package string
 	// Version is the version of the Swift package.
 	Version string
 	// Products are the names of the products available to import.

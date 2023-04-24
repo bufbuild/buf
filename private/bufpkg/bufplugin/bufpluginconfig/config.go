@@ -112,7 +112,17 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		return nil, nil
 	}
 	options := OptionsSliceToPluginOptions(externalRegistryConfig.Opts)
-	if !isNPMEmpty {
+	switch {
+	case !isGoEmpty:
+		goRegistryConfig, err := newGoRegistryConfig(externalRegistryConfig.Go)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Go:      goRegistryConfig,
+			Options: options,
+		}, nil
+	case !isNPMEmpty:
 		npmRegistryConfig, err := newNPMRegistryConfig(externalRegistryConfig.NPM)
 		if err != nil {
 			return nil, err
@@ -121,7 +131,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 			NPM:     npmRegistryConfig,
 			Options: options,
 		}, nil
-	} else if !isMavenEmpty {
+	case !isMavenEmpty:
 		mavenRegistryConfig, err := newMavenRegistryConfig(externalRegistryConfig.Maven)
 		if err != nil {
 			return nil, err
@@ -130,7 +140,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 			Maven:   mavenRegistryConfig,
 			Options: options,
 		}, nil
-	} else if !isSwiftEmpty {
+	case !isSwiftEmpty:
 		swiftRegistryConfig, err := newSwiftRegistryConfig(externalRegistryConfig.Swift)
 		if err != nil {
 			return nil, err
@@ -139,17 +149,9 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 			Swift:   swiftRegistryConfig,
 			Options: options,
 		}, nil
+	default:
+		return nil, errors.New("unknown registry configuration")
 	}
-	// At this point, the Go runtime is guaranteed to be specified. Note
-	// that this will change if/when there are more runtime languages supported.
-	goRegistryConfig, err := newGoRegistryConfig(externalRegistryConfig.Go)
-	if err != nil {
-		return nil, err
-	}
-	return &RegistryConfig{
-		Go:      goRegistryConfig,
-		Options: options,
-	}, nil
 }
 
 func newNPMRegistryConfig(externalNPMRegistryConfig *ExternalNPMRegistryConfig) (*NPMRegistryConfig, error) {
@@ -303,7 +305,7 @@ func swiftExternalDependencyToDependencyConfig(externalDep ExternalSwiftRegistry
 		return SwiftRegistryDependencyConfig{}, fmt.Errorf("swift runtime dependency %s:%s does not have a valid semantic version", externalDep.Module, externalDep.Version)
 	}
 	return SwiftRegistryDependencyConfig{
-		Module:   externalDep.Module,
+		Package:  externalDep.Module,
 		Version:  externalDep.Version,
 		Products: externalDep.Products,
 		Platforms: SwiftRegistryDependencyPlatformConfig{

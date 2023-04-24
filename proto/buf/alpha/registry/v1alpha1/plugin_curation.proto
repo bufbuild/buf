@@ -64,6 +64,15 @@ enum NPMImportStyle {
   NPM_IMPORT_STYLE_COMMONJS = 2;
 }
 
+// SwiftPlatformType is used to specify the platform type for a swift plugin version
+enum SwiftPlatformType {
+  SWIFT_PLATFORM_TYPE_UNSPECIFIED = 0;
+  SWIFT_PLATFORM_TYPE_MACOS = 1;
+  SWIFT_PLATFORM_TYPE_IOS = 2;
+  SWIFT_PLATFORM_TYPE_WATCHOS = 3;
+  SWIFT_PLATFORM_TYPE_TVOS = 4;
+}
+
 // GoConfig is the configuration for a Go plugin.
 message GoConfig {
   // RuntimeLibrary describes the runtime library dependency of the generated code.
@@ -168,18 +177,14 @@ message SwiftConfig {
     // The products exported by the runtime library.
     repeated string products = 3;
     // The minimum compatible platform versions of the runtime library.
-    message Platforms {
-      // The minimum compatible version of the MacOS platform.
-      string macos = 1;
-      // The minimum compatible version of the iOS platform.
-      string ios = 2;
-      // The minimum compatible version of the tvOS platform.
-      string tvos = 3;
-      // The minimum compatible version of the watchOS platform.
-      string watchos = 4;
+    message Platform {
+      // The name of the platform.
+      SwiftPlatformType name = 1;
+      // The minimum compatible version of the platform.
+      string version = 2;
     }
     // The minimum compatible platform versions of the runtime library.
-    Platforms platforms = 4;
+    repeated Platform platforms = 4;
   }
   // Optionally define the runtime libraries for the plugin.
   repeated RuntimeLibrary runtime_libraries = 1;
