@@ -291,26 +291,40 @@ func SwiftRegistryConfigToProtoSwiftConfig(swiftConfig *bufpluginconfig.SwiftReg
 	if swiftConfig.Dependencies != nil {
 		protoSwiftConfig.RuntimeLibraries = make([]*registryv1alpha1.SwiftConfig_RuntimeLibrary, 0, len(swiftConfig.Dependencies))
 		for _, dependency := range swiftConfig.Dependencies {
-			protoSwiftConfig.RuntimeLibraries = append(protoSwiftConfig.RuntimeLibraries, &registryv1alpha1.SwiftConfig_RuntimeLibrary{
+			depConfig := &registryv1alpha1.SwiftConfig_RuntimeLibrary{
 				Package:  dependency.Package,
 				Version:  dependency.Version,
 				Products: dependency.Products,
-				Platforms: []*registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform{
-					{
-						Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_MACOS,
-						Version: dependency.Platforms.MacOS,
-					}, {
-						Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_IOS,
-						Version: dependency.Platforms.IOS,
-					}, {
-						Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_TVOS,
-						Version: dependency.Platforms.TVOS,
-					}, {
-						Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_WATCHOS,
-						Version: dependency.Platforms.WatchOS,
-					},
-				},
-			})
+			}
+			platforms := make([]*registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform, 0)
+			if dependency.Platforms.MacOS != "" {
+				platforms = append(platforms, &registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform{
+					Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_MACOS,
+					Version: dependency.Platforms.MacOS,
+				})
+			}
+			if dependency.Platforms.IOS != "" {
+				platforms = append(platforms, &registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform{
+					Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_IOS,
+					Version: dependency.Platforms.IOS,
+				})
+			}
+			if dependency.Platforms.TVOS != "" {
+				platforms = append(platforms, &registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform{
+					Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_TVOS,
+					Version: dependency.Platforms.TVOS,
+				})
+			}
+			if dependency.Platforms.WatchOS != "" {
+				platforms = append(platforms, &registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform{
+					Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_WATCHOS,
+					Version: dependency.Platforms.WatchOS,
+				})
+			}
+			if len(platforms) > 0 {
+				depConfig.Platforms = platforms
+			}
+			protoSwiftConfig.RuntimeLibraries = append(protoSwiftConfig.RuntimeLibraries, depConfig)
 		}
 	}
 	return protoSwiftConfig
