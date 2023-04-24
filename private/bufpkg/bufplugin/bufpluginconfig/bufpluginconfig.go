@@ -195,8 +195,8 @@ type MavenRuntimeConfig struct {
 
 // SwiftRegistryConfig is the registry configuration for a Swift plugin.
 type SwiftRegistryConfig struct {
-	// Deps are dependencies for the remote package.
-	Deps []SwiftRegistryDependencyConfig
+	// Dependencies are dependencies for the remote package.
+	Dependencies []SwiftRegistryDependencyConfig
 }
 
 // SwiftRegistryDependencyConfig is the swift registry dependency configuration.

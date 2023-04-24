@@ -281,15 +281,15 @@ func newSwiftRegistryConfig(externalSwiftRegistryConfig *ExternalSwiftRegistryCo
 		return nil, nil
 	}
 	var dependencies []SwiftRegistryDependencyConfig
-	for _, externalDep := range externalSwiftRegistryConfig.Deps {
-		dep, err := swiftExternalDependencyToDependencyConfig(externalDep)
+	for _, externalDependency := range externalSwiftRegistryConfig.Deps {
+		dependency, err := swiftExternalDependencyToDependencyConfig(externalDependency)
 		if err != nil {
 			return nil, err
 		}
-		dependencies = append(dependencies, dep)
+		dependencies = append(dependencies, dependency)
 	}
 	return &SwiftRegistryConfig{
-		Deps: dependencies,
+		Dependencies: dependencies,
 	}, nil
 }
 

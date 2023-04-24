@@ -157,7 +157,7 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 	})
 	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
 		Swift: &bufpluginconfig.SwiftRegistryConfig{
-			Deps: []bufpluginconfig.SwiftRegistryDependencyConfig{
+			Dependencies: []bufpluginconfig.SwiftRegistryDependencyConfig{
 				{
 					Package:  "github.com/apple/swift-protobuf",
 					Version:  "1.12.0",

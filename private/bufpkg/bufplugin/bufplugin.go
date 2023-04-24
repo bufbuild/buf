@@ -258,9 +258,9 @@ func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.Sw
 	swiftConfig := &bufpluginconfig.SwiftRegistryConfig{}
 	runtimeLibs := protoSwiftConfig.GetRuntimeLibraries()
 	if runtimeLibs != nil {
-		swiftConfig.Deps = make([]bufpluginconfig.SwiftRegistryDependencyConfig, 0, len(runtimeLibs))
+		swiftConfig.Dependencies = make([]bufpluginconfig.SwiftRegistryDependencyConfig, 0, len(runtimeLibs))
 		for _, runtimeLib := range runtimeLibs {
-			cfg := bufpluginconfig.SwiftRegistryDependencyConfig{
+			dependencyConfig := bufpluginconfig.SwiftRegistryDependencyConfig{
 				Package:  runtimeLib.GetPackage(),
 				Version:  runtimeLib.GetVersion(),
 				Products: runtimeLib.GetProducts(),
@@ -269,18 +269,18 @@ func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.Sw
 			for _, platform := range platforms {
 				switch platform.GetName() {
 				case registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_MACOS:
-					cfg.Platforms.MacOS = platform.GetVersion()
+					dependencyConfig.Platforms.MacOS = platform.GetVersion()
 				case registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_IOS:
-					cfg.Platforms.IOS = platform.GetVersion()
+					dependencyConfig.Platforms.IOS = platform.GetVersion()
 				case registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_TVOS:
-					cfg.Platforms.TVOS = platform.GetVersion()
+					dependencyConfig.Platforms.TVOS = platform.GetVersion()
 				case registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_WATCHOS:
-					cfg.Platforms.WatchOS = platform.GetVersion()
+					dependencyConfig.Platforms.WatchOS = platform.GetVersion()
 				default:
 					return nil, fmt.Errorf("unknown platform type: %v", platform.GetName())
 				}
 			}
-			swiftConfig.Deps = append(swiftConfig.Deps, cfg)
+			swiftConfig.Dependencies = append(swiftConfig.Dependencies, dependencyConfig)
 		}
 	}
 	return swiftConfig, nil
@@ -288,26 +288,26 @@ func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.Sw
 
 func SwiftRegistryConfigToProtoSwiftConfig(swiftConfig *bufpluginconfig.SwiftRegistryConfig) *registryv1alpha1.SwiftConfig {
 	protoSwiftConfig := &registryv1alpha1.SwiftConfig{}
-	if swiftConfig.Deps != nil {
-		protoSwiftConfig.RuntimeLibraries = make([]*registryv1alpha1.SwiftConfig_RuntimeLibrary, 0, len(swiftConfig.Deps))
-		for _, dep := range swiftConfig.Deps {
+	if swiftConfig.Dependencies != nil {
+		protoSwiftConfig.RuntimeLibraries = make([]*registryv1alpha1.SwiftConfig_RuntimeLibrary, 0, len(swiftConfig.Dependencies))
+		for _, dependency := range swiftConfig.Dependencies {
 			protoSwiftConfig.RuntimeLibraries = append(protoSwiftConfig.RuntimeLibraries, &registryv1alpha1.SwiftConfig_RuntimeLibrary{
-				Package:  dep.Package,
-				Version:  dep.Version,
-				Products: dep.Products,
+				Package:  dependency.Package,
+				Version:  dependency.Version,
+				Products: dependency.Products,
 				Platforms: []*registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform{
 					{
 						Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_MACOS,
-						Version: dep.Platforms.MacOS,
+						Version: dependency.Platforms.MacOS,
 					}, {
 						Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_IOS,
-						Version: dep.Platforms.IOS,
+						Version: dependency.Platforms.IOS,
 					}, {
 						Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_TVOS,
-						Version: dep.Platforms.TVOS,
+						Version: dependency.Platforms.TVOS,
 					}, {
 						Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_WATCHOS,
-						Version: dep.Platforms.WatchOS,
+						Version: dependency.Platforms.WatchOS,
 					},
 				},
 			})

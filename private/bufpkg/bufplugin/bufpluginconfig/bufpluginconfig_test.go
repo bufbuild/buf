@@ -272,7 +272,7 @@ func TestParsePluginConfigSwiftYAML(t *testing.T) {
 			OutputLanguages: []string{"swift"},
 			Registry: &RegistryConfig{
 				Swift: &SwiftRegistryConfig{
-					Deps: []SwiftRegistryDependencyConfig{
+					Dependencies: []SwiftRegistryDependencyConfig{
 						{
 							Package:  "github.com/apple/swift-protobuf",
 							Version:  "1.21.0",
