@@ -294,7 +294,7 @@ func newSwiftRegistryConfig(externalSwiftRegistryConfig *ExternalSwiftRegistryCo
 }
 
 func swiftExternalDependencyToDependencyConfig(externalDep ExternalSwiftRegistryDependencyConfig) (SwiftRegistryDependencyConfig, error) {
-	if externalDep.Module == "" {
+	if externalDep.Package == "" {
 		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty module name")
 	}
 	if externalDep.Version == "" {
@@ -302,10 +302,10 @@ func swiftExternalDependencyToDependencyConfig(externalDep ExternalSwiftRegistry
 	}
 	// Swift SemVers are typically not prefixed with a "v". The Golang semver library requires a "v" prefix.
 	if !semver.IsValid(fmt.Sprintf("v%s", externalDep.Version)) {
-		return SwiftRegistryDependencyConfig{}, fmt.Errorf("swift runtime dependency %s:%s does not have a valid semantic version", externalDep.Module, externalDep.Version)
+		return SwiftRegistryDependencyConfig{}, fmt.Errorf("swift runtime dependency %s:%s does not have a valid semantic version", externalDep.Package, externalDep.Version)
 	}
 	return SwiftRegistryDependencyConfig{
-		Package:  externalDep.Module,
+		Package:  externalDep.Package,
 		Version:  externalDep.Version,
 		Products: externalDep.Products,
 		Platforms: SwiftRegistryDependencyPlatformConfig{

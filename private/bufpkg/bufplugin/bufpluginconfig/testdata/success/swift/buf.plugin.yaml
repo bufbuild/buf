@@ -10,7 +10,7 @@ output_languages:
 registry:
   swift:
     deps:
-      - module: github.com/apple/swift-protobuf
+      - package: github.com/apple/swift-protobuf
         products: [SwiftProtobuf]
         version: 1.21.0
         platforms:

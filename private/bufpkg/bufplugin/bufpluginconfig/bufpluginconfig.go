@@ -433,8 +433,8 @@ type ExternalSwiftRegistryConfig struct {
 
 // ExternalSwiftRegistryDependencyConfig is the swift registry dependency configuration.
 type ExternalSwiftRegistryDependencyConfig struct {
-	// Module is the name of the Swift package.
-	Module string `json:"module,omitempty" yaml:"module,omitempty"`
+	// Package is the name of the Swift package.
+	Package string `json:"package,omitempty" yaml:"package,omitempty"`
 	// Version is the version of the Swift package.
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 	// Products are the names of the products available to import.
