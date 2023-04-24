@@ -164,7 +164,10 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 					Version:  "1.12.0",
 					Products: []string{"SwiftProtobuf"},
 					Platforms: bufpluginconfig.SwiftRegistryDependencyPlatformConfig{
-						MacOS: "v10_15",
+						MacOS:   "v10_15",
+						IOS:     "v10_15",
+						TVOS:    "v10_15",
+						WatchOS: "v10_15",
 					},
 				},
 			},
