@@ -148,10 +148,10 @@ func RunProtoc(
 	if err := runner.Run(
 		ctx,
 		protocBinPath,
-		command.RunWithArgs(args...),
-		command.RunWithEnv(env),
-		command.RunWithStdout(stdout),
-		command.RunWithStderr(stderr),
+		command.ExecWithArgs(args...),
+		command.ExecWithEnv(env),
+		command.ExecWithStdout(stdout),
+		command.ExecWithStderr(stderr),
 	); err != nil {
 		return fmt.Errorf("%s returned error: %v %v", protocBinPath, err, stderr.String())
 	}

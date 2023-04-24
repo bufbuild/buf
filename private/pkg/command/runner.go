@@ -45,32 +45,37 @@ func newRunner(options ...RunnerOption) *runner {
 	return runner
 }
 
-func (r *runner) Run(ctx context.Context, name string, options ...RunOption) error {
-	runOptions := newRunOptions(options...)
+func (r *runner) Run(ctx context.Context, name string, options ...ExecOption) error {
+	runOptions := newExecOptions(options...)
 	cmd := exec.CommandContext(ctx, name, runOptions.args...)
 	runOptions.Apply(cmd)
-	r.semaphoreC <- struct{}{}
+	r.increment()
 	err := cmd.Run()
-	<-r.semaphoreC
+	r.decrement()
 	return err
 }
 
-func (r *runner) Start(name string, options ...RunOption) (Process, error) {
-	runOptions := newRunOptions(options...)
+func (r *runner) Start(name string, options ...ExecOption) (Process, error) {
+	runOptions := newExecOptions(options...)
 	cmd := exec.Command(name, runOptions.args...)
 	runOptions.Apply(cmd)
-	r.semaphoreC <- struct{}{}
+	r.increment()
 	err := cmd.Start()
 	if err != nil {
 		return nil, err
 	}
-	return &process{
-		osProcess: cmd.Process,
-		runner:    r,
-	}, nil
+	return newProcess(cmd, r.decrement), nil
 }
 
-type runOptions struct {
+func (r *runner) increment() {
+	r.semaphoreC <- struct{}{}
+}
+
+func (r *runner) decrement() {
+	<-r.semaphoreC
+}
+
+type execOptions struct {
 	args   []string
 	env    map[string]string
 	stdin  io.Reader
@@ -82,8 +87,8 @@ type runOptions struct {
 // We set the defaults after calling any RunOptions on a runOptions struct
 // so that users cannot override the empty values, which would lead to the
 // default stdin, stdout, stderr, and environment being used.
-func newRunOptions(options ...RunOption) *runOptions {
-	runOptions := &runOptions{}
+func newExecOptions(options ...ExecOption) *execOptions {
+	runOptions := &execOptions{}
 	for _, option := range options {
 		option(runOptions)
 	}
@@ -96,7 +101,7 @@ func newRunOptions(options ...RunOption) *runOptions {
 	return runOptions
 }
 
-func (r *runOptions) Apply(cmd *exec.Cmd) {
+func (r *execOptions) Apply(cmd *exec.Cmd) {
 	cmd.Env = envSlice(r.env)
 	cmd.Stdin = r.stdin
 	// If Stdout or Stderr are nil, os/exec connects the process output directly
