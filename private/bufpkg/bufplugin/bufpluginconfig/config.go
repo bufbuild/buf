@@ -298,7 +298,7 @@ func swiftExternalDependencyToDependencyConfig(externalDep ExternalSwiftRegistry
 		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty source")
 	}
 	if externalDep.Package == "" {
-		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty module name")
+		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty package name")
 	}
 	if externalDep.Version == "" {
 		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty version name")
