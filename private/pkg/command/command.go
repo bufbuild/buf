@@ -22,18 +22,17 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 )
 
-// Process represents a prepared command to execute.
+// Process represents a background process.
 type Process interface {
-	// Run executes the command and waits for it to exit.
-	Run(ctx context.Context) error
-
-	// Start executes the command and returns. Call [Wait] to wait for the
-	// process to exit.
-	Start() error
-
-	// Wait waits for the process to exit. If the context expires, it will kill
-	// the process and release the resources.
-	Wait(ctx context.Context) error
+	// Terminate signals a process to exit cleanly, if it can. It'll wait for
+	// the process to exit until the context deadline is exceeded. After that a
+	// kill signal is sent and an error is returned. In both cases the process
+	// is released and left to the host operating system to deal with the
+	// zombie.
+	//
+	// On systems where clean termination is not possible (Windows), the
+	// context is ignored and the kill signal is immediately sent.
+	Terminate(ctx context.Context) error
 }
 
 // Runner runs external commands.
@@ -44,66 +43,72 @@ type Process interface {
 // All external commands in buf MUST use command.Runner instead of
 // exec.Command, exec.CommandContext.
 type Runner interface {
-	// Exec prepares a command to run. Use the returned process to run or start
-	// the command.
-	Exec(name string, options ...ExecOption) Process
+	// Run runs the external command. It blocks until the command exits.
+	//
+	// This should be used instead of exec.CommandContext(...).Run().
+	Run(ctx context.Context, name string, options ...RunOption) error
+
+	// Start runs the external command, returning a [Process] handle.
+	//
+	// This should be used instead of exec.Command(...).Start().
+	Start(name string, options ...RunOption) (Process, error)
 }
 
-// ExecOption is an option for Run.
-type ExecOption func(*execOptions)
+// RunOption is an option for Run.
+type RunOption func(*runOptions)
 
-// ExecWithArgs returns a new RunOption that sets the arguments other
+// RunWithArgs returns a new RunOption that sets the arguments other
 // than the name.
 //
 // The default is no arguments.
-func ExecWithArgs(args ...string) ExecOption {
-	return func(runOptions *execOptions) {
+func RunWithArgs(args ...string) RunOption {
+	return func(runOptions *runOptions) {
 		runOptions.args = args
 	}
 }
 
-// ExecWithEnv returns a new RunOption that sets the environment variables.
+// RunWithEnv returns a new RunOption that sets the environment variables.
 //
 // The default is to use the single environment variable __EMPTY_ENV__=1 as we
 // cannot explicitly set an empty environment with the exec package.
-func ExecWithEnv(env map[string]string) ExecOption {
-	return func(runOptions *execOptions) {
+func RunWithEnv(env map[string]string) RunOption {
+	return func(runOptions *runOptions) {
 		runOptions.env = env
 	}
 }
 
-// ExecWithStdin returns a new RunOption that sets the stdin.
+// RunWithStdin returns a new RunOption that sets the stdin.
 //
 // The default is ioextended.DiscardReader.
-func ExecWithStdin(stdin io.Reader) ExecOption {
-	return func(runOptions *execOptions) {
+func RunWithStdin(stdin io.Reader) RunOption {
+	return func(runOptions *runOptions) {
 		runOptions.stdin = stdin
 	}
 }
 
-// ExecWithStdout returns a new RunOption that sets the stdout.
+// RunWithStdout returns a new RunOption that sets the stdout.
 //
 // The default is the null device (os.DevNull).
-func ExecWithStdout(stdout io.Writer) ExecOption {
-	return func(runOptions *execOptions) {
+func RunWithStdout(stdout io.Writer) RunOption {
+	return func(runOptions *runOptions) {
 		runOptions.stdout = stdout
 	}
 }
 
-// ExecWithStderr returns a new RunOption that sets the stderr.
+// RunWithStderr returns a new RunOption that sets the stderr.
 //
 // The default is the null device (os.DevNull).
-func ExecWithStderr(stderr io.Writer) ExecOption {
-	return func(runOptions *execOptions) {
+func RunWithStderr(stderr io.Writer) RunOption {
+	return func(runOptions *runOptions) {
 		runOptions.stderr = stderr
 	}
 }
 
-// ExecWithDir returns a new RunOption that sets the working directory.
+// RunWithDir returns a new RunOption that sets the working directory.
 //
 // The default is the current working directory.
-func ExecWithDir(dir string) ExecOption {
-	return func(runOptions *execOptions) {
+func RunWithDir(dir string) RunOption {
+	return func(runOptions *runOptions) {
 		runOptions.dir = dir
 	}
 }
@@ -139,14 +144,15 @@ func RunStdout(
 	args ...string,
 ) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
-	if err := runner.Exec(
+	if err := runner.Run(
+		ctx,
 		name,
-		ExecWithArgs(args...),
-		ExecWithEnv(app.EnvironMap(container)),
-		ExecWithStdin(container.Stdin()),
-		ExecWithStdout(buffer),
-		ExecWithStderr(container.Stderr()),
-	).Run(ctx); err != nil {
+		RunWithArgs(args...),
+		RunWithEnv(app.EnvironMap(container)),
+		RunWithStdin(container.Stdin()),
+		RunWithStdout(buffer),
+		RunWithStderr(container.Stderr()),
+	); err != nil {
 		return nil, err
 	}
 	return buffer.Bytes(), nil

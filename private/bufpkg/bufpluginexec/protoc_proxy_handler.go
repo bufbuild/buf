@@ -144,13 +144,14 @@ func (h *protocProxyHandler) Handle(
 	if descriptorFilePath != "" && descriptorFilePath == app.DevStdinFilePath {
 		stdin = bytes.NewReader(fileDescriptorSetData)
 	}
-	if err := h.runner.Exec(
+	if err := h.runner.Run(
+		ctx,
 		h.protocPath,
-		command.ExecWithArgs(args...),
-		command.ExecWithEnv(app.EnvironMap(container)),
-		command.ExecWithStdin(stdin),
-		command.ExecWithStderr(container.Stderr()),
-	).Run(ctx); err != nil {
+		command.RunWithArgs(args...),
+		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithStdin(stdin),
+		command.RunWithStderr(container.Stderr()),
+	); err != nil {
 		// TODO: strip binary path as well?
 		// We don't know if this is a system error or plugin error, so we assume system error
 		return handlePotentialTooManyFilesError(err)
@@ -187,12 +188,13 @@ func (h *protocProxyHandler) getProtocVersion(
 	container app.EnvContainer,
 ) (*pluginpb.Version, error) {
 	stdoutBuffer := bytes.NewBuffer(nil)
-	if err := h.runner.Exec(
+	if err := h.runner.Run(
+		ctx,
 		h.protocPath,
-		command.ExecWithArgs("--version"),
-		command.ExecWithEnv(app.EnvironMap(container)),
-		command.ExecWithStdout(stdoutBuffer),
-	).Run(ctx); err != nil {
+		command.RunWithArgs("--version"),
+		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithStdout(stdoutBuffer),
+	); err != nil {
 		// TODO: strip binary path as well?
 		return nil, handlePotentialTooManyFilesError(err)
 	}

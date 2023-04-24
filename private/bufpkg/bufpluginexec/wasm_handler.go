@@ -92,7 +92,7 @@ func (h *wasmHandler) Handle(
 	if err := h.wasmPluginExecutor.Run(
 		ctx,
 		compiledPlugin,
-		// command.ExecWithEnv(app.EnvironMap(container)), // TODO, not exposed right now
+		// command.RunWithEnv(app.EnvironMap(container)), // TODO, not exposed right now
 		bytes.NewReader(requestData),
 		responseBuffer,
 	); err != nil {
