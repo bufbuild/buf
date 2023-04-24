@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Remove `buf beta registry {plugin,template} {deprecate,undeprecate}`.
+- Add `--user` and `--netrc` flags to `buf curl`, providing the same behavior as the
+  flags of the same name in the cURL tool.
 
 ## [v1.17.0] - 2023-04-05
 
