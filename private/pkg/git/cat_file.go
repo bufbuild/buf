@@ -62,11 +62,11 @@ func NewCatFile(
 			}),
 		)
 	}
-	process := runner.Exec(
+	process, err := runner.Start(
 		"git",
 		runOpts...,
 	)
-	if err := process.Start(); err != nil {
+	if err != nil {
 		return nil, err
 	}
 	return newCatFileConnection(process, tx, rx), nil
