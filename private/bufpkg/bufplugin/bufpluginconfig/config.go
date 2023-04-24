@@ -294,6 +294,9 @@ func newSwiftRegistryConfig(externalSwiftRegistryConfig *ExternalSwiftRegistryCo
 }
 
 func swiftExternalDependencyToDependencyConfig(externalDep ExternalSwiftRegistryDependencyConfig) (SwiftRegistryDependencyConfig, error) {
+	if externalDep.Source == "" {
+		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty source")
+	}
 	if externalDep.Package == "" {
 		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty module name")
 	}
@@ -305,6 +308,7 @@ func swiftExternalDependencyToDependencyConfig(externalDep ExternalSwiftRegistry
 		return SwiftRegistryDependencyConfig{}, fmt.Errorf("swift runtime dependency %s:%s does not have a valid semantic version", externalDep.Package, externalDep.Version)
 	}
 	return SwiftRegistryDependencyConfig{
+		Source:   externalDep.Source,
 		Package:  externalDep.Package,
 		Version:  externalDep.Version,
 		Products: externalDep.Products,

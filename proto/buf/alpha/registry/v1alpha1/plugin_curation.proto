@@ -170,12 +170,14 @@ message MavenConfig {
 message SwiftConfig {
   // RuntimeLibrary describes the runtime library dependency of the generated code.
   message RuntimeLibrary {
-    // The name of the runtime library package, github.com/apple/swift-protobuf.
-    string package = 1;
+    // The source of the runtime library package, github.com/apple/swift-protobuf.
+    string source = 1;
+    // The name of the runtime library package, i.e. "swift-protobuf".
+    string package = 2;
     // The version of the runtime library, i.e. "1.21.0"
-    string version = 2;
+    string version = 3;
     // The products exported by the runtime library.
-    repeated string products = 3;
+    repeated string products = 4;
     // The minimum compatible platform versions of the runtime library.
     message Platform {
       // The name of the platform.
@@ -184,7 +186,7 @@ message SwiftConfig {
       string version = 2;
     }
     // The minimum compatible platform versions of the runtime library.
-    repeated Platform platforms = 4;
+    repeated Platform platforms = 5;
   }
   // Optionally define the runtime libraries for the plugin.
   repeated RuntimeLibrary runtime_libraries = 1;

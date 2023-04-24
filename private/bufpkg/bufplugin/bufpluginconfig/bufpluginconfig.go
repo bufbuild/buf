@@ -201,6 +201,8 @@ type SwiftRegistryConfig struct {
 
 // SwiftRegistryDependencyConfig is the swift registry dependency configuration.
 type SwiftRegistryDependencyConfig struct {
+	// Source specifies the source of the dependency.
+	Source string
 	// Package is the name of the Swift package.
 	Package string
 	// Version is the version of the Swift package.
@@ -433,6 +435,8 @@ type ExternalSwiftRegistryConfig struct {
 
 // ExternalSwiftRegistryDependencyConfig is the swift registry dependency configuration.
 type ExternalSwiftRegistryDependencyConfig struct {
+	// Source is the URL of the Swift package.
+	Source string `json:"source,omitempty" yaml:"source,omitempty"`
 	// Package is the name of the Swift package.
 	Package string `json:"package,omitempty" yaml:"package,omitempty"`
 	// Version is the version of the Swift package.

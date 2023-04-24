@@ -274,7 +274,8 @@ func TestParsePluginConfigSwiftYAML(t *testing.T) {
 				Swift: &SwiftRegistryConfig{
 					Dependencies: []SwiftRegistryDependencyConfig{
 						{
-							Package:  "github.com/apple/swift-protobuf",
+							Source:   "github.com/apple/swift-protobuf",
+							Package:  "swift-protobuf",
 							Version:  "1.21.0",
 							Products: []string{"SwiftProtobuf"},
 							Platforms: SwiftRegistryDependencyPlatformConfig{
