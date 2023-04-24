@@ -57,6 +57,7 @@ jobs:
           path: |
             ~/.cache/buf/${{ runner.os }}/x86_64/bin
             ~/.cache/buf/${{ runner.os }}/x86_64/go/pkg/mod
+            ~/.cache/buf/${{ runner.os }}/x86_64/gocache
             ~/.cache/buf/${{ runner.os }}/x86_64/include
             ~/.cache/buf/${{ runner.os }}/x86_64/versions
           key: ${{ runner.os }}-buf-test-${{ hashFiles('**/go.sum', 'make/**') }}
