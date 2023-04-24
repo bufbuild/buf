@@ -27,7 +27,7 @@ import (
 // Plugin represents a plugin defined by a buf.plugin.yaml.
 type Plugin interface {
 	// Version is the version of the plugin's implementation
-	// (e.g the protoc-gen-connect-go implementation is v0.2.0).
+	// (e.g. the protoc-gen-connect-go implementation is v0.2.0).
 	Version() string
 	// SourceURL is an optional attribute used to specify where the source
 	// for the plugin can be found.
@@ -47,7 +47,7 @@ type Plugin interface {
 	Registry() *bufpluginconfig.RegistryConfig
 	// ContainerImageDigest returns the plugin's source image digest.
 	//
-	// For now we only support docker image sources, but this
+	// For now, we only support docker image sources, but this
 	// might evolve to support others later on.
 	ContainerImageDigest() string
 }
@@ -74,6 +74,8 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM
 		} else if plugin.Registry().Maven != nil {
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN
+		} else if plugin.Registry().Swift != nil {
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT
 		}
 	}
 	return registryType
@@ -182,6 +184,9 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 			}
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_MavenConfig{MavenConfig: mavenConfig}
+	} else if pluginRegistry.Swift != nil {
+		swiftConfig := SwiftRegistryConfigToProtoSwiftConfig(pluginRegistry.Swift)
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_SwiftConfig{SwiftConfig: swiftConfig}
 	}
 	return registryConfig, nil
 }
@@ -239,8 +244,88 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			return nil, err
 		}
 		registryConfig.Maven = mavenConfig
+	} else if protoSwiftConfig := config.GetSwiftConfig(); protoSwiftConfig != nil {
+		swiftConfig, err := ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig)
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.Swift = swiftConfig
 	}
 	return registryConfig, nil
+}
+
+func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.SwiftConfig) (*bufpluginconfig.SwiftRegistryConfig, error) {
+	swiftConfig := &bufpluginconfig.SwiftRegistryConfig{}
+	runtimeLibs := protoSwiftConfig.GetRuntimeLibraries()
+	if runtimeLibs != nil {
+		swiftConfig.Dependencies = make([]bufpluginconfig.SwiftRegistryDependencyConfig, 0, len(runtimeLibs))
+		for _, runtimeLib := range runtimeLibs {
+			dependencyConfig := bufpluginconfig.SwiftRegistryDependencyConfig{
+				Source:   runtimeLib.GetSource(),
+				Package:  runtimeLib.GetPackage(),
+				Version:  runtimeLib.GetVersion(),
+				Products: runtimeLib.GetProducts(),
+			}
+			platforms := runtimeLib.GetPlatforms()
+			for _, platform := range platforms {
+				switch platform.GetName() {
+				case registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_MACOS:
+					dependencyConfig.Platforms.MacOS = platform.GetVersion()
+				case registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_IOS:
+					dependencyConfig.Platforms.IOS = platform.GetVersion()
+				case registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_TVOS:
+					dependencyConfig.Platforms.TVOS = platform.GetVersion()
+				case registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_WATCHOS:
+					dependencyConfig.Platforms.WatchOS = platform.GetVersion()
+				default:
+					return nil, fmt.Errorf("unknown platform type: %v", platform.GetName())
+				}
+			}
+			swiftConfig.Dependencies = append(swiftConfig.Dependencies, dependencyConfig)
+		}
+	}
+	return swiftConfig, nil
+}
+
+func SwiftRegistryConfigToProtoSwiftConfig(swiftConfig *bufpluginconfig.SwiftRegistryConfig) *registryv1alpha1.SwiftConfig {
+	protoSwiftConfig := &registryv1alpha1.SwiftConfig{}
+	if swiftConfig.Dependencies != nil {
+		protoSwiftConfig.RuntimeLibraries = make([]*registryv1alpha1.SwiftConfig_RuntimeLibrary, 0, len(swiftConfig.Dependencies))
+		for _, dependency := range swiftConfig.Dependencies {
+			depConfig := &registryv1alpha1.SwiftConfig_RuntimeLibrary{
+				Source:   dependency.Source,
+				Package:  dependency.Package,
+				Version:  dependency.Version,
+				Products: dependency.Products,
+			}
+			if dependency.Platforms.MacOS != "" {
+				depConfig.Platforms = append(depConfig.Platforms, &registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform{
+					Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_MACOS,
+					Version: dependency.Platforms.MacOS,
+				})
+			}
+			if dependency.Platforms.IOS != "" {
+				depConfig.Platforms = append(depConfig.Platforms, &registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform{
+					Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_IOS,
+					Version: dependency.Platforms.IOS,
+				})
+			}
+			if dependency.Platforms.TVOS != "" {
+				depConfig.Platforms = append(depConfig.Platforms, &registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform{
+					Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_TVOS,
+					Version: dependency.Platforms.TVOS,
+				})
+			}
+			if dependency.Platforms.WatchOS != "" {
+				depConfig.Platforms = append(depConfig.Platforms, &registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform{
+					Name:    registryv1alpha1.SwiftPlatformType_SWIFT_PLATFORM_TYPE_WATCHOS,
+					Version: dependency.Platforms.WatchOS,
+				})
+			}
+			protoSwiftConfig.RuntimeLibraries = append(protoSwiftConfig.RuntimeLibraries, depConfig)
+		}
+	}
+	return protoSwiftConfig
 }
 
 // ProtoMavenConfigToMavenRegistryConfig converts a registryv1alpha1.MavenConfig to a bufpluginconfig.MavenRegistryConfig.
