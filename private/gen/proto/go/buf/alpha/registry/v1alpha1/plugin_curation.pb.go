@@ -283,7 +283,7 @@ func (NPMImportStyle) EnumDescriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_plugin_curation_proto_rawDescGZIP(), []int{3}
 }
 
-// SwiftPlatformType is used to specify the platform type for a swift plugin version
+// SwiftPlatformType is used to specify the platform type for a Swift plugins minimum compatible version.
 type SwiftPlatformType int32
 
 const (
@@ -2318,19 +2318,19 @@ func (x *MavenConfig_RuntimeConfig) GetOptions() []string {
 	return nil
 }
 
-// RuntimeLibrary describes the runtime library dependency of the generated code.
+// RuntimeLibrary describes a runtime library dependency of the generated code.
 type SwiftConfig_RuntimeLibrary struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The source of the runtime library package, github.com/apple/swift-protobuf.
+	// The source of the runtime library package, e.g. github.com/apple/swift-protobuf.
 	Source string `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
-	// The name of the runtime library package, i.e. "swift-protobuf".
+	// The name of the runtime library package, e.g. "swift-protobuf".
 	Package string `protobuf:"bytes,2,opt,name=package,proto3" json:"package,omitempty"`
-	// The version of the runtime library, i.e. "1.21.0"
+	// The version of the runtime library, e.g. "1.21.0".
 	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	// The products exported by the runtime library.
+	// The products exported by the runtime library, e.g. "SwiftProtobuf".
 	Products []string `protobuf:"bytes,4,rep,name=products,proto3" json:"products,omitempty"`
 	// The minimum compatible platform versions of the runtime library.
 	Platforms []*SwiftConfig_RuntimeLibrary_Platform `protobuf:"bytes,5,rep,name=platforms,proto3" json:"platforms,omitempty"`

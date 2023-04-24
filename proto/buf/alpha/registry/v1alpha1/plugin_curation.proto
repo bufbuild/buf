@@ -64,7 +64,7 @@ enum NPMImportStyle {
   NPM_IMPORT_STYLE_COMMONJS = 2;
 }
 
-// SwiftPlatformType is used to specify the platform type for a swift plugin version
+// SwiftPlatformType is used to specify the platform type for a Swift plugins minimum compatible version.
 enum SwiftPlatformType {
   SWIFT_PLATFORM_TYPE_UNSPECIFIED = 0;
   SWIFT_PLATFORM_TYPE_MACOS = 1;
@@ -168,15 +168,15 @@ message MavenConfig {
 }
 
 message SwiftConfig {
-  // RuntimeLibrary describes the runtime library dependency of the generated code.
+  // RuntimeLibrary describes a runtime library dependency of the generated code.
   message RuntimeLibrary {
-    // The source of the runtime library package, github.com/apple/swift-protobuf.
+    // The source of the runtime library package, e.g. github.com/apple/swift-protobuf.
     string source = 1;
-    // The name of the runtime library package, i.e. "swift-protobuf".
+    // The name of the runtime library package, e.g. "swift-protobuf".
     string package = 2;
-    // The version of the runtime library, i.e. "1.21.0"
+    // The version of the runtime library, e.g. "1.21.0".
     string version = 3;
-    // The products exported by the runtime library.
+    // The products exported by the runtime library, e.g. "SwiftProtobuf".
     repeated string products = 4;
     // The minimum compatible platform versions of the runtime library.
     message Platform {

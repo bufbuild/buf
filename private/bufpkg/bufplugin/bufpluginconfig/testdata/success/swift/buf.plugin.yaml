@@ -16,5 +16,8 @@ registry:
         version: 1.21.0
         platforms:
           macos: v10_15
+          ios: v10_15
+          tvos: v10_15
+          watchos: v10_15
 spdx_license_id: Apache-2.0
 license_url: https://github.com/bufbuild/connect-swift/blob/0.5.0/LICENSE
