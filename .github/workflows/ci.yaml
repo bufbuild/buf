@@ -26,6 +26,15 @@ jobs:
           key: ${{ runner.os }}-buf-lint-${{ hashFiles('**/go.sum', 'make/**') }}
           restore-keys: |
             ${{ runner.os }}-buf-lint-
+      - name: golangci-lint-cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/golangci-lint
+          # https://github.com/golangci/golangci-lint-action#caching-internals includes an interval number in the cache
+          # key, however we update our go modules at least once weekly so we shouldn't need that.
+          key: ${{ runner.os }}-buf-golangci-lint-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-buf-golangci-lint-
       - name: make-lint
         run: make lint
         env:
