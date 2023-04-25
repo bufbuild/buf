@@ -48,12 +48,8 @@ service DisplayService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
-  // DisplayOrganizationEntitledElements returns which organization elements are entitled to be displayed to the user.
-  rpc DisplayOrganizationEntitledElements(DisplayOrganizationEntitledElementsRequest) returns (DisplayOrganizationEntitledElementsResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // DisplayUserEntitledElements returns which user elements are entitled to be displayed to the user.
-  rpc DisplayUserEntitledElements(DisplayUserEntitledElementsRequest) returns (DisplayUserEntitledElementsResponse) {
+  // DisplayOwnerEntitledElements returns which owner elements are entitled to be displayed to the user.
+  rpc DisplayOwnerEntitledElements(DisplayOwnerEntitledElementsRequest) returns (DisplayOwnerEntitledElementsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // DisplayRepositoryEntitledElements returns which repository elements are entitled to be displayed to the user.
@@ -181,21 +177,17 @@ message DisplayServerElementsResponse {
   bool admin_panel = 1;
 }
 
-message DisplayOrganizationEntitledElementsRequest {
-  // The ID of the organization for which to check
+message DisplayOwnerEntitledElementsRequest {
+  // The ID of the owner for which to check
   // which elements are entitled to be displayed.
-  string organization_id = 1;
+  oneof owner {
+    string user_id = 1;
+    string organization_id = 2;
+  }
 }
 
-message DisplayOrganizationEntitledElementsResponse {
-  // Display create organization private repository element if true.
-  bool create_private_repository = 1;
-}
-
-message DisplayUserEntitledElementsRequest {}
-
-message DisplayUserEntitledElementsResponse {
-  // Display create user private repository element if true.
+message DisplayOwnerEntitledElementsResponse {
+  // Display create private repository element if true.
   bool create_private_repository = 1;
 }
 

@@ -65,12 +65,9 @@ const (
 	// DisplayServiceDisplayServerElementsProcedure is the fully-qualified name of the DisplayService's
 	// DisplayServerElements RPC.
 	DisplayServiceDisplayServerElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayServerElements"
-	// DisplayServiceDisplayOrganizationEntitledElementsProcedure is the fully-qualified name of the
-	// DisplayService's DisplayOrganizationEntitledElements RPC.
-	DisplayServiceDisplayOrganizationEntitledElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayOrganizationEntitledElements"
-	// DisplayServiceDisplayUserEntitledElementsProcedure is the fully-qualified name of the
-	// DisplayService's DisplayUserEntitledElements RPC.
-	DisplayServiceDisplayUserEntitledElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayUserEntitledElements"
+	// DisplayServiceDisplayOwnerEntitledElementsProcedure is the fully-qualified name of the
+	// DisplayService's DisplayOwnerEntitledElements RPC.
+	DisplayServiceDisplayOwnerEntitledElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayOwnerEntitledElements"
 	// DisplayServiceDisplayRepositoryEntitledElementsProcedure is the fully-qualified name of the
 	// DisplayService's DisplayRepositoryEntitledElements RPC.
 	DisplayServiceDisplayRepositoryEntitledElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryEntitledElements"
@@ -112,10 +109,8 @@ type DisplayServiceClient interface {
 	DisplayUserElements(context.Context, *connect_go.Request[v1alpha1.DisplayUserElementsRequest]) (*connect_go.Response[v1alpha1.DisplayUserElementsResponse], error)
 	// DisplayServerElements returns which server elements should be displayed to the user.
 	DisplayServerElements(context.Context, *connect_go.Request[v1alpha1.DisplayServerElementsRequest]) (*connect_go.Response[v1alpha1.DisplayServerElementsResponse], error)
-	// DisplayOrganizationEntitledElements returns which organization elements are entitled to be displayed to the user.
-	DisplayOrganizationEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayOrganizationEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayOrganizationEntitledElementsResponse], error)
-	// DisplayUserEntitledElements returns which user elements are entitled to be displayed to the user.
-	DisplayUserEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayUserEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayUserEntitledElementsResponse], error)
+	// DisplayOwnerEntitledElements returns which owner elements are entitled to be displayed to the user.
+	DisplayOwnerEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayOwnerEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayOwnerEntitledElementsResponse], error)
 	// DisplayRepositoryEntitledElements returns which repository elements are entitled to be displayed to the user.
 	DisplayRepositoryEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayRepositoryEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayRepositoryEntitledElementsResponse], error)
 	// ListManageableRepositoryRoles returns which roles should be displayed
@@ -192,15 +187,9 @@ func NewDisplayServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
-		displayOrganizationEntitledElements: connect_go.NewClient[v1alpha1.DisplayOrganizationEntitledElementsRequest, v1alpha1.DisplayOrganizationEntitledElementsResponse](
+		displayOwnerEntitledElements: connect_go.NewClient[v1alpha1.DisplayOwnerEntitledElementsRequest, v1alpha1.DisplayOwnerEntitledElementsResponse](
 			httpClient,
-			baseURL+DisplayServiceDisplayOrganizationEntitledElementsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		displayUserEntitledElements: connect_go.NewClient[v1alpha1.DisplayUserEntitledElementsRequest, v1alpha1.DisplayUserEntitledElementsResponse](
-			httpClient,
-			baseURL+DisplayServiceDisplayUserEntitledElementsProcedure,
+			baseURL+DisplayServiceDisplayOwnerEntitledElementsProcedure,
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
@@ -251,21 +240,20 @@ func NewDisplayServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 
 // displayServiceClient implements DisplayServiceClient.
 type displayServiceClient struct {
-	displayOrganizationElements         *connect_go.Client[v1alpha1.DisplayOrganizationElementsRequest, v1alpha1.DisplayOrganizationElementsResponse]
-	displayRepositoryElements           *connect_go.Client[v1alpha1.DisplayRepositoryElementsRequest, v1alpha1.DisplayRepositoryElementsResponse]
-	displayPluginElements               *connect_go.Client[v1alpha1.DisplayPluginElementsRequest, v1alpha1.DisplayPluginElementsResponse]
-	displayTemplateElements             *connect_go.Client[v1alpha1.DisplayTemplateElementsRequest, v1alpha1.DisplayTemplateElementsResponse]
-	displayUserElements                 *connect_go.Client[v1alpha1.DisplayUserElementsRequest, v1alpha1.DisplayUserElementsResponse]
-	displayServerElements               *connect_go.Client[v1alpha1.DisplayServerElementsRequest, v1alpha1.DisplayServerElementsResponse]
-	displayOrganizationEntitledElements *connect_go.Client[v1alpha1.DisplayOrganizationEntitledElementsRequest, v1alpha1.DisplayOrganizationEntitledElementsResponse]
-	displayUserEntitledElements         *connect_go.Client[v1alpha1.DisplayUserEntitledElementsRequest, v1alpha1.DisplayUserEntitledElementsResponse]
-	displayRepositoryEntitledElements   *connect_go.Client[v1alpha1.DisplayRepositoryEntitledElementsRequest, v1alpha1.DisplayRepositoryEntitledElementsResponse]
-	listManageableRepositoryRoles       *connect_go.Client[v1alpha1.ListManageableRepositoryRolesRequest, v1alpha1.ListManageableRepositoryRolesResponse]
-	listManageableUserRepositoryRoles   *connect_go.Client[v1alpha1.ListManageableUserRepositoryRolesRequest, v1alpha1.ListManageableUserRepositoryRolesResponse]
-	listManageablePluginRoles           *connect_go.Client[v1alpha1.ListManageablePluginRolesRequest, v1alpha1.ListManageablePluginRolesResponse]
-	listManageableUserPluginRoles       *connect_go.Client[v1alpha1.ListManageableUserPluginRolesRequest, v1alpha1.ListManageableUserPluginRolesResponse]
-	listManageableTemplateRoles         *connect_go.Client[v1alpha1.ListManageableTemplateRolesRequest, v1alpha1.ListManageableTemplateRolesResponse]
-	listManageableUserTemplateRoles     *connect_go.Client[v1alpha1.ListManageableUserTemplateRolesRequest, v1alpha1.ListManageableUserTemplateRolesResponse]
+	displayOrganizationElements       *connect_go.Client[v1alpha1.DisplayOrganizationElementsRequest, v1alpha1.DisplayOrganizationElementsResponse]
+	displayRepositoryElements         *connect_go.Client[v1alpha1.DisplayRepositoryElementsRequest, v1alpha1.DisplayRepositoryElementsResponse]
+	displayPluginElements             *connect_go.Client[v1alpha1.DisplayPluginElementsRequest, v1alpha1.DisplayPluginElementsResponse]
+	displayTemplateElements           *connect_go.Client[v1alpha1.DisplayTemplateElementsRequest, v1alpha1.DisplayTemplateElementsResponse]
+	displayUserElements               *connect_go.Client[v1alpha1.DisplayUserElementsRequest, v1alpha1.DisplayUserElementsResponse]
+	displayServerElements             *connect_go.Client[v1alpha1.DisplayServerElementsRequest, v1alpha1.DisplayServerElementsResponse]
+	displayOwnerEntitledElements      *connect_go.Client[v1alpha1.DisplayOwnerEntitledElementsRequest, v1alpha1.DisplayOwnerEntitledElementsResponse]
+	displayRepositoryEntitledElements *connect_go.Client[v1alpha1.DisplayRepositoryEntitledElementsRequest, v1alpha1.DisplayRepositoryEntitledElementsResponse]
+	listManageableRepositoryRoles     *connect_go.Client[v1alpha1.ListManageableRepositoryRolesRequest, v1alpha1.ListManageableRepositoryRolesResponse]
+	listManageableUserRepositoryRoles *connect_go.Client[v1alpha1.ListManageableUserRepositoryRolesRequest, v1alpha1.ListManageableUserRepositoryRolesResponse]
+	listManageablePluginRoles         *connect_go.Client[v1alpha1.ListManageablePluginRolesRequest, v1alpha1.ListManageablePluginRolesResponse]
+	listManageableUserPluginRoles     *connect_go.Client[v1alpha1.ListManageableUserPluginRolesRequest, v1alpha1.ListManageableUserPluginRolesResponse]
+	listManageableTemplateRoles       *connect_go.Client[v1alpha1.ListManageableTemplateRolesRequest, v1alpha1.ListManageableTemplateRolesResponse]
+	listManageableUserTemplateRoles   *connect_go.Client[v1alpha1.ListManageableUserTemplateRolesRequest, v1alpha1.ListManageableUserTemplateRolesResponse]
 }
 
 // DisplayOrganizationElements calls
@@ -304,16 +292,10 @@ func (c *displayServiceClient) DisplayServerElements(ctx context.Context, req *c
 	return c.displayServerElements.CallUnary(ctx, req)
 }
 
-// DisplayOrganizationEntitledElements calls
-// buf.alpha.registry.v1alpha1.DisplayService.DisplayOrganizationEntitledElements.
-func (c *displayServiceClient) DisplayOrganizationEntitledElements(ctx context.Context, req *connect_go.Request[v1alpha1.DisplayOrganizationEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayOrganizationEntitledElementsResponse], error) {
-	return c.displayOrganizationEntitledElements.CallUnary(ctx, req)
-}
-
-// DisplayUserEntitledElements calls
-// buf.alpha.registry.v1alpha1.DisplayService.DisplayUserEntitledElements.
-func (c *displayServiceClient) DisplayUserEntitledElements(ctx context.Context, req *connect_go.Request[v1alpha1.DisplayUserEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayUserEntitledElementsResponse], error) {
-	return c.displayUserEntitledElements.CallUnary(ctx, req)
+// DisplayOwnerEntitledElements calls
+// buf.alpha.registry.v1alpha1.DisplayService.DisplayOwnerEntitledElements.
+func (c *displayServiceClient) DisplayOwnerEntitledElements(ctx context.Context, req *connect_go.Request[v1alpha1.DisplayOwnerEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayOwnerEntitledElementsResponse], error) {
+	return c.displayOwnerEntitledElements.CallUnary(ctx, req)
 }
 
 // DisplayRepositoryEntitledElements calls
@@ -385,10 +367,8 @@ type DisplayServiceHandler interface {
 	DisplayUserElements(context.Context, *connect_go.Request[v1alpha1.DisplayUserElementsRequest]) (*connect_go.Response[v1alpha1.DisplayUserElementsResponse], error)
 	// DisplayServerElements returns which server elements should be displayed to the user.
 	DisplayServerElements(context.Context, *connect_go.Request[v1alpha1.DisplayServerElementsRequest]) (*connect_go.Response[v1alpha1.DisplayServerElementsResponse], error)
-	// DisplayOrganizationEntitledElements returns which organization elements are entitled to be displayed to the user.
-	DisplayOrganizationEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayOrganizationEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayOrganizationEntitledElementsResponse], error)
-	// DisplayUserEntitledElements returns which user elements are entitled to be displayed to the user.
-	DisplayUserEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayUserEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayUserEntitledElementsResponse], error)
+	// DisplayOwnerEntitledElements returns which owner elements are entitled to be displayed to the user.
+	DisplayOwnerEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayOwnerEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayOwnerEntitledElementsResponse], error)
 	// DisplayRepositoryEntitledElements returns which repository elements are entitled to be displayed to the user.
 	DisplayRepositoryEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayRepositoryEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayRepositoryEntitledElementsResponse], error)
 	// ListManageableRepositoryRoles returns which roles should be displayed
@@ -462,15 +442,9 @@ func NewDisplayServiceHandler(svc DisplayServiceHandler, opts ...connect_go.Hand
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle(DisplayServiceDisplayOrganizationEntitledElementsProcedure, connect_go.NewUnaryHandler(
-		DisplayServiceDisplayOrganizationEntitledElementsProcedure,
-		svc.DisplayOrganizationEntitledElements,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceDisplayUserEntitledElementsProcedure, connect_go.NewUnaryHandler(
-		DisplayServiceDisplayUserEntitledElementsProcedure,
-		svc.DisplayUserEntitledElements,
+	mux.Handle(DisplayServiceDisplayOwnerEntitledElementsProcedure, connect_go.NewUnaryHandler(
+		DisplayServiceDisplayOwnerEntitledElementsProcedure,
+		svc.DisplayOwnerEntitledElements,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	))
@@ -546,12 +520,8 @@ func (UnimplementedDisplayServiceHandler) DisplayServerElements(context.Context,
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.DisplayServerElements is not implemented"))
 }
 
-func (UnimplementedDisplayServiceHandler) DisplayOrganizationEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayOrganizationEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayOrganizationEntitledElementsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.DisplayOrganizationEntitledElements is not implemented"))
-}
-
-func (UnimplementedDisplayServiceHandler) DisplayUserEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayUserEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayUserEntitledElementsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.DisplayUserEntitledElements is not implemented"))
+func (UnimplementedDisplayServiceHandler) DisplayOwnerEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayOwnerEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayOwnerEntitledElementsResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.DisplayOwnerEntitledElements is not implemented"))
 }
 
 func (UnimplementedDisplayServiceHandler) DisplayRepositoryEntitledElements(context.Context, *connect_go.Request[v1alpha1.DisplayRepositoryEntitledElementsRequest]) (*connect_go.Response[v1alpha1.DisplayRepositoryEntitledElementsResponse], error) {
