@@ -60,11 +60,11 @@ func (r *runner) Start(name string, options ...ExecOption) (Process, error) {
 	cmd := exec.Command(name, runOptions.args...)
 	runOptions.Apply(cmd)
 	r.increment()
-	err := cmd.Start()
-	if err != nil {
+	proc := newProcess(newCmdCalls(cmd), r.decrement)
+	if err := proc.Start(); err != nil {
 		return nil, err
 	}
-	return newProcess(cmd, r.decrement), nil
+	return proc, nil
 }
 
 func (r *runner) increment() {

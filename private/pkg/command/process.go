@@ -16,32 +16,40 @@ package command
 
 import (
 	"context"
+	"errors"
 	"os/exec"
 
 	"go.uber.org/multierr"
 )
 
+var errWaitAlreadyCalled = errors.New("wait already called")
+
 type process struct {
-	cmd          *exec.Cmd
+	cmd          cmdCaller
 	doneCallback func()
 	wait         chan error
-	procErr      error
 }
 
 // newProcess monitors cmd and will call doneCallback when the process exits.
-func newProcess(cmd *exec.Cmd, doneCallback func()) *process {
-	p := &process{
+func newProcess(cmd cmdCaller, doneCallback func()) *process {
+	return &process{
 		cmd:          cmd,
 		doneCallback: doneCallback,
 		wait:         make(chan error),
 	}
-	go p.monitor()
-	return p
 }
 
-func (p *process) monitor() {
-	p.wait <- p.cmd.Wait()
-	p.doneCallback()
+// Start runs the command and monitors for its exit.
+func (p *process) Start() error {
+	if err := p.cmd.Start(); err != nil {
+		return err
+	}
+	go func() {
+		err := p.cmd.Wait()
+		p.doneCallback()
+		p.wait <- err
+	}()
+	return nil
 }
 
 func (p *process) Wait(ctx context.Context) error {
@@ -49,16 +57,41 @@ func (p *process) Wait(ctx context.Context) error {
 	case err, ok := <-p.wait:
 		// Process exited
 		if ok {
-			p.procErr = err
 			close(p.wait)
 			return err
 		}
-		return p.procErr
+		return errWaitAlreadyCalled
 	case <-ctx.Done():
 		// Timed out. Send a kill signal and release our handle to it.
 		return multierr.Combine(
 			ctx.Err(),
-			p.cmd.Process.Kill(),
+			p.cmd.Kill(),
 		)
 	}
+}
+
+type cmdCaller interface {
+	Start() error
+	Wait() error
+	Kill() error
+}
+
+type cmdCalls struct {
+	cmd *exec.Cmd
+}
+
+func newCmdCalls(cmd *exec.Cmd) *cmdCalls {
+	return &cmdCalls{cmd: cmd}
+}
+
+func (c *cmdCalls) Start() error {
+	return c.cmd.Start()
+}
+
+func (c *cmdCalls) Wait() error {
+	return c.cmd.Wait()
+}
+
+func (c *cmdCalls) Kill() error {
+	return c.cmd.Process.Kill()
 }
