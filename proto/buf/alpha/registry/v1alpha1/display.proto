@@ -178,12 +178,9 @@ message DisplayServerElementsResponse {
 }
 
 message DisplayOwnerEntitledElementsRequest {
-  // The ID of the owner for which to check
+  // The name of the owner for which to check
   // which elements are entitled to be displayed.
-  oneof owner {
-    string user_id = 1;
-    string organization_id = 2;
-  }
+  string owner_name = 1;
 }
 
 message DisplayOwnerEntitledElementsResponse {
