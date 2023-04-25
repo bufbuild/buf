@@ -33,6 +33,23 @@ func TestNewModulePin(t *testing.T) {
 	testNewModulePin(t, "nominal digest", nullDigest.String(), false)
 }
 
+func TestNewModulePinForString(t *testing.T) {
+	testNewModulePinForString(t, "empty", "", true)
+	testNewModulePinForString(t, "missing pieces", "foo/foo", true)
+	testNewModulePinForString(t, "extra pieces", "foo/foo/foo/foo:foo:foo", true)
+	testNewModulePinForString(t, "missing remote", "/owner/repo:commit", true)
+	testNewModulePinForString(t, "missing owner", "remote//repo:commit", true)
+	testNewModulePinForString(t, "missing repo", "remote/owner/:commit", true)
+	testNewModulePinForString(t, "missing commit", "remote/owner/repo:", true)
+	testNewModulePinForString(t, "valid", "remote/owner/repo:commit", false)
+	testNewModulePinForString(
+		t, "valid with options", "remote/owner/repo:commit", false,
+		NewModulePinForStringWithBranch("branch"),
+		NewModulePinForStringWithCreateTime(time.Now()),
+		NewModulePinForStringWithDigest("digest"),
+	)
+}
+
 func testNewModulePin(
 	t *testing.T,
 	desc string,
@@ -56,6 +73,25 @@ func testNewModulePin(
 			assert.Equal(t, "", pin.Digest())
 		} else {
 			assert.Equal(t, digest, pin.Digest())
+		}
+	})
+}
+
+func testNewModulePinForString(
+	t *testing.T,
+	desc string,
+	pin string,
+	expectErr bool,
+	opts ...NewModulePinForStringOption,
+) {
+	t.Helper()
+	t.Run(desc, func(t *testing.T) {
+		t.Parallel()
+		_, err := newModulePinForString(pin, opts...)
+		if expectErr {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
 		}
 	})
 }

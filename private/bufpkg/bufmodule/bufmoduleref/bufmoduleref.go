@@ -299,6 +299,44 @@ func NewModulePin(
 	return newModulePin(remote, owner, repository, branch, commit, digest, createTime)
 }
 
+// NewModulePinForStringOption are options passed when creating a module pin from a string.
+type NewModulePinForStringOption func(*newModulePinForStringOptions)
+
+// NewModulePinForStringWithCreateTime sets a create time for a passed pin. Since the string
+// representation of a module pin does not include a create time value, the zero value will be set
+// by default. Use this option to set one if you know it.
+func NewModulePinForStringWithCreateTime(createTime time.Time) NewModulePinForStringOption {
+	return func(opts *newModulePinForStringOptions) {
+		opts.createTime = createTime
+	}
+}
+
+// NewModulePinForStringWithBranch sets a branch for a passed pin. Since the string representation
+// of a module pin does not include a branch value, "main" will be set by default. Use this option
+// to set a different one.
+func NewModulePinForStringWithBranch(branch string) NewModulePinForStringOption {
+	return func(opts *newModulePinForStringOptions) {
+		opts.branch = branch
+	}
+}
+
+// NewModulePinForStringWithDigest sets a digest for a passed pin. Since the string representation
+// of a module pin does not include a digest value, an empty string will be set by default. Use this
+// option to set one if you know it.
+func NewModulePinForStringWithDigest(digest string) NewModulePinForStringOption {
+	return func(opts *newModulePinForStringOptions) {
+		opts.digest = digest
+	}
+}
+
+// NewModulePinForString returns a new ModulePin for the string representation of a module pin.
+// Since the string representation of a pin is "remote/owner/repository:commit", remaining
+// properties of a pin are either the default or zero value: CreateTime: zero value, Branch: main,
+// Digest: empty.
+func NewModulePinForString(pin string, opts ...NewModulePinForStringOption) (ModulePin, error) {
+	return newModulePinForString(pin, opts...)
+}
+
 // NewModulePinForProto returns a new ModulePin for the given proto ModulePin.
 func NewModulePinForProto(protoModulePin *modulev1alpha1.ModulePin) (ModulePin, error) {
 	return newModulePinForProto(protoModulePin)

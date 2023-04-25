@@ -15,6 +15,8 @@
 package bufmoduleref
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -56,6 +58,54 @@ func newModulePin(
 			CreateTime:     protoCreateTime,
 		},
 	)
+}
+
+type newModulePinForStringOptions struct {
+	branch     string
+	digest     string
+	createTime time.Time
+}
+
+func newModulePinForString(
+	pin string,
+	opts ...NewModulePinForStringOption,
+) (*modulePin, error) {
+	config := newModulePinForStringOptions{branch: Main}
+	for _, option := range opts {
+		option(&config)
+	}
+	// Pin string representation: remote/owner/repository:commit
+	pinParts := strings.Split(pin, "/")
+	if len(pinParts) != 3 {
+		return nil, fmt.Errorf("invalid pin, expected 3 parts when splitting remote, owner and repository")
+	}
+	remote, owner, repoWithCommit := pinParts[0], pinParts[1], pinParts[2]
+	repoWithCommitParts := strings.Split(repoWithCommit, ":")
+	if len(repoWithCommitParts) != 2 {
+		return nil, fmt.Errorf("invalid pin, expected 2 parts when splitting repository and commit")
+	}
+	repository, commit := repoWithCommitParts[0], repoWithCommitParts[1]
+	if err := validateRemote(remote); err != nil {
+		return nil, err
+	}
+	if err := ValidateOwner(owner, "owner"); err != nil {
+		return nil, err
+	}
+	if err := ValidateRepository(repository); err != nil {
+		return nil, err
+	}
+	if err := ValidateCommit(commit); err != nil {
+		return nil, err
+	}
+	return &modulePin{
+		remote:     remote,
+		owner:      owner,
+		repository: repository,
+		commit:     commit,
+		branch:     config.branch,
+		digest:     config.digest,
+		createTime: config.createTime,
+	}, nil
 }
 
 func newModulePinForProto(
