@@ -37,7 +37,7 @@ const (
 	// DocumentationFilePath defines the path to the documentation file, relative to the root of the module.
 	DocumentationFilePath = "buf.md"
 	// FallbackDocumentationPath defines the fallback path to the documentation file, relative to the root of the module.
-	FallbackDocumentationPath = "readme.md"
+	FallbackDocumentationPath = "README.md"
 	// LicenseFilePath defines the path to the license file, relative to the root of the module.
 	LicenseFilePath = "LICENSE"
 
