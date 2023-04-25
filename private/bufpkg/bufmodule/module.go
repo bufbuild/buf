@@ -148,6 +148,12 @@ func newModuleForBucket(
 	if err != nil {
 		return nil, err
 	}
+	if documentation == "" {
+		documentation, err = getFileContentForBucket(ctx, sourceReadBucket, FallbackDocumentationPath)
+	}
+	if err != nil {
+		return nil, err
+	}
 	license, err := getFileContentForBucket(ctx, sourceReadBucket, LicenseFilePath)
 	if err != nil {
 		return nil, err
