@@ -53,7 +53,7 @@ message Module {
   repeated ModuleFile files = 1;
   // dependencies are the dependencies.
   repeated ModulePin dependencies = 2;
-  // documentation is the string representation of the contents of the `documentation_filename` file.
+  // documentation is the string representation of the contents of the file at documentation_path.
   //
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
   string documentation = 3;
@@ -65,10 +65,10 @@ message Module {
   //
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
   string license = 6;
-  // documentation_filename is the filename of the file which contains the module documentation.
+  // documentation_path is the path of the file which contains the module documentation.
   //
   // either `buf.md`, `README.md` or `README.markdown`.
-  string documentation_filename = 7;
+  string documentation_path = 7;
 }
 
 // ModuleFile is a file within a FileSet.
