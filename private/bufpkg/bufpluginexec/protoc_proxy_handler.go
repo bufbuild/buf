@@ -147,10 +147,10 @@ func (h *protocProxyHandler) Handle(
 	if err := h.runner.Run(
 		ctx,
 		h.protocPath,
-		command.ExecWithArgs(args...),
-		command.ExecWithEnv(app.EnvironMap(container)),
-		command.ExecWithStdin(stdin),
-		command.ExecWithStderr(container.Stderr()),
+		command.RunWithArgs(args...),
+		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithStdin(stdin),
+		command.RunWithStderr(container.Stderr()),
 	); err != nil {
 		// TODO: strip binary path as well?
 		// We don't know if this is a system error or plugin error, so we assume system error
@@ -191,9 +191,9 @@ func (h *protocProxyHandler) getProtocVersion(
 	if err := h.runner.Run(
 		ctx,
 		h.protocPath,
-		command.ExecWithArgs("--version"),
-		command.ExecWithEnv(app.EnvironMap(container)),
-		command.ExecWithStdout(stdoutBuffer),
+		command.RunWithArgs("--version"),
+		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithStdout(stdoutBuffer),
 	); err != nil {
 		// TODO: strip binary path as well?
 		return nil, handlePotentialTooManyFilesError(err)

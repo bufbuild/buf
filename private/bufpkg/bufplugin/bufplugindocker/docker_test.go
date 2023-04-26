@@ -126,10 +126,10 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 	if err := cmd.Run(
 		context.Background(),
 		docker,
-		command.ExecWithArgs("build", "-t", imageName, "."),
-		command.ExecWithDir(filepath.Dir(dockerfilePath)),
-		command.ExecWithStdout(os.Stdout),
-		command.ExecWithStderr(os.Stderr),
+		command.RunWithArgs("build", "-t", imageName, "."),
+		command.RunWithDir(filepath.Dir(dockerfilePath)),
+		command.RunWithStdout(os.Stdout),
+		command.RunWithStderr(os.Stderr),
 	); err != nil {
 		return "", err
 	}
@@ -138,10 +138,10 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 		if err := cmd.Run(
 			context.Background(),
 			docker,
-			command.ExecWithArgs("rmi", "--force", imageName),
-			command.ExecWithDir(filepath.Dir(dockerfilePath)),
-			command.ExecWithStdout(os.Stdout),
-			command.ExecWithStderr(os.Stderr),
+			command.RunWithArgs("rmi", "--force", imageName),
+			command.RunWithDir(filepath.Dir(dockerfilePath)),
+			command.RunWithStdout(os.Stdout),
+			command.RunWithStderr(os.Stderr),
 		); err != nil {
 			t.Logf("failed to remove temporary docker image: %v", err)
 		}

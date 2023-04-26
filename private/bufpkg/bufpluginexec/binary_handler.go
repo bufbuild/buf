@@ -70,14 +70,14 @@ func (h *binaryHandler) Handle(
 	}
 	responseBuffer := bytes.NewBuffer(nil)
 	stderrWriteCloser := newStderrWriteCloser(container.Stderr(), h.pluginPath)
-	runOptions := []command.ExecOption{
-		command.ExecWithEnv(app.EnvironMap(container)),
-		command.ExecWithStdin(bytes.NewReader(requestData)),
-		command.ExecWithStdout(responseBuffer),
-		command.ExecWithStderr(stderrWriteCloser),
+	runOptions := []command.RunOption{
+		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithStdin(bytes.NewReader(requestData)),
+		command.RunWithStdout(responseBuffer),
+		command.RunWithStderr(stderrWriteCloser),
 	}
 	if len(h.pluginArgs) > 0 {
-		runOptions = append(runOptions, command.ExecWithArgs(h.pluginArgs...))
+		runOptions = append(runOptions, command.RunWithArgs(h.pluginArgs...))
 	}
 	if err := h.runner.Run(
 		ctx,

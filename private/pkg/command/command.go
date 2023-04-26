@@ -40,71 +40,130 @@ type Runner interface {
 	// Run runs the external command. It blocks until the command exits.
 	//
 	// This should be used instead of exec.CommandContext(...).Run().
-	Run(ctx context.Context, name string, options ...ExecOption) error
+	Run(ctx context.Context, name string, options ...RunOption) error
 
 	// Start runs the external command, returning a [Process] handle to track
 	// its progress.
 	//
 	// This should be used instead of exec.Command(...).Start().
-	Start(name string, options ...ExecOption) (Process, error)
+	Start(name string, options ...StartOption) (Process, error)
 }
 
-// ExecOption is an option for Run.
-type ExecOption func(*execOptions)
+// RunOption is an option for Run.
+type RunOption func(*execOptions)
 
-// ExecWithArgs returns a new RunOption that sets the arguments other
+// RunWithArgs returns a new RunOption that sets the arguments other
 // than the name.
 //
 // The default is no arguments.
-func ExecWithArgs(args ...string) ExecOption {
-	return func(runOptions *execOptions) {
-		runOptions.args = args
+func RunWithArgs(args ...string) RunOption {
+	return func(execOptions *execOptions) {
+		execOptions.args = args
 	}
 }
 
-// ExecWithEnv returns a new RunOption that sets the environment variables.
+// RunWithEnv returns a new RunOption that sets the environment variables.
 //
 // The default is to use the single environment variable __EMPTY_ENV__=1 as we
 // cannot explicitly set an empty environment with the exec package.
-func ExecWithEnv(env map[string]string) ExecOption {
-	return func(runOptions *execOptions) {
-		runOptions.env = env
+func RunWithEnv(env map[string]string) RunOption {
+	return func(execOptions *execOptions) {
+		execOptions.env = env
 	}
 }
 
-// ExecWithStdin returns a new RunOption that sets the stdin.
+// RunWithStdin returns a new RunOption that sets the stdin.
 //
 // The default is ioextended.DiscardReader.
-func ExecWithStdin(stdin io.Reader) ExecOption {
-	return func(runOptions *execOptions) {
-		runOptions.stdin = stdin
+func RunWithStdin(stdin io.Reader) RunOption {
+	return func(execOptions *execOptions) {
+		execOptions.stdin = stdin
 	}
 }
 
-// ExecWithStdout returns a new RunOption that sets the stdout.
+// RunWithStdout returns a new RunOption that sets the stdout.
 //
 // The default is the null device (os.DevNull).
-func ExecWithStdout(stdout io.Writer) ExecOption {
-	return func(runOptions *execOptions) {
-		runOptions.stdout = stdout
+func RunWithStdout(stdout io.Writer) RunOption {
+	return func(execOptions *execOptions) {
+		execOptions.stdout = stdout
 	}
 }
 
-// ExecWithStderr returns a new RunOption that sets the stderr.
+// RunWithStderr returns a new RunOption that sets the stderr.
 //
 // The default is the null device (os.DevNull).
-func ExecWithStderr(stderr io.Writer) ExecOption {
-	return func(runOptions *execOptions) {
-		runOptions.stderr = stderr
+func RunWithStderr(stderr io.Writer) RunOption {
+	return func(execOptions *execOptions) {
+		execOptions.stderr = stderr
 	}
 }
 
-// ExecWithDir returns a new RunOption that sets the working directory.
+// RunWithDir returns a new RunOption that sets the working directory.
 //
 // The default is the current working directory.
-func ExecWithDir(dir string) ExecOption {
-	return func(runOptions *execOptions) {
-		runOptions.dir = dir
+func RunWithDir(dir string) RunOption {
+	return func(execOptions *execOptions) {
+		execOptions.dir = dir
+	}
+}
+
+// StartOption is an option for Start.
+type StartOption func(*execOptions)
+
+// StartWithArgs returns a new RunOption that sets the arguments other
+// than the name.
+//
+// The default is no arguments.
+func StartWithArgs(args ...string) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.args = args
+	}
+}
+
+// StartWithEnv returns a new RunOption that sets the environment variables.
+//
+// The default is to use the single environment variable __EMPTY_ENV__=1 as we
+// cannot explicitly set an empty environment with the exec package.
+func StartWithEnv(env map[string]string) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.env = env
+	}
+}
+
+// StartWithStdin returns a new RunOption that sets the stdin.
+//
+// The default is ioextended.DiscardReader.
+func StartWithStdin(stdin io.Reader) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.stdin = stdin
+	}
+}
+
+// StartWithStdout returns a new RunOption that sets the stdout.
+//
+// The default is the null device (os.DevNull).
+func StartWithStdout(stdout io.Writer) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.stdout = stdout
+	}
+}
+
+// StartWithStderr returns a new RunOption that sets the stderr.
+//
+// The default is the null device (os.DevNull).
+func StartWithStderr(stderr io.Writer) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.stderr = stderr
+	}
+}
+
+// StartWithDir returns a new RunOption that sets the working directory.
+//
+// The default is the current working directory.
+func StartWithDir(dir string) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.dir = dir
 	}
 }
 
@@ -142,11 +201,11 @@ func RunStdout(
 	if err := runner.Run(
 		ctx,
 		name,
-		ExecWithArgs(args...),
-		ExecWithEnv(app.EnvironMap(container)),
-		ExecWithStdin(container.Stdin()),
-		ExecWithStdout(buffer),
-		ExecWithStderr(container.Stderr()),
+		RunWithArgs(args...),
+		RunWithEnv(app.EnvironMap(container)),
+		RunWithStdin(container.Stdin()),
+		RunWithStdout(buffer),
+		RunWithStderr(container.Stderr()),
 	); err != nil {
 		return nil, err
 	}

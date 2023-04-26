@@ -120,9 +120,9 @@ func doDiff(
 	err = runner.Run(
 		ctx,
 		binaryPath,
-		command.ExecWithArgs("-u", f1, f2),
-		command.ExecWithStdout(buffer),
-		command.ExecWithStderr(buffer),
+		command.RunWithArgs("-u", f1, f2),
+		command.RunWithStdout(buffer),
+		command.RunWithStderr(buffer),
 	)
 	data := buffer.Bytes()
 	if len(data) > 0 {

@@ -22,76 +22,48 @@ import (
 	"go.uber.org/multierr"
 )
 
-var errWaitAlreadyCalled = errors.New("wait already called")
+var errWaitAlreadyCalled = errors.New("wait already called on process")
 
 type process struct {
-	cmd          cmdCaller
-	doneCallback func()
-	wait         chan error
+	cmd   *exec.Cmd
+	done  func()
+	waitC chan error
 }
 
-// newProcess monitors cmd and will call doneCallback when the process exits.
-func newProcess(cmd cmdCaller, doneCallback func()) *process {
+// newProcess wraps an *exec.Cmd and monitors it for exiting.
+// When the process exits, done will be called.
+//
+// This implements the Process interface.
+//
+// The process is expected to have been started by the caller.
+func newProcess(cmd *exec.Cmd, done func()) *process {
 	return &process{
-		cmd:          cmd,
-		doneCallback: doneCallback,
-		wait:         make(chan error),
+		cmd:   cmd,
+		done:  done,
+		waitC: make(chan error, 1),
 	}
 }
 
-// Start runs the command and monitors for its exit.
-func (p *process) Start() error {
-	if err := p.cmd.Start(); err != nil {
-		return err
-	}
+// Monitor starts monitoring of the *exec.Cmd.
+func (p *process) Monitor() {
 	go func() {
-		err := p.cmd.Wait()
-		p.doneCallback()
-		p.wait <- err
+		p.waitC <- p.cmd.Wait()
+		close(p.waitC)
+		p.done()
 	}()
-	return nil
 }
 
+// Wait waits for the process to exit.
 func (p *process) Wait(ctx context.Context) error {
 	select {
-	case err, ok := <-p.wait:
+	case err, ok := <-p.waitC:
 		// Process exited
 		if ok {
-			close(p.wait)
 			return err
 		}
 		return errWaitAlreadyCalled
 	case <-ctx.Done():
 		// Timed out. Send a kill signal and release our handle to it.
-		return multierr.Combine(
-			ctx.Err(),
-			p.cmd.Kill(),
-		)
+		return multierr.Combine(ctx.Err(), p.cmd.Process.Kill())
 	}
-}
-
-type cmdCaller interface {
-	Start() error
-	Wait() error
-	Kill() error
-}
-
-type cmdCalls struct {
-	cmd *exec.Cmd
-}
-
-func newCmdCalls(cmd *exec.Cmd) *cmdCalls {
-	return &cmdCalls{cmd: cmd}
-}
-
-func (c *cmdCalls) Start() error {
-	return c.cmd.Start()
-}
-
-func (c *cmdCalls) Wait() error {
-	return c.cmd.Wait()
-}
-
-func (c *cmdCalls) Kill() error {
-	return c.cmd.Process.Kill()
 }
