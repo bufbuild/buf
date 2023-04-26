@@ -1,0 +1,23 @@
+version: v1
+name: buf.build/bufbuild/connect-swift
+plugin_version: v0.5.0
+source_url: https://github.com/bufbuild/connect-swift
+description: Idiomatic gRPC & Connect RPCs for Swift.
+deps:
+  - plugin: buf.build/apple/swift:v1.21.0
+output_languages:
+  - swift
+registry:
+  swift:
+    deps:
+      - source: github.com/apple/swift-protobuf
+        package: swift-protobuf
+        products: [SwiftProtobuf]
+        version: 1.21.0
+        platforms:
+          macos: v10_15
+          ios: v10_15
+          tvos: v10_15
+          watchos: v10_15
+spdx_license_id: Apache-2.0
+license_url: https://github.com/bufbuild/connect-swift/blob/0.5.0/LICENSE

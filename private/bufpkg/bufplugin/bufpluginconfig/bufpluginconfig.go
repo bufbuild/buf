@@ -49,7 +49,7 @@ type Config struct {
 	// Name is the name of the plugin (e.g. 'buf.build/protocolbuffers/go').
 	Name bufpluginref.PluginIdentity
 	// PluginVersion is the version of the plugin's implementation
-	// (e.g the protoc-gen-connect-go implementation is v0.2.0).
+	// (e.g. the protoc-gen-connect-go implementation is v0.2.0).
 	//
 	// This excludes any other details found in the buf.plugin.yaml
 	// or plugin source (e.g. Dockerfile) that would otherwise influence
@@ -87,6 +87,7 @@ type RegistryConfig struct {
 	Go    *GoRegistryConfig
 	NPM   *NPMRegistryConfig
 	Maven *MavenRegistryConfig
+	Swift *SwiftRegistryConfig
 	// Options is the set of options passed into the plugin for the
 	// remote registry.
 	//
@@ -190,6 +191,38 @@ type MavenRuntimeConfig struct {
 	Deps []MavenDependencyConfig
 	// Options contains the Maven plugin options for the runtime. Overrides RegistryConfig.Options.
 	Options []string
+}
+
+// SwiftRegistryConfig is the registry configuration for a Swift plugin.
+type SwiftRegistryConfig struct {
+	// Dependencies are dependencies for the remote package.
+	Dependencies []SwiftRegistryDependencyConfig
+}
+
+// SwiftRegistryDependencyConfig is the swift registry dependency configuration.
+type SwiftRegistryDependencyConfig struct {
+	// Source specifies the source of the dependency.
+	Source string
+	// Package is the name of the Swift package.
+	Package string
+	// Version is the version of the Swift package.
+	Version string
+	// Products are the names of the products available to import.
+	Products []string
+	// Platforms are the minimum versions for platforms the package supports.
+	Platforms SwiftRegistryDependencyPlatformConfig
+}
+
+// SwiftRegistryDependencyPlatformConfig is the swift registry dependency platform configuration.
+type SwiftRegistryDependencyPlatformConfig struct {
+	// macOS specifies the version of the macOS platform.
+	MacOS string
+	// iOS specifies the version of the iOS platform.
+	IOS string
+	// TVOS specifies the version of the tvOS platform.
+	TVOS string
+	// WatchOS specifies the version of the watchOS platform.
+	WatchOS string
 }
 
 // ConfigOption is an optional option used when loading a Config.
@@ -319,6 +352,7 @@ type ExternalRegistryConfig struct {
 	Go    *ExternalGoRegistryConfig    `json:"go,omitempty" yaml:"go,omitempty"`
 	NPM   *ExternalNPMRegistryConfig   `json:"npm,omitempty" yaml:"npm,omitempty"`
 	Maven *ExternalMavenRegistryConfig `json:"maven,omitempty" yaml:"maven,omitempty"`
+	Swift *ExternalSwiftRegistryConfig `json:"swift,omitempty" yaml:"swift,omitempty"`
 	Opts  []string                     `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
@@ -391,6 +425,38 @@ type ExternalMavenRuntimeConfig struct {
 	Deps []string `json:"deps,omitempty" yaml:"deps,omitempty"`
 	// Opts contains the Maven plugin options for the runtime. Overrides ExternalRegistryConfig.Opts.
 	Opts []string `json:"opts,omitempty" yaml:"opts,omitempty"`
+}
+
+// ExternalSwiftRegistryConfig is the registry configuration for a Swift plugin.
+type ExternalSwiftRegistryConfig struct {
+	// Deps are dependencies for the remote package.
+	Deps []ExternalSwiftRegistryDependencyConfig `json:"deps,omitempty" yaml:"deps,omitempty"`
+}
+
+// ExternalSwiftRegistryDependencyConfig is the swift registry dependency configuration.
+type ExternalSwiftRegistryDependencyConfig struct {
+	// Source is the URL of the Swift package.
+	Source string `json:"source,omitempty" yaml:"source,omitempty"`
+	// Package is the name of the Swift package.
+	Package string `json:"package,omitempty" yaml:"package,omitempty"`
+	// Version is the version of the Swift package.
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+	// Products are the names of the products available to import.
+	Products []string `json:"products,omitempty" yaml:"products,omitempty"`
+	// Platforms are the minimum versions for platforms the package supports.
+	Platforms ExternalSwiftRegistryDependencyPlatformConfig `json:"platforms,omitempty" yaml:"platforms,omitempty"`
+}
+
+// ExternalSwiftRegistryDependencyPlatformConfig is the swift registry dependency platform configuration.
+type ExternalSwiftRegistryDependencyPlatformConfig struct {
+	// macOS specifies the version of the macOS platform.
+	MacOS string `json:"macos,omitempty" yaml:"macos,omitempty"`
+	// iOS specifies the version of the iOS platform.
+	IOS string `json:"ios,omitempty" yaml:"ios,omitempty"`
+	// TVOS specifies the version of the tvOS platform.
+	TVOS string `json:"tvos,omitempty" yaml:"tvos,omitempty"`
+	// WatchOS specifies the version of the watchOS platform.
+	WatchOS string `json:"watchos,omitempty" yaml:"watchos,omitempty"`
 }
 
 type externalConfigVersion struct {

@@ -48,6 +48,15 @@ service DisplayService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
+  // DisplayOwnerEntitledElements returns which owner elements are entitled to be displayed to the user.
+  rpc DisplayOwnerEntitledElements(DisplayOwnerEntitledElementsRequest) returns (DisplayOwnerEntitledElementsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // DisplayRepositoryEntitledElements returns which repository elements are entitled to be displayed to the user.
+  rpc DisplayRepositoryEntitledElements(DisplayRepositoryEntitledElementsRequest) returns (DisplayRepositoryEntitledElementsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
   // ListManageableRepositoryRoles returns which roles should be displayed
   // to the user when they are managing contributors on the repository.
   rpc ListManageableRepositoryRoles(ListManageableRepositoryRolesRequest) returns (ListManageableRepositoryRolesResponse) {
@@ -166,6 +175,28 @@ message DisplayServerElementsRequest {}
 message DisplayServerElementsResponse {
   // Display server admin panel element if true.
   bool admin_panel = 1;
+}
+
+message DisplayOwnerEntitledElementsRequest {
+  // The name of the owner for which to check
+  // which elements are entitled to be displayed.
+  string owner_name = 1;
+}
+
+message DisplayOwnerEntitledElementsResponse {
+  // Display create private repository element if true.
+  bool create_private_repository = 1;
+}
+
+message DisplayRepositoryEntitledElementsRequest {
+  // The ID of the repository for which to check
+  // which elements are entitled to be displayed.
+  string repository_id = 1;
+}
+
+message DisplayRepositoryEntitledElementsResponse {
+  // Display repository change to private setting element if true.
+  bool set_private = 1;
 }
 
 message ListManageableRepositoryRolesRequest {

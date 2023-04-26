@@ -22,6 +22,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 )
 
+// Process represents a background process.
+type Process interface {
+	// Wait blocks to wait for the process to exit. It will attempt to kill the
+	// process if the passed context expires.
+	Wait(ctx context.Context) error
+}
+
 // Runner runs external commands.
 //
 // A Runner will limit the number of concurrent commands, as well as explicitly
@@ -30,22 +37,28 @@ import (
 // All external commands in buf MUST use command.Runner instead of
 // exec.Command, exec.CommandContext.
 type Runner interface {
-	// Run runs the external command.
+	// Run runs the external command. It blocks until the command exits.
 	//
 	// This should be used instead of exec.CommandContext(...).Run().
 	Run(ctx context.Context, name string, options ...RunOption) error
+
+	// Start runs the external command, returning a [Process] handle to track
+	// its progress.
+	//
+	// This should be used instead of exec.Command(...).Start().
+	Start(name string, options ...StartOption) (Process, error)
 }
 
 // RunOption is an option for Run.
-type RunOption func(*runOptions)
+type RunOption func(*execOptions)
 
 // RunWithArgs returns a new RunOption that sets the arguments other
 // than the name.
 //
 // The default is no arguments.
 func RunWithArgs(args ...string) RunOption {
-	return func(runOptions *runOptions) {
-		runOptions.args = args
+	return func(execOptions *execOptions) {
+		execOptions.args = args
 	}
 }
 
@@ -54,8 +67,8 @@ func RunWithArgs(args ...string) RunOption {
 // The default is to use the single environment variable __EMPTY_ENV__=1 as we
 // cannot explicitly set an empty environment with the exec package.
 func RunWithEnv(env map[string]string) RunOption {
-	return func(runOptions *runOptions) {
-		runOptions.env = env
+	return func(execOptions *execOptions) {
+		execOptions.env = env
 	}
 }
 
@@ -63,8 +76,8 @@ func RunWithEnv(env map[string]string) RunOption {
 //
 // The default is ioextended.DiscardReader.
 func RunWithStdin(stdin io.Reader) RunOption {
-	return func(runOptions *runOptions) {
-		runOptions.stdin = stdin
+	return func(execOptions *execOptions) {
+		execOptions.stdin = stdin
 	}
 }
 
@@ -72,8 +85,8 @@ func RunWithStdin(stdin io.Reader) RunOption {
 //
 // The default is the null device (os.DevNull).
 func RunWithStdout(stdout io.Writer) RunOption {
-	return func(runOptions *runOptions) {
-		runOptions.stdout = stdout
+	return func(execOptions *execOptions) {
+		execOptions.stdout = stdout
 	}
 }
 
@@ -81,8 +94,8 @@ func RunWithStdout(stdout io.Writer) RunOption {
 //
 // The default is the null device (os.DevNull).
 func RunWithStderr(stderr io.Writer) RunOption {
-	return func(runOptions *runOptions) {
-		runOptions.stderr = stderr
+	return func(execOptions *execOptions) {
+		execOptions.stderr = stderr
 	}
 }
 
@@ -90,8 +103,67 @@ func RunWithStderr(stderr io.Writer) RunOption {
 //
 // The default is the current working directory.
 func RunWithDir(dir string) RunOption {
-	return func(runOptions *runOptions) {
-		runOptions.dir = dir
+	return func(execOptions *execOptions) {
+		execOptions.dir = dir
+	}
+}
+
+// StartOption is an option for Start.
+type StartOption func(*execOptions)
+
+// StartWithArgs returns a new RunOption that sets the arguments other
+// than the name.
+//
+// The default is no arguments.
+func StartWithArgs(args ...string) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.args = args
+	}
+}
+
+// StartWithEnv returns a new RunOption that sets the environment variables.
+//
+// The default is to use the single environment variable __EMPTY_ENV__=1 as we
+// cannot explicitly set an empty environment with the exec package.
+func StartWithEnv(env map[string]string) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.env = env
+	}
+}
+
+// StartWithStdin returns a new RunOption that sets the stdin.
+//
+// The default is ioextended.DiscardReader.
+func StartWithStdin(stdin io.Reader) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.stdin = stdin
+	}
+}
+
+// StartWithStdout returns a new RunOption that sets the stdout.
+//
+// The default is the null device (os.DevNull).
+func StartWithStdout(stdout io.Writer) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.stdout = stdout
+	}
+}
+
+// StartWithStderr returns a new RunOption that sets the stderr.
+//
+// The default is the null device (os.DevNull).
+func StartWithStderr(stderr io.Writer) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.stderr = stderr
+	}
+}
+
+// StartWithDir returns a new RunOption that sets the working directory.
+//
+// The default is the current working directory.
+func StartWithDir(dir string) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.dir = dir
 	}
 }
 
