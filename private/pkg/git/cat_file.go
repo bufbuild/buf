@@ -50,14 +50,14 @@ func NewCatFile(
 	}
 	rx, stdout := io.Pipe()
 	stdin, tx := io.Pipe()
-	runOpts := []command.ExecOption{
-		command.ExecWithArgs("cat-file", "--batch"),
-		command.ExecWithStdin(stdin),
-		command.ExecWithStdout(stdout),
+	runOpts := []command.StartOption{
+		command.StartWithArgs("cat-file", "--batch"),
+		command.StartWithStdin(stdin),
+		command.StartWithStdout(stdout),
 	}
 	if opts.gitdir != "" {
 		runOpts = append(runOpts,
-			command.ExecWithEnv(map[string]string{
+			command.StartWithEnv(map[string]string{
 				"GIT_DIR": opts.gitdir,
 			}),
 		)
