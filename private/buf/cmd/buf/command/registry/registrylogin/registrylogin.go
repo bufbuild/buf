@@ -197,7 +197,7 @@ func inner(
 		return errors.New("no user found for provided token")
 	}
 	if user.Username != username {
-		return fmt.Errorf("the username associated with that token (%s) does not match the username provided (%s)", user.Username, username)
+		return errors.New("the username associated with the provided token does not match the provided username")
 	}
 	if err := netrc.PutMachines(
 		container,

@@ -33,7 +33,9 @@ message Owner {
 service OwnerService {
   // GetOwnerByName takes an owner name and returns the owner as
   // either a user or organization.
-  rpc GetOwnerByName(GetOwnerByNameRequest) returns (GetOwnerByNameResponse);
+  rpc GetOwnerByName(GetOwnerByNameRequest) returns (GetOwnerByNameResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetOwnerByNameRequest {

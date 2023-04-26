@@ -52,7 +52,7 @@ func GetMachineForName(envContainer app.EnvContainer, name string) (_ Machine, r
 	if err != nil {
 		return nil, err
 	}
-	return getMachineForNameAndFilePath(name, filePath)
+	return GetMachineForNameAndFilePath(name, filePath)
 }
 
 // PutMachines adds the given Machines to the configured netrc file.
@@ -87,7 +87,11 @@ func GetFilePath(envContainer app.EnvContainer) (string, error) {
 	return filepath.Join(homeDirPath, netrcFilename), nil
 }
 
-func getMachineForNameAndFilePath(name string, filePath string) (_ Machine, retErr error) {
+// GetMachineForNameAndFilePath returns the Machine for the given name from the
+// file at the given path.
+//
+// Returns nil if no such Machine or no such file.
+func GetMachineForNameAndFilePath(name string, filePath string) (_ Machine, retErr error) {
 	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

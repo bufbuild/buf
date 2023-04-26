@@ -12,24 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+// Generated. DO NOT EDIT.
 
-package buf.alpha.registry.v1alpha1;
+package workspacepush
 
-message GithubAppConfig {
-  string app_id = 1;
-}
-
-message GetGithubAppConfigRequest {}
-
-message GetGithubAppConfigResponse {
-  GithubAppConfig app_config = 1;
-}
-
-// GithubService is the service used to interact with Github-related information
-service GithubService {
-  // GetGithubAppConfig returns a Github Application Configuration.
-  rpc GetGithubAppConfig(GetGithubAppConfigRequest) returns (GetGithubAppConfigResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-}
+import _ "github.com/bufbuild/buf/private/usage"

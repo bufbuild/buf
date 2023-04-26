@@ -89,12 +89,14 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isGoEmpty    = externalRegistryConfig.Go == nil
 		isNPMEmpty   = externalRegistryConfig.NPM == nil
 		isMavenEmpty = externalRegistryConfig.Maven == nil
+		isSwiftEmpty = externalRegistryConfig.Swift == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
 		isGoEmpty,
 		isNPMEmpty,
 		isMavenEmpty,
+		isSwiftEmpty,
 	} {
 		if !isEmpty {
 			registryCount++
@@ -110,7 +112,17 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		return nil, nil
 	}
 	options := OptionsSliceToPluginOptions(externalRegistryConfig.Opts)
-	if !isNPMEmpty {
+	switch {
+	case !isGoEmpty:
+		goRegistryConfig, err := newGoRegistryConfig(externalRegistryConfig.Go)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Go:      goRegistryConfig,
+			Options: options,
+		}, nil
+	case !isNPMEmpty:
 		npmRegistryConfig, err := newNPMRegistryConfig(externalRegistryConfig.NPM)
 		if err != nil {
 			return nil, err
@@ -119,7 +131,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 			NPM:     npmRegistryConfig,
 			Options: options,
 		}, nil
-	} else if !isMavenEmpty {
+	case !isMavenEmpty:
 		mavenRegistryConfig, err := newMavenRegistryConfig(externalRegistryConfig.Maven)
 		if err != nil {
 			return nil, err
@@ -128,17 +140,18 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 			Maven:   mavenRegistryConfig,
 			Options: options,
 		}, nil
+	case !isSwiftEmpty:
+		swiftRegistryConfig, err := newSwiftRegistryConfig(externalRegistryConfig.Swift)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Swift:   swiftRegistryConfig,
+			Options: options,
+		}, nil
+	default:
+		return nil, errors.New("unknown registry configuration")
 	}
-	// At this point, the Go runtime is guaranteed to be specified. Note
-	// that this will change if/when there are more runtime languages supported.
-	goRegistryConfig, err := newGoRegistryConfig(externalRegistryConfig.Go)
-	if err != nil {
-		return nil, err
-	}
-	return &RegistryConfig{
-		Go:      goRegistryConfig,
-		Options: options,
-	}, nil
 }
 
 func newNPMRegistryConfig(externalNPMRegistryConfig *ExternalNPMRegistryConfig) (*NPMRegistryConfig, error) {
@@ -260,6 +273,51 @@ func newMavenRegistryConfig(externalMavenRegistryConfig *ExternalMavenRegistryCo
 		},
 		Deps:               dependencies,
 		AdditionalRuntimes: additionalRuntimes,
+	}, nil
+}
+
+func newSwiftRegistryConfig(externalSwiftRegistryConfig *ExternalSwiftRegistryConfig) (*SwiftRegistryConfig, error) {
+	if externalSwiftRegistryConfig == nil {
+		return nil, nil
+	}
+	var dependencies []SwiftRegistryDependencyConfig
+	for _, externalDependency := range externalSwiftRegistryConfig.Deps {
+		dependency, err := swiftExternalDependencyToDependencyConfig(externalDependency)
+		if err != nil {
+			return nil, err
+		}
+		dependencies = append(dependencies, dependency)
+	}
+	return &SwiftRegistryConfig{
+		Dependencies: dependencies,
+	}, nil
+}
+
+func swiftExternalDependencyToDependencyConfig(externalDep ExternalSwiftRegistryDependencyConfig) (SwiftRegistryDependencyConfig, error) {
+	if externalDep.Source == "" {
+		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty source")
+	}
+	if externalDep.Package == "" {
+		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty package name")
+	}
+	if externalDep.Version == "" {
+		return SwiftRegistryDependencyConfig{}, errors.New("swift runtime dependency requires a non-empty version name")
+	}
+	// Swift SemVers are typically not prefixed with a "v". The Golang semver library requires a "v" prefix.
+	if !semver.IsValid(fmt.Sprintf("v%s", externalDep.Version)) {
+		return SwiftRegistryDependencyConfig{}, fmt.Errorf("swift runtime dependency %s:%s does not have a valid semantic version", externalDep.Package, externalDep.Version)
+	}
+	return SwiftRegistryDependencyConfig{
+		Source:   externalDep.Source,
+		Package:  externalDep.Package,
+		Version:  externalDep.Version,
+		Products: externalDep.Products,
+		Platforms: SwiftRegistryDependencyPlatformConfig{
+			MacOS:   externalDep.Platforms.MacOS,
+			IOS:     externalDep.Platforms.IOS,
+			TVOS:    externalDep.Platforms.TVOS,
+			WatchOS: externalDep.Platforms.WatchOS,
+		},
 	}, nil
 }
 

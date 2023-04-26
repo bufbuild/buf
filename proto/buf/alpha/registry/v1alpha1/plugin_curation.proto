@@ -34,6 +34,7 @@ enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_GO = 1;
   PLUGIN_REGISTRY_TYPE_NPM = 2;
   PLUGIN_REGISTRY_TYPE_MAVEN = 3;
+  PLUGIN_REGISTRY_TYPE_SWIFT = 4;
 }
 
 // PluginLanguage is used to specify the output languages a plugin supports.
@@ -61,6 +62,15 @@ enum NPMImportStyle {
   NPM_IMPORT_STYLE_UNSPECIFIED = 0;
   NPM_IMPORT_STYLE_MODULE = 1;
   NPM_IMPORT_STYLE_COMMONJS = 2;
+}
+
+// SwiftPlatformType is used to specify the platform type for a Swift plugins minimum compatible version.
+enum SwiftPlatformType {
+  SWIFT_PLATFORM_TYPE_UNSPECIFIED = 0;
+  SWIFT_PLATFORM_TYPE_MACOS = 1;
+  SWIFT_PLATFORM_TYPE_IOS = 2;
+  SWIFT_PLATFORM_TYPE_WATCHOS = 3;
+  SWIFT_PLATFORM_TYPE_TVOS = 4;
 }
 
 // GoConfig is the configuration for a Go plugin.
@@ -157,15 +167,41 @@ message MavenConfig {
   repeated RuntimeConfig additional_runtimes = 3;
 }
 
+message SwiftConfig {
+  // RuntimeLibrary describes a runtime library dependency of the generated code.
+  message RuntimeLibrary {
+    // The source of the runtime library package, e.g. github.com/apple/swift-protobuf.
+    string source = 1;
+    // The name of the runtime library package, e.g. "swift-protobuf".
+    string package = 2;
+    // The version of the runtime library, e.g. "1.21.0".
+    string version = 3;
+    // The products exported by the runtime library, e.g. "SwiftProtobuf".
+    repeated string products = 4;
+    // The minimum compatible platform versions of the runtime library.
+    message Platform {
+      // The name of the platform.
+      SwiftPlatformType name = 1;
+      // The minimum compatible version of the platform.
+      string version = 2;
+    }
+    // The minimum compatible platform versions of the runtime library.
+    repeated Platform platforms = 5;
+  }
+  // Optionally define the runtime libraries for the plugin.
+  repeated RuntimeLibrary runtime_libraries = 1;
+}
+
 // RegistryConfig is the configuration for the remote registry of a plugin.
 message RegistryConfig {
   oneof registry_config {
     GoConfig go_config = 1;
     NPMConfig npm_config = 2;
     MavenConfig maven_config = 3;
+    SwiftConfig swift_config = 4;
   }
   // Reserved for future remote registry types.
-  reserved 4 to 9;
+  reserved 5 to 9;
   // The options to pass to the plugin. These will
   // be merged into a single, comma-separated string.
   repeated string options = 10;
@@ -227,11 +263,15 @@ message CuratedPlugin {
 // PluginCurationService manages curated plugins.
 service PluginCurationService {
   // ListCuratedPlugins returns all the curated plugins available.
-  rpc ListCuratedPlugins(ListCuratedPluginsRequest) returns (ListCuratedPluginsResponse);
+  rpc ListCuratedPlugins(ListCuratedPluginsRequest) returns (ListCuratedPluginsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // CreateCuratedPlugin creates a new curated plugin.
   rpc CreateCuratedPlugin(CreateCuratedPluginRequest) returns (CreateCuratedPluginResponse);
   // GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
-  rpc GetLatestCuratedPlugin(GetLatestCuratedPluginRequest) returns (GetLatestCuratedPluginResponse);
+  rpc GetLatestCuratedPlugin(GetLatestCuratedPluginRequest) returns (GetLatestCuratedPluginResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DeleteCuratedPlugin deletes a curated plugin based on the given parameters.
   rpc DeleteCuratedPlugin(DeleteCuratedPluginRequest) returns (DeleteCuratedPluginResponse);
 }
@@ -335,6 +375,8 @@ message ListCuratedPluginsRequest {
   // The first page is returned if this is empty.
   string page_token = 2;
   bool reverse = 3;
+  // If true, will only return plugins which support remote packages (registry_type is set).
+  bool supports_remote_packages = 4;
 }
 
 message ListCuratedPluginsResponse {
@@ -356,6 +398,8 @@ message GetLatestCuratedPluginRequest {
   // It is an error to set a revision without a corresponding version.
   string version = 3;
   uint32 revision = 4;
+  // If true, will only return versions (and revisions) which support remote packages (registry_type is set).
+  bool supports_remote_packages = 5;
 }
 
 message GetLatestCuratedPluginResponse {

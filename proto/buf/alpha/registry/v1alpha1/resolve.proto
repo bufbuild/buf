@@ -30,7 +30,9 @@ service ResolveService {
   // to make sure this function can do dependency resolution.
   //
   // This function also deals with tiebreaking what ModulePin wins for the same repository.
-  rpc GetModulePins(GetModulePinsRequest) returns (GetModulePinsResponse);
+  rpc GetModulePins(GetModulePinsRequest) returns (GetModulePinsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetModulePinsRequest {
@@ -69,7 +71,9 @@ service LocalResolveService {
   //  2. Having a separate method makes us able to say "do not make decisions about what
   //     wins between competing pins for the same repo". This should only be done in
   //     GetModulePins, not in this function, i.e. only done at the top level.
-  rpc GetLocalModulePins(GetLocalModulePinsRequest) returns (GetLocalModulePinsResponse);
+  rpc GetLocalModulePins(GetLocalModulePinsRequest) returns (GetLocalModulePinsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetLocalModulePinsRequest {

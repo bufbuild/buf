@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// OrganizationServiceName is the fully-qualified name of the OrganizationService service.
@@ -143,22 +143,26 @@ func NewOrganizationServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 		getOrganization: connect_go.NewClient[v1alpha1.GetOrganizationRequest, v1alpha1.GetOrganizationResponse](
 			httpClient,
 			baseURL+OrganizationServiceGetOrganizationProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getOrganizationByName: connect_go.NewClient[v1alpha1.GetOrganizationByNameRequest, v1alpha1.GetOrganizationByNameResponse](
 			httpClient,
 			baseURL+OrganizationServiceGetOrganizationByNameProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listOrganizations: connect_go.NewClient[v1alpha1.ListOrganizationsRequest, v1alpha1.ListOrganizationsResponse](
 			httpClient,
 			baseURL+OrganizationServiceListOrganizationsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listUserOrganizations: connect_go.NewClient[v1alpha1.ListUserOrganizationsRequest, v1alpha1.ListUserOrganizationsResponse](
 			httpClient,
 			baseURL+OrganizationServiceListUserOrganizationsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		createOrganization: connect_go.NewClient[v1alpha1.CreateOrganizationRequest, v1alpha1.CreateOrganizationResponse](
 			httpClient,
@@ -198,7 +202,8 @@ func NewOrganizationServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 		getOrganizationSettings: connect_go.NewClient[v1alpha1.GetOrganizationSettingsRequest, v1alpha1.GetOrganizationSettingsResponse](
 			httpClient,
 			baseURL+OrganizationServiceGetOrganizationSettingsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		updateOrganizationSettings: connect_go.NewClient[v1alpha1.UpdateOrganizationSettingsRequest, v1alpha1.UpdateOrganizationSettingsResponse](
 			httpClient,
@@ -367,22 +372,26 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 	mux.Handle(OrganizationServiceGetOrganizationProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceGetOrganizationProcedure,
 		svc.GetOrganization,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceGetOrganizationByNameProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceGetOrganizationByNameProcedure,
 		svc.GetOrganizationByName,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceListOrganizationsProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceListOrganizationsProcedure,
 		svc.ListOrganizations,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceListUserOrganizationsProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceListUserOrganizationsProcedure,
 		svc.ListUserOrganizations,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceCreateOrganizationProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceCreateOrganizationProcedure,
@@ -422,7 +431,8 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 	mux.Handle(OrganizationServiceGetOrganizationSettingsProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceGetOrganizationSettingsProcedure,
 		svc.GetOrganizationSettings,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceUpdateOrganizationSettingsProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceUpdateOrganizationSettingsProcedure,
