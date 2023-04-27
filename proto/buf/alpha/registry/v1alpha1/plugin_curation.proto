@@ -258,6 +258,10 @@ message CuratedPlugin {
   bool verified = 17;
   // Visibility indicates whether the plugin is public or private.
   CuratedPluginVisibility visibility = 18;
+  // Deprecated indicates whether the plugin is deprecated.
+  bool deprecated = 19;
+  // Optionally specify a message to be displayed when the plugin is deprecated.
+  string deprecation_message = 20;
 }
 
 // PluginCurationService manages curated plugins.
