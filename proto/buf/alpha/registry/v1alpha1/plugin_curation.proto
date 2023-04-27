@@ -377,6 +377,8 @@ message ListCuratedPluginsRequest {
   bool reverse = 3;
   // If true, will only return plugins which support remote packages (registry_type is set).
   bool supports_remote_packages = 4;
+  // If true, will include deprecated plugins.
+  bool include_deprecated = 5;
 }
 
 message ListCuratedPluginsResponse {
