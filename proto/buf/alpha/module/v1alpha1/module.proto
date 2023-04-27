@@ -67,7 +67,8 @@ message Module {
   string license = 6;
   // documentation_path is the path of the file which contains the module documentation.
   //
-  // either `buf.md`, `README.md` or `README.markdown`.
+  // either `buf.md`, `README.md` or `README.markdown`. 
+  // if empty, assumes buf.md.
   string documentation_path = 7;
 }
 
