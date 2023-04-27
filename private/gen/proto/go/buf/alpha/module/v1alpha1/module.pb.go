@@ -230,6 +230,7 @@ type Module struct {
 	// documentation_path is the path of the file which contains the module documentation.
 	//
 	// either `buf.md`, `README.md` or `README.markdown`.
+	// if empty, assumes buf.md.
 	DocumentationPath string `protobuf:"bytes,7,opt,name=documentation_path,json=documentationPath,proto3" json:"documentation_path,omitempty"`
 }
 
