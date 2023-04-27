@@ -85,6 +85,7 @@ message CuratedPluginSearchResult {
   // The name of the user or organization
   // who is the owner of this plugin.
   string owner = 3;
+  bool deprecated = 4;
 }
 
 message TemplateSearchResult {
