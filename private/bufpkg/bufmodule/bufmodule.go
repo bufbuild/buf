@@ -422,7 +422,7 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
-	if docPath := module.DocumentationPath(); docPath != "" {
+	if docPath := module.DocumentationPath(); docPath != "" && docPath != DocumentationFilePath {
 		if _, err := hash.Write([]byte(docPath)); err != nil {
 			return "", err
 		}
