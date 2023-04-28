@@ -421,6 +421,7 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
+	// TODO: Should we include module.DocumentationPath here?
 	if license := module.License(); license != "" {
 		if _, err := hash.Write([]byte(license)); err != nil {
 			return "", err
@@ -466,7 +467,11 @@ func ModuleToBucket(
 		}
 	}
 	if docs := module.Documentation(); docs != "" {
-		if err := storage.PutPath(ctx, writeBucket, DocumentationFilePath, []byte(docs)); err != nil {
+		moduleDocPath := DocumentationFilePath
+		if docPath := module.DocumentationPath(); docPath != "" {
+			moduleDocPath = docPath
+		}
+		if err := storage.PutPath(ctx, writeBucket, moduleDocPath, []byte(docs)); err != nil {
 			return err
 		}
 	}
