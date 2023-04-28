@@ -421,7 +421,11 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
-	// TODO: Should we include module.DocumentationPath here?
+	if docPath := module.DocumentationPath(); docPath != "" {
+		if _, err := hash.Write([]byte(docPath)); err != nil {
+			return "", err
+		}
+	}
 	if license := module.License(); license != "" {
 		if _, err := hash.Write([]byte(license)); err != nil {
 			return "", err
