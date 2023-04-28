@@ -36,8 +36,10 @@ import (
 const (
 	// DocumentationFilePath defines the path to the documentation file, relative to the root of the module.
 	DocumentationFilePath = "buf.md"
-	// FallbackDocumentationPath defines the fallback path to the documentation file, relative to the root of the module.
-	FallbackDocumentationPath = "README.md"
+	// FallbackDocumentationPathMd defines the fallback path to the documentation file, relative to the root of the module.
+	FallbackDocumentationPathMD = "README.md"
+	// FallbackDocumentationPathMarkdown defines the fallback path to the documentation file, relative to the root of the module.
+	FallbackDocumentationPathMarkdown = "README.markdown"
 	// LicenseFilePath defines the path to the license file, relative to the root of the module.
 	LicenseFilePath = "LICENSE"
 
@@ -102,6 +104,9 @@ type Module interface {
 	// Documentation gets the contents of the module documentation file, buf.md and returns the string representation.
 	// This may return an empty string if the documentation file does not exist.
 	Documentation() string
+	// DocumentationPath returns the path to the documentation file for the module.
+	// Can be one of `buf.md`, `README.md` or `README.markdown`
+	DocumentationPath() string
 	// License gets the contents of the module license file, LICENSE and returns the string representation.
 	// This may return an empty string if the documentation file does not exist.
 	License() string
@@ -351,12 +356,13 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 		protoLintConfig = buflintconfig.ProtoForConfig(module.LintConfig())
 	}
 	protoModule := &modulev1alpha1.Module{
-		Files:          protoModuleFiles,
-		Dependencies:   protoModulePins,
-		Documentation:  module.Documentation(),
-		BreakingConfig: protoBreakingConfig,
-		LintConfig:     protoLintConfig,
-		License:        module.License(),
+		Files:             protoModuleFiles,
+		Dependencies:      protoModulePins,
+		Documentation:     module.Documentation(),
+		DocumentationPath: module.DocumentationPath(),
+		BreakingConfig:    protoBreakingConfig,
+		LintConfig:        protoLintConfig,
+		License:           module.License(),
 	}
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err

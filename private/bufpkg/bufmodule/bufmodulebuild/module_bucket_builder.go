@@ -83,7 +83,8 @@ func (b *moduleBucketBuilder) BuildForBucket(
 	externalPaths := []string{
 		buflock.ExternalConfigFilePath,
 		bufmodule.DocumentationFilePath,
-		bufmodule.FallbackDocumentationPath,
+		bufmodule.FallbackDocumentationPathMD,
+		bufmodule.FallbackDocumentationPathMarkdown,
 		bufmodule.LicenseFilePath,
 	}
 	externalPaths = append(externalPaths, bufconfig.AllConfigFilePaths...)

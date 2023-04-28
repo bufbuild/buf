@@ -37,6 +37,7 @@ type module struct {
 	moduleIdentity       bufmoduleref.ModuleIdentity
 	commit               string
 	documentation        string
+	documentationPath    string
 	license              string
 	breakingConfig       *bufbreakingconfig.Config
 	lintConfig           *buflintconfig.Config
@@ -77,6 +78,7 @@ func newModuleForProto(
 		dependencyModulePins,
 		nil, // The module identity is not stored on the proto. We rely on the layer above, (e.g. `ModuleReader`) to set this as needed.
 		protoModule.GetDocumentation(),
+		protoModule.GetDocumentationPath(),
 		protoModule.GetLicense(),
 		breakingConfig,
 		lintConfig,
@@ -144,15 +146,17 @@ func newModuleForBucket(
 	if err != nil {
 		return nil, err
 	}
-	documentation, err := getFileContentForBucket(ctx, sourceReadBucket, DocumentationFilePath)
-	if err != nil {
-		return nil, err
-	}
-	if documentation == "" {
-		documentation, err = getFileContentForBucket(ctx, sourceReadBucket, FallbackDocumentationPath)
-	}
-	if err != nil {
-		return nil, err
+	var documentation string
+	var documentationPath string
+	for _, docPath := range []string{DocumentationFilePath, FallbackDocumentationPathMD, FallbackDocumentationPathMarkdown} {
+		documentation, err = getFileContentForBucket(ctx, sourceReadBucket, docPath)
+		if err != nil {
+			return nil, err
+		}
+		if documentation != "" {
+			documentationPath = docPath
+			break
+		}
 	}
 	license, err := getFileContentForBucket(ctx, sourceReadBucket, LicenseFilePath)
 	if err != nil {
@@ -173,6 +177,7 @@ func newModuleForBucket(
 		dependencyModulePins,
 		moduleIdentity,
 		documentation,
+		documentationPath,
 		license,
 		moduleConfig.Breaking,
 		moduleConfig.Lint,
@@ -212,6 +217,7 @@ func newModule(
 	dependencyModulePins []bufmoduleref.ModulePin,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	documentation string,
+	documentationPath string,
 	license string,
 	breakingConfig *bufbreakingconfig.Config,
 	lintConfig *buflintconfig.Config,
@@ -227,6 +233,7 @@ func newModule(
 		dependencyModulePins: dependencyModulePins,
 		moduleIdentity:       moduleIdentity,
 		documentation:        documentation,
+		documentationPath:    documentationPath,
 		license:              license,
 		breakingConfig:       breakingConfig,
 		lintConfig:           lintConfig,
@@ -296,6 +303,10 @@ func (m *module) DependencyModulePins() []bufmoduleref.ModulePin {
 
 func (m *module) Documentation() string {
 	return m.documentation
+}
+
+func (m *module) DocumentationPath() string {
+	return m.documentationPath
 }
 
 func (m *module) License() string {

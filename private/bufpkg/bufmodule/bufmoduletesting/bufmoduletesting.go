@@ -48,6 +48,8 @@ const (
 	TestModuleReferenceFooBazV2String = "buf.build/foob/baz:v2"
 	// TestModuleDocumentation is a markdown module documentation file.
 	TestModuleDocumentation = "# Module Documentation"
+
+	TestModuleDocumentationPath = "README.md"
 	// TestModuleLicense is a txt module license file.
 	TestModuleLicense = "Module License"
 	// TestModuleConfiguration is a configuration file with an arbitrary module name,
@@ -124,10 +126,10 @@ var (
 	}
 	// TestDataWithDocumentation is the data that maps to TestDigestWithDocumentation.
 	//
-	// It includes a buf.md file.
+	// It includes a README.md file.
 	TestDataWithDocumentation = map[string][]byte{
-		TestFile1Path: []byte(`syntax="proto3";`),
-		"buf.md":      []byte(TestModuleDocumentation),
+		TestFile1Path:               []byte(`syntax="proto3";`),
+		TestModuleDocumentationPath: []byte(TestModuleDocumentation),
 	}
 	// TestDataWithDocumentationProto is the proto representation of TestDataWithDocumentation.
 	TestDataWithDocumentationProto = &modulev1alpha1.Module{
@@ -137,18 +139,19 @@ var (
 				Content: []byte(`syntax="proto3";`),
 			},
 		},
-		Documentation:  TestModuleDocumentation,
-		BreakingConfig: &breakingv1.Config{Version: "v1beta1"},
-		LintConfig:     &lintv1.Config{Version: "v1beta1"},
+		Documentation:     TestModuleDocumentation,
+		DocumentationPath: TestModuleDocumentationPath,
+		BreakingConfig:    &breakingv1.Config{Version: "v1beta1"},
+		LintConfig:        &lintv1.Config{Version: "v1beta1"},
 	}
 	// TestDataWithConfiguration is the data that maps to TestDigestWithConfiguration.
 	//
-	// It includes a buf.yaml and a buf.md file.
+	// It includes a buf.yaml and a README.md file.
 	TestDataWithConfiguration = map[string][]byte{
-		TestFile1Path: []byte(`syntax="proto3";`),
-		TestFile2Path: []byte(`syntax="proto3";`),
-		"buf.yaml":    []byte(TestModuleConfiguration),
-		"buf.md":      []byte(TestModuleDocumentation),
+		TestFile1Path:               []byte(`syntax="proto3";`),
+		TestFile2Path:               []byte(`syntax="proto3";`),
+		"buf.yaml":                  []byte(TestModuleConfiguration),
+		TestModuleDocumentationPath: []byte(TestModuleDocumentation),
 	}
 	// TestDataWithLicense is the data that maps to TestDigestB3WithLicense.
 	//
