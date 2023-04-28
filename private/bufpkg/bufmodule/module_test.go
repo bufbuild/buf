@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
@@ -109,7 +110,7 @@ deps:
 	testNewModuleForBucket(t,
 		"license and documentation are consumed",
 		map[string][]byte{
-			"buf.md":  []byte("foo"),
+			bufmoduletesting.TestDataProto.DocumentationPath: []byte("foo"),
 			"LICENSE": []byte("bar"),
 		},
 		false,

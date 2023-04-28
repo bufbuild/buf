@@ -48,7 +48,7 @@ const (
 	TestModuleReferenceFooBazV2String = "buf.build/foob/baz:v2"
 	// TestModuleDocumentation is a markdown module documentation file.
 	TestModuleDocumentation = "# Module Documentation"
-
+	// TestModuleDocumentationPath is a path for module documentation file.
 	TestModuleDocumentationPath = "README.md"
 	// TestModuleLicense is a txt module license file.
 	TestModuleLicense = "Module License"
