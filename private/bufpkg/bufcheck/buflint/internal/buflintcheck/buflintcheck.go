@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/envoyproxy/protoc-gen-validate/validate"
 )
 
 const (
@@ -960,6 +961,25 @@ var CheckSyntaxSpecified = newFileCheckFunc(checkSyntaxSpecified)
 func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 	if file.Syntax() == protosource.SyntaxUnspecified {
 		add(file, file.SyntaxLocation(), nil, `Files must have a syntax explicitly specified. If no syntax is specified, the file defaults to "proto2".`)
+	}
+	return nil
+}
+
+// CheckValidateMessageNoDisabled is a check function.
+var CheckValidateMessageNoDisabled = newMessageCheckFunc(checkValidateMessageNoDisabled)
+
+func checkValidateMessageNoDisabled(add addFunc, message protosource.Message) error {
+	disabledIface, ok := message.OptionExtension(validate.E_Disabled)
+	if !ok {
+		return nil
+	}
+	disabled, ok := disabledIface.(bool)
+	if !ok {
+		return fmt.Errorf("could not convert expected validate.disabled into bool, was %T", disabledIface)
+	}
+	if disabled {
+		// TODO: we need protosource.OptionExtensionDescriptor.OptionExtensionLocation
+		add(message, message.Location(), nil, "Message %q had validate.disabled set.", message.Name())
 	}
 	return nil
 }

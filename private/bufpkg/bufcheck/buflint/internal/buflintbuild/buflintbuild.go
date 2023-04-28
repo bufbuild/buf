@@ -348,6 +348,12 @@ var (
 		"all files have a syntax specified",
 		newAdapter(buflintcheck.CheckSyntaxSpecified),
 	)
+	// ValidateMessageNoDisabledRuleBuilder is a rule builder.
+	ValidateMessageNoDisabledRuleBuilder = internal.NewNopRuleBuilder(
+		"VALIDATE_MESSAGE_NO_DISABLED",
+		"messages do not have the validate.disabled option set",
+		newAdapter(buflintcheck.CheckValidateMessageNoDisabled),
+	)
 )
 
 func newAdapter(

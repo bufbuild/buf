@@ -73,6 +73,8 @@ import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 //   - PACKAGE_DEFINED
 //   - PACKAGE_DIRECTORY_MATCH
 //   - PACKAGE_SAME_DIRECTORY
+//
+// DEFAULT has also had all VALIDATE_* rules added.
 var VersionSpec = &internal.VersionSpec{
 	RuleBuilders:      v1RuleBuilders,
 	DefaultCategories: v1DefaultCategories,
