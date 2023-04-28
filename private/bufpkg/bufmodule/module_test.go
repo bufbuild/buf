@@ -110,7 +110,7 @@ deps:
 	testNewModuleForBucket(t,
 		"license and documentation are consumed",
 		map[string][]byte{
-			bufmoduletesting.TestDataProto.DocumentationPath: []byte("foo"),
+			bufmoduletesting.TestModuleDocumentationPath: []byte("foo"),
 			"LICENSE": []byte("bar"),
 		},
 		false,
