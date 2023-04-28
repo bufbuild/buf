@@ -379,9 +379,10 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 //  2. Add the dependency's module identity and commit ID (sorted lexicographically by commit ID)
 //  3. Add the module identity if available.
 //  4. Add the module documentation if available.
-//  5. Add the module license if available.
-//  6. Add the breaking and lint configurations if available.
-//  7. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
+//  5. Add the module documentation path if available.
+//  6. Add the module license if available.
+//  7. Add the breaking and lint configurations if available.
+//  8. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
 func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	hash := sha256.New()
 	// We do not want to change the sort order as the rest of the codebase relies on it,
