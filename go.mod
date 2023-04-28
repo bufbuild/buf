@@ -6,6 +6,7 @@ require (
 	github.com/bufbuild/connect-go v1.7.0
 	github.com/bufbuild/protocompile v0.5.1
 	github.com/docker/docker v23.0.4+incompatible
+	github.com/envoyproxy/protoc-gen-validate v1.0.0
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid/v5 v5.0.0
@@ -50,7 +51,6 @@ require (
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/envoyproxy/protoc-gen-validate v1.0.0 // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
