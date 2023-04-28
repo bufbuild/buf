@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package a;
+
+import "validate/validate.proto";
+
+message Foo {
+  option (validate.disabled) = true;
+}

@@ -1,0 +1,6 @@
+version: v1
+lint:
+  use:
+    - VALIDATE_MESSAGE_NO_DISABLED
+  ignore:
+    - validate

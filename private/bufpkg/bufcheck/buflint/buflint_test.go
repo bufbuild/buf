@@ -887,6 +887,14 @@ func TestCommentIgnoresCascadeOn(t *testing.T) {
 	)
 }
 
+func TestValidateMessageNoDisabled(t *testing.T) {
+	testLint(
+		t,
+		"validate_message_no_disabled",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 7, 1, 9, 2, "VALIDATE_MESSAGE_NO_DISABLED"),
+	)
+}
+
 func testLint(
 	t *testing.T,
 	relDirPath string,
