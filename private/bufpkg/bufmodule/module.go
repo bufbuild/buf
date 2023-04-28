@@ -148,7 +148,7 @@ func newModuleForBucket(
 	}
 	var documentation string
 	var documentationPath string
-	for _, docPath := range []string{DocumentationFilePath, FallbackDocumentationPathMD, FallbackDocumentationPathMarkdown} {
+	for _, docPath := range []string{DocumentationFilePath, FallbackDocumentationPathReadmeMD, FallbackDocumentationPathReadmeMarkdown} {
 		documentation, err = getFileContentForBucket(ctx, sourceReadBucket, docPath)
 		if err != nil {
 			return nil, err

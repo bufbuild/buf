@@ -36,10 +36,10 @@ import (
 const (
 	// DocumentationFilePath defines the path to the documentation file, relative to the root of the module.
 	DocumentationFilePath = "buf.md"
-	// FallbackDocumentationPathMd defines the fallback path to the documentation file, relative to the root of the module.
-	FallbackDocumentationPathMD = "README.md"
-	// FallbackDocumentationPathMarkdown defines the fallback path to the documentation file, relative to the root of the module.
-	FallbackDocumentationPathMarkdown = "README.markdown"
+	// FallbackDocumentationPathReadmeMD defines the fallback path to the documentation file, relative to the root of the module.
+	FallbackDocumentationPathReadmeMD = "README.md"
+	// FallbackDocumentationPathReadmeMarkdown defines the fallback path to the documentation file, relative to the root of the module.
+	FallbackDocumentationPathReadmeMarkdown = "README.markdown"
 	// LicenseFilePath defines the path to the license file, relative to the root of the module.
 	LicenseFilePath = "LICENSE"
 
