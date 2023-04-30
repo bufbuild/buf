@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// SCIMTokenServiceName is the fully-qualified name of the SCIMTokenService service.
@@ -93,7 +93,8 @@ func NewSCIMTokenServiceClient(httpClient connect_go.HTTPClient, baseURL string,
 		listSCIMTokens: connect_go.NewClient[v1alpha1.ListSCIMTokensRequest, v1alpha1.ListSCIMTokensResponse](
 			httpClient,
 			baseURL+SCIMTokenServiceListSCIMTokensProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteSCIMToken: connect_go.NewClient[v1alpha1.DeleteSCIMTokenRequest, v1alpha1.DeleteSCIMTokenResponse](
 			httpClient,
@@ -157,7 +158,8 @@ func NewSCIMTokenServiceHandler(svc SCIMTokenServiceHandler, opts ...connect_go.
 	mux.Handle(SCIMTokenServiceListSCIMTokensProcedure, connect_go.NewUnaryHandler(
 		SCIMTokenServiceListSCIMTokensProcedure,
 		svc.ListSCIMTokens,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(SCIMTokenServiceDeleteSCIMTokenProcedure, connect_go.NewUnaryHandler(
 		SCIMTokenServiceDeleteSCIMTokenProcedure,

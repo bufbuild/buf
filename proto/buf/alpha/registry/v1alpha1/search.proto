@@ -85,6 +85,7 @@ message CuratedPluginSearchResult {
   // The name of the user or organization
   // who is the owner of this plugin.
   string owner = 3;
+  bool deprecated = 4;
 }
 
 message TemplateSearchResult {
@@ -114,11 +115,17 @@ message SearchResult {
 // SearchService is the search service.
 service SearchService {
   // Search searches the BSR.
-  rpc Search(SearchRequest) returns (SearchResponse);
+  rpc Search(SearchRequest) returns (SearchResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // SearchTag searches for tags in a repository
-  rpc SearchTag(SearchTagRequest) returns (SearchTagResponse);
+  rpc SearchTag(SearchTagRequest) returns (SearchTagResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // SearchDraft searches for drafts in a repository
-  rpc SearchDraft(SearchDraftRequest) returns (SearchDraftResponse);
+  rpc SearchDraft(SearchDraftRequest) returns (SearchDraftResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message SearchRequest {

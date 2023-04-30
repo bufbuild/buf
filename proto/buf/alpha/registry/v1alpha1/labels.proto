@@ -42,7 +42,9 @@ message LabelValue {
 service LabelService {
   rpc CreateLabel(CreateLabelRequest) returns (CreateLabelResponse);
   rpc MoveLabel(MoveLabelRequest) returns (MoveLabelResponse);
-  rpc GetLabels(GetLabelsRequest) returns (GetLabelsResponse);
+  rpc GetLabels(GetLabelsRequest) returns (GetLabelsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message CreateLabelRequest {
@@ -60,8 +62,6 @@ message MoveLabelRequest {
   LabelName label_name = 1;
   optional LabelValue from = 2;
   LabelValue to = 3;
-  string repository_owner = 4;
-  string repository_name = 5;
 }
 
 message MoveLabelResponse {}

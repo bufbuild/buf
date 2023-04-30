@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// RecommendationServiceName is the fully-qualified name of the RecommendationService service.
@@ -90,17 +90,20 @@ func NewRecommendationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 		recommendedRepositories: connect_go.NewClient[v1alpha1.RecommendedRepositoriesRequest, v1alpha1.RecommendedRepositoriesResponse](
 			httpClient,
 			baseURL+RecommendationServiceRecommendedRepositoriesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		recommendedTemplates: connect_go.NewClient[v1alpha1.RecommendedTemplatesRequest, v1alpha1.RecommendedTemplatesResponse](
 			httpClient,
 			baseURL+RecommendationServiceRecommendedTemplatesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listRecommendedResources: connect_go.NewClient[v1alpha1.ListRecommendedResourcesRequest, v1alpha1.ListRecommendedResourcesResponse](
 			httpClient,
 			baseURL+RecommendationServiceListRecommendedResourcesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		setRecommendedResources: connect_go.NewClient[v1alpha1.SetRecommendedResourcesRequest, v1alpha1.SetRecommendedResourcesResponse](
 			httpClient,
@@ -169,17 +172,20 @@ func NewRecommendationServiceHandler(svc RecommendationServiceHandler, opts ...c
 	mux.Handle(RecommendationServiceRecommendedRepositoriesProcedure, connect_go.NewUnaryHandler(
 		RecommendationServiceRecommendedRepositoriesProcedure,
 		svc.RecommendedRepositories,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RecommendationServiceRecommendedTemplatesProcedure, connect_go.NewUnaryHandler(
 		RecommendationServiceRecommendedTemplatesProcedure,
 		svc.RecommendedTemplates,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RecommendationServiceListRecommendedResourcesProcedure, connect_go.NewUnaryHandler(
 		RecommendationServiceListRecommendedResourcesProcedure,
 		svc.ListRecommendedResources,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RecommendationServiceSetRecommendedResourcesProcedure, connect_go.NewUnaryHandler(
 		RecommendationServiceSetRecommendedResourcesProcedure,

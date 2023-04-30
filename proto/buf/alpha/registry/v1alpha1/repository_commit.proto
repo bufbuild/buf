@@ -59,19 +59,28 @@ service RepositoryCommitService {
     // ListRepositoryCommitsByBranch has been deprecated, use
     // ListRepositoryCommitsByReference instead.
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
 
   // ListRepositoryCommitsByReference returns repository commits up-to and including
   // the provided reference.
-  rpc ListRepositoryCommitsByReference(ListRepositoryCommitsByReferenceRequest) returns (ListRepositoryCommitsByReferenceResponse);
+  rpc ListRepositoryCommitsByReference(ListRepositoryCommitsByReferenceRequest) returns (ListRepositoryCommitsByReferenceResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetRepositoryCommitByReference returns the repository commit matching
   // the provided reference, if it exists.
-  rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse);
+  rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetRepositoryCommitBySequenceId returns the repository commit matching
   // the provided sequence ID and branch, if it exists.
-  rpc GetRepositoryCommitBySequenceId(GetRepositoryCommitBySequenceIdRequest) returns (GetRepositoryCommitBySequenceIdResponse);
+  rpc GetRepositoryCommitBySequenceId(GetRepositoryCommitBySequenceIdRequest) returns (GetRepositoryCommitBySequenceIdResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListRepositoryDraftCommits lists draft commits in a repository.
-  rpc ListRepositoryDraftCommits(ListRepositoryDraftCommitsRequest) returns (ListRepositoryDraftCommitsResponse);
+  rpc ListRepositoryDraftCommits(ListRepositoryDraftCommitsRequest) returns (ListRepositoryDraftCommitsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DeleteRepositoryDraftCommit deletes a draft.
   rpc DeleteRepositoryDraftCommit(DeleteRepositoryDraftCommitRequest) returns (DeleteRepositoryDraftCommitResponse);
 }

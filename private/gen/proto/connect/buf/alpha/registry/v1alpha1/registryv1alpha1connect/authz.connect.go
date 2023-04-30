@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// AuthzServiceName is the fully-qualified name of the AuthzService service.
@@ -219,112 +219,134 @@ func NewAuthzServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 		userCanCreateOrganizationRepository: connect_go.NewClient[v1alpha1.UserCanCreateOrganizationRepositoryRequest, v1alpha1.UserCanCreateOrganizationRepositoryResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanCreateOrganizationRepositoryProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanSeeRepositorySettings: connect_go.NewClient[v1alpha1.UserCanSeeRepositorySettingsRequest, v1alpha1.UserCanSeeRepositorySettingsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanSeeRepositorySettingsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanSeeOrganizationSettings: connect_go.NewClient[v1alpha1.UserCanSeeOrganizationSettingsRequest, v1alpha1.UserCanSeeOrganizationSettingsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanSeeOrganizationSettingsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanReadPlugin: connect_go.NewClient[v1alpha1.UserCanReadPluginRequest, v1alpha1.UserCanReadPluginResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanReadPluginProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanCreatePluginVersion: connect_go.NewClient[v1alpha1.UserCanCreatePluginVersionRequest, v1alpha1.UserCanCreatePluginVersionResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanCreatePluginVersionProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanCreateTemplateVersion: connect_go.NewClient[v1alpha1.UserCanCreateTemplateVersionRequest, v1alpha1.UserCanCreateTemplateVersionResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanCreateTemplateVersionProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanCreateOrganizationPlugin: connect_go.NewClient[v1alpha1.UserCanCreateOrganizationPluginRequest, v1alpha1.UserCanCreateOrganizationPluginResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanCreateOrganizationPluginProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanCreateOrganizationTemplate: connect_go.NewClient[v1alpha1.UserCanCreateOrganizationTemplateRequest, v1alpha1.UserCanCreateOrganizationTemplateResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanCreateOrganizationTemplateProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanSeePluginSettings: connect_go.NewClient[v1alpha1.UserCanSeePluginSettingsRequest, v1alpha1.UserCanSeePluginSettingsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanSeePluginSettingsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanSeeTemplateSettings: connect_go.NewClient[v1alpha1.UserCanSeeTemplateSettingsRequest, v1alpha1.UserCanSeeTemplateSettingsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanSeeTemplateSettingsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanAddOrganizationMember: connect_go.NewClient[v1alpha1.UserCanAddOrganizationMemberRequest, v1alpha1.UserCanAddOrganizationMemberResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanAddOrganizationMemberProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanUpdateOrganizationMember: connect_go.NewClient[v1alpha1.UserCanUpdateOrganizationMemberRequest, v1alpha1.UserCanUpdateOrganizationMemberResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanUpdateOrganizationMemberProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanRemoveOrganizationMember: connect_go.NewClient[v1alpha1.UserCanRemoveOrganizationMemberRequest, v1alpha1.UserCanRemoveOrganizationMemberResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanRemoveOrganizationMemberProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanDeleteOrganization: connect_go.NewClient[v1alpha1.UserCanDeleteOrganizationRequest, v1alpha1.UserCanDeleteOrganizationResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanDeleteOrganizationProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanDeleteRepository: connect_go.NewClient[v1alpha1.UserCanDeleteRepositoryRequest, v1alpha1.UserCanDeleteRepositoryResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanDeleteRepositoryProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanDeleteTemplate: connect_go.NewClient[v1alpha1.UserCanDeleteTemplateRequest, v1alpha1.UserCanDeleteTemplateResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanDeleteTemplateProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanDeletePlugin: connect_go.NewClient[v1alpha1.UserCanDeletePluginRequest, v1alpha1.UserCanDeletePluginResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanDeletePluginProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanDeleteUser: connect_go.NewClient[v1alpha1.UserCanDeleteUserRequest, v1alpha1.UserCanDeleteUserResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanDeleteUserProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanSeeServerAdminPanel: connect_go.NewClient[v1alpha1.UserCanSeeServerAdminPanelRequest, v1alpha1.UserCanSeeServerAdminPanelResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanSeeServerAdminPanelProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanManageRepositoryContributors: connect_go.NewClient[v1alpha1.UserCanManageRepositoryContributorsRequest, v1alpha1.UserCanManageRepositoryContributorsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanManageRepositoryContributorsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanManagePluginContributors: connect_go.NewClient[v1alpha1.UserCanManagePluginContributorsRequest, v1alpha1.UserCanManagePluginContributorsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanManagePluginContributorsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		userCanManageTemplateContributors: connect_go.NewClient[v1alpha1.UserCanManageTemplateContributorsRequest, v1alpha1.UserCanManageTemplateContributorsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanManageTemplateContributorsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -604,112 +626,134 @@ func NewAuthzServiceHandler(svc AuthzServiceHandler, opts ...connect_go.HandlerO
 	mux.Handle(AuthzServiceUserCanCreateOrganizationRepositoryProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanCreateOrganizationRepositoryProcedure,
 		svc.UserCanCreateOrganizationRepository,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanSeeRepositorySettingsProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanSeeRepositorySettingsProcedure,
 		svc.UserCanSeeRepositorySettings,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanSeeOrganizationSettingsProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanSeeOrganizationSettingsProcedure,
 		svc.UserCanSeeOrganizationSettings,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanReadPluginProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanReadPluginProcedure,
 		svc.UserCanReadPlugin,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanCreatePluginVersionProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanCreatePluginVersionProcedure,
 		svc.UserCanCreatePluginVersion,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanCreateTemplateVersionProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanCreateTemplateVersionProcedure,
 		svc.UserCanCreateTemplateVersion,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanCreateOrganizationPluginProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanCreateOrganizationPluginProcedure,
 		svc.UserCanCreateOrganizationPlugin,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanCreateOrganizationTemplateProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanCreateOrganizationTemplateProcedure,
 		svc.UserCanCreateOrganizationTemplate,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanSeePluginSettingsProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanSeePluginSettingsProcedure,
 		svc.UserCanSeePluginSettings,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanSeeTemplateSettingsProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanSeeTemplateSettingsProcedure,
 		svc.UserCanSeeTemplateSettings,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanAddOrganizationMemberProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanAddOrganizationMemberProcedure,
 		svc.UserCanAddOrganizationMember,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanUpdateOrganizationMemberProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanUpdateOrganizationMemberProcedure,
 		svc.UserCanUpdateOrganizationMember,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanRemoveOrganizationMemberProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanRemoveOrganizationMemberProcedure,
 		svc.UserCanRemoveOrganizationMember,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanDeleteOrganizationProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanDeleteOrganizationProcedure,
 		svc.UserCanDeleteOrganization,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanDeleteRepositoryProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanDeleteRepositoryProcedure,
 		svc.UserCanDeleteRepository,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanDeleteTemplateProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanDeleteTemplateProcedure,
 		svc.UserCanDeleteTemplate,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanDeletePluginProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanDeletePluginProcedure,
 		svc.UserCanDeletePlugin,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanDeleteUserProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanDeleteUserProcedure,
 		svc.UserCanDeleteUser,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanSeeServerAdminPanelProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanSeeServerAdminPanelProcedure,
 		svc.UserCanSeeServerAdminPanel,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanManageRepositoryContributorsProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanManageRepositoryContributorsProcedure,
 		svc.UserCanManageRepositoryContributors,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanManagePluginContributorsProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanManagePluginContributorsProcedure,
 		svc.UserCanManagePluginContributors,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AuthzServiceUserCanManageTemplateContributorsProcedure, connect_go.NewUnaryHandler(
 		AuthzServiceUserCanManageTemplateContributorsProcedure,
 		svc.UserCanManageTemplateContributors,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.AuthzService/", mux
 }

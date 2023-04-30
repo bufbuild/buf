@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// WebhookServiceName is the fully-qualified name of the WebhookService service.
@@ -92,7 +92,8 @@ func NewWebhookServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 		listWebhooks: connect_go.NewClient[v1alpha1.ListWebhooksRequest, v1alpha1.ListWebhooksResponse](
 			httpClient,
 			baseURL+WebhookServiceListWebhooksProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -151,7 +152,8 @@ func NewWebhookServiceHandler(svc WebhookServiceHandler, opts ...connect_go.Hand
 	mux.Handle(WebhookServiceListWebhooksProcedure, connect_go.NewUnaryHandler(
 		WebhookServiceListWebhooksProcedure,
 		svc.ListWebhooks,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.WebhookService/", mux
 }

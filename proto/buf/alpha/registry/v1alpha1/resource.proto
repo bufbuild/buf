@@ -30,7 +30,9 @@ message Resource {
 service ResourceService {
   // GetResourceByName takes a resource name and returns the
   // resource either as a repository or a plugin.
-  rpc GetResourceByName(GetResourceByNameRequest) returns (GetResourceByNameResponse);
+  rpc GetResourceByName(GetResourceByNameRequest) returns (GetResourceByNameResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetResourceByNameRequest {

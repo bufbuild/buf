@@ -80,8 +80,12 @@ issues:
   exclude-rules:
     - linters:
         - forbidigo
-      # this is the one file we want to allow exec.Cmd functions in
+      # this is one of two files we want to allow exec.Cmd functions in
       path: private/pkg/command/runner.go
+    - linters:
+        - forbidigo
+      # this is one of two files we want to allow exec.Cmd functions in
+      path: private/pkg/command/process.go
     - linters:
         - forbidigo
       # we use os.Rename here to rename files in the same directory

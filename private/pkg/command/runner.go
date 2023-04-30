@@ -24,9 +24,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/thread"
 )
 
-var emptyEnv = map[string]string{
-	"__EMPTY_ENV": "1",
-}
+var emptyEnv = envSlice(
+	map[string]string{
+		"__EMPTY_ENV": "1",
+	},
+)
 
 type runner struct {
 	parallelism int
@@ -46,33 +48,43 @@ func newRunner(options ...RunnerOption) *runner {
 }
 
 func (r *runner) Run(ctx context.Context, name string, options ...RunOption) error {
-	runOptions := newRunOptions()
+	execOptions := newExecOptions()
 	for _, option := range options {
-		option(runOptions)
+		option(execOptions)
 	}
-	if len(runOptions.env) == 0 {
-		runOptions.env = emptyEnv
-	}
-	if runOptions.stdin == nil {
-		runOptions.stdin = ioextended.DiscardReader
-	}
-	cmd := exec.CommandContext(ctx, name, runOptions.args...)
-	cmd.Env = envSlice(runOptions.env)
-	cmd.Stdin = runOptions.stdin
-	// If Stdout or Stderr are nil, os/exec connects the process output directly
-	// to the null device.
-	cmd.Stdout = runOptions.stdout
-	cmd.Stderr = runOptions.stderr
-	// The default behavior for dir is what we want already, i.e. the current
-	// working directory.
-	cmd.Dir = runOptions.dir
-	r.semaphoreC <- struct{}{}
+	cmd := exec.CommandContext(ctx, name, execOptions.args...)
+	execOptions.ApplyToCmd(cmd)
+	r.increment()
 	err := cmd.Run()
-	<-r.semaphoreC
+	r.decrement()
 	return err
 }
 
-type runOptions struct {
+func (r *runner) Start(name string, options ...StartOption) (Process, error) {
+	execOptions := newExecOptions()
+	for _, option := range options {
+		option(execOptions)
+	}
+	cmd := exec.Command(name, execOptions.args...)
+	execOptions.ApplyToCmd(cmd)
+	r.increment()
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+	process := newProcess(cmd, r.decrement)
+	process.Monitor()
+	return process, nil
+}
+
+func (r *runner) increment() {
+	r.semaphoreC <- struct{}{}
+}
+
+func (r *runner) decrement() {
+	<-r.semaphoreC
+}
+
+type execOptions struct {
 	args   []string
 	env    map[string]string
 	stdin  io.Reader
@@ -81,11 +93,32 @@ type runOptions struct {
 	dir    string
 }
 
-// We set the defaults after calling any RunOptions on a runOptions struct
-// so that users cannot override the empty values, which would lead to the
-// default stdin, stdout, stderr, and environment being used.
-func newRunOptions() *runOptions {
-	return &runOptions{}
+func newExecOptions() *execOptions {
+	return &execOptions{}
+}
+
+func (e *execOptions) ApplyToCmd(cmd *exec.Cmd) {
+	// If the user did not specify env vars, we want to make sure
+	// the command has access to none, as the default is the current env.
+	if len(e.env) == 0 {
+		cmd.Env = emptyEnv
+	} else {
+		cmd.Env = envSlice(e.env)
+	}
+	// If the user did not specify any stdin, we want to make sure
+	// the command has access to none, as the default is the default stdin.
+	if e.stdin == nil {
+		cmd.Stdin = ioextended.DiscardReader
+	} else {
+		cmd.Stdin = e.stdin
+	}
+	// If Stdout or Stderr are nil, os/exec connects the process output directly
+	// to the null device.
+	cmd.Stdout = e.stdout
+	cmd.Stderr = e.stderr
+	// The default behavior for dir is what we want already, i.e. the current
+	// working directory.
+	cmd.Dir = e.dir
 }
 
 func envSlice(env map[string]string) []string {
