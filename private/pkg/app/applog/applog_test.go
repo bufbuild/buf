@@ -15,38 +15,38 @@
 package applog
 
 import (
-    "testing"
 	"fmt"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zapcore"
 )
 
 func TestGetZapLevel(t *testing.T) {
-    testCases := []struct {
-        levelString string
-        expected    zapcore.Level
-        expectError bool
-    }{
-        {"debug", zapcore.DebugLevel, false},
-        {"info", zapcore.InfoLevel, false},
-        {"warn", zapcore.WarnLevel, false},
-        {"error", zapcore.ErrorLevel, false},
-        {"", zapcore.InfoLevel, false},
-        {"foobar", zapcore.InfoLevel, true},
-    }
+	testCases := []struct {
+		levelString string
+		expected    zapcore.Level
+		expectError bool
+	}{
+		{"debug", zapcore.DebugLevel, false},
+		{"info", zapcore.InfoLevel, false},
+		{"warn", zapcore.WarnLevel, false},
+		{"error", zapcore.ErrorLevel, false},
+		{"", zapcore.InfoLevel, false},
+		{"foobar", zapcore.InfoLevel, true},
+	}
 
-    for _, tc := range testCases {
-        actual, err := getZapLevel(tc.levelString)
-        if tc.expectError && err == nil {
-            t.Errorf("Expected error for level %q but got none", tc.levelString)
-        } else if !tc.expectError && err != nil {
-            t.Errorf("Unexpected error for level %q: %s", tc.levelString, err)
-        }
-        if actual != tc.expected {
-            t.Errorf("For level %q expected %v but got %v", tc.levelString, tc.expected, actual)
-        }
-    }
+	for _, tc := range testCases {
+		actual, err := getZapLevel(tc.levelString)
+		if tc.expectError && err == nil {
+			t.Errorf("Expected error for level %q but got none", tc.levelString)
+		} else if !tc.expectError && err != nil {
+			t.Errorf("Unexpected error for level %q: %s", tc.levelString, err)
+		}
+		if actual != tc.expected {
+			t.Errorf("For level %q expected %v but got %v", tc.levelString, tc.expected, actual)
+		}
+	}
 }
 
 func TestGetZapEncoder(t *testing.T) {
