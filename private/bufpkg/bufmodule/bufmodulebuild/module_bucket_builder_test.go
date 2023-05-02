@@ -305,7 +305,7 @@ func TestDocumentation(t *testing.T) {
 	testDocumentationBucket(
 		t,
 		"testdata/4",
-		bufmodule.DocumentationFilePath,
+		bufmodule.DefaultDocumentationPath,
 		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/4/proto/1.proto", false, nil, ""),
 		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/4/proto/a/2.proto", false, nil, ""),
 	)

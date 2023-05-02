@@ -34,8 +34,8 @@ import (
 )
 
 const (
-	// DocumentationFilePath defines the path to the documentation file, relative to the root of the module.
-	DocumentationFilePath = "buf.md"
+	// DefaultDocumentationPath defines the path to the documentation file, relative to the root of the module.
+	DefaultDocumentationPath = "buf.md"
 	// FallbackDocumentationPathReadmeMD defines the fallback path to the documentation file, relative to the root of the module.
 	FallbackDocumentationPathReadmeMD = "README.md"
 	// FallbackDocumentationPathReadmeMarkdown defines the fallback path to the documentation file, relative to the root of the module.
@@ -47,6 +47,14 @@ const (
 	//
 	// It is used by the CLI cache and intended to eventually replace b1 entirely.
 	b3DigestPrefix = "b3"
+)
+
+var (
+	AllDocumentationPaths = []string{
+		DefaultDocumentationPath,
+		"README.md",
+		"README.markdown",
+	}
 )
 
 // ModuleFile is a module file.
@@ -422,7 +430,7 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
-	if docPath := module.DocumentationPath(); docPath != "" && docPath != DocumentationFilePath {
+	if docPath := module.DocumentationPath(); docPath != "" && docPath != DefaultDocumentationPath {
 		if _, err := hash.Write([]byte(docPath)); err != nil {
 			return "", err
 		}
@@ -472,7 +480,7 @@ func ModuleToBucket(
 		}
 	}
 	if docs := module.Documentation(); docs != "" {
-		moduleDocPath := DocumentationFilePath
+		moduleDocPath := DefaultDocumentationPath
 		if docPath := module.DocumentationPath(); docPath != "" {
 			moduleDocPath = docPath
 		}
