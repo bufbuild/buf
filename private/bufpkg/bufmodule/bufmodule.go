@@ -34,12 +34,8 @@ import (
 )
 
 const (
-	// DefaultDocumentationPath defines the path to the documentation file, relative to the root of the module.
+	// DefaultDocumentationPath defines the default path to the documentation file, relative to the root of the module.
 	DefaultDocumentationPath = "buf.md"
-	// FallbackDocumentationPathReadmeMD defines the fallback path to the documentation file, relative to the root of the module.
-	FallbackDocumentationPathReadmeMD = "README.md"
-	// FallbackDocumentationPathReadmeMarkdown defines the fallback path to the documentation file, relative to the root of the module.
-	FallbackDocumentationPathReadmeMarkdown = "README.markdown"
 	// LicenseFilePath defines the path to the license file, relative to the root of the module.
 	LicenseFilePath = "LICENSE"
 
@@ -50,6 +46,7 @@ const (
 )
 
 var (
+	// AllDocumentationPaths defines all possible paths to the documentation file, relative to the root of the module.
 	AllDocumentationPaths = []string{
 		DefaultDocumentationPath,
 		"README.md",
