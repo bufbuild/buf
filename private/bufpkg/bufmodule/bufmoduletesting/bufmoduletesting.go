@@ -135,7 +135,7 @@ var (
 		TestFile1Path:               []byte(`syntax="proto3";`),
 		TestModuleDocumentationPath: []byte(TestModuleDocumentation),
 	}
-	// TestDataWithDocumentationWithFallbackPath is the data that maps to TestDigestWithDocumentation.
+	// TestDataWithFallbackDocumentationPath is the data that maps to TestDigestWithDocumentation.
 	//
 	// It includes a README.md file.
 	TestDataWithFallbackDocumentationPath = map[string][]byte{
