@@ -82,7 +82,7 @@ func (b *moduleBucketBuilder) BuildForBucket(
 	// proxy plain files
 	externalPaths := []string{
 		buflock.ExternalConfigFilePath,
-		bufmodule.DocumentationFilePath,
+		bufmodule.DefaultDocumentationPath,
 		bufmodule.LicenseFilePath,
 	}
 	externalPaths = append(externalPaths, bufconfig.AllConfigFilePaths...)

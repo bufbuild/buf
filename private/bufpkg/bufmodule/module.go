@@ -144,7 +144,7 @@ func newModuleForBucket(
 	if err != nil {
 		return nil, err
 	}
-	documentation, err := getFileContentForBucket(ctx, sourceReadBucket, DocumentationFilePath)
+	documentation, err := getFileContentForBucket(ctx, sourceReadBucket, DefaultDocumentationPath)
 	if err != nil {
 		return nil, err
 	}
