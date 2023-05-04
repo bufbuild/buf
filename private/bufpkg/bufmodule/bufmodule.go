@@ -34,8 +34,8 @@ import (
 )
 
 const (
-	// DocumentationFilePath defines the path to the documentation file, relative to the root of the module.
-	DocumentationFilePath = "buf.md"
+	// DefaultDocumentationPath defines the default path to the documentation file, relative to the root of the module.
+	DefaultDocumentationPath = "buf.md"
 	// LicenseFilePath defines the path to the license file, relative to the root of the module.
 	LicenseFilePath = "LICENSE"
 
@@ -43,6 +43,15 @@ const (
 	//
 	// It is used by the CLI cache and intended to eventually replace b1 entirely.
 	b3DigestPrefix = "b3"
+)
+
+var (
+	// AllDocumentationPaths defines all possible paths to the documentation file, relative to the root of the module.
+	AllDocumentationPaths = []string{
+		DefaultDocumentationPath,
+		"README.md",
+		"README.markdown",
+	}
 )
 
 // ModuleFile is a module file.
@@ -100,6 +109,9 @@ type Module interface {
 	// Documentation gets the contents of the module documentation file, buf.md and returns the string representation.
 	// This may return an empty string if the documentation file does not exist.
 	Documentation() string
+	// DocumentationPath returns the path to the documentation file for the module.
+	// Can be one of `buf.md`, `README.md` or `README.markdown`
+	DocumentationPath() string
 	// License gets the contents of the module license file, LICENSE and returns the string representation.
 	// This may return an empty string if the documentation file does not exist.
 	License() string
@@ -458,7 +470,7 @@ func ModuleToBucket(
 		}
 	}
 	if docs := module.Documentation(); docs != "" {
-		if err := storage.PutPath(ctx, writeBucket, DocumentationFilePath, []byte(docs)); err != nil {
+		if err := storage.PutPath(ctx, writeBucket, DefaultDocumentationPath, []byte(docs)); err != nil {
 			return err
 		}
 	}
