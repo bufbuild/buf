@@ -80,13 +80,22 @@ func (b *moduleBucketBuilder) BuildForBucket(
 	config *bufmoduleconfig.Config,
 ) (*BuiltModule, error) {
 	// proxy plain files
-	externalPaths := append(
-		bufmodule.AllDocumentationPaths,
+	externalPaths := []string{
 		buflock.ExternalConfigFilePath,
 		bufmodule.LicenseFilePath,
-	)
+	}
 	externalPaths = append(externalPaths, bufconfig.AllConfigFilePaths...)
-	rootBuckets := make([]storage.ReadBucket, 0, len(externalPaths))
+	rootBuckets := make([]storage.ReadBucket, 0, len(externalPaths)+1)
+	for _, docPath := range bufmodule.AllDocumentationPaths {
+		bucket, err := getFileReadBucket(ctx, readBucket, docPath)
+		if err != nil {
+			return nil, err
+		}
+		if bucket != nil {
+			rootBuckets = append(rootBuckets, bucket)
+			break
+		}
+	}
 	for _, path := range externalPaths {
 		bucket, err := getFileReadBucket(ctx, readBucket, path)
 		if err != nil {
