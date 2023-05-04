@@ -348,7 +348,10 @@ func TestBuildFromGitIntegration(t *testing.T) {
 	require.NoError(t, err)
 	// object service
 	runner := command.NewRunner()
-	objects, err := git.NewCatFile(runner)
+	catfile, err := git.NewCatFile(runner)
+	require.NoError(t, err)
+	objects, err := catfile.Connect()
+	require.NoError(t, err)
 	defer func() { assert.NoError(t, objects.Close()) }()
 	require.NoError(t, err)
 	// locate proto tree

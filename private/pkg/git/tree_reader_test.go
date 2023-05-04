@@ -179,7 +179,10 @@ func TestStorageIntegration(t *testing.T) {
 	require.NoError(t, err)
 	// object service
 	runner := command.NewRunner()
-	objects, err := NewCatFile(runner)
+	catfile, err := NewCatFile(runner)
+	require.NoError(t, err)
+	objects, err := catfile.Connect()
+	require.NoError(t, err)
 	defer func() { assert.NoError(t, objects.Close()) }()
 	require.NoError(t, err)
 	commit, err := objects.Commit(commitref)

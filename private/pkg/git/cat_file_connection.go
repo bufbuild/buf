@@ -29,10 +29,10 @@ import (
 	"go.uber.org/multierr"
 )
 
-// terminateTime is the amount of time we'll wait for git-cat-file to exit.
-var terminateTime = 5 * time.Second
+// exitTime is the amount of time we'll wait for git-cat-file(1) to exit.
+var exitTime = 5 * time.Second
 
-// catFileConection represents a git-cat-file process.
+// catFileConection represents a git-cat-file(1)  process.
 type catFileConnection struct {
 	process command.Process
 	tx      io.WriteCloser
@@ -88,13 +88,14 @@ func (c *catFileConnection) object(typ string, id object.ID) ([]byte, error) {
 		return nil, err
 	}
 	// response
-	header, err := c.rx.ReadBytes('\n') // todo: data + error case
+	header, err := c.rx.ReadBytes('\n') // TODO: data + error case
 	if err != nil {
 		return nil, err
 	}
-	parts := strings.Split(string(header), " ")
+	headerStr := string(header)
+	parts := strings.Split(headerStr, " ")
 	if len(parts) < 3 {
-		return nil, errors.New("malformed header")
+		return nil, fmt.Errorf("git-cat-file: malformed header: %q", headerStr)
 	}
 	var objID object.ID
 	if err := objID.UnmarshalText([]byte(parts[0])); err != nil {
@@ -117,12 +118,14 @@ func (c *catFileConnection) object(typ string, id object.ID) ([]byte, error) {
 		return nil, err
 	}
 	if len(trailer) != 1 {
-		return nil, errors.New("unexpected trailer")
+		return nil, errors.New("git-cat-file: unexpected trailer")
 	}
 	// Check the response type. It's check here to consume the complete request
 	// first.
 	if objType != typ {
-		return nil, fmt.Errorf("object %q is a %s, not a %s", id, objType, typ)
+		return nil, fmt.Errorf(
+			"git-cat-file: object %q is a %s, not a %s", id, objType, typ,
+		)
 	}
 	return objContent, err
 }
@@ -131,7 +134,7 @@ func (c *catFileConnection) object(typ string, id object.ID) ([]byte, error) {
 func (c *catFileConnection) Close() error {
 	ctx, cancel := context.WithDeadline(
 		context.Background(),
-		time.Now().Add(terminateTime),
+		time.Now().Add(exitTime),
 	)
 	defer cancel()
 	return multierr.Combine(

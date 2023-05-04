@@ -15,7 +15,9 @@
 package git
 
 import (
+	"fmt"
 	"io"
+	"os"
 
 	"github.com/bufbuild/buf/private/pkg/command"
 )
@@ -25,29 +27,52 @@ type catFileOptions struct {
 }
 
 type CatFileOption interface {
-	apply(*catFileOptions)
+	apply(*catFileOptions) error
 }
 
 type gitdirOption string
 
-func (gitdir gitdirOption) apply(o *catFileOptions) {
-	o.gitdir = string(gitdir)
+func (gitdir gitdirOption) apply(o *catFileOptions) error {
+	dir := string(gitdir)
+	info, err := os.Stat(dir)
+	if err != nil {
+		return fmt.Errorf("git dir: %q does not exist", dir)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("git dir: %q is not a directory", dir)
+	}
+	o.gitdir = dir
+	return nil
 }
 
 func CatFileGitDir(dir string) CatFileOption {
 	return gitdirOption(dir)
 }
 
-// NewCatFile starts up a git-cat-file instance and returns a
-// ObjectService for it. Call Close to stop the git-cat-file process.
+// [CatFile] is a handle to create [ObjectService] backed by git-cat-file(1).
+type CatFile struct {
+	runner command.Runner
+	opts   *catFileOptions
+}
+
+// NewCatFile returns a [CatFile].
 func NewCatFile(
 	runner command.Runner,
 	options ...CatFileOption,
-) (ObjectService, error) {
-	var opts catFileOptions
+) (*CatFile, error) {
+	opts := &catFileOptions{}
 	for _, opt := range options {
-		opt.apply(&opts)
+		if err := opt.apply(opts); err != nil {
+			return nil, err
+		}
 	}
+	return &CatFile{runner: runner, opts: opts}, nil
+}
+
+// Connect returns an ObjectService backed by git-cat-file(1).
+func (cf *CatFile) Connect() (ObjectService, error) {
+	// For now let's spawn a new git-cat-file on every connection request.
+	// We can later manage a pool of them and route requests amongst them.
 	rx, stdout := io.Pipe()
 	stdin, tx := io.Pipe()
 	runOpts := []command.StartOption{
@@ -55,14 +80,14 @@ func NewCatFile(
 		command.StartWithStdin(stdin),
 		command.StartWithStdout(stdout),
 	}
-	if opts.gitdir != "" {
+	if cf.opts.gitdir != "" {
 		runOpts = append(runOpts,
 			command.StartWithEnv(map[string]string{
-				"GIT_DIR": opts.gitdir,
+				"GIT_DIR": cf.opts.gitdir,
 			}),
 		)
 	}
-	process, err := runner.Start(
+	process, err := cf.runner.Start(
 		"git",
 		runOpts...,
 	)

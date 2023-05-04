@@ -15,6 +15,7 @@
 package git
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -23,18 +24,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestCatFileGitDir(t *testing.T) {
+	dir := t.TempDir()        // probing is only on a plain dir
+	var runner command.Runner // runner shouldn't be touched in construction
+	_, err := NewCatFile(runner, CatFileGitDir(filepath.Join(dir, "none")))
+	assert.Error(t, err)
+	_, err = NewCatFile(runner, CatFileGitDir(dir))
+	assert.NoError(t, err)
+}
+
 func TestCatFileIntegration(t *testing.T) {
 	if testing.Short() {
 		// This test spawns a live git-cat-file process.
 		t.Skip("skipping git-cat-file integration test")
 	}
 	runner := command.NewRunner()
-	conn, err := NewCatFile(runner)
+	catfile, err := NewCatFile(runner)
+	require.NoError(t, err)
+	objects, err := catfile.Connect()
 	require.NoError(t, err)
 	// This is the first commit in bufbuild/buf. It most certainly should
 	// exist.
 	firstCommit := mustID(t, "157c7ae554844ff7ae178536ec10787b5b74b5db")
-	commit, err := conn.Commit(firstCommit)
+	commit, err := objects.Commit(firstCommit)
 	require.NoError(t, err)
 	assert.Equal(t,
 		mustID(t, "0760f36a308962f130706202101dfc86349df1df"),
@@ -46,7 +58,7 @@ func TestCatFileIntegration(t *testing.T) {
 	assert.Equal(t, "Copy from internal\n", commit.Message)
 	// And this is the second commit in bufbuild/buf.
 	secondCommit := mustID(t, "a765578a6b69c391891a79cff85cba9bfa08d792")
-	commit, err = conn.Commit(secondCommit)
+	commit, err = objects.Commit(secondCommit)
 	require.NoError(t, err)
 	assert.Equal(t,
 		mustID(t, "67563e7d3436f4a7ca5caff504350ac33dfc4a81"),
@@ -59,7 +71,7 @@ func TestCatFileIntegration(t *testing.T) {
 		"docs(README): campatibility -> compatibility",
 		commit.Message,
 	)
-	assert.NoError(t, conn.Close())
+	assert.NoError(t, objects.Close())
 }
 
 func mustID(t *testing.T, hexid string) (objID object.ID) {
