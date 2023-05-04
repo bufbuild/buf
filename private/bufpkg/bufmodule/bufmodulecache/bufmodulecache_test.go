@@ -264,7 +264,7 @@ func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	require.NoError(t, bufmodule.ModuleToBucket(ctx, module, readWriteBucket))
 	// Verify that the buf.md file was created.
-	exists, err := storage.Exists(ctx, readWriteBucket, bufmodule.DocumentationFilePath)
+	exists, err := storage.Exists(ctx, readWriteBucket, bufmodule.DefaultDocumentationPath)
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.Equal(t, bufmoduletesting.TestModuleDocumentation, module.Documentation())
@@ -300,7 +300,7 @@ func TestModuleReaderCacherWithConfiguration(t *testing.T) {
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	require.NoError(t, bufmodule.ModuleToBucket(ctx, module, readWriteBucket))
 	// Verify that the buf.md file was created.
-	exists, err := storage.Exists(ctx, readWriteBucket, bufmodule.DocumentationFilePath)
+	exists, err := storage.Exists(ctx, readWriteBucket, bufmodule.DefaultDocumentationPath)
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.Equal(t, bufmoduletesting.TestModuleDocumentation, module.Documentation())
