@@ -6,10 +6,8 @@ permissions: read-all
 jobs:
   test:
     env:
-      GOMODCACHE: 'd:\gomodcache'
-      GOCACHE: 'd:\gocache'
       DOWNLOAD_CACHE: 'd:\downloadcache'
-    runs-on: windows-2019
+    runs-on: windows-latest
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -21,10 +19,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ${{ env.GOCACHE }}
-            ${{ env.GOMODCACHE }}
             ${{ env.DOWNLOAD_CACHE }}
-          key: ${{ runner.os }}-buf-windows-${{ hashFiles('**/go.sum', 'windows/**') }}
+          key: ${{ runner.os }}-buf-windows-${{ hashFiles('windows/**') }}
           restore-keys: |
             ${{ runner.os }}-buf-windows-
       - name: test
