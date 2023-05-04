@@ -37,6 +37,7 @@ type module struct {
 	moduleIdentity       bufmoduleref.ModuleIdentity
 	commit               string
 	documentation        string
+	documentationPath    string
 	license              string
 	breakingConfig       *bufbreakingconfig.Config
 	lintConfig           *buflintconfig.Config
@@ -77,6 +78,7 @@ func newModuleForProto(
 		dependencyModulePins,
 		nil, // The module identity is not stored on the proto. We rely on the layer above, (e.g. `ModuleReader`) to set this as needed.
 		protoModule.GetDocumentation(),
+		protoModule.GetDocumentationPath(),
 		protoModule.GetLicense(),
 		breakingConfig,
 		lintConfig,
@@ -167,6 +169,7 @@ func newModuleForBucket(
 		dependencyModulePins,
 		moduleIdentity,
 		documentation,
+		"",
 		license,
 		moduleConfig.Breaking,
 		moduleConfig.Lint,
@@ -206,6 +209,7 @@ func newModule(
 	dependencyModulePins []bufmoduleref.ModulePin,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	documentation string,
+	documentationPath string,
 	license string,
 	breakingConfig *bufbreakingconfig.Config,
 	lintConfig *buflintconfig.Config,
@@ -221,6 +225,7 @@ func newModule(
 		dependencyModulePins: dependencyModulePins,
 		moduleIdentity:       moduleIdentity,
 		documentation:        documentation,
+		documentationPath:    documentationPath,
 		license:              license,
 		breakingConfig:       breakingConfig,
 		lintConfig:           lintConfig,
@@ -290,6 +295,10 @@ func (m *module) DependencyModulePins() []bufmoduleref.ModulePin {
 
 func (m *module) Documentation() string {
 	return m.documentation
+}
+
+func (m *module) DocumentationPath() string {
+	return m.documentationPath
 }
 
 func (m *module) License() string {
