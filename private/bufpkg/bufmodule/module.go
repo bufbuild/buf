@@ -78,7 +78,7 @@ func newModuleForProto(
 		dependencyModulePins,
 		nil, // The module identity is not stored on the proto. We rely on the layer above, (e.g. `ModuleReader`) to set this as needed.
 		protoModule.GetDocumentation(),
-		DefaultDocumentationPath,
+		protoModule.GetDocumentationPath(),
 		protoModule.GetLicense(),
 		breakingConfig,
 		lintConfig,
@@ -169,7 +169,7 @@ func newModuleForBucket(
 		dependencyModulePins,
 		moduleIdentity,
 		documentation,
-		DefaultDocumentationPath,
+		"",
 		license,
 		moduleConfig.Breaking,
 		moduleConfig.Lint,
