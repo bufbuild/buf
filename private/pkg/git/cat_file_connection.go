@@ -88,13 +88,18 @@ func (c *catFileConnection) object(typ string, id object.ID) ([]byte, error) {
 		return nil, err
 	}
 	// response
-	header, err := c.rx.ReadBytes('\n') // TODO: data + error case
+	header, err := c.rx.ReadBytes('\n')
 	if err != nil {
 		return nil, err
 	}
-	headerStr := string(header)
+	headerStr := strings.TrimRight(string(header), "\n")
 	parts := strings.Split(headerStr, " ")
-	if len(parts) < 3 {
+	if len(parts) == 2 && parts[1] == "missing" {
+		return nil, fmt.Errorf(
+			"git-cat-file: %w: %s", ErrObjectNotFound, parts[0],
+		)
+	}
+	if len(parts) != 3 {
 		return nil, fmt.Errorf("git-cat-file: malformed header: %q", headerStr)
 	}
 	var objID object.ID
@@ -102,7 +107,7 @@ func (c *catFileConnection) object(typ string, id object.ID) ([]byte, error) {
 		return nil, err
 	}
 	objType := parts[1]
-	objLenStr := strings.TrimRight(parts[2], "\n")
+	objLenStr := parts[2]
 	objLen, err := strconv.ParseInt(objLenStr, 10, 64)
 	if err != nil {
 		return nil, err

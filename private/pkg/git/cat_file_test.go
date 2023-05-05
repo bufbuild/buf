@@ -15,14 +15,64 @@
 package git
 
 import (
+	"context"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git/object"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// gitCmd wraps calling out to the host's "git"
+type gitCmd struct {
+	t       *testing.T
+	runner  command.Runner
+	gitdir  string
+	timeout time.Duration
+	env     map[string]string
+}
+
+func newGitCmd(t *testing.T, runner command.Runner, gitdir string) *gitCmd {
+	return &gitCmd{
+		t:       t,
+		runner:  runner,
+		gitdir:  gitdir,
+		timeout: 5 * time.Second,
+	}
+}
+
+func (g *gitCmd) Env(env map[string]string) *gitCmd {
+	git := *g
+	git.env = env
+	return &git
+}
+
+func (g *gitCmd) Cmd(args ...string) {
+	cmdEnv := map[string]string{
+		"GIT_DIR": g.gitdir,
+	}
+	for k, v := range g.env {
+		cmdEnv[k] = v
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), g.timeout)
+	defer cancel()
+	err := g.runner.Run(ctx,
+		"git",
+		command.RunWithArgs(args...),
+		command.RunWithEnv(cmdEnv),
+		command.RunWithStdout(os.Stdout),
+		command.RunWithStderr(os.Stderr),
+	)
+	if err != nil {
+		argStr := strings.Join(args, " ")
+		g.t.Errorf("`git %s`: %s", argStr, err)
+	}
+}
 
 func TestCatFileGitDir(t *testing.T) {
 	dir := t.TempDir()        // probing is only on a plain dir
@@ -35,42 +85,63 @@ func TestCatFileGitDir(t *testing.T) {
 
 func TestCatFileIntegration(t *testing.T) {
 	if testing.Short() {
-		// This test spawns a live git-cat-file process.
+		// This test builds a git repo and spawns a live git-cat-file process.
 		t.Skip("skipping git-cat-file integration test")
 	}
+	// Construct a git repository.
+	dir := t.TempDir()
 	runner := command.NewRunner()
-	catfile, err := NewCatFile(runner)
+	git := newGitCmd(t, runner, dir)
+	git.Cmd("init", "--bare")
+	git.Cmd("config", "--local", "user.name", "buftest")
+	git.Cmd("config", "--local", "user.email", "buftest@example.com")
+	// produces a root commit at 87372c52f1a8dac8ebfe92f47bf6681822a2dcfa
+	git.Env(map[string]string{
+		"GIT_AUTHOR_DATE":    "2000-01-01T00:00:00",
+		"GIT_COMMITTER_DATE": "2000-01-01T00:00:00",
+	}).Cmd(
+		"commit-tree",
+		"-m", "msg",
+		"4b825dc642cb6eb9a060e54bf8d69288fbee4904", // zero tree
+	)
+	// produces a descendent at 08af856a42981682ecc4a9420ac1b63a1c79fe96
+	git.Env(map[string]string{
+		"GIT_AUTHOR_DATE":    "2000-01-01T00:00:00",
+		"GIT_COMMITTER_DATE": "2000-01-01T00:00:00",
+	}).Cmd(
+		"commit-tree",
+		"-m", "different msg",
+		"-p", "87372c52f1a8dac8ebfe92f47bf6681822a2dcfa", // parent is root
+		"4b825dc642cb6eb9a060e54bf8d69288fbee4904", // zero tree
+	)
+	catfile, err := NewCatFile(runner, CatFileGitDir(dir))
 	require.NoError(t, err)
 	objects, err := catfile.Connect()
 	require.NoError(t, err)
-	// This is the first commit in bufbuild/buf. It most certainly should
-	// exist.
-	firstCommit := mustID(t, "157c7ae554844ff7ae178536ec10787b5b74b5db")
+	// root commit
+	firstCommit := mustID(t, "87372c52f1a8dac8ebfe92f47bf6681822a2dcfa")
 	commit, err := objects.Commit(firstCommit)
 	require.NoError(t, err)
 	assert.Equal(t,
-		mustID(t, "0760f36a308962f130706202101dfc86349df1df"),
+		mustID(t, "4b825dc642cb6eb9a060e54bf8d69288fbee4904"),
 		commit.Tree,
 	)
 	assert.Nil(t, commit.Parents)
-	assert.Equal(t, "bufdev", commit.Author.Name)
-	assert.Equal(t, "bufdev-github@buf.build", commit.Author.Email)
-	assert.Equal(t, "Copy from internal\n", commit.Message)
-	// And this is the second commit in bufbuild/buf.
-	secondCommit := mustID(t, "a765578a6b69c391891a79cff85cba9bfa08d792")
+	assert.Equal(t, "buftest", commit.Author.Name)
+	assert.Equal(t, "buftest@example.com", commit.Author.Email)
+	assert.Equal(t, "msg\n", commit.Message)
+	// second commit
+	secondCommit := mustID(t, "08af856a42981682ecc4a9420ac1b63a1c79fe96")
 	commit, err = objects.Commit(secondCommit)
 	require.NoError(t, err)
 	assert.Equal(t,
-		mustID(t, "67563e7d3436f4a7ca5caff504350ac33dfc4a81"),
+		mustID(t, "4b825dc642cb6eb9a060e54bf8d69288fbee4904"),
 		commit.Tree,
 	)
 	assert.Equal(t, []object.ID{firstCommit}, commit.Parents)
-	assert.Equal(t, "Samuel Vaillant", commit.Author.Name)
-	assert.Equal(t, "samuel.vllnt@gmail.com", commit.Author.Email)
-	assert.Equal(t,
-		"docs(README): campatibility -> compatibility",
-		commit.Message,
-	)
+	assert.Equal(t, "buftest", commit.Author.Name)
+	assert.Equal(t, "buftest@example.com", commit.Author.Email)
+	assert.Equal(t, "different msg\n", commit.Message)
 	assert.NoError(t, objects.Close())
 }
 

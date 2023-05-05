@@ -130,6 +130,16 @@ func TestCatFileConnectionIncorrectObjectType(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestCatFileConnectionMissingObject(t *testing.T) {
+	t.Parallel()
+	catfile := newMockCatFile(nil)
+	conn := newCatFileConnection(catfile, catfile.ToStdin, catfile.FromStdout)
+	defer conn.Close()
+	_, err := conn.Commit(object.ID([]byte{0x55, 0x66, 0x77, 0x88}))
+	assert.ErrorIs(t, err, ErrObjectNotFound)
+	assert.ErrorIs(t, err, ErrNotFound)
+}
+
 func TestCatFileConnectionTermination(t *testing.T) {
 	t.Parallel()
 	catfile := newMockCatFile(map[string]obj{})

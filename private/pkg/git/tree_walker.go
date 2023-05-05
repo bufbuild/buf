@@ -15,20 +15,12 @@
 package git
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/git/object"
 )
-
-// ErrEntryNotFound is returned when an entry of any type is not found.
-var ErrEntryNotFound = errors.New("not found")
-
-// ErrDirEntryNotFound is returned when an ModeDir entry is not found. It
-// wraps ErrEntryNotFound.
-var ErrDirEntryNotFound = fmt.Errorf("dir %w", ErrEntryNotFound)
 
 // TreeFinder finds or ranges over entries in a tree.
 type TreeFinder struct {

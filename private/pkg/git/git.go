@@ -16,6 +16,8 @@ package git
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"regexp"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -25,6 +27,21 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
+
+// ErrNotFound is returned whenever any object, entry, or any entity is not
+// found. More specific not-found errors wrap this one.
+var ErrNotFound = errors.New("not found")
+
+// ErrObjectNotFound is returned when a git commit, tree, or other object
+// could not be found.
+var ErrObjectNotFound = fmt.Errorf("object %w", ErrNotFound)
+
+// ErrEntryNotFound is returned when an entry of any type is not found.
+var ErrEntryNotFound = fmt.Errorf("entry %w", ErrNotFound)
+
+// ErrDirEntryNotFound is returned when an ModeDir entry is not found. It
+// wraps ErrEntryNotFound.
+var ErrDirEntryNotFound = fmt.Errorf("dir %w", ErrEntryNotFound)
 
 // Name is a name identifiable by git.
 type Name interface {
