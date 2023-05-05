@@ -16,6 +16,7 @@ package git
 
 import (
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,7 +53,7 @@ func (g *gitCmd) Env(env map[string]string) *gitCmd {
 	return &git
 }
 
-func (g *gitCmd) Cmd(args ...string) {
+func (g *gitCmd) Cmd(args ...string) string {
 	cmdEnv := map[string]string{
 		"GIT_DIR": g.gitdir,
 	}
@@ -61,17 +62,19 @@ func (g *gitCmd) Cmd(args ...string) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), g.timeout)
 	defer cancel()
+	var stdout strings.Builder
 	err := g.runner.Run(ctx,
 		"git",
 		command.RunWithArgs(args...),
 		command.RunWithEnv(cmdEnv),
-		command.RunWithStdout(os.Stdout),
+		command.RunWithStdout(io.MultiWriter(&stdout, os.Stdout)),
 		command.RunWithStderr(os.Stderr),
 	)
 	if err != nil {
 		argStr := strings.Join(args, " ")
-		g.t.Errorf("`git %s`: %s", argStr, err)
+		g.t.Fatalf("`git %s`: %s", argStr, err)
 	}
+	return stdout.String()
 }
 
 func TestCatFileGitDir(t *testing.T) {
@@ -95,8 +98,8 @@ func TestCatFileIntegration(t *testing.T) {
 	git.Cmd("init", "--bare")
 	git.Cmd("config", "--local", "user.name", "buftest")
 	git.Cmd("config", "--local", "user.email", "buftest@example.com")
-	// produces a root commit at 87372c52f1a8dac8ebfe92f47bf6681822a2dcfa
-	git.Env(map[string]string{
+	// produces a root commit
+	rootHash := git.Env(map[string]string{
 		"GIT_AUTHOR_DATE":    "2000-01-01T00:00:00",
 		"GIT_COMMITTER_DATE": "2000-01-01T00:00:00",
 	}).Cmd(
@@ -104,22 +107,24 @@ func TestCatFileIntegration(t *testing.T) {
 		"-m", "msg",
 		"4b825dc642cb6eb9a060e54bf8d69288fbee4904", // zero tree
 	)
-	// produces a descendent at 08af856a42981682ecc4a9420ac1b63a1c79fe96
-	git.Env(map[string]string{
+	rootHash = strings.TrimRight(rootHash, "\n")
+	// produces a descendent from the root
+	secondHash := git.Env(map[string]string{
 		"GIT_AUTHOR_DATE":    "2000-01-01T00:00:00",
 		"GIT_COMMITTER_DATE": "2000-01-01T00:00:00",
 	}).Cmd(
 		"commit-tree",
 		"-m", "different msg",
-		"-p", "87372c52f1a8dac8ebfe92f47bf6681822a2dcfa", // parent is root
+		"-p", rootHash,
 		"4b825dc642cb6eb9a060e54bf8d69288fbee4904", // zero tree
 	)
+	secondHash = strings.TrimRight(secondHash, "\n")
 	catfile, err := NewCatFile(runner, CatFileGitDir(dir))
 	require.NoError(t, err)
 	objects, err := catfile.Connect()
 	require.NoError(t, err)
 	// root commit
-	firstCommit := mustID(t, "87372c52f1a8dac8ebfe92f47bf6681822a2dcfa")
+	firstCommit := mustID(t, rootHash)
 	commit, err := objects.Commit(firstCommit)
 	require.NoError(t, err)
 	assert.Equal(t,
@@ -131,7 +136,7 @@ func TestCatFileIntegration(t *testing.T) {
 	assert.Equal(t, "buftest@example.com", commit.Author.Email)
 	assert.Equal(t, "msg\n", commit.Message)
 	// second commit
-	secondCommit := mustID(t, "08af856a42981682ecc4a9420ac1b63a1c79fe96")
+	secondCommit := mustID(t, secondHash)
 	commit, err = objects.Commit(secondCommit)
 	require.NoError(t, err)
 	assert.Equal(t,
