@@ -5,6 +5,10 @@
 - Remove `buf beta registry {plugin,template} {deprecate,undeprecate}`.
 - Add `--user` and `--netrc` flags to `buf curl`, providing the same behavior as the
   flags of the same name in the cURL tool.
+- Include `DocumentationPath` in the module on `buf push`.
+- Support fallback paths, `README.md` and `README.markdown`, for module documentation.
+  The default source for module documentation is `buf.md`.
+  If `buf.md` is missing, `README.md` or `README.markdown` is used as fallback sources.
 
 ## [v1.17.0] - 2023-04-05
 
