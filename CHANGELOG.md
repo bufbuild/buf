@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.18.0] - 2023-05-05
 
 - Remove `buf beta registry {plugin,template} {deprecate,undeprecate}`.
 - Add `--user` and `--netrc` flags to `buf curl`, providing the same behavior as the
@@ -862,7 +862,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.17.0...HEAD
+[v1.18.0]: https://github.com/bufbuild/buf/compare/v1.17.0...v1.18.0
 [v1.17.0]: https://github.com/bufbuild/buf/compare/v1.16.0...v1.17.0
 [v1.16.0]: https://github.com/bufbuild/buf/compare/v1.15.1...v1.16.0
 [v1.15.1]: https://github.com/bufbuild/buf/compare/v1.15.0...v1.15.1
