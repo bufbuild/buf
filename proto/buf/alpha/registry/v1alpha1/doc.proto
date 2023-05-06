@@ -129,6 +129,11 @@ message ModuleDocumentation {
   // The LICENSE file is a part of the module.
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
   string license = 4;
+  // documentation_path is the path of the file which contains the module documentation.
+  //
+  // either `buf.md`, `README.md` or `README.markdown`.
+  // if empty, assumes buf.md.
+  string documentation_path = 5;
 }
 
 // GetPackageDocumentationRequest takes an owner, repository, reference, and package name.

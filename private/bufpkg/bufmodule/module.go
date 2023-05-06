@@ -146,9 +146,17 @@ func newModuleForBucket(
 	if err != nil {
 		return nil, err
 	}
-	documentation, err := getFileContentForBucket(ctx, sourceReadBucket, DefaultDocumentationPath)
-	if err != nil {
-		return nil, err
+	var documentation string
+	var documentationPath string
+	for _, docPath := range AllDocumentationPaths {
+		documentation, err = getFileContentForBucket(ctx, sourceReadBucket, docPath)
+		if err != nil {
+			return nil, err
+		}
+		if documentation != "" {
+			documentationPath = docPath
+			break
+		}
 	}
 	license, err := getFileContentForBucket(ctx, sourceReadBucket, LicenseFilePath)
 	if err != nil {
@@ -169,7 +177,7 @@ func newModuleForBucket(
 		dependencyModulePins,
 		moduleIdentity,
 		documentation,
-		"",
+		documentationPath,
 		license,
 		moduleConfig.Breaking,
 		moduleConfig.Lint,
