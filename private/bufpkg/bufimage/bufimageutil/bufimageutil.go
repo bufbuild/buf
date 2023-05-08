@@ -335,7 +335,7 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 			svcsPath := append(basePath, fileServicesTag)
 			// We must iterate through the services *before* we trim the slice. That way the
 			// index we see is for the "old path", which we need to know to mark elements as
-			// moved or deleted wih the sourcePathRemapper.
+			// moved or deleted with the sourcePathRemapper.
 			for index, serviceDescriptor := range imageFileDescriptor.Service {
 				if _, ok := closure.elements[serviceDescriptor]; !ok {
 					continue
@@ -382,7 +382,7 @@ func trimMessageDescriptors(
 ) []*descriptorpb.DescriptorProto {
 	// We must iterate through the messages *before* we trim the slice. That way the
 	// index we see is for the "old path", which we need to know to mark elements as
-	// moved or deleted wih the sourcePathRemapper.
+	// moved or deleted with the sourcePathRemapper.
 	for index, messageDescriptor := range in {
 		path := append(pathSoFar, int32(index))
 		mode, ok := toKeep[messageDescriptor]
