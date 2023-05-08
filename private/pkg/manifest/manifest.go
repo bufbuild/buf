@@ -114,6 +114,7 @@ func (m *Manifest) AddEntry(path string, digest Digest) error {
 	if err != nil {
 		return fmt.Errorf("clean path: %w", err)
 	}
+	path = filepath.ToSlash(path)
 	if strings.Contains(path, "..") {
 		return errors.New(`invalid sequence ".." in path`)
 	}
