@@ -159,7 +159,7 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 		Swift: &bufpluginconfig.SwiftRegistryConfig{
 			Dependencies: []bufpluginconfig.SwiftRegistryDependencyConfig{
 				{
-					Source:   "github.com/apple/swift-protobuf",
+					Source:   "https://github.com/apple/swift-protobuf.git",
 					Package:  "swift-protobuf",
 					Version:  "1.12.0",
 					Products: []string{"SwiftProtobuf"},
