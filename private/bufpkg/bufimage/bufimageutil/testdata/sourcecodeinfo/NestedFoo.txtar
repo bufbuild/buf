@@ -1,0 +1,570 @@
+{
+  "location": [
+    {
+      "span": [
+        1,
+        0,
+        153,
+        1
+      ]
+    },
+    {
+      "path": [
+        12
+      ],
+      "span": [
+        1,
+        0,
+        18
+      ],
+      "leadingComments": " Keep 1: comment on syntax\n"
+    },
+    {
+      "path": [
+        2
+      ],
+      "span": [
+        4,
+        0,
+        16
+      ],
+      "leadingComments": " Keep 2: comment on package\n"
+    },
+    {
+      "path": [
+        8
+      ],
+      "span": [
+        7,
+        0,
+        34
+      ]
+    },
+    {
+      "path": [
+        8,
+        11
+      ],
+      "span": [
+        7,
+        0,
+        34
+      ],
+      "leadingComments": " Keep 3: comment on option\n"
+    },
+    {
+      "path": [
+        11,
+        0
+      ],
+      "span": [
+        13,
+        7,
+        11
+      ]
+    },
+    {
+      "path": [
+        3,
+        0
+      ],
+      "span": [
+        16,
+        0,
+        40
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on import any.proto\n"
+    },
+    {
+      "path": [
+        4,
+        0
+      ],
+      "span": [
+        40,
+        0,
+        89,
+        1
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        1
+      ],
+      "span": [
+        40,
+        8,
+        11
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        7
+      ],
+      "span": [
+        46,
+        2,
+        26
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        7,
+        10101
+      ],
+      "span": [
+        46,
+        2,
+        26
+      ],
+      "leadingComments": " Keep if Foo | NestedFoo: comment on option\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0
+      ],
+      "span": [
+        61,
+        2,
+        88,
+        3
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on message NestedFoo\n",
+      "trailingComments": " We keep the following comment for Foo + ext because we don't\n discard options or option comments even if we're only retaining\n a message as a namespace for another retained element.\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        1
+      ],
+      "span": [
+        61,
+        10,
+        19
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        7
+      ],
+      "span": [
+        67,
+        4,
+        28
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        7,
+        10101
+      ],
+      "span": [
+        67,
+        4,
+        28
+      ],
+      "leadingComments": " Keep if Foo + ext | NestedFoo: comment on option\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        69,
+        4,
+        28
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on field uid\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        69,
+        4,
+        12
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        0,
+        5
+      ],
+      "span": [
+        69,
+        13,
+        19
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        69,
+        20,
+        23
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        0,
+        3
+      ],
+      "span": [
+        69,
+        26,
+        27
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        1
+      ],
+      "span": [
+        71,
+        4,
+        42
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on field meta\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        1,
+        4
+      ],
+      "span": [
+        71,
+        4,
+        12
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        1,
+        6
+      ],
+      "span": [
+        71,
+        13,
+        32
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        1,
+        1
+      ],
+      "span": [
+        71,
+        33,
+        37
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        1,
+        3
+      ],
+      "span": [
+        71,
+        40,
+        41
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        2
+      ],
+      "span": [
+        73,
+        4,
+        29
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on field state\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        2,
+        4
+      ],
+      "span": [
+        73,
+        4,
+        12
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        2,
+        6
+      ],
+      "span": [
+        73,
+        13,
+        18
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        2,
+        1
+      ],
+      "span": [
+        73,
+        19,
+        24
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        2,
+        2,
+        3
+      ],
+      "span": [
+        73,
+        27,
+        28
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        4,
+        0
+      ],
+      "span": [
+        76,
+        4,
+        81,
+        5
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on enum State\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        4,
+        0,
+        1
+      ],
+      "span": [
+        76,
+        9,
+        14
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        4,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        78,
+        6,
+        28
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_UNSPECIFIED\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        4,
+        0,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        78,
+        6,
+        23
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        4,
+        0,
+        2,
+        0,
+        2
+      ],
+      "span": [
+        78,
+        26,
+        27
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        4,
+        0,
+        2,
+        1
+      ],
+      "span": [
+        80,
+        6,
+        21
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_GOOD\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        4,
+        0,
+        2,
+        1,
+        1
+      ],
+      "span": [
+        80,
+        6,
+        16
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        4,
+        0,
+        2,
+        1,
+        2
+      ],
+      "span": [
+        80,
+        19,
+        20
+      ]
+    }
+  ]
+}
