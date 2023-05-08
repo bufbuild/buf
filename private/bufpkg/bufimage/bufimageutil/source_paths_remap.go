@@ -16,29 +16,50 @@ package bufimageutil
 
 import "sort"
 
+// sourcePathsRemapTrieNode is a node in a trie. Each node represents the
+// path of a source code location.
 type sourcePathsRemapTrieNode struct {
-	oldIndex  int32
-	newIndex  int32
+	oldIndex int32
+	// If == -1, the item at this path is being deleted. Otherwise,
+	// if != oldIndex, the item at this path is being moved, as well as
+	// all its descendents in the trie.
+	newIndex int32
+	// If true, the item at this point has its comments omitted. This is
+	// used to omit comments for messages that, after filtering, are only
+	// present as a namespace (so the comments likely no longer apply).
 	noComment bool
-	children  sourcePathsRemapTrie
+	// This node's children. These represent paths for which the current
+	// node is a path prefix (aka ancestor).
+	children sourcePathsRemapTrie
 }
 
+// sourcePathsRemapTrie is a trie (aka prefix tree) whose children are a
+// sorted slice (more efficient than a map, mainly due to not having to
+// sort it with every addition, in practice, since source code info is
+// mostly sorted).
+//
+// Each node in the trie represents some path of a source code location.
+// This is used to track renumbering and deletions of paths.
 type sourcePathsRemapTrie []*sourcePathsRemapTrieNode
 
-// insert inserts the given path into the trie and marks the last element
-// of oldPath to be replaced with newIndex. If newIndex is -1 then it means
-// the element at oldPath was deleted, not moved.
-func (t *sourcePathsRemapTrie) insert(oldPath []int32, newIndex int32) {
-	t.doInsert(oldPath, newIndex, false)
+// markMoved inserts the given path into the trie and marks the last element
+// of oldPath to be replaced with newIndex.
+func (t *sourcePathsRemapTrie) markMoved(oldPath []int32, newIndex int32) {
+	t.doTrieInsert(oldPath, newIndex, false)
 }
 
-// noComment inserts the given path into the trie and marks the element so
+// markDeleted marks the given path for deletion.
+func (t *sourcePathsRemapTrie) markDeleted(oldPath []int32) {
+	t.doTrieInsert(oldPath, -1, false)
+}
+
+// markNoComment inserts the given path into the trie and marks the element so
 // its comments will be dropped.
-func (t *sourcePathsRemapTrie) noComment(oldPath []int32) {
-	t.doInsert(oldPath, oldPath[len(oldPath)-1], true)
+func (t *sourcePathsRemapTrie) markNoComment(oldPath []int32) {
+	t.doTrieInsert(oldPath, oldPath[len(oldPath)-1], true)
 }
 
-func (t *sourcePathsRemapTrie) doInsert(oldPath []int32, newIndex int32, noComment bool) {
+func (t *sourcePathsRemapTrie) doTrieInsert(oldPath []int32, newIndex int32, noComment bool) {
 	if t == nil {
 		return
 	}
@@ -67,7 +88,7 @@ func (t *sourcePathsRemapTrie) doInsert(oldPath []int32, newIndex int32, noComme
 		*t = items
 	}
 	if len(oldPath) > 1 {
-		items[idx].children.doInsert(oldPath[1:], newIndex, noComment)
+		items[idx].children.doTrieInsert(oldPath[1:], newIndex, noComment)
 		return
 	}
 	if noComment {
@@ -78,8 +99,8 @@ func (t *sourcePathsRemapTrie) doInsert(oldPath []int32, newIndex int32, noComme
 }
 
 // newPath returns the corrected path of oldPath, given any moves and
-// deletions insert into t. If the item at the given oldPath was deleted
-// nil is returned. Otherwise, the corrected path is returned. If the
+// deletions inserted into t. If the item at the given oldPath was deleted
+// then nil is returned. Otherwise, the corrected path is returned. If the
 // item at oldPath was not moved or deleted, the returned path has the
 // same values as oldPath.
 func (t *sourcePathsRemapTrie) newPath(oldPath []int32) (path []int32, noComment bool) {

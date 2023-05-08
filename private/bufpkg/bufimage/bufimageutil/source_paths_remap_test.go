@@ -167,10 +167,10 @@ func createTrie(permutation func([]insertionOp) []insertionOp) *sourcePathsRemap
 	trie := &sourcePathsRemapTrie{}
 	for _, op := range ops {
 		if op.newIndex == -2 {
-			trie.noComment(op.oldPath)
+			trie.markNoComment(op.oldPath)
 			continue
 		}
-		trie.insert(op.oldPath, op.newIndex)
+		trie.markMoved(op.oldPath, op.newIndex)
 	}
 	return trie
 }

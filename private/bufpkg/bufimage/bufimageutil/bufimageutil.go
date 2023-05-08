@@ -258,10 +258,16 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		imageFileDescriptor := imageFile.Proto()
 
 		importsRequired := closure.imports[imageFile.Path()]
+		// If the file has source code info, we need to remap paths to correctly
+		// update this info for the elements retained after filtering.
 		var sourcePathRemapper *sourcePathsRemapTrie
 		if len(imageFileDescriptor.SourceCodeInfo.GetLocation()) > 0 {
 			sourcePathRemapper = &sourcePathsRemapTrie{}
 		}
+		// We track the source path as we go through the model, so that we can
+		// mark paths as moved or deleted. Whenever an element is deleted, any
+		// subsequent elements of the same type in the same scope have are "moved",
+		// because their index is shifted down.
 		basePath := make([]int32, 1, 16)
 		basePath[0] = fileDependencyTag
 		// While employing
@@ -273,14 +279,14 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		for indexFrom, importPath := range imageFileDescriptor.GetDependency() {
 			path := append(basePath, int32(indexFrom))
 			if _, ok := importsRequired[importPath]; ok {
-				sourcePathRemapper.insert(path, int32(indexTo))
+				sourcePathRemapper.markMoved(path, int32(indexTo))
 				indexFromTo[int32(indexFrom)] = int32(indexTo)
 				imageFileDescriptor.Dependency[indexTo] = importPath
 				indexTo++
-				// delete them as we go, so we know which ones weren't in the list
+				// markDeleted them as we go, so we know which ones weren't in the list
 				delete(importsRequired, importPath)
 			} else {
-				sourcePathRemapper.insert(path, -1)
+				sourcePathRemapper.markDeleted(path)
 			}
 		}
 		imageFileDescriptor.Dependency = imageFileDescriptor.Dependency[:indexTo]
@@ -292,7 +298,7 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 			imageFileDescriptor.Dependency = append(imageFileDescriptor.Dependency, importPath)
 		}
 		imageFileDescriptor.PublicDependency = nil
-		sourcePathRemapper.insert([]int32{filePublicDependencyTag}, -1)
+		sourcePathRemapper.markDeleted([]int32{filePublicDependencyTag})
 
 		basePath = basePath[:1]
 		basePath[0] = fileWeakDependencyTag
@@ -300,11 +306,11 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		for _, indexFrom := range imageFileDescriptor.WeakDependency {
 			path := append(basePath, indexFrom)
 			if indexTo, ok := indexFromTo[indexFrom]; ok {
-				sourcePathRemapper.insert(path, indexTo)
+				sourcePathRemapper.markMoved(path, indexTo)
 				imageFileDescriptor.WeakDependency[i] = indexTo
 				i++
 			} else {
-				sourcePathRemapper.insert(path, -1)
+				sourcePathRemapper.markDeleted(path)
 			}
 		}
 		imageFileDescriptor.WeakDependency = imageFileDescriptor.WeakDependency[:i]
@@ -324,9 +330,12 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 			extsPath := append(basePath, fileExtensionsTag)
 			imageFileDescriptor.Extension = trimSlice(imageFileDescriptor.Extension, closure.elements, sourcePathRemapper, extsPath)
 			if len(imageFileDescriptor.Extension) == 0 {
-				sourcePathRemapper.insert(extsPath, -1)
+				sourcePathRemapper.markDeleted(extsPath)
 			}
 			svcsPath := append(basePath, fileServicesTag)
+			// We must iterate through the services *before* we trim the slice. That way the
+			// index we see is for the "old path", which we need to know to mark elements as
+			// moved or deleted wih the sourcePathRemapper.
 			for index, serviceDescriptor := range imageFileDescriptor.Service {
 				if _, ok := closure.elements[serviceDescriptor]; !ok {
 					continue
@@ -338,8 +347,13 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		}
 
 		if len(imageFileDescriptor.SourceCodeInfo.GetLocation()) > 0 {
+			// Now the sourcePathRemapper has been fully populated for all of the deletions
+			// and moves above. So we can use it to reconstruct the source code info slice
+			// of locations.
 			i := 0
 			for _, location := range imageFileDescriptor.SourceCodeInfo.Location {
+				// This function returns newPath==nil if the element at the given path
+				// was marked for deletion (so this location should be omitted).
 				newPath, noComment := sourcePathRemapper.newPath(location.Path)
 				if newPath != nil {
 					imageFileDescriptor.SourceCodeInfo.Location[i] = location
@@ -366,6 +380,9 @@ func trimMessageDescriptors(
 	sourcePathRemapper *sourcePathsRemapTrie,
 	pathSoFar []int32,
 ) []*descriptorpb.DescriptorProto {
+	// We must iterate through the messages *before* we trim the slice. That way the
+	// index we see is for the "old path", which we need to know to mark elements as
+	// moved or deleted wih the sourcePathRemapper.
 	for index, messageDescriptor := range in {
 		path := append(pathSoFar, int32(index))
 		mode, ok := toKeep[messageDescriptor]
@@ -380,12 +397,12 @@ func trimMessageDescriptors(
 			messageDescriptor.ExtensionRange = nil
 			messageDescriptor.ReservedRange = nil
 			messageDescriptor.ReservedName = nil
-			sourcePathRemapper.noComment(path)
-			sourcePathRemapper.insert(append(path, messageFieldsTag), -1)
-			sourcePathRemapper.insert(append(path, messageOneofsTag), -1)
-			sourcePathRemapper.insert(append(path, messageExtensionRangesTag), -1)
-			sourcePathRemapper.insert(append(path, messageReservedRangesTag), -1)
-			sourcePathRemapper.insert(append(path, messageReservedNamesTag), -1)
+			sourcePathRemapper.markNoComment(path)
+			sourcePathRemapper.markDeleted(append(path, messageFieldsTag))
+			sourcePathRemapper.markDeleted(append(path, messageOneofsTag))
+			sourcePathRemapper.markDeleted(append(path, messageExtensionRangesTag))
+			sourcePathRemapper.markDeleted(append(path, messageReservedRangesTag))
+			sourcePathRemapper.markDeleted(append(path, messageReservedNamesTag))
 		}
 		messageDescriptor.NestedType = trimMessageDescriptors(messageDescriptor.NestedType, toKeep, sourcePathRemapper, append(path, messageNestedMessagesTag))
 		messageDescriptor.EnumType = trimSlice(messageDescriptor.EnumType, toKeep, sourcePathRemapper, append(path, messageEnumsTag))
@@ -396,7 +413,7 @@ func trimMessageDescriptors(
 		extsPath := append(path, messageExtensionsTag)
 		messageDescriptor.Extension = trimSlice(messageDescriptor.Extension, toKeep, sourcePathRemapper, extsPath)
 		if len(messageDescriptor.Extension) == 0 {
-			sourcePathRemapper.insert(extsPath, -1)
+			sourcePathRemapper.markDeleted(extsPath)
 		}
 	}
 	return trimSlice(in, toKeep, sourcePathRemapper, pathSoFar)
@@ -414,11 +431,11 @@ func trimSlice[T namedDescriptor](
 	for index, descriptor := range in {
 		path := append(pathSoFar, int32(index))
 		if _, ok := toKeep[descriptor]; ok {
-			sourcePathRemapper.insert(path, int32(i))
+			sourcePathRemapper.markMoved(path, int32(i))
 			in[i] = descriptor
 			i++
 		} else {
-			sourcePathRemapper.insert(path, -1)
+			sourcePathRemapper.markDeleted(path)
 		}
 	}
 	return in[:i]
