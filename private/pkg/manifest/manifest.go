@@ -47,6 +47,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -105,6 +106,13 @@ func NewFromReader(manifest io.Reader) (*Manifest, error) {
 func (m *Manifest) AddEntry(path string, digest Digest) error {
 	if path == "" {
 		return errors.New("empty path")
+	}
+	path = filepath.Clean(path)
+	if strings.Contains(path, "..") {
+		return errors.New(`invalid sequence ".."  in path`)
+	}
+	if filepath.IsAbs(path) {
+		return errors.New("absolute path")
 	}
 	if digest.Type() == "" || digest.Hex() == "" {
 		return errors.New("invalid digest")
