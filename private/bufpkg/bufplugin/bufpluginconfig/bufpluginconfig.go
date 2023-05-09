@@ -211,7 +211,7 @@ type SwiftRegistryDependencyConfig struct {
 	Products []string
 	// Platforms are the minimum versions for platforms the package supports.
 	Platforms SwiftRegistryDependencyPlatformConfig
-	// SwiftVersions are the minimum versions for Swift the package supports.
+	// SwiftVersions are the versions of Swift the package supports.
 	SwiftVersions []string
 }
 
@@ -447,7 +447,7 @@ type ExternalSwiftRegistryDependencyConfig struct {
 	Products []string `json:"products,omitempty" yaml:"products,omitempty"`
 	// Platforms are the minimum versions for platforms the package supports.
 	Platforms ExternalSwiftRegistryDependencyPlatformConfig `json:"platforms,omitempty" yaml:"platforms,omitempty"`
-	// SwiftVersions are the minimum versions for Swift the package supports.
+	// SwiftVersions are the versions of Swift the package supports.
 	SwiftVersions []string `json:"swift_versions,omitempty" yaml:"swift_versions,omitempty"`
 }
 
