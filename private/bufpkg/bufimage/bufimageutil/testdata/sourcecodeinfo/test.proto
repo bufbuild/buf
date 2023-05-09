@@ -1,0 +1,154 @@
+// Keep 1: comment on syntax
+syntax = "proto2";
+
+// Keep 2: comment on package
+package foo.bar;
+
+// Keep 3: comment on option
+option go_package = "foo.bar/baz";
+
+// Keep if ext: comment on import descriptor.proto
+import "google/protobuf/descriptor.proto";
+
+// No keep
+import weak "google/protobuf/struct.proto";
+
+// Keep if NestedFoo: comment on import any.proto
+import weak "google/protobuf/any.proto";
+
+// Keep if ext: comment on extend block
+extend google.protobuf.MessageOptions {
+  // Keep if ext: comment on custom option bizniz
+  optional string bizniz = 10101;
+}
+
+// Keep if ext: comment on extend block
+extend google.protobuf.ServiceOptions {
+  // Keep if ext + Svc: comment on custom option fizzbuzz
+  optional string fizzbuzz = 10101;
+}
+
+// Keep if all: comment on message Frobnitz
+message Frobnitz {
+  // Keep if all: comment on field xyz
+  optional bytes xyz = 1;
+}
+
+// "Keep if Foo" are also kept for Bar, Svc, and Svc.Do since those
+// elements depend on Foo.
+
+// Keep if Foo: comment on message Foo
+message Foo {
+  // We keep the following comment for NestedFoo because we don't
+  // discard options or option comments even if we're only retaining
+  // a message as a namespace for another retained element.
+
+  // Keep if Foo | NestedFoo: comment on option
+  option (bizniz) = "abc";
+
+  // Keep if Foo: comment on field name
+  optional string name = 1;
+  // Keep if Foo: comment on field bits
+  repeated int64 bits = 2;
+
+  // Keep if Foo: comment on reserved range
+  reserved 10 to 20;
+  // Keep if Foo: comment on reserved names
+  reserved "abc", "def", "ghi";
+  // Keep if Foo: comment on extension range
+  extensions 100 to max;
+
+  // Keep if NestedFoo: comment on message NestedFoo
+  message NestedFoo {
+    // We keep the following comment for Foo + ext because we don't
+    // discard options or option comments even if we're only retaining
+    // a message as a namespace for another retained element.
+
+    // Keep if Foo + ext | NestedFoo: comment on option
+    option (bizniz) = "abc";
+    // Keep if NestedFoo: comment on field uid
+    optional uint64 uid = 1;
+    // Keep if NestedFoo: comment on field meta
+    repeated google.protobuf.Any meta = 2;
+    // Keep if NestedFoo: comment on field state
+    optional State state = 3;
+
+    // Keep if NestedFoo: comment on enum State
+    enum State {
+      // Keep if NestedFoo: comment on enum value STATE_UNSPECIFIED
+      STATE_UNSPECIFIED = 0;
+      // Keep if NestedFoo: comment on enum value STATE_GOOD
+      STATE_GOOD = 1;
+    }
+
+    // Keep if Foo + ext: comment on extend block
+    extend Foo {
+      // Keep if Foo + ext: comment on extension blah
+      repeated bytes blah = 101;
+    }
+  }
+}
+
+// "Keep if Bar" are also kept for Svc and Svc.Do since those
+// elements depend on Bar.
+
+// Keep if Bar: comment on message Bar
+message Bar {
+  // Keep if Bar: comment on field foo
+  optional Foo foo = 1;
+  // Keep if Bar: comment on oneof status
+  oneof status {
+    // Keep if Bar: comment on field baz
+    Baz baz = 2;
+    // Keep if Bar: comment on field quz
+    Quz quz = 3;
+  }
+}
+
+// "Keep if Baz" and "Keep if Quz" are also kept for Bar, Svc, and Svc.Do
+// since those elements depend on Baz and Quz.
+
+// Keep if Baz: comment on enum Baz
+enum Baz {
+  // Keep if Baz: comment on enum value BAZ_UNSPECIFIED
+  BAZ_UNSPECIFIED = 0;
+}
+
+// Keep if Quz: comment on enum Quz
+enum Quz {
+  // Keep if Quz: comment on enum value QUZ_UNSPECIFIED
+  QUZ_UNSPECIFIED = 0;
+}
+
+// Keep if all: comment on message Buzz
+message Buzz {
+  // Keep if all: comment on field s
+  optional string s = 1;
+}
+
+// Keep if all: comment on message Bedazzle
+message Bedazzle {
+  // Keep if all: comment on field t
+  optional string t = 1;
+}
+
+// Keep if all: comment on service BuzzService
+service BuzzService {
+  // Keep if all: comment on method BuzzyBuzz
+  rpc BuzzyBuzz(Buzz) returns (Bedazzle);
+}
+
+// Keep if Svc: comment on service Svc
+service Svc {
+  // Keep if Svc: comment on option
+  option (fizzbuzz) = "wxyz";
+
+  // Keep if Svc.Do: comment on rpc Do
+  rpc Do(Foo) returns (Bar) {
+    // Keep if Svc.Do: comment on option
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // Keep if Svc: comment on rpc Dont
+  rpc Dont(Foo) returns (Bar);
+}
