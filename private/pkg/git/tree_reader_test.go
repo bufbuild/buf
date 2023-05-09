@@ -179,6 +179,8 @@ func TestStorageIntegration(t *testing.T) {
 	dir := t.TempDir()
 	runner := command.NewRunner()
 	git := gittest.NewGitCmd(t, runner, gittest.GitCmdInit(dir))
+	git.Cmd("config", "--local", "user.name", "buftest")
+	git.Cmd("config", "--local", "user.email", "buftest@example.com")
 	// Produce a commit with a file.
 	path := "image.proto"
 	testProto, err := os.Create(filepath.Join(dir, path))
