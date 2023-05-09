@@ -14,6 +14,7 @@ registry:
         package: swift-protobuf
         products: [SwiftProtobuf]
         version: 1.21.0
+        swift_versions: [".v5"]
         platforms:
           macos: v10_15
           ios: v10_15
