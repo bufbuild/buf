@@ -15,69 +15,19 @@
 package git
 
 import (
-	"context"
-	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"github.com/bufbuild/buf/private/pkg/git/object"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// gitCmd wraps calling out to the host's "git"
-type gitCmd struct {
-	t       *testing.T
-	runner  command.Runner
-	gitdir  string
-	timeout time.Duration
-	env     map[string]string
-}
-
-func newGitCmd(t *testing.T, runner command.Runner, gitdir string) *gitCmd {
-	return &gitCmd{
-		t:       t,
-		runner:  runner,
-		gitdir:  gitdir,
-		timeout: 5 * time.Second,
-	}
-}
-
-func (g *gitCmd) Env(env map[string]string) *gitCmd {
-	git := *g
-	git.env = env
-	return &git
-}
-
-func (g *gitCmd) Cmd(args ...string) string {
-	cmdEnv := map[string]string{
-		"GIT_DIR": g.gitdir,
-	}
-	for k, v := range g.env {
-		cmdEnv[k] = v
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), g.timeout)
-	defer cancel()
-	var stdout strings.Builder
-	err := g.runner.Run(ctx,
-		"git",
-		command.RunWithArgs(args...),
-		command.RunWithEnv(cmdEnv),
-		command.RunWithStdout(io.MultiWriter(&stdout, os.Stdout)),
-		command.RunWithStderr(os.Stderr),
-	)
-	if err != nil {
-		argStr := strings.Join(args, " ")
-		g.t.Fatalf("`git %s`: %s", argStr, err)
-	}
-	return stdout.String()
-}
-
 func TestCatFileGitDir(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()        // probing is only on a plain dir
 	var runner command.Runner // runner shouldn't be touched in construction
 	_, err := NewCatFile(runner, CatFileGitDir(filepath.Join(dir, "none")))
@@ -91,11 +41,11 @@ func TestCatFileIntegration(t *testing.T) {
 		// This test builds a git repo and spawns a live git-cat-file process.
 		t.Skip("skipping git-cat-file integration test")
 	}
+	t.Parallel()
 	// Construct a git repository.
 	dir := t.TempDir()
 	runner := command.NewRunner()
-	git := newGitCmd(t, runner, dir)
-	git.Cmd("init", "--bare")
+	git := gittest.NewGitCmd(t, runner, gittest.GitCmdInitBare(dir))
 	git.Cmd("config", "--local", "user.name", "buftest")
 	git.Cmd("config", "--local", "user.email", "buftest@example.com")
 	// produces a root commit

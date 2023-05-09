@@ -19,6 +19,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -171,25 +174,38 @@ func TestStorageIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("git storage integration is slow")
 	}
-	// A commit on bufbuild/buf.
-	var commitref object.ID
-	err := commitref.UnmarshalText(
-		[]byte("d4d069df5747c0c2ccfa3ebf0a36a514801553bb"),
-	)
-	require.NoError(t, err)
-	// object service
+	t.Parallel()
+	// Construct a git repository.
+	dir := t.TempDir()
 	runner := command.NewRunner()
-	catfile, err := NewCatFile(runner)
+	git := gittest.NewGitCmd(t, runner, gittest.GitCmdInit(dir))
+	// Produce a commit with a file.
+	path := "image.proto"
+	testProto, err := os.Create(filepath.Join(dir, path))
+	require.NoError(t, err)
+	testProto.Close()
+	git.Cmd("add", path)
+	git.Cmd("commit", "-m", "msg")
+	rootHash := git.Cmd("rev-parse", "HEAD")
+	rootHash = strings.TrimRight(rootHash, "\n")
+	var commitref object.ID
+	err = commitref.UnmarshalText([]byte(rootHash))
+	require.NoError(t, err)
+	// Start an object service.
+	catfile, err := NewCatFile(
+		runner,
+		CatFileGitDir(filepath.Join(dir, ".git")),
+	)
 	require.NoError(t, err)
 	objects, err := catfile.Connect()
 	require.NoError(t, err)
 	defer func() { assert.NoError(t, objects.Close()) }()
 	require.NoError(t, err)
+	// Load the commit and find our file.
 	commit, err := objects.Commit(commitref)
 	require.NoError(t, err)
 	treereader := NewTreeReader(objects, commit.Tree)
 	ctx := context.Background()
-	path := "proto/buf/alpha/image/v1/image.proto"
 	info, err := treereader.Stat(ctx, path)
 	require.NoError(t, err)
 	assert.Equal(t, path, info.Path())
