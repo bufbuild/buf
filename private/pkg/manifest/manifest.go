@@ -47,11 +47,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/filepathextended"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 var errNoFinalNewline = errors.New("partial record: missing newline")
@@ -109,17 +108,9 @@ func (m *Manifest) AddEntry(path string, digest Digest) error {
 	if path == "" {
 		return errors.New("empty path")
 	}
-	var err error
-	path, err = filepathextended.RealClean(path)
+	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
-		return fmt.Errorf("clean path: %w", err)
-	}
-	path = filepath.ToSlash(path)
-	if strings.Contains(path, "..") {
-		return errors.New(`invalid sequence ".." in path`)
-	}
-	if filepath.IsAbs(path) {
-		return errors.New("absolute path")
+		return fmt.Errorf("invalid path: %w", err)
 	}
 	if digest.Type() == "" || digest.Hex() == "" {
 		return errors.New("invalid digest")
