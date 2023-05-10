@@ -202,7 +202,6 @@ func TestStorageIntegration(t *testing.T) {
 	objects, err := catfile.Connect()
 	require.NoError(t, err)
 	defer func() { assert.NoError(t, objects.Close()) }()
-	require.NoError(t, err)
 	// Load the commit and find our file.
 	commit, err := objects.Commit(commitref)
 	require.NoError(t, err)

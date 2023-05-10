@@ -17,6 +17,7 @@ package bufmodulebuild
 import (
 	"context"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -29,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
+	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"github.com/bufbuild/buf/private/pkg/git/object"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -340,37 +342,55 @@ func TestBuildFromGitIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("building from git is slow")
 	}
-	// A buildable commit on bufbuild/buf.
-	var commitref object.ID
-	err := commitref.UnmarshalText(
-		[]byte("d4d069df5747c0c2ccfa3ebf0a36a514801553bb"),
-	)
-	require.NoError(t, err)
-	// object service
+	t.Parallel()
+	// Construct a git repository.
+	dir := t.TempDir()
 	runner := command.NewRunner()
-	catfile, err := git.NewCatFile(runner)
+	gitcmd := gittest.NewGitCmd(t, runner, gittest.GitCmdInit(dir))
+	gitcmd.Cmd("config", "--local", "user.name", "buftest")
+	gitcmd.Cmd("config", "--local", "user.email", "buftest@example.com")
+	// Produce a commit with a single proto file.
+	path := filepath.Join(dir, "proto/valid.proto")
+	err := os.MkdirAll(filepath.Dir(path), 0770)
+	require.NoError(t, err)
+	fh, err := os.Create(path)
+	require.NoError(t, err)
+	err = fh.Close()
+	require.NoError(t, err)
+	gitcmd.Cmd("add", path)
+	gitcmd.Cmd("commit", "-m", path)
+	hashStr := gitcmd.Cmd("rev-parse", "HEAD")
+	hashStr = strings.TrimRight(hashStr, "\n")
+	var goodCommit object.ID
+	if err := goodCommit.UnmarshalText([]byte(hashStr)); err != nil {
+		t.Fatalf("git rev-parse HEAD: %s: %s", hashStr, err)
+	}
+	// Start an object service.
+	catfile, err := git.NewCatFile(
+		runner,
+		git.CatFileGitDir(filepath.Join(dir, ".git")),
+	)
 	require.NoError(t, err)
 	objects, err := catfile.Connect()
 	require.NoError(t, err)
 	defer func() { assert.NoError(t, objects.Close()) }()
-	require.NoError(t, err)
-	// locate proto tree
-	commit, err := objects.Commit(commitref)
+	// Locate the proto/ tree.
+	commit, err := objects.Commit(goodCommit)
 	require.NoError(t, err)
 	treeWalker := git.NewTreeFinder(objects, commit.Tree)
 	treeEntry, err := treeWalker.FindEntry("proto")
 	require.NoError(t, err)
-	// bucket for this tree
+	// Bucket for this tree.
 	treereader := git.NewTreeReader(objects, treeEntry.ID)
-	// build it
+	// Build the bucket.
 	ctx := context.Background()
 	config, err := bufconfig.GetConfigForBucket(ctx, treereader)
 	require.NoError(t, err)
 	module, err := BuildForBucket(ctx, treereader, config.Build)
 	require.NoError(t, err)
-	file, err := module.GetModuleFile(ctx, "buf/alpha/image/v1/image.proto")
+	file, err := module.GetModuleFile(ctx, "valid.proto")
 	require.NoError(t, err)
-	assert.Equal(t, "buf/alpha/image/v1/image.proto", file.Path())
+	assert.Equal(t, "valid.proto", file.Path())
 }
 
 func testConfigInclusion(t *testing.T, confname string) {
