@@ -1,0 +1,700 @@
+{
+  "location": [
+    {
+      "span": [
+        1,
+        0,
+        153,
+        1
+      ]
+    },
+    {
+      "path": [
+        12
+      ],
+      "span": [
+        1,
+        0,
+        18
+      ],
+      "leadingComments": " Keep 1: comment on syntax\n"
+    },
+    {
+      "path": [
+        2
+      ],
+      "span": [
+        4,
+        0,
+        16
+      ],
+      "leadingComments": " Keep 2: comment on package\n"
+    },
+    {
+      "path": [
+        8
+      ],
+      "span": [
+        7,
+        0,
+        34
+      ]
+    },
+    {
+      "path": [
+        8,
+        11
+      ],
+      "span": [
+        7,
+        0,
+        34
+      ],
+      "leadingComments": " Keep 3: comment on option\n"
+    },
+    {
+      "path": [
+        3,
+        0
+      ],
+      "span": [
+        10,
+        0,
+        42
+      ],
+      "leadingComments": " Keep if ext: comment on import descriptor.proto\n"
+    },
+    {
+      "path": [
+        11,
+        0
+      ],
+      "span": [
+        13,
+        7,
+        11
+      ]
+    },
+    {
+      "path": [
+        7
+      ],
+      "span": [
+        19,
+        0,
+        22,
+        1
+      ],
+      "leadingComments": " Keep if ext: comment on extend block\n"
+    },
+    {
+      "path": [
+        7,
+        0
+      ],
+      "span": [
+        21,
+        2,
+        33
+      ],
+      "leadingComments": " Keep if ext: comment on custom option bizniz\n"
+    },
+    {
+      "path": [
+        7,
+        0,
+        2
+      ],
+      "span": [
+        19,
+        7,
+        37
+      ]
+    },
+    {
+      "path": [
+        7,
+        0,
+        4
+      ],
+      "span": [
+        21,
+        2,
+        10
+      ]
+    },
+    {
+      "path": [
+        7,
+        0,
+        5
+      ],
+      "span": [
+        21,
+        11,
+        17
+      ]
+    },
+    {
+      "path": [
+        7,
+        0,
+        1
+      ],
+      "span": [
+        21,
+        18,
+        24
+      ]
+    },
+    {
+      "path": [
+        7,
+        0,
+        3
+      ],
+      "span": [
+        21,
+        27,
+        32
+      ]
+    },
+    {
+      "path": [
+        7
+      ],
+      "span": [
+        25,
+        0,
+        28,
+        1
+      ],
+      "leadingComments": " Keep if ext: comment on extend block\n"
+    },
+    {
+      "path": [
+        4,
+        0
+      ],
+      "span": [
+        40,
+        0,
+        89,
+        1
+      ],
+      "leadingComments": " Keep if Foo: comment on message Foo\n",
+      "trailingComments": " We keep the following comment for NestedFoo because we don't\n discard options or option comments even if we're only retaining\n a message as a namespace for another retained element.\n",
+      "leadingDetachedComments": [
+        " \"Keep if Foo\" are also kept for Bar, Svc, and Svc.Do since those\n elements depend on Foo.\n"
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        1
+      ],
+      "span": [
+        40,
+        8,
+        11
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        7
+      ],
+      "span": [
+        46,
+        2,
+        26
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        7,
+        10101
+      ],
+      "span": [
+        46,
+        2,
+        26
+      ],
+      "leadingComments": " Keep if Foo | NestedFoo: comment on option\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        49,
+        2,
+        27
+      ],
+      "leadingComments": " Keep if Foo: comment on field name\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        49,
+        2,
+        10
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0,
+        5
+      ],
+      "span": [
+        49,
+        11,
+        17
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        49,
+        18,
+        22
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0,
+        3
+      ],
+      "span": [
+        49,
+        25,
+        26
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        1
+      ],
+      "span": [
+        51,
+        2,
+        26
+      ],
+      "leadingComments": " Keep if Foo: comment on field bits\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        1,
+        4
+      ],
+      "span": [
+        51,
+        2,
+        10
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        1,
+        5
+      ],
+      "span": [
+        51,
+        11,
+        16
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        1,
+        1
+      ],
+      "span": [
+        51,
+        17,
+        21
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        1,
+        3
+      ],
+      "span": [
+        51,
+        24,
+        25
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        9
+      ],
+      "span": [
+        54,
+        2,
+        20
+      ],
+      "leadingComments": " Keep if Foo: comment on reserved range\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        9,
+        0
+      ],
+      "span": [
+        54,
+        11,
+        19
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        9,
+        0,
+        1
+      ],
+      "span": [
+        54,
+        11,
+        13
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        9,
+        0,
+        2
+      ],
+      "span": [
+        54,
+        17,
+        19
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        10
+      ],
+      "span": [
+        56,
+        2,
+        31
+      ],
+      "leadingComments": " Keep if Foo: comment on reserved names\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        10,
+        0
+      ],
+      "span": [
+        56,
+        11,
+        16
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        10,
+        1
+      ],
+      "span": [
+        56,
+        18,
+        23
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        10,
+        2
+      ],
+      "span": [
+        56,
+        25,
+        30
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        5
+      ],
+      "span": [
+        58,
+        2,
+        24
+      ],
+      "leadingComments": " Keep if Foo: comment on extension range\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        5,
+        0
+      ],
+      "span": [
+        58,
+        13,
+        23
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        5,
+        0,
+        1
+      ],
+      "span": [
+        58,
+        13,
+        16
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        5,
+        0,
+        2
+      ],
+      "span": [
+        58,
+        20,
+        23
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0
+      ],
+      "span": [
+        61,
+        2,
+        88,
+        3
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        1
+      ],
+      "span": [
+        61,
+        10,
+        19
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        7
+      ],
+      "span": [
+        67,
+        4,
+        28
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        7,
+        10101
+      ],
+      "span": [
+        67,
+        4,
+        28
+      ],
+      "leadingComments": " Keep if Foo + ext | NestedFoo: comment on option\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        6
+      ],
+      "span": [
+        84,
+        4,
+        87,
+        5
+      ],
+      "leadingComments": " Keep if Foo + ext: comment on extend block\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        6,
+        0
+      ],
+      "span": [
+        86,
+        6,
+        32
+      ],
+      "leadingComments": " Keep if Foo + ext: comment on extension blah\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        6,
+        0,
+        2
+      ],
+      "span": [
+        84,
+        11,
+        14
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        6,
+        0,
+        4
+      ],
+      "span": [
+        86,
+        6,
+        14
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        6,
+        0,
+        5
+      ],
+      "span": [
+        86,
+        15,
+        20
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        6,
+        0,
+        1
+      ],
+      "span": [
+        86,
+        21,
+        25
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        3,
+        0,
+        6,
+        0,
+        3
+      ],
+      "span": [
+        86,
+        28,
+        31
+      ]
+    }
+  ]
+}

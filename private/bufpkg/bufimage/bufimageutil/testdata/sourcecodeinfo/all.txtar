@@ -1,0 +1,2103 @@
+{
+  "location": [
+    {
+      "span": [
+        1,
+        0,
+        153,
+        1
+      ]
+    },
+    {
+      "path": [
+        12
+      ],
+      "span": [
+        1,
+        0,
+        18
+      ],
+      "leadingComments": " Keep 1: comment on syntax\n"
+    },
+    {
+      "path": [
+        2
+      ],
+      "span": [
+        4,
+        0,
+        16
+      ],
+      "leadingComments": " Keep 2: comment on package\n"
+    },
+    {
+      "path": [
+        8
+      ],
+      "span": [
+        7,
+        0,
+        34
+      ]
+    },
+    {
+      "path": [
+        8,
+        11
+      ],
+      "span": [
+        7,
+        0,
+        34
+      ],
+      "leadingComments": " Keep 3: comment on option\n"
+    },
+    {
+      "path": [
+        3,
+        0
+      ],
+      "span": [
+        10,
+        0,
+        42
+      ],
+      "leadingComments": " Keep if ext: comment on import descriptor.proto\n"
+    },
+    {
+      "path": [
+        11,
+        0
+      ],
+      "span": [
+        13,
+        7,
+        11
+      ]
+    },
+    {
+      "path": [
+        3,
+        1
+      ],
+      "span": [
+        16,
+        0,
+        40
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on import any.proto\n"
+    },
+    {
+      "path": [
+        7
+      ],
+      "span": [
+        19,
+        0,
+        22,
+        1
+      ],
+      "leadingComments": " Keep if ext: comment on extend block\n"
+    },
+    {
+      "path": [
+        7,
+        0
+      ],
+      "span": [
+        21,
+        2,
+        33
+      ],
+      "leadingComments": " Keep if ext: comment on custom option bizniz\n"
+    },
+    {
+      "path": [
+        7,
+        0,
+        2
+      ],
+      "span": [
+        19,
+        7,
+        37
+      ]
+    },
+    {
+      "path": [
+        7,
+        0,
+        4
+      ],
+      "span": [
+        21,
+        2,
+        10
+      ]
+    },
+    {
+      "path": [
+        7,
+        0,
+        5
+      ],
+      "span": [
+        21,
+        11,
+        17
+      ]
+    },
+    {
+      "path": [
+        7,
+        0,
+        1
+      ],
+      "span": [
+        21,
+        18,
+        24
+      ]
+    },
+    {
+      "path": [
+        7,
+        0,
+        3
+      ],
+      "span": [
+        21,
+        27,
+        32
+      ]
+    },
+    {
+      "path": [
+        7
+      ],
+      "span": [
+        25,
+        0,
+        28,
+        1
+      ],
+      "leadingComments": " Keep if ext: comment on extend block\n"
+    },
+    {
+      "path": [
+        7,
+        1
+      ],
+      "span": [
+        27,
+        2,
+        35
+      ],
+      "leadingComments": " Keep if ext + Svc: comment on custom option fizzbuzz\n"
+    },
+    {
+      "path": [
+        7,
+        1,
+        2
+      ],
+      "span": [
+        25,
+        7,
+        37
+      ]
+    },
+    {
+      "path": [
+        7,
+        1,
+        4
+      ],
+      "span": [
+        27,
+        2,
+        10
+      ]
+    },
+    {
+      "path": [
+        7,
+        1,
+        5
+      ],
+      "span": [
+        27,
+        11,
+        17
+      ]
+    },
+    {
+      "path": [
+        7,
+        1,
+        1
+      ],
+      "span": [
+        27,
+        18,
+        26
+      ]
+    },
+    {
+      "path": [
+        7,
+        1,
+        3
+      ],
+      "span": [
+        27,
+        29,
+        34
+      ]
+    },
+    {
+      "path": [
+        4,
+        0
+      ],
+      "span": [
+        31,
+        0,
+        34,
+        1
+      ],
+      "leadingComments": " Keep if all: comment on message Frobnitz\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        1
+      ],
+      "span": [
+        31,
+        8,
+        16
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        33,
+        2,
+        25
+      ],
+      "leadingComments": " Keep if all: comment on field xyz\n"
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        33,
+        2,
+        10
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0,
+        5
+      ],
+      "span": [
+        33,
+        11,
+        16
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        33,
+        17,
+        20
+      ]
+    },
+    {
+      "path": [
+        4,
+        0,
+        2,
+        0,
+        3
+      ],
+      "span": [
+        33,
+        23,
+        24
+      ]
+    },
+    {
+      "path": [
+        4,
+        1
+      ],
+      "span": [
+        40,
+        0,
+        89,
+        1
+      ],
+      "leadingComments": " Keep if Foo: comment on message Foo\n",
+      "trailingComments": " We keep the following comment for NestedFoo because we don't\n discard options or option comments even if we're only retaining\n a message as a namespace for another retained element.\n",
+      "leadingDetachedComments": [
+        " \"Keep if Foo\" are also kept for Bar, Svc, and Svc.Do since those\n elements depend on Foo.\n"
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        1
+      ],
+      "span": [
+        40,
+        8,
+        11
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        7
+      ],
+      "span": [
+        46,
+        2,
+        26
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        7,
+        10101
+      ],
+      "span": [
+        46,
+        2,
+        26
+      ],
+      "leadingComments": " Keep if Foo | NestedFoo: comment on option\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        0
+      ],
+      "span": [
+        49,
+        2,
+        27
+      ],
+      "leadingComments": " Keep if Foo: comment on field name\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        49,
+        2,
+        10
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        0,
+        5
+      ],
+      "span": [
+        49,
+        11,
+        17
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        49,
+        18,
+        22
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        0,
+        3
+      ],
+      "span": [
+        49,
+        25,
+        26
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        1
+      ],
+      "span": [
+        51,
+        2,
+        26
+      ],
+      "leadingComments": " Keep if Foo: comment on field bits\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        1,
+        4
+      ],
+      "span": [
+        51,
+        2,
+        10
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        1,
+        5
+      ],
+      "span": [
+        51,
+        11,
+        16
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        1,
+        1
+      ],
+      "span": [
+        51,
+        17,
+        21
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        2,
+        1,
+        3
+      ],
+      "span": [
+        51,
+        24,
+        25
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        9
+      ],
+      "span": [
+        54,
+        2,
+        20
+      ],
+      "leadingComments": " Keep if Foo: comment on reserved range\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        9,
+        0
+      ],
+      "span": [
+        54,
+        11,
+        19
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        9,
+        0,
+        1
+      ],
+      "span": [
+        54,
+        11,
+        13
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        9,
+        0,
+        2
+      ],
+      "span": [
+        54,
+        17,
+        19
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        10
+      ],
+      "span": [
+        56,
+        2,
+        31
+      ],
+      "leadingComments": " Keep if Foo: comment on reserved names\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        10,
+        0
+      ],
+      "span": [
+        56,
+        11,
+        16
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        10,
+        1
+      ],
+      "span": [
+        56,
+        18,
+        23
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        10,
+        2
+      ],
+      "span": [
+        56,
+        25,
+        30
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        5
+      ],
+      "span": [
+        58,
+        2,
+        24
+      ],
+      "leadingComments": " Keep if Foo: comment on extension range\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        5,
+        0
+      ],
+      "span": [
+        58,
+        13,
+        23
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        5,
+        0,
+        1
+      ],
+      "span": [
+        58,
+        13,
+        16
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        5,
+        0,
+        2
+      ],
+      "span": [
+        58,
+        20,
+        23
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0
+      ],
+      "span": [
+        61,
+        2,
+        88,
+        3
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on message NestedFoo\n",
+      "trailingComments": " We keep the following comment for Foo + ext because we don't\n discard options or option comments even if we're only retaining\n a message as a namespace for another retained element.\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        1
+      ],
+      "span": [
+        61,
+        10,
+        19
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        7
+      ],
+      "span": [
+        67,
+        4,
+        28
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        7,
+        10101
+      ],
+      "span": [
+        67,
+        4,
+        28
+      ],
+      "leadingComments": " Keep if Foo + ext | NestedFoo: comment on option\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        69,
+        4,
+        28
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on field uid\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        69,
+        4,
+        12
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        0,
+        5
+      ],
+      "span": [
+        69,
+        13,
+        19
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        69,
+        20,
+        23
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        0,
+        3
+      ],
+      "span": [
+        69,
+        26,
+        27
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        1
+      ],
+      "span": [
+        71,
+        4,
+        42
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on field meta\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        1,
+        4
+      ],
+      "span": [
+        71,
+        4,
+        12
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        1,
+        6
+      ],
+      "span": [
+        71,
+        13,
+        32
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        1,
+        1
+      ],
+      "span": [
+        71,
+        33,
+        37
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        1,
+        3
+      ],
+      "span": [
+        71,
+        40,
+        41
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        2
+      ],
+      "span": [
+        73,
+        4,
+        29
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on field state\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        2,
+        4
+      ],
+      "span": [
+        73,
+        4,
+        12
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        2,
+        6
+      ],
+      "span": [
+        73,
+        13,
+        18
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        2,
+        1
+      ],
+      "span": [
+        73,
+        19,
+        24
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        2,
+        2,
+        3
+      ],
+      "span": [
+        73,
+        27,
+        28
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        4,
+        0
+      ],
+      "span": [
+        76,
+        4,
+        81,
+        5
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on enum State\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        4,
+        0,
+        1
+      ],
+      "span": [
+        76,
+        9,
+        14
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        4,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        78,
+        6,
+        28
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_UNSPECIFIED\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        4,
+        0,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        78,
+        6,
+        23
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        4,
+        0,
+        2,
+        0,
+        2
+      ],
+      "span": [
+        78,
+        26,
+        27
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        4,
+        0,
+        2,
+        1
+      ],
+      "span": [
+        80,
+        6,
+        21
+      ],
+      "leadingComments": " Keep if NestedFoo: comment on enum value STATE_GOOD\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        4,
+        0,
+        2,
+        1,
+        1
+      ],
+      "span": [
+        80,
+        6,
+        16
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        4,
+        0,
+        2,
+        1,
+        2
+      ],
+      "span": [
+        80,
+        19,
+        20
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        6
+      ],
+      "span": [
+        84,
+        4,
+        87,
+        5
+      ],
+      "leadingComments": " Keep if Foo + ext: comment on extend block\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        6,
+        0
+      ],
+      "span": [
+        86,
+        6,
+        32
+      ],
+      "leadingComments": " Keep if Foo + ext: comment on extension blah\n"
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        6,
+        0,
+        2
+      ],
+      "span": [
+        84,
+        11,
+        14
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        6,
+        0,
+        4
+      ],
+      "span": [
+        86,
+        6,
+        14
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        6,
+        0,
+        5
+      ],
+      "span": [
+        86,
+        15,
+        20
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        6,
+        0,
+        1
+      ],
+      "span": [
+        86,
+        21,
+        25
+      ]
+    },
+    {
+      "path": [
+        4,
+        1,
+        3,
+        0,
+        6,
+        0,
+        3
+      ],
+      "span": [
+        86,
+        28,
+        31
+      ]
+    },
+    {
+      "path": [
+        4,
+        2
+      ],
+      "span": [
+        95,
+        0,
+        105,
+        1
+      ],
+      "leadingComments": " Keep if Bar: comment on message Bar\n",
+      "leadingDetachedComments": [
+        " \"Keep if Bar\" are also kept for Svc and Svc.Do since those\n elements depend on Bar.\n"
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        1
+      ],
+      "span": [
+        95,
+        8,
+        11
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        0
+      ],
+      "span": [
+        97,
+        2,
+        23
+      ],
+      "leadingComments": " Keep if Bar: comment on field foo\n"
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        97,
+        2,
+        10
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        0,
+        6
+      ],
+      "span": [
+        97,
+        11,
+        14
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        97,
+        15,
+        18
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        0,
+        3
+      ],
+      "span": [
+        97,
+        21,
+        22
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        8,
+        0
+      ],
+      "span": [
+        99,
+        2,
+        104,
+        3
+      ],
+      "leadingComments": " Keep if Bar: comment on oneof status\n"
+    },
+    {
+      "path": [
+        4,
+        2,
+        8,
+        0,
+        1
+      ],
+      "span": [
+        99,
+        8,
+        14
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        1
+      ],
+      "span": [
+        101,
+        4,
+        16
+      ],
+      "leadingComments": " Keep if Bar: comment on field baz\n"
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        1,
+        6
+      ],
+      "span": [
+        101,
+        4,
+        7
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        1,
+        1
+      ],
+      "span": [
+        101,
+        8,
+        11
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        1,
+        3
+      ],
+      "span": [
+        101,
+        14,
+        15
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        2
+      ],
+      "span": [
+        103,
+        4,
+        16
+      ],
+      "leadingComments": " Keep if Bar: comment on field quz\n"
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        2,
+        6
+      ],
+      "span": [
+        103,
+        4,
+        7
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        2,
+        1
+      ],
+      "span": [
+        103,
+        8,
+        11
+      ]
+    },
+    {
+      "path": [
+        4,
+        2,
+        2,
+        2,
+        3
+      ],
+      "span": [
+        103,
+        14,
+        15
+      ]
+    },
+    {
+      "path": [
+        5,
+        0
+      ],
+      "span": [
+        111,
+        0,
+        114,
+        1
+      ],
+      "leadingComments": " Keep if Baz: comment on enum Baz\n",
+      "leadingDetachedComments": [
+        " \"Keep if Baz\" and \"Keep if Quz\" are also kept for Bar, Svc, and Svc.Do\n since those elements depend on Baz and Quz.\n"
+      ]
+    },
+    {
+      "path": [
+        5,
+        0,
+        1
+      ],
+      "span": [
+        111,
+        5,
+        8
+      ]
+    },
+    {
+      "path": [
+        5,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        113,
+        2,
+        22
+      ],
+      "leadingComments": " Keep if Baz: comment on enum value BAZ_UNSPECIFIED\n"
+    },
+    {
+      "path": [
+        5,
+        0,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        113,
+        2,
+        17
+      ]
+    },
+    {
+      "path": [
+        5,
+        0,
+        2,
+        0,
+        2
+      ],
+      "span": [
+        113,
+        20,
+        21
+      ]
+    },
+    {
+      "path": [
+        5,
+        1
+      ],
+      "span": [
+        117,
+        0,
+        120,
+        1
+      ],
+      "leadingComments": " Keep if Quz: comment on enum Quz\n"
+    },
+    {
+      "path": [
+        5,
+        1,
+        1
+      ],
+      "span": [
+        117,
+        5,
+        8
+      ]
+    },
+    {
+      "path": [
+        5,
+        1,
+        2,
+        0
+      ],
+      "span": [
+        119,
+        2,
+        22
+      ],
+      "leadingComments": " Keep if Quz: comment on enum value QUZ_UNSPECIFIED\n"
+    },
+    {
+      "path": [
+        5,
+        1,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        119,
+        2,
+        17
+      ]
+    },
+    {
+      "path": [
+        5,
+        1,
+        2,
+        0,
+        2
+      ],
+      "span": [
+        119,
+        20,
+        21
+      ]
+    },
+    {
+      "path": [
+        4,
+        3
+      ],
+      "span": [
+        123,
+        0,
+        126,
+        1
+      ],
+      "leadingComments": " Keep if all: comment on message Buzz\n"
+    },
+    {
+      "path": [
+        4,
+        3,
+        1
+      ],
+      "span": [
+        123,
+        8,
+        12
+      ]
+    },
+    {
+      "path": [
+        4,
+        3,
+        2,
+        0
+      ],
+      "span": [
+        125,
+        2,
+        24
+      ],
+      "leadingComments": " Keep if all: comment on field s\n"
+    },
+    {
+      "path": [
+        4,
+        3,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        125,
+        2,
+        10
+      ]
+    },
+    {
+      "path": [
+        4,
+        3,
+        2,
+        0,
+        5
+      ],
+      "span": [
+        125,
+        11,
+        17
+      ]
+    },
+    {
+      "path": [
+        4,
+        3,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        125,
+        18,
+        19
+      ]
+    },
+    {
+      "path": [
+        4,
+        3,
+        2,
+        0,
+        3
+      ],
+      "span": [
+        125,
+        22,
+        23
+      ]
+    },
+    {
+      "path": [
+        4,
+        4
+      ],
+      "span": [
+        129,
+        0,
+        132,
+        1
+      ],
+      "leadingComments": " Keep if all: comment on message Bedazzle\n"
+    },
+    {
+      "path": [
+        4,
+        4,
+        1
+      ],
+      "span": [
+        129,
+        8,
+        16
+      ]
+    },
+    {
+      "path": [
+        4,
+        4,
+        2,
+        0
+      ],
+      "span": [
+        131,
+        2,
+        24
+      ],
+      "leadingComments": " Keep if all: comment on field t\n"
+    },
+    {
+      "path": [
+        4,
+        4,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        131,
+        2,
+        10
+      ]
+    },
+    {
+      "path": [
+        4,
+        4,
+        2,
+        0,
+        5
+      ],
+      "span": [
+        131,
+        11,
+        17
+      ]
+    },
+    {
+      "path": [
+        4,
+        4,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        131,
+        18,
+        19
+      ]
+    },
+    {
+      "path": [
+        4,
+        4,
+        2,
+        0,
+        3
+      ],
+      "span": [
+        131,
+        22,
+        23
+      ]
+    },
+    {
+      "path": [
+        6,
+        0
+      ],
+      "span": [
+        135,
+        0,
+        138,
+        1
+      ],
+      "leadingComments": " Keep if all: comment on service BuzzService\n"
+    },
+    {
+      "path": [
+        6,
+        0,
+        1
+      ],
+      "span": [
+        135,
+        8,
+        19
+      ]
+    },
+    {
+      "path": [
+        6,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        137,
+        2,
+        41
+      ],
+      "leadingComments": " Keep if all: comment on method BuzzyBuzz\n"
+    },
+    {
+      "path": [
+        6,
+        0,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        137,
+        6,
+        15
+      ]
+    },
+    {
+      "path": [
+        6,
+        0,
+        2,
+        0,
+        2
+      ],
+      "span": [
+        137,
+        16,
+        20
+      ]
+    },
+    {
+      "path": [
+        6,
+        0,
+        2,
+        0,
+        3
+      ],
+      "span": [
+        137,
+        31,
+        39
+      ]
+    },
+    {
+      "path": [
+        6,
+        1
+      ],
+      "span": [
+        141,
+        0,
+        153,
+        1
+      ],
+      "leadingComments": " Keep if Svc: comment on service Svc\n"
+    },
+    {
+      "path": [
+        6,
+        1,
+        1
+      ],
+      "span": [
+        141,
+        8,
+        11
+      ]
+    },
+    {
+      "path": [
+        6,
+        1,
+        3
+      ],
+      "span": [
+        143,
+        2,
+        29
+      ]
+    },
+    {
+      "path": [
+        6,
+        1,
+        3,
+        10101
+      ],
+      "span": [
+        143,
+        2,
+        29
+      ],
+      "leadingComments": " Keep if Svc: comment on option\n"
+    },
+    {
+      "path": [
+        6,
+        1,
+        2,
+        0
+      ],
+      "span": [
+        146,
+        2,
+        149,
+        3
+      ],
+      "leadingComments": " Keep if Svc.Do: comment on rpc Do\n"
+    },
+    {
+      "path": [
+        6,
+        1,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        146,
+        6,
+        8
+      ]
+    },
+    {
+      "path": [
+        6,
+        1,
+        2,
+        0,
+        2
+      ],
+      "span": [
+        146,
+        9,
+        12
+      ]
+    },
+    {
+      "path": [
+        6,
+        1,
+        2,
+        0,
+        3
+      ],
+      "span": [
+        146,
+        23,
+        26
+      ]
+    },
+    {
+      "path": [
+        6,
+        1,
+        2,
+        0,
+        4
+      ],
+      "span": [
+        148,
+        4,
+        47
+      ]
+    },
+    {
+      "path": [
+        6,
+        1,
+        2,
+        0,
+        4,
+        34
+      ],
+      "span": [
+        148,
+        4,
+        47
+      ],
+      "leadingComments": " Keep if Svc.Do: comment on option\n"
+    },
+    {
+      "path": [
+        6,
+        1,
+        2,
+        1
+      ],
+      "span": [
+        152,
+        2,
+        30
+      ],
+      "leadingComments": " Keep if Svc: comment on rpc Dont\n"
+    },
+    {
+      "path": [
+        6,
+        1,
+        2,
+        1,
+        1
+      ],
+      "span": [
+        152,
+        6,
+        10
+      ]
+    },
+    {
+      "path": [
+        6,
+        1,
+        2,
+        1,
+        2
+      ],
+      "span": [
+        152,
+        11,
+        14
+      ]
+    },
+    {
+      "path": [
+        6,
+        1,
+        2,
+        1,
+        3
+      ],
+      "span": [
+        152,
+        25,
+        28
+      ]
+    }
+  ]
+}

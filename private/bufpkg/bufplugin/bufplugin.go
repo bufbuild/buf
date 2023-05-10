@@ -261,10 +261,11 @@ func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.Sw
 		swiftConfig.Dependencies = make([]bufpluginconfig.SwiftRegistryDependencyConfig, 0, len(runtimeLibs))
 		for _, runtimeLib := range runtimeLibs {
 			dependencyConfig := bufpluginconfig.SwiftRegistryDependencyConfig{
-				Source:   runtimeLib.GetSource(),
-				Package:  runtimeLib.GetPackage(),
-				Version:  runtimeLib.GetVersion(),
-				Products: runtimeLib.GetProducts(),
+				Source:        runtimeLib.GetSource(),
+				Package:       runtimeLib.GetPackage(),
+				Version:       runtimeLib.GetVersion(),
+				Products:      runtimeLib.GetProducts(),
+				SwiftVersions: runtimeLib.GetSwiftVersions(),
 			}
 			platforms := runtimeLib.GetPlatforms()
 			for _, platform := range platforms {
@@ -293,10 +294,11 @@ func SwiftRegistryConfigToProtoSwiftConfig(swiftConfig *bufpluginconfig.SwiftReg
 		protoSwiftConfig.RuntimeLibraries = make([]*registryv1alpha1.SwiftConfig_RuntimeLibrary, 0, len(swiftConfig.Dependencies))
 		for _, dependency := range swiftConfig.Dependencies {
 			depConfig := &registryv1alpha1.SwiftConfig_RuntimeLibrary{
-				Source:   dependency.Source,
-				Package:  dependency.Package,
-				Version:  dependency.Version,
-				Products: dependency.Products,
+				Source:        dependency.Source,
+				Package:       dependency.Package,
+				Version:       dependency.Version,
+				Products:      dependency.Products,
+				SwiftVersions: dependency.SwiftVersions,
 			}
 			if dependency.Platforms.MacOS != "" {
 				depConfig.Platforms = append(depConfig.Platforms, &registryv1alpha1.SwiftConfig_RuntimeLibrary_Platform{

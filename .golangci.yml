@@ -184,3 +184,9 @@ issues:
         - gosec
       text: "G402:"
       path: private/buf/bufcurl/tls.go
+    # We don't need a cryptographically secure RNG for these tests, and a
+    # deterministic RNG is actually nice for test repeatability.
+    - linters:
+        - gosec
+      text: "G404:"
+      path: private/bufpkg/bufimage/bufimageutil/.*_test\.go
