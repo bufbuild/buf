@@ -77,18 +77,6 @@ const (
 	// DisplayServiceListManageableUserRepositoryRolesProcedure is the fully-qualified name of the
 	// DisplayService's ListManageableUserRepositoryRoles RPC.
 	DisplayServiceListManageableUserRepositoryRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserRepositoryRoles"
-	// DisplayServiceListManageablePluginRolesProcedure is the fully-qualified name of the
-	// DisplayService's ListManageablePluginRoles RPC.
-	DisplayServiceListManageablePluginRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageablePluginRoles"
-	// DisplayServiceListManageableUserPluginRolesProcedure is the fully-qualified name of the
-	// DisplayService's ListManageableUserPluginRoles RPC.
-	DisplayServiceListManageableUserPluginRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserPluginRoles"
-	// DisplayServiceListManageableTemplateRolesProcedure is the fully-qualified name of the
-	// DisplayService's ListManageableTemplateRoles RPC.
-	DisplayServiceListManageableTemplateRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableTemplateRoles"
-	// DisplayServiceListManageableUserTemplateRolesProcedure is the fully-qualified name of the
-	// DisplayService's ListManageableUserTemplateRoles RPC.
-	DisplayServiceListManageableUserTemplateRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserTemplateRoles"
 )
 
 // DisplayServiceClient is a client for the buf.alpha.registry.v1alpha1.DisplayService service.
@@ -119,26 +107,6 @@ type DisplayServiceClient interface {
 	// ListManageableUserRepositoryRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the repository.
 	ListManageableUserRepositoryRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserRepositoryRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserRepositoryRolesResponse], error)
-	// ListManageablePluginRoles returns which roles should be displayed
-	// to the user when they are managing contributors on the plugin.
-	//
-	// Deprecated: do not use.
-	ListManageablePluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageablePluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageablePluginRolesResponse], error)
-	// ListManageableUserPluginRoles returns which roles should be displayed
-	// to the user when they are managing a specific contributor on the plugin.
-	//
-	// Deprecated: do not use.
-	ListManageableUserPluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserPluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserPluginRolesResponse], error)
-	// ListManageableTemplateRoles returns which roles should be displayed
-	// to the user when they are managing contributors on the template.
-	//
-	// Deprecated: do not use.
-	ListManageableTemplateRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableTemplateRolesResponse], error)
-	// ListManageableUserTemplateRoles returns which roles should be displayed
-	// to the user when they are managing a specific contributor on the template.
-	//
-	// Deprecated: do not use.
-	ListManageableUserTemplateRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserTemplateRolesResponse], error)
 }
 
 // NewDisplayServiceClient constructs a client for the buf.alpha.registry.v1alpha1.DisplayService
@@ -211,30 +179,6 @@ func NewDisplayServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
-		listManageablePluginRoles: connect_go.NewClient[v1alpha1.ListManageablePluginRolesRequest, v1alpha1.ListManageablePluginRolesResponse](
-			httpClient,
-			baseURL+DisplayServiceListManageablePluginRolesProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		listManageableUserPluginRoles: connect_go.NewClient[v1alpha1.ListManageableUserPluginRolesRequest, v1alpha1.ListManageableUserPluginRolesResponse](
-			httpClient,
-			baseURL+DisplayServiceListManageableUserPluginRolesProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		listManageableTemplateRoles: connect_go.NewClient[v1alpha1.ListManageableTemplateRolesRequest, v1alpha1.ListManageableTemplateRolesResponse](
-			httpClient,
-			baseURL+DisplayServiceListManageableTemplateRolesProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		listManageableUserTemplateRoles: connect_go.NewClient[v1alpha1.ListManageableUserTemplateRolesRequest, v1alpha1.ListManageableUserTemplateRolesResponse](
-			httpClient,
-			baseURL+DisplayServiceListManageableUserTemplateRolesProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
 	}
 }
 
@@ -250,10 +194,6 @@ type displayServiceClient struct {
 	displayRepositoryEntitledElements *connect_go.Client[v1alpha1.DisplayRepositoryEntitledElementsRequest, v1alpha1.DisplayRepositoryEntitledElementsResponse]
 	listManageableRepositoryRoles     *connect_go.Client[v1alpha1.ListManageableRepositoryRolesRequest, v1alpha1.ListManageableRepositoryRolesResponse]
 	listManageableUserRepositoryRoles *connect_go.Client[v1alpha1.ListManageableUserRepositoryRolesRequest, v1alpha1.ListManageableUserRepositoryRolesResponse]
-	listManageablePluginRoles         *connect_go.Client[v1alpha1.ListManageablePluginRolesRequest, v1alpha1.ListManageablePluginRolesResponse]
-	listManageableUserPluginRoles     *connect_go.Client[v1alpha1.ListManageableUserPluginRolesRequest, v1alpha1.ListManageableUserPluginRolesResponse]
-	listManageableTemplateRoles       *connect_go.Client[v1alpha1.ListManageableTemplateRolesRequest, v1alpha1.ListManageableTemplateRolesResponse]
-	listManageableUserTemplateRoles   *connect_go.Client[v1alpha1.ListManageableUserTemplateRolesRequest, v1alpha1.ListManageableUserTemplateRolesResponse]
 }
 
 // DisplayOrganizationElements calls
@@ -316,38 +256,6 @@ func (c *displayServiceClient) ListManageableUserRepositoryRoles(ctx context.Con
 	return c.listManageableUserRepositoryRoles.CallUnary(ctx, req)
 }
 
-// ListManageablePluginRoles calls
-// buf.alpha.registry.v1alpha1.DisplayService.ListManageablePluginRoles.
-//
-// Deprecated: do not use.
-func (c *displayServiceClient) ListManageablePluginRoles(ctx context.Context, req *connect_go.Request[v1alpha1.ListManageablePluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageablePluginRolesResponse], error) {
-	return c.listManageablePluginRoles.CallUnary(ctx, req)
-}
-
-// ListManageableUserPluginRoles calls
-// buf.alpha.registry.v1alpha1.DisplayService.ListManageableUserPluginRoles.
-//
-// Deprecated: do not use.
-func (c *displayServiceClient) ListManageableUserPluginRoles(ctx context.Context, req *connect_go.Request[v1alpha1.ListManageableUserPluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserPluginRolesResponse], error) {
-	return c.listManageableUserPluginRoles.CallUnary(ctx, req)
-}
-
-// ListManageableTemplateRoles calls
-// buf.alpha.registry.v1alpha1.DisplayService.ListManageableTemplateRoles.
-//
-// Deprecated: do not use.
-func (c *displayServiceClient) ListManageableTemplateRoles(ctx context.Context, req *connect_go.Request[v1alpha1.ListManageableTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableTemplateRolesResponse], error) {
-	return c.listManageableTemplateRoles.CallUnary(ctx, req)
-}
-
-// ListManageableUserTemplateRoles calls
-// buf.alpha.registry.v1alpha1.DisplayService.ListManageableUserTemplateRoles.
-//
-// Deprecated: do not use.
-func (c *displayServiceClient) ListManageableUserTemplateRoles(ctx context.Context, req *connect_go.Request[v1alpha1.ListManageableUserTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserTemplateRolesResponse], error) {
-	return c.listManageableUserTemplateRoles.CallUnary(ctx, req)
-}
-
 // DisplayServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.DisplayService
 // service.
 type DisplayServiceHandler interface {
@@ -377,26 +285,6 @@ type DisplayServiceHandler interface {
 	// ListManageableUserRepositoryRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the repository.
 	ListManageableUserRepositoryRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserRepositoryRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserRepositoryRolesResponse], error)
-	// ListManageablePluginRoles returns which roles should be displayed
-	// to the user when they are managing contributors on the plugin.
-	//
-	// Deprecated: do not use.
-	ListManageablePluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageablePluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageablePluginRolesResponse], error)
-	// ListManageableUserPluginRoles returns which roles should be displayed
-	// to the user when they are managing a specific contributor on the plugin.
-	//
-	// Deprecated: do not use.
-	ListManageableUserPluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserPluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserPluginRolesResponse], error)
-	// ListManageableTemplateRoles returns which roles should be displayed
-	// to the user when they are managing contributors on the template.
-	//
-	// Deprecated: do not use.
-	ListManageableTemplateRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableTemplateRolesResponse], error)
-	// ListManageableUserTemplateRoles returns which roles should be displayed
-	// to the user when they are managing a specific contributor on the template.
-	//
-	// Deprecated: do not use.
-	ListManageableUserTemplateRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserTemplateRolesResponse], error)
 }
 
 // NewDisplayServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -466,30 +354,6 @@ func NewDisplayServiceHandler(svc DisplayServiceHandler, opts ...connect_go.Hand
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle(DisplayServiceListManageablePluginRolesProcedure, connect_go.NewUnaryHandler(
-		DisplayServiceListManageablePluginRolesProcedure,
-		svc.ListManageablePluginRoles,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceListManageableUserPluginRolesProcedure, connect_go.NewUnaryHandler(
-		DisplayServiceListManageableUserPluginRolesProcedure,
-		svc.ListManageableUserPluginRoles,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceListManageableTemplateRolesProcedure, connect_go.NewUnaryHandler(
-		DisplayServiceListManageableTemplateRolesProcedure,
-		svc.ListManageableTemplateRoles,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceListManageableUserTemplateRolesProcedure, connect_go.NewUnaryHandler(
-		DisplayServiceListManageableUserTemplateRolesProcedure,
-		svc.ListManageableUserTemplateRoles,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	))
 	return "/buf.alpha.registry.v1alpha1.DisplayService/", mux
 }
 
@@ -534,20 +398,4 @@ func (UnimplementedDisplayServiceHandler) ListManageableRepositoryRoles(context.
 
 func (UnimplementedDisplayServiceHandler) ListManageableUserRepositoryRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserRepositoryRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserRepositoryRolesResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.ListManageableUserRepositoryRoles is not implemented"))
-}
-
-func (UnimplementedDisplayServiceHandler) ListManageablePluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageablePluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageablePluginRolesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.ListManageablePluginRoles is not implemented"))
-}
-
-func (UnimplementedDisplayServiceHandler) ListManageableUserPluginRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserPluginRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserPluginRolesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.ListManageableUserPluginRoles is not implemented"))
-}
-
-func (UnimplementedDisplayServiceHandler) ListManageableTemplateRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableTemplateRolesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.ListManageableTemplateRoles is not implemented"))
-}
-
-func (UnimplementedDisplayServiceHandler) ListManageableUserTemplateRoles(context.Context, *connect_go.Request[v1alpha1.ListManageableUserTemplateRolesRequest]) (*connect_go.Response[v1alpha1.ListManageableUserTemplateRolesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.ListManageableUserTemplateRoles is not implemented"))
 }
