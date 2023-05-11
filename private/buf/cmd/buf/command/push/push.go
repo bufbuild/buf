@@ -159,6 +159,8 @@ func run(
 		if _, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility); err != nil {
 			return appcmd.NewInvalidArgumentError(err.Error())
 		}
+	} else if flags.Create {
+		return appcmd.NewInvalidArgumentErrorf("--%s is required if --%s is set.", createVisibilityFlagName, createFlagName)
 	}
 	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
