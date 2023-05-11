@@ -155,7 +155,7 @@ func run(
 			return appcmd.NewInvalidArgumentErrorf("Cannot set --%s without --%s.", createVisibilityFlagName, createFlagName)
 		}
 		// We re-parse below as needed, but do not return an appcmd.NewInvalidArgumentError below as
-		// we expect valiation to be handled here.
+		// we expect validation to be handled here.
 		if _, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility); err != nil {
 			return appcmd.NewInvalidArgumentError(err.Error())
 		}
