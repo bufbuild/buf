@@ -78,7 +78,8 @@ func NewRepositoryTagServiceClient(httpClient connect_go.HTTPClient, baseURL str
 		createRepositoryTag: connect_go.NewClient[v1alpha1.CreateRepositoryTagRequest, v1alpha1.CreateRepositoryTagResponse](
 			httpClient,
 			baseURL+RepositoryTagServiceCreateRepositoryTagProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		listRepositoryTags: connect_go.NewClient[v1alpha1.ListRepositoryTagsRequest, v1alpha1.ListRepositoryTagsResponse](
 			httpClient,
@@ -124,7 +125,8 @@ func NewRepositoryTagServiceHandler(svc RepositoryTagServiceHandler, opts ...con
 	mux.Handle(RepositoryTagServiceCreateRepositoryTagProcedure, connect_go.NewUnaryHandler(
 		RepositoryTagServiceCreateRepositoryTagProcedure,
 		svc.CreateRepositoryTag,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryTagServiceListRepositoryTagsProcedure, connect_go.NewUnaryHandler(
 		RepositoryTagServiceListRepositoryTagsProcedure,

@@ -67,17 +67,27 @@ service OrganizationService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // CreateOrganization creates a new organization.
-  rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
+  rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // DeleteOrganization deletes a organization.
-  rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse);
+  rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // DeleteOrganizationByName deletes a organization by name.
-  rpc DeleteOrganizationByName(DeleteOrganizationByNameRequest) returns (DeleteOrganizationByNameResponse);
+  rpc DeleteOrganizationByName(DeleteOrganizationByNameRequest) returns (DeleteOrganizationByNameResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // AddOrganizationMember add a role to an user in the organization.
-  rpc AddOrganizationMember(AddOrganizationMemberRequest) returns (AddOrganizationMemberResponse);
+  rpc AddOrganizationMember(AddOrganizationMemberRequest) returns (AddOrganizationMemberResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // UpdateOrganizationMember update the user's membership information in the organization.
   rpc UpdateOrganizationMember(UpdateOrganizationMemberRequest) returns (UpdateOrganizationMemberResponse);
   // RemoveOrganizationMember remove the role of an user in the organization.
-  rpc RemoveOrganizationMember(RemoveOrganizationMemberRequest) returns (RemoveOrganizationMemberResponse);
+  rpc RemoveOrganizationMember(RemoveOrganizationMemberRequest) returns (RemoveOrganizationMemberResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // SetOrganizationMember sets the role of a user in the organization.
   rpc SetOrganizationMember(SetOrganizationMemberRequest) returns (SetOrganizationMemberResponse);
   // GetOrganizationSettings gets the settings of an organization, including organization base roles.
@@ -87,9 +97,13 @@ service OrganizationService {
   // UpdateOrganizationSettings update the organization settings including base roles.
   rpc UpdateOrganizationSettings(UpdateOrganizationSettingsRequest) returns (UpdateOrganizationSettingsResponse);
   // AddOrganizationGroup adds an IdP Group to the organization.
-  rpc AddOrganizationGroup(AddOrganizationGroupRequest) returns (AddOrganizationGroupResponse);
+  rpc AddOrganizationGroup(AddOrganizationGroupRequest) returns (AddOrganizationGroupResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // RemoveOrganizationGroup removes an IdP Group from the organization.
-  rpc RemoveOrganizationGroup(RemoveOrganizationGroupRequest) returns (RemoveOrganizationGroupResponse);
+  rpc RemoveOrganizationGroup(RemoveOrganizationGroupRequest) returns (RemoveOrganizationGroupResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message GetOrganizationRequest {

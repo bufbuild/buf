@@ -100,7 +100,8 @@ func NewStudioRequestServiceClient(httpClient connect_go.HTTPClient, baseURL str
 		deleteStudioRequest: connect_go.NewClient[v1alpha1.DeleteStudioRequestRequest, v1alpha1.DeleteStudioRequestResponse](
 			httpClient,
 			baseURL+StudioRequestServiceDeleteStudioRequestProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		listStudioRequests: connect_go.NewClient[v1alpha1.ListStudioRequestsRequest, v1alpha1.ListStudioRequestsResponse](
 			httpClient,
@@ -174,7 +175,8 @@ func NewStudioRequestServiceHandler(svc StudioRequestServiceHandler, opts ...con
 	mux.Handle(StudioRequestServiceDeleteStudioRequestProcedure, connect_go.NewUnaryHandler(
 		StudioRequestServiceDeleteStudioRequestProcedure,
 		svc.DeleteStudioRequest,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(StudioRequestServiceListStudioRequestsProcedure, connect_go.NewUnaryHandler(
 		StudioRequestServiceListStudioRequestsProcedure,

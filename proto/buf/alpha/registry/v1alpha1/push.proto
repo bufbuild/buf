@@ -23,9 +23,13 @@ import "buf/alpha/registry/v1alpha1/module.proto";
 service PushService {
   // Push pushes.
   // NOTE: Newer clients should use PushManifestAndBlobs.
-  rpc Push(PushRequest) returns (PushResponse);
+  rpc Push(PushRequest) returns (PushResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // PushManifestAndBlobs pushes a module by encoding it in a manifest and blobs format.
-  rpc PushManifestAndBlobs(PushManifestAndBlobsRequest) returns (PushManifestAndBlobsResponse);
+  rpc PushManifestAndBlobs(PushManifestAndBlobsRequest) returns (PushManifestAndBlobsResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 // PushRequest specifies the module to push to the BSR.

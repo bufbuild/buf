@@ -216,7 +216,8 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 		createPlugin: connect_go.NewClient[v1alpha1.CreatePluginRequest, v1alpha1.CreatePluginResponse](
 			httpClient,
 			baseURL+PluginServiceCreatePluginProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		getPlugin: connect_go.NewClient[v1alpha1.GetPluginRequest, v1alpha1.GetPluginResponse](
 			httpClient,
@@ -227,7 +228,8 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 		deletePlugin: connect_go.NewClient[v1alpha1.DeletePluginRequest, v1alpha1.DeletePluginResponse](
 			httpClient,
 			baseURL+PluginServiceDeletePluginProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		setPluginContributor: connect_go.NewClient[v1alpha1.SetPluginContributorRequest, v1alpha1.SetPluginContributorResponse](
 			httpClient,
@@ -285,12 +287,14 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 		createTemplate: connect_go.NewClient[v1alpha1.CreateTemplateRequest, v1alpha1.CreateTemplateResponse](
 			httpClient,
 			baseURL+PluginServiceCreateTemplateProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteTemplate: connect_go.NewClient[v1alpha1.DeleteTemplateRequest, v1alpha1.DeleteTemplateResponse](
 			httpClient,
 			baseURL+PluginServiceDeleteTemplateProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		createTemplateVersion: connect_go.NewClient[v1alpha1.CreateTemplateVersionRequest, v1alpha1.CreateTemplateVersionResponse](
 			httpClient,
@@ -550,7 +554,8 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 	mux.Handle(PluginServiceCreatePluginProcedure, connect_go.NewUnaryHandler(
 		PluginServiceCreatePluginProcedure,
 		svc.CreatePlugin,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceGetPluginProcedure, connect_go.NewUnaryHandler(
 		PluginServiceGetPluginProcedure,
@@ -561,7 +566,8 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 	mux.Handle(PluginServiceDeletePluginProcedure, connect_go.NewUnaryHandler(
 		PluginServiceDeletePluginProcedure,
 		svc.DeletePlugin,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceSetPluginContributorProcedure, connect_go.NewUnaryHandler(
 		PluginServiceSetPluginContributorProcedure,
@@ -619,12 +625,14 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 	mux.Handle(PluginServiceCreateTemplateProcedure, connect_go.NewUnaryHandler(
 		PluginServiceCreateTemplateProcedure,
 		svc.CreateTemplate,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceDeleteTemplateProcedure, connect_go.NewUnaryHandler(
 		PluginServiceDeleteTemplateProcedure,
 		svc.DeleteTemplate,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceCreateTemplateVersionProcedure, connect_go.NewUnaryHandler(
 		PluginServiceCreateTemplateVersionProcedure,
