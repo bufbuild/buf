@@ -207,12 +207,6 @@ service PluginService {
   rpc DeletePlugin(DeletePluginRequest) returns (DeletePluginResponse);
   // SetPluginContributor sets the role of a user in the plugin.
   rpc SetPluginContributor(SetPluginContributorRequest) returns (SetPluginContributorResponse);
-  // ListPluginContributors returns the list of contributors that has an explicit role against the plugin.
-  // This does not include users who have implicit roles against the plugin, unless they have also been
-  // assigned a role explicitly.
-  rpc ListPluginContributors(ListPluginContributorsRequest) returns (ListPluginContributorsResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
   // GetTemplate returns the template, if found.
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -252,12 +246,6 @@ service PluginService {
   rpc CreateTemplateVersion(CreateTemplateVersionRequest) returns (CreateTemplateVersionResponse);
   // SetTemplateContributor sets the role of a user in the template.
   rpc SetTemplateContributor(SetTemplateContributorRequest) returns (SetTemplateContributorResponse);
-  // ListTemplateContributors returns the list of contributors that has an explicit role against the template.
-  // This does not include users who have implicit roles against the template, unless they have also been
-  // assigned a role explicitly.
-  rpc ListTemplateContributors(ListTemplateContributorsRequest) returns (ListTemplateContributorsResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
 }
 
 message ListPluginsRequest {
@@ -383,20 +371,6 @@ message SetPluginContributorRequest {
 }
 
 message SetPluginContributorResponse {}
-
-message ListPluginContributorsRequest {
-  string plugin_id = 1;
-  uint32 page_size = 2;
-  // The first page is returned if this is empty.
-  string page_token = 3;
-  bool reverse = 4;
-}
-
-message ListPluginContributorsResponse {
-  repeated PluginContributor users = 1;
-  // There are no more pages if this is empty.
-  string next_page_token = 2;
-}
 
 message GetTemplateRequest {
   // The owner of the template.
@@ -554,17 +528,3 @@ message SetTemplateContributorRequest {
 }
 
 message SetTemplateContributorResponse {}
-
-message ListTemplateContributorsRequest {
-  string template_id = 1;
-  uint32 page_size = 2;
-  // The first page is returned if this is empty.
-  string page_token = 3;
-  bool reverse = 4;
-}
-
-message ListTemplateContributorsResponse {
-  repeated TemplateContributor users = 1;
-  // There are no more pages if this is empty.
-  string next_page_token = 2;
-}

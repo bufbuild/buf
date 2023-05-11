@@ -128,18 +128,6 @@ service AuthzService {
   rpc UserCanManageRepositoryContributors(UserCanManageRepositoryContributorsRequest) returns (UserCanManageRepositoryContributorsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // UserCanManagePluginContributors returns whether the user is authorized to manage
-  // any contributors to the plugin and the list of roles they can manage.
-  rpc UserCanManagePluginContributors(UserCanManagePluginContributorsRequest) returns (UserCanManagePluginContributorsResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // UserCanManageTemplateContributors returns whether the user is authorized to manage
-  // any contributors to the template and the list of roles they can manage.
-  rpc UserCanManageTemplateContributors(UserCanManageTemplateContributorsRequest) returns (UserCanManageTemplateContributorsResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
 }
 
 message UserCanCreateOrganizationRepositoryRequest {
@@ -363,32 +351,4 @@ message UserCanManageRepositoryContributorsResponse {
   // The list of roles that the user is authorized to manage, empty list means the user is
   // not authorized to manage any contributors.
   repeated RepositoryRole authorized_roles = 1;
-}
-
-message UserCanManagePluginContributorsRequest {
-  option deprecated = true;
-  // The ID of the plugin for which to check
-  // whether the user is authorized.
-  string plugin_id = 1;
-}
-
-message UserCanManagePluginContributorsResponse {
-  option deprecated = true;
-  // The list of roles that the user is authorized to manage, empty list means the user is
-  // not authorized to manage any contributors.
-  repeated PluginRole authorized_roles = 1;
-}
-
-message UserCanManageTemplateContributorsRequest {
-  option deprecated = true;
-  // The ID of the template for which to check
-  // whether the user is authorized.
-  string template_id = 1;
-}
-
-message UserCanManageTemplateContributorsResponse {
-  option deprecated = true;
-  // The list of roles that the user is authorized to manage, empty list means the user is
-  // not authorized to manage any contributors.
-  repeated TemplateRole authorized_roles = 1;
 }
