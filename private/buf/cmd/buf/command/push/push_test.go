@@ -114,7 +114,7 @@ func TestPushCreate(t *testing.T) {
 		connect.NewError(connect.CodeNotFound, errors.New("repository not found")),
 		true,
 		"",
-		"Failure: invalid visibility: , expected one of [public,private]",
+		"Failure: --create-visibility is required if --create is set.",
 	)
 }
 
