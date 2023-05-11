@@ -48,6 +48,14 @@ func printAsJSON(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	)
 }
 
+func printAsGithubActions(writer io.Writer, fileAnnotations []FileAnnotation) error {
+	return printEachAnnotationOnNewLine(
+		writer,
+		fileAnnotations,
+		printFileAnnotationAsGithubActions,
+	)
+}
+
 func printAsJUnit(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	encoder := xml.NewEncoder(writer)
 	encoder.Indent("", "  ")
@@ -195,6 +203,49 @@ func printFileAnnotationAsJSON(buffer *bytes.Buffer, f FileAnnotation) error {
 		return err
 	}
 	_, _ = buffer.Write(data)
+	return nil
+}
+
+func printFileAnnotationAsGithubActions(buffer *bytes.Buffer, f FileAnnotation) error {
+	if f == nil {
+		return nil
+	}
+	_, _ = buffer.WriteString("::error ")
+
+	// file= is required for GitHub Actions, however it is possible to not have
+	// a path foe a FileAnnotation. We still print something, however we need
+	// to test what happens in GitHub Actions if no valid path is printed out.
+	path := "<input>"
+	if f.FileInfo() != nil {
+		path = f.FileInfo().ExternalPath()
+	}
+	_, _ = buffer.WriteString("file=")
+	_, _ = buffer.WriteString(path)
+
+	// Everything else is optional.
+	if startLine := f.StartLine(); startLine > 0 {
+		_, _ = buffer.WriteString(",line=")
+		_, _ = buffer.WriteString(strconv.Itoa(startLine))
+		// We only print column information if we have line information.
+		if startColumn := f.StartColumn(); startColumn > 0 {
+			_, _ = buffer.WriteString("col=")
+			_, _ = buffer.WriteString(strconv.Itoa(startColumn))
+		}
+		// We only do any ending line information if we have starting line information
+		if endLine := f.EndLine(); endLine > 0 {
+			_, _ = buffer.WriteString(",endLine=")
+			_, _ = buffer.WriteString(strconv.Itoa(endLine))
+			// We only print column information if we have line information.
+			if endColumn := f.EndColumn(); endColumn > 0 {
+				// Yes, the spec has "col" for start and "endColumn" for end.
+				_, _ = buffer.WriteString("endColumn=")
+				_, _ = buffer.WriteString(strconv.Itoa(endColumn))
+			}
+		}
+	}
+
+	_, _ = buffer.WriteString("::")
+	_, _ = buffer.WriteString(f.Message())
 	return nil
 }
 
