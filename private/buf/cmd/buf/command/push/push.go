@@ -125,7 +125,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Create,
 		createFlagName,
 		false,
-		"Create the repository if it does not exist.",
+		fmt.Sprintf("Create the repository if it does not exist. Must set a visibility using --%s", createVisibilityFlagName),
 	)
 	flagSet.StringSliceVar(
 		&f.Tracks,
@@ -226,7 +226,7 @@ func pushOrCreate(
 		// This technically could be a NotFound error for some other entity than the repository
 		// in question, however if it is, then this Create call will just fail as the repository
 		// is already created, and there is no side effect. The 99% case is that a NotFound
-		// error is because the repository does not exist, and we want to avoide having to do
+		// error is because the repository does not exist, and we want to avoid having to do
 		// a GetRepository RPC call for every call to push --create.
 		if flags.Create && connect.CodeOf(err) == connect.CodeNotFound {
 			if err := create(ctx, container, clientConfig, moduleIdentity, flags); err != nil {
@@ -311,12 +311,16 @@ func create(
 	if err != nil {
 		return err
 	}
+	fullName := moduleIdentity.Owner() + "/" + moduleIdentity.Repository()
 	_, err = service.CreateRepositoryByFullName(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
-			FullName:   moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),
+			FullName:   fullName,
 			Visibility: visiblity,
 		}),
 	)
+	if err != nil && connect.CodeOf(err) == connect.CodeAlreadyExists {
+		return connect.NewError(connect.CodeInternal, fmt.Errorf("Expected repository %s to be missing but found the repository to already exist", fullName))
+	}
 	return err
 }
