@@ -41,7 +41,7 @@ message Actor {
 // ResourceType is the type of the resource that was affected by the audited
 // event.
 enum ResourceType {
-  RESOURCE_TYPE_UNSPECIFIED = 0;
+  rESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
   RESOURCE_TYPE_ORGANIZATION = 2;
   RESOURCE_TYPE_ORGANIZATION_MEMBER = 3;

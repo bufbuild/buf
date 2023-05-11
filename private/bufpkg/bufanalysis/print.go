@@ -228,7 +228,7 @@ func printFileAnnotationAsGithubActions(buffer *bytes.Buffer, f FileAnnotation) 
 		_, _ = buffer.WriteString(strconv.Itoa(startLine))
 		// We only print column information if we have line information.
 		if startColumn := f.StartColumn(); startColumn > 0 {
-			_, _ = buffer.WriteString("col=")
+			_, _ = buffer.WriteString(",col=")
 			_, _ = buffer.WriteString(strconv.Itoa(startColumn))
 		}
 		// We only do any ending line information if we have starting line information
@@ -238,7 +238,7 @@ func printFileAnnotationAsGithubActions(buffer *bytes.Buffer, f FileAnnotation) 
 			// We only print column information if we have line information.
 			if endColumn := f.EndColumn(); endColumn > 0 {
 				// Yes, the spec has "col" for start and "endColumn" for end.
-				_, _ = buffer.WriteString("endColumn=")
+				_, _ = buffer.WriteString(",endColumn=")
 				_, _ = buffer.WriteString(strconv.Itoa(endColumn))
 			}
 		}
