@@ -67,30 +67,6 @@ service DisplayService {
   rpc ListManageableUserRepositoryRoles(ListManageableUserRepositoryRolesRequest) returns (ListManageableUserRepositoryRolesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // ListManageablePluginRoles returns which roles should be displayed
-  // to the user when they are managing contributors on the plugin.
-  rpc ListManageablePluginRoles(ListManageablePluginRolesRequest) returns (ListManageablePluginRolesResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // ListManageableUserPluginRoles returns which roles should be displayed
-  // to the user when they are managing a specific contributor on the plugin.
-  rpc ListManageableUserPluginRoles(ListManageableUserPluginRolesRequest) returns (ListManageableUserPluginRolesResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // ListManageableTemplateRoles returns which roles should be displayed
-  // to the user when they are managing contributors on the template.
-  rpc ListManageableTemplateRoles(ListManageableTemplateRolesRequest) returns (ListManageableTemplateRolesResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // ListManageableUserTemplateRoles returns which roles should be displayed
-  // to the user when they are managing a specific contributor on the template.
-  rpc ListManageableUserTemplateRoles(ListManageableUserTemplateRolesRequest) returns (ListManageableUserTemplateRolesResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
 }
 
 message DisplayOrganizationElementsRequest {
@@ -224,66 +200,4 @@ message ListManageableUserRepositoryRolesResponse {
   // The list of roles that should be displayed
   // to the user as manageable.
   repeated RepositoryRole roles = 1;
-}
-
-message ListManageablePluginRolesRequest {
-  option deprecated = true;
-  // The ID of the plugin for which to check
-  // which roles should be displayed as manageable.
-  string plugin_id = 1;
-}
-
-message ListManageablePluginRolesResponse {
-  option deprecated = true;
-  // The list of roles that should be displayed
-  // to the user as manageable.
-  repeated PluginRole roles = 1;
-}
-
-message ListManageableUserPluginRolesRequest {
-  option deprecated = true;
-  // The ID of the plugin for which to check
-  // which roles should be displayed as manageable.
-  string plugin_id = 1;
-  // The ID of the target user for which to check
-  // which roles are manageable.
-  string user_id = 2;
-}
-
-message ListManageableUserPluginRolesResponse {
-  option deprecated = true;
-  // The list of roles that should be displayed
-  // to the user as manageable.
-  repeated PluginRole roles = 1;
-}
-
-message ListManageableTemplateRolesRequest {
-  option deprecated = true;
-  // The ID of the template for which to check
-  // which roles should be displayed as manageable.
-  string template_id = 1;
-}
-
-message ListManageableTemplateRolesResponse {
-  option deprecated = true;
-  // The list of roles that should be displayed
-  // to the user as manageable.
-  repeated TemplateRole roles = 1;
-}
-
-message ListManageableUserTemplateRolesRequest {
-  option deprecated = true;
-  // The ID of the template for which to check
-  // which roles should be displayed as manageable.
-  string template_id = 1;
-  // The ID of the target user for which to check
-  // which roles are manageable.
-  string user_id = 2;
-}
-
-message ListManageableUserTemplateRolesResponse {
-  option deprecated = true;
-  // The list of roles that should be displayed
-  // to the user as manageable.
-  repeated TemplateRole roles = 1;
 }

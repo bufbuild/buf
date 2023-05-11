@@ -107,12 +107,6 @@ const (
 	// AuthzServiceUserCanManageRepositoryContributorsProcedure is the fully-qualified name of the
 	// AuthzService's UserCanManageRepositoryContributors RPC.
 	AuthzServiceUserCanManageRepositoryContributorsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageRepositoryContributors"
-	// AuthzServiceUserCanManagePluginContributorsProcedure is the fully-qualified name of the
-	// AuthzService's UserCanManagePluginContributors RPC.
-	AuthzServiceUserCanManagePluginContributorsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManagePluginContributors"
-	// AuthzServiceUserCanManageTemplateContributorsProcedure is the fully-qualified name of the
-	// AuthzService's UserCanManageTemplateContributors RPC.
-	AuthzServiceUserCanManageTemplateContributorsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageTemplateContributors"
 )
 
 // AuthzServiceClient is a client for the buf.alpha.registry.v1alpha1.AuthzService service.
@@ -194,16 +188,6 @@ type AuthzServiceClient interface {
 	// UserCanManageRepositoryContributors returns whether the user is authorized to manage
 	// any contributors to the repository and the list of roles they can manage.
 	UserCanManageRepositoryContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error)
-	// UserCanManagePluginContributors returns whether the user is authorized to manage
-	// any contributors to the plugin and the list of roles they can manage.
-	//
-	// Deprecated: do not use.
-	UserCanManagePluginContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManagePluginContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManagePluginContributorsResponse], error)
-	// UserCanManageTemplateContributors returns whether the user is authorized to manage
-	// any contributors to the template and the list of roles they can manage.
-	//
-	// Deprecated: do not use.
-	UserCanManageTemplateContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManageTemplateContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManageTemplateContributorsResponse], error)
 }
 
 // NewAuthzServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AuthzService
@@ -336,18 +320,6 @@ func NewAuthzServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
-		userCanManagePluginContributors: connect_go.NewClient[v1alpha1.UserCanManagePluginContributorsRequest, v1alpha1.UserCanManagePluginContributorsResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanManagePluginContributorsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		userCanManageTemplateContributors: connect_go.NewClient[v1alpha1.UserCanManageTemplateContributorsRequest, v1alpha1.UserCanManageTemplateContributorsResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanManageTemplateContributorsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
 	}
 }
 
@@ -373,8 +345,6 @@ type authzServiceClient struct {
 	userCanDeleteUser                   *connect_go.Client[v1alpha1.UserCanDeleteUserRequest, v1alpha1.UserCanDeleteUserResponse]
 	userCanSeeServerAdminPanel          *connect_go.Client[v1alpha1.UserCanSeeServerAdminPanelRequest, v1alpha1.UserCanSeeServerAdminPanelResponse]
 	userCanManageRepositoryContributors *connect_go.Client[v1alpha1.UserCanManageRepositoryContributorsRequest, v1alpha1.UserCanManageRepositoryContributorsResponse]
-	userCanManagePluginContributors     *connect_go.Client[v1alpha1.UserCanManagePluginContributorsRequest, v1alpha1.UserCanManagePluginContributorsResponse]
-	userCanManageTemplateContributors   *connect_go.Client[v1alpha1.UserCanManageTemplateContributorsRequest, v1alpha1.UserCanManageTemplateContributorsResponse]
 }
 
 // UserCanCreateOrganizationRepository calls
@@ -509,22 +479,6 @@ func (c *authzServiceClient) UserCanManageRepositoryContributors(ctx context.Con
 	return c.userCanManageRepositoryContributors.CallUnary(ctx, req)
 }
 
-// UserCanManagePluginContributors calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanManagePluginContributors.
-//
-// Deprecated: do not use.
-func (c *authzServiceClient) UserCanManagePluginContributors(ctx context.Context, req *connect_go.Request[v1alpha1.UserCanManagePluginContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManagePluginContributorsResponse], error) {
-	return c.userCanManagePluginContributors.CallUnary(ctx, req)
-}
-
-// UserCanManageTemplateContributors calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanManageTemplateContributors.
-//
-// Deprecated: do not use.
-func (c *authzServiceClient) UserCanManageTemplateContributors(ctx context.Context, req *connect_go.Request[v1alpha1.UserCanManageTemplateContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManageTemplateContributorsResponse], error) {
-	return c.userCanManageTemplateContributors.CallUnary(ctx, req)
-}
-
 // AuthzServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AuthzService service.
 type AuthzServiceHandler interface {
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
@@ -604,16 +558,6 @@ type AuthzServiceHandler interface {
 	// UserCanManageRepositoryContributors returns whether the user is authorized to manage
 	// any contributors to the repository and the list of roles they can manage.
 	UserCanManageRepositoryContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error)
-	// UserCanManagePluginContributors returns whether the user is authorized to manage
-	// any contributors to the plugin and the list of roles they can manage.
-	//
-	// Deprecated: do not use.
-	UserCanManagePluginContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManagePluginContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManagePluginContributorsResponse], error)
-	// UserCanManageTemplateContributors returns whether the user is authorized to manage
-	// any contributors to the template and the list of roles they can manage.
-	//
-	// Deprecated: do not use.
-	UserCanManageTemplateContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManageTemplateContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManageTemplateContributorsResponse], error)
 }
 
 // NewAuthzServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -743,18 +687,6 @@ func NewAuthzServiceHandler(svc AuthzServiceHandler, opts ...connect_go.HandlerO
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle(AuthzServiceUserCanManagePluginContributorsProcedure, connect_go.NewUnaryHandler(
-		AuthzServiceUserCanManagePluginContributorsProcedure,
-		svc.UserCanManagePluginContributors,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(AuthzServiceUserCanManageTemplateContributorsProcedure, connect_go.NewUnaryHandler(
-		AuthzServiceUserCanManageTemplateContributorsProcedure,
-		svc.UserCanManageTemplateContributors,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	))
 	return "/buf.alpha.registry.v1alpha1.AuthzService/", mux
 }
 
@@ -839,12 +771,4 @@ func (UnimplementedAuthzServiceHandler) UserCanSeeServerAdminPanel(context.Conte
 
 func (UnimplementedAuthzServiceHandler) UserCanManageRepositoryContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanManageRepositoryContributors is not implemented"))
-}
-
-func (UnimplementedAuthzServiceHandler) UserCanManagePluginContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManagePluginContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManagePluginContributorsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanManagePluginContributors is not implemented"))
-}
-
-func (UnimplementedAuthzServiceHandler) UserCanManageTemplateContributors(context.Context, *connect_go.Request[v1alpha1.UserCanManageTemplateContributorsRequest]) (*connect_go.Response[v1alpha1.UserCanManageTemplateContributorsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanManageTemplateContributors is not implemented"))
 }
