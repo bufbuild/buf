@@ -94,6 +94,31 @@ func TestAddEntry(t *testing.T) {
 	retContent, err := m.MarshalText()
 	require.NoError(t, err)
 	assert.Equal(t, expect, string(retContent))
+
+	t.Run("clean-up-paths", func(t *testing.T) {
+		t.Parallel()
+		var m manifest.Manifest
+		validDigest := mustDigestShake256(t, nil)
+		// adding same entry many times, should be cleaned up.
+		assert.NoError(t, m.AddEntry("./my/valid/path", *validDigest))
+		assert.NoError(t, m.AddEntry("my///valid///path", *validDigest))
+		assert.NoError(t, m.AddEntry("././my/valid/path", *validDigest))
+		assert.NoError(t, m.AddEntry("./my/./valid/./path", *validDigest))
+		assert.NoError(t, m.AddEntry("./my/valid/../../my/valid/path", *validDigest))
+		assert.NoError(t, m.AddEntry("foo/../my/valid/path", *validDigest))
+		paths := m.Paths()
+		require.Len(t, paths, 1)
+		assert.Equal(t, paths[0], "my/valid/path")
+	})
+	t.Run("invalid-paths", func(t *testing.T) {
+		t.Parallel()
+		var m manifest.Manifest
+		validDigest := mustDigestShake256(t, nil)
+		assert.Error(t, m.AddEntry("/invalid/absolute/path", *validDigest))
+		assert.Error(t, m.AddEntry("../invalid/outer/path", *validDigest))
+		assert.Error(t, m.AddEntry("invalid/../../outer/path", *validDigest))
+		assert.Empty(t, m.Paths())
+	})
 }
 
 func TestInvalidManifests(t *testing.T) {

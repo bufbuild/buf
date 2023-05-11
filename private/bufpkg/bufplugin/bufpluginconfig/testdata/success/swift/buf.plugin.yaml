@@ -10,10 +10,11 @@ output_languages:
 registry:
   swift:
     deps:
-      - source: github.com/apple/swift-protobuf
+      - source: https://github.com/apple/swift-protobuf.git
         package: swift-protobuf
         products: [SwiftProtobuf]
         version: 1.21.0
+        swift_versions: [".v5"]
         platforms:
           macos: v10_15
           ios: v10_15

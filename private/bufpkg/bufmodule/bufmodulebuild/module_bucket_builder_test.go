@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
@@ -310,6 +311,7 @@ func TestDocumentation(t *testing.T) {
 	testDocumentationBucket(
 		t,
 		"testdata/4",
+		bufmodule.DefaultDocumentationPath,
 		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/4/proto/1.proto", false, nil, ""),
 		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/4/proto/a/2.proto", false, nil, ""),
 	)
@@ -565,6 +567,7 @@ func testBucketGetFileInfosForExternalPathsError(
 func testDocumentationBucket(
 	t *testing.T,
 	relDir string,
+	expectedDocPath string,
 	expectedFileInfos ...bufmoduleref.FileInfo,
 ) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
@@ -585,6 +588,7 @@ func testDocumentationBucket(
 	require.NoError(t, err)
 	require.NotNil(t, module)
 	assert.NotEmpty(t, module.Documentation())
+	assert.Equal(t, expectedDocPath, module.DocumentationPath())
 	fileInfos, err := module.TargetFileInfos(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(

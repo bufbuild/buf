@@ -308,10 +308,11 @@ func swiftExternalDependencyToDependencyConfig(externalDep ExternalSwiftRegistry
 		return SwiftRegistryDependencyConfig{}, fmt.Errorf("swift runtime dependency %s:%s does not have a valid semantic version", externalDep.Package, externalDep.Version)
 	}
 	return SwiftRegistryDependencyConfig{
-		Source:   externalDep.Source,
-		Package:  externalDep.Package,
-		Version:  externalDep.Version,
-		Products: externalDep.Products,
+		Source:        externalDep.Source,
+		Package:       externalDep.Package,
+		Version:       externalDep.Version,
+		Products:      externalDep.Products,
+		SwiftVersions: externalDep.SwiftVersions,
 		Platforms: SwiftRegistryDependencyPlatformConfig{
 			MacOS:   externalDep.Platforms.MacOS,
 			IOS:     externalDep.Platforms.IOS,
