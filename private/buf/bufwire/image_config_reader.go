@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/zap"
@@ -146,14 +147,32 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	}
 	imageConfigs := make([]ImageConfig, 0, len(moduleConfigs))
 	var allFileAnnotations []bufanalysis.FileAnnotation
-	for _, moduleConfig := range moduleConfigs {
+	var directDeps []string
+	for idx, moduleConfig := range moduleConfigs {
+		for _, directDep := range moduleConfig.Config().Build.DependencyModuleReferences {
+			directDeps = append(directDeps, directDep.String())
+		}
+		directDepsMap := stringutil.SliceToMap(directDeps)
+		directDepsFiles := make(map[string]struct{})
+		fmt.Printf("mod[%d].directDeps: %v\n", idx, stringutil.MapToSortedSlice(directDepsMap))
+		sfi, _ := moduleConfig.Module().SourceFileInfos(ctx)
+		for _, file := range sfi {
+			fmt.Printf("mod[%d].sourceFilesPath: %v\n", idx, file.Path())
+		}
 		moduleFileSet, err := i.moduleFileSetBuilder.Build(
 			ctx,
 			moduleConfig.Module(),
 			bufmodulebuild.WithWorkspace(moduleConfig.Workspace()),
+			bufmodulebuild.WithDirectDeps(directDepsMap),
+			bufmodulebuild.WithDirectDepsFiles(directDepsFiles), // passed by reference, will be populated
 		)
 		if err != nil {
 			return nil, nil, err
+		}
+		fmt.Printf("mod[%d].directDepsFiles: %v\n", idx, stringutil.MapToSortedSlice(directDepsFiles))
+		ali, _ := moduleFileSet.AllFileInfos(ctx)
+		for _, file := range ali {
+			fmt.Printf("mod[%d].allFilesPath: %v\n", idx, file.Path())
 		}
 		targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 		if err != nil {
@@ -172,6 +191,15 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 		)
 		if err != nil {
 			return nil, nil, err
+		}
+		for _, file := range imageConfig.Image().Files() {
+			if !file.IsImport() {
+				for _, importFilePath := range file.FileDescriptor().GetDependency() {
+					if _, ok := directDepsFiles[importFilePath]; !ok {
+						return nil, nil, fmt.Errorf("proto file %q imports %q, not found in your direct dependencies", file.Path(), importFilePath)
+					}
+				}
+			}
 		}
 		if imageConfig != nil {
 			imageConfigs = append(imageConfigs, imageConfig)
