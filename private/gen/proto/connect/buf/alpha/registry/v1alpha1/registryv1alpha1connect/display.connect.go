@@ -53,12 +53,6 @@ const (
 	// DisplayServiceDisplayRepositoryElementsProcedure is the fully-qualified name of the
 	// DisplayService's DisplayRepositoryElements RPC.
 	DisplayServiceDisplayRepositoryElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryElements"
-	// DisplayServiceDisplayPluginElementsProcedure is the fully-qualified name of the DisplayService's
-	// DisplayPluginElements RPC.
-	DisplayServiceDisplayPluginElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayPluginElements"
-	// DisplayServiceDisplayTemplateElementsProcedure is the fully-qualified name of the
-	// DisplayService's DisplayTemplateElements RPC.
-	DisplayServiceDisplayTemplateElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayTemplateElements"
 	// DisplayServiceDisplayUserElementsProcedure is the fully-qualified name of the DisplayService's
 	// DisplayUserElements RPC.
 	DisplayServiceDisplayUserElementsProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/DisplayUserElements"
@@ -85,14 +79,6 @@ type DisplayServiceClient interface {
 	DisplayOrganizationElements(context.Context, *connect_go.Request[v1alpha1.DisplayOrganizationElementsRequest]) (*connect_go.Response[v1alpha1.DisplayOrganizationElementsResponse], error)
 	// DisplayRepositoryElements returns which repository elements should be displayed to the user.
 	DisplayRepositoryElements(context.Context, *connect_go.Request[v1alpha1.DisplayRepositoryElementsRequest]) (*connect_go.Response[v1alpha1.DisplayRepositoryElementsResponse], error)
-	// DisplayPluginElements returns which plugin elements should be displayed to the user.
-	//
-	// Deprecated: do not use.
-	DisplayPluginElements(context.Context, *connect_go.Request[v1alpha1.DisplayPluginElementsRequest]) (*connect_go.Response[v1alpha1.DisplayPluginElementsResponse], error)
-	// DisplayTemplateElements returns which template elements should be displayed to the user.
-	//
-	// Deprecated: do not use.
-	DisplayTemplateElements(context.Context, *connect_go.Request[v1alpha1.DisplayTemplateElementsRequest]) (*connect_go.Response[v1alpha1.DisplayTemplateElementsResponse], error)
 	// DisplayUserElements returns which user elements should be displayed to the user.
 	DisplayUserElements(context.Context, *connect_go.Request[v1alpha1.DisplayUserElementsRequest]) (*connect_go.Response[v1alpha1.DisplayUserElementsResponse], error)
 	// DisplayServerElements returns which server elements should be displayed to the user.
@@ -128,18 +114,6 @@ func NewDisplayServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 		displayRepositoryElements: connect_go.NewClient[v1alpha1.DisplayRepositoryElementsRequest, v1alpha1.DisplayRepositoryElementsResponse](
 			httpClient,
 			baseURL+DisplayServiceDisplayRepositoryElementsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		displayPluginElements: connect_go.NewClient[v1alpha1.DisplayPluginElementsRequest, v1alpha1.DisplayPluginElementsResponse](
-			httpClient,
-			baseURL+DisplayServiceDisplayPluginElementsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		displayTemplateElements: connect_go.NewClient[v1alpha1.DisplayTemplateElementsRequest, v1alpha1.DisplayTemplateElementsResponse](
-			httpClient,
-			baseURL+DisplayServiceDisplayTemplateElementsProcedure,
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
@@ -186,8 +160,6 @@ func NewDisplayServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 type displayServiceClient struct {
 	displayOrganizationElements       *connect_go.Client[v1alpha1.DisplayOrganizationElementsRequest, v1alpha1.DisplayOrganizationElementsResponse]
 	displayRepositoryElements         *connect_go.Client[v1alpha1.DisplayRepositoryElementsRequest, v1alpha1.DisplayRepositoryElementsResponse]
-	displayPluginElements             *connect_go.Client[v1alpha1.DisplayPluginElementsRequest, v1alpha1.DisplayPluginElementsResponse]
-	displayTemplateElements           *connect_go.Client[v1alpha1.DisplayTemplateElementsRequest, v1alpha1.DisplayTemplateElementsResponse]
 	displayUserElements               *connect_go.Client[v1alpha1.DisplayUserElementsRequest, v1alpha1.DisplayUserElementsResponse]
 	displayServerElements             *connect_go.Client[v1alpha1.DisplayServerElementsRequest, v1alpha1.DisplayServerElementsResponse]
 	displayOwnerEntitledElements      *connect_go.Client[v1alpha1.DisplayOwnerEntitledElementsRequest, v1alpha1.DisplayOwnerEntitledElementsResponse]
@@ -206,20 +178,6 @@ func (c *displayServiceClient) DisplayOrganizationElements(ctx context.Context, 
 // buf.alpha.registry.v1alpha1.DisplayService.DisplayRepositoryElements.
 func (c *displayServiceClient) DisplayRepositoryElements(ctx context.Context, req *connect_go.Request[v1alpha1.DisplayRepositoryElementsRequest]) (*connect_go.Response[v1alpha1.DisplayRepositoryElementsResponse], error) {
 	return c.displayRepositoryElements.CallUnary(ctx, req)
-}
-
-// DisplayPluginElements calls buf.alpha.registry.v1alpha1.DisplayService.DisplayPluginElements.
-//
-// Deprecated: do not use.
-func (c *displayServiceClient) DisplayPluginElements(ctx context.Context, req *connect_go.Request[v1alpha1.DisplayPluginElementsRequest]) (*connect_go.Response[v1alpha1.DisplayPluginElementsResponse], error) {
-	return c.displayPluginElements.CallUnary(ctx, req)
-}
-
-// DisplayTemplateElements calls buf.alpha.registry.v1alpha1.DisplayService.DisplayTemplateElements.
-//
-// Deprecated: do not use.
-func (c *displayServiceClient) DisplayTemplateElements(ctx context.Context, req *connect_go.Request[v1alpha1.DisplayTemplateElementsRequest]) (*connect_go.Response[v1alpha1.DisplayTemplateElementsResponse], error) {
-	return c.displayTemplateElements.CallUnary(ctx, req)
 }
 
 // DisplayUserElements calls buf.alpha.registry.v1alpha1.DisplayService.DisplayUserElements.
@@ -263,14 +221,6 @@ type DisplayServiceHandler interface {
 	DisplayOrganizationElements(context.Context, *connect_go.Request[v1alpha1.DisplayOrganizationElementsRequest]) (*connect_go.Response[v1alpha1.DisplayOrganizationElementsResponse], error)
 	// DisplayRepositoryElements returns which repository elements should be displayed to the user.
 	DisplayRepositoryElements(context.Context, *connect_go.Request[v1alpha1.DisplayRepositoryElementsRequest]) (*connect_go.Response[v1alpha1.DisplayRepositoryElementsResponse], error)
-	// DisplayPluginElements returns which plugin elements should be displayed to the user.
-	//
-	// Deprecated: do not use.
-	DisplayPluginElements(context.Context, *connect_go.Request[v1alpha1.DisplayPluginElementsRequest]) (*connect_go.Response[v1alpha1.DisplayPluginElementsResponse], error)
-	// DisplayTemplateElements returns which template elements should be displayed to the user.
-	//
-	// Deprecated: do not use.
-	DisplayTemplateElements(context.Context, *connect_go.Request[v1alpha1.DisplayTemplateElementsRequest]) (*connect_go.Response[v1alpha1.DisplayTemplateElementsResponse], error)
 	// DisplayUserElements returns which user elements should be displayed to the user.
 	DisplayUserElements(context.Context, *connect_go.Request[v1alpha1.DisplayUserElementsRequest]) (*connect_go.Response[v1alpha1.DisplayUserElementsResponse], error)
 	// DisplayServerElements returns which server elements should be displayed to the user.
@@ -303,18 +253,6 @@ func NewDisplayServiceHandler(svc DisplayServiceHandler, opts ...connect_go.Hand
 	mux.Handle(DisplayServiceDisplayRepositoryElementsProcedure, connect_go.NewUnaryHandler(
 		DisplayServiceDisplayRepositoryElementsProcedure,
 		svc.DisplayRepositoryElements,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceDisplayPluginElementsProcedure, connect_go.NewUnaryHandler(
-		DisplayServiceDisplayPluginElementsProcedure,
-		svc.DisplayPluginElements,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceDisplayTemplateElementsProcedure, connect_go.NewUnaryHandler(
-		DisplayServiceDisplayTemplateElementsProcedure,
-		svc.DisplayTemplateElements,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	))
@@ -366,14 +304,6 @@ func (UnimplementedDisplayServiceHandler) DisplayOrganizationElements(context.Co
 
 func (UnimplementedDisplayServiceHandler) DisplayRepositoryElements(context.Context, *connect_go.Request[v1alpha1.DisplayRepositoryElementsRequest]) (*connect_go.Response[v1alpha1.DisplayRepositoryElementsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.DisplayRepositoryElements is not implemented"))
-}
-
-func (UnimplementedDisplayServiceHandler) DisplayPluginElements(context.Context, *connect_go.Request[v1alpha1.DisplayPluginElementsRequest]) (*connect_go.Response[v1alpha1.DisplayPluginElementsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.DisplayPluginElements is not implemented"))
-}
-
-func (UnimplementedDisplayServiceHandler) DisplayTemplateElements(context.Context, *connect_go.Request[v1alpha1.DisplayTemplateElementsRequest]) (*connect_go.Response[v1alpha1.DisplayTemplateElementsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DisplayService.DisplayTemplateElements is not implemented"))
 }
 
 func (UnimplementedDisplayServiceHandler) DisplayUserElements(context.Context, *connect_go.Request[v1alpha1.DisplayUserElementsRequest]) (*connect_go.Response[v1alpha1.DisplayUserElementsResponse], error) {
