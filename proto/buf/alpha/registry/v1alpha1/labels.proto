@@ -43,9 +43,7 @@ service LabelService {
   rpc CreateLabel(CreateLabelRequest) returns (CreateLabelResponse) {
     option idempotency_level = IDEMPOTENT;
   }
-  rpc MoveLabel(MoveLabelRequest) returns (MoveLabelResponse) {
-    option idempotency_level = IDEMPOTENT;
-  }
+  rpc MoveLabel(MoveLabelRequest) returns (MoveLabelResponse);
   rpc GetLabels(GetLabelsRequest) returns (GetLabelsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
