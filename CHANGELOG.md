@@ -2,10 +2,12 @@
 
 ## [Unreleased]
 
-- Fixed a bug in `buf build` and `buf generate` where the use of type filtering (via
+- Fix issue in `buf build` and `buf generate` where the use of type filtering (via
   `--type` flags) would cause the resulting image to have no source code info, even
   when `--exclude-source-info` was not specified. The main impact of the bug was that
   generated code would be missing comments.
+- Add `--create` flag to `buf push` to create a repository if it does not exist. The user
+  is also required to specify the visibility using `--create-visibility`.
 
 ## [v1.18.0] - 2023-05-05
 
