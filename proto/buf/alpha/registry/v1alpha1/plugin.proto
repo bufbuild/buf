@@ -17,8 +17,6 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/generate.proto";
-import "buf/alpha/registry/v1alpha1/role.proto";
-import "buf/alpha/registry/v1alpha1/user.proto";
 import "google/protobuf/timestamp.proto";
 
 option deprecated = true;
@@ -149,28 +147,6 @@ message PluginVersionMapping {
   bool inaccessible = 5;
 }
 
-message PluginContributor {
-  User user = 1;
-  // The ID of the plugin which the role belongs to.
-  string plugin_id = 2;
-  // The role that the user has been explicitly assigned against the plugin.
-  PluginRole explicit_role = 3;
-  // Optionally defines the role that the user has implicitly against the plugin through the owning organization.
-  // If the plugin does not belong to an organization or the user is not part of the owning organization, this is unset.
-  PluginRole implicit_role = 4;
-}
-
-message TemplateContributor {
-  User user = 1;
-  // The ID of the template which the role belongs to.
-  string template_id = 2;
-  // The role that the user has been explicitly assigned against the template.
-  TemplateRole explicit_role = 3;
-  // Optionally defines the role that the user has implicitly against the template through the owning organization.
-  // If the template does not belong to an organization or the user is not part of the owning organization, this is unset.
-  TemplateRole implicit_role = 4;
-}
-
 // PluginService manages plugins.
 service PluginService {
   // ListPlugins returns all the plugins available to the user. This includes
@@ -205,8 +181,6 @@ service PluginService {
   // a plugin may cause breaking changes for templates using that plugin,
   // and should be done with extreme care.
   rpc DeletePlugin(DeletePluginRequest) returns (DeletePluginResponse);
-  // SetPluginContributor sets the role of a user in the plugin.
-  rpc SetPluginContributor(SetPluginContributorRequest) returns (SetPluginContributorResponse);
   // GetTemplate returns the template, if found.
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -244,8 +218,6 @@ service PluginService {
   rpc DeleteTemplate(DeleteTemplateRequest) returns (DeleteTemplateResponse);
   // CreateTemplateVersion creates a new template version.
   rpc CreateTemplateVersion(CreateTemplateVersionRequest) returns (CreateTemplateVersionResponse);
-  // SetTemplateContributor sets the role of a user in the template.
-  rpc SetTemplateContributor(SetTemplateContributorRequest) returns (SetTemplateContributorResponse);
 }
 
 message ListPluginsRequest {
@@ -359,18 +331,6 @@ message DeletePluginRequest {
 }
 
 message DeletePluginResponse {}
-
-message SetPluginContributorRequest {
-  // The ID of the plugin for which the user's role will be set.
-  string plugin_id = 1;
-  // The ID of the user whose role will be set.
-  string user_id = 2;
-  // The role to assign to the user.
-  // Setting UNSPECIFIED means removing the user's role.
-  PluginRole plugin_role = 3;
-}
-
-message SetPluginContributorResponse {}
 
 message GetTemplateRequest {
   // The owner of the template.
@@ -516,15 +476,3 @@ message CreateTemplateVersionResponse {
   // The created template version.
   TemplateVersion template_version = 1;
 }
-
-message SetTemplateContributorRequest {
-  // The ID of the template for which the user's role will be set.
-  string template_id = 1;
-  // The ID of the user whose role will be set.
-  string user_id = 2;
-  // The role to assign to the user.
-  // Setting UNSPECIFIED means removing the user's role.
-  TemplateRole template_role = 3;
-}
-
-message SetTemplateContributorResponse {}
