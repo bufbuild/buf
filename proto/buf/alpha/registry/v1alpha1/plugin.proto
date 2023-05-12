@@ -182,7 +182,9 @@ service PluginService {
   // DeletePlugin deletes the plugin, if it exists. Note that deleting
   // a plugin may cause breaking changes for templates using that plugin,
   // and should be done with extreme care.
-  rpc DeletePlugin(DeletePluginRequest) returns (DeletePluginResponse);
+  rpc DeletePlugin(DeletePluginRequest) returns (DeletePluginResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // GetTemplate returns the template, if found.
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
