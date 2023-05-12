@@ -29,16 +29,6 @@ service DisplayService {
   rpc DisplayRepositoryElements(DisplayRepositoryElementsRequest) returns (DisplayRepositoryElementsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // DisplayPluginElements returns which plugin elements should be displayed to the user.
-  rpc DisplayPluginElements(DisplayPluginElementsRequest) returns (DisplayPluginElementsResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // DisplayTemplateElements returns which template elements should be displayed to the user.
-  rpc DisplayTemplateElements(DisplayTemplateElementsRequest) returns (DisplayTemplateElementsResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
   // DisplayUserElements returns which user elements should be displayed to the user.
   rpc DisplayUserElements(DisplayUserElementsRequest) returns (DisplayUserElementsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -103,40 +93,6 @@ message DisplayRepositoryElementsResponse {
   bool delete = 2;
   // Display write repository element if true.
   bool write = 3;
-}
-
-message DisplayPluginElementsRequest {
-  option deprecated = true;
-  // The ID of the plugin for which to check
-  // which elements should be displayed.
-  string plugin_id = 1;
-}
-
-message DisplayPluginElementsResponse {
-  option deprecated = true;
-  // Display create plugin version element if true.
-  bool create_version = 1;
-  // Display plugin settings element if true.
-  bool settings = 2;
-  // Display delete plugin element if true.
-  bool delete = 3;
-}
-
-message DisplayTemplateElementsRequest {
-  option deprecated = true;
-  // The ID of the template for which to check
-  // which elements should be displayed.
-  string template_id = 1;
-}
-
-message DisplayTemplateElementsResponse {
-  option deprecated = true;
-  // Display create template version element if true.
-  bool create_version = 1;
-  // Display template settings element if true.
-  bool settings = 2;
-  // Display delete template element if true.
-  bool delete = 3;
 }
 
 message DisplayUserElementsRequest {}
