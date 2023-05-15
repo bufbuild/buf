@@ -34,8 +34,8 @@ import (
 )
 
 const (
-	// DocumentationFilePath defines the path to the documentation file, relative to the root of the module.
-	DocumentationFilePath = "buf.md"
+	// DefaultDocumentationPath defines the default path to the documentation file, relative to the root of the module.
+	DefaultDocumentationPath = "buf.md"
 	// LicenseFilePath defines the path to the license file, relative to the root of the module.
 	LicenseFilePath = "LICENSE"
 
@@ -43,6 +43,15 @@ const (
 	//
 	// It is used by the CLI cache and intended to eventually replace b1 entirely.
 	b3DigestPrefix = "b3"
+)
+
+var (
+	// AllDocumentationPaths defines all possible paths to the documentation file, relative to the root of the module.
+	AllDocumentationPaths = []string{
+		DefaultDocumentationPath,
+		"README.md",
+		"README.markdown",
+	}
 )
 
 // ModuleFile is a module file.
@@ -100,6 +109,9 @@ type Module interface {
 	// Documentation gets the contents of the module documentation file, buf.md and returns the string representation.
 	// This may return an empty string if the documentation file does not exist.
 	Documentation() string
+	// DocumentationPath returns the path to the documentation file for the module.
+	// Can be one of `buf.md`, `README.md` or `README.markdown`
+	DocumentationPath() string
 	// License gets the contents of the module license file, LICENSE and returns the string representation.
 	// This may return an empty string if the documentation file does not exist.
 	License() string
@@ -349,12 +361,13 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 		protoLintConfig = buflintconfig.ProtoForConfig(module.LintConfig())
 	}
 	protoModule := &modulev1alpha1.Module{
-		Files:          protoModuleFiles,
-		Dependencies:   protoModulePins,
-		Documentation:  module.Documentation(),
-		BreakingConfig: protoBreakingConfig,
-		LintConfig:     protoLintConfig,
-		License:        module.License(),
+		Files:             protoModuleFiles,
+		Dependencies:      protoModulePins,
+		Documentation:     module.Documentation(),
+		DocumentationPath: module.DocumentationPath(),
+		BreakingConfig:    protoBreakingConfig,
+		LintConfig:        protoLintConfig,
+		License:           module.License(),
 	}
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
@@ -371,9 +384,10 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 //  2. Add the dependency's module identity and commit ID (sorted lexicographically by commit ID)
 //  3. Add the module identity if available.
 //  4. Add the module documentation if available.
-//  5. Add the module license if available.
-//  6. Add the breaking and lint configurations if available.
-//  7. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
+//  5. Add the module documentation path if available.
+//  6. Add the module license if available.
+//  7. Add the breaking and lint configurations if available.
+//  8. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
 func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	hash := sha256.New()
 	// We do not want to change the sort order as the rest of the codebase relies on it,
@@ -410,6 +424,11 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	}
 	if docs := module.Documentation(); docs != "" {
 		if _, err := hash.Write([]byte(docs)); err != nil {
+			return "", err
+		}
+	}
+	if docPath := module.DocumentationPath(); docPath != "" && docPath != DefaultDocumentationPath {
+		if _, err := hash.Write([]byte(docPath)); err != nil {
 			return "", err
 		}
 	}
@@ -458,7 +477,11 @@ func ModuleToBucket(
 		}
 	}
 	if docs := module.Documentation(); docs != "" {
-		if err := storage.PutPath(ctx, writeBucket, DocumentationFilePath, []byte(docs)); err != nil {
+		moduleDocPath := DefaultDocumentationPath
+		if docPath := module.DocumentationPath(); docPath != "" {
+			moduleDocPath = docPath
+		}
+		if err := storage.PutPath(ctx, writeBucket, moduleDocPath, []byte(docs)); err != nil {
 			return err
 		}
 	}

@@ -42,14 +42,16 @@ message LabelValue {
 service LabelService {
   rpc CreateLabel(CreateLabelRequest) returns (CreateLabelResponse);
   rpc MoveLabel(MoveLabelRequest) returns (MoveLabelResponse);
-  rpc GetLabels(GetLabelsRequest) returns (GetLabelsResponse);
+  rpc GetLabels(GetLabelsRequest) returns (GetLabelsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message CreateLabelRequest {
   LabelName label_name = 1;
   LabelValue label_value = 2;
   optional string author = 3;
-  optional google.protobuf.Timestamp move_time = 4;
+  optional google.protobuf.Timestamp create_time = 4;
 }
 
 message CreateLabelResponse {
@@ -60,8 +62,6 @@ message MoveLabelRequest {
   LabelName label_name = 1;
   optional LabelValue from = 2;
   LabelValue to = 3;
-  string repository_owner = 4;
-  string repository_name = 5;
 }
 
 message MoveLabelResponse {}

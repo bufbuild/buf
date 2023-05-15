@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// PluginServiceName is the fully-qualified name of the PluginService service.
@@ -70,18 +70,6 @@ const (
 	// PluginServiceDeletePluginProcedure is the fully-qualified name of the PluginService's
 	// DeletePlugin RPC.
 	PluginServiceDeletePluginProcedure = "/buf.alpha.registry.v1alpha1.PluginService/DeletePlugin"
-	// PluginServiceSetPluginContributorProcedure is the fully-qualified name of the PluginService's
-	// SetPluginContributor RPC.
-	PluginServiceSetPluginContributorProcedure = "/buf.alpha.registry.v1alpha1.PluginService/SetPluginContributor"
-	// PluginServiceListPluginContributorsProcedure is the fully-qualified name of the PluginService's
-	// ListPluginContributors RPC.
-	PluginServiceListPluginContributorsProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListPluginContributors"
-	// PluginServiceDeprecatePluginProcedure is the fully-qualified name of the PluginService's
-	// DeprecatePlugin RPC.
-	PluginServiceDeprecatePluginProcedure = "/buf.alpha.registry.v1alpha1.PluginService/DeprecatePlugin"
-	// PluginServiceUndeprecatePluginProcedure is the fully-qualified name of the PluginService's
-	// UndeprecatePlugin RPC.
-	PluginServiceUndeprecatePluginProcedure = "/buf.alpha.registry.v1alpha1.PluginService/UndeprecatePlugin"
 	// PluginServiceGetTemplateProcedure is the fully-qualified name of the PluginService's GetTemplate
 	// RPC.
 	PluginServiceGetTemplateProcedure = "/buf.alpha.registry.v1alpha1.PluginService/GetTemplate"
@@ -112,18 +100,6 @@ const (
 	// PluginServiceCreateTemplateVersionProcedure is the fully-qualified name of the PluginService's
 	// CreateTemplateVersion RPC.
 	PluginServiceCreateTemplateVersionProcedure = "/buf.alpha.registry.v1alpha1.PluginService/CreateTemplateVersion"
-	// PluginServiceSetTemplateContributorProcedure is the fully-qualified name of the PluginService's
-	// SetTemplateContributor RPC.
-	PluginServiceSetTemplateContributorProcedure = "/buf.alpha.registry.v1alpha1.PluginService/SetTemplateContributor"
-	// PluginServiceListTemplateContributorsProcedure is the fully-qualified name of the PluginService's
-	// ListTemplateContributors RPC.
-	PluginServiceListTemplateContributorsProcedure = "/buf.alpha.registry.v1alpha1.PluginService/ListTemplateContributors"
-	// PluginServiceDeprecateTemplateProcedure is the fully-qualified name of the PluginService's
-	// DeprecateTemplate RPC.
-	PluginServiceDeprecateTemplateProcedure = "/buf.alpha.registry.v1alpha1.PluginService/DeprecateTemplate"
-	// PluginServiceUndeprecateTemplateProcedure is the fully-qualified name of the PluginService's
-	// UndeprecateTemplate RPC.
-	PluginServiceUndeprecateTemplateProcedure = "/buf.alpha.registry.v1alpha1.PluginService/UndeprecateTemplate"
 )
 
 // PluginServiceClient is a client for the buf.alpha.registry.v1alpha1.PluginService service.
@@ -148,16 +124,6 @@ type PluginServiceClient interface {
 	// a plugin may cause breaking changes for templates using that plugin,
 	// and should be done with extreme care.
 	DeletePlugin(context.Context, *connect_go.Request[v1alpha1.DeletePluginRequest]) (*connect_go.Response[v1alpha1.DeletePluginResponse], error)
-	// SetPluginContributor sets the role of a user in the plugin.
-	SetPluginContributor(context.Context, *connect_go.Request[v1alpha1.SetPluginContributorRequest]) (*connect_go.Response[v1alpha1.SetPluginContributorResponse], error)
-	// ListPluginContributors returns the list of contributors that has an explicit role against the plugin.
-	// This does not include users who have implicit roles against the plugin, unless they have also been
-	// assigned a role explicitly.
-	ListPluginContributors(context.Context, *connect_go.Request[v1alpha1.ListPluginContributorsRequest]) (*connect_go.Response[v1alpha1.ListPluginContributorsResponse], error)
-	// DeprecatePlugin deprecates the plugin, if found.
-	DeprecatePlugin(context.Context, *connect_go.Request[v1alpha1.DeprecatePluginRequest]) (*connect_go.Response[v1alpha1.DeprecatePluginResponse], error)
-	// UndeprecatePlugin makes the plugin not deprecated and removes any deprecation_message.
-	UndeprecatePlugin(context.Context, *connect_go.Request[v1alpha1.UndeprecatePluginRequest]) (*connect_go.Response[v1alpha1.UndeprecatePluginResponse], error)
 	// GetTemplate returns the template, if found.
 	GetTemplate(context.Context, *connect_go.Request[v1alpha1.GetTemplateRequest]) (*connect_go.Response[v1alpha1.GetTemplateResponse], error)
 	// ListTemplates returns all the templates available to the user. This includes
@@ -181,16 +147,6 @@ type PluginServiceClient interface {
 	DeleteTemplate(context.Context, *connect_go.Request[v1alpha1.DeleteTemplateRequest]) (*connect_go.Response[v1alpha1.DeleteTemplateResponse], error)
 	// CreateTemplateVersion creates a new template version.
 	CreateTemplateVersion(context.Context, *connect_go.Request[v1alpha1.CreateTemplateVersionRequest]) (*connect_go.Response[v1alpha1.CreateTemplateVersionResponse], error)
-	// SetTemplateContributor sets the role of a user in the template.
-	SetTemplateContributor(context.Context, *connect_go.Request[v1alpha1.SetTemplateContributorRequest]) (*connect_go.Response[v1alpha1.SetTemplateContributorResponse], error)
-	// ListTemplateContributors returns the list of contributors that has an explicit role against the template.
-	// This does not include users who have implicit roles against the template, unless they have also been
-	// assigned a role explicitly.
-	ListTemplateContributors(context.Context, *connect_go.Request[v1alpha1.ListTemplateContributorsRequest]) (*connect_go.Response[v1alpha1.ListTemplateContributorsResponse], error)
-	// DeprecateTemplate deprecates the template, if found.
-	DeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.DeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.DeprecateTemplateResponse], error)
-	// UndeprecateTemplate makes the template not deprecated and removes any deprecation_message.
-	UndeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.UndeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.UndeprecateTemplateResponse], error)
 }
 
 // NewPluginServiceClient constructs a client for the buf.alpha.registry.v1alpha1.PluginService
@@ -206,27 +162,32 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 		listPlugins: connect_go.NewClient[v1alpha1.ListPluginsRequest, v1alpha1.ListPluginsResponse](
 			httpClient,
 			baseURL+PluginServiceListPluginsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listUserPlugins: connect_go.NewClient[v1alpha1.ListUserPluginsRequest, v1alpha1.ListUserPluginsResponse](
 			httpClient,
 			baseURL+PluginServiceListUserPluginsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listOrganizationPlugins: connect_go.NewClient[v1alpha1.ListOrganizationPluginsRequest, v1alpha1.ListOrganizationPluginsResponse](
 			httpClient,
 			baseURL+PluginServiceListOrganizationPluginsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getPluginVersion: connect_go.NewClient[v1alpha1.GetPluginVersionRequest, v1alpha1.GetPluginVersionResponse](
 			httpClient,
 			baseURL+PluginServiceGetPluginVersionProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listPluginVersions: connect_go.NewClient[v1alpha1.ListPluginVersionsRequest, v1alpha1.ListPluginVersionsResponse](
 			httpClient,
 			baseURL+PluginServiceListPluginVersionsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		createPlugin: connect_go.NewClient[v1alpha1.CreatePluginRequest, v1alpha1.CreatePluginResponse](
 			httpClient,
@@ -236,67 +197,55 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 		getPlugin: connect_go.NewClient[v1alpha1.GetPluginRequest, v1alpha1.GetPluginResponse](
 			httpClient,
 			baseURL+PluginServiceGetPluginProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		deletePlugin: connect_go.NewClient[v1alpha1.DeletePluginRequest, v1alpha1.DeletePluginResponse](
 			httpClient,
 			baseURL+PluginServiceDeletePluginProcedure,
 			opts...,
 		),
-		setPluginContributor: connect_go.NewClient[v1alpha1.SetPluginContributorRequest, v1alpha1.SetPluginContributorResponse](
-			httpClient,
-			baseURL+PluginServiceSetPluginContributorProcedure,
-			opts...,
-		),
-		listPluginContributors: connect_go.NewClient[v1alpha1.ListPluginContributorsRequest, v1alpha1.ListPluginContributorsResponse](
-			httpClient,
-			baseURL+PluginServiceListPluginContributorsProcedure,
-			opts...,
-		),
-		deprecatePlugin: connect_go.NewClient[v1alpha1.DeprecatePluginRequest, v1alpha1.DeprecatePluginResponse](
-			httpClient,
-			baseURL+PluginServiceDeprecatePluginProcedure,
-			opts...,
-		),
-		undeprecatePlugin: connect_go.NewClient[v1alpha1.UndeprecatePluginRequest, v1alpha1.UndeprecatePluginResponse](
-			httpClient,
-			baseURL+PluginServiceUndeprecatePluginProcedure,
-			opts...,
-		),
 		getTemplate: connect_go.NewClient[v1alpha1.GetTemplateRequest, v1alpha1.GetTemplateResponse](
 			httpClient,
 			baseURL+PluginServiceGetTemplateProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listTemplates: connect_go.NewClient[v1alpha1.ListTemplatesRequest, v1alpha1.ListTemplatesResponse](
 			httpClient,
 			baseURL+PluginServiceListTemplatesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listTemplatesUserCanAccess: connect_go.NewClient[v1alpha1.ListTemplatesUserCanAccessRequest, v1alpha1.ListTemplatesUserCanAccessResponse](
 			httpClient,
 			baseURL+PluginServiceListTemplatesUserCanAccessProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listUserTemplates: connect_go.NewClient[v1alpha1.ListUserTemplatesRequest, v1alpha1.ListUserTemplatesResponse](
 			httpClient,
 			baseURL+PluginServiceListUserTemplatesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listOrganizationTemplates: connect_go.NewClient[v1alpha1.ListOrganizationTemplatesRequest, v1alpha1.ListOrganizationTemplatesResponse](
 			httpClient,
 			baseURL+PluginServiceListOrganizationTemplatesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getTemplateVersion: connect_go.NewClient[v1alpha1.GetTemplateVersionRequest, v1alpha1.GetTemplateVersionResponse](
 			httpClient,
 			baseURL+PluginServiceGetTemplateVersionProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listTemplateVersions: connect_go.NewClient[v1alpha1.ListTemplateVersionsRequest, v1alpha1.ListTemplateVersionsResponse](
 			httpClient,
 			baseURL+PluginServiceListTemplateVersionsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		createTemplate: connect_go.NewClient[v1alpha1.CreateTemplateRequest, v1alpha1.CreateTemplateResponse](
 			httpClient,
@@ -313,26 +262,6 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 			baseURL+PluginServiceCreateTemplateVersionProcedure,
 			opts...,
 		),
-		setTemplateContributor: connect_go.NewClient[v1alpha1.SetTemplateContributorRequest, v1alpha1.SetTemplateContributorResponse](
-			httpClient,
-			baseURL+PluginServiceSetTemplateContributorProcedure,
-			opts...,
-		),
-		listTemplateContributors: connect_go.NewClient[v1alpha1.ListTemplateContributorsRequest, v1alpha1.ListTemplateContributorsResponse](
-			httpClient,
-			baseURL+PluginServiceListTemplateContributorsProcedure,
-			opts...,
-		),
-		deprecateTemplate: connect_go.NewClient[v1alpha1.DeprecateTemplateRequest, v1alpha1.DeprecateTemplateResponse](
-			httpClient,
-			baseURL+PluginServiceDeprecateTemplateProcedure,
-			opts...,
-		),
-		undeprecateTemplate: connect_go.NewClient[v1alpha1.UndeprecateTemplateRequest, v1alpha1.UndeprecateTemplateResponse](
-			httpClient,
-			baseURL+PluginServiceUndeprecateTemplateProcedure,
-			opts...,
-		),
 	}
 }
 
@@ -346,10 +275,6 @@ type pluginServiceClient struct {
 	createPlugin               *connect_go.Client[v1alpha1.CreatePluginRequest, v1alpha1.CreatePluginResponse]
 	getPlugin                  *connect_go.Client[v1alpha1.GetPluginRequest, v1alpha1.GetPluginResponse]
 	deletePlugin               *connect_go.Client[v1alpha1.DeletePluginRequest, v1alpha1.DeletePluginResponse]
-	setPluginContributor       *connect_go.Client[v1alpha1.SetPluginContributorRequest, v1alpha1.SetPluginContributorResponse]
-	listPluginContributors     *connect_go.Client[v1alpha1.ListPluginContributorsRequest, v1alpha1.ListPluginContributorsResponse]
-	deprecatePlugin            *connect_go.Client[v1alpha1.DeprecatePluginRequest, v1alpha1.DeprecatePluginResponse]
-	undeprecatePlugin          *connect_go.Client[v1alpha1.UndeprecatePluginRequest, v1alpha1.UndeprecatePluginResponse]
 	getTemplate                *connect_go.Client[v1alpha1.GetTemplateRequest, v1alpha1.GetTemplateResponse]
 	listTemplates              *connect_go.Client[v1alpha1.ListTemplatesRequest, v1alpha1.ListTemplatesResponse]
 	listTemplatesUserCanAccess *connect_go.Client[v1alpha1.ListTemplatesUserCanAccessRequest, v1alpha1.ListTemplatesUserCanAccessResponse]
@@ -360,10 +285,6 @@ type pluginServiceClient struct {
 	createTemplate             *connect_go.Client[v1alpha1.CreateTemplateRequest, v1alpha1.CreateTemplateResponse]
 	deleteTemplate             *connect_go.Client[v1alpha1.DeleteTemplateRequest, v1alpha1.DeleteTemplateResponse]
 	createTemplateVersion      *connect_go.Client[v1alpha1.CreateTemplateVersionRequest, v1alpha1.CreateTemplateVersionResponse]
-	setTemplateContributor     *connect_go.Client[v1alpha1.SetTemplateContributorRequest, v1alpha1.SetTemplateContributorResponse]
-	listTemplateContributors   *connect_go.Client[v1alpha1.ListTemplateContributorsRequest, v1alpha1.ListTemplateContributorsResponse]
-	deprecateTemplate          *connect_go.Client[v1alpha1.DeprecateTemplateRequest, v1alpha1.DeprecateTemplateResponse]
-	undeprecateTemplate        *connect_go.Client[v1alpha1.UndeprecateTemplateRequest, v1alpha1.UndeprecateTemplateResponse]
 }
 
 // ListPlugins calls buf.alpha.registry.v1alpha1.PluginService.ListPlugins.
@@ -404,26 +325,6 @@ func (c *pluginServiceClient) GetPlugin(ctx context.Context, req *connect_go.Req
 // DeletePlugin calls buf.alpha.registry.v1alpha1.PluginService.DeletePlugin.
 func (c *pluginServiceClient) DeletePlugin(ctx context.Context, req *connect_go.Request[v1alpha1.DeletePluginRequest]) (*connect_go.Response[v1alpha1.DeletePluginResponse], error) {
 	return c.deletePlugin.CallUnary(ctx, req)
-}
-
-// SetPluginContributor calls buf.alpha.registry.v1alpha1.PluginService.SetPluginContributor.
-func (c *pluginServiceClient) SetPluginContributor(ctx context.Context, req *connect_go.Request[v1alpha1.SetPluginContributorRequest]) (*connect_go.Response[v1alpha1.SetPluginContributorResponse], error) {
-	return c.setPluginContributor.CallUnary(ctx, req)
-}
-
-// ListPluginContributors calls buf.alpha.registry.v1alpha1.PluginService.ListPluginContributors.
-func (c *pluginServiceClient) ListPluginContributors(ctx context.Context, req *connect_go.Request[v1alpha1.ListPluginContributorsRequest]) (*connect_go.Response[v1alpha1.ListPluginContributorsResponse], error) {
-	return c.listPluginContributors.CallUnary(ctx, req)
-}
-
-// DeprecatePlugin calls buf.alpha.registry.v1alpha1.PluginService.DeprecatePlugin.
-func (c *pluginServiceClient) DeprecatePlugin(ctx context.Context, req *connect_go.Request[v1alpha1.DeprecatePluginRequest]) (*connect_go.Response[v1alpha1.DeprecatePluginResponse], error) {
-	return c.deprecatePlugin.CallUnary(ctx, req)
-}
-
-// UndeprecatePlugin calls buf.alpha.registry.v1alpha1.PluginService.UndeprecatePlugin.
-func (c *pluginServiceClient) UndeprecatePlugin(ctx context.Context, req *connect_go.Request[v1alpha1.UndeprecatePluginRequest]) (*connect_go.Response[v1alpha1.UndeprecatePluginResponse], error) {
-	return c.undeprecatePlugin.CallUnary(ctx, req)
 }
 
 // GetTemplate calls buf.alpha.registry.v1alpha1.PluginService.GetTemplate.
@@ -478,27 +379,6 @@ func (c *pluginServiceClient) CreateTemplateVersion(ctx context.Context, req *co
 	return c.createTemplateVersion.CallUnary(ctx, req)
 }
 
-// SetTemplateContributor calls buf.alpha.registry.v1alpha1.PluginService.SetTemplateContributor.
-func (c *pluginServiceClient) SetTemplateContributor(ctx context.Context, req *connect_go.Request[v1alpha1.SetTemplateContributorRequest]) (*connect_go.Response[v1alpha1.SetTemplateContributorResponse], error) {
-	return c.setTemplateContributor.CallUnary(ctx, req)
-}
-
-// ListTemplateContributors calls
-// buf.alpha.registry.v1alpha1.PluginService.ListTemplateContributors.
-func (c *pluginServiceClient) ListTemplateContributors(ctx context.Context, req *connect_go.Request[v1alpha1.ListTemplateContributorsRequest]) (*connect_go.Response[v1alpha1.ListTemplateContributorsResponse], error) {
-	return c.listTemplateContributors.CallUnary(ctx, req)
-}
-
-// DeprecateTemplate calls buf.alpha.registry.v1alpha1.PluginService.DeprecateTemplate.
-func (c *pluginServiceClient) DeprecateTemplate(ctx context.Context, req *connect_go.Request[v1alpha1.DeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.DeprecateTemplateResponse], error) {
-	return c.deprecateTemplate.CallUnary(ctx, req)
-}
-
-// UndeprecateTemplate calls buf.alpha.registry.v1alpha1.PluginService.UndeprecateTemplate.
-func (c *pluginServiceClient) UndeprecateTemplate(ctx context.Context, req *connect_go.Request[v1alpha1.UndeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.UndeprecateTemplateResponse], error) {
-	return c.undeprecateTemplate.CallUnary(ctx, req)
-}
-
 // PluginServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.PluginService
 // service.
 type PluginServiceHandler interface {
@@ -522,16 +402,6 @@ type PluginServiceHandler interface {
 	// a plugin may cause breaking changes for templates using that plugin,
 	// and should be done with extreme care.
 	DeletePlugin(context.Context, *connect_go.Request[v1alpha1.DeletePluginRequest]) (*connect_go.Response[v1alpha1.DeletePluginResponse], error)
-	// SetPluginContributor sets the role of a user in the plugin.
-	SetPluginContributor(context.Context, *connect_go.Request[v1alpha1.SetPluginContributorRequest]) (*connect_go.Response[v1alpha1.SetPluginContributorResponse], error)
-	// ListPluginContributors returns the list of contributors that has an explicit role against the plugin.
-	// This does not include users who have implicit roles against the plugin, unless they have also been
-	// assigned a role explicitly.
-	ListPluginContributors(context.Context, *connect_go.Request[v1alpha1.ListPluginContributorsRequest]) (*connect_go.Response[v1alpha1.ListPluginContributorsResponse], error)
-	// DeprecatePlugin deprecates the plugin, if found.
-	DeprecatePlugin(context.Context, *connect_go.Request[v1alpha1.DeprecatePluginRequest]) (*connect_go.Response[v1alpha1.DeprecatePluginResponse], error)
-	// UndeprecatePlugin makes the plugin not deprecated and removes any deprecation_message.
-	UndeprecatePlugin(context.Context, *connect_go.Request[v1alpha1.UndeprecatePluginRequest]) (*connect_go.Response[v1alpha1.UndeprecatePluginResponse], error)
 	// GetTemplate returns the template, if found.
 	GetTemplate(context.Context, *connect_go.Request[v1alpha1.GetTemplateRequest]) (*connect_go.Response[v1alpha1.GetTemplateResponse], error)
 	// ListTemplates returns all the templates available to the user. This includes
@@ -555,16 +425,6 @@ type PluginServiceHandler interface {
 	DeleteTemplate(context.Context, *connect_go.Request[v1alpha1.DeleteTemplateRequest]) (*connect_go.Response[v1alpha1.DeleteTemplateResponse], error)
 	// CreateTemplateVersion creates a new template version.
 	CreateTemplateVersion(context.Context, *connect_go.Request[v1alpha1.CreateTemplateVersionRequest]) (*connect_go.Response[v1alpha1.CreateTemplateVersionResponse], error)
-	// SetTemplateContributor sets the role of a user in the template.
-	SetTemplateContributor(context.Context, *connect_go.Request[v1alpha1.SetTemplateContributorRequest]) (*connect_go.Response[v1alpha1.SetTemplateContributorResponse], error)
-	// ListTemplateContributors returns the list of contributors that has an explicit role against the template.
-	// This does not include users who have implicit roles against the template, unless they have also been
-	// assigned a role explicitly.
-	ListTemplateContributors(context.Context, *connect_go.Request[v1alpha1.ListTemplateContributorsRequest]) (*connect_go.Response[v1alpha1.ListTemplateContributorsResponse], error)
-	// DeprecateTemplate deprecates the template, if found.
-	DeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.DeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.DeprecateTemplateResponse], error)
-	// UndeprecateTemplate makes the template not deprecated and removes any deprecation_message.
-	UndeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.UndeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.UndeprecateTemplateResponse], error)
 }
 
 // NewPluginServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -577,27 +437,32 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 	mux.Handle(PluginServiceListPluginsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListPluginsProcedure,
 		svc.ListPlugins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListUserPluginsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListUserPluginsProcedure,
 		svc.ListUserPlugins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListOrganizationPluginsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListOrganizationPluginsProcedure,
 		svc.ListOrganizationPlugins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceGetPluginVersionProcedure, connect_go.NewUnaryHandler(
 		PluginServiceGetPluginVersionProcedure,
 		svc.GetPluginVersion,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListPluginVersionsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListPluginVersionsProcedure,
 		svc.ListPluginVersions,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceCreatePluginProcedure, connect_go.NewUnaryHandler(
 		PluginServiceCreatePluginProcedure,
@@ -607,67 +472,55 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 	mux.Handle(PluginServiceGetPluginProcedure, connect_go.NewUnaryHandler(
 		PluginServiceGetPluginProcedure,
 		svc.GetPlugin,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceDeletePluginProcedure, connect_go.NewUnaryHandler(
 		PluginServiceDeletePluginProcedure,
 		svc.DeletePlugin,
 		opts...,
 	))
-	mux.Handle(PluginServiceSetPluginContributorProcedure, connect_go.NewUnaryHandler(
-		PluginServiceSetPluginContributorProcedure,
-		svc.SetPluginContributor,
-		opts...,
-	))
-	mux.Handle(PluginServiceListPluginContributorsProcedure, connect_go.NewUnaryHandler(
-		PluginServiceListPluginContributorsProcedure,
-		svc.ListPluginContributors,
-		opts...,
-	))
-	mux.Handle(PluginServiceDeprecatePluginProcedure, connect_go.NewUnaryHandler(
-		PluginServiceDeprecatePluginProcedure,
-		svc.DeprecatePlugin,
-		opts...,
-	))
-	mux.Handle(PluginServiceUndeprecatePluginProcedure, connect_go.NewUnaryHandler(
-		PluginServiceUndeprecatePluginProcedure,
-		svc.UndeprecatePlugin,
-		opts...,
-	))
 	mux.Handle(PluginServiceGetTemplateProcedure, connect_go.NewUnaryHandler(
 		PluginServiceGetTemplateProcedure,
 		svc.GetTemplate,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListTemplatesProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListTemplatesProcedure,
 		svc.ListTemplates,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListTemplatesUserCanAccessProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListTemplatesUserCanAccessProcedure,
 		svc.ListTemplatesUserCanAccess,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListUserTemplatesProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListUserTemplatesProcedure,
 		svc.ListUserTemplates,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListOrganizationTemplatesProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListOrganizationTemplatesProcedure,
 		svc.ListOrganizationTemplates,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceGetTemplateVersionProcedure, connect_go.NewUnaryHandler(
 		PluginServiceGetTemplateVersionProcedure,
 		svc.GetTemplateVersion,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceListTemplateVersionsProcedure, connect_go.NewUnaryHandler(
 		PluginServiceListTemplateVersionsProcedure,
 		svc.ListTemplateVersions,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginServiceCreateTemplateProcedure, connect_go.NewUnaryHandler(
 		PluginServiceCreateTemplateProcedure,
@@ -682,26 +535,6 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 	mux.Handle(PluginServiceCreateTemplateVersionProcedure, connect_go.NewUnaryHandler(
 		PluginServiceCreateTemplateVersionProcedure,
 		svc.CreateTemplateVersion,
-		opts...,
-	))
-	mux.Handle(PluginServiceSetTemplateContributorProcedure, connect_go.NewUnaryHandler(
-		PluginServiceSetTemplateContributorProcedure,
-		svc.SetTemplateContributor,
-		opts...,
-	))
-	mux.Handle(PluginServiceListTemplateContributorsProcedure, connect_go.NewUnaryHandler(
-		PluginServiceListTemplateContributorsProcedure,
-		svc.ListTemplateContributors,
-		opts...,
-	))
-	mux.Handle(PluginServiceDeprecateTemplateProcedure, connect_go.NewUnaryHandler(
-		PluginServiceDeprecateTemplateProcedure,
-		svc.DeprecateTemplate,
-		opts...,
-	))
-	mux.Handle(PluginServiceUndeprecateTemplateProcedure, connect_go.NewUnaryHandler(
-		PluginServiceUndeprecateTemplateProcedure,
-		svc.UndeprecateTemplate,
 		opts...,
 	))
 	return "/buf.alpha.registry.v1alpha1.PluginService/", mux
@@ -742,22 +575,6 @@ func (UnimplementedPluginServiceHandler) DeletePlugin(context.Context, *connect_
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.DeletePlugin is not implemented"))
 }
 
-func (UnimplementedPluginServiceHandler) SetPluginContributor(context.Context, *connect_go.Request[v1alpha1.SetPluginContributorRequest]) (*connect_go.Response[v1alpha1.SetPluginContributorResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.SetPluginContributor is not implemented"))
-}
-
-func (UnimplementedPluginServiceHandler) ListPluginContributors(context.Context, *connect_go.Request[v1alpha1.ListPluginContributorsRequest]) (*connect_go.Response[v1alpha1.ListPluginContributorsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.ListPluginContributors is not implemented"))
-}
-
-func (UnimplementedPluginServiceHandler) DeprecatePlugin(context.Context, *connect_go.Request[v1alpha1.DeprecatePluginRequest]) (*connect_go.Response[v1alpha1.DeprecatePluginResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.DeprecatePlugin is not implemented"))
-}
-
-func (UnimplementedPluginServiceHandler) UndeprecatePlugin(context.Context, *connect_go.Request[v1alpha1.UndeprecatePluginRequest]) (*connect_go.Response[v1alpha1.UndeprecatePluginResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.UndeprecatePlugin is not implemented"))
-}
-
 func (UnimplementedPluginServiceHandler) GetTemplate(context.Context, *connect_go.Request[v1alpha1.GetTemplateRequest]) (*connect_go.Response[v1alpha1.GetTemplateResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.GetTemplate is not implemented"))
 }
@@ -796,20 +613,4 @@ func (UnimplementedPluginServiceHandler) DeleteTemplate(context.Context, *connec
 
 func (UnimplementedPluginServiceHandler) CreateTemplateVersion(context.Context, *connect_go.Request[v1alpha1.CreateTemplateVersionRequest]) (*connect_go.Response[v1alpha1.CreateTemplateVersionResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.CreateTemplateVersion is not implemented"))
-}
-
-func (UnimplementedPluginServiceHandler) SetTemplateContributor(context.Context, *connect_go.Request[v1alpha1.SetTemplateContributorRequest]) (*connect_go.Response[v1alpha1.SetTemplateContributorResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.SetTemplateContributor is not implemented"))
-}
-
-func (UnimplementedPluginServiceHandler) ListTemplateContributors(context.Context, *connect_go.Request[v1alpha1.ListTemplateContributorsRequest]) (*connect_go.Response[v1alpha1.ListTemplateContributorsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.ListTemplateContributors is not implemented"))
-}
-
-func (UnimplementedPluginServiceHandler) DeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.DeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.DeprecateTemplateResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.DeprecateTemplate is not implemented"))
-}
-
-func (UnimplementedPluginServiceHandler) UndeprecateTemplate(context.Context, *connect_go.Request[v1alpha1.UndeprecateTemplateRequest]) (*connect_go.Response[v1alpha1.UndeprecateTemplateResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.UndeprecateTemplate is not implemented"))
 }

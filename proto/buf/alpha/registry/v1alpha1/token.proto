@@ -32,11 +32,15 @@ service TokenService {
   // GetToken gets the specific token for the user
   //
   // This method requires authentication.
-  rpc GetToken(GetTokenRequest) returns (GetTokenResponse);
+  rpc GetToken(GetTokenRequest) returns (GetTokenResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListTokens lists the users active tokens
   //
   // This method requires authentication.
-  rpc ListTokens(ListTokensRequest) returns (ListTokensResponse);
+  rpc ListTokens(ListTokensRequest) returns (ListTokensResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DeleteToken deletes an existing token.
   //
   // This method requires authentication.

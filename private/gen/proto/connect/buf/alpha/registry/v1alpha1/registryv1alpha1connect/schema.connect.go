@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// SchemaServiceName is the fully-qualified name of the SchemaService service.
@@ -77,7 +77,8 @@ func NewSchemaServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 		getSchema: connect_go.NewClient[v1alpha1.GetSchemaRequest, v1alpha1.GetSchemaResponse](
 			httpClient,
 			baseURL+SchemaServiceGetSchemaProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		convertMessage: connect_go.NewClient[v1alpha1.ConvertMessageRequest, v1alpha1.ConvertMessageResponse](
 			httpClient,
@@ -124,7 +125,8 @@ func NewSchemaServiceHandler(svc SchemaServiceHandler, opts ...connect_go.Handle
 	mux.Handle(SchemaServiceGetSchemaProcedure, connect_go.NewUnaryHandler(
 		SchemaServiceGetSchemaProcedure,
 		svc.GetSchema,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(SchemaServiceConvertMessageProcedure, connect_go.NewUnaryHandler(
 		SchemaServiceConvertMessageProcedure,

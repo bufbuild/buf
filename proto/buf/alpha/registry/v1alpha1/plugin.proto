@@ -17,8 +17,6 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/generate.proto";
-import "buf/alpha/registry/v1alpha1/role.proto";
-import "buf/alpha/registry/v1alpha1/user.proto";
 import "google/protobuf/timestamp.proto";
 
 option deprecated = true;
@@ -149,93 +147,77 @@ message PluginVersionMapping {
   bool inaccessible = 5;
 }
 
-message PluginContributor {
-  User user = 1;
-  // The ID of the plugin which the role belongs to.
-  string plugin_id = 2;
-  // The role that the user has been explicitly assigned against the plugin.
-  PluginRole explicit_role = 3;
-  // Optionally defines the role that the user has implicitly against the plugin through the owning organization.
-  // If the plugin does not belong to an organization or the user is not part of the owning organization, this is unset.
-  PluginRole implicit_role = 4;
-}
-
-message TemplateContributor {
-  User user = 1;
-  // The ID of the template which the role belongs to.
-  string template_id = 2;
-  // The role that the user has been explicitly assigned against the template.
-  TemplateRole explicit_role = 3;
-  // Optionally defines the role that the user has implicitly against the template through the owning organization.
-  // If the template does not belong to an organization or the user is not part of the owning organization, this is unset.
-  TemplateRole implicit_role = 4;
-}
-
 // PluginService manages plugins.
 service PluginService {
   // ListPlugins returns all the plugins available to the user. This includes
   // public plugins, those uploaded to organizations the user is part of,
   // and any plugins uploaded directly by the user.
-  rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse);
+  rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListUserPlugins lists all plugins belonging to a user.
-  rpc ListUserPlugins(ListUserPluginsRequest) returns (ListUserPluginsResponse);
+  rpc ListUserPlugins(ListUserPluginsRequest) returns (ListUserPluginsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListOrganizationPlugins lists all plugins for an organization.
-  rpc ListOrganizationPlugins(ListOrganizationPluginsRequest) returns (ListOrganizationPluginsResponse);
+  rpc ListOrganizationPlugins(ListOrganizationPluginsRequest) returns (ListOrganizationPluginsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetPluginVersion returns the plugin version, if found.
-  rpc GetPluginVersion(GetPluginVersionRequest) returns (GetPluginVersionResponse);
+  rpc GetPluginVersion(GetPluginVersionRequest) returns (GetPluginVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListPluginVersions lists all the versions available for the specified plugin.
-  rpc ListPluginVersions(ListPluginVersionsRequest) returns (ListPluginVersionsResponse);
+  rpc ListPluginVersions(ListPluginVersionsRequest) returns (ListPluginVersionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // CreatePlugin creates a new plugin.
   rpc CreatePlugin(CreatePluginRequest) returns (CreatePluginResponse);
   // GetPlugin returns the plugin, if found.
-  rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse);
+  rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DeletePlugin deletes the plugin, if it exists. Note that deleting
   // a plugin may cause breaking changes for templates using that plugin,
   // and should be done with extreme care.
   rpc DeletePlugin(DeletePluginRequest) returns (DeletePluginResponse);
-  // SetPluginContributor sets the role of a user in the plugin.
-  rpc SetPluginContributor(SetPluginContributorRequest) returns (SetPluginContributorResponse);
-  // ListPluginContributors returns the list of contributors that has an explicit role against the plugin.
-  // This does not include users who have implicit roles against the plugin, unless they have also been
-  // assigned a role explicitly.
-  rpc ListPluginContributors(ListPluginContributorsRequest) returns (ListPluginContributorsResponse);
-  // DeprecatePlugin deprecates the plugin, if found.
-  rpc DeprecatePlugin(DeprecatePluginRequest) returns (DeprecatePluginResponse);
-  // UndeprecatePlugin makes the plugin not deprecated and removes any deprecation_message.
-  rpc UndeprecatePlugin(UndeprecatePluginRequest) returns (UndeprecatePluginResponse);
   // GetTemplate returns the template, if found.
-  rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
+  rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListTemplates returns all the templates available to the user. This includes
   // public templates, those owned by organizations the user is part of,
   // and any created directly by the user.
-  rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
+  rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListTemplatesUserCanAccess is like ListTemplates, but does not return
   // public templates.
-  rpc ListTemplatesUserCanAccess(ListTemplatesUserCanAccessRequest) returns (ListTemplatesUserCanAccessResponse);
+  rpc ListTemplatesUserCanAccess(ListTemplatesUserCanAccessRequest) returns (ListTemplatesUserCanAccessResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListUserPlugins lists all templates belonging to a user.
-  rpc ListUserTemplates(ListUserTemplatesRequest) returns (ListUserTemplatesResponse);
+  rpc ListUserTemplates(ListUserTemplatesRequest) returns (ListUserTemplatesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListOrganizationTemplates lists all templates for an organization.
-  rpc ListOrganizationTemplates(ListOrganizationTemplatesRequest) returns (ListOrganizationTemplatesResponse);
+  rpc ListOrganizationTemplates(ListOrganizationTemplatesRequest) returns (ListOrganizationTemplatesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetTemplateVersion returns the template version, if found.
-  rpc GetTemplateVersion(GetTemplateVersionRequest) returns (GetTemplateVersionResponse);
+  rpc GetTemplateVersion(GetTemplateVersionRequest) returns (GetTemplateVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListTemplateVersions lists all the template versions available for the specified template.
-  rpc ListTemplateVersions(ListTemplateVersionsRequest) returns (ListTemplateVersionsResponse);
+  rpc ListTemplateVersions(ListTemplateVersionsRequest) returns (ListTemplateVersionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // CreateTemplate creates a new template.
   rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse);
   // DeleteTemplate deletes the template, if it exists.
   rpc DeleteTemplate(DeleteTemplateRequest) returns (DeleteTemplateResponse);
   // CreateTemplateVersion creates a new template version.
   rpc CreateTemplateVersion(CreateTemplateVersionRequest) returns (CreateTemplateVersionResponse);
-  // SetTemplateContributor sets the role of a user in the template.
-  rpc SetTemplateContributor(SetTemplateContributorRequest) returns (SetTemplateContributorResponse);
-  // ListTemplateContributors returns the list of contributors that has an explicit role against the template.
-  // This does not include users who have implicit roles against the template, unless they have also been
-  // assigned a role explicitly.
-  rpc ListTemplateContributors(ListTemplateContributorsRequest) returns (ListTemplateContributorsResponse);
-  // DeprecateTemplate deprecates the template, if found.
-  rpc DeprecateTemplate(DeprecateTemplateRequest) returns (DeprecateTemplateResponse);
-  // UndeprecateTemplate makes the template not deprecated and removes any deprecation_message.
-  rpc UndeprecateTemplate(UndeprecateTemplateRequest) returns (UndeprecateTemplateResponse);
 }
 
 message ListPluginsRequest {
@@ -349,52 +331,6 @@ message DeletePluginRequest {
 }
 
 message DeletePluginResponse {}
-
-message SetPluginContributorRequest {
-  // The ID of the plugin for which the user's role will be set.
-  string plugin_id = 1;
-  // The ID of the user whose role will be set.
-  string user_id = 2;
-  // The role to assign to the user.
-  // Setting UNSPECIFIED means removing the user's role.
-  PluginRole plugin_role = 3;
-}
-
-message SetPluginContributorResponse {}
-
-message ListPluginContributorsRequest {
-  string plugin_id = 1;
-  uint32 page_size = 2;
-  // The first page is returned if this is empty.
-  string page_token = 3;
-  bool reverse = 4;
-}
-
-message ListPluginContributorsResponse {
-  repeated PluginContributor users = 1;
-  // There are no more pages if this is empty.
-  string next_page_token = 2;
-}
-
-message DeprecatePluginRequest {
-  // The owner of the plugin.
-  string owner = 1;
-  // The name of the plugin.
-  string name = 2;
-  // A message shown along with the deprecation warning for this plugin.
-  string message = 3;
-}
-
-message DeprecatePluginResponse {}
-
-message UndeprecatePluginRequest {
-  // The owner of the plugin.
-  string owner = 1;
-  // The name of the plugin.
-  string name = 2;
-}
-
-message UndeprecatePluginResponse {}
 
 message GetTemplateRequest {
   // The owner of the template.
@@ -540,49 +476,3 @@ message CreateTemplateVersionResponse {
   // The created template version.
   TemplateVersion template_version = 1;
 }
-
-message SetTemplateContributorRequest {
-  // The ID of the template for which the user's role will be set.
-  string template_id = 1;
-  // The ID of the user whose role will be set.
-  string user_id = 2;
-  // The role to assign to the user.
-  // Setting UNSPECIFIED means removing the user's role.
-  TemplateRole template_role = 3;
-}
-
-message SetTemplateContributorResponse {}
-
-message ListTemplateContributorsRequest {
-  string template_id = 1;
-  uint32 page_size = 2;
-  // The first page is returned if this is empty.
-  string page_token = 3;
-  bool reverse = 4;
-}
-
-message ListTemplateContributorsResponse {
-  repeated TemplateContributor users = 1;
-  // There are no more pages if this is empty.
-  string next_page_token = 2;
-}
-
-message DeprecateTemplateRequest {
-  // The owner of the template.
-  string owner = 1;
-  // The name of the template.
-  string name = 2;
-  // A message shown along with the deprecation warning for this template.
-  string message = 3;
-}
-
-message DeprecateTemplateResponse {}
-
-message UndeprecateTemplateRequest {
-  // The owner of the template.
-  string owner = 1;
-  // The name of the template.
-  string name = 2;
-}
-
-message UndeprecateTemplateResponse {}

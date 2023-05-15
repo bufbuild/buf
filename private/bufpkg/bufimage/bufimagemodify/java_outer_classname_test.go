@@ -36,7 +36,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
-			JavaOuterClassname(zap.NewNop(), sweeper, nil),
+			JavaOuterClassname(zap.NewNop(), sweeper, nil, false),
 			ModifierFunc(sweeper.Sweep),
 		)
 		err := modifier.Modify(
@@ -59,7 +59,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaOuterClassname(zap.NewNop(), sweeper, nil).Modify(
+		err := JavaOuterClassname(zap.NewNop(), sweeper, nil, false).Modify(
 			context.Background(),
 			image,
 		)
@@ -80,7 +80,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
-			JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"}),
+			JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"}, false),
 			ModifierFunc(sweeper.Sweep),
 		)
 		err := modifier.Modify(
@@ -103,7 +103,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"}).Modify(
+		err := JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"}, false).Modify(
 			context.Background(),
 			image,
 		)
@@ -115,6 +115,30 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+	})
+
+	t.Run("with preserveExistingValue", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+
+		sweeper := NewFileOptionSweeper()
+		modifier := NewMultiModifier(
+			JavaOuterClassname(zap.NewNop(), sweeper, nil, true),
+			ModifierFunc(sweeper.Sweep),
+		)
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t, "AProto", descriptor.GetOptions().GetJavaOuterClassname())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
 	})
 }
 
@@ -128,7 +152,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
-			JavaOuterClassname(zap.NewNop(), sweeper, nil),
+			JavaOuterClassname(zap.NewNop(), sweeper, nil, false),
 			ModifierFunc(sweeper.Sweep),
 		)
 		err := modifier.Modify(
@@ -151,7 +175,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaOuterClassname(zap.NewNop(), sweeper, nil).Modify(
+		err := JavaOuterClassname(zap.NewNop(), sweeper, nil, false).Modify(
 			context.Background(),
 			image,
 		)
@@ -171,7 +195,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
-			JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"}),
+			JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"}, false),
 			ModifierFunc(sweeper.Sweep),
 		)
 		err := modifier.Modify(
@@ -194,7 +218,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"}).Modify(
+		err := JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"}, false).Modify(
 			context.Background(),
 			image,
 		)
@@ -205,6 +229,30 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+	})
+
+	t.Run("with preserveExistingValue", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
+
+		sweeper := NewFileOptionSweeper()
+		modifier := NewMultiModifier(
+			JavaOuterClassname(zap.NewNop(), sweeper, nil, true),
+			ModifierFunc(sweeper.Sweep),
+		)
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.Equal(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t, "foo", descriptor.GetOptions().GetJavaOuterClassname())
+		}
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
 	})
 }
 
@@ -218,7 +266,7 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
-			JavaOuterClassname(zap.NewNop(), sweeper, nil),
+			JavaOuterClassname(zap.NewNop(), sweeper, nil, false),
 			ModifierFunc(sweeper.Sweep),
 		)
 		err := modifier.Modify(
@@ -240,7 +288,7 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaOuterClassname(zap.NewNop(), sweeper, nil).Modify(
+		err := JavaOuterClassname(zap.NewNop(), sweeper, nil, false).Modify(
 			context.Background(),
 			image,
 		)
@@ -260,7 +308,7 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
-			JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"}),
+			JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"}, false),
 			ModifierFunc(sweeper.Sweep),
 		)
 		err := modifier.Modify(
@@ -286,7 +334,7 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"}).Modify(
+		err := JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"}, false).Modify(
 			context.Background(),
 			image,
 		)
@@ -313,7 +361,7 @@ func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
-			JavaOuterClassname(zap.NewNop(), sweeper, nil),
+			JavaOuterClassname(zap.NewNop(), sweeper, nil, false),
 			ModifierFunc(sweeper.Sweep),
 		)
 		err := modifier.Modify(
@@ -340,7 +388,7 @@ func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaOuterClassname(zap.NewNop(), sweeper, nil).Modify(
+		err := JavaOuterClassname(zap.NewNop(), sweeper, nil, false).Modify(
 			context.Background(),
 			image,
 		)

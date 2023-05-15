@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/workspace/workspacepush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
@@ -36,9 +37,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugincreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginversion/pluginversionlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
@@ -51,9 +50,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatecreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatedelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatedeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatelist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversioncreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
@@ -206,8 +203,6 @@ func NewRootCommand(name string) *appcmd.Command {
 									plugincreate.NewCommand("create", builder),
 									pluginlist.NewCommand("list", builder),
 									plugindelete.NewCommand("delete", builder),
-									plugindeprecate.NewCommand("deprecate", builder),
-									pluginundeprecate.NewCommand("undeprecate", builder),
 									{
 										Use:   "version",
 										Short: "Manage Protobuf plugin versions",
@@ -224,8 +219,6 @@ func NewRootCommand(name string) *appcmd.Command {
 									templatecreate.NewCommand("create", builder),
 									templatelist.NewCommand("list", builder),
 									templatedelete.NewCommand("delete", builder),
-									templatedeprecate.NewCommand("deprecate", builder),
-									templateundeprecate.NewCommand("undeprecate", builder),
 									{
 										Use:   "version",
 										Short: "Manage Protobuf template versions",
@@ -276,6 +269,13 @@ func NewRootCommand(name string) *appcmd.Command {
 						SubCommands: []*appcmd.Command{
 							pluginpush.NewCommand("push", builder),
 							curatedplugindelete.NewCommand("delete", builder),
+						},
+					},
+					{
+						Use:   "workspace",
+						Short: "Manage workspaces",
+						SubCommands: []*appcmd.Command{
+							workspacepush.NewCommand("push", builder),
 						},
 					},
 				},

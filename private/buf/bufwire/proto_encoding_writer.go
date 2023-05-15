@@ -64,7 +64,7 @@ func (p *protoEncodingWriter) PutMessage(
 	case bufconvert.MessageEncodingBin:
 		marshaler = protoencoding.NewWireMarshaler()
 	case bufconvert.MessageEncodingJSON:
-		marshaler = protoencoding.NewJSONMarshalerIndent(resolver)
+		marshaler = protoencoding.NewJSONMarshaler(resolver)
 	default:
 		return errors.New("unknown message encoding type")
 	}

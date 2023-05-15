@@ -33,7 +33,9 @@ service SCIMTokenService {
   // ListTokens lists all active SCIM tokens.
   //
   // This method requires authentication.
-  rpc ListSCIMTokens(ListSCIMTokensRequest) returns (ListSCIMTokensResponse);
+  rpc ListSCIMTokens(ListSCIMTokensRequest) returns (ListSCIMTokensResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DeleteToken deletes an existing token.
   //
   // This method requires authentication.

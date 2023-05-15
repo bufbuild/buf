@@ -22,7 +22,9 @@ import "buf/alpha/image/v1/image.proto";
 service ImageService {
   // GetImage serves a compiled image for the local module. It automatically
   // downloads dependencies if necessary.
-  rpc GetImage(GetImageRequest) returns (GetImageResponse);
+  rpc GetImage(GetImageRequest) returns (GetImageResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 // ImageMask is used in GetImageRequest to specify which parts of an image

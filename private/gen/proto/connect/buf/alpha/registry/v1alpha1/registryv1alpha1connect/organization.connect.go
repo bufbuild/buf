@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// OrganizationServiceName is the fully-qualified name of the OrganizationService service.
@@ -59,6 +59,9 @@ const (
 	// OrganizationServiceListUserOrganizationsProcedure is the fully-qualified name of the
 	// OrganizationService's ListUserOrganizations RPC.
 	OrganizationServiceListUserOrganizationsProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/ListUserOrganizations"
+	// OrganizationServiceGetUserOrganizationProcedure is the fully-qualified name of the
+	// OrganizationService's GetUserOrganization RPC.
+	OrganizationServiceGetUserOrganizationProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/GetUserOrganization"
 	// OrganizationServiceCreateOrganizationProcedure is the fully-qualified name of the
 	// OrganizationService's CreateOrganization RPC.
 	OrganizationServiceCreateOrganizationProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/CreateOrganization"
@@ -105,6 +108,7 @@ type OrganizationServiceClient interface {
 	ListOrganizations(context.Context, *connect_go.Request[v1alpha1.ListOrganizationsRequest]) (*connect_go.Response[v1alpha1.ListOrganizationsResponse], error)
 	// ListUserOrganizations lists all organizations a user is member of.
 	ListUserOrganizations(context.Context, *connect_go.Request[v1alpha1.ListUserOrganizationsRequest]) (*connect_go.Response[v1alpha1.ListUserOrganizationsResponse], error)
+	GetUserOrganization(context.Context, *connect_go.Request[v1alpha1.GetUserOrganizationRequest]) (*connect_go.Response[v1alpha1.GetUserOrganizationResponse], error)
 	// CreateOrganization creates a new organization.
 	CreateOrganization(context.Context, *connect_go.Request[v1alpha1.CreateOrganizationRequest]) (*connect_go.Response[v1alpha1.CreateOrganizationResponse], error)
 	// DeleteOrganization deletes a organization.
@@ -143,22 +147,32 @@ func NewOrganizationServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 		getOrganization: connect_go.NewClient[v1alpha1.GetOrganizationRequest, v1alpha1.GetOrganizationResponse](
 			httpClient,
 			baseURL+OrganizationServiceGetOrganizationProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getOrganizationByName: connect_go.NewClient[v1alpha1.GetOrganizationByNameRequest, v1alpha1.GetOrganizationByNameResponse](
 			httpClient,
 			baseURL+OrganizationServiceGetOrganizationByNameProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listOrganizations: connect_go.NewClient[v1alpha1.ListOrganizationsRequest, v1alpha1.ListOrganizationsResponse](
 			httpClient,
 			baseURL+OrganizationServiceListOrganizationsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listUserOrganizations: connect_go.NewClient[v1alpha1.ListUserOrganizationsRequest, v1alpha1.ListUserOrganizationsResponse](
 			httpClient,
 			baseURL+OrganizationServiceListUserOrganizationsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
+		),
+		getUserOrganization: connect_go.NewClient[v1alpha1.GetUserOrganizationRequest, v1alpha1.GetUserOrganizationResponse](
+			httpClient,
+			baseURL+OrganizationServiceGetUserOrganizationProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		createOrganization: connect_go.NewClient[v1alpha1.CreateOrganizationRequest, v1alpha1.CreateOrganizationResponse](
 			httpClient,
@@ -198,7 +212,8 @@ func NewOrganizationServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 		getOrganizationSettings: connect_go.NewClient[v1alpha1.GetOrganizationSettingsRequest, v1alpha1.GetOrganizationSettingsResponse](
 			httpClient,
 			baseURL+OrganizationServiceGetOrganizationSettingsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		updateOrganizationSettings: connect_go.NewClient[v1alpha1.UpdateOrganizationSettingsRequest, v1alpha1.UpdateOrganizationSettingsResponse](
 			httpClient,
@@ -224,6 +239,7 @@ type organizationServiceClient struct {
 	getOrganizationByName      *connect_go.Client[v1alpha1.GetOrganizationByNameRequest, v1alpha1.GetOrganizationByNameResponse]
 	listOrganizations          *connect_go.Client[v1alpha1.ListOrganizationsRequest, v1alpha1.ListOrganizationsResponse]
 	listUserOrganizations      *connect_go.Client[v1alpha1.ListUserOrganizationsRequest, v1alpha1.ListUserOrganizationsResponse]
+	getUserOrganization        *connect_go.Client[v1alpha1.GetUserOrganizationRequest, v1alpha1.GetUserOrganizationResponse]
 	createOrganization         *connect_go.Client[v1alpha1.CreateOrganizationRequest, v1alpha1.CreateOrganizationResponse]
 	deleteOrganization         *connect_go.Client[v1alpha1.DeleteOrganizationRequest, v1alpha1.DeleteOrganizationResponse]
 	deleteOrganizationByName   *connect_go.Client[v1alpha1.DeleteOrganizationByNameRequest, v1alpha1.DeleteOrganizationByNameResponse]
@@ -257,6 +273,11 @@ func (c *organizationServiceClient) ListOrganizations(ctx context.Context, req *
 // buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations.
 func (c *organizationServiceClient) ListUserOrganizations(ctx context.Context, req *connect_go.Request[v1alpha1.ListUserOrganizationsRequest]) (*connect_go.Response[v1alpha1.ListUserOrganizationsResponse], error) {
 	return c.listUserOrganizations.CallUnary(ctx, req)
+}
+
+// GetUserOrganization calls buf.alpha.registry.v1alpha1.OrganizationService.GetUserOrganization.
+func (c *organizationServiceClient) GetUserOrganization(ctx context.Context, req *connect_go.Request[v1alpha1.GetUserOrganizationRequest]) (*connect_go.Response[v1alpha1.GetUserOrganizationResponse], error) {
+	return c.getUserOrganization.CallUnary(ctx, req)
 }
 
 // CreateOrganization calls buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization.
@@ -333,6 +354,7 @@ type OrganizationServiceHandler interface {
 	ListOrganizations(context.Context, *connect_go.Request[v1alpha1.ListOrganizationsRequest]) (*connect_go.Response[v1alpha1.ListOrganizationsResponse], error)
 	// ListUserOrganizations lists all organizations a user is member of.
 	ListUserOrganizations(context.Context, *connect_go.Request[v1alpha1.ListUserOrganizationsRequest]) (*connect_go.Response[v1alpha1.ListUserOrganizationsResponse], error)
+	GetUserOrganization(context.Context, *connect_go.Request[v1alpha1.GetUserOrganizationRequest]) (*connect_go.Response[v1alpha1.GetUserOrganizationResponse], error)
 	// CreateOrganization creates a new organization.
 	CreateOrganization(context.Context, *connect_go.Request[v1alpha1.CreateOrganizationRequest]) (*connect_go.Response[v1alpha1.CreateOrganizationResponse], error)
 	// DeleteOrganization deletes a organization.
@@ -367,22 +389,32 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 	mux.Handle(OrganizationServiceGetOrganizationProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceGetOrganizationProcedure,
 		svc.GetOrganization,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceGetOrganizationByNameProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceGetOrganizationByNameProcedure,
 		svc.GetOrganizationByName,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceListOrganizationsProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceListOrganizationsProcedure,
 		svc.ListOrganizations,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceListUserOrganizationsProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceListUserOrganizationsProcedure,
 		svc.ListUserOrganizations,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
+	))
+	mux.Handle(OrganizationServiceGetUserOrganizationProcedure, connect_go.NewUnaryHandler(
+		OrganizationServiceGetUserOrganizationProcedure,
+		svc.GetUserOrganization,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceCreateOrganizationProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceCreateOrganizationProcedure,
@@ -422,7 +454,8 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 	mux.Handle(OrganizationServiceGetOrganizationSettingsProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceGetOrganizationSettingsProcedure,
 		svc.GetOrganizationSettings,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceUpdateOrganizationSettingsProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceUpdateOrganizationSettingsProcedure,
@@ -459,6 +492,10 @@ func (UnimplementedOrganizationServiceHandler) ListOrganizations(context.Context
 
 func (UnimplementedOrganizationServiceHandler) ListUserOrganizations(context.Context, *connect_go.Request[v1alpha1.ListUserOrganizationsRequest]) (*connect_go.Response[v1alpha1.ListUserOrganizationsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations is not implemented"))
+}
+
+func (UnimplementedOrganizationServiceHandler) GetUserOrganization(context.Context, *connect_go.Request[v1alpha1.GetUserOrganizationRequest]) (*connect_go.Response[v1alpha1.GetUserOrganizationResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.GetUserOrganization is not implemented"))
 }
 
 func (UnimplementedOrganizationServiceHandler) CreateOrganization(context.Context, *connect_go.Request[v1alpha1.CreateOrganizationRequest]) (*connect_go.Response[v1alpha1.CreateOrganizationResponse], error) {

@@ -36,6 +36,7 @@ func javaOuterClassname(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	overrides map[string]string,
+	preserveExistingValue bool,
 ) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
@@ -46,7 +47,7 @@ func javaOuterClassname(
 					javaOuterClassnameValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
-				if err := javaOuterClassnameForFile(ctx, sweeper, imageFile, javaOuterClassnameValue); err != nil {
+				if err := javaOuterClassnameForFile(ctx, sweeper, imageFile, javaOuterClassnameValue, preserveExistingValue); err != nil {
 					return err
 				}
 			}
@@ -65,11 +66,20 @@ func javaOuterClassnameForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	javaOuterClassnameValue string,
+	preserveExistingValue bool,
 ) error {
+	if isWellKnownType(ctx, imageFile) {
+		// The file is a well-known type - don't override the value.
+		return nil
+	}
 	descriptor := imageFile.Proto()
-	if options := descriptor.GetOptions(); isWellKnownType(ctx, imageFile) || (options != nil && options.GetJavaOuterClassname() == javaOuterClassnameValue) {
-		// The file is a well-known type or already defines the java_outer_classname
-		// option with the given value, so this is a no-op.
+	options := descriptor.GetOptions()
+	if options != nil && options.JavaOuterClassname != nil && preserveExistingValue {
+		// The option is explicitly set in the file - don't override it if we want to preserve the existing value.
+		return nil
+	}
+	if options.GetJavaOuterClassname() == javaOuterClassnameValue {
+		// The file already defines the java_outer_classname option with the given value, so this is a no-op.
 		return nil
 	}
 	if descriptor.Options == nil {

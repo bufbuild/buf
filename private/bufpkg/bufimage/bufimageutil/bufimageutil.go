@@ -258,6 +258,18 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		imageFileDescriptor := imageFile.Proto()
 
 		importsRequired := closure.imports[imageFile.Path()]
+		// If the file has source code info, we need to remap paths to correctly
+		// update this info for the elements retained after filtering.
+		var sourcePathRemapper *sourcePathsRemapTrie
+		if len(imageFileDescriptor.SourceCodeInfo.GetLocation()) > 0 {
+			sourcePathRemapper = &sourcePathsRemapTrie{}
+		}
+		// We track the source path as we go through the model, so that we can
+		// mark paths as moved or deleted. Whenever an element is deleted, any
+		// subsequent elements of the same type in the same scope have are "moved",
+		// because their index is shifted down.
+		basePath := make([]int32, 1, 16)
+		basePath[0] = fileDependencyTag
 		// While employing
 		// https://github.com/golang/go/wiki/SliceTricks#filter-in-place,
 		// also keep a record of which index moved where, so we can fixup
@@ -265,12 +277,16 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		indexFromTo := make(map[int32]int32)
 		indexTo := 0
 		for indexFrom, importPath := range imageFileDescriptor.GetDependency() {
+			path := append(basePath, int32(indexFrom))
 			if _, ok := importsRequired[importPath]; ok {
+				sourcePathRemapper.markMoved(path, int32(indexTo))
 				indexFromTo[int32(indexFrom)] = int32(indexTo)
 				imageFileDescriptor.Dependency[indexTo] = importPath
 				indexTo++
-				// delete them as we go, so we know which ones weren't in the list
+				// markDeleted them as we go, so we know which ones weren't in the list
 				delete(importsRequired, importPath)
+			} else {
+				sourcePathRemapper.markDeleted(path)
 			}
 		}
 		imageFileDescriptor.Dependency = imageFileDescriptor.Dependency[:indexTo]
@@ -282,39 +298,93 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 			imageFileDescriptor.Dependency = append(imageFileDescriptor.Dependency, importPath)
 		}
 		imageFileDescriptor.PublicDependency = nil
+		sourcePathRemapper.markDeleted([]int32{filePublicDependencyTag})
 
+		basePath = basePath[:1]
+		basePath[0] = fileWeakDependencyTag
 		i := 0
 		for _, indexFrom := range imageFileDescriptor.WeakDependency {
+			path := append(basePath, indexFrom)
 			if indexTo, ok := indexFromTo[indexFrom]; ok {
+				sourcePathRemapper.markMoved(path, indexTo)
 				imageFileDescriptor.WeakDependency[i] = indexTo
 				i++
+			} else {
+				sourcePathRemapper.markDeleted(path)
 			}
 		}
 		imageFileDescriptor.WeakDependency = imageFileDescriptor.WeakDependency[:i]
 
 		if _, ok := closure.completeFiles[imageFile.Path()]; !ok {
 			// if not keeping entire file, filter contents now
-			imageFileDescriptor.MessageType = trimMessageDescriptors(imageFileDescriptor.MessageType, closure.elements)
-			imageFileDescriptor.EnumType = trimSlice(imageFileDescriptor.EnumType, closure.elements)
-			imageFileDescriptor.Extension = trimSlice(imageFileDescriptor.Extension, closure.elements)
-			imageFileDescriptor.Service = trimSlice(imageFileDescriptor.Service, closure.elements)
-			for _, serviceDescriptor := range imageFileDescriptor.Service {
-				serviceDescriptor.Method = trimSlice(serviceDescriptor.Method, closure.elements)
+			basePath = basePath[:0]
+			imageFileDescriptor.MessageType = trimMessageDescriptors(imageFileDescriptor.MessageType, closure.elements, sourcePathRemapper, append(basePath, fileMessagesTag))
+			imageFileDescriptor.EnumType = trimSlice(imageFileDescriptor.EnumType, closure.elements, sourcePathRemapper, append(basePath, fileEnumsTag))
+			// TODO: We could end up removing all extensions from a particular extend block
+			// but we then don't mark that extend block's source code info for deletion. This
+			// is because extend blocks don't have distinct paths -- we have to actually look
+			// at the span information to determine which extensions correspond to which blocks
+			// to decide which blocks to remove. That is possible, but non-trivial, and it's
+			// unclear if the "juice is worth the squeeze", so we leave it. The best we do is
+			// to remove comments for extend blocks when there are NO extensions.
+			extsPath := append(basePath, fileExtensionsTag)
+			imageFileDescriptor.Extension = trimSlice(imageFileDescriptor.Extension, closure.elements, sourcePathRemapper, extsPath)
+			if len(imageFileDescriptor.Extension) == 0 {
+				sourcePathRemapper.markDeleted(extsPath)
 			}
+			svcsPath := append(basePath, fileServicesTag)
+			// We must iterate through the services *before* we trim the slice. That way the
+			// index we see is for the "old path", which we need to know to mark elements as
+			// moved or deleted with the sourcePathRemapper.
+			for index, serviceDescriptor := range imageFileDescriptor.Service {
+				if _, ok := closure.elements[serviceDescriptor]; !ok {
+					continue
+				}
+				methodPath := append(svcsPath, int32(index), serviceMethodsTag)
+				serviceDescriptor.Method = trimSlice(serviceDescriptor.Method, closure.elements, sourcePathRemapper, methodPath)
+			}
+			imageFileDescriptor.Service = trimSlice(imageFileDescriptor.Service, closure.elements, sourcePathRemapper, svcsPath)
 		}
 
-		// TODO: With some from/to mappings, perhaps even sourcecodeinfo
-		// isn't too bad.
-		imageFileDescriptor.SourceCodeInfo = nil
+		if len(imageFileDescriptor.SourceCodeInfo.GetLocation()) > 0 {
+			// Now the sourcePathRemapper has been fully populated for all of the deletions
+			// and moves above. So we can use it to reconstruct the source code info slice
+			// of locations.
+			i := 0
+			for _, location := range imageFileDescriptor.SourceCodeInfo.Location {
+				// This function returns newPath==nil if the element at the given path
+				// was marked for deletion (so this location should be omitted).
+				newPath, noComment := sourcePathRemapper.newPath(location.Path)
+				if newPath != nil {
+					imageFileDescriptor.SourceCodeInfo.Location[i] = location
+					location.Path = newPath
+					if noComment {
+						location.LeadingDetachedComments = nil
+						location.LeadingComments = nil
+						location.TrailingComments = nil
+					}
+					i++
+				}
+			}
+			imageFileDescriptor.SourceCodeInfo.Location = imageFileDescriptor.SourceCodeInfo.Location[:i]
+		}
 	}
 	return bufimage.NewImage(includedFiles)
 }
 
 // trimMessageDescriptors removes (nested) messages and nested enums from a slice
 // of message descriptors if their type names are not found in the toKeep map.
-func trimMessageDescriptors(in []*descriptorpb.DescriptorProto, toKeep map[namedDescriptor]closureInclusionMode) []*descriptorpb.DescriptorProto {
-	in = trimSlice(in, toKeep)
-	for _, messageDescriptor := range in {
+func trimMessageDescriptors(
+	in []*descriptorpb.DescriptorProto,
+	toKeep map[namedDescriptor]closureInclusionMode,
+	sourcePathRemapper *sourcePathsRemapTrie,
+	pathSoFar []int32,
+) []*descriptorpb.DescriptorProto {
+	// We must iterate through the messages *before* we trim the slice. That way the
+	// index we see is for the "old path", which we need to know to mark elements as
+	// moved or deleted with the sourcePathRemapper.
+	for index, messageDescriptor := range in {
+		path := append(pathSoFar, int32(index))
 		mode, ok := toKeep[messageDescriptor]
 		if !ok {
 			continue
@@ -327,22 +397,45 @@ func trimMessageDescriptors(in []*descriptorpb.DescriptorProto, toKeep map[named
 			messageDescriptor.ExtensionRange = nil
 			messageDescriptor.ReservedRange = nil
 			messageDescriptor.ReservedName = nil
+			sourcePathRemapper.markNoComment(path)
+			sourcePathRemapper.markDeleted(append(path, messageFieldsTag))
+			sourcePathRemapper.markDeleted(append(path, messageOneofsTag))
+			sourcePathRemapper.markDeleted(append(path, messageExtensionRangesTag))
+			sourcePathRemapper.markDeleted(append(path, messageReservedRangesTag))
+			sourcePathRemapper.markDeleted(append(path, messageReservedNamesTag))
 		}
-		messageDescriptor.NestedType = trimMessageDescriptors(messageDescriptor.NestedType, toKeep)
-		messageDescriptor.EnumType = trimSlice(messageDescriptor.EnumType, toKeep)
-		messageDescriptor.Extension = trimSlice(messageDescriptor.Extension, toKeep)
+		messageDescriptor.NestedType = trimMessageDescriptors(messageDescriptor.NestedType, toKeep, sourcePathRemapper, append(path, messageNestedMessagesTag))
+		messageDescriptor.EnumType = trimSlice(messageDescriptor.EnumType, toKeep, sourcePathRemapper, append(path, messageEnumsTag))
+		// TODO: We could end up removing all extensions from a particular extend block
+		// but we then don't mark that extend block's source code info for deletion. The
+		// best we do is to remove comments for extend blocks when there are NO extensions.
+		// See comment above for file extensions for more info.
+		extsPath := append(path, messageExtensionsTag)
+		messageDescriptor.Extension = trimSlice(messageDescriptor.Extension, toKeep, sourcePathRemapper, extsPath)
+		if len(messageDescriptor.Extension) == 0 {
+			sourcePathRemapper.markDeleted(extsPath)
+		}
 	}
-	return in
+	return trimSlice(in, toKeep, sourcePathRemapper, pathSoFar)
 }
 
 // trimSlice removes elements from a slice of descriptors if they are
 // not present in the given map.
-func trimSlice[T namedDescriptor](in []T, toKeep map[namedDescriptor]closureInclusionMode) []T {
+func trimSlice[T namedDescriptor](
+	in []T,
+	toKeep map[namedDescriptor]closureInclusionMode,
+	sourcePathRemapper *sourcePathsRemapTrie,
+	pathSoFar []int32,
+) []T {
 	i := 0
-	for _, descriptor := range in {
+	for index, descriptor := range in {
+		path := append(pathSoFar, int32(index))
 		if _, ok := toKeep[descriptor]; ok {
+			sourcePathRemapper.markMoved(path, int32(i))
 			in[i] = descriptor
 			i++
+		} else {
+			sourcePathRemapper.markDeleted(path)
 		}
 	}
 	return in[:i]
@@ -741,7 +834,7 @@ func (t *transitiveClosure) exploreOptionValueForAny(
 		if isMessageKind(fd.MapValue().Kind()) {
 			var err error
 			val.Map().Range(func(_ protoreflect.MapKey, v protoreflect.Value) bool {
-				if err = t.exploreOptionScalarValueForAny(v.Message(), referrerFile, imageIndex, opts); err != nil {
+				if err = t.exploreOptionSingularValueForAny(v.Message(), referrerFile, imageIndex, opts); err != nil {
 					return false
 				}
 				return true
@@ -752,18 +845,18 @@ func (t *transitiveClosure) exploreOptionValueForAny(
 		if fd.IsList() {
 			listVal := val.List()
 			for i := 0; i < listVal.Len(); i++ {
-				if err := t.exploreOptionScalarValueForAny(listVal.Get(i).Message(), referrerFile, imageIndex, opts); err != nil {
+				if err := t.exploreOptionSingularValueForAny(listVal.Get(i).Message(), referrerFile, imageIndex, opts); err != nil {
 					return err
 				}
 			}
 		} else {
-			return t.exploreOptionScalarValueForAny(val.Message(), referrerFile, imageIndex, opts)
+			return t.exploreOptionSingularValueForAny(val.Message(), referrerFile, imageIndex, opts)
 		}
 	}
 	return nil
 }
 
-func (t *transitiveClosure) exploreOptionScalarValueForAny(
+func (t *transitiveClosure) exploreOptionSingularValueForAny(
 	msg protoreflect.Message,
 	referrerFile string,
 	imageIndex *imageIndex,

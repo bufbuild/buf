@@ -29,6 +29,7 @@ func TestPluginToProtoPluginRegistryType(t *testing.T) {
 	assertPluginToPluginRegistryType(t, &bufpluginconfig.RegistryConfig{Go: &bufpluginconfig.GoRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_GO)
 	assertPluginToPluginRegistryType(t, &bufpluginconfig.RegistryConfig{NPM: &bufpluginconfig.NPMRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM)
 	assertPluginToPluginRegistryType(t, &bufpluginconfig.RegistryConfig{Maven: &bufpluginconfig.MavenRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN)
+	assertPluginToPluginRegistryType(t, &bufpluginconfig.RegistryConfig{Swift: &bufpluginconfig.SwiftRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT)
 }
 
 func assertPluginToPluginRegistryType(t testing.TB, config *bufpluginconfig.RegistryConfig, registryType registryv1alpha1.PluginRegistryType) {
@@ -147,6 +148,28 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 						},
 					},
 					Options: []string{"lite"},
+				},
+			},
+		},
+	})
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		Swift: &bufpluginconfig.SwiftRegistryConfig{},
+	})
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		Swift: &bufpluginconfig.SwiftRegistryConfig{
+			Dependencies: []bufpluginconfig.SwiftRegistryDependencyConfig{
+				{
+					Source:        "https://github.com/apple/swift-protobuf.git",
+					Package:       "swift-protobuf",
+					Version:       "1.12.0",
+					Products:      []string{"SwiftProtobuf"},
+					SwiftVersions: []string{".v5"},
+					Platforms: bufpluginconfig.SwiftRegistryDependencyPlatformConfig{
+						MacOS:   "v10_15",
+						IOS:     "v10_15",
+						TVOS:    "v10_15",
+						WatchOS: "v10_15",
+					},
 				},
 			},
 		},

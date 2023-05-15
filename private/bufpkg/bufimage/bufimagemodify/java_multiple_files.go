@@ -40,6 +40,7 @@ func javaMultipleFiles(
 	sweeper Sweeper,
 	value bool,
 	overrides map[string]bool,
+	preserveExistingValue bool,
 ) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
@@ -50,7 +51,7 @@ func javaMultipleFiles(
 					modifierValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
-				if err := javaMultipleFilesForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
+				if err := javaMultipleFilesForFile(ctx, sweeper, imageFile, modifierValue, preserveExistingValue); err != nil {
 					return err
 				}
 			}
@@ -69,6 +70,7 @@ func javaMultipleFilesForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	value bool,
+	preserveExistingValue bool,
 ) error {
 	descriptor := imageFile.Proto()
 	options := descriptor.GetOptions()
@@ -76,9 +78,15 @@ func javaMultipleFilesForFile(
 	case isWellKnownType(ctx, imageFile):
 		// The file is a well-known type, don't do anything.
 		return nil
-	case options != nil && options.GetJavaMultipleFiles() == value:
-		// The option is already set to the same value, don't do anything.
-		return nil
+	case options != nil:
+		if preserveExistingValue && options.JavaMultipleFiles != nil {
+			// This option is explicitly set to a value - preserve existing value.
+			return nil
+		}
+		if options.GetJavaMultipleFiles() == value {
+			// The option is already set to the same value, don't do anything.
+			return nil
+		}
 	case options == nil && descriptorpb.Default_FileOptions_JavaMultipleFiles == value:
 		// The option is not set, but the value we want to set is the
 		// same as the default, don't do anything.

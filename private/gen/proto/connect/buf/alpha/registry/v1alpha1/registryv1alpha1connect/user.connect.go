@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// UserServiceName is the fully-qualified name of the UserService service.
@@ -117,22 +117,26 @@ func NewUserServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 		getUser: connect_go.NewClient[v1alpha1.GetUserRequest, v1alpha1.GetUserResponse](
 			httpClient,
 			baseURL+UserServiceGetUserProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getUserByUsername: connect_go.NewClient[v1alpha1.GetUserByUsernameRequest, v1alpha1.GetUserByUsernameResponse](
 			httpClient,
 			baseURL+UserServiceGetUserByUsernameProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listUsers: connect_go.NewClient[v1alpha1.ListUsersRequest, v1alpha1.ListUsersResponse](
 			httpClient,
 			baseURL+UserServiceListUsersProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listOrganizationUsers: connect_go.NewClient[v1alpha1.ListOrganizationUsersRequest, v1alpha1.ListOrganizationUsersResponse](
 			httpClient,
 			baseURL+UserServiceListOrganizationUsersProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteUser: connect_go.NewClient[v1alpha1.DeleteUserRequest, v1alpha1.DeleteUserResponse](
 			httpClient,
@@ -152,7 +156,8 @@ func NewUserServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 		countUsers: connect_go.NewClient[v1alpha1.CountUsersRequest, v1alpha1.CountUsersResponse](
 			httpClient,
 			baseURL+UserServiceCountUsersProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		updateUserSettings: connect_go.NewClient[v1alpha1.UpdateUserSettingsRequest, v1alpha1.UpdateUserSettingsResponse](
 			httpClient,
@@ -266,22 +271,26 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect_go.HandlerOpt
 	mux.Handle(UserServiceGetUserProcedure, connect_go.NewUnaryHandler(
 		UserServiceGetUserProcedure,
 		svc.GetUser,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(UserServiceGetUserByUsernameProcedure, connect_go.NewUnaryHandler(
 		UserServiceGetUserByUsernameProcedure,
 		svc.GetUserByUsername,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(UserServiceListUsersProcedure, connect_go.NewUnaryHandler(
 		UserServiceListUsersProcedure,
 		svc.ListUsers,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(UserServiceListOrganizationUsersProcedure, connect_go.NewUnaryHandler(
 		UserServiceListOrganizationUsersProcedure,
 		svc.ListOrganizationUsers,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(UserServiceDeleteUserProcedure, connect_go.NewUnaryHandler(
 		UserServiceDeleteUserProcedure,
@@ -301,7 +310,8 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect_go.HandlerOpt
 	mux.Handle(UserServiceCountUsersProcedure, connect_go.NewUnaryHandler(
 		UserServiceCountUsersProcedure,
 		svc.CountUsers,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(UserServiceUpdateUserSettingsProcedure, connect_go.NewUnaryHandler(
 		UserServiceUpdateUserSettingsProcedure,
