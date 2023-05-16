@@ -64,7 +64,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.16.1-dev"
+	Version = "1.18.1-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -279,7 +279,18 @@ func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string) {
 		addr,
 		flagName,
 		"",
-		fmt.Sprintf(`The repository's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The repository's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
+	)
+}
+
+// BindCreateVisibility binds the create-visibility flag. Kept in this package
+// so we can keep allVisibilityStrings private.
+func BindCreateVisibility(flagSet *pflag.FlagSet, addr *string, flagName string, createFlagName string) {
+	flagSet.StringVar(
+		addr,
+		flagName,
+		"",
+		fmt.Sprintf(`The repository's visibility setting, if created. Must be set if --%s is set. Must be one of %s`, createFlagName, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 }
 
@@ -650,9 +661,7 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 	if err != nil {
 		return nil, err
 	}
-	client := httpclient.NewClient(
-		httpclient.WithTLSConfig(config.TLS),
-	)
+	client := httpclient.NewClient(config.TLS)
 	options := []connectclient.ConfigOption{
 		connectclient.WithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {

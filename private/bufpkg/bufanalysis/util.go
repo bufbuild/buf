@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+package bufanalysis
 
-package templatedeprecate
-
-import _ "github.com/bufbuild/buf/private/usage"
+func atLeast1(i int) int {
+	if i <= 0 {
+		return 1
+	}
+	return i
+}

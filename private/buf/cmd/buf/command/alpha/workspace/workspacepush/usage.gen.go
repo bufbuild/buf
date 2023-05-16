@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package plugindeprecate
+package workspacepush
 
 import _ "github.com/bufbuild/buf/private/usage"

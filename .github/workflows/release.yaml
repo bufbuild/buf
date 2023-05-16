@@ -40,14 +40,14 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
       - uses: actions/setup-go@v4
         with:
-          go-version: "^1.20.x"
+          go-version: "1.20.x"
       - name: Install Buf
         run: make installbuf
       - name: Update Buf Version
         run: make updateversion
       - name: Create PR
         id: cpr
-        uses: peter-evans/create-pull-request@38e0b6e68b4c852a5500a94740f0e535e0d7ba54
+        uses: peter-evans/create-pull-request@284f54f989303d2699d373481a0cfa13ad5a6666
         with:
           add-paths: .
           commit-message: "Update version to v${{env.VERSION}}"
@@ -134,7 +134,7 @@ jobs:
           echo "VERSION=${{github.ref_name}}" >> $GITHUB_ENV
       - uses: actions/setup-go@v4
         with:
-          go-version: "^1.20.x"
+          go-version: "1.20.x"
       - name: Create assets
         env:
           RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
@@ -187,7 +187,7 @@ jobs:
       - name: update home brew badge
         run: make updatehomebrewbadge VERSION=${{github.ref_name}}
       - name: create PR
-        uses: peter-evans/create-pull-request@38e0b6e68b4c852a5500a94740f0e535e0d7ba54
+        uses: peter-evans/create-pull-request@284f54f989303d2699d373481a0cfa13ad5a6666
         with:
           add-paths: .
           commit-message: "Back to development"
@@ -203,6 +203,23 @@ jobs:
         with:
           script:
             core.setOutput('version', "${{github.ref_name}}".replace("v", ""));
+  trigger-maven-update:
+    runs-on: ubuntu-latest
+    needs: post-release
+    steps:
+      - name: trigger maven update
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: github.repository_owner,
+              repo: "buf-maven-publish",
+              workflow_id: "update-buf-version.yaml",
+              ref: "main",
+              inputs: {
+                version: "${{needs.post-release.outputs.version}}"
+              }
+            })
   trigger-npm-publish:
     runs-on: ubuntu-latest
     needs: post-release

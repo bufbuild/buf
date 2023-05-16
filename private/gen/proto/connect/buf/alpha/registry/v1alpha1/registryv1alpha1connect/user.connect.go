@@ -32,11 +32,46 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// UserServiceName is the fully-qualified name of the UserService service.
 	UserServiceName = "buf.alpha.registry.v1alpha1.UserService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// UserServiceCreateUserProcedure is the fully-qualified name of the UserService's CreateUser RPC.
+	UserServiceCreateUserProcedure = "/buf.alpha.registry.v1alpha1.UserService/CreateUser"
+	// UserServiceGetUserProcedure is the fully-qualified name of the UserService's GetUser RPC.
+	UserServiceGetUserProcedure = "/buf.alpha.registry.v1alpha1.UserService/GetUser"
+	// UserServiceGetUserByUsernameProcedure is the fully-qualified name of the UserService's
+	// GetUserByUsername RPC.
+	UserServiceGetUserByUsernameProcedure = "/buf.alpha.registry.v1alpha1.UserService/GetUserByUsername"
+	// UserServiceListUsersProcedure is the fully-qualified name of the UserService's ListUsers RPC.
+	UserServiceListUsersProcedure = "/buf.alpha.registry.v1alpha1.UserService/ListUsers"
+	// UserServiceListOrganizationUsersProcedure is the fully-qualified name of the UserService's
+	// ListOrganizationUsers RPC.
+	UserServiceListOrganizationUsersProcedure = "/buf.alpha.registry.v1alpha1.UserService/ListOrganizationUsers"
+	// UserServiceDeleteUserProcedure is the fully-qualified name of the UserService's DeleteUser RPC.
+	UserServiceDeleteUserProcedure = "/buf.alpha.registry.v1alpha1.UserService/DeleteUser"
+	// UserServiceDeactivateUserProcedure is the fully-qualified name of the UserService's
+	// DeactivateUser RPC.
+	UserServiceDeactivateUserProcedure = "/buf.alpha.registry.v1alpha1.UserService/DeactivateUser"
+	// UserServiceUpdateUserServerRoleProcedure is the fully-qualified name of the UserService's
+	// UpdateUserServerRole RPC.
+	UserServiceUpdateUserServerRoleProcedure = "/buf.alpha.registry.v1alpha1.UserService/UpdateUserServerRole"
+	// UserServiceCountUsersProcedure is the fully-qualified name of the UserService's CountUsers RPC.
+	UserServiceCountUsersProcedure = "/buf.alpha.registry.v1alpha1.UserService/CountUsers"
+	// UserServiceUpdateUserSettingsProcedure is the fully-qualified name of the UserService's
+	// UpdateUserSettings RPC.
+	UserServiceUpdateUserSettingsProcedure = "/buf.alpha.registry.v1alpha1.UserService/UpdateUserSettings"
 )
 
 // UserServiceClient is a client for the buf.alpha.registry.v1alpha1.UserService service.
@@ -76,52 +111,57 @@ func NewUserServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 	return &userServiceClient{
 		createUser: connect_go.NewClient[v1alpha1.CreateUserRequest, v1alpha1.CreateUserResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.UserService/CreateUser",
+			baseURL+UserServiceCreateUserProcedure,
 			opts...,
 		),
 		getUser: connect_go.NewClient[v1alpha1.GetUserRequest, v1alpha1.GetUserResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.UserService/GetUser",
-			opts...,
+			baseURL+UserServiceGetUserProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getUserByUsername: connect_go.NewClient[v1alpha1.GetUserByUsernameRequest, v1alpha1.GetUserByUsernameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.UserService/GetUserByUsername",
-			opts...,
+			baseURL+UserServiceGetUserByUsernameProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listUsers: connect_go.NewClient[v1alpha1.ListUsersRequest, v1alpha1.ListUsersResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.UserService/ListUsers",
-			opts...,
+			baseURL+UserServiceListUsersProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listOrganizationUsers: connect_go.NewClient[v1alpha1.ListOrganizationUsersRequest, v1alpha1.ListOrganizationUsersResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.UserService/ListOrganizationUsers",
-			opts...,
+			baseURL+UserServiceListOrganizationUsersProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteUser: connect_go.NewClient[v1alpha1.DeleteUserRequest, v1alpha1.DeleteUserResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.UserService/DeleteUser",
+			baseURL+UserServiceDeleteUserProcedure,
 			opts...,
 		),
 		deactivateUser: connect_go.NewClient[v1alpha1.DeactivateUserRequest, v1alpha1.DeactivateUserResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.UserService/DeactivateUser",
+			baseURL+UserServiceDeactivateUserProcedure,
 			opts...,
 		),
 		updateUserServerRole: connect_go.NewClient[v1alpha1.UpdateUserServerRoleRequest, v1alpha1.UpdateUserServerRoleResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.UserService/UpdateUserServerRole",
+			baseURL+UserServiceUpdateUserServerRoleProcedure,
 			opts...,
 		),
 		countUsers: connect_go.NewClient[v1alpha1.CountUsersRequest, v1alpha1.CountUsersResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.UserService/CountUsers",
-			opts...,
+			baseURL+UserServiceCountUsersProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		updateUserSettings: connect_go.NewClient[v1alpha1.UpdateUserSettingsRequest, v1alpha1.UpdateUserSettingsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.UserService/UpdateUserSettings",
+			baseURL+UserServiceUpdateUserSettingsProcedure,
 			opts...,
 		),
 	}
@@ -223,53 +263,58 @@ type UserServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewUserServiceHandler(svc UserServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.UserService/CreateUser", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.UserService/CreateUser",
+	mux.Handle(UserServiceCreateUserProcedure, connect_go.NewUnaryHandler(
+		UserServiceCreateUserProcedure,
 		svc.CreateUser,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.UserService/GetUser", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.UserService/GetUser",
+	mux.Handle(UserServiceGetUserProcedure, connect_go.NewUnaryHandler(
+		UserServiceGetUserProcedure,
 		svc.GetUser,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.UserService/GetUserByUsername", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.UserService/GetUserByUsername",
+	mux.Handle(UserServiceGetUserByUsernameProcedure, connect_go.NewUnaryHandler(
+		UserServiceGetUserByUsernameProcedure,
 		svc.GetUserByUsername,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.UserService/ListUsers", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.UserService/ListUsers",
+	mux.Handle(UserServiceListUsersProcedure, connect_go.NewUnaryHandler(
+		UserServiceListUsersProcedure,
 		svc.ListUsers,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.UserService/ListOrganizationUsers", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.UserService/ListOrganizationUsers",
+	mux.Handle(UserServiceListOrganizationUsersProcedure, connect_go.NewUnaryHandler(
+		UserServiceListOrganizationUsersProcedure,
 		svc.ListOrganizationUsers,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.UserService/DeleteUser", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.UserService/DeleteUser",
+	mux.Handle(UserServiceDeleteUserProcedure, connect_go.NewUnaryHandler(
+		UserServiceDeleteUserProcedure,
 		svc.DeleteUser,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.UserService/DeactivateUser", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.UserService/DeactivateUser",
+	mux.Handle(UserServiceDeactivateUserProcedure, connect_go.NewUnaryHandler(
+		UserServiceDeactivateUserProcedure,
 		svc.DeactivateUser,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.UserService/UpdateUserServerRole", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.UserService/UpdateUserServerRole",
+	mux.Handle(UserServiceUpdateUserServerRoleProcedure, connect_go.NewUnaryHandler(
+		UserServiceUpdateUserServerRoleProcedure,
 		svc.UpdateUserServerRole,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.UserService/CountUsers", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.UserService/CountUsers",
+	mux.Handle(UserServiceCountUsersProcedure, connect_go.NewUnaryHandler(
+		UserServiceCountUsersProcedure,
 		svc.CountUsers,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.UserService/UpdateUserSettings", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.UserService/UpdateUserSettings",
+	mux.Handle(UserServiceUpdateUserSettingsProcedure, connect_go.NewUnaryHandler(
+		UserServiceUpdateUserSettingsProcedure,
 		svc.UpdateUserSettings,
 		opts...,
 	))

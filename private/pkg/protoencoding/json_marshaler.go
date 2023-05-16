@@ -42,7 +42,6 @@ func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
 	}
 	options := protojson.MarshalOptions{
 		Resolver:      m.resolver,
-		Indent:        m.indent,
 		UseProtoNames: m.useProtoNames,
 	}
 	data, err := options.Marshal(message)
@@ -58,8 +57,14 @@ func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
 	// We may need to do a full encoding/json encode/decode in the future if protojson
 	// produces non-deterministic output.
 	buffer := bytes.NewBuffer(nil)
-	if err := json.Compact(buffer, data); err != nil {
-		return nil, err
+	if m.indent != "" {
+		if err := json.Indent(buffer, data, "", m.indent); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := json.Compact(buffer, data); err != nil {
+			return nil, err
+		}
 	}
 	return buffer.Bytes(), nil
 }

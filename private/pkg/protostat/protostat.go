@@ -24,17 +24,20 @@ import (
 )
 
 // Stats represents some statistics about one or more Protobuf files.
+//
+// Note that as opposed to most structs in this codebase, we do not omitempty for
+// the fields for JSON or YAML.
 type Stats struct {
-	NumFiles                 int `json:"num_files,omitempty" yaml:"num_files,omitempty"`
-	NumPackages              int `json:"num_packages,omitempty" yaml:"num_packages,omitempty"`
-	NumFilesWithSyntaxErrors int `json:"num_files_with_syntax_errors,omitempty" yaml:"num_files_with_syntax_errors,omitempty"`
-	NumMessages              int `json:"num_messages,omitempty" yaml:"num_messages,omitempty"`
-	NumFields                int `json:"num_fields,omitempty" yaml:"num_fields,omitempty"`
-	NumEnums                 int `json:"num_enums,omitempty" yaml:"num_enums,omitempty"`
-	NumEnumValues            int `json:"num_enum_values,omitempty" yaml:"num_enum_values,omitempty"`
-	NumExtensions            int `json:"num_extensions,omitempty" yaml:"num_extensions,omitempty"`
-	NumServices              int `json:"num_services,omitempty" yaml:"num_services,omitempty"`
-	NumMethods               int `json:"num_methods,omitempty" yaml:"num_methods,omitempty"`
+	NumFiles                 int `json:"num_files" yaml:"num_files"`
+	NumPackages              int `json:"num_packages" yaml:"num_packages"`
+	NumFilesWithSyntaxErrors int `json:"num_files_with_syntax_errors" yaml:"num_files_with_syntax_errors"`
+	NumMessages              int `json:"num_messages" yaml:"num_messages"`
+	NumFields                int `json:"num_fields" yaml:"num_fields"`
+	NumEnums                 int `json:"num_enums" yaml:"num_enums"`
+	NumEnumValues            int `json:"num_enum_values" yaml:"num_enum_values"`
+	NumExtensions            int `json:"num_extensions" yaml:"num_extensions"`
+	NumServices              int `json:"num_services" yaml:"num_services"`
+	NumMethods               int `json:"num_methods" yaml:"num_methods"`
 }
 
 // FileWalker goes through all .proto files for GetStats.

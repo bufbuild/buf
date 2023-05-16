@@ -129,28 +129,33 @@ func GoPackage(
 
 // JavaMultipleFiles returns a Modifier that sets the java_multiple_files
 // file option to the given value in all of the files contained in
-// the Image.
+// the Image. If the preserveExistingValue is set to true, then the
+// java_multiple_files option will be preserved if set.
 func JavaMultipleFiles(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	value bool,
 	overrides map[string]string,
+	preserveExistingValue bool,
 ) (Modifier, error) {
 	validatedOverrides, err := stringOverridesToBoolOverrides(overrides)
 	if err != nil {
 		return nil, fmt.Errorf("invalid override for %s: %w", JavaMultipleFilesID, err)
 	}
-	return javaMultipleFiles(logger, sweeper, value, validatedOverrides), nil
+	return javaMultipleFiles(logger, sweeper, value, validatedOverrides, preserveExistingValue), nil
 }
 
 // JavaOuterClassname returns a Modifier that sets the java_outer_classname file option
 // in all of the files contained in the Image based on the PascalCase of their filename.
+// If the preserveExistingValue is set to true, then the java_outer_classname option will
+// be preserved if set.
 func JavaOuterClassname(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	overrides map[string]string,
+	preserveExistingValue bool,
 ) Modifier {
-	return javaOuterClassname(logger, sweeper, overrides)
+	return javaOuterClassname(logger, sweeper, overrides, preserveExistingValue)
 }
 
 // JavaPackage returns a Modifier that sets the java_package file option

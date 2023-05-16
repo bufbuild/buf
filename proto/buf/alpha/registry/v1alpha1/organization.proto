@@ -48,13 +48,24 @@ message OrganizationMembership {
 // OrganizationService is the Organization service.
 service OrganizationService {
   // GetOrganization gets a organization by ID.
-  rpc GetOrganization(GetOrganizationRequest) returns (GetOrganizationResponse);
+  rpc GetOrganization(GetOrganizationRequest) returns (GetOrganizationResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetOrganizationByName gets a organization by name.
-  rpc GetOrganizationByName(GetOrganizationByNameRequest) returns (GetOrganizationByNameResponse);
+  rpc GetOrganizationByName(GetOrganizationByNameRequest) returns (GetOrganizationByNameResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListOrganizations lists all organizations.
-  rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+  rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // ListUserOrganizations lists all organizations a user is member of.
-  rpc ListUserOrganizations(ListUserOrganizationsRequest) returns (ListUserOrganizationsResponse);
+  rpc ListUserOrganizations(ListUserOrganizationsRequest) returns (ListUserOrganizationsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc GetUserOrganization(GetUserOrganizationRequest) returns (GetUserOrganizationResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // CreateOrganization creates a new organization.
   rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
   // DeleteOrganization deletes a organization.
@@ -70,7 +81,9 @@ service OrganizationService {
   // SetOrganizationMember sets the role of a user in the organization.
   rpc SetOrganizationMember(SetOrganizationMemberRequest) returns (SetOrganizationMemberResponse);
   // GetOrganizationSettings gets the settings of an organization, including organization base roles.
-  rpc GetOrganizationSettings(GetOrganizationSettingsRequest) returns (GetOrganizationSettingsResponse);
+  rpc GetOrganizationSettings(GetOrganizationSettingsRequest) returns (GetOrganizationSettingsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // UpdateOrganizationSettings update the organization settings including base roles.
   rpc UpdateOrganizationSettings(UpdateOrganizationSettingsRequest) returns (UpdateOrganizationSettingsResponse);
   // AddOrganizationGroup adds an IdP Group to the organization.
@@ -121,6 +134,17 @@ message ListUserOrganizationsResponse {
   repeated OrganizationMembership organizations = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+}
+
+message GetUserOrganizationRequest {
+  // The ID of the user whose membership should be retrieved.
+  string user_id = 1;
+  // The ID of the organization.
+  string organization_id = 2;
+}
+
+message GetUserOrganizationResponse {
+  OrganizationMembership organization_membership = 1;
 }
 
 message CreateOrganizationRequest {

@@ -1,0 +1,137 @@
+{
+  "location": [
+    {
+      "span": [
+        1,
+        0,
+        153,
+        1
+      ]
+    },
+    {
+      "path": [
+        12
+      ],
+      "span": [
+        1,
+        0,
+        18
+      ],
+      "leadingComments": " Keep 1: comment on syntax\n"
+    },
+    {
+      "path": [
+        2
+      ],
+      "span": [
+        4,
+        0,
+        16
+      ],
+      "leadingComments": " Keep 2: comment on package\n"
+    },
+    {
+      "path": [
+        8
+      ],
+      "span": [
+        7,
+        0,
+        34
+      ]
+    },
+    {
+      "path": [
+        8,
+        11
+      ],
+      "span": [
+        7,
+        0,
+        34
+      ],
+      "leadingComments": " Keep 3: comment on option\n"
+    },
+    {
+      "path": [
+        11,
+        0
+      ],
+      "span": [
+        13,
+        7,
+        11
+      ]
+    },
+    {
+      "path": [
+        5,
+        0
+      ],
+      "span": [
+        111,
+        0,
+        114,
+        1
+      ],
+      "leadingComments": " Keep if Baz: comment on enum Baz\n",
+      "leadingDetachedComments": [
+        " \"Keep if Baz\" and \"Keep if Quz\" are also kept for Bar, Svc, and Svc.Do\n since those elements depend on Baz and Quz.\n"
+      ]
+    },
+    {
+      "path": [
+        5,
+        0,
+        1
+      ],
+      "span": [
+        111,
+        5,
+        8
+      ]
+    },
+    {
+      "path": [
+        5,
+        0,
+        2,
+        0
+      ],
+      "span": [
+        113,
+        2,
+        22
+      ],
+      "leadingComments": " Keep if Baz: comment on enum value BAZ_UNSPECIFIED\n"
+    },
+    {
+      "path": [
+        5,
+        0,
+        2,
+        0,
+        1
+      ],
+      "span": [
+        113,
+        2,
+        17
+      ]
+    },
+    {
+      "path": [
+        5,
+        0,
+        2,
+        0,
+        2
+      ],
+      "span": [
+        113,
+        20,
+        21
+      ]
+    }
+  ]
+}

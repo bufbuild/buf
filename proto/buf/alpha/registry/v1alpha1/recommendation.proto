@@ -48,13 +48,18 @@ message SetRecommendedResource {
 // RecommendationService is the recommendation service.
 service RecommendationService {
   // RecommendedRepositories returns a list of recommended repositories.
-  rpc RecommendedRepositories(RecommendedRepositoriesRequest) returns (RecommendedRepositoriesResponse);
+  rpc RecommendedRepositories(RecommendedRepositoriesRequest) returns (RecommendedRepositoriesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // RecommendedTemplates returns a list of recommended templates.
   rpc RecommendedTemplates(RecommendedTemplatesRequest) returns (RecommendedTemplatesResponse) {
     option deprecated = true;
+    option idempotency_level = NO_SIDE_EFFECTS;
   }
   // ListRecommendedResources returns a list of recommended resources.
-  rpc ListRecommendedResources(ListRecommendedResourcesRequest) returns (ListRecommendedResourcesResponse);
+  rpc ListRecommendedResources(ListRecommendedResourcesRequest) returns (ListRecommendedResourcesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // SetRecommendedResources set the list of recommended resources in the server.
   rpc SetRecommendedResources(SetRecommendedResourcesRequest) returns (SetRecommendedResourcesResponse);
 }

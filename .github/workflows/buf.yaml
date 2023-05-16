@@ -5,20 +5,20 @@ on:
       - 'proto/**'
 jobs:
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.15.1
+      - uses: bufbuild/buf-setup-action@v1.18.0
         with:
           github_token: ${{ github.token }}
       - uses: bufbuild/buf-lint-action@v1.0.3
         with:
           buf_token: ${{ secrets.BUF_TOKEN }}
   breaking:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.15.1
+      - uses: bufbuild/buf-setup-action@v1.18.0
         with:
           github_token: ${{ github.token }}
       - uses: bufbuild/buf-breaking-action@v1.1.2
@@ -26,14 +26,14 @@ jobs:
           against: buf.build/bufbuild/buf
           buf_token: ${{ secrets.BUF_TOKEN }}
   push:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs:
       - lint
       - breaking
     steps:
       - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.15.1
+      - uses: bufbuild/buf-setup-action@v1.18.0
         with:
           github_token: ${{ github.token }}
       - uses: bufbuild/buf-push-action@v1.1.1

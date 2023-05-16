@@ -24,19 +24,29 @@ service DocService {
   //
   // The purpose of this is to get a representation of the file tree for a given
   // module to enable exploring the module by navigating through its contents.
-  rpc GetSourceDirectoryInfo(GetSourceDirectoryInfoRequest) returns (GetSourceDirectoryInfoResponse);
+  rpc GetSourceDirectoryInfo(GetSourceDirectoryInfoRequest) returns (GetSourceDirectoryInfoResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetSourceFile retrieves the source contents for the given owner, repository,
   // reference, and path.
-  rpc GetSourceFile(GetSourceFileRequest) returns (GetSourceFileResponse);
+  rpc GetSourceFile(GetSourceFileRequest) returns (GetSourceFileResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetModulePackages retrieves the list of packages for the module based on the given
   // owner, repository, and reference.
-  rpc GetModulePackages(GetModulePackagesRequest) returns (GetModulePackagesResponse);
+  rpc GetModulePackages(GetModulePackagesRequest) returns (GetModulePackagesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetModuleDocumentation retrieves the documentations including buf.md and LICENSE files
   // for module based on the given owner, repository, and reference.
-  rpc GetModuleDocumentation(GetModuleDocumentationRequest) returns (GetModuleDocumentationResponse);
+  rpc GetModuleDocumentation(GetModuleDocumentationRequest) returns (GetModuleDocumentationResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // GetPackageDocumentation retrieves a a slice of documentation structures
   // for the given owner, repository, reference, and package name.
-  rpc GetPackageDocumentation(GetPackageDocumentationRequest) returns (GetPackageDocumentationResponse);
+  rpc GetPackageDocumentation(GetPackageDocumentationRequest) returns (GetPackageDocumentationResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 // GetSourceDirectoryInfoRequest takes an owner, repository, and reference.
@@ -119,6 +129,11 @@ message ModuleDocumentation {
   // The LICENSE file is a part of the module.
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
   string license = 4;
+  // documentation_path is the path of the file which contains the module documentation.
+  //
+  // either `buf.md`, `README.md` or `README.markdown`.
+  // if empty, assumes buf.md.
+  string documentation_path = 5;
 }
 
 // GetPackageDocumentationRequest takes an owner, repository, reference, and package name.

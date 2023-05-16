@@ -32,11 +32,27 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// DownloadServiceName is the fully-qualified name of the DownloadService service.
 	DownloadServiceName = "buf.alpha.registry.v1alpha1.DownloadService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// DownloadServiceDownloadProcedure is the fully-qualified name of the DownloadService's Download
+	// RPC.
+	DownloadServiceDownloadProcedure = "/buf.alpha.registry.v1alpha1.DownloadService/Download"
+	// DownloadServiceDownloadManifestAndBlobsProcedure is the fully-qualified name of the
+	// DownloadService's DownloadManifestAndBlobs RPC.
+	DownloadServiceDownloadManifestAndBlobsProcedure = "/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs"
 )
 
 // DownloadServiceClient is a client for the buf.alpha.registry.v1alpha1.DownloadService service.
@@ -60,13 +76,15 @@ func NewDownloadServiceClient(httpClient connect_go.HTTPClient, baseURL string, 
 	return &downloadServiceClient{
 		download: connect_go.NewClient[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DownloadService/Download",
-			opts...,
+			baseURL+DownloadServiceDownloadProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		downloadManifestAndBlobs: connect_go.NewClient[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs",
-			opts...,
+			baseURL+DownloadServiceDownloadManifestAndBlobsProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -105,15 +123,17 @@ type DownloadServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewDownloadServiceHandler(svc DownloadServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.DownloadService/Download", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DownloadService/Download",
+	mux.Handle(DownloadServiceDownloadProcedure, connect_go.NewUnaryHandler(
+		DownloadServiceDownloadProcedure,
 		svc.Download,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs",
+	mux.Handle(DownloadServiceDownloadManifestAndBlobsProcedure, connect_go.NewUnaryHandler(
+		DownloadServiceDownloadManifestAndBlobsProcedure,
 		svc.DownloadManifestAndBlobs,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.DownloadService/", mux
 }

@@ -110,15 +110,13 @@ func NewBucket(m Manifest, blobs BlobSet, opts ...BucketOption) (storage.ReadBuc
 		option(&config)
 	}
 	if config.allManifestBlobs {
-		for _, path := range m.Paths() {
-			pathDigest, ok := m.DigestFor(path)
-			if !ok {
-				// we're iterating manifest paths, this should never happen.
-				return nil, fmt.Errorf("path %q not present in manifest", path)
+		if err := m.Range(func(path string, digest Digest) error {
+			if _, ok := blobs.BlobFor(digest.String()); !ok {
+				return fmt.Errorf("manifest path %q with digest %q has no associated blob", path, digest.String())
 			}
-			if _, ok := blobs.BlobFor(pathDigest.String()); !ok {
-				return nil, fmt.Errorf("manifest path %q with digest %q has no associated blob", path, pathDigest.String())
-			}
+			return nil
+		}); err != nil {
+			return nil, err
 		}
 	}
 	if config.noExtraBlobs {

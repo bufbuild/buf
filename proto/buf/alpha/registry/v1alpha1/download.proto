@@ -22,9 +22,13 @@ import "buf/alpha/module/v1alpha1/module.proto";
 service DownloadService {
   // Download downloads a BSR module.
   // NOTE: Newer clients should use DownloadManifestAndBlobs instead.
-  rpc Download(DownloadRequest) returns (DownloadResponse);
+  rpc Download(DownloadRequest) returns (DownloadResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // DownloadManifestAndBlobs downloads a module in the manifest+blobs encoding format.
-  rpc DownloadManifestAndBlobs(DownloadManifestAndBlobsRequest) returns (DownloadManifestAndBlobsResponse);
+  rpc DownloadManifestAndBlobs(DownloadManifestAndBlobsRequest) returns (DownloadManifestAndBlobsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 // DownloadRequest specifies the module to download.

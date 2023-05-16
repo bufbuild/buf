@@ -32,11 +32,36 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// DocServiceName is the fully-qualified name of the DocService service.
 	DocServiceName = "buf.alpha.registry.v1alpha1.DocService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// DocServiceGetSourceDirectoryInfoProcedure is the fully-qualified name of the DocService's
+	// GetSourceDirectoryInfo RPC.
+	DocServiceGetSourceDirectoryInfoProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetSourceDirectoryInfo"
+	// DocServiceGetSourceFileProcedure is the fully-qualified name of the DocService's GetSourceFile
+	// RPC.
+	DocServiceGetSourceFileProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetSourceFile"
+	// DocServiceGetModulePackagesProcedure is the fully-qualified name of the DocService's
+	// GetModulePackages RPC.
+	DocServiceGetModulePackagesProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetModulePackages"
+	// DocServiceGetModuleDocumentationProcedure is the fully-qualified name of the DocService's
+	// GetModuleDocumentation RPC.
+	DocServiceGetModuleDocumentationProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetModuleDocumentation"
+	// DocServiceGetPackageDocumentationProcedure is the fully-qualified name of the DocService's
+	// GetPackageDocumentation RPC.
+	DocServiceGetPackageDocumentationProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetPackageDocumentation"
 )
 
 // DocServiceClient is a client for the buf.alpha.registry.v1alpha1.DocService service.
@@ -73,28 +98,33 @@ func NewDocServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts 
 	return &docServiceClient{
 		getSourceDirectoryInfo: connect_go.NewClient[v1alpha1.GetSourceDirectoryInfoRequest, v1alpha1.GetSourceDirectoryInfoResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DocService/GetSourceDirectoryInfo",
-			opts...,
+			baseURL+DocServiceGetSourceDirectoryInfoProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getSourceFile: connect_go.NewClient[v1alpha1.GetSourceFileRequest, v1alpha1.GetSourceFileResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DocService/GetSourceFile",
-			opts...,
+			baseURL+DocServiceGetSourceFileProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getModulePackages: connect_go.NewClient[v1alpha1.GetModulePackagesRequest, v1alpha1.GetModulePackagesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DocService/GetModulePackages",
-			opts...,
+			baseURL+DocServiceGetModulePackagesProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getModuleDocumentation: connect_go.NewClient[v1alpha1.GetModuleDocumentationRequest, v1alpha1.GetModuleDocumentationResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DocService/GetModuleDocumentation",
-			opts...,
+			baseURL+DocServiceGetModuleDocumentationProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getPackageDocumentation: connect_go.NewClient[v1alpha1.GetPackageDocumentationRequest, v1alpha1.GetPackageDocumentationResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.DocService/GetPackageDocumentation",
-			opts...,
+			baseURL+DocServiceGetPackageDocumentationProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -162,30 +192,35 @@ type DocServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewDocServiceHandler(svc DocServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.DocService/GetSourceDirectoryInfo", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DocService/GetSourceDirectoryInfo",
+	mux.Handle(DocServiceGetSourceDirectoryInfoProcedure, connect_go.NewUnaryHandler(
+		DocServiceGetSourceDirectoryInfoProcedure,
 		svc.GetSourceDirectoryInfo,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DocService/GetSourceFile", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DocService/GetSourceFile",
+	mux.Handle(DocServiceGetSourceFileProcedure, connect_go.NewUnaryHandler(
+		DocServiceGetSourceFileProcedure,
 		svc.GetSourceFile,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DocService/GetModulePackages", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DocService/GetModulePackages",
+	mux.Handle(DocServiceGetModulePackagesProcedure, connect_go.NewUnaryHandler(
+		DocServiceGetModulePackagesProcedure,
 		svc.GetModulePackages,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DocService/GetModuleDocumentation", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DocService/GetModuleDocumentation",
+	mux.Handle(DocServiceGetModuleDocumentationProcedure, connect_go.NewUnaryHandler(
+		DocServiceGetModuleDocumentationProcedure,
 		svc.GetModuleDocumentation,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.DocService/GetPackageDocumentation", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.DocService/GetPackageDocumentation",
+	mux.Handle(DocServiceGetPackageDocumentationProcedure, connect_go.NewUnaryHandler(
+		DocServiceGetPackageDocumentationProcedure,
 		svc.GetPackageDocumentation,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.DocService/", mux
 }

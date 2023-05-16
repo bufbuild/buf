@@ -94,6 +94,31 @@ func TestAddEntry(t *testing.T) {
 	retContent, err := m.MarshalText()
 	require.NoError(t, err)
 	assert.Equal(t, expect, string(retContent))
+
+	t.Run("clean-up-paths", func(t *testing.T) {
+		t.Parallel()
+		var m manifest.Manifest
+		validDigest := mustDigestShake256(t, nil)
+		// adding same entry many times, should be cleaned up.
+		assert.NoError(t, m.AddEntry("./my/valid/path", *validDigest))
+		assert.NoError(t, m.AddEntry("my///valid///path", *validDigest))
+		assert.NoError(t, m.AddEntry("././my/valid/path", *validDigest))
+		assert.NoError(t, m.AddEntry("./my/./valid/./path", *validDigest))
+		assert.NoError(t, m.AddEntry("./my/valid/../../my/valid/path", *validDigest))
+		assert.NoError(t, m.AddEntry("foo/../my/valid/path", *validDigest))
+		paths := m.Paths()
+		require.Len(t, paths, 1)
+		assert.Equal(t, paths[0], "my/valid/path")
+	})
+	t.Run("invalid-paths", func(t *testing.T) {
+		t.Parallel()
+		var m manifest.Manifest
+		validDigest := mustDigestShake256(t, nil)
+		assert.Error(t, m.AddEntry("/invalid/absolute/path", *validDigest))
+		assert.Error(t, m.AddEntry("../invalid/outer/path", *validDigest))
+		assert.Error(t, m.AddEntry("invalid/../../outer/path", *validDigest))
+		assert.Empty(t, m.Paths())
+	})
 }
 
 func TestInvalidManifests(t *testing.T) {
@@ -191,18 +216,40 @@ func testInvalidManifest(
 	})
 }
 
-func TestAllPaths(t *testing.T) {
+func TestPathsDigestsRange(t *testing.T) {
 	t.Parallel()
-	var m manifest.Manifest
-	var addedPaths []string
+	var (
+		m          manifest.Manifest
+		addedPaths []string
+		nilDigest  = mustDigestShake256(t, nil)
+	)
 	for i := 0; i < 20; i++ {
 		path := fmt.Sprintf("path/to/file%0d", i)
-		require.NoError(t, m.AddEntry(path, *mustDigestShake256(t, nil)))
+		require.NoError(t, m.AddEntry(path, *nilDigest)) // all of the paths have the same digest/content
 		addedPaths = append(addedPaths, path)
 	}
-	retPaths := m.Paths()
-	assert.Equal(t, len(addedPaths), len(retPaths))
-	assert.ElementsMatch(t, addedPaths, retPaths)
+	t.Run("AllPaths", func(t *testing.T) {
+		t.Parallel()
+		allPaths := m.Paths()
+		assert.Equal(t, len(addedPaths), len(allPaths))
+		assert.ElementsMatch(t, addedPaths, allPaths)
+	})
+	t.Run("AllDigests", func(t *testing.T) {
+		t.Parallel()
+		allDigests := m.Digests()
+		require.Equal(t, 1, len(allDigests))
+		assert.True(t, nilDigest.Equal(allDigests[0]))
+	})
+	t.Run("Range", func(t *testing.T) {
+		t.Parallel()
+		var iteratedPaths []string
+		require.NoError(t, m.Range(func(path string, digest manifest.Digest) error {
+			iteratedPaths = append(iteratedPaths, path)
+			assert.True(t, digest.Equal(*nilDigest))
+			return nil
+		}))
+		assert.ElementsMatch(t, addedPaths, iteratedPaths)
+	})
 }
 
 func TestManifestZeroValue(t *testing.T) {

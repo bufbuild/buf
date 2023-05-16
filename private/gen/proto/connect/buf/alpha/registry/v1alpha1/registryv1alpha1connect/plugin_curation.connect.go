@@ -32,13 +32,38 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// PluginCurationServiceName is the fully-qualified name of the PluginCurationService service.
 	PluginCurationServiceName = "buf.alpha.registry.v1alpha1.PluginCurationService"
 	// CodeGenerationServiceName is the fully-qualified name of the CodeGenerationService service.
 	CodeGenerationServiceName = "buf.alpha.registry.v1alpha1.CodeGenerationService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// PluginCurationServiceListCuratedPluginsProcedure is the fully-qualified name of the
+	// PluginCurationService's ListCuratedPlugins RPC.
+	PluginCurationServiceListCuratedPluginsProcedure = "/buf.alpha.registry.v1alpha1.PluginCurationService/ListCuratedPlugins"
+	// PluginCurationServiceCreateCuratedPluginProcedure is the fully-qualified name of the
+	// PluginCurationService's CreateCuratedPlugin RPC.
+	PluginCurationServiceCreateCuratedPluginProcedure = "/buf.alpha.registry.v1alpha1.PluginCurationService/CreateCuratedPlugin"
+	// PluginCurationServiceGetLatestCuratedPluginProcedure is the fully-qualified name of the
+	// PluginCurationService's GetLatestCuratedPlugin RPC.
+	PluginCurationServiceGetLatestCuratedPluginProcedure = "/buf.alpha.registry.v1alpha1.PluginCurationService/GetLatestCuratedPlugin"
+	// PluginCurationServiceDeleteCuratedPluginProcedure is the fully-qualified name of the
+	// PluginCurationService's DeleteCuratedPlugin RPC.
+	PluginCurationServiceDeleteCuratedPluginProcedure = "/buf.alpha.registry.v1alpha1.PluginCurationService/DeleteCuratedPlugin"
+	// CodeGenerationServiceGenerateCodeProcedure is the fully-qualified name of the
+	// CodeGenerationService's GenerateCode RPC.
+	CodeGenerationServiceGenerateCodeProcedure = "/buf.alpha.registry.v1alpha1.CodeGenerationService/GenerateCode"
 )
 
 // PluginCurationServiceClient is a client for the buf.alpha.registry.v1alpha1.PluginCurationService
@@ -67,22 +92,24 @@ func NewPluginCurationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 	return &pluginCurationServiceClient{
 		listCuratedPlugins: connect_go.NewClient[v1alpha1.ListCuratedPluginsRequest, v1alpha1.ListCuratedPluginsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginCurationService/ListCuratedPlugins",
-			opts...,
+			baseURL+PluginCurationServiceListCuratedPluginsProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		createCuratedPlugin: connect_go.NewClient[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginCurationService/CreateCuratedPlugin",
+			baseURL+PluginCurationServiceCreateCuratedPluginProcedure,
 			opts...,
 		),
 		getLatestCuratedPlugin: connect_go.NewClient[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginCurationService/GetLatestCuratedPlugin",
-			opts...,
+			baseURL+PluginCurationServiceGetLatestCuratedPluginProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteCuratedPlugin: connect_go.NewClient[v1alpha1.DeleteCuratedPluginRequest, v1alpha1.DeleteCuratedPluginResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.PluginCurationService/DeleteCuratedPlugin",
+			baseURL+PluginCurationServiceDeleteCuratedPluginProcedure,
 			opts...,
 		),
 	}
@@ -137,23 +164,25 @@ type PluginCurationServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginCurationService/ListCuratedPlugins", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginCurationService/ListCuratedPlugins",
+	mux.Handle(PluginCurationServiceListCuratedPluginsProcedure, connect_go.NewUnaryHandler(
+		PluginCurationServiceListCuratedPluginsProcedure,
 		svc.ListCuratedPlugins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginCurationService/CreateCuratedPlugin", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginCurationService/CreateCuratedPlugin",
+	mux.Handle(PluginCurationServiceCreateCuratedPluginProcedure, connect_go.NewUnaryHandler(
+		PluginCurationServiceCreateCuratedPluginProcedure,
 		svc.CreateCuratedPlugin,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginCurationService/GetLatestCuratedPlugin", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginCurationService/GetLatestCuratedPlugin",
+	mux.Handle(PluginCurationServiceGetLatestCuratedPluginProcedure, connect_go.NewUnaryHandler(
+		PluginCurationServiceGetLatestCuratedPluginProcedure,
 		svc.GetLatestCuratedPlugin,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.PluginCurationService/DeleteCuratedPlugin", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.PluginCurationService/DeleteCuratedPlugin",
+	mux.Handle(PluginCurationServiceDeleteCuratedPluginProcedure, connect_go.NewUnaryHandler(
+		PluginCurationServiceDeleteCuratedPluginProcedure,
 		svc.DeleteCuratedPlugin,
 		opts...,
 	))
@@ -199,7 +228,7 @@ func NewCodeGenerationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 	return &codeGenerationServiceClient{
 		generateCode: connect_go.NewClient[v1alpha1.GenerateCodeRequest, v1alpha1.GenerateCodeResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.CodeGenerationService/GenerateCode",
+			baseURL+CodeGenerationServiceGenerateCodeProcedure,
 			opts...,
 		),
 	}
@@ -229,8 +258,8 @@ type CodeGenerationServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewCodeGenerationServiceHandler(svc CodeGenerationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.CodeGenerationService/GenerateCode", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.CodeGenerationService/GenerateCode",
+	mux.Handle(CodeGenerationServiceGenerateCodeProcedure, connect_go.NewUnaryHandler(
+		CodeGenerationServiceGenerateCodeProcedure,
 		svc.GenerateCode,
 		opts...,
 	))

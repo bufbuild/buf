@@ -32,11 +32,28 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// LabelServiceName is the fully-qualified name of the LabelService service.
 	LabelServiceName = "buf.alpha.registry.v1alpha1.LabelService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// LabelServiceCreateLabelProcedure is the fully-qualified name of the LabelService's CreateLabel
+	// RPC.
+	LabelServiceCreateLabelProcedure = "/buf.alpha.registry.v1alpha1.LabelService/CreateLabel"
+	// LabelServiceMoveLabelProcedure is the fully-qualified name of the LabelService's MoveLabel RPC.
+	LabelServiceMoveLabelProcedure = "/buf.alpha.registry.v1alpha1.LabelService/MoveLabel"
+	// LabelServiceGetLabelsProcedure is the fully-qualified name of the LabelService's GetLabels RPC.
+	LabelServiceGetLabelsProcedure = "/buf.alpha.registry.v1alpha1.LabelService/GetLabels"
 )
 
 // LabelServiceClient is a client for the buf.alpha.registry.v1alpha1.LabelService service.
@@ -58,18 +75,19 @@ func NewLabelServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 	return &labelServiceClient{
 		createLabel: connect_go.NewClient[v1alpha1.CreateLabelRequest, v1alpha1.CreateLabelResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.LabelService/CreateLabel",
+			baseURL+LabelServiceCreateLabelProcedure,
 			opts...,
 		),
 		moveLabel: connect_go.NewClient[v1alpha1.MoveLabelRequest, v1alpha1.MoveLabelResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.LabelService/MoveLabel",
+			baseURL+LabelServiceMoveLabelProcedure,
 			opts...,
 		),
 		getLabels: connect_go.NewClient[v1alpha1.GetLabelsRequest, v1alpha1.GetLabelsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.LabelService/GetLabels",
-			opts...,
+			baseURL+LabelServiceGetLabelsProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -110,20 +128,21 @@ type LabelServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewLabelServiceHandler(svc LabelServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.LabelService/CreateLabel", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.LabelService/CreateLabel",
+	mux.Handle(LabelServiceCreateLabelProcedure, connect_go.NewUnaryHandler(
+		LabelServiceCreateLabelProcedure,
 		svc.CreateLabel,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.LabelService/MoveLabel", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.LabelService/MoveLabel",
+	mux.Handle(LabelServiceMoveLabelProcedure, connect_go.NewUnaryHandler(
+		LabelServiceMoveLabelProcedure,
 		svc.MoveLabel,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.LabelService/GetLabels", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.LabelService/GetLabels",
+	mux.Handle(LabelServiceGetLabelsProcedure, connect_go.NewUnaryHandler(
+		LabelServiceGetLabelsProcedure,
 		svc.GetLabels,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.LabelService/", mux
 }

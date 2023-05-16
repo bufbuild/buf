@@ -32,11 +32,26 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// SchemaServiceName is the fully-qualified name of the SchemaService service.
 	SchemaServiceName = "buf.alpha.registry.v1alpha1.SchemaService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// SchemaServiceGetSchemaProcedure is the fully-qualified name of the SchemaService's GetSchema RPC.
+	SchemaServiceGetSchemaProcedure = "/buf.alpha.registry.v1alpha1.SchemaService/GetSchema"
+	// SchemaServiceConvertMessageProcedure is the fully-qualified name of the SchemaService's
+	// ConvertMessage RPC.
+	SchemaServiceConvertMessageProcedure = "/buf.alpha.registry.v1alpha1.SchemaService/ConvertMessage"
 )
 
 // SchemaServiceClient is a client for the buf.alpha.registry.v1alpha1.SchemaService service.
@@ -61,12 +76,13 @@ func NewSchemaServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 	return &schemaServiceClient{
 		getSchema: connect_go.NewClient[v1alpha1.GetSchemaRequest, v1alpha1.GetSchemaResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.SchemaService/GetSchema",
-			opts...,
+			baseURL+SchemaServiceGetSchemaProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		convertMessage: connect_go.NewClient[v1alpha1.ConvertMessageRequest, v1alpha1.ConvertMessageResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.SchemaService/ConvertMessage",
+			baseURL+SchemaServiceConvertMessageProcedure,
 			opts...,
 		),
 	}
@@ -106,13 +122,14 @@ type SchemaServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewSchemaServiceHandler(svc SchemaServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.SchemaService/GetSchema", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.SchemaService/GetSchema",
+	mux.Handle(SchemaServiceGetSchemaProcedure, connect_go.NewUnaryHandler(
+		SchemaServiceGetSchemaProcedure,
 		svc.GetSchema,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.SchemaService/ConvertMessage", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.SchemaService/ConvertMessage",
+	mux.Handle(SchemaServiceConvertMessageProcedure, connect_go.NewUnaryHandler(
+		SchemaServiceConvertMessageProcedure,
 		svc.ConvertMessage,
 		opts...,
 	))

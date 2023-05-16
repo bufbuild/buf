@@ -62,26 +62,18 @@ func (c *casModuleCacher) GetModule(
 	if err != nil {
 		return nil, err
 	}
-	manifestFromCache, err := c.readManifest(ctx, moduleBasedir, manifestDigest)
+	manifestFromCache, err := c.readManifest(ctx, moduleBasedir, *manifestDigest)
 	if err != nil {
 		return nil, err
 	}
-	var blobs []manifest.Blob
-	blobDigests := make(map[string]struct{})
-	for _, path := range manifestFromCache.Paths() {
-		digest, found := manifestFromCache.DigestFor(path)
-		if !found {
-			return nil, fmt.Errorf("digest not found for path: %s", path)
-		}
-		if _, ok := blobDigests[digest.String()]; ok {
-			// We've already loaded this blob
-			continue
-		}
+	digests := manifestFromCache.Digests()
+	blobs := make([]manifest.Blob, len(digests))
+	for i, digest := range digests {
 		blob, err := c.readBlob(ctx, moduleBasedir, digest)
 		if err != nil {
 			return nil, err
 		}
-		blobs = append(blobs, blob)
+		blobs[i] = blob
 	}
 	blobSet, err := manifest.NewBlobSet(ctx, blobs)
 	if err != nil {
@@ -103,39 +95,31 @@ func (c *casModuleCacher) PutModule(
 	if err != nil {
 		return err
 	}
-	digest := manifestBlob.Digest()
-	if digest == nil {
+	manifestDigest := manifestBlob.Digest()
+	if manifestDigest == nil {
 		return errors.New("empty manifest digest")
 	}
 	if modulePinDigestEncoded := modulePin.Digest(); modulePinDigestEncoded != "" {
 		modulePinDigest, err := manifest.NewDigestFromString(modulePinDigestEncoded)
 		if err != nil {
-			return fmt.Errorf("invalid digest %q: %w", modulePinDigestEncoded, err)
+			return fmt.Errorf("invalid module pin digest %q: %w", modulePinDigestEncoded, err)
 		}
-		if !digest.Equal(*modulePinDigest) {
-			return fmt.Errorf("manifest digest mismatch: expected=%q, found=%q", modulePinDigest.String(), digest.String())
+		if !manifestDigest.Equal(*modulePinDigest) {
+			return fmt.Errorf("manifest digest mismatch: pin=%q, module=%q", modulePinDigest.String(), manifestDigest.String())
 		}
 	}
 	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
 	// Write blobs
-	writtenDigests := make(map[string]struct{})
-	for _, path := range moduleManifest.Paths() {
-		blobDigest, found := moduleManifest.DigestFor(path)
-		if !found {
-			return fmt.Errorf("failed to find digest for path=%q", path)
-		}
-		blobDigestStr := blobDigest.String()
-		if _, ok := writtenDigests[blobDigestStr]; ok {
-			continue
-		}
+	for _, digest := range moduleManifest.Digests() {
+		blobDigestStr := digest.String()
 		blob, found := module.BlobSet().BlobFor(blobDigestStr)
 		if !found {
-			return fmt.Errorf("blob not found for path=%q, digest=%q", path, blobDigestStr)
+			paths, _ := moduleManifest.PathsFor(blobDigestStr)
+			return fmt.Errorf("blob not found for digest=%q (paths=%v)", blobDigestStr, paths)
 		}
 		if err := c.writeBlob(ctx, moduleBasedir, blob); err != nil {
 			return err
 		}
-		writtenDigests[blobDigestStr] = struct{}{}
 	}
 	// Write manifest
 	if err := c.writeBlob(ctx, moduleBasedir, manifestBlob); err != nil {
@@ -152,7 +136,7 @@ func (c *casModuleCacher) PutModule(
 func (c *casModuleCacher) readBlob(
 	ctx context.Context,
 	moduleBasedir string,
-	digest *manifest.Digest,
+	digest manifest.Digest,
 ) (_ manifest.Blob, retErr error) {
 	hexDigest := digest.Hex()
 	blobPath := normalpath.Join(moduleBasedir, blobsDir, hexDigest[:2], hexDigest[2:])
@@ -160,7 +144,7 @@ func (c *casModuleCacher) readBlob(
 	if err != nil {
 		return nil, err
 	}
-	blob, err := manifest.NewMemoryBlob(*digest, contents, manifest.MemoryBlobWithDigestValidation())
+	blob, err := manifest.NewMemoryBlob(digest, contents, manifest.MemoryBlobWithDigestValidation())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create blob from path %s: %w", blobPath, err)
 	}
@@ -197,7 +181,7 @@ func (c *casModuleCacher) validateBlob(
 func (c *casModuleCacher) readManifest(
 	ctx context.Context,
 	moduleBasedir string,
-	manifestDigest *manifest.Digest,
+	manifestDigest manifest.Digest,
 ) (_ *manifest.Manifest, retErr error) {
 	blob, err := c.readBlob(ctx, moduleBasedir, manifestDigest)
 	if err != nil {

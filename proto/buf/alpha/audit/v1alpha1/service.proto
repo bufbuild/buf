@@ -22,7 +22,9 @@ import "google/protobuf/timestamp.proto";
 // AuditService is the Audit service.
 service AuditService {
   // ListAuditedEvents lists audited events recorded in the BSR instance.
-  rpc ListAuditedEvents(ListAuditedEventsRequest) returns (ListAuditedEventsResponse);
+  rpc ListAuditedEvents(ListAuditedEventsRequest) returns (ListAuditedEventsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message ListAuditedEventsRequest {

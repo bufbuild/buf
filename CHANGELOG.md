@@ -2,15 +2,38 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix issue in `buf build` and `buf generate` where the use of type filtering (via
+  `--type` flags) would cause the resulting image to have no source code info, even
+  when `--exclude-source-info` was not specified. The main impact of the bug was that
+  generated code would be missing comments.
+- Add `--create` flag to `buf push` to create a repository if it does not exist. The user
+  is also required to specify the visibility using `--create-visibility`.
+
+## [v1.18.0] - 2023-05-05
+
+- Remove `buf beta registry {plugin,template} {deprecate,undeprecate}`.
+- Add `--user` and `--netrc` flags to `buf curl`, providing the same behavior as the
+  flags of the same name in the cURL tool.
+- Include `DocumentationPath` in the module on `buf push`.
+- Support fallback paths, `README.md` and `README.markdown`, for module documentation.
+  The default source for module documentation is `buf.md`.
+  If `buf.md` is missing, `README.md` or `README.markdown` is used as fallback sources.
+
+## [v1.17.0] - 2023-04-05
+
+- Fix issue with JSON marshalling of errors where line and column fields were
+  omitted when line and column information was empty.
+- Fix issue with MSVS marshalling of errors where the column could be 0.
+- Add `buf beta stats` command to print statistics about a given source or module.
+- Update `buf beta price` with the latest pricing information.
 
 ## [v1.16.0] - 2023-03-29
 
 - Add `buf beta price` command to help users of the BSR figure out how much a module
   will cost to store on the BSR under the Teams or Pro plans.
-- Fix an issue in `protoc-gen-buf-lint` that prevented it from reporting lint
+- Fix issue in `protoc-gen-buf-lint` that prevented it from reporting lint
   errors for unused imports.
-- Fix an issue with `buf format` where indents would be produced on certain empty lines.
+- Fix issue with `buf format` where indents would be produced on certain empty lines.
 - Remove `buf alpha registry token create` command. Tokens must be created through the BSR UI.
 - Add local WASM plugin support in alpha, gated by the `BUF_ALPHA_ENABLE_WASM` environment variable.
   This feature is under evaluation, and may change at any time. If you are interested in WASM
@@ -18,13 +41,13 @@
 
 ## [v1.15.1] - 2023-03-08
 
-- Fix a bug in `buf generate` with `v1beta1` config files.
-- Fix a potential crash when using the `--type` flag with `buf build` or `buf generate`.
+- Fix bug in `buf generate` with `v1beta1` config files.
+- Fix potential crash when using the `--type` flag with `buf build` or `buf generate`.
 
 ## [v1.15.0] - 2023-02-28
 
 - Update built-in Well-Known Types to Protobuf v22.0.
-- Fix a bug in `buf format` where C-style block comments in which every
+- Fix bug in `buf format` where C-style block comments in which every
   line includes a prefix (usually "*") would be incorrectly indented.
 - Add `--private-network` flag to `buf beta studio-agent` to support handling CORS requests
   from Studio on private networks that set the `Access-Control-Request-Private-Network` header.
@@ -848,7 +871,9 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.16.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.18.0...HEAD
+[v1.18.0]: https://github.com/bufbuild/buf/compare/v1.17.0...v1.18.0
+[v1.17.0]: https://github.com/bufbuild/buf/compare/v1.16.0...v1.17.0
 [v1.16.0]: https://github.com/bufbuild/buf/compare/v1.15.1...v1.16.0
 [v1.15.1]: https://github.com/bufbuild/buf/compare/v1.15.0...v1.15.1
 [v1.15.0]: https://github.com/bufbuild/buf/compare/v1.14.0...v1.15.0

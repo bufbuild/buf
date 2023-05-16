@@ -23,6 +23,7 @@ import (
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/protostat"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/multierr"
 	"google.golang.org/protobuf/proto"
@@ -200,6 +201,16 @@ func NewTokenPrinter(writer io.Writer, format Format) (TokenPrinter, error) {
 	default:
 		return nil, fmt.Errorf("unknown format: %v", format)
 	}
+}
+
+// StatsPrinter is a printer of Stats.
+type StatsPrinter interface {
+	PrintStats(ctx context.Context, format Format, stats *protostat.Stats) error
+}
+
+// NewStatsPrinter returns a new StatsPrinter.
+func NewStatsPrinter(writer io.Writer) StatsPrinter {
+	return newStatsPrinter(writer)
 }
 
 // TabWriter is a tab writer.

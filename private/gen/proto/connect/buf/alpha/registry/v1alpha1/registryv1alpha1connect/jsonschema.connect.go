@@ -32,11 +32,24 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// JSONSchemaServiceName is the fully-qualified name of the JSONSchemaService service.
 	JSONSchemaServiceName = "buf.alpha.registry.v1alpha1.JSONSchemaService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// JSONSchemaServiceGetJSONSchemaProcedure is the fully-qualified name of the JSONSchemaService's
+	// GetJSONSchema RPC.
+	JSONSchemaServiceGetJSONSchemaProcedure = "/buf.alpha.registry.v1alpha1.JSONSchemaService/GetJSONSchema"
 )
 
 // JSONSchemaServiceClient is a client for the buf.alpha.registry.v1alpha1.JSONSchemaService
@@ -60,8 +73,9 @@ func NewJSONSchemaServiceClient(httpClient connect_go.HTTPClient, baseURL string
 	return &jSONSchemaServiceClient{
 		getJSONSchema: connect_go.NewClient[v1alpha1.GetJSONSchemaRequest, v1alpha1.GetJSONSchemaResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.JSONSchemaService/GetJSONSchema",
-			opts...,
+			baseURL+JSONSchemaServiceGetJSONSchemaProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -91,10 +105,11 @@ type JSONSchemaServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewJSONSchemaServiceHandler(svc JSONSchemaServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.JSONSchemaService/GetJSONSchema", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.JSONSchemaService/GetJSONSchema",
+	mux.Handle(JSONSchemaServiceGetJSONSchemaProcedure, connect_go.NewUnaryHandler(
+		JSONSchemaServiceGetJSONSchemaProcedure,
 		svc.GetJSONSchema,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.JSONSchemaService/", mux
 }

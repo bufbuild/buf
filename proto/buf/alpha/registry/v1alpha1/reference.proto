@@ -55,7 +55,9 @@ message RepositoryDraft {
 service ReferenceService {
   // GetReferenceByName takes a reference name and returns the
   // reference either as 'main', a tag, or commit.
-  rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse);
+  rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetReferenceByNameRequest {

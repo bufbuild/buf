@@ -32,11 +32,24 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// GithubServiceName is the fully-qualified name of the GithubService service.
 	GithubServiceName = "buf.alpha.registry.v1alpha1.GithubService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// GithubServiceGetGithubAppConfigProcedure is the fully-qualified name of the GithubService's
+	// GetGithubAppConfig RPC.
+	GithubServiceGetGithubAppConfigProcedure = "/buf.alpha.registry.v1alpha1.GithubService/GetGithubAppConfig"
 )
 
 // GithubServiceClient is a client for the buf.alpha.registry.v1alpha1.GithubService service.
@@ -57,8 +70,9 @@ func NewGithubServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 	return &githubServiceClient{
 		getGithubAppConfig: connect_go.NewClient[v1alpha1.GetGithubAppConfigRequest, v1alpha1.GetGithubAppConfigResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.GithubService/GetGithubAppConfig",
-			opts...,
+			baseURL+GithubServiceGetGithubAppConfigProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -87,10 +101,11 @@ type GithubServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewGithubServiceHandler(svc GithubServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.GithubService/GetGithubAppConfig", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.GithubService/GetGithubAppConfig",
+	mux.Handle(GithubServiceGetGithubAppConfigProcedure, connect_go.NewUnaryHandler(
+		GithubServiceGetGithubAppConfigProcedure,
 		svc.GetGithubAppConfig,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.GithubService/", mux
 }

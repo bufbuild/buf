@@ -90,6 +90,27 @@ func TestNewBlobValidDuplicates(t *testing.T) {
 	assert.NotNil(t, blobSet)
 }
 
+func TestNewBlobSetWithNilBlobs(t *testing.T) {
+	t.Parallel()
+	blobsWithNil := append(newBlobsArray(t), nil)
+	t.Run("DefaultRejectNils", func(t *testing.T) {
+		_, err := manifest.NewBlobSet(
+			context.Background(),
+			blobsWithNil,
+		)
+		require.Error(t, err)
+	})
+	t.Run("AllowNils", func(t *testing.T) {
+		blobSet, err := manifest.NewBlobSet(
+			context.Background(),
+			blobsWithNil,
+			manifest.BlobSetWithSkipNilBlobs(),
+		)
+		require.NoError(t, err)
+		assert.NotNil(t, blobSet)
+	})
+}
+
 func TestNewBlobInvalidDuplicates(t *testing.T) {
 	t.Parallel()
 	blobs := newBlobsArray(t)
@@ -105,6 +126,15 @@ func TestNewBlobInvalidDuplicates(t *testing.T) {
 		manifest.BlobSetWithContentValidation(),
 	)
 	require.Error(t, err)
+}
+
+func TestAllBlobs(t *testing.T) {
+	t.Parallel()
+	blobs := newBlobsArray(t)
+	set, err := manifest.NewBlobSet(context.Background(), blobs)
+	require.NoError(t, err)
+	retBlobs := set.Blobs()
+	assertBlobsAreEqual(t, blobs, retBlobs)
 }
 
 type mockBlob struct {
@@ -323,4 +353,18 @@ func newBlobsArray(t *testing.T) []manifest.Blob {
 		blobs = append(blobs, blob)
 	}
 	return blobs
+}
+
+// assertBlobsAreEqual makes sure all the blobs digests in the array are the
+// same (assuming they're correctly built), ignoring order in the blobs arrays.
+func assertBlobsAreEqual(t *testing.T, expectedBlobs []manifest.Blob, actualBlobs []manifest.Blob) {
+	expectedDigests := make(map[string]struct{}, len(expectedBlobs))
+	for _, expectedBlob := range expectedBlobs {
+		expectedDigests[expectedBlob.Digest().String()] = struct{}{}
+	}
+	actualDigests := make(map[string]struct{}, len(actualBlobs))
+	for _, actualBlob := range actualBlobs {
+		actualDigests[actualBlob.Digest().String()] = struct{}{}
+	}
+	assert.Equal(t, expectedDigests, actualDigests)
 }

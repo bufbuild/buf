@@ -32,13 +32,29 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// ResolveServiceName is the fully-qualified name of the ResolveService service.
 	ResolveServiceName = "buf.alpha.registry.v1alpha1.ResolveService"
 	// LocalResolveServiceName is the fully-qualified name of the LocalResolveService service.
 	LocalResolveServiceName = "buf.alpha.registry.v1alpha1.LocalResolveService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// ResolveServiceGetModulePinsProcedure is the fully-qualified name of the ResolveService's
+	// GetModulePins RPC.
+	ResolveServiceGetModulePinsProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetModulePins"
+	// LocalResolveServiceGetLocalModulePinsProcedure is the fully-qualified name of the
+	// LocalResolveService's GetLocalModulePins RPC.
+	LocalResolveServiceGetLocalModulePinsProcedure = "/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins"
 )
 
 // ResolveServiceClient is a client for the buf.alpha.registry.v1alpha1.ResolveService service.
@@ -65,8 +81,9 @@ func NewResolveServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 	return &resolveServiceClient{
 		getModulePins: connect_go.NewClient[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.ResolveService/GetModulePins",
-			opts...,
+			baseURL+ResolveServiceGetModulePinsProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -101,10 +118,11 @@ type ResolveServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.ResolveService/GetModulePins", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.ResolveService/GetModulePins",
+	mux.Handle(ResolveServiceGetModulePinsProcedure, connect_go.NewUnaryHandler(
+		ResolveServiceGetModulePinsProcedure,
 		svc.GetModulePins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.ResolveService/", mux
 }
@@ -147,8 +165,9 @@ func NewLocalResolveServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 	return &localResolveServiceClient{
 		getLocalModulePins: connect_go.NewClient[v1alpha1.GetLocalModulePinsRequest, v1alpha1.GetLocalModulePinsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins",
-			opts...,
+			baseURL+LocalResolveServiceGetLocalModulePinsProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -188,10 +207,11 @@ type LocalResolveServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewLocalResolveServiceHandler(svc LocalResolveServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins",
+	mux.Handle(LocalResolveServiceGetLocalModulePinsProcedure, connect_go.NewUnaryHandler(
+		LocalResolveServiceGetLocalModulePinsProcedure,
 		svc.GetLocalModulePins,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.LocalResolveService/", mux
 }

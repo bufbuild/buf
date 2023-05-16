@@ -350,7 +350,7 @@ type ExternalConfigV1 struct {
 	Version string                   `json:"version,omitempty" yaml:"version,omitempty"`
 	Plugins []ExternalPluginConfigV1 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 	Managed ExternalManagedConfigV1  `json:"managed,omitempty" yaml:"managed,omitempty"`
-	Types   *ExternalTypesConfigV1   `json:"types,omitempty" yaml:"types,omitempty"`
+	Types   ExternalTypesConfigV1    `json:"types,omitempty" yaml:"types,omitempty"`
 }
 
 // ExternalPluginConfigV1 is an external plugin configuration.
@@ -573,4 +573,9 @@ type ExternalConfigVersion struct {
 // ExternalTypesConfigV1 is an external types configuration.
 type ExternalTypesConfigV1 struct {
 	Include []string `json:"include,omitempty" yaml:"include"`
+}
+
+// IsEmpty returns true if e is empty.
+func (e ExternalTypesConfigV1) IsEmpty() bool {
+	return len(e.Include) == 0
 }

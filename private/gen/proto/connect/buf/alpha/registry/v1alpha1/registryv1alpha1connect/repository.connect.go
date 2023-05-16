@@ -32,11 +32,75 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// RepositoryServiceName is the fully-qualified name of the RepositoryService service.
 	RepositoryServiceName = "buf.alpha.registry.v1alpha1.RepositoryService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// RepositoryServiceGetRepositoryProcedure is the fully-qualified name of the RepositoryService's
+	// GetRepository RPC.
+	RepositoryServiceGetRepositoryProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepository"
+	// RepositoryServiceGetRepositoryByFullNameProcedure is the fully-qualified name of the
+	// RepositoryService's GetRepositoryByFullName RPC.
+	RepositoryServiceGetRepositoryByFullNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryByFullName"
+	// RepositoryServiceListRepositoriesProcedure is the fully-qualified name of the RepositoryService's
+	// ListRepositories RPC.
+	RepositoryServiceListRepositoriesProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositories"
+	// RepositoryServiceListUserRepositoriesProcedure is the fully-qualified name of the
+	// RepositoryService's ListUserRepositories RPC.
+	RepositoryServiceListUserRepositoriesProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/ListUserRepositories"
+	// RepositoryServiceListRepositoriesUserCanAccessProcedure is the fully-qualified name of the
+	// RepositoryService's ListRepositoriesUserCanAccess RPC.
+	RepositoryServiceListRepositoriesUserCanAccessProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoriesUserCanAccess"
+	// RepositoryServiceListOrganizationRepositoriesProcedure is the fully-qualified name of the
+	// RepositoryService's ListOrganizationRepositories RPC.
+	RepositoryServiceListOrganizationRepositoriesProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/ListOrganizationRepositories"
+	// RepositoryServiceCreateRepositoryByFullNameProcedure is the fully-qualified name of the
+	// RepositoryService's CreateRepositoryByFullName RPC.
+	RepositoryServiceCreateRepositoryByFullNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/CreateRepositoryByFullName"
+	// RepositoryServiceDeleteRepositoryProcedure is the fully-qualified name of the RepositoryService's
+	// DeleteRepository RPC.
+	RepositoryServiceDeleteRepositoryProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/DeleteRepository"
+	// RepositoryServiceDeleteRepositoryByFullNameProcedure is the fully-qualified name of the
+	// RepositoryService's DeleteRepositoryByFullName RPC.
+	RepositoryServiceDeleteRepositoryByFullNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/DeleteRepositoryByFullName"
+	// RepositoryServiceDeprecateRepositoryByNameProcedure is the fully-qualified name of the
+	// RepositoryService's DeprecateRepositoryByName RPC.
+	RepositoryServiceDeprecateRepositoryByNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/DeprecateRepositoryByName"
+	// RepositoryServiceUndeprecateRepositoryByNameProcedure is the fully-qualified name of the
+	// RepositoryService's UndeprecateRepositoryByName RPC.
+	RepositoryServiceUndeprecateRepositoryByNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/UndeprecateRepositoryByName"
+	// RepositoryServiceGetRepositoriesByFullNameProcedure is the fully-qualified name of the
+	// RepositoryService's GetRepositoriesByFullName RPC.
+	RepositoryServiceGetRepositoriesByFullNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesByFullName"
+	// RepositoryServiceSetRepositoryContributorProcedure is the fully-qualified name of the
+	// RepositoryService's SetRepositoryContributor RPC.
+	RepositoryServiceSetRepositoryContributorProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/SetRepositoryContributor"
+	// RepositoryServiceListRepositoryContributorsProcedure is the fully-qualified name of the
+	// RepositoryService's ListRepositoryContributors RPC.
+	RepositoryServiceListRepositoryContributorsProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoryContributors"
+	// RepositoryServiceGetRepositoryContributorProcedure is the fully-qualified name of the
+	// RepositoryService's GetRepositoryContributor RPC.
+	RepositoryServiceGetRepositoryContributorProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryContributor"
+	// RepositoryServiceGetRepositorySettingsProcedure is the fully-qualified name of the
+	// RepositoryService's GetRepositorySettings RPC.
+	RepositoryServiceGetRepositorySettingsProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositorySettings"
+	// RepositoryServiceUpdateRepositorySettingsByNameProcedure is the fully-qualified name of the
+	// RepositoryService's UpdateRepositorySettingsByName RPC.
+	RepositoryServiceUpdateRepositorySettingsByNameProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositorySettingsByName"
+	// RepositoryServiceGetRepositoriesMetadataProcedure is the fully-qualified name of the
+	// RepositoryService's GetRepositoriesMetadata RPC.
+	RepositoryServiceGetRepositoriesMetadataProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesMetadata"
 )
 
 // RepositoryServiceClient is a client for the buf.alpha.registry.v1alpha1.RepositoryService
@@ -98,93 +162,104 @@ func NewRepositoryServiceClient(httpClient connect_go.HTTPClient, baseURL string
 	return &repositoryServiceClient{
 		getRepository: connect_go.NewClient[v1alpha1.GetRepositoryRequest, v1alpha1.GetRepositoryResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepository",
-			opts...,
+			baseURL+RepositoryServiceGetRepositoryProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getRepositoryByFullName: connect_go.NewClient[v1alpha1.GetRepositoryByFullNameRequest, v1alpha1.GetRepositoryByFullNameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryByFullName",
-			opts...,
+			baseURL+RepositoryServiceGetRepositoryByFullNameProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listRepositories: connect_go.NewClient[v1alpha1.ListRepositoriesRequest, v1alpha1.ListRepositoriesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositories",
-			opts...,
+			baseURL+RepositoryServiceListRepositoriesProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listUserRepositories: connect_go.NewClient[v1alpha1.ListUserRepositoriesRequest, v1alpha1.ListUserRepositoriesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/ListUserRepositories",
-			opts...,
+			baseURL+RepositoryServiceListUserRepositoriesProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listRepositoriesUserCanAccess: connect_go.NewClient[v1alpha1.ListRepositoriesUserCanAccessRequest, v1alpha1.ListRepositoriesUserCanAccessResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoriesUserCanAccess",
-			opts...,
+			baseURL+RepositoryServiceListRepositoriesUserCanAccessProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listOrganizationRepositories: connect_go.NewClient[v1alpha1.ListOrganizationRepositoriesRequest, v1alpha1.ListOrganizationRepositoriesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/ListOrganizationRepositories",
-			opts...,
+			baseURL+RepositoryServiceListOrganizationRepositoriesProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		createRepositoryByFullName: connect_go.NewClient[v1alpha1.CreateRepositoryByFullNameRequest, v1alpha1.CreateRepositoryByFullNameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/CreateRepositoryByFullName",
+			baseURL+RepositoryServiceCreateRepositoryByFullNameProcedure,
 			opts...,
 		),
 		deleteRepository: connect_go.NewClient[v1alpha1.DeleteRepositoryRequest, v1alpha1.DeleteRepositoryResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/DeleteRepository",
+			baseURL+RepositoryServiceDeleteRepositoryProcedure,
 			opts...,
 		),
 		deleteRepositoryByFullName: connect_go.NewClient[v1alpha1.DeleteRepositoryByFullNameRequest, v1alpha1.DeleteRepositoryByFullNameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/DeleteRepositoryByFullName",
+			baseURL+RepositoryServiceDeleteRepositoryByFullNameProcedure,
 			opts...,
 		),
 		deprecateRepositoryByName: connect_go.NewClient[v1alpha1.DeprecateRepositoryByNameRequest, v1alpha1.DeprecateRepositoryByNameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/DeprecateRepositoryByName",
+			baseURL+RepositoryServiceDeprecateRepositoryByNameProcedure,
 			opts...,
 		),
 		undeprecateRepositoryByName: connect_go.NewClient[v1alpha1.UndeprecateRepositoryByNameRequest, v1alpha1.UndeprecateRepositoryByNameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/UndeprecateRepositoryByName",
+			baseURL+RepositoryServiceUndeprecateRepositoryByNameProcedure,
 			opts...,
 		),
 		getRepositoriesByFullName: connect_go.NewClient[v1alpha1.GetRepositoriesByFullNameRequest, v1alpha1.GetRepositoriesByFullNameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesByFullName",
-			opts...,
+			baseURL+RepositoryServiceGetRepositoriesByFullNameProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		setRepositoryContributor: connect_go.NewClient[v1alpha1.SetRepositoryContributorRequest, v1alpha1.SetRepositoryContributorResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/SetRepositoryContributor",
+			baseURL+RepositoryServiceSetRepositoryContributorProcedure,
 			opts...,
 		),
 		listRepositoryContributors: connect_go.NewClient[v1alpha1.ListRepositoryContributorsRequest, v1alpha1.ListRepositoryContributorsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoryContributors",
-			opts...,
+			baseURL+RepositoryServiceListRepositoryContributorsProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getRepositoryContributor: connect_go.NewClient[v1alpha1.GetRepositoryContributorRequest, v1alpha1.GetRepositoryContributorResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryContributor",
-			opts...,
+			baseURL+RepositoryServiceGetRepositoryContributorProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		getRepositorySettings: connect_go.NewClient[v1alpha1.GetRepositorySettingsRequest, v1alpha1.GetRepositorySettingsResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositorySettings",
-			opts...,
+			baseURL+RepositoryServiceGetRepositorySettingsProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		updateRepositorySettingsByName: connect_go.NewClient[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositorySettingsByName",
+			baseURL+RepositoryServiceUpdateRepositorySettingsByNameProcedure,
 			opts...,
 		),
 		getRepositoriesMetadata: connect_go.NewClient[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesMetadata",
-			opts...,
+			baseURL+RepositoryServiceGetRepositoriesMetadataProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -367,95 +442,106 @@ type RepositoryServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/GetRepository", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepository",
+	mux.Handle(RepositoryServiceGetRepositoryProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceGetRepositoryProcedure,
 		svc.GetRepository,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryByFullName", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryByFullName",
+	mux.Handle(RepositoryServiceGetRepositoryByFullNameProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceGetRepositoryByFullNameProcedure,
 		svc.GetRepositoryByFullName,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositories", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositories",
+	mux.Handle(RepositoryServiceListRepositoriesProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceListRepositoriesProcedure,
 		svc.ListRepositories,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/ListUserRepositories", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/ListUserRepositories",
+	mux.Handle(RepositoryServiceListUserRepositoriesProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceListUserRepositoriesProcedure,
 		svc.ListUserRepositories,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoriesUserCanAccess", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoriesUserCanAccess",
+	mux.Handle(RepositoryServiceListRepositoriesUserCanAccessProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceListRepositoriesUserCanAccessProcedure,
 		svc.ListRepositoriesUserCanAccess,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/ListOrganizationRepositories", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/ListOrganizationRepositories",
+	mux.Handle(RepositoryServiceListOrganizationRepositoriesProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceListOrganizationRepositoriesProcedure,
 		svc.ListOrganizationRepositories,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/CreateRepositoryByFullName", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/CreateRepositoryByFullName",
+	mux.Handle(RepositoryServiceCreateRepositoryByFullNameProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceCreateRepositoryByFullNameProcedure,
 		svc.CreateRepositoryByFullName,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/DeleteRepository", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/DeleteRepository",
+	mux.Handle(RepositoryServiceDeleteRepositoryProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceDeleteRepositoryProcedure,
 		svc.DeleteRepository,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/DeleteRepositoryByFullName", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/DeleteRepositoryByFullName",
+	mux.Handle(RepositoryServiceDeleteRepositoryByFullNameProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceDeleteRepositoryByFullNameProcedure,
 		svc.DeleteRepositoryByFullName,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/DeprecateRepositoryByName", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/DeprecateRepositoryByName",
+	mux.Handle(RepositoryServiceDeprecateRepositoryByNameProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceDeprecateRepositoryByNameProcedure,
 		svc.DeprecateRepositoryByName,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/UndeprecateRepositoryByName", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/UndeprecateRepositoryByName",
+	mux.Handle(RepositoryServiceUndeprecateRepositoryByNameProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceUndeprecateRepositoryByNameProcedure,
 		svc.UndeprecateRepositoryByName,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesByFullName", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesByFullName",
+	mux.Handle(RepositoryServiceGetRepositoriesByFullNameProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceGetRepositoriesByFullNameProcedure,
 		svc.GetRepositoriesByFullName,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/SetRepositoryContributor", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/SetRepositoryContributor",
+	mux.Handle(RepositoryServiceSetRepositoryContributorProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceSetRepositoryContributorProcedure,
 		svc.SetRepositoryContributor,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoryContributors", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoryContributors",
+	mux.Handle(RepositoryServiceListRepositoryContributorsProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceListRepositoryContributorsProcedure,
 		svc.ListRepositoryContributors,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryContributor", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryContributor",
+	mux.Handle(RepositoryServiceGetRepositoryContributorProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceGetRepositoryContributorProcedure,
 		svc.GetRepositoryContributor,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositorySettings", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositorySettings",
+	mux.Handle(RepositoryServiceGetRepositorySettingsProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceGetRepositorySettingsProcedure,
 		svc.GetRepositorySettings,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositorySettingsByName", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositorySettingsByName",
+	mux.Handle(RepositoryServiceUpdateRepositorySettingsByNameProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceUpdateRepositorySettingsByNameProcedure,
 		svc.UpdateRepositorySettingsByName,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesMetadata", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesMetadata",
+	mux.Handle(RepositoryServiceGetRepositoriesMetadataProcedure, connect_go.NewUnaryHandler(
+		RepositoryServiceGetRepositoriesMetadataProcedure,
 		svc.GetRepositoriesMetadata,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.RepositoryService/", mux
 }

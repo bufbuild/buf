@@ -16,51 +16,14 @@ package httpclient
 
 import (
 	"crypto/tls"
-	"net"
 	"net/http"
-
-	"golang.org/x/net/http2"
 )
 
-type clientOptions struct {
-	tlsConfig       *tls.Config
-	proxy           Proxy
-	interceptorFunc ClientInterceptorFunc
-	h2c             bool
-}
-
-func newClient(options ...ClientOption) *http.Client {
-	opts := &clientOptions{
-		proxy: http.ProxyFromEnvironment,
-	}
-	for _, opt := range options {
-		opt(opts)
-	}
-	var roundTripper http.RoundTripper
-	if opts.h2c {
-		roundTripper = &http2.Transport{
-			AllowHTTP:       true,
-			TLSClientConfig: opts.tlsConfig,
-			DialTLS: func(netw, addr string, cfg *tls.Config) (net.Conn, error) {
-				return net.Dial(netw, addr)
-			},
-		}
-	} else {
-		roundTripper = &http.Transport{
-			TLSClientConfig: opts.tlsConfig,
-			Proxy:           opts.proxy,
-		}
-	}
-	if opts.interceptorFunc != nil {
-		roundTripper = opts.interceptorFunc(roundTripper)
-	}
+func newClient(clientTLSConfig *tls.Config) *http.Client {
 	return &http.Client{
-		Transport: roundTripper,
-	}
-}
-
-func newClientWithTransport(transport http.RoundTripper) *http.Client {
-	return &http.Client{
-		Transport: transport,
+		Transport: &http.Transport{
+			TLSClientConfig: clientTLSConfig,
+			Proxy:           http.ProxyFromEnvironment,
+		},
 	}
 }

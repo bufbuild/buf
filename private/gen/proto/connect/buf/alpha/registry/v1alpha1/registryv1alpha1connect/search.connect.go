@@ -32,11 +32,28 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// SearchServiceName is the fully-qualified name of the SearchService service.
 	SearchServiceName = "buf.alpha.registry.v1alpha1.SearchService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// SearchServiceSearchProcedure is the fully-qualified name of the SearchService's Search RPC.
+	SearchServiceSearchProcedure = "/buf.alpha.registry.v1alpha1.SearchService/Search"
+	// SearchServiceSearchTagProcedure is the fully-qualified name of the SearchService's SearchTag RPC.
+	SearchServiceSearchTagProcedure = "/buf.alpha.registry.v1alpha1.SearchService/SearchTag"
+	// SearchServiceSearchDraftProcedure is the fully-qualified name of the SearchService's SearchDraft
+	// RPC.
+	SearchServiceSearchDraftProcedure = "/buf.alpha.registry.v1alpha1.SearchService/SearchDraft"
 )
 
 // SearchServiceClient is a client for the buf.alpha.registry.v1alpha1.SearchService service.
@@ -61,18 +78,21 @@ func NewSearchServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 	return &searchServiceClient{
 		search: connect_go.NewClient[v1alpha1.SearchRequest, v1alpha1.SearchResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.SearchService/Search",
-			opts...,
+			baseURL+SearchServiceSearchProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		searchTag: connect_go.NewClient[v1alpha1.SearchTagRequest, v1alpha1.SearchTagResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.SearchService/SearchTag",
-			opts...,
+			baseURL+SearchServiceSearchTagProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		searchDraft: connect_go.NewClient[v1alpha1.SearchDraftRequest, v1alpha1.SearchDraftResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.SearchService/SearchDraft",
-			opts...,
+			baseURL+SearchServiceSearchDraftProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -117,20 +137,23 @@ type SearchServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.SearchService/Search", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.SearchService/Search",
+	mux.Handle(SearchServiceSearchProcedure, connect_go.NewUnaryHandler(
+		SearchServiceSearchProcedure,
 		svc.Search,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.SearchService/SearchTag", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.SearchService/SearchTag",
+	mux.Handle(SearchServiceSearchTagProcedure, connect_go.NewUnaryHandler(
+		SearchServiceSearchTagProcedure,
 		svc.SearchTag,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.SearchService/SearchDraft", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.SearchService/SearchDraft",
+	mux.Handle(SearchServiceSearchDraftProcedure, connect_go.NewUnaryHandler(
+		SearchServiceSearchDraftProcedure,
 		svc.SearchDraft,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.SearchService/", mux
 }

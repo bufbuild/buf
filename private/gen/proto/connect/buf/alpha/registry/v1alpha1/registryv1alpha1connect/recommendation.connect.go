@@ -32,11 +32,33 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// RecommendationServiceName is the fully-qualified name of the RecommendationService service.
 	RecommendationServiceName = "buf.alpha.registry.v1alpha1.RecommendationService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// RecommendationServiceRecommendedRepositoriesProcedure is the fully-qualified name of the
+	// RecommendationService's RecommendedRepositories RPC.
+	RecommendationServiceRecommendedRepositoriesProcedure = "/buf.alpha.registry.v1alpha1.RecommendationService/RecommendedRepositories"
+	// RecommendationServiceRecommendedTemplatesProcedure is the fully-qualified name of the
+	// RecommendationService's RecommendedTemplates RPC.
+	RecommendationServiceRecommendedTemplatesProcedure = "/buf.alpha.registry.v1alpha1.RecommendationService/RecommendedTemplates"
+	// RecommendationServiceListRecommendedResourcesProcedure is the fully-qualified name of the
+	// RecommendationService's ListRecommendedResources RPC.
+	RecommendationServiceListRecommendedResourcesProcedure = "/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedResources"
+	// RecommendationServiceSetRecommendedResourcesProcedure is the fully-qualified name of the
+	// RecommendationService's SetRecommendedResources RPC.
+	RecommendationServiceSetRecommendedResourcesProcedure = "/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedResources"
 )
 
 // RecommendationServiceClient is a client for the buf.alpha.registry.v1alpha1.RecommendationService
@@ -67,22 +89,25 @@ func NewRecommendationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 	return &recommendationServiceClient{
 		recommendedRepositories: connect_go.NewClient[v1alpha1.RecommendedRepositoriesRequest, v1alpha1.RecommendedRepositoriesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RecommendationService/RecommendedRepositories",
-			opts...,
+			baseURL+RecommendationServiceRecommendedRepositoriesProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		recommendedTemplates: connect_go.NewClient[v1alpha1.RecommendedTemplatesRequest, v1alpha1.RecommendedTemplatesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RecommendationService/RecommendedTemplates",
-			opts...,
+			baseURL+RecommendationServiceRecommendedTemplatesProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		listRecommendedResources: connect_go.NewClient[v1alpha1.ListRecommendedResourcesRequest, v1alpha1.ListRecommendedResourcesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedResources",
-			opts...,
+			baseURL+RecommendationServiceListRecommendedResourcesProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		setRecommendedResources: connect_go.NewClient[v1alpha1.SetRecommendedResourcesRequest, v1alpha1.SetRecommendedResourcesResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedResources",
+			baseURL+RecommendationServiceSetRecommendedResourcesProcedure,
 			opts...,
 		),
 	}
@@ -144,23 +169,26 @@ type RecommendationServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewRecommendationServiceHandler(svc RecommendationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.RecommendationService/RecommendedRepositories", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RecommendationService/RecommendedRepositories",
+	mux.Handle(RecommendationServiceRecommendedRepositoriesProcedure, connect_go.NewUnaryHandler(
+		RecommendationServiceRecommendedRepositoriesProcedure,
 		svc.RecommendedRepositories,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RecommendationService/RecommendedTemplates", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RecommendationService/RecommendedTemplates",
+	mux.Handle(RecommendationServiceRecommendedTemplatesProcedure, connect_go.NewUnaryHandler(
+		RecommendationServiceRecommendedTemplatesProcedure,
 		svc.RecommendedTemplates,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedResources", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedResources",
+	mux.Handle(RecommendationServiceListRecommendedResourcesProcedure, connect_go.NewUnaryHandler(
+		RecommendationServiceListRecommendedResourcesProcedure,
 		svc.ListRecommendedResources,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedResources", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.RecommendationService/SetRecommendedResources",
+	mux.Handle(RecommendationServiceSetRecommendedResourcesProcedure, connect_go.NewUnaryHandler(
+		RecommendationServiceSetRecommendedResourcesProcedure,
 		svc.SetRecommendedResources,
 		opts...,
 	))
