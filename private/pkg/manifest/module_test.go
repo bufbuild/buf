@@ -90,6 +90,27 @@ func TestNewBlobValidDuplicates(t *testing.T) {
 	assert.NotNil(t, blobSet)
 }
 
+func TestNewBlobSetWithNilBlobs(t *testing.T) {
+	t.Parallel()
+	blobsWithNil := append(newBlobsArray(t), nil)
+	t.Run("DefaultRejectNils", func(t *testing.T) {
+		_, err := manifest.NewBlobSet(
+			context.Background(),
+			blobsWithNil,
+		)
+		require.Error(t, err)
+	})
+	t.Run("AllowNils", func(t *testing.T) {
+		blobSet, err := manifest.NewBlobSet(
+			context.Background(),
+			blobsWithNil,
+			manifest.BlobSetWithSkipNilBlobs(),
+		)
+		require.NoError(t, err)
+		assert.NotNil(t, blobSet)
+	})
+}
+
 func TestNewBlobInvalidDuplicates(t *testing.T) {
 	t.Parallel()
 	blobs := newBlobsArray(t)
