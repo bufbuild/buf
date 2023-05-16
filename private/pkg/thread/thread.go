@@ -16,7 +16,6 @@ package thread
 
 import (
 	"context"
-	"fmt"
 	"runtime"
 	"sync"
 
@@ -74,7 +73,7 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 	var wg sync.WaitGroup
 	var lock sync.Mutex
 	var stop bool
-	for jobIdx, job := range jobs {
+	for _, job := range jobs {
 		if stop {
 			break
 		}
@@ -87,19 +86,19 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 		select {
 		case <-ctx.Done():
 			stop = true
-			retErr = multierr.Append(retErr, fmt.Errorf("jobs[%d]: context canceled", jobIdx))
+			retErr = multierr.Append(retErr, ctx.Err())
 		case semaphoreC <- struct{}{}:
 			select {
 			case <-ctx.Done():
 				stop = true
-				retErr = multierr.Append(retErr, fmt.Errorf("jobs[%d]: context canceled", jobIdx))
+				retErr = multierr.Append(retErr, ctx.Err())
 			default:
-				job, jobIdx := job, jobIdx
+				job := job
 				wg.Add(1)
 				go func() {
 					if err := job(ctx); err != nil {
 						lock.Lock()
-						retErr = multierr.Append(retErr, fmt.Errorf("jobs[%d]: %w", jobIdx, err))
+						retErr = multierr.Append(retErr, err)
 						lock.Unlock()
 						if parallelizeOptions.cancel != nil {
 							parallelizeOptions.cancel()
