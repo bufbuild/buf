@@ -192,16 +192,16 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 		if err != nil {
 			return nil, nil, err
 		}
-		for _, file := range imageConfig.Image().Files() {
-			if !file.IsImport() {
-				for _, importFilePath := range file.FileDescriptor().GetDependency() {
-					if _, ok := directDepsFiles[importFilePath]; !ok {
-						return nil, nil, fmt.Errorf("proto file %q imports %q, not found in your direct dependencies", file.Path(), importFilePath)
+		if imageConfig != nil {
+			for _, file := range imageConfig.Image().Files() {
+				if !file.IsImport() {
+					for _, importFilePath := range file.FileDescriptor().GetDependency() {
+						if _, ok := directDepsFiles[importFilePath]; !ok {
+							return nil, nil, fmt.Errorf("proto file %q imports %q, not found in your direct dependencies", file.Path(), importFilePath)
+						}
 					}
 				}
 			}
-		}
-		if imageConfig != nil {
 			imageConfigs = append(imageConfigs, imageConfig)
 		}
 		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
