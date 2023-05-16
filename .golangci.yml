@@ -21,6 +21,7 @@ linters-settings:
       - '^log\.'
       - '^print$'
       - '^println$'
+      - '^panic$'
   importas:
     alias:
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1
@@ -190,3 +191,16 @@ issues:
         - gosec
       text: "G404:"
       path: private/bufpkg/bufimage/bufimageutil/.*_test\.go
+    # Panics are appropriate in a few cases, primarily for testing.
+    - linters:
+        - forbidigo
+      path: private/usage/usage.go
+    - linters:
+        - forbidigo
+      path: private/bufpkg/bufimage/bufimagebuild/bufimagebuildtesting/bufimagebuildtesting.go
+    - linters:
+        - forbidigo
+      path: private/pkg/protosource/tag_range_test.go
+    - linters:
+        - forbidigo
+      path: private/bufpkg/bufmodule/bufmoduletesting/bufmoduletesting.go
