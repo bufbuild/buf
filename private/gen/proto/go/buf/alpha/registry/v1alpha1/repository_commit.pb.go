@@ -69,7 +69,7 @@ type RepositoryCommit struct {
 	// https://spdx.org/licenses, and will be not set if the license file is not
 	// presented or cannot be classified into a known license.
 	SpdxLicenseId string `protobuf:"bytes,10,opt,name=spdx_license_id,json=spdxLicenseId,proto3" json:"spdx_license_id,omitempty"`
-	// The manifest digest of the commit. Populated via Tamper Proofing.
+	// The manifest digest of the commit.
 	ManifestDigest string `protobuf:"bytes,11,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
 }
 
