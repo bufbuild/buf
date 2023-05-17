@@ -213,7 +213,7 @@ func printFileAnnotationAsGithubActions(buffer *bytes.Buffer, f FileAnnotation) 
 	_, _ = buffer.WriteString("::error ")
 
 	// file= is required for GitHub Actions, however it is possible to not have
-	// a path foe a FileAnnotation. We still print something, however we need
+	// a path for a FileAnnotation. We still print something, however we need
 	// to test what happens in GitHub Actions if no valid path is printed out.
 	path := "<input>"
 	if f.FileInfo() != nil {
