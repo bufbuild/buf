@@ -268,7 +268,7 @@ func (i *imageConfigReader) validateSourceImports(
 					continue // import comes from direct dep
 				}
 				errorMsg := fmt.Sprintf(
-					"source proto file %q imports %q, not found in your direct dependencies",
+					"source proto file %q imports %q, not found in your source files or direct dependencies",
 					file.Path(), importFilePath,
 				)
 				if transitiveDepModule, ok := transitiveDepsFilesToModule[importFilePath]; ok {
