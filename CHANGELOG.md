@@ -11,6 +11,10 @@
   generated code would be missing comments.
 - Fix issue in `buf curl` when using `--user` or `--netrc` that would cause a malformed
   Authorization header to be sent.
+- Update the buf CLI to store module cache information in an optimized content addressable
+  store. The cache is now self-healing and uses significantly less space. Users wishing to
+  free unused space can run `buf mod --clear-cache` once after upgrading to remove data
+  stored in the previous module cache.
 
 ## [v1.18.0] - 2023-05-05
 
