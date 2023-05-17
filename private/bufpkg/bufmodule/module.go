@@ -185,7 +185,7 @@ func newModuleForBucket(
 	return newModule(
 		ctx,
 		storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
-		moduleConfig.Build.DependencyModuleReferences,
+		moduleConfig.Build.DependencyModuleReferences, // straight copy from the buf.yaml file
 		dependencyModulePins,
 		moduleIdentity,
 		documentation,

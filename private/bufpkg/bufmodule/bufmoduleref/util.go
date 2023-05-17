@@ -68,50 +68,6 @@ func parseModuleIdentityComponents(path string) (remote string, owner string, re
 	return remote, owner, repository, nil
 }
 
-func moduleReferenceLess(a ModuleReference, b ModuleReference) bool {
-	return moduleReferenceCompareTo(a, b) < 0
-}
-
-// return -1 if less
-// return 1 if greater
-// return 0 if equal
-func moduleReferenceCompareTo(a ModuleReference, b ModuleReference) int {
-	if a == nil && b == nil {
-		return 0
-	}
-	if a == nil && b != nil {
-		return -1
-	}
-	if a != nil && b == nil {
-		return 1
-	}
-	if a.Remote() < b.Remote() {
-		return -1
-	}
-	if a.Remote() > b.Remote() {
-		return 1
-	}
-	if a.Owner() < b.Owner() {
-		return -1
-	}
-	if a.Owner() > b.Owner() {
-		return 1
-	}
-	if a.Repository() < b.Repository() {
-		return -1
-	}
-	if a.Repository() > b.Repository() {
-		return 1
-	}
-	if a.Reference() < b.Reference() {
-		return -1
-	}
-	if a.Reference() > b.Reference() {
-		return 1
-	}
-	return 0
-}
-
 func modulePinLess(a ModulePin, b ModulePin) bool {
 	return modulePinCompareTo(a, b) < 0
 }

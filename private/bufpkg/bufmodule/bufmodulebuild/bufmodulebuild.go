@@ -50,18 +50,6 @@ func WithWorkspace(workspace bufmodule.Workspace) BuildModuleFileSetOption {
 	}
 }
 
-func WithDirectDeps(directDeps map[string]struct{}) BuildModuleFileSetOption {
-	return func(buildModuleFileSetOptions *buildModuleFileSetOptions) {
-		buildModuleFileSetOptions.directDeps = directDeps
-	}
-}
-
-func WithDirectDepsFiles(directDepsFiles map[string]struct{}) BuildModuleFileSetOption {
-	return func(buildModuleFileSetOptions *buildModuleFileSetOptions) {
-		buildModuleFileSetOptions.directDepsFiles = directDepsFiles
-	}
-}
-
 // ModuleBucketBuilder builds modules for buckets.
 type ModuleBucketBuilder = *moduleBucketBuilder
 

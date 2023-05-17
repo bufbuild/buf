@@ -117,7 +117,5 @@ type buildOptions struct {
 }
 
 type buildModuleFileSetOptions struct {
-	workspace       bufmodule.Workspace
-	directDeps      map[string]struct{}
-	directDepsFiles map[string]struct{}
+	workspace bufmodule.Workspace
 }

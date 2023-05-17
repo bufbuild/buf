@@ -48,8 +48,6 @@ func (m *moduleFileSetBuilder) Build(
 		ctx,
 		module,
 		buildModuleFileSetOptions.workspace,
-		buildModuleFileSetOptions.directDeps,
-		buildModuleFileSetOptions.directDepsFiles,
 	)
 }
 
@@ -57,8 +55,6 @@ func (m *moduleFileSetBuilder) build(
 	ctx context.Context,
 	module bufmodule.Module,
 	workspace bufmodule.Workspace,
-	directDeps map[string]struct{},
-	directDepsFiles map[string]struct{},
 ) (bufmodule.ModuleFileSet, error) {
 	var dependencyModules []bufmodule.Module
 	if workspace != nil {
@@ -86,12 +82,6 @@ func (m *moduleFileSetBuilder) build(
 		dependencyModule, err := m.moduleReader.GetModule(ctx, dependencyModulePin)
 		if err != nil {
 			return nil, err
-		}
-		if _, ok := directDeps[dependencyModulePin.IdentityString()]; ok {
-			sfi, _ := dependencyModule.SourceFileInfos(ctx)
-			for _, file := range sfi {
-				directDepsFiles[file.Path()] = struct{}{}
-			}
 		}
 		dependencyModules = append(dependencyModules, dependencyModule)
 	}
