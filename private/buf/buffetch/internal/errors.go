@@ -111,6 +111,14 @@ func NewInvalidPathError(format string, path string) error {
 	return fmt.Errorf("invalid %spath: %q", format, path)
 }
 
+// NewProtoFileCannotBeDevPathError is a fetch error.
+func NewProtoFileCannotBeDevPathError(format string, path string) error {
+	if format != "" {
+		format = format + " "
+	}
+	return fmt.Errorf("invalid %spath: %q (protofiles cannot be read or written to or from stdio)", format, path)
+}
+
 // NewRealCleanPathError is a fetch error.
 func NewRealCleanPathError(path string) error {
 	return fmt.Errorf("could not clean relative path %q", path)
