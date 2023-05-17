@@ -160,7 +160,7 @@ var (
 	//
 	// Normalized.
 	// This directory replaces the use of v1CacheModuleDataRelDirPath, v1CacheModuleLockRelDirPath, and
-	// v1CacheModuleSumRelDirPath with a new cache implementation using content addressable storage.
+	// v1CacheModuleSumRelDirPath with a cache implementation using content addressable storage.
 	v2CacheModuleRelDirPath = normalpath.Join("v2", "module")
 
 	// allVisibiltyStrings are the possible options that a user can set the visibility flag with.

@@ -234,7 +234,7 @@ func (m *mockDownloadService) Download(
 	context.Context,
 	*connect.Request[registryv1alpha1.DownloadRequest],
 ) (*connect.Response[registryv1alpha1.DownloadResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("Download RPC should not be called, use DownloadManifestAndBlobs RPC instead"))
 }
 
 func (m *mockDownloadService) DownloadManifestAndBlobs(

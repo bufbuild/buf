@@ -207,7 +207,7 @@ func (m *mockPushService) Push(
 	context.Context,
 	*connect.Request[registryv1alpha1.PushRequest],
 ) (*connect.Response[registryv1alpha1.PushResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("Push RPC should not be called, use PushManifestAndBlobs RPC instead"))
 }
 
 func (m *mockPushService) PushManifestAndBlobs(
