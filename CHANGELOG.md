@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.19.0] - 2023-05-17
 
 - Add `--create` flag to `buf push` to create a repository if it does not exist. The user
@@ -878,6 +882,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.19.0...HEAD
 [v1.19.0]: https://github.com/bufbuild/buf/compare/v1.18.0...v1.19.0
 [v1.18.0]: https://github.com/bufbuild/buf/compare/v1.17.0...v1.18.0
 [v1.17.0]: https://github.com/bufbuild/buf/compare/v1.16.0...v1.17.0
