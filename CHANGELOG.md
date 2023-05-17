@@ -8,6 +8,8 @@
   generated code would be missing comments.
 - Add `--create` flag to `buf push` to create a repository if it does not exist. The user
   is also required to specify the visibility using `--create-visibility`.
+- Fix bug in `buf curl` when using `--user` or `--netrc` that would cause a malformed
+  Authorization header to be sent.
 
 ## [v1.18.0] - 2023-05-05
 
