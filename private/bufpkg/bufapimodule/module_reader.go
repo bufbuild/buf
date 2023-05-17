@@ -44,6 +44,19 @@ func newModuleReader(
 }
 
 func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
+	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
+		modulePin.Remote(),
+		modulePin.Owner(),
+		modulePin.Repository(),
+	)
+	if err != nil {
+		// malformed pin
+		return nil, err
+	}
+	identityAndCommitOpt := bufmodule.ModuleWithModuleIdentityAndCommit(
+		moduleIdentity,
+		modulePin.Commit(),
+	)
 	resp, err := m.downloadManifestAndBlobs(ctx, modulePin)
 	if err != nil {
 		return nil, err
@@ -60,7 +73,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewModuleForManifestAndBlobSet(ctx, moduleManifest, blobSet)
+	return bufmodule.NewModuleForManifestAndBlobSet(ctx, moduleManifest, blobSet, identityAndCommitOpt)
 }
 
 func (m *moduleReader) downloadManifestAndBlobs(
