@@ -68,6 +68,19 @@ func TestDownload(t *testing.T) {
 	)
 	testDownload(
 		t,
+		"success with valid manifest module",
+		newMockDownloadService(
+			t,
+			withBlobsFromMap(map[string][]byte{
+				"test.proto": []byte(`syntax = "proto3";
+message Test {}
+`),
+			}),
+		),
+		"",
+	)
+	testDownload(
+		t,
 		"manifest module with invalid lock file",
 		newMockDownloadService(
 			t,
@@ -122,6 +135,11 @@ func testDownload(
 		} else {
 			assert.NotNil(t, module)
 			assert.NoError(t, err)
+			for _, path := range module.Manifest().Paths() {
+				moduleFile, err := module.GetModuleFile(ctx, path)
+				require.NoError(t, err)
+				assert.Equal(t, pin.Commit(), moduleFile.Commit())
+			}
 		}
 	})
 }
