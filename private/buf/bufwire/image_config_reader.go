@@ -204,9 +204,9 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 }
 
 // validateSourceImports takes the direct dependencies from a module, and a built image for that
-// module, and validates that all the source image files have valid imports clauses that come from a
-// direct dependency and not a transitive (or unknown) one. Error message is safe to pass to the
-// user.
+// module, and validates that all the source image files have valid imports clauses that come from
+// source or from a direct dependency and not a transitive (or unknown) one. Error message is safe
+// to pass to the user.
 func (i *imageConfigReader) validateSourceImports(
 	directModuleDeps []bufmoduleref.ModuleReference,
 	builtImage bufimage.Image,
@@ -223,28 +223,35 @@ func (i *imageConfigReader) validateSourceImports(
 
 	// categorize image files into direct vs transitive dependencies
 	allImgFiles := make(map[string]map[string][]string)    // for logging purposes only, modIdentity:filepath:imports
+	sourceFiles := make(map[string]struct{})               // filepath
 	directDepsFilesToModule := make(map[string]string)     // filepath:modIdentity
 	transitiveDepsFilesToModule := make(map[string]string) // filepath:modIdentity
 	for _, file := range builtImage.Files() {
-		modIdentity := "source"
-		if file.ModuleIdentity() != nil {
-			modIdentity = file.ModuleIdentity().IdentityString()
-		}
-		if _, ok := allImgFiles[modIdentity]; !ok {
-			allImgFiles[modIdentity] = make(map[string][]string)
-		}
-		allImgFiles[modIdentity][file.Path()] = file.FileDescriptor().GetDependency()
-		if file.IsImport() {
-			if _, ok := directDepsIdentities[modIdentity]; ok {
-				directDepsFilesToModule[file.Path()] = modIdentity
-			} else {
-				transitiveDepsFilesToModule[file.Path()] = modIdentity
+		{
+			modIdentity := "source"
+			if file.ModuleIdentity() != nil {
+				modIdentity = file.ModuleIdentity().IdentityString()
 			}
+			if _, ok := allImgFiles[modIdentity]; !ok {
+				allImgFiles[modIdentity] = make(map[string][]string)
+			}
+			allImgFiles[modIdentity][file.Path()] = file.FileDescriptor().GetDependency()
+		}
+		if file.ModuleIdentity() != nil && file.IsImport() {
+			if _, ok := directDepsIdentities[file.ModuleIdentity().IdentityString()]; ok {
+				directDepsFilesToModule[file.Path()] = file.ModuleIdentity().IdentityString()
+			} else {
+				transitiveDepsFilesToModule[file.Path()] = file.ModuleIdentity().IdentityString()
+			}
+		} else {
+			// file has no module identity (workspace local), or is no import (is source)
+			sourceFiles[file.Path()] = struct{}{}
 		}
 	}
 	i.logger.Debug(
 		"image_files",
 		zap.Any("all_with_imports", allImgFiles),
+		zap.Any("source", sourceFiles),
 		zap.Any("from_direct_dependencies", directDepsFilesToModule),
 		zap.Any("from_transitive_dependencies", transitiveDepsFilesToModule),
 	)
@@ -254,6 +261,9 @@ func (i *imageConfigReader) validateSourceImports(
 	for _, file := range builtImage.Files() {
 		if !file.IsImport() {
 			for _, importFilePath := range file.FileDescriptor().GetDependency() {
+				if _, ok := sourceFiles[importFilePath]; ok {
+					continue // import comes from source
+				}
 				if _, ok := directDepsFilesToModule[importFilePath]; ok {
 					continue // import comes from direct dep
 				}
