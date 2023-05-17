@@ -22,7 +22,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -250,47 +249,21 @@ func push(
 	flags *flags,
 ) (*registryv1alpha1.LocalModulePin, error) {
 	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewPushServiceClient)
-	// Check if tamper proofing env var is enabled
-	tamperProofingEnabled, err := bufcli.IsBetaTamperProofingEnabled(container)
+	m, blobSet, err := manifest.NewFromBucket(ctx, builtModule.Bucket)
 	if err != nil {
 		return nil, err
 	}
-	if tamperProofingEnabled {
-		m, blobSet, err := manifest.NewFromBucket(ctx, builtModule.Bucket)
-		if err != nil {
-			return nil, err
-		}
-		bucketManifest, blobs, err := bufmanifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
-		if err != nil {
-			return nil, err
-		}
-		resp, err := service.PushManifestAndBlobs(
-			ctx,
-			connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
-				Owner:      moduleIdentity.Owner(),
-				Repository: moduleIdentity.Repository(),
-				Manifest:   bucketManifest,
-				Blobs:      blobs,
-				Tags:       flags.Tags,
-				DraftName:  flags.Draft,
-			}),
-		)
-		if err != nil {
-			return nil, err
-		}
-		return resp.Msg.LocalModulePin, nil
-	}
-	// Fall back to previous push call
-	protoModule, err := bufmodule.ModuleToProtoModule(ctx, builtModule.Module)
+	bucketManifest, blobs, err := bufmanifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := service.Push(
+	resp, err := service.PushManifestAndBlobs(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.PushRequest{
+		connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
 			Owner:      moduleIdentity.Owner(),
 			Repository: moduleIdentity.Repository(),
-			Module:     protoModule,
+			Manifest:   bucketManifest,
+			Blobs:      blobs,
 			Tags:       flags.Tags,
 			DraftName:  flags.Draft,
 		}),

@@ -28,7 +28,6 @@ import (
 
 type moduleReader struct {
 	downloadClientFactory DownloadServiceClientFactory
-	tamperProofingEnabled bool
 }
 
 func newModuleReader(
@@ -58,57 +57,23 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		moduleIdentity,
 		modulePin.Commit(),
 	)
-	if m.tamperProofingEnabled {
-		resp, err := m.downloadManifestAndBlobs(ctx, modulePin)
-		if err != nil {
-			return nil, err
-		}
-		if resp.Manifest == nil {
-			return nil, errors.New("expected non-nil manifest with tamper proofing enabled")
-		}
-		// use manifest and blobs
-		moduleManifest, err := bufmanifest.NewManifestFromProto(ctx, resp.Manifest)
-		if err != nil {
-			return nil, err
-		}
-		blobSet, err := bufmanifest.NewBlobSetFromProto(ctx, resp.Blobs)
-		if err != nil {
-			return nil, err
-		}
-		return bufmodule.NewModuleForManifestAndBlobSet(ctx, moduleManifest, blobSet)
-	}
-	resp, err := m.download(ctx, modulePin)
+	resp, err := m.downloadManifestAndBlobs(ctx, modulePin)
 	if err != nil {
 		return nil, err
 	}
-	if resp.Module == nil {
-		// funny, success without a module to build
-		return nil, errors.New("no module in response")
+	if resp.Manifest == nil {
+		return nil, errors.New("expected non-nil manifest")
 	}
-	return bufmodule.NewModuleForProto(ctx, resp.Module, identityAndCommitOpt)
-}
-
-func (m *moduleReader) download(
-	ctx context.Context,
-	modulePin bufmoduleref.ModulePin,
-) (*registryv1alpha1.DownloadResponse, error) {
-	downloadService := m.downloadClientFactory(modulePin.Remote())
-	resp, err := downloadService.Download(
-		ctx,
-		connect.NewRequest(&registryv1alpha1.DownloadRequest{
-			Owner:      modulePin.Owner(),
-			Repository: modulePin.Repository(),
-			Reference:  modulePin.Commit(),
-		}),
-	)
+	// use manifest and blobs
+	moduleManifest, err := bufmanifest.NewManifestFromProto(ctx, resp.Manifest)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Required by ModuleReader interface spec
-			return nil, storage.NewErrNotExist(modulePin.String())
-		}
 		return nil, err
 	}
-	return resp.Msg, err
+	blobSet, err := bufmanifest.NewBlobSetFromProto(ctx, resp.Blobs)
+	if err != nil {
+		return nil, err
+	}
+	return bufmodule.NewModuleForManifestAndBlobSet(ctx, moduleManifest, blobSet, identityAndCommitOpt)
 }
 
 func (m *moduleReader) downloadManifestAndBlobs(

@@ -30,7 +30,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
@@ -47,11 +46,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPush(t *testing.T) {
-	testPush(
+func TestPushManifest(t *testing.T) {
+	testPushManifest(
 		t,
 		"success",
-		&registryv1alpha1.PushResponse{
+		&registryv1alpha1.PushManifestAndBlobsResponse{
 			LocalModulePin: &registryv1alpha1.LocalModulePin{},
 		},
 		nil,   // no push service error set
@@ -59,10 +58,10 @@ func TestPush(t *testing.T) {
 		"",
 		"",
 	)
-	testPush(
+	testPushManifest(
 		t,
 		"missing local module pin",
-		&registryv1alpha1.PushResponse{
+		&registryv1alpha1.PushManifestAndBlobsResponse{
 			LocalModulePin: nil,
 		},
 		nil,   // no push service error set
@@ -70,7 +69,7 @@ func TestPush(t *testing.T) {
 		"",
 		"Missing local module pin",
 	)
-	testPush(
+	testPushManifest(
 		t,
 		"registry error",
 		nil,
@@ -81,12 +80,12 @@ func TestPush(t *testing.T) {
 	)
 }
 
-func TestPushCreate(t *testing.T) {
+func TestPushManifestCreate(t *testing.T) {
 	t.Parallel()
-	testPush(
+	testPushManifest(
 		t,
 		"repository not found, successfully create public repository",
-		&registryv1alpha1.PushResponse{
+		&registryv1alpha1.PushManifestAndBlobsResponse{
 			LocalModulePin: &registryv1alpha1.LocalModulePin{},
 		},
 		connect.NewError(connect.CodeNotFound, errors.New("repository not found")),
@@ -94,10 +93,10 @@ func TestPushCreate(t *testing.T) {
 		"public",
 		"",
 	)
-	testPush(
+	testPushManifest(
 		t,
 		"repository not found, successfully create private repository",
-		&registryv1alpha1.PushResponse{
+		&registryv1alpha1.PushManifestAndBlobsResponse{
 			LocalModulePin: &registryv1alpha1.LocalModulePin{},
 		},
 		connect.NewError(connect.CodeNotFound, errors.New("repository not found")),
@@ -105,27 +104,16 @@ func TestPushCreate(t *testing.T) {
 		"private",
 		"",
 	)
-	testPush(
+	testPushManifest(
 		t,
 		"repository not found, fail to create repository, no visibility",
-		&registryv1alpha1.PushResponse{
+		&registryv1alpha1.PushManifestAndBlobsResponse{
 			LocalModulePin: &registryv1alpha1.LocalModulePin{},
 		},
 		connect.NewError(connect.CodeNotFound, errors.New("repository not found")),
 		true,
 		"",
 		"Failure: --create-visibility is required if --create is set.",
-	)
-}
-
-func TestPushManifest(t *testing.T) {
-	testPushManifest(
-		t,
-		"success tamper proofing enabled",
-		&registryv1alpha1.PushManifestAndBlobsResponse{
-			LocalModulePin: &registryv1alpha1.LocalModulePin{},
-		},
-		"",
 	)
 }
 
@@ -146,7 +134,6 @@ func TestPushManifestIsSmallerBucket(t *testing.T) {
 			"bar.proto": nil,
 			"baz.file":  nil,
 		},
-		true, // tamperProofingEnabled
 	)
 	require.NoError(t, err)
 	request := mock.PushManifestRequest()
@@ -196,20 +183,16 @@ func TestBucketBlobs(t *testing.T) {
 type mockPushService struct {
 	t *testing.T
 
-	// protects pushRequest / pushManifestRequest
+	// protects pushManifestRequest and called
 	sync.RWMutex
 
-	// for testing with tamper proofing disabled
-	pushRequest       *registryv1alpha1.PushRequest
-	pushResponse      *registryv1alpha1.PushResponse
-	pushResponseError error
 	// number of times Push is called. we only want to return error once to test repository
 	// create flow.
 	called int
 
-	// for testing with tamper proofing enabled
-	pushManifestRequest  *registryv1alpha1.PushManifestAndBlobsRequest
-	pushManifestResponse *registryv1alpha1.PushManifestAndBlobsResponse
+	pushManifestRequest       *registryv1alpha1.PushManifestAndBlobsRequest
+	pushManifestResponse      *registryv1alpha1.PushManifestAndBlobsResponse
+	pushManifestResponseError error
 }
 
 var _ registryv1alpha1connect.PushServiceHandler = (*mockPushService)(nil)
@@ -221,30 +204,10 @@ func newMockPushService(t *testing.T) *mockPushService {
 }
 
 func (m *mockPushService) Push(
-	_ context.Context,
-	req *connect.Request[registryv1alpha1.PushRequest],
+	context.Context,
+	*connect.Request[registryv1alpha1.PushRequest],
 ) (*connect.Response[registryv1alpha1.PushResponse], error) {
-	m.Lock()
-	defer m.Unlock()
-	m.called++
-	m.pushRequest = req.Msg
-	assert.NotNil(m.t, req.Msg.Module, "missing module")
-	resp := m.pushResponse
-	if resp == nil {
-		return nil, errors.New("bad request")
-	}
-	if m.pushResponseError != nil {
-		if m.called == 1 {
-			return nil, m.pushResponseError
-		}
-	}
-	return connect.NewResponse(resp), nil
-}
-
-func (m *mockPushService) PushRequest() *registryv1alpha1.PushRequest {
-	m.RLock()
-	defer m.RUnlock()
-	return m.pushRequest
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("Push RPC should not be called, use PushManifestAndBlobs RPC instead"))
 }
 
 func (m *mockPushService) PushManifestAndBlobs(
@@ -253,11 +216,17 @@ func (m *mockPushService) PushManifestAndBlobs(
 ) (*connect.Response[registryv1alpha1.PushManifestAndBlobsResponse], error) {
 	m.Lock()
 	defer m.Unlock()
+	m.called++
 	m.pushManifestRequest = req.Msg
 	assert.NotNil(m.t, req.Msg.Manifest, "missing manifest")
 	resp := m.pushManifestResponse
 	if resp == nil {
 		return nil, errors.New("bad request")
+	}
+	if m.pushManifestResponseError != nil {
+		if m.called == 1 {
+			return nil, m.pushManifestResponseError
+		}
 	}
 	return connect.NewResponse(resp), nil
 }
@@ -387,7 +356,6 @@ func createServer(t *testing.T, mockPushService *mockPushService, mockRepository
 func appRun(
 	t *testing.T,
 	files map[string][]byte,
-	tamperProofingEnabled bool,
 	args ...string,
 ) error {
 	const appName = "test"
@@ -402,9 +370,6 @@ func appRun(
 					env["BUF_TOKEN"] = "invalid"
 					buftransport.SetDisableAPISubdomain(env)
 					injectConfig(t, appName, env)
-					if tamperProofingEnabled {
-						env[bufcli.BetaEnableTamperProofingEnvKey] = "1"
-					}
 					return env
 				},
 			)(appName),
@@ -420,26 +385,26 @@ func appRun(
 	)
 }
 
-func testPush(
+func testPushManifest(
 	t *testing.T,
 	desc string,
-	pushServiceResponse *registryv1alpha1.PushResponse,
+	resp *registryv1alpha1.PushManifestAndBlobsResponse,
 	pushServiceError error,
 	create bool,
 	createVisibility string,
 	errorMsg string,
 ) {
 	t.Helper()
-	mockPushService := newMockPushService(t)
-	mockPushService.pushResponse = pushServiceResponse
-	mockPushService.pushResponseError = pushServiceError
+	mock := newMockPushService(t)
+	mock.pushManifestResponse = resp
+	mock.pushManifestResponseError = pushServiceError
 	mockRepositoryService := newMockRepositoryService(t)
 	var args []string
 	if create {
 		args = append(args, "--create", "--create-visibility="+createVisibility)
 	}
 
-	server := createServer(t, mockPushService, mockRepositoryService)
+	server := createServer(t, mock, mockRepositoryService)
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
 		err := appRun(
@@ -449,37 +414,7 @@ func testPush(
 				"foo.proto": nil,
 				"bar.proto": nil,
 			},
-			false, // tamperProofingEnabled
 			args...,
-		)
-		if errorMsg == "" {
-			assert.NoError(t, err)
-		} else {
-			assert.ErrorContains(t, err, errorMsg)
-		}
-	})
-}
-
-func testPushManifest(
-	t *testing.T,
-	desc string,
-	resp *registryv1alpha1.PushManifestAndBlobsResponse,
-	errorMsg string,
-) {
-	t.Helper()
-	mock := newMockPushService(t)
-	mock.pushManifestResponse = resp
-	server := createServer(t, mock, nil) // not testing the create on the push manifest code path
-	t.Run(desc, func(t *testing.T) {
-		t.Parallel()
-		err := appRun(
-			t,
-			map[string][]byte{
-				"buf.yaml":  bufYAML(t, server.URL, "owner", "repo"),
-				"foo.proto": nil,
-				"bar.proto": nil,
-			},
-			true,
 		)
 		if errorMsg == "" {
 			assert.NoError(t, err)
