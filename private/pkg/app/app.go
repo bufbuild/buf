@@ -291,6 +291,12 @@ func IsDevNull(path string) bool {
 	return path != "" && path == DevNullFilePath
 }
 
+// IsDevPath returns true if the path is the equivalent of /dev/stdin, /dev/stdout,
+// /dev/stderr, or /dev/null.
+func IsDevPath(path string) bool {
+	return IsDevStdin(path) || IsDevStdout(path) || IsDevStderr(path) || IsDevNull(path)
+}
+
 // Main runs the application using the OS Container and calling os.Exit on the return value of Run.
 func Main(ctx context.Context, f func(context.Context, Container) error) {
 	container, err := NewContainerForOS()

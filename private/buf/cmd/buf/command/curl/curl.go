@@ -687,7 +687,7 @@ func basicAuth(username, password string) string {
 	buf.WriteString(username)
 	buf.WriteByte(':')
 	buf.WriteString(password)
-	return base64.StdEncoding.EncodeToString(buf.Bytes())
+	return "Basic " + base64.StdEncoding.EncodeToString(buf.Bytes())
 }
 
 func validateHeaders(flags []string, flagName string, schemaIsStdin bool, allowAsterisk bool, headerFiles map[string]struct{}) error {

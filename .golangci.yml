@@ -11,8 +11,6 @@ linters-settings:
       - '^exec\.Cmd$'
       - '^exec\.Command$'
       - '^exec\.CommandContext$'
-      # This should only be used by github.com/bufbuild/buf-language-server
-      - '^bufcli\.NewModuleReaderAndCreateCacheDirsWithExternalPaths'
       # os.Rename does not work across filesystem boundaries
       # See https://github.com/bufbuild/buf/issues/639
       - '^os\.Rename$'
