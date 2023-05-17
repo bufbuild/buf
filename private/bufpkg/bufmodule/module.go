@@ -33,6 +33,7 @@ import (
 
 type module struct {
 	sourceReadBucket     storage.ReadBucket
+	directDependencies   []bufmoduleref.ModuleReference
 	dependencyModulePins []bufmoduleref.ModulePin
 	moduleIdentity       bufmoduleref.ModuleIdentity
 	commit               string
@@ -72,9 +73,19 @@ func newModuleForProto(
 	if err != nil {
 		return nil, err
 	}
+	allDependenciesRefs := make([]bufmoduleref.ModuleReference, len(dependencyModulePins))
+	for i, dep := range dependencyModulePins {
+		allDependenciesRefs[i], err = bufmoduleref.NewModuleReference(
+			dep.Remote(), dep.Owner(), dep.Repository(), dep.Commit(),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("cannot build module reference from dependency pin %s: %w", dep.String(), err)
+		}
+	}
 	return newModule(
 		ctx,
 		readWriteBucket,
+		allDependenciesRefs, // Since proto has no distinction between direct/transitive dependencies, we'll need to set them all as direct, otherwise the build will fail.
 		dependencyModulePins,
 		nil, // The module identity is not stored on the proto. We rely on the layer above, (e.g. `ModuleReader`) to set this as needed.
 		protoModule.GetDocumentation(),
@@ -174,6 +185,7 @@ func newModuleForBucket(
 	return newModule(
 		ctx,
 		storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
+		moduleConfig.Build.DependencyModuleReferences,
 		dependencyModulePins,
 		moduleIdentity,
 		documentation,
@@ -214,6 +226,7 @@ func newModule(
 	ctx context.Context,
 	// must only contain .proto files
 	sourceReadBucket storage.ReadBucket,
+	directDependencies []bufmoduleref.ModuleReference,
 	dependencyModulePins []bufmoduleref.ModulePin,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	documentation string,
@@ -223,13 +236,18 @@ func newModule(
 	lintConfig *buflintconfig.Config,
 	options ...ModuleOption,
 ) (_ *module, retErr error) {
+	if err := bufmoduleref.ValidateModuleReferencesUniqueByIdentity(directDependencies); err != nil {
+		return nil, err
+	}
 	if err := bufmoduleref.ValidateModulePinsUniqueByIdentity(dependencyModulePins); err != nil {
 		return nil, err
 	}
 	// we rely on this being sorted here
+	bufmoduleref.SortModuleReferences(directDependencies)
 	bufmoduleref.SortModulePins(dependencyModulePins)
 	module := &module{
 		sourceReadBucket:     sourceReadBucket,
+		directDependencies:   directDependencies,
 		dependencyModulePins: dependencyModulePins,
 		moduleIdentity:       moduleIdentity,
 		documentation:        documentation,
@@ -294,6 +312,11 @@ func (m *module) GetModuleFile(ctx context.Context, path string) (ModuleFile, er
 		return nil, err
 	}
 	return newModuleFile(fileInfo, readObjectCloser), nil
+}
+
+func (m *module) DirectDependencies() []bufmoduleref.ModuleReference {
+	// already sorted in constructor
+	return m.directDependencies
 }
 
 func (m *module) DependencyModulePins() []bufmoduleref.ModulePin {

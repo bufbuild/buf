@@ -26,11 +26,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -147,32 +148,14 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	}
 	imageConfigs := make([]ImageConfig, 0, len(moduleConfigs))
 	var allFileAnnotations []bufanalysis.FileAnnotation
-	var directDeps []string
-	for idx, moduleConfig := range moduleConfigs {
-		for _, directDep := range moduleConfig.Config().Build.DependencyModuleReferences {
-			directDeps = append(directDeps, directDep.String())
-		}
-		directDepsMap := stringutil.SliceToMap(directDeps)
-		directDepsFiles := make(map[string]struct{})
-		fmt.Printf("mod[%d].directDeps: %v\n", idx, stringutil.MapToSortedSlice(directDepsMap))
-		sfi, _ := moduleConfig.Module().SourceFileInfos(ctx)
-		for _, file := range sfi {
-			fmt.Printf("mod[%d].sourceFilesPath: %v\n", idx, file.Path())
-		}
+	for _, moduleConfig := range moduleConfigs {
 		moduleFileSet, err := i.moduleFileSetBuilder.Build(
 			ctx,
 			moduleConfig.Module(),
 			bufmodulebuild.WithWorkspace(moduleConfig.Workspace()),
-			bufmodulebuild.WithDirectDeps(directDepsMap),
-			bufmodulebuild.WithDirectDepsFiles(directDepsFiles), // passed by reference, will be populated
 		)
 		if err != nil {
 			return nil, nil, err
-		}
-		fmt.Printf("mod[%d].directDepsFiles: %v\n", idx, stringutil.MapToSortedSlice(directDepsFiles))
-		ali, _ := moduleFileSet.AllFileInfos(ctx)
-		for _, file := range ali {
-			fmt.Printf("mod[%d].allFilesPath: %v\n", idx, file.Path())
 		}
 		targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 		if err != nil {
@@ -193,14 +176,11 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 			return nil, nil, err
 		}
 		if imageConfig != nil {
-			for _, file := range imageConfig.Image().Files() {
-				if !file.IsImport() {
-					for _, importFilePath := range file.FileDescriptor().GetDependency() {
-						if _, ok := directDepsFiles[importFilePath]; !ok {
-							return nil, nil, fmt.Errorf("proto file %q imports %q, not found in your direct dependencies", file.Path(), importFilePath)
-						}
-					}
-				}
+			if importsErr := i.validateSourceImports(
+				moduleConfig.Module().DirectDependencies(),
+				imageConfig.Image(),
+			); importsErr != nil {
+				return nil, nil, fmt.Errorf("source imports: %w", importsErr)
 			}
 			imageConfigs = append(imageConfigs, imageConfig)
 		}
@@ -221,6 +201,79 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 		}
 	}
 	return imageConfigs, nil, nil
+}
+
+// validateSourceImports takes the direct dependencies from a module, and a built image for that
+// module, and validates that all the source image files have valid imports clauses that come from a
+// direct dependency and not a transitive (or unknown) one. Error message is safe to pass to the
+// user.
+func (i *imageConfigReader) validateSourceImports(
+	directModuleDeps []bufmoduleref.ModuleReference,
+	builtImage bufimage.Image,
+) error {
+	// prepare direct deps as a map
+	directDepsIdentities := make(map[string]struct{}, len(directModuleDeps))
+	for _, directDep := range directModuleDeps {
+		directDepsIdentities[directDep.IdentityString()] = struct{}{}
+	}
+	i.logger.Debug(
+		"module",
+		zap.Any("module_direct_dependencies", directDepsIdentities),
+	)
+
+	// categorize image files into direct vs transitive dependencies
+	allImgFiles := make(map[string]map[string][]string)    // for logging purposes only, modIdentity:filepath:imports
+	directDepsFilesToModule := make(map[string]string)     // filepath:modIdentity
+	transitiveDepsFilesToModule := make(map[string]string) // filepath:modIdentity
+	for _, file := range builtImage.Files() {
+		modIdentity := "source"
+		if file.ModuleIdentity() != nil {
+			modIdentity = file.ModuleIdentity().IdentityString()
+		}
+		if _, ok := allImgFiles[modIdentity]; !ok {
+			allImgFiles[modIdentity] = make(map[string][]string)
+		}
+		allImgFiles[modIdentity][file.Path()] = file.FileDescriptor().GetDependency()
+		if file.IsImport() {
+			if _, ok := directDepsIdentities[modIdentity]; ok {
+				directDepsFilesToModule[file.Path()] = modIdentity
+			} else {
+				transitiveDepsFilesToModule[file.Path()] = modIdentity
+			}
+		}
+	}
+	i.logger.Debug(
+		"image_files",
+		zap.Any("all_with_imports", allImgFiles),
+		zap.Any("from_direct_dependencies", directDepsFilesToModule),
+		zap.Any("from_transitive_dependencies", transitiveDepsFilesToModule),
+	)
+
+	// validate import statements of source files against dependencies categorization above
+	var importsErr error
+	for _, file := range builtImage.Files() {
+		if !file.IsImport() {
+			for _, importFilePath := range file.FileDescriptor().GetDependency() {
+				if _, ok := directDepsFilesToModule[importFilePath]; ok {
+					continue // import comes from direct dep
+				}
+				errorMsg := fmt.Sprintf(
+					"source proto file %q imports %q, not found in your direct dependencies",
+					file.Path(), importFilePath,
+				)
+				if transitiveDepModule, ok := transitiveDepsFilesToModule[importFilePath]; ok {
+					errorMsg += fmt.Sprintf(
+						", but found in transitive dependency %q, please declare that one as explicit dependency in your buf.yaml file",
+						transitiveDepModule,
+					)
+				} else {
+					errorMsg += ", or any of your transitive dependencies, please check that your imports are declared as explicit dependencies in your buf.yaml file"
+				}
+				importsErr = multierr.Append(importsErr, errors.New(errorMsg))
+			}
+		}
+	}
+	return importsErr
 }
 
 func (i *imageConfigReader) getImageImageConfig(
