@@ -30,7 +30,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
@@ -42,44 +41,79 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	connect_go "github.com/bufbuild/connect-go"
+	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestPush(t *testing.T) {
-	testPush(
+func TestPushManifest(t *testing.T) {
+	testPushManifest(
 		t,
 		"success",
-		&registryv1alpha1.PushResponse{
+		&registryv1alpha1.PushManifestAndBlobsResponse{
 			LocalModulePin: &registryv1alpha1.LocalModulePin{},
 		},
+		nil,   // no push service error set
+		false, // no --create flag
+		"",
 		"",
 	)
-	testPush(
+	testPushManifest(
 		t,
 		"missing local module pin",
-		&registryv1alpha1.PushResponse{
+		&registryv1alpha1.PushManifestAndBlobsResponse{
 			LocalModulePin: nil,
 		},
+		nil,   // no push service error set
+		false, // no --create flag
+		"",
 		"Missing local module pin",
 	)
-	testPush(
+	testPushManifest(
 		t,
 		"registry error",
 		nil,
+		nil,   // no push service error set
+		false, // no --create flag
+		"",
 		"bad request",
 	)
 }
 
-func TestPushManifest(t *testing.T) {
+func TestPushManifestCreate(t *testing.T) {
+	t.Parallel()
 	testPushManifest(
 		t,
-		"success tamper proofing enabled",
+		"repository not found, successfully create public repository",
 		&registryv1alpha1.PushManifestAndBlobsResponse{
 			LocalModulePin: &registryv1alpha1.LocalModulePin{},
 		},
+		connect.NewError(connect.CodeNotFound, errors.New("repository not found")),
+		true,
+		"public",
 		"",
+	)
+	testPushManifest(
+		t,
+		"repository not found, successfully create private repository",
+		&registryv1alpha1.PushManifestAndBlobsResponse{
+			LocalModulePin: &registryv1alpha1.LocalModulePin{},
+		},
+		connect.NewError(connect.CodeNotFound, errors.New("repository not found")),
+		true,
+		"private",
+		"",
+	)
+	testPushManifest(
+		t,
+		"repository not found, fail to create repository, no visibility",
+		&registryv1alpha1.PushManifestAndBlobsResponse{
+			LocalModulePin: &registryv1alpha1.LocalModulePin{},
+		},
+		connect.NewError(connect.CodeNotFound, errors.New("repository not found")),
+		true,
+		"",
+		"Failure: --create-visibility is required if --create is set.",
 	)
 }
 
@@ -91,7 +125,7 @@ func TestPushManifestIsSmallerBucket(t *testing.T) {
 	mock.pushManifestResponse = &registryv1alpha1.PushManifestAndBlobsResponse{
 		LocalModulePin: &registryv1alpha1.LocalModulePin{},
 	}
-	server := createServer(t, mock)
+	server := createServer(t, mock, nil) // not testing the create on the push manifest code path
 	err := appRun(
 		t,
 		map[string][]byte{
@@ -100,7 +134,6 @@ func TestPushManifestIsSmallerBucket(t *testing.T) {
 			"bar.proto": nil,
 			"baz.file":  nil,
 		},
-		true, // tamperProofingEnabled
 	)
 	require.NoError(t, err)
 	request := mock.PushManifestRequest()
@@ -150,16 +183,16 @@ func TestBucketBlobs(t *testing.T) {
 type mockPushService struct {
 	t *testing.T
 
-	// protects pushRequest / pushManifestRequest
+	// protects pushManifestRequest and called
 	sync.RWMutex
 
-	// for testing with tamper proofing disabled
-	pushRequest  *registryv1alpha1.PushRequest
-	pushResponse *registryv1alpha1.PushResponse
+	// number of times Push is called. we only want to return error once to test repository
+	// create flow.
+	called int
 
-	// for testing with tamper proofing enabled
-	pushManifestRequest  *registryv1alpha1.PushManifestAndBlobsRequest
-	pushManifestResponse *registryv1alpha1.PushManifestAndBlobsResponse
+	pushManifestRequest       *registryv1alpha1.PushManifestAndBlobsRequest
+	pushManifestResponse      *registryv1alpha1.PushManifestAndBlobsResponse
+	pushManifestResponseError error
 }
 
 var _ registryv1alpha1connect.PushServiceHandler = (*mockPushService)(nil)
@@ -170,41 +203,32 @@ func newMockPushService(t *testing.T) *mockPushService {
 	}
 }
 
-// Push pushes.
 func (m *mockPushService) Push(
-	_ context.Context,
-	req *connect_go.Request[registryv1alpha1.PushRequest],
-) (*connect_go.Response[registryv1alpha1.PushResponse], error) {
-	m.Lock()
-	defer m.Unlock()
-	m.pushRequest = req.Msg
-	assert.NotNil(m.t, req.Msg.Module, "missing module")
-	resp := m.pushResponse
-	if resp == nil {
-		return nil, errors.New("bad request")
-	}
-	return connect_go.NewResponse(resp), nil
-}
-
-func (m *mockPushService) PushRequest() *registryv1alpha1.PushRequest {
-	m.RLock()
-	defer m.RUnlock()
-	return m.pushRequest
+	context.Context,
+	*connect.Request[registryv1alpha1.PushRequest],
+) (*connect.Response[registryv1alpha1.PushResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("Push RPC should not be called, use PushManifestAndBlobs RPC instead"))
 }
 
 func (m *mockPushService) PushManifestAndBlobs(
 	_ context.Context,
-	req *connect_go.Request[registryv1alpha1.PushManifestAndBlobsRequest],
-) (*connect_go.Response[registryv1alpha1.PushManifestAndBlobsResponse], error) {
+	req *connect.Request[registryv1alpha1.PushManifestAndBlobsRequest],
+) (*connect.Response[registryv1alpha1.PushManifestAndBlobsResponse], error) {
 	m.Lock()
 	defer m.Unlock()
+	m.called++
 	m.pushManifestRequest = req.Msg
 	assert.NotNil(m.t, req.Msg.Manifest, "missing manifest")
 	resp := m.pushManifestResponse
 	if resp == nil {
 		return nil, errors.New("bad request")
 	}
-	return connect_go.NewResponse(resp), nil
+	if m.pushManifestResponseError != nil {
+		if m.called == 1 {
+			return nil, m.pushManifestResponseError
+		}
+	}
+	return connect.NewResponse(resp), nil
 }
 
 func (m *mockPushService) PushManifestRequest() *registryv1alpha1.PushManifestAndBlobsRequest {
@@ -213,11 +237,114 @@ func (m *mockPushService) PushManifestRequest() *registryv1alpha1.PushManifestAn
 	return m.pushManifestRequest
 }
 
-func createServer(t *testing.T, mock *mockPushService) *httptest.Server {
+type mockRepositoryService struct {
+	t *testing.T
+}
+
+var _ registryv1alpha1connect.RepositoryServiceHandler = (*mockRepositoryService)(nil)
+
+func newMockRepositoryService(t *testing.T) *mockRepositoryService {
+	return &mockRepositoryService{
+		t: t,
+	}
+}
+
+func (m *mockRepositoryService) CreateRepositoryByFullName(
+	_ context.Context,
+	req *connect.Request[registryv1alpha1.CreateRepositoryByFullNameRequest],
+) (*connect.Response[registryv1alpha1.CreateRepositoryByFullNameResponse], error) {
+	if req.Msg.FullName == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("full repository name required"))
+	}
+	if req.Msg.Visibility != registryv1alpha1.Visibility_VISIBILITY_PUBLIC && req.Msg.Visibility != registryv1alpha1.Visibility_VISIBILITY_PRIVATE {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid visibility"))
+	}
+	split := strings.Split(req.Msg.FullName, "/")
+	assert.Equal(m.t, 2, len(split))
+	return connect.NewResponse(&registryv1alpha1.CreateRepositoryByFullNameResponse{
+		Repository: &registryv1alpha1.Repository{
+			Name:       split[1],
+			Visibility: req.Msg.Visibility,
+		},
+	}), nil
+}
+
+func (m *mockRepositoryService) GetRepository(_ context.Context, _ *connect.Request[registryv1alpha1.GetRepositoryRequest]) (*connect.Response[registryv1alpha1.GetRepositoryResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) GetRepositoryByFullName(_ context.Context, _ *connect.Request[registryv1alpha1.GetRepositoryByFullNameRequest]) (*connect.Response[registryv1alpha1.GetRepositoryByFullNameResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) ListRepositories(_ context.Context, _ *connect.Request[registryv1alpha1.ListRepositoriesRequest]) (*connect.Response[registryv1alpha1.ListRepositoriesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) ListUserRepositories(_ context.Context, _ *connect.Request[registryv1alpha1.ListUserRepositoriesRequest]) (*connect.Response[registryv1alpha1.ListUserRepositoriesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) ListRepositoriesUserCanAccess(_ context.Context, _ *connect.Request[registryv1alpha1.ListRepositoriesUserCanAccessRequest]) (*connect.Response[registryv1alpha1.ListRepositoriesUserCanAccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) ListOrganizationRepositories(_ context.Context, _ *connect.Request[registryv1alpha1.ListOrganizationRepositoriesRequest]) (*connect.Response[registryv1alpha1.ListOrganizationRepositoriesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) DeleteRepository(_ context.Context, _ *connect.Request[registryv1alpha1.DeleteRepositoryRequest]) (*connect.Response[registryv1alpha1.DeleteRepositoryResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) DeleteRepositoryByFullName(_ context.Context, _ *connect.Request[registryv1alpha1.DeleteRepositoryByFullNameRequest]) (*connect.Response[registryv1alpha1.DeleteRepositoryByFullNameResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) DeprecateRepositoryByName(_ context.Context, _ *connect.Request[registryv1alpha1.DeprecateRepositoryByNameRequest]) (*connect.Response[registryv1alpha1.DeprecateRepositoryByNameResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) UndeprecateRepositoryByName(_ context.Context, _ *connect.Request[registryv1alpha1.UndeprecateRepositoryByNameRequest]) (*connect.Response[registryv1alpha1.UndeprecateRepositoryByNameResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) GetRepositoriesByFullName(_ context.Context, _ *connect.Request[registryv1alpha1.GetRepositoriesByFullNameRequest]) (*connect.Response[registryv1alpha1.GetRepositoriesByFullNameResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) SetRepositoryContributor(_ context.Context, _ *connect.Request[registryv1alpha1.SetRepositoryContributorRequest]) (*connect.Response[registryv1alpha1.SetRepositoryContributorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) ListRepositoryContributors(_ context.Context, _ *connect.Request[registryv1alpha1.ListRepositoryContributorsRequest]) (*connect.Response[registryv1alpha1.ListRepositoryContributorsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) GetRepositoryContributor(_ context.Context, _ *connect.Request[registryv1alpha1.GetRepositoryContributorRequest]) (*connect.Response[registryv1alpha1.GetRepositoryContributorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) GetRepositorySettings(_ context.Context, _ *connect.Request[registryv1alpha1.GetRepositorySettingsRequest]) (*connect.Response[registryv1alpha1.GetRepositorySettingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) UpdateRepositorySettingsByName(_ context.Context, _ *connect.Request[registryv1alpha1.UpdateRepositorySettingsByNameRequest]) (*connect.Response[registryv1alpha1.UpdateRepositorySettingsByNameResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func (m *mockRepositoryService) GetRepositoriesMetadata(_ context.Context, _ *connect.Request[registryv1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[registryv1alpha1.GetRepositoriesMetadataResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
+func createServer(t *testing.T, mockPushService *mockPushService, mockRepositoryService *mockRepositoryService) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(
-		registryv1alpha1connect.NewPushServiceHandler(mock),
+		registryv1alpha1connect.NewPushServiceHandler(mockPushService),
+	)
+	mux.Handle(
+		registryv1alpha1connect.NewRepositoryServiceHandler(mockRepositoryService),
 	)
 	server := httptest.NewServer(mux)
 	t.Cleanup(func() {
@@ -229,9 +356,11 @@ func createServer(t *testing.T, mock *mockPushService) *httptest.Server {
 func appRun(
 	t *testing.T,
 	files map[string][]byte,
-	tamperProofingEnabled bool,
+	args ...string,
 ) error {
 	const appName = "test"
+	defaultArgs := []string{appName, "-#format=tar"} // using stdin as a tar
+	args = append(defaultArgs, args...)
 	return appcmd.Run(
 		context.Background(),
 		app.NewContainer(
@@ -241,17 +370,13 @@ func appRun(
 					env["BUF_TOKEN"] = "invalid"
 					buftransport.SetDisableAPISubdomain(env)
 					injectConfig(t, appName, env)
-					if tamperProofingEnabled {
-						env[bufcli.BetaEnableTamperProofingEnvKey] = "1"
-					}
 					return env
 				},
 			)(appName),
 			tarball(files),
 			os.Stdout,
 			os.Stderr,
-			appName,        // push ran as appName, aka "test"
-			"-#format=tar", // using stdin as a tar
+			args...,
 		),
 		NewCommand(
 			appName,
@@ -260,45 +385,26 @@ func appRun(
 	)
 }
 
-func testPush(
-	t *testing.T,
-	desc string,
-	resp *registryv1alpha1.PushResponse,
-	errorMsg string,
-) {
-	t.Helper()
-	mock := newMockPushService(t)
-	mock.pushResponse = resp
-	server := createServer(t, mock)
-	t.Run(desc, func(t *testing.T) {
-		t.Parallel()
-		err := appRun(
-			t,
-			map[string][]byte{
-				"buf.yaml":  bufYAML(t, server.URL, "owner", "repo"),
-				"foo.proto": nil,
-				"bar.proto": nil,
-			},
-			false, // tamperProofingEnabled
-		)
-		if errorMsg == "" {
-			assert.NoError(t, err)
-		} else {
-			assert.ErrorContains(t, err, errorMsg)
-		}
-	})
-}
-
 func testPushManifest(
 	t *testing.T,
 	desc string,
 	resp *registryv1alpha1.PushManifestAndBlobsResponse,
+	pushServiceError error,
+	create bool,
+	createVisibility string,
 	errorMsg string,
 ) {
 	t.Helper()
 	mock := newMockPushService(t)
 	mock.pushManifestResponse = resp
-	server := createServer(t, mock)
+	mock.pushManifestResponseError = pushServiceError
+	mockRepositoryService := newMockRepositoryService(t)
+	var args []string
+	if create {
+		args = append(args, "--create", "--create-visibility="+createVisibility)
+	}
+
+	server := createServer(t, mock, mockRepositoryService)
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
 		err := appRun(
@@ -308,7 +414,7 @@ func testPushManifest(
 				"foo.proto": nil,
 				"bar.proto": nil,
 			},
-			true,
+			args...,
 		)
 		if errorMsg == "" {
 			assert.NoError(t, err)

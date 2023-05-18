@@ -49,6 +49,8 @@ import (
 	"io"
 	"sort"
 	"strings"
+
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 var errNoFinalNewline = errors.New("partial record: missing newline")
@@ -105,6 +107,10 @@ func NewFromReader(manifest io.Reader) (*Manifest, error) {
 func (m *Manifest) AddEntry(path string, digest Digest) error {
 	if path == "" {
 		return errors.New("empty path")
+	}
+	path, err := normalpath.NormalizeAndValidate(path)
+	if err != nil {
+		return fmt.Errorf("invalid path: %w", err)
 	}
 	if digest.Type() == "" || digest.Hex() == "" {
 		return errors.New("invalid digest")

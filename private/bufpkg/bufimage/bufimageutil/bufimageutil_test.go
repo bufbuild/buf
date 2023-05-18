@@ -38,11 +38,12 @@ import (
 	"go.uber.org/zap/zaptest"
 	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // IF YOU HAVE ANY FAILING TESTS IN HERE, ESPECIALLY AFTER A PROTOC UPGRADE,
-// SWITCH THIS TO TRUE, RE-RUN THE TESTS ***TWICE***, AND THEN SWITCH BACK TO FALSE
+// SWITCH THIS TO TRUE, RE-RUN THE TESTS AND THEN SWITCH BACK TO FALSE.
 const shouldUpdateExpectations = false
 
 func TestOptions(t *testing.T) {
@@ -129,6 +130,20 @@ func TestAny(t *testing.T) {
 	runDiffTest(t, "testdata/any", []string{"NormalMessageSyntaxInvalidType"}, "e.txtar")
 }
 
+func TestSourceCodeInfo(t *testing.T) {
+	t.Parallel()
+	noExts := []ImageFilterOption{WithExcludeCustomOptions(), WithExcludeKnownExtensions()}
+	runSourceCodeInfoTest(t, "foo.bar.Foo", "Foo.txtar", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Foo", "Foo+Ext.txtar")
+	runSourceCodeInfoTest(t, "foo.bar.Foo.NestedFoo", "NestedFoo.txtar", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Bar", "Bar.txtar", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Baz", "Baz.txtar", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Quz", "Quz.txtar", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Svc", "Svc.txtar", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar.Svc.Do", "Do.txtar", noExts...)
+	runSourceCodeInfoTest(t, "foo.bar", "all.txtar")
+}
+
 func TestTransitivePublic(t *testing.T) {
 	ctx := context.Background()
 	bucket, err := storagemem.NewReadBucket(map[string][]byte{
@@ -195,7 +210,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
 
-func getImage(ctx context.Context, logger *zap.Logger, testdataDir string) (storage.ReadWriteBucket, bufimage.Image, error) {
+func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, options ...bufimagebuild.BuildOption) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	if err != nil {
 		return nil, nil, err
@@ -211,7 +226,7 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string) (stor
 	image, analysis, err := builder.Build(
 		ctx,
 		bufmodule.NewModuleFileSet(module, nil),
-		bufimagebuild.WithExcludeSourceCodeInfo(),
+		options...,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -224,7 +239,7 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string) (stor
 
 func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
-	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), testdataDir)
+	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), testdataDir, bufimagebuild.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
@@ -267,20 +282,45 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 		return archive.Files[i].Name < archive.Files[j].Name
 	})
 	generated := txtar.Format(archive)
+	checkExpectation(t, ctx, generated, bucket, expectedFile)
+}
 
-	expectedReader, err := bucket.Get(ctx, expectedFile)
-	require.NoError(t, err)
-	expected, err := io.ReadAll(expectedReader)
-	require.NoError(t, err)
-	assert.Equal(t, string(expected), string(generated))
-
+func checkExpectation(t *testing.T, ctx context.Context, actual []byte, bucket storage.ReadWriteBucket, expectedFile string) {
 	if shouldUpdateExpectations {
 		writer, err := bucket.Put(ctx, expectedFile)
 		require.NoError(t, err)
-		_, err = writer.Write(generated)
+		_, err = writer.Write(actual)
 		require.NoError(t, err)
 		require.NoError(t, writer.Close())
+	} else {
+		expectedReader, err := bucket.Get(ctx, expectedFile)
+		require.NoError(t, err)
+		expected, err := io.ReadAll(expectedReader)
+		require.NoError(t, err)
+		assert.Equal(t, string(expected), string(actual))
 	}
+}
+
+func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, opts ...ImageFilterOption) {
+	ctx := context.Background()
+	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), "testdata/sourcecodeinfo")
+	require.NoError(t, err)
+
+	filteredImage, err := ImageFilteredByTypesWithOptions(image, []string{typename}, opts...)
+	require.NoError(t, err)
+
+	imageFile := filteredImage.GetFile("test.proto")
+	sourceCodeInfo := imageFile.FileDescriptor().GetSourceCodeInfo()
+	actual, err := protoencoding.NewJSONMarshalerIndent(nil).Marshal(sourceCodeInfo)
+	require.NoError(t, err)
+
+	checkExpectation(t, ctx, actual, bucket, expectedFile)
+
+	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptors(filteredImage)...)
+	require.NoError(t, err)
+	file, err := resolver.FindFileByPath("test.proto")
+	require.NoError(t, err)
+	examineComments(t, file)
 }
 
 func imageIsDependencyOrdered(image bufimage.Image) bool {
@@ -296,7 +336,82 @@ func imageIsDependencyOrdered(image bufimage.Image) bool {
 	return true
 }
 
-func BenchmarkFilterImage(b *testing.B) {
+func examineComments(t *testing.T, file protoreflect.FileDescriptor) {
+	examineCommentsInTypeContainer(t, file, file)
+	svcs := file.Services()
+	for i, numSvcs := 0, svcs.Len(); i < numSvcs; i++ {
+		svc := svcs.Get(i)
+		examineComment(t, file, svc)
+		methods := svc.Methods()
+		for j, numMethods := 0, methods.Len(); j < numMethods; j++ {
+			method := methods.Get(j)
+			examineComment(t, file, method)
+		}
+	}
+}
+
+type typeContainer interface {
+	Messages() protoreflect.MessageDescriptors
+	Enums() protoreflect.EnumDescriptors
+	Extensions() protoreflect.ExtensionDescriptors
+}
+
+func examineCommentsInTypeContainer(t *testing.T, file protoreflect.FileDescriptor, descriptor typeContainer) {
+	msgs := descriptor.Messages()
+	for i, numMsgs := 0, msgs.Len(); i < numMsgs; i++ {
+		msg := msgs.Get(i)
+		examineComment(t, file, msg)
+		fields := msg.Fields()
+		for j, numFields := 0, fields.Len(); j < numFields; j++ {
+			field := fields.Get(j)
+			examineComment(t, file, field)
+		}
+		oneofs := msg.Oneofs()
+		for j, numOneofs := 0, oneofs.Len(); j < numOneofs; j++ {
+			oneof := oneofs.Get(j)
+			examineComment(t, file, oneof)
+		}
+		examineCommentsInTypeContainer(t, file, msg)
+	}
+	enums := descriptor.Enums()
+	for i, numEnums := 0, enums.Len(); i < numEnums; i++ {
+		enum := enums.Get(i)
+		examineComment(t, file, enum)
+		vals := enum.Values()
+		for j, numVals := 0, vals.Len(); j < numVals; j++ {
+			val := vals.Get(j)
+			examineComment(t, file, val)
+		}
+	}
+	exts := descriptor.Extensions()
+	for i, numExts := 0, exts.Len(); i < numExts; i++ {
+		ext := exts.Get(i)
+		examineComment(t, file, ext)
+	}
+}
+
+func examineComment(t *testing.T, file protoreflect.FileDescriptor, descriptor protoreflect.Descriptor) {
+	loc := file.SourceLocations().ByDescriptor(descriptor)
+	if loc.LeadingComments == "" {
+		// Messages that are only present because they are namespaces that contains a retained
+		// type will not have a comment. So we can skip the comment check for that case.
+		if msg, ok := descriptor.(protoreflect.MessageDescriptor); ok && msg.Fields().Len() == 0 {
+			return
+		}
+	}
+	// Verify we got the correct location by checking that the comment contains the element's name
+	require.Contains(t, loc.LeadingComments, string(descriptor.Name()))
+}
+
+func BenchmarkFilterImage_WithoutSourceCodeInfo(b *testing.B) {
+	benchmarkFilterImage(b, bufimagebuild.WithExcludeSourceCodeInfo())
+}
+
+func BenchmarkFilterImage_WithSourceCodeInfo(b *testing.B) {
+	benchmarkFilterImage(b)
+}
+
+func benchmarkFilterImage(b *testing.B, opts ...bufimagebuild.BuildOption) {
 	benchmarkCases := []*struct {
 		folder string
 		image  bufimage.Image
@@ -321,7 +436,7 @@ func BenchmarkFilterImage(b *testing.B) {
 	}
 	ctx := context.Background()
 	for _, benchmarkCase := range benchmarkCases {
-		_, image, err := getImage(ctx, zaptest.NewLogger(b), benchmarkCase.folder)
+		_, image, err := getImage(ctx, zaptest.NewLogger(b), benchmarkCase.folder, opts...)
 		require.NoError(b, err)
 		benchmarkCase.image = image
 	}

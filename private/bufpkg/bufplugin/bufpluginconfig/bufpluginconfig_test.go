@@ -274,10 +274,11 @@ func TestParsePluginConfigSwiftYAML(t *testing.T) {
 				Swift: &SwiftRegistryConfig{
 					Dependencies: []SwiftRegistryDependencyConfig{
 						{
-							Source:   "github.com/apple/swift-protobuf",
-							Package:  "swift-protobuf",
-							Version:  "1.21.0",
-							Products: []string{"SwiftProtobuf"},
+							Source:        "https://github.com/apple/swift-protobuf.git",
+							Package:       "swift-protobuf",
+							Version:       "1.21.0",
+							Products:      []string{"SwiftProtobuf"},
+							SwiftVersions: []string{".v5"},
 							Platforms: SwiftRegistryDependencyPlatformConfig{
 								MacOS:   "v10_15",
 								IOS:     "v10_15",

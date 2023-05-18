@@ -22,7 +22,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -39,11 +38,13 @@ import (
 )
 
 const (
-	tagFlagName             = "tag"
-	tagFlagShortName        = "t"
-	draftFlagName           = "draft"
-	errorFormatFlagName     = "error-format"
-	disableSymlinksFlagName = "disable-symlinks"
+	tagFlagName              = "tag"
+	tagFlagShortName         = "t"
+	draftFlagName            = "draft"
+	errorFormatFlagName      = "error-format"
+	disableSymlinksFlagName  = "disable-symlinks"
+	createFlagName           = "create"
+	createVisibilityFlagName = "create-visibility"
 	// deprecated
 	trackFlagName = "track"
 )
@@ -70,10 +71,12 @@ func NewCommand(
 }
 
 type flags struct {
-	Tags            []string
-	Draft           string
-	ErrorFormat     string
-	DisableSymlinks bool
+	Tags             []string
+	Draft            string
+	ErrorFormat      string
+	DisableSymlinks  bool
+	Create           bool
+	CreateVisibility string
 	// Deprecated
 	Tracks []string
 	// special
@@ -87,6 +90,7 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
+	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
 	flagSet.StringSliceVarP(
 		&f.Tags,
 		tagFlagName,
@@ -116,6 +120,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
+	flagSet.BoolVar(
+		&f.Create,
+		createFlagName,
+		false,
+		fmt.Sprintf("Create the repository if it does not exist. Must set a visibility using --%s", createVisibilityFlagName),
+	)
 	flagSet.StringSliceVar(
 		&f.Tracks,
 		trackFlagName,
@@ -138,6 +148,18 @@ func run(
 	}
 	if len(flags.Tags) > 0 && flags.Draft != "" {
 		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, draftFlagName)
+	}
+	if flags.CreateVisibility != "" {
+		if !flags.Create {
+			return appcmd.NewInvalidArgumentErrorf("Cannot set --%s without --%s.", createVisibilityFlagName, createFlagName)
+		}
+		// We re-parse below as needed, but do not return an appcmd.NewInvalidArgumentError below as
+		// we expect validation to be handled here.
+		if _, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility); err != nil {
+			return appcmd.NewInvalidArgumentError(err.Error())
+		}
+	} else if flags.Create {
+		return appcmd.NewInvalidArgumentErrorf("--%s is required if --%s is set.", createVisibilityFlagName, createFlagName)
 	}
 	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
@@ -167,7 +189,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	modulePin, err := push(ctx, container, moduleIdentity, builtModule, flags)
+	modulePin, err := pushOrCreate(ctx, container, moduleIdentity, builtModule, flags)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
 			if _, err := container.Stderr().Write(
@@ -188,7 +210,7 @@ func run(
 	return nil
 }
 
-func push(
+func pushOrCreate(
 	ctx context.Context,
 	container appflag.Container,
 	moduleIdentity bufmoduleref.ModuleIdentity,
@@ -199,48 +221,49 @@ func push(
 	if err != nil {
 		return nil, err
 	}
+	modulePin, err := push(ctx, container, clientConfig, moduleIdentity, builtModule, flags)
+	if err != nil {
+		// We rely on Push* returning a NotFound error to denote the repository is not created.
+		// This technically could be a NotFound error for some other entity than the repository
+		// in question, however if it is, then this Create call will just fail as the repository
+		// is already created, and there is no side effect. The 99% case is that a NotFound
+		// error is because the repository does not exist, and we want to avoid having to do
+		// a GetRepository RPC call for every call to push --create.
+		if flags.Create && connect.CodeOf(err) == connect.CodeNotFound {
+			if err := create(ctx, container, clientConfig, moduleIdentity, flags); err != nil {
+				return nil, err
+			}
+			return push(ctx, container, clientConfig, moduleIdentity, builtModule, flags)
+		}
+		return nil, err
+	}
+	return modulePin, nil
+}
+
+func push(
+	ctx context.Context,
+	container appflag.Container,
+	clientConfig *connectclient.Config,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	builtModule *bufmodulebuild.BuiltModule,
+	flags *flags,
+) (*registryv1alpha1.LocalModulePin, error) {
 	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewPushServiceClient)
-	// Check if tamper proofing env var is enabled
-	tamperProofingEnabled, err := bufcli.IsBetaTamperProofingEnabled(container)
+	m, blobSet, err := manifest.NewFromBucket(ctx, builtModule.Bucket)
 	if err != nil {
 		return nil, err
 	}
-	if tamperProofingEnabled {
-		m, blobSet, err := manifest.NewFromBucket(ctx, builtModule.Bucket)
-		if err != nil {
-			return nil, err
-		}
-		bucketManifest, blobs, err := bufmanifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
-		if err != nil {
-			return nil, err
-		}
-		resp, err := service.PushManifestAndBlobs(
-			ctx,
-			connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
-				Owner:      moduleIdentity.Owner(),
-				Repository: moduleIdentity.Repository(),
-				Manifest:   bucketManifest,
-				Blobs:      blobs,
-				Tags:       flags.Tags,
-				DraftName:  flags.Draft,
-			}),
-		)
-		if err != nil {
-			return nil, err
-		}
-		return resp.Msg.LocalModulePin, nil
-	}
-	// Fall back to previous push call
-	protoModule, err := bufmodule.ModuleToProtoModule(ctx, builtModule.Module)
+	bucketManifest, blobs, err := bufmanifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := service.Push(
+	resp, err := service.PushManifestAndBlobs(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.PushRequest{
+		connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
 			Owner:      moduleIdentity.Owner(),
 			Repository: moduleIdentity.Repository(),
-			Module:     protoModule,
+			Manifest:   bucketManifest,
+			Blobs:      blobs,
 			Tags:       flags.Tags,
 			DraftName:  flags.Draft,
 		}),
@@ -249,4 +272,30 @@ func push(
 		return nil, err
 	}
 	return resp.Msg.LocalModulePin, nil
+}
+
+func create(
+	ctx context.Context,
+	container appflag.Container,
+	clientConfig *connectclient.Config,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	flags *flags,
+) error {
+	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
+	visiblity, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility)
+	if err != nil {
+		return err
+	}
+	fullName := moduleIdentity.Owner() + "/" + moduleIdentity.Repository()
+	_, err = service.CreateRepositoryByFullName(
+		ctx,
+		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
+			FullName:   fullName,
+			Visibility: visiblity,
+		}),
+	)
+	if err != nil && connect.CodeOf(err) == connect.CodeAlreadyExists {
+		return connect.NewError(connect.CodeInternal, fmt.Errorf("Expected repository %s to be missing but found the repository to already exist", fullName))
+	}
+	return err
 }

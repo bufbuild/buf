@@ -4,6 +4,22 @@
 
 - No changes yet.
 
+## [v1.19.0] - 2023-05-17
+
+- Add `--create` flag to `buf push` to create a repository if it does not exist. The user
+  is also required to specify the visibility using `--create-visibility`.
+- Add `github-actions` error format to print errors in a form parseable by GitHub Actions.
+- Fix issue in `buf build` and `buf generate` where the use of type filtering (via
+  `--type` flags) would cause the resulting image to have no source code info, even
+  when `--exclude-source-info` was not specified. The main impact of the bug was that
+  generated code would be missing comments.
+- Fix issue in `buf curl` when using `--user` or `--netrc` that would cause a malformed
+  Authorization header to be sent.
+- Update the module cache to use an optimized content addressable store. The cache is
+  now self-healing and uses significantly less space. Users wishing to free unused space
+  can run `buf mod --clear-cache` once after upgrading to remove data stored in the
+  previous module cache.
+
 ## [v1.18.0] - 2023-05-05
 
 - Remove `buf beta registry {plugin,template} {deprecate,undeprecate}`.
@@ -866,7 +882,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.18.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.19.0...HEAD
+[v1.19.0]: https://github.com/bufbuild/buf/compare/v1.18.0...v1.19.0
 [v1.18.0]: https://github.com/bufbuild/buf/compare/v1.17.0...v1.18.0
 [v1.17.0]: https://github.com/bufbuild/buf/compare/v1.16.0...v1.17.0
 [v1.16.0]: https://github.com/bufbuild/buf/compare/v1.15.1...v1.16.0

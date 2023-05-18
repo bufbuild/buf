@@ -290,6 +290,9 @@ func filterImageConfigs(imageConfigs []ImageConfig, protoFileRef buffetch.ProtoF
 		}
 		images = append(images, imageConfig.Image())
 	}
+	if path == "" {
+		return nil, errors.New("did not find a matching image file for the ProtoFileRef")
+	}
 	image, err := bufimage.MergeImages(images...)
 	if err != nil {
 		return nil, err

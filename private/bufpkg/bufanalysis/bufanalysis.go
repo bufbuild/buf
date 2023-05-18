@@ -32,6 +32,10 @@ const (
 	FormatMSVS
 	// FormatJUnit is the JUnit format for FileAnnotations.
 	FormatJUnit
+	// FormatGithubActions is the Github Actions format for FileAnnotations.
+	//
+	// See https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-error-message.
+	FormatGithubActions
 )
 
 var (
@@ -43,6 +47,7 @@ var (
 		"json",
 		"msvs",
 		"junit",
+		"github-actions",
 	}
 	// AllFormatStringsWithAliases is all format strings with aliases.
 	//
@@ -53,21 +58,24 @@ var (
 		"json",
 		"msvs",
 		"junit",
+		"github-actions",
 	}
 
 	stringToFormat = map[string]Format{
 		"text": FormatText,
 		// alias for text
-		"gcc":   FormatText,
-		"json":  FormatJSON,
-		"msvs":  FormatMSVS,
-		"junit": FormatJUnit,
+		"gcc":            FormatText,
+		"json":           FormatJSON,
+		"msvs":           FormatMSVS,
+		"junit":          FormatJUnit,
+		"github-actions": FormatGithubActions,
 	}
 	formatToString = map[Format]string{
-		FormatText:  "text",
-		FormatJSON:  "json",
-		FormatMSVS:  "msvs",
-		FormatJUnit: "junit",
+		FormatText:          "text",
+		FormatJSON:          "json",
+		FormatMSVS:          "msvs",
+		FormatJUnit:         "junit",
+		FormatGithubActions: "github-actions",
 	}
 )
 
@@ -209,6 +217,8 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, fo
 		return printAsMSVS(writer, fileAnnotations)
 	case FormatJUnit:
 		return printAsJUnit(writer, fileAnnotations)
+	case FormatGithubActions:
+		return printAsGithubActions(writer, fileAnnotations)
 	default:
 		return fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}
