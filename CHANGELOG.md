@@ -2,7 +2,12 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix issue in the module build process used in `buf build` that would allow proto imports from
+  transitive dependencies. Now the build operation checks that all imports statements in your target
+  files are valid paths that come from other target files in the local module, from other modules in
+  the local workspace, or from a direct dependency. In case none of those matches, and the file is
+  found in a transitive dependency, such dependency is suggested to be upgraded to direct dependency
+  in the `buf.yaml` file.
 
 ## [v1.19.0] - 2023-05-17
 
