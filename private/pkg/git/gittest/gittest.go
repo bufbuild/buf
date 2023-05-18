@@ -17,6 +17,7 @@ package gittest
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"path"
 	"testing"
@@ -117,11 +118,17 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 }
 
 func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args ...string) {
+	stderr := bytes.NewBuffer(nil)
 	err := runner.Run(
 		context.Background(),
 		cmd,
 		command.RunWithArgs(args...),
 		command.RunWithDir(dir),
+		command.RunWithStderr(stderr),
 	)
+	if err != nil {
+		_, err := io.Copy(os.Stderr, stderr)
+		require.NoError(t, err)
+	}
 	require.NoError(t, err)
 }
