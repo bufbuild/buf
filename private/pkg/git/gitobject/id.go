@@ -16,7 +16,7 @@ package gitobject
 
 import (
 	"encoding/hex"
-	"errors"
+	"fmt"
 )
 
 // idLength is the length, in bytes, of digests/IDs in object format SHA1
@@ -43,6 +43,9 @@ func (i *id) String() string {
 }
 
 func newObjectIDFromBytes(data []byte) (*id, error) {
+	if len(data) != idLength {
+		return nil, fmt.Errorf("ID is not %d bytes", idLength)
+	}
 	dst := make([]byte, hex.EncodedLen(len(data)))
 	hex.Encode(dst, data)
 	return &id{
@@ -53,7 +56,7 @@ func newObjectIDFromBytes(data []byte) (*id, error) {
 
 func parseObjectIDFromHex(data string) (*id, error) {
 	if len(data) != idHexLength {
-		return nil, errors.New("ID is not 40 characters")
+		return nil, fmt.Errorf("ID is not %d characters", idHexLength)
 	}
 	raw, err := hex.DecodeString(data)
 	return &id{
