@@ -41,8 +41,6 @@ type casModuleCacher struct {
 	bucket storage.ReadWriteBucket
 }
 
-var _ moduleCache = (*casModuleCacher)(nil)
-
 func (c *casModuleCacher) GetModule(
 	ctx context.Context,
 	modulePin bufmoduleref.ModulePin,

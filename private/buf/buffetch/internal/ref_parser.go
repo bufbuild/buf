@@ -94,7 +94,7 @@ func (a *refParser) getParsedRef(
 		return getArchiveRef(rawRef, archiveFormatInfo.archiveType, archiveFormatInfo.defaultCompressionType)
 	}
 	if protoFileOK {
-		return getProtoFileRef(rawRef), nil
+		return getProtoFileRef(rawRef)
 	}
 	if dirOK {
 		return getDirRef(rawRef)
@@ -342,7 +342,7 @@ func getGitRefName(path string, branch string, tag string, ref string) (git.Name
 	return git.NewTagName(tag), nil
 }
 
-func getProtoFileRef(rawRef *RawRef) ParsedProtoFileRef {
+func getProtoFileRef(rawRef *RawRef) (ParsedProtoFileRef, error) {
 	return newProtoFileRef(
 		rawRef.Format,
 		rawRef.Path,
