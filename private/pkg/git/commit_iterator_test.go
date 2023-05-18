@@ -17,7 +17,7 @@ package git_test
 import (
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/git/gitobject"
+	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,8 +25,8 @@ import (
 
 func TestCommits(t *testing.T) {
 	repo := gittest.ScaffoldGitRepository(t)
-	var commits []gitobject.Commit
-	err := repo.CommitIterator.ForEachCommit(gittest.DefaultBranch, func(c gitobject.Commit) error {
+	var commits []git.Commit
+	err := repo.CommitIterator.ForEachCommit(gittest.DefaultBranch, func(c git.Commit) error {
 		commits = append(commits, c)
 		return nil
 	})

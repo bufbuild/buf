@@ -23,7 +23,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/git/gitobject"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
@@ -38,12 +37,12 @@ type commitIteratorOpts struct {
 type commitIterator struct {
 	gitDirPath   string
 	baseBranch   string
-	objectReader gitobject.Reader
+	objectReader ObjectReader
 }
 
 func newCommitIterator(
 	gitDirPath string,
-	objectReader gitobject.Reader,
+	objectReader ObjectReader,
 	opts commitIteratorOpts,
 ) (CommitIterator, error) {
 	gitDirPath = normalpath.Unnormalize(gitDirPath)
@@ -72,7 +71,7 @@ func (r *commitIterator) BaseBranch() string {
 	return r.baseBranch
 }
 
-func (r *commitIterator) ForEachCommit(branch string, f func(gitobject.Commit) error) error {
+func (r *commitIterator) ForEachCommit(branch string, f func(Commit) error) error {
 	branch = normalpath.Unnormalize(branch)
 	commitBytes, err := os.ReadFile(path.Join(r.gitDirPath, "refs", "remotes", defaultRemoteName, branch))
 	if err != nil {
@@ -82,7 +81,7 @@ func (r *commitIterator) ForEachCommit(branch string, f func(gitobject.Commit) e
 		return err
 	}
 	commitBytes = bytes.TrimRight(commitBytes, "\n")
-	commitID, err := gitobject.NewIDFromHex(string(commitBytes))
+	commitID, err := NewHashFromHex(string(commitBytes))
 	if err != nil {
 		return err
 	}
@@ -90,7 +89,7 @@ func (r *commitIterator) ForEachCommit(branch string, f func(gitobject.Commit) e
 	if err != nil {
 		return err
 	}
-	var commits []gitobject.Commit
+	var commits []Commit
 	// TODO: this only works for the base branch; for non-base branches,
 	// we have to be much more careful about not ranging over commits belonging
 	// to other branches (i.e., running past the origin of our branch).

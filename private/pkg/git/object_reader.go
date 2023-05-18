@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gitobject
+package git
 
 import (
 	"bufio"
@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -34,13 +33,13 @@ import (
 // exitTime is the amount of time we'll wait for git-cat-file(1) to exit.
 var exitTime = 5 * time.Second
 
-type reader struct {
+type objectReader struct {
 	rx      *bufio.Reader
 	tx      io.WriteCloser
 	process command.Process
 }
 
-func newReader(gitDirPath string, runner command.Runner) (*reader, error) {
+func newObjectReader(gitDirPath string, runner command.Runner) (*objectReader, error) {
 	gitDirPath = normalpath.Unnormalize(gitDirPath)
 	if err := validateDirPathExists(gitDirPath); err != nil {
 		return nil, err
@@ -64,14 +63,14 @@ func newReader(gitDirPath string, runner command.Runner) (*reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &reader{
+	return &objectReader{
 		rx:      bufio.NewReader(rx),
 		tx:      tx,
 		process: process,
 	}, nil
 }
 
-func (o *reader) Close() error {
+func (o *objectReader) Close() error {
 	ctx, cancel := context.WithDeadline(
 		context.Background(),
 		time.Now().Add(exitTime),
@@ -83,7 +82,7 @@ func (o *reader) Close() error {
 	)
 }
 
-func (o *reader) Commit(id ID) (Commit, error) {
+func (o *objectReader) Commit(id Hash) (Commit, error) {
 	data, err := o.read("commit", id)
 	if err != nil {
 		return nil, err
@@ -91,7 +90,7 @@ func (o *reader) Commit(id ID) (Commit, error) {
 	return parseCommit(id, data)
 }
 
-func (o *reader) read(objectType string, id ID) ([]byte, error) {
+func (o *objectReader) read(objectType string, id Hash) ([]byte, error) {
 	// request
 	if _, err := fmt.Fprintf(o.tx, "%s\n", id.Hex()); err != nil {
 		return nil, err
@@ -111,7 +110,7 @@ func (o *reader) read(objectType string, id ID) ([]byte, error) {
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("git-cat-file: malformed header: %q", headerStr)
 	}
-	objID, err := parseObjectIDFromHex(parts[0])
+	objID, err := parseHashFromHex(parts[0])
 	if err != nil {
 		return nil, err
 	}
@@ -145,19 +144,4 @@ func (o *reader) read(objectType string, id ID) ([]byte, error) {
 		)
 	}
 	return objContent, err
-}
-
-// validateDirPathExists returns a non-nil error if the given dirPath
-// is not a valid directory path.
-func validateDirPathExists(dirPath string) error {
-	var fileInfo os.FileInfo
-	// We do not follow symlinks
-	fileInfo, err := os.Lstat(dirPath)
-	if err != nil {
-		return err
-	}
-	if !fileInfo.IsDir() {
-		return normalpath.NewError(dirPath, errors.New("not a directory"))
-	}
-	return nil
 }

@@ -20,18 +20,17 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/filepathextended"
-	"github.com/bufbuild/buf/private/pkg/git/gitobject"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 type branchIterator struct {
 	gitDirPath   string
-	objectReader gitobject.Reader
+	objectReader ObjectReader
 }
 
 func newBranchIterator(
 	gitDirPath string,
-	objectReader gitobject.Reader,
+	objectReader ObjectReader,
 ) (BranchIterator, error) {
 	gitDirPath = normalpath.Unnormalize(gitDirPath)
 	if err := validateDirPathExists(gitDirPath); err != nil {

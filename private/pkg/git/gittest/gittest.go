@@ -25,7 +25,6 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
-	"github.com/bufbuild/buf/private/pkg/git/gitobject"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,8 +32,8 @@ const DefaultBranch = "master"
 
 type TestGitRepository struct {
 	DotGitDir         string
-	DefaultBranchHead gitobject.Commit
-	Reader            gitobject.Reader
+	DefaultBranchHead git.Commit
+	Reader            git.ObjectReader
 	BranchIterator    git.BranchIterator
 	CommitIterator    git.CommitIterator
 }
@@ -43,7 +42,7 @@ func ScaffoldGitRepository(t *testing.T) TestGitRepository {
 	runner := command.NewRunner()
 	dir := scaffoldGitRepository(t, runner)
 	dotGitPath := path.Join(dir, ".git")
-	reader, closer, err := gitobject.NewReader(dotGitPath, runner)
+	reader, closer, err := git.NewObjectReader(dotGitPath, runner)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		require.NoError(t, closer())
@@ -56,7 +55,7 @@ func ScaffoldGitRepository(t *testing.T) TestGitRepository {
 	require.NoError(t, err)
 	require.NoError(t, err)
 	commitBytes = bytes.TrimRight(commitBytes, "\n")
-	commitID, err := gitobject.NewIDFromHex(string(commitBytes))
+	commitID, err := git.NewHashFromHex(string(commitBytes))
 	require.NoError(t, err)
 	commit, err := reader.Commit(commitID)
 	require.NoError(t, err)

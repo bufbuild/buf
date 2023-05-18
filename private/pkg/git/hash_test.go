@@ -12,23 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gitobject
+package git
 
 import (
 	"testing"
-	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseIdent(t *testing.T) {
-	ident, err := parseIdent([]byte("Foo <bar@baz> 1680571785 +0445"))
+func TestParseHashFromHex(t *testing.T) {
+	hex := "5edab9f970913225f985d9673ac19d61d36f0942"
+
+	id, err := parseHashFromHex(hex)
 
 	require.NoError(t, err)
-	location := time.FixedZone("UTC+0445", 4*60*60+45*60)
-	assert.Equal(t, ident.Name(), "Foo")
-	assert.Equal(t, ident.Email(), "bar@baz")
-	assert.Equal(t, ident.Timestamp(), time.Unix(1680571785, 0).In(location))
-	assert.Equal(t, ident.Timestamp().Unix(), int64(1680571785))
+	require.Equal(t, id.Hex(), hex)
+	require.Equal(t, id.Raw(), []byte{0x5e, 0xda, 0xb9, 0xf9, 0x70, 0x91, 0x32, 0x25, 0xf9, 0x85, 0xd9, 0x67, 0x3a, 0xc1, 0x9d, 0x61, 0xd3, 0x6f, 0x9, 0x42})
+}
+
+func TestNewHashFromBytes(t *testing.T) {
+	bytes := []byte{0x5e, 0xda, 0xb9, 0xf9, 0x70, 0x91, 0x32, 0x25, 0xf9, 0x85, 0xd9, 0x67, 0x3a, 0xc1, 0x9d, 0x61, 0xd3, 0x6f, 0x9, 0x42}
+
+	id, err := newHashFromBytes(bytes)
+
+	require.NoError(t, err)
+	require.Equal(t, id.Hex(), "5edab9f970913225f985d9673ac19d61d36f0942")
+	require.Equal(t, id.Raw(), bytes)
 }

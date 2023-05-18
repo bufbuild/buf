@@ -12,54 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gitobject
+package git
 
 import (
 	"encoding/hex"
 	"fmt"
 )
 
-// idLength is the length, in bytes, of digests/IDs in object format SHA1
-const idLength = 20
+// hashLength is the length, in bytes, of digests/hashes in object format SHA1
+const hashLength = 20
 
-// idLength is the length, in hexadecimal characters, of digests/IDs in object format SHA1
-var idHexLength = hex.EncodedLen(idLength)
+// hashHexLength is the length, in hexadecimal characters, of digests/hashes in object format SHA1
+var hashHexLength = hex.EncodedLen(hashLength)
 
-type id struct {
+type hash struct {
 	raw []byte
 	hex string
 }
 
-func (i *id) Raw() []byte {
+func (i *hash) Raw() []byte {
 	return i.raw
 }
 
-func (i *id) Hex() string {
+func (i *hash) Hex() string {
 	return i.hex
 }
 
-func (i *id) String() string {
+func (i *hash) String() string {
 	return i.hex
 }
 
-func newObjectIDFromBytes(data []byte) (*id, error) {
-	if len(data) != idLength {
-		return nil, fmt.Errorf("ID is not %d bytes", idLength)
+func newHashFromBytes(data []byte) (*hash, error) {
+	if len(data) != hashLength {
+		return nil, fmt.Errorf("hash is not %d bytes", hashLength)
 	}
 	dst := make([]byte, hex.EncodedLen(len(data)))
 	hex.Encode(dst, data)
-	return &id{
+	return &hash{
 		raw: data,
 		hex: string(dst),
 	}, nil
 }
 
-func parseObjectIDFromHex(data string) (*id, error) {
-	if len(data) != idHexLength {
-		return nil, fmt.Errorf("ID is not %d characters", idHexLength)
+func parseHashFromHex(data string) (*hash, error) {
+	if len(data) != hashHexLength {
+		return nil, fmt.Errorf("hash is not %d characters", hashHexLength)
 	}
 	raw, err := hex.DecodeString(data)
-	return &id{
+	return &hash{
 		raw: raw,
 		hex: data,
 	}, err

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gitobject
+package git
 
 import (
 	"testing"
@@ -22,7 +22,7 @@ import (
 )
 
 func TestParseCommit(t *testing.T) {
-	id, err := parseObjectIDFromHex("43848150a6f5f6d76eeef6e0f69eb46290eefab6")
+	id, err := parseHashFromHex("43848150a6f5f6d76eeef6e0f69eb46290eefab6")
 	require.NoError(t, err)
 	commit, err := parseCommit(
 		id,

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gitobject
+package git
 
 import (
 	"bytes"
@@ -22,21 +22,21 @@ import (
 )
 
 type commit struct {
-	id        ID
-	tree      ID
-	parents   []ID
+	id        Hash
+	tree      Hash
+	parents   []Hash
 	author    Ident
 	committer Ident
 	message   string
 }
 
-func (c *commit) ID() ID {
+func (c *commit) ID() Hash {
 	return c.id
 }
-func (c *commit) Tree() ID {
+func (c *commit) Tree() Hash {
 	return c.tree
 }
-func (c *commit) Parents() []ID {
+func (c *commit) Parents() []Hash {
 	return c.parents
 }
 func (c *commit) Author() Ident {
@@ -49,7 +49,7 @@ func (c *commit) Message() string {
 	return c.message
 }
 
-func parseCommit(id ID, data []byte) (*commit, error) {
+func parseCommit(id Hash, data []byte) (*commit, error) {
 	c := commit{
 		id: id,
 	}
@@ -63,11 +63,11 @@ func parseCommit(id ID, data []byte) (*commit, error) {
 			if c.tree != nil {
 				return nil, errors.New("too many tree headers")
 			}
-			if c.tree, err = parseObjectIDFromHex(value); err != nil {
+			if c.tree, err = parseHashFromHex(value); err != nil {
 				return nil, err
 			}
 		case "parent":
-			if parent, err := parseObjectIDFromHex(value); err != nil {
+			if parent, err := parseHashFromHex(value); err != nil {
 				return nil, err
 			} else {
 				c.parents = append(c.parents, parent)
