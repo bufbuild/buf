@@ -86,12 +86,13 @@ func (r *ranger) Branches(f func(string) error) error {
 		if err != nil {
 			return err
 		}
+		branchName = normalpath.Normalize(branchName)
 		return f(branchName)
 	})
 }
 
 func (r *ranger) Commits(branch string, f func(gitobject.Commit) error) error {
-	branch = normalpath.Normalize(branch)
+	branch = normalpath.Unnormalize(branch)
 	commitBytes, err := os.ReadFile(path.Join(r.gitDirPath, "refs", "remotes", defaultRemoteName, branch))
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {

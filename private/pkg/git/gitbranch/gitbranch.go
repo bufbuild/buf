@@ -25,7 +25,7 @@ import (
 // Only branches and commits from the remote named `origin` are ranged.
 type Ranger interface {
 	// BaseBranch is the base branch of the repository. This is either
-	// configured via the `WithDefaultBranch` option, or discovered via the
+	// configured via the `WithBaseBranch` option, or discovered via the
 	// remote named `origin`. Therefore, discovery requires that the repository
 	// is pushed to the remote.
 	BaseBranch() string
@@ -53,9 +53,9 @@ func WithBaseBranch(name string) RangerOption {
 
 // NewRanger creates a new Ranger that can range over commits and branches.
 //
-// By default, NewRanger will attempt to detect the default branch if the repository
+// By default, NewRanger will attempt to detect the base branch if the repository
 // has been pushed. This may fail. TODO: we probably want to remove this and
-// force the use of the `WithDefaultBranch` option.
+// force the use of the `WithBaseBranch` option.
 func NewRanger(
 	gitDirPath string,
 	objectReader gitobject.Reader,
