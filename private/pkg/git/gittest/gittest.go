@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -71,8 +72,12 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	runInDir(t, runner, dir, "mkdir", "local", "remote")
 	remote := path.Join(dir, "remote")
 	runInDir(t, runner, remote, "git", "init", "--bare")
+	runInDir(t, runner, remote, "git", "config", "user.name", "Buf TestBot")
+	runInDir(t, runner, remote, "git", "config", "user.email", "testbot@buf.build")
 	local := path.Join(dir, "local")
 	runInDir(t, runner, local, "git", "init")
+	runInDir(t, runner, local, "git", "config", "user.name", "Buf TestBot")
+	runInDir(t, runner, local, "git", "config", "user.email", "testbot@buf.build")
 	runInDir(t, runner, local, "git", "remote", "add", "origin", remote)
 
 	// (1) commit in main branch
@@ -93,26 +98,26 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	runInDir(t, runner, path.Join(local, "proto", "acme", "petstore", "v1"), "touch", "e.proto", "f.proto")
 	runInDir(t, runner, local, "git", "add", ".")
 	runInDir(t, runner, local, "git", "commit", "-m", "branch1")
-	runInDir(t, runner, local, "git", "push", "origin", "head")
+	runInDir(t, runner, local, "git", "push", "origin", "smian/branch1")
 
 	// (3) branch off branch and begin work
 	runInDir(t, runner, local, "git", "checkout", "-b", "smian/branch2")
 	runInDir(t, runner, path.Join(local, "proto", "acme", "grocerystore", "v1"), "touch", "g.proto", "h.proto")
 	runInDir(t, runner, local, "git", "add", ".")
 	runInDir(t, runner, local, "git", "commit", "-m", "branch2")
-	runInDir(t, runner, local, "git", "push", "origin", "head")
+	runInDir(t, runner, local, "git", "push", "origin", "smian/branch2")
 
 	// (4) merge first branch
 	runInDir(t, runner, local, "git", "checkout", DefaultBranch)
 	runInDir(t, runner, local, "git", "merge", "--squash", "smian/branch1")
 	runInDir(t, runner, local, "git", "commit", "-m", "second commit")
-	runInDir(t, runner, local, "git", "push", "origin", "head")
+	runInDir(t, runner, local, "git", "push")
 
 	// (5) merge second branch
 	runInDir(t, runner, local, "git", "checkout", DefaultBranch)
 	runInDir(t, runner, local, "git", "merge", "--squash", "smian/branch2")
 	runInDir(t, runner, local, "git", "commit", "-m", "third commit")
-	runInDir(t, runner, local, "git", "push", "origin", "head")
+	runInDir(t, runner, local, "git", "push")
 
 	return local
 }
@@ -127,6 +132,7 @@ func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args 
 		command.RunWithStderr(stderr),
 	)
 	if err != nil {
+		t.Logf("run %q", strings.Join(append([]string{cmd}, args...), " "))
 		_, err := io.Copy(os.Stderr, stderr)
 		require.NoError(t, err)
 	}
