@@ -50,7 +50,7 @@ func (c *commit) Message() string {
 }
 
 func parseCommit(id Hash, data []byte) (*commit, error) {
-	c := commit{
+	c := &commit{
 		id: id,
 	}
 	buffer := bytes.NewBuffer(data)
@@ -87,5 +87,5 @@ func parseCommit(id Hash, data []byte) (*commit, error) {
 	}
 	c.message = buffer.String()
 	c.message = strings.TrimRight(c.message, "\n")
-	return &c, err
+	return c, err
 }
