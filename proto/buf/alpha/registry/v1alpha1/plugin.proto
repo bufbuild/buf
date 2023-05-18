@@ -172,7 +172,9 @@ service PluginService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // CreatePlugin creates a new plugin.
-  rpc CreatePlugin(CreatePluginRequest) returns (CreatePluginResponse);
+  rpc CreatePlugin(CreatePluginRequest) returns (CreatePluginResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // GetPlugin returns the plugin, if found.
   rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -180,7 +182,9 @@ service PluginService {
   // DeletePlugin deletes the plugin, if it exists. Note that deleting
   // a plugin may cause breaking changes for templates using that plugin,
   // and should be done with extreme care.
-  rpc DeletePlugin(DeletePluginRequest) returns (DeletePluginResponse);
+  rpc DeletePlugin(DeletePluginRequest) returns (DeletePluginResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // GetTemplate returns the template, if found.
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -213,9 +217,13 @@ service PluginService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // CreateTemplate creates a new template.
-  rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse);
+  rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // DeleteTemplate deletes the template, if it exists.
-  rpc DeleteTemplate(DeleteTemplateRequest) returns (DeleteTemplateResponse);
+  rpc DeleteTemplate(DeleteTemplateRequest) returns (DeleteTemplateResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // CreateTemplateVersion creates a new template version.
   rpc CreateTemplateVersion(CreateTemplateVersionRequest) returns (CreateTemplateVersionResponse);
 }

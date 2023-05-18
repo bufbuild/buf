@@ -82,12 +82,14 @@ func NewWebhookServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 		createWebhook: connect_go.NewClient[v1alpha1.CreateWebhookRequest, v1alpha1.CreateWebhookResponse](
 			httpClient,
 			baseURL+WebhookServiceCreateWebhookProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteWebhook: connect_go.NewClient[v1alpha1.DeleteWebhookRequest, v1alpha1.DeleteWebhookResponse](
 			httpClient,
 			baseURL+WebhookServiceDeleteWebhookProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		listWebhooks: connect_go.NewClient[v1alpha1.ListWebhooksRequest, v1alpha1.ListWebhooksResponse](
 			httpClient,
@@ -142,12 +144,14 @@ func NewWebhookServiceHandler(svc WebhookServiceHandler, opts ...connect_go.Hand
 	mux.Handle(WebhookServiceCreateWebhookProcedure, connect_go.NewUnaryHandler(
 		WebhookServiceCreateWebhookProcedure,
 		svc.CreateWebhook,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(WebhookServiceDeleteWebhookProcedure, connect_go.NewUnaryHandler(
 		WebhookServiceDeleteWebhookProcedure,
 		svc.DeleteWebhook,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(WebhookServiceListWebhooksProcedure, connect_go.NewUnaryHandler(
 		WebhookServiceListWebhooksProcedure,

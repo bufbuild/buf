@@ -199,17 +199,20 @@ func NewRepositoryServiceClient(httpClient connect_go.HTTPClient, baseURL string
 		createRepositoryByFullName: connect_go.NewClient[v1alpha1.CreateRepositoryByFullNameRequest, v1alpha1.CreateRepositoryByFullNameResponse](
 			httpClient,
 			baseURL+RepositoryServiceCreateRepositoryByFullNameProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteRepository: connect_go.NewClient[v1alpha1.DeleteRepositoryRequest, v1alpha1.DeleteRepositoryResponse](
 			httpClient,
 			baseURL+RepositoryServiceDeleteRepositoryProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteRepositoryByFullName: connect_go.NewClient[v1alpha1.DeleteRepositoryByFullNameRequest, v1alpha1.DeleteRepositoryByFullNameResponse](
 			httpClient,
 			baseURL+RepositoryServiceDeleteRepositoryByFullNameProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		deprecateRepositoryByName: connect_go.NewClient[v1alpha1.DeprecateRepositoryByNameRequest, v1alpha1.DeprecateRepositoryByNameResponse](
 			httpClient,
@@ -481,17 +484,20 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect_g
 	mux.Handle(RepositoryServiceCreateRepositoryByFullNameProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceCreateRepositoryByFullNameProcedure,
 		svc.CreateRepositoryByFullName,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceDeleteRepositoryProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceDeleteRepositoryProcedure,
 		svc.DeleteRepository,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceDeleteRepositoryByFullNameProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceDeleteRepositoryByFullNameProcedure,
 		svc.DeleteRepositoryByFullName,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(RepositoryServiceDeprecateRepositoryByNameProcedure, connect_go.NewUnaryHandler(
 		RepositoryServiceDeprecateRepositoryByNameProcedure,

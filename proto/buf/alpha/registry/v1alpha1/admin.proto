@@ -26,13 +26,17 @@ import "buf/alpha/registry/v1alpha1/verification_status.proto";
 service AdminService {
   // ForceDeleteUser forces to delete a user. Resources and organizations that are
   // solely owned by the user will also be deleted.
-  rpc ForceDeleteUser(ForceDeleteUserRequest) returns (ForceDeleteUserResponse);
+  rpc ForceDeleteUser(ForceDeleteUserRequest) returns (ForceDeleteUserResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // Update a user's verification status.
   rpc UpdateUserVerificationStatus(UpdateUserVerificationStatusRequest) returns (UpdateUserVerificationStatusResponse);
   // Update a organization's verification.
   rpc UpdateOrganizationVerificationStatus(UpdateOrganizationVerificationStatusRequest) returns (UpdateOrganizationVerificationStatusResponse);
   // Create a new machine user on the server.
-  rpc CreateMachineUser(CreateMachineUserRequest) returns (CreateMachineUserResponse);
+  rpc CreateMachineUser(CreateMachineUserRequest) returns (CreateMachineUserResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message ForceDeleteUserRequest {
