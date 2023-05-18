@@ -239,7 +239,7 @@ message GetOrganizationSettingsResponse {
   // The IdP groups associated with the organization.
   repeated string idp_groups = 5;
   // Whether server-side enforcement of breaking changes is enabled.
-  bool breaking_change_enforcement = 7;
+  bool breaking_change_enforcement = 6;
 }
 
 message UpdateOrganizationSettingsRequest {
