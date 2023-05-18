@@ -550,6 +550,7 @@ func newModifier(
 		javaPackagePrefix.Except,
 		javaPackagePrefix.Override,
 		managedConfig.Override[bufimagemodify.JavaPackageID],
+		false, // useFileOption
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct java_package modifier: %w", err)

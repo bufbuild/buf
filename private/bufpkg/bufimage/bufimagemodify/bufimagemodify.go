@@ -159,7 +159,9 @@ func JavaOuterClassname(
 }
 
 // JavaPackage returns a Modifier that sets the java_package file option
-// according to the given packagePrefix.
+// according to the given packagePrefix. If the useFileOption parameter
+// is true, the java_package option (if present) will be appended to the
+// package prefix. Otherwise, the protobuf package will be appended.
 func JavaPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
@@ -167,6 +169,7 @@ func JavaPackage(
 	except []bufmoduleref.ModuleIdentity,
 	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
+	useFileOption bool,
 ) (Modifier, error) {
 	return javaPackage(
 		logger,
@@ -175,6 +178,7 @@ func JavaPackage(
 		except,
 		moduleOverrides,
 		overrides,
+		useFileOption,
 	)
 }
 

@@ -44,6 +44,7 @@ func javaPackage(
 	except []bufmoduleref.ModuleIdentity,
 	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
+	useFileOption bool,
 ) (Modifier, error) {
 	if defaultPackagePrefix == "" {
 		return nil, fmt.Errorf("a non-empty package prefix is required")
@@ -71,7 +72,7 @@ func javaPackage(
 						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
 					}
 				}
-				javaPackageValue := javaPackageValue(imageFile, packagePrefix)
+				javaPackageValue := javaPackageValue(imageFile, packagePrefix, useFileOption)
 				if overridePackagePrefix, ok := overrides[imageFile.Path()]; ok {
 					javaPackageValue = overridePackagePrefix
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
@@ -142,10 +143,20 @@ func shouldSkipJavaPackageForFile(
 	return false
 }
 
-// javaPackageValue returns the java_package for the given ImageFile based on its
-// package declaration. If the image file doesn't have a package declaration, an
-// empty string is returned.
-func javaPackageValue(imageFile bufimage.ImageFile, packagePrefix string) string {
+// javaPackageValue returns the java_package for the given ImageFile based on the
+// java_package option (if useFileOption is true), falling back to the package
+// declaration. If the image file doesn't have a package declaration, an empty
+// string is returned.
+func javaPackageValue(
+	imageFile bufimage.ImageFile,
+	packagePrefix string,
+	useFileOption bool,
+) string {
+	if useFileOption {
+		if javaPkg := imageFile.Proto().GetOptions().GetJavaPackage(); javaPkg != "" {
+			return packagePrefix + "." + javaPkg
+		}
+	}
 	if pkg := imageFile.Proto().GetPackage(); pkg != "" {
 		return packagePrefix + "." + pkg
 	}
