@@ -273,13 +273,17 @@ service PluginCurationService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // CreateCuratedPlugin creates a new curated plugin.
-  rpc CreateCuratedPlugin(CreateCuratedPluginRequest) returns (CreateCuratedPluginResponse);
+  rpc CreateCuratedPlugin(CreateCuratedPluginRequest) returns (CreateCuratedPluginResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
   rpc GetLatestCuratedPlugin(GetLatestCuratedPluginRequest) returns (GetLatestCuratedPluginResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // DeleteCuratedPlugin deletes a curated plugin based on the given parameters.
-  rpc DeleteCuratedPlugin(DeleteCuratedPluginRequest) returns (DeleteCuratedPluginResponse);
+  rpc DeleteCuratedPlugin(DeleteCuratedPluginRequest) returns (DeleteCuratedPluginResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 // CodeGenerationService generates code using remote plugins.

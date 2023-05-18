@@ -23,9 +23,13 @@ import "google/protobuf/timestamp.proto";
 service WebhookService {
   // Create a webhook, subscribes to a given repository event for a callback URL
   // invocation.
-  rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse) {}
+  rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // Delete a webhook removes the event subscription.
-  rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse) {}
+  rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // Lists the webhooks subscriptions for a given repository.
   rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;

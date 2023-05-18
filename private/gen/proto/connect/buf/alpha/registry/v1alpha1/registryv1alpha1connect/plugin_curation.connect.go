@@ -99,7 +99,8 @@ func NewPluginCurationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 		createCuratedPlugin: connect_go.NewClient[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceCreateCuratedPluginProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		getLatestCuratedPlugin: connect_go.NewClient[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse](
 			httpClient,
@@ -110,7 +111,8 @@ func NewPluginCurationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 		deleteCuratedPlugin: connect_go.NewClient[v1alpha1.DeleteCuratedPluginRequest, v1alpha1.DeleteCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceDeleteCuratedPluginProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -173,7 +175,8 @@ func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...c
 	mux.Handle(PluginCurationServiceCreateCuratedPluginProcedure, connect_go.NewUnaryHandler(
 		PluginCurationServiceCreateCuratedPluginProcedure,
 		svc.CreateCuratedPlugin,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PluginCurationServiceGetLatestCuratedPluginProcedure, connect_go.NewUnaryHandler(
 		PluginCurationServiceGetLatestCuratedPluginProcedure,
@@ -184,7 +187,8 @@ func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...c
 	mux.Handle(PluginCurationServiceDeleteCuratedPluginProcedure, connect_go.NewUnaryHandler(
 		PluginCurationServiceDeleteCuratedPluginProcedure,
 		svc.DeleteCuratedPlugin,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.PluginCurationService/", mux
 }

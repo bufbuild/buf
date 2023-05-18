@@ -36,7 +36,9 @@ message RepositoryTag {
 // RepositoryTagService is the Repository tag service.
 service RepositoryTagService {
   // CreateRepositoryTag creates a new repository tag.
-  rpc CreateRepositoryTag(CreateRepositoryTagRequest) returns (CreateRepositoryTagResponse);
+  rpc CreateRepositoryTag(CreateRepositoryTagRequest) returns (CreateRepositoryTagResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // ListRepositoryTags lists the repository tags associated with a Repository.
   rpc ListRepositoryTags(ListRepositoryTagsRequest) returns (ListRepositoryTagsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;

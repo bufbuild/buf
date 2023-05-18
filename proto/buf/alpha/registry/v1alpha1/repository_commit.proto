@@ -82,7 +82,9 @@ service RepositoryCommitService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // DeleteRepositoryDraftCommit deletes a draft.
-  rpc DeleteRepositoryDraftCommit(DeleteRepositoryDraftCommitRequest) returns (DeleteRepositoryDraftCommitResponse);
+  rpc DeleteRepositoryDraftCommit(DeleteRepositoryDraftCommitRequest) returns (DeleteRepositoryDraftCommitResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message ListRepositoryCommitsByBranchRequest {

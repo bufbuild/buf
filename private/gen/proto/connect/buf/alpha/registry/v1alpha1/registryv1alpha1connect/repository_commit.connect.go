@@ -134,7 +134,8 @@ func NewRepositoryCommitServiceClient(httpClient connect_go.HTTPClient, baseURL 
 		deleteRepositoryDraftCommit: connect_go.NewClient[v1alpha1.DeleteRepositoryDraftCommitRequest, v1alpha1.DeleteRepositoryDraftCommitResponse](
 			httpClient,
 			baseURL+RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -250,7 +251,8 @@ func NewRepositoryCommitServiceHandler(svc RepositoryCommitServiceHandler, opts 
 	mux.Handle(RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure, connect_go.NewUnaryHandler(
 		RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure,
 		svc.DeleteRepositoryDraftCommit,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.RepositoryCommitService/", mux
 }
