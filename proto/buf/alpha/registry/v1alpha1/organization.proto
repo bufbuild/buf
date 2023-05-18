@@ -238,6 +238,8 @@ message GetOrganizationSettingsResponse {
   uint32 members_count = 4;
   // The IdP groups associated with the organization.
   repeated string idp_groups = 5;
+  // Whether server-side enforcement of breaking changes is enabled.
+  bool enforce_breaking_changes = 6;
 }
 
 message UpdateOrganizationSettingsRequest {
@@ -253,6 +255,8 @@ message UpdateOrganizationSettingsRequest {
   optional string description = 5;
   // optional, update to url will only be made when this is present
   optional string url = 6;
+  // optional, update to enforce_breaking_changes will only be made when this is present
+  optional bool enforce_breaking_changes = 7;
 }
 
 message UpdateOrganizationSettingsResponse {}
