@@ -93,4 +93,41 @@ path/to/file.proto(2,1) : error FOO : Hello.
 `,
 		sb.String(),
 	)
+	sb.Reset()
+	err = bufanalysis.PrintFileAnnotations(
+		sb,
+		append(
+			fileAnnotations,
+			newFileAnnotation(
+				t,
+				"path/to/file.proto",
+				0,
+				0,
+				0,
+				0,
+				"FOO",
+				"Hello.",
+			),
+			newFileAnnotation(
+				t,
+				"",
+				0,
+				0,
+				0,
+				0,
+				"FOO",
+				"Hello.",
+			),
+		),
+		"github-actions",
+	)
+	require.NoError(t, err)
+	assert.Equal(t,
+		`::error file=path/to/file.proto,line=1,endLine=1::Hello.
+::error file=path/to/file.proto,line=2,col=1,endLine=2,endColumn=1::Hello.
+::error file=path/to/file.proto::Hello.
+::error file=<input>::Hello.
+`,
+		sb.String(),
+	)
 }

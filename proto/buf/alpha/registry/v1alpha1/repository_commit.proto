@@ -47,7 +47,7 @@ message RepositoryCommit {
   // https://spdx.org/licenses, and will be not set if the license file is not
   // presented or cannot be classified into a known license.
   string spdx_license_id = 10;
-  // The manifest digest of the commit. Populated via Tamper Proofing.
+  // The manifest digest of the commit.
   string manifest_digest = 11;
 }
 
@@ -82,7 +82,9 @@ service RepositoryCommitService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // DeleteRepositoryDraftCommit deletes a draft.
-  rpc DeleteRepositoryDraftCommit(DeleteRepositoryDraftCommitRequest) returns (DeleteRepositoryDraftCommitResponse);
+  rpc DeleteRepositoryDraftCommit(DeleteRepositoryDraftCommitRequest) returns (DeleteRepositoryDraftCommitResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message ListRepositoryCommitsByBranchRequest {

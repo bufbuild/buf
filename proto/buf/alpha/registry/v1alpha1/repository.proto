@@ -118,11 +118,17 @@ service RepositoryService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // CreateRepositoryByFullName creates a new repository by full name.
-  rpc CreateRepositoryByFullName(CreateRepositoryByFullNameRequest) returns (CreateRepositoryByFullNameResponse);
+  rpc CreateRepositoryByFullName(CreateRepositoryByFullNameRequest) returns (CreateRepositoryByFullNameResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // DeleteRepository deletes a repository.
-  rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse);
+  rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // DeleteRepositoryByFullName deletes a repository by full name.
-  rpc DeleteRepositoryByFullName(DeleteRepositoryByFullNameRequest) returns (DeleteRepositoryByFullNameResponse);
+  rpc DeleteRepositoryByFullName(DeleteRepositoryByFullNameRequest) returns (DeleteRepositoryByFullNameResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // DeprecateRepositoryByName deprecates the repository.
   rpc DeprecateRepositoryByName(DeprecateRepositoryByNameRequest) returns (DeprecateRepositoryByNameResponse);
   // UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.

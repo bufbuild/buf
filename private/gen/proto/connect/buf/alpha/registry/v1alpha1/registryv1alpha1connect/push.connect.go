@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// PushServiceName is the fully-qualified name of the PushService service.
@@ -76,12 +76,14 @@ func NewPushServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 		push: connect_go.NewClient[v1alpha1.PushRequest, v1alpha1.PushResponse](
 			httpClient,
 			baseURL+PushServicePushProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		pushManifestAndBlobs: connect_go.NewClient[v1alpha1.PushManifestAndBlobsRequest, v1alpha1.PushManifestAndBlobsResponse](
 			httpClient,
 			baseURL+PushServicePushManifestAndBlobsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -121,12 +123,14 @@ func NewPushServiceHandler(svc PushServiceHandler, opts ...connect_go.HandlerOpt
 	mux.Handle(PushServicePushProcedure, connect_go.NewUnaryHandler(
 		PushServicePushProcedure,
 		svc.Push,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(PushServicePushManifestAndBlobsProcedure, connect_go.NewUnaryHandler(
 		PushServicePushManifestAndBlobsProcedure,
 		svc.PushManifestAndBlobs,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.PushService/", mux
 }

@@ -77,7 +77,6 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 		if stop {
 			break
 		}
-		job := job
 		// We always want context cancellation/deadline expiration to take
 		// precedence over the semaphore unblocking, but select statements choose
 		// among the unblocked non-default cases pseudorandomly. To correctly
@@ -87,11 +86,14 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 		select {
 		case <-ctx.Done():
 			stop = true
+			retErr = multierr.Append(retErr, ctx.Err())
 		case semaphoreC <- struct{}{}:
 			select {
 			case <-ctx.Done():
 				stop = true
+				retErr = multierr.Append(retErr, ctx.Err())
 			default:
+				job := job
 				wg.Add(1)
 				go func() {
 					if err := job(ctx); err != nil {

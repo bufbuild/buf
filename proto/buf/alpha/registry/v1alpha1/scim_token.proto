@@ -39,7 +39,9 @@ service SCIMTokenService {
   // DeleteToken deletes an existing token.
   //
   // This method requires authentication.
-  rpc DeleteSCIMToken(DeleteSCIMTokenRequest) returns (DeleteSCIMTokenResponse);
+  rpc DeleteSCIMToken(DeleteSCIMTokenRequest) returns (DeleteSCIMTokenResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message CreateSCIMTokenRequest {

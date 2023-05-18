@@ -104,7 +104,7 @@ func testGetModulePin(
 			assert.Equal(t, "repository", pin.Repository())
 			assert.Equal(t, "", pin.Branch())
 			assert.Equal(t, resp.RepositoryCommit.Name, pin.Commit())
-			assert.Equal(t, resp.RepositoryCommit.Digest, pin.Digest())
+			assert.Equal(t, resp.RepositoryCommit.ManifestDigest, pin.Digest())
 			assert.Equal(
 				t,
 				time.Date(1970, time.January, 1, 0, 0, 0, 0, time.UTC),

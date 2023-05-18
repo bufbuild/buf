@@ -14,6 +14,8 @@
 
 package internal
 
+import "github.com/bufbuild/buf/private/pkg/app"
+
 var (
 	_ ParsedProtoFileRef = &protoFileRef{}
 )
@@ -24,12 +26,15 @@ type protoFileRef struct {
 	includePackageFiles bool
 }
 
-func newProtoFileRef(format string, path string, includePackageFiles bool) *protoFileRef {
+func newProtoFileRef(format string, path string, includePackageFiles bool) (*protoFileRef, error) {
+	if app.IsDevPath(path) || path == "-" {
+		return nil, NewProtoFileCannotBeDevPathError(format, path)
+	}
 	return &protoFileRef{
 		format:              format,
 		path:                path,
 		includePackageFiles: includePackageFiles,
-	}
+	}, nil
 }
 
 func (s *protoFileRef) Format() string {

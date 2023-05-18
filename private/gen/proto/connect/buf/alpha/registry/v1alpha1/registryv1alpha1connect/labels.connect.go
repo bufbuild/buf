@@ -76,7 +76,8 @@ func NewLabelServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 		createLabel: connect_go.NewClient[v1alpha1.CreateLabelRequest, v1alpha1.CreateLabelResponse](
 			httpClient,
 			baseURL+LabelServiceCreateLabelProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		moveLabel: connect_go.NewClient[v1alpha1.MoveLabelRequest, v1alpha1.MoveLabelResponse](
 			httpClient,
@@ -131,7 +132,8 @@ func NewLabelServiceHandler(svc LabelServiceHandler, opts ...connect_go.HandlerO
 	mux.Handle(LabelServiceCreateLabelProcedure, connect_go.NewUnaryHandler(
 		LabelServiceCreateLabelProcedure,
 		svc.CreateLabel,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(LabelServiceMoveLabelProcedure, connect_go.NewUnaryHandler(
 		LabelServiceMoveLabelProcedure,

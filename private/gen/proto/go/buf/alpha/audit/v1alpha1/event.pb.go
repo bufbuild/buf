@@ -1623,7 +1623,7 @@ type PayloadRepositoryCommitPushed struct {
 	Tags []string `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
 	// draft_name is the name of the draft. Optional.
 	DraftName string `protobuf:"bytes,6,opt,name=draft_name,json=draftName,proto3" json:"draft_name,omitempty"`
-	// manifest_digest is the module's manifest digest if tamper proofing is enabled.
+	// manifest_digest is the module's manifest digest.
 	ManifestDigest string `protobuf:"bytes,7,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
 }
 

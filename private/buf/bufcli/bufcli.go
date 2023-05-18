@@ -47,7 +47,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appname"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/netrc"
@@ -64,7 +63,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.17.1-dev"
+	Version = "1.19.1-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -76,8 +75,6 @@ const (
 
 	// AlphaEnableWASMEnvKey is an env var to enable WASM local plugin execution
 	AlphaEnableWASMEnvKey = "BUF_ALPHA_ENABLE_WASM"
-	// BetaEnableTamperProofingEnvKey is an env var to enable tamper proofing
-	BetaEnableTamperProofingEnvKey = "BUF_BETA_ENABLE_TAMPER_PROOFING"
 
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
@@ -163,7 +160,7 @@ var (
 	//
 	// Normalized.
 	// This directory replaces the use of v1CacheModuleDataRelDirPath, v1CacheModuleLockRelDirPath, and
-	// v1CacheModuleSumRelDirPath for modules which support tamper proofing.
+	// v1CacheModuleSumRelDirPath with a cache implementation using content addressable storage.
 	v2CacheModuleRelDirPath = normalpath.Join("v2", "module")
 
 	// allVisibiltyStrings are the possible options that a user can set the visibility flag with.
@@ -279,7 +276,18 @@ func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string) {
 		addr,
 		flagName,
 		"",
-		fmt.Sprintf(`The repository's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
+		fmt.Sprintf(`The repository's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
+	)
+}
+
+// BindCreateVisibility binds the create-visibility flag. Kept in this package
+// so we can keep allVisibilityStrings private.
+func BindCreateVisibility(flagSet *pflag.FlagSet, addr *string, flagName string, createFlagName string) {
+	flagSet.StringVar(
+		addr,
+		flagName,
+		"",
+		fmt.Sprintf(`The repository's visibility setting, if created. Must be set if --%s is set. Must be one of %s`, createFlagName, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 }
 
@@ -362,7 +370,7 @@ func GetInputValue(
 
 // WarnAlphaCommand prints a warning for a alpha command unless the alphaSuppressWarningsEnvKey
 // environment variable is set.
-func WarnAlphaCommand(ctx context.Context, container appflag.Container) {
+func WarnAlphaCommand(_ context.Context, container appflag.Container) {
 	if container.Env(alphaSuppressWarningsEnvKey) == "" {
 		container.Logger().Warn("This command is in alpha. It is hidden for a reason. This command is purely for development purposes, and may never even be promoted to beta, do not rely on this command's functionality. To suppress this warning, set " + alphaSuppressWarningsEnvKey + "=1")
 	}
@@ -370,7 +378,7 @@ func WarnAlphaCommand(ctx context.Context, container appflag.Container) {
 
 // WarnBetaCommand prints a warning for a beta command unless the betaSuppressWarningsEnvKey
 // environment variable is set.
-func WarnBetaCommand(ctx context.Context, container appflag.Container) {
+func WarnBetaCommand(_ context.Context, container appflag.Container) {
 	if container.Env(betaSuppressWarningsEnvKey) == "" {
 		container.Logger().Warn("This command is in beta. It is unstable and likely to change. To suppress this warning, set " + betaSuppressWarningsEnvKey + "=1")
 	}
@@ -530,108 +538,37 @@ func NewModuleReaderAndCreateCacheDirs(
 	container appflag.Container,
 	clientConfig *connectclient.Config,
 ) (bufmodule.ModuleReader, error) {
-	return newModuleReaderAndCreateCacheDirs(
-		container,
-		clientConfig,
-	)
-}
-
-// NewModuleReaderAndCreateCacheDirsWithExternalPaths returns a new ModuleReader while creating the
-// required cache directories, and configures the cache to preserve external paths.
-//
-// WARNING - this should only be used by systems like the LSP - leaking external paths from the module
-// cache is otherwise dangerous and requires manager approval.
-func NewModuleReaderAndCreateCacheDirsWithExternalPaths(
-	container appflag.Container,
-	clientConfig *connectclient.Config,
-) (bufmodule.ModuleReader, error) {
-	return newModuleReaderAndCreateCacheDirs(
-		container,
-		clientConfig,
-		bufmodulecache.ModuleReaderWithExternalPaths(),
-	)
+	return newModuleReaderAndCreateCacheDirs(container, clientConfig)
 }
 
 func newModuleReaderAndCreateCacheDirs(
 	container appflag.Container,
 	clientConfig *connectclient.Config,
-	cacheModuleReaderOpts ...bufmodulecache.ModuleReaderOption,
 ) (bufmodule.ModuleReader, error) {
-	cacheModuleDataDirPathV1 := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
-	cacheModuleLockDirPathV1 := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
-	cacheModuleSumDirPathV1 := normalpath.Join(container.CacheDirPath(), v1CacheModuleSumRelDirPath)
 	cacheModuleDirPathV2 := normalpath.Join(container.CacheDirPath(), v2CacheModuleRelDirPath)
-	// Check if tamper proofing env var is enabled
-	tamperProofingEnabled, err := IsBetaTamperProofingEnabled(container)
-	if err != nil {
+	if err := checkExistingCacheDirs(container.CacheDirPath(), cacheModuleDirPathV2); err != nil {
 		return nil, err
 	}
-	var cacheDirsToCreate []string
-	if tamperProofingEnabled {
-		cacheDirsToCreate = append(cacheDirsToCreate, cacheModuleDirPathV2)
-	} else {
-		cacheDirsToCreate = append(
-			cacheDirsToCreate,
-			cacheModuleDataDirPathV1,
-			cacheModuleLockDirPathV1,
-			cacheModuleSumDirPathV1,
-		)
-	}
-	if err := checkExistingCacheDirs(container.CacheDirPath(), cacheDirsToCreate...); err != nil {
+	if err := createCacheDirs(cacheModuleDirPathV2); err != nil {
 		return nil, err
-	}
-	if err := createCacheDirs(cacheDirsToCreate...); err != nil {
-		return nil, err
-	}
-	var moduleReaderOpts []bufapimodule.ModuleReaderOption
-	if tamperProofingEnabled {
-		moduleReaderOpts = append(moduleReaderOpts, bufapimodule.WithTamperProofing())
 	}
 	delegateReader := bufapimodule.NewModuleReader(
 		bufapimodule.NewDownloadServiceClientFactory(clientConfig),
-		moduleReaderOpts...,
 	)
 	repositoryClientFactory := bufmodulecache.NewRepositoryServiceClientFactory(clientConfig)
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	var moduleReader bufmodule.ModuleReader
-	if tamperProofingEnabled {
-		casModuleBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDirPathV2)
-		if err != nil {
-			return nil, err
-		}
-		moduleReader = bufmodulecache.NewCASModuleReader(
-			container.Logger(),
-			container.VerbosePrinter(),
-			casModuleBucket,
-			delegateReader,
-			repositoryClientFactory,
-		)
-	} else {
-		// do NOT want to enable symlinks for our cache
-		dataReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDataDirPathV1)
-		if err != nil {
-			return nil, err
-		}
-		// do NOT want to enable symlinks for our cache
-		sumReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleSumDirPathV1)
-		if err != nil {
-			return nil, err
-		}
-		fileLocker, err := filelock.NewLocker(cacheModuleLockDirPathV1)
-		if err != nil {
-			return nil, err
-		}
-		moduleReader = bufmodulecache.NewModuleReader(
-			container.Logger(),
-			container.VerbosePrinter(),
-			fileLocker,
-			dataReadWriteBucket,
-			sumReadWriteBucket,
-			delegateReader,
-			repositoryClientFactory,
-			cacheModuleReaderOpts...,
-		)
+	casModuleBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDirPathV2)
+	if err != nil {
+		return nil, err
 	}
+	moduleReader = bufmodulecache.NewModuleReader(
+		container.Logger(),
+		container.VerbosePrinter(),
+		casModuleBucket,
+		delegateReader,
+		repositoryClientFactory,
+	)
 	return moduleReader, nil
 }
 
@@ -916,11 +853,6 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1al
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s", visibility)
 	}
-}
-
-// IsBetaTamperProofingEnabled returns if BUF_BETA_ENABLE_TAMPER_PROOFING is set to true.
-func IsBetaTamperProofingEnabled(container app.EnvContainer) (bool, error) {
-	return app.EnvBool(container, BetaEnableTamperProofingEnvKey, false)
 }
 
 // IsAlphaWASMEnabled returns an BUF_ALPHA_ENABLE_WASM is set to true.
