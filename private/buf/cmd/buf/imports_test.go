@@ -65,7 +65,7 @@ func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, 100,
-		filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:6:8:people/v1/people_nonexistent.proto: does not exist`),
+		filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:6:8:`)+`people/v1/people_nonexistent.proto: does not exist`,
 		"build",
 		filepath.Join("testdata", "imports", "failure", "students"),
 	)
@@ -75,7 +75,7 @@ func TestInvalidImportFromTransitive(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, 1,
-		filepath.FromSlash(`Failure: source imports: target proto file "school/v1/school1.proto" imports "people/v1/people1.proto", not found in your local target files or direct dependencies, but found in transitive dependency "bufbuild.test/bufbot/people", please declare that one as explicit dependency in your buf.yaml file`),
+		`Failure: source imports: target proto file "school/v1/school1.proto" imports "people/v1/people1.proto", not found in your local target files or direct dependencies, but found in transitive dependency "bufbuild.test/bufbot/people", please declare that one as explicit dependency in your buf.yaml file`,
 		"build",
 		filepath.Join("testdata", "imports", "failure", "school"),
 	)
