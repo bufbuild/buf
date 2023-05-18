@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gitbranch
+package git
 
 import (
 	"bytes"
@@ -23,7 +23,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/filepathextended"
 	"github.com/bufbuild/buf/private/pkg/git/gitobject"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
@@ -32,21 +31,21 @@ const defaultRemoteName = "origin"
 
 var baseBranchRefPrefix = []byte("ref: refs/remotes/" + defaultRemoteName + "/")
 
-type rangerOpts struct {
+type commitIteratorOpts struct {
 	baseBranch string
 }
 
-type ranger struct {
+type commitIterator struct {
 	gitDirPath   string
 	baseBranch   string
 	objectReader gitobject.Reader
 }
 
-func newRanger(
+func newCommitIterator(
 	gitDirPath string,
 	objectReader gitobject.Reader,
-	opts rangerOpts,
-) (Ranger, error) {
+	opts commitIteratorOpts,
+) (CommitIterator, error) {
 	gitDirPath = normalpath.Unnormalize(gitDirPath)
 	if err := validateDirPathExists(gitDirPath); err != nil {
 		return nil, err
@@ -62,41 +61,23 @@ func newRanger(
 			return nil, fmt.Errorf("automatically determine base branch: %w", err)
 		}
 	}
-	return &ranger{
+	return &commitIterator{
 		gitDirPath:   gitDirPath,
 		baseBranch:   opts.baseBranch,
 		objectReader: objectReader,
 	}, nil
 }
 
-func (r *ranger) BaseBranch() string {
+func (r *commitIterator) BaseBranch() string {
 	return r.baseBranch
 }
 
-func (r *ranger) Branches(f func(string) error) error {
-	dir := path.Join(r.gitDirPath, "refs", "remotes", defaultRemoteName)
-	return filepathextended.Walk(dir, func(path string, info fs.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.Name() == "HEAD" || info.IsDir() {
-			return nil
-		}
-		branchName, err := filepath.Rel(dir, path)
-		if err != nil {
-			return err
-		}
-		branchName = normalpath.Normalize(branchName)
-		return f(branchName)
-	})
-}
-
-func (r *ranger) Commits(branch string, f func(gitobject.Commit) error) error {
+func (r *commitIterator) ForEachCommit(branch string, f func(gitobject.Commit) error) error {
 	branch = normalpath.Unnormalize(branch)
 	commitBytes, err := os.ReadFile(path.Join(r.gitDirPath, "refs", "remotes", defaultRemoteName, branch))
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return errors.New("branch not found")
+			return fmt.Errorf("branch %q not found", branch)
 		}
 		return err
 	}

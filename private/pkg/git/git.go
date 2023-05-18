@@ -16,10 +16,12 @@ package git
 
 import (
 	"context"
+	"errors"
 	"regexp"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/git/gitobject"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -132,4 +134,68 @@ type ListFilesAndUnstagedFilesOptions struct {
 	// These must be unnormalized in the manner of the local OS that the Lister
 	// is being applied to.
 	IgnorePathRegexps []*regexp.Regexp
+}
+
+// BranchIterator ranges over branches for a git repository.
+//
+// Only branches from the remote named `origin` are ranged.
+type BranchIterator interface {
+	// ForEachBranch ranges over branches in the repository in an undefined order.
+	ForEachBranch(func(branch string) error) error
+}
+
+// CommitIterator ranges over commits for a git repository.
+//
+// Only commits from the remote named `origin` are ranged.
+type CommitIterator interface {
+	// BaseBranch is the base branch of the repository. This is either
+	// configured via the `WithBaseBranch` option, or discovered via the
+	// remote named `origin`. Therefore, discovery requires that the repository
+	// is pushed to the remote.
+	BaseBranch() string
+	// ForEachCommit ranges over commits for the target branch in reverse topological order.
+	//
+	// Parents are visited before children, and only left parents are visited (i.e.,
+	// commits from branches merged into the target branch are not visited).
+	ForEachCommit(branch string, f func(commit gitobject.Commit) error) error
+}
+
+type CommitIteratorOption func(*commitIteratorOpts) error
+
+// CommitIteratorWithBaseBranch configures the base branch for this iterator.
+func CommitIteratorWithBaseBranch(name string) CommitIteratorOption {
+	return func(r *commitIteratorOpts) error {
+		if name == "" {
+			return errors.New("base branch cannot be empty")
+		}
+		r.baseBranch = name
+		return nil
+	}
+}
+
+// NewBranchIterator creates a new BranchIterator that can range over branches.
+func NewBranchIterator(
+	gitDirPath string,
+	objectReader gitobject.Reader,
+) (BranchIterator, error) {
+	return newBranchIterator(gitDirPath, objectReader)
+}
+
+// NewCommitIterator creates a new CommitIterator that can range over commits.
+//
+// By default, NewCommitIterator will attempt to detect the base branch if the repository
+// has been pushed. This may fail. TODO: we probably want to remove this and
+// force the use of the `WithBaseBranch` option.
+func NewCommitIterator(
+	gitDirPath string,
+	objectReader gitobject.Reader,
+	options ...CommitIteratorOption,
+) (CommitIterator, error) {
+	var opts commitIteratorOpts
+	for _, option := range options {
+		if err := option(&opts); err != nil {
+			return nil, err
+		}
+	}
+	return newCommitIterator(gitDirPath, objectReader, opts)
 }

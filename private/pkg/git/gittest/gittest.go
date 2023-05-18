@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/git/gitbranch"
+	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/git/gitobject"
 	"github.com/stretchr/testify/require"
 )
@@ -35,7 +35,8 @@ type TestGitRepository struct {
 	DotGitDir         string
 	DefaultBranchHead gitobject.Commit
 	Reader            gitobject.Reader
-	Ranger            gitbranch.Ranger
+	BranchIterator    git.BranchIterator
+	CommitIterator    git.CommitIterator
 }
 
 func ScaffoldGitRepository(t *testing.T) TestGitRepository {
@@ -47,7 +48,9 @@ func ScaffoldGitRepository(t *testing.T) TestGitRepository {
 	t.Cleanup(func() {
 		require.NoError(t, closer())
 	})
-	ranger, err := gitbranch.NewRanger(dotGitPath, reader, gitbranch.WithBaseBranch(DefaultBranch))
+	branchIterator, err := git.NewBranchIterator(dotGitPath, reader)
+	require.NoError(t, err)
+	commitIterator, err := git.NewCommitIterator(dotGitPath, reader, git.CommitIteratorWithBaseBranch(DefaultBranch))
 	require.NoError(t, err)
 	commitBytes, err := os.ReadFile(path.Join(dotGitPath, "refs", "heads", DefaultBranch))
 	require.NoError(t, err)
@@ -60,7 +63,8 @@ func ScaffoldGitRepository(t *testing.T) TestGitRepository {
 	return TestGitRepository{
 		DotGitDir:         dotGitPath,
 		Reader:            reader,
-		Ranger:            ranger,
+		BranchIterator:    branchIterator,
+		CommitIterator:    commitIterator,
 		DefaultBranchHead: commit,
 	}
 }
