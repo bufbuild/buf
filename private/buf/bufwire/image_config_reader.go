@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.opentelemetry.io/otel"
@@ -176,10 +175,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 			return nil, nil, err
 		}
 		if imageConfig != nil {
-			if importsErr := i.validateSourceImports(
-				moduleConfig.Module().DirectDependencies(),
-				imageConfig.Image(),
-			); importsErr != nil {
+			if importsErr := i.validateImports(ctx, moduleConfig, imageConfig.Image()); importsErr != nil {
 				return nil, nil, fmt.Errorf("source imports: %w", importsErr)
 			}
 			imageConfigs = append(imageConfigs, imageConfig)
@@ -203,18 +199,38 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	return imageConfigs, nil, nil
 }
 
-// validateSourceImports takes the direct dependencies from a module, and a built image for that
-// module, and validates that all the source image files have valid imports clauses that come from
-// source or from a direct dependency and not a transitive (or unknown) one. Error message is safe
+// validateImports takes the direct dependencies from a module, and a built image for that module,
+// and validates that all the target image files have valid imports clauses that come from the local
+// module or from a direct dependency and not a transitive (or unknown) one. Error message is safe
 // to pass to the user.
-func (i *imageConfigReader) validateSourceImports(
-	directModuleDeps []bufmoduleref.ModuleReference,
+func (i *imageConfigReader) validateImports(
+	ctx context.Context,
+	moduleConfig ModuleConfig,
 	builtImage bufimage.Image,
 ) error {
 	// prepare direct deps as a map
-	directDepsIdentities := make(map[string]struct{}, len(directModuleDeps))
-	for _, directDep := range directModuleDeps {
-		directDepsIdentities[directDep.IdentityString()] = struct{}{}
+	explicitDirectModuleDeps := moduleConfig.Module().DirectDependencies()
+	directDepsIdentities := make(map[string]string, len(explicitDirectModuleDeps))
+	for _, directDep := range explicitDirectModuleDeps {
+		directDepsIdentities[directDep.IdentityString()] = "explicit"
+	}
+	// if it's a workspace build, and there's any named module in it, then it's considered a direct
+	// dependency too
+	if ws := moduleConfig.Workspace(); ws != nil {
+		for _, mod := range ws.GetModules() {
+			if mod != nil {
+				targetFiles, err := mod.TargetFileInfos(ctx)
+				if err != nil {
+					return fmt.Errorf("workspace module target file infos: %w", err)
+				}
+				for _, file := range targetFiles {
+					if file.ModuleIdentity() != nil {
+						directDepsIdentities[file.ModuleIdentity().IdentityString()] = "workspace"
+						break
+					}
+				}
+			}
+		}
 	}
 	i.logger.Debug(
 		"module",
@@ -223,12 +239,12 @@ func (i *imageConfigReader) validateSourceImports(
 
 	// categorize image files into direct vs transitive dependencies
 	allImgFiles := make(map[string]map[string][]string)    // for logging purposes only, modIdentity:filepath:imports
-	sourceFiles := make(map[string]struct{})               // filepath
+	targetFiles := make(map[string]struct{})               // filepath
 	directDepsFilesToModule := make(map[string]string)     // filepath:modIdentity
 	transitiveDepsFilesToModule := make(map[string]string) // filepath:modIdentity
 	for _, file := range builtImage.Files() {
 		{
-			modIdentity := "source"
+			modIdentity := "local"
 			if file.ModuleIdentity() != nil {
 				modIdentity = file.ModuleIdentity().IdentityString()
 			}
@@ -244,31 +260,31 @@ func (i *imageConfigReader) validateSourceImports(
 				transitiveDepsFilesToModule[file.Path()] = file.ModuleIdentity().IdentityString()
 			}
 		} else {
-			// file has no module identity (workspace local), or is no import (is source)
-			sourceFiles[file.Path()] = struct{}{}
+			// file has no module identity (workspace local), or is no import (is local)
+			targetFiles[file.Path()] = struct{}{}
 		}
 	}
 	i.logger.Debug(
 		"image_files",
 		zap.Any("all_with_imports", allImgFiles),
-		zap.Any("source", sourceFiles),
+		zap.Any("local", targetFiles),
 		zap.Any("from_direct_dependencies", directDepsFilesToModule),
 		zap.Any("from_transitive_dependencies", transitiveDepsFilesToModule),
 	)
 
-	// validate import statements of source files against dependencies categorization above
+	// validate import statements of target files against dependencies categorization above
 	var importsErr error
 	for _, file := range builtImage.Files() {
 		if !file.IsImport() {
 			for _, importFilePath := range file.FileDescriptor().GetDependency() {
-				if _, ok := sourceFiles[importFilePath]; ok {
-					continue // import comes from source
+				if _, ok := targetFiles[importFilePath]; ok {
+					continue // import comes from local
 				}
 				if _, ok := directDepsFilesToModule[importFilePath]; ok {
 					continue // import comes from direct dep
 				}
 				errorMsg := fmt.Sprintf(
-					"source proto file %q imports %q, not found in your source files or direct dependencies",
+					"target proto file %q imports %q, not found in your local target files or direct dependencies",
 					file.Path(), importFilePath,
 				)
 				if transitiveDepModule, ok := transitiveDepsFilesToModule[importFilePath]; ok {
