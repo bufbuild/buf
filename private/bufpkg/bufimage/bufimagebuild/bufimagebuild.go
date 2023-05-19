@@ -55,3 +55,5 @@ func WithExcludeSourceCodeInfo() BuildOption {
 		buildOptions.excludeSourceCodeInfo = true
 	}
 }
+
+// TODO Add WithDirectDeps and WithWorkspace options here.

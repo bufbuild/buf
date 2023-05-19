@@ -233,6 +233,7 @@ func getBuildResult(
 	for i := range compiledFiles {
 		fileDescriptors[i] = compiledFiles[i]
 	}
+	// TODO move validateImports here.
 	return newBuildResult(
 		fileDescriptors,
 		syntaxUnspecifiedFilenames,

@@ -24,6 +24,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 )
 
+// TODO check that the BSR breaks the build. After that, comment the ticket and  make these tests
+// WARN-aware. instead of FAIL-aware.
+
 func TestValidNoImports(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
