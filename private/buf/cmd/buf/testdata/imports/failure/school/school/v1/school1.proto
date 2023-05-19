@@ -6,6 +6,7 @@ package school.v1;
 import "school/v1/school2.proto"; // source, ok
 import "students/v1/students.proto"; // direct dep, ok
 import "people/v1/people1.proto"; // file from transitive dep, not ok
+import "people/v1/people2.proto"; // file from transitive dep, not ok
 
 message Class {
   school.v1.SchoolType school_type = 1;
