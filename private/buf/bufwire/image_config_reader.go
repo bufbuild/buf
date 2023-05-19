@@ -176,7 +176,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 		}
 		if imageConfig != nil {
 			if importsErr := i.validateImports(ctx, moduleConfig, imageConfig.Image()); importsErr != nil {
-				return nil, nil, fmt.Errorf("source imports: %w", importsErr)
+				return nil, nil, importsErr
 			}
 			imageConfigs = append(imageConfigs, imageConfig)
 		}
@@ -199,10 +199,9 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	return imageConfigs, nil, nil
 }
 
-// validateImports takes the direct dependencies from a module, and a built image for that module,
-// and validates that all the target image files have valid imports clauses that come from the local
-// module or from a direct dependency and not a transitive (or unknown) one. Error message is safe
-// to pass to the user.
+// validateImports checks that all the target image files have valid imports statements that come
+// from the local module target files, workspace target files, or from a direct dependency, and not
+// a transitive (or unknown) one. Error message is safe to pass to the user.
 func (i *imageConfigReader) validateImports(
 	ctx context.Context,
 	moduleConfig ModuleConfig,
