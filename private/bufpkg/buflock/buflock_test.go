@@ -267,6 +267,24 @@ func TestDependencyForExternalConfigDependencyV1(t *testing.T) {
 			Commit:     "aabbccd",
 		},
 	)
+	testDependencyForExternalConfigDependencyV1(
+		t,
+		"don't filter out non-b1/b3 invalid hashes",
+		buflock.ExternalConfigDependencyV1{
+			Remote:     "remote",
+			Owner:      "owner",
+			Repository: "repository",
+			Commit:     "aabbccd",
+			Digest:     "shake256:abcd",
+		},
+		buflock.Dependency{
+			Remote:     "remote",
+			Owner:      "owner",
+			Repository: "repository",
+			Commit:     "aabbccd",
+			Digest:     "shake256:abcd",
+		},
+	)
 }
 
 func testDependencyForExternalConfigDependencyV1(
