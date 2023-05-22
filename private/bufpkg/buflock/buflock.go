@@ -85,8 +85,8 @@ type ExternalConfigDependencyV1 struct {
 
 // DependencyForExternalConfigDependencyV1 returns the Dependency representation of a ExternalConfigDependencyV1.
 func DependencyForExternalConfigDependencyV1(dep ExternalConfigDependencyV1) Dependency {
-	// Don't consume old b1/b3 buf digests.
 	digest := dep.Digest
+	// Don't consume old b1/b3 buf digests.
 	if strings.HasPrefix(digest, "b1-") || strings.HasPrefix(digest, "b3-") {
 		digest = ""
 	}
