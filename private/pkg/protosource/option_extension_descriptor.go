@@ -18,15 +18,20 @@ import (
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type optionExtensionDescriptor struct {
-	message proto.Message
+	message       proto.Message
+	optionsPath   []int32
+	locationStore *locationStore
 }
 
-func newOptionExtensionDescriptor(message proto.Message) optionExtensionDescriptor {
+func newOptionExtensionDescriptor(message proto.Message, optionsPath []int32, locationStore *locationStore) optionExtensionDescriptor {
 	return optionExtensionDescriptor{
-		message: message,
+		message:       message,
+		optionsPath:   optionsPath,
+		locationStore: locationStore,
 	}
 }
 
@@ -38,6 +43,43 @@ func (o *optionExtensionDescriptor) OptionExtension(extensionType protoreflect.E
 		return nil, false
 	}
 	return proto.GetExtension(o.message, extensionType), true
+}
+
+func (o *optionExtensionDescriptor) OptionExtensionLocation(extensionType protoreflect.ExtensionType, extraPath ...int32) Location {
+	if extensionType.TypeDescriptor().ContainingMessage().FullName() != o.message.ProtoReflect().Descriptor().FullName() {
+		return nil
+	}
+	if o.locationStore == nil {
+		return nil
+	}
+	path := make([]int32, len(o.optionsPath), len(o.optionsPath)+1+len(extraPath))
+	copy(path, o.optionsPath)
+	path = append(path, int32(extensionType.TypeDescriptor().Number()))
+	extensionPathLen := len(path) // length of path to extension (without extraPath)
+	path = append(path, extraPath...)
+	loc := o.locationStore.getLocation(path)
+	if loc != nil {
+		// Found an exact match!
+		return loc
+	}
+	// "Fuzzy" search: find a location whose path is at least extensionPathLen long,
+	// preferring the longest matching ancestor path (i.e. as many extraPath elements
+	// as can be found). If we find a *sub*path (a descendant path, that points INTO
+	// the path we are trying to find), use the first such one encountered.
+	var bestMatch *descriptorpb.SourceCodeInfo_Location
+	var bestMatchPathLen int
+	for _, loc := range o.locationStore.sourceCodeInfoLocations {
+		if len(loc.Path) >= extensionPathLen && isDescendantPath(path, loc.Path) && len(loc.Path) > bestMatchPathLen {
+			bestMatch = loc
+			bestMatchPathLen = len(loc.Path)
+		} else if isDescendantPath(loc.Path, path) {
+			return newLocation(loc)
+		}
+	}
+	if bestMatch != nil {
+		return newLocation(bestMatch)
+	}
+	return nil
 }
 
 func (o *optionExtensionDescriptor) PresentExtensionNumbers() []int32 {
@@ -71,4 +113,16 @@ func (o *optionExtensionDescriptor) PresentExtensionNumbers() []int32 {
 	})
 
 	return fieldNumbers
+}
+
+func isDescendantPath(descendant, ancestor []int32) bool {
+	if len(descendant) < len(ancestor) {
+		return false
+	}
+	for i := range ancestor {
+		if descendant[i] != ancestor[i] {
+			return false
+		}
+	}
+	return true
 }
