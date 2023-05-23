@@ -269,4 +269,3 @@ func OpenObjectReader(
 	reader, err := newObjectReader(gitDirPath, runner)
 	return reader, err
 }
-}
