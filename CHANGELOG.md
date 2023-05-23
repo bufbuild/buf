@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-<!-- TODO: rephrase this item to say it's a WARN, not a FAIL  -->
+<!-- FIXME: rephrase this item to say it's a WARN, not a FAIL  -->
 - Fix issue in the module file set build process that would allow Protobuf imports from transitive
   dependencies. Now it checks that all imports statements in your target files are valid paths that
   come from other target files in the local module, from other modules in the local workspace, or
