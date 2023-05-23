@@ -41,11 +41,11 @@ type TestGitRepository struct {
 func ScaffoldGitRepository(t *testing.T) TestGitRepository {
 	runner := command.NewRunner()
 	dir := scaffoldGitRepository(t, runner)
-	dotGitPath := path.Join(dir, ".git")
-	reader, closer, err := git.NewObjectReader(dotGitPath, runner)
+	dotGitPath := path.Join(dir, git.DotGitDir)
+	reader, err := git.OpenObjectReader(dotGitPath, runner)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		require.NoError(t, closer())
+		require.NoError(t, reader.Close())
 	})
 	branchIterator, err := git.NewBranchIterator(dotGitPath, reader)
 	require.NoError(t, err)

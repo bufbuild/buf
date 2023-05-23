@@ -22,7 +22,7 @@ import (
 )
 
 type commit struct {
-	id        Hash
+	hash      Hash
 	tree      Hash
 	parents   []Hash
 	author    Ident
@@ -30,8 +30,8 @@ type commit struct {
 	message   string
 }
 
-func (c *commit) ID() Hash {
-	return c.id
+func (c *commit) Hash() Hash {
+	return c.hash
 }
 func (c *commit) Tree() Hash {
 	return c.tree
@@ -49,9 +49,9 @@ func (c *commit) Message() string {
 	return c.message
 }
 
-func parseCommit(id Hash, data []byte) (*commit, error) {
+func parseCommit(hash Hash, data []byte) (*commit, error) {
 	c := &commit{
-		id: id,
+		hash: hash,
 	}
 	buffer := bytes.NewBuffer(data)
 	line, err := buffer.ReadString('\n')

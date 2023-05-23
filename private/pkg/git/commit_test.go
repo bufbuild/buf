@@ -22,10 +22,10 @@ import (
 )
 
 func TestParseCommit(t *testing.T) {
-	id, err := parseHashFromHex("43848150a6f5f6d76eeef6e0f69eb46290eefab6")
+	hash, err := parseHashFromHex("43848150a6f5f6d76eeef6e0f69eb46290eefab6")
 	require.NoError(t, err)
 	commit, err := parseCommit(
-		id,
+		hash,
 		[]byte(`tree 5edab9f970913225f985d9673ac19d61d36f0942
 parent aa4f1392d3ee58eacc4c34badd506d83239669ca
 author Bob <bob@buf.build> 1680571785 -0700
@@ -36,7 +36,7 @@ Hello World
 	require.NoError(t, err)
 	assert.Equal(t,
 		"43848150a6f5f6d76eeef6e0f69eb46290eefab6",
-		commit.ID().String(),
+		commit.Hash().String(),
 	)
 	assert.Equal(t,
 		"5edab9f970913225f985d9673ac19d61d36f0942",

@@ -27,6 +27,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	DotGitDir = ".git"
+)
+
 // Name is a name identifiable by git.
 type Name interface {
 	// If cloneBranch returns a non-empty string, any clones will be performed with --branch set to the value.
@@ -228,8 +232,8 @@ type Ident interface {
 //
 // All commits will have a non-nil Tree. All but the root commit will contain >0 parents.
 type Commit interface {
-	// ID is the ID for this commit.
-	ID() Hash
+	// Hash is the Hash for this commit.
+	Hash() Hash
 	// Tree is the ID to the git tree for this commit.
 	Tree() Hash
 	// Parents is the set of parents for this commit. It may be empty.
@@ -248,18 +252,21 @@ type Commit interface {
 type ObjectReader interface {
 	// Commit reads the commit identified by the hash.
 	Commit(id Hash) (Commit, error)
+	// Close closes the reader.
+	Close() error
 }
 
-// NewReader creates a new Reader that can read objects from a `.git` directory.
+// OpenObjectReader opens a new Reader that can read objects from a `.git` directory.
 //
 // The provided path to the `.git` dir need not be normalized or cleaned.
 //
-// Internally, NewReader will spawns a new process to communicate with `git-cat-file`,
-// so the caller must invoke the close function to clean up resources.
-func NewObjectReader(
+// Internally, OpenObjectReader will spawns a new process to communicate with `git-cat-file`,
+// so the caller must close the reader function to clean up resources.
+func OpenObjectReader(
 	gitDirPath string,
 	runner command.Runner,
-) (ObjectReader, func() error, error) {
+) (ObjectReader, error) {
 	reader, err := newObjectReader(gitDirPath, runner)
-	return reader, reader.Close, err
+	return reader, err
+}
 }
