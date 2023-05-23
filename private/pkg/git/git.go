@@ -188,8 +188,8 @@ func NewBranchIterator(
 // NewCommitIterator creates a new CommitIterator that can range over commits.
 //
 // By default, NewCommitIterator will attempt to detect the base branch if the repository
-// has been pushed. This may fail. TODO: we probably want to remove this and
-// force the use of the `WithBaseBranch` option.
+// has been pushed. This may fail is the repository is not pushed. In this case, use the
+// `CommitIteratorWithBaseBranch` option.
 func NewCommitIterator(
 	gitDirPath string,
 	objectReader ObjectReader,

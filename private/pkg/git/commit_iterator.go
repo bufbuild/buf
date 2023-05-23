@@ -53,7 +53,6 @@ func newCommitIterator(
 	if err != nil {
 		return nil, err
 	}
-	// TODO: do we need to validate `gitDirPath` is not jumping context?
 	if opts.baseBranch == "" {
 		opts.baseBranch, err = baseBranch(gitDirPath)
 		if err != nil {
