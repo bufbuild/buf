@@ -2,8 +2,8 @@
 
 ## [Unreleased]
 
-- Add new validation in the image builder that logs warnings in case an import statement does not
-  come from other target files in the local module or from a direct dependency.
+- Log a warning in case an import statement does not point to a file in the module or in a direct
+  dependency.
 
 ## [v1.19.0] - 2023-05-17
 
