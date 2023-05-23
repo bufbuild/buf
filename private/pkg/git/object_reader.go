@@ -81,12 +81,24 @@ func (o *objectReader) Close() error {
 	)
 }
 
-func (o *objectReader) Commit(id Hash) (Commit, error) {
-	data, err := o.read("commit", id)
+func (o *objectReader) Blob(hash Hash) ([]byte, error) {
+	return o.read("blob", hash)
+}
+
+func (o *objectReader) Commit(hash Hash) (Commit, error) {
+	data, err := o.read("commit", hash)
 	if err != nil {
 		return nil, err
 	}
-	return parseCommit(id, data)
+	return parseCommit(hash, data)
+}
+
+func (o *objectReader) Tree(hash Hash) (Tree, error) {
+	data, err := o.read("tree", hash)
+	if err != nil {
+		return nil, err
+	}
+	return parseTree(hash, data)
 }
 
 func (o *objectReader) read(objectType string, id Hash) ([]byte, error) {

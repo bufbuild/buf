@@ -250,8 +250,12 @@ type Commit interface {
 
 // ObjectReader reads objects (commits, trees, blobs) from a `.git` directory.
 type ObjectReader interface {
+	// Blob reads the blob identified by the hash.
+	Blob(id Hash) ([]byte, error)
 	// Commit reads the commit identified by the hash.
 	Commit(id Hash) (Commit, error)
+	// Tree reads the tree identified by the hash.
+	Tree(id Hash) (Tree, error)
 	// Close closes the reader.
 	Close() error
 }
@@ -267,4 +271,50 @@ func OpenObjectReader(
 	runner command.Runner,
 ) (ObjectReader, error) {
 	return newObjectReader(gitDirPath, runner)
+}
+
+const (
+	// ModeUnknown is a mode's zero value.
+	ModeUnknown FileMode = 0
+	// ModeFile is a blob that should be written as a plain file.
+	ModeFile FileMode = 010_0644
+	// ModeExec is a blob that should be written with the executable bit set.
+	ModeExe FileMode = 010_0755
+	// ModeDir is a tree to be unpacked as a subdirectory in the current
+	// directory.
+	ModeDir FileMode = 004_0000
+	// ModeSymlink is a blob with its content being the path linked to.
+	ModeSymlink FileMode = 012_0000
+	// ModeSubmodule is a commit that the submodule is checked out at.
+	ModeSubmodule FileMode = 016_0000
+)
+
+// FileMode is how to interpret a tree entry's object. See the Mode* constants
+// for how to interpret each mode value.
+type FileMode uint32
+
+var ErrSubTreeNotFound = errors.New("subtree not found")
+
+// Tree is a git tree, which are a manifest of other git objects, including other trees.
+type Tree interface {
+	// Hash is the Hash for this Tree.
+	Hash() Hash
+	// Entries is the set of entries in this Tree.
+	Entries() []TreeEntry
+	// Traverse walks down a tree, following the name-path specified,
+	// and returns the terminal TreeEntry. If no entry is found, it returns
+	// ErrSubTreeNotFound.
+	Traverse(objectReader ObjectReader, names ...string) (TreeEntry, error)
+}
+
+// TreeEntry is a reference to an object contained in a tree. These objects have
+// a file mode associated with them, which hints at the type of object located
+// at ID (tree or blob).
+type TreeEntry interface {
+	// Hash is the Hash of the object referenced by this TreeEntry.
+	Hash() Hash
+	// Name is the name of the object referenced by this TreeEntry.
+	Name() string
+	// Mode is the file mode of the object referenced by this TreeEntry.
+	Mode() FileMode
 }

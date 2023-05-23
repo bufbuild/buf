@@ -103,28 +103,35 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	runInDir(t, runner, local, "git", "remote", "add", "origin", remote)
 
 	// (1) commit in main branch
-	runInDir(t, runner, local, "touch", "randomBinary")
+	writeFiles(t, local, map[string]string{
+		"randomBinary":                       "some executable",
+		"proto/buf.yaml":                     "some buf.yaml",
+		"proto/acme/petstore/v1/a.proto":     "cats",
+		"proto/acme/petstore/v1/b.proto":     "animals",
+		"proto/acme/grocerystore/v1/c.proto": "toysrus",
+		"proto/acme/grocerystore/v1/d.proto": "petsrus",
+	})
 	runInDir(t, runner, local, "chmod", "+x", "randomBinary")
-	runInDir(t, runner, local, "mkdir", "proto")
-	runInDir(t, runner, path.Join(local, "proto"), "touch", "buf.yaml")
-	runInDir(t, runner, local, "mkdir", "-p", "proto/acme/petstore/v1")
-	runInDir(t, runner, path.Join(local, "proto", "acme", "petstore", "v1"), "touch", "a.proto", "b.proto")
-	runInDir(t, runner, local, "mkdir", "-p", "proto/acme/grocerystore/v1")
-	runInDir(t, runner, path.Join(local, "proto", "acme", "grocerystore", "v1"), "touch", "c.proto", "d.proto")
 	runInDir(t, runner, local, "git", "add", ".")
 	runInDir(t, runner, local, "git", "commit", "-m", "initial commit")
 	runInDir(t, runner, local, "git", "push", "-u", "-f", "origin", DefaultBranch)
 
 	// (2) branch off main and begin work
 	runInDir(t, runner, local, "git", "checkout", "-b", "smian/branch1")
-	runInDir(t, runner, path.Join(local, "proto", "acme", "petstore", "v1"), "touch", "e.proto", "f.proto")
+	writeFiles(t, local, map[string]string{
+		"proto/acme/petstore/v1/e.proto": "loblaws",
+		"proto/acme/petstore/v1/f.proto": "merchant of venice",
+	})
 	runInDir(t, runner, local, "git", "add", ".")
 	runInDir(t, runner, local, "git", "commit", "-m", "branch1")
 	runInDir(t, runner, local, "git", "push", "origin", "smian/branch1")
 
 	// (3) branch off branch and begin work
 	runInDir(t, runner, local, "git", "checkout", "-b", "smian/branch2")
-	runInDir(t, runner, path.Join(local, "proto", "acme", "grocerystore", "v1"), "touch", "g.proto", "h.proto")
+	writeFiles(t, local, map[string]string{
+		"proto/acme/grocerystore/v1/g.proto": "hamlet",
+		"proto/acme/grocerystore/v1/h.proto": "bethoven",
+	})
 	runInDir(t, runner, local, "git", "add", ".")
 	runInDir(t, runner, local, "git", "commit", "-m", "branch2")
 	runInDir(t, runner, local, "git", "push", "origin", "smian/branch2")
@@ -159,4 +166,11 @@ func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args 
 		require.NoError(t, err)
 	}
 	require.NoError(t, err)
+}
+
+func writeFiles(t *testing.T, dir string, files map[string]string) {
+	for path, contents := range files {
+		require.NoError(t, os.MkdirAll(filepath.Join(dir, filepath.Dir(path)), 0700))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, path), []byte(contents), 0644))
+	}
 }
