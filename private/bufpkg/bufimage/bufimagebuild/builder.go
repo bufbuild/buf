@@ -213,28 +213,30 @@ func (b *builder) warnInvalidImports(
 
 	// validate import statements of target files against dependencies categorization above
 	for _, file := range builtImage.Files() {
-		if !file.IsImport() {
-			for _, importFilePath := range file.FileDescriptor().GetDependency() {
-				if _, ok := targetFiles[importFilePath]; ok {
-					continue // import comes from local
-				}
-				if _, ok := directDepsFilesToModule[importFilePath]; ok {
-					continue // import comes from direct dep
-				}
-				warnMsg := fmt.Sprintf(
-					"Target proto file %q imports %q, not found in your local target files or direct dependencies",
-					file.Path(), importFilePath,
-				)
-				if transitiveDepModule, ok := transitiveDepsFilesToModule[importFilePath]; ok {
-					warnMsg += fmt.Sprintf(
-						", but found in transitive dependency %q, please declare that one as explicit dependency in your buf.yaml file",
-						transitiveDepModule,
-					)
-				} else {
-					warnMsg += ", or any of your transitive dependencies, please check that your imports are declared as explicit dependencies in your buf.yaml file"
-				}
-				b.logger.Warn(warnMsg)
+		if file.IsImport() {
+			continue // only check import statements in local files
+		}
+		// .GetDependency() returns an array of file path imports in the file descriptor
+		for _, importFilePath := range file.FileDescriptor().GetDependency() {
+			if _, ok := targetFiles[importFilePath]; ok {
+				continue // import comes from local
 			}
+			if _, ok := directDepsFilesToModule[importFilePath]; ok {
+				continue // import comes from direct dep
+			}
+			warnMsg := fmt.Sprintf(
+				"Target proto file %q imports %q, not found in your local target files or direct dependencies",
+				file.Path(), importFilePath,
+			)
+			if transitiveDepModule, ok := transitiveDepsFilesToModule[importFilePath]; ok {
+				warnMsg += fmt.Sprintf(
+					", but found in transitive dependency %q, please declare that one as explicit dependency in your buf.yaml file",
+					transitiveDepModule,
+				)
+			} else {
+				warnMsg += ", or any of your transitive dependencies, please check that your imports are declared as explicit dependencies in your buf.yaml file"
+			}
+			b.logger.Warn(warnMsg)
 		}
 	}
 	return nil
