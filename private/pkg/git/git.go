@@ -266,6 +266,5 @@ func OpenObjectReader(
 	gitDirPath string,
 	runner command.Runner,
 ) (ObjectReader, error) {
-	reader, err := newObjectReader(gitDirPath, runner)
-	return reader, err
+	return newObjectReader(gitDirPath, runner)
 }
