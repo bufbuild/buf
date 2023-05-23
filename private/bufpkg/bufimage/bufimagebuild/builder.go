@@ -33,7 +33,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -131,16 +130,16 @@ func (b *builder) build(
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := b.validateImports(ctx, image, directDeps, localWorkspace); err != nil {
-		b.logger.Warn("Invalid imports: " + err.Error())
+	if err := b.warnInvalidImports(ctx, image, directDeps, localWorkspace); err != nil {
+		b.logger.Error("warn_invalid_imports", zap.Error(err))
 	}
 	return image, nil, nil
 }
 
-// validateImports checks that all the target image files have valid imports statements that come
+// warnInvalidImports checks that all the target image files have valid imports statements that come
 // from the local module target files, workspace target files, or from a direct dependency, and not
-// a transitive (or unknown) one. Error message is safe to pass to the user.
-func (b *builder) validateImports(
+// a transitive (or unknown) one. It outputs a WARN message per invalid import statement.
+func (b *builder) warnInvalidImports(
 	ctx context.Context,
 	builtImage bufimage.Image,
 	explicitDirectModuleDeps []bufmoduleref.ModuleReference,
@@ -213,7 +212,6 @@ func (b *builder) validateImports(
 	)
 
 	// validate import statements of target files against dependencies categorization above
-	var importsErr error
 	for _, file := range builtImage.Files() {
 		if !file.IsImport() {
 			for _, importFilePath := range file.FileDescriptor().GetDependency() {
@@ -223,23 +221,23 @@ func (b *builder) validateImports(
 				if _, ok := directDepsFilesToModule[importFilePath]; ok {
 					continue // import comes from direct dep
 				}
-				errorMsg := fmt.Sprintf(
-					"target proto file %q imports %q, not found in your local target files or direct dependencies",
+				warnMsg := fmt.Sprintf(
+					"Target proto file %q imports %q, not found in your local target files or direct dependencies",
 					file.Path(), importFilePath,
 				)
 				if transitiveDepModule, ok := transitiveDepsFilesToModule[importFilePath]; ok {
-					errorMsg += fmt.Sprintf(
+					warnMsg += fmt.Sprintf(
 						", but found in transitive dependency %q, please declare that one as explicit dependency in your buf.yaml file",
 						transitiveDepModule,
 					)
 				} else {
-					errorMsg += ", or any of your transitive dependencies, please check that your imports are declared as explicit dependencies in your buf.yaml file"
+					warnMsg += ", or any of your transitive dependencies, please check that your imports are declared as explicit dependencies in your buf.yaml file"
 				}
-				importsErr = multierr.Append(importsErr, errors.New(errorMsg))
+				b.logger.Warn(warnMsg)
 			}
 		}
 	}
-	return importsErr
+	return nil
 }
 
 func getBuildResult(

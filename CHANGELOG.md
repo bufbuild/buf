@@ -2,13 +2,12 @@
 
 ## [Unreleased]
 
-<!-- FIXME: rephrase this item to say it's a WARN, not a FAIL  -->
-- Fix issue in the module file set build process that would allow Protobuf imports from transitive
-  dependencies. Now it checks that all imports statements in your target files are valid paths that
+- Add new validation in the image builder that logs warnings in case an import statement is not
+  valid. This validation checks that all imports statements in your target files are file paths that
   come from other target files in the local module, from other modules in the local workspace, or
-  from a direct dependency. In case none of those matches, and the file is found in a transitive
-  dependency, such dependency is suggested to be upgraded to direct dependency in the `buf.yaml`
-  file.
+  from a direct dependency (basically, invalidating imports from transitive dependencies). In case
+  the validation fails and the imported file is found in a transitive dependency, such dependency is
+  suggested to be upgraded to direct dependency in the `buf.yaml` file.
 
 ## [v1.19.0] - 2023-05-17
 
