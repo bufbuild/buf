@@ -137,26 +137,26 @@ func (b *builder) build(
 }
 
 // warnInvalidImports checks that all the target image files have valid imports statements that come
-// from the local module target files, workspace target files, or from a direct dependency, and not
-// a transitive (or unknown) one. It outputs a WARN message per invalid import statement.
+// from the local module target files or from a direct dependency. It outputs a WARN message per
+// invalid import statement.
 func (b *builder) warnInvalidImports(
 	ctx context.Context,
 	builtImage bufimage.Image,
 	explicitDirectModuleDeps []bufmoduleref.ModuleReference,
 	localWorkspace bufmodule.Workspace,
 ) error {
+	// FIXME: do we really need to bail out here?
 	if explicitDirectModuleDeps == nil && localWorkspace == nil {
 		return nil
 	}
-	// prepare direct deps as a map
-	directDepsIdentities := make(map[string]string, len(explicitDirectModuleDeps))
+	directDepsIdentities := make(map[string]struct{}, len(explicitDirectModuleDeps))
 	for _, directDep := range explicitDirectModuleDeps {
-		directDepsIdentities[directDep.IdentityString()] = "explicit"
+		directDepsIdentities[directDep.IdentityString()] = struct{}{}
 	}
-	// if it's a workspace build, and there's any named module in it, then it's considered a direct
-	// dependency too
+	workspaceIdentities := make(map[string]struct{})
 	if localWorkspace != nil {
-		for _, mod := range localWorkspace.GetModules() {
+		wsModules := localWorkspace.GetModules()
+		for _, mod := range wsModules {
 			if mod == nil {
 				b.logger.Debug("nil_module_in_workspace")
 				continue
@@ -167,24 +167,26 @@ func (b *builder) warnInvalidImports(
 			}
 			for _, file := range targetFiles {
 				if file.ModuleIdentity() != nil {
-					directDepsIdentities[file.ModuleIdentity().IdentityString()] = "workspace"
+					workspaceIdentities[file.ModuleIdentity().IdentityString()] = struct{}{}
 					break
 				}
 			}
 		}
 	}
 	b.logger.Debug(
-		"module",
-		zap.Any("module_direct_dependencies", directDepsIdentities),
+		"module_identities",
+		zap.Any("from_direct_dependencies", directDepsIdentities),
+		zap.Any("from_workspace", workspaceIdentities),
 	)
 
 	// categorize image files into direct vs transitive dependencies
 	allImgFiles := make(map[string]map[string][]string)    // for logging purposes only, modIdentity:filepath:imports
 	targetFiles := make(map[string]struct{})               // filepath
 	directDepsFilesToModule := make(map[string]string)     // filepath:modIdentity
+	workspaceFilesToModule := make(map[string]string)      // filepath:modIdentity
 	transitiveDepsFilesToModule := make(map[string]string) // filepath:modIdentity
 	for _, file := range builtImage.Files() {
-		{
+		{ // populate allImgFiles
 			modIdentity := "local"
 			if file.ModuleIdentity() != nil {
 				modIdentity = file.ModuleIdentity().IdentityString()
@@ -194,21 +196,30 @@ func (b *builder) warnInvalidImports(
 			}
 			allImgFiles[modIdentity][file.Path()] = file.FileDescriptor().GetDependency()
 		}
-		if file.ModuleIdentity() != nil && file.IsImport() {
-			if _, ok := directDepsIdentities[file.ModuleIdentity().IdentityString()]; ok {
-				directDepsFilesToModule[file.Path()] = file.ModuleIdentity().IdentityString()
-			} else {
-				transitiveDepsFilesToModule[file.Path()] = file.ModuleIdentity().IdentityString()
-			}
-		} else {
-			// file has no module identity (workspace local), or is no import (is local)
+		if !file.IsImport() {
 			targetFiles[file.Path()] = struct{}{}
+			continue
+		}
+		if file.ModuleIdentity() == nil {
+			workspaceFilesToModule[file.Path()] = "" // local workspace unnamed module
+			continue
+		}
+		// file is import and comes from a named module. It's either a direct dep, a workspace module,
+		// or a transitive dep.
+		modIdentity := file.ModuleIdentity().IdentityString()
+		if _, ok := directDepsIdentities[modIdentity]; ok {
+			directDepsFilesToModule[file.Path()] = modIdentity
+		} else if _, ok := workspaceIdentities[modIdentity]; ok {
+			workspaceFilesToModule[file.Path()] = modIdentity
+		} else {
+			transitiveDepsFilesToModule[file.Path()] = modIdentity
 		}
 	}
 	b.logger.Debug(
 		"image_files",
 		zap.Any("all_with_imports", allImgFiles),
-		zap.Any("local", targetFiles),
+		zap.Any("local_target", targetFiles),
+		zap.Any("from_workspace", workspaceFilesToModule),
 		zap.Any("from_direct_dependencies", directDepsFilesToModule),
 		zap.Any("from_transitive_dependencies", transitiveDepsFilesToModule),
 	)
@@ -230,14 +241,24 @@ func (b *builder) warnInvalidImports(
 				"File %q imports %q, which is not found in your local files or direct dependencies",
 				file.Path(), importFilePath,
 			)
-			if transitiveDepModule, ok := transitiveDepsFilesToModule[importFilePath]; ok {
+			if workspaceModule, ok := workspaceFilesToModule[importFilePath]; ok {
+				if workspaceModule == "" {
+					warnMsg += ", but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml."
+				} else {
+					warnMsg += fmt.Sprintf(
+						", but is found in local workspace module %q. Declare dependency %q in the deps key in buf.yaml.",
+						workspaceModule,
+						workspaceModule,
+					)
+				}
+			} else if transitiveDepModule, ok := transitiveDepsFilesToModule[importFilePath]; ok {
 				warnMsg += fmt.Sprintf(
-					", but is found in the transitive dependency %q. Please declare dependency %q in the deps key in buf.yaml.",
+					", but is found in the transitive dependency %q. Declare dependency %q in the deps key in buf.yaml.",
 					transitiveDepModule,
 					transitiveDepModule,
 				)
 			} else {
-				warnMsg += ", or any of your transitive dependencies. Check that external imports are declared as dependencies in the deps key in buf.yaml."
+				warnMsg += ", or any of your workspace modules or transitive dependencies. Check that external imports are declared as dependencies in the deps key in buf.yaml."
 			}
 			b.logger.Warn(warnMsg)
 		}
