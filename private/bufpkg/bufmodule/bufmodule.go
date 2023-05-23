@@ -104,8 +104,8 @@ type Module interface {
 	// The returned ModuleReferences are sorted by remote, owner, repository, and reference (if
 	// present). The returned ModulePins are unique by remote, owner, repository.
 	//
-	// This does not include any transitive dependency, but it should map 1:1 to one of the
-	// dependencies from the DependencyModulePins.
+	// This does not include any transitive dependencies, but it maps 1:1 to one of the dependencies
+	// from the DependencyModulePins.
 	DirectDependencies() []bufmoduleref.ModuleReference
 	// DependencyModulePins gets the dependency ModulePins.
 	//

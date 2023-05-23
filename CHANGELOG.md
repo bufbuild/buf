@@ -7,7 +7,7 @@
   come from other target files in the local module, from other modules in the local workspace, or
   from a direct dependency (basically, invalidating imports from transitive dependencies). In case
   the validation fails and the imported file is found in a transitive dependency, such dependency is
-  suggested to be upgraded to direct dependency in the `buf.yaml` file.
+  suggested to be upgraded to a direct dependency in the `buf.yaml` file.
 
 ## [v1.19.0] - 2023-05-17
 

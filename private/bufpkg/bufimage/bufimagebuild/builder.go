@@ -227,16 +227,17 @@ func (b *builder) warnInvalidImports(
 				continue // import comes from direct dep
 			}
 			warnMsg := fmt.Sprintf(
-				"Target proto file %q imports %q, not found in your local target files or direct dependencies",
+				"File %q imports %q, which is not found in your local files or direct dependencies",
 				file.Path(), importFilePath,
 			)
 			if transitiveDepModule, ok := transitiveDepsFilesToModule[importFilePath]; ok {
 				warnMsg += fmt.Sprintf(
-					", but found in transitive dependency %q, please declare that one as explicit dependency in your buf.yaml file",
+					", but is found in the transitive dependency %q. Please declare dependency %q in the deps key in buf.yaml.",
+					transitiveDepModule,
 					transitiveDepModule,
 				)
 			} else {
-				warnMsg += ", or any of your transitive dependencies, please check that your imports are declared as explicit dependencies in your buf.yaml file"
+				warnMsg += ", or any of your transitive dependencies. Check that external imports are declared as dependencies in the deps key in buf.yaml."
 			}
 			b.logger.Warn(warnMsg)
 		}

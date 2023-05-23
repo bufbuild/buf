@@ -79,9 +79,9 @@ func TestInvalidImportFromTransitive(t *testing.T) {
 			"WARN",
 			"bufimagebuild",
 			// "people1.proto" failure
-			`Target proto file "school/v1/school1.proto" imports "people/v1/people1.proto", not found in your local target files or direct dependencies, but found in transitive dependency "bufbuild.test/bufbot/people", please declare that one as explicit dependency in your buf.yaml file`,
+			`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Please declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
 			// "people2.proto" failure
-			`Target proto file "school/v1/school1.proto" imports "people/v1/people2.proto", not found in your local target files or direct dependencies, but found in transitive dependency "bufbuild.test/bufbot/people", please declare that one as explicit dependency in your buf.yaml file`,
+			`File "school/v1/school1.proto" imports "people/v1/people2.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Please declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
 		},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "school"),
