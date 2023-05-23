@@ -88,6 +88,22 @@ func RunCommandExitCodeStdoutStdinFile(
 	RunCommandExitCodeStdout(t, newCommand, expectedExitCode, expectedStdout, newEnv, stdin, args...)
 }
 
+// RunCommandExitCodeStderr runs the command and compares the exit code and stderr output.
+func RunCommandExitCodeStderr(
+	t *testing.T,
+	newCommand func(use string) *appcmd.Command,
+	expectedExitCode int,
+	expectedStderr string,
+	newEnv func(use string) map[string]string,
+	stdin io.Reader,
+	args ...string,
+) {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
+	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
+}
+
 // RunCommandExitCodeStderrContains runs the command and compares the exit code and stderr output
 // with the passed partial messages.
 func RunCommandExitCodeStderrContains(
