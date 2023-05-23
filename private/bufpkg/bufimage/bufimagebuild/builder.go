@@ -132,8 +132,7 @@ func (b *builder) build(
 		return nil, nil, err
 	}
 	if err := b.validateImports(ctx, image, directDeps, localWorkspace); err != nil {
-		// FIXME: make this into a warning
-		return nil, nil, err
+		b.logger.Warn("Invalid imports: " + err.Error())
 	}
 	return image, nil, nil
 }

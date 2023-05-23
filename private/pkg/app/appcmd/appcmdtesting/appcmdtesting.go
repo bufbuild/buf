@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -87,12 +88,13 @@ func RunCommandExitCodeStdoutStdinFile(
 	RunCommandExitCodeStdout(t, newCommand, expectedExitCode, expectedStdout, newEnv, stdin, args...)
 }
 
-// RunCommandExitCodeStderr runs the command and compares the exit code and stderr output.
-func RunCommandExitCodeStderr(
+// RunCommandExitCodeStderrContains runs the command and compares the exit code and stderr output
+// with the passed partial messages.
+func RunCommandExitCodeStderrContains(
 	t *testing.T,
 	newCommand func(use string) *appcmd.Command,
 	expectedExitCode int,
-	expectedStderr string,
+	expectedStderrPartials []string,
 	newEnv func(use string) map[string]string,
 	stdin io.Reader,
 	args ...string,
@@ -100,7 +102,10 @@ func RunCommandExitCodeStderr(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
+	allStderr := stderr.String()
+	for _, expectedPartial := range expectedStderrPartials {
+		assert.Contains(t, allStderr, expectedPartial)
+	}
 }
 
 // RunCommandExitCodeStdoutStderr runs the command and compares the exit code, stdout, and stderr output.
