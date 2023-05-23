@@ -68,6 +68,25 @@ func ScaffoldGitRepository(t *testing.T) TestGitRepository {
 	}
 }
 
+// the resulting Git repo looks like so:
+//
+//	.
+//	├── proto
+//	│   ├── acme
+//	│   │   ├── grocerystore
+//	│   │   │   └── v1
+//	│   │   │       ├── c.proto
+//	│   │   │       ├── d.proto
+//	│   │   │       ├── g.proto
+//	│   │   │       └── h.proto
+//	│   │   └── petstore
+//	│   │       └── v1
+//	│   │           ├── a.proto
+//	│   │           ├── b.proto
+//	│   │           ├── e.proto
+//	│   │           └── f.proto
+//	│   └── buf.yaml
+//	└── randomBinary (+x)
 func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	dir := t.TempDir()
 
