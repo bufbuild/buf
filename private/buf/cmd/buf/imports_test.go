@@ -78,9 +78,9 @@ func TestInvalidImportFromTransitive(t *testing.T) {
 		[]string{
 			"WARN",
 			"bufimagebuild",
-			// "people1.proto" warning
+			// school1 -> people1
 			`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
-			// "people2.proto" warning
+			// school1 -> people2
 			`File "school/v1/school1.proto" imports "people/v1/people2.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
 		},
 		"build",
@@ -95,6 +95,7 @@ func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 		[]string{
 			"WARN",
 			"bufimagebuild",
+			// a -> c
 			`File "a.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in local workspace module "bufbuild.test/workspace/third". Declare dependency "bufbuild.test/workspace/third" in the deps key in buf.yaml.`,
 		},
 		"build",
@@ -109,11 +110,11 @@ func TestInvalidImportFromTransitiveWorkspaceUnnamedModule(t *testing.T) {
 		[]string{
 			"WARN",
 			"bufimagebuild",
-			// "a.proto" -> "b.proto" warning
+			// a -> b
 			`File "a.proto" imports "b.proto", which is not found in your local files or direct dependencies, but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml.`,
-			// "a.proto" -> "c.proto" warning
+			// a -> c
 			`File "a.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml.`,
-			// "b.proto" -> "c.proto" warning
+			// b -> c
 			`File "b.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml.`,
 		},
 		"build",
