@@ -2,12 +2,8 @@
 
 ## [Unreleased]
 
-- Add new validation in the image builder that logs warnings in case an import statement is not
-  valid. This validation checks that all imports statements in your target files are file paths that
-  come from other target files in the local module, from other modules in the local workspace, or
-  from a direct dependency (basically, invalidating imports from transitive dependencies). In case
-  the validation fails and the imported file is found in a transitive dependency, such dependency is
-  suggested to be upgraded to a direct dependency in the `buf.yaml` file.
+- Add new validation in the image builder that logs warnings in case an import statement does not
+  come from other target files in the local module or from a direct dependency.
 
 ## [v1.19.0] - 2023-05-17
 
