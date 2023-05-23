@@ -157,16 +157,18 @@ func (b *builder) warnInvalidImports(
 	// dependency too
 	if localWorkspace != nil {
 		for _, mod := range localWorkspace.GetModules() {
-			if mod != nil {
-				targetFiles, err := mod.TargetFileInfos(ctx)
-				if err != nil {
-					return fmt.Errorf("workspace module target file infos: %w", err)
-				}
-				for _, file := range targetFiles {
-					if file.ModuleIdentity() != nil {
-						directDepsIdentities[file.ModuleIdentity().IdentityString()] = "workspace"
-						break
-					}
+			if mod == nil {
+				b.logger.Debug("nil_module_in_workspace")
+				continue
+			}
+			targetFiles, err := mod.TargetFileInfos(ctx)
+			if err != nil {
+				return fmt.Errorf("workspace module target file infos: %w", err)
+			}
+			for _, file := range targetFiles {
+				if file.ModuleIdentity() != nil {
+					directDepsIdentities[file.ModuleIdentity().IdentityString()] = "workspace"
+					break
 				}
 			}
 		}
