@@ -48,7 +48,6 @@ func newObjectReader(gitDirPath string, runner command.Runner) (*objectReader, e
 	if err != nil {
 		return nil, err
 	}
-	// TODO: do we need to validate `gitDirPath` is not jumping context?
 	rx, stdout := io.Pipe()
 	stdin, tx := io.Pipe()
 	process, err := runner.Start(
