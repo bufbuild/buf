@@ -143,5 +143,4 @@ func (o *objectReader) read(objectType string, id Hash) ([]byte, error) {
 			"git-cat-file: object %q is a %s, not a %s", id, objType, objectType,
 		)
 	}
-	return objContent, err
 }

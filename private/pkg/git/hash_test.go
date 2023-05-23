@@ -21,7 +21,7 @@ import (
 )
 
 func TestParseHashFromHex(t *testing.T) {
-	hex := "5edab9f970913225f985d9673ac19d61d36f0942"
+	const hex = "5edab9f970913225f985d9673ac19d61d36f0942"
 
 	id, err := parseHashFromHex(hex)
 
