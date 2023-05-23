@@ -16,13 +16,19 @@ package git
 
 import (
 	"context"
+	"errors"
 	"regexp"
+	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
+)
+
+const (
+	DotGitDir = ".git"
 )
 
 // Name is a name identifiable by git.
@@ -132,4 +138,133 @@ type ListFilesAndUnstagedFilesOptions struct {
 	// These must be unnormalized in the manner of the local OS that the Lister
 	// is being applied to.
 	IgnorePathRegexps []*regexp.Regexp
+}
+
+// BranchIterator ranges over branches for a git repository.
+//
+// Only branches from the remote named `origin` are ranged.
+type BranchIterator interface {
+	// ForEachBranch ranges over branches in the repository in an undefined order.
+	ForEachBranch(func(branch string) error) error
+}
+
+// CommitIterator ranges over commits for a git repository.
+//
+// Only commits from the remote named `origin` are ranged.
+type CommitIterator interface {
+	// BaseBranch is the base branch of the repository. This is either
+	// configured via the `WithBaseBranch` option, or discovered via the
+	// remote named `origin`. Therefore, discovery requires that the repository
+	// is pushed to the remote.
+	BaseBranch() string
+	// ForEachCommit ranges over commits for the target branch in reverse topological order.
+	//
+	// Parents are visited before children, and only left parents are visited (i.e.,
+	// commits from branches merged into the target branch are not visited).
+	ForEachCommit(branch string, f func(commit Commit) error) error
+}
+
+type CommitIteratorOption func(*commitIteratorOpts) error
+
+// CommitIteratorWithBaseBranch configures the base branch for this iterator.
+func CommitIteratorWithBaseBranch(name string) CommitIteratorOption {
+	return func(r *commitIteratorOpts) error {
+		if name == "" {
+			return errors.New("base branch cannot be empty")
+		}
+		r.baseBranch = name
+		return nil
+	}
+}
+
+// NewBranchIterator creates a new BranchIterator that can range over branches.
+func NewBranchIterator(
+	gitDirPath string,
+	objectReader ObjectReader,
+) (BranchIterator, error) {
+	return newBranchIterator(gitDirPath, objectReader)
+}
+
+// NewCommitIterator creates a new CommitIterator that can range over commits.
+//
+// By default, NewCommitIterator will attempt to detect the base branch if the repository
+// has been pushed. This may fail is the repository is not pushed. In this case, use the
+// `CommitIteratorWithBaseBranch` option.
+func NewCommitIterator(
+	gitDirPath string,
+	objectReader ObjectReader,
+	options ...CommitIteratorOption,
+) (CommitIterator, error) {
+	var opts commitIteratorOpts
+	for _, option := range options {
+		if err := option(&opts); err != nil {
+			return nil, err
+		}
+	}
+	return newCommitIterator(gitDirPath, objectReader, opts)
+}
+
+// Hash represents the hash of a Git object (tree, blob, or commit).
+type Hash interface {
+	// Hex is the hexadecimal representation of this ID.
+	Hex() string
+	// String returns the hexadecimal representation of this ID.
+	String() string
+}
+
+// NewHashFromHex creates a new hash that is validated.
+func NewHashFromHex(value string) (Hash, error) {
+	return parseHashFromHex(value)
+}
+
+// Ident is a git user identifier. These typically represent authors and committers.
+type Ident interface {
+	// Name is the name of the user.
+	Name() string
+	// Email is the email of the user.
+	Email() string
+	// Timestamp is the time at which this identity was created. For authors it's the
+	// commit's author time, and for committers it's the commit's commit time.
+	Timestamp() time.Time
+}
+
+// Commit represents a commit object.
+//
+// All commits will have a non-nil Tree. All but the root commit will contain >0 parents.
+type Commit interface {
+	// Hash is the Hash for this commit.
+	Hash() Hash
+	// Tree is the ID to the git tree for this commit.
+	Tree() Hash
+	// Parents is the set of parents for this commit. It may be empty.
+	//
+	// By convention, the first parent in a multi-parent commit is the merge target.
+	Parents() []Hash
+	// Author is the user who authored the commit.
+	Author() Ident
+	// Committer is the user who created the commit.
+	Committer() Ident
+	// Message is the commit message.
+	Message() string
+}
+
+// ObjectReader reads objects (commits, trees, blobs) from a `.git` directory.
+type ObjectReader interface {
+	// Commit reads the commit identified by the hash.
+	Commit(id Hash) (Commit, error)
+	// Close closes the reader.
+	Close() error
+}
+
+// OpenObjectReader opens a new Reader that can read objects from a `.git` directory.
+//
+// The provided path to the `.git` dir need not be normalized or cleaned.
+//
+// Internally, OpenObjectReader will spawns a new process to communicate with `git-cat-file`,
+// so the caller must close the reader function to clean up resources.
+func OpenObjectReader(
+	gitDirPath string,
+	runner command.Runner,
+) (ObjectReader, error) {
+	return newObjectReader(gitDirPath, runner)
 }
