@@ -142,15 +142,17 @@ func (b *builder) build(
 func (b *builder) warnInvalidImports(
 	ctx context.Context,
 	builtImage bufimage.Image,
-	explicitDirectModuleDeps []bufmoduleref.ModuleReference,
+	directModuleDeps []bufmoduleref.ModuleReference,
 	localWorkspace bufmodule.Workspace,
 ) error {
-	// FIXME: do we really need to bail out here?
-	if explicitDirectModuleDeps == nil && localWorkspace == nil {
+	if directModuleDeps == nil && localWorkspace == nil {
+		// Bail out early in case the caller didn't send explicitly send direct module dependencies nor
+		// workspace. TODO: We should always send direct deps, so this imports warning can always
+		// happen.
 		return nil
 	}
-	directDepsIdentities := make(map[string]struct{}, len(explicitDirectModuleDeps))
-	for _, directDep := range explicitDirectModuleDeps {
+	directDepsIdentities := make(map[string]struct{}, len(directModuleDeps))
+	for _, directDep := range directModuleDeps {
 		directDepsIdentities[directDep.IdentityString()] = struct{}{}
 	}
 	workspaceIdentities := make(map[string]struct{})
