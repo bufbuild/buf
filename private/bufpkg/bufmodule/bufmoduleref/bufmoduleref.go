@@ -536,6 +536,13 @@ func SortFileInfosByExternalPath(fileInfos []FileInfo) {
 	)
 }
 
+// SortModuleReferences sorts the ModuleReferences lexicographically by their identity.
+func SortModuleReferences(references []ModuleReference) {
+	sort.Slice(references, func(i, j int) bool {
+		return references[i].IdentityString() < references[j].IdentityString()
+	})
+}
+
 // SortModulePins sorts the ModulePins.
 func SortModulePins(modulePins []ModulePin) {
 	sort.Slice(modulePins, func(i, j int) bool {

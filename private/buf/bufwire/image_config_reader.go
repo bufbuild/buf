@@ -164,11 +164,18 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 			// an image for it.
 			continue
 		}
+		buildOpts := []bufimagebuild.BuildOption{
+			bufimagebuild.WithDirectDependencies(moduleConfig.Module().DirectDependencies()),
+			bufimagebuild.WithLocalWorkspace(moduleConfig.Workspace()),
+		}
+		if excludeSourceCodeInfo {
+			buildOpts = append(buildOpts, bufimagebuild.WithExcludeSourceCodeInfo())
+		}
 		imageConfig, fileAnnotations, err := i.buildModule(
 			ctx,
 			moduleConfig.Config(),
 			moduleFileSet,
-			excludeSourceCodeInfo,
+			buildOpts...,
 		)
 		if err != nil {
 			return nil, nil, err
@@ -239,18 +246,14 @@ func (i *imageConfigReader) buildModule(
 	ctx context.Context,
 	config *bufconfig.Config,
 	moduleFileSet bufmodule.ModuleFileSet,
-	excludeSourceCodeInfo bool,
+	buildOpts ...bufimagebuild.BuildOption,
 ) (ImageConfig, []bufanalysis.FileAnnotation, error) {
 	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "build_module")
 	defer span.End()
-	var options []bufimagebuild.BuildOption
-	if excludeSourceCodeInfo {
-		options = append(options, bufimagebuild.WithExcludeSourceCodeInfo())
-	}
 	image, fileAnnotations, err := i.imageBuilder.Build(
 		ctx,
 		moduleFileSet,
-		options...,
+		buildOpts...,
 	)
 	if err != nil {
 		span.RecordError(err)
