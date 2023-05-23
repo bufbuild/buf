@@ -78,13 +78,46 @@ func TestInvalidImportFromTransitive(t *testing.T) {
 		[]string{
 			"WARN",
 			"bufimagebuild",
-			// "people1.proto" failure
-			`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Please declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
-			// "people2.proto" failure
-			`File "school/v1/school1.proto" imports "people/v1/people2.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Please declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
+			// "people1.proto" warning
+			`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
+			// "people2.proto" warning
+			`File "school/v1/school1.proto" imports "people/v1/people2.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
 		},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "school"),
+	)
+}
+
+func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
+	t.Parallel()
+	testRunStderrWithCache(
+		t, nil, 0,
+		[]string{
+			"WARN",
+			"bufimagebuild",
+			`File "a.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in local workspace module "bufbuild.test/workspace/third". Declare dependency "bufbuild.test/workspace/third" in the deps key in buf.yaml.`,
+		},
+		"build",
+		filepath.Join("testdata", "imports", "failure", "workspace", "transitive_imports"),
+	)
+}
+
+func TestInvalidImportFromTransitiveWorkspaceUnnamedModule(t *testing.T) {
+	t.Parallel()
+	testRunStderrWithCache(
+		t, nil, 0,
+		[]string{
+			"WARN",
+			"bufimagebuild",
+			// "a.proto" -> "b.proto" warning
+			`File "a.proto" imports "b.proto", which is not found in your local files or direct dependencies, but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml.`,
+			// "a.proto" -> "c.proto" warning
+			`File "a.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml.`,
+			// "b.proto" -> "c.proto" warning
+			`File "b.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml.`,
+		},
+		"build",
+		filepath.Join("testdata", "imports", "failure", "workspace", "transitive_imports_unnamed"),
 	)
 }
 
