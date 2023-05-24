@@ -79,16 +79,14 @@ func (r *tagIterator) ForEachTag(f func(string, Hash) error) error {
 		// Finally, we fail.
 		tag, err := r.objectReader.Tag(hash)
 		if err == nil {
-			f(tagName, tag.Commit())
-			return nil
+			return f(tagName, tag.Commit())
 		}
 		if !errors.Is(err, errObjectTypeMismatch) {
 			return err
 		}
 		_, err = r.objectReader.Commit(hash)
 		if err == nil {
-			f(tagName, hash)
-			return nil
+			return f(tagName, hash)
 		}
 		if !errors.Is(err, errObjectTypeMismatch) {
 			return err
