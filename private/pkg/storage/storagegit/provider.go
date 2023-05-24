@@ -29,7 +29,7 @@ func newProvider(objectReader git.ObjectReader) *provider {
 	}
 }
 
-func (p *provider) NewReadBucketForTreeHash(treeHash git.Hash) (storage.ReadBucket, error) {
+func (p *provider) NewReadBucket(treeHash git.Hash) (storage.ReadBucket, error) {
 	tree, err := p.objectReader.Tree(treeHash)
 	if err != nil {
 		return nil, err

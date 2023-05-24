@@ -23,6 +23,7 @@ import (
 )
 
 func TestParseTree(t *testing.T) {
+	t.Parallel()
 	/*
 		This is generated using the following procedure:
 		```sh
@@ -43,14 +44,14 @@ func TestParseTree(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, tree.Hash(), hash)
-	assert.Len(t, tree.Entries(), 3)
-	assert.Equal(t, tree.Entries()[0].Hash().Hex(), "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
-	assert.Equal(t, tree.Entries()[0].Name(), "a.proto")
-	assert.Equal(t, tree.Entries()[0].Mode(), ModeFile)
-	assert.Equal(t, tree.Entries()[1].Hash().Hex(), "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
-	assert.Equal(t, tree.Entries()[1].Name(), "b")
-	assert.Equal(t, tree.Entries()[1].Mode(), ModeExe)
-	assert.Equal(t, tree.Entries()[2].Hash().Hex(), "5c4c3b5f86fa2060081873bf2f06973dd139832b")
-	assert.Equal(t, tree.Entries()[2].Name(), "c")
-	assert.Equal(t, tree.Entries()[2].Mode(), ModeDir)
+	assert.Len(t, tree.Nodes(), 3)
+	assert.Equal(t, tree.Nodes()[0].Hash().Hex(), "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
+	assert.Equal(t, tree.Nodes()[0].Name(), "a.proto")
+	assert.Equal(t, tree.Nodes()[0].Mode(), ModeFile)
+	assert.Equal(t, tree.Nodes()[1].Hash().Hex(), "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
+	assert.Equal(t, tree.Nodes()[1].Name(), "b")
+	assert.Equal(t, tree.Nodes()[1].Mode(), ModeExe)
+	assert.Equal(t, tree.Nodes()[2].Hash().Hex(), "5c4c3b5f86fa2060081873bf2f06973dd139832b")
+	assert.Equal(t, tree.Nodes()[2].Name(), "c")
+	assert.Equal(t, tree.Nodes()[2].Mode(), ModeDir)
 }

@@ -21,20 +21,8 @@ import (
 )
 
 type tree struct {
-	hash    Hash
-	entries []TreeEntry
-}
-
-func (t *tree) Hash() Hash {
-	return t.hash
-}
-
-func (t *tree) Entries() []TreeEntry {
-	return t.entries
-}
-
-func (t *tree) Traverse(objectReader ObjectReader, names ...string) (TreeEntry, error) {
-	return traverse(objectReader, t, names...)
+	hash  Hash
+	nodes []Node
 }
 
 func parseTree(hash Hash, data []byte) (*tree, error) {
@@ -47,26 +35,38 @@ func parseTree(hash Hash, data []byte) (*tree, error) {
 			return nil, errors.New("malformed tree")
 		}
 		length := i + 1 + hashLength
-		entry, err := parseTreeEntry(data[:length])
+		entry, err := parseTreeNode(data[:length])
 		if err != nil {
 			return nil, fmt.Errorf("malformed tree: %w", err)
 		}
-		t.entries = append(t.entries, entry)
+		t.nodes = append(t.nodes, entry)
 		data = data[length:]
 	}
 	return t, nil
+}
+
+func (t *tree) Hash() Hash {
+	return t.hash
+}
+
+func (t *tree) Nodes() []Node {
+	return t.nodes
+}
+
+func (t *tree) Traverse(objectReader ObjectReader, names ...string) (Node, error) {
+	return traverse(objectReader, t, names...)
 }
 
 func traverse(
 	objectReader ObjectReader,
 	root Tree,
 	names ...string,
-) (TreeEntry, error) {
+) (Node, error) {
 	name := names[0]
 	names = names[1:]
 	// Find name in this tree.
-	var found TreeEntry
-	for _, entry := range root.Entries() {
+	var found Node
+	for _, entry := range root.Nodes() {
 		if entry.Name() == name {
 			found = entry
 			break

@@ -95,7 +95,7 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 
 func (b *bucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
 	walkChecker := storageutil.NewWalkChecker()
-	return b.walk(b.root, b.objectReader, prefix, func(path string, te git.TreeEntry) error {
+	return b.walk(b.root, b.objectReader, prefix, func(path string, te git.Node) error {
 		if err := walkChecker.Check(ctx); err != nil {
 			return err
 		}
@@ -107,7 +107,7 @@ func (b *bucket) walk(
 	root git.Tree,
 	objectReader git.ObjectReader,
 	prefix string,
-	walkFn func(string, git.TreeEntry) error,
+	walkFn func(string, git.Node) error,
 ) error {
 	prefix = normalpath.Normalize(prefix)
 	if prefix != "." {
@@ -131,9 +131,9 @@ func walkTree(
 	root git.Tree,
 	objectReader git.ObjectReader,
 	prefix string,
-	walkFn func(string, git.TreeEntry) error,
+	walkFn func(string, git.Node) error,
 ) error {
-	for _, entry := range root.Entries() {
+	for _, entry := range root.Nodes() {
 		path := normalpath.Join(prefix, entry.Name())
 		switch entry.Mode() {
 		case git.ModeFile, git.ModeExe, git.ModeSymlink:

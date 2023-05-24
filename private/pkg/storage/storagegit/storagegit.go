@@ -21,12 +21,12 @@ import (
 
 // Provider provides storage buckets for a git repository.
 type Provider interface {
-	// NewReadBucketForTreeHash returns a new ReadBucket that represents
+	// NewReadBucket returns a new ReadBucket that represents
 	// the state of the working tree at the particular tree.
 	//
 	// Typically, callers will want to source the tree from a commit, but
 	// they can also use a subtree of another tree.
-	NewReadBucketForTreeHash(hash git.Hash) (storage.ReadBucket, error)
+	NewReadBucket(hash git.Hash) (storage.ReadBucket, error)
 }
 
 // NewProvider creates a new Provider for a git repository.

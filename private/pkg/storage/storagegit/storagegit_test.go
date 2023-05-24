@@ -34,7 +34,7 @@ func TestNewBucketAtTreeHash(t *testing.T) {
 		return nil
 	}))
 	require.NotNil(t, commit)
-	bucket, err := provider.NewReadBucketForTreeHash(commit.Tree())
+	bucket, err := provider.NewReadBucket(commit.Tree())
 	require.NoError(t, err)
 
 	storagetesting.AssertPaths(

@@ -21,46 +21,46 @@ import (
 	"strconv"
 )
 
-type treeEntry struct {
+type treeNode struct {
 	name string
 	mode FileMode
 	hash Hash
 }
 
-func (e *treeEntry) Name() string {
-	return e.name
-}
-
-func (e *treeEntry) Mode() FileMode {
-	return e.mode
-}
-
-func (e *treeEntry) Hash() Hash {
-	return e.hash
-}
-
-func parseTreeEntry(data []byte) (*treeEntry, error) {
+func parseTreeNode(data []byte) (*treeNode, error) {
 	modeAndName, hash, found := bytes.Cut(data, []byte{0})
 	if !found {
-		return nil, errors.New("malformed entry")
+		return nil, errors.New("malformed node")
 	}
 	parsedHash, err := newHashFromBytes(hash)
 	if err != nil {
-		return nil, fmt.Errorf("malformed git tree entry: %w", err)
+		return nil, fmt.Errorf("malformed git tree node: %w", err)
 	}
 	mode, name, found := bytes.Cut(modeAndName, []byte{' '})
 	if !found {
-		return nil, errors.New("malformed entry")
+		return nil, errors.New("malformed node")
 	}
 	parsedFileMode, err := parseFileMode(mode)
 	if err != nil {
-		return nil, fmt.Errorf("malformed git tree entry: %w", err)
+		return nil, fmt.Errorf("malformed git tree node: %w", err)
 	}
-	return &treeEntry{
+	return &treeNode{
 		hash: parsedHash,
 		name: string(name),
 		mode: parsedFileMode,
 	}, nil
+}
+
+func (e *treeNode) Name() string {
+	return e.name
+}
+
+func (e *treeNode) Mode() FileMode {
+	return e.mode
+}
+
+func (e *treeNode) Hash() Hash {
+	return e.hash
 }
 
 // decodes the octal form of a file mode into one of the valid Mode* values.
