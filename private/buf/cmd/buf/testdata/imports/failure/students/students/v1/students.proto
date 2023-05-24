@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package students.v1;
+
+import "people/v1/people1.proto"; // explicit direct import, ok
+import "people/v1/people_nonexistent.proto"; // but nonexistent file in explicit direct import
+
+message Student {
+  people.v1.Person1 person = 1;
+  people.v1.Person2 person2 = 2;
+}

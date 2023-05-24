@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/git_metadata.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -49,6 +50,8 @@ message RepositoryCommit {
   string spdx_license_id = 10;
   // The manifest digest of the commit.
   string manifest_digest = 11;
+  // Optional Git commit metadata for this commit.
+  optional GitCommitMetadata git_metadata = 12;
 }
 
 // RepositoryCommitService is the Repository commit service.

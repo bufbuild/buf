@@ -24,7 +24,7 @@ import (
 
 func TestWorkspaceAbsoluteFail(t *testing.T) {
 	// The buf.work.yaml file cannot specify absolute paths.
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,

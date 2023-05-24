@@ -37,6 +37,7 @@ type TestGitRepository struct {
 	Reader            git.ObjectReader
 	BranchIterator    git.BranchIterator
 	CommitIterator    git.CommitIterator
+	TagIterator       git.TagIterator
 }
 
 func ScaffoldGitRepository(t *testing.T) TestGitRepository {
@@ -52,6 +53,8 @@ func ScaffoldGitRepository(t *testing.T) TestGitRepository {
 	require.NoError(t, err)
 	commitIterator, err := git.NewCommitIterator(dotGitPath, reader, git.CommitIteratorWithBaseBranch(DefaultBranch))
 	require.NoError(t, err)
+	tagIterator, err := git.NewTagIterator(dotGitPath, reader)
+	require.NoError(t, err)
 	commitBytes, err := os.ReadFile(path.Join(dotGitPath, "refs", "heads", DefaultBranch))
 	require.NoError(t, err)
 	require.NoError(t, err)
@@ -65,6 +68,7 @@ func ScaffoldGitRepository(t *testing.T) TestGitRepository {
 		Reader:            reader,
 		BranchIterator:    branchIterator,
 		CommitIterator:    commitIterator,
+		TagIterator:       tagIterator,
 		DefaultBranchHead: commit,
 	}
 }
@@ -115,7 +119,8 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	runInDir(t, runner, local, "chmod", "+x", "randomBinary")
 	runInDir(t, runner, local, "git", "add", ".")
 	runInDir(t, runner, local, "git", "commit", "-m", "initial commit")
-	runInDir(t, runner, local, "git", "push", "-u", "-f", "origin", DefaultBranch)
+	runInDir(t, runner, local, "git", "tag", "release/v1")
+	runInDir(t, runner, local, "git", "push", "--follow-tags", "-u", "-f", "origin", DefaultBranch)
 
 	// (2) branch off main and begin work
 	runInDir(t, runner, local, "git", "checkout", "-b", "smian/branch1")
@@ -125,7 +130,8 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	})
 	runInDir(t, runner, local, "git", "add", ".")
 	runInDir(t, runner, local, "git", "commit", "-m", "branch1")
-	runInDir(t, runner, local, "git", "push", "origin", "smian/branch1")
+	runInDir(t, runner, local, "git", "tag", "-m", "for testing", "branch/v1")
+	runInDir(t, runner, local, "git", "push", "--follow-tags", "origin", "smian/branch1")
 
 	// (3) branch off branch and begin work
 	runInDir(t, runner, local, "git", "checkout", "-b", "smian/branch2")
@@ -135,19 +141,22 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	})
 	runInDir(t, runner, local, "git", "add", ".")
 	runInDir(t, runner, local, "git", "commit", "-m", "branch2")
-	runInDir(t, runner, local, "git", "push", "origin", "smian/branch2")
+	runInDir(t, runner, local, "git", "tag", "-m", "for testing", "branch/v2")
+	runInDir(t, runner, local, "git", "push", "--follow-tags", "origin", "smian/branch2")
 
 	// (4) merge first branch
 	runInDir(t, runner, local, "git", "checkout", DefaultBranch)
 	runInDir(t, runner, local, "git", "merge", "--squash", "smian/branch1")
 	runInDir(t, runner, local, "git", "commit", "-m", "second commit")
-	runInDir(t, runner, local, "git", "push")
+	runInDir(t, runner, local, "git", "tag", "v2")
+	runInDir(t, runner, local, "git", "push", "--follow-tags")
 
 	// (5) merge second branch
 	runInDir(t, runner, local, "git", "checkout", DefaultBranch)
 	runInDir(t, runner, local, "git", "merge", "--squash", "smian/branch2")
 	runInDir(t, runner, local, "git", "commit", "-m", "third commit")
-	runInDir(t, runner, local, "git", "push")
+	runInDir(t, runner, local, "git", "tag", "v3.0")
+	runInDir(t, runner, local, "git", "push", "--follow-tags")
 
 	return local
 }
