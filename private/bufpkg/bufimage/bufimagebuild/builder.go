@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -239,6 +240,9 @@ func (b *builder) warnInvalidImports(
 			if _, ok := directDepsFilesToModule[importFilePath]; ok {
 				continue // import comes from direct dep
 			}
+			if isWKTFile(importFilePath) {
+				continue // wkt files are shipped with protoc, and we ship them in datawkt, so it's always safe to import them
+			}
 			warnMsg := fmt.Sprintf(
 				"File %q imports %q, which is not found in your local files or direct dependencies",
 				file.Path(), importFilePath,
@@ -266,6 +270,32 @@ func (b *builder) warnInvalidImports(
 		}
 	}
 	return nil
+}
+
+var (
+	wktFiles map[string]struct{} // populated in isWKTFile func
+	wktOnce  sync.Once
+)
+
+func isWKTFile(filepath string) bool {
+	wktOnce.Do(func() {
+		wktFiles = map[string]struct{}{
+			"google/protobuf/any.proto":             {},
+			"google/protobuf/api.proto":             {},
+			"google/protobuf/compiler/plugin.proto": {},
+			"google/protobuf/descriptor.proto":      {},
+			"google/protobuf/duration.proto":        {},
+			"google/protobuf/empty.proto":           {},
+			"google/protobuf/field_mask.proto":      {},
+			"google/protobuf/source_context.proto":  {},
+			"google/protobuf/struct.proto":          {},
+			"google/protobuf/timestamp.proto":       {},
+			"google/protobuf/type.proto":            {},
+			"google/protobuf/wrappers.proto":        {},
+		}
+	})
+	_, ok := wktFiles[filepath]
+	return ok
 }
 
 func getBuildResult(
