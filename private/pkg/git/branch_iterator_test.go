@@ -22,6 +22,8 @@ import (
 )
 
 func TestBranches(t *testing.T) {
+	t.Parallel()
+
 	repo := gittest.ScaffoldGitRepository(t)
 	var branches []string
 	err := repo.BranchIterator.ForEachBranch(func(branch string) error {

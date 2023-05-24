@@ -22,6 +22,7 @@ import (
 
 func TestParseFileMode(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		desc      string
 		mode      FileMode

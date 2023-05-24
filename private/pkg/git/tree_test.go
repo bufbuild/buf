@@ -24,6 +24,7 @@ import (
 
 func TestParseTree(t *testing.T) {
 	t.Parallel()
+
 	/*
 		This is generated using the following procedure:
 		```sh

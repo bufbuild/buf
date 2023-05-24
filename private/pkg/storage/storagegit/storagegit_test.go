@@ -25,6 +25,8 @@ import (
 )
 
 func TestNewBucketAtTreeHash(t *testing.T) {
+	t.Parallel()
+
 	repo := gittest.ScaffoldGitRepository(t)
 	provider := NewProvider(repo.Reader)
 	// get last commit

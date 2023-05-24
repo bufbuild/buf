@@ -24,6 +24,8 @@ import (
 )
 
 func TestTags(t *testing.T) {
+	t.Parallel()
+
 	repo := gittest.ScaffoldGitRepository(t)
 	var tags []string
 	err := repo.TagIterator.ForEachTag(func(tag string, commitHash git.Hash) error {
