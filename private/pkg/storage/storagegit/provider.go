@@ -21,21 +21,38 @@ import (
 
 type provider struct {
 	objectReader git.ObjectReader
+	symlinks     bool
 }
 
-func newProvider(objectReader git.ObjectReader) *provider {
-	return &provider{
+func newProvider(objectReader git.ObjectReader, opts ...ProviderOption) *provider {
+	p := &provider{
 		objectReader: objectReader,
 	}
+	for _, opt := range opts {
+		opt(p)
+	}
+	return p
 }
 
-func (p *provider) NewReadBucket(treeHash git.Hash) (storage.ReadBucket, error) {
+func (p *provider) NewReadBucket(treeHash git.Hash, options ...ReadBucketOption) (storage.ReadBucket, error) {
+	var opts readBucketOptions
+	for _, opt := range options {
+		opt(&opts)
+	}
 	tree, err := p.objectReader.Tree(treeHash)
 	if err != nil {
 		return nil, err
 	}
 	return newBucket(
 		p.objectReader,
+		p.symlinks && opts.symlinksIfSupported,
 		tree,
 	)
+}
+
+// doing this as a separate struct so that it's clear this is resolved
+// as a combination of the provider options and read write bucket options
+// so there's no potential issues in newBucket
+type readBucketOptions struct {
+	symlinksIfSupported bool
 }

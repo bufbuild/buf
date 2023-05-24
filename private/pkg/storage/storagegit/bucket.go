@@ -28,30 +28,33 @@ import (
 
 type bucket struct {
 	objectReader git.ObjectReader
+	symlinks     bool
 	root         git.Tree
 }
 
 func newBucket(
 	objectReader git.ObjectReader,
+	symlinksIfSupported bool,
 	root git.Tree,
 ) (storage.ReadBucket, error) {
 	return &bucket{
 		objectReader: objectReader,
+		symlinks:     symlinksIfSupported,
 		root:         root,
 	}, nil
 }
 
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
-	entry, err := b.root.Traverse(b.objectReader, normalpath.Components(path)...)
+	node, err := b.root.Traverse(b.objectReader, normalpath.Components(path)...)
 	if err != nil {
 		if errors.Is(err, git.ErrSubTreeNotFound) {
 			return nil, storage.NewErrNotExist(path)
 		}
 		return nil, err
 	}
-	switch entry.Mode() {
+	switch node.Mode() {
 	case git.ModeFile, git.ModeExe:
-		data, err := b.objectReader.Blob(entry.Hash())
+		data, err := b.objectReader.Blob(node.Hash())
 		if err != nil {
 			return nil, err
 		}
@@ -60,9 +63,12 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 			reader: bytes.NewReader(data),
 		}, nil
 	case git.ModeSymlink:
+		if !b.symlinks {
+			return nil, storage.NewErrNotExist(path)
+		}
 		// Symlinks are stored as blobs that reference the target path as a relative
 		// path. We can follow this symlink trivially.
-		data, err := b.objectReader.Blob(entry.Hash())
+		data, err := b.objectReader.Blob(node.Hash())
 		if err != nil {
 			return nil, err
 		}
@@ -77,15 +83,20 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 }
 
 func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
-	entry, err := b.root.Traverse(b.objectReader, normalpath.Components(path)...)
+	node, err := b.root.Traverse(b.objectReader, normalpath.Components(path)...)
 	if err != nil {
 		if errors.Is(err, git.ErrSubTreeNotFound) {
 			return nil, storage.NewErrNotExist(path)
 		}
 		return nil, err
 	}
-	switch entry.Mode() {
-	case git.ModeFile, git.ModeExe, git.ModeSymlink:
+	switch node.Mode() {
+	case git.ModeFile, git.ModeExe:
+		return b.newObjectInfo(path), nil
+	case git.ModeSymlink:
+		if !b.symlinks {
+			return nil, storage.NewErrNotExist(path)
+		}
 		return b.newObjectInfo(path), nil
 	default:
 		// TODO: should this be an error? What kind of error can we throw here?
@@ -111,41 +122,47 @@ func (b *bucket) walk(
 ) error {
 	prefix = normalpath.Normalize(prefix)
 	if prefix != "." {
-		entry, err := b.root.Traverse(b.objectReader, normalpath.Components(prefix)...)
+		node, err := b.root.Traverse(b.objectReader, normalpath.Components(prefix)...)
 		if err != nil {
 			if errors.Is(err, git.ErrSubTreeNotFound) {
 				return storage.NewErrNotExist(prefix)
 			}
 			return err
 		}
-		subTree, err := b.objectReader.Tree(entry.Hash())
+		subTree, err := b.objectReader.Tree(node.Hash())
 		if err != nil {
 			return err
 		}
 		root = subTree
 	}
-	return walkTree(root, objectReader, prefix, walkFn)
+	return b.walkTree(root, objectReader, prefix, walkFn)
 }
 
-func walkTree(
+func (b *bucket) walkTree(
 	root git.Tree,
 	objectReader git.ObjectReader,
 	prefix string,
 	walkFn func(string, git.Node) error,
 ) error {
-	for _, entry := range root.Nodes() {
-		path := normalpath.Join(prefix, entry.Name())
-		switch entry.Mode() {
-		case git.ModeFile, git.ModeExe, git.ModeSymlink:
-			if err := walkFn(path, entry); err != nil {
+	for _, node := range root.Nodes() {
+		path := normalpath.Join(prefix, node.Name())
+		switch node.Mode() {
+		case git.ModeFile, git.ModeExe:
+			if err := walkFn(path, node); err != nil {
 				return err
 			}
+		case git.ModeSymlink:
+			if b.symlinks {
+				if err := walkFn(path, node); err != nil {
+					return err
+				}
+			}
 		case git.ModeDir:
-			subTree, err := objectReader.Tree(entry.Hash())
+			subTree, err := objectReader.Tree(node.Hash())
 			if err != nil {
 				return err
 			}
-			if err := walkTree(subTree, objectReader, path, walkFn); err != nil {
+			if err := b.walkTree(subTree, objectReader, path, walkFn); err != nil {
 				return err
 			}
 		case git.ModeSubmodule, git.ModeUnknown:

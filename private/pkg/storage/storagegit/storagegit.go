@@ -26,10 +26,30 @@ type Provider interface {
 	//
 	// Typically, callers will want to source the tree from a commit, but
 	// they can also use a subtree of another tree.
-	NewReadBucket(hash git.Hash) (storage.ReadBucket, error)
+	NewReadBucket(hash git.Hash, options ...ReadBucketOption) (storage.ReadBucket, error)
+}
+
+type ProviderOption func(*provider)
+
+// ProviderWithSymlinks returns a ProviderOption that results in symlink support.
+//
+// Note that ReadBucketWithSymlinksEnabled still needs to be passed for a given
+// ReadBucket to have symlinks followed.
+func ProviderWithSymlinks() ProviderOption {
+	return func(provider *provider) {
+		provider.symlinks = true
+	}
+}
+
+type ReadBucketOption func(*readBucketOptions)
+
+func ReadBucketWithSymlinksEnabled() ReadBucketOption {
+	return func(b *readBucketOptions) {
+		b.symlinksIfSupported = true
+	}
 }
 
 // NewProvider creates a new Provider for a git repository.
-func NewProvider(objectReader git.ObjectReader) Provider {
-	return newProvider(objectReader)
+func NewProvider(objectReader git.ObjectReader, options ...ProviderOption) Provider {
+	return newProvider(objectReader, options...)
 }

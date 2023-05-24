@@ -48,7 +48,7 @@ const (
 
 var ErrSubTreeNotFound = errors.New("subtree not found")
 
-// FileMode is how to interpret a tree entry's object. See the Mode* constants
+// FileMode is how to interpret a tree node's object. See the Mode* constants
 // for how to interpret each mode value.
 type FileMode uint32
 
@@ -301,7 +301,7 @@ type Tree interface {
 	// Nodes is the set of nodes in this Tree.
 	Nodes() []Node
 	// Traverse walks down a tree, following the name-path specified,
-	// and returns the terminal Node. If no entry is found, it returns
+	// and returns the terminal Node. If no node is found, it returns
 	// ErrSubTreeNotFound.
 	Traverse(objectReader ObjectReader, names ...string) (Node, error)
 }

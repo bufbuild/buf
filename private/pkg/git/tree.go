@@ -66,9 +66,9 @@ func traverse(
 	names = names[1:]
 	// Find name in this tree.
 	var found Node
-	for _, entry := range root.Nodes() {
-		if entry.Name() == name {
-			found = entry
+	for _, node := range root.Nodes() {
+		if node.Name() == name {
+			found = node
 			break
 		}
 	}
@@ -84,6 +84,7 @@ func traverse(
 		// Part of the path is not a directory.
 		return nil, ErrSubTreeNotFound
 	}
+	// TODO: support symlinks (on intermediate dirs) with traverse option
 	// Walk down the tree.
 	tree, err := objectReader.Tree(found.Hash())
 	if err != nil {
