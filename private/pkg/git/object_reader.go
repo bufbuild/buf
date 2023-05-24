@@ -32,6 +32,7 @@ import (
 
 // exitTime is the amount of time we'll wait for git-cat-file(1) to exit.
 var exitTime = 5 * time.Second
+var errObjectTypeMismatch = errors.New("object type mismatch")
 
 type objectReader struct {
 	rx      *bufio.Reader
@@ -89,6 +90,14 @@ func (o *objectReader) Commit(id Hash) (Commit, error) {
 	return parseCommit(id, data)
 }
 
+func (o *objectReader) Tag(hash Hash) (AnnotatedTag, error) {
+	data, err := o.read("tag", hash)
+	if err != nil {
+		return nil, err
+	}
+	return parseAnnotatedTag(hash, data)
+}
+
 func (o *objectReader) read(objectType string, id Hash) ([]byte, error) {
 	// request
 	if _, err := fmt.Fprintf(o.tx, "%s\n", id.Hex()); err != nil {
@@ -139,7 +148,11 @@ func (o *objectReader) read(objectType string, id Hash) ([]byte, error) {
 	// first.
 	if objType != objectType {
 		return nil, fmt.Errorf(
-			"git-cat-file: object %q is a %s, not a %s", id, objType, objectType,
+			"git-cat-file: object %q is a %s, not a %s: %w",
+			id,
+			objType,
+			objectType,
+			errObjectTypeMismatch,
 		)
 	}
 	return objContent, nil

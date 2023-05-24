@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package people.v1;
+
+import "nonexistent.proto";
+
+message Person1 {
+  string name = 1;
+}

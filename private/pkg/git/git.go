@@ -140,6 +140,22 @@ type ListFilesAndUnstagedFilesOptions struct {
 	IgnorePathRegexps []*regexp.Regexp
 }
 
+// TagIterator ranges over tags for a git repository.
+//
+// All tags are ranged, including local (unpushed) tags.
+type TagIterator interface {
+	// ForEachTag ranges over tags in the repository in an undefined order.
+	ForEachTag(func(tag string, commitHash Hash) error) error
+}
+
+// NewTagIterator creates a new TagIterator that can range over tags.
+func NewTagIterator(
+	gitDirPath string,
+	objectReader ObjectReader,
+) (TagIterator, error) {
+	return newTagIterator(gitDirPath, objectReader)
+}
+
 // BranchIterator ranges over branches for a git repository.
 //
 // Only branches from the remote named `origin` are ranged.
@@ -248,10 +264,26 @@ type Commit interface {
 	Message() string
 }
 
+// AnnotatedTag represents an annotated tag object.
+type AnnotatedTag interface {
+	// Hash is the Hash for this tag.
+	Hash() Hash
+	// Commit is the ID to the git commit that this tag points to.
+	Commit() Hash
+	// Tagger is the user who tagged the commit.
+	Tagger() Ident
+	// Name is the value of the tag.
+	Name() string
+	// Message is the commit message.
+	Message() string
+}
+
 // ObjectReader reads objects (commits, trees, blobs) from a `.git` directory.
 type ObjectReader interface {
 	// Commit reads the commit identified by the hash.
 	Commit(id Hash) (Commit, error)
+	// Tag reads the tag identified by the hash.
+	Tag(id Hash) (AnnotatedTag, error)
 	// Close closes the reader.
 	Close() error
 }

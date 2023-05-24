@@ -229,17 +229,20 @@ func (f *file) SyntaxLocation() Location {
 // does not validation of the fileDescriptorProto - this is assumed to be done elsewhere
 // does no duplicate checking by name - could just have maps ie importToFileImport, enumNameToEnum, etc
 func newFile(inputFile InputFile) (*file, error) {
+	locationStore := newLocationStore(inputFile.FileDescriptor().GetSourceCodeInfo().GetLocation())
 	f := &file{
 		FileInfo:       inputFile,
 		fileDescriptor: inputFile.FileDescriptor(),
 		optionExtensionDescriptor: newOptionExtensionDescriptor(
 			inputFile.FileDescriptor().GetOptions(),
+			[]int32{8},
+			locationStore,
 		),
 		edition: inputFile.FileDescriptor().GetEdition(),
 	}
 	descriptor := newDescriptor(
 		f,
-		newLocationStore(f.fileDescriptor.GetSourceCodeInfo().GetLocation()),
+		locationStore,
 	)
 	f.descriptor = descriptor
 
@@ -377,6 +380,8 @@ func (f *file) populateEnum(
 		enumNamedDescriptor,
 		newOptionExtensionDescriptor(
 			enumDescriptorProto.GetOptions(),
+			getEnumOptionsPath(enumIndex, nestedMessageIndexes...),
+			f.descriptor.locationStore,
 		),
 		enumDescriptorProto.GetOptions().GetAllowAlias(),
 		enumDescriptorProto.GetOptions().GetDeprecatedLegacyJsonFieldConflicts(),
@@ -402,6 +407,8 @@ func (f *file) populateEnum(
 			enumValueNamedDescriptor,
 			newOptionExtensionDescriptor(
 				enumValueDescriptorProto.GetOptions(),
+				getEnumValueOptionsPath(enumIndex, enumValueIndex, nestedMessageIndexes...),
+				f.descriptor.locationStore,
 			),
 			enum,
 			int(enumValueDescriptorProto.GetNumber()),
@@ -467,6 +474,8 @@ func (f *file) populateMessage(
 		messageNamedDescriptor,
 		newOptionExtensionDescriptor(
 			descriptorProto.GetOptions(),
+			getMessageOptionsPath(topLevelMessageIndex, nestedMessageIndexes...),
+			f.descriptor.locationStore,
 		),
 		parent,
 		descriptorProto.GetOptions().GetMapEntry(),
@@ -495,6 +504,8 @@ func (f *file) populateMessage(
 			oneofNamedDescriptor,
 			newOptionExtensionDescriptor(
 				oneofDescriptorProto.GetOptions(),
+				getMessageOneofOptionsPath(oneofIndex, topLevelMessageIndex, nestedMessageIndexes...),
+				f.descriptor.locationStore,
 			),
 			message,
 		)
@@ -532,6 +543,8 @@ func (f *file) populateMessage(
 			fieldNamedDescriptor,
 			newOptionExtensionDescriptor(
 				fieldDescriptorProto.GetOptions(),
+				getMessageFieldOptionsPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
+				f.descriptor.locationStore,
 			),
 			message,
 			int(fieldDescriptorProto.GetNumber()),
@@ -593,6 +606,8 @@ func (f *file) populateMessage(
 			fieldNamedDescriptor,
 			newOptionExtensionDescriptor(
 				fieldDescriptorProto.GetOptions(),
+				getMessageExtensionOptionsPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
+				f.descriptor.locationStore,
 			),
 			message,
 			int(fieldDescriptorProto.GetNumber()),
@@ -666,6 +681,8 @@ func (f *file) populateMessage(
 			int(extensionRangeDescriptorProto.GetEnd()),
 			newOptionExtensionDescriptor(
 				extensionRangeDescriptorProto.GetOptions(),
+				getMessageExtensionRangeOptionsPath(extensionRangeIndex, topLevelMessageIndex, nestedMessageIndexes...),
+				f.descriptor.locationStore,
 			),
 		)
 		message.addExtensionRange(extensionMessageRange)
@@ -721,6 +738,8 @@ func (f *file) populateService(
 		serviceNamedDescriptor,
 		newOptionExtensionDescriptor(
 			serviceDescriptorProto.GetOptions(),
+			getServiceOptionsPath(serviceIndex),
+			f.descriptor.locationStore,
 		),
 		serviceDescriptorProto.GetOptions().GetDeprecated(),
 	)
@@ -741,6 +760,8 @@ func (f *file) populateService(
 			methodNamedDescriptor,
 			newOptionExtensionDescriptor(
 				methodDescriptorProto.GetOptions(),
+				getMethodOptionsPath(serviceIndex, methodIndex),
+				f.descriptor.locationStore,
 			),
 			service,
 			strings.TrimPrefix(methodDescriptorProto.GetInputType(), "."),
@@ -785,6 +806,8 @@ func (f *file) populateExtension(
 		fieldNamedDescriptor,
 		newOptionExtensionDescriptor(
 			fieldDescriptorProto.GetOptions(),
+			getFileExtensionOptionsPath(fieldIndex),
+			f.descriptor.locationStore,
 		),
 		nil,
 		int(fieldDescriptorProto.GetNumber()),
