@@ -18,13 +18,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleprotocompile"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
@@ -240,7 +240,7 @@ func (b *builder) warnInvalidImports(
 			if _, ok := directDepsFilesToModule[importFilePath]; ok {
 				continue // import comes from direct dep
 			}
-			if isWKTFile(importFilePath) {
+			if datawkt.Exists(importFilePath) {
 				continue // wkt files are shipped with protoc, and we ship them in datawkt, so it's always safe to import them
 			}
 			warnMsg := fmt.Sprintf(
@@ -270,32 +270,6 @@ func (b *builder) warnInvalidImports(
 		}
 	}
 	return nil
-}
-
-var (
-	wktFiles map[string]struct{} // populated in isWKTFile func
-	wktOnce  sync.Once
-)
-
-func isWKTFile(filepath string) bool {
-	wktOnce.Do(func() {
-		wktFiles = map[string]struct{}{
-			"google/protobuf/any.proto":             {},
-			"google/protobuf/api.proto":             {},
-			"google/protobuf/compiler/plugin.proto": {},
-			"google/protobuf/descriptor.proto":      {},
-			"google/protobuf/duration.proto":        {},
-			"google/protobuf/empty.proto":           {},
-			"google/protobuf/field_mask.proto":      {},
-			"google/protobuf/source_context.proto":  {},
-			"google/protobuf/struct.proto":          {},
-			"google/protobuf/timestamp.proto":       {},
-			"google/protobuf/type.proto":            {},
-			"google/protobuf/wrappers.proto":        {},
-		}
-	})
-	_, ok := wktFiles[filepath]
-	return ok
 }
 
 func getBuildResult(
