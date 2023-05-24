@@ -28,6 +28,10 @@ type treeNode struct {
 }
 
 func parseTreeNode(data []byte) (*treeNode, error) {
+	/*
+		data is in the format
+			<mode><space><name>\0<hash>
+	*/
 	modeAndName, hash, found := bytes.Cut(data, []byte{0})
 	if !found {
 		return nil, errors.New("malformed node")

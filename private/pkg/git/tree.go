@@ -29,7 +29,15 @@ func parseTree(hash Hash, data []byte) (*tree, error) {
 	t := &tree{
 		hash: hash,
 	}
+	/*
+		data is in the format
+			<mode><space><name>\0<hash>
+		repeated
+	*/
 	for len(data) > 0 {
+		// We can find the \0 character before the <hash>
+		// and slice to the index of \0 + the length of a hash.
+		// That gives us a single node.
 		i := bytes.Index(data, []byte{0})
 		if i == -1 {
 			return nil, errors.New("malformed tree")
@@ -62,9 +70,15 @@ func traverse(
 	root Tree,
 	names ...string,
 ) (Node, error) {
+	// split by the name of the next node we're looking for
+	// and the names of the descendant nodes
 	name := names[0]
-	names = names[1:]
-	// Find name in this tree.
+	if len(names) > 2 {
+		names = names[1:]
+	} else {
+		names = nil
+	}
+	// Find node with that name in this tree.
 	var found Node
 	for _, node := range root.Nodes() {
 		if node.Name() == name {
@@ -73,19 +87,21 @@ func traverse(
 		}
 	}
 	if found == nil {
-		// No name in this tree.
+		// No node with that name in this tree.
 		return nil, ErrSubTreeNotFound
 	}
 	if len(names) == 0 {
-		// We found it.
+		// No more descendants, we've found our terminal node.
 		return found, nil
 	}
 	if found.Mode() != ModeDir {
-		// Part of the path is not a directory.
+		// This is an intermediate (non-terminal) node, which are expected to be
+		// directories. This is node is not a directory, so we fail with a non-found
+		// errror.
 		return nil, ErrSubTreeNotFound
 	}
 	// TODO: support symlinks (on intermediate dirs) with traverse option
-	// Walk down the tree.
+	// Descend down and traverse.
 	tree, err := objectReader.Tree(found.Hash())
 	if err != nil {
 		return nil, err
