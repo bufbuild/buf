@@ -35,11 +35,11 @@ func parseTree(hash Hash, data []byte) (*tree, error) {
 			return nil, errors.New("malformed tree")
 		}
 		length := i + 1 + hashLength
-		entry, err := parseTreeNode(data[:length])
+		node, err := parseTreeNode(data[:length])
 		if err != nil {
 			return nil, fmt.Errorf("malformed tree: %w", err)
 		}
-		t.nodes = append(t.nodes, entry)
+		t.nodes = append(t.nodes, node)
 		data = data[length:]
 	}
 	return t, nil
