@@ -17,6 +17,7 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/module/v1alpha1/module.proto";
+import "buf/alpha/registry/v1alpha1/git_metadata.proto";
 import "buf/alpha/registry/v1alpha1/module.proto";
 
 // PushService is the Push service.
@@ -70,6 +71,9 @@ message PushManifestAndBlobsRequest {
   repeated string tags = 5;
   // If non-empty, the push creates a draft commit with this name.
   string draft_name = 6;
+  // Additional Git-related metadata to attach to the commit. If empty, the commit
+  // will belong to the `main` branch and will generate a new timestamp.
+  optional GitCommitMetadata git_metadata = 7;
 }
 
 // PushManifestAndBlobsResponse is the pushed module pin, local to the used
