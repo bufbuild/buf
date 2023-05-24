@@ -115,14 +115,14 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectI
 }
 
 func (b *bucket) walk(
-	root git.Tree,
+	parent git.Tree,
 	objectReader git.ObjectReader,
 	prefix string,
 	walkFn func(string, git.Node) error,
 ) error {
 	prefix = normalpath.Normalize(prefix)
 	if prefix != "." {
-		node, err := b.root.Traverse(b.objectReader, normalpath.Components(prefix)...)
+		node, err := parent.Traverse(b.objectReader, normalpath.Components(prefix)...)
 		if err != nil {
 			if errors.Is(err, git.ErrSubTreeNotFound) {
 				return storage.NewErrNotExist(prefix)
@@ -133,18 +133,18 @@ func (b *bucket) walk(
 		if err != nil {
 			return err
 		}
-		root = subTree
+		parent = subTree
 	}
-	return b.walkTree(root, objectReader, prefix, walkFn)
+	return b.walkTree(parent, objectReader, prefix, walkFn)
 }
 
 func (b *bucket) walkTree(
-	root git.Tree,
+	parent git.Tree,
 	objectReader git.ObjectReader,
 	prefix string,
 	walkFn func(string, git.Node) error,
 ) error {
-	for _, node := range root.Nodes() {
+	for _, node := range parent.Nodes() {
 		path := normalpath.Join(prefix, node.Name())
 		switch node.Mode() {
 		case git.ModeFile, git.ModeExe:
