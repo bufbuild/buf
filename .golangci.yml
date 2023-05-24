@@ -62,6 +62,7 @@ linters:
     - nilerr
     - nolintlint
     - nosprintfhostport
+    - paralleltest
     - predeclared
     - promlinter
     - reassign
