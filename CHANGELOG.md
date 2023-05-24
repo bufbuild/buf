@@ -2,8 +2,8 @@
 
 ## [Unreleased]
 
-- Log a warning in case an import statement does not point to a file in the module or in a direct
-  dependency.
+- Log a warning in case an import statement does not point to a file in the module, a file in a
+  direct dependency, or a well-known type file.
 
 ## [v1.19.0] - 2023-05-17
 
