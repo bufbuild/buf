@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleprotocompile"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
@@ -238,6 +239,9 @@ func (b *builder) warnInvalidImports(
 			}
 			if _, ok := directDepsFilesToModule[importFilePath]; ok {
 				continue // import comes from direct dep
+			}
+			if datawkt.Exists(importFilePath) {
+				continue // wkt files are shipped with protoc, and we ship them in datawkt, so it's always safe to import them
 			}
 			warnMsg := fmt.Sprintf(
 				"File %q imports %q, which is not found in your local files or direct dependencies",

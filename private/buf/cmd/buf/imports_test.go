@@ -51,6 +51,16 @@ func TestValidImportTransitiveFromCache(t *testing.T) {
 	)
 }
 
+func TestValidImportWKT(t *testing.T) {
+	t.Parallel()
+	testRunStdoutStderr(
+		t, nil, 0,
+		"", // no warnings
+		"build",
+		filepath.Join("testdata", "imports", "success", "wkt"),
+	)
+}
+
 func TestInvalidNonexistentImport(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
