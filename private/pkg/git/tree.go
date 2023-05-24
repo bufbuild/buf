@@ -73,7 +73,7 @@ func traverse(
 	// split by the name of the next node we're looking for
 	// and the names of the descendant nodes
 	name := names[0]
-	if len(names) > 2 {
+	if len(names) >= 2 {
 		names = names[1:]
 	} else {
 		names = nil
