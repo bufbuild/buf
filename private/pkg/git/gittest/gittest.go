@@ -172,6 +172,6 @@ func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args 
 func writeFiles(t *testing.T, dir string, files map[string]string) {
 	for path, contents := range files {
 		require.NoError(t, os.MkdirAll(filepath.Join(dir, filepath.Dir(path)), 0700))
-		require.NoError(t, os.WriteFile(filepath.Join(dir, path), []byte(contents), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, path), []byte(contents), 0600))
 	}
 }
