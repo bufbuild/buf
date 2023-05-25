@@ -28,10 +28,10 @@ func TestTags(t *testing.T) {
 
 	repo := gittest.ScaffoldGitRepository(t)
 	var tags []string
-	err := repo.TagIterator.ForEachTag(func(tag string, commitHash git.Hash) error {
+	err := repo.ForEachTag(func(tag string, commitHash git.Hash) error {
 		tags = append(tags, tag)
 
-		commit, err := repo.Reader.Commit(commitHash)
+		commit, err := repo.Objects().Commit(commitHash)
 		require.NoError(t, err)
 		switch tag {
 		case "release/v1":
@@ -58,5 +58,57 @@ func TestTags(t *testing.T) {
 		"branch/v2",
 		"v2",
 		"v3.0",
+	})
+}
+
+func TestCommits(t *testing.T) {
+	t.Parallel()
+
+	repo := gittest.ScaffoldGitRepository(t)
+	var commits []git.Commit
+	err := repo.ForEachCommit(gittest.DefaultBranch, func(c git.Commit) error {
+		commits = append(commits, c)
+		return nil
+	})
+
+	require.NoError(t, err)
+	require.Len(t, commits, 3)
+	assert.Empty(t, commits[0].Parents())
+	assert.Equal(t, commits[0].Message(), "initial commit")
+	assert.Contains(t, commits[1].Parents(), commits[0].Hash())
+	assert.Equal(t, commits[1].Message(), "second commit")
+	assert.Contains(t, commits[2].Parents(), commits[1].Hash())
+	assert.Equal(t, commits[2].Message(), "third commit")
+}
+
+func TestBranches(t *testing.T) {
+	t.Parallel()
+
+	repo := gittest.ScaffoldGitRepository(t)
+	var branches []string
+	err := repo.ForEachBranch(func(branch string, headHash git.Hash) error {
+		branches = append(branches, branch)
+
+		commit, err := repo.Objects().Commit(headHash)
+		require.NoError(t, err)
+		switch branch {
+		case "master":
+			assert.Equal(t, commit.Message(), "third commit")
+		case "smian/branch1":
+			assert.Equal(t, commit.Message(), "branch1")
+		case "smian/branch2":
+			assert.Equal(t, commit.Message(), "branch2")
+		default:
+			assert.Failf(t, "unknown branch", branch)
+		}
+
+		return nil
+	})
+
+	require.NoError(t, err)
+	require.ElementsMatch(t, branches, []string{
+		"master",
+		"smian/branch1",
+		"smian/branch2",
 	})
 }

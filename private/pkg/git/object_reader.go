@@ -20,13 +20,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"go.uber.org/multierr"
 )
 
@@ -48,14 +46,6 @@ type objectReader struct {
 }
 
 func newObjectReader(gitDirPath string, runner command.Runner) (*objectReader, error) {
-	gitDirPath = normalpath.Unnormalize(gitDirPath)
-	if err := validateDirPathExists(gitDirPath); err != nil {
-		return nil, err
-	}
-	gitDirPath, err := filepath.Abs(gitDirPath)
-	if err != nil {
-		return nil, err
-	}
 	rx, stdout := io.Pipe()
 	stdin, tx := io.Pipe()
 	process, err := runner.Start(
@@ -77,7 +67,7 @@ func newObjectReader(gitDirPath string, runner command.Runner) (*objectReader, e
 	}, nil
 }
 
-func (o *objectReader) Close() error {
+func (o *objectReader) close() error {
 	ctx, cancel := context.WithDeadline(
 		context.Background(),
 		time.Now().Add(exitTime),

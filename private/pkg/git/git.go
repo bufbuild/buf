@@ -161,86 +161,6 @@ type ListFilesAndUnstagedFilesOptions struct {
 	IgnorePathRegexps []*regexp.Regexp
 }
 
-// TagIterator ranges over tags for a git repository.
-//
-// All tags are ranged, including local (unpushed) tags.
-type TagIterator interface {
-	// ForEachTag ranges over tags in the repository in an undefined order.
-	ForEachTag(func(tag string, commitHash Hash) error) error
-}
-
-// NewTagIterator creates a new TagIterator that can range over tags.
-func NewTagIterator(
-	gitDirPath string,
-	objectReader ObjectReader,
-) (TagIterator, error) {
-	return newTagIterator(gitDirPath, objectReader)
-}
-
-// BranchIterator ranges over branches for a git repository.
-//
-// Only branches from the remote named `origin` are ranged.
-type BranchIterator interface {
-	// ForEachBranch ranges over branches in the repository in an undefined order.
-	ForEachBranch(func(branch string) error) error
-}
-
-// CommitIterator ranges over commits for a git repository.
-//
-// Only commits from the remote named `origin` are ranged.
-type CommitIterator interface {
-	// BaseBranch is the base branch of the repository. This is either
-	// configured via the `WithBaseBranch` option, or discovered via the
-	// remote named `origin`. Therefore, discovery requires that the repository
-	// is pushed to the remote.
-	BaseBranch() string
-	// ForEachCommit ranges over commits for the target branch in reverse topological order.
-	//
-	// Parents are visited before children, and only left parents are visited (i.e.,
-	// commits from branches merged into the target branch are not visited).
-	ForEachCommit(branch string, f func(commit Commit) error) error
-}
-
-type CommitIteratorOption func(*commitIteratorOpts) error
-
-// CommitIteratorWithBaseBranch configures the base branch for this iterator.
-func CommitIteratorWithBaseBranch(name string) CommitIteratorOption {
-	return func(r *commitIteratorOpts) error {
-		if name == "" {
-			return errors.New("base branch cannot be empty")
-		}
-		r.baseBranch = name
-		return nil
-	}
-}
-
-// NewBranchIterator creates a new BranchIterator that can range over branches.
-func NewBranchIterator(
-	gitDirPath string,
-	objectReader ObjectReader,
-) (BranchIterator, error) {
-	return newBranchIterator(gitDirPath, objectReader)
-}
-
-// NewCommitIterator creates a new CommitIterator that can range over commits.
-//
-// By default, NewCommitIterator will attempt to detect the base branch if the repository
-// has been pushed. This may fail is the repository is not pushed. In this case, use the
-// `CommitIteratorWithBaseBranch` option.
-func NewCommitIterator(
-	gitDirPath string,
-	objectReader ObjectReader,
-	options ...CommitIteratorOption,
-) (CommitIterator, error) {
-	var opts commitIteratorOpts
-	for _, option := range options {
-		if err := option(&opts); err != nil {
-			return nil, err
-		}
-	}
-	return newCommitIterator(gitDirPath, objectReader, opts)
-}
-
 // Hash represents the hash of a Git object (tree, blob, or commit).
 type Hash interface {
 	// Hex is the hexadecimal representation of this ID.
@@ -299,7 +219,7 @@ type AnnotatedTag interface {
 	Message() string
 }
 
-// ObjectReader reads objects (commits, trees, blobs) from a `.git` directory.
+// ObjectReader reads objects (commits, trees, blobs, tags) from a `.git` directory.
 type ObjectReader interface {
 	// Blob reads the blob identified by the hash.
 	Blob(id Hash) ([]byte, error)
@@ -309,21 +229,6 @@ type ObjectReader interface {
 	Tree(id Hash) (Tree, error)
 	// Tag reads the tag identified by the hash.
 	Tag(id Hash) (AnnotatedTag, error)
-	// Close closes the reader.
-	Close() error
-}
-
-// OpenObjectReader opens a new Reader that can read objects from a `.git` directory.
-//
-// The provided path to the `.git` dir need not be normalized or cleaned.
-//
-// Internally, OpenObjectReader will spawns a new process to communicate with `git-cat-file`,
-// so the caller must close the reader function to clean up resources.
-func OpenObjectReader(
-	gitDirPath string,
-	runner command.Runner,
-) (ObjectReader, error) {
-	return newObjectReader(gitDirPath, runner)
 }
 
 // Tree is a git tree, which are a manifest of other git objects, including other trees.
@@ -348,4 +253,60 @@ type TreeNode interface {
 	Name() string
 	// Mode is the file mode of the object referenced by this Node.
 	Mode() ObjectMode
+}
+
+// Repository is a git repository that is backed by a `.git` directory.
+type Repository interface {
+	// BaseBranch is the base branch of the repository. This is either configured
+	// via the `OpenRepositoryWithBaseBranch` option, or discovered via the remote
+	// named `origin`. Therefore, discovery requires that the repository is pushed
+	// to the remote.
+	BaseBranch() string
+	// ForEachBranch ranges over branches in the repository in an undefined order.
+	//
+	// Only pushed (i.e., remote) branches are visited.
+	ForEachBranch(func(branch string, headHash Hash) error) error
+	// ForEachCommit ranges over commits for the target branch in reverse topological order.
+	//
+	// Only commits pushed to the 'origin' remote are visited.
+	//
+	// Parents are visited before children, and only left parents are visited (i.e.,
+	// commits from branches merged into the target branch are not visited).
+	ForEachCommit(branch string, f func(commit Commit) error) error
+	// ForEachTag ranges over tags in the repository in an undefined order.
+	//
+	// All tags are ranged, including local (unpushed) tags.
+	ForEachTag(func(tag string, commitHash Hash) error) error
+	// Objects exposes the underlying object reader to read objects directly from the
+	// `.git` directory.
+	Objects() ObjectReader
+	// Close closes the repository.
+	Close() error
+}
+
+// OpenRepository opens a new Repository from a `.git` directory. The provided path to the
+// `.git` dir need not be normalized or cleaned.
+//
+// Internally, OpenRepository will spawns a new process to communicate with `git-cat-file`,
+// so the caller must close the repository to clean up resources.
+//
+// By default, OpenRepository will attempt to detect the base branch if the repository
+// has been pushed. This may fail if the repository is not pushed. In this case, use the
+// `OpenRepositoryWithBaseBranch` option.
+func OpenRepository(gitDirPath string, runner command.Runner, options ...OpenRepositoryOption) (Repository, error) {
+	return openGitRepository(gitDirPath, runner, options...)
+}
+
+// OpenRepositoryOption configures the opening of a repository.
+type OpenRepositoryOption func(*openRepositoryOpts) error
+
+// CommitIteratorWithBaseBranch configures the base branch for this iterator.
+func OpenRepositoryWithBaseBranch(name string) OpenRepositoryOption {
+	return func(r *openRepositoryOpts) error {
+		if name == "" {
+			return errors.New("base branch cannot be empty")
+		}
+		r.baseBranch = name
+		return nil
+	}
 }
