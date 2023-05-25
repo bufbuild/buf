@@ -30,6 +30,13 @@ import (
 	"go.uber.org/multierr"
 )
 
+const (
+	objectTypeBlob   = "blob"
+	objectTypeCommit = "commit"
+	objectTypeTree   = "tree"
+	objectTypeTag    = "tag"
+)
+
 // exitTime is the amount of time we'll wait for git-cat-file(1) to exit.
 var exitTime = 5 * time.Second
 var errObjectTypeMismatch = errors.New("object type mismatch")
@@ -82,16 +89,28 @@ func (o *objectReader) Close() error {
 	)
 }
 
-func (o *objectReader) Commit(id Hash) (Commit, error) {
-	data, err := o.read("commit", id)
+func (o *objectReader) Blob(hash Hash) ([]byte, error) {
+	return o.read(objectTypeBlob, hash)
+}
+
+func (o *objectReader) Commit(hash Hash) (Commit, error) {
+	data, err := o.read(objectTypeCommit, hash)
 	if err != nil {
 		return nil, err
 	}
-	return parseCommit(id, data)
+	return parseCommit(hash, data)
+}
+
+func (o *objectReader) Tree(hash Hash) (Tree, error) {
+	data, err := o.read(objectTypeTree, hash)
+	if err != nil {
+		return nil, err
+	}
+	return parseTree(hash, data)
 }
 
 func (o *objectReader) Tag(hash Hash) (AnnotatedTag, error) {
-	data, err := o.read("tag", hash)
+	data, err := o.read(objectTypeTag, hash)
 	if err != nil {
 		return nil, err
 	}

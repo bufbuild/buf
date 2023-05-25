@@ -12,29 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package git_test
+// Generated. DO NOT EDIT.
 
-import (
-	"testing"
+package storagegit
 
-	"github.com/bufbuild/buf/private/pkg/git/gittest"
-	"github.com/stretchr/testify/require"
-)
-
-func TestBranches(t *testing.T) {
-	t.Parallel()
-
-	repo := gittest.ScaffoldGitRepository(t)
-	var branches []string
-	err := repo.BranchIterator.ForEachBranch(func(branch string) error {
-		branches = append(branches, branch)
-		return nil
-	})
-
-	require.NoError(t, err)
-	require.ElementsMatch(t, branches, []string{
-		"master",
-		"smian/branch1",
-		"smian/branch2",
-	})
-}
+import _ "github.com/bufbuild/buf/private/usage"

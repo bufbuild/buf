@@ -28,8 +28,29 @@ import (
 )
 
 const (
+	// DotGitDir is a relative path to the `.git` directory.
 	DotGitDir = ".git"
+
+	// ModeUnknown is a mode's zero value.
+	ModeUnknown ObjectMode = 0
+	// ModeFile is a blob that should be written as a plain file.
+	ModeFile ObjectMode = 010_0644
+	// ModeExec is a blob that should be written with the executable bit set.
+	ModeExe ObjectMode = 010_0755
+	// ModeDir is a tree to be unpacked as a subdirectory in the current
+	// directory.
+	ModeDir ObjectMode = 004_0000
+	// ModeSymlink is a blob with its content being the path linked to.
+	ModeSymlink ObjectMode = 012_0000
+	// ModeSubmodule is a commit that the submodule is checked out at.
+	ModeSubmodule ObjectMode = 016_0000
 )
+
+var ErrTreeNodeNotFound = errors.New("node not found")
+
+// ObjectMode is how to interpret a tree node's object. See the Mode* constants
+// for how to interpret each mode value.
+type ObjectMode uint32
 
 // Name is a name identifiable by git.
 type Name interface {
@@ -280,8 +301,12 @@ type AnnotatedTag interface {
 
 // ObjectReader reads objects (commits, trees, blobs) from a `.git` directory.
 type ObjectReader interface {
+	// Blob reads the blob identified by the hash.
+	Blob(id Hash) ([]byte, error)
 	// Commit reads the commit identified by the hash.
 	Commit(id Hash) (Commit, error)
+	// Tree reads the tree identified by the hash.
+	Tree(id Hash) (Tree, error)
 	// Tag reads the tag identified by the hash.
 	Tag(id Hash) (AnnotatedTag, error)
 	// Close closes the reader.
@@ -299,4 +324,28 @@ func OpenObjectReader(
 	runner command.Runner,
 ) (ObjectReader, error) {
 	return newObjectReader(gitDirPath, runner)
+}
+
+// Tree is a git tree, which are a manifest of other git objects, including other trees.
+type Tree interface {
+	// Hash is the Hash for this Tree.
+	Hash() Hash
+	// Nodes is the set of nodes in this Tree.
+	Nodes() []TreeNode
+	// Descendant walks down a tree, following the path specified,
+	// and returns the terminal Node. If no node is found, it returns
+	// ErrTreeNodeNotFound.
+	Descendant(path string, objectReader ObjectReader) (TreeNode, error)
+}
+
+// TreeNode is a reference to an object contained in a tree. These objects have
+// a file mode associated with them, which hints at the type of object located
+// at ID (tree or blob).
+type TreeNode interface {
+	// Hash is the Hash of the object referenced by this Node.
+	Hash() Hash
+	// Name is the name of the object referenced by this Node.
+	Name() string
+	// Mode is the file mode of the object referenced by this Node.
+	Mode() ObjectMode
 }
