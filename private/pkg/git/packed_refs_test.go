@@ -46,6 +46,7 @@ func TestReadPackedRefs(t *testing.T) {
 	})
 	assert.Equal(t, hexTags, map[string]string{
 		"v0.1.0":  "157c7ae554844ff7ae178536ec10787b5b74b5db",
+		"v0.2.0":  "ace9301f315979bd053b7658c017391fe1af8804",
 		"v1.10.0": "ebb191e8268db7cee389e3abb0d1edc1852337a3",
 	})
 }
