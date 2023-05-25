@@ -31,10 +31,6 @@ import (
 
 const DefaultBranch = "master"
 
-type TestGitRepository struct {
-	Repository git.Repository
-}
-
 func ScaffoldGitRepository(t *testing.T) git.Repository {
 	runner := command.NewRunner()
 	dir := scaffoldGitRepository(t, runner)
