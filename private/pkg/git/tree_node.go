@@ -34,19 +34,19 @@ func parseTreeNode(data []byte) (*treeNode, error) {
 	*/
 	modeAndName, hash, found := bytes.Cut(data, []byte{0})
 	if !found {
-		return nil, errors.New("malformed node")
+		return nil, errors.New("parse tree node")
 	}
 	parsedHash, err := newHashFromBytes(hash)
 	if err != nil {
-		return nil, fmt.Errorf("malformed git tree node: %w", err)
+		return nil, fmt.Errorf("parse tree node hash: %w", err)
 	}
 	mode, name, found := bytes.Cut(modeAndName, []byte{' '})
 	if !found {
-		return nil, errors.New("malformed node")
+		return nil, errors.New("parse tree node")
 	}
-	parsedFileMode, err := parseFileMode(mode)
+	parsedFileMode, err := parseObjectMode(mode)
 	if err != nil {
-		return nil, fmt.Errorf("malformed git tree node: %w", err)
+		return nil, fmt.Errorf("parse tree node object mode: %w", err)
 	}
 	return &treeNode{
 		hash: parsedHash,
@@ -67,8 +67,8 @@ func (e *treeNode) Hash() Hash {
 	return e.hash
 }
 
-// decodes the octal form of a file mode into one of the valid Mode* values.
-func parseFileMode(data []byte) (ObjectMode, error) {
+// decodes the octal form of a object mode into one of the valid Mode* values.
+func parseObjectMode(data []byte) (ObjectMode, error) {
 	mode, err := strconv.ParseUint(string(data), 8, 32)
 	if err != nil {
 		return 0, err
@@ -80,7 +80,7 @@ func parseFileMode(data []byte) (ObjectMode, error) {
 	case ModeSymlink:
 	case ModeSubmodule:
 	default:
-		return 0, fmt.Errorf("unknown file mode: %o", mode)
+		return 0, fmt.Errorf("unknown object mode: %o", mode)
 	}
 	return ObjectMode(mode), nil
 }

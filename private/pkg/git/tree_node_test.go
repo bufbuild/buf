@@ -64,7 +64,7 @@ func TestParseFileMode(t *testing.T) {
 		test := tests[i]
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
-			mode, err := parseFileMode([]byte(test.txt))
+			mode, err := parseObjectMode([]byte(test.txt))
 			if test.expectErr {
 				assert.Error(t, err)
 			} else {

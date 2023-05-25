@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -72,10 +73,15 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 		if err != nil {
 			return nil, err
 		}
-		path = normalpath.Join(
-			normalpath.Base(path),
-			normalpath.Normalize(string(data)),
+		path, err := normalpath.NormalizeAndValidate(
+			normalpath.Join(
+				normalpath.Base(path),
+				normalpath.Normalize(string(data)),
+			),
 		)
+		if err != nil {
+			return nil, fmt.Errorf("invalid path %q: %w", path, err)
+		}
 		return b.Get(ctx, path)
 	default:
 		return nil, storage.NewErrNotExist(path)
@@ -99,14 +105,13 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 		}
 		return b.newObjectInfo(path), nil
 	default:
-		// TODO: should this be an error? What kind of error can we throw here?
 		return nil, storage.NewErrNotExist(path)
 	}
 }
 
 func (b *bucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
 	walkChecker := storageutil.NewWalkChecker()
-	return b.walk(b.root, b.objectReader, prefix, func(path string, te git.TreeNode) error {
+	return b.walk(b.root, b.objectReader, prefix, func(path string) error {
 		if err := walkChecker.Check(ctx); err != nil {
 			return err
 		}
@@ -118,7 +123,7 @@ func (b *bucket) walk(
 	parent git.Tree,
 	objectReader git.ObjectReader,
 	prefix string,
-	walkFn func(string, git.TreeNode) error,
+	walkFn func(string) error,
 ) error {
 	prefix = normalpath.Normalize(prefix)
 	if prefix != "." {
@@ -128,6 +133,9 @@ func (b *bucket) walk(
 				return storage.NewErrNotExist(prefix)
 			}
 			return err
+		}
+		if node.Mode() != git.ModeDir {
+			return errors.New("prefix is not a directory")
 		}
 		subTree, err := b.objectReader.Tree(node.Hash())
 		if err != nil {
@@ -142,18 +150,18 @@ func (b *bucket) walkTree(
 	parent git.Tree,
 	objectReader git.ObjectReader,
 	prefix string,
-	walkFn func(string, git.TreeNode) error,
+	walkFn func(string) error,
 ) error {
 	for _, node := range parent.Nodes() {
 		path := normalpath.Join(prefix, node.Name())
 		switch node.Mode() {
 		case git.ModeFile, git.ModeExe:
-			if err := walkFn(path, node); err != nil {
+			if err := walkFn(path); err != nil {
 				return err
 			}
 		case git.ModeSymlink:
 			if b.symlinks {
-				if err := walkFn(path, node); err != nil {
+				if err := walkFn(path); err != nil {
 					return err
 				}
 			}
@@ -165,7 +173,7 @@ func (b *bucket) walkTree(
 			if err := b.walkTree(subTree, objectReader, path, walkFn); err != nil {
 				return err
 			}
-		case git.ModeSubmodule, git.ModeUnknown:
+		default:
 			// ignored
 		}
 	}

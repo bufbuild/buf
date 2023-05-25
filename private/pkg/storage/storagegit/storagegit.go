@@ -29,11 +29,12 @@ type Provider interface {
 	NewReadBucket(hash git.Hash, options ...ReadBucketOption) (storage.ReadBucket, error)
 }
 
+// ProviderOption is an option for a new Provider.
 type ProviderOption func(*provider)
 
 // ProviderWithSymlinks returns a ProviderOption that results in symlink support.
 //
-// Note that ReadBucketWithSymlinksEnabled still needs to be passed for a given
+// Note that ReadBucketWithSymlinksIfSupported still needs to be passed for a given
 // ReadBucket to have symlinks followed.
 func ProviderWithSymlinks() ProviderOption {
 	return func(provider *provider) {
@@ -41,9 +42,13 @@ func ProviderWithSymlinks() ProviderOption {
 	}
 }
 
+// ReadBucketOption is an option for a new ReadBucket.
 type ReadBucketOption func(*readBucketOptions)
 
-func ReadBucketWithSymlinksEnabled() ReadBucketOption {
+// ReadBucketWithSymlinksIfSupported returns a ReadBucketOption that results
+// in symlink support being enabled for this bucket. If the Provider did not have symlink
+// support, this is a no-op.
+func ReadBucketWithSymlinksIfSupported() ReadBucketOption {
 	return func(b *readBucketOptions) {
 		b.symlinksIfSupported = true
 	}

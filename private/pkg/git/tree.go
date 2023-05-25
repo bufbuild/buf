@@ -42,12 +42,12 @@ func parseTree(hash Hash, data []byte) (*tree, error) {
 		// That gives us a single node.
 		i := bytes.Index(data, []byte{0})
 		if i == -1 {
-			return nil, errors.New("malformed tree")
+			return nil, errors.New("parse tree")
 		}
 		length := i + 1 + hashLength
 		node, err := parseTreeNode(data[:length])
 		if err != nil {
-			return nil, fmt.Errorf("malformed tree: %w", err)
+			return nil, fmt.Errorf("parse tree: %w", err)
 		}
 		t.nodes = append(t.nodes, node)
 		data = data[length:]
@@ -64,6 +64,9 @@ func (t *tree) Nodes() []TreeNode {
 }
 
 func (t *tree) Descendant(path string, objectReader ObjectReader) (TreeNode, error) {
+	if path == "" {
+		return nil, errors.New("empty path")
+	}
 	return descendant(objectReader, t, normalpath.Components(path))
 }
 
