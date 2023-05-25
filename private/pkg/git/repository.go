@@ -290,7 +290,7 @@ func (r *repository) readPackedRefs() error {
 			r.packedReadError = err
 			return
 		}
-		r.packedBranches, r.packedTags, r.packedReadError = readPackedRefs(allBytes)
+		r.packedBranches, r.packedTags, r.packedReadError = parsePackedRefs(allBytes)
 	})
 	return r.packedReadError
 }

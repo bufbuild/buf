@@ -29,7 +29,7 @@ func TestReadPackedRefs(t *testing.T) {
 	allBytes, err := os.ReadFile(path.Join("testdata", "packed-refs"))
 	require.NoError(t, err)
 
-	branches, tags, err := readPackedRefs(allBytes)
+	branches, tags, err := parsePackedRefs(allBytes)
 
 	require.NoError(t, err)
 	hexBranches := map[string]string{}

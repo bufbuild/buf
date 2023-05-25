@@ -31,8 +31,12 @@ const (
 	unpeeledRefPrefix     = '^'
 )
 
-// readPackedRefs reads a `packed-refs` file, returning the packed branches and tags
-func readPackedRefs(data []byte) (map[string]Hash, map[string]Hash, error) {
+// parsePackedRefs reads a `packed-refs` file, returning the packed branches and tags
+func parsePackedRefs(data []byte) (
+	map[string]Hash, // branches
+	map[string]Hash, // tags
+	error,
+) {
 	var (
 		packedBranches = map[string]Hash{}
 		packedTags     = map[string]Hash{}
@@ -88,9 +92,6 @@ func readPackedRefs(data []byte) (map[string]Hash, map[string]Hash, error) {
 				// We have an annotated tag that's been peeled. Let's read it.
 				i++
 				nextLine := lines[i]
-				if err != nil {
-					return nil, nil, err
-				}
 				nextLine = strings.TrimPrefix(nextLine, string(unpeeledRefPrefix))
 				hash, err = parseHashFromHex(nextLine)
 				if err != nil {
