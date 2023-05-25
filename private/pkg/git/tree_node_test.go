@@ -25,7 +25,7 @@ func TestParseFileMode(t *testing.T) {
 
 	tests := []struct {
 		desc      string
-		mode      FileMode
+		mode      ObjectMode
 		txt       string
 		expectErr bool
 	}{

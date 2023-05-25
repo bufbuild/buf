@@ -23,7 +23,7 @@ import (
 
 type treeNode struct {
 	name string
-	mode FileMode
+	mode ObjectMode
 	hash Hash
 }
 
@@ -59,7 +59,7 @@ func (e *treeNode) Name() string {
 	return e.name
 }
 
-func (e *treeNode) Mode() FileMode {
+func (e *treeNode) Mode() ObjectMode {
 	return e.mode
 }
 
@@ -68,12 +68,12 @@ func (e *treeNode) Hash() Hash {
 }
 
 // decodes the octal form of a file mode into one of the valid Mode* values.
-func parseFileMode(data []byte) (FileMode, error) {
+func parseFileMode(data []byte) (ObjectMode, error) {
 	mode, err := strconv.ParseUint(string(data), 8, 32)
 	if err != nil {
 		return 0, err
 	}
-	switch FileMode(mode) {
+	switch ObjectMode(mode) {
 	case ModeFile:
 	case ModeExe:
 	case ModeDir:
@@ -82,5 +82,5 @@ func parseFileMode(data []byte) (FileMode, error) {
 	default:
 		return 0, fmt.Errorf("unknown file mode: %o", mode)
 	}
-	return FileMode(mode), nil
+	return ObjectMode(mode), nil
 }

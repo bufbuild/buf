@@ -32,25 +32,25 @@ const (
 	DotGitDir = ".git"
 
 	// ModeUnknown is a mode's zero value.
-	ModeUnknown FileMode = 0
+	ModeUnknown ObjectMode = 0
 	// ModeFile is a blob that should be written as a plain file.
-	ModeFile FileMode = 010_0644
+	ModeFile ObjectMode = 010_0644
 	// ModeExec is a blob that should be written with the executable bit set.
-	ModeExe FileMode = 010_0755
+	ModeExe ObjectMode = 010_0755
 	// ModeDir is a tree to be unpacked as a subdirectory in the current
 	// directory.
-	ModeDir FileMode = 004_0000
+	ModeDir ObjectMode = 004_0000
 	// ModeSymlink is a blob with its content being the path linked to.
-	ModeSymlink FileMode = 012_0000
+	ModeSymlink ObjectMode = 012_0000
 	// ModeSubmodule is a commit that the submodule is checked out at.
-	ModeSubmodule FileMode = 016_0000
+	ModeSubmodule ObjectMode = 016_0000
 )
 
 var ErrSubTreeNotFound = errors.New("subtree not found")
 
-// FileMode is how to interpret a tree node's object. See the Mode* constants
+// ObjectMode is how to interpret a tree node's object. See the Mode* constants
 // for how to interpret each mode value.
-type FileMode uint32
+type ObjectMode uint32
 
 // Name is a name identifiable by git.
 type Name interface {
@@ -347,5 +347,5 @@ type Node interface {
 	// Name is the name of the object referenced by this Node.
 	Name() string
 	// Mode is the file mode of the object referenced by this Node.
-	Mode() FileMode
+	Mode() ObjectMode
 }
