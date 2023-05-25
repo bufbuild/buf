@@ -28,10 +28,10 @@ func TestNewBucketAtTreeHash(t *testing.T) {
 	t.Parallel()
 
 	repo := gittest.ScaffoldGitRepository(t)
-	provider := NewProvider(repo.Reader)
+	provider := NewProvider(repo.Objects())
 	// get last commit
 	var commit git.Commit
-	require.NoError(t, repo.CommitIterator.ForEachCommit(repo.CommitIterator.BaseBranch(), func(c git.Commit) error {
+	require.NoError(t, repo.ForEachCommit(repo.BaseBranch(), func(c git.Commit) error {
 		commit = c
 		return nil
 	}))

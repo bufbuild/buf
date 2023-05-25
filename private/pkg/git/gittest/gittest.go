@@ -31,46 +31,16 @@ import (
 
 const DefaultBranch = "master"
 
-type TestGitRepository struct {
-	DotGitDir         string
-	DefaultBranchHead git.Commit
-	Reader            git.ObjectReader
-	BranchIterator    git.BranchIterator
-	CommitIterator    git.CommitIterator
-	TagIterator       git.TagIterator
-}
-
-func ScaffoldGitRepository(t *testing.T) TestGitRepository {
+func ScaffoldGitRepository(t *testing.T) git.Repository {
 	runner := command.NewRunner()
 	dir := scaffoldGitRepository(t, runner)
 	dotGitPath := path.Join(dir, git.DotGitDir)
-	reader, err := git.OpenObjectReader(dotGitPath, runner)
+	repo, err := git.OpenRepository(dotGitPath, runner, git.OpenRepositoryWithBaseBranch(DefaultBranch))
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		require.NoError(t, reader.Close())
+		require.NoError(t, repo.Close())
 	})
-	branchIterator, err := git.NewBranchIterator(dotGitPath, reader)
-	require.NoError(t, err)
-	commitIterator, err := git.NewCommitIterator(dotGitPath, reader, git.CommitIteratorWithBaseBranch(DefaultBranch))
-	require.NoError(t, err)
-	tagIterator, err := git.NewTagIterator(dotGitPath, reader)
-	require.NoError(t, err)
-	commitBytes, err := os.ReadFile(path.Join(dotGitPath, "refs", "heads", DefaultBranch))
-	require.NoError(t, err)
-	require.NoError(t, err)
-	commitBytes = bytes.TrimRight(commitBytes, "\n")
-	commitID, err := git.NewHashFromHex(string(commitBytes))
-	require.NoError(t, err)
-	commit, err := reader.Commit(commitID)
-	require.NoError(t, err)
-	return TestGitRepository{
-		DotGitDir:         dotGitPath,
-		Reader:            reader,
-		BranchIterator:    branchIterator,
-		CommitIterator:    commitIterator,
-		TagIterator:       tagIterator,
-		DefaultBranchHead: commit,
-	}
+	return repo
 }
 
 // the resulting Git repo looks like so:
@@ -151,7 +121,11 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	runInDir(t, runner, local, "git", "tag", "v2")
 	runInDir(t, runner, local, "git", "push", "--follow-tags")
 
-	// (5) merge second branch
+	// (5) pack some refs
+	runInDir(t, runner, local, "git", "pack-refs", "--all")
+	runInDir(t, runner, local, "git", "repack")
+
+	// (6) merge second branch
 	runInDir(t, runner, local, "git", "checkout", DefaultBranch)
 	runInDir(t, runner, local, "git", "merge", "--squash", "smian/branch2")
 	runInDir(t, runner, local, "git", "commit", "-m", "third commit")
