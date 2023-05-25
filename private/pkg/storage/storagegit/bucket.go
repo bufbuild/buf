@@ -45,9 +45,9 @@ func newBucket(
 }
 
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
-	node, err := b.root.Traverse(b.objectReader, normalpath.Components(path)...)
+	node, err := b.root.Descendant(path, b.objectReader)
 	if err != nil {
-		if errors.Is(err, git.ErrSubTreeNotFound) {
+		if errors.Is(err, git.ErrTreeNodeNotFound) {
 			return nil, storage.NewErrNotExist(path)
 		}
 		return nil, err
@@ -83,9 +83,9 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 }
 
 func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
-	node, err := b.root.Traverse(b.objectReader, normalpath.Components(path)...)
+	node, err := b.root.Descendant(path, b.objectReader)
 	if err != nil {
-		if errors.Is(err, git.ErrSubTreeNotFound) {
+		if errors.Is(err, git.ErrTreeNodeNotFound) {
 			return nil, storage.NewErrNotExist(path)
 		}
 		return nil, err
@@ -122,9 +122,9 @@ func (b *bucket) walk(
 ) error {
 	prefix = normalpath.Normalize(prefix)
 	if prefix != "." {
-		node, err := parent.Traverse(b.objectReader, normalpath.Components(prefix)...)
+		node, err := parent.Descendant(prefix, b.objectReader)
 		if err != nil {
-			if errors.Is(err, git.ErrSubTreeNotFound) {
+			if errors.Is(err, git.ErrTreeNodeNotFound) {
 				return storage.NewErrNotExist(prefix)
 			}
 			return err

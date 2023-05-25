@@ -46,7 +46,7 @@ const (
 	ModeSubmodule ObjectMode = 016_0000
 )
 
-var ErrSubTreeNotFound = errors.New("subtree not found")
+var ErrTreeNodeNotFound = errors.New("node not found")
 
 // ObjectMode is how to interpret a tree node's object. See the Mode* constants
 // for how to interpret each mode value.
@@ -332,10 +332,10 @@ type Tree interface {
 	Hash() Hash
 	// Nodes is the set of nodes in this Tree.
 	Nodes() []TreeNode
-	// Traverse walks down a tree, following the name-path specified,
+	// Descendant walks down a tree, following the path specified,
 	// and returns the terminal Node. If no node is found, it returns
-	// ErrSubTreeNotFound.
-	Traverse(objectReader ObjectReader, names ...string) (TreeNode, error)
+	// ErrTreeNodeNotFound.
+	Descendant(path string, objectReader ObjectReader) (TreeNode, error)
 }
 
 // TreeNode is a reference to an object contained in a tree. These objects have

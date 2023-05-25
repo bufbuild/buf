@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 type tree struct {
@@ -61,14 +63,14 @@ func (t *tree) Nodes() []TreeNode {
 	return t.nodes
 }
 
-func (t *tree) Traverse(objectReader ObjectReader, names ...string) (TreeNode, error) {
-	return traverse(objectReader, t, names...)
+func (t *tree) Descendant(path string, objectReader ObjectReader) (TreeNode, error) {
+	return descendant(objectReader, t, normalpath.Components(path))
 }
 
-func traverse(
+func descendant(
 	objectReader ObjectReader,
 	root Tree,
-	names ...string,
+	names []string,
 ) (TreeNode, error) {
 	// split by the name of the next node we're looking for
 	// and the names of the descendant nodes
@@ -88,7 +90,7 @@ func traverse(
 	}
 	if found == nil {
 		// No node with that name in this tree.
-		return nil, ErrSubTreeNotFound
+		return nil, ErrTreeNodeNotFound
 	}
 	if len(names) == 0 {
 		// No more descendants, we've found our terminal node.
@@ -98,13 +100,13 @@ func traverse(
 		// This is an intermediate (non-terminal) node, which are expected to be
 		// directories. This is node is not a directory, so we fail with a non-found
 		// errror.
-		return nil, ErrSubTreeNotFound
+		return nil, ErrTreeNodeNotFound
 	}
-	// TODO: support symlinks (on intermediate dirs) with traverse option
+	// TODO: support symlinks (on intermediate dirs) with descendant option
 	// Descend down and traverse.
 	tree, err := objectReader.Tree(found.Hash())
 	if err != nil {
 		return nil, err
 	}
-	return traverse(objectReader, tree, names...)
+	return descendant(objectReader, tree, names)
 }
