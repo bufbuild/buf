@@ -22,7 +22,7 @@ import (
 
 type tree struct {
 	hash  Hash
-	nodes []Node
+	nodes []TreeNode
 }
 
 func parseTree(hash Hash, data []byte) (*tree, error) {
@@ -57,11 +57,11 @@ func (t *tree) Hash() Hash {
 	return t.hash
 }
 
-func (t *tree) Nodes() []Node {
+func (t *tree) Nodes() []TreeNode {
 	return t.nodes
 }
 
-func (t *tree) Traverse(objectReader ObjectReader, names ...string) (Node, error) {
+func (t *tree) Traverse(objectReader ObjectReader, names ...string) (TreeNode, error) {
 	return traverse(objectReader, t, names...)
 }
 
@@ -69,7 +69,7 @@ func traverse(
 	objectReader ObjectReader,
 	root Tree,
 	names ...string,
-) (Node, error) {
+) (TreeNode, error) {
 	// split by the name of the next node we're looking for
 	// and the names of the descendant nodes
 	name := names[0]
@@ -79,7 +79,7 @@ func traverse(
 		names = nil
 	}
 	// Find node with that name in this tree.
-	var found Node
+	var found TreeNode
 	for _, node := range root.Nodes() {
 		if node.Name() == name {
 			found = node

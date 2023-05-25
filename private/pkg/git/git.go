@@ -331,17 +331,17 @@ type Tree interface {
 	// Hash is the Hash for this Tree.
 	Hash() Hash
 	// Nodes is the set of nodes in this Tree.
-	Nodes() []Node
+	Nodes() []TreeNode
 	// Traverse walks down a tree, following the name-path specified,
 	// and returns the terminal Node. If no node is found, it returns
 	// ErrSubTreeNotFound.
-	Traverse(objectReader ObjectReader, names ...string) (Node, error)
+	Traverse(objectReader ObjectReader, names ...string) (TreeNode, error)
 }
 
-// Node is a reference to an object contained in a tree. These objects have
+// TreeNode is a reference to an object contained in a tree. These objects have
 // a file mode associated with them, which hints at the type of object located
 // at ID (tree or blob).
-type Node interface {
+type TreeNode interface {
 	// Hash is the Hash of the object referenced by this Node.
 	Hash() Hash
 	// Name is the name of the object referenced by this Node.

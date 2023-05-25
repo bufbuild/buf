@@ -106,7 +106,7 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 
 func (b *bucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
 	walkChecker := storageutil.NewWalkChecker()
-	return b.walk(b.root, b.objectReader, prefix, func(path string, te git.Node) error {
+	return b.walk(b.root, b.objectReader, prefix, func(path string, te git.TreeNode) error {
 		if err := walkChecker.Check(ctx); err != nil {
 			return err
 		}
@@ -118,7 +118,7 @@ func (b *bucket) walk(
 	parent git.Tree,
 	objectReader git.ObjectReader,
 	prefix string,
-	walkFn func(string, git.Node) error,
+	walkFn func(string, git.TreeNode) error,
 ) error {
 	prefix = normalpath.Normalize(prefix)
 	if prefix != "." {
@@ -142,7 +142,7 @@ func (b *bucket) walkTree(
 	parent git.Tree,
 	objectReader git.ObjectReader,
 	prefix string,
-	walkFn func(string, git.Node) error,
+	walkFn func(string, git.TreeNode) error,
 ) error {
 	for _, node := range parent.Nodes() {
 		path := normalpath.Join(prefix, node.Name())
