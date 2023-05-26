@@ -16,10 +16,10 @@ package bufinit
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
@@ -52,19 +52,32 @@ func (i *initializer) initialize(
 	ctx context.Context,
 	readWriteBucket storage.ReadWriteBucket,
 ) error {
-	fileInfos, err := i.getFileInfos(ctx, readWriteBucket)
+	fileInfos, err := i.getSortedFileInfos(ctx, readWriteBucket)
 	if err != nil {
 		return err
 	}
-	data, err := json.MarshalIndent(fileInfos, "", "  ")
-	if err != nil {
-		return err
+	node := newReversePathTrieNode()
+	for _, path := range getAllSortedFileInfoPaths(fileInfos) {
+		node.Insert(path)
 	}
-	fmt.Println(string(data))
+	directoryMap := make(map[string]struct{})
+	for _, importPath := range getAllSortedFileInfoImportPaths(fileInfos) {
+		directories, present := node.Get(importPath)
+		if present {
+			for _, directory := range directories {
+				directoryMap[directory] = struct{}{}
+			}
+		}
+
+	}
+	directories := stringutil.MapToSortedSlice(directoryMap)
+	for _, directory := range directories {
+		fmt.Println(directory)
+	}
 	return nil
 }
 
-func (i *initializer) getFileInfos(
+func (i *initializer) getSortedFileInfos(
 	ctx context.Context,
 	readWriteBucket storage.ReadWriteBucket,
 ) ([]*fileInfo, error) {
@@ -73,29 +86,15 @@ func (i *initializer) getFileInfos(
 		ctx,
 		readWriteBucket,
 		func(fileNode *ast.FileNode) error {
-			// Should always be normalized, but defensive programming.
-			path, err := normalizeAndValidateProtoFile(fileNode.Name())
+			fileInfo, err := newFileInfo(fileNode)
 			if err != nil {
 				return err
-			}
-			fileInfo := &fileInfo{
-				Path: path,
-			}
-			for _, decl := range fileNode.Decls {
-				switch decl := decl.(type) {
-				case *ast.ImportNode:
-					// Should always be normalized, but defensive programming.
-					importPath, err := normalizeAndValidateProtoFile(decl.Name.AsString())
-					if err != nil {
-						return err
-					}
-					fileInfo.ImportPaths = append(fileInfo.ImportPaths, importPath)
-				}
 			}
 			fileInfos = append(fileInfos, fileInfo)
 			return nil
 		},
 	)
+	sortFileInfos(fileInfos)
 	return fileInfos, nil
 }
 
@@ -135,13 +134,6 @@ func (i *initializer) forEachFileNode(
 			return f(fileNode)
 		},
 	)
-}
-
-type fileInfo struct {
-	// Normalized, validated, and never empty or ".".
-	Path string `json:"path,omitempty" yaml:"path,omitempty"`
-	// Normalized, validated, and each element never empty or ".".
-	ImportPaths []string `json:"import_paths,omitempty" yaml:"import_paths,omitempty"`
 }
 
 type initializeOptions struct{}

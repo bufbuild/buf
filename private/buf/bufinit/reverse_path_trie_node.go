@@ -15,8 +15,6 @@
 package bufinit
 
 import (
-	"fmt"
-
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
@@ -54,7 +52,6 @@ func (r *reversePathTrieNode) Get(path string) (directories []string, present bo
 }
 
 func (r *reversePathTrieNode) get(reverseComponents []string) ([]string, bool) {
-	fmt.Println(reverseComponents)
 	if len(reverseComponents) == 0 {
 		return r.getAllDirectories("."), true
 	}
