@@ -35,9 +35,6 @@ import (
 )
 
 const (
-	// PluginsImagePrefix is used to prefix all image names with the correct path for pushing to the OCI registry.
-	PluginsImagePrefix = "plugins."
-
 	// Setting this value on the buf docker client allows us to propagate a custom
 	// value to the OCI registry. This is a useful property that enables registries
 	// to differentiate between the buf cli vs other tools like docker cli.
@@ -152,9 +149,6 @@ func (d *dockerAPIClient) Tag(ctx context.Context, image string, config *bufplug
 	}
 	buildID := stringid.GenerateRandomID()
 	imageName := config.Name.IdentityString() + ":" + buildID
-	if !strings.HasPrefix(imageName, PluginsImagePrefix) {
-		imageName = PluginsImagePrefix + imageName
-	}
 	if err := d.cli.ImageTag(ctx, image, imageName); err != nil {
 		return nil, err
 	}
