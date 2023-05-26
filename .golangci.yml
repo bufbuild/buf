@@ -230,3 +230,9 @@ issues:
         - paralleltest
       text: "missing the call to method parallel"
       path: private/buf/cmd/buf/workspace_test.go
+    # Parallelizing TestPlainPostHandlerTLS and TestPlainPostHandlerH2C
+    # makes this test flaky.
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/bufpkg/bufstudioagent/bufstudioagent_test.go
