@@ -24,6 +24,7 @@ import (
 )
 
 func TestLicenseSymlink(t *testing.T) {
+	t.Parallel()
 	testLicenseBucket(
 		t,
 		"testdata/6",

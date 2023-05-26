@@ -25,6 +25,7 @@ import (
 )
 
 func TestWorkspaceSymlinkFail(t *testing.T) {
+	t.Parallel()
 	// The workspace includes a symlink that isn't buildable.
 	testRunStdoutStderr(
 		t,
@@ -74,6 +75,7 @@ func TestWorkspaceSymlink(t *testing.T) {
 }
 
 func TestWorkspaceAbsoluteFail(t *testing.T) {
+	t.Parallel()
 	// The buf.work.yaml file cannot specify absolute paths.
 	testRunStdoutStderr(
 		t,

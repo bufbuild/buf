@@ -17,8 +17,8 @@ linters-settings:
       # Ban debug statements
       - '^fmt\.Print'
       - '^log\.'
-      - '^print$'
-      - '^println$'
+      - "^print$"
+      - "^println$"
   importas:
     alias:
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1
@@ -189,3 +189,31 @@ issues:
         - gosec
       text: "G404:"
       path: private/bufpkg/bufimage/bufimageutil/.*_test\.go
+    # This test shouldn't run in parallel as it allocates a lot of memory.
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/bufpkg/bufimage/bufimagebuild/builder_unix_test.go
+    # These tests calls helper functions that call t.Parallel() without creating
+    # subtests with t.Run(...). The linter fails to recognize that they already
+    # run in parallel.
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/bufpkg/bufcheck/buflint/buflint_test.go
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/bufpkg/bufmodule/bufmodulebuild/module_bucket_builder_test.go
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/buf/cmd/protoc-gen-buf-lint/lint_test.go
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/bufpkg/bufcheck/bufbreaking/bufbreaking_test.go
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/buf/buffetch/buffetch_test.go

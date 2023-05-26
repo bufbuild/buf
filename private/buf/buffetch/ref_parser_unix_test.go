@@ -25,6 +25,7 @@ import (
 )
 
 func TestGetParsedRefSuccess_UnixOnly(t *testing.T) {
+	t.Parallel()
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(

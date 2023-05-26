@@ -44,6 +44,7 @@ const (
 )
 
 func TestPlainPostHandlerTLS(t *testing.T) {
+	t.Parallel()
 	upstreamServerTLS := newTestConnectServer(t, true)
 	defer upstreamServerTLS.Close()
 	testPlainPostHandler(t, upstreamServerTLS)
@@ -51,6 +52,7 @@ func TestPlainPostHandlerTLS(t *testing.T) {
 }
 
 func TestPlainPostHandlerH2C(t *testing.T) {
+	t.Parallel()
 	upstreamServerH2C := newTestConnectServer(t, false)
 	defer upstreamServerH2C.Close()
 	testPlainPostHandler(t, upstreamServerH2C)

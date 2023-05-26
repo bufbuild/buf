@@ -31,6 +31,7 @@ import (
 )
 
 func TestPutDependencyModulePinsToBucket(t *testing.T) {
+	t.Parallel()
 	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
 	require.NoError(t, err)
 	nullDigest, err := digester.Digest(&bytes.Buffer{})
@@ -87,6 +88,7 @@ func TestPutDependencyModulePinsToBucket(t *testing.T) {
 }
 
 func TestDependencyModulePinsForBucket(t *testing.T) {
+	t.Parallel()
 	testDependencyModulePinsForBucket(
 		t,
 		"no pins",

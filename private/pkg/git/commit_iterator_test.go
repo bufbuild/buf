@@ -24,6 +24,7 @@ import (
 )
 
 func TestCommits(t *testing.T) {
+	t.Parallel()
 	repo := gittest.ScaffoldGitRepository(t)
 	var commits []git.Commit
 	err := repo.CommitIterator.ForEachCommit(gittest.DefaultBranch, func(c git.Commit) error {

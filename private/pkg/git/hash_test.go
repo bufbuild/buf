@@ -21,6 +21,7 @@ import (
 )
 
 func TestParseHashFromHex(t *testing.T) {
+	t.Parallel()
 	const hex = "5edab9f970913225f985d9673ac19d61d36f0942"
 
 	id, err := parseHashFromHex(hex)
@@ -31,6 +32,7 @@ func TestParseHashFromHex(t *testing.T) {
 }
 
 func TestNewHashFromBytes(t *testing.T) {
+	t.Parallel()
 	bytes := []byte{0x5e, 0xda, 0xb9, 0xf9, 0x70, 0x91, 0x32, 0x25, 0xf9, 0x85, 0xd9, 0x67, 0x3a, 0xc1, 0x9d, 0x61, 0xd3, 0x6f, 0x9, 0x42}
 
 	id, err := newHashFromBytes(bytes)

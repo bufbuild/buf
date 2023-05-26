@@ -137,6 +137,7 @@ func TestCompareInsertionPointOutput(t *testing.T) {
 }
 
 func TestOutputFlag(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
@@ -151,6 +152,7 @@ func TestOutputFlag(t *testing.T) {
 }
 
 func TestProtoFileRefIncludePackageFiles(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
@@ -167,6 +169,7 @@ func TestProtoFileRefIncludePackageFiles(t *testing.T) {
 }
 
 func TestGenerateDuplicatePlugins(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
@@ -183,6 +186,7 @@ func TestGenerateDuplicatePlugins(t *testing.T) {
 }
 
 func TestOutputWithPathEqualToExclude(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunStdoutStderr(
 		t,

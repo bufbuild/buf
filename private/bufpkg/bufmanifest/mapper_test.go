@@ -92,6 +92,7 @@ func TestProtoBlob(t *testing.T) {
 }
 
 func TestBlobFromReader(t *testing.T) {
+	t.Parallel()
 	testBlobFromReader(
 		t,
 		[]byte("hello"),
@@ -108,7 +109,6 @@ func TestBlobFromReader(t *testing.T) {
 
 func testBlobFromReader(t *testing.T, content []byte, digest []byte) {
 	t.Helper()
-	t.Parallel()
 	blob, err := manifest.NewMemoryBlobFromReader(bytes.NewReader(content))
 	require.NoError(t, err)
 	protoBlob, err := bufmanifest.AsProtoBlob(context.Background(), blob)

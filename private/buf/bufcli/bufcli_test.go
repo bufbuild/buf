@@ -41,6 +41,7 @@ func (m *mockBucketProvider) NewReadWriteBucket(
 }
 
 func TestBucketAndConfigForSource(t *testing.T) {
+	t.Parallel()
 	testBucketAndConfigForSource(
 		t,
 		"minimal module",

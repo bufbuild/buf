@@ -23,6 +23,7 @@ import (
 )
 
 func TestParseIdent(t *testing.T) {
+	t.Parallel()
 	ident, err := parseIdent([]byte("Foo <bar@baz> 1680571785 +0445"))
 
 	require.NoError(t, err)

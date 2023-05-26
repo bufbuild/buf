@@ -884,6 +884,7 @@ testdata/workspace/success/roots/module2/root3/d/d.proto:3:1:Package name "d" sh
 }
 
 func TestWorkspaceBreakingFail(t *testing.T) {
+	t.Parallel()
 	// The two workspaces define a different number of
 	// images, so it's impossible to verify compatibility.
 	testRunStdout(
@@ -908,6 +909,7 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 }
 
 func TestWorkspaceDuplicateFail(t *testing.T) {
+	t.Parallel()
 	// The workspace includes multiple images that define the same file.
 	testRunStdoutStderr(
 		t,
@@ -921,6 +923,7 @@ func TestWorkspaceDuplicateFail(t *testing.T) {
 }
 
 func TestWorkspaceNotExistFail(t *testing.T) {
+	t.Parallel()
 	// The directory defined in the workspace does not exist.
 	testRunStdoutStderr(
 		t,
@@ -934,6 +937,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 }
 
 func TestWorkspaceJumpContextFail(t *testing.T) {
+	t.Parallel()
 	// The workspace directories cannot jump context.
 	testRunStdoutStderr(
 		t,
@@ -951,6 +955,7 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 }
 
 func TestWorkspaceDirOverlapFail(t *testing.T) {
+	t.Parallel()
 	// The buf.work.yaml file cannot specify overlapping diretories.
 	testRunStdoutStderr(
 		t,
@@ -966,6 +971,7 @@ func TestWorkspaceDirOverlapFail(t *testing.T) {
 func TestWorkspaceInputOverlapFail(t *testing.T) {
 	// The target input cannot overlap with any of the directories defined
 	// in the workspace.
+	t.Parallel()
 	testRunStdoutStderr(
 		t,
 		nil,
@@ -988,6 +994,7 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 
 func TestWorkspaceNoVersionFail(t *testing.T) {
 	// The buf.work.yaml must specify a version.
+	t.Parallel()
 	testRunStdoutStderr(
 		t,
 		nil,
@@ -1001,6 +1008,7 @@ func TestWorkspaceNoVersionFail(t *testing.T) {
 
 func TestWorkspaceInvalidVersionFail(t *testing.T) {
 	// The buf.work.yaml must specify a valid version.
+	t.Parallel()
 	testRunStdoutStderr(
 		t,
 		nil,
@@ -1013,6 +1021,7 @@ func TestWorkspaceInvalidVersionFail(t *testing.T) {
 }
 
 func TestWorkspaceNoDirectoriesFail(t *testing.T) {
+	t.Parallel()
 	// The buf.work.yaml must specify at least one directory.
 	testRunStdoutStderr(
 		t,
@@ -1026,6 +1035,7 @@ func TestWorkspaceNoDirectoriesFail(t *testing.T) {
 }
 
 func TestWorkspaceWithWorkspacePathFail(t *testing.T) {
+	t.Parallel()
 	// The --path flag cannot match the workspace directory (i.e. root requirements).
 	testRunStdoutStderr(
 		t,
@@ -1041,6 +1051,7 @@ func TestWorkspaceWithWorkspacePathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithWorkspaceDirectoryPathFail(t *testing.T) {
+	t.Parallel()
 	// The --path flag cannot match one of the workspace directories (i.e. root requirements).
 	testRunStdoutStderr(
 		t,
@@ -1060,6 +1071,7 @@ func TestWorkspaceWithWorkspaceDirectoryPathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidWorkspaceDirectoryPathFail(t *testing.T) {
+	t.Parallel()
 	// The --path flag did not reference a file found in either of the
 	// workspace directories.
 	testRunStdoutStderr(
@@ -1076,6 +1088,7 @@ func TestWorkspaceWithInvalidWorkspaceDirectoryPathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
+	t.Parallel()
 	// The --path flag did not reference a file found outside of
 	// one of the workspace directories.
 	testRunStdoutStderr(
@@ -1092,6 +1105,7 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
+	t.Parallel()
 	// The --path flag did not reference a file found in the archive.
 	zipDir := createZipFromDir(
 		t,
@@ -1112,6 +1126,7 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
+	t.Parallel()
 	// The --path flag did not reference an absolute file patfound in the archive.
 	zipDir := createZipFromDir(
 		t,

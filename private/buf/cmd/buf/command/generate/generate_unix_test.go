@@ -26,6 +26,7 @@ import (
 )
 
 func TestProtoFileRef(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
@@ -42,6 +43,7 @@ func TestProtoFileRef(t *testing.T) {
 }
 
 func TestOutputWithExclude(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
@@ -75,6 +77,7 @@ func TestOutputWithExclude(t *testing.T) {
 }
 
 func TestOutputWithPathWithinExclude(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
@@ -95,6 +98,7 @@ func TestOutputWithPathWithinExclude(t *testing.T) {
 }
 
 func TestOutputWithExcludeWithinPath(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
@@ -120,6 +124,7 @@ func TestOutputWithExcludeWithinPath(t *testing.T) {
 }
 
 func TestOutputWithNestedExcludeAndTargetPaths(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
@@ -155,6 +160,7 @@ func TestOutputWithNestedExcludeAndTargetPaths(t *testing.T) {
 }
 
 func TestWorkspaceGenerateWithExcludeAndTargetPaths(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
