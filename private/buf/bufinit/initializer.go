@@ -16,9 +16,10 @@ package bufinit
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
@@ -51,35 +52,41 @@ func (i *initializer) initialize(
 	ctx context.Context,
 	readWriteBucket storage.ReadWriteBucket,
 ) error {
-	imports, err := i.getAllImports(ctx, readWriteBucket)
+	fileInfos, err := i.getFileInfos(ctx, readWriteBucket)
 	if err != nil {
 		return err
 	}
-	for _, imp := range imports {
-		i.logger.Info(imp)
+	data, err := json.MarshalIndent(fileInfos, "", "  ")
+	if err != nil {
+		return err
 	}
+	fmt.Println(string(data))
 	return nil
 }
 
-func (i *initializer) getAllImports(
+func (i *initializer) getFileInfos(
 	ctx context.Context,
 	readWriteBucket storage.ReadWriteBucket,
-) ([]string, error) {
-	importMap := make(map[string]struct{})
+) ([]*fileInfo, error) {
+	var fileInfos []*fileInfo
 	i.forEachFileNode(
 		ctx,
 		readWriteBucket,
 		func(fileNode *ast.FileNode) error {
+			fileInfo := &fileInfo{
+				Path: fileNode.Name(),
+			}
 			for _, decl := range fileNode.Decls {
 				switch decl := decl.(type) {
 				case *ast.ImportNode:
-					importMap[decl.Name.AsString()] = struct{}{}
+					fileInfo.ImportPaths = append(fileInfo.ImportPaths, decl.Name.AsString())
 				}
 			}
+			fileInfos = append(fileInfos, fileInfo)
 			return nil
 		},
 	)
-	return stringutil.MapToSortedSlice(importMap), nil
+	return fileInfos, nil
 }
 
 func (i *initializer) forEachFileNode(
@@ -117,6 +124,11 @@ func (i *initializer) forEachFileNode(
 			return f(fileNode)
 		},
 	)
+}
+
+type fileInfo struct {
+	Path        string   `json:"path,omitempty" yaml:"path,omitempty"`
+	ImportPaths []string `json:"import_paths,omitempty" yaml:"import_paths,omitempty"`
 }
 
 type initializeOptions struct{}
