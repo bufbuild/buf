@@ -129,10 +129,10 @@ func readHeadersFile(headerFile string, stopAtBlankLine bool, headers http.Heade
 			}
 		}
 	}()
-	in := &lineReader{r: bufio.NewReader(f)}
+	input := &lineReader{r: bufio.NewReader(f)}
 	var lineNo int
 	for {
-		line, err := in.ReadLine()
+		line, err := input.ReadLine()
 		if err == io.EOF {
 			if stopAtBlankLine {
 				// never hit a blank line
@@ -146,7 +146,7 @@ func readHeadersFile(headerFile string, stopAtBlankLine bool, headers http.Heade
 			closer := f
 			// we don't want close f on return in above defer function, so we clear it
 			f = nil
-			return &readerWithClose{Reader: in, Closer: closer}, nil
+			return &readerWithClose{Reader: input, Closer: closer}, nil
 		}
 		line = strings.TrimSpace(line)
 		if strings.TrimSpace(line) == "" || strings.HasPrefix(line, "#") {

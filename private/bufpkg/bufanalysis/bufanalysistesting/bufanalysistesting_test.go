@@ -47,37 +47,37 @@ func TestBasic(t *testing.T) {
 			"Hello.",
 		),
 	}
-	sb := &strings.Builder{}
-	err := bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "text")
+	builder := &strings.Builder{}
+	err := bufanalysis.PrintFileAnnotations(builder, fileAnnotations, "text")
 	require.NoError(t, err)
 	assert.Equal(
 		t,
 		`path/to/file.proto:1:1:Hello.
 path/to/file.proto:2:1:Hello.
 `,
-		sb.String(),
+		builder.String(),
 	)
-	sb.Reset()
-	err = bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "json")
+	builder.Reset()
+	err = bufanalysis.PrintFileAnnotations(builder, fileAnnotations, "json")
 	require.NoError(t, err)
 	assert.Equal(
 		t,
 		`{"path":"path/to/file.proto","start_line":1,"start_column":1,"end_line":1,"end_column":1,"type":"FOO","message":"Hello."}
 {"path":"path/to/file.proto","start_line":2,"start_column":1,"end_line":2,"end_column":1,"type":"FOO","message":"Hello."}
 `,
-		sb.String(),
+		builder.String(),
 	)
-	sb.Reset()
-	err = bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "msvs")
+	builder.Reset()
+	err = bufanalysis.PrintFileAnnotations(builder, fileAnnotations, "msvs")
 	require.NoError(t, err)
 	assert.Equal(t,
 		`path/to/file.proto(1,1) : error FOO : Hello.
 path/to/file.proto(2,1) : error FOO : Hello.
 `,
-		sb.String(),
+		builder.String(),
 	)
-	sb.Reset()
-	err = bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "junit")
+	builder.Reset()
+	err = bufanalysis.PrintFileAnnotations(builder, fileAnnotations, "junit")
 	require.NoError(t, err)
 	assert.Equal(t,
 		`<testsuites>
@@ -91,6 +91,6 @@ path/to/file.proto(2,1) : error FOO : Hello.
   </testsuite>
 </testsuites>
 `,
-		sb.String(),
+		builder.String(),
 	)
 }

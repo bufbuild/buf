@@ -172,7 +172,7 @@ type option interface {
 
 type filemap map[string][]byte
 
-func (fm filemap) apply(m *mockDownloadService) error {
+func (fm filemap) apply(downloadService *mockDownloadService) error {
 	bucket, err := storagemem.NewReadBucket(fm)
 	if err != nil {
 		return err
@@ -186,18 +186,18 @@ func (fm filemap) apply(m *mockDownloadService) error {
 	if err != nil {
 		return err
 	}
-	m.manifestBlob, err = bufmanifest.AsProtoBlob(ctx, mBlob)
+	downloadService.manifestBlob, err = bufmanifest.AsProtoBlob(ctx, mBlob)
 	if err != nil {
 		return err
 	}
 	blobs := blobSet.Blobs()
-	m.blobs = make([]*modulev1alpha1.Blob, 0, len(blobs))
+	downloadService.blobs = make([]*modulev1alpha1.Blob, 0, len(blobs))
 	for _, blob := range blobs {
 		protoBlob, err := bufmanifest.AsProtoBlob(ctx, blob)
 		if err != nil {
 			return err
 		}
-		m.blobs = append(m.blobs, protoBlob)
+		downloadService.blobs = append(downloadService.blobs, protoBlob)
 	}
 	return nil
 }
@@ -232,13 +232,13 @@ func newMockDownloadService(
 	t *testing.T,
 	opts ...option,
 ) *mockDownloadService {
-	m := &mockDownloadService{}
+	downloadService := &mockDownloadService{}
 	for _, opt := range opts {
-		if err := opt.apply(m); err != nil {
+		if err := opt.apply(downloadService); err != nil {
 			t.Error(err)
 		}
 	}
-	return m
+	return downloadService
 }
 
 func (m *mockDownloadService) factory(_ string) registryv1alpha1connect.DownloadServiceClient {

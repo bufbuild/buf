@@ -53,16 +53,16 @@ func (p protoCodec) Marshal(a any) ([]byte, error) {
 	return protoencoding.NewWireMarshaler().Marshal(protoMessage)
 }
 
-func (p protoCodec) Unmarshal(bytes []byte, a any) error {
-	if deferred, ok := a.(*deferredMessage); ok {
+func (p protoCodec) Unmarshal(bytes []byte, target any) error {
+	if deferred, ok := target.(*deferredMessage); ok {
 		// must make a copy since Connect framework will re-use the byte slice
 		deferred.data = make([]byte, len(bytes))
 		copy(deferred.data, bytes)
 		return nil
 	}
-	protoMessage, ok := a.(proto.Message)
+	protoMessage, ok := target.(proto.Message)
 	if !ok {
-		return fmt.Errorf("cannot unmarshal: %T does not implement proto.Message", a)
+		return fmt.Errorf("cannot unmarshal: %T does not implement proto.Message", target)
 	}
 	return protoencoding.NewWireUnmarshaler(nil).Unmarshal(bytes, protoMessage)
 }
@@ -83,13 +83,13 @@ type invoker struct {
 // in JSON format. The given resolver is used to resolve Any messages and
 // extensions that appear in the input or output. Other parameters are used
 // to create a Connect client, for issuing the RPC.
-func NewInvoker(container appflag.Container, md protoreflect.MethodDescriptor, res protoencoding.Resolver, httpClient connect.HTTPClient, opts []connect.ClientOption, url string, out io.Writer) Invoker {
+func NewInvoker(container appflag.Container, methodDescriptor protoreflect.MethodDescriptor, res protoencoding.Resolver, httpClient connect.HTTPClient, opts []connect.ClientOption, url string, out io.Writer) Invoker {
 	opts = append(opts, connect.WithCodec(protoCodec{}))
 	// TODO: could also provide custom compressor implementations that could give us
 	//  optics into when request and response messages are compressed (which could be
 	//  useful to include in verbose output).
 	return &invoker{
-		md:        md,
+		md:        methodDescriptor,
 		res:       res,
 		output:    out,
 		printer:   container.VerbosePrinter(),

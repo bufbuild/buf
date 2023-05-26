@@ -86,7 +86,7 @@ func testGetModulePin(
 			}
 		}
 		ctx := context.Background()
-		mr := newModuleResolver(nil, clientFactory) // logger is unused
+		resolver := newModuleResolver(nil, clientFactory) // logger is unused
 		moduleReference, err := bufmoduleref.NewModuleReference(
 			"remote",
 			"owner",
@@ -94,7 +94,7 @@ func testGetModulePin(
 			"reference",
 		)
 		require.NoError(t, err)
-		pin, err := mr.GetModulePin(ctx, moduleReference)
+		pin, err := resolver.GetModulePin(ctx, moduleReference)
 		if isError {
 			assert.Error(t, err)
 		} else {

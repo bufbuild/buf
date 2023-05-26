@@ -497,8 +497,8 @@ func tarball(files map[string][]byte) io.ReadCloser {
 }
 
 func tarballWriter(files map[string][]byte, out io.WriteCloser) {
-	tw := tar.NewWriter(out)
-	defer tw.Close()
+	tarWriter := tar.NewWriter(out)
+	defer tarWriter.Close()
 	defer out.Close()
 	for name, content := range files {
 		hdr := &tar.Header{
@@ -506,10 +506,10 @@ func tarballWriter(files map[string][]byte, out io.WriteCloser) {
 			Mode: 0666,
 			Size: int64(len(content)),
 		}
-		if err := tw.WriteHeader(hdr); err != nil {
+		if err := tarWriter.WriteHeader(hdr); err != nil {
 			return
 		}
-		if _, err := tw.Write(content); err != nil {
+		if _, err := tarWriter.Write(content); err != nil {
 			return
 		}
 	}

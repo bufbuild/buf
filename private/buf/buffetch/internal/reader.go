@@ -90,19 +90,19 @@ func (r *reader) GetFile(
 	for _, option := range options {
 		option(getFileOptions)
 	}
-	switch t := fileRef.(type) {
+	switch typ := fileRef.(type) {
 	case SingleRef:
 		return r.getSingle(
 			ctx,
 			container,
-			t,
+			typ,
 			getFileOptions.keepFileCompression,
 		)
 	case ArchiveRef:
 		return r.getArchiveFile(
 			ctx,
 			container,
-			t,
+			typ,
 			getFileOptions.keepFileCompression,
 		)
 	default:
@@ -120,33 +120,33 @@ func (r *reader) GetBucket(
 	for _, option := range options {
 		option(getBucketOptions)
 	}
-	switch t := bucketRef.(type) {
+	switch typ := bucketRef.(type) {
 	case ArchiveRef:
 		return r.getArchiveBucket(
 			ctx,
 			container,
-			t,
+			typ,
 			getBucketOptions.terminateFileNames,
 		)
 	case DirRef:
 		return r.getDirBucket(
 			ctx,
 			container,
-			t,
+			typ,
 			getBucketOptions.terminateFileNames,
 		)
 	case GitRef:
 		return r.getGitBucket(
 			ctx,
 			container,
-			t,
+			typ,
 			getBucketOptions.terminateFileNames,
 		)
 	case ProtoFileRef:
 		return r.getProtoFileBucket(
 			ctx,
 			container,
-			t,
+			typ,
 			getBucketOptions.terminateFileNames,
 		)
 	default:

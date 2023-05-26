@@ -153,9 +153,9 @@ func (r *reflectionResolver) FindFileByPath(path string) (protoreflect.FileDescr
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	d, err := r.cachedFiles.FindFileByPath(path)
-	if d != nil {
-		return d, nil
+	descriptor, err := r.cachedFiles.FindFileByPath(path)
+	if descriptor != nil {
+		return descriptor, nil
 	}
 	if err != protoregistry.NotFound {
 		return nil, err
@@ -178,9 +178,9 @@ func (r *reflectionResolver) FindDescriptorByName(name protoreflect.FullName) (p
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	d, err := r.cachedFiles.FindDescriptorByName(name)
-	if d != nil {
-		return d, nil
+	descriptor, err := r.cachedFiles.FindDescriptorByName(name)
+	if descriptor != nil {
+		return descriptor, nil
 	}
 	if err != protoregistry.NotFound {
 		return nil, err
@@ -200,25 +200,25 @@ func (r *reflectionResolver) FindDescriptorByName(name protoreflect.FullName) (p
 }
 
 func (r *reflectionResolver) FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error) {
-	d, err := r.FindDescriptorByName(enum)
+	descriptor, err := r.FindDescriptorByName(enum)
 	if err != nil {
 		return nil, err
 	}
-	ed, ok := d.(protoreflect.EnumDescriptor)
+	ed, ok := descriptor.(protoreflect.EnumDescriptor)
 	if !ok {
-		return nil, fmt.Errorf("element %s is a %s, not an enum", enum, descriptorKind(d))
+		return nil, fmt.Errorf("element %s is a %s, not an enum", enum, descriptorKind(descriptor))
 	}
 	return dynamicpb.NewEnumType(ed), nil
 }
 
 func (r *reflectionResolver) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
-	d, err := r.FindDescriptorByName(message)
+	descriptor, err := r.FindDescriptorByName(message)
 	if err != nil {
 		return nil, err
 	}
-	md, ok := d.(protoreflect.MessageDescriptor)
+	md, ok := descriptor.(protoreflect.MessageDescriptor)
 	if !ok {
-		return nil, fmt.Errorf("element %s is a %s, not a message", message, descriptorKind(d))
+		return nil, fmt.Errorf("element %s is a %s, not a message", message, descriptorKind(descriptor))
 	}
 	return dynamicpb.NewMessageType(md), nil
 }
@@ -230,13 +230,13 @@ func (r *reflectionResolver) FindMessageByURL(url string) (protoreflect.MessageT
 }
 
 func (r *reflectionResolver) FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error) {
-	d, err := r.FindDescriptorByName(field)
+	descriptor, err := r.FindDescriptorByName(field)
 	if err != nil {
 		return nil, err
 	}
-	fd, ok := d.(protoreflect.FieldDescriptor)
+	fd, ok := descriptor.(protoreflect.FieldDescriptor)
 	if !ok || !fd.IsExtension() {
-		return nil, fmt.Errorf("element %s is a %s, not an extension", field, descriptorKind(d))
+		return nil, fmt.Errorf("element %s is a %s, not an extension", field, descriptorKind(descriptor))
 	}
 	return dynamicpb.NewExtensionType(fd), nil
 }
@@ -494,14 +494,14 @@ func registerExtensions(reg *protoregistry.Types, descriptor extensionContainer)
 }
 
 // descriptorKind returns a succinct description of the type of the given descriptor.
-func descriptorKind(d protoreflect.Descriptor) string {
-	switch d := d.(type) {
+func descriptorKind(descriptor protoreflect.Descriptor) string {
+	switch descriptor := descriptor.(type) {
 	case protoreflect.FileDescriptor:
 		return "file"
 	case protoreflect.MessageDescriptor:
 		return "message"
 	case protoreflect.FieldDescriptor:
-		if d.IsExtension() {
+		if descriptor.IsExtension() {
 			return "extension"
 		}
 		return "field"
@@ -516,6 +516,6 @@ func descriptorKind(d protoreflect.Descriptor) string {
 	case protoreflect.MethodDescriptor:
 		return "method"
 	default:
-		return fmt.Sprintf("%T", d)
+		return fmt.Sprintf("%T", descriptor)
 	}
 }

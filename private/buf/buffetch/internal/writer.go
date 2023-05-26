@@ -61,19 +61,19 @@ func (w *writer) PutFile(
 	for _, option := range options {
 		option(putFileOptions)
 	}
-	switch t := fileRef.(type) {
+	switch typ := fileRef.(type) {
 	case SingleRef:
 		return w.putSingle(
 			ctx,
 			container,
-			t,
+			typ,
 			putFileOptions.noFileCompression,
 		)
 	case ArchiveRef:
 		return w.putArchiveFile(
 			ctx,
 			container,
-			t,
+			typ,
 			putFileOptions.noFileCompression,
 		)
 	default:

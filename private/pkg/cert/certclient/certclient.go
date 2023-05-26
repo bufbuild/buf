@@ -41,7 +41,7 @@ func NewClientTLSConfig(
 	container appname.Container,
 	externalClientTLSConfig ExternalClientTLSConfig,
 ) (*tls.Config, error) {
-	switch t := strings.ToLower(strings.TrimSpace(externalClientTLSConfig.Use)); t {
+	switch use := strings.ToLower(strings.TrimSpace(externalClientTLSConfig.Use)); use {
 	case "local":
 		rootCertFilePaths := externalClientTLSConfig.RootCertFilePaths
 		if len(rootCertFilePaths) == 0 {
@@ -59,6 +59,6 @@ func NewClientTLSConfig(
 	case "false":
 		return nil, nil
 	default:
-		return nil, fmt.Errorf("unknown tls.use: %q", t)
+		return nil, fmt.Errorf("unknown tls.use: %q", use)
 	}
 }

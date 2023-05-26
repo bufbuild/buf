@@ -38,7 +38,7 @@ func TestWorkspaceDir(t *testing.T) {
 		"dir",
 		"dir_buf_work",
 	} {
-		wd, err := osextended.Getwd()
+		workdir, err := osextended.Getwd()
 		require.NoError(t, err)
 		testRunStdout(
 			t,
@@ -99,10 +99,10 @@ func TestWorkspaceDir(t *testing.T) {
 			bufcli.ExitCodeFileAnnotation,
 			filepath.FromSlash(
 				fmt.Sprintf(`%s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".
-		    %s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`, wd, wd),
+		    %s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`, workdir, workdir),
 			),
 			"lint",
-			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto"),
+			filepath.Join(workdir, "testdata", "workspace", "success", baseDirPath, "other", "proto"),
 		)
 		testRunStdout(
 			t,
@@ -1118,7 +1118,7 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"archive.zip",
 	)
-	wd, err := osextended.Getwd()
+	workdir, err := osextended.Getwd()
 	require.NoError(t, err)
 	testRunStdoutStderr(
 		t,
@@ -1127,12 +1127,12 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 		``,
 		filepath.FromSlash(fmt.Sprintf(
 			`Failure: %s/proto/rpc.proto: expected to be relative`,
-			wd,
+			workdir,
 		)),
 		"lint",
 		filepath.Join(zipDir, "archive.zip#subdir=proto"),
 		"--path",
-		filepath.Join(wd, "proto", "rpc.proto"),
+		filepath.Join(workdir, "proto", "rpc.proto"),
 	)
 }
 

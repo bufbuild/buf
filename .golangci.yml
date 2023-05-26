@@ -30,6 +30,18 @@ linters-settings:
         alias: modulev1
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1
         alias: registryv1alpha1
+  varnamelen:
+    ignore-decls:
+      - T any
+      - i int
+      - id string
+      - "f *os.File"
+      - ok bool
+      - s string
+      - r rune
+      - t testing.T
+      - tb testing.TB
+      - wg sync.WaitGroup
 linters:
   enable:
     - asciicheck
@@ -76,6 +88,7 @@ linters:
     - unused
     - wastedassign
     - whitespace
+    - varnamelen
   disable-all: true
 issues:
   exclude-rules:
@@ -197,10 +210,13 @@ issues:
       path: private/usage/usage.go
     - linters:
         - forbidigo
+      text: "use of `panic`"
       path: private/bufpkg/bufimage/bufimagebuild/bufimagebuildtesting/bufimagebuildtesting.go
     - linters:
         - forbidigo
+      text: "use of `panic`"
       path: private/pkg/protosource/tag_range_test.go
     - linters:
         - forbidigo
+      text: "use of `panic`"
       path: private/bufpkg/bufmodule/bufmoduletesting/bufmoduletesting.go

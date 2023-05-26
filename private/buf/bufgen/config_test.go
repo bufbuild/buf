@@ -717,14 +717,14 @@ func assertConfigsWithEqualOptimizeFor(t *testing.T, successConfig *Config, conf
 	assertEqualModuleIdentityKeyedMaps(t, optimizeForConfig.Override, optimizeForConfig.Override)
 }
 
-func assertEqualModuleIdentityKeyedMaps[V any](t *testing.T, m1 map[bufmoduleref.ModuleIdentity]V, m2 map[bufmoduleref.ModuleIdentity]V) {
-	require.Equal(t, len(m1), len(m2))
-	keyedM1 := make(map[string]V, len(m1))
-	keyedM2 := make(map[string]V, len(m2))
-	for k, v := range m1 {
+func assertEqualModuleIdentityKeyedMaps[V any](t *testing.T, left map[bufmoduleref.ModuleIdentity]V, right map[bufmoduleref.ModuleIdentity]V) {
+	require.Equal(t, len(left), len(right))
+	keyedM1 := make(map[string]V, len(left))
+	keyedM2 := make(map[string]V, len(right))
+	for k, v := range left {
 		keyedM1[k.IdentityString()] = v
 	}
-	for k, v := range m2 {
+	for k, v := range right {
 		keyedM2[k.IdentityString()] = v
 	}
 	require.Equal(t, keyedM1, keyedM2)

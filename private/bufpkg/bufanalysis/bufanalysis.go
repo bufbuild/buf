@@ -239,18 +239,18 @@ func (a sortFileAnnotations) Less(i int, j int) bool { return fileAnnotationComp
 
 // fileAnnotationCompareTo returns a value less than 0 if a < b, a value
 // greater than 0 if a > b, and 0 if a == b.
-func fileAnnotationCompareTo(a FileAnnotation, b FileAnnotation) int {
-	if a == nil && b == nil {
+func fileAnnotationCompareTo(left FileAnnotation, right FileAnnotation) int {
+	if left == nil && right == nil {
 		return 0
 	}
-	if a == nil && b != nil {
+	if left == nil && right != nil {
 		return -1
 	}
-	if a != nil && b == nil {
+	if left != nil && right == nil {
 		return 1
 	}
-	aFileInfo := a.FileInfo()
-	bFileInfo := b.FileInfo()
+	aFileInfo := left.FileInfo()
+	bFileInfo := right.FileInfo()
 	if aFileInfo == nil && bFileInfo != nil {
 		return -1
 	}
@@ -265,40 +265,40 @@ func fileAnnotationCompareTo(a FileAnnotation, b FileAnnotation) int {
 			return 1
 		}
 	}
-	if a.StartLine() < b.StartLine() {
+	if left.StartLine() < right.StartLine() {
 		return -1
 	}
-	if a.StartLine() > b.StartLine() {
+	if left.StartLine() > right.StartLine() {
 		return 1
 	}
-	if a.StartColumn() < b.StartColumn() {
+	if left.StartColumn() < right.StartColumn() {
 		return -1
 	}
-	if a.StartColumn() > b.StartColumn() {
+	if left.StartColumn() > right.StartColumn() {
 		return 1
 	}
-	if a.Type() < b.Type() {
+	if left.Type() < right.Type() {
 		return -1
 	}
-	if a.Type() > b.Type() {
+	if left.Type() > right.Type() {
 		return 1
 	}
-	if a.Message() < b.Message() {
+	if left.Message() < right.Message() {
 		return -1
 	}
-	if a.Message() > b.Message() {
+	if left.Message() > right.Message() {
 		return 1
 	}
-	if a.EndLine() < b.EndLine() {
+	if left.EndLine() < right.EndLine() {
 		return -1
 	}
-	if a.EndLine() > b.EndLine() {
+	if left.EndLine() > right.EndLine() {
 		return 1
 	}
-	if a.EndColumn() < b.EndColumn() {
+	if left.EndColumn() < right.EndColumn() {
 		return -1
 	}
-	if a.EndColumn() > b.EndColumn() {
+	if left.EndColumn() > right.EndColumn() {
 		return 1
 	}
 	return 0

@@ -32,9 +32,9 @@ import (
 func TestWorkspaceSubDirectory(t *testing.T) {
 	// Execute buf within a workspace directory.
 	t.Parallel()
-	wd, err := osextended.Getwd()
+	workdir, err := osextended.Getwd()
 	require.NoError(t, err)
-	parentDirectory := filepath.Join(wd, "..")
+	parentDirectory := filepath.Join(workdir, "..")
 	testRunStdout(
 		t,
 		nil,
@@ -90,7 +90,7 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		0,
 		``,
 		"build",
-		filepath.Join(wd, "..", "..", ".."),
+		filepath.Join(workdir, "..", "..", ".."),
 	)
 	testRunStdout(
 		t,
@@ -100,7 +100,7 @@ func TestWorkspaceSubDirectory(t *testing.T) {
         %s/one/b.proto
         %s/two/c.proto`, parentDirectory, parentDirectory, parentDirectory)),
 		"ls-files",
-		filepath.Join(wd, "..", "..", ".."),
+		filepath.Join(workdir, "..", "..", ".."),
 	)
 	testRunStdout(
 		t,
@@ -112,7 +112,7 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 			parentDirectory, parentDirectory, parentDirectory,
 		)),
 		"lint",
-		filepath.Join(wd, "..", "..", ".."),
+		filepath.Join(workdir, "..", "..", ".."),
 	)
 	testRunStdout(
 		t,
@@ -151,9 +151,9 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 			parentDirectory, parentDirectory,
 		)),
 		"lint",
-		filepath.Join(wd, "..", "..", ".."),
+		filepath.Join(workdir, "..", "..", ".."),
 		"--path",
-		filepath.Join(wd, "..", "one"),
+		filepath.Join(workdir, "..", "one"),
 	)
 	testRunStdout(
 		t,
@@ -163,9 +163,9 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 			parentDirectory,
 		)),
 		"lint",
-		filepath.Join(wd, "..", "..", ".."),
+		filepath.Join(workdir, "..", "..", ".."),
 		"--path",
-		filepath.Join(wd, "..", "two"),
+		filepath.Join(workdir, "..", "two"),
 	)
 }
 

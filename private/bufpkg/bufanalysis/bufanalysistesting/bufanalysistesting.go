@@ -138,8 +138,8 @@ func normalizeFileAnnotations(
 		return nil
 	}
 	normalizedFileAnnotations := make([]bufanalysis.FileAnnotation, len(fileAnnotations))
-	for i, a := range fileAnnotations {
-		fileInfo := a.FileInfo()
+	for i, annotation := range fileAnnotations {
+		fileInfo := annotation.FileInfo()
 		var err error
 		if fileInfo != nil {
 			fileInfo, err = bufmoduleref.NewFileInfo(
@@ -153,11 +153,11 @@ func normalizeFileAnnotations(
 		}
 		normalizedFileAnnotations[i] = bufanalysis.NewFileAnnotation(
 			fileInfo,
-			a.StartLine(),
-			a.StartColumn(),
-			a.EndLine(),
-			a.EndColumn(),
-			a.Type(),
+			annotation.StartLine(),
+			annotation.StartColumn(),
+			annotation.EndLine(),
+			annotation.EndColumn(),
+			annotation.Type(),
 			"",
 		)
 	}

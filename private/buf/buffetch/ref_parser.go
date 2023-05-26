@@ -196,23 +196,23 @@ func (a *refParser) GetRef(
 	if err != nil {
 		return nil, err
 	}
-	switch t := parsedRef.(type) {
+	switch typ := parsedRef.(type) {
 	case internal.ParsedSingleRef:
-		imageEncoding, err := parseImageEncoding(t.Format())
+		imageEncoding, err := parseImageEncoding(typ.Format())
 		if err != nil {
 			return nil, err
 		}
-		return newImageRef(t, imageEncoding), nil
+		return newImageRef(typ, imageEncoding), nil
 	case internal.ParsedArchiveRef:
-		return newSourceRef(t), nil
+		return newSourceRef(typ), nil
 	case internal.ParsedDirRef:
-		return newSourceRef(t), nil
+		return newSourceRef(typ), nil
 	case internal.ParsedGitRef:
-		return newSourceRef(t), nil
+		return newSourceRef(typ), nil
 	case internal.ParsedModuleRef:
-		return newModuleRef(t), nil
+		return newModuleRef(typ), nil
 	case internal.ProtoFileRef:
-		return newProtoFileRef(t), nil
+		return newProtoFileRef(typ), nil
 	default:
 		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
 	}
@@ -234,19 +234,19 @@ func (a *refParser) GetSourceOrModuleRef(
 	if err != nil {
 		return nil, err
 	}
-	switch t := parsedRef.(type) {
+	switch typ := parsedRef.(type) {
 	case internal.ParsedSingleRef:
 		return nil, fmt.Errorf("invalid ParsedRef type for source or module: %T", parsedRef)
 	case internal.ParsedArchiveRef:
-		return newSourceRef(t), nil
+		return newSourceRef(typ), nil
 	case internal.ParsedDirRef:
-		return newSourceRef(t), nil
+		return newSourceRef(typ), nil
 	case internal.ParsedGitRef:
-		return newSourceRef(t), nil
+		return newSourceRef(typ), nil
 	case internal.ParsedModuleRef:
-		return newModuleRef(t), nil
+		return newModuleRef(typ), nil
 	case internal.ProtoFileRef:
-		return newProtoFileRef(t), nil
+		return newProtoFileRef(typ), nil
 	default:
 		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
 	}
