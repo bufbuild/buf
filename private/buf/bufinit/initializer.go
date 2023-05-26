@@ -54,6 +54,12 @@ func (i *initializer) initialize(
 	ctx context.Context,
 	readWriteBucket storage.ReadWriteBucket,
 ) error {
+	// TODO: if a file has a directory path that matches its package structure,
+	// that is a good hint that a buf.yaml should be at the root of the package structure
+	// need to make sure all files are covered by a buf.yaml
+	// also need to make sure every file has exactly one buf.yaml
+	// TODO: for common things like gogo, add a dep to buf.yaml if the file is not found
+
 	fileInfos, err := i.getSortedFileInfos(ctx, readWriteBucket)
 	if err != nil {
 		return err
