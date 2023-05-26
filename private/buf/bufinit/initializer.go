@@ -70,7 +70,7 @@ func (i *initializer) initialize(
 		node.Insert(fileInfo.Path)
 	}
 	directoryMap := make(map[string]struct{})
-	missingImports := make(map[string][]string)
+	missingImportPathToFilePaths := make(map[string][]string)
 	for _, fileInfo := range fileInfos {
 		for _, importPath := range fileInfo.ImportPaths {
 			directories, present := node.Get(importPath)
@@ -79,12 +79,12 @@ func (i *initializer) initialize(
 					directoryMap[directory] = struct{}{}
 				}
 			} else if !datawkt.Exists(importPath) {
-				missingImports[importPath] = append(missingImports[importPath], fileInfo.Path)
+				missingImportPathToFilePaths[importPath] = append(missingImportPathToFilePaths[importPath], fileInfo.Path)
 			}
 		}
 	}
-	if len(missingImports) > 0 {
-		for importPath, paths := range missingImports {
+	if len(missingImportPathToFilePaths) > 0 {
+		for importPath, paths := range missingImportPathToFilePaths {
 			fmt.Printf("%s is imported by %v but is not found in the current directory.\n", importPath, stringutil.SliceToHumanString(paths))
 		}
 		fmt.Println()
