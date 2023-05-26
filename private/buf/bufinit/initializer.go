@@ -16,6 +16,7 @@ package bufinit
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -55,6 +56,13 @@ func (i *initializer) initialize(
 	fileInfos, err := i.getSortedFileInfos(ctx, readWriteBucket)
 	if err != nil {
 		return err
+	}
+	if checkedEntry := i.logger.Check(zap.DebugLevel, "file_infos"); checkedEntry != nil {
+		data, err := json.Marshal(fileInfos)
+		if err != nil {
+			return err
+		}
+		checkedEntry.Write(zap.String("value", string(data)))
 	}
 	node := newReversePathTrieNode()
 	for _, path := range getAllSortedFileInfoPaths(fileInfos) {
