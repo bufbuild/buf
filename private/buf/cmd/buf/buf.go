@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/bufinit"
 	curatedplugindelete "github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
@@ -247,6 +248,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted",
 				Hidden: true,
 				SubCommands: []*appcmd.Command{
+					bufinit.NewCommand("init", builder),
 					protoc.NewCommand("protoc", builder),
 					{
 						Use:   "registry",
