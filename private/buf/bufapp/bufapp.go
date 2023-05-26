@@ -25,7 +25,7 @@ import (
 const currentVersion = "v1"
 
 // ExternalConfig is an external config.
-type ExternalConfig struct {
+type externalConfig struct {
 	// If editing ExternalConfig, make sure to update ExternalConfig.IsEmpty!
 
 	Version string                             `json:"version,omitempty" yaml:"version,omitempty"`
