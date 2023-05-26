@@ -51,6 +51,18 @@ func (r *reversePathTrieNode) Get(path string) (directories []string, present bo
 	return r.get(reverseComponents(path))
 }
 
+func (r *reversePathTrieNode) insert(reverseComponents []string) {
+	if len(reverseComponents) == 0 {
+		return
+	}
+	node, ok := r.componentToChild[reverseComponents[0]]
+	if !ok {
+		node = newReversePathTrieNode()
+		r.componentToChild[reverseComponents[0]] = node
+	}
+	node.insert(reverseComponents[1:])
+}
+
 func (r *reversePathTrieNode) get(reverseComponents []string) ([]string, bool) {
 	if len(reverseComponents) == 0 {
 		return r.getAllDirectories("."), true
@@ -74,16 +86,4 @@ func (r *reversePathTrieNode) getAllDirectories(base string) []string {
 		}
 	}
 	return stringutil.MapToSortedSlice(directoryMap)
-}
-
-func (r *reversePathTrieNode) insert(reverseComponents []string) {
-	if len(reverseComponents) == 0 {
-		return
-	}
-	node, ok := r.componentToChild[reverseComponents[0]]
-	if !ok {
-		node = newReversePathTrieNode()
-		r.componentToChild[reverseComponents[0]] = node
-	}
-	node.insert(reverseComponents[1:])
 }
