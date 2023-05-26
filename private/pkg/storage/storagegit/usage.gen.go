@@ -12,25 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build windows
-// +build windows
+// Generated. DO NOT EDIT.
 
-package buf
+package storagegit
 
-import (
-	"path/filepath"
-	"testing"
-)
-
-func TestWorkspaceAbsoluteFail(t *testing.T) {
-	// The buf.work.yaml file cannot specify absolute paths.
-	testRunStdoutStderrNoWarn(
-		t,
-		nil,
-		1,
-		``,
-		`Failure: directory "C:\buf" listed in testdata\workspace\fail\absolute\windows\buf.work.yaml is invalid: C:\buf: expected to be relative`,
-		"build",
-		filepath.Join("testdata", "workspace", "fail", "absolute", "windows"),
-	)
-}
+import _ "github.com/bufbuild/buf/private/usage"

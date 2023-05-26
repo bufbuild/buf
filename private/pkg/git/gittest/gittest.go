@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -30,42 +31,16 @@ import (
 
 const DefaultBranch = "master"
 
-type TestGitRepository struct {
-	DotGitDir         string
-	DefaultBranchHead git.Commit
-	Reader            git.ObjectReader
-	BranchIterator    git.BranchIterator
-	CommitIterator    git.CommitIterator
-}
-
-func ScaffoldGitRepository(t *testing.T) TestGitRepository {
+func ScaffoldGitRepository(t *testing.T) git.Repository {
 	runner := command.NewRunner()
 	dir := scaffoldGitRepository(t, runner)
 	dotGitPath := path.Join(dir, git.DotGitDir)
-	reader, err := git.OpenObjectReader(dotGitPath, runner)
+	repo, err := git.OpenRepository(dotGitPath, runner, git.OpenRepositoryWithBaseBranch(DefaultBranch))
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		require.NoError(t, reader.Close())
+		require.NoError(t, repo.Close())
 	})
-	branchIterator, err := git.NewBranchIterator(dotGitPath, reader)
-	require.NoError(t, err)
-	commitIterator, err := git.NewCommitIterator(dotGitPath, reader, git.CommitIteratorWithBaseBranch(DefaultBranch))
-	require.NoError(t, err)
-	commitBytes, err := os.ReadFile(path.Join(dotGitPath, "refs", "heads", DefaultBranch))
-	require.NoError(t, err)
-	require.NoError(t, err)
-	commitBytes = bytes.TrimRight(commitBytes, "\n")
-	commitID, err := git.NewHashFromHex(string(commitBytes))
-	require.NoError(t, err)
-	commit, err := reader.Commit(commitID)
-	require.NoError(t, err)
-	return TestGitRepository{
-		DotGitDir:         dotGitPath,
-		Reader:            reader,
-		BranchIterator:    branchIterator,
-		CommitIterator:    commitIterator,
-		DefaultBranchHead: commit,
-	}
+	return repo
 }
 
 // the resulting Git repo looks like so:
@@ -103,43 +78,59 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	runInDir(t, runner, local, "git", "remote", "add", "origin", remote)
 
 	// (1) commit in main branch
-	runInDir(t, runner, local, "touch", "randomBinary")
+	writeFiles(t, local, map[string]string{
+		"randomBinary":                       "some executable",
+		"proto/buf.yaml":                     "some buf.yaml",
+		"proto/acme/petstore/v1/a.proto":     "cats",
+		"proto/acme/petstore/v1/b.proto":     "animals",
+		"proto/acme/grocerystore/v1/c.proto": "toysrus",
+		"proto/acme/grocerystore/v1/d.proto": "petsrus",
+	})
 	runInDir(t, runner, local, "chmod", "+x", "randomBinary")
-	runInDir(t, runner, local, "mkdir", "proto")
-	runInDir(t, runner, path.Join(local, "proto"), "touch", "buf.yaml")
-	runInDir(t, runner, local, "mkdir", "-p", "proto/acme/petstore/v1")
-	runInDir(t, runner, path.Join(local, "proto", "acme", "petstore", "v1"), "touch", "a.proto", "b.proto")
-	runInDir(t, runner, local, "mkdir", "-p", "proto/acme/grocerystore/v1")
-	runInDir(t, runner, path.Join(local, "proto", "acme", "grocerystore", "v1"), "touch", "c.proto", "d.proto")
 	runInDir(t, runner, local, "git", "add", ".")
 	runInDir(t, runner, local, "git", "commit", "-m", "initial commit")
-	runInDir(t, runner, local, "git", "push", "-u", "-f", "origin", DefaultBranch)
+	runInDir(t, runner, local, "git", "tag", "release/v1")
+	runInDir(t, runner, local, "git", "push", "--follow-tags", "-u", "-f", "origin", DefaultBranch)
 
 	// (2) branch off main and begin work
 	runInDir(t, runner, local, "git", "checkout", "-b", "smian/branch1")
-	runInDir(t, runner, path.Join(local, "proto", "acme", "petstore", "v1"), "touch", "e.proto", "f.proto")
+	writeFiles(t, local, map[string]string{
+		"proto/acme/petstore/v1/e.proto": "loblaws",
+		"proto/acme/petstore/v1/f.proto": "merchant of venice",
+	})
 	runInDir(t, runner, local, "git", "add", ".")
 	runInDir(t, runner, local, "git", "commit", "-m", "branch1")
-	runInDir(t, runner, local, "git", "push", "origin", "smian/branch1")
+	runInDir(t, runner, local, "git", "tag", "-m", "for testing", "branch/v1")
+	runInDir(t, runner, local, "git", "push", "--follow-tags", "origin", "smian/branch1")
 
 	// (3) branch off branch and begin work
 	runInDir(t, runner, local, "git", "checkout", "-b", "smian/branch2")
-	runInDir(t, runner, path.Join(local, "proto", "acme", "grocerystore", "v1"), "touch", "g.proto", "h.proto")
+	writeFiles(t, local, map[string]string{
+		"proto/acme/grocerystore/v1/g.proto": "hamlet",
+		"proto/acme/grocerystore/v1/h.proto": "bethoven",
+	})
 	runInDir(t, runner, local, "git", "add", ".")
 	runInDir(t, runner, local, "git", "commit", "-m", "branch2")
-	runInDir(t, runner, local, "git", "push", "origin", "smian/branch2")
+	runInDir(t, runner, local, "git", "tag", "-m", "for testing", "branch/v2")
+	runInDir(t, runner, local, "git", "push", "--follow-tags", "origin", "smian/branch2")
 
 	// (4) merge first branch
 	runInDir(t, runner, local, "git", "checkout", DefaultBranch)
 	runInDir(t, runner, local, "git", "merge", "--squash", "smian/branch1")
 	runInDir(t, runner, local, "git", "commit", "-m", "second commit")
-	runInDir(t, runner, local, "git", "push")
+	runInDir(t, runner, local, "git", "tag", "v2")
+	runInDir(t, runner, local, "git", "push", "--follow-tags")
 
-	// (5) merge second branch
+	// (5) pack some refs
+	runInDir(t, runner, local, "git", "pack-refs", "--all")
+	runInDir(t, runner, local, "git", "repack")
+
+	// (6) merge second branch
 	runInDir(t, runner, local, "git", "checkout", DefaultBranch)
 	runInDir(t, runner, local, "git", "merge", "--squash", "smian/branch2")
 	runInDir(t, runner, local, "git", "commit", "-m", "third commit")
-	runInDir(t, runner, local, "git", "push")
+	runInDir(t, runner, local, "git", "tag", "v3.0")
+	runInDir(t, runner, local, "git", "push", "--follow-tags")
 
 	return local
 }
@@ -159,4 +150,11 @@ func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args 
 		require.NoError(t, err)
 	}
 	require.NoError(t, err)
+}
+
+func writeFiles(t *testing.T, dir string, files map[string]string) {
+	for path, contents := range files {
+		require.NoError(t, os.MkdirAll(filepath.Join(dir, filepath.Dir(path)), 0700))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, path), []byte(contents), 0600))
+	}
 }

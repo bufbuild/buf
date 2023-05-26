@@ -23,6 +23,7 @@ import (
 
 func TestParseCommit(t *testing.T) {
 	t.Parallel()
+
 	hash, err := parseHashFromHex("43848150a6f5f6d76eeef6e0f69eb46290eefab6")
 	require.NoError(t, err)
 	commit, err := parseCommit(

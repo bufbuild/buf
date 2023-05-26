@@ -161,7 +161,7 @@ func TestWorkspaceDir(t *testing.T) {
 			"--against",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 		)
-		testRunStdoutStderr(
+		testRunStdoutStderrNoWarn(
 			t,
 			nil,
 			1,
@@ -194,7 +194,7 @@ func TestWorkspaceDir(t *testing.T) {
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
-		testRunStdoutStderr(
+		testRunStdoutStderrNoWarn(
 			t,
 			nil,
 			1,
@@ -895,7 +895,7 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "breaking"),
 	)
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -911,7 +911,7 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 func TestWorkspaceDuplicateFail(t *testing.T) {
 	t.Parallel()
 	// The workspace includes multiple images that define the same file.
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -925,7 +925,7 @@ func TestWorkspaceDuplicateFail(t *testing.T) {
 func TestWorkspaceNotExistFail(t *testing.T) {
 	t.Parallel()
 	// The directory defined in the workspace does not exist.
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -939,7 +939,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 func TestWorkspaceJumpContextFail(t *testing.T) {
 	t.Parallel()
 	// The workspace directories cannot jump context.
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -957,7 +957,7 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 func TestWorkspaceDirOverlapFail(t *testing.T) {
 	t.Parallel()
 	// The buf.work.yaml file cannot specify overlapping diretories.
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -972,7 +972,7 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 	// The target input cannot overlap with any of the directories defined
 	// in the workspace.
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -981,7 +981,7 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "overlap", "proto", "buf"),
 	)
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -995,7 +995,7 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 func TestWorkspaceNoVersionFail(t *testing.T) {
 	// The buf.work.yaml must specify a version.
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -1009,7 +1009,7 @@ func TestWorkspaceNoVersionFail(t *testing.T) {
 func TestWorkspaceInvalidVersionFail(t *testing.T) {
 	// The buf.work.yaml must specify a valid version.
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -1023,7 +1023,7 @@ func TestWorkspaceInvalidVersionFail(t *testing.T) {
 func TestWorkspaceNoDirectoriesFail(t *testing.T) {
 	t.Parallel()
 	// The buf.work.yaml must specify at least one directory.
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -1037,7 +1037,7 @@ func TestWorkspaceNoDirectoriesFail(t *testing.T) {
 func TestWorkspaceWithWorkspacePathFail(t *testing.T) {
 	t.Parallel()
 	// The --path flag cannot match the workspace directory (i.e. root requirements).
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -1053,7 +1053,7 @@ func TestWorkspaceWithWorkspacePathFail(t *testing.T) {
 func TestWorkspaceWithWorkspaceDirectoryPathFail(t *testing.T) {
 	t.Parallel()
 	// The --path flag cannot match one of the workspace directories (i.e. root requirements).
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -1074,7 +1074,7 @@ func TestWorkspaceWithInvalidWorkspaceDirectoryPathFail(t *testing.T) {
 	t.Parallel()
 	// The --path flag did not reference a file found in either of the
 	// workspace directories.
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -1091,7 +1091,7 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 	t.Parallel()
 	// The --path flag did not reference a file found outside of
 	// one of the workspace directories.
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -1112,7 +1112,7 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"archive.zip",
 	)
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -1135,7 +1135,7 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 	)
 	wd, err := osextended.Getwd()
 	require.NoError(t, err)
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,

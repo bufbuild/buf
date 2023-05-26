@@ -20,18 +20,24 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"go.uber.org/multierr"
+)
+
+const (
+	objectTypeBlob   = "blob"
+	objectTypeCommit = "commit"
+	objectTypeTree   = "tree"
+	objectTypeTag    = "tag"
 )
 
 // exitTime is the amount of time we'll wait for git-cat-file(1) to exit.
 var exitTime = 5 * time.Second
+var errObjectTypeMismatch = errors.New("object type mismatch")
 
 type objectReader struct {
 	rx      *bufio.Reader
@@ -40,14 +46,6 @@ type objectReader struct {
 }
 
 func newObjectReader(gitDirPath string, runner command.Runner) (*objectReader, error) {
-	gitDirPath = normalpath.Unnormalize(gitDirPath)
-	if err := validateDirPathExists(gitDirPath); err != nil {
-		return nil, err
-	}
-	gitDirPath, err := filepath.Abs(gitDirPath)
-	if err != nil {
-		return nil, err
-	}
 	rx, stdout := io.Pipe()
 	stdin, tx := io.Pipe()
 	process, err := runner.Start(
@@ -69,7 +67,7 @@ func newObjectReader(gitDirPath string, runner command.Runner) (*objectReader, e
 	}, nil
 }
 
-func (o *objectReader) Close() error {
+func (o *objectReader) close() error {
 	ctx, cancel := context.WithDeadline(
 		context.Background(),
 		time.Now().Add(exitTime),
@@ -81,12 +79,32 @@ func (o *objectReader) Close() error {
 	)
 }
 
-func (o *objectReader) Commit(id Hash) (Commit, error) {
-	data, err := o.read("commit", id)
+func (o *objectReader) Blob(hash Hash) ([]byte, error) {
+	return o.read(objectTypeBlob, hash)
+}
+
+func (o *objectReader) Commit(hash Hash) (Commit, error) {
+	data, err := o.read(objectTypeCommit, hash)
 	if err != nil {
 		return nil, err
 	}
-	return parseCommit(id, data)
+	return parseCommit(hash, data)
+}
+
+func (o *objectReader) Tree(hash Hash) (Tree, error) {
+	data, err := o.read(objectTypeTree, hash)
+	if err != nil {
+		return nil, err
+	}
+	return parseTree(hash, data)
+}
+
+func (o *objectReader) Tag(hash Hash) (AnnotatedTag, error) {
+	data, err := o.read(objectTypeTag, hash)
+	if err != nil {
+		return nil, err
+	}
+	return parseAnnotatedTag(hash, data)
 }
 
 func (o *objectReader) read(objectType string, id Hash) ([]byte, error) {
@@ -139,7 +157,11 @@ func (o *objectReader) read(objectType string, id Hash) ([]byte, error) {
 	// first.
 	if objType != objectType {
 		return nil, fmt.Errorf(
-			"git-cat-file: object %q is a %s, not a %s", id, objType, objectType,
+			"git-cat-file: object %q is a %s, not a %s: %w",
+			id,
+			objType,
+			objectType,
+			errObjectTypeMismatch,
 		)
 	}
 	return objContent, nil

@@ -42,6 +42,7 @@ type runner struct {
 	readHeaderTimeout time.Duration
 	tlsConfig         *tls.Config
 	walkFunc          chi.WalkFunc
+	disableH2C        bool
 }
 
 // RunOption is an option for a new Run.
@@ -87,6 +88,13 @@ func RunWithWalkFunc(walkFunc chi.WalkFunc) RunOption {
 	}
 }
 
+// RunWithoutH2C disables use of H2C (used when RunWithTLSConfig is not called).
+func RunWithoutH2C() RunOption {
+	return func(runner *runner) {
+		runner.disableH2C = true
+	}
+}
+
 // Run will start a HTTP server listening on the provided listener and
 // serving the provided handler. This call is blocking and the run
 // is cancelled when the input context is cancelled, the listener is
@@ -117,7 +125,7 @@ func Run(
 		ErrorLog:          stdLogger,
 		TLSConfig:         s.tlsConfig,
 	}
-	if s.tlsConfig == nil {
+	if s.tlsConfig == nil && !s.disableH2C {
 		httpServer.Handler = h2c.NewHandler(handler, &http2.Server{
 			IdleTimeout: DefaultIdleTimeout,
 		})
