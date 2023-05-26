@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufinit"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -75,6 +76,5 @@ func run(
 	if err != nil {
 		return err
 	}
-	_ = readWriteBucket
-	return nil
+	return bufinit.NewInitializer(container.Logger()).Initialize(ctx, readWriteBucket)
 }
