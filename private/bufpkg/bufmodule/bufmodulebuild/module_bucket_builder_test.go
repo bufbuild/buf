@@ -312,6 +312,7 @@ func TestDocumentation(t *testing.T) {
 }
 
 func TestLicense(t *testing.T) {
+	t.Parallel()
 	testLicenseBucket(
 		t,
 		"testdata/5",
@@ -322,6 +323,7 @@ func TestLicense(t *testing.T) {
 }
 
 func TestConfigInclusion(t *testing.T) {
+	t.Parallel()
 	t.Run("buf.yaml", func(t *testing.T) {
 		t.Parallel()
 		testConfigInclusion(t, "buf.yaml")
@@ -452,6 +454,7 @@ func testBucketGetAllFileInfosError(
 	config *bufmoduleconfig.Config,
 	expectedSpecificError error,
 ) {
+	t.Parallel()
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		relDir,
@@ -478,6 +481,7 @@ func testBucketGetFileInfosForExternalPathsError(
 	config *bufmoduleconfig.Config,
 	externalPaths []string,
 ) {
+	t.Parallel()
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		relDir,
@@ -507,6 +511,7 @@ func testDocumentationBucket(
 	expectedDocPath string,
 	expectedFileInfos ...bufmoduleref.FileInfo,
 ) {
+	t.Parallel()
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		relDir,
