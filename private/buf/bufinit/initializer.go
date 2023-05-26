@@ -73,13 +73,23 @@ func (i *initializer) getFileInfos(
 		ctx,
 		readWriteBucket,
 		func(fileNode *ast.FileNode) error {
+			// Should always be normalized, but defensive programming.
+			path, err := normalizeAndValidateProtoFile(fileNode.Name())
+			if err != nil {
+				return err
+			}
 			fileInfo := &fileInfo{
-				Path: fileNode.Name(),
+				Path: path,
 			}
 			for _, decl := range fileNode.Decls {
 				switch decl := decl.(type) {
 				case *ast.ImportNode:
-					fileInfo.ImportPaths = append(fileInfo.ImportPaths, decl.Name.AsString())
+					// Should always be normalized, but defensive programming.
+					importPath, err := normalizeAndValidateProtoFile(decl.Name.AsString())
+					if err != nil {
+						return err
+					}
+					fileInfo.ImportPaths = append(fileInfo.ImportPaths, importPath)
 				}
 			}
 			fileInfos = append(fileInfos, fileInfo)
@@ -112,6 +122,7 @@ func (i *initializer) forEachFileNode(
 		"",
 		func(readObject storage.ReadObject) error {
 			// This can return an error and non-nil AST.
+			// readObject.Path() will always be normalized.
 			fileNode, err := parser.Parse(readObject.Path(), readObject, handler)
 			if fileNode == nil {
 				// No AST implies an I/O error trying to read the file contents. Consider this a real error.
@@ -127,7 +138,9 @@ func (i *initializer) forEachFileNode(
 }
 
 type fileInfo struct {
-	Path        string   `json:"path,omitempty" yaml:"path,omitempty"`
+	// Normalized, validated, and never empty or ".".
+	Path string `json:"path,omitempty" yaml:"path,omitempty"`
+	// Normalized, validated, and each element never empty or ".".
 	ImportPaths []string `json:"import_paths,omitempty" yaml:"import_paths,omitempty"`
 }
 
