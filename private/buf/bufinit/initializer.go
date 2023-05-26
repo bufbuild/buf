@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/ast"
@@ -65,22 +66,40 @@ func (i *initializer) initialize(
 		checkedEntry.Write(zap.String("value", string(data)))
 	}
 	node := newReversePathTrieNode()
-	for _, path := range getAllSortedFileInfoPaths(fileInfos) {
-		node.Insert(path)
+	for _, fileInfo := range fileInfos {
+		node.Insert(fileInfo.Path)
 	}
 	directoryMap := make(map[string]struct{})
-	for _, importPath := range getAllSortedFileInfoImportPaths(fileInfos) {
-		directories, present := node.Get(importPath)
-		if present {
-			for _, directory := range directories {
-				directoryMap[directory] = struct{}{}
+	missingImports := make(map[string][]string)
+	for _, fileInfo := range fileInfos {
+		for _, importPath := range fileInfo.ImportPaths {
+			directories, present := node.Get(importPath)
+			if present {
+				for _, directory := range directories {
+					directoryMap[directory] = struct{}{}
+				}
+			} else if !datawkt.Exists(importPath) {
+				missingImports[importPath] = append(missingImports[importPath], fileInfo.Path)
 			}
 		}
-
+	}
+	if len(missingImports) > 0 {
+		for importPath, paths := range missingImports {
+			fmt.Printf("%s is imported by %v but is not found in the current directory.\n", importPath, stringutil.SliceToHumanString(paths))
+		}
+		fmt.Println()
+		fmt.Println("Given that you have missing imports, buf will not be able to build directly.")
+		fmt.Println()
 	}
 	directories := stringutil.MapToSortedSlice(directoryMap)
-	for _, directory := range directories {
-		fmt.Println(directory)
+	if len(directories) > 0 {
+		fmt.Println("Directories that need a buf.yaml:")
+		fmt.Println()
+		for _, directory := range directories {
+			fmt.Println(directory)
+		}
+	} else {
+		fmt.Println("No directories need a buf.yaml.")
 	}
 	return nil
 }
