@@ -1105,7 +1105,6 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
-	t.Parallel()
 	// The --path flag did not reference a file found in the archive.
 	zipDir := createZipFromDir(
 		t,
@@ -1126,7 +1125,6 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
-	t.Parallel()
 	// The --path flag did not reference an absolute file patfound in the archive.
 	zipDir := createZipFromDir(
 		t,

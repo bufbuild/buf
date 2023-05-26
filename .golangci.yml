@@ -217,3 +217,9 @@ issues:
         - paralleltest
       text: "missing the call to method parallel"
       path: private/buf/buffetch/buffetch_test.go
+    # Some tests in this file cannot run in parallel because they write to
+    # the same file, calling createZipFromDir.
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/buf/cmd/buf/workspace_test.go
