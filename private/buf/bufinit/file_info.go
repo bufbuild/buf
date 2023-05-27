@@ -15,8 +15,11 @@
 package bufinit
 
 import (
+	"errors"
+	"fmt"
 	"sort"
 
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/protocompile/ast"
 )
 
@@ -65,23 +68,12 @@ func sortFileInfos(fileInfos []*fileInfo) {
 	)
 }
 
-//func getAllSortedFileInfoPaths(fileInfos []*fileInfo) []string {
-//paths := make([]string, len(fileInfos))
-//for i, fileInfo := range fileInfos {
-//paths[i] = fileInfo.Path
-//}
-//// Given that we pass around sorted fileInfos, this should already be sorted,
-//// but just to make sure.
-//sort.Strings(paths)
-//return paths
-//}
-
-//func getAllSortedFileInfoImportPaths(fileInfos []*fileInfo) []string {
-//importPathMap := make(map[string]struct{})
-//for _, fileInfo := range fileInfos {
-//for _, importPath := range fileInfo.ImportPaths {
-//importPathMap[importPath] = struct{}{}
-//}
-//}
-//return stringutil.MapToSortedSlice(importPathMap)
-//}
+func normalizeAndValidateProtoFile(path string) (string, error) {
+	if path == "" {
+		return "", errors.New("empty path")
+	}
+	if path == "." {
+		return "", fmt.Errorf("path cannot be '.'")
+	}
+	return normalpath.NormalizeAndValidate(path)
+}

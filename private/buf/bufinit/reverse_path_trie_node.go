@@ -87,3 +87,13 @@ func (r *reversePathTrieNode) getAllDirectories(base string) []string {
 	}
 	return stringutil.MapToSortedSlice(directoryMap)
 }
+
+func reverseComponents(path string) []string {
+	components := normalpath.Components(path)
+	// https://github.com/golang/go/wiki/SliceTricks#reversing
+	for i := len(components)/2 - 1; i >= 0; i-- {
+		opp := len(components) - 1 - i
+		components[i], components[opp] = components[opp], components[i]
+	}
+	return components
+}
