@@ -91,7 +91,13 @@ func (c *calculation) ImportPathsNotCoveredByPackageInferredIncludePaths() []str
 	for _, packageInferredIncludePath := range c.FilePathToPackageInferredIncludePath {
 		delete(importDirPathMap, packageInferredIncludePath)
 	}
-	return stringutil.MapToSortedSlice(importDirPathMap)
+	importPathMap := make(map[string]struct{})
+	for importDirPath := range importDirPathMap {
+		for importPath := range c.ImportDirPathToImportPaths[importDirPath] {
+			importPathMap[importPath] = struct{}{}
+		}
+	}
+	return stringutil.MapToSortedSlice(importPathMap)
 }
 
 // handles FilePathToFileInfo
