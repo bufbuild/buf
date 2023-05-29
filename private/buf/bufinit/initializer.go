@@ -51,6 +51,14 @@ func (i *initializer) Initialize(
 //     Based on the answer here, this might be where you start in terms of your directories you want to include
 //   - Do you have files that you know you want to ignore?
 //     Based on the answer here, we might be able to blanket exclude things like testdata
+//
+// Current "best":
+//
+// 1. Take the list of package-inferred include paths, these are usually right.
+// 2. Delete the shortest paths that cause overlaps with other paths - can't have overlaps
+// 3. Figure out what import paths are not covered by this list, add this import dir paths back.
+// 4. Do the same delete of overlaps.
+// 5. Report if you can compile or not.
 func (i *initializer) initialize(
 	ctx context.Context,
 	readWriteBucket storage.ReadWriteBucket,
