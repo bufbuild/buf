@@ -25,7 +25,8 @@ import (
 
 type fileInfo struct {
 	// Normalized, validated, and never empty or ".".
-	Path string `json:"path,omitempty" yaml:"path,omitempty"`
+	Path    string `json:"path,omitempty" yaml:"path,omitempty"`
+	Package string `json:"package,omitempty" yaml:"package,omitempty"`
 	// Normalized, validated, and each element never empty or ".".
 	ImportPaths []string `json:"import_paths,omitempty" yaml:"import_paths,omitempty"`
 }
@@ -48,6 +49,8 @@ func newFileInfo(fileNode *ast.FileNode) (*fileInfo, error) {
 				return nil, err
 			}
 			fileInfo.ImportPaths = append(fileInfo.ImportPaths, importPath)
+		case *ast.PackageNode:
+			fileInfo.Package = string(decl.Name.AsIdentifier())
 		}
 	}
 	sort.Slice(

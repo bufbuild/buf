@@ -41,13 +41,13 @@ func (r *reversePathTrieNode) Insert(path string) {
 // Get will get the directories that contain a given path, if present.
 //
 // present is true if this is a path contained in the trie.
-// If present is true, directories is the list of directories that contain this path.
+// If present is true, dirPaths is the list of directories that contain this path.
 //
 // Example: Trie contains paths a/b/c.proto, a/d/c.proto -> Get for "c.proto"
 // will return (["a/b", "a/d"], true), however "e/c.proto" will return (nil, false).
 //
 // path assumed to be normalized, validated, and non-empty.
-func (r *reversePathTrieNode) Get(path string) (directories []string, present bool) {
+func (r *reversePathTrieNode) Get(path string) (dirPaths []string, present bool) {
 	return r.get(reverseComponents(path))
 }
 
@@ -65,7 +65,7 @@ func (r *reversePathTrieNode) insert(reverseComponents []string) {
 
 func (r *reversePathTrieNode) get(reverseComponents []string) ([]string, bool) {
 	if len(reverseComponents) == 0 {
-		return r.getAllDirectories("."), true
+		return r.getAllDirPaths("."), true
 	}
 	child, ok := r.componentToChild[reverseComponents[0]]
 	if !ok {
@@ -74,18 +74,18 @@ func (r *reversePathTrieNode) get(reverseComponents []string) ([]string, bool) {
 	return child.get(reverseComponents[1:])
 }
 
-func (r *reversePathTrieNode) getAllDirectories(base string) []string {
+func (r *reversePathTrieNode) getAllDirPaths(base string) []string {
 	if len(r.componentToChild) == 0 {
 		return []string{base}
 	}
-	directoryMap := make(map[string]struct{})
+	dirPathMap := make(map[string]struct{})
 	for component, child := range r.componentToChild {
 		// component comes first, since this is reverse
-		for _, childDirectory := range child.getAllDirectories(normalpath.Join(component, base)) {
-			directoryMap[childDirectory] = struct{}{}
+		for _, childDirPath := range child.getAllDirPaths(normalpath.Join(component, base)) {
+			dirPathMap[childDirPath] = struct{}{}
 		}
 	}
-	return stringutil.MapToSortedSlice(directoryMap)
+	return stringutil.MapToSortedSlice(dirPathMap)
 }
 
 func reverseComponents(path string) []string {
