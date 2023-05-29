@@ -100,6 +100,21 @@ func (c *calculation) ImportPathsNotCoveredByPackageInferredIncludePaths() []str
 	return stringutil.MapToSortedSlice(importPathMap)
 }
 
+// ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths is the same as ImportPathsNotCoveredByPackageInferredIncludePaths
+// except it gives you a map importDirPath -> [importPaths], instead of just the importPaths.
+func (c *calculation) ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths() map[string]map[string]struct{} {
+	importDirPathToImportPaths := make(map[string]map[string]struct{})
+	for importDirPath, importPaths := range c.ImportDirPathToImportPaths {
+		// We make a copy of the importDirPathToImportPaths map, but we don't need to copy each
+		// importPathsMap as we do not modify it (and won't, concievably).
+		importDirPathToImportPaths[importDirPath] = importPaths
+	}
+	for _, packageInferredIncludePath := range c.FilePathToPackageInferredIncludePath {
+		delete(importDirPathToImportPaths, packageInferredIncludePath)
+	}
+	return importDirPathToImportPaths
+}
+
 // handles FilePathToFileInfo
 func (c *calculation) addFileInfo(fileInfo *fileInfo) error {
 	if _, ok := c.FilePathToFileInfo[fileInfo.Path]; ok {
@@ -165,21 +180,23 @@ func (c *calculation) postValidate() error {
 func (c *calculation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(
 		struct {
-			FilePathToFileInfo                                 map[string]*fileInfo           `json:"file_path_to_file_info,omitempty"`
-			ImportDirPathToImportPaths                         map[string]map[string]struct{} `json:"import_dir_path_to_import_paths,omitempty"`
-			ImportPathToImportDirPaths                         map[string]map[string]struct{} `json:"import_path_to_import_dir_paths,omitempty"`
-			AllImportDirPaths                                  []string                       `json:"all_import_dir_paths,omitempty"`
-			MissingImportPathToFilePaths                       map[string]map[string]struct{} `json:"missing_import_path_to_file_paths,omitempty"`
-			FilePathToPackageInferredIncludePath               map[string]string              `json:"file_path_to_package_inferred_include_path,omitempty"`
-			ImportPathsNotCoveredByPackageInferredIncludePaths []string                       `json:"import_paths_not_covered_by_package_inferred_include_paths,omitempty"`
+			FilePathToFileInfo                                                map[string]*fileInfo           `json:"file_path_to_file_info,omitempty"`
+			ImportDirPathToImportPaths                                        map[string]map[string]struct{} `json:"import_dir_path_to_import_paths,omitempty"`
+			ImportPathToImportDirPaths                                        map[string]map[string]struct{} `json:"import_path_to_import_dir_paths,omitempty"`
+			AllImportDirPaths                                                 []string                       `json:"all_import_dir_paths,omitempty"`
+			MissingImportPathToFilePaths                                      map[string]map[string]struct{} `json:"missing_import_path_to_file_paths,omitempty"`
+			FilePathToPackageInferredIncludePath                              map[string]string              `json:"file_path_to_package_inferred_include_path,omitempty"`
+			ImportPathsNotCoveredByPackageInferredIncludePaths                []string                       `json:"import_paths_not_covered_by_package_inferred_include_paths,omitempty"`
+			ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths map[string]map[string]struct{} `json:"import_dir_path_to_import_paths_not_covered_by_package_inferred_include_paths,omitempty"`
 		}{
-			FilePathToFileInfo:                                 c.FilePathToFileInfo,
-			ImportDirPathToImportPaths:                         c.ImportDirPathToImportPaths,
-			ImportPathToImportDirPaths:                         c.ImportPathToImportDirPaths,
-			AllImportDirPaths:                                  c.AllImportDirPaths(),
-			MissingImportPathToFilePaths:                       c.MissingImportPathToFilePaths,
-			FilePathToPackageInferredIncludePath:               c.FilePathToPackageInferredIncludePath,
-			ImportPathsNotCoveredByPackageInferredIncludePaths: c.ImportPathsNotCoveredByPackageInferredIncludePaths(),
+			FilePathToFileInfo:                                                c.FilePathToFileInfo,
+			ImportDirPathToImportPaths:                                        c.ImportDirPathToImportPaths,
+			ImportPathToImportDirPaths:                                        c.ImportPathToImportDirPaths,
+			AllImportDirPaths:                                                 c.AllImportDirPaths(),
+			MissingImportPathToFilePaths:                                      c.MissingImportPathToFilePaths,
+			FilePathToPackageInferredIncludePath:                              c.FilePathToPackageInferredIncludePath,
+			ImportPathsNotCoveredByPackageInferredIncludePaths:                c.ImportPathsNotCoveredByPackageInferredIncludePaths(),
+			ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths: c.ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths(),
 		},
 	)
 }
