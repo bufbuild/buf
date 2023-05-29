@@ -60,6 +60,14 @@ type calculation struct {
 	// the include path is "a/b". Say instead the package was "a.b.c.d", we would infer
 	// the include path is ".". Say instead the package was "e", we would not infer
 	// an include path.
+	//
+	// This map should only be added to if the file path is a subset of the package, and this
+	// is validated. Say we have "package c.e" for file "a/e/e.proto" - this should not
+	// be in the map as the package-inferred include path does not match the directory stucture.
+	//
+	// We may want to lint/warn about this as this is a violation of buf's basic lint rules
+	// in the first place, but we are trying to onboard repos in their current state the
+	// best that we can.
 	FilePathToPackageInferredIncludePath map[string]string
 }
 
@@ -83,6 +91,15 @@ func (c *calculation) AllImportDirPaths() []string {
 	return importDirPaths
 }
 
+// All the package-inferred include paths.
+func (c *calculation) AllPackageInferredIncludePaths() []string {
+	packageInferredIncludePathMap := make(map[string]struct{})
+	for _, packageInferredIncludePath := range c.FilePathToPackageInferredIncludePath {
+		packageInferredIncludePathMap[packageInferredIncludePath] = struct{}{}
+	}
+	return stringutil.MapToSortedSlice(packageInferredIncludePathMap)
+}
+
 // A list of imports that are not covered by package-inferred include paths.
 //
 // This is all the files within import dir paths that are not in package-inferred include paths.
@@ -98,6 +115,18 @@ func (c *calculation) ImportPathsNotCoveredByPackageInferredIncludePaths() []str
 		}
 	}
 	return stringutil.MapToSortedSlice(importPathMap)
+}
+
+// FilePathsNotCoveredByPackageInferredIncludePaths is a list of file paths not covered by package-inferred include paths.
+func (c *calculation) FilePathsNotCoveredByPackageInferredIncludePaths() []string {
+	filePathMap := make(map[string]struct{})
+	for filePath := range c.FilePathToFileInfo {
+		filePathMap[filePath] = struct{}{}
+	}
+	for filePath := range c.FilePathToPackageInferredIncludePath {
+		delete(filePathMap, filePath)
+	}
+	return stringutil.MapToSortedSlice(filePathMap)
 }
 
 // ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths is the same as ImportPathsNotCoveredByPackageInferredIncludePaths
@@ -190,6 +219,11 @@ func (c *calculation) postValidate() error {
 			}
 		}
 	}
+	for filePath, packageInferredIncludePath := range c.FilePathToPackageInferredIncludePath {
+		if _, err := normalpath.Rel(packageInferredIncludePath, filePath); err != nil {
+			return fmt.Errorf("calculation: package-inferred include path %q was not a base of filePath %q: %w", packageInferredIncludePath, filePath, err)
+		}
+	}
 	return nil
 }
 
@@ -199,22 +233,26 @@ func (c *calculation) MarshalJSON() ([]byte, error) {
 			FilePathToFileInfo                                                map[string]*fileInfo           `json:"file_path_to_file_info"`
 			ImportDirPathToImportPaths                                        map[string]map[string]struct{} `json:"import_dir_path_to_import_paths"`
 			ImportPathToImportDirPaths                                        map[string]map[string]struct{} `json:"import_path_to_import_dir_paths"`
-			AllImportDirPaths                                                 []string                       `json:"all_import_dir_paths"`
 			MissingImportPathToFilePaths                                      map[string]map[string]struct{} `json:"missing_import_path_to_file_paths"`
 			FilePathToPackageInferredIncludePath                              map[string]string              `json:"file_path_to_package_inferred_include_path"`
-			ImportPathsNotCoveredByPackageInferredIncludePaths                []string                       `json:"import_paths_not_covered_by_package_inferred_include_paths"`
 			ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths map[string]map[string]struct{} `json:"import_dir_path_to_import_paths_not_covered_by_package_inferred_include_paths"`
 			ImportPathToImportDirPathsWithMoreThanOneImportDirPaths           map[string]map[string]struct{} `json:"import_path_to_import_dir_paths_with_more_than_one_import_dir_paths"`
+			AllImportDirPaths                                                 []string                       `json:"all_import_dir_paths"`
+			AllPackageInferredIncludePaths                                    []string                       `json:"all_package_inferred_include_paths"`
+			ImportPathsNotCoveredByPackageInferredIncludePaths                []string                       `json:"import_paths_not_covered_by_package_inferred_include_paths"`
+			FilePathsNotCoveredByPackageInferredIncludePaths                  []string                       `json:"file_paths_not_covered_by_package_inferred_include_paths"`
 		}{
 			FilePathToFileInfo:                                                c.FilePathToFileInfo,
 			ImportDirPathToImportPaths:                                        c.ImportDirPathToImportPaths,
 			ImportPathToImportDirPaths:                                        c.ImportPathToImportDirPaths,
-			AllImportDirPaths:                                                 c.AllImportDirPaths(),
 			MissingImportPathToFilePaths:                                      c.MissingImportPathToFilePaths,
 			FilePathToPackageInferredIncludePath:                              c.FilePathToPackageInferredIncludePath,
-			ImportPathsNotCoveredByPackageInferredIncludePaths:                c.ImportPathsNotCoveredByPackageInferredIncludePaths(),
 			ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths: c.ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths(),
 			ImportPathToImportDirPathsWithMoreThanOneImportDirPaths:           c.ImportPathToImportDirPathsWithMoreThanOneImportDirPaths(),
+			AllImportDirPaths:                                                 c.AllImportDirPaths(),
+			AllPackageInferredIncludePaths:                                    c.AllPackageInferredIncludePaths(),
+			ImportPathsNotCoveredByPackageInferredIncludePaths:                c.ImportPathsNotCoveredByPackageInferredIncludePaths(),
+			FilePathsNotCoveredByPackageInferredIncludePaths:                  c.FilePathsNotCoveredByPackageInferredIncludePaths(),
 		},
 	)
 }
