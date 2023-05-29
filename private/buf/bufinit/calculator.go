@@ -16,8 +16,10 @@ package bufinit
 
 import (
 	"context"
+	"strings"
 
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
@@ -52,10 +54,13 @@ func (c *calculator) Calculate(
 	//}
 	//}()
 
-	if err := c.populateFileInfosAndDirectlyAssociatedMaps(ctx, readWriteBucket, calculation); err != nil {
+	if err := c.populateFileInfos(ctx, readWriteBucket, calculation); err != nil {
 		return nil, err
 	}
 	if err := c.populateImportPathMaps(calculation); err != nil {
+		return nil, err
+	}
+	if err := c.populatePackageInferredIncludePaths(calculation); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +70,7 @@ func (c *calculator) Calculate(
 	return calculation, nil
 }
 
-func (c *calculator) populateFileInfosAndDirectlyAssociatedMaps(
+func (c *calculator) populateFileInfos(
 	ctx context.Context,
 	readWriteBucket storage.ReadWriteBucket,
 	calculation *calculation,
@@ -104,6 +109,25 @@ func (c *calculator) populateImportPathMaps(
 				if err := calculation.addMissingImportPathAndFilePath(importPath, fileInfo.Path); err != nil {
 					return err
 				}
+			}
+		}
+	}
+	return nil
+}
+
+// assumes populateFileInfos has been called
+func (c *calculator) populatePackageInferredIncludePaths(
+	calculation *calculation,
+) error {
+	for _, fileInfo := range calculation.FilePathToFileInfo {
+		if fileInfo.Package != "" {
+			dirPath := normalpath.Dir(fileInfo.Path)
+			inferredDirPath := strings.ReplaceAll(fileInfo.Package, ".", "/")
+			if dirPath == inferredDirPath {
+				calculation.addPackageInferredIncludePath(fileInfo.Path, ".")
+			} else if strings.HasSuffix(dirPath, inferredDirPath) {
+				// TODO: could be buggy, but maybe not since all paths are cleaned
+				calculation.addPackageInferredIncludePath(fileInfo.Path, normalpath.Normalize(strings.TrimSuffix(dirPath, "/"+inferredDirPath)))
 			}
 		}
 	}

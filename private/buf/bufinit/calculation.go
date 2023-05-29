@@ -15,16 +15,17 @@
 package bufinit
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 type calculation struct {
 	// A map from file path to the fileInfo that represents this file.
-	FilePathToFileInfo map[string]*fileInfo `json:"file_path_to_file_info,omitempty" yaml:"file_path_to_file_info,omitempty"`
+	FilePathToFileInfo map[string]*fileInfo
 	// A map from -I directories based on detected imports, to the imports contained within them.
 	// Based off of the reverse trie lookup - if a file is detected to be potentially within
 	// a given directory and it is imported, this is added as an import dir path, while the
@@ -42,25 +43,24 @@ type calculation struct {
 	// of the directories you need to compile everything.
 	//
 	// normalpath.Join(importDirPath, importPath) should always be a key in FilePathToFileInfo.
-	ImportDirPathToImportPaths map[string]map[string]struct{} `json:"import_dir_path_to_import_paths,omitempty" yaml:"import_dir_path_to_import_paths,omitempty"`
+	ImportDirPathToImportPaths map[string]map[string]struct{}
 	//ImportPathToImportDirPaths is the inverse of ImportDirPathToImportPaths, that is for a given
 	// "c.proto", it will tell you all directories with a "c.proto.
-	ImportPathToImportDirPaths map[string]map[string]struct{} `json:"import_path_to_import_dir_paths,omitempty" yaml:"import_path_to_import_dir_paths,omitempty"`
+	ImportPathToImportDirPaths map[string]map[string]struct{}
 	// A map from an import that is not detected in the fileInfos, to the file paths that contain
 	// this missing import.
 	//
 	// Example: "a/b/c.proto" imports "gogo.proto", but "gogo.proto" is not detected to be a
 	// fileInfo that we have, regardless of how many directories we have stripped (so we don't
 	// have ".*/gogo.proto").
-	MissingImportPathToFilePaths map[string]map[string]struct{} `json:"missing_import_path_to_file_paths,omitempty" yaml:"missing_import_path_to_file_paths,omitempty"`
-
+	MissingImportPathToFilePaths map[string]map[string]struct{}
 	// A map from file path to the inferred include path based on the package, if any.
 	//
 	// As an example, assume we have "a/b/c/d.proto" with "package c.d". we would infer
 	// the include path is "a/b". Say instead the package was "a.b.c.d", we would infer
 	// the include path is ".". Say instead the package was "e", we would not infer
 	// an include path.
-	FilePathToPackageInferredIncludePath map[string]string `json:"file_path_to_package_inferred_include_path,omitempty" yaml:"file_path_to_package_inferred_include_path,omitempty"`
+	FilePathToPackageInferredIncludePath map[string]string
 }
 
 func newCalculation() *calculation {
@@ -73,6 +73,7 @@ func newCalculation() *calculation {
 	}
 }
 
+// All the import dir paths.
 func (c *calculation) AllImportDirPaths() []string {
 	importDirPaths := make([]string, 0, len(c.ImportDirPathToImportPaths))
 	for importDirPath := range c.ImportDirPathToImportPaths {
@@ -82,24 +83,24 @@ func (c *calculation) AllImportDirPaths() []string {
 	return importDirPaths
 }
 
+// A list of imports that are not covered by package-inferred include paths.
+//
+// This is all the files within import dir paths that are not in package-inferred include paths.
+func (c *calculation) ImportPathsNotCoveredByPackageInferredIncludePaths() []string {
+	importDirPathMap := stringutil.SliceToMap(c.AllImportDirPaths())
+	for _, packageInferredIncludePath := range c.FilePathToPackageInferredIncludePath {
+		delete(importDirPathMap, packageInferredIncludePath)
+	}
+	return stringutil.MapToSortedSlice(importDirPathMap)
+}
+
 // handles FilePathToFileInfo
-// handles FilePathToPackageInferredIncludePath
 func (c *calculation) addFileInfo(fileInfo *fileInfo) error {
 	if _, ok := c.FilePathToFileInfo[fileInfo.Path]; ok {
 		// we don't expect this from our production of fileInfos, this is a system error
 		return fmt.Errorf("calculation: duplicate filePath: %q", fileInfo.Path)
 	}
 	c.FilePathToFileInfo[fileInfo.Path] = fileInfo
-	if fileInfo.Package != "" {
-		dirPath := normalpath.Dir(fileInfo.Path)
-		inferredDirPath := strings.ReplaceAll(fileInfo.Package, ".", "/")
-		if dirPath == inferredDirPath {
-			c.FilePathToPackageInferredIncludePath[fileInfo.Path] = "."
-		} else if strings.HasSuffix(dirPath, inferredDirPath) {
-			// TODO: could be buggy, but maybe not since all paths are cleaned
-			c.FilePathToPackageInferredIncludePath[fileInfo.Path] = normalpath.Normalize(strings.TrimSuffix(dirPath, "/"+inferredDirPath))
-		}
-	}
 	return nil
 }
 
@@ -118,6 +119,15 @@ func (c *calculation) addImportDirPathAndImportPath(importDirPath string, import
 		c.ImportPathToImportDirPaths[importPath] = importDirPathMap
 	}
 	importDirPathMap[importDirPath] = struct{}{}
+	return nil
+}
+
+// handles FilePathToPackageInferredIncludePath
+func (c *calculation) addPackageInferredIncludePath(filePath string, packageInferredIncludePath string) error {
+	if _, ok := c.FilePathToPackageInferredIncludePath[filePath]; ok {
+		return fmt.Errorf("calculation: duplicate filePath for package-inferred include path: %q", filePath)
+	}
+	c.FilePathToPackageInferredIncludePath[filePath] = packageInferredIncludePath
 	return nil
 }
 
@@ -144,4 +154,26 @@ func (c *calculation) postValidate() error {
 		}
 	}
 	return nil
+}
+
+func (c *calculation) MarshalJSON() ([]byte, error) {
+	return json.Marshal(
+		struct {
+			FilePathToFileInfo                                 map[string]*fileInfo           `json:"file_path_to_file_info,omitempty"`
+			ImportDirPathToImportPaths                         map[string]map[string]struct{} `json:"import_dir_path_to_import_paths,omitempty"`
+			ImportPathToImportDirPaths                         map[string]map[string]struct{} `json:"import_path_to_import_dir_paths,omitempty"`
+			AllImportDirPaths                                  []string                       `json:"all_import_dir_paths,omitempty"`
+			MissingImportPathToFilePaths                       map[string]map[string]struct{} `json:"missing_import_path_to_file_paths,omitempty"`
+			FilePathToPackageInferredIncludePath               map[string]string              `json:"file_path_to_package_inferred_include_path,omitempty"`
+			ImportPathsNotCoveredByPackageInferredIncludePaths []string                       `json:"import_paths_not_covered_by_package_inferred_include_paths,omitempty"`
+		}{
+			FilePathToFileInfo:                                 c.FilePathToFileInfo,
+			ImportDirPathToImportPaths:                         c.ImportDirPathToImportPaths,
+			ImportPathToImportDirPaths:                         c.ImportPathToImportDirPaths,
+			AllImportDirPaths:                                  c.AllImportDirPaths(),
+			MissingImportPathToFilePaths:                       c.MissingImportPathToFilePaths,
+			FilePathToPackageInferredIncludePath:               c.FilePathToPackageInferredIncludePath,
+			ImportPathsNotCoveredByPackageInferredIncludePaths: c.ImportPathsNotCoveredByPackageInferredIncludePaths(),
+		},
+	)
 }

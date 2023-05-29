@@ -16,9 +16,9 @@ package bufinit
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -55,8 +55,7 @@ func (i *initializer) initialize(
 		return err
 	}
 
-	//data, err := json.MarshalIndent(calculation, "", "  ")
-	data, err := encoding.MarshalYAML(calculation)
+	data, err := json.MarshalIndent(calculation, "", "  ")
 	if err != nil {
 		return err
 	}
