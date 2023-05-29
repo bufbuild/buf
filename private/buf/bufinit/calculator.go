@@ -41,10 +41,10 @@ func (c *calculator) Calculate(
 	ctx context.Context,
 	readWriteBucket storage.ReadWriteBucket,
 ) (_ *calculation, retErr error) {
-	// TODO: if a file has a directory path that matches its package structure,
-	// that is a good hint that a buf.yaml should be at the root of the package structure
-	// need to make sure all files are covered by a buf.yaml
-	// also need to make sure every file has exactly one buf.yaml
+	// TODO: need to make sure all files are covered by a buf.yaml
+	// TODO: also need to make sure every file has exactly one buf.yaml
+	// TODO: need to make sure suggested include structure doesn't have overlaps
+	// TODO: what to do about dually-named imports?
 	// TODO: for common things like gogo, add a dep to buf.yaml if the file is not found
 
 	calculation := newCalculation()

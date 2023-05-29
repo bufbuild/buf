@@ -104,15 +104,31 @@ func (c *calculation) ImportPathsNotCoveredByPackageInferredIncludePaths() []str
 // except it gives you a map importDirPath -> [importPaths], instead of just the importPaths.
 func (c *calculation) ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths() map[string]map[string]struct{} {
 	importDirPathToImportPaths := make(map[string]map[string]struct{})
-	for importDirPath, importPaths := range c.ImportDirPathToImportPaths {
+	for importDirPath, importPathMap := range c.ImportDirPathToImportPaths {
 		// We make a copy of the importDirPathToImportPaths map, but we don't need to copy each
-		// importPathsMap as we do not modify it (and won't, concievably).
-		importDirPathToImportPaths[importDirPath] = importPaths
+		// importPathMap as we do not modify it (and won't, concievably).
+		importDirPathToImportPaths[importDirPath] = importPathMap
 	}
 	for _, packageInferredIncludePath := range c.FilePathToPackageInferredIncludePath {
 		delete(importDirPathToImportPaths, packageInferredIncludePath)
 	}
 	return importDirPathToImportPaths
+}
+
+// Returns ImportPathToImportDirPaths only for those importPaths where len(importDirPaths) > 1
+func (c *calculation) ImportPathToImportDirPathsWithMoreThanOneImportDirPaths() map[string]map[string]struct{} {
+	importPathToImportDirPaths := make(map[string]map[string]struct{})
+	for importPath, importDirPathMap := range c.ImportPathToImportDirPaths {
+		// We make a copy of the importPathToImportDirPaths map, but we don't need to copy each
+		// importDirPathsMap as we do not modify it (and won't, concievably).
+		importPathToImportDirPaths[importPath] = importDirPathMap
+	}
+	for importPath, importDirPathMap := range importPathToImportDirPaths {
+		if len(importDirPathMap) <= 1 {
+			delete(importPathToImportDirPaths, importPath)
+		}
+	}
+	return importPathToImportDirPaths
 }
 
 // handles FilePathToFileInfo
@@ -188,6 +204,7 @@ func (c *calculation) MarshalJSON() ([]byte, error) {
 			FilePathToPackageInferredIncludePath                              map[string]string              `json:"file_path_to_package_inferred_include_path"`
 			ImportPathsNotCoveredByPackageInferredIncludePaths                []string                       `json:"import_paths_not_covered_by_package_inferred_include_paths"`
 			ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths map[string]map[string]struct{} `json:"import_dir_path_to_import_paths_not_covered_by_package_inferred_include_paths"`
+			ImportPathToImportDirPathsWithMoreThanOneImportDirPaths           map[string]map[string]struct{} `json:"import_path_to_import_dir_paths_with_more_than_one_import_dir_paths"`
 		}{
 			FilePathToFileInfo:                                                c.FilePathToFileInfo,
 			ImportDirPathToImportPaths:                                        c.ImportDirPathToImportPaths,
@@ -197,6 +214,7 @@ func (c *calculation) MarshalJSON() ([]byte, error) {
 			FilePathToPackageInferredIncludePath:                              c.FilePathToPackageInferredIncludePath,
 			ImportPathsNotCoveredByPackageInferredIncludePaths:                c.ImportPathsNotCoveredByPackageInferredIncludePaths(),
 			ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths: c.ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths(),
+			ImportPathToImportDirPathsWithMoreThanOneImportDirPaths:           c.ImportPathToImportDirPathsWithMoreThanOneImportDirPaths(),
 		},
 	)
 }
