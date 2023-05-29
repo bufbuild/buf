@@ -45,8 +45,9 @@ type calculation struct {
 
 func newCalculation() *calculation {
 	return &calculation{
-		FilePathToFileInfo:         make(map[string]*fileInfo),
-		ImportDirPathToImportPaths: make(map[string]map[string]struct{}),
+		FilePathToFileInfo:           make(map[string]*fileInfo),
+		ImportDirPathToImportPaths:   make(map[string]map[string]struct{}),
+		MissingImportPathToFilePaths: make(map[string]map[string]struct{}),
 	}
 }
 
@@ -81,7 +82,7 @@ func (c *calculation) addImportDirPathAndImportPath(importDirPath string, import
 func (c *calculation) addMissingImportPathAndFilePath(missingImportPath string, filePath string) error {
 	filePathMap, ok := c.MissingImportPathToFilePaths[missingImportPath]
 	if !ok {
-		filePathMap := make(map[string]struct{})
+		filePathMap = make(map[string]struct{})
 		c.MissingImportPathToFilePaths[missingImportPath] = filePathMap
 	}
 	filePathMap[filePath] = struct{}{}
