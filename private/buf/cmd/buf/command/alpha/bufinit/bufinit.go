@@ -26,6 +26,10 @@ import (
 	"github.com/spf13/pflag"
 )
 
+const (
+	excludePathsFlagName = "exclude-path"
+)
+
 // NewCommand returns a new init Command.
 func NewCommand(
 	name string,
@@ -46,13 +50,17 @@ func NewCommand(
 	}
 }
 
-type flags struct{}
+type flags struct {
+	ExcludePaths []string
+}
 
 func newFlags() *flags {
 	return &flags{}
 }
 
-func (f *flags) Bind(flagSet *pflag.FlagSet) {}
+func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
+}
 
 func run(
 	ctx context.Context,
@@ -76,5 +84,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	return bufinit.NewInitializer(container.Logger()).Initialize(ctx, readWriteBucket)
+	return bufinit.NewInitializer(container.Logger()).Initialize(
+		ctx,
+		readWriteBucket,
+		bufinit.InitializeWithExcludePaths(flags.ExcludePaths...),
+	)
 }

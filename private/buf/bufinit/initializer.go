@@ -42,14 +42,40 @@ func (i *initializer) Initialize(
 	for _, option := range options {
 		option(initializeOptions)
 	}
-	return i.initialize(ctx, readWriteBucket)
+	return i.initialize(ctx, readWriteBucket, initializeOptions.excludePaths)
 }
 
+// Questions you might want to ask in an interactive prompt:
+//
+//   - Do you have a directory, or a set of directories, where you commonly include your .proto files from?
+//     Based on the answer here, this might be where you start in terms of your directories you want to include
+//   - Do you have files that you know you want to ignore?
+//     Based on the answer here, we might be able to blanket exclude things like testdata
 func (i *initializer) initialize(
 	ctx context.Context,
 	readWriteBucket storage.ReadWriteBucket,
+	excludePaths []string,
 ) error {
 	calculator := newCalculator(i.logger)
+	if len(excludePaths) > 0 {
+		var notOrMatchers []storage.Matcher
+		for _, excludePath := range excludePaths {
+			// Doesn't have the compilicated logic in bufmodule because I don't think
+			// it is necessary here
+			notOrMatchers = append(
+				notOrMatchers,
+				storage.MatchPathEqualOrContained(excludePath),
+			)
+		}
+		readWriteBucket = storage.MapReadWriteBucket(
+			readWriteBucket,
+			storage.MatchNot(
+				storage.MatchOr(
+					notOrMatchers...,
+				),
+			),
+		)
+	}
 	calculation, err := calculator.Calculate(ctx, readWriteBucket)
 	if err != nil {
 		return err
@@ -99,4 +125,6 @@ func (i *initializer) initialize(
 	return nil
 }
 
-type initializeOptions struct{}
+type initializeOptions struct {
+	excludePaths []string
+}

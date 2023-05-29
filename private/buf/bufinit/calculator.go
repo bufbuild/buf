@@ -39,7 +39,7 @@ func newCalculator(logger *zap.Logger) *calculator {
 
 func (c *calculator) Calculate(
 	ctx context.Context,
-	readWriteBucket storage.ReadWriteBucket,
+	readBucket storage.ReadBucket,
 ) (_ *calculation, retErr error) {
 	// TODO: need to make sure all files are covered by a buf.yaml
 	// TODO: also need to make sure every file has exactly one buf.yaml
@@ -54,7 +54,7 @@ func (c *calculator) Calculate(
 	//}
 	//}()
 
-	if err := c.populateFileInfos(ctx, readWriteBucket, calculation); err != nil {
+	if err := c.populateFileInfos(ctx, readBucket, calculation); err != nil {
 		return nil, err
 	}
 	if err := c.populateImportPathMaps(calculation); err != nil {
@@ -72,12 +72,12 @@ func (c *calculator) Calculate(
 
 func (c *calculator) populateFileInfos(
 	ctx context.Context,
-	readWriteBucket storage.ReadWriteBucket,
+	readBucket storage.ReadBucket,
 	calculation *calculation,
 ) error {
 	return c.forEachFileNode(
 		ctx,
-		readWriteBucket,
+		readBucket,
 		func(fileNode *ast.FileNode) error {
 			fileInfo, err := newFileInfo(fileNode)
 			if err != nil {

@@ -33,3 +33,13 @@ func NewInitializer(logger *zap.Logger) Initializer {
 
 // InitializeOption is an option for Initialize
 type InitializeOption func(*initializeOptions)
+
+// InitializeWithExcludePaths returns a new InitializeOption that will exclude
+// the given files or directories from the initialization.
+//
+// This is not a regex, but is recursive - excluding "a/b" will exclude "a/b/c", "a/b/b.proto", etc.
+func InitializeWithExcludePaths(excludePaths ...string) InitializeOption {
+	return func(initializeOptions *initializeOptions) {
+		initializeOptions.excludePaths = append(initializeOptions.excludePaths, excludePaths...)
+	}
+}
