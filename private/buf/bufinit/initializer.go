@@ -76,7 +76,7 @@ func (i *initializer) initialize(
 		fmt.Println("Given that you have missing imports, buf will not be able to build directly.")
 		fmt.Println()
 	}
-	if importDirPaths := calculation.ImportDirPaths(); len(importDirPaths) > 0 {
+	if importDirPaths := calculation.AllImportDirPaths(); len(importDirPaths) > 0 {
 		fmt.Println("Directories that need a buf.yaml:")
 		fmt.Println()
 		for _, importDirPath := range importDirPaths {
@@ -91,7 +91,7 @@ func (i *initializer) initialize(
 	fmt.Println()
 	buffer := bytes.NewBuffer(nil)
 	buffer.WriteString("protoc -o /dev/null")
-	for _, importDirPath := range calculation.ImportDirPaths() {
+	for _, importDirPath := range calculation.AllImportDirPaths() {
 		buffer.WriteString(" \\ \n-I \"")
 		buffer.WriteString(importDirPath)
 		buffer.WriteString("\"")

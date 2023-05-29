@@ -42,6 +42,9 @@ type calculation struct {
 	//
 	// normalpath.Join(importDirPath, importPath) should always be a key in FilePathToFileInfo.
 	ImportDirPathToImportPaths map[string]map[string]struct{}
+	//ImportPathToImportDirPaths is the inverse of ImportDirPathToImportPaths, that is for a given
+	// "c.proto", it will tell you all directories with a "c.proto.
+	ImportPathToImportDirPaths map[string]map[string]struct{}
 	// A map from an import that is not detected in the fileInfos, to the file paths that contain
 	// this missing import.
 	//
@@ -55,11 +58,12 @@ func newCalculation() *calculation {
 	return &calculation{
 		FilePathToFileInfo:           make(map[string]*fileInfo),
 		ImportDirPathToImportPaths:   make(map[string]map[string]struct{}),
+		ImportPathToImportDirPaths:   make(map[string]map[string]struct{}),
 		MissingImportPathToFilePaths: make(map[string]map[string]struct{}),
 	}
 }
 
-func (c *calculation) ImportDirPaths() []string {
+func (c *calculation) AllImportDirPaths() []string {
 	importDirPaths := make([]string, 0, len(c.ImportDirPathToImportPaths))
 	for importDirPath := range c.ImportDirPathToImportPaths {
 		importDirPaths = append(importDirPaths, importDirPath)
@@ -84,6 +88,12 @@ func (c *calculation) addImportDirPathAndImportPath(importDirPath string, import
 		c.ImportDirPathToImportPaths[importDirPath] = importPathMap
 	}
 	importPathMap[importPath] = struct{}{}
+	importDirPathMap, ok := c.ImportPathToImportDirPaths[importPath]
+	if !ok {
+		importDirPathMap = make(map[string]struct{})
+		c.ImportPathToImportDirPaths[importPath] = importDirPathMap
+	}
+	importDirPathMap[importDirPath] = struct{}{}
 	return nil
 }
 
