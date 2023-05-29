@@ -15,13 +15,11 @@
 package bufinit
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 )
 
@@ -57,47 +55,48 @@ func (i *initializer) initialize(
 		return err
 	}
 
-	data, err := json.MarshalIndent(calculation, "", "  ")
+	//data, err := json.MarshalIndent(calculation, "", "  ")
+	data, err := encoding.MarshalYAML(calculation)
 	if err != nil {
 		return err
 	}
-	fmt.Println("*** CALCULATION ***")
-	fmt.Println()
+	//fmt.Println("*** CALCULATION ***")
+	//fmt.Println()
 	fmt.Println(string(data))
-	fmt.Println()
+	//fmt.Println()
 
-	fmt.Println("*** MESSAGE SO FAR ***")
-	fmt.Println()
-	if len(calculation.MissingImportPathToFilePaths) > 0 {
-		for missingImportPath, filePathMap := range calculation.MissingImportPathToFilePaths {
-			fmt.Printf("%s is imported by %v but is not found in the current directory.\n", missingImportPath, stringutil.SliceToHumanString(stringutil.MapToSortedSlice(filePathMap)))
-		}
-		fmt.Println()
-		fmt.Println("Given that you have missing imports, buf will not be able to build directly.")
-		fmt.Println()
-	}
-	if importDirPaths := calculation.AllImportDirPaths(); len(importDirPaths) > 0 {
-		fmt.Println("Directories that need a buf.yaml:")
-		fmt.Println()
-		for _, importDirPath := range importDirPaths {
-			fmt.Println(importDirPath)
-		}
-	} else {
-		fmt.Println("No directories need a buf.yaml.")
-	}
-	fmt.Println()
+	//fmt.Println("*** MESSAGE SO FAR ***")
+	//fmt.Println()
+	//if len(calculation.MissingImportPathToFilePaths) > 0 {
+	//for missingImportPath, filePathMap := range calculation.MissingImportPathToFilePaths {
+	//fmt.Printf("%s is imported by %v but is not found in the current directory.\n", missingImportPath, stringutil.SliceToHumanString(stringutil.MapToSortedSlice(filePathMap)))
+	//}
+	//fmt.Println()
+	//fmt.Println("Given that you have missing imports, buf will not be able to build directly.")
+	//fmt.Println()
+	//}
+	//if importDirPaths := calculation.AllImportDirPaths(); len(importDirPaths) > 0 {
+	//fmt.Println("Directories that need a buf.yaml:")
+	//fmt.Println()
+	//for _, importDirPath := range importDirPaths {
+	//fmt.Println(importDirPath)
+	//}
+	//} else {
+	//fmt.Println("No directories need a buf.yaml.")
+	//}
+	//fmt.Println()
 
-	fmt.Println("*** THEORETICAL PROTOC COMMAND ***")
-	fmt.Println()
-	buffer := bytes.NewBuffer(nil)
-	buffer.WriteString("protoc -o /dev/null")
-	for _, importDirPath := range calculation.AllImportDirPaths() {
-		buffer.WriteString(" \\ \n-I \"")
-		buffer.WriteString(importDirPath)
-		buffer.WriteString("\"")
-	}
-	buffer.WriteString(" \\ \n$(find . -name '*.proto')")
-	fmt.Println(buffer.String())
+	//fmt.Println("*** THEORETICAL PROTOC COMMAND ***")
+	//fmt.Println()
+	//buffer := bytes.NewBuffer(nil)
+	//buffer.WriteString("protoc -o /dev/null")
+	//for _, importDirPath := range calculation.AllImportDirPaths() {
+	//buffer.WriteString(" \\ \n-I \"")
+	//buffer.WriteString(importDirPath)
+	//buffer.WriteString("\"")
+	//}
+	//buffer.WriteString(" \\ \n$(find . -name '*.proto')")
+	//fmt.Println(buffer.String())
 	return nil
 }
 

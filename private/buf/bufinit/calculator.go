@@ -52,7 +52,7 @@ func (c *calculator) Calculate(
 	//}
 	//}()
 
-	if err := c.populateFileInfos(ctx, readWriteBucket, calculation); err != nil {
+	if err := c.populateFileInfosAndDirectlyAssociatedMaps(ctx, readWriteBucket, calculation); err != nil {
 		return nil, err
 	}
 	if err := c.populateImportPathMaps(calculation); err != nil {
@@ -65,7 +65,7 @@ func (c *calculator) Calculate(
 	return calculation, nil
 }
 
-func (c *calculator) populateFileInfos(
+func (c *calculator) populateFileInfosAndDirectlyAssociatedMaps(
 	ctx context.Context,
 	readWriteBucket storage.ReadWriteBucket,
 	calculation *calculation,
