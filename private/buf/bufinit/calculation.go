@@ -180,14 +180,14 @@ func (c *calculation) postValidate() error {
 func (c *calculation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(
 		struct {
-			FilePathToFileInfo                                                map[string]*fileInfo           `json:"file_path_to_file_info,omitempty"`
-			ImportDirPathToImportPaths                                        map[string]map[string]struct{} `json:"import_dir_path_to_import_paths,omitempty"`
-			ImportPathToImportDirPaths                                        map[string]map[string]struct{} `json:"import_path_to_import_dir_paths,omitempty"`
-			AllImportDirPaths                                                 []string                       `json:"all_import_dir_paths,omitempty"`
-			MissingImportPathToFilePaths                                      map[string]map[string]struct{} `json:"missing_import_path_to_file_paths,omitempty"`
-			FilePathToPackageInferredIncludePath                              map[string]string              `json:"file_path_to_package_inferred_include_path,omitempty"`
-			ImportPathsNotCoveredByPackageInferredIncludePaths                []string                       `json:"import_paths_not_covered_by_package_inferred_include_paths,omitempty"`
-			ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths map[string]map[string]struct{} `json:"import_dir_path_to_import_paths_not_covered_by_package_inferred_include_paths,omitempty"`
+			FilePathToFileInfo                                                map[string]*fileInfo           `json:"file_path_to_file_info"`
+			ImportDirPathToImportPaths                                        map[string]map[string]struct{} `json:"import_dir_path_to_import_paths"`
+			ImportPathToImportDirPaths                                        map[string]map[string]struct{} `json:"import_path_to_import_dir_paths"`
+			AllImportDirPaths                                                 []string                       `json:"all_import_dir_paths"`
+			MissingImportPathToFilePaths                                      map[string]map[string]struct{} `json:"missing_import_path_to_file_paths"`
+			FilePathToPackageInferredIncludePath                              map[string]string              `json:"file_path_to_package_inferred_include_path"`
+			ImportPathsNotCoveredByPackageInferredIncludePaths                []string                       `json:"import_paths_not_covered_by_package_inferred_include_paths"`
+			ImportDirPathToImportPathsNotCoveredByPackageInferredIncludePaths map[string]map[string]struct{} `json:"import_dir_path_to_import_paths_not_covered_by_package_inferred_include_paths"`
 		}{
 			FilePathToFileInfo:                                                c.FilePathToFileInfo,
 			ImportDirPathToImportPaths:                                        c.ImportDirPathToImportPaths,
