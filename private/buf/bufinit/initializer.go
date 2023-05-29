@@ -15,7 +15,9 @@
 package bufinit
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -55,6 +57,17 @@ func (i *initializer) initialize(
 		return err
 	}
 
+	data, err := json.MarshalIndent(calculation, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println("*** CALCULATION ***")
+	fmt.Println()
+	fmt.Println(string(data))
+	fmt.Println()
+
+	fmt.Println("*** MESSAGE SO FAR ***")
+	fmt.Println()
 	if len(calculation.MissingImportPathToFilePaths) > 0 {
 		for missingImportPath, filePathMap := range calculation.MissingImportPathToFilePaths {
 			fmt.Printf("%s is imported by %v but is not found in the current directory.\n", missingImportPath, stringutil.SliceToHumanString(stringutil.MapToSortedSlice(filePathMap)))
@@ -72,6 +85,19 @@ func (i *initializer) initialize(
 	} else {
 		fmt.Println("No directories need a buf.yaml.")
 	}
+	fmt.Println()
+
+	fmt.Println("*** THEORETICAL PROTOC COMMAND ***")
+	fmt.Println()
+	buffer := bytes.NewBuffer(nil)
+	buffer.WriteString("protoc -o /dev/null")
+	for _, importDirPath := range calculation.ImportDirPaths() {
+		buffer.WriteString(" \\ \n-I \"")
+		buffer.WriteString(importDirPath)
+		buffer.WriteString("\"")
+	}
+	buffer.WriteString(" \\ \n$(find . -name '*.proto')")
+	fmt.Println(buffer.String())
 	return nil
 }
 

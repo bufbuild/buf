@@ -46,11 +46,11 @@ func (c *calculator) Calculate(
 	// TODO: for common things like gogo, add a dep to buf.yaml if the file is not found
 
 	calculation := newCalculation()
-	defer func() {
-		if checkedEntry := c.logger.Check(zap.DebugLevel, "calculation"); checkedEntry != nil {
-			checkedEntry.Write(zap.Reflect("value", calculation))
-		}
-	}()
+	//defer func() {
+	//if checkedEntry := c.logger.Check(zap.DebugLevel, "calculation"); checkedEntry != nil {
+	//checkedEntry.Write(zap.Reflect("value", calculation))
+	//}
+	//}()
 
 	if err := c.populateFileInfos(ctx, readWriteBucket, calculation); err != nil {
 		return nil, err

@@ -32,6 +32,14 @@ type calculation struct {
 	// Example: if "a/b/c.proto" is a file in FilePathToFileInfo, and some file imports "c.proto",
 	// then this map will contain "a/b" -> "c.proto".
 	//
+	// Note that this might add directories that are do not actually make sense as import directories/
+	// For example, in bufbuild/buf, we have imports in tests like "2.proto", but there are a lot
+	// of "2.protos" in bufbuild/buf, so if we import "2.proto" anywhere, every directory that
+	// contains a "2.proto" will be added as an importDirPath.
+	//
+	// The idea is that if you were to include all these directories, you would have a superset
+	// of the directories you need to compile everything.
+	//
 	// normalpath.Join(importDirPath, importPath) should always be a key in FilePathToFileInfo.
 	ImportDirPathToImportPaths map[string]map[string]struct{}
 	// A map from an import that is not detected in the fileInfos, to the file paths that contain
