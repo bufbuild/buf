@@ -195,7 +195,7 @@ func DiffFileDescriptorSetsJSON(
 	if err != nil {
 		return "", err
 	}
-	oneData, err := protoencoding.NewJSONMarshalerIndent(oneResolver).Marshal(one)
+	oneData, err := protoencoding.NewJSONMarshaler(oneResolver, protoencoding.JSONMarshalerWithIndent()).Marshal(one)
 	if err != nil {
 		return "", err
 	}
@@ -203,7 +203,7 @@ func DiffFileDescriptorSetsJSON(
 	if err != nil {
 		return "", err
 	}
-	twoData, err := protoencoding.NewJSONMarshalerIndent(twoResolver).Marshal(two)
+	twoData, err := protoencoding.NewJSONMarshaler(twoResolver, protoencoding.JSONMarshalerWithIndent()).Marshal(two)
 	if err != nil {
 		return "", err
 	}

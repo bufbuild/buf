@@ -70,12 +70,13 @@ func (p protoCodec) Unmarshal(bytes []byte, a any) error {
 type invokeClient = connect.Client[dynamicpb.Message, deferredMessage]
 
 type invoker struct {
-	md        protoreflect.MethodDescriptor
-	res       protoencoding.Resolver
-	client    *invokeClient
-	output    io.Writer
-	errOutput io.Writer
-	printer   verbose.Printer
+	md           protoreflect.MethodDescriptor
+	res          protoencoding.Resolver
+	emitDefaults bool
+	client       *invokeClient
+	output       io.Writer
+	errOutput    io.Writer
+	printer      verbose.Printer
 }
 
 // NewInvoker creates a new invoker for invoking the method described by the
@@ -83,18 +84,19 @@ type invoker struct {
 // in JSON format. The given resolver is used to resolve Any messages and
 // extensions that appear in the input or output. Other parameters are used
 // to create a Connect client, for issuing the RPC.
-func NewInvoker(container appflag.Container, md protoreflect.MethodDescriptor, res protoencoding.Resolver, httpClient connect.HTTPClient, opts []connect.ClientOption, url string, out io.Writer) Invoker {
+func NewInvoker(container appflag.Container, md protoreflect.MethodDescriptor, res protoencoding.Resolver, emitDefaults bool, httpClient connect.HTTPClient, opts []connect.ClientOption, url string, out io.Writer) Invoker {
 	opts = append(opts, connect.WithCodec(protoCodec{}))
 	// TODO: could also provide custom compressor implementations that could give us
 	//  optics into when request and response messages are compressed (which could be
 	//  useful to include in verbose output).
 	return &invoker{
-		md:        md,
-		res:       res,
-		output:    out,
-		printer:   container.VerbosePrinter(),
-		errOutput: container.Stderr(),
-		client:    connect.NewClient[dynamicpb.Message, deferredMessage](httpClient, url, opts...),
+		md:           md,
+		res:          res,
+		emitDefaults: emitDefaults,
+		output:       out,
+		printer:      container.VerbosePrinter(),
+		errOutput:    container.Stderr(),
+		client:       connect.NewClient[dynamicpb.Message, deferredMessage](httpClient, url, opts...),
 	}
 }
 

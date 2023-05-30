@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add `--emit-defaults` flag to `buf curl` to emit default values in JSON-encoded responses.
 - Log a warning in case an import statement does not point to a file in the module, a file in a
   direct dependency, or a well-known type file.
 
