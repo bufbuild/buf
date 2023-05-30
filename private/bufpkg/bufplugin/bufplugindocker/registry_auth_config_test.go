@@ -28,7 +28,7 @@ func TestRegistryAuthMarshalJSON(t *testing.T) {
 		Username:      "someuser",
 		Password:      "somepass",
 		Email:         "someemail@buf.build",
-		ServerAddress: "plugins.buf.build",
+		ServerAddress: "buf.build",
 	}
 	encoded, err := json.Marshal(auth)
 	require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestRegistryAuthToFromHeader(t *testing.T) {
 		Username:      "someuser",
 		Password:      "somepass",
 		Email:         "someemail@buf.build",
-		ServerAddress: "plugins.buf.build",
+		ServerAddress: "buf.build",
 	}
 	encoded, err := auth.ToHeader()
 	require.NoError(t, err)
