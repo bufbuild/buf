@@ -226,9 +226,9 @@ type flags struct {
 	NetrcFile string
 	Headers   []string
 	Data      string
-	Output    string
 
-	// Other options
+	// Output options
+	Output       string
 	EmitDefaults bool
 
 	// so we can inquire about which flags present on command-line
