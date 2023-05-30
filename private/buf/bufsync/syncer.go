@@ -32,7 +32,7 @@ type syncer struct {
 	storageGitProvider storagegit.Provider
 	modulesToSync      []syncableModule
 
-	knownTags map[string][]string
+	knownTagsByCommitHash map[string][]string
 }
 
 func newSyncer(
@@ -55,9 +55,9 @@ func newSyncer(
 }
 
 func (s *syncer) Sync(ctx context.Context, pushFunc PushFunc) error {
-	s.knownTags = map[string][]string{}
+	s.knownTagsByCommitHash = map[string][]string{}
 	if err := s.repo.ForEachTag(func(tag string, commitHash git.Hash) error {
-		s.knownTags[commitHash.Hex()] = append(s.knownTags[commitHash.Hex()], tag)
+		s.knownTagsByCommitHash[commitHash.Hex()] = append(s.knownTagsByCommitHash[commitHash.Hex()], tag)
 		return nil
 	}); err != nil {
 		return fmt.Errorf("process tags: %w", err)
@@ -85,6 +85,11 @@ func (s *syncer) Sync(ctx context.Context, pushFunc PushFunc) error {
 	return nil
 }
 
+// visitCommit looks for the module in the commit, and if found tries to validate it.
+// If it is valid, it invokes `pushFunc`.
+//
+// It does not return errors on invalid modules, but it will return any errors from
+// `pushFunc` as those may be transient.
 func (s *syncer) visitCommit(
 	ctx context.Context,
 	module syncableModule,
@@ -106,6 +111,11 @@ func (s *syncer) visitCommit(
 	}
 	if foundModule == "" {
 		// We did not find a module. Carry on to the next commit.
+		s.logger.Debug(
+			"module not found, skipping commit",
+			zap.String("commit", commit.Hash().String()),
+			zap.String("module", module.dir),
+		)
 		return nil
 	}
 	sourceConfig, err := bufconfig.GetConfigForBucket(ctx, sourceBucket)
@@ -123,6 +133,11 @@ func (s *syncer) visitCommit(
 	}
 	if sourceConfig.ModuleIdentity == nil {
 		// Unnamed module. Carry on.
+		s.logger.Debug(
+			"unnamed module, skipping commit",
+			zap.String("commit", commit.Hash().String()),
+			zap.String("module", module.dir),
+		)
 		return nil
 	}
 	moduleIdentity := sourceConfig.ModuleIdentity
@@ -153,7 +168,7 @@ func (s *syncer) visitCommit(
 			builtModule.Bucket,
 			commit,
 			branch,
-			s.knownTags[commit.Hash().Hex()],
+			s.knownTagsByCommitHash[commit.Hash().Hex()],
 		),
 	)
 }
