@@ -91,15 +91,12 @@ func (t *depsTree) NewRootNode(rootNode string, dependencies map[string]struct{}
 	if rootNode == "" {
 		return errors.New("empty root node")
 	}
-	if _, ok := t.tree[rootNode]; !ok {
-		t.tree[rootNode] = make(map[string]struct{})
-	}
 	for dep := range dependencies {
 		if dep == "" {
 			return errors.New("empty dependency node")
 		}
-		t.tree[rootNode][dep] = struct{}{}
 	}
+	t.tree[rootNode] = dependencies
 	return nil
 }
 
