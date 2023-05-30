@@ -91,10 +91,10 @@ const (
 	headerFlagShortName    = "H"
 	dataFlagName           = "data"
 	dataFlagShortName      = "d"
-	outputFlagName         = "output"
-	outputFlagShortName    = "o"
 
-	// Other flags
+	// Output flags
+	outputFlagName       = "output"
+	outputFlagShortName  = "o"
 	emitDefaultsFlagName = "emit-defaults"
 )
 
