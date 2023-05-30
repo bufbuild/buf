@@ -279,9 +279,7 @@ func (inv *invoker) handleResponse(data []byte, msg *dynamicpb.Message) error {
 	if err := protoencoding.NewWireUnmarshaler(inv.res).Unmarshal(data, msg); err != nil {
 		return err
 	}
-	// If we want to add a pretty-print option, we should perhaps make this a flag
-	// and use protoencoding.NewJSONMarshalerIndent
-	outputBytes, err := protoencoding.NewJSONMarshaler(inv.res).Marshal(msg)
+	outputBytes, err := protoencoding.NewJSONMarshalerIndent(inv.res).Marshal(msg)
 	if err != nil {
 		return err
 	}
