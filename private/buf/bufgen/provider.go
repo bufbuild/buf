@@ -40,6 +40,34 @@ func newProvider(logger *zap.Logger) *provider {
 }
 
 func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
+	data, id, err := p.GetConfigData(ctx, readBucket)
+	if err != nil {
+		return nil, err
+	}
+	return getConfig(
+		p.logger,
+		encoding.UnmarshalYAMLNonStrict,
+		encoding.UnmarshalYAMLStrict,
+		data,
+		id,
+	)
+}
+
+func (p *provider) GetConfigVersion(ctx context.Context, readBucket storage.ReadBucket) (_ *string, retErr error) {
+	data, id, err := p.GetConfigData(ctx, readBucket)
+	if err != nil {
+		return nil, err
+	}
+	return getConfigVersion(
+		p.logger,
+		encoding.UnmarshalYAMLNonStrict,
+		encoding.UnmarshalYAMLStrict,
+		data,
+		id,
+	)
+}
+
+func (p *provider) GetConfigData(ctx context.Context, readBucket storage.ReadBucket) (_ []byte, _ string, retErr error) {
 	ctx, span := p.tracer.Start(ctx, "get_config")
 	defer span.End()
 	defer func() {
@@ -53,20 +81,14 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	if err != nil {
 		// There is no default generate template, so we propagate all errors, including
 		// storage.ErrNotExist.
-		return nil, err
+		return nil, "", err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
 	data, err := io.ReadAll(readObjectCloser)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return getConfig(
-		p.logger,
-		encoding.UnmarshalYAMLNonStrict,
-		encoding.UnmarshalYAMLStrict,
-		data,
-		`File "`+readObjectCloser.ExternalPath()+`"`,
-	)
+	return data, `File "` + readObjectCloser.ExternalPath() + `"`, nil
 }

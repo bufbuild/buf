@@ -31,13 +31,16 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-func readConfig(
+type unmarshaller func([]byte, interface{}) error
+
+func readFromConfig[V any](
 	ctx context.Context,
 	logger *zap.Logger,
 	provider Provider,
 	readBucket storage.ReadBucket,
+	configGetter func(*zap.Logger, unmarshaller, unmarshaller, []byte, string) (*V, error),
 	options ...ReadConfigOption,
-) (*Config, error) {
+) (*V, error) {
 	readConfigOptions := newReadConfigOptions()
 	for _, option := range options {
 		option(readConfigOptions)
@@ -45,22 +48,36 @@ func readConfig(
 	if override := readConfigOptions.override; override != "" {
 		switch filepath.Ext(override) {
 		case ".json":
-			return getConfigJSONFile(logger, override)
+			return getConfigJSONFile(logger, override, configGetter)
 		case ".yaml", ".yml":
-			return getConfigYAMLFile(logger, override)
+			return getConfigYAMLFile(logger, override, configGetter)
 		default:
-			return getConfigJSONOrYAMLData(logger, override)
+			return getConfigJSONOrYAMLData(logger, override, configGetter)
 		}
 	}
-	return provider.GetConfig(ctx, readBucket)
+	data, id, err := provider.GetConfigData(ctx, readBucket)
+	if err != nil {
+		return nil, err
+	}
+	return configGetter(
+		logger,
+		encoding.UnmarshalYAMLNonStrict,
+		encoding.UnmarshalYAMLStrict,
+		data,
+		id,
+	)
 }
 
-func getConfigJSONFile(logger *zap.Logger, file string) (*Config, error) {
+func getConfigJSONFile[V any](
+	logger *zap.Logger,
+	file string,
+	configGetter func(*zap.Logger, unmarshaller, unmarshaller, []byte, string) (*V, error),
+) (*V, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("could not read file %s: %v", file, err)
 	}
-	return getConfig(
+	return configGetter(
 		logger,
 		encoding.UnmarshalJSONNonStrict,
 		encoding.UnmarshalJSONStrict,
@@ -69,12 +86,16 @@ func getConfigJSONFile(logger *zap.Logger, file string) (*Config, error) {
 	)
 }
 
-func getConfigYAMLFile(logger *zap.Logger, file string) (*Config, error) {
+func getConfigYAMLFile[V any](
+	logger *zap.Logger,
+	file string,
+	configGetter func(*zap.Logger, unmarshaller, unmarshaller, []byte, string) (*V, error),
+) (*V, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("could not read file %s: %v", file, err)
 	}
-	return getConfig(
+	return configGetter(
 		logger,
 		encoding.UnmarshalYAMLNonStrict,
 		encoding.UnmarshalYAMLStrict,
@@ -83,8 +104,12 @@ func getConfigYAMLFile(logger *zap.Logger, file string) (*Config, error) {
 	)
 }
 
-func getConfigJSONOrYAMLData(logger *zap.Logger, data string) (*Config, error) {
-	return getConfig(
+func getConfigJSONOrYAMLData[V any](
+	logger *zap.Logger,
+	data string,
+	configGetter func(*zap.Logger, unmarshaller, unmarshaller, []byte, string) (*V, error),
+) (*V, error) {
+	return configGetter(
 		logger,
 		encoding.UnmarshalJSONOrYAMLNonStrict,
 		encoding.UnmarshalJSONOrYAMLStrict,
@@ -93,10 +118,24 @@ func getConfigJSONOrYAMLData(logger *zap.Logger, data string) (*Config, error) {
 	)
 }
 
+func getConfigVersion(
+	_ *zap.Logger,
+	unmarshalNonStrict unmarshaller,
+	_ unmarshaller,
+	data []byte,
+	_ string,
+) (*string, error) {
+	var externalConfigVersion ExternalConfigVersion
+	if err := unmarshalNonStrict(data, &externalConfigVersion); err != nil {
+		return nil, err
+	}
+	return &externalConfigVersion.Version, nil
+}
+
 func getConfig(
 	logger *zap.Logger,
-	unmarshalNonStrict func([]byte, interface{}) error,
-	unmarshalStrict func([]byte, interface{}) error,
+	unmarshalNonStrict unmarshaller,
+	unmarshalStrict unmarshaller,
 	data []byte,
 	id string,
 ) (*Config, error) {

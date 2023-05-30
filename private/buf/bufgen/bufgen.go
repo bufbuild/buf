@@ -44,6 +44,8 @@ const (
 	V1Version = "v1"
 	// V1Beta1Version is the string used to identify the v1beta1 version of the generate template.
 	V1Beta1Version = "v1beta1"
+	// V2Version is the string used to identify the v2 version of the generate template.
+	V2Version = "v2"
 )
 
 const (
@@ -90,6 +92,13 @@ type Provider interface {
 	//
 	// If the data is of length 0, returns the default config.
 	GetConfig(ctx context.Context, readBucket storage.ReadBucket) (*Config, error)
+	// GetConfig gets the Config's version for the YAML data at ExternalConfigFilePath.
+	//
+	// If the data is of length 0, returns nil.
+	GetConfigVersion(ctx context.Context, readBucket storage.ReadBucket) (*string, error)
+
+	// GetConfigData gets the Config's data in bytes at ExternalConfigFilePath.
+	GetConfigData(context.Context, storage.ReadBucket) ([]byte, string, error)
 }
 
 // NewProvider returns a new Provider.
@@ -315,11 +324,32 @@ func ReadConfig(
 	readBucket storage.ReadBucket,
 	options ...ReadConfigOption,
 ) (*Config, error) {
-	return readConfig(
+	return readFromConfig(
 		ctx,
 		logger,
 		provider,
 		readBucket,
+		getConfig,
+		options...,
+	)
+}
+
+// ReadConfig reads the configuration version from the OS or an override, if any.
+//
+// Only use in CLI tools.
+func ReadConfigVersion(
+	ctx context.Context,
+	logger *zap.Logger,
+	provider Provider,
+	readBucket storage.ReadBucket,
+	options ...ReadConfigOption,
+) (*string, error) {
+	return readFromConfig(
+		ctx,
+		logger,
+		provider,
+		readBucket,
+		getConfigVersion,
 		options...,
 	)
 }

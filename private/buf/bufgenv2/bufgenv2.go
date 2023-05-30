@@ -181,3 +181,22 @@ func applyManagementForFile(
 	}
 	return nil
 }
+
+// ReadConfig reads the configuration from the OS or an override, if any.
+//
+// Only use in CLI tools.
+// func ReadConfig(
+// 	ctx context.Context,
+// 	logger *zap.Logger,
+// 	provider bufgen.Provider,
+// 	readBucket storage.ReadBucket,
+// 	options ...bufgen.ReadConfigOption,
+// ) (*Config, error) {
+// 	return readConfig(
+// 		ctx,
+// 		logger,
+// 		provider,
+// 		readBucket,
+// 		options...,
+// 	)
+// }
