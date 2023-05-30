@@ -281,7 +281,16 @@ func (inv *invoker) handleResponse(data []byte, msg *dynamicpb.Message) error {
 	if err := protoencoding.NewWireUnmarshaler(inv.res).Unmarshal(data, msg); err != nil {
 		return err
 	}
-	outputBytes, err := protoencoding.NewJSONMarshaler(inv.res, protoencoding.JSONMarshalerWithIndent()).Marshal(msg)
+	jsonMarshalerOptions := []protoencoding.JSONMarshalerOption{
+		protoencoding.JSONMarshalerWithIndent(),
+	}
+	if inv.emitDefaults {
+		jsonMarshalerOptions = append(
+			jsonMarshalerOptions,
+			protoencoding.JSONMarshalerWithEmitUnpopulated(),
+		)
+	}
+	outputBytes, err := protoencoding.NewJSONMarshaler(inv.res, jsonMarshalerOptions...).Marshal(msg)
 	if err != nil {
 		return err
 	}
