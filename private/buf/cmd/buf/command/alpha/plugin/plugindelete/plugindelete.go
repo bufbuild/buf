@@ -64,7 +64,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnBetaCommand(ctx, container)
+	bufcli.WarnAlphaCommand(ctx, container)
 	identity, version, _ := strings.Cut(container.Arg(0), ":")
 	pluginIdentity, err := bufpluginref.PluginIdentityForString(identity)
 	if err != nil {
