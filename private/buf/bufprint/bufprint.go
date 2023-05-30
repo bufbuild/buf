@@ -238,7 +238,7 @@ func WithTabWriter(
 
 // printProtoMessageJSON prints the Protobuf message as JSON.
 func printProtoMessageJSON(writer io.Writer, message proto.Message) error {
-	data, err := protoencoding.NewJSONMarshalerIndent(nil).Marshal(message)
+	data, err := protoencoding.NewJSONMarshaler(nil, protoencoding.JSONMarshalerWithIndent()).Marshal(message)
 	if err != nil {
 		return err
 	}

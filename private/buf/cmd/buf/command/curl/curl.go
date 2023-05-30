@@ -91,8 +91,11 @@ const (
 	headerFlagShortName    = "H"
 	dataFlagName           = "data"
 	dataFlagShortName      = "d"
-	outputFlagName         = "output"
-	outputFlagShortName    = "o"
+
+	// Output flags
+	outputFlagName       = "output"
+	outputFlagShortName  = "o"
+	emitDefaultsFlagName = "emit-defaults"
 )
 
 // NewCommand returns a new Command.
@@ -223,7 +226,10 @@ type flags struct {
 	NetrcFile string
 	Headers   []string
 	Data      string
-	Output    string
+
+	// Output options
+	Output       string
+	EmitDefaults bool
 
 	// so we can inquire about which flags present on command-line
 	// TODO: ideally we'd use cobra directly instead of having the appcmd wrapper,
@@ -467,6 +473,12 @@ provided via stdin as a file descriptor set or image`,
 		outputFlagShortName,
 		"",
 		`Path to output file to create with response data. If absent, response is printed to stdout`,
+	)
+	flagSet.BoolVar(
+		&f.EmitDefaults,
+		emitDefaultsFlagName,
+		false,
+		`Emit default values for JSON-encoded responses.`,
 	)
 }
 
@@ -943,7 +955,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 	}
 
 	// Now we can finally issue the RPC
-	invoker := bufcurl.NewInvoker(container, methodDescriptor, res, transport, clientOptions, container.Arg(0), output)
+	invoker := bufcurl.NewInvoker(container, methodDescriptor, res, f.EmitDefaults, transport, clientOptions, container.Arg(0), output)
 	return invoker.Invoke(ctx, dataSource, dataReader, requestHeaders)
 }
 
