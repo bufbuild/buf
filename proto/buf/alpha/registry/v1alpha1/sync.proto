@@ -19,6 +19,7 @@ package buf.alpha.registry.v1alpha1;
 import "buf/alpha/module/v1alpha1/module.proto";
 import "buf/alpha/registry/v1alpha1/git_metadata.proto";
 
+// GitSyncPoint is the sync point for a particular module contained in a Git repository.
 message GitSyncPoint {
   string owner = 1;
   string repository = 2;
@@ -41,19 +42,25 @@ service SyncService {
 }
 
 message GetGitSyncPointRequest {
+  // Owner is the owner of the BSR repository.
   string owner = 1;
+  // Repository is the name of the BSR repository.
   string repository = 2;
+  // Branch is the Git branch for which to look up the commit.
   string branch = 3;
 }
 
 message GetGitSyncPointResponse {
+  // SyncPoint is the latest syncpoint for the specified owner/repo/branch.
   GitSyncPoint sync_point = 1;
 }
 
-// SyncGitCommitRequest specifies the module to push to the BSR.
 message SyncGitCommitRequest {
+  // Owner is the owner of the BSR repository.
   string owner = 1;
+  // Repository is the name of the BSR repository.
   string repository = 2;
+  // Branch is the Git branch that this commit belongs to.
   string branch = 3;
   // Manifest with all the module files being pushed.
   buf.alpha.module.v1alpha1.Blob manifest = 4;
@@ -61,7 +68,7 @@ message SyncGitCommitRequest {
   // blob per file, but one blob per digest, so for files with exactly the same
   // content, you can send just one blob.
   repeated buf.alpha.module.v1alpha1.Blob blobs = 5;
-  // Hash is the SHA1 has of the Git commit.
+  // Hash is the SHA1 hash of the Git commit.
   string hash = 6;
   // Author is the author of the Git commit. This is typically an end-user.
   GitIdentity author = 7;
@@ -71,7 +78,7 @@ message SyncGitCommitRequest {
   repeated string tags = 9;
 }
 
-// SyncGitCommitResponse is the pushed module pin, local to the used remote.
 message SyncGitCommitResponse {
+  // SyncPoint is the latest syncpoint for the SyncGitCommit request.
   GitSyncPoint sync_point = 1;
 }

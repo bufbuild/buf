@@ -35,6 +35,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// GitSyncPoint is the sync point for a particular module contained in a Git repository.
 type GitSyncPoint struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -119,9 +120,12 @@ type GetGitSyncPointRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// Owner is the owner of the BSR repository.
+	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// Repository is the name of the BSR repository.
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Branch     string `protobuf:"bytes,3,opt,name=branch,proto3" json:"branch,omitempty"`
+	// Branch is the Git branch for which to look up the commit.
+	Branch string `protobuf:"bytes,3,opt,name=branch,proto3" json:"branch,omitempty"`
 }
 
 func (x *GetGitSyncPointRequest) Reset() {
@@ -182,6 +186,7 @@ type GetGitSyncPointResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// SyncPoint is the latest syncpoint for the specified owner/repo/branch.
 	SyncPoint *GitSyncPoint `protobuf:"bytes,1,opt,name=sync_point,json=syncPoint,proto3" json:"sync_point,omitempty"`
 }
 
@@ -224,22 +229,24 @@ func (x *GetGitSyncPointResponse) GetSyncPoint() *GitSyncPoint {
 	return nil
 }
 
-// SyncGitCommitRequest specifies the module to push to the BSR.
 type SyncGitCommitRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// Owner is the owner of the BSR repository.
+	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// Repository is the name of the BSR repository.
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Branch     string `protobuf:"bytes,3,opt,name=branch,proto3" json:"branch,omitempty"`
+	// Branch is the Git branch that this commit belongs to.
+	Branch string `protobuf:"bytes,3,opt,name=branch,proto3" json:"branch,omitempty"`
 	// Manifest with all the module files being pushed.
 	Manifest *v1alpha1.Blob `protobuf:"bytes,4,opt,name=manifest,proto3" json:"manifest,omitempty"`
 	// Referenced blobs in the manifest. Keep in mind there is not necessarily one
 	// blob per file, but one blob per digest, so for files with exactly the same
 	// content, you can send just one blob.
 	Blobs []*v1alpha1.Blob `protobuf:"bytes,5,rep,name=blobs,proto3" json:"blobs,omitempty"`
-	// Hash is the SHA1 has of the Git commit.
+	// Hash is the SHA1 hash of the Git commit.
 	Hash string `protobuf:"bytes,6,opt,name=hash,proto3" json:"hash,omitempty"`
 	// Author is the author of the Git commit. This is typically an end-user.
 	Author *GitIdentity `protobuf:"bytes,7,opt,name=author,proto3" json:"author,omitempty"`
@@ -344,12 +351,12 @@ func (x *SyncGitCommitRequest) GetTags() []string {
 	return nil
 }
 
-// SyncGitCommitResponse is the pushed module pin, local to the used remote.
 type SyncGitCommitResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// SyncPoint is the latest syncpoint for the SyncGitCommit request.
 	SyncPoint *GitSyncPoint `protobuf:"bytes,1,opt,name=sync_point,json=syncPoint,proto3" json:"sync_point,omitempty"`
 }
 
