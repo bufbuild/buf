@@ -150,6 +150,18 @@ func TestOutputFlag(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestVersion(t *testing.T) {
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		"Failure: v2 unimplemented",
+		"--template",
+		filepath.Join("testdata", "recognize_v2", "buf.gen.yaml"),
+	)
+}
+
 func TestProtoFileRefIncludePackageFiles(t *testing.T) {
 	tempDirPath := t.TempDir()
 	testRunSuccess(
