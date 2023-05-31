@@ -328,7 +328,7 @@ func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, o
 
 	imageFile := filteredImage.GetFile("test.proto")
 	sourceCodeInfo := imageFile.FileDescriptor().GetSourceCodeInfo()
-	actual, err := protoencoding.NewJSONMarshalerIndent(nil).Marshal(sourceCodeInfo)
+	actual, err := protoencoding.NewJSONMarshaler(nil, protoencoding.JSONMarshalerWithIndent()).Marshal(sourceCodeInfo)
 	require.NoError(t, err)
 
 	checkExpectation(t, ctx, actual, bucket, expectedFile)

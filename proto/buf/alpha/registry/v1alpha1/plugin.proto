@@ -224,8 +224,6 @@ service PluginService {
   rpc DeleteTemplate(DeleteTemplateRequest) returns (DeleteTemplateResponse) {
     option idempotency_level = IDEMPOTENT;
   }
-  // CreateTemplateVersion creates a new template version.
-  rpc CreateTemplateVersion(CreateTemplateVersionRequest) returns (CreateTemplateVersionResponse);
 }
 
 message ListPluginsRequest {
@@ -466,21 +464,3 @@ message DeleteTemplateRequest {
 }
 
 message DeleteTemplateResponse {}
-
-message CreateTemplateVersionRequest {
-  // The name of the template version, i.e. "v1".
-  string name = 1;
-  // The owner of the template.
-  string template_owner = 2;
-  // The name of the template.
-  string template_name = 3;
-  // A map from plugin owner and name to version for the plugins
-  // defined in the template. Every plugin in the template
-  // must have a corresponding version in this array.
-  repeated PluginVersionMapping plugin_versions = 4;
-}
-
-message CreateTemplateVersionResponse {
-  // The created template version.
-  TemplateVersion template_version = 1;
-}

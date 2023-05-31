@@ -67,24 +67,32 @@ func NewWireMarshaler() Marshaler {
 //
 // This has the potential to be unstable over time.
 // resolver can be nil if unknown and are only needed for extensions.
-func NewJSONMarshaler(resolver Resolver) Marshaler {
-	return newJSONMarshaler(resolver, "", false)
+func NewJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshaler {
+	return newJSONMarshaler(resolver, options...)
 }
 
-// NewJSONMarshalerIndent returns a new Marshaler for JSON with indents.
-//
-// This has the potential to be unstable over time.
-// resolver can be nil if unknown and are only needed for extensions.
-func NewJSONMarshalerIndent(resolver Resolver) Marshaler {
-	return newJSONMarshaler(resolver, "  ", false)
+// JSONMarshalerOption is an option for a new JSONMarshaler.
+type JSONMarshalerOption func(*jsonMarshaler)
+
+// JSONMarshalerWithIndent says to use an indent of two spaces.
+func JSONMarshalerWithIndent() JSONMarshalerOption {
+	return func(jsonMarshaler *jsonMarshaler) {
+		jsonMarshaler.indent = "  "
+	}
 }
 
-// NewJSONMarshalerUseProtoNames returns a new Marshaler for JSON using the proto names for keys.
-//
-// This has the potential to be unstable over time.
-// resolver can be nil if unknown and are only needed for extensions.
-func NewJSONMarshalerUseProtoNames(resolver Resolver) Marshaler {
-	return newJSONMarshaler(resolver, "", true)
+// JSONMarshalerWithUseProtoNames says to use an use proto names.
+func JSONMarshalerWithUseProtoNames() JSONMarshalerOption {
+	return func(jsonMarshaler *jsonMarshaler) {
+		jsonMarshaler.useProtoNames = true
+	}
+}
+
+// JSONMarshalerWithEmitUnpopulated says to emit unpopulated values
+func JSONMarshalerWithEmitUnpopulated() JSONMarshalerOption {
+	return func(jsonMarshaler *jsonMarshaler) {
+		jsonMarshaler.emitUnpopulated = true
+	}
 }
 
 // Unmarshaler unmarshals Messages.

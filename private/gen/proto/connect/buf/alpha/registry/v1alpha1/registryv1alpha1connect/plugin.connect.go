@@ -97,9 +97,6 @@ const (
 	// PluginServiceDeleteTemplateProcedure is the fully-qualified name of the PluginService's
 	// DeleteTemplate RPC.
 	PluginServiceDeleteTemplateProcedure = "/buf.alpha.registry.v1alpha1.PluginService/DeleteTemplate"
-	// PluginServiceCreateTemplateVersionProcedure is the fully-qualified name of the PluginService's
-	// CreateTemplateVersion RPC.
-	PluginServiceCreateTemplateVersionProcedure = "/buf.alpha.registry.v1alpha1.PluginService/CreateTemplateVersion"
 )
 
 // PluginServiceClient is a client for the buf.alpha.registry.v1alpha1.PluginService service.
@@ -145,8 +142,6 @@ type PluginServiceClient interface {
 	CreateTemplate(context.Context, *connect_go.Request[v1alpha1.CreateTemplateRequest]) (*connect_go.Response[v1alpha1.CreateTemplateResponse], error)
 	// DeleteTemplate deletes the template, if it exists.
 	DeleteTemplate(context.Context, *connect_go.Request[v1alpha1.DeleteTemplateRequest]) (*connect_go.Response[v1alpha1.DeleteTemplateResponse], error)
-	// CreateTemplateVersion creates a new template version.
-	CreateTemplateVersion(context.Context, *connect_go.Request[v1alpha1.CreateTemplateVersionRequest]) (*connect_go.Response[v1alpha1.CreateTemplateVersionResponse], error)
 }
 
 // NewPluginServiceClient constructs a client for the buf.alpha.registry.v1alpha1.PluginService
@@ -261,11 +256,6 @@ func NewPluginServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 			connect_go.WithClientOptions(opts...),
 		),
-		createTemplateVersion: connect_go.NewClient[v1alpha1.CreateTemplateVersionRequest, v1alpha1.CreateTemplateVersionResponse](
-			httpClient,
-			baseURL+PluginServiceCreateTemplateVersionProcedure,
-			opts...,
-		),
 	}
 }
 
@@ -288,7 +278,6 @@ type pluginServiceClient struct {
 	listTemplateVersions       *connect_go.Client[v1alpha1.ListTemplateVersionsRequest, v1alpha1.ListTemplateVersionsResponse]
 	createTemplate             *connect_go.Client[v1alpha1.CreateTemplateRequest, v1alpha1.CreateTemplateResponse]
 	deleteTemplate             *connect_go.Client[v1alpha1.DeleteTemplateRequest, v1alpha1.DeleteTemplateResponse]
-	createTemplateVersion      *connect_go.Client[v1alpha1.CreateTemplateVersionRequest, v1alpha1.CreateTemplateVersionResponse]
 }
 
 // ListPlugins calls buf.alpha.registry.v1alpha1.PluginService.ListPlugins.
@@ -378,11 +367,6 @@ func (c *pluginServiceClient) DeleteTemplate(ctx context.Context, req *connect_g
 	return c.deleteTemplate.CallUnary(ctx, req)
 }
 
-// CreateTemplateVersion calls buf.alpha.registry.v1alpha1.PluginService.CreateTemplateVersion.
-func (c *pluginServiceClient) CreateTemplateVersion(ctx context.Context, req *connect_go.Request[v1alpha1.CreateTemplateVersionRequest]) (*connect_go.Response[v1alpha1.CreateTemplateVersionResponse], error) {
-	return c.createTemplateVersion.CallUnary(ctx, req)
-}
-
 // PluginServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.PluginService
 // service.
 type PluginServiceHandler interface {
@@ -427,8 +411,6 @@ type PluginServiceHandler interface {
 	CreateTemplate(context.Context, *connect_go.Request[v1alpha1.CreateTemplateRequest]) (*connect_go.Response[v1alpha1.CreateTemplateResponse], error)
 	// DeleteTemplate deletes the template, if it exists.
 	DeleteTemplate(context.Context, *connect_go.Request[v1alpha1.DeleteTemplateRequest]) (*connect_go.Response[v1alpha1.DeleteTemplateResponse], error)
-	// CreateTemplateVersion creates a new template version.
-	CreateTemplateVersion(context.Context, *connect_go.Request[v1alpha1.CreateTemplateVersionRequest]) (*connect_go.Response[v1alpha1.CreateTemplateVersionResponse], error)
 }
 
 // NewPluginServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -540,11 +522,6 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.Handle
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle(PluginServiceCreateTemplateVersionProcedure, connect_go.NewUnaryHandler(
-		PluginServiceCreateTemplateVersionProcedure,
-		svc.CreateTemplateVersion,
-		opts...,
-	))
 	return "/buf.alpha.registry.v1alpha1.PluginService/", mux
 }
 
@@ -617,8 +594,4 @@ func (UnimplementedPluginServiceHandler) CreateTemplate(context.Context, *connec
 
 func (UnimplementedPluginServiceHandler) DeleteTemplate(context.Context, *connect_go.Request[v1alpha1.DeleteTemplateRequest]) (*connect_go.Response[v1alpha1.DeleteTemplateResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.DeleteTemplate is not implemented"))
-}
-
-func (UnimplementedPluginServiceHandler) CreateTemplateVersion(context.Context, *connect_go.Request[v1alpha1.CreateTemplateVersionRequest]) (*connect_go.Response[v1alpha1.CreateTemplateVersionResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginService.CreateTemplateVersion is not implemented"))
 }

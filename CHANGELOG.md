@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.20.0] - 2023-05-30
+
+- Add `--emit-defaults` flag to `buf curl` to emit default values in JSON-encoded responses.
+- Indent JSON-encoded responses from `buf curl` by default.
 - Log a warning in case an import statement does not point to a file in the module, a file in a
   direct dependency, or a well-known type file.
 
@@ -883,7 +889,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.19.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.20.0...HEAD
+[v1.20.0]: https://github.com/bufbuild/buf/compare/v1.19.0...v1.20.0
 [v1.19.0]: https://github.com/bufbuild/buf/compare/v1.18.0...v1.19.0
 [v1.18.0]: https://github.com/bufbuild/buf/compare/v1.17.0...v1.18.0
 [v1.17.0]: https://github.com/bufbuild/buf/compare/v1.16.0...v1.17.0
