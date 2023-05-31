@@ -172,12 +172,11 @@ func sync(
 			}
 			module = normalpath.Normalize(module[:colon])
 		}
-		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(
-			bufsync.NewModule(
-				module,
-				moduleIdentityOverride,
-			),
-		))
+		syncModule, err := bufsync.NewModule(module, moduleIdentityOverride)
+		if err != nil {
+			return err
+		}
+		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(syncModule))
 	}
 	syncer, err := bufsync.NewSyncer(
 		container.Logger(),

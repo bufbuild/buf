@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"go.uber.org/zap"
@@ -59,8 +60,15 @@ type Module interface {
 }
 
 // NewModule constructs a new module that can be synced with a Syncer.
-func NewModule(dir string, identityOverride bufmoduleref.ModuleIdentity) Module {
-	return newSyncableModule(dir, identityOverride)
+func NewModule(dir string, identityOverride bufmoduleref.ModuleIdentity) (Module, error) {
+	path, err := normalpath.NormalizeAndValidate(dir)
+	if err != nil {
+		return nil, err
+	}
+	return newSyncableModule(
+		path,
+		identityOverride,
+	), nil
 }
 
 // Syncer syncs a modules in a git.Repository.
