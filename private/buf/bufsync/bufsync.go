@@ -65,14 +65,14 @@ func NewModule(dir string, identityOverride bufmoduleref.ModuleIdentity) Module 
 
 // Syncer syncs a modules in a git.Repository.
 type Syncer interface {
-	// Sync syncs the repository using the provided PushFunc. It processes
+	// Sync syncs the repository using the provided SyncFunc. It processes
 	// commits in reverse topological order, loads any configured named
 	// modules, extracts any Git metadata for that commit, and invokes
-	// PushFunc with a ModuleCommit.
+	// SyncFunc with a ModuleCommit.
 	//
 	// Only commits/branches belonging to the remote named 'origin' are
 	// processed. All tags are processed.
-	Sync(context.Context, PushFunc) error
+	Sync(context.Context, SyncFunc) error
 }
 
 // NewSyncer creates a new Syncer.
@@ -118,8 +118,8 @@ func SyncerWithModule(module Module) SyncerOption {
 	}
 }
 
-// PushFunc is invoked by Syncer to process a sync point.
-type PushFunc func(ctx context.Context, commit ModuleCommit) error
+// SyncFunc is invoked by Syncer to process a sync point.
+type SyncFunc func(ctx context.Context, commit ModuleCommit) error
 
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {

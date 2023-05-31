@@ -190,7 +190,7 @@ func sync(
 		return err
 	}
 	return syncer.Sync(ctx, func(ctx context.Context, commit bufsync.ModuleCommit) error {
-		pin, err := pushOrCreate(
+		syncPoint, err := pushOrCreate(
 			ctx,
 			clientConfig,
 			repo,
@@ -202,11 +202,6 @@ func sync(
 			createWithVisibility,
 		)
 		if err != nil {
-			if connect.CodeOf(err) == connect.CodeAlreadyExists {
-				// Module has identical content. The BSR has already created the relevant labels
-				// for us, so we can simply carry on.
-				return nil
-			}
 			// We failed to push. We fail hard on this because the error may be recoverable
 			// (i.e., the BSR may be down) and we should re-attempt this commit.
 			return fmt.Errorf(
@@ -217,7 +212,7 @@ func sync(
 			)
 		}
 		_, err = container.Stderr().Write([]byte(
-			fmt.Sprintf("%s:%s\n", commit.Identity().IdentityString(), pin.Commit)),
+			fmt.Sprintf("%s:%s\n", commit.Identity().IdentityString(), syncPoint.BsrCommitName)),
 		)
 		return err
 	})
@@ -267,7 +262,7 @@ func pushOrCreate(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	moduleBucket storage.ReadBucket,
 	createWithVisibility string,
-) (*registryv1alpha1.LocalModulePin, error) {
+) (*registryv1alpha1.GitSyncPoint, error) {
 	modulePin, err := push(
 		ctx,
 		clientConfig,
@@ -314,8 +309,8 @@ func push(
 	tags []string,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	moduleBucket storage.ReadBucket,
-) (*registryv1alpha1.LocalModulePin, error) {
-	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewPushServiceClient)
+) (*registryv1alpha1.GitSyncPoint, error) {
+	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewSyncServiceClient)
 	m, blobSet, err := manifest.NewFromBucket(ctx, moduleBucket)
 	if err != nil {
 		return nil, err
@@ -330,36 +325,29 @@ func push(
 		// per module.
 		branch = bufmoduleref.Main
 	}
-	resp, err := service.PushManifestAndBlobs(
-		ctx,
-		connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
-			Owner:      moduleIdentity.Owner(),
-			Repository: moduleIdentity.Repository(),
-			Manifest:   bucketManifest,
-			Blobs:      blobs,
-			GitMetadata: &registryv1alpha1.GitCommitMetadata{
-				Hash: commit.Hash().Hex(),
-				Branches: []string{
-					branch,
-				},
-				Tags: tags,
-				Author: &registryv1alpha1.GitIdentity{
-					Name:  commit.Author().Name(),
-					Email: commit.Author().Email(),
-					Time:  timestamppb.New(commit.Author().Timestamp()),
-				},
-				Commiter: &registryv1alpha1.GitIdentity{
-					Name:  commit.Committer().Name(),
-					Email: commit.Committer().Email(),
-					Time:  timestamppb.New(commit.Committer().Timestamp()),
-				},
-			},
-		}),
-	)
+	resp, err := service.SyncGitCommit(ctx, connect.NewRequest(&registryv1alpha1.SyncGitCommitRequest{
+		Owner:      moduleIdentity.Owner(),
+		Repository: moduleIdentity.Repository(),
+		Manifest:   bucketManifest,
+		Blobs:      blobs,
+		Hash:       commit.Hash().Hex(),
+		Branch:     branch,
+		Tags:       tags,
+		Author: &registryv1alpha1.GitIdentity{
+			Name:  commit.Author().Name(),
+			Email: commit.Author().Email(),
+			Time:  timestamppb.New(commit.Author().Timestamp()),
+		},
+		Commiter: &registryv1alpha1.GitIdentity{
+			Name:  commit.Committer().Name(),
+			Email: commit.Committer().Email(),
+			Time:  timestamppb.New(commit.Committer().Timestamp()),
+		},
+	}))
 	if err != nil {
 		return nil, err
 	}
-	return resp.Msg.LocalModulePin, nil
+	return resp.Msg.SyncPoint, nil
 }
 
 func create(

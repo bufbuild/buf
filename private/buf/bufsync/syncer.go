@@ -56,7 +56,7 @@ func newSyncer(
 	return s, nil
 }
 
-func (s *syncer) Sync(ctx context.Context, pushFunc PushFunc) error {
+func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	s.knownTagsByCommitHash = map[string][]string{}
 	if err := s.repo.ForEachTag(func(tag string, commitHash git.Hash) error {
 		s.knownTagsByCommitHash[commitHash.Hex()] = append(s.knownTagsByCommitHash[commitHash.Hex()], tag)
@@ -74,7 +74,7 @@ func (s *syncer) Sync(ctx context.Context, pushFunc PushFunc) error {
 					module,
 					branch,
 					commit,
-					pushFunc,
+					syncFunc,
 				); err != nil {
 					return fmt.Errorf("process commit %s: %w", commit.Hash().Hex(), err)
 				}
@@ -88,16 +88,16 @@ func (s *syncer) Sync(ctx context.Context, pushFunc PushFunc) error {
 }
 
 // visitCommit looks for the module in the commit, and if found tries to validate it.
-// If it is valid, it invokes `pushFunc`.
+// If it is valid, it invokes `syncFunc`.
 //
 // It does not return errors on invalid modules, but it will return any errors from
-// `pushFunc` as those may be transient.
+// `syncFunc` as those may be transient.
 func (s *syncer) visitCommit(
 	ctx context.Context,
 	module Module,
 	branch string,
 	commit git.Commit,
-	pushFunc PushFunc,
+	syncFunc SyncFunc,
 ) error {
 	sourceBucket, err := s.storageGitProvider.NewReadBucket(
 		commit.Tree(),
@@ -145,7 +145,7 @@ func (s *syncer) visitCommit(
 	if err != nil {
 		return s.errorHandler.BuildFailure(module.Dir(), moduleIdentity, commit, err)
 	}
-	return pushFunc(
+	return syncFunc(
 		ctx,
 		newModuleCommit(
 			moduleIdentity,

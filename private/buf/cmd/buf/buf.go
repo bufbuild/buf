@@ -241,14 +241,6 @@ func NewRootCommand(name string) *appcmd.Command {
 						},
 					},
 					{
-						Use:   "plugin",
-						Short: "Manage plugins on the Buf Schema Registry",
-						SubCommands: []*appcmd.Command{
-							pluginpush.NewCommand("push", builder),
-							curatedplugindelete.NewCommand("delete", builder),
-						},
-					},
-					{
 						Use:   "workspace",
 						Short: "Manage workspaces",
 						SubCommands: []*appcmd.Command{
