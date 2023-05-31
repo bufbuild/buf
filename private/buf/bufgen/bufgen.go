@@ -19,11 +19,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const (
@@ -151,21 +148,3 @@ type ConfigGetter[V any] func(
 	[]byte,
 	string,
 ) (*V, error)
-
-func ComputeRequiredFeatures(image bufimage.Image) requiredFeatures {
-	return computeRequiredFeatures(image)
-}
-
-type Plugin interface {
-	PluginName() string
-	// TODO: add more fields when working on plugin configs
-}
-
-func CheckRequiredFeatures(
-	container app.StderrContainer,
-	required requiredFeatures,
-	responses []*pluginpb.CodeGeneratorResponse,
-	plugins []Plugin,
-) {
-	checkRequiredFeatures(container, required, responses, plugins)
-}

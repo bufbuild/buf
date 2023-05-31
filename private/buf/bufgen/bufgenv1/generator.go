@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -173,7 +172,7 @@ func (g *generator) execPlugins(
 	// Collect all of the plugin jobs so that they can be executed in parallel.
 	jobs := make([]func(context.Context) error, 0, len(config.PluginConfigs))
 	responses := make([]*pluginpb.CodeGeneratorResponse, len(config.PluginConfigs))
-	requiredFeatures := bufgen.ComputeRequiredFeatures(image)
+	requiredFeatures := computeRequiredFeatures(image)
 	remotePluginConfigTable := make(map[string][]*remotePluginExecArgs, len(config.PluginConfigs))
 	for i, pluginConfig := range config.PluginConfigs {
 		index := i
@@ -287,14 +286,7 @@ func (g *generator) execPlugins(
 	if err := validateResponses(responses, config.PluginConfigs); err != nil {
 		return nil, err
 	}
-	// This builds a []bufgen.Plugin from []PluginConfig, because the latter
-	// cannot be passed as the former, even though it implements methods required. See
-	// https://stackoverflow.com/questions/12753805/type-converting-slices-of-interfaces/12754757#12754757.
-	plugins := make([]bufgen.Plugin, len(config.PluginConfigs))
-	for i, pluginConfig := range config.PluginConfigs {
-		plugins[i] = pluginConfig
-	}
-	bufgen.CheckRequiredFeatures(container, requiredFeatures, responses, plugins)
+	checkRequiredFeatures(container, requiredFeatures, responses, config.PluginConfigs)
 	return responses, nil
 }
 

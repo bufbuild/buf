@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufgen
+package bufgenv1
 
 import (
 	"fmt"
@@ -60,7 +60,7 @@ func checkRequiredFeatures(
 	container app.StderrContainer,
 	required requiredFeatures,
 	responses []*pluginpb.CodeGeneratorResponse,
-	plugins []Plugin,
+	configs []*PluginConfig,
 ) {
 	for responseIndex, response := range responses {
 		if response == nil || response.GetError() != "" {
@@ -81,7 +81,7 @@ func checkRequiredFeatures(
 		if len(failed) > 0 {
 			// TODO: plugin config to turn this into an error
 			_, _ = fmt.Fprintf(container.Stderr(), "Warning: plugin %q does not support required features.\n",
-				plugins[responseIndex].PluginName())
+				configs[responseIndex].PluginName())
 			sort.Slice(failedFeatures, func(i, j int) bool {
 				return failedFeatures[i].Number() < failedFeatures[j].Number()
 			})
