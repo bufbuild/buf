@@ -421,6 +421,9 @@ func findExistingDigestForImageID(
 	if err != nil {
 		structuredErr := new(transport.Error)
 		if errors.As(err, &structuredErr) {
+			if structuredErr.StatusCode == http.StatusUnauthorized {
+				return "", errors.New("Failure: you are not authenticated")
+			}
 			if structuredErr.StatusCode == http.StatusNotFound {
 				return "", nil
 			}
