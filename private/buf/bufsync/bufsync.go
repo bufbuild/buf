@@ -53,7 +53,7 @@ type Module interface {
 	// IdentityOverride is an optional module identity override. If empty,
 	// the identity specified in the module config file will be used.
 	//
-	// Unnamed modules will not have their identity overriden, as they are
+	// Unnamed modules will not have their identity overridden, as they are
 	// not pushable.
 	IdentityOverride() bufmoduleref.ModuleIdentity
 }
