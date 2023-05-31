@@ -16,9 +16,11 @@ package plugindelete
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	internal "github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -29,19 +31,15 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const (
-	forceFlagName = "force"
-)
-
-// NewCommand returns a new Command
+// NewCommand returns a new Command.
 func NewCommand(
 	name string,
 	builder appflag.Builder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/" + internal.PluginsPathName + "/plugin>",
-		Short: "Delete a Protobuf plugin",
+		Use:   name + " <buf.build/owner/plugin[:version]>",
+		Short: "Delete a plugin from the registry",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -53,22 +51,13 @@ func NewCommand(
 	}
 }
 
-type flags struct {
-	Force bool
-}
+type flags struct{}
 
 func newFlags() *flags {
 	return &flags{}
 }
 
-func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(
-		&f.Force,
-		forceFlagName,
-		false,
-		"Force deletion without confirming. Use with caution",
-	)
-}
+func (f *flags) Bind(flagSet *pflag.FlagSet) {}
 
 func run(
 	ctx context.Context,
@@ -76,33 +65,35 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	pluginPath := container.Arg(0)
-	if pluginPath == "" {
-		return appcmd.NewInvalidArgumentError("you must specify a plugin path")
+	identity, version, _ := strings.Cut(container.Arg(0), ":")
+	pluginIdentity, err := bufpluginref.PluginIdentityForString(identity)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	if version != "" {
+		if err := bufpluginref.ValidatePluginVersion(version); err != nil {
+			return appcmd.NewInvalidArgumentError(err.Error())
+		}
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	remote, owner, name, err := internal.ParsePluginPath(pluginPath)
-	if err != nil {
-		return err
-	}
-	pluginService := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewPluginServiceClient)
-	if !flags.Force {
-		if err := bufcli.PromptUserForDelete(container, "plugin", name); err != nil {
-			return err
-		}
-	}
-	if _, err := pluginService.DeletePlugin(
+	service := connectclient.Make(
+		clientConfig,
+		pluginIdentity.Remote(),
+		registryv1alpha1connect.NewPluginCurationServiceClient,
+	)
+	if _, err := service.DeleteCuratedPlugin(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.DeletePluginRequest{
-			Owner: owner,
-			Name:  name,
+		connect.NewRequest(&registryv1alpha1.DeleteCuratedPluginRequest{
+			Owner:   pluginIdentity.Owner(),
+			Name:    pluginIdentity.Plugin(),
+			Version: version,
 		}),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewPluginNotFoundError(owner, name)
+			return fmt.Errorf("the plugin %s does not exist", container.Arg(0))
 		}
 		return err
 	}

@@ -19,8 +19,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	curatedplugindelete "github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/plugindelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
@@ -36,10 +34,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugincreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginversion/pluginversionlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydeprecate"
@@ -49,11 +45,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatecreate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatedelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatelist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversioncreate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
@@ -198,45 +189,20 @@ func NewRootCommand(name string) *appcmd.Command {
 								},
 							},
 							{
-								Use:   "plugin",
-								Short: "Manage Protobuf plugins",
-								SubCommands: []*appcmd.Command{
-									plugincreate.NewCommand("create", builder),
-									pluginlist.NewCommand("list", builder),
-									plugindelete.NewCommand("delete", builder),
-									{
-										Use:   "version",
-										Short: "Manage Protobuf plugin versions",
-										SubCommands: []*appcmd.Command{
-											pluginversionlist.NewCommand("list", builder),
-										},
-									},
-								},
-							},
-							{
-								Use:   "template",
-								Short: "Manage Protobuf templates on the Buf Schema Registry",
-								SubCommands: []*appcmd.Command{
-									templatecreate.NewCommand("create", builder),
-									templatelist.NewCommand("list", builder),
-									templatedelete.NewCommand("delete", builder),
-									{
-										Use:   "version",
-										Short: "Manage Protobuf template versions",
-										SubCommands: []*appcmd.Command{
-											templateversioncreate.NewCommand("create", builder),
-											templateversionlist.NewCommand("list", builder),
-										},
-									},
-								},
-							},
-							{
 								Use:   "webhook",
 								Short: "Manage webhooks for a repository on the Buf Schema Registry",
 								SubCommands: []*appcmd.Command{
 									webhookcreate.NewCommand("create", builder),
 									webhookdelete.NewCommand("delete", builder),
 									webhooklist.NewCommand("list", builder),
+								},
+							},
+							{
+								Use:   "plugin",
+								Short: "Manage plugins on the Buf Schema Registry",
+								SubCommands: []*appcmd.Command{
+									pluginpush.NewCommand("push", builder),
+									plugindelete.NewCommand("delete", builder),
 								},
 							},
 						},

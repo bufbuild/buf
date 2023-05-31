@@ -171,10 +171,6 @@ service PluginService {
   rpc ListPluginVersions(ListPluginVersionsRequest) returns (ListPluginVersionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // CreatePlugin creates a new plugin.
-  rpc CreatePlugin(CreatePluginRequest) returns (CreatePluginResponse) {
-    option idempotency_level = IDEMPOTENT;
-  }
   // GetPlugin returns the plugin, if found.
   rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -216,16 +212,10 @@ service PluginService {
   rpc ListTemplateVersions(ListTemplateVersionsRequest) returns (ListTemplateVersionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // CreateTemplate creates a new template.
-  rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse) {
-    option idempotency_level = IDEMPOTENT;
-  }
   // DeleteTemplate deletes the template, if it exists.
   rpc DeleteTemplate(DeleteTemplateRequest) returns (DeleteTemplateResponse) {
     option idempotency_level = IDEMPOTENT;
   }
-  // CreateTemplateVersion creates a new template version.
-  rpc CreateTemplateVersion(CreateTemplateVersionRequest) returns (CreateTemplateVersionResponse);
 }
 
 message ListPluginsRequest {
@@ -300,24 +290,6 @@ message ListPluginVersionsResponse {
   repeated PluginVersion plugin_versions = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
-}
-
-message CreatePluginRequest {
-  // The owner of the plugin. This must be either the name
-  // of the authenticated user or an organization the user is
-  // authorized to create plugins in.
-  string owner = 1;
-  // The name of the plugin, i.e. "protoc-gen-go".
-  string name = 2;
-  // Whether the created plugin should be available to any user
-  // or only those authorized through organization membership
-  // or being the creator.
-  PluginVisibility visibility = 3;
-}
-
-message CreatePluginResponse {
-  // The created plugin.
-  Plugin plugin = 1;
 }
 
 message GetPluginRequest {
@@ -438,26 +410,6 @@ message ListTemplateVersionsResponse {
   string next_page_token = 2;
 }
 
-message CreateTemplateRequest {
-  // The owner of the template. This will be either a username
-  // or organization name.
-  string owner = 1;
-  // The name of the template version, i.e. "grpc-go".
-  string name = 2;
-  // Whether the created template should be available to any user
-  // or only those authorized through organization membership
-  // or being the creator.
-  PluginVisibility visibility = 3;
-  // The plugins and associated runtime configuration that make
-  // up this template.
-  repeated PluginConfig plugin_configs = 4;
-}
-
-message CreateTemplateResponse {
-  // The created template.
-  Template template = 1;
-}
-
 message DeleteTemplateRequest {
   // The owner of the template to delete.
   string owner = 1;
@@ -466,21 +418,3 @@ message DeleteTemplateRequest {
 }
 
 message DeleteTemplateResponse {}
-
-message CreateTemplateVersionRequest {
-  // The name of the template version, i.e. "v1".
-  string name = 1;
-  // The owner of the template.
-  string template_owner = 2;
-  // The name of the template.
-  string template_name = 3;
-  // A map from plugin owner and name to version for the plugins
-  // defined in the template. Every plugin in the template
-  // must have a corresponding version in this array.
-  repeated PluginVersionMapping plugin_versions = 4;
-}
-
-message CreateTemplateVersionResponse {
-  // The created template version.
-  TemplateVersion template_version = 1;
-}

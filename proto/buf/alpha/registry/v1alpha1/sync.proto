@@ -1,0 +1,84 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/module/v1alpha1/module.proto";
+import "buf/alpha/registry/v1alpha1/git_metadata.proto";
+
+// GitSyncPoint is the sync point for a particular module contained in a Git repository.
+message GitSyncPoint {
+  string owner = 1;
+  string repository = 2;
+  string branch = 3;
+  string git_commit_hash = 4;
+  string bsr_commit_name = 5;
+}
+
+// SyncService is the Sync service.
+service SyncService {
+  // GetGitSyncPoint retrieves the Git sync point for the named repository
+  // on the specified branch.
+  rpc GetGitSyncPoint(GetGitSyncPointRequest) returns (GetGitSyncPointResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // SyncGitCommit syncs a Git commit containing a module to a named repository.
+  rpc SyncGitCommit(SyncGitCommitRequest) returns (SyncGitCommitResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+}
+
+message GetGitSyncPointRequest {
+  // Owner is the owner of the BSR repository.
+  string owner = 1;
+  // Repository is the name of the BSR repository.
+  string repository = 2;
+  // Branch is the Git branch for which to look up the commit.
+  string branch = 3;
+}
+
+message GetGitSyncPointResponse {
+  // SyncPoint is the latest syncpoint for the specified owner/repo/branch.
+  GitSyncPoint sync_point = 1;
+}
+
+message SyncGitCommitRequest {
+  // Owner is the owner of the BSR repository.
+  string owner = 1;
+  // Repository is the name of the BSR repository.
+  string repository = 2;
+  // Branch is the Git branch that this commit belongs to.
+  string branch = 3;
+  // Manifest with all the module files being pushed.
+  buf.alpha.module.v1alpha1.Blob manifest = 4;
+  // Referenced blobs in the manifest. Keep in mind there is not necessarily one
+  // blob per file, but one blob per digest, so for files with exactly the same
+  // content, you can send just one blob.
+  repeated buf.alpha.module.v1alpha1.Blob blobs = 5;
+  // Hash is the SHA1 hash of the Git commit.
+  string hash = 6;
+  // Author is the author of the Git commit. This is typically an end-user.
+  GitIdentity author = 7;
+  // Commiter is the commiter of the Git commit. This typically a CI system.
+  GitIdentity commiter = 8;
+  // Tags are the Git tags which point to this commit.
+  repeated string tags = 9;
+}
+
+message SyncGitCommitResponse {
+  // SyncPoint is the latest syncpoint for the SyncGitCommit request.
+  GitSyncPoint sync_point = 1;
+}
