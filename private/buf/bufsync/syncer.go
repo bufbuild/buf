@@ -30,7 +30,8 @@ type syncer struct {
 	logger             *zap.Logger
 	repo               git.Repository
 	storageGitProvider storagegit.Provider
-	modulesToSync      []syncableModule
+	errorHandler       ErrorHandler
+	modulesToSync      []Module
 
 	knownTagsByCommitHash map[string][]string
 }
@@ -39,6 +40,7 @@ func newSyncer(
 	logger *zap.Logger,
 	repo git.Repository,
 	storageGitProvider storagegit.Provider,
+	errorHandler ErrorHandler,
 	options ...SyncerOption,
 ) (Syncer, error) {
 	s := &syncer{
@@ -92,7 +94,7 @@ func (s *syncer) Sync(ctx context.Context, pushFunc PushFunc) error {
 // `pushFunc` as those may be transient.
 func (s *syncer) visitCommit(
 	ctx context.Context,
-	module syncableModule,
+	module Module,
 	branch string,
 	commit git.Commit,
 	pushFunc PushFunc,
@@ -104,7 +106,7 @@ func (s *syncer) visitCommit(
 	if err != nil {
 		return err
 	}
-	sourceBucket = storage.MapReadBucket(sourceBucket, storage.MapOnPrefix(module.dir))
+	sourceBucket = storage.MapReadBucket(sourceBucket, storage.MapOnPrefix(module.Dir()))
 	foundModule, err := bufconfig.ExistingConfigFilePath(ctx, sourceBucket)
 	if err != nil {
 		return err
@@ -114,35 +116,26 @@ func (s *syncer) visitCommit(
 		s.logger.Debug(
 			"module not found, skipping commit",
 			zap.String("commit", commit.Hash().String()),
-			zap.String("module", module.dir),
+			zap.String("module", module.Dir()),
 		)
 		return nil
 	}
 	sourceConfig, err := bufconfig.GetConfigForBucket(ctx, sourceBucket)
 	if err != nil {
-		// We found a module but the module config is invalid. We can warn on this
-		// and carry on. Note that because of resumption, we will typically only come
-		// across this commit once, we will not log this warning again.
-		s.logger.Warn(
-			"invalid module",
-			zap.String("commit", commit.Hash().String()),
-			zap.String("module", module.dir),
-			zap.Error(err),
-		)
-		return nil
+		return s.errorHandler.InvalidModuleConfig(module.Dir(), commit, err)
 	}
 	if sourceConfig.ModuleIdentity == nil {
 		// Unnamed module. Carry on.
 		s.logger.Debug(
 			"unnamed module, skipping commit",
 			zap.String("commit", commit.Hash().String()),
-			zap.String("module", module.dir),
+			zap.String("module", module.Dir()),
 		)
 		return nil
 	}
 	moduleIdentity := sourceConfig.ModuleIdentity
-	if module.identityOverride != nil {
-		moduleIdentity = module.identityOverride
+	if module.IdentityOverride() != nil {
+		moduleIdentity = module.IdentityOverride()
 	}
 	builtModule, err := bufmodulebuild.BuildForBucket(
 		ctx,
@@ -150,16 +143,7 @@ func (s *syncer) visitCommit(
 		sourceConfig.Build,
 	)
 	if err != nil {
-		// We failed to build the module. We can warn on this
-		// and carry on. Note that because of resumption, we will typically only come
-		// across this commit once, we will not log this warning again.
-		s.logger.Warn(
-			"invalid module",
-			zap.String("commit", commit.Hash().String()),
-			zap.String("module", module.dir),
-			zap.Error(err),
-		)
-		return nil
+		return s.errorHandler.BuildFailure(module.Dir(), moduleIdentity, commit, err)
 	}
 	return pushFunc(
 		ctx,

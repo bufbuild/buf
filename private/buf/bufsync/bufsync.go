@@ -25,6 +25,44 @@ import (
 	"go.uber.org/zap"
 )
 
+// ErrorHandler handles errors reported by the Syncer. If a non-nil
+// error is returned by the handler, sync will abort in a partially-synced
+// state.
+type ErrorHandler interface {
+	// InvalidModuleConfig is invoked by Syncer upon encountering a module
+	// with an invalid module config.
+	InvalidModuleConfig(
+		module string,
+		commit git.Commit,
+		err error,
+	) error
+	// BuildFailure is invoked by Syncer upon encountering a module that fails
+	// build.
+	BuildFailure(
+		module string,
+		moduleIdentity bufmoduleref.ModuleIdentity,
+		commit git.Commit,
+		err error,
+	) error
+}
+
+// Module is a module that will be synced by Syncer.
+type Module interface {
+	// Dir is the path to the module relative to the repository root.
+	Dir() string
+	// IdentityOverride is an optional module identity override. If empty,
+	// the identity specified in the module config file will be used.
+	//
+	// Unnamed modules will not have their identity overriden, as they are
+	// not pushable.
+	IdentityOverride() bufmoduleref.ModuleIdentity
+}
+
+// NewModule constructs a new module that can be synced with a Syncer.
+func NewModule(dir string, identityOverride bufmoduleref.ModuleIdentity) Module {
+	return newSyncableModule(dir, identityOverride)
+}
+
 // Syncer syncs a modules in a git.Repository.
 type Syncer interface {
 	// Sync syncs the repository using the provided PushFunc. It processes
@@ -42,12 +80,14 @@ func NewSyncer(
 	logger *zap.Logger,
 	repo git.Repository,
 	storageGitProvider storagegit.Provider,
+	errorHandler ErrorHandler,
 	options ...SyncerOption,
 ) (Syncer, error) {
 	return newSyncer(
 		logger,
 		repo,
 		storageGitProvider,
+		errorHandler,
 		options...,
 	)
 }
@@ -55,29 +95,25 @@ func NewSyncer(
 // SyncerOption configures the creation of a new Syncer.
 type SyncerOption func(*syncer) error
 
-// SyncerWithModule configures a Syncer to sync the specified module. The module
-// identity override is optional.
+// SyncerWithModule configures a Syncer to sync the specified module.
 //
 // This option can be provided multiple times to sync multiple distinct modules.
-func SyncerWithModule(dir string, identityOverride bufmoduleref.ModuleIdentity) SyncerOption {
+func SyncerWithModule(module Module) SyncerOption {
 	return func(s *syncer) error {
 		for _, existingModule := range s.modulesToSync {
-			if existingModule.dir != dir {
+			if existingModule.Dir() != module.Dir() {
 				continue
 			}
-			if identityOverride == nil && existingModule.identityOverride == nil {
-				return fmt.Errorf("duplicate module %s", dir)
+			if module.IdentityOverride() == nil && existingModule.IdentityOverride() == nil {
+				return fmt.Errorf("duplicate module %s", module.Dir())
 			}
-			if identityOverride != nil &&
-				existingModule.identityOverride != nil &&
-				identityOverride.IdentityString() == existingModule.identityOverride.IdentityString() {
-				return fmt.Errorf("duplicate module %s:%s", dir, identityOverride.IdentityString())
+			if module.IdentityOverride() != nil &&
+				existingModule.IdentityOverride() != nil &&
+				module.IdentityOverride().IdentityString() == existingModule.IdentityOverride().IdentityString() {
+				return fmt.Errorf("duplicate module %s:%s", module.Dir(), module.IdentityOverride().IdentityString())
 			}
 		}
-		s.modulesToSync = append(s.modulesToSync, newSyncableModule(
-			dir,
-			identityOverride,
-		))
+		s.modulesToSync = append(s.modulesToSync, module)
 		return nil
 	}
 }

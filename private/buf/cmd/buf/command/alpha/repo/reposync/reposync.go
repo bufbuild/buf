@@ -39,6 +39,7 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -171,12 +172,18 @@ func sync(
 			}
 			module = normalpath.Normalize(module[:colon])
 		}
-		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(module, moduleIdentityOverride))
+		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(
+			bufsync.NewModule(
+				module,
+				moduleIdentityOverride,
+			),
+		))
 	}
 	syncer, err := bufsync.NewSyncer(
 		container.Logger(),
 		repo,
 		storageProvider,
+		newErrorHandler(container.Logger()),
 		syncerOptions...,
 	)
 	if err != nil {
@@ -214,6 +221,40 @@ func sync(
 		)
 		return err
 	})
+}
+
+type syncErrorHandler struct {
+	logger *zap.Logger
+}
+
+func newErrorHandler(logger *zap.Logger) bufsync.ErrorHandler {
+	return &syncErrorHandler{logger: logger}
+}
+
+func (s *syncErrorHandler) BuildFailure(module string, moduleIdentity bufmoduleref.ModuleIdentity, commit git.Commit, err error) error {
+	// We failed to build the module. We can warn on this and carry on.
+	// Note that because of resumption, Syncer will typically only come
+	// across this commit once, we will not log this warning again.
+	s.logger.Warn(
+		"invalid module",
+		zap.String("commit", commit.Hash().String()),
+		zap.String("module", module),
+		zap.Error(err),
+	)
+	return nil
+}
+
+func (s *syncErrorHandler) InvalidModuleConfig(module string, commit git.Commit, err error) error {
+	// We found a module but the module config is invalid. We can warn on this
+	// and carry on. Note that because of resumption, Syncer will typically only come
+	// across this commit once, we will not log this warning again.
+	s.logger.Warn(
+		"invalid module",
+		zap.String("commit", commit.Hash().String()),
+		zap.String("module", module),
+		zap.Error(err),
+	)
+	return nil
 }
 
 func pushOrCreate(
