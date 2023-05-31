@@ -132,9 +132,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
 		&f.Visibility,
 		visibilityFlagName,
-		"public",
+		"",
 		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
+	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
 }
 
 func run(
@@ -142,7 +143,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) (retErr error) {
-	bufcli.WarnAlphaCommand(ctx, container)
+	bufcli.WarnBetaCommand(ctx, container)
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
@@ -399,11 +400,7 @@ func findExistingDigestForImageID(
 	imageID string,
 	currentImageDigest string,
 ) (string, error) {
-	pluginsRemote := plugin.Name.Remote()
-	if !strings.HasPrefix(pluginsRemote, bufplugindocker.PluginsImagePrefix) {
-		pluginsRemote = bufplugindocker.PluginsImagePrefix + pluginsRemote
-	}
-	repo, err := name.NewRepository(fmt.Sprintf("%s/%s/%s", pluginsRemote, plugin.Name.Owner(), plugin.Name.Plugin()))
+	repo, err := name.NewRepository(fmt.Sprintf("%s/%s/%s", plugin.Name.Remote(), plugin.Name.Owner(), plugin.Name.Plugin()))
 	if err != nil {
 		return "", err
 	}
