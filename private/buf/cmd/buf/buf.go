@@ -35,7 +35,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugincreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginversion/pluginversionlist"
@@ -48,7 +47,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatecreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatedelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatelist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist"
@@ -199,7 +197,6 @@ func NewRootCommand(name string) *appcmd.Command {
 								Use:   "plugin",
 								Short: "Manage Protobuf plugins",
 								SubCommands: []*appcmd.Command{
-									plugincreate.NewCommand("create", builder),
 									pluginlist.NewCommand("list", builder),
 									plugindelete.NewCommand("delete", builder),
 									{
@@ -215,7 +212,6 @@ func NewRootCommand(name string) *appcmd.Command {
 								Use:   "template",
 								Short: "Manage Protobuf templates on the Buf Schema Registry",
 								SubCommands: []*appcmd.Command{
-									templatecreate.NewCommand("create", builder),
 									templatelist.NewCommand("list", builder),
 									templatedelete.NewCommand("delete", builder),
 									{
