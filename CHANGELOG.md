@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Remove `buf beta registry template` commands.
+- Move `buf alpha plugin` commands to `buf beta registry plugin` and remove old plugin implementation.
 
 ## [v1.20.0] - 2023-05-30
 
