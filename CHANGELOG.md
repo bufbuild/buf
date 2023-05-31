@@ -3,7 +3,8 @@
 ## [Unreleased]
 
 - Remove `buf beta registry template` commands.
-- Move `buf alpha plugin` commands to `buf beta registry plugin` and remove old plugin implementation.
+- Remove `buf beta registry plugin {create,deprecate,list,undeprecate,version}` commands and replace
+  with `buf beta registry plugin {push,delete}` commands, promoted from `buf alpha plugin`.
 
 ## [v1.20.0] - 2023-05-30
 
