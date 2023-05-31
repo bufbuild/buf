@@ -82,16 +82,6 @@ func ParseTemplatePath(templatePath string) (remote string, owner string, name s
 	return components[0], components[1], components[3], nil
 }
 
-// ValidateTemplateName validates the format of the template name.
-// This is only used for client side validation and attempts to avoid
-// validation constraints that we may want to change.
-func ValidateTemplateName(templateName string) error {
-	if templateName == "" {
-		return errors.New("template name is required")
-	}
-	return nil
-}
-
 // TemplateConfig is the config used to describe the plugins
 // of a new template.
 type TemplateConfig struct {
@@ -177,68 +167,12 @@ type TemplateVersionConfig struct {
 	PluginVersions []PluginVersion
 }
 
-// TemplateVersionConfigToProtoPluginVersionMappings converts the template version config to a
-// slice of Plugin version mappings, suitable for use with the Plugin Service CreateTemplateVersion RPC.
-func TemplateVersionConfigToProtoPluginVersionMappings(
-	templateVersionConfig *TemplateVersionConfig,
-) []*registryv1alpha1.PluginVersionMapping {
-	pluginVersions := make([]*registryv1alpha1.PluginVersionMapping, 0, len(templateVersionConfig.PluginVersions))
-	for _, pluginVersion := range templateVersionConfig.PluginVersions {
-		pluginVersions = append(
-			pluginVersions,
-			&registryv1alpha1.PluginVersionMapping{
-				PluginOwner: pluginVersion.Owner,
-				PluginName:  pluginVersion.Name,
-				Version:     pluginVersion.Version,
-			},
-		)
-	}
-	return pluginVersions
-}
-
 // PluginVersion describes a version of a plugin for
 // use in a template version.
 type PluginVersion struct {
 	Owner   string
 	Name    string
 	Version string
-}
-
-// ParseTemplateVersionConfig parses the input template version config as a path or JSON/YAML literal.
-func ParseTemplateVersionConfig(config string) (*TemplateVersionConfig, error) {
-	var data []byte
-	var err error
-	switch filepath.Ext(config) {
-	case ".json", ".yaml", ".yml":
-		data, err = os.ReadFile(config)
-		if err != nil {
-			return nil, fmt.Errorf("could not read file: %v", err)
-		}
-	default:
-		data = []byte(config)
-	}
-	var version externalTemplateConfigVersion
-	if err := encoding.UnmarshalJSONOrYAMLNonStrict(data, &version); err != nil {
-		return nil, fmt.Errorf("failed to determine version of template version config: %w", err)
-	}
-	switch version.Version {
-	case "":
-		return nil, errors.New("template version config version is required")
-	case v1Version:
-	default:
-		return nil, fmt.Errorf("unknown template version config version: %q", version.Version)
-	}
-	var externalConfig externalTemplateVersionConfig
-	if err := encoding.UnmarshalJSONOrYAMLStrict(data, &externalConfig); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal template version config: %w", err)
-	}
-	templateVersionConfig := &TemplateVersionConfig{
-		PluginVersions: make([]PluginVersion, 0, len(externalConfig.PluginVersions)),
-	}
-	for _, pluginVersion := range externalConfig.PluginVersions {
-		templateVersionConfig.PluginVersions = append(templateVersionConfig.PluginVersions, PluginVersion(pluginVersion))
-	}
-	return templateVersionConfig, nil
 }
 
 type externalTemplateConfig struct {
@@ -250,17 +184,6 @@ type externalPluginConfig struct {
 	Owner   string      `json:"owner,omitempty" yaml:"owner,omitempty"`
 	Name    string      `json:"name,omitempty" yaml:"name,omitempty"`
 	Options interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
-}
-
-type externalTemplateVersionConfig struct {
-	Version        string                  `json:"version,omitempty" yaml:"version,omitempty"`
-	PluginVersions []externalPluginVersion `json:"plugin_versions,omitempty" yaml:"plugin_versions,omitempty"`
-}
-
-type externalPluginVersion struct {
-	Owner   string `json:"owner,omitempty" yaml:"owner,omitempty"`
-	Name    string `json:"name,omitempty" yaml:"name,omitempty"`
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }
 
 type externalTemplateConfigVersion struct {

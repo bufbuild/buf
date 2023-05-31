@@ -1,8 +1,0 @@
-version: v1beta1
-plugin_versions:
-  - owner: testowner
-    name: testplugin
-    version: v1.2.0
-  - owner: testowner2
-    name: testplugin2
-    version: v2.1.0

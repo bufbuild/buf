@@ -51,7 +51,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatecreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatedelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatelist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversioncreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
@@ -231,7 +230,6 @@ func NewRootCommand(name string) *appcmd.Command {
 										Use:   "version",
 										Short: "Manage Protobuf template versions",
 										SubCommands: []*appcmd.Command{
-											templateversioncreate.NewCommand("create", builder),
 											templateversionlist.NewCommand("list", builder),
 										},
 									},
