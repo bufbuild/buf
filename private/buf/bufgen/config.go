@@ -29,6 +29,31 @@ func newReadConfigOptions() *readConfigOptions {
 	return &readConfigOptions{}
 }
 
+type readConfigOptions struct {
+	override string
+}
+
+func readConfigVersion(
+	ctx context.Context,
+	logger *zap.Logger,
+	provider ConfigDataProvider,
+	readBucket storage.ReadBucket,
+	options ...ReadConfigOption,
+) (string, error) {
+	version, err := ReadFromConfig(
+		ctx,
+		logger,
+		provider,
+		readBucket,
+		getConfigVersion,
+		options...,
+	)
+	if err != nil || version == nil {
+		return "", err
+	}
+	return *version, nil
+}
+
 func readFromConfig[V any](
 	ctx context.Context,
 	logger *zap.Logger,

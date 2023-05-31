@@ -15,6 +15,7 @@
 package bufgenv1
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -24,9 +25,27 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
+
+func readConfigV1(
+	ctx context.Context,
+	logger *zap.Logger,
+	provider bufgen.ConfigDataProvider,
+	readBucket storage.ReadBucket,
+	options ...bufgen.ReadConfigOption,
+) (*Config, error) {
+	return bufgen.ReadFromConfig(
+		ctx,
+		logger,
+		provider,
+		readBucket,
+		getConfig,
+		options...,
+	)
+}
 
 func getConfig(
 	logger *zap.Logger,

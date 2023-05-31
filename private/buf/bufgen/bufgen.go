@@ -84,7 +84,7 @@ func (s Strategy) String() string {
 // Provider is a provider.
 type ConfigDataProvider interface {
 	// GetConfigData gets the Config's data in bytes at ExternalConfigFilePath,
-	// as well as the id of the file.
+	// as well as the id of the file, in the form of `File "<path>"`.
 	GetConfigData(context.Context, storage.ReadBucket) ([]byte, string, error)
 }
 
@@ -94,11 +94,6 @@ func NewConfigDataProvider(logger *zap.Logger) ConfigDataProvider {
 }
 
 // ReadConfigOption is an option for ReadConfig.
-
-type readConfigOptions struct {
-	override string
-}
-
 type ReadConfigOption func(*readConfigOptions)
 
 // ReadConfigWithOverride sets the override.
@@ -129,18 +124,13 @@ func ReadConfigVersion(
 	readBucket storage.ReadBucket,
 	options ...ReadConfigOption,
 ) (string, error) {
-	version, err := ReadFromConfig(
+	return readConfigVersion(
 		ctx,
 		logger,
 		provider,
 		readBucket,
-		getConfigVersion,
 		options...,
 	)
-	if err != nil || version == nil {
-		return "", err
-	}
-	return *version, nil
 }
 
 func ReadFromConfig[V any](
@@ -168,7 +158,7 @@ func ComputeRequiredFeatures(image bufimage.Image) requiredFeatures {
 
 type Plugin interface {
 	PluginName() string
-	// Out() string // TODO
+	// TODO: add more fields when working on plugin configs
 }
 
 func CheckRequiredFeatures(

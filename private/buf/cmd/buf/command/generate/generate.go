@@ -285,7 +285,6 @@ func run(
 		return err
 	}
 	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	// runner := command.NewRunner()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		".",
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),

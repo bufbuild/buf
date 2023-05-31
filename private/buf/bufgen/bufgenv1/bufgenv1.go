@@ -36,22 +36,6 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// ProviderV1 is a provider. TODO: deprecate this.
-// type ProviderV1 interface {
-// 	// GetConfig gets the Config for the YAML data at ExternalConfigFilePath.
-// 	//
-// 	// If the data is of length 0, returns the default config.
-// 	GetConfig(ctx context.Context, readBucket storage.ReadBucket) (*Config, error)
-
-// 	// GetConfigData gets the Config's data in bytes at ExternalConfigFilePath.
-// 	GetConfigData(context.Context, storage.ReadBucket) ([]byte, string, error)
-// }
-
-// // NewProvider returns a new Provider.
-// func NewProvider(logger *zap.Logger) ProviderV1 {
-// 	return newProvider(logger)
-// }
-
 // Generator generates Protobuf stubs based on configurations.
 type Generator interface {
 	// Generate calls the generation logic.
@@ -133,12 +117,11 @@ func ReadConfigV1(
 	readBucket storage.ReadBucket,
 	options ...bufgen.ReadConfigOption,
 ) (*Config, error) {
-	return bufgen.ReadFromConfig(
+	return readConfigV1(
 		ctx,
 		logger,
 		provider,
 		readBucket,
-		getConfig,
 		options...,
 	)
 }
