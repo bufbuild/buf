@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package toposort implemented topological sorting.
+// Package toposort implements topological sorting.
 //
 // Topological sorting algorithms are especially useful for dependency calculation,
 // and so this particular implementation is mainly intended for this purpose.
