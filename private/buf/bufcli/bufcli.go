@@ -639,7 +639,7 @@ func NewConnectClientConfigWithToken(container appflag.Container, token string) 
 	)
 }
 
-// PromptUserForDelete is used to receieve user confirmation that a specific
+// PromptUserForDelete is used to receive user confirmation that a specific
 // entity should be deleted. If the user's answer does not match the expected
 // answer, an error is returned.
 // ErrNotATTY is returned if the input containers Stdin is not a terminal.
