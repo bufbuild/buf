@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv1"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -64,10 +65,10 @@ func runV1(
 	if err != nil {
 		return err
 	}
-	genConfig, err := bufgen.ReadConfig(
+	genConfig, err := bufgenv1.ReadConfigV1(
 		ctx,
 		logger,
-		bufgen.NewProvider(logger),
+		bufgen.NewConfigDataProvider(logger),
 		readWriteBucket,
 		bufgen.ReadConfigWithOverride(flags.Template),
 	)
@@ -114,19 +115,19 @@ func runV1(
 	if err != nil {
 		return err
 	}
-	generateOptions := []bufgen.GenerateOption{
-		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
+	generateOptions := []bufgenv1.GenerateOption{
+		bufgenv1.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
 	}
 	if flags.IncludeImports {
 		generateOptions = append(
 			generateOptions,
-			bufgen.GenerateWithIncludeImports(),
+			bufgenv1.GenerateWithIncludeImports(),
 		)
 	}
 	if flags.IncludeWKT {
 		generateOptions = append(
 			generateOptions,
-			bufgen.GenerateWithIncludeWellKnownTypes(),
+			bufgenv1.GenerateWithIncludeWellKnownTypes(),
 		)
 	}
 	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
@@ -136,7 +137,7 @@ func runV1(
 	if wasmEnabled {
 		generateOptions = append(
 			generateOptions,
-			bufgen.GenerateWithWASMEnabled(),
+			bufgenv1.GenerateWithWASMEnabled(),
 		)
 	}
 	var includedTypes []string
@@ -157,7 +158,7 @@ func runV1(
 	if err != nil {
 		return err
 	}
-	return bufgen.NewGenerator(
+	return bufgenv1.NewGenerator(
 		logger,
 		storageosProvider,
 		runner,

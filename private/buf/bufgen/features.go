@@ -60,7 +60,7 @@ func checkRequiredFeatures(
 	container app.StderrContainer,
 	required requiredFeatures,
 	responses []*pluginpb.CodeGeneratorResponse,
-	configs []*PluginConfig,
+	plugins []Plugin,
 ) {
 	for responseIndex, response := range responses {
 		if response == nil || response.GetError() != "" {
@@ -81,7 +81,7 @@ func checkRequiredFeatures(
 		if len(failed) > 0 {
 			// TODO: plugin config to turn this into an error
 			_, _ = fmt.Fprintf(container.Stderr(), "Warning: plugin %q does not support required features.\n",
-				configs[responseIndex].PluginName())
+				plugins[responseIndex].PluginName())
 			sort.Slice(failedFeatures, func(i, j int) bool {
 				return failedFeatures[i].Number() < failedFeatures[j].Number()
 			})

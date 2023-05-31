@@ -22,6 +22,20 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
+// TODO: remove this
+func SilenceLinter() {
+	empty := ExternalConfigV2{}
+	_, _ = newManagedConfig(empty.Managed)
+	_ = validateExternalManagedConfigV2(empty.Managed)
+	_, _ = newDisabledFunc(ExternalManagedDisableConfigV2{})
+	_, _ = newOverrideFunc(ExternalManagedOverrideConfigV2{})
+	matchesModule(nil, "")
+	matchesPath(nil, "")
+	mergeDisabledFuncs(nil)
+	mergeOverrideFuncs(nil)
+	mergeFileOptionToOverrideFuncs(nil)
+}
+
 func newManagedConfig(externalConfig ExternalManagedConfigV2) (*ManagedConfig, error) {
 	if externalConfig.IsEmpty() {
 		return nil, nil
@@ -169,7 +183,6 @@ func mergeDisabledFuncs(disabledFuncs []DisabledFunc) DisabledFunc {
 		}
 		return false
 	}
-	return nil
 }
 
 func mergeOverrideFuncs(overrideFuncs []OverrideFunc) OverrideFunc {

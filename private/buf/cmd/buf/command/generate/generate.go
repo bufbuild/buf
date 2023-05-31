@@ -296,12 +296,19 @@ func run(
 	configVersion, err := bufgen.ReadConfigVersion(
 		ctx,
 		logger,
-		bufgen.NewProvider(logger),
+		bufgen.NewConfigDataProvider(logger),
 		readWriteBucket,
 		bufgen.ReadConfigWithOverride(flags.Template),
 	)
-	if configVersion != nil && *configVersion == bufgen.V2Version {
-		return runV2(ctx, container, flags)
+	if err != nil {
+		return err
 	}
-	return runV1(ctx, container, flags)
+	switch configVersion {
+	case bufgen.V1Version, bufgen.V1Beta1Version:
+		return runV1(ctx, container, flags)
+	case bufgen.V2Version:
+		return runV2(ctx, container, flags)
+	default:
+		return fmt.Errorf("invalid version: %s", configVersion)
+	}
 }

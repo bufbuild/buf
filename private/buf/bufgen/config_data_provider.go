@@ -18,7 +18,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
@@ -27,48 +26,20 @@ import (
 	"go.uber.org/zap"
 )
 
-type provider struct {
+type configDataProvider struct {
 	logger *zap.Logger
 	tracer trace.Tracer
 }
 
-func newProvider(logger *zap.Logger) *provider {
-	return &provider{
+func newConfigDataProvider(logger *zap.Logger) *configDataProvider {
+	return &configDataProvider{
 		logger: logger,
 		tracer: otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 }
 
-func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
-	data, id, err := p.GetConfigData(ctx, readBucket)
-	if err != nil {
-		return nil, err
-	}
-	return getConfig(
-		p.logger,
-		encoding.UnmarshalYAMLNonStrict,
-		encoding.UnmarshalYAMLStrict,
-		data,
-		id,
-	)
-}
-
-func (p *provider) GetConfigVersion(ctx context.Context, readBucket storage.ReadBucket) (_ *string, retErr error) {
-	data, id, err := p.GetConfigData(ctx, readBucket)
-	if err != nil {
-		return nil, err
-	}
-	return getConfigVersion(
-		p.logger,
-		encoding.UnmarshalYAMLNonStrict,
-		encoding.UnmarshalYAMLStrict,
-		data,
-		id,
-	)
-}
-
-func (p *provider) GetConfigData(ctx context.Context, readBucket storage.ReadBucket) (_ []byte, _ string, retErr error) {
-	ctx, span := p.tracer.Start(ctx, "get_config")
+func (p *configDataProvider) GetConfigData(ctx context.Context, readBucket storage.ReadBucket) (_ []byte, _ string, retErr error) {
+	ctx, span := p.tracer.Start(ctx, "get_config_data")
 	defer span.End()
 	defer func() {
 		if retErr != nil {

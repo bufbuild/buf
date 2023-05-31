@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -526,13 +526,13 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 }
 
 func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out string) string {
-	externalConfig := bufgen.ExternalConfigV1{
+	externalConfig := bufgenv1.ExternalConfigV1{
 		Version: "v1",
 	}
 	for _, plugin := range plugins {
 		externalConfig.Plugins = append(
 			externalConfig.Plugins,
-			bufgen.ExternalPluginConfigV1{
+			bufgenv1.ExternalPluginConfigV1{
 				Name: plugin.name,
 				Out:  out,
 				Opt:  plugin.opt,

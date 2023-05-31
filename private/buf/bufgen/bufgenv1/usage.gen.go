@@ -12,20 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package generate
+// Generated. DO NOT EDIT.
 
-import (
-	"context"
-	"errors"
+package bufgenv1
 
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-)
-
-func runV2(
-	ctx context.Context,
-	container appflag.Container,
-	flags *flags,
-) (retErr error) {
-	// TODO: implement this
-	return errors.New("v2 unimplemented")
-}
+import _ "github.com/bufbuild/buf/private/usage"
