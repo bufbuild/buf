@@ -25,10 +25,6 @@ const (
 	// PluginsPathName is the path prefix used to signify that
 	// a name belongs to a plugin.
 	PluginsPathName = "plugins"
-
-	// TemplatesPathName is the path prefix used to signify that
-	// a name belongs to a template.
-	TemplatesPathName = "templates"
 )
 
 // ParsePluginPath parses a string in the format <buf.build/owner/plugins/name>
@@ -60,17 +56,4 @@ func ParsePluginVersionPath(pluginVersionPath string) (remote string, owner stri
 	default:
 		return "", "", "", "", fmt.Errorf("invalid version: %q", name)
 	}
-}
-
-// ParseTemplatePath parses a string in the format <buf.build/owner/templates/name>
-// into remote, owner and name.
-func ParseTemplatePath(templatePath string) (remote string, owner string, name string, _ error) {
-	if templatePath == "" {
-		return "", "", "", appcmd.NewInvalidArgumentError("you must specify a template path")
-	}
-	components := strings.Split(templatePath, "/")
-	if len(components) != 4 || components[2] != TemplatesPathName {
-		return "", "", "", appcmd.NewInvalidArgumentErrorf("%s is not a valid template path", templatePath)
-	}
-	return components[0], components[1], components[3], nil
 }
