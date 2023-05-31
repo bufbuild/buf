@@ -94,6 +94,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
+	// TODO: before we take this to beta, and as part of mult-module support, re-evaluate the UX of this flag
 	flagSet.StringArrayVar(
 		&f.Modules,
 		moduleFlagName,
