@@ -178,6 +178,9 @@ postgenerate::
 .PHONY: licensegenerate
 licensegenerate::
 
+.PHONY: format
+format::
+
 .PHONY: generate
 generate: ## Run all generation steps.
 	@$(MAKE) preinstallgenerate
@@ -186,6 +189,7 @@ generate: ## Run all generation steps.
 	@$(MAKE) postprepostgenerate
 	@$(MAKE) postgenerate
 	@$(MAKE) licensegenerate
+	@$(MAKE) format
 
 .PHONY: checknodiffgenerated
 checknodiffgenerated:
