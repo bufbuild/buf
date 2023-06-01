@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/repo/reposync"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/workspace/workspacepush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
@@ -227,6 +228,16 @@ func NewRootCommand(name string) *appcmd.Command {
 									tokendelete.NewCommand("delete", builder),
 								},
 							},
+						},
+					},
+					{
+						Use:   "repo",
+						Short: "Manage Git repositories",
+						SubCommands: []*appcmd.Command{
+							// No timeout for the sync command as it may run for a while
+							// that first time, and then again depending on how often it
+							// is invoked.
+							reposync.NewCommand("sync", noTimeoutBuilder),
 						},
 					},
 					{
