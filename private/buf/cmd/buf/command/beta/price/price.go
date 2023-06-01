@@ -33,18 +33,18 @@ import (
 const (
 	disableSymlinksFlagName       = "disable-symlinks"
 	teamsDollarsPerType           = float64(0.50)
-	proDollarsPerType             = float64(1)
+	proDollarsPerType             = float64(1.50)
 	teamsDollarsPerTypeDiscounted = float64(0.40)
-	proDollarsPerTypeDiscounted   = float64(0.80)
+	proDollarsPerTypeDiscounted   = float64(1.20)
 	tmplCopy                      = `Current BSR pricing:
 
   - Teams: $0.50 per type
-  - Pro: $1.00 per type
+  - Pro: $1.50 per type
 
 If you sign up before October 15, 2023, we will give you a 20% discount for the first year:
 
   - Teams: $0.40 per type for the first year
-  - Pro: $0.80 per type for the first year
+  - Pro: $1.20 per type for the first year
 
 Pricing data last updated on April 4, 2023.
 
