@@ -16,6 +16,7 @@ package bufsync
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 type syncableModule struct {
@@ -34,9 +35,13 @@ func (s *syncableModule) IdentityOverride() bufmoduleref.ModuleIdentity {
 func newSyncableModule(
 	dir string,
 	identityOverride bufmoduleref.ModuleIdentity,
-) Module {
-	return &syncableModule{
-		dir:              dir,
-		identityOverride: identityOverride,
+) (Module, error) {
+	normalized, err := normalpath.NormalizeAndValidate(dir)
+	if err != nil {
+		return nil, err
 	}
+	return &syncableModule{
+		dir:              normalized,
+		identityOverride: identityOverride,
+	}, nil
 }
