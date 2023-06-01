@@ -24,14 +24,6 @@ type syncableModule struct {
 	identityOverride bufmoduleref.ModuleIdentity
 }
 
-func (s *syncableModule) Dir() string {
-	return s.dir
-}
-
-func (s *syncableModule) IdentityOverride() bufmoduleref.ModuleIdentity {
-	return s.identityOverride
-}
-
 func newSyncableModule(
 	dir string,
 	identityOverride bufmoduleref.ModuleIdentity,
@@ -44,4 +36,12 @@ func newSyncableModule(
 		dir:              normalized,
 		identityOverride: identityOverride,
 	}, nil
+}
+
+func (s *syncableModule) Dir() string {
+	return s.dir
+}
+
+func (s *syncableModule) IdentityOverride() bufmoduleref.ModuleIdentity {
+	return s.identityOverride
 }
