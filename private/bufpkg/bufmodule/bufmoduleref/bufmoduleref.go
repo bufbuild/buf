@@ -65,6 +65,12 @@ type FileInfo interface {
 	// This will only be set if ModuleIdentity is set. but may not be set
 	// even if ModuleIdentity is set, that is commit is optional information
 	// even if we know what module this file came from.
+	//
+	// You may not have a commit for i.e. a locally-built Module that has a name,
+	// but was pulled from disk and not from the BSR.
+	//
+	// Note that in most cases, all imports that have a ModuleIdentity will have a commit,
+	// but workspaces are a situation where imports have a ModuleIdentity but no commits.
 	Commit() string
 	// WithIsImport returns this FileInfo with the given IsImport value.
 	WithIsImport(isImport bool) FileInfo

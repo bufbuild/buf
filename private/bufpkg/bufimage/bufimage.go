@@ -467,6 +467,24 @@ func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.Fi
 	return protoImageFilesToFileDescriptors(protoImage.File)
 }
 
+// ImageDirectDependencyModuleIdentities returns all ModuleIdentities of files that
+// are imports of the non-imports in the image.
+//
+// Example:
+//
+//		a.proto, module buf.build/foo/a, non-import, imports b.proto, d.proto
+//		b.proto, module buf.build/foo/b, import, imports c.proto
+//		c.proto, module buf.build/foo/c, import
+//	 d.proto, no module, import
+//
+// In this case, the list would contain only buf.build/foo/b, as buf.build/foo/a
+// for a.proto is a non-import, and buf.build/foo/c for c.proto is only imported
+// by an import. d.proto has no module so is not included
+func ImageDirectDependencyModuleIdentities(image Image) ([]bufmoduleref.ModuleIdentity, error) {
+	return nil, nil
+	//var moduleIdentities []bufmoduleref.ModuleIdentity
+}
+
 type newImageForProtoOptions struct {
 	noReparse            bool
 	computeUnusedImports bool
