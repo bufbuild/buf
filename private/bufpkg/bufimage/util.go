@@ -321,8 +321,7 @@ func imageFileToProtoImageFile(imageFile ImageFile) *imagev1.ImageFile {
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
-		imageFile.ModuleIdentity(),
-		imageFile.Commit(),
+		imageFile.ModuleIdentityOptionalCommit(),
 	)
 }
 
@@ -331,19 +330,18 @@ func fileDescriptorProtoToProtoImageFile(
 	isImport bool,
 	isSyntaxUnspecified bool,
 	unusedDependencyIndexes []int32,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	moduleCommit string,
+	moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit,
 ) *imagev1.ImageFile {
 	var protoModuleInfo *imagev1.ModuleInfo
-	if moduleIdentity != nil {
+	if moduleIdentityOptionalCommit != nil {
 		protoModuleInfo = &imagev1.ModuleInfo{
 			Name: &imagev1.ModuleName{
-				Remote:     proto.String(moduleIdentity.Remote()),
-				Owner:      proto.String(moduleIdentity.Owner()),
-				Repository: proto.String(moduleIdentity.Repository()),
+				Remote:     proto.String(moduleIdentityOptionalCommit.Remote()),
+				Owner:      proto.String(moduleIdentityOptionalCommit.Owner()),
+				Repository: proto.String(moduleIdentityOptionalCommit.Repository()),
 			},
 		}
-		if moduleCommit != "" {
+		if moduleCommit := moduleIdentityOptionalCommit.Commit(); moduleCommit != "" {
 			protoModuleInfo.Commit = proto.String(moduleCommit)
 		}
 	}

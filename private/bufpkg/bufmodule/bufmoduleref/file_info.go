@@ -21,11 +21,10 @@ import (
 var _ FileInfo = &fileInfo{}
 
 type fileInfo struct {
-	path           string
-	externalPath   string
-	isImport       bool
-	moduleIdentity ModuleIdentity
-	commit         string
+	path                         string
+	externalPath                 string
+	isImport                     bool
+	moduleIdentityOptionalCommit ModuleIdentityOptionalCommit
 }
 
 func newFileInfo(
@@ -41,12 +40,24 @@ func newFileInfo(
 	if externalPath == "" {
 		externalPath = path
 	}
+	var moduleIdentityOptionalCommit *moduleIdentityOptionalCommit
+	var err error
+	if moduleIdentity != nil {
+		moduleIdentityOptionalCommit, err = newModuleIdentityOptionalCommit(
+			moduleIdentity.Remote(),
+			moduleIdentity.Owner(),
+			moduleIdentity.Repository(),
+			commit,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return newFileInfoNoValidate(
 		path,
 		externalPath,
 		isImport,
-		moduleIdentity,
-		commit,
+		moduleIdentityOptionalCommit,
 	), nil
 }
 
@@ -54,15 +65,13 @@ func newFileInfoNoValidate(
 	path string,
 	externalPath string,
 	isImport bool,
-	moduleIdentity ModuleIdentity,
-	commit string,
+	moduleIdentityOptionalCommit ModuleIdentityOptionalCommit,
 ) *fileInfo {
 	return &fileInfo{
-		path:           path,
-		externalPath:   externalPath,
-		isImport:       isImport,
-		moduleIdentity: moduleIdentity,
-		commit:         commit,
+		path:                         path,
+		externalPath:                 externalPath,
+		isImport:                     isImport,
+		moduleIdentityOptionalCommit: moduleIdentityOptionalCommit,
 	}
 }
 
@@ -78,12 +87,8 @@ func (f *fileInfo) IsImport() bool {
 	return f.isImport
 }
 
-func (f *fileInfo) ModuleIdentity() ModuleIdentity {
-	return f.moduleIdentity
-}
-
-func (f *fileInfo) Commit() string {
-	return f.commit
+func (f *fileInfo) ModuleIdentityOptionalCommit() ModuleIdentityOptionalCommit {
+	return f.moduleIdentityOptionalCommit
 }
 
 func (f *fileInfo) WithIsImport(isImport bool) FileInfo {
@@ -91,8 +96,7 @@ func (f *fileInfo) WithIsImport(isImport bool) FileInfo {
 		f.path,
 		f.externalPath,
 		isImport,
-		f.moduleIdentity,
-		f.commit,
+		f.moduleIdentityOptionalCommit,
 	)
 }
 

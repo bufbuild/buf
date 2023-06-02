@@ -202,6 +202,16 @@ func validateModuleIdentity(moduleIdentity ModuleIdentity) error {
 	return nil
 }
 
+func validateModuleIdentityOptionalCommit(moduleIdentityOptionalCommit ModuleIdentityOptionalCommit) error {
+	if err := validateModuleIdentity(moduleIdentityOptionalCommit); err != nil {
+		return err
+	}
+	if moduleIdentityOptionalCommit.Commit() != "" {
+		return ValidateCommit(moduleIdentityOptionalCommit.Commit())
+	}
+	return nil
+}
+
 func validateRemote(remote string) error {
 	if _, err := netextended.ValidateHostname(remote); err != nil {
 		return fmt.Errorf("invalid remote %q: %w", remote, err)

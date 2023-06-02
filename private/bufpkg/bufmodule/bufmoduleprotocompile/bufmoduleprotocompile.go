@@ -37,10 +37,8 @@ type ParserAccessorHandler interface {
 	ExternalPath(path string) string
 	// IsImport returns true if the path is an import.
 	IsImport(path string) bool
-	// ModuleIdentity returns nil if not available.
-	ModuleIdentity(path string) bufmoduleref.ModuleIdentity
-	// Commit returns empty if not available.
-	Commit(path string) string
+	// ModuleIdentityOptionalCommit returns nil if not available.
+	ModuleIdentityOptionalCommit(path string) bufmoduleref.ModuleIdentityOptionalCommit
 }
 
 // NewParserAccessorHandler returns a new ParserAccessorHandler.

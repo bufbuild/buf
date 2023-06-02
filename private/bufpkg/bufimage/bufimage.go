@@ -227,7 +227,7 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest, opt
 	for i, fileDescriptorProto := range request.GetProtoFile() {
 		// we filter whether something is an import or not in ImageWithOnlyPaths
 		// we cannot determine if the syntax was unset
-		protoImageFiles[i] = fileDescriptorProtoToProtoImageFile(fileDescriptorProto, false, false, nil, nil, "")
+		protoImageFiles[i] = fileDescriptorProtoToProtoImageFile(fileDescriptorProto, false, false, nil, nil)
 	}
 	image, err := NewImageForProto(
 		&imagev1.Image{

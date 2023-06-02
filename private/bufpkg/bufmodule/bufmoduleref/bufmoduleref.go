@@ -54,24 +54,12 @@ type FileInfo interface {
 	ExternalPath() string
 	// IsImport returns true if this file is an import.
 	IsImport() bool
-	// ModuleIdentity is the module that this file came from.
+	// ModuleIdentityOptionalCommit is the module that this file came from, along with an optional commit.
 	//
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
 	// Note that nil checking should work since the backing type is always a pointer.
-	ModuleIdentity() ModuleIdentity
-	// Commit is the commit for the module that this file came from.
-	//
-	// This will only be set if ModuleIdentity is set. but may not be set
-	// even if ModuleIdentity is set, that is commit is optional information
-	// even if we know what module this file came from.
-	//
-	// You may not have a commit for i.e. a locally-built Module that has a name,
-	// but was pulled from disk and not from the BSR.
-	//
-	// Note that in most cases, all imports that have a ModuleIdentity will have a commit,
-	// but workspaces are a situation where imports have a ModuleIdentity but no commits.
-	Commit() string
+	ModuleIdentityOptionalCommit() ModuleIdentityOptionalCommit
 	// WithIsImport returns this FileInfo with the given IsImport value.
 	WithIsImport(isImport bool) FileInfo
 
@@ -173,6 +161,38 @@ func ModuleIdentityForString(path string) (ModuleIdentity, error) {
 		return nil, err
 	}
 	return NewModuleIdentity(remote, owner, repository)
+}
+
+// ModuleIdentityOptionalCommit is a ModuleIdentity with an optional commit.
+//
+// Commit may or may not be set depending on the situation.
+//
+// You may not have a commit for i.e. a locally-built Module that has a name,
+// but was pulled from disk and not from the BSR.
+//
+// Note that in most cases, all imports that have a ModuleIdentity will have a commit,
+// but workspaces are a situation where imports have a ModuleIdentity but no commits.
+type ModuleIdentityOptionalCommit interface {
+	ModuleIdentity
+
+	// Prints remote/owner/repository[:commit].
+	fmt.Stringer
+
+	Commit() string
+
+	isModuleIdentityOptionalCommit()
+}
+
+// NewModuleIdentityOptionalCommit returns a new validated ModuleIdentityOptionalCommit.
+//
+// commit is optional.
+func NewModuleIdentityOptionalCommit(
+	remote string,
+	owner string,
+	repository string,
+	commit string,
+) (ModuleIdentityOptionalCommit, error) {
+	return newModuleIdentityOptionalCommit(remote, owner, repository, commit)
 }
 
 // ModuleReference is a module reference.
