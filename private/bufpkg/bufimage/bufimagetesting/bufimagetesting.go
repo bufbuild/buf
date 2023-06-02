@@ -98,6 +98,10 @@ func AssertImageFilesEqual(t testing.TB, expected []bufimage.ImageFile, actual [
 func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufimage.ImageFile {
 	normalizedImageFiles := make([]bufimage.ImageFile, len(imageFiles))
 	for i, imageFile := range imageFiles {
+		var commit string
+		if imageFile.ModuleIdentityOptionalCommit() != nil {
+			commit = imageFile.ModuleIdentityOptionalCommit().Commit()
+		}
 		normalizedImageFiles[i] = NewImageFile(
 			t,
 			NewProtoImageFile(
@@ -105,8 +109,8 @@ func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufima
 				imageFile.FileDescriptor().GetName(),
 				imageFile.FileDescriptor().GetDependency()...,
 			),
-			imageFile.ModuleIdentity(),
-			imageFile.Commit(),
+			imageFile.ModuleIdentityOptionalCommit(),
+			commit,
 			imageFile.ExternalPath(),
 			imageFile.IsImport(),
 			imageFile.IsSyntaxUnspecified(),

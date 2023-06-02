@@ -59,7 +59,7 @@ func goPackage(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
 				importPathPrefix := defaultImportPathPrefix
-				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+				if moduleIdentity := imageFile.ModuleIdentityOptionalCommit(); moduleIdentity != nil {
 					moduleIdentityString := moduleIdentity.IdentityString()
 					if modulePrefixOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
 						importPathPrefix = modulePrefixOverride
@@ -128,7 +128,7 @@ func shouldSkipGoPackageForFile(
 		// to include it.
 		return true
 	}
-	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+	if moduleIdentity := imageFile.ModuleIdentityOptionalCommit(); moduleIdentity != nil {
 		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
 			return true
 		}

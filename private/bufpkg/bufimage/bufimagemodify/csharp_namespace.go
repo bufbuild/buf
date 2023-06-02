@@ -56,7 +56,7 @@ func csharpNamespace(
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				csharpNamespaceValue := csharpNamespaceValue(imageFile)
-				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+				if moduleIdentity := imageFile.ModuleIdentityOptionalCommit(); moduleIdentity != nil {
 					moduleIdentityString := moduleIdentity.IdentityString()
 					if moduleNamespaceOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
 						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
@@ -127,7 +127,7 @@ func shouldSkipCsharpNamespaceForFile(
 		return true
 	}
 
-	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+	if moduleIdentity := imageFile.ModuleIdentityOptionalCommit(); moduleIdentity != nil {
 		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
 			return true
 		}

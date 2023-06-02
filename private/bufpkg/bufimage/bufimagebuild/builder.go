@@ -169,8 +169,8 @@ func (b *builder) warnInvalidImports(
 				return fmt.Errorf("workspace module target file infos: %w", err)
 			}
 			for _, file := range targetFiles {
-				if file.ModuleIdentity() != nil {
-					workspaceIdentities[file.ModuleIdentity().IdentityString()] = struct{}{}
+				if file.ModuleIdentityOptionalCommit() != nil {
+					workspaceIdentities[file.ModuleIdentityOptionalCommit().IdentityString()] = struct{}{}
 					break
 				}
 			}
@@ -191,8 +191,8 @@ func (b *builder) warnInvalidImports(
 	for _, file := range builtImage.Files() {
 		{ // populate allImgFiles
 			modIdentity := "local"
-			if file.ModuleIdentity() != nil {
-				modIdentity = file.ModuleIdentity().IdentityString()
+			if file.ModuleIdentityOptionalCommit() != nil {
+				modIdentity = file.ModuleIdentityOptionalCommit().IdentityString()
 			}
 			if _, ok := allImgFiles[modIdentity]; !ok {
 				allImgFiles[modIdentity] = make(map[string][]string)
@@ -203,13 +203,13 @@ func (b *builder) warnInvalidImports(
 			targetFiles[file.Path()] = struct{}{}
 			continue
 		}
-		if file.ModuleIdentity() == nil {
+		if file.ModuleIdentityOptionalCommit() == nil {
 			workspaceFilesToModule[file.Path()] = "" // local workspace unnamed module
 			continue
 		}
 		// file is import and comes from a named module. It's either a direct dep, a workspace module,
 		// or a transitive dep.
-		modIdentity := file.ModuleIdentity().IdentityString()
+		modIdentity := file.ModuleIdentityOptionalCommit().IdentityString()
 		if _, ok := directDepsIdentities[modIdentity]; ok {
 			directDepsFilesToModule[file.Path()] = modIdentity
 		} else if _, ok := workspaceIdentities[modIdentity]; ok {
@@ -541,10 +541,15 @@ func getImageFilesRec(
 	}
 	_, isNotImport := nonImportFilenames[path]
 	_, syntaxUnspecified := syntaxUnspecifiedFilenames[path]
+	moduleIdentityOptionalCommit := parserAccessorHandler.ModuleIdentityOptionalCommit(path)
+	var commit string
+	if moduleIdentityOptionalCommit != nil {
+		commit = moduleIdentityOptionalCommit.Commit()
+	}
 	imageFile, err := bufimage.NewImageFile(
 		fileDescriptorProto,
-		parserAccessorHandler.ModuleIdentity(path),
-		parserAccessorHandler.Commit(path),
+		moduleIdentityOptionalCommit,
+		commit,
 		// if empty, defaults to path
 		parserAccessorHandler.ExternalPath(path),
 		!isNotImport,
