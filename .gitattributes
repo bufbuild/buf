@@ -8,4 +8,4 @@
 
 **/corpus/** linguist-generated=true
 **/privateusage.gen.go linguist-generated=true
-private/gen/** linguist-generated=true
+/private/gen/** linguist-generated=true
