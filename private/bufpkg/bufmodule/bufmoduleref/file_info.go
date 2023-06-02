@@ -40,10 +40,8 @@ func newFileInfo(
 	if externalPath == "" {
 		externalPath = path
 	}
-	var moduleIdentityOptionalCommit *moduleIdentityOptionalCommit
-	var err error
 	if moduleIdentity != nil {
-		moduleIdentityOptionalCommit, err = newModuleIdentityOptionalCommit(
+		moduleIdentityOptionalCommit, err := NewModuleIdentityOptionalCommit(
 			moduleIdentity.Remote(),
 			moduleIdentity.Owner(),
 			moduleIdentity.Repository(),
@@ -52,12 +50,19 @@ func newFileInfo(
 		if err != nil {
 			return nil, err
 		}
+		return newFileInfoNoValidate(
+			path,
+			externalPath,
+			isImport,
+			moduleIdentityOptionalCommit,
+		), nil
 	}
+	// NEED TO DO EXPLICIT NIL, OTHERWISE WE GET THE NIL INTERFACE ISSUE
 	return newFileInfoNoValidate(
 		path,
 		externalPath,
 		isImport,
-		moduleIdentityOptionalCommit,
+		nil,
 	), nil
 }
 
