@@ -196,7 +196,7 @@ type FileInfo interface {
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto
 	ExternalPath() string
-	// ModuleIdentityOptional is the module that this file came from.
+	// ModuleIdentityOptionalCommit is the module that this file came from.
 	//
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
