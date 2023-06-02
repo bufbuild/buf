@@ -33,7 +33,6 @@ type parserAccessorHandler struct {
 	pathToExternalPath                 map[string]string
 	nonImportPaths                     map[string]struct{}
 	pathToModuleIdentityOptionalCommit map[string]bufmoduleref.ModuleIdentityOptionalCommit
-	pathToCommit                       map[string]string
 	lock                               sync.RWMutex
 }
 
@@ -47,7 +46,6 @@ func newParserAccessorHandler(
 		pathToExternalPath:                 make(map[string]string),
 		nonImportPaths:                     make(map[string]struct{}),
 		pathToModuleIdentityOptionalCommit: make(map[string]bufmoduleref.ModuleIdentityOptionalCommit),
-		pathToCommit:                       make(map[string]string),
 	}
 }
 
@@ -109,12 +107,6 @@ func (p *parserAccessorHandler) ModuleIdentityOptionalCommit(path string) bufmod
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 	return p.pathToModuleIdentityOptionalCommit[path] // nil is a valid value.
-}
-
-func (p *parserAccessorHandler) Commit(path string) string {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-	return p.pathToCommit[path] // empty is a valid value.
 }
 
 func (p *parserAccessorHandler) addPath(
