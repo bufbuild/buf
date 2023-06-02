@@ -57,14 +57,22 @@ func WithExcludeSourceCodeInfo() BuildOption {
 	}
 }
 
-// WithDirectDependencies sets direct module dependencies, so transitive imports can be warned.
-func WithDirectDependencies(directDependencies []bufmoduleref.ModuleReference) BuildOption {
+// WithExpectedDirectDependencies sets the module dependencies that are expected, usually because
+// they are in a configuration file (buf.yaml). If the build detects that there are direct dependencies
+// outside of this list, a warning will be printed.
+func WithExpectedDirectDependencies(expectedDirectDependencies []bufmoduleref.ModuleReference) BuildOption {
 	return func(buildOptions *buildOptions) {
-		buildOptions.directDependencies = directDependencies
+		buildOptions.expectedDirectDependencies = expectedDirectDependencies
 	}
 }
 
 // WithLocalWorkspace sets a local workspace, so imports from it are not warned.
+//
+// TODO: this can probably be dealt with by finding out if a ModuleIdentityOptionalCommit has a commit
+// or not, although that is hacky, that's an implementation detail in practice, but perhaps
+// we could justify it - transitive dependencies without commits don't make sense?
+//
+// TODO: shouldn't buf.yamls in workspaces have deps properly declared in them anyways? Why not warn?
 func WithLocalWorkspace(workspace bufmodule.Workspace) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.workspace = workspace
