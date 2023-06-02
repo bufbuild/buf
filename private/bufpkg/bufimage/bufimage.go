@@ -467,22 +467,40 @@ func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.Fi
 	return protoImageFilesToFileDescriptors(protoImage.File)
 }
 
-// ImageDirectDependencyModuleIdentities returns all ModuleIdentities of files that
-// are imports of the non-imports in the image.
+// ImageDirectDependencyModuleIdentityOptionalCommits returns all ModuleIdentityOptionalCommits
+// of files that are imports of the non-imports in the image.
 //
 // Example:
 //
 //		a.proto, module buf.build/foo/a, non-import, imports b.proto, d.proto
 //		b.proto, module buf.build/foo/b, import, imports c.proto
 //		c.proto, module buf.build/foo/c, import
-//	 d.proto, no module, import
+//	    d.proto, no module, import
 //
 // In this case, the list would contain only buf.build/foo/b, as buf.build/foo/a
 // for a.proto is a non-import, and buf.build/foo/c for c.proto is only imported
 // by an import. d.proto has no module so is not included
-func ImageDirectDependencyModuleIdentities(image Image) ([]bufmoduleref.ModuleIdentity, error) {
-	return nil, nil
-	//var moduleIdentities []bufmoduleref.ModuleIdentity
+func ImageDirectDependencyModuleIdentityOptionalCommits(image Image) []bufmoduleref.ModuleIdentityOptionalCommit {
+	importsOfNonImports := make(map[string]struct{})
+	for _, imageFile := range image.Files() {
+		if !imageFile.IsImport() {
+			for _, dependency := range imageFile.FileDescriptor().GetDependency() {
+				importsOfNonImports[dependency] = struct{}{}
+			}
+		}
+	}
+	var moduleIdentityOptionalCommits []bufmoduleref.ModuleIdentityOptionalCommit
+	for _, imageFile := range image.Files() {
+		if _, ok := importsOfNonImports[imageFile.Path()]; ok {
+			if moduleIdentityOptionalCommit := imageFile.ModuleIdentityOptionalCommit(); moduleIdentityOptionalCommit != nil {
+				moduleIdentityOptionalCommits = append(
+					moduleIdentityOptionalCommits,
+					moduleIdentityOptionalCommit,
+				)
+			}
+		}
+	}
+	return moduleIdentityOptionalCommits
 }
 
 type newImageForProtoOptions struct {
