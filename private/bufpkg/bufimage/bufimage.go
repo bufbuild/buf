@@ -479,7 +479,7 @@ func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.Fi
 //
 // In this case, the list would contain only buf.build/foo/b, as buf.build/foo/a
 // for a.proto is a non-import, and buf.build/foo/c for c.proto is only imported
-// by an import. d.proto has no module so is not included
+// by an import. d.proto has no module so is not included.
 func ImageDirectDependencyModuleIdentityOptionalCommits(image Image) []bufmoduleref.ModuleIdentityOptionalCommit {
 	importsOfNonImports := make(map[string]struct{})
 	for _, imageFile := range image.Files() {
