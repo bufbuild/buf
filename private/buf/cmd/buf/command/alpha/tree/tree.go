@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -98,6 +99,29 @@ func run(
 	if err != nil {
 		return err
 	}
-	_ = input
+	image, err := bufcli.NewImageForSource(
+		ctx,
+		container,
+		input,
+		flags.ErrorFormat,
+		flags.DisableSymlinks,
+		flags.Config,
+		nil,
+		nil,
+		false,
+		true,
+	)
+	if err != nil {
+		return err
+	}
+	for _, imageModuleDependency := range bufimage.ImageModuleDependencies(image) {
+		indirectString := ""
+		if !imageModuleDependency.IsDirect() {
+			indirectString = " (indirect)"
+		}
+		if _, err := fmt.Fprintf(container.Stdout(), "%s%s\n", imageModuleDependency.String(), indirectString); err != nil {
+			return err
+		}
+	}
 	return nil
 }
