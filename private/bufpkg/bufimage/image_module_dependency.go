@@ -42,7 +42,7 @@ func (i *imageModuleDependency) IsDirect() bool {
 
 func (i *imageModuleDependency) String() string {
 	s := i.ModuleIdentityOptionalCommit.String()
-	if i.isDirect {
+	if !i.isDirect {
 		return s + " (indirect)"
 	}
 	return s
