@@ -442,6 +442,20 @@ func ValidateModulePinsConsistentDigests(
 	return changedErrors
 }
 
+// ModuleIdentityOptionalCommitEqual returns true if a equals b.
+func ModuleIdentityOptionalCommitEqual(a ModuleIdentityOptionalCommit, b ModuleIdentityOptionalCommit) bool {
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if a == nil {
+		return true
+	}
+	return a.Remote() == b.Remote() &&
+		a.Owner() == b.Owner() &&
+		a.Repository() == b.Repository() &&
+		a.Commit() == b.Commit()
+}
+
 // ModuleReferenceEqual returns true if a equals b.
 func ModuleReferenceEqual(a ModuleReference, b ModuleReference) bool {
 	if (a == nil) != (b == nil) {
@@ -560,6 +574,13 @@ func SortFileInfosByExternalPath(fileInfos []FileInfo) {
 			return fileInfos[i].ExternalPath() < fileInfos[j].ExternalPath()
 		},
 	)
+}
+
+// SortModuleIdentityOptionalCommits sorts the ModuleIdentityOptionalCommits.
+func SortModuleIdentityOptionalCommits(moduleIdentityOptionalCommits []ModuleIdentityOptionalCommit) {
+	sort.Slice(moduleIdentityOptionalCommits, func(i, j int) bool {
+		return moduleIdentityOptionalCommitLess(moduleIdentityOptionalCommits[i], moduleIdentityOptionalCommits[j])
+	})
 }
 
 // SortModuleReferences sorts the ModuleReferences lexicographically by their identity.
