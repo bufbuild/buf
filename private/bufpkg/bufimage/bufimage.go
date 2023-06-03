@@ -516,7 +516,9 @@ type ImageModuleDependency interface {
 
 // ImageModuleDependency returns all ImageModuleDependencies for the Image.
 //
-// Returns error if the Image contains
+// Does not return any ImageModuleDependencies for non-imports, that is the
+// ModuleIdentityOptionalCommits represented by non-imports are not represented
+// in this list.
 func ImageModuleDependencies(image Image) []ImageModuleDependency {
 	importsOfNonImports := make(map[string]struct{})
 	for _, imageFile := range image.Files() {
@@ -531,12 +533,14 @@ func ImageModuleDependencies(image Image) []ImageModuleDependency {
 	// unique dependencies.
 	stringToImageModuleDependency := make(map[string]ImageModuleDependency)
 	for _, imageFile := range image.Files() {
-		if moduleIdentityOptionalCommit := imageFile.ModuleIdentityOptionalCommit(); moduleIdentityOptionalCommit != nil {
-			_, isDirect := importsOfNonImports[imageFile.Path()]
-			stringToImageModuleDependency[moduleIdentityOptionalCommit.String()] = newImageModuleDependency(
-				moduleIdentityOptionalCommit,
-				isDirect,
-			)
+		if imageFile.IsImport() {
+			if moduleIdentityOptionalCommit := imageFile.ModuleIdentityOptionalCommit(); moduleIdentityOptionalCommit != nil {
+				_, isDirect := importsOfNonImports[imageFile.Path()]
+				stringToImageModuleDependency[moduleIdentityOptionalCommit.String()] = newImageModuleDependency(
+					moduleIdentityOptionalCommit,
+					isDirect,
+				)
+			}
 		}
 	}
 	imageModuleDependencies := make([]ImageModuleDependency, 0, len(stringToImageModuleDependency))
