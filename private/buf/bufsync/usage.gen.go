@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package plugincreate
+package bufsync
 
 import _ "github.com/bufbuild/buf/private/usage"

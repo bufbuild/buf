@@ -95,11 +95,6 @@ func NewErrorInterceptor() appflag.Interceptor {
 	}
 }
 
-// NewModuleRefError is used when the client fails to parse a module ref.
-func NewModuleRefError(moduleRef string) error {
-	return fmt.Errorf("could not parse %q as a module; please verify this is a valid reference", moduleRef)
-}
-
 // NewTooManyEmptyAnswersError is used when the user does not answer a prompt in
 // the given number of attempts.
 func NewTooManyEmptyAnswersError(attempts int) error {
@@ -150,18 +145,6 @@ func NewTokenNotFoundError(tokenID string) error {
 
 func NewUnimplementedRemoteError(err error, remote string, moduleIdentity string) error {
 	return fmt.Errorf("%w. Are you sure %q (derived from module name %q) is a Buf Schema Registry?", err, remote, moduleIdentity)
-}
-
-// NewPluginNotFoundError informs the user that a plugin with
-// that owner and name does not exist.
-func NewPluginNotFoundError(owner string, name string) error {
-	return fmt.Errorf("the plugin %s/%s does not exist", owner, name)
-}
-
-// NewTemplateNotFoundError informs the user that a template with
-// that owner and name does not exist.
-func NewTemplateNotFoundError(owner string, name string) error {
-	return fmt.Errorf("the template %s/%s does not exist", owner, name)
 }
 
 // wrapError is used when a CLI command fails, regardless of its error code.
