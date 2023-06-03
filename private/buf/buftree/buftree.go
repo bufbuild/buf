@@ -13,3 +13,23 @@
 // limitations under the License.
 
 package buftree
+
+import (
+	"context"
+
+	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufwire"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/dag"
+)
+
+// DependencyGraph builds the dependency graph.
+func DependencyGraph(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	imageConfigReader bufwire.ImageConfigReader,
+	sourceOrModuleRef buffetch.SourceOrModuleRef,
+	configOverride string,
+) (*dag.Graph[string], error) {
+	return nil, nil
+}
