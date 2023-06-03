@@ -68,6 +68,50 @@ func parseModuleIdentityComponents(path string) (remote string, owner string, re
 	return remote, owner, repository, nil
 }
 
+func moduleIdentityOptionalCommitLess(a ModuleIdentityOptionalCommit, b ModuleIdentityOptionalCommit) bool {
+	return moduleIdentityOptionalCommitCompareTo(a, b) < 0
+}
+
+// return -1 if less
+// return 1 if greater
+// return 0 if equal
+func moduleIdentityOptionalCommitCompareTo(a ModuleIdentityOptionalCommit, b ModuleIdentityOptionalCommit) int {
+	if a == nil && b == nil {
+		return 0
+	}
+	if a == nil && b != nil {
+		return -1
+	}
+	if a != nil && b == nil {
+		return 1
+	}
+	if a.Remote() < b.Remote() {
+		return -1
+	}
+	if a.Remote() > b.Remote() {
+		return 1
+	}
+	if a.Owner() < b.Owner() {
+		return -1
+	}
+	if a.Owner() > b.Owner() {
+		return 1
+	}
+	if a.Repository() < b.Repository() {
+		return -1
+	}
+	if a.Repository() > b.Repository() {
+		return 1
+	}
+	if a.Commit() < b.Commit() {
+		return -1
+	}
+	if a.Commit() > b.Commit() {
+		return 1
+	}
+	return 0
+}
+
 func modulePinLess(a ModulePin, b ModulePin) bool {
 	return modulePinCompareTo(a, b) < 0
 }

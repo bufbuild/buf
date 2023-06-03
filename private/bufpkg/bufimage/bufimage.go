@@ -87,6 +87,9 @@ type Image interface {
 	//
 	// This contains all files, including imports if available.
 	// The returned files are in correct DAG order.
+	//
+	// All files that have the same ModuleIdentity will also have the same commit, or no commit.
+	// This is enforced at construction time.
 	Files() []ImageFile
 	// GetFile gets the file for the root relative file path.
 	//
@@ -467,20 +470,54 @@ func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.Fi
 	return protoImageFilesToFileDescriptors(protoImage.File)
 }
 
-// ImageDirectDependencyModuleIdentityOptionalCommits returns all ModuleIdentityOptionalCommits
-// of files that are imports of the non-imports in the image.
+// ImageDependency is a dependency of an image.
 //
-// Example:
+// This could conceivably be part of ImageFile or bufmoduleref.FileInfo.
+// For ImageFile, this would be a field that is ignored when translated to proto,
+// and is calculated on creation from proto. IsImport would become ImportType.
+// You could go a step further and make this optionally part of the proto definition.
 //
-//		a.proto, module buf.build/foo/a, non-import, imports b.proto, d.proto
-//		b.proto, module buf.build/foo/b, import, imports c.proto
-//		c.proto, module buf.build/foo/c, import
-//	    d.proto, no module, import
+// You could even go down to bufmoduleref.FileInfo if you used the AST, but this
+// could be error prone.
 //
-// In this case, the list would contain only buf.build/foo/b, as buf.build/foo/a
-// for a.proto is a non-import, and buf.build/foo/c for c.proto is only imported
-// by an import. d.proto has no module so is not included.
-func ImageDirectDependencyModuleIdentityOptionalCommits(image Image) []bufmoduleref.ModuleIdentityOptionalCommit {
+// However, for simplicity now (and to not rewrite the whole codebase), we make
+// this a separate type that is calculated off of an Image after the fact.
+//
+// If this became part of ImageFile or bufmoduleref.FileInfo, you would get
+// all the ImageDependencies from the ImageFiles, and then sort | uniq them
+// to get the ImageDependencies for an Image. This would remove the requirement
+// of this associated type to have a ModuleIdentityOptionalCommit, so in
+// the IsDirect example  below, d.proto would not be "ignored" - it would
+// be an ImageFile like any other, with ImportType DIRECT.
+//
+// Note that if we ever do this, there is validation in newImage that enforces
+// that all ImageFiles with the same ModuleIdentity have the same commit. This
+// validation will likely have to be moved around.
+type ImageModuleDependency interface {
+	bufmoduleref.ModuleIdentityOptionalCommit
+
+	// IsDirect returns true if the dependency is a direct dependency.
+	//
+	// A dependency is direct if it is only an import of non-imports in the image.
+	//
+	// Example:
+	//
+	//		a.proto, module buf.build/foo/a, non-import, imports b.proto
+	//		b.proto, module buf.build/foo/b, import, imports c.proto
+	//		c.proto, module buf.build/foo/c, import
+	//
+	// In this case, the list would contain only buf.build/foo/b, as buf.build/foo/a
+	// for a.proto is a non-import, and buf.build/foo/c for c.proto is only imported
+	// by an import
+	IsDirect() bool
+
+	isImageModuleDependency()
+}
+
+// ImageModuleDependency returns all ImageModuleDependencies for the Image.
+//
+// Returns error if the Image contains
+func ImageModuleDependencies(image Image) []ImageModuleDependency {
 	importsOfNonImports := make(map[string]struct{})
 	for _, imageFile := range image.Files() {
 		if !imageFile.IsImport() {
@@ -489,18 +526,28 @@ func ImageDirectDependencyModuleIdentityOptionalCommits(image Image) []bufmodule
 			}
 		}
 	}
-	var moduleIdentityOptionalCommits []bufmoduleref.ModuleIdentityOptionalCommit
+	// We know that all ModuleIdentityOptionalCommits with the same ModuleIdentity
+	// have the same commit or no commit, so using String() will properly identify
+	// unique dependencies.
+	stringToImageModuleDependency := make(map[string]ImageModuleDependency)
 	for _, imageFile := range image.Files() {
-		if _, ok := importsOfNonImports[imageFile.Path()]; ok {
-			if moduleIdentityOptionalCommit := imageFile.ModuleIdentityOptionalCommit(); moduleIdentityOptionalCommit != nil {
-				moduleIdentityOptionalCommits = append(
-					moduleIdentityOptionalCommits,
-					moduleIdentityOptionalCommit,
-				)
-			}
+		if moduleIdentityOptionalCommit := imageFile.ModuleIdentityOptionalCommit(); moduleIdentityOptionalCommit != nil {
+			_, isDirect := importsOfNonImports[imageFile.Path()]
+			stringToImageModuleDependency[moduleIdentityOptionalCommit.String()] = newImageModuleDependency(
+				moduleIdentityOptionalCommit,
+				isDirect,
+			)
 		}
 	}
-	return moduleIdentityOptionalCommits
+	imageModuleDependencies := make([]ImageModuleDependency, 0, len(stringToImageModuleDependency))
+	for _, imageModuleDependency := range stringToImageModuleDependency {
+		imageModuleDependencies = append(
+			imageModuleDependencies,
+			imageModuleDependency,
+		)
+	}
+	sortImageModuleDependencies(imageModuleDependencies)
+	return imageModuleDependencies
 }
 
 type newImageForProtoOptions struct {

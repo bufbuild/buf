@@ -17,6 +17,7 @@ package bufimage
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
@@ -496,4 +497,60 @@ func isFileToGenerate(
 		alreadyUsedPaths[path] = struct{}{}
 	}
 	return true
+}
+
+func sortImageModuleDependencies(imageModuleDependencies []ImageModuleDependency) {
+	sort.Slice(imageModuleDependencies, func(i, j int) bool {
+		return imageModuleDependencyLess(imageModuleDependencies[i], imageModuleDependencies[j])
+	})
+}
+
+func imageModuleDependencyLess(a ImageModuleDependency, b ImageModuleDependency) bool {
+	return imageModuleDependencyCompareTo(a, b) < 0
+}
+
+// return -1 if less
+// return 1 if greater
+// return 0 if equal
+func imageModuleDependencyCompareTo(a ImageModuleDependency, b ImageModuleDependency) int {
+	if a == nil && b == nil {
+		return 0
+	}
+	if a == nil && b != nil {
+		return -1
+	}
+	if a != nil && b == nil {
+		return 1
+	}
+	if a.Remote() < b.Remote() {
+		return -1
+	}
+	if a.Remote() > b.Remote() {
+		return 1
+	}
+	if a.Owner() < b.Owner() {
+		return -1
+	}
+	if a.Owner() > b.Owner() {
+		return 1
+	}
+	if a.Repository() < b.Repository() {
+		return -1
+	}
+	if a.Repository() > b.Repository() {
+		return 1
+	}
+	if a.Commit() < b.Commit() {
+		return -1
+	}
+	if a.Commit() > b.Commit() {
+		return 1
+	}
+	if a.IsDirect() && !b.IsDirect() {
+		return -1
+	}
+	if !a.IsDirect() && b.IsDirect() {
+		return 1
+	}
+	return 0
 }

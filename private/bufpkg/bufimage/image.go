@@ -17,6 +17,8 @@ package bufimage
 import (
 	"errors"
 	"fmt"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 )
 
 var _ Image = &image{}
@@ -31,12 +33,24 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 		return nil, errors.New("image contains no files")
 	}
 	pathToImageFile := make(map[string]ImageFile, len(files))
+	identityStringToModuleIdentityOptionalCommit := make(map[string]bufmoduleref.ModuleIdentityOptionalCommit)
 	for _, file := range files {
 		path := file.Path()
 		if _, ok := pathToImageFile[path]; ok {
 			return nil, fmt.Errorf("duplicate file: %s", path)
 		}
 		pathToImageFile[path] = file
+		if moduleIdentityOptionalCommit := file.ModuleIdentityOptionalCommit(); moduleIdentityOptionalCommit != nil {
+			identityString := moduleIdentityOptionalCommit.IdentityString()
+			existingModuleIdentityOptionalCommit, ok := identityStringToModuleIdentityOptionalCommit[identityString]
+			if ok {
+				if !bufmoduleref.ModuleIdentityOptionalCommitEqual(moduleIdentityOptionalCommit, existingModuleIdentityOptionalCommit) {
+					return nil, fmt.Errorf("image had two different ModuleIdentityOptionalCommits for the same module: %q and %q", moduleIdentityOptionalCommit.String(), existingModuleIdentityOptionalCommit.String())
+				}
+			} else {
+				identityStringToModuleIdentityOptionalCommit[identityString] = moduleIdentityOptionalCommit
+			}
+		}
 	}
 	if reorder {
 		files = orderImageFiles(files, pathToImageFile)
