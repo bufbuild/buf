@@ -137,6 +137,37 @@ func TestTopoSortCycleError3(t *testing.T) {
 	)
 }
 
+func TestForEachEdge(t *testing.T) {
+	t.Parallel()
+	testForEachEdgeSuccess(
+		t,
+		func(graph *Graph[string]) {
+			// b -> c
+			// a -> c
+			// a -> b
+			// purposefully not the same start key
+			graph.AddEdge("b", "c")
+			graph.AddEdge("a", "c")
+			graph.AddEdge("a", "b")
+		},
+		"a",
+		[]stringEdge{
+			{
+				From: "a",
+				To:   "c",
+			},
+			{
+				From: "a",
+				To:   "b",
+			},
+			{
+				From: "b",
+				To:   "c",
+			},
+		},
+	)
+}
+
 func testTopoSortSuccess(
 	t *testing.T,
 	setupGraph func(*Graph[string]),
@@ -166,4 +197,35 @@ func testTopoSortCycleError(
 		},
 		err,
 	)
+}
+
+func testForEachEdgeSuccess(
+	t *testing.T,
+	setupGraph func(*Graph[string]),
+	start string,
+	expected []stringEdge,
+) {
+	graph := &Graph[string]{}
+	setupGraph(graph)
+	var results []stringEdge
+	err := graph.ForEachEdge(
+		start,
+		func(from string, to string) error {
+			results = append(
+				results,
+				stringEdge{
+					From: from,
+					To:   to,
+				},
+			)
+			return nil
+		},
+	)
+	require.NoError(t, err)
+	require.Equal(t, expected, results)
+}
+
+type stringEdge struct {
+	From string
+	To   string
 }

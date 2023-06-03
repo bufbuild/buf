@@ -53,7 +53,7 @@ func (c *CycleError[Key]) Error() string {
 
 // Graph is a directed acyclic graph structure with comparable keys.
 type Graph[Key comparable] struct {
-	keyToNode map[Key]node[Key]
+	keyToNode map[Key]*node[Key]
 }
 
 // NewGraph returns a new Graph.
@@ -108,11 +108,11 @@ func (g *Graph[Key]) TopoSort(start Key) ([]Key, error) {
 
 func (g *Graph[Key]) init() {
 	if g.keyToNode == nil {
-		g.keyToNode = make(map[Key]node[Key])
+		g.keyToNode = make(map[Key]*node[Key])
 	}
 }
 
-func (g *Graph[Key]) getOrAddNode(key Key) node[Key] {
+func (g *Graph[Key]) getOrAddNode(key Key) *node[Key] {
 	node, ok := g.keyToNode[key]
 	if !ok {
 		node = newNode[Key]()
@@ -130,7 +130,7 @@ func (g *Graph[Key]) edgeVisit(key Key, f func(Key, Key) error, visited *ordered
 	}
 
 	node := g.keyToNode[key]
-	for _, edge := range node.edges() {
+	for _, edge := range node.edges {
 		if err := f(key, edge); err != nil {
 			return err
 		}
@@ -151,7 +151,7 @@ func (g *Graph[Key]) topoVisit(key Key, results *orderedSet[Key], visited *order
 	}
 
 	node := g.keyToNode[key]
-	for _, edge := range node.edges() {
+	for _, edge := range node.edges {
 		if err := g.topoVisit(edge, results, visited.copy()); err != nil {
 			return err
 		}
@@ -161,22 +161,23 @@ func (g *Graph[Key]) topoVisit(key Key, results *orderedSet[Key], visited *order
 	return nil
 }
 
-type node[Key comparable] map[Key]struct{}
-
-func newNode[Key comparable]() node[Key] {
-	return make(node[Key])
+// need to store order for deterministic visits
+type node[Key comparable] struct {
+	edges   []Key
+	edgeMap map[Key]struct{}
 }
 
-func (n node[Key]) addEdge(key Key) {
-	n[key] = struct{}{}
-}
-
-func (n node[Key]) edges() []Key {
-	var keys []Key
-	for key := range n {
-		keys = append(keys, key)
+func newNode[Key comparable]() *node[Key] {
+	return &node[Key]{
+		edgeMap: make(map[Key]struct{}),
 	}
-	return keys
+}
+
+func (n *node[Key]) addEdge(key Key) {
+	if _, ok := n.edgeMap[key]; !ok {
+		n.edgeMap[key] = struct{}{}
+		n.edges = append(n.edges, key)
+	}
 }
 
 type orderedSet[Key comparable] struct {
