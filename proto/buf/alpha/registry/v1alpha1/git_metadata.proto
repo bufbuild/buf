@@ -36,8 +36,8 @@ message GitCommitMetadata {
   GitIdentity author = 2;
   // Commiter is the commiter of the Git commit. This typically a CI system.
   GitIdentity commiter = 3;
-  // Branches are the Git branches to which this Git commit belongs.
-  repeated string branches = 4;
+  // Branch is the Git branch to which this Git commit belongs.
+  string branch = 4;
   // Tags are the Git tags which point to this commit.
   repeated string tags = 5;
 }
