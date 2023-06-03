@@ -86,6 +86,14 @@ func (g *Graph[Key]) ContainsNode(key Key) bool {
 	return ok
 }
 
+// ForEachEdge visits each edge in the Graph starting at the given key.
+//
+// Returns a *CycleError if there is a cycle in the graph.
+func (g *Graph[Key]) ForEachEdge(start Key, f func(Key, Key) error) error {
+	g.init()
+	return g.edgeVisit(start, f, newOrderedSet[Key]())
+}
+
 // TopoSort topologically sorts the nodes in the Graph starting at the given key.
 //
 // Returns a *CycleError if there is a cycle in the graph.
@@ -111,6 +119,27 @@ func (g *Graph[Key]) getOrAddNode(key Key) node[Key] {
 		g.keyToNode[key] = node
 	}
 	return node
+}
+
+func (g *Graph[Key]) edgeVisit(key Key, f func(Key, Key) error, visited *orderedSet[Key]) error {
+	added := visited.add(key)
+	if !added {
+		index := visited.index(key)
+		cycle := append(visited.keys[index:], key)
+		return &CycleError[Key]{Keys: cycle}
+	}
+
+	node := g.keyToNode[key]
+	for _, edge := range node.edges() {
+		if err := f(key, edge); err != nil {
+			return err
+		}
+		if err := g.edgeVisit(edge, f, visited.copy()); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (g *Graph[Key]) topoVisit(key Key, results *orderedSet[Key], visited *orderedSet[Key]) error {
@@ -162,6 +191,7 @@ func newOrderedSet[Key comparable]() *orderedSet[Key] {
 	}
 }
 
+// returns true if already added
 func (s *orderedSet[Key]) add(key Key) bool {
 	_, ok := s.keyToIndex[key]
 	if !ok {
