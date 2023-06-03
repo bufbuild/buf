@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/tree"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/workspace/workspacepush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
@@ -245,6 +246,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted",
 				Hidden: true,
 				SubCommands: []*appcmd.Command{
+					tree.NewCommand("tree", builder),
 					protoc.NewCommand("protoc", builder),
 					{
 						Use:   "registry",
