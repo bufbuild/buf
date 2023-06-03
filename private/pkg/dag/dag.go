@@ -14,6 +14,11 @@
 
 package dag
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Largely adopted from https://github.com/stevenle/topsort, with modifications.
 //
 // Copyright 2013 Steven Le. All rights reserved.
@@ -32,10 +37,19 @@ package dag
 //
 // See https://github.com/stevenle/topsort/blob/master/LICENSE.
 
-import (
-	"fmt"
-	"strings"
-)
+// CycleError is an error if the Graph had a cycle.
+type CycleError[Key comparable] struct {
+	Keys []Key
+}
+
+// Error implements error.
+func (c *CycleError[Key]) Error() string {
+	strs := make([]string, len(c.Keys))
+	for i, key := range c.Keys {
+		strs[i] = fmt.Sprintf("%v", key)
+	}
+	return fmt.Sprintf("cycle error: %s", strings.Join(strs, " -> "))
+}
 
 // Graph is a directed acyclic graph structure with comparable keys.
 type Graph[Key comparable] struct {
@@ -72,14 +86,13 @@ func (g *Graph[Key]) ContainsNode(key Key) bool {
 	return ok
 }
 
-// TopoSort topologically sorts starting at the given key.
+// TopoSort topologically sorts the nodes in the Graph starting at the given key.
 //
-// Returns error if there is a cycle in the graph.
-func (g *Graph[Key]) TopoSort(key Key) ([]Key, error) {
+// Returns a *CycleError if there is a cycle in the graph.
+func (g *Graph[Key]) TopoSort(start Key) ([]Key, error) {
 	g.init()
 	results := newOrderedSet[Key]()
-	err := g.visit(key, results, nil)
-	if err != nil {
+	if err := g.topoVisit(start, results, newOrderedSet[Key]()); err != nil {
 		return nil, err
 	}
 	return results.keys, nil
@@ -100,25 +113,17 @@ func (g *Graph[Key]) getOrAddNode(key Key) node[Key] {
 	return node
 }
 
-func (g *Graph[Key]) visit(key Key, results *orderedSet[Key], visited *orderedSet[Key]) error {
-	if visited == nil {
-		visited = newOrderedSet[Key]()
-	}
-
+func (g *Graph[Key]) topoVisit(key Key, results *orderedSet[Key], visited *orderedSet[Key]) error {
 	added := visited.add(key)
 	if !added {
 		index := visited.index(key)
 		cycle := append(visited.keys[index:], key)
-		strs := make([]string, len(cycle))
-		for i, k := range cycle {
-			strs[i] = fmt.Sprintf("%v", k)
-		}
-		return fmt.Errorf("cycle error: %s", strings.Join(strs, " -> "))
+		return &CycleError[Key]{Keys: cycle}
 	}
 
 	node := g.keyToNode[key]
 	for _, edge := range node.edges() {
-		if err := g.visit(edge, results, visited.copy()); err != nil {
+		if err := g.topoVisit(edge, results, visited.copy()); err != nil {
 			return err
 		}
 	}
