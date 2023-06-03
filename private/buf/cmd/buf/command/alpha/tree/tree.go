@@ -115,11 +115,7 @@ func run(
 		return err
 	}
 	for _, imageModuleDependency := range bufimage.ImageModuleDependencies(image) {
-		indirectString := ""
-		if !imageModuleDependency.IsDirect() {
-			indirectString = " (indirect)"
-		}
-		if _, err := fmt.Fprintf(container.Stdout(), "%s%s\n", imageModuleDependency.String(), indirectString); err != nil {
+		if _, err := fmt.Fprintln(container.Stdout(), imageModuleDependency.String()); err != nil {
 			return err
 		}
 	}
