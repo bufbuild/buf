@@ -228,7 +228,6 @@ func assertModuleIdentity(t *testing.T, module bufmodule.Module, expectedModuleI
 			t, expectedCommit, fileInfo.Commit(),
 			"unexpected commit for file %q", fileInfo.Path(),
 		)
-
 	}
 }
 
