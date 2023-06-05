@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
@@ -151,7 +152,7 @@ type PluginConfig struct {
 	// Optional, exclusive with Remote
 	Path []string
 	// Required
-	Strategy bufgen.Strategy
+	Strategy internal.Strategy
 	// Optional
 	ProtocPath string
 }

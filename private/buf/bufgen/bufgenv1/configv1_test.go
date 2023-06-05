@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -40,7 +41,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Out:      "gen/go",
 				Opt:      "plugins=connect",
 				Path:     []string{"/path/to/foo"},
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 		ManagedConfig: &ManagedConfig{
@@ -68,7 +69,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Out:      "gen/go",
 				Opt:      "plugins=connect,foo=bar",
 				Path:     []string{"/path/to/foo"},
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 	}
@@ -85,7 +86,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Name:     "go",
 				Out:      "gen/go",
 				Path:     []string{"/path/to/foo"},
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 	}
@@ -101,7 +102,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 			{
 				Name:     "go",
 				Out:      "gen/go",
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 	}
@@ -146,7 +147,7 @@ func TestReadConfigV1(t *testing.T) {
 				Out:      "gen/go",
 				Opt:      "plugins=connect",
 				Path:     []string{"/path/to/foo"},
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 		ManagedConfig: &ManagedConfig{
@@ -187,7 +188,7 @@ func TestReadConfigV1(t *testing.T) {
 				Out:      "gen/go",
 				Opt:      "plugins=connect,foo=bar",
 				Path:     []string{"/path/to/foo"},
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 	}
@@ -204,7 +205,7 @@ func TestReadConfigV1(t *testing.T) {
 				Name:     "go",
 				Out:      "gen/go",
 				Path:     []string{"/path/to/foo"},
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 	}
@@ -213,7 +214,7 @@ func TestReadConfigV1(t *testing.T) {
 			{
 				Remote:   "someremote.com/owner/plugins/myplugin:v1.1.0-1",
 				Out:      "gen/go",
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 	}
@@ -222,7 +223,7 @@ func TestReadConfigV1(t *testing.T) {
 			{
 				Remote:   "someremote.com/owner/plugins/myplugin",
 				Out:      "gen/go",
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 	}
@@ -244,7 +245,7 @@ func TestReadConfigV1(t *testing.T) {
 			{
 				Remote:   "someremote.com/owner/plugins/myplugin",
 				Out:      "gen/go",
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 	}
@@ -255,7 +256,7 @@ func TestReadConfigV1(t *testing.T) {
 				Out:      "gen/go",
 				Opt:      "plugins=connect",
 				Path:     []string{"/path/to/foo"},
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 		ManagedConfig: nil,
@@ -322,7 +323,7 @@ func TestReadConfigV1(t *testing.T) {
 			{
 				Remote:   "someremote.com/owner/plugins/myplugin",
 				Out:      "gen/go",
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 	}
@@ -364,7 +365,7 @@ func TestReadConfigV1(t *testing.T) {
 			{
 				Remote:   "someremote.com/owner/plugins/myplugin",
 				Out:      "gen/go",
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 	}
@@ -610,7 +611,7 @@ func TestReadConfigV1(t *testing.T) {
 				Out:      "gen/go",
 				Opt:      "plugins=connect",
 				Path:     []string{"/path/to/foo"},
-				Strategy: bufgen.StrategyAll,
+				Strategy: internal.StrategyAll,
 			},
 		},
 		ManagedConfig: &ManagedConfig{

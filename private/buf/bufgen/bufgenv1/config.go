@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
@@ -89,7 +90,7 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 	}
 	pluginConfigs := make([]*PluginConfig, 0, len(externalConfig.Plugins))
 	for _, plugin := range externalConfig.Plugins {
-		strategy, err := bufgen.ParseStrategy(plugin.Strategy)
+		strategy, err := internal.ParseStrategy(plugin.Strategy)
 		if err != nil {
 			return nil, err
 		}
@@ -114,7 +115,7 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 		}
 		if pluginConfig.IsRemote() {
 			// Always use StrategyAll for remote plugins
-			pluginConfig.Strategy = bufgen.StrategyAll
+			pluginConfig.Strategy = internal.StrategyAll
 		}
 		pluginConfigs = append(pluginConfigs, pluginConfig)
 	}
@@ -526,7 +527,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 	}
 	pluginConfigs := make([]*PluginConfig, 0, len(externalConfig.Plugins))
 	for _, plugin := range externalConfig.Plugins {
-		strategy, err := bufgen.ParseStrategy(plugin.Strategy)
+		strategy, err := internal.ParseStrategy(plugin.Strategy)
 		if err != nil {
 			return nil, err
 		}

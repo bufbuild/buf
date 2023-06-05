@@ -16,8 +16,6 @@ package bufgen
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
@@ -38,44 +36,6 @@ const (
 // file versions that is used to determine the configuration version.
 type ExternalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
-}
-
-const (
-	// StrategyDirectory is the strategy that says to generate per directory.
-	//
-	// This is the default value.
-	StrategyDirectory Strategy = 1
-	// StrategyAll is the strategy that says to generate with all files at once.
-	StrategyAll Strategy = 2
-)
-
-// Strategy is a generation stategy.
-type Strategy int
-
-// ParseStrategy parses the Strategy.
-//
-// If the empty string is provided, this is interpreted as StrategyDirectory.
-func ParseStrategy(s string) (Strategy, error) {
-	switch s {
-	case "", "directory":
-		return StrategyDirectory, nil
-	case "all":
-		return StrategyAll, nil
-	default:
-		return 0, fmt.Errorf("unknown strategy: %s", s)
-	}
-}
-
-// String implements fmt.Stringer.
-func (s Strategy) String() string {
-	switch s {
-	case StrategyDirectory:
-		return "directory"
-	case StrategyAll:
-		return "all"
-	default:
-		return strconv.Itoa(int(s))
-	}
 }
 
 // ConfigDataProvider is a provider for config data.
