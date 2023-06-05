@@ -66,11 +66,6 @@ func ReadConfigWithOverride(override string) ReadConfigOption {
 	}
 }
 
-// ConfigExists checks if a generation configuration file exists.
-func ConfigExists(ctx context.Context, readBucket storage.ReadBucket) (bool, error) {
-	return storage.Exists(ctx, readBucket, ExternalConfigFilePath)
-}
-
 // ReadConfig reads the configuration version from the OS or an override, if any.
 //
 // Only use in CLI tools.
