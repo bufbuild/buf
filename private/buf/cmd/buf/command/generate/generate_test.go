@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
@@ -151,14 +152,15 @@ func TestOutputFlag(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
+	configFile := filepath.Join("testdata", "recognize_v2", "buf.gen.yaml")
 	testRunStdoutStderr(
 		t,
 		nil,
 		1,
 		``,
-		"Failure: v2 unimplemented",
+		fmt.Sprintf(`Failure: %s has no version set. Please add "version: %s"`, configFile, bufgen.V1Version),
 		"--template",
-		filepath.Join("testdata", "recognize_v2", "buf.gen.yaml"),
+		configFile,
 	)
 }
 
