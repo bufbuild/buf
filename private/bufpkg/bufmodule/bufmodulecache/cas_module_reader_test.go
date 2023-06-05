@@ -37,14 +37,7 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-const (
-	remote         = "buf.build"
-	owner          = "test"
-	repo           = "ping"
-	moduleIdentity = remote + "/" + owner + "/" + repo
-	commit         = "00ff00ff00ff00ff00ff00ff00ff00ff"
-
-	pingProto = `syntax = "proto3";
+const pingProto = `syntax = "proto3";
 
 package connect.ping.v1;
 
@@ -62,7 +55,6 @@ service PingService {
   rpc Ping(PingRequest) returns (PingResponse) {}
 }
 `
-)
 
 func TestCASModuleReaderHappyPath(t *testing.T) {
 	t.Parallel()
@@ -79,16 +71,16 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 		return &testRepositoryServiceClient{}
 	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
 	pin, err := bufmoduleref.NewModulePin(
-		remote,
-		owner,
-		repo,
+		"buf.build",
+		"test",
+		"ping",
 		"",
-		commit,
+		"abcd",
 		moduleBlob.Digest().String(),
 		time.Now(),
 	)
 	require.NoError(t, err)
-	_, err = moduleReader.GetModule(context.Background(), pin)
+	_, err = moduleReader.GetModule(context.Background(), pin) // non-cached
 	require.NoError(t, err)
 	assert.Equal(t, 1, moduleReader.stats.Count())
 	assert.Equal(t, 0, moduleReader.stats.Hits())
@@ -96,13 +88,7 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 
 	cachedMod, err := moduleReader.GetModule(context.Background(), pin)
 	require.NoError(t, err)
-	fileInfos, err := cachedMod.SourceFileInfos(context.Background())
-	require.NoError(t, err)
-	for _, fileInfo := range fileInfos {
-		assert.Equalf(t, fileInfo.ModuleIdentity().IdentityString(), moduleIdentity, "unexpected module identity for file %q", fileInfo.Path())
-		assert.Equalf(t, fileInfo.Commit(), commit, "unexpected commit for file %q", fileInfo.Path())
-
-	}
+	assertModuleIdentity(t, cachedMod, pin.IdentityString(), pin.Commit())
 	assert.Equal(t, 2, moduleReader.stats.Count())
 	assert.Equal(t, 1, moduleReader.stats.Hits()) // We should have a cache hit the second time
 	verifyCache(t, storageBucket, pin, moduleManifest, blobs)
@@ -120,11 +106,11 @@ func TestCASModuleReaderNoDigest(t *testing.T) {
 		return &testRepositoryServiceClient{}
 	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
 	pin, err := bufmoduleref.NewModulePin(
-		remote,
-		owner,
-		repo,
+		"buf.build",
+		"test",
+		"ping",
 		"",
-		commit,
+		"abcd",
 		"",
 		time.Now(),
 	)
@@ -148,11 +134,11 @@ func TestCASModuleReaderDigestMismatch(t *testing.T) {
 		return &testRepositoryServiceClient{}
 	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
 	pin, err := bufmoduleref.NewModulePin(
-		remote,
-		owner,
-		repo,
+		"buf.build",
+		"test",
+		"ping",
 		"",
-		commit,
+		"abcd",
 		"shake256:"+strings.Repeat("00", 64), // Digest which doesn't match module's digest
 		time.Now(),
 	)
@@ -201,16 +187,12 @@ func verifyCache(
 
 func createSampleManifestAndBlobs(t *testing.T) (*manifest.Manifest, *manifest.BlobSet) {
 	t.Helper()
-	protoBlob, err := manifest.NewMemoryBlobFromReader(strings.NewReader(pingProto))
+	blobs, err := manifest.NewMemoryBlobFromReader(strings.NewReader(pingProto))
 	require.NoError(t, err)
 	var moduleManifest manifest.Manifest
-	err = moduleManifest.AddEntry("connect/ping/v1/ping.proto", *protoBlob.Digest())
+	err = moduleManifest.AddEntry("connect/ping/v1/ping.proto", *blobs.Digest())
 	require.NoError(t, err)
-	// bufYamlBlob, err := manifest.NewMemoryBlobFromReader(strings.NewReader(bufYaml))
-	// require.NoError(t, err)
-	// err = moduleManifest.AddEntry("buf.yaml", *bufYamlBlob.Digest())
-	// require.NoError(t, err)
-	blobSet, err := manifest.NewBlobSet(context.Background(), []manifest.Blob{protoBlob})
+	blobSet, err := manifest.NewBlobSet(context.Background(), []manifest.Blob{blobs})
 	require.NoError(t, err)
 	return &moduleManifest, blobSet
 }
@@ -229,6 +211,25 @@ func verifyBlobContents(t *testing.T, bucket storage.ReadWriteBucket, basedir st
 	cachedModule, err := io.ReadAll(f)
 	require.NoError(t, err)
 	assert.Equal(t, bb.Bytes(), cachedModule)
+}
+
+func assertModuleIdentity(t *testing.T, module bufmodule.Module, expectedModuleIdentity string, expectedCommit string) {
+	require.NotNil(t, module)
+	require.NotEmpty(t, expectedCommit)
+	fileInfos, err := module.SourceFileInfos(context.Background())
+	require.NoError(t, err)
+	for _, fileInfo := range fileInfos {
+		require.NotNil(t, fileInfo.ModuleIdentity())
+		assert.Equalf(
+			t, expectedModuleIdentity, fileInfo.ModuleIdentity().IdentityString(),
+			"unexpected module identity for file %q", fileInfo.Path(),
+		)
+		assert.Equalf(
+			t, expectedCommit, fileInfo.Commit(),
+			"unexpected commit for file %q", fileInfo.Path(),
+		)
+
+	}
 }
 
 type testModuleReader struct {
