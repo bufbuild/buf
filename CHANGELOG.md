@@ -2,9 +2,11 @@
 
 ## [v1.21.0] - 2023-06-05
 
-- Remove `buf beta registry template` commands.
-- Remove `buf beta registry plugin {create,deprecate,list,undeprecate,version}` commands and replace
-  with `buf beta registry plugin {push,delete}` commands, promoted from `buf alpha plugin`.
+- Fix issue where locally-produced images did not have module information if the corresponding
+  module was stored in the new cache.
+- Remove `buf beta registry template`.
+- Remove `buf beta registry plugin {create,deprecate,list,undeprecate,version}` and replace with
+  `buf beta registry plugin {push,delete}`.
 - Update `buf beta price` with the latest pricing information.
 
 ## [v1.20.0] - 2023-05-30
