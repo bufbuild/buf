@@ -37,7 +37,14 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-const pingProto = `syntax = "proto3";
+const (
+	remote         = "buf.build"
+	owner          = "test"
+	repo           = "ping"
+	moduleIdentity = remote + "/" + owner + "/" + repo
+	commit         = "00ff00ff00ff00ff00ff00ff00ff00ff"
+
+	pingProto = `syntax = "proto3";
 
 package connect.ping.v1;
 
@@ -55,6 +62,7 @@ service PingService {
   rpc Ping(PingRequest) returns (PingResponse) {}
 }
 `
+)
 
 func TestCASModuleReaderHappyPath(t *testing.T) {
 	t.Parallel()
@@ -71,11 +79,11 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 		return &testRepositoryServiceClient{}
 	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
 	pin, err := bufmoduleref.NewModulePin(
-		"buf.build",
-		"test",
-		"ping",
+		remote,
+		owner,
+		repo,
 		"",
-		"abcd",
+		commit,
 		moduleBlob.Digest().String(),
 		time.Now(),
 	)
@@ -86,8 +94,15 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 	assert.Equal(t, 0, moduleReader.stats.Hits())
 	verifyCache(t, storageBucket, pin, moduleManifest, blobs)
 
-	_, err = moduleReader.GetModule(context.Background(), pin)
+	cachedMod, err := moduleReader.GetModule(context.Background(), pin)
 	require.NoError(t, err)
+	fileInfos, err := cachedMod.SourceFileInfos(context.Background())
+	require.NoError(t, err)
+	for _, fileInfo := range fileInfos {
+		assert.Equalf(t, fileInfo.ModuleIdentity().IdentityString(), moduleIdentity, "unexpected module identity for file %q", fileInfo.Path())
+		assert.Equalf(t, fileInfo.Commit(), commit, "unexpected commit for file %q", fileInfo.Path())
+
+	}
 	assert.Equal(t, 2, moduleReader.stats.Count())
 	assert.Equal(t, 1, moduleReader.stats.Hits()) // We should have a cache hit the second time
 	verifyCache(t, storageBucket, pin, moduleManifest, blobs)
@@ -105,11 +120,11 @@ func TestCASModuleReaderNoDigest(t *testing.T) {
 		return &testRepositoryServiceClient{}
 	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
 	pin, err := bufmoduleref.NewModulePin(
-		"buf.build",
-		"test",
-		"ping",
+		remote,
+		owner,
+		repo,
 		"",
-		"abcd",
+		commit,
 		"",
 		time.Now(),
 	)
@@ -133,11 +148,11 @@ func TestCASModuleReaderDigestMismatch(t *testing.T) {
 		return &testRepositoryServiceClient{}
 	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
 	pin, err := bufmoduleref.NewModulePin(
-		"buf.build",
-		"test",
-		"ping",
+		remote,
+		owner,
+		repo,
 		"",
-		"abcd",
+		commit,
 		"shake256:"+strings.Repeat("00", 64), // Digest which doesn't match module's digest
 		time.Now(),
 	)
@@ -186,12 +201,16 @@ func verifyCache(
 
 func createSampleManifestAndBlobs(t *testing.T) (*manifest.Manifest, *manifest.BlobSet) {
 	t.Helper()
-	blob, err := manifest.NewMemoryBlobFromReader(strings.NewReader(pingProto))
+	protoBlob, err := manifest.NewMemoryBlobFromReader(strings.NewReader(pingProto))
 	require.NoError(t, err)
 	var moduleManifest manifest.Manifest
-	err = moduleManifest.AddEntry("connect/ping/v1/ping.proto", *blob.Digest())
+	err = moduleManifest.AddEntry("connect/ping/v1/ping.proto", *protoBlob.Digest())
 	require.NoError(t, err)
-	blobSet, err := manifest.NewBlobSet(context.Background(), []manifest.Blob{blob})
+	// bufYamlBlob, err := manifest.NewMemoryBlobFromReader(strings.NewReader(bufYaml))
+	// require.NoError(t, err)
+	// err = moduleManifest.AddEntry("buf.yaml", *bufYamlBlob.Digest())
+	// require.NoError(t, err)
+	blobSet, err := manifest.NewBlobSet(context.Background(), []manifest.Blob{protoBlob})
 	require.NoError(t, err)
 	return &moduleManifest, blobSet
 }
