@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.21.0] - 2023-06-05
 
 - Remove `buf beta registry template` commands.
 - Remove `buf beta registry plugin {create,deprecate,list,undeprecate,version}` commands and replace
@@ -892,7 +892,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.20.0...HEAD
+[v1.21.0]: https://github.com/bufbuild/buf/compare/v1.20.0...v1.21.0
 [v1.20.0]: https://github.com/bufbuild/buf/compare/v1.19.0...v1.20.0
 [v1.19.0]: https://github.com/bufbuild/buf/compare/v1.18.0...v1.19.0
 [v1.18.0]: https://github.com/bufbuild/buf/compare/v1.17.0...v1.18.0
