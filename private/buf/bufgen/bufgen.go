@@ -34,6 +34,8 @@ const (
 
 // ExternalConfigVersion defines the subset of all config
 // file versions that is used to determine the configuration version.
+// TODO: investigate if this can be hidden in internal and if v1beta1_migrator
+// can call ReadConfigVersion.
 type ExternalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }
