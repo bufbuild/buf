@@ -38,7 +38,7 @@ func ApplyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
 	return markSweeper.Sweep()
 }
 
-// DisableFunc decides whether a file option shoudl be disabled for a file.
+// DisableFunc decides whether a file option should be disabled for a file.
 type DisabledFunc func(FileOption, bufimage.ImageFile) bool
 
 // TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
