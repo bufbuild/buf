@@ -78,14 +78,14 @@ func (s Strategy) String() string {
 	}
 }
 
-// Provider is a provider.
+// ConfigDataProvider is a provider for config data.
 type ConfigDataProvider interface {
 	// GetConfigData gets the Config's data in bytes at ExternalConfigFilePath,
 	// as well as the id of the file, in the form of `File "<path>"`.
 	GetConfigData(context.Context, storage.ReadBucket) ([]byte, string, error)
 }
 
-// NewProvider returns a new Provider.
+// New ConfigDataProvider returns a new ConfigDataProvider.
 func NewConfigDataProvider(logger *zap.Logger) ConfigDataProvider {
 	return newConfigDataProvider(logger)
 }
@@ -130,6 +130,8 @@ func ReadConfigVersion(
 	)
 }
 
+// ReadFromConfig reads the configuration as bytes from the OS or an override, if any,
+// and interprets these bytes as a value of V, with configGetter.
 func ReadFromConfig[V any](
 	ctx context.Context,
 	logger *zap.Logger,
@@ -141,10 +143,11 @@ func ReadFromConfig[V any](
 	return readFromConfig(ctx, logger, provider, readBucket, configGetter, options...)
 }
 
+// ConfigGetter is a function that interpret a slice of bytes as a value of type V.
 type ConfigGetter[V any] func(
-	*zap.Logger,
-	func([]byte, interface{}) error,
-	func([]byte, interface{}) error,
-	[]byte,
-	string,
+	logger *zap.Logger,
+	unmarshalNonStrict func([]byte, interface{}) error,
+	unmarshalStrict func([]byte, interface{}) error,
+	data []byte,
+	id string,
 ) (*V, error)
