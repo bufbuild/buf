@@ -287,7 +287,6 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) (retErr error) {
-	logger := container.Logger()
 	if flags.IncludeWKT && !flags.IncludeImports {
 		// You need to set --include-imports if you set --include-wkt, which isn’t great. The alternative is to have
 		// --include-wkt implicitly set --include-imports, but this could be surprising. Or we could rename
@@ -298,16 +297,7 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
-	if err != nil {
-		return err
-	}
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
-	if err != nil {
-		return err
-	}
 	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		".",
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
@@ -315,6 +305,7 @@ func run(
 	if err != nil {
 		return err
 	}
+	logger := container.Logger()
 	configVersion, err := bufgen.ReadConfigVersion(
 		ctx,
 		logger,
@@ -327,6 +318,15 @@ func run(
 	}
 	// TODO: behave differently based on this version
 	_ = configVersion
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	if err != nil {
+		return err
+	}
+	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
+	if err != nil {
+		return err
+	}
+	runner := command.NewRunner()
 	genConfig, err := bufgenv1.ReadConfigV1(
 		ctx,
 		logger,
