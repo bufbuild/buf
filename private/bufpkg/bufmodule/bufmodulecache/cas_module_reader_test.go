@@ -187,12 +187,12 @@ func verifyCache(
 
 func createSampleManifestAndBlobs(t *testing.T) (*manifest.Manifest, *manifest.BlobSet) {
 	t.Helper()
-	blobs, err := manifest.NewMemoryBlobFromReader(strings.NewReader(pingProto))
+	blob, err := manifest.NewMemoryBlobFromReader(strings.NewReader(pingProto))
 	require.NoError(t, err)
 	var moduleManifest manifest.Manifest
-	err = moduleManifest.AddEntry("connect/ping/v1/ping.proto", *blobs.Digest())
+	err = moduleManifest.AddEntry("connect/ping/v1/ping.proto", *blob.Digest())
 	require.NoError(t, err)
-	blobSet, err := manifest.NewBlobSet(context.Background(), []manifest.Blob{blobs})
+	blobSet, err := manifest.NewBlobSet(context.Background(), []manifest.Blob{blob})
 	require.NoError(t, err)
 	return &moduleManifest, blobSet
 }
