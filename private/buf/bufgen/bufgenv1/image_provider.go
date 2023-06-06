@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufgen
+package bufgenv1
 
 import (
 	"fmt"
 	"sync"
 
+	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 )
 
@@ -39,11 +40,11 @@ func newImageProvider(image bufimage.Image) *imageProvider {
 	}
 }
 
-func (p *imageProvider) GetImages(strategy Strategy) ([]bufimage.Image, error) {
+func (p *imageProvider) GetImages(strategy internal.Strategy) ([]bufimage.Image, error) {
 	switch strategy {
-	case StrategyAll:
+	case internal.StrategyAll:
 		return []bufimage.Image{p.image}, nil
-	case StrategyDirectory:
+	case internal.StrategyDirectory:
 		p.lock.Lock()
 		defer p.lock.Unlock()
 		if p.imagesByDir == nil {

@@ -27,6 +27,7 @@ const (
 
 // TODO this would be part of a runner or likewise
 // this is just for demonstration of bringing the management stuff into one function
+// ApplyManagement modifies an image based on managed mode configuration.
 func ApplyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
 	markSweeper := bufimagemodifyv2.NewMarkSweeper(image)
 	for _, imageFile := range image.Files() {
@@ -37,11 +38,15 @@ func ApplyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
 	return markSweeper.Sweep()
 }
 
+// DisableFunc decides whether a file option should be disabled for a file.
 type DisabledFunc func(FileOption, bufimage.ImageFile) bool
 
 // TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
+// OverrideFunc is specific to a file option, and returns what thie file option
+// should be overridden to for this file.
 type OverrideFunc func(bufimage.ImageFile) (string, error)
 
+// Config is a configuration.
 type Config struct {
 	Managed *ManagedConfig
 	Plugins []*PluginConfig
@@ -49,11 +54,13 @@ type Config struct {
 }
 
 // TODO: We use nil or not to denote enabled or not, but that deems dangerous
+// ManagedConfig is a managed mode configuration.
 type ManagedConfig struct {
 	DisabledFunc             DisabledFunc
 	FileOptionToOverrideFunc map[FileOption]OverrideFunc
 }
 
+// PluginConfig is a plugin configuration.
 type PluginConfig struct {
 	Remote        string
 	Binary        []string
@@ -73,11 +80,13 @@ type PluginConfig struct {
 	Strategy string
 }
 
+// InputConfig is an input configuration.
 type InputConfig struct {
 	Path  string
 	Types []string
 }
 
+// ExternalConfigV2 is an external configuration.
 type ExternalConfigV2 struct {
 	// Must be V2 in this current code setup, but we'd want this to be alongside V1
 	Version string                   `json:"version,omitempty" yaml:"version,omitempty"`
@@ -86,16 +95,20 @@ type ExternalConfigV2 struct {
 	Inputs  []ExternalInputConfigV2  `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 }
 
+// ExternalManagedConfigV2 is an external managed mode configuration.
 type ExternalManagedConfigV2 struct {
 	Enable   bool                              `json:"enable,omitempty" yaml:"enable,omitempty"`
 	Disable  []ExternalManagedDisableConfigV2  `json:"disable,omitempty" yaml:"disable,omitempty"`
 	Override []ExternalManagedOverrideConfigV2 `json:"override,omitempty" yaml:"override,omitempty"`
 }
 
+// IsEmpty returns true if the config is empty.
 func (m ExternalManagedConfigV2) IsEmpty() bool {
 	return !m.Enable && len(m.Disable) == 0 && len(m.Override) == 0
 }
 
+// ExternalManagedDisableConfigV2 is an external configuration that disables file options in
+// managed mode.
 type ExternalManagedDisableConfigV2 struct {
 	// Must be validated to be a valid FileOption
 	FileOption string `json:"file_option,omitempty" yaml:"file_option,omitempty"`
@@ -105,6 +118,8 @@ type ExternalManagedDisableConfigV2 struct {
 	Path string `json:"path,omitempty" yaml:"path,omitempty"`
 }
 
+// ExternalManagedOverrideConfigV2 is an external configuration that overrides file options in
+// managed mode.
 type ExternalManagedOverrideConfigV2 struct {
 	// Must be validated to be a valid FileOption
 	// Required
@@ -119,6 +134,7 @@ type ExternalManagedOverrideConfigV2 struct {
 	Prefix string `json:"prefix,omitempty" yaml:"prefix,omitempty"`
 }
 
+// ExternalPluginConfigV2 is an external plugin configuration.
 type ExternalPluginConfigV2 struct {
 	// Only one of Remote, Binary, Wasm, ProtocBuiltin can be set
 	Remote string `json:"remote,omitempty" yaml:"remote,omitempty"`
@@ -141,6 +157,7 @@ type ExternalPluginConfigV2 struct {
 	Strategy string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 
+// ExternalInputConfigV2 is an external input configuration.
 type ExternalInputConfigV2 struct {
 	// TODO: split up into Git, Module, etc
 	Path  string

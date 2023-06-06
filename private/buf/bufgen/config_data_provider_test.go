@@ -21,15 +21,13 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
-const testConfigFileData = `
-version: %s
+const testConfigFileData = `version: %s
 plugins:
   - name: go
     out: private/gen/proto/go
@@ -49,8 +47,8 @@ func TestProviderError(t *testing.T) {
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(".")
 	require.NoError(t, err)
 
-	provider := NewProvider(zap.NewNop())
-	_, err = provider.GetConfig(context.Background(), readWriteBucket)
+	provider := NewConfigDataProvider(zap.NewNop())
+	_, _, err = provider.GetConfigData(context.Background(), readWriteBucket)
 	require.True(t, storage.IsNotExist(err))
 }
 
@@ -59,14 +57,11 @@ func testProvider(t *testing.T, version string) {
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", version))
 	require.NoError(t, err)
 
-	nopLogger := zap.NewNop()
-	provider := NewProvider(zap.NewNop())
-	actual, err := provider.GetConfig(context.Background(), readWriteBucket)
+	provider := NewConfigDataProvider(zap.NewNop())
+	actual, _, err := provider.GetConfigData(context.Background(), readWriteBucket)
 	require.NoError(t, err)
-
-	emptyBucket, err := storagemem.NewReadBucket(nil)
-	require.NoError(t, err)
-	expected, err := ReadConfig(context.Background(), nopLogger, provider, emptyBucket, ReadConfigWithOverride(fmt.Sprintf(testConfigFileData, version)))
-	require.NoError(t, err)
+	expected := []byte(fmt.Sprintf(testConfigFileData, version))
 	assert.Equal(t, expected, actual)
+
+	// TODO: write tests (not necessarily in this file) on the unmarshalled configs, for both V1 and V2.
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv1"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -286,7 +287,6 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) (retErr error) {
-	logger := container.Logger()
 	if flags.IncludeWKT && !flags.IncludeImports {
 		// You need to set --include-imports if you set --include-wkt, which isn’t great. The alternative is to have
 		// --include-wkt implicitly set --include-imports, but this could be surprising. Or we could rename
@@ -297,6 +297,27 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
+	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		".",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return err
+	}
+	logger := container.Logger()
+	configVersion, err := bufgen.ReadConfigVersion(
+		ctx,
+		logger,
+		bufgen.NewConfigDataProvider(logger),
+		readWriteBucket,
+		bufgen.ReadConfigWithOverride(flags.Template),
+	)
+	if err != nil {
+		return err
+	}
+	// TODO: behave differently based on this version
+	_ = configVersion
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
@@ -305,19 +326,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		".",
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return err
-	}
-	genConfig, err := bufgen.ReadConfig(
+	genConfig, err := bufgenv1.ReadConfigV1(
 		ctx,
 		logger,
-		bufgen.NewProvider(logger),
+		bufgen.NewConfigDataProvider(logger),
 		readWriteBucket,
 		bufgen.ReadConfigWithOverride(flags.Template),
 	)
@@ -364,19 +377,19 @@ func run(
 	if err != nil {
 		return err
 	}
-	generateOptions := []bufgen.GenerateOption{
-		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
+	generateOptions := []bufgenv1.GenerateOption{
+		bufgenv1.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
 	}
 	if flags.IncludeImports {
 		generateOptions = append(
 			generateOptions,
-			bufgen.GenerateWithIncludeImports(),
+			bufgenv1.GenerateWithIncludeImports(),
 		)
 	}
 	if flags.IncludeWKT {
 		generateOptions = append(
 			generateOptions,
-			bufgen.GenerateWithIncludeWellKnownTypes(),
+			bufgenv1.GenerateWithIncludeWellKnownTypes(),
 		)
 	}
 	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
@@ -386,7 +399,7 @@ func run(
 	if wasmEnabled {
 		generateOptions = append(
 			generateOptions,
-			bufgen.GenerateWithWASMEnabled(),
+			bufgenv1.GenerateWithWASMEnabled(),
 		)
 	}
 	var includedTypes []string
@@ -407,7 +420,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	return bufgen.NewGenerator(
+	return bufgenv1.NewGenerator(
 		logger,
 		storageosProvider,
 		runner,

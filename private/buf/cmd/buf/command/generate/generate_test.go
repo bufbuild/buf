@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -148,6 +149,19 @@ func TestOutputFlag(t *testing.T) {
 	)
 	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
 	require.NoError(t, err)
+}
+
+func TestVersion(t *testing.T) {
+	configFile := filepath.Join("testdata", "recognize_v2", "buf.gen.yaml")
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		fmt.Sprintf(`Failure: %s has no version set. Please add "version: %s"`, configFile, bufgen.V1Version),
+		"--template",
+		configFile,
+	)
 }
 
 func TestProtoFileRefIncludePackageFiles(t *testing.T) {
@@ -526,13 +540,13 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 }
 
 func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out string) string {
-	externalConfig := bufgen.ExternalConfigV1{
+	externalConfig := bufgenv1.ExternalConfigV1{
 		Version: "v1",
 	}
 	for _, plugin := range plugins {
 		externalConfig.Plugins = append(
 			externalConfig.Plugins,
-			bufgen.ExternalPluginConfigV1{
+			bufgenv1.ExternalPluginConfigV1{
 				Name: plugin.name,
 				Out:  out,
 				Opt:  plugin.opt,

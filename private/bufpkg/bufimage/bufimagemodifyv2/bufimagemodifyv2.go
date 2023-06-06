@@ -22,18 +22,18 @@ import (
 
 var (
 	// TODO: double-check these
-	javaPackagePath          = []int32{8, 1}
-	javaOuterClassnamePath   = []int32{8, 8}
-	javaMultipleFilesPath    = []int32{8, 10}
-	javaStringCheckUtf8Path  = []int32{8, 27}
-	optimizeForPath          = []int32{8, 9}
-	goPackagePath            = []int32{8, 11}
-	ccEnableArenasPath       = []int32{8, 31}
-	objcClassPrefixPath      = []int32{8, 36}
-	csharpNamespacePath      = []int32{8, 37}
-	phpNamespacePath         = []int32{8, 41}
-	phpMetadataNamespacePath = []int32{8, 44}
-	rubyPackagePath          = []int32{8, 45}
+	javaPackagePath = []int32{8, 1}
+	// javaOuterClassnamePath   = []int32{8, 8}
+	// javaMultipleFilesPath    = []int32{8, 10}
+	// javaStringCheckUtf8Path  = []int32{8, 27}
+	// optimizeForPath          = []int32{8, 9}
+	// goPackagePath            = []int32{8, 11}
+	// ccEnableArenasPath       = []int32{8, 31}
+	// objcClassPrefixPath      = []int32{8, 36}
+	// csharpNamespacePath      = []int32{8, 37}
+	// phpNamespacePath         = []int32{8, 41}
+	// phpMetadataNamespacePath = []int32{8, 44}
+	// rubyPackagePath          = []int32{8, 45}
 )
 
 type Marker interface {

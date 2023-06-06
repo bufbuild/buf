@@ -18,7 +18,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
@@ -27,20 +26,20 @@ import (
 	"go.uber.org/zap"
 )
 
-type provider struct {
+type configDataProvider struct {
 	logger *zap.Logger
 	tracer trace.Tracer
 }
 
-func newProvider(logger *zap.Logger) *provider {
-	return &provider{
+func newConfigDataProvider(logger *zap.Logger) *configDataProvider {
+	return &configDataProvider{
 		logger: logger,
 		tracer: otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 }
 
-func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
-	ctx, span := p.tracer.Start(ctx, "get_config")
+func (p *configDataProvider) GetConfigData(ctx context.Context, readBucket storage.ReadBucket) (_ []byte, _ string, retErr error) {
+	ctx, span := p.tracer.Start(ctx, "get_config_data")
 	defer span.End()
 	defer func() {
 		if retErr != nil {
@@ -53,20 +52,14 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	if err != nil {
 		// There is no default generate template, so we propagate all errors, including
 		// storage.ErrNotExist.
-		return nil, err
+		return nil, "", err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
 	data, err := io.ReadAll(readObjectCloser)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return getConfig(
-		p.logger,
-		encoding.UnmarshalYAMLNonStrict,
-		encoding.UnmarshalYAMLStrict,
-		data,
-		`File "`+readObjectCloser.ExternalPath()+`"`,
-	)
+	return data, `File "` + readObjectCloser.ExternalPath() + `"`, nil
 }
