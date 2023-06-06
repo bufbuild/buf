@@ -100,8 +100,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Modules,
 		moduleFlagName,
 		nil,
-		"The module(s) to sync to the BSR; you can provide a module override in the format "+
-			"<module>:<module-identity>",
+		"The module(s) to sync to the BSR; this must be in the format <module>:<module-identity>",
 	)
 	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
 	flagSet.BoolVar(
@@ -165,13 +164,15 @@ func sync(
 	var syncerOptions []bufsync.SyncerOption
 	for _, module := range modules {
 		var moduleIdentityOverride bufmoduleref.ModuleIdentity
-		if colon := strings.IndexRune(module, ':'); colon != -1 {
-			moduleIdentityOverride, err = bufmoduleref.ModuleIdentityForString(module[colon+1:])
-			if err != nil {
-				return err
-			}
-			module = normalpath.Normalize(module[:colon])
+		colon := strings.IndexRune(module, ':')
+		if colon == -1 {
+			return appcmd.NewInvalidArgumentErrorf("module %s is missing an identity", module)
 		}
+		moduleIdentityOverride, err = bufmoduleref.ModuleIdentityForString(module[colon+1:])
+		if err != nil {
+			return err
+		}
+		module = normalpath.Normalize(module[:colon])
 		syncModule, err := bufsync.NewModule(module, moduleIdentityOverride)
 		if err != nil {
 			return err

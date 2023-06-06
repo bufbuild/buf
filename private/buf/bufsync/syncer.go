@@ -133,22 +133,18 @@ func (s *syncer) visitCommit(
 		)
 		return nil
 	}
-	moduleIdentity := sourceConfig.ModuleIdentity
-	if module.IdentityOverride() != nil {
-		moduleIdentity = module.IdentityOverride()
-	}
 	builtModule, err := bufmodulebuild.BuildForBucket(
 		ctx,
 		sourceBucket,
 		sourceConfig.Build,
 	)
 	if err != nil {
-		return s.errorHandler.BuildFailure(module.Dir(), moduleIdentity, commit, err)
+		return s.errorHandler.BuildFailure(module.Dir(), module.RemoteIdentity(), commit, err)
 	}
 	return syncFunc(
 		ctx,
 		newModuleCommit(
-			moduleIdentity,
+			module.RemoteIdentity(),
 			builtModule.Bucket,
 			commit,
 			branch,

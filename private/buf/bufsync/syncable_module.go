@@ -20,21 +20,21 @@ import (
 )
 
 type syncableModule struct {
-	dir              string
-	identityOverride bufmoduleref.ModuleIdentity
+	dir            string
+	remoteIdentity bufmoduleref.ModuleIdentity
 }
 
 func newSyncableModule(
 	dir string,
-	identityOverride bufmoduleref.ModuleIdentity,
+	remoteIdentity bufmoduleref.ModuleIdentity,
 ) (Module, error) {
 	normalized, err := normalpath.NormalizeAndValidate(dir)
 	if err != nil {
 		return nil, err
 	}
 	return &syncableModule{
-		dir:              normalized,
-		identityOverride: identityOverride,
+		dir:            normalized,
+		remoteIdentity: remoteIdentity,
 	}, nil
 }
 
@@ -42,6 +42,6 @@ func (s *syncableModule) Dir() string {
 	return s.dir
 }
 
-func (s *syncableModule) IdentityOverride() bufmoduleref.ModuleIdentity {
-	return s.identityOverride
+func (s *syncableModule) RemoteIdentity() bufmoduleref.ModuleIdentity {
+	return s.remoteIdentity
 }
