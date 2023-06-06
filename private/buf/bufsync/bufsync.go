@@ -50,12 +50,9 @@ type ErrorHandler interface {
 type Module interface {
 	// Dir is the path to the module relative to the repository root.
 	Dir() string
-	// IdentityOverride is an optional module identity override. If empty,
-	// the identity specified in the module config file will be used.
-	//
-	// Unnamed modules will not have their identity overridden, as they are
-	// not pushable.
-	IdentityOverride() bufmoduleref.ModuleIdentity
+	// RemoteIdentity is the identity of the remote module that the
+	// local module is synced to.
+	RemoteIdentity() bufmoduleref.ModuleIdentity
 }
 
 // NewModule constructs a new module that can be synced with a Syncer.
@@ -104,16 +101,9 @@ type SyncerOption func(*syncer) error
 func SyncerWithModule(module Module) SyncerOption {
 	return func(s *syncer) error {
 		for _, existingModule := range s.modulesToSync {
-			if existingModule.Dir() != module.Dir() {
-				continue
-			}
-			if module.IdentityOverride() == nil && existingModule.IdentityOverride() == nil {
-				return fmt.Errorf("duplicate module %s", module.Dir())
-			}
-			if module.IdentityOverride() != nil &&
-				existingModule.IdentityOverride() != nil &&
-				module.IdentityOverride().IdentityString() == existingModule.IdentityOverride().IdentityString() {
-				return fmt.Errorf("duplicate module %s:%s", module.Dir(), module.IdentityOverride().IdentityString())
+			if existingModule.Dir() == module.Dir() &&
+				module.RemoteIdentity().IdentityString() == existingModule.RemoteIdentity().IdentityString() {
+				return fmt.Errorf("duplicate module %s:%s", module.Dir(), module.RemoteIdentity().IdentityString())
 			}
 		}
 		s.modulesToSync = append(s.modulesToSync, module)
