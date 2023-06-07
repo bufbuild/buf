@@ -140,6 +140,9 @@ func Modify(
 	if licenseHeader == "" {
 		return []byte(remainder), nil
 	}
+	if len(remainder) == 0 {
+		return []byte(licenseHeader + "\n"), nil
+	}
 	return []byte(licenseHeader + "\n\n" + remainder), nil
 }
 
