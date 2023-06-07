@@ -15,10 +15,15 @@
 package bufgenv2
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodifyv2"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/zap"
 )
 
 const (
@@ -45,6 +50,22 @@ type DisabledFunc func(FileOption, bufimage.ImageFile) bool
 // OverrideFunc is specific to a file option, and returns what thie file option
 // should be overridden to for this file.
 type OverrideFunc func(bufimage.ImageFile) (string, error)
+
+func ReadConfigV2(
+	ctx context.Context,
+	logger *zap.Logger,
+	provider bufgen.ConfigDataProvider,
+	readBucket storage.ReadBucket,
+	options ...bufgen.ReadConfigOption,
+) (*Config, error) {
+	return readConfigV2(
+		ctx,
+		logger,
+		provider,
+		readBucket,
+		options...,
+	)
+}
 
 // Config is a configuration.
 type Config struct {
@@ -82,8 +103,10 @@ type PluginConfig struct {
 
 // InputConfig is an input configuration.
 type InputConfig struct {
-	Path  string
-	Types []string
+	InputRef     buffetch.Ref
+	Types        []string
+	ExcludePaths []string
+	IncludePaths []string
 }
 
 // ExternalConfigV2 is an external configuration.
@@ -159,9 +182,30 @@ type ExternalPluginConfigV2 struct {
 
 // ExternalInputConfigV2 is an external input configuration.
 type ExternalInputConfigV2 struct {
-	// TODO: split up into Git, Module, etc
-	Path  string
-	Types []string
+	Module      string `json:"module,omitempty" yaml:"module,omitempty"`
+	Directory   string `json:"directory,omitempty" yaml:"directory,omitempty"`
+	ProtoFile   string `json:"proto_file,omitempty" yaml:"proto_file,omitempty"`
+	Tarball     string `json:"tarball,omitempty" yaml:"tarball,omitempty"`
+	ZipArchive  string `json:"zip_archive,omitempty" yaml:"zip_archive,omitempty"`
+	BinaryImage string `json:"binary_image,omitempty" yaml:"binary_image,omitempty"`
+	JSONImage   string `json:"json_image,omitempty" yaml:"json_image,omitempty"`
+	GitRepo     string `json:"git_repo,omitempty" yaml:"git_repo,omitempty"`
+	//
+	Compression     *string `json:"compression,omitempty" yaml:"compression,omitempty"`
+	StripComponents *uint32 `json:"strip_components,omitempty" yaml:"strip_components,omitempty"`
+	Subdir          *string `json:"subdir,omitempty" yaml:"subdir,omitempty"`
+	//
+	Branch            *string `json:"branch,omitempty" yaml:"branch,omitempty"`
+	Tag               *string `json:"tag,omitempty" yaml:"tag,omitempty"`
+	Ref               *string `json:"ref,omitempty" yaml:"ref,omitempty"`
+	Depth             *uint32 `json:"depth,omitempty" yaml:"depth,omitempty"`
+	RecurseSubmodules *bool   `json:"recurse_submodules,omitempty" yaml:"recurse_submodules,omitempty"`
+	//
+	IncludePackageFiles *bool `json:"include_package_files,omitempty" yaml:"include_package_files,omitempty"`
+	//
+	Types        []string `json:"types,omitempty" yaml:"types,omitempty"`
+	IncludePaths []string `json:"include_paths,omitempty" yaml:"include_paths,omitempty"`
+	ExcludePaths []string `json:"exclude_paths,omitempty" yaml:"exclude_paths,omitempty"`
 }
 
 func applyManagementForFile(

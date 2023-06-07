@@ -72,6 +72,12 @@ const (
 	CompressionTypeZstd
 )
 
+var stringToCompression = map[string]CompressionType{
+	"none": CompressionTypeNone,
+	"gzip": CompressionTypeGzip,
+	"zstd": CompressionTypeZstd,
+}
+
 // FileScheme is a file scheme.
 type FileScheme int
 
@@ -83,6 +89,19 @@ type ArchiveType int
 
 // CompressionType is a compression type.
 type CompressionType int
+
+// NewCompressionType returns a CompressionType from the compression name,
+// and returns CompressionTypeNone if name is empty.
+func NewCompressionType(name string) (CompressionType, error) {
+	if name == "" {
+		return CompressionTypeNone, nil
+	}
+	compressionType, ok := stringToCompression[name]
+	if !ok {
+		return CompressionTypeNone, NewCompressionUnknownError(name)
+	}
+	return compressionType, nil
+}
 
 // Ref is a reference.
 type Ref interface {
@@ -116,8 +135,8 @@ type SingleRef interface {
 }
 
 // NewSingleRef returns a new SingleRef.
-func NewSingleRef(path string, compressionType CompressionType) (SingleRef, error) {
-	return newSingleRef("", path, compressionType)
+func NewSingleRef(format string, path string, compressionType CompressionType) (SingleRef, error) {
+	return newSingleRef(format, path, compressionType)
 }
 
 // ArchiveRef is an archive reference.
@@ -137,13 +156,14 @@ type ArchiveRef interface {
 
 // NewArchiveRef returns a new ArchiveRef.
 func NewArchiveRef(
+	format string,
 	path string,
 	archiveType ArchiveType,
 	compressionType CompressionType,
 	stripComponents uint32,
 	subDirPath string,
 ) (ArchiveRef, error) {
-	return newArchiveRef("", path, archiveType, compressionType, stripComponents, subDirPath)
+	return newArchiveRef(format, path, archiveType, compressionType, stripComponents, subDirPath)
 }
 
 // DirRef is a local directory reference.
@@ -157,8 +177,8 @@ type DirRef interface {
 }
 
 // NewDirRef returns a new DirRef.
-func NewDirRef(path string) (DirRef, error) {
-	return newDirRef("", path)
+func NewDirRef(format string, path string) (DirRef, error) {
+	return newDirRef(format, path)
 }
 
 // ProtoFileRef is a file reference that incorporates a BucketRef.
@@ -169,6 +189,11 @@ type ProtoFileRef interface {
 	// IncludePackageFiles says to include the same package files TODO update comment
 	IncludePackageFiles() bool
 	protoFileRef()
+}
+
+// NewProtoFileRef returns a new ProtoFileRef
+func NewProtoFileRef(format string, path string, includePackageFiles bool) ProtoFileRef {
+	return newProtoFileRef(format, path, includePackageFiles)
 }
 
 // GitRef is a git reference.
@@ -190,15 +215,40 @@ type GitRef interface {
 	gitRef()
 }
 
-// NewGitRef returns a new GitRef.
-func NewGitRef(
+// NewGitRefByName returns a new GitRef.
+func NewGitRefByName(
 	path string,
 	gitName git.Name,
 	depth uint32,
 	recurseSubmodules bool,
 	subDirPath string,
 ) (GitRef, error) {
-	return newGitRef("", path, gitName, depth, recurseSubmodules, subDirPath)
+	return newGitRefByName("", path, gitName, depth, recurseSubmodules, subDirPath)
+}
+
+func NewGitRef(
+	format string,
+	path string,
+	branch string,
+	tag string,
+	ref string,
+	depth uint32,
+	recurseSubmodules bool,
+	subdirPath string,
+) (ParsedGitRef, error) {
+	if depth == 0 {
+		depth = getDefaultGitDepth(ref)
+	}
+	return newGitRef(
+		format,
+		path,
+		branch,
+		tag,
+		ref,
+		depth,
+		recurseSubmodules,
+		subdirPath,
+	)
 }
 
 // ModuleRef is a module reference.
@@ -211,8 +261,8 @@ type ModuleRef interface {
 // NewModuleRef returns a new ModuleRef.
 //
 // The path must be in the form server/owner/repository/branch[:digest].
-func NewModuleRef(path string) (ModuleRef, error) {
-	return newModuleRef("", path)
+func NewModuleRef(format string, path string) (ModuleRef, error) {
+	return newModuleRef(format, path)
 }
 
 // HasFormat is an object that has a format.
