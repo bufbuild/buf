@@ -33,6 +33,7 @@ const (
 // TODO this would be part of a runner or likewise
 // this is just for demonstration of bringing the management stuff into one function
 // ApplyManagement modifies an image based on managed mode configuration.
+// ApplyManagement modifies an image based on managed mode configuration.
 func ApplyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
 	markSweeper := bufimagemodifyv2.NewMarkSweeper(image)
 	for _, imageFile := range image.Files() {
