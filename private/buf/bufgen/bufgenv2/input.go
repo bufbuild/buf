@@ -15,6 +15,7 @@
 package bufgenv2
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -22,14 +23,14 @@ import (
 )
 
 const (
-	inputGit         = "git_repo"
-	inputModule      = "module"
-	inputDirectory   = "directory"
-	inputProtoFile   = "proto_file"
-	inputBinaryImage = "binary_image"
-	inputTarball     = "tarball"
-	inputZipArchive  = "zip_archive"
-	inputJSONImage   = "json_image"
+	formatGitRepo     = "git_repo"
+	formatModule      = "module"
+	formatDirectory   = "directory"
+	formatProtoFile   = "proto_file"
+	formatBinaryImage = "binary_image"
+	formatTarball     = "tarball"
+	formatZipArchive  = "zip_archive"
+	formatJSONImage   = "json_image"
 )
 
 const (
@@ -45,7 +46,7 @@ const (
 )
 
 var allowedOptionsForFormat = map[string](map[string]bool){
-	inputGit: {
+	formatGitRepo: {
 		optionBranch:            true,
 		optionTag:               true,
 		optionRef:               true,
@@ -53,29 +54,29 @@ var allowedOptionsForFormat = map[string](map[string]bool){
 		optionRecurseSubmodules: true,
 		optionSubdir:            true,
 	},
-	inputModule:    {},
-	inputDirectory: {},
-	inputProtoFile: {
+	formatModule:    {},
+	formatDirectory: {},
+	formatProtoFile: {
 		optionIncludePackageFiles: true,
 	},
-	inputTarball: {
+	formatTarball: {
 		optionCompression:     true,
 		optionStripComponents: true,
 		optionSubdir:          true,
 	},
-	inputZipArchive: {
+	formatZipArchive: {
 		optionStripComponents: true,
 		optionSubdir:          true,
 	},
-	inputBinaryImage: {
+	formatBinaryImage: {
 		optionCompression: true,
 	},
-	inputJSONImage: {
+	formatJSONImage: {
 		optionCompression: true,
 	},
 }
 
-func newInputConfig(externalConfig ExternalInputConfigV2) (*InputConfig, error) {
+func newInputConfig(ctx context.Context, externalConfig ExternalInputConfigV2) (*InputConfig, error) {
 	formatsSpecified, optionsSpecified := getFormatsAndOptionsSet(externalConfig)
 	if len(formatsSpecified) == 0 {
 		return nil, errors.New("must specify input type")
@@ -102,7 +103,7 @@ func newInputConfig(externalConfig ExternalInputConfigV2) (*InputConfig, error) 
 	refBuilder := buffetch.NewRefBuilder()
 	var err error
 	switch format {
-	case inputGit:
+	case formatGitRepo:
 		var options []buffetch.GetGitRefOption
 		if branch := externalConfig.Branch; branch != nil {
 			options = append(options, buffetch.WithGetGitRefBranch(*branch))
@@ -116,34 +117,42 @@ func newInputConfig(externalConfig ExternalInputConfigV2) (*InputConfig, error) 
 		if depth := externalConfig.Depth; depth != nil {
 			options = append(options, buffetch.WithGetGitRefDepth(*depth))
 		}
-		if recurseSubmodules := externalConfig.RecurseSubmodules; recurseSubmodules != nil {
-			options = append(options, buffetch.WithGetGitRefRecurseSubmodules(*recurseSubmodules))
+		if recurseSubmodules := externalConfig.RecurseSubmodules; recurseSubmodules != nil && *recurseSubmodules {
+			options = append(options, buffetch.WithGetGitRefRecurseSubmodules())
 		}
 		if subDir := externalConfig.Subdir; subDir != nil {
 			options = append(options, buffetch.WithGetGitRefSubDir(*subDir))
 		}
 		inputConfig.InputRef, err = refBuilder.GetGitRef(
-			externalConfig.GitRepo,
+			ctx,
+			formatGitRepo,
+			*externalConfig.GitRepo,
 			options...,
 		)
-	case inputModule:
+	case formatModule:
 		inputConfig.InputRef, err = refBuilder.GetModuleRef(
-			externalConfig.Module,
+			ctx,
+			formatModule,
+			*externalConfig.Module,
 		)
-	case inputDirectory:
+	case formatDirectory:
 		inputConfig.InputRef, err = refBuilder.GetDirRef(
-			externalConfig.Directory,
+			ctx,
+			formatDirectory,
+			*externalConfig.Directory,
 		)
-	case inputProtoFile:
+	case formatProtoFile:
 		var options []buffetch.GetProtoFileRefOption
 		if externalConfig.IncludePackageFiles != nil && *externalConfig.IncludePackageFiles {
 			options = append(options, buffetch.WithGetProtoFileRefIncludePackageFiles())
 		}
-		inputConfig.InputRef = refBuilder.GetProtoFileRef(
-			externalConfig.ProtoFile,
+		inputConfig.InputRef, err = refBuilder.GetProtoFileRef(
+			ctx,
+			formatProtoFile,
+			*externalConfig.ProtoFile,
 			options...,
 		)
-	case inputTarball:
+	case formatTarball:
 		var options []buffetch.GetTarballRefOption
 		if compression := externalConfig.Compression; compression != nil {
 			options = append(options, buffetch.WithGetTarballRefCompression(*compression))
@@ -155,10 +164,12 @@ func newInputConfig(externalConfig ExternalInputConfigV2) (*InputConfig, error) 
 			options = append(options, buffetch.WithGetTarballRefSubDir(*subDir))
 		}
 		inputConfig.InputRef, err = refBuilder.GetTarballRef(
-			externalConfig.Tarball,
+			ctx,
+			formatTarball,
+			*externalConfig.Tarball,
 			options...,
 		)
-	case inputZipArchive:
+	case formatZipArchive:
 		var options []buffetch.GetZipArchiveRefOption
 		if stripComponents := externalConfig.StripComponents; stripComponents != nil {
 			options = append(options, buffetch.WithGetZipArchiveRefStripComponents(*stripComponents))
@@ -166,19 +177,34 @@ func newInputConfig(externalConfig ExternalInputConfigV2) (*InputConfig, error) 
 		if subDir := externalConfig.Subdir; subDir != nil {
 			options = append(options, buffetch.WithGetZipArchiveRefSubDir(*subDir))
 		}
-		inputConfig.InputRef, err = refBuilder.GetZipArchiveRef(externalConfig.ZipArchive, options...)
-	case inputBinaryImage:
+		inputConfig.InputRef, err = refBuilder.GetZipArchiveRef(
+			ctx,
+			formatZipArchive,
+			*externalConfig.ZipArchive,
+			options...,
+		)
+	case formatBinaryImage:
 		var options []buffetch.GetImageRefOption
 		if compression := externalConfig.Compression; compression != nil {
 			options = append(options, buffetch.WithGetImageRefOption(*compression))
 		}
-		inputConfig.InputRef, err = refBuilder.GetBinaryImageRef(externalConfig.BinaryImage, options...)
-	case inputJSONImage:
+		inputConfig.InputRef, err = refBuilder.GetBinaryImageRef(
+			ctx,
+			formatBinaryImage,
+			*externalConfig.BinaryImage,
+			options...,
+		)
+	case formatJSONImage:
 		var options []buffetch.GetImageRefOption
 		if compression := externalConfig.Compression; compression != nil {
 			options = append(options, buffetch.WithGetImageRefOption(*compression))
 		}
-		inputConfig.InputRef, err = refBuilder.GetJSONImageRef(externalConfig.JSONImage, options...)
+		inputConfig.InputRef, err = refBuilder.GetJSONImageRef(
+			ctx,
+			formatJSONImage,
+			*externalConfig.JSONImage,
+			options...,
+		)
 	default:
 		// this should not happen
 		return nil, fmt.Errorf("unsupported format: %s", format)
@@ -192,29 +218,29 @@ func newInputConfig(externalConfig ExternalInputConfigV2) (*InputConfig, error) 
 func getFormatsAndOptionsSet(externalConfig ExternalInputConfigV2) ([]string, []string) {
 	var formats []string
 	var options []string
-	if externalConfig.Module != "" {
-		formats = append(formats, inputModule)
+	if externalConfig.Module != nil {
+		formats = append(formats, formatModule)
 	}
-	if externalConfig.Directory != "" {
-		formats = append(formats, inputDirectory)
+	if externalConfig.Directory != nil {
+		formats = append(formats, formatDirectory)
 	}
-	if externalConfig.ProtoFile != "" {
-		formats = append(formats, inputProtoFile)
+	if externalConfig.ProtoFile != nil {
+		formats = append(formats, formatProtoFile)
 	}
-	if externalConfig.BinaryImage != "" {
-		formats = append(formats, inputBinaryImage)
+	if externalConfig.BinaryImage != nil {
+		formats = append(formats, formatBinaryImage)
 	}
-	if externalConfig.Tarball != "" {
-		formats = append(formats, inputTarball)
+	if externalConfig.Tarball != nil {
+		formats = append(formats, formatTarball)
 	}
-	if externalConfig.ZipArchive != "" {
-		formats = append(formats, inputZipArchive)
+	if externalConfig.ZipArchive != nil {
+		formats = append(formats, formatZipArchive)
 	}
-	if externalConfig.JSONImage != "" {
-		formats = append(formats, inputJSONImage)
+	if externalConfig.JSONImage != nil {
+		formats = append(formats, formatJSONImage)
 	}
-	if externalConfig.GitRepo != "" {
-		formats = append(formats, inputGit)
+	if externalConfig.GitRepo != nil {
+		formats = append(formats, formatGitRepo)
 	}
 
 	if externalConfig.Compression != nil {

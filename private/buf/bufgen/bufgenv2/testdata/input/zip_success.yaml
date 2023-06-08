@@ -13,3 +13,5 @@ inputs:
       - x/y/w1
       - x/y/w2
   - zip_archive: a/b/c
+  # read from stdin
+  - zip_archive: "-"

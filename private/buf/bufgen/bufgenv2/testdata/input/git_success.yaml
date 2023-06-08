@@ -5,7 +5,7 @@ inputs:
     branch: main
     ref: fdafaewafe
     depth: 1
-    recurse_submodules: false
+    recurse_submodules: true
     subdir: protos
     types:
       - a.b.c1
@@ -20,7 +20,7 @@ inputs:
   - git_repo: github.com/acme/weather1.git
     tag: v123
     depth: 10
-    recurse_submodules: true
+    recurse_submodules: false
     subdir: proto
   # no options
   - git_repo: github.com/acme/weather2.git

@@ -13,9 +13,13 @@ inputs:
       - x/y/w2
   # should infer compression type gzip
   - binary_image: a/b/c.bin.gz
-  # # should infer compression type zstd
+  # should infer compression type zstd
   - binary_image: a/b/c.bin.zst
-  # # should infer compression type none
+  # should infer compression type none
   - binary_image: a/b/c.bin
-  # # should infer compression type none
+  # should infer compression type none
   - binary_image: a/b/c
+  # /dev/null is allowed
+  - binary_image: /dev/null
+  # read from stdin
+  - binary_image: "-"

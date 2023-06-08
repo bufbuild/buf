@@ -183,14 +183,14 @@ type ExternalPluginConfigV2 struct {
 
 // ExternalInputConfigV2 is an external input configuration.
 type ExternalInputConfigV2 struct {
-	Module      string `json:"module,omitempty" yaml:"module,omitempty"`
-	Directory   string `json:"directory,omitempty" yaml:"directory,omitempty"`
-	ProtoFile   string `json:"proto_file,omitempty" yaml:"proto_file,omitempty"`
-	Tarball     string `json:"tarball,omitempty" yaml:"tarball,omitempty"`
-	ZipArchive  string `json:"zip_archive,omitempty" yaml:"zip_archive,omitempty"`
-	BinaryImage string `json:"binary_image,omitempty" yaml:"binary_image,omitempty"`
-	JSONImage   string `json:"json_image,omitempty" yaml:"json_image,omitempty"`
-	GitRepo     string `json:"git_repo,omitempty" yaml:"git_repo,omitempty"`
+	Module      *string `json:"module,omitempty" yaml:"module,omitempty"`
+	Directory   *string `json:"directory,omitempty" yaml:"directory,omitempty"`
+	ProtoFile   *string `json:"proto_file,omitempty" yaml:"proto_file,omitempty"`
+	Tarball     *string `json:"tarball,omitempty" yaml:"tarball,omitempty"`
+	ZipArchive  *string `json:"zip_archive,omitempty" yaml:"zip_archive,omitempty"`
+	BinaryImage *string `json:"binary_image,omitempty" yaml:"binary_image,omitempty"`
+	JSONImage   *string `json:"json_image,omitempty" yaml:"json_image,omitempty"`
+	GitRepo     *string `json:"git_repo,omitempty" yaml:"git_repo,omitempty"`
 	//
 	Compression     *string `json:"compression,omitempty" yaml:"compression,omitempty"`
 	StripComponents *uint32 `json:"strip_components,omitempty" yaml:"strip_components,omitempty"`

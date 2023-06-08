@@ -15,11 +15,13 @@ inputs:
       - x/y/w2
   # should infer compression type gzip
   - tarball: a/b/c.tar.gz
-  # # should infer compression type gzip
+  # should infer compression type gzip
   - tarball: a/b/c.tgz
-  # # should infer compression type zstd
+  # should infer compression type zstd
   - tarball: a/b/c.tar.zst
-  # # should infer compression type none
+  # should infer compression type none
   - tarball: a/b/c.tar
-  # # should infer compression type none
+  # should infer compression type none
   - tarball: a/b/c
+  # read from stdin
+  - tarball: "-"

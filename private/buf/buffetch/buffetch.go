@@ -363,109 +363,175 @@ type getSourceBucketOptions struct {
 
 type RefBuilder interface {
 	// GetGitRef returns a Ref for a Git repository.
-	GetGitRef(path string, options ...GetGitRefOption) (Ref, error)
+	GetGitRef(
+		ctx context.Context,
+		format string,
+		path string,
+		options ...GetGitRefOption,
+	) (Ref, error)
 
 	// GetModuleRef returns a Ref for a module.
-	GetModuleRef(path string) (Ref, error)
+	GetModuleRef(
+		ctx context.Context,
+		format string,
+		path string,
+	) (Ref, error)
 
 	// GetProtoFileRef returns a Ref for a proto file.
-	GetProtoFileRef(path string, options ...GetProtoFileRefOption) Ref
+	GetProtoFileRef(
+		ctx context.Context,
+		format string,
+		path string,
+		options ...GetProtoFileRefOption,
+	) (Ref, error)
 
 	// GetDirRef returns a Ref for a directory.
-	GetDirRef(path string) (Ref, error)
+	GetDirRef(
+		ctx context.Context,
+		format string,
+		path string,
+	) (Ref, error)
 
 	// GetTarballRef returns a Ref for a tarball.
-	GetTarballRef(path string, options ...GetTarballRefOption) (Ref, error)
+	GetTarballRef(
+		ctx context.Context,
+		format string,
+		path string,
+		options ...GetTarballRefOption,
+	) (Ref, error)
 
 	// GetZipArchiveRef returns a Ref for a zip archive.
-	GetZipArchiveRef(path string, options ...GetZipArchiveRefOption) (Ref, error)
+	GetZipArchiveRef(
+		ctx context.Context,
+		format string,
+		path string,
+		options ...GetZipArchiveRefOption,
+	) (Ref, error)
 
 	// GetBinaryImageRef returns a Ref for a binary image.
-	GetBinaryImageRef(path string, options ...GetImageRefOption) (Ref, error)
+	GetBinaryImageRef(
+		ctx context.Context,
+		format string,
+		path string,
+		options ...GetImageRefOption,
+	) (Ref, error)
 
 	// GetJSONImageRef returns a Ref for a JSON image.
-	GetJSONImageRef(path string, options ...GetImageRefOption) (Ref, error)
+	GetJSONImageRef(
+		ctx context.Context,
+		format string,
+		path string,
+		options ...GetImageRefOption,
+	) (Ref, error)
 }
 
+// GetGitRefOption is an option for GetGitRefOption.
 type GetGitRefOption func(*getGitRefOptions)
 
+// WithGetGitRefBranch sets branch.
 func WithGetGitRefBranch(branch string) GetGitRefOption {
 	return func(getGitRefOptions *getGitRefOptions) {
 		getGitRefOptions.branch = branch
 	}
 }
+
+// WithGetGitRefTag sets tag.
 func WithGetGitRefTag(tag string) GetGitRefOption {
 	return func(getGitRefOptions *getGitRefOptions) {
 		getGitRefOptions.tag = tag
 	}
 }
+
+// WithGetGitRefRef sets ref.
 func WithGetGitRefRef(ref string) GetGitRefOption {
 	return func(getGitRefOptions *getGitRefOptions) {
 		getGitRefOptions.ref = ref
 	}
 }
+
+// WithGetGitRefDepth sets depth.
 func WithGetGitRefDepth(depth uint32) GetGitRefOption {
 	return func(getGitRefOptions *getGitRefOptions) {
 		getGitRefOptions.depth = depth
 	}
 }
-func WithGetGitRefRecurseSubmodules(recurseSubmodules bool) GetGitRefOption {
+
+// WithGetGitRefRecurseSubmodules enables recursing submodules.
+func WithGetGitRefRecurseSubmodules() GetGitRefOption {
 	return func(getGitRefOptions *getGitRefOptions) {
-		getGitRefOptions.recurseSubmodules = recurseSubmodules
+		getGitRefOptions.recurseSubmodules = true
 	}
 }
+
+// WithGetGitRefSubDir sets subDirPath
 func WithGetGitRefSubDir(subDirPath string) GetGitRefOption {
 	return func(getGitRefOptions *getGitRefOptions) {
 		getGitRefOptions.subDirPath = subDirPath
 	}
 }
 
+// GetProtoFileRefOption is an option for GetProtoFileRef.
 type GetProtoFileRefOption func(*getProtoFileRefOptions)
 
+// WithGetProtoFileRefIncludePackageFiles enables including package files.
 func WithGetProtoFileRefIncludePackageFiles() GetProtoFileRefOption {
 	return func(getProtoFileRefOptions *getProtoFileRefOptions) {
 		getProtoFileRefOptions.includePackageFiles = true
 	}
 }
 
+// GetTarballRefOption is an option for GetTarballRef.
 type GetTarballRefOption func(*getTarballRefOptions)
 
+// WithGetTarballRefCompression sets compression.
 func WithGetTarballRefCompression(compression string) GetTarballRefOption {
 	return func(getTarballRefOptions *getTarballRefOptions) {
 		getTarballRefOptions.compression = compression
 	}
 }
+
+// WithGetTarballRefStripComponents sets the number of components to strip.
 func WithGetTarballRefStripComponents(stripComponents uint32) GetTarballRefOption {
 	return func(getTarballRefOptions *getTarballRefOptions) {
 		getTarballRefOptions.stripComponents = stripComponents
 	}
 }
-func WithGetTarballRefSubDir(subDir string) GetTarballRefOption {
+
+// WithGetTarballRefSubDir sets the subdirectory path.
+func WithGetTarballRefSubDir(subDirPath string) GetTarballRefOption {
 	return func(getTarballRefOptions *getTarballRefOptions) {
-		getTarballRefOptions.subDir = subDir
+		getTarballRefOptions.subDirPath = subDirPath
 	}
 }
 
+// GetZipArchiveRefOption is an option for GetZipArchiveRef.
 type GetZipArchiveRefOption func(*getZipArchiveRefOptions)
 
+// WithGetZipArchiveRefStripComponents sets the number of components to strip.
 func WithGetZipArchiveRefStripComponents(stripComponents uint32) GetZipArchiveRefOption {
 	return func(getZipArchiveRefOptions *getZipArchiveRefOptions) {
 		getZipArchiveRefOptions.stripComponents = stripComponents
 	}
 }
-func WithGetZipArchiveRefSubDir(subDir string) GetZipArchiveRefOption {
+
+// WithGetZipArchiveRefSubDir sets the subdirectory path.
+func WithGetZipArchiveRefSubDir(subDirPath string) GetZipArchiveRefOption {
 	return func(getZipArchiveRefOptions *getZipArchiveRefOptions) {
-		getZipArchiveRefOptions.subDir = subDir
+		getZipArchiveRefOptions.subDirPath = subDirPath
 	}
 }
 
+// GetImageRefOption is an option for GetImageRef.
 type GetImageRefOption func(*getImageRefOptions)
 
+// WithGetImageRefOption sets compression.
 func WithGetImageRefOption(compression string) GetImageRefOption {
 	return func(getJSONImageRefOptions *getImageRefOptions) {
 		getJSONImageRefOptions.compression = compression
 	}
 }
+
+// NewRefBuilder returns a RefBuilder.
 func NewRefBuilder() RefBuilder {
 	return newRefBuilder()
 }

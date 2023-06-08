@@ -58,6 +58,7 @@ func readConfigV2(
 }
 
 func getConfig(
+	ctx context.Context,
 	logger *zap.Logger,
 	_ func([]byte, interface{}) error,
 	unmarshalStrict func([]byte, interface{}) error,
@@ -73,7 +74,7 @@ func getConfig(
 	}
 	config := Config{}
 	for _, externalInputConfig := range externalConfigV2.Inputs {
-		inputConfig, err := newInputConfig(externalInputConfig)
+		inputConfig, err := newInputConfig(ctx, externalInputConfig)
 		if err != nil {
 			return nil, err
 		}

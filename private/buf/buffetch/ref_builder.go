@@ -15,15 +15,25 @@
 package buffetch
 
 import (
+	"context"
+	"fmt"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
-type refBuilder struct{}
+type refBuilder struct {
+	tracer trace.Tracer
+}
 
 func newRefBuilder() *refBuilder {
-	return &refBuilder{}
+	return &refBuilder{
+		tracer: otel.GetTracerProvider().Tracer(tracerName),
+	}
 }
 
 type getGitRefOptions struct {
@@ -39,13 +49,29 @@ func newGetGitRefOptions() *getGitRefOptions {
 	return &getGitRefOptions{}
 }
 
-func (r *refBuilder) GetGitRef(path string, options ...GetGitRefOption) (Ref, error) {
+func (r *refBuilder) GetGitRef(
+	ctx context.Context,
+	format string,
+	path string,
+	options ...GetGitRefOption,
+) (_ Ref, retErr error) {
+	_, span := r.tracer.Start(ctx, "get_git_ref")
+	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
+	if app.IsDevNull(path) {
+		return nil, newDevNullNotAllowedError(path, format)
+	}
 	getGitRefOptions := newGetGitRefOptions()
 	for _, option := range options {
 		option(getGitRefOptions)
 	}
 	parsedRef, err := internal.NewGitRef(
-		formatGit,
+		format,
 		path,
 		getGitRefOptions.branch,
 		getGitRefOptions.tag,
@@ -60,16 +86,46 @@ func (r *refBuilder) GetGitRef(path string, options ...GetGitRefOption) (Ref, er
 	return newSourceRef(parsedRef), nil
 }
 
-func (r *refBuilder) GetModuleRef(path string) (Ref, error) {
-	parsedRef, err := internal.NewModuleRef(formatMod, path)
+func (r *refBuilder) GetModuleRef(
+	ctx context.Context,
+	format string,
+	path string,
+) (_ Ref, retErr error) {
+	_, span := r.tracer.Start(ctx, "get_module_ref")
+	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
+	if app.IsDevNull(path) {
+		return nil, newDevNullNotAllowedError(path, format)
+	}
+	parsedRef, err := internal.NewModuleRef(format, path)
 	if err != nil {
 		return nil, err
 	}
 	return newModuleRef(parsedRef), nil
 }
 
-func (r *refBuilder) GetDirRef(path string) (Ref, error) {
-	parsedRef, err := internal.NewDirRef(formatDir, path)
+func (r *refBuilder) GetDirRef(
+	ctx context.Context,
+	format string,
+	path string,
+) (_ Ref, retErr error) {
+	_, span := r.tracer.Start(ctx, "get_dir_ref")
+	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
+	if app.IsDevNull(path) {
+		return nil, newDevNullNotAllowedError(path, format)
+	}
+	parsedRef, err := internal.NewDirRef(format, path)
 	if err != nil {
 		return nil, err
 	}
@@ -84,25 +140,58 @@ func newGetProtoFileRefOptions() *getProtoFileRefOptions {
 	return &getProtoFileRefOptions{}
 }
 
-func (r *refBuilder) GetProtoFileRef(path string, options ...GetProtoFileRefOption) Ref {
+func (r *refBuilder) GetProtoFileRef(
+	ctx context.Context,
+	format string,
+	path string,
+	options ...GetProtoFileRefOption,
+) (_ Ref, retErr error) {
+	_, span := r.tracer.Start(ctx, "get_proto_file_ref")
+	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
+	if app.IsDevNull(path) {
+		return nil, newDevNullNotAllowedError(path, format)
+	}
 	getProtoFileRefOptions := newGetProtoFileRefOptions()
 	for _, option := range options {
 		option(getProtoFileRefOptions)
 	}
-	return newProtoFileRef(internal.NewProtoFileRef(formatProtoFile, path, getProtoFileRefOptions.includePackageFiles))
+	parsedRef := internal.NewProtoFileRef(format, path, getProtoFileRefOptions.includePackageFiles)
+	return newProtoFileRef(parsedRef), nil
 }
 
 type getTarballRefOptions struct {
 	compression     string
 	stripComponents uint32
-	subDir          string
+	subDirPath      string
 }
 
 func newGetTarballRefOptions() *getTarballRefOptions {
 	return &getTarballRefOptions{}
 }
 
-func (r *refBuilder) GetTarballRef(path string, options ...GetTarballRefOption) (Ref, error) {
+func (r *refBuilder) GetTarballRef(
+	ctx context.Context,
+	format string,
+	path string,
+	options ...GetTarballRefOption,
+) (_ Ref, retErr error) {
+	_, span := r.tracer.Start(ctx, "get_tarball_ref")
+	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
+	if app.IsDevNull(path) {
+		return nil, newDevNullNotAllowedError(path, format)
+	}
 	getTarballRefOptions := newGetTarballRefOptions()
 	for _, option := range options {
 		option(getTarballRefOptions)
@@ -122,12 +211,12 @@ func (r *refBuilder) GetTarballRef(path string, options ...GetTarballRefOption) 
 		}
 	}
 	parsedRef, err := internal.NewArchiveRef(
-		formatTar,
+		format,
 		path,
 		internal.ArchiveTypeTar,
 		compressionType,
 		getTarballRefOptions.stripComponents,
-		getTarballRefOptions.subDir,
+		getTarballRefOptions.subDirPath,
 	)
 	if err != nil {
 		return nil, err
@@ -137,25 +226,41 @@ func (r *refBuilder) GetTarballRef(path string, options ...GetTarballRefOption) 
 
 type getZipArchiveRefOptions struct {
 	stripComponents uint32
-	subDir          string
+	subDirPath      string
 }
 
 func newGetZipArchiveRefOptions() *getZipArchiveRefOptions {
 	return &getZipArchiveRefOptions{}
 }
 
-func (r *refBuilder) GetZipArchiveRef(path string, options ...GetZipArchiveRefOption) (Ref, error) {
+func (r *refBuilder) GetZipArchiveRef(
+	ctx context.Context,
+	format string,
+	path string,
+	options ...GetZipArchiveRefOption,
+) (_ Ref, retErr error) {
+	_, span := r.tracer.Start(ctx, "get_zip_archive_ref")
+	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
+	if app.IsDevNull(path) {
+		return nil, newDevNullNotAllowedError(path, format)
+	}
 	getZipArchiveRefOptions := newGetZipArchiveRefOptions()
 	for _, option := range options {
 		option(getZipArchiveRefOptions)
 	}
 	parsedRef, err := internal.NewArchiveRef(
-		formatZip,
+		format,
 		path,
 		internal.ArchiveTypeZip,
 		internal.CompressionTypeNone,
 		getZipArchiveRefOptions.stripComponents,
-		getZipArchiveRefOptions.subDir,
+		getZipArchiveRefOptions.subDirPath,
 	)
 	if err != nil {
 		return nil, err
@@ -171,12 +276,41 @@ func newGetImageRefOptions() *getImageRefOptions {
 	return &getImageRefOptions{}
 }
 
-func (r *refBuilder) GetJSONImageRef(path string, options ...GetImageRefOption) (Ref, error) {
-	return r.getImageRef(formatJSON, ImageEncodingJSON, path, options...)
+func (r *refBuilder) GetJSONImageRef(
+	ctx context.Context,
+	format string,
+	path string,
+	options ...GetImageRefOption,
+) (_ Ref, retErr error) {
+	_, span := r.tracer.Start(ctx, "get_json_image_ref")
+	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
+	if app.IsDevNull(path) {
+		return nil, newDevNullNotAllowedError(path, format)
+	}
+	return r.getImageRef(format, ImageEncodingJSON, path, options...)
 }
 
-func (r *refBuilder) GetBinaryImageRef(path string, options ...GetImageRefOption) (Ref, error) {
-	return r.getImageRef(formatBin, ImageEncodingBin, path, options...)
+func (r *refBuilder) GetBinaryImageRef(
+	ctx context.Context,
+	format string,
+	path string,
+	options ...GetImageRefOption,
+) (_ Ref, retErr error) {
+	_, span := r.tracer.Start(ctx, "get_binary_image_ref")
+	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
+	return r.getImageRef(format, ImageEncodingBin, path, options...)
 }
 
 func (r *refBuilder) getImageRef(format string, encoding ImageEncoding, path string, options ...GetImageRefOption) (Ref, error) {
@@ -188,7 +322,7 @@ func (r *refBuilder) getImageRef(format string, encoding ImageEncoding, path str
 	switch ext := filepath.Ext(path); ext {
 	case ".zst":
 		compressionType = internal.CompressionTypeZstd
-	case ".tgz", ".gz":
+	case ".gz":
 		compressionType = internal.CompressionTypeGzip
 	}
 	if compression := getImageRefOptions.compression; compression != "" {
@@ -203,4 +337,8 @@ func (r *refBuilder) getImageRef(format string, encoding ImageEncoding, path str
 		return nil, err
 	}
 	return newImageRef(parsedRef, encoding), nil
+}
+
+func newDevNullNotAllowedError(path string, format string) error {
+	return fmt.Errorf("%s is not allowed for %s", path, format)
 }

@@ -13,9 +13,11 @@ inputs:
       - x/y/w2
   # should infer compression type gzip
   - json_image: a/b/c.json.gz
-  # # should infer compression type zstd
+  # should infer compression type zstd
   - json_image: a/b/c.json.zst
-  # # should infer compression type none
+  # should infer compression type none
   - json_image: a/b/c.json
-  # # should infer compression type none
+  # should infer compression type none
   - json_image: a/b/c
+  # read from stdin
+  - json_image: "-"

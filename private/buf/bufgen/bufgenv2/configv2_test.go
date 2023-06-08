@@ -31,7 +31,7 @@ import (
 func TestIntputConfigSuccess(t *testing.T) {
 	ctx := context.Background()
 	nopLogger := zap.NewNop()
-	refParser := buffetch.NewRefParser(nopLogger)
+	refBuilder := buffetch.NewRefBuilder()
 	provider := bufgen.NewConfigDataProvider(zap.NewNop())
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
@@ -47,11 +47,16 @@ func TestIntputConfigSuccess(t *testing.T) {
 			expectedConfig: &Config{
 				Inputs: []*InputConfig{
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetGitRef(
 							t,
 							ctx,
-							refParser,
-							"github.com/acme/weather0.git#branch=main,ref=fdafaewafe,depth=1,subdir=protos,recurse_submodules=false",
+							refBuilder,
+							"github.com/acme/weather0.git",
+							buffetch.WithGetGitRefBranch("main"),
+							buffetch.WithGetGitRefRef("fdafaewafe"),
+							buffetch.WithGetGitRefDepth(1),
+							buffetch.WithGetGitRefSubDir("protos"),
+							buffetch.WithGetGitRefRecurseSubmodules(),
 						),
 						Types: []string{
 							"a.b.c1",
@@ -67,21 +72,24 @@ func TestIntputConfigSuccess(t *testing.T) {
 						},
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetGitRef(
 							t,
 							ctx,
-							refParser,
-							"github.com/acme/weather1.git#tag=v123,depth=10,subdir=proto,recurse_submodules=true",
+							refBuilder,
+							"github.com/acme/weather1.git",
+							buffetch.WithGetGitRefTag("v123"),
+							buffetch.WithGetGitRefDepth(10),
+							buffetch.WithGetGitRefSubDir("proto"),
 						),
 						Types:        nil,
 						ExcludePaths: nil,
 						IncludePaths: nil,
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetGitRef(
 							t,
 							ctx,
-							refParser,
+							refBuilder,
 							"github.com/acme/weather2.git",
 						),
 						Types:        nil,
@@ -97,10 +105,10 @@ func TestIntputConfigSuccess(t *testing.T) {
 			expectedConfig: &Config{
 				Inputs: []*InputConfig{
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetModuleRef(
 							t,
 							ctx,
-							refParser,
+							refBuilder,
 							"buf.build/acme/weather",
 						),
 						Types: []string{
@@ -117,10 +125,10 @@ func TestIntputConfigSuccess(t *testing.T) {
 						},
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetModuleRef(
 							t,
 							ctx,
-							refParser,
+							refBuilder,
 							"buf.build/acme/weather",
 						),
 					},
@@ -133,11 +141,12 @@ func TestIntputConfigSuccess(t *testing.T) {
 			expectedConfig: &Config{
 				Inputs: []*InputConfig{
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetProtoFileRef(
 							t,
 							ctx,
-							refParser,
-							"a.proto#include_package_files=true",
+							refBuilder,
+							"a.proto",
+							buffetch.WithGetProtoFileRefIncludePackageFiles(),
 						),
 						Types: []string{
 							"a.b.c1",
@@ -153,19 +162,19 @@ func TestIntputConfigSuccess(t *testing.T) {
 						},
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetProtoFileRef(
 							t,
 							ctx,
-							refParser,
+							refBuilder,
 							"b.proto",
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetProtoFileRef(
 							t,
 							ctx,
-							refParser,
-							"c.proto#include_package_files=false",
+							refBuilder,
+							"c.proto",
 						),
 					},
 				},
@@ -177,10 +186,10 @@ func TestIntputConfigSuccess(t *testing.T) {
 			expectedConfig: &Config{
 				Inputs: []*InputConfig{
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetDirRef(
 							t,
 							ctx,
-							refParser,
+							refBuilder,
 							"a/b",
 						),
 						Types: []string{
@@ -197,19 +206,19 @@ func TestIntputConfigSuccess(t *testing.T) {
 						},
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetDirRef(
 							t,
 							ctx,
-							refParser,
+							refBuilder,
 							"/c/d",
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetDirRef(
 							t,
 							ctx,
-							refParser,
-							"/e/f/g",
+							refBuilder,
+							"/e/f/g/",
 						),
 					},
 				},
@@ -221,11 +230,14 @@ func TestIntputConfigSuccess(t *testing.T) {
 			expectedConfig: &Config{
 				Inputs: []*InputConfig{
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetTarballRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c#format=tar,compression=gzip,strip_components=6,subdir=x/y",
+							refBuilder,
+							"a/b/c",
+							buffetch.WithGetTarballRefCompression("gzip"),
+							buffetch.WithGetTarballRefStripComponents(6),
+							buffetch.WithGetTarballRefSubDir("x/y"),
 						),
 						Types: []string{
 							"a.b.c1",
@@ -241,43 +253,56 @@ func TestIntputConfigSuccess(t *testing.T) {
 						},
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetTarballRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c.tar.gz#format=tar,compression=gzip",
+							refBuilder,
+							"a/b/c.tar.gz",
+							buffetch.WithGetTarballRefCompression("gzip"),
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetTarballRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c.tgz#format=tar,compression=gzip",
+							refBuilder,
+							"a/b/c.tgz",
+							buffetch.WithGetTarballRefCompression("gzip"),
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetTarballRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c.tar.zst#format=tar,compression=zstd",
+							refBuilder,
+							"a/b/c.tar.zst",
+							buffetch.WithGetTarballRefCompression("zstd"),
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetTarballRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c.tar#format=tar,compression=none",
+							refBuilder,
+							"a/b/c.tar",
+							buffetch.WithGetTarballRefCompression("none"),
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetTarballRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c#format=tar,compression=none",
+							refBuilder,
+							"a/b/c",
+							buffetch.WithGetTarballRefCompression("none"),
+						),
+					},
+					{
+						InputRef: mustGetTarballRef(
+							t,
+							ctx,
+							refBuilder,
+							"-",
 						),
 					},
 				},
@@ -289,11 +314,13 @@ func TestIntputConfigSuccess(t *testing.T) {
 			expectedConfig: &Config{
 				Inputs: []*InputConfig{
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetZipArchiveRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c.zip#format=zip,strip_components=10,subdir=x/y",
+							refBuilder,
+							"a/b/c.zip",
+							buffetch.WithGetZipArchiveRefStripComponents(10),
+							buffetch.WithGetZipArchiveRefSubDir("x/y"),
 						),
 						Types: []string{
 							"a.b.c1",
@@ -309,11 +336,19 @@ func TestIntputConfigSuccess(t *testing.T) {
 						},
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetZipArchiveRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c#format=zip",
+							refBuilder,
+							"a/b/c",
+						),
+					},
+					{
+						InputRef: mustGetZipArchiveRef(
+							t,
+							ctx,
+							refBuilder,
+							"-",
 						),
 					},
 				},
@@ -325,11 +360,12 @@ func TestIntputConfigSuccess(t *testing.T) {
 			expectedConfig: &Config{
 				Inputs: []*InputConfig{
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetJSONImageRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c#format=json,compression=gzip",
+							refBuilder,
+							"a/b/c",
+							buffetch.WithGetImageRefOption("gzip"),
 						),
 						Types: []string{
 							"a.b.c1",
@@ -345,35 +381,48 @@ func TestIntputConfigSuccess(t *testing.T) {
 						},
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetJSONImageRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c.json.gz#format=json,compression=gzip",
+							refBuilder,
+							"a/b/c.json.gz",
+							buffetch.WithGetImageRefOption("gzip"),
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetJSONImageRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c.json.zst#format=json,compression=zstd",
+							refBuilder,
+							"a/b/c.json.zst",
+							buffetch.WithGetImageRefOption("zstd"),
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetJSONImageRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c.json#format=json,compression=none",
+							refBuilder,
+							"a/b/c.json",
+							buffetch.WithGetImageRefOption("none"),
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetJSONImageRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c#format=json,compression=none",
+							refBuilder,
+							"a/b/c",
+							buffetch.WithGetImageRefOption("none"),
+						),
+					},
+					{
+						InputRef: mustGetJSONImageRef(
+							t,
+							ctx,
+							refBuilder,
+							"-",
+							buffetch.WithGetImageRefOption("none"),
 						),
 					},
 				},
@@ -385,11 +434,12 @@ func TestIntputConfigSuccess(t *testing.T) {
 			expectedConfig: &Config{
 				Inputs: []*InputConfig{
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetBinaryImageRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c#format=bin,compression=gzip",
+							refBuilder,
+							"a/b/c",
+							buffetch.WithGetImageRefOption("gzip"),
 						),
 						Types: []string{
 							"a.b.c1",
@@ -405,35 +455,55 @@ func TestIntputConfigSuccess(t *testing.T) {
 						},
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetBinaryImageRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c.bin.gz#format=bin,compression=gzip",
+							refBuilder,
+							"a/b/c.bin.gz",
+							buffetch.WithGetImageRefOption("gzip"),
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetBinaryImageRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c.bin.zst#format=bin,compression=zstd",
+							refBuilder,
+							"a/b/c.bin.zst",
+							buffetch.WithGetImageRefOption("zstd"),
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetBinaryImageRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c.bin#format=bin,compression=none",
+							refBuilder,
+							"a/b/c.bin",
+							buffetch.WithGetImageRefOption("none"),
 						),
 					},
 					{
-						InputRef: mustParseRefFromValue(
+						InputRef: mustGetBinaryImageRef(
 							t,
 							ctx,
-							refParser,
-							"a/b/c#format=bin,compression=none",
+							refBuilder,
+							"a/b/c",
+							buffetch.WithGetImageRefOption("none"),
+						),
+					},
+					{
+						InputRef: mustGetBinaryImageRef(
+							t,
+							ctx,
+							refBuilder,
+							"/dev/null",
+						),
+					},
+					{
+						InputRef: mustGetBinaryImageRef(
+							t,
+							ctx,
+							refBuilder,
+							"-",
 						),
 					},
 				},
@@ -508,14 +578,19 @@ func TestInputConfigError(t *testing.T) {
 			expectedError: newOptionNotAllowedForIntMessage("recurse_submodules", "module"),
 		},
 		{
-			testName:      "Test tag not allowed for proto file",
+			testName:      "Test tag is not allowed for proto file",
 			file:          "proto_file_error1",
 			expectedError: newOptionNotAllowedForIntMessage("tag", "proto_file"),
 		},
 		{
-			testName:      "Test subdir not allowed for directory",
+			testName:      "Test subdir is not allowed for directory",
 			file:          "dir_error1",
 			expectedError: newOptionNotAllowedForIntMessage("subdir", "directory"),
+		},
+		{
+			testName:      "Test stdin is not allowed for directory",
+			file:          "dir_error2",
+			expectedError: `invalid directory path: "-"`,
 		},
 		{
 			testName:      "Test invalid compression not allowed",
@@ -574,9 +649,51 @@ func TestInputConfigError(t *testing.T) {
 	}
 }
 
-func mustParseRefFromValue(t *testing.T, ctx context.Context, refParser buffetch.RefParser, value string) buffetch.Ref {
-	ref, err := refParser.GetRef(ctx, value)
-	require.NoError(t, err, "invalid test case: error trying to parse value %q to a Ref: %v", value, err)
+func mustGetGitRef(t *testing.T, ctx context.Context, refBuilder buffetch.RefBuilder, path string, options ...buffetch.GetGitRefOption) buffetch.Ref {
+	ref, err := refBuilder.GetGitRef(ctx, "git_repo", path, options...)
+	require.NoError(t, err)
+	return ref
+}
+
+func mustGetModuleRef(t *testing.T, ctx context.Context, refBuilder buffetch.RefBuilder, path string) buffetch.Ref {
+	ref, err := refBuilder.GetModuleRef(ctx, "module", path)
+	require.NoError(t, err)
+	return ref
+}
+
+func mustGetProtoFileRef(t *testing.T, ctx context.Context, refBuilder buffetch.RefBuilder, path string, options ...buffetch.GetProtoFileRefOption) buffetch.Ref {
+	ref, err := refBuilder.GetProtoFileRef(ctx, "proto_file", path, options...)
+	require.NoError(t, err)
+	return ref
+}
+
+func mustGetDirRef(t *testing.T, ctx context.Context, refBuilder buffetch.RefBuilder, path string) buffetch.Ref {
+	ref, err := refBuilder.GetDirRef(ctx, "directory", path)
+	require.NoError(t, err)
+	return ref
+}
+
+func mustGetTarballRef(t *testing.T, ctx context.Context, refBuilder buffetch.RefBuilder, path string, options ...buffetch.GetTarballRefOption) buffetch.Ref {
+	ref, err := refBuilder.GetTarballRef(ctx, "tarball", path, options...)
+	require.NoError(t, err)
+	return ref
+}
+
+func mustGetZipArchiveRef(t *testing.T, ctx context.Context, refBuilder buffetch.RefBuilder, path string, options ...buffetch.GetZipArchiveRefOption) buffetch.Ref {
+	ref, err := refBuilder.GetZipArchiveRef(ctx, "zip_archive", path, options...)
+	require.NoError(t, err)
+	return ref
+}
+
+func mustGetBinaryImageRef(t *testing.T, ctx context.Context, refBuilder buffetch.RefBuilder, path string, options ...buffetch.GetImageRefOption) buffetch.Ref {
+	ref, err := refBuilder.GetBinaryImageRef(ctx, "binary_image", path, options...)
+	require.NoError(t, err)
+	return ref
+}
+
+func mustGetJSONImageRef(t *testing.T, ctx context.Context, refBuilder buffetch.RefBuilder, path string, options ...buffetch.GetImageRefOption) buffetch.Ref {
+	ref, err := refBuilder.GetJSONImageRef(ctx, "json_image", path, options...)
+	require.NoError(t, err)
 	return ref
 }
 
