@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/filepathextended"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/stretchr/testify/require"
@@ -344,7 +345,7 @@ func TestGetDirRef(t *testing.T) {
 			expectedRef: newSourceRef(
 				internal.NewDirectParsedDirRef(
 					"directory",
-					normalpath.Normalize("."),
+					mustCleanAndNormalizePath(t, "."),
 				),
 			),
 		},
@@ -355,7 +356,7 @@ func TestGetDirRef(t *testing.T) {
 			expectedRef: newSourceRef(
 				internal.NewDirectParsedDirRef(
 					"directory",
-					normalpath.Normalize("/x/y"),
+					mustCleanAndNormalizePath(t, "/x/y"),
 				),
 			),
 		},
@@ -839,4 +840,10 @@ func TestGetJSONImageRef(t *testing.T) {
 			}
 		})
 	}
+}
+
+func mustCleanAndNormalizePath(t *testing.T, path string) string {
+	path, err := filepathextended.RealClean(path)
+	require.NoError(t, err)
+	return normalpath.Normalize(path)
 }
