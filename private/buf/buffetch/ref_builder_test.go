@@ -27,6 +27,7 @@ import (
 )
 
 func TestGetGitRef(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	refBuilder := newRefBuilder()
 
@@ -167,6 +168,7 @@ func TestGetGitRef(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			ref, err := refBuilder.GetGitRef(
 				ctx,
 				test.format,
@@ -185,6 +187,7 @@ func TestGetGitRef(t *testing.T) {
 }
 
 func TestGetModuleRef(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	refBuilder := newRefBuilder()
 
@@ -235,6 +238,7 @@ func TestGetModuleRef(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			ref, err := refBuilder.GetModuleRef(
 				ctx,
 				test.format,
@@ -252,6 +256,7 @@ func TestGetModuleRef(t *testing.T) {
 }
 
 func TestGetProtoFileRef(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	refBuilder := newRefBuilder()
 
@@ -271,7 +276,7 @@ func TestGetProtoFileRef(t *testing.T) {
 				WithGetProtoFileRefIncludePackageFiles(),
 			},
 			expectedRef: newProtoFileRef(
-				internal.NewProtoFileRef(
+				internal.NewDirectParsedProtoFileRef(
 					"proto_file",
 					"a/b/c.proto",
 					true,
@@ -283,18 +288,25 @@ func TestGetProtoFileRef(t *testing.T) {
 			path:   "/x/y/z.proto",
 			format: "proto_file",
 			expectedRef: newProtoFileRef(
-				internal.NewProtoFileRef(
+				internal.NewDirectParsedProtoFileRef(
 					"proto_file",
 					"/x/y/z.proto",
 					false,
 				),
 			),
 		},
+		{
+			name:          "Test stdin not allowed proto file",
+			path:          "-",
+			format:        "proto_file",
+			expectedError: errors.New(`invalid proto_file path: "-" (protofiles cannot be read or written to or from stdio)`),
+		},
 	}
 
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			ref, err := refBuilder.GetProtoFileRef(
 				ctx,
 				test.format,
@@ -313,6 +325,7 @@ func TestGetProtoFileRef(t *testing.T) {
 }
 
 func TestGetDirRef(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	refBuilder := newRefBuilder()
 
@@ -362,6 +375,7 @@ func TestGetDirRef(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			ref, err := refBuilder.GetDirRef(
 				ctx,
 				test.format,
@@ -379,6 +393,7 @@ func TestGetDirRef(t *testing.T) {
 }
 
 func TestGetTarballRef(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	refBuilder := newRefBuilder()
 
@@ -521,6 +536,7 @@ func TestGetTarballRef(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			ref, err := refBuilder.GetTarballRef(
 				ctx,
 				test.format,
@@ -539,6 +555,7 @@ func TestGetTarballRef(t *testing.T) {
 }
 
 func TestGetZipArchiveRef(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	refBuilder := newRefBuilder()
 
@@ -617,6 +634,7 @@ func TestGetZipArchiveRef(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			ref, err := refBuilder.GetZipArchiveRef(
 				ctx,
 				test.format,
@@ -635,6 +653,7 @@ func TestGetZipArchiveRef(t *testing.T) {
 }
 
 func TestGetBinaryImageRef(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	refBuilder := newRefBuilder()
 
@@ -713,6 +732,7 @@ func TestGetBinaryImageRef(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			ref, err := refBuilder.GetBinaryImageRef(
 				ctx,
 				test.format,
@@ -731,6 +751,7 @@ func TestGetBinaryImageRef(t *testing.T) {
 }
 
 func TestGetJSONImageRef(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	refBuilder := newRefBuilder()
 
@@ -801,6 +822,7 @@ func TestGetJSONImageRef(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			ref, err := refBuilder.GetJSONImageRef(
 				ctx,
 				test.format,

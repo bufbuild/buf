@@ -192,7 +192,7 @@ type ProtoFileRef interface {
 }
 
 // NewProtoFileRef returns a new ProtoFileRef
-func NewProtoFileRef(format string, path string, includePackageFiles bool) ProtoFileRef {
+func NewProtoFileRef(format string, path string, includePackageFiles bool) (ProtoFileRef, error) {
 	return newProtoFileRef(format, path, includePackageFiles)
 }
 
@@ -357,6 +357,10 @@ func NewDirectParsedDirRef(format string, path string) ParsedDirRef {
 type ParsedProtoFileRef interface {
 	ProtoFileRef
 	HasFormat
+}
+
+func NewDirectParsedProtoFileRef(format string, path string, includePackageFiles bool) ParsedProtoFileRef {
+	return newDirectProtoFileRef(format, path, includePackageFiles)
 }
 
 // ParsedGitRef is a parsed GitRef.

@@ -180,3 +180,10 @@ func getGitSchemeAndPath(format string, path string) (GitScheme, string, error) 
 	}
 	return GitSchemeLocal, normalpath.Normalize(path), nil
 }
+
+func getDefaultGitDepth(gitRef string) uint32 {
+	if gitRef == "" {
+		return 1
+	}
+	return 50
+}

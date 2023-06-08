@@ -161,7 +161,10 @@ func (r *refBuilder) GetProtoFileRef(
 	for _, option := range options {
 		option(getProtoFileRefOptions)
 	}
-	parsedRef := internal.NewProtoFileRef(format, path, getProtoFileRefOptions.includePackageFiles)
+	parsedRef, err := internal.NewProtoFileRef(format, path, getProtoFileRefOptions.includePackageFiles)
+	if err != nil {
+		return nil, err
+	}
 	return newProtoFileRef(parsedRef), nil
 }
 
