@@ -20,16 +20,9 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/connect-go"
 	"go.uber.org/zap"
 )
-
-// newCacheKey returns the key associated with the given module pin.
-// The cache key is of the form: remote/owner/repository/commit.
-func newCacheKey(modulePin bufmoduleref.ModulePin) string {
-	return normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository(), modulePin.Commit())
-}
 
 // warnIfDeprecated emits a warning message to logger if the repository
 // is deprecated on the BSR.

@@ -107,7 +107,8 @@ func NewTokenServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 		deleteToken: connect_go.NewClient[v1alpha1.DeleteTokenRequest, v1alpha1.DeleteTokenResponse](
 			httpClient,
 			baseURL+TokenServiceDeleteTokenProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -185,7 +186,8 @@ func NewTokenServiceHandler(svc TokenServiceHandler, opts ...connect_go.HandlerO
 	mux.Handle(TokenServiceDeleteTokenProcedure, connect_go.NewUnaryHandler(
 		TokenServiceDeleteTokenProcedure,
 		svc.DeleteToken,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.TokenService/", mux
 }

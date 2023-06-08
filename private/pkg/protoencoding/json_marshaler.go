@@ -23,17 +23,20 @@ import (
 )
 
 type jsonMarshaler struct {
-	resolver      Resolver
-	indent        string
-	useProtoNames bool
+	resolver        Resolver
+	indent          string
+	useProtoNames   bool
+	emitUnpopulated bool
 }
 
-func newJSONMarshaler(resolver Resolver, indent string, useProtoNames bool) Marshaler {
-	return &jsonMarshaler{
-		resolver:      resolver,
-		indent:        indent,
-		useProtoNames: useProtoNames,
+func newJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshaler {
+	jsonMarshaler := &jsonMarshaler{
+		resolver: resolver,
 	}
+	for _, option := range options {
+		option(jsonMarshaler)
+	}
+	return jsonMarshaler
 }
 
 func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
@@ -41,8 +44,9 @@ func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
 		return nil, err
 	}
 	options := protojson.MarshalOptions{
-		Resolver:      m.resolver,
-		UseProtoNames: m.useProtoNames,
+		Resolver:        m.resolver,
+		UseProtoNames:   m.useProtoNames,
+		EmitUnpopulated: m.emitUnpopulated,
 	}
 	data, err := options.Marshal(message)
 	if err != nil {

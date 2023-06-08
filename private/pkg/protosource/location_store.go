@@ -23,10 +23,8 @@ import (
 type locationStore struct {
 	sourceCodeInfoLocations []*descriptorpb.SourceCodeInfo_Location
 
-	pathToLocation               map[string]Location
-	pathToSourceCodeInfoLocation map[string]*descriptorpb.SourceCodeInfo_Location
-	locationLock                 sync.RWMutex
-	sourceCodeInfoLocationLock   sync.RWMutex
+	initLocations  sync.Once
+	pathToLocation map[string]Location
 }
 
 func newLocationStore(sourceCodeInfoLocations []*descriptorpb.SourceCodeInfo_Location) *locationStore {
@@ -40,54 +38,23 @@ func (l *locationStore) getLocation(path []int32) Location {
 	return l.getLocationByPathKey(getPathKey(path))
 }
 
-// optimization for keys we know ahead of time such as package location, certain file options
 func (l *locationStore) getLocationByPathKey(pathKey string) Location {
-	// check cache first
-	l.locationLock.RLock()
-	location, ok := l.pathToLocation[pathKey]
-	l.locationLock.RUnlock()
-	if ok {
-		return location
-	}
-
-	// build index and get sourceCodeInfoLocation
-	l.sourceCodeInfoLocationLock.RLock()
-	pathToSourceCodeInfoLocation := l.pathToSourceCodeInfoLocation
-	l.sourceCodeInfoLocationLock.RUnlock()
-	if pathToSourceCodeInfoLocation == nil {
-		l.sourceCodeInfoLocationLock.Lock()
-		pathToSourceCodeInfoLocation = l.pathToSourceCodeInfoLocation
-		if pathToSourceCodeInfoLocation == nil {
-			pathToSourceCodeInfoLocation = make(map[string]*descriptorpb.SourceCodeInfo_Location)
-			for _, sourceCodeInfoLocation := range l.sourceCodeInfoLocations {
-				pathKey := getPathKey(sourceCodeInfoLocation.Path)
-				// - Multiple locations may have the same path.  This happens when a single
-				//   logical declaration is spread out across multiple places.  The most
-				//   obvious example is the "extend" block again -- there may be multiple
-				//   extend blocks in the same scope, each of which will have the same path.
-				if _, ok := pathToSourceCodeInfoLocation[pathKey]; !ok {
-					pathToSourceCodeInfoLocation[pathKey] = sourceCodeInfoLocation
-				}
+	l.initLocations.Do(func() {
+		pathToLocation := make(map[string]Location)
+		for _, sourceCodeInfoLocation := range l.sourceCodeInfoLocations {
+			pathKey := getPathKey(sourceCodeInfoLocation.Path)
+			// - Multiple locations may have the same path.  This happens when a single
+			//   logical declaration is spread out across multiple places.  The most
+			//   obvious example is the "extend" block again -- there may be multiple
+			//   extend blocks in the same scope, each of which will have the same path.
+			if _, ok := pathToLocation[pathKey]; !ok {
+				pathToLocation[pathKey] = newLocation(sourceCodeInfoLocation)
 			}
 		}
-		l.pathToSourceCodeInfoLocation = pathToSourceCodeInfoLocation
-		l.sourceCodeInfoLocationLock.Unlock()
-	}
-	sourceCodeInfoLocation, ok := pathToSourceCodeInfoLocation[pathKey]
-	if !ok {
-		return nil
-	}
+		l.pathToLocation = pathToLocation
+	})
 
-	// populate cache and return
-	if sourceCodeInfoLocation == nil {
-		location = nil
-	} else {
-		location = newLocation(sourceCodeInfoLocation)
-	}
-	l.locationLock.Lock()
-	l.pathToLocation[pathKey] = location
-	l.locationLock.Unlock()
-	return location
+	return l.pathToLocation[pathKey]
 }
 
 func getPathKey(path []int32) string {

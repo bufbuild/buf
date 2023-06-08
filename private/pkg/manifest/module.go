@@ -99,6 +99,7 @@ type BlobSet struct {
 
 type blobSetOptions struct {
 	validateContent bool
+	skipNilBlobs    bool
 }
 
 // BlobSetOption are options passed when creating a new blob set.
@@ -115,6 +116,16 @@ func BlobSetWithContentValidation() BlobSetOption {
 	}
 }
 
+// BlobSetWithSkipNilBlobs allows passing nil blobs in the slice of blobs. The default behavior is
+// that if you pass a nil blob in the slice, you'll get an error from the `NewBlobSet` constructor.
+// If you pass this option, any nil blob will be skipped and the blob set will be built only from
+// the non-nil ones.
+func BlobSetWithSkipNilBlobs() BlobSetOption {
+	return func(opts *blobSetOptions) {
+		opts.skipNilBlobs = true
+	}
+}
+
 // NewBlobSet receives a slice of blobs, and de-duplicates them into a BlobSet.
 func NewBlobSet(ctx context.Context, blobs []Blob, opts ...BlobSetOption) (*BlobSet, error) {
 	var config blobSetOptions
@@ -122,7 +133,13 @@ func NewBlobSet(ctx context.Context, blobs []Blob, opts ...BlobSetOption) (*Blob
 		option(&config)
 	}
 	digestToBlobs := make(map[string]Blob, len(blobs))
-	for _, b := range blobs {
+	for i, b := range blobs {
+		if b == nil {
+			if config.skipNilBlobs {
+				continue
+			}
+			return nil, fmt.Errorf("blobs[%d]: nil blob", i)
+		}
 		digestStr := b.Digest().String()
 		if config.validateContent {
 			existingBlob, alreadyPresent := digestToBlobs[digestStr]

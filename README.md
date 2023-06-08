@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/bufbuild/buf?include_prereleases)][badges_release]
 [![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)][badges_ci]
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)][badges_docker]
-[![Homebrew](https://img.shields.io/badge/homebrew-v1.18.0-blue)][badges_homebrew]
+[![Homebrew](https://img.shields.io/homebrew/v/buf)][badges_homebrew]
 [![AUR](https://img.shields.io/aur/version/buf)][badges_aur]
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges_slack]
 
@@ -80,7 +80,7 @@ While we intend to incrementally improve on the `buf` CLI and the [BSR](#the-buf
 
 ## The Buf Schema Registry
 
-The [Buf Schema Registry][bsr] (BSR) is a SaaS platform for managing your Protobuf APIs. It provides a centralized registry and a single source of truth for all of your Protobuf assets, including not just your `.proto` files but also [remote plugins][bsr_plugins]. Although the BSR provides an intuitive browser UI, `buf` enables you to perform most BSR-related tasks from the command line, such as [pushing] Protobuf sources to the registry and managing [users] and [repositories]. The BSR is currently in [**beta**][bsr_post].
+The [Buf Schema Registry][bsr] (BSR) is a SaaS platform for managing your Protobuf APIs. It provides a centralized registry and a single source of truth for all of your Protobuf assets, including not just your `.proto` files but also [remote plugins][bsr_plugins]. Although the BSR provides an intuitive browser UI, `buf` enables you to perform most BSR-related tasks from the command line, such as [pushing] Protobuf sources to the registry and managing [users] and [repositories]. 
 
 > The BSR is not required to use `buf`. We've made the core [features] of the `buf` CLI available to _all_ Protobuf users.
 
@@ -124,7 +124,6 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [brew]: https://brew.sh
 [bsr]: https://docs.buf.build/bsr
 [bsr_plugins]: https://buf.build/plugins
-[bsr_post]: https://buf.build/blog/announcing-bsr
 [bsr_usage]: https://docs.buf.build/bsr/usage
 [buf]: https://buf.build
 [build_config]: https://docs.buf.build/build/usage/#configuration

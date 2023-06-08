@@ -44,7 +44,9 @@ service TokenService {
   // DeleteToken deletes an existing token.
   //
   // This method requires authentication.
-  rpc DeleteToken(DeleteTokenRequest) returns (DeleteTokenResponse);
+  rpc DeleteToken(DeleteTokenRequest) returns (DeleteTokenResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message CreateTokenRequest {

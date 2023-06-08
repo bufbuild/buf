@@ -61,7 +61,9 @@ service RecommendationService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // SetRecommendedResources set the list of recommended resources in the server.
-  rpc SetRecommendedResources(SetRecommendedResourcesRequest) returns (SetRecommendedResourcesResponse);
+  rpc SetRecommendedResources(SetRecommendedResourcesRequest) returns (SetRecommendedResourcesResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message RecommendedRepositoriesRequest {}

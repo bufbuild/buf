@@ -17,9 +17,9 @@ package buflock
 
 import (
 	"context"
+	"strings"
 	"time"
 
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -85,9 +85,9 @@ type ExternalConfigDependencyV1 struct {
 
 // DependencyForExternalConfigDependencyV1 returns the Dependency representation of a ExternalConfigDependencyV1.
 func DependencyForExternalConfigDependencyV1(dep ExternalConfigDependencyV1) Dependency {
-	// Don't consume old buf digests.
 	digest := dep.Digest
-	if !isValidDigest(digest) {
+	// Don't consume old b1/b3 buf digests.
+	if strings.HasPrefix(digest, "b1-") || strings.HasPrefix(digest, "b3-") {
 		digest = ""
 	}
 	return Dependency{
@@ -151,11 +151,4 @@ func ExternalConfigDependencyV1Beta1ForDependency(dep Dependency) ExternalConfig
 // file versions that is used to determine the version.
 type ExternalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
-}
-
-// isValidDigest returns true when the digest string is successfully parsed
-// by the `manifest` pkg. Older buf digests are not considered valid (b1/b3).
-func isValidDigest(digest string) bool {
-	_, err := manifest.NewDigestFromString(digest)
-	return err == nil
 }

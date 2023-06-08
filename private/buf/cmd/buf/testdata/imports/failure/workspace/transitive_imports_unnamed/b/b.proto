@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package b;
+
+import "c.proto"; // file from local workspace module c, not declared as explicit dep, not ok
+
+message B {
+    c.C c = 1;
+}

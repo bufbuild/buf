@@ -112,7 +112,8 @@ func NewUserServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 		createUser: connect_go.NewClient[v1alpha1.CreateUserRequest, v1alpha1.CreateUserResponse](
 			httpClient,
 			baseURL+UserServiceCreateUserProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		getUser: connect_go.NewClient[v1alpha1.GetUserRequest, v1alpha1.GetUserResponse](
 			httpClient,
@@ -141,12 +142,14 @@ func NewUserServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 		deleteUser: connect_go.NewClient[v1alpha1.DeleteUserRequest, v1alpha1.DeleteUserResponse](
 			httpClient,
 			baseURL+UserServiceDeleteUserProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		deactivateUser: connect_go.NewClient[v1alpha1.DeactivateUserRequest, v1alpha1.DeactivateUserResponse](
 			httpClient,
 			baseURL+UserServiceDeactivateUserProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		updateUserServerRole: connect_go.NewClient[v1alpha1.UpdateUserServerRoleRequest, v1alpha1.UpdateUserServerRoleResponse](
 			httpClient,
@@ -266,7 +269,8 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect_go.HandlerOpt
 	mux.Handle(UserServiceCreateUserProcedure, connect_go.NewUnaryHandler(
 		UserServiceCreateUserProcedure,
 		svc.CreateUser,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(UserServiceGetUserProcedure, connect_go.NewUnaryHandler(
 		UserServiceGetUserProcedure,
@@ -295,12 +299,14 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect_go.HandlerOpt
 	mux.Handle(UserServiceDeleteUserProcedure, connect_go.NewUnaryHandler(
 		UserServiceDeleteUserProcedure,
 		svc.DeleteUser,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(UserServiceDeactivateUserProcedure, connect_go.NewUnaryHandler(
 		UserServiceDeactivateUserProcedure,
 		svc.DeactivateUser,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(UserServiceUpdateUserServerRoleProcedure, connect_go.NewUnaryHandler(
 		UserServiceUpdateUserServerRoleProcedure,

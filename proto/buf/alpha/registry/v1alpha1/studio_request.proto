@@ -28,7 +28,9 @@ service StudioRequestService {
   rpc RenameStudioRequest(RenameStudioRequestRequest) returns (RenameStudioRequestResponse) {}
   // DeleteStudioRequest removes a favorite Studio Request from the caller's BSR
   // profile.
-  rpc DeleteStudioRequest(DeleteStudioRequestRequest) returns (DeleteStudioRequestResponse) {}
+  rpc DeleteStudioRequest(DeleteStudioRequestRequest) returns (DeleteStudioRequestResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // ListStudioRequests shows the caller's favorited Studio Requests.
   rpc ListStudioRequests(ListStudioRequestsRequest) returns (ListStudioRequestsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
