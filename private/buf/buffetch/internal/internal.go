@@ -226,6 +226,7 @@ func NewGitRefByName(
 	return newGitRefByName("", path, gitName, depth, recurseSubmodules, subDirPath)
 }
 
+// NewModuleRef returns a new GitRef.
 func NewGitRef(
 	format string,
 	path string,
@@ -359,6 +360,9 @@ type ParsedProtoFileRef interface {
 	HasFormat
 }
 
+// NewDirectParsedProtoFileRef returns a new ParsedProtoFileRef with no validation checks.
+//
+// This should only be used for testing.
 func NewDirectParsedProtoFileRef(format string, path string, includePackageFiles bool) ParsedProtoFileRef {
 	return newDirectProtoFileRef(format, path, includePackageFiles)
 }

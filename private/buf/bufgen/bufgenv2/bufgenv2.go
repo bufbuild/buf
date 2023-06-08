@@ -33,7 +33,6 @@ const (
 // TODO this would be part of a runner or likewise
 // this is just for demonstration of bringing the management stuff into one function
 // ApplyManagement modifies an image based on managed mode configuration.
-// ApplyManagement modifies an image based on managed mode configuration.
 func ApplyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
 	markSweeper := bufimagemodifyv2.NewMarkSweeper(image)
 	for _, imageFile := range image.Files() {
@@ -52,6 +51,7 @@ type DisabledFunc func(FileOption, bufimage.ImageFile) bool
 // should be overridden to for this file.
 type OverrideFunc func(bufimage.ImageFile) (string, error)
 
+// ReadConfigV2 reads V2 configuration.
 func ReadConfigV2(
 	ctx context.Context,
 	logger *zap.Logger,
@@ -183,6 +183,8 @@ type ExternalPluginConfigV2 struct {
 
 // ExternalInputConfigV2 is an external input configuration.
 type ExternalInputConfigV2 struct {
+	// Only one of Module, Directory, ProtoFile, Tarball, ZipArchive, BinaryImage,
+	// JSONImage and GitRepo can be set as the format.
 	Module      *string `json:"module,omitempty" yaml:"module,omitempty"`
 	Directory   *string `json:"directory,omitempty" yaml:"directory,omitempty"`
 	ProtoFile   *string `json:"proto_file,omitempty" yaml:"proto_file,omitempty"`
@@ -191,19 +193,18 @@ type ExternalInputConfigV2 struct {
 	BinaryImage *string `json:"binary_image,omitempty" yaml:"binary_image,omitempty"`
 	JSONImage   *string `json:"json_image,omitempty" yaml:"json_image,omitempty"`
 	GitRepo     *string `json:"git_repo,omitempty" yaml:"git_repo,omitempty"`
-	//
-	Compression     *string `json:"compression,omitempty" yaml:"compression,omitempty"`
-	StripComponents *uint32 `json:"strip_components,omitempty" yaml:"strip_components,omitempty"`
-	Subdir          *string `json:"subdir,omitempty" yaml:"subdir,omitempty"`
-	//
-	Branch            *string `json:"branch,omitempty" yaml:"branch,omitempty"`
-	Tag               *string `json:"tag,omitempty" yaml:"tag,omitempty"`
-	Ref               *string `json:"ref,omitempty" yaml:"ref,omitempty"`
-	Depth             *uint32 `json:"depth,omitempty" yaml:"depth,omitempty"`
-	RecurseSubmodules *bool   `json:"recurse_submodules,omitempty" yaml:"recurse_submodules,omitempty"`
-	//
-	IncludePackageFiles *bool `json:"include_package_files,omitempty" yaml:"include_package_files,omitempty"`
-	//
+	// Compression, StripComponents, Subdir, Branch, Tag, Ref, Depth, RecurseSubmodules
+	// and IncludePackageFils are available for only some formats.
+	Compression         *string `json:"compression,omitempty" yaml:"compression,omitempty"`
+	StripComponents     *uint32 `json:"strip_components,omitempty" yaml:"strip_components,omitempty"`
+	Subdir              *string `json:"subdir,omitempty" yaml:"subdir,omitempty"`
+	Branch              *string `json:"branch,omitempty" yaml:"branch,omitempty"`
+	Tag                 *string `json:"tag,omitempty" yaml:"tag,omitempty"`
+	Ref                 *string `json:"ref,omitempty" yaml:"ref,omitempty"`
+	Depth               *uint32 `json:"depth,omitempty" yaml:"depth,omitempty"`
+	RecurseSubmodules   *bool   `json:"recurse_submodules,omitempty" yaml:"recurse_submodules,omitempty"`
+	IncludePackageFiles *bool   `json:"include_package_files,omitempty" yaml:"include_package_files,omitempty"`
+	// Types, IncludePaths and ExcludePaths are available for all formats.
 	Types        []string `json:"types,omitempty" yaml:"types,omitempty"`
 	IncludePaths []string `json:"include_paths,omitempty" yaml:"include_paths,omitempty"`
 	ExcludePaths []string `json:"exclude_paths,omitempty" yaml:"exclude_paths,omitempty"`
