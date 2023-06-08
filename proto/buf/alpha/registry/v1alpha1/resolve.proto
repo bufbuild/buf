@@ -33,6 +33,10 @@ service ResolveService {
   rpc GetModulePins(GetModulePinsRequest) returns (GetModulePinsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+
+  rpc ResolveReference(ResolveReferenceRequest) returns (ResolveReferenceResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetModulePinsRequest {
@@ -106,4 +110,25 @@ message GetLocalModulePinsResponse {
   //
   // This includes the transitive deps.
   repeated buf.alpha.module.v1alpha1.ModulePin dependencies = 2;
+}
+
+message ResolveReferenceRequest {
+  PluginRef plugin = 1;
+  ModuleRef module = 2;
+}
+
+message PluginRef {
+  string owner = 1;
+  string name = 2;
+  string version = 3;
+}
+
+message ModuleRef {
+  string owner = 1;
+  string repository = 2;
+  string reference = 3;
+}
+
+message ResolveReferenceResponse {
+  string version = 1;
 }
