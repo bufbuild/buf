@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/stretchr/testify/require"
 )
 
@@ -343,7 +344,7 @@ func TestGetDirRef(t *testing.T) {
 			expectedRef: newSourceRef(
 				internal.NewDirectParsedDirRef(
 					"directory",
-					".",
+					normalpath.Normalize("."),
 				),
 			),
 		},
@@ -354,7 +355,7 @@ func TestGetDirRef(t *testing.T) {
 			expectedRef: newSourceRef(
 				internal.NewDirectParsedDirRef(
 					"directory",
-					"/x/y",
+					normalpath.Normalize("/x/y"),
 				),
 			),
 		},
