@@ -157,7 +157,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 		}); err != nil {
 			return fmt.Errorf("process commits: %w", err)
 		}
-		// If we have any sync points left, they were not encountered during sync, which is unexpected behaviour.
+		// If we have any sync points left, they were not encountered during sync, which is unexpected behavior.
 		for module, syncPoint := range syncPoints {
 			if err := s.errorHandler.SyncPointNotEncountered(module, branch, syncPoint); err != nil {
 				return err
