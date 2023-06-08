@@ -598,9 +598,10 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 			}
 			return buftransport.PrependHTTPS(address)
 		}),
-		connectclient.WithInterceptors(
-			[]connect.Interceptor{bufconnect.NewSetCLIVersionInterceptor(Version)},
-		),
+		connectclient.WithInterceptors([]connect.Interceptor{
+			bufconnect.NewSetCLIVersionInterceptor(Version),
+			bufconnect.NewCLIWarningInterceptor(container),
+		}),
 	}
 	options = append(options, opts...)
 
