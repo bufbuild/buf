@@ -16,7 +16,6 @@ package bufconnect
 
 import (
 	"context"
-	"encoding/base64"
 
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/connect-go"
@@ -46,7 +45,7 @@ func NewCLIWarningInterceptor(container applog.Container) connect.UnaryIntercept
 			if resp != nil && resp.Header() != nil {
 				encoded := resp.Header().Get(CLIWarningHeaderName)
 				if encoded != "" {
-					if warning, err := base64.StdEncoding.DecodeString(encoded); err == nil && len(warning) > 0 {
+					if warning, err := connect.DecodeBinaryHeader(encoded); err == nil && len(warning) > 0 {
 						container.Logger().Warn(string(warning))
 					}
 				}
