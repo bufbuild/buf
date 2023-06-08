@@ -38,7 +38,7 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	return interceptor
 }
 
-// NewCLIWarningInterceptor returns a new Connect Interceptor that logs CLI warnings returned by sever responses.
+// NewCLIWarningInterceptor returns a new Connect Interceptor that logs CLI warnings returned by server responses.
 func NewCLIWarningInterceptor(container applog.Container) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
