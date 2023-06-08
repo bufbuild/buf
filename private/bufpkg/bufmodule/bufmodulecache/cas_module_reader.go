@@ -83,8 +83,7 @@ func (c *casModuleReader) GetModule(
 	if err != nil {
 		return nil, err
 	}
-	// Manifest and BlobSet should always be set if tamper proofing is enabled.
-	// If not, the BSR doesn't support tamper proofing while the CLI feature is enabled.
+	// Manifest and BlobSet should always be set.
 	if remoteModule.Manifest() == nil || remoteModule.BlobSet() == nil {
 		return nil, fmt.Errorf("required manifest/blobSet not set on module")
 	}

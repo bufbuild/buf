@@ -56,7 +56,7 @@ func ReadWriteBucketWithSymlinksIfSupported() ReadWriteBucketOption {
 
 // ProviderWithSymlinks returns a ProviderOption that results in symlink support.
 //
-// Note that ReadWriteBucketWithSymlinksEnabled still needs to be passed for a given
+// Note that ReadWriteBucketWithSymlinksIfSupported still needs to be passed for a given
 // ReadWriteBucket to have symlinks followed.
 func ProviderWithSymlinks() ProviderOption {
 	return func(provider *provider) {

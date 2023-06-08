@@ -69,7 +69,9 @@ enum UserType {
 // UserService is the User service.
 service UserService {
   // CreateUser creates a new user with the given username.
-  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // GetUser gets a user by ID.
   rpc GetUser(GetUserRequest) returns (GetUserResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -88,9 +90,13 @@ service UserService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // DeleteUser deletes a user.
-  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // Deactivate user deactivates a user.
-  rpc DeactivateUser(DeactivateUserRequest) returns (DeactivateUserResponse);
+  rpc DeactivateUser(DeactivateUserRequest) returns (DeactivateUserResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // UpdateUserServerRole update the role of an user in the server.
   rpc UpdateUserServerRole(UpdateUserServerRoleRequest) returns (UpdateUserServerRoleResponse);
   // CountUsers returns the number of users in the server by the user state provided.

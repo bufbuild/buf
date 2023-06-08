@@ -41,8 +41,6 @@ type casModuleCacher struct {
 	bucket storage.ReadWriteBucket
 }
 
-var _ moduleCache = (*casModuleCacher)(nil)
-
 func (c *casModuleCacher) GetModule(
 	ctx context.Context,
 	modulePin bufmoduleref.ModulePin,
@@ -79,7 +77,15 @@ func (c *casModuleCacher) GetModule(
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewModuleForManifestAndBlobSet(ctx, manifestFromCache, blobSet)
+	return bufmodule.NewModuleForManifestAndBlobSet(
+		ctx,
+		manifestFromCache,
+		blobSet,
+		bufmodule.ModuleWithModuleIdentityAndCommit(
+			modulePin,
+			modulePin.Commit(),
+		),
+	)
 }
 
 func (c *casModuleCacher) PutModule(

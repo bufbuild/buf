@@ -177,22 +177,26 @@ func NewOrganizationServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 		createOrganization: connect_go.NewClient[v1alpha1.CreateOrganizationRequest, v1alpha1.CreateOrganizationResponse](
 			httpClient,
 			baseURL+OrganizationServiceCreateOrganizationProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteOrganization: connect_go.NewClient[v1alpha1.DeleteOrganizationRequest, v1alpha1.DeleteOrganizationResponse](
 			httpClient,
 			baseURL+OrganizationServiceDeleteOrganizationProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		deleteOrganizationByName: connect_go.NewClient[v1alpha1.DeleteOrganizationByNameRequest, v1alpha1.DeleteOrganizationByNameResponse](
 			httpClient,
 			baseURL+OrganizationServiceDeleteOrganizationByNameProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		addOrganizationMember: connect_go.NewClient[v1alpha1.AddOrganizationMemberRequest, v1alpha1.AddOrganizationMemberResponse](
 			httpClient,
 			baseURL+OrganizationServiceAddOrganizationMemberProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		updateOrganizationMember: connect_go.NewClient[v1alpha1.UpdateOrganizationMemberRequest, v1alpha1.UpdateOrganizationMemberResponse](
 			httpClient,
@@ -202,7 +206,8 @@ func NewOrganizationServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 		removeOrganizationMember: connect_go.NewClient[v1alpha1.RemoveOrganizationMemberRequest, v1alpha1.RemoveOrganizationMemberResponse](
 			httpClient,
 			baseURL+OrganizationServiceRemoveOrganizationMemberProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		setOrganizationMember: connect_go.NewClient[v1alpha1.SetOrganizationMemberRequest, v1alpha1.SetOrganizationMemberResponse](
 			httpClient,
@@ -223,12 +228,14 @@ func NewOrganizationServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 		addOrganizationGroup: connect_go.NewClient[v1alpha1.AddOrganizationGroupRequest, v1alpha1.AddOrganizationGroupResponse](
 			httpClient,
 			baseURL+OrganizationServiceAddOrganizationGroupProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 		removeOrganizationGroup: connect_go.NewClient[v1alpha1.RemoveOrganizationGroupRequest, v1alpha1.RemoveOrganizationGroupResponse](
 			httpClient,
 			baseURL+OrganizationServiceRemoveOrganizationGroupProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -419,22 +426,26 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 	mux.Handle(OrganizationServiceCreateOrganizationProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceCreateOrganizationProcedure,
 		svc.CreateOrganization,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceDeleteOrganizationProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceDeleteOrganizationProcedure,
 		svc.DeleteOrganization,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceDeleteOrganizationByNameProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceDeleteOrganizationByNameProcedure,
 		svc.DeleteOrganizationByName,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceAddOrganizationMemberProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceAddOrganizationMemberProcedure,
 		svc.AddOrganizationMember,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceUpdateOrganizationMemberProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceUpdateOrganizationMemberProcedure,
@@ -444,7 +455,8 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 	mux.Handle(OrganizationServiceRemoveOrganizationMemberProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceRemoveOrganizationMemberProcedure,
 		svc.RemoveOrganizationMember,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceSetOrganizationMemberProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceSetOrganizationMemberProcedure,
@@ -465,12 +477,14 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 	mux.Handle(OrganizationServiceAddOrganizationGroupProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceAddOrganizationGroupProcedure,
 		svc.AddOrganizationGroup,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(OrganizationServiceRemoveOrganizationGroupProcedure, connect_go.NewUnaryHandler(
 		OrganizationServiceRemoveOrganizationGroupProcedure,
 		svc.RemoveOrganizationGroup,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.OrganizationService/", mux
 }

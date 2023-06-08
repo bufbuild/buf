@@ -99,7 +99,8 @@ func NewSCIMTokenServiceClient(httpClient connect_go.HTTPClient, baseURL string,
 		deleteSCIMToken: connect_go.NewClient[v1alpha1.DeleteSCIMTokenRequest, v1alpha1.DeleteSCIMTokenResponse](
 			httpClient,
 			baseURL+SCIMTokenServiceDeleteSCIMTokenProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -164,7 +165,8 @@ func NewSCIMTokenServiceHandler(svc SCIMTokenServiceHandler, opts ...connect_go.
 	mux.Handle(SCIMTokenServiceDeleteSCIMTokenProcedure, connect_go.NewUnaryHandler(
 		SCIMTokenServiceDeleteSCIMTokenProcedure,
 		svc.DeleteSCIMToken,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.SCIMTokenService/", mux
 }

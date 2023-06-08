@@ -20,6 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"go.uber.org/zap"
 )
 
@@ -53,5 +54,19 @@ type BuildOption func(*buildOptions)
 func WithExcludeSourceCodeInfo() BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.excludeSourceCodeInfo = true
+	}
+}
+
+// WithDirectDependencies sets direct module dependencies, so transitive imports can be warned.
+func WithDirectDependencies(directDependencies []bufmoduleref.ModuleReference) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.directDependencies = directDependencies
+	}
+}
+
+// WithLocalWorkspace sets a local workspace, so imports from it are not warned.
+func WithLocalWorkspace(workspace bufmodule.Workspace) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.workspace = workspace
 	}
 }

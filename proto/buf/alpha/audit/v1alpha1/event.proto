@@ -86,6 +86,7 @@ enum EventType {
   EVENT_TYPE_PLUGIN_CREATED = 13 [deprecated = true];
   EVENT_TYPE_PLUGIN_DELETED = 14 [deprecated = true];
   EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
+  EVENT_TYPE_CURATED_PLUGIN_DELETED = 31;
   EVENT_TYPE_USER_CREATED = 15;
   EVENT_TYPE_USER_DELETED = 16;
   EVENT_TYPE_USER_DEACTIVATED = 17;
@@ -159,6 +160,7 @@ message Event {
     PayloadRepositoryCommitDeleted repository_commit_deleted = 34;
     PayloadRepositoryLabelCreated repository_label_created = 35;
     PayloadRepositoryLabelMoved repository_label_moved = 36;
+    PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
   }
 }
 
@@ -248,7 +250,7 @@ message PayloadRepositoryCommitPushed {
   repeated string tags = 5;
   // draft_name is the name of the draft. Optional.
   string draft_name = 6;
-  // manifest_digest is the module's manifest digest if tamper proofing is enabled.
+  // manifest_digest is the module's manifest digest.
   string manifest_digest = 7;
 }
 
@@ -337,6 +339,13 @@ message PayloadUserLoggedIn {}
 message PayloadUserLoggedOut {}
 
 message PayloadCuratedPluginCreated {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+}
+
+message PayloadCuratedPluginDeleted {
   // owner_id is the id of the owner of the plugin.
   string owner_id = 1;
   // owner_name is the name of the owner of the plugin.

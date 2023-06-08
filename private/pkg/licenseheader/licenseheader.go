@@ -84,6 +84,11 @@ All rights reserved.`,
 		".kt":    "//",
 		".swift": "//",
 		".java":  "//",
+		".cc":    "//",
+		".c":     "//",
+		".h":     "//",
+		".py":    "#",
+		".pyi":   "#",
 	}
 )
 
@@ -134,6 +139,9 @@ func Modify(
 	}
 	if licenseHeader == "" {
 		return []byte(remainder), nil
+	}
+	if len(remainder) == 0 {
+		return []byte(licenseHeader + "\n"), nil
 	}
 	return []byte(licenseHeader + "\n\n" + remainder), nil
 }

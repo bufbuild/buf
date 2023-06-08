@@ -108,7 +108,8 @@ func NewRecommendationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 		setRecommendedResources: connect_go.NewClient[v1alpha1.SetRecommendedResourcesRequest, v1alpha1.SetRecommendedResourcesResponse](
 			httpClient,
 			baseURL+RecommendationServiceSetRecommendedResourcesProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
 		),
 	}
 }
@@ -190,7 +191,8 @@ func NewRecommendationServiceHandler(svc RecommendationServiceHandler, opts ...c
 	mux.Handle(RecommendationServiceSetRecommendedResourcesProcedure, connect_go.NewUnaryHandler(
 		RecommendationServiceSetRecommendedResourcesProcedure,
 		svc.SetRecommendedResources,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	return "/buf.alpha.registry.v1alpha1.RecommendationService/", mux
 }

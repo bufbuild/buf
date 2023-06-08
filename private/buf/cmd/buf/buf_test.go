@@ -206,7 +206,7 @@ func TestFail5(t *testing.T) {
 
 func TestFail6(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
@@ -229,7 +229,7 @@ func TestFail6(t *testing.T) {
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 	)
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -254,7 +254,7 @@ func TestFail7(t *testing.T) {
 		"--input-config",
 		`{"version":"v1","lint":{"use":["BASIC"]}}`,
 	)
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
@@ -268,7 +268,7 @@ testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, 
 		"--config",
 		`{"version":"v1beta1","lint":{"use":["BASIC"]}}`,
 	)
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
@@ -400,7 +400,7 @@ func TestFail13(t *testing.T) {
 
 func TestFailCheckBreaking1(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
@@ -1038,7 +1038,7 @@ func TestLsFilesImage5(t *testing.T) {
 
 func TestBuildFailProtoFileRefWithPathFlag(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -1427,7 +1427,7 @@ func TestExportProtoFileRefIncludePackageFilesExcludeImports(t *testing.T) {
 func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -1450,7 +1450,7 @@ func TestBuildWithPaths(t *testing.T) {
 
 func TestLintWithPaths(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
@@ -1463,7 +1463,7 @@ func TestLintWithPaths(t *testing.T) {
 		"--exclude-path",
 		filepath.Join("testdata", "paths", "a", "v3", "foo"),
 	)
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
@@ -1493,7 +1493,7 @@ func TestBreakingWithPaths(t *testing.T) {
 		"previous.bin",
 		"current.bin",
 	)
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
@@ -1748,7 +1748,7 @@ func TestConvertWithImage(t *testing.T) {
 	})
 
 	t.Run("no stdin input", func(t *testing.T) {
-		testRunStdoutStderr(
+		testRunStdoutStderrNoWarn(
 			t,
 			nil,
 			1,
@@ -1866,7 +1866,7 @@ func TestConvertInvalidTypeName(t *testing.T) {
 	stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.bin"))
 	require.NoError(t, err)
 	defer stdin.Close()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		stdin,
 		1,
@@ -2166,7 +2166,7 @@ func TestFormatEquivalence(t *testing.T) {
 
 func TestFormatInvalidFlagCombination(t *testing.T) {
 	tempDir := t.TempDir()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -2181,7 +2181,7 @@ func TestFormatInvalidFlagCombination(t *testing.T) {
 }
 
 func TestFormatInvalidWriteWithModuleReference(t *testing.T) {
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -2194,7 +2194,7 @@ func TestFormatInvalidWriteWithModuleReference(t *testing.T) {
 }
 
 func TestFormatInvalidIncludePackageFiles(t *testing.T) {
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -2207,7 +2207,7 @@ func TestFormatInvalidIncludePackageFiles(t *testing.T) {
 
 func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
 	tempDir := t.TempDir()
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -2220,7 +2220,7 @@ func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
 	)
 	_, err := os.Stat(filepath.Join(tempDir, "formatted", "invalid"))
 	assert.True(t, os.IsNotExist(err))
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -2354,7 +2354,7 @@ func testMigrateV1Beta1Diff(
 	require.NoError(t, err)
 	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
 
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		0,
@@ -2379,7 +2379,7 @@ func testMigrateV1Beta1Failure(t *testing.T, storageosProvider storageos.Provide
 	require.NoError(t, err)
 	tempDir, _ := internaltesting.CopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
 
-	testRunStdoutStderr(
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
@@ -2419,7 +2419,19 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 	)
 }
 
-func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
+func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderr string, args ...string) {
+	appcmdtesting.RunCommandExitCodeStderr(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		expectedExitCode,
+		expectedStderr,
+		internaltesting.NewEnvFunc(t),
+		stdin,
+		args...,
+	)
+}
+
+func testRunStdoutStderrNoWarn(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStdoutStderr(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },

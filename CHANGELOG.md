@@ -2,12 +2,39 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.21.0] - 2023-06-05
+
+- Fix issue where locally-produced images did not have module information if the corresponding
+  module was stored in the new cache.
+- Remove `buf beta registry template`.
+- Remove `buf beta registry plugin {create,deprecate,list,undeprecate,version}` and replace with
+  `buf beta registry plugin {push,delete}`.
+- Update `buf beta price` with the latest pricing information.
+
+## [v1.20.0] - 2023-05-30
+
+- Add `--emit-defaults` flag to `buf curl` to emit default values in JSON-encoded responses.
+- Indent JSON-encoded responses from `buf curl` by default.
+- Log a warning in case an import statement does not point to a file in the module, a file in a
+  direct dependency, or a well-known type file.
+
+## [v1.19.0] - 2023-05-17
+
+- Add `--create` flag to `buf push` to create a repository if it does not exist. The user
+  is also required to specify the visibility using `--create-visibility`.
+- Add `github-actions` error format to print errors in a form parseable by GitHub Actions.
 - Fix issue in `buf build` and `buf generate` where the use of type filtering (via
   `--type` flags) would cause the resulting image to have no source code info, even
   when `--exclude-source-info` was not specified. The main impact of the bug was that
   generated code would be missing comments.
-- Add `--create` flag to `buf push` to create a repository if it does not exist. The user
-  is also required to specify the visibility using `--create-visibility`.
+- Fix issue in `buf curl` when using `--user` or `--netrc` that would cause a malformed
+  Authorization header to be sent.
+- Update the module cache to use an optimized content addressable store. The cache is
+  now self-healing and uses significantly less space. Users wishing to free unused space
+  can run `buf mod --clear-cache` once after upgrading to remove data stored in the
+  previous module cache.
 
 ## [v1.18.0] - 2023-05-05
 
@@ -871,7 +898,10 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.18.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.21.0...HEAD
+[v1.21.0]: https://github.com/bufbuild/buf/compare/v1.20.0...v1.21.0
+[v1.20.0]: https://github.com/bufbuild/buf/compare/v1.19.0...v1.20.0
+[v1.19.0]: https://github.com/bufbuild/buf/compare/v1.18.0...v1.19.0
 [v1.18.0]: https://github.com/bufbuild/buf/compare/v1.17.0...v1.18.0
 [v1.17.0]: https://github.com/bufbuild/buf/compare/v1.16.0...v1.17.0
 [v1.16.0]: https://github.com/bufbuild/buf/compare/v1.15.1...v1.16.0

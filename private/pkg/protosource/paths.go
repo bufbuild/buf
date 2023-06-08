@@ -53,6 +53,10 @@ func getMessageNamePath(messageIndex int, nestedMessageIndexes ...int) []int32 {
 	return append(getMessagePath(messageIndex, nestedMessageIndexes...), 1)
 }
 
+func getMessageOptionsPath(messageIndex int, nestedMessageIndexes ...int) []int32 {
+	return append(getMessagePath(messageIndex, nestedMessageIndexes...), 7)
+}
+
 func getMessageMessageSetWireFormatPath(messageIndex int, nestedMessageIndexes ...int) []int32 {
 	return append(getMessagePath(messageIndex, nestedMessageIndexes...), 7, 1)
 }
@@ -83,6 +87,10 @@ func getMessageFieldTypeNamePath(fieldIndex int, topLevelMessageIndex int, neste
 
 func getMessageFieldJSONNamePath(fieldIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
 	return append(getMessageFieldPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...), 10)
+}
+
+func getMessageFieldOptionsPath(fieldIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
+	return append(getMessageFieldPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...), 8)
 }
 
 func getMessageFieldJSTypePath(fieldIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
@@ -125,6 +133,10 @@ func getMessageExtensionJSONNamePath(extensionIndex int, topLevelMessageIndex in
 	return append(getMessageExtensionPath(extensionIndex, topLevelMessageIndex, nestedMessageIndexes...), 10)
 }
 
+func getMessageExtensionOptionsPath(extensionIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
+	return append(getMessageExtensionPath(extensionIndex, topLevelMessageIndex, nestedMessageIndexes...), 8)
+}
+
 func getMessageExtensionJSTypePath(extensionIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
 	return append(getMessageExtensionPath(extensionIndex, topLevelMessageIndex, nestedMessageIndexes...), 8, 6)
 }
@@ -149,6 +161,10 @@ func getMessageOneofNamePath(oneofIndex int, topLevelMessageIndex int, nestedMes
 	return append(getMessageOneofPath(oneofIndex, topLevelMessageIndex, nestedMessageIndexes...), 1)
 }
 
+func getMessageOneofOptionsPath(oneofIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
+	return append(getMessageOneofPath(oneofIndex, topLevelMessageIndex, nestedMessageIndexes...), 2)
+}
+
 func getMessageReservedRangePath(reservedRangeIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
 	return append(getMessagePath(topLevelMessageIndex, nestedMessageIndexes...), 9, int32(reservedRangeIndex))
 }
@@ -161,6 +177,10 @@ func getMessageExtensionRangePath(extensionRangeIndex int, topLevelMessageIndex 
 	return append(getMessagePath(topLevelMessageIndex, nestedMessageIndexes...), 5, int32(extensionRangeIndex))
 }
 
+func getMessageExtensionRangeOptionsPath(extensionRangeIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
+	return append(getMessagePath(topLevelMessageIndex, nestedMessageIndexes...), 5, int32(extensionRangeIndex), 3)
+}
+
 func getEnumPath(enumIndex int, nestedMessageIndexes ...int) []int32 {
 	if len(nestedMessageIndexes) == 0 {
 		return []int32{5, int32(enumIndex)}
@@ -171,8 +191,13 @@ func getEnumPath(enumIndex int, nestedMessageIndexes ...int) []int32 {
 	}
 	return append(path, 4, int32(enumIndex))
 }
+
 func getEnumNamePath(enumIndex int, nestedMessageIndexes ...int) []int32 {
 	return append(getEnumPath(enumIndex, nestedMessageIndexes...), 1)
+}
+
+func getEnumOptionsPath(enumIndex int, nestedMessageIndexes ...int) []int32 {
+	return append(getEnumPath(enumIndex, nestedMessageIndexes...), 3)
 }
 
 func getEnumAllowAliasPath(enumIndex int, nestedMessageIndexes ...int) []int32 {
@@ -191,6 +216,10 @@ func getEnumValueNumberPath(enumIndex int, enumValueIndex int, nestedMessageInde
 	return append(getEnumValuePath(enumIndex, enumValueIndex, nestedMessageIndexes...), 2)
 }
 
+func getEnumValueOptionsPath(enumIndex int, enumValueIndex int, nestedMessageIndexes ...int) []int32 {
+	return append(getEnumValuePath(enumIndex, enumValueIndex, nestedMessageIndexes...), 3)
+}
+
 func getEnumReservedRangePath(enumIndex int, reservedRangeIndex int, nestedMessageIndexes ...int) []int32 {
 	return append(getEnumPath(enumIndex, nestedMessageIndexes...), 4, int32(reservedRangeIndex))
 }
@@ -207,6 +236,10 @@ func getServiceNamePath(serviceIndex int) []int32 {
 	return append(getServicePath(serviceIndex), 1)
 }
 
+func getServiceOptionsPath(serviceIndex int) []int32 {
+	return append(getServicePath(serviceIndex), 3)
+}
+
 func getMethodPath(serviceIndex int, methodIndex int) []int32 {
 	return []int32{6, int32(serviceIndex), 2, int32(methodIndex)}
 }
@@ -221,6 +254,10 @@ func getMethodInputTypePath(serviceIndex int, methodIndex int) []int32 {
 
 func getMethodOutputTypePath(serviceIndex int, methodIndex int) []int32 {
 	return append(getMethodPath(serviceIndex, methodIndex), 3)
+}
+
+func getMethodOptionsPath(serviceIndex int, methodIndex int) []int32 {
+	return append(getMethodPath(serviceIndex, methodIndex), 4)
 }
 
 func getMethodIdempotencyLevelPath(serviceIndex int, methodIndex int) []int32 {
@@ -249,6 +286,10 @@ func getFileExtensionTypeNamePath(fieldIndex int) []int32 {
 
 func getFileExtensionJSONNamePath(fieldIndex int) []int32 {
 	return append(getFileExtensionPath(fieldIndex), 10)
+}
+
+func getFileExtensionOptionsPath(fieldIndex int) []int32 {
+	return append(getFileExtensionPath(fieldIndex), 8)
 }
 
 func getFileExtensionJSTypePath(fieldIndex int) []int32 {
