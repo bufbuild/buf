@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add `buf-warning-bin` header to detect and print server warning messages.
+- No changes yet.
 
 ## [v1.21.0] - 2023-06-05
 
