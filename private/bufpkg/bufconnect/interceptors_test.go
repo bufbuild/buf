@@ -17,13 +17,17 @@ package bufconnect
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testMachine struct{}
@@ -100,4 +104,27 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 	authErr, ok := AsAuthError(err)
 	assert.True(t, ok)
 	assert.Equal(t, tokenEnvKey, authErr.tokenEnvKey)
+}
+
+func TestCLIWarningInterceptor(t *testing.T) {
+	warningMessage := "This is a warning message from the BSR"
+	var buf bytes.Buffer
+	logger, err := applog.NewLogger(&buf, "warn", "text")
+	require.NoError(t, err)
+	// testing valid warning message
+	_, err = NewCLIWarningInterceptor(applog.NewContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		resp := connect.NewResponse(&bytes.Buffer{})
+		resp.Header().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
+		return resp, nil
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
+
+	// testing no warning message in valid response with no header
+	buf.Reset()
+	_, err = NewCLIWarningInterceptor(applog.NewContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		return connect.NewResponse(&bytes.Buffer{}), nil
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	assert.NoError(t, err)
+	assert.Equal(t, "", buf.String())
 }

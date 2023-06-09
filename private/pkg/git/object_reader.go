@@ -121,7 +121,9 @@ func (o *objectReader) read(objectType string, id Hash) ([]byte, error) {
 	parts := strings.Split(headerStr, " ")
 	if len(parts) == 2 && parts[1] == "missing" {
 		return nil, fmt.Errorf(
-			"git-cat-file: object not found: %s", parts[0],
+			"git-cat-file: %s: %w",
+			parts[0],
+			ErrObjectNotFound,
 		)
 	}
 	if len(parts) != 3 {

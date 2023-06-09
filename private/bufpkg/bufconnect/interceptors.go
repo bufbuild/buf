@@ -17,6 +17,7 @@ package bufconnect
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/connect-go"
 )
 
@@ -28,12 +29,28 @@ const (
 // NewSetCLIVersionInterceptor returns a new Connect Interceptor that sets the Buf CLI version into all request headers
 func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(
-			ctx context.Context,
-			req connect.AnyRequest,
-		) (connect.AnyResponse, error) {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 			req.Header().Set(CliVersionHeaderName, version)
 			return next(ctx, req)
+		}
+	}
+	return interceptor
+}
+
+// NewCLIWarningInterceptor returns a new Connect Interceptor that logs CLI warnings returned by server responses.
+func NewCLIWarningInterceptor(container applog.Container) connect.UnaryInterceptorFunc {
+	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			resp, err := next(ctx, req)
+			if resp != nil && resp.Header() != nil {
+				encoded := resp.Header().Get(CLIWarningHeaderName)
+				if encoded != "" {
+					if warning, err := connect.DecodeBinaryHeader(encoded); err == nil && len(warning) > 0 {
+						container.Logger().Warn(string(warning))
+					}
+				}
+			}
+			return resp, err
 		}
 	}
 	return interceptor
@@ -55,10 +72,7 @@ type TokenProvider interface {
 func NewAuthorizationInterceptorProvider(tokenProviders ...TokenProvider) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-			return connect.UnaryFunc(func(
-				ctx context.Context,
-				req connect.AnyRequest,
-			) (connect.AnyResponse, error) {
+			return connect.UnaryFunc(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 				usingTokenEnvKey := false
 				for _, tf := range tokenProviders {
 					if token := tf.RemoteToken(address); token != "" {

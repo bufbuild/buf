@@ -22,6 +22,19 @@ import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
 import "buf/alpha/registry/v1alpha1/verification_status.proto";
 
+// BreakingChangeCategory is the allowed list of categories for breaking rule settings.
+enum BreakingChangeCategory {
+  BREAKING_CHANGE_CATEGORY_UNSPECIFIED = 0;
+  BREAKING_CHANGE_CATEGORY_FILE = 1;
+  BREAKING_CHANGE_CATEGORY_WIRE_JSON = 2;
+}
+
+message BreakingChangeSettings {
+  bool enabled = 1;
+  bool ignore_unstable_packages = 2;
+  BreakingChangeCategory category = 3;
+}
+
 // AdminService is the Admin service.
 service AdminService {
   // ForceDeleteUser forces to delete a user. Resources and organizations that are
@@ -37,6 +50,12 @@ service AdminService {
   rpc CreateMachineUser(CreateMachineUserRequest) returns (CreateMachineUserResponse) {
     option idempotency_level = IDEMPOTENT;
   }
+  // Get breaking change settings for the server.
+  rpc GetBreakingChangeSettings(GetBreakingChangeSettingsRequest) returns (GetBreakingChangeSettingsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // Update breaking change settings for the server.
+  rpc UpdateBreakingChangeSettings(UpdateBreakingChangeSettingsRequest) returns (UpdateBreakingChangeSettingsResponse);
 }
 
 message ForceDeleteUserRequest {
@@ -77,3 +96,15 @@ message CreateMachineUserRequest {
 message CreateMachineUserResponse {
   User user = 1;
 }
+
+message GetBreakingChangeSettingsRequest {}
+
+message GetBreakingChangeSettingsResponse {
+  BreakingChangeSettings settings = 1;
+}
+
+message UpdateBreakingChangeSettingsRequest {
+  BreakingChangeSettings settings = 1;
+}
+
+message UpdateBreakingChangeSettingsResponse {}
