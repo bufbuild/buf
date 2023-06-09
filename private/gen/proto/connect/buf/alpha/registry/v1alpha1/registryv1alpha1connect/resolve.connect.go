@@ -70,6 +70,8 @@ type ResolveServiceClient interface {
 	//
 	// This function also deals with tiebreaking what ModulePin wins for the same repository.
 	GetModulePins(context.Context, *connect_go.Request[v1alpha1.GetModulePinsRequest]) (*connect_go.Response[v1alpha1.GetModulePinsResponse], error)
+	// ResolveReference resolves the given plugin and module references to a version.
+	// The format of the version is determined by the plugin type.
 	ResolveReference(context.Context, *connect_go.Request[v1alpha1.ResolveReferenceRequest]) (*connect_go.Response[v1alpha1.ResolveReferenceResponse], error)
 }
 
@@ -125,6 +127,8 @@ type ResolveServiceHandler interface {
 	//
 	// This function also deals with tiebreaking what ModulePin wins for the same repository.
 	GetModulePins(context.Context, *connect_go.Request[v1alpha1.GetModulePinsRequest]) (*connect_go.Response[v1alpha1.GetModulePinsResponse], error)
+	// ResolveReference resolves the given plugin and module references to a version.
+	// The format of the version is determined by the plugin type.
 	ResolveReference(context.Context, *connect_go.Request[v1alpha1.ResolveReferenceRequest]) (*connect_go.Response[v1alpha1.ResolveReferenceResponse], error)
 }
 
