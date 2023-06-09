@@ -1,0 +1,23 @@
+{
+  "version": "v2",
+  "inputs": [
+    {
+      "module": "buf.build/acme/weather",
+      "types": [
+        "foo.v1.User",
+        "foo.v1.UserService"
+      ],
+      "include_paths": [
+        "protos/a",
+        "protos/b"
+      ],
+      "exclude_paths": [
+        "protos/c",
+        "protos/d"
+      ]
+    },
+    {
+      "module": "buf.build/acme/weather"
+    }
+  ]
+}

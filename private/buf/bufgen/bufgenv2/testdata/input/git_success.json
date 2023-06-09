@@ -1,0 +1,35 @@
+{
+  "version": "v2",
+  "inputs": [
+    {
+      "git_repo": "github.com/acme/weather0.git",
+      "branch": "main",
+      "ref": "fdafaewafe",
+      "depth": 1,
+      "recurse_submodules": true,
+      "subdir": "protos",
+      "types": [
+        "a.b.c1",
+        "a.b.c2"
+      ],
+      "exclude_paths": [
+        "x/y/z1",
+        "x/y/z2"
+      ],
+      "include_paths": [
+        "x/y/w1",
+        "x/y/w2"
+      ]
+    },
+    {
+      "git_repo": "github.com/acme/weather1.git",
+      "tag": "v123",
+      "depth": 10,
+      "recurse_submodules": false,
+      "subdir": "proto"
+    },
+    {
+      "git_repo": "github.com/acme/weather2.git"
+    }
+  ]
+}
