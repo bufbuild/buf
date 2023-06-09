@@ -98,14 +98,14 @@ func (s *syncer) resolveSyncPoint(ctx context.Context, module Module, branch str
 	if err != nil {
 		return nil, fmt.Errorf("resolve syncPoint for module %s: %w", module.RemoteIdentity(), err)
 	}
-	if syncPoint != nil {
-		// Validate that the commit pointed to by the sync point exists.
-		if _, err := s.repo.Objects().Commit(syncPoint); err != nil {
-			return nil, s.errorHandler.InvalidSyncPoint(module, branch, syncPoint, err)
-		}
-		return syncPoint, nil
+	if syncPoint == nil {
+		return nil, nil
 	}
-	return nil, nil
+	// Validate that the commit pointed to by the sync point exists.
+	if _, err := s.repo.Objects().Commit(syncPoint); err != nil {
+		return nil, s.errorHandler.InvalidSyncPoint(module, branch, syncPoint, err)
+	}
+	return syncPoint, nil
 }
 
 func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
