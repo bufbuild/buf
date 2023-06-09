@@ -21,8 +21,8 @@ import "google/protobuf/timestamp.proto";
 message RepositoryBranch {
   // The name of the repository branch.
   string name = 1;
-  // The name of the author.
-  string author_name = 2;
+  // The name of the author who pushed the latest commit to this branch.
+  string latest_git_commit_author_name = 2;
   // The last update time of the branch.
   google.protobuf.Timestamp update_time = 3;
 }
