@@ -298,7 +298,7 @@ func (s *syncErrorHandler) InvalidSyncPoint(
 	// sync those commits if we continue. So we now we simply error.
 	if errors.Is(err, git.ErrObjectNotFound) {
 		return fmt.Errorf(
-			"last known commit %s was not found for module %s; did you rebase?",
+			"last synced commit %s was not found for module %s; did you rebase?",
 			syncPoint,
 			module,
 		)
