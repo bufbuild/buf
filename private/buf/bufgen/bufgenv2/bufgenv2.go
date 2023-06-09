@@ -183,8 +183,8 @@ type ExternalPluginConfigV2 struct {
 
 // ExternalInputConfigV2 is an external input configuration.
 type ExternalInputConfigV2 struct {
-	// Only one of Module, Directory, ProtoFile, Tarball, ZipArchive, BinaryImage,
-	// JSONImage and GitRepo can be set as the format.
+	// One and only one of Module, Directory, ProtoFile, Tarball, ZipArchive, BinaryImage,
+	// JSONImage and GitRepo must be specified as the format.
 	Module      *string `json:"module,omitempty" yaml:"module,omitempty"`
 	Directory   *string `json:"directory,omitempty" yaml:"directory,omitempty"`
 	ProtoFile   *string `json:"proto_file,omitempty" yaml:"proto_file,omitempty"`
