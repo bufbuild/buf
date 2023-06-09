@@ -259,6 +259,11 @@ func (f *formatter) writeFileHeader() {
 		if i == 0 && f.previousNode != nil && !f.leadingCommentsContainBlankLine(importNode) {
 			f.P("")
 		}
+
+		if i > 0 && importNode.Name.AsString() == importNodes[i-1].Name.AsString() {
+			continue
+		}
+
 		f.writeImport(importNode, i > 0)
 	}
 	sort.Slice(optionNodes, func(i, j int) bool {
