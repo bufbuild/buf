@@ -51,7 +51,9 @@ service AdminService {
     option idempotency_level = IDEMPOTENT;
   }
   // Gets breaking change settings for the server.
-  rpc GetBreakingChangeSettings(GetBreakingChangeSettingsRequest) returns (GetBreakingChangeSettingsResponse) {}
+  rpc GetBreakingChangeSettings(GetBreakingChangeSettingsRequest) returns (GetBreakingChangeSettingsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
   // Updates breaking change settings for the server.
   rpc UpdateBreakingChangeSettings(UpdateBreakingChangeSettingsRequest) returns (UpdateBreakingChangeSettingsResponse);
 }
