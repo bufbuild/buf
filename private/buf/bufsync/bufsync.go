@@ -31,18 +31,43 @@ import (
 type ErrorHandler interface {
 	// InvalidModuleConfig is invoked by Syncer upon encountering a module
 	// with an invalid module config.
+	//
+	// Returning an error will abort sync.
 	InvalidModuleConfig(
-		module string,
+		module Module,
 		commit git.Commit,
 		err error,
 	) error
 	// BuildFailure is invoked by Syncer upon encountering a module that fails
 	// build.
+	//
+	// Returning an error will abort sync.
 	BuildFailure(
-		module string,
-		moduleIdentity bufmoduleref.ModuleIdentity,
+		module Module,
 		commit git.Commit,
 		err error,
+	) error
+	// InvalidSyncPoint is invoked by Syncer upon encountering a module's branch
+	// sync point that is invalid. A typical example is either a sync point that
+	// point to a commit that cannot be found anymore, or the commit itself has
+	// been corrupted.
+	//
+	// Returning an error will abort sync.
+	InvalidSyncPoint(
+		module Module,
+		branch string,
+		syncPoint git.Hash,
+		err error,
+	) error
+	// SyncPointNotEncountered is invoked by Syncer upon syncing a module on a
+	// branch where a sync point was resolved and validated, but was not
+	// encountered during sync.
+	//
+	// Returning an error will abort sync.
+	SyncPointNotEncountered(
+		module Module,
+		branch string,
+		syncPoint git.Hash,
 	) error
 }
 
@@ -53,6 +78,8 @@ type Module interface {
 	// RemoteIdentity is the identity of the remote module that the
 	// local module is synced to.
 	RemoteIdentity() bufmoduleref.ModuleIdentity
+	// String is the string representation of this module.
+	String() string
 }
 
 // NewModule constructs a new module that can be synced with a Syncer.
@@ -101,9 +128,8 @@ type SyncerOption func(*syncer) error
 func SyncerWithModule(module Module) SyncerOption {
 	return func(s *syncer) error {
 		for _, existingModule := range s.modulesToSync {
-			if existingModule.Dir() == module.Dir() &&
-				module.RemoteIdentity().IdentityString() == existingModule.RemoteIdentity().IdentityString() {
-				return fmt.Errorf("duplicate module %s:%s", module.Dir(), module.RemoteIdentity().IdentityString())
+			if existingModule.String() == module.String() {
+				return fmt.Errorf("duplicate module %s", module)
 			}
 		}
 		s.modulesToSync = append(s.modulesToSync, module)
@@ -111,8 +137,26 @@ func SyncerWithModule(module Module) SyncerOption {
 	}
 }
 
-// SyncFunc is invoked by Syncer to process a sync point.
+// SyncerWithResumption configures a Syncer with a resumption using a SyncPointResolver.
+func SyncerWithResumption(resolver SyncPointResolver) SyncerOption {
+	return func(s *syncer) error {
+		s.syncPointResolver = resolver
+		return nil
+	}
+}
+
+// SyncFunc is invoked by Syncer to process a sync point. If an error is returned,
+// sync will abort.
 type SyncFunc func(ctx context.Context, commit ModuleCommit) error
+
+// SyncPointResolver is invoked by Syncer to resolve a syncpoint for a particular module
+// at a particular branch. If no syncpoint is found, this function returns nil. If an error
+// is returned, sync will abort.
+type SyncPointResolver func(
+	ctx context.Context,
+	identity bufmoduleref.ModuleIdentity,
+	branch string,
+) (git.Hash, error)
 
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {
