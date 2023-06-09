@@ -24,6 +24,9 @@ const (
 	AuthenticationTokenPrefix = "Bearer "
 	// CliVersionHeaderName is the name of the header carrying the buf CLI version.
 	CliVersionHeaderName = "buf-version"
+	// CLIWarningHeaderName is the name of the header carrying a base64-encoded warning message
+	// from the server to the CLI.
+	CLIWarningHeaderName = "buf-warning-bin"
 	// DefaultRemote is the default remote if none can be inferred from a module name.
 	DefaultRemote = "buf.build"
 )
