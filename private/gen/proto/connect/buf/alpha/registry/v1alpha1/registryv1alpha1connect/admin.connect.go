@@ -119,7 +119,8 @@ func NewAdminServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 		getBreakingChangeSettings: connect_go.NewClient[v1alpha1.GetBreakingChangeSettingsRequest, v1alpha1.GetBreakingChangeSettingsResponse](
 			httpClient,
 			baseURL+AdminServiceGetBreakingChangeSettingsProcedure,
-			opts...,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		updateBreakingChangeSettings: connect_go.NewClient[v1alpha1.UpdateBreakingChangeSettingsRequest, v1alpha1.UpdateBreakingChangeSettingsResponse](
 			httpClient,
@@ -222,7 +223,8 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 	mux.Handle(AdminServiceGetBreakingChangeSettingsProcedure, connect_go.NewUnaryHandler(
 		AdminServiceGetBreakingChangeSettingsProcedure,
 		svc.GetBreakingChangeSettings,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
 	mux.Handle(AdminServiceUpdateBreakingChangeSettingsProcedure, connect_go.NewUnaryHandler(
 		AdminServiceUpdateBreakingChangeSettingsProcedure,
