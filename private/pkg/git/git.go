@@ -47,8 +47,12 @@ const (
 )
 
 var (
+	// ErrTreeNodeNotFound is an error found in the error chain when
+	// Tree#Descendant is unable to find the target tree node.
 	ErrTreeNodeNotFound = errors.New("node not found")
-	ErrObjectNotFound   = errors.New("object not found")
+	// ErrTreeNodeNotFound is an error found in the error chain when
+	// ObjectReader is unable to find the target object.
+	ErrObjectNotFound = errors.New("object not found")
 )
 
 // ObjectMode is how to interpret a tree node's object. See the Mode* constants
