@@ -77,7 +77,7 @@ var allowedOptionsForFormat = map[string](map[string]bool){
 }
 
 func newInputConfig(ctx context.Context, externalConfig ExternalInputConfigV2) (*InputConfig, error) {
-	formatsSpecified, optionsSpecified := getFormatsAndOptionsSet(externalConfig)
+	formatsSpecified, optionsSpecified := getFormatsAndOptionsSpecified(externalConfig)
 	if len(formatsSpecified) == 0 {
 		return nil, errors.New("must specify input type")
 	}
@@ -215,7 +215,7 @@ func newInputConfig(ctx context.Context, externalConfig ExternalInputConfigV2) (
 	return &inputConfig, nil
 }
 
-func getFormatsAndOptionsSet(externalConfig ExternalInputConfigV2) ([]string, []string) {
+func getFormatsAndOptionsSpecified(externalConfig ExternalInputConfigV2) ([]string, []string) {
 	var formats []string
 	var options []string
 	if externalConfig.Module != nil {
