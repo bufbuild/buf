@@ -78,9 +78,9 @@ type AdminServiceClient interface {
 	UpdateOrganizationVerificationStatus(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error)
 	// Create a new machine user on the server.
 	CreateMachineUser(context.Context, *connect_go.Request[v1alpha1.CreateMachineUserRequest]) (*connect_go.Response[v1alpha1.CreateMachineUserResponse], error)
-	// Gets breaking change settings for the server.
+	// Get breaking change settings for the server.
 	GetBreakingChangeSettings(context.Context, *connect_go.Request[v1alpha1.GetBreakingChangeSettingsRequest]) (*connect_go.Response[v1alpha1.GetBreakingChangeSettingsResponse], error)
-	// Updates breaking change settings for the server.
+	// Update breaking change settings for the server.
 	UpdateBreakingChangeSettings(context.Context, *connect_go.Request[v1alpha1.UpdateBreakingChangeSettingsRequest]) (*connect_go.Response[v1alpha1.UpdateBreakingChangeSettingsResponse], error)
 }
 
@@ -185,9 +185,9 @@ type AdminServiceHandler interface {
 	UpdateOrganizationVerificationStatus(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error)
 	// Create a new machine user on the server.
 	CreateMachineUser(context.Context, *connect_go.Request[v1alpha1.CreateMachineUserRequest]) (*connect_go.Response[v1alpha1.CreateMachineUserResponse], error)
-	// Gets breaking change settings for the server.
+	// Get breaking change settings for the server.
 	GetBreakingChangeSettings(context.Context, *connect_go.Request[v1alpha1.GetBreakingChangeSettingsRequest]) (*connect_go.Response[v1alpha1.GetBreakingChangeSettingsResponse], error)
-	// Updates breaking change settings for the server.
+	// Update breaking change settings for the server.
 	UpdateBreakingChangeSettings(context.Context, *connect_go.Request[v1alpha1.UpdateBreakingChangeSettingsRequest]) (*connect_go.Response[v1alpha1.UpdateBreakingChangeSettingsResponse], error)
 }
 
