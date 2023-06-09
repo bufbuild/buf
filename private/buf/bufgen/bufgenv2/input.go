@@ -82,7 +82,7 @@ func newInputConfig(ctx context.Context, externalConfig ExternalInputConfigV2) (
 		return nil, errors.New("must specify input type")
 	}
 	if len(formatsSpecified) > 1 {
-		return nil, errors.New("each input can only have one format")
+		return nil, fmt.Errorf("each input can only have one format, already have format %s", formatsSpecified[0])
 	}
 	format := formatsSpecified[0]
 	allowedOptions, ok := allowedOptionsForFormat[format]

@@ -512,7 +512,7 @@ func TestIntputConfigSuccess(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		for _, fileExtension := range []string{"yaml" /* ,"yml", "json" */} { // TODO: enable all
+		for _, fileExtension := range []string{"yaml", "json"} {
 			t.Run(test.testName, func(t *testing.T) {
 				test := test
 				file := filepath.Join("testdata", "input", test.file+"."+fileExtension)
@@ -560,7 +560,7 @@ func TestInputConfigError(t *testing.T) {
 		{
 			testName:      "Test two input types not allowed",
 			file:          "two_types_error",
-			expectedError: "each input can only have one format", // TODO: each input can only have one format, already of type: xyz
+			expectedError: "each input can only have one format, already have format json_image",
 		},
 		{
 			testName:      "Test input type required",
@@ -630,7 +630,7 @@ func TestInputConfigError(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		for _, fileExtension := range []string{"yaml" /* ,"yml", "json" */} { // TODO: enable all
+		for _, fileExtension := range []string{"yaml", "json"} {
 			t.Run(test.testName, func(t *testing.T) {
 				test := test
 				file := filepath.Join("testdata", "input", test.file+"."+fileExtension)
