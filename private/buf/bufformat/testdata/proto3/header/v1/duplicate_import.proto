@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+//only the first should be preserved
+import "google/protobuf/timestamp.proto";
+//will be removed
+import "google/protobuf/timestamp.proto";
+
+import "google/protobuf/empty.proto"; //will be preserved
+import /* duplicate */ "google/protobuf/empty.proto"; 
+import /* duplicate */ "google/protobuf/empty.proto"; 

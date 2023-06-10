@@ -260,6 +260,7 @@ func (f *formatter) writeFileHeader() {
 			f.P("")
 		}
 
+		// since imports are sorted, this can remove duplicate imports after first one
 		if i > 0 && importNode.Name.AsString() == importNodes[i-1].Name.AsString() {
 			continue
 		}

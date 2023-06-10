@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto"; //will be preserved
+//only the first should be preserved
+import "google/protobuf/timestamp.proto";
