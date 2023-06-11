@@ -280,9 +280,10 @@ func (f *formatter) writeFileHeader() {
 			f.P("")
 		}
 
-		// since the imports are sorted, this will only preserve the first import
-		if i > 0 && !f.importHasComment(importNode) &&
-			importNode.Name.AsString() == importNodes[i-1].Name.AsString() {
+		// since the imports are sorted, this will skip write imports
+		// if they have appear before and dont have comment
+		if i > 0 && importNode.Name.AsString() == importNodes[i-1].Name.AsString() &&
+			!f.importHasComment(importNode) {
 			continue
 		}
 
