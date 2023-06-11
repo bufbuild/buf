@@ -2229,11 +2229,14 @@ func (f *formatter) importHasComment(importNode *ast.ImportNode) bool {
 	return f.nodeHasComment(importNode.Keyword) ||
 		f.nodeHasComment(importNode.Name) ||
 		f.nodeHasComment(importNode.Semicolon) ||
-		(importNode.Public != nil && f.nodeHasComment(importNode.Public)) ||
-		(importNode.Weak != nil && f.nodeHasComment(importNode.Weak))
+		f.nodeHasComment(importNode.Public) ||
+		f.nodeHasComment(importNode.Weak)
 }
 
 func (f *formatter) nodeHasComment(node ast.Node) bool {
+	if node == nil {
+		return false
+	}
 	nodeinfo := f.fileNode.NodeInfo(node)
 	return nodeinfo.LeadingComments().Len() > 0 ||
 		nodeinfo.TrailingComments().Len() > 0
