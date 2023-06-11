@@ -1,10 +1,22 @@
-syntax = "proto3";
+syntax = "proto3";/*
+timestamp will preserve commented imports
+field_mask will preserve the first one
+empty will preserve public import
+annotation will preserve the normal import
+*/
 
-//only the first should be preserved
 import "google/protobuf/timestamp.proto";
-//will be removed
+// commented import will not be removed
 import "google/protobuf/timestamp.proto";
+import /*commented*/ "google/protobuf/timestamp.proto";
+import "google/protobuf/timestamp.proto"; //commented
 
-import "google/protobuf/empty.proto"; //will be preserved
-import /* duplicate */ "google/protobuf/empty.proto"; 
-import /* duplicate */ "google/protobuf/empty.proto"; 
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/field_mask.proto";
+
+import "google/protobuf/empty.proto";
+import public "google/protobuf/empty.proto"; 
+import weak "google/protobuf/empty.proto"; 
+
+import "google/protobuf/annotation.proto";
+import weak "google/protobuf/annotation.proto"; 

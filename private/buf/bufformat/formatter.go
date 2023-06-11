@@ -253,15 +253,36 @@ func (f *formatter) writeFileHeader() {
 		f.writePackage(packageNode)
 	}
 	sort.Slice(importNodes, func(i, j int) bool {
-		return importNodes[i].Name.AsString() < importNodes[j].Name.AsString()
+		iName := importNodes[i].Name.AsString()
+		jName := importNodes[j].Name.AsString()
+		// sort by public > None > weak
+		iLevel := importLevel(importNodes[i])
+		jLevel := importLevel(importNodes[j])
+
+		if iName < jName {
+			return true
+		}
+		if iName > jName {
+			return false
+		}
+		if iLevel > jLevel {
+			return true
+		}
+		if iLevel < jLevel {
+			return false
+		}
+
+		// put commented import first
+		return !f.importHasComment(importNodes[j])
 	})
 	for i, importNode := range importNodes {
 		if i == 0 && f.previousNode != nil && !f.leadingCommentsContainBlankLine(importNode) {
 			f.P("")
 		}
 
-		// since imports are sorted, this can remove duplicate imports after first one
-		if i > 0 && importNode.Name.AsString() == importNodes[i-1].Name.AsString() {
+		// since the imports are sorted, this will only preserve the first import
+		if i > 0 && !f.importHasComment(importNode) &&
+			importNode.Name.AsString() == importNodes[i-1].Name.AsString() {
 			continue
 		}
 
@@ -2201,6 +2222,33 @@ func (f *formatter) leadingCommentsContainBlankLine(n ast.Node) bool {
 		}
 	}
 	return newlineCount(info.LeadingWhitespace()) > 1
+}
+
+func (f *formatter) importHasComment(importNode *ast.ImportNode) bool {
+	return f.nodeHasComment(importNode.Keyword) ||
+		f.nodeHasComment(importNode.Name) ||
+		f.nodeHasComment(importNode.Semicolon) ||
+		(importNode.Public != nil && f.nodeHasComment(importNode.Public)) ||
+		(importNode.Weak != nil && f.nodeHasComment(importNode.Weak))
+}
+
+func (f *formatter) nodeHasComment(node ast.Node) bool {
+	nodeinfo := f.fileNode.NodeInfo(node)
+	return nodeinfo.LeadingComments().Len() > 0 ||
+		nodeinfo.TrailingComments().Len() > 0
+}
+
+// importLevel maps import types to a level, so it can be compared and sorted.
+// `import public`=3, `import`=2; `import weak` =1
+func importLevel(node *ast.ImportNode) int {
+	switch {
+	case node.Public != nil:
+		return 3
+	case node.Weak != nil:
+		return 1
+	default:
+		return 2
+	}
 }
 
 // stringForOptionName returns the string representation of the given option name node.
