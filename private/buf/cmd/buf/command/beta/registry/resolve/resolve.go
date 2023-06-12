@@ -98,6 +98,9 @@ func run(
 			},
 		},
 	))
+	if err != nil {
+		return err
+	}
 	_, err = container.Stdout().Write([]byte(resolvedReference.Msg.Version))
 	return err
 }
