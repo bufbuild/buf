@@ -33,6 +33,12 @@ service ResolveService {
   rpc GetModulePins(GetModulePinsRequest) returns (GetModulePinsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+
+  // ResolveReference resolves the given plugin and module references to a version.
+  // The format of the version is determined by the plugin type.
+  rpc ResolveReference(ResolveReferenceRequest) returns (ResolveReferenceResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetModulePinsRequest {
@@ -106,4 +112,31 @@ message GetLocalModulePinsResponse {
   //
   // This includes the transitive deps.
   repeated buf.alpha.module.v1alpha1.ModulePin dependencies = 2;
+}
+
+message ResolveReferenceRequest {
+  // The plugin reference to resolve.
+  ResolveReferencePlugin plugin_reference = 1;
+  // The module reference to resolve.
+  LocalModuleReference module_reference = 2;
+}
+
+// ResolveReferencePlugin is a plugin reference.
+// If the version is empty, this is a reference to the latest version.
+message ResolveReferencePlugin {
+  // The owner of the plugin.
+  // example: bufbuild
+  string owner = 1;
+  // The name of the plugin.
+  // example: connect-go
+  string name = 2;
+  // The version of the plugin.
+  // If empty, this is a reference to the latest version.
+  // example: v1.0.0
+  string version = 3;
+}
+
+message ResolveReferenceResponse {
+  // version is the resolved version that can be sent to a registry.
+  string version = 1;
 }
