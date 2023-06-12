@@ -99,7 +99,7 @@ type Generator interface {
 
 	// GenerateWithProtocBuiltin generates a CodeGeneratorResponse for the given pluginName.
 	// The pluginName must be one of the plugins built-in to protoc. The path to protoc can
-	// be overriden via the GenerateWithProtocBuiltinWithPath.
+	// be overridden via the GenerateWithProtocBuiltinWithPath.
 	GenerateWithProtocBuiltin(
 		ctx context.Context,
 		container app.EnvStderrContainer,

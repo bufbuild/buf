@@ -635,6 +635,9 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 				plugin.Out,
 				opt,
 			)
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			pluginConfig = bufgen.NewLocalPluginConfig(
 				plugin.Name,
