@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Discover the correct remote to use for fetching dependencies in the `mod update` and `mod prune`
+  commands, in case there is a mix of remotes in the `buf.yaml` configuration file.
 
 ## [v1.21.0] - 2023-06-05
 
