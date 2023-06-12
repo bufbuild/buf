@@ -117,14 +117,14 @@ message GetLocalModulePinsResponse {
 
 message ResolveReferenceRequest {
   // The plugin reference to resolve.
-  CuratedPluginReference plugin_reference = 1;
+  ResolveReferencePlugin plugin_reference = 1;
   // The module reference to resolve.
   LocalModuleReference module_reference = 2;
 }
 
-// PluginRef is a plugin reference.
+// ResolveReferencePlugin is a plugin reference.
 // If the version is empty, this is a reference to the latest version.
-message PluginRef {
+message ResolveReferencePlugin {
   // The owner of the plugin.
   // example: bufbuild
   string owner = 1;
