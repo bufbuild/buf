@@ -74,9 +74,6 @@ func getConfig(
 		if err := unmarshalStrict(data, &externalConfigV1); err != nil {
 			return nil, err
 		}
-		// if err := validateExternalConfigV1(externalConfigV1, id); err != nil {
-		// 	return nil, err
-		// }
 		return newConfigV1(logger, externalConfigV1, id)
 	default:
 		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, bufgen.V1Version)
@@ -88,38 +85,6 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 	if err != nil {
 		return nil, err
 	}
-	// pluginConfigs := make([]bufgen.PluginConfig, 0, len(externalConfig.Plugins))
-	// for _, plugin := range externalConfig.Plugins {
-	// 	strategy, err := internal.ParseStrategy(plugin.Strategy)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	opt, err := encoding.InterfaceSliceOrStringToCommaSepString(plugin.Opt)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	path, err := encoding.InterfaceSliceOrStringToStringSlice(plugin.Path)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	pluginConfig := &PluginConfig{
-	// 		Plugin:     plugin.Plugin,
-	// 		Revision:   plugin.Revision,
-	// 		Name:       plugin.Name,
-	// 		Remote:     plugin.Remote,
-	// 		Out:        plugin.Out,
-	// 		Opt:        opt,
-	// 		Path:       path,
-	// 		ProtocPath: plugin.ProtocPath,
-	// 		Strategy:   strategy,
-	// 	}
-	// 	// TODO: figure out whether it needs to be set for remote plugin config types
-	// 	// if pluginConfig.IsRemote() {
-	// 	// 	// Always use StrategyAll for remote plugins
-	// 	// 	pluginConfig.Strategy = internal.StrategyAll
-	// 	// }
-	// 	pluginConfigs = append(pluginConfigs, pluginConfig)
-	// }
 	pluginConfigs, err := getPluginConfigs(externalConfig, id)
 	if err != nil {
 		return nil, err
@@ -171,7 +136,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 		switch {
 		case plugin.Plugin != "":
 			if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
-				// plugin.Plugin is a curated remote plugin
+				// plugin.Plugin is a curated plugin
 				if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
 					return nil, err
 				}
@@ -183,7 +148,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 				)
 				pluginConfigs = append(pluginConfigs, curatedPluginConfig)
 			} else {
-				// plugin.Plugin is a local plugin - verify it isn't using an alpha remote plugin path
+				// plugin.Plugin is a local plugin - verify it isn't using an legacy remote plugin path
 				if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
 					return nil, fmt.Errorf("%s: invalid local plugin", id)
 				}

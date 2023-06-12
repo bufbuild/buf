@@ -189,7 +189,7 @@ type ConfigGetter[V any] func(
 
 // PluginConfig is a plugin configuration.
 type PluginConfig interface {
-	PluginName() string // is it really needed?
+	PluginName() string
 	Out() string
 	Opt() string
 
@@ -204,7 +204,7 @@ type LocalPluginConfig interface {
 	localPluginConfig()
 }
 
-// NewLocalPluginConfig creates a new local plugin  configuration whose exact
+// NewLocalPluginConfig creates a new local plugin configuration whose exact
 // type is not yet determined, which could be either binary or protoc built-in.
 func NewLocalPluginConfig(
 	name string,
@@ -228,6 +228,7 @@ type BinaryPluginConfig interface {
 	binaryPluginConfig()
 }
 
+// NewBinaryPluginConfig returns a new binary plugin configuration.
 func NewBinaryPluginConfig(
 	name string,
 	path []string,
@@ -244,7 +245,7 @@ func NewBinaryPluginConfig(
 	)
 }
 
-// ProtocBuiltinPluginConifg is a protoc built-in plugin configuration.
+// ProtocBuiltinPluginConfig is a protoc built-in plugin configuration.
 type ProtocBuiltinPluginConfig interface {
 	LocalPluginConfig
 	ProtocPath() string
@@ -252,6 +253,7 @@ type ProtocBuiltinPluginConfig interface {
 	protocBuiltinPluginConfig()
 }
 
+// NewProtocBuiltinPluginConfig returns a new protoc built-in plugin configuration.
 func NewProtocBuiltinPluginConfig(
 	name string,
 	protocPath string,
@@ -268,6 +270,7 @@ func NewProtocBuiltinPluginConfig(
 	)
 }
 
+// RemotePluginConfig is a remote plugin configuration.
 type RemotePluginConfig interface {
 	PluginConfig
 	Remote() string
@@ -283,6 +286,7 @@ type CuratedPluginConfig interface {
 	curatedPluginConfig()
 }
 
+// NewCuratedPluginConfig returns a new curated plugin configuration.
 func NewCuratedPluginConfig(
 	plugin string,
 	revision int, // TODO: maybe pointer to indicate absence
@@ -297,6 +301,14 @@ func NewCuratedPluginConfig(
 	)
 }
 
+// LegacyRemotePluginConfig is a legacy remote plugin configuration.
+type LegacyRemotePluginConfig interface {
+	RemotePluginConfig
+
+	legacyRemotePluginConfig()
+}
+
+// NewLegacyRemotePluginConfig returns a new legacy remote plugin configuration.
 func NewLegacyRemotePluginConfig(
 	remote string,
 	out string,
@@ -307,11 +319,4 @@ func NewLegacyRemotePluginConfig(
 		out,
 		opt,
 	)
-}
-
-// LegacyRemotePluginConfig is a V1 remote plugin configuration.
-type LegacyRemotePluginConfig interface {
-	RemotePluginConfig
-
-	legacyRemotePluginConfig()
 }

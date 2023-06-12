@@ -65,7 +65,7 @@ type binaryPluginConfig struct {
 	out      string
 	opt      string
 	strategy internal.Strategy
-	path     []string // pluginName is the first element
+	path     []string
 }
 
 func newBinaryPluginConfig(
@@ -118,7 +118,7 @@ type protocBuiltinPluginConfig struct {
 	out        string
 	opt        string
 	strategy   internal.Strategy
-	name       string // pluginName is this
+	name       string
 	protocPath string
 }
 
@@ -163,7 +163,7 @@ func (c *protocBuiltinPluginConfig) localPluginConfig()         {}
 func (c *protocBuiltinPluginConfig) protocBuiltinPluginConfig() {}
 
 type curatedPluginConfig struct {
-	plugin   string // pluginName is this
+	plugin   string
 	revision int
 	out      string
 	opt      string
@@ -171,7 +171,7 @@ type curatedPluginConfig struct {
 
 func newCuratedPluginConfig(
 	plugin string,
-	revision int, // TODO: maybe pointer to indicate absence
+	revision int,
 	out string,
 	opt string,
 ) *curatedPluginConfig {
@@ -209,7 +209,7 @@ func (c *curatedPluginConfig) curatedPluginConfig() {}
 type legacyRemotePluginConfig struct {
 	out    string
 	opt    string
-	remote string // pluginName is this
+	remote string
 }
 
 func newLegacyRemotePluginConfig(
