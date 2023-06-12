@@ -29,6 +29,7 @@ import (
 )
 
 func TestIntputConfigSuccess(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	nopLogger := zap.NewNop()
 	refBuilder := buffetch.NewRefBuilder()
@@ -512,10 +513,12 @@ func TestIntputConfigSuccess(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		for _, fileExtension := range []string{"yaml", "json"} {
-			t.Run(test.testName, func(t *testing.T) {
-				test := test
-				file := filepath.Join("testdata", "input", test.file+"."+fileExtension)
+		test := test
+		for _, fileExtension := range []string{".yaml", ".json"} {
+			fileExtension := fileExtension
+			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
+				t.Parallel()
+				file := filepath.Join("testdata", "input", test.file+fileExtension)
 				config, err := ReadConfigV2(
 					ctx,
 					nopLogger,
@@ -536,6 +539,7 @@ func TestIntputConfigSuccess(t *testing.T) {
 }
 
 func TestInputConfigError(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	nopLogger := zap.NewNop()
 	provider := bufgen.NewConfigDataProvider(zap.NewNop())
@@ -630,11 +634,12 @@ func TestInputConfigError(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		for _, fileExtension := range []string{"yaml", "json"} {
-			t.Run(test.testName, func(t *testing.T) {
-				test := test
-				file := filepath.Join("testdata", "input", test.file+"."+fileExtension)
-
+		test := test
+		for _, fileExtension := range []string{".yaml", ".json"} {
+			fileExtension := fileExtension
+			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
+				t.Parallel()
+				file := filepath.Join("testdata", "input", test.file+fileExtension)
 				config, err := ReadConfigV2(
 					ctx,
 					nopLogger,
