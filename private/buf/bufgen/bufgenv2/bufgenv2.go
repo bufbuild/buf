@@ -62,10 +62,10 @@ type ManagedConfig struct {
 
 // PluginConfig is a plugin configuration.
 type PluginConfig struct {
-	Remote        string
-	Binary        []string
-	ProtocBuiltin string
-	Wasm          string
+	Remote        *string
+	Binary        *[]string
+	ProtocBuiltin *string
+	Wasm          *string
 	// Only valid with Remote
 	Revision int
 	// Only valid with ProtocBuiltin
@@ -137,16 +137,15 @@ type ExternalManagedOverrideConfigV2 struct {
 // ExternalPluginConfigV2 is an external plugin configuration.
 type ExternalPluginConfigV2 struct {
 	// Only one of Remote, Binary, Wasm, ProtocBuiltin can be set
-	Remote string `json:"remote,omitempty" yaml:"remote,omitempty"`
+	Remote *string `json:"remote,omitempty" yaml:"remote,omitempty"`
 	// Can be multiple arguments
 	// All arguments must be strings
 	Binary        interface{} `json:"binary,omitempty" yaml:"binary,omitempty"`
-	Wasm          string      `json:"wasm,omitempty" yaml:"wasm,omitempty"`
-	ProtocBuiltin string      `json:"protoc_builtin,omitempty" yaml:"protoc_builtin,omitempty"`
+	ProtocBuiltin *string     `json:"protoc_builtin,omitempty" yaml:"protoc_builtin,omitempty"`
 	// Only valid with Remote
-	Revision int `json:"revision,omitempty" yaml:"revision,omitempty"`
+	Revision *int `json:"revision,omitempty" yaml:"revision,omitempty"`
 	// Only valid with ProtocBuiltin
-	ProtocPath string `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
+	ProtocPath *string `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
 	// Required
 	Out string `json:"out,omitempty" yaml:"out,omitempty"`
 	// Can be one string or multiple strings
