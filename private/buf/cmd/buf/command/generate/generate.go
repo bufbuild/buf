@@ -377,19 +377,19 @@ func run(
 	if err != nil {
 		return err
 	}
-	generateOptions := []bufgenv1.GenerateOption{
-		bufgenv1.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
+	generateOptions := []bufgen.GenerateOption{
+		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
 	}
 	if flags.IncludeImports {
 		generateOptions = append(
 			generateOptions,
-			bufgenv1.GenerateWithIncludeImports(),
+			bufgen.GenerateWithIncludeImports(),
 		)
 	}
 	if flags.IncludeWKT {
 		generateOptions = append(
 			generateOptions,
-			bufgenv1.GenerateWithIncludeWellKnownTypes(),
+			bufgen.GenerateWithIncludeWellKnownTypes(),
 		)
 	}
 	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
@@ -399,7 +399,7 @@ func run(
 	if wasmEnabled {
 		generateOptions = append(
 			generateOptions,
-			bufgenv1.GenerateWithWASMEnabled(),
+			bufgen.GenerateWithWASMEnabled(),
 		)
 	}
 	var includedTypes []string
@@ -420,7 +420,15 @@ func run(
 	if err != nil {
 		return err
 	}
-	return bufgenv1.NewGenerator(
+	if err := bufgenv1.ModifyImage(
+		ctx,
+		logger,
+		genConfig,
+		image,
+	); err != nil {
+		return err
+	}
+	return bufgen.NewGenerator(
 		logger,
 		storageosProvider,
 		runner,
@@ -429,7 +437,7 @@ func run(
 	).Generate(
 		ctx,
 		container,
-		genConfig,
+		genConfig.PluginConfigs,
 		image,
 		generateOptions...,
 	)

@@ -74,9 +74,9 @@ func getConfig(
 		if err := unmarshalStrict(data, &externalConfigV1); err != nil {
 			return nil, err
 		}
-		if err := validateExternalConfigV1(externalConfigV1, id); err != nil {
-			return nil, err
-		}
+		// if err := validateExternalConfigV1(externalConfigV1, id); err != nil {
+		// 	return nil, err
+		// }
 		return newConfigV1(logger, externalConfigV1, id)
 	default:
 		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, bufgen.V1Version)
@@ -88,8 +88,74 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 	if err != nil {
 		return nil, err
 	}
-	pluginConfigs := make([]*PluginConfig, 0, len(externalConfig.Plugins))
+	// pluginConfigs := make([]bufgen.PluginConfig, 0, len(externalConfig.Plugins))
+	// for _, plugin := range externalConfig.Plugins {
+	// 	strategy, err := internal.ParseStrategy(plugin.Strategy)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	opt, err := encoding.InterfaceSliceOrStringToCommaSepString(plugin.Opt)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	path, err := encoding.InterfaceSliceOrStringToStringSlice(plugin.Path)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	pluginConfig := &PluginConfig{
+	// 		Plugin:     plugin.Plugin,
+	// 		Revision:   plugin.Revision,
+	// 		Name:       plugin.Name,
+	// 		Remote:     plugin.Remote,
+	// 		Out:        plugin.Out,
+	// 		Opt:        opt,
+	// 		Path:       path,
+	// 		ProtocPath: plugin.ProtocPath,
+	// 		Strategy:   strategy,
+	// 	}
+	// 	// TODO: figure out whether it needs to be set for remote plugin config types
+	// 	// if pluginConfig.IsRemote() {
+	// 	// 	// Always use StrategyAll for remote plugins
+	// 	// 	pluginConfig.Strategy = internal.StrategyAll
+	// 	// }
+	// 	pluginConfigs = append(pluginConfigs, pluginConfig)
+	// }
+	pluginConfigs, err := getPluginConfigs(externalConfig, id)
+	if err != nil {
+		return nil, err
+	}
+	typesConfig := newTypesConfigV1(externalConfig.Types)
+	return &Config{
+		PluginConfigs: pluginConfigs,
+		ManagedConfig: managedConfig,
+		TypesConfig:   typesConfig,
+	}, nil
+}
+
+func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.PluginConfig, error) {
+	if len(externalConfig.Plugins) == 0 {
+		return nil, fmt.Errorf("%s: no plugins set", id)
+	}
+	var pluginConfigs []bufgen.PluginConfig
 	for _, plugin := range externalConfig.Plugins {
+		var numPluginIdentifiers int
+		var pluginIdentifier string
+		for _, possibleIdentifier := range []string{plugin.Plugin, plugin.Name, plugin.Remote} {
+			if possibleIdentifier != "" {
+				numPluginIdentifiers++
+				// Doesn't matter if we reassign here - we only allow one to be set below
+				pluginIdentifier = possibleIdentifier
+			}
+		}
+		if numPluginIdentifiers == 0 {
+			return nil, fmt.Errorf("%s: one of plugin, name or remote is required", id)
+		}
+		if numPluginIdentifiers > 1 {
+			return nil, fmt.Errorf("%s: only one of plugin, name, or remote can be set", id)
+		}
+		if plugin.Out == "" {
+			return nil, fmt.Errorf("%s: plugin %s out is required", id, pluginIdentifier)
+		}
 		strategy, err := internal.ParseStrategy(plugin.Strategy)
 		if err != nil {
 			return nil, err
@@ -102,89 +168,114 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 		if err != nil {
 			return nil, err
 		}
-		pluginConfig := &PluginConfig{
-			Plugin:     plugin.Plugin,
-			Revision:   plugin.Revision,
-			Name:       plugin.Name,
-			Remote:     plugin.Remote,
-			Out:        plugin.Out,
-			Opt:        opt,
-			Path:       path,
-			ProtocPath: plugin.ProtocPath,
-			Strategy:   strategy,
-		}
-		if pluginConfig.IsRemote() {
-			// Always use StrategyAll for remote plugins
-			pluginConfig.Strategy = internal.StrategyAll
-		}
-		pluginConfigs = append(pluginConfigs, pluginConfig)
-	}
-	typesConfig := newTypesConfigV1(externalConfig.Types)
-	return &Config{
-		PluginConfigs: pluginConfigs,
-		ManagedConfig: managedConfig,
-		TypesConfig:   typesConfig,
-	}, nil
-}
-
-func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error {
-	if len(externalConfig.Plugins) == 0 {
-		return fmt.Errorf("%s: no plugins set", id)
-	}
-	for _, plugin := range externalConfig.Plugins {
-		var numPluginIdentifiers int
-		var pluginIdentifier string
-		for _, possibleIdentifier := range []string{plugin.Plugin, plugin.Name, plugin.Remote} {
-			if possibleIdentifier != "" {
-				numPluginIdentifiers++
-				// Doesn't matter if we reassign here - we only allow one to be set below
-				pluginIdentifier = possibleIdentifier
-			}
-		}
-		if numPluginIdentifiers == 0 {
-			return fmt.Errorf("%s: one of plugin, name or remote is required", id)
-		}
-		if numPluginIdentifiers > 1 {
-			return fmt.Errorf("%s: only one of plugin, name, or remote can be set", id)
-		}
-		if plugin.Out == "" {
-			return fmt.Errorf("%s: plugin %s out is required", id, pluginIdentifier)
-		}
 		switch {
 		case plugin.Plugin != "":
 			if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
-				// plugin.Plugin is a remote plugin
+				// plugin.Plugin is a curated remote plugin
 				if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
-					return err
+					return nil, err
 				}
+				curatedPluginConfig := bufgen.NewCuratedPluginConfig(
+					plugin.Plugin,
+					plugin.Revision,
+					plugin.Out,
+					opt,
+				)
+				pluginConfigs = append(pluginConfigs, curatedPluginConfig)
 			} else {
 				// plugin.Plugin is a local plugin - verify it isn't using an alpha remote plugin path
 				if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
-					return fmt.Errorf("%s: invalid local plugin", id)
+					return nil, fmt.Errorf("%s: invalid local plugin", id)
 				}
+				var currentPluginConfig bufgen.PluginConfig
+				if len(path) > 0 {
+					currentPluginConfig, err = bufgen.NewBinaryPluginConfig(
+						plugin.Plugin,
+						path,
+						strategy,
+						plugin.Out,
+						opt,
+					)
+					if err != nil {
+						return nil, err
+					}
+				} else if plugin.ProtocPath != "" {
+					currentPluginConfig = bufgen.NewProtocBuiltinPluginConfig(
+						plugin.Plugin,
+						plugin.ProtocPath,
+						plugin.Out,
+						opt,
+						strategy,
+					)
+				} else {
+					currentPluginConfig = bufgen.NewLocalPluginConfig(
+						plugin.Plugin,
+						strategy,
+						plugin.Out,
+						opt,
+					)
+				}
+				pluginConfigs = append(pluginConfigs, currentPluginConfig)
 			}
 		case plugin.Remote != "":
 			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err != nil {
-				return fmt.Errorf("%s: invalid remote plugin name: %w", id, err)
+				return nil, fmt.Errorf("%s: invalid remote plugin name: %w", id, err)
 			}
 			if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
-				return err
+				return nil, err
 			}
+			pluginConfigs = append(
+				pluginConfigs,
+				bufgen.NewLegacyRemotePluginConfig(
+					plugin.Remote,
+					plugin.Out,
+					opt,
+				),
+			)
 		case plugin.Name != "":
 			// Check that the plugin name doesn't look like a plugin reference
 			if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
-				return fmt.Errorf("%s: invalid local plugin name: %s", id, pluginIdentifier)
+				return nil, fmt.Errorf("%s: invalid local plugin name: %s", id, pluginIdentifier)
 			}
 			// Check that the plugin name doesn't look like an alpha remote plugin
 			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
-				return fmt.Errorf("%s: invalid plugin name %s, did you mean to use a remote plugin?", id, pluginIdentifier)
+				return nil, fmt.Errorf("%s: invalid plugin name %s, did you mean to use a remote plugin?", id, pluginIdentifier)
 			}
+			var currentPluginConfig bufgen.PluginConfig
+			if len(path) > 0 {
+				currentPluginConfig, err = bufgen.NewBinaryPluginConfig(
+					plugin.Name,
+					path,
+					strategy,
+					plugin.Out,
+					opt,
+				)
+				if err != nil {
+					return nil, err
+				}
+			} else if plugin.ProtocPath != "" {
+				currentPluginConfig = bufgen.NewProtocBuiltinPluginConfig(
+					plugin.Name,
+					plugin.ProtocPath,
+					plugin.Out,
+					opt,
+					strategy,
+				)
+			} else {
+				currentPluginConfig = bufgen.NewLocalPluginConfig(
+					plugin.Name,
+					strategy,
+					plugin.Out,
+					opt,
+				)
+			}
+			pluginConfigs = append(pluginConfigs, currentPluginConfig)
 		default:
 			// unreachable - validated above
-			return errors.New("one of plugin, name, or remote is required")
+			return nil, errors.New("one of plugin, name, or remote is required")
 		}
 	}
-	return nil
+	return pluginConfigs, nil
 }
 
 func checkPathAndStrategyUnset(id string, plugin ExternalPluginConfigV1, pluginIdentifier string) error {
@@ -525,7 +616,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 	if err != nil {
 		return nil, err
 	}
-	pluginConfigs := make([]*PluginConfig, 0, len(externalConfig.Plugins))
+	pluginConfigs := make([]bufgen.PluginConfig, 0, len(externalConfig.Plugins))
 	for _, plugin := range externalConfig.Plugins {
 		strategy, err := internal.ParseStrategy(plugin.Strategy)
 		if err != nil {
@@ -535,14 +626,22 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 		if err != nil {
 			return nil, err
 		}
-		pluginConfig := &PluginConfig{
-			Name:     plugin.Name,
-			Out:      plugin.Out,
-			Opt:      opt,
-			Strategy: strategy,
-		}
+		var pluginConfig bufgen.PluginConfig
 		if plugin.Path != "" {
-			pluginConfig.Path = []string{plugin.Path}
+			pluginConfig, err = bufgen.NewBinaryPluginConfig(
+				plugin.Name,
+				[]string{plugin.Path},
+				strategy,
+				plugin.Out,
+				opt,
+			)
+		} else {
+			pluginConfig = bufgen.NewLocalPluginConfig(
+				plugin.Name,
+				strategy,
+				plugin.Out,
+				opt,
+			)
 		}
 		pluginConfigs = append(pluginConfigs, pluginConfig)
 	}

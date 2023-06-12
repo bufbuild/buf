@@ -23,90 +23,13 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
-
-// Generator generates Protobuf stubs based on configurations.
-type Generator interface {
-	// Generate calls the generation logic.
-	//
-	// The config is assumed to be valid. If created by ReadConfig, it will
-	// always be valid.
-	Generate(
-		ctx context.Context,
-		container app.EnvStdioContainer,
-		config *Config,
-		image bufimage.Image,
-		options ...GenerateOption,
-	) error
-}
-
-// NewGenerator returns a new Generator.
-func NewGenerator(
-	logger *zap.Logger,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	wasmPluginExecutor bufwasm.PluginExecutor,
-	clientConfig *connectclient.Config,
-) Generator {
-	return newGenerator(
-		logger,
-		storageosProvider,
-		runner,
-		wasmPluginExecutor,
-		clientConfig,
-	)
-}
-
-// GenerateOption is an option for Generate.
-type GenerateOption func(*generateOptions)
-
-// GenerateWithBaseOutDirPath returns a new GenerateOption that uses the given
-// base directory as the output directory.
-//
-// The default is to use the current directory.
-func GenerateWithBaseOutDirPath(baseOutDirPath string) GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.baseOutDirPath = baseOutDirPath
-	}
-}
-
-// GenerateWithIncludeImports says to also generate imports.
-//
-// Note that this does NOT result in the Well-Known Types being generated, use
-// GenerateWithIncludeWellKnownTypes to include the Well-Known Types.
-func GenerateWithIncludeImports() GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.includeImports = true
-	}
-}
-
-// GenerateWithIncludeWellKnownTypes says to also generate well known types.
-//
-// This option has no effect if GenerateWithIncludeImports is not set.
-func GenerateWithIncludeWellKnownTypes() GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.includeWellKnownTypes = true
-	}
-}
-
-// GenerateWithWASMEnabled says to enable WASM support.
-func GenerateWithWASMEnabled() GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.wasmEnabled = true
-	}
-}
 
 // ReadConfigV1 reads the configuration from the OS or an override, if any.
 //
@@ -130,7 +53,7 @@ func ReadConfigV1(
 // Config is a configuration.
 type Config struct {
 	// Required
-	PluginConfigs []*PluginConfig
+	PluginConfigs []bufgen.PluginConfig
 	// Optional
 	ManagedConfig *ManagedConfig
 	// Optional

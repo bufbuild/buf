@@ -35,14 +35,15 @@ import (
 func TestReadConfigV1Beta1(t *testing.T) {
 	truth := true
 	successConfig := &Config{
-		PluginConfigs: []*PluginConfig{
-			{
-				Name:     "go",
-				Out:      "gen/go",
-				Opt:      "plugins=connect",
-				Path:     []string{"/path/to/foo"},
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			mustCreateBinaryPlugin(
+				t,
+				"go",
+				[]string{"/path/to/foo"},
+				internal.StrategyAll,
+				"gen/go",
+				"plugins=connect",
+			),
 		},
 		ManagedConfig: &ManagedConfig{
 			CcEnableArenas:      &truth,
@@ -63,14 +64,15 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []*PluginConfig{
-			{
-				Name:     "go",
-				Out:      "gen/go",
-				Opt:      "plugins=connect,foo=bar",
-				Path:     []string{"/path/to/foo"},
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			mustCreateBinaryPlugin(
+				t,
+				"go",
+				[]string{"/path/to/foo"},
+				internal.StrategyAll,
+				"gen/go",
+				"plugins=connect,foo=bar",
+			),
 		},
 	}
 	successConfig3 := &Config{
@@ -81,13 +83,15 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []*PluginConfig{
-			{
-				Name:     "go",
-				Out:      "gen/go",
-				Path:     []string{"/path/to/foo"},
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			mustCreateBinaryPlugin(
+				t,
+				"go",
+				[]string{"/path/to/foo"},
+				internal.StrategyAll,
+				"gen/go",
+				"",
+			),
 		},
 	}
 	successConfig4 := &Config{
@@ -98,12 +102,13 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []*PluginConfig{
-			{
-				Name:     "go",
-				Out:      "gen/go",
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			bufgen.NewLocalPluginConfig(
+				"go",
+				internal.StrategyAll,
+				"gen/go",
+				"",
+			),
 		},
 	}
 	ctx := context.Background()
@@ -141,14 +146,15 @@ func TestReadConfigV1Beta1(t *testing.T) {
 func TestReadConfigV1(t *testing.T) {
 	truth := true
 	successConfig := &Config{
-		PluginConfigs: []*PluginConfig{
-			{
-				Name:     "go",
-				Out:      "gen/go",
-				Opt:      "plugins=connect",
-				Path:     []string{"/path/to/foo"},
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			mustCreateBinaryPlugin(
+				t,
+				"go",
+				[]string{"/path/to/foo"},
+				internal.StrategyAll,
+				"gen/go",
+				"plugins=connect",
+			),
 		},
 		ManagedConfig: &ManagedConfig{
 			CcEnableArenas:      &truth,
@@ -182,14 +188,15 @@ func TestReadConfigV1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []*PluginConfig{
-			{
-				Name:     "go",
-				Out:      "gen/go",
-				Opt:      "plugins=connect,foo=bar",
-				Path:     []string{"/path/to/foo"},
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			mustCreateBinaryPlugin(
+				t,
+				"go",
+				[]string{"/path/to/foo"},
+				internal.StrategyAll,
+				"gen/go",
+				"plugins=connect,foo=bar",
+			),
 		},
 	}
 	successConfig3 := &Config{
@@ -200,31 +207,33 @@ func TestReadConfigV1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []*PluginConfig{
-			{
-				Name:     "go",
-				Out:      "gen/go",
-				Path:     []string{"/path/to/foo"},
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			mustCreateBinaryPlugin(
+				t,
+				"go",
+				[]string{"/path/to/foo"},
+				internal.StrategyAll,
+				"gen/go",
+				"",
+			),
 		},
 	}
 	successConfig4 := &Config{
-		PluginConfigs: []*PluginConfig{
-			{
-				Remote:   "someremote.com/owner/plugins/myplugin:v1.1.0-1",
-				Out:      "gen/go",
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			bufgen.NewLegacyRemotePluginConfig(
+				"someremote.com/owner/plugins/myplugin:v1.1.0-1",
+				"gen/go",
+				"",
+			),
 		},
 	}
 	successConfig5 := &Config{
-		PluginConfigs: []*PluginConfig{
-			{
-				Remote:   "someremote.com/owner/plugins/myplugin",
-				Out:      "gen/go",
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			bufgen.NewLegacyRemotePluginConfig(
+				"someremote.com/owner/plugins/myplugin",
+				"gen/go",
+				"",
+			),
 		},
 	}
 	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
@@ -241,23 +250,24 @@ func TestReadConfigV1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]string),
 			},
 		},
-		PluginConfigs: []*PluginConfig{
-			{
-				Remote:   "someremote.com/owner/plugins/myplugin",
-				Out:      "gen/go",
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			bufgen.NewLegacyRemotePluginConfig(
+				"someremote.com/owner/plugins/myplugin",
+				"gen/go",
+				"",
+			),
 		},
 	}
 	successConfig7 := &Config{
-		PluginConfigs: []*PluginConfig{
-			{
-				Name:     "go",
-				Out:      "gen/go",
-				Opt:      "plugins=connect",
-				Path:     []string{"/path/to/foo"},
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			mustCreateBinaryPlugin(
+				t,
+				"go",
+				[]string{"/path/to/foo"},
+				internal.StrategyAll,
+				"gen/go",
+				"plugins=connect",
+			),
 		},
 		ManagedConfig: nil,
 	}
@@ -319,12 +329,12 @@ func TestReadConfigV1(t *testing.T) {
 				},
 			},
 		},
-		PluginConfigs: []*PluginConfig{
-			{
-				Remote:   "someremote.com/owner/plugins/myplugin",
-				Out:      "gen/go",
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			bufgen.NewLegacyRemotePluginConfig(
+				"someremote.com/owner/plugins/myplugin",
+				"gen/go",
+				"",
+			),
 		},
 	}
 	successConfig9 := &Config{
@@ -361,12 +371,12 @@ func TestReadConfigV1(t *testing.T) {
 				},
 			},
 		},
-		PluginConfigs: []*PluginConfig{
-			{
-				Remote:   "someremote.com/owner/plugins/myplugin",
-				Out:      "gen/go",
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			bufgen.NewLegacyRemotePluginConfig(
+				"someremote.com/owner/plugins/myplugin",
+				"gen/go",
+				"",
+			),
 		},
 	}
 
@@ -605,14 +615,15 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error14.yaml"))
 
 	successConfig = &Config{
-		PluginConfigs: []*PluginConfig{
-			{
-				Name:     "go",
-				Out:      "gen/go",
-				Opt:      "plugins=connect",
-				Path:     []string{"/path/to/foo"},
-				Strategy: internal.StrategyAll,
-			},
+		PluginConfigs: []bufgen.PluginConfig{
+			mustCreateBinaryPlugin(
+				t,
+				"go",
+				[]string{"/path/to/foo"},
+				internal.StrategyAll,
+				"gen/go",
+				"plugins=connect",
+			),
 		},
 		ManagedConfig: &ManagedConfig{
 			GoPackagePrefixConfig: &GoPackagePrefixConfig{
@@ -730,4 +741,23 @@ func assertEqualModuleIdentityKeyedMaps[V any](t *testing.T, m1 map[bufmoduleref
 		keyedM2[k.IdentityString()] = v
 	}
 	require.Equal(t, keyedM1, keyedM2)
+}
+
+func mustCreateBinaryPlugin(
+	t *testing.T,
+	name string,
+	path []string,
+	strategy internal.Strategy,
+	out string,
+	opt string,
+) bufgen.BinaryPluginConfig {
+	plugin, err := bufgen.NewBinaryPluginConfig(
+		name,
+		path,
+		strategy,
+		out,
+		opt,
+	)
+	require.NoError(t, err)
+	return plugin
 }

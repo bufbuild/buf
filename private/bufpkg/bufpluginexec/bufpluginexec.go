@@ -85,6 +85,28 @@ type Generator interface {
 		requests []*pluginpb.CodeGeneratorRequest,
 		options ...GenerateOption,
 	) (*pluginpb.CodeGeneratorResponse, error)
+
+	// GenerateWithBinary generates a CodeGeneratorResponse for the given pluginPath.
+	// The pluginPath must be available on the system's PATH. The plugin is
+	// invoked with pluginArgs.
+	GenerateWithBinary(
+		ctx context.Context,
+		container app.EnvStderrContainer,
+		pluginPath string,
+		pluginArgs []string,
+		requests []*pluginpb.CodeGeneratorRequest,
+	) (*pluginpb.CodeGeneratorResponse, error)
+
+	// GenerateWithProtocBuiltin generates a CodeGeneratorResponse for the given pluginName.
+	// The pluginName must be one of the plugins built-in to protoc. The path to protoc can
+	// be overriden via the GenerateWithProtocBuiltinWithPath.
+	GenerateWithProtocBuiltin(
+		ctx context.Context,
+		container app.EnvStderrContainer,
+		pluginName string,
+		requests []*pluginpb.CodeGeneratorRequest,
+		options ...GenerateWithProtocBuiltinOption,
+	) (*pluginpb.CodeGeneratorResponse, error)
 }
 
 // NewGenerator returns a new Generator.
@@ -121,6 +143,17 @@ func GenerateWithProtocPath(protocPath string) GenerateOption {
 func GenerateWithWASMEnabled() GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.wasmEnabled = true
+	}
+}
+
+// GenerateWithProtocBuiltinOption is an option for GenerateWithProtocBuiltin
+type GenerateWithProtocBuiltinOption func(*generateWithProtocBuiltinOptions)
+
+// GenerateWithProtocBuiltinWithPath returns a new GenerateWithProtocBuiltinOption that
+// sets path to protoc.
+func GenerateWithProtocBuiltinWithPath(protocPath string) GenerateWithProtocBuiltinOption {
+	return func(generateWithProtocBuiltinOptions *generateWithProtocBuiltinOptions) {
+		generateWithProtocBuiltinOptions.protocPath = protocPath
 	}
 }
 
@@ -166,16 +199,10 @@ func NewHandler(
 
 	// Initialize builtin protoc plugin handler. We always look for protoc-gen-X first,
 	// but if not, check the builtins.
-	if _, ok := ProtocProxyPluginNames[pluginName]; ok {
-		if handlerOptions.protocPath == "" {
-			handlerOptions.protocPath = "protoc"
-		}
-		if protocPath, err := unsafeLookPath(handlerOptions.protocPath); err != nil {
-			return nil, err
-		} else {
-			return newProtocProxyHandler(storageosProvider, runner, protocPath, pluginName), nil
-		}
+	if handler, err := NewProtocProxyHandler(storageosProvider, runner, handlerOptions.protocPath, pluginName); err == nil {
+		return handler, nil
 	}
+
 	return nil, fmt.Errorf(
 		"could not find protoc plugin for name %s - please make sure protoc-gen-%s is installed and present on your $PATH",
 		pluginName,
@@ -224,6 +251,27 @@ func NewBinaryHandler(runner command.Runner, pluginPath string, pluginArgs []str
 		return nil, err
 	}
 	return newBinaryHandler(runner, pluginPath, pluginArgs), nil
+}
+
+// NewProtocProxyHandler returns a new Handler that invokes the protoc built-in
+// plugin specified by pluginName, in the form of "java".
+func NewProtocProxyHandler(
+	storageosProvider storageos.Provider,
+	runner command.Runner,
+	protocPath string,
+	pluginName string,
+) (*protocProxyHandler, error) {
+	if _, ok := ProtocProxyPluginNames[pluginName]; !ok {
+		return nil, fmt.Errorf("could not find protoc plugin for name %s", pluginName)
+	}
+	if protocPath == "" {
+		protocPath = "protoc"
+	}
+	if protocPath, err := unsafeLookPath(protocPath); err != nil {
+		return nil, err
+	} else {
+		return newProtocProxyHandler(storageosProvider, runner, protocPath, pluginName), nil
+	}
 }
 
 type handlerOptions struct {

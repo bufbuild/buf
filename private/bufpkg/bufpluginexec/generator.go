@@ -53,7 +53,7 @@ func (g *generator) Generate(
 	pluginName string,
 	requests []*pluginpb.CodeGeneratorRequest,
 	options ...GenerateOption,
-) (_ *pluginpb.CodeGeneratorResponse, retErr error) {
+) (*pluginpb.CodeGeneratorResponse, error) {
 	generateOptions := newGenerateOptions()
 	for _, option := range options {
 		option(generateOptions)
@@ -88,6 +88,61 @@ func (g *generator) Generate(
 	)
 }
 
+func (g *generator) GenerateWithBinary(
+	ctx context.Context,
+	container app.EnvStderrContainer,
+	pluginPath string,
+	pluginArgs []string,
+	requests []*pluginpb.CodeGeneratorRequest,
+) (*pluginpb.CodeGeneratorResponse, error) {
+	handler, err := NewBinaryHandler(
+		g.runner,
+		pluginPath,
+		pluginArgs,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return appproto.NewGenerator(
+		g.logger,
+		handler,
+	).Generate(
+		ctx,
+		container,
+		requests,
+	)
+}
+
+func (g *generator) GenerateWithProtocBuiltin(
+	ctx context.Context,
+	container app.EnvStderrContainer,
+	pluginName string,
+	requests []*pluginpb.CodeGeneratorRequest,
+	options ...GenerateWithProtocBuiltinOption,
+) (*pluginpb.CodeGeneratorResponse, error) {
+	generateOptions := newGenerateWithProtocBuiltinOptions()
+	for _, option := range options {
+		option(generateOptions)
+	}
+	handler, err := NewProtocProxyHandler(
+		g.storageosProvider,
+		g.runner,
+		generateOptions.protocPath,
+		pluginName,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return appproto.NewGenerator(
+		g.logger,
+		handler,
+	).Generate(
+		ctx,
+		container,
+		requests,
+	)
+}
+
 type generateOptions struct {
 	pluginPath  []string
 	protocPath  string
@@ -96,4 +151,12 @@ type generateOptions struct {
 
 func newGenerateOptions() *generateOptions {
 	return &generateOptions{}
+}
+
+type generateWithProtocBuiltinOptions struct {
+	protocPath string
+}
+
+func newGenerateWithProtocBuiltinOptions() *generateWithProtocBuiltinOptions {
+	return &generateWithProtocBuiltinOptions{}
 }
