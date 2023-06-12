@@ -249,8 +249,13 @@ func (b *builder) warnInvalidImports(
 			)
 			if workspaceModule, ok := workspaceFilesToModule[importFilePath]; ok {
 				if workspaceModule == "" {
-					warnMsg += ", but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml."
+					// If dependency comes from an unnamed module, that is probably a local dependency, and
+					// that module won't be pushed to the BSR. We can skip this warning.
+					continue
 				} else {
+					// If dependency comes from a named module, we _could_ skip this warning as it _might_
+					// fail when pushing trying to build, but we better keep it in case it is a transitive
+					// dependency too, and both direct and transitive dependencies live in the same workspace.
 					warnMsg += fmt.Sprintf(
 						", but is found in local workspace module %q. Declare dependency %q in the deps key in buf.yaml.",
 						workspaceModule,
