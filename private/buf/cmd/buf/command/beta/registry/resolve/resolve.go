@@ -91,7 +91,7 @@ func run(
 				Repository: moduleReference.Repository(),
 				Reference:  moduleReference.Reference(),
 			},
-			PluginReference: &registryv1alpha1.CuratedPluginReference{
+			PluginReference: &registryv1alpha1.ResolveReferencePlugin{
 				Owner:   pluginReference.Owner(),
 				Name:    pluginReference.Plugin(),
 				Version: pluginReference.Version(),
