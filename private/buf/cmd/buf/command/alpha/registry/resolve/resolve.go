@@ -84,14 +84,14 @@ func run(
 		moduleReference.Remote(),
 		registryv1alpha1connect.NewResolveServiceClient,
 	)
-	resolvedReference, err := resolver.ResolveReference(ctx, connect.NewRequest(
-		&registryv1alpha1.ResolveReferenceRequest{
+	packageVersion, err := resolver.GetRemotePackageVersion(ctx, connect.NewRequest(
+		&registryv1alpha1.GetRemotePackageVersionRequest{
 			ModuleReference: &registryv1alpha1.LocalModuleReference{
 				Owner:      moduleReference.Owner(),
 				Repository: moduleReference.Repository(),
 				Reference:  moduleReference.Reference(),
 			},
-			PluginReference: &registryv1alpha1.ResolveReferencePlugin{
+			PluginReference: &registryv1alpha1.GetRemotePackageVersionPlugin{
 				Owner:   pluginReference.Owner(),
 				Name:    pluginReference.Plugin(),
 				Version: pluginReference.Version(),
@@ -101,6 +101,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	_, err = container.Stdout().Write([]byte(resolvedReference.Msg.Version))
+	_, err = container.Stdout().Write([]byte(packageVersion.Msg.Version))
 	return err
 }
