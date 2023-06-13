@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.audit.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/admin.proto";
 import "buf/alpha/registry/v1alpha1/plugin.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
@@ -54,6 +55,7 @@ enum ResourceType {
   RESOURCE_TYPE_TOKEN = 10;
   RESOURCE_TYPE_SCIM_TOKEN = 11;
   RESOURCE_TYPE_REPOSITORY_LABEL = 12;
+  RESOURCE_TYPE_SERVER = 13;
 }
 
 // Resource is the affected resource by the audited event.
@@ -100,6 +102,7 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_COMMIT_DELETED = 28;
   EVENT_TYPE_REPOSITORY_LABEL_CREATED = 29;
   EVENT_TYPE_REPOSITORY_LABEL_MOVED = 30;
+  EVENT_TYPE_SERVER_BREAKING_CHANGES_CHANGED = 32;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -161,6 +164,7 @@ message Event {
     PayloadRepositoryLabelCreated repository_label_created = 35;
     PayloadRepositoryLabelMoved repository_label_moved = 36;
     PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
+    PayloadServerBreakingChangesChanged server_breaking_changes_changed = 38;
   }
 }
 
@@ -414,4 +418,13 @@ message PayloadRepositoryLabelMoved {
   string to_commit_id = 6;
   // from_commit_id is the id of the commit on which the label was moved from.
   string from_commit_id = 7;
+}
+
+message PayloadServerBreakingChangesChanged {
+  // enabled tracks whether breaking changes were enabled or disabled.
+  optional bool enabled = 1;
+  // category is the category of breaking changes.
+  buf.alpha.registry.v1alpha1.BreakingChangeCategory category = 2;
+  // ignore_unstable_packages tracks whether breaking changes were enabled or disabled for unstable packages.
+  optional bool ignore_unstable_packages = 3;
 }
