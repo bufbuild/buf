@@ -111,32 +111,13 @@ func run(
 		return err
 	}
 
-	remote := bufconnect.DefaultRemote
-	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
-		remote = moduleConfig.ModuleIdentity.Remote()
-	} else {
-		for _, moduleReference := range moduleConfig.Build.DependencyModuleReferences {
-			if moduleReference.Remote() != bufconnect.DefaultRemote {
-				warnMsg := fmt.Sprintf(
-					`%q does not specify a "name", so Buf is defaulting to using remote %q for dependency resolution. This remote may be unable to resolve %q if it's an enterprise BSR module. Did you mean to specify a "name: %s/..." on this module?`,
-					existingConfigFilePath,
-					bufconnect.DefaultRemote,
-					moduleReference.IdentityString(),
-					moduleReference.Remote(),
-				)
-				container.Logger().Warn(warnMsg)
-				break
-			}
-		}
-	}
-
 	pinnedRepositories, err := getDependencies(
 		ctx,
 		container,
 		flags,
-		remote,
 		moduleConfig,
 		readWriteBucket,
+		existingConfigFilePath,
 	)
 	if err != nil {
 		return err
@@ -178,9 +159,9 @@ func getDependencies(
 	ctx context.Context,
 	container appflag.Container,
 	flags *flags,
-	remote string,
 	moduleConfig *bufconfig.Config,
 	readWriteBucket storage.ReadWriteBucket,
+	existingConfigFilePath string,
 ) ([]*pinnedRepository, error) {
 	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
 		return nil, nil
@@ -188,6 +169,19 @@ func getDependencies(
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return nil, err
+	}
+	var remote string
+	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
+		remote = moduleConfig.ModuleIdentity.Remote()
+	} else {
+		// At this point we know there's at least one dependency. If it's an unnamed module, discover
+		// the right remote from the list of dependencies.
+		remote = bufmoduleref.DiscoverRemote(moduleConfig.Build.DependencyModuleReferences)
+		container.Logger().Debug(fmt.Sprintf(
+			`%q does not specify a "name". From your dependencies, Buf is defaulting to using remote %q for dependency resolution. This remote may be unable to resolve some of your dependencies. Did you mean to specify a "name: %s/..." on this module?`,
+			existingConfigFilePath,
+			remote, remote,
+		))
 	}
 	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
 	var protoDependencyModuleReferences []*modulev1alpha1.ModuleReference
