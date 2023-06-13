@@ -15,6 +15,7 @@
 package bufmoduleref
 
 import (
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 )
 
@@ -92,6 +93,21 @@ func (m *moduleReference) String() string {
 
 func (m *moduleReference) IdentityString() string {
 	return m.remote + "/" + m.owner + "/" + m.repository
+}
+
+// DiscoverRemote returns the first remote in a list of dependencies that is not "buf.build", if
+// any. If not, it defaults to "buf.build". It skips any nil reference. It's useful for targeting
+// single-tenant BSR addresses.
+func DiscoverRemote(refs []ModuleReference) string {
+	for _, ref := range refs {
+		if ref == nil {
+			continue
+		}
+		if ref.Remote() != bufconnect.DefaultRemote {
+			return ref.Remote()
+		}
+	}
+	return bufconnect.DefaultRemote
 }
 
 func (*moduleReference) isModuleOwner()     {}
