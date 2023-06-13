@@ -12,34 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodify
+// Generated. DO NOT EDIT.
 
-import (
-	"context"
+package bufimagemodifyv1
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-)
-
-type multiModifier struct {
-	delegates []Modifier
-}
-
-func newMultiModifier(
-	delegates []Modifier,
-) *multiModifier {
-	return &multiModifier{
-		delegates: delegates,
-	}
-}
-
-func (m *multiModifier) Modify(
-	ctx context.Context,
-	image bufimage.Image,
-) error {
-	for _, delegate := range m.delegates {
-		if err := delegate.Modify(ctx, image); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+import _ "github.com/bufbuild/buf/private/usage"

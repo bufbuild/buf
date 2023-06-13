@@ -12,139 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodify
+package bufimagemodifyv1
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-func TestOptimizeForEmptyOptions(t *testing.T) {
+func TestGoPackageError(t *testing.T) {
+	t.Parallel()
+	_, err := GoPackage(zap.NewNop(), NewFileOptionSweeper(), "", nil, nil, nil)
+	require.Error(t, err)
+}
+
+func TestGoPackageEmptyOptions(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
-		require.NoError(t, err)
-		modifier := NewMultiModifier(
-			optimizeForModifier,
-			ModifierFunc(sweeper.Sweep),
-		)
-		err = modifier.Modify(
-			context.Background(),
-			image,
-		)
+		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
 		require.NoError(t, err)
 
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
-		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
-	})
-
-	t.Run("without SourceCodeInfo", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
-
-		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
-		require.NoError(t, err)
-		err = optimizeForModifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
-		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
-	})
-
-	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
-
-		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
-		require.NoError(t, err)
-		modifier := NewMultiModifier(
-			optimizeForModifier,
-			ModifierFunc(sweeper.Sweep),
-		)
-		err = modifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
-				assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
-				continue
-			}
-			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
-		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
-	})
-
-	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
-
-		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
-		require.NoError(t, err)
-		err = optimizeForModifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
-				assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
-				continue
-			}
-			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
-		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
-	})
-}
-
-func TestOptimizeForAllOptions(t *testing.T) {
-	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
-	t.Run("with SourceCodeInfo", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
-
-		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
-		require.NoError(t, err)
-		modifier := NewMultiModifier(
-			optimizeForModifier,
-			ModifierFunc(sweeper.Sweep),
-		)
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,
@@ -154,125 +55,23 @@ func TestOptimizeForAllOptions(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
+			assert.Equal(t,
+				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
+				descriptor.GetOptions().GetGoPackage(),
+			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
+		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
 		require.NoError(t, err)
-		err = optimizeForModifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
-		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
-	})
-
-	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
-
-		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
-		require.NoError(t, err)
-		modifier := NewMultiModifier(
-			optimizeForModifier,
-			ModifierFunc(sweeper.Sweep),
-		)
 		err = modifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
-				assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
-				continue
-			}
-			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
-		}
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
-	})
-
-	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
-
-		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
-		require.NoError(t, err)
-		err = optimizeForModifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
-				assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
-				continue
-			}
-			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
-		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
-	})
-}
-
-func TestOptimizeForCcOptions(t *testing.T) {
-	t.Parallel()
-	dirPath := filepath.Join("testdata", "ccoptions")
-	t.Run("with SourceCodeInfo", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
-
-		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, nil)
-		require.NoError(t, err)
-		modifier := NewMultiModifier(
-			optimizeForModifier,
-			ModifierFunc(sweeper.Sweep),
-		)
-		err = modifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
-		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
-	})
-
-	t.Run("without SourceCodeInfo", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
-
-		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, nil)
-		require.NoError(t, err)
-		err = optimizeForModifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -281,79 +80,74 @@ func TestOptimizeForCcOptions(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
+			assert.Equal(t,
+				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
+				descriptor.GetOptions().GetGoPackage(),
+			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, map[string]string{"a.proto": "LITE_RUNTIME"})
+		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
 		require.NoError(t, err)
-		modifier := NewMultiModifier(
-			optimizeForModifier,
-			ModifierFunc(sweeper.Sweep),
-		)
+
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
 		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
-				assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
-				continue
-			}
-			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
+			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, map[string]string{"a.proto": "LITE_RUNTIME"})
+		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
 		require.NoError(t, err)
-		err = optimizeForModifier.Modify(
+		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
 		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
-				assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
-				continue
-			}
-			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
+			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 }
 
-func TestOptimizeForWellKnownTypes(t *testing.T) {
+func TestGoPackageAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join("testdata", "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, nil)
+		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{})
 		require.NoError(t, err)
-		modifier := NewMultiModifier(
-			optimizeForModifier,
-			ModifierFunc(sweeper.Sweep),
-		)
+
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,
@@ -362,7 +156,246 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
+			assert.Equal(t,
+				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
+				descriptor.GetOptions().GetGoPackage(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+	})
+
+	t.Run("without SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
+		require.NoError(t, err)
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t,
+				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
+				descriptor.GetOptions().GetGoPackage(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+	})
+
+	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
+
+		sweeper := NewFileOptionSweeper()
+		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+	})
+
+	t.Run("without SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
+		require.NoError(t, err)
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+	})
+}
+
+func TestGoPackagePackageVersion(t *testing.T) {
+	t.Parallel()
+	dirPath := filepath.Join("testdata", "packageversion")
+	packageSuffix := "weatherv1alpha1"
+	t.Run("with SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
+
+		sweeper := NewFileOptionSweeper()
+		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t,
+				fmt.Sprintf("%s;%s",
+					normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
+					packageSuffix,
+				),
+				descriptor.GetOptions().GetGoPackage(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+	})
+
+	t.Run("without SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
+		require.NoError(t, err)
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t,
+				fmt.Sprintf("%s;%s",
+					normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
+					packageSuffix,
+				),
+				descriptor.GetOptions().GetGoPackage(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+	})
+
+	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
+
+		sweeper := NewFileOptionSweeper()
+		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			if imageFile.Path() == "a.proto" {
+				assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
+				continue
+			}
+			assert.Equal(t,
+				fmt.Sprintf("%s;%s",
+					normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
+					packageSuffix,
+				),
+				descriptor.GetOptions().GetGoPackage(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+	})
+
+	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
+		require.NoError(t, err)
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			if imageFile.Path() == "a.proto" {
+				assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
+				continue
+			}
+			assert.Equal(t,
+				fmt.Sprintf("%s;%s",
+					normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
+					packageSuffix,
+				),
+				descriptor.GetOptions().GetGoPackage(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+	})
+}
+
+func TestGoPackageWellKnownTypes(t *testing.T) {
+	t.Parallel()
+	dirPath := filepath.Join("testdata", "wktimport")
+	packageSuffix := "weatherv1alpha1"
+	t.Run("with SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+
+		sweeper := NewFileOptionSweeper()
+		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			modifiedGoPackage := fmt.Sprintf("%s;%s",
+				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
+				packageSuffix,
+			)
+			descriptor := imageFile.Proto()
+			if isWellKnownType(context.Background(), imageFile) {
+				assert.NotEmpty(t, descriptor.GetOptions().GetGoPackage())
+				assert.NotEqual(t, modifiedGoPackage, descriptor.GetOptions().GetGoPackage())
+				continue
+			}
+			assert.Equal(t,
+				modifiedGoPackage,
+				descriptor.GetOptions().GetGoPackage(),
+			)
 		}
 	})
 
@@ -371,22 +404,34 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, nil)
+		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
 		require.NoError(t, err)
-		err = optimizeForModifier.Modify(
+		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
+			modifiedGoPackage := fmt.Sprintf("%s;%s",
+				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
+				packageSuffix,
+			)
 			descriptor := imageFile.Proto()
-			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
+			if isWellKnownType(context.Background(), imageFile) {
+				assert.NotEmpty(t, descriptor.GetOptions().GetGoPackage())
+				assert.NotEqual(t, modifiedGoPackage, descriptor.GetOptions().GetGoPackage())
+				continue
+			}
+			assert.Equal(t,
+				modifiedGoPackage,
+				descriptor.GetOptions().GetGoPackage(),
+			)
 		}
 	})
 }
 
-func TestOptimizeForWithExcept(t *testing.T) {
+func TestGoPackageWithExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
@@ -402,17 +447,17 @@ func TestOptimizeForWithExcept(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(
+		goPackageModifier, err := GoPackage(
 			zap.NewNop(),
 			sweeper,
-			descriptorpb.FileOptions_CODE_SIZE,
+			testImportPathPrefix,
 			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
 			nil,
 			nil,
 		)
 		require.NoError(t, err)
 
-		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,
@@ -428,17 +473,15 @@ func TestOptimizeForWithExcept(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(
+		modifier, err := GoPackage(
 			zap.NewNop(),
 			sweeper,
-			descriptorpb.FileOptions_CODE_SIZE,
+			testImportPathPrefix,
 			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
 			nil,
 			nil,
 		)
 		require.NoError(t, err)
-
-		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,
@@ -454,19 +497,17 @@ func TestOptimizeForWithExcept(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(
+		goPackageModifier, err := GoPackage(
 			zap.NewNop(),
 			sweeper,
-			descriptorpb.FileOptions_CODE_SIZE,
+			testImportPathPrefix,
 			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
 			nil,
-			map[string]string{
-				"a.proto": "LITE_RUNTIME",
-			},
+			map[string]string{"a.proto": "override"},
 		)
 		require.NoError(t, err)
 
-		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,
@@ -481,19 +522,15 @@ func TestOptimizeForWithExcept(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(
+		modifier, err := GoPackage(
 			zap.NewNop(),
 			sweeper,
-			descriptorpb.FileOptions_CODE_SIZE,
+			testImportPathPrefix,
 			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
 			nil,
-			map[string]string{
-				"a.proto": "SPEED",
-			},
+			map[string]string{"a.proto": "override"},
 		)
 		require.NoError(t, err)
-
-		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,
@@ -503,10 +540,10 @@ func TestOptimizeForWithExcept(t *testing.T) {
 	})
 }
 
-func TestOptimizeForWithOverride(t *testing.T) {
+func TestGoPackageWithOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
-	overrideOptimizeFor := descriptorpb.FileOptions_LITE_RUNTIME
+	overrideGoPackagePrefix := "github.com/foo/bar/private/private/gen/proto/go"
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,
 		testRepositoryOwner,
@@ -520,19 +557,19 @@ func TestOptimizeForWithOverride(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(
+		goPackageModifier, err := GoPackage(
 			zap.NewNop(),
 			sweeper,
-			descriptorpb.FileOptions_CODE_SIZE,
+			testImportPathPrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
-				testModuleIdentity: overrideOptimizeFor,
+			map[bufmoduleref.ModuleIdentity]string{
+				testModuleIdentity: overrideGoPackagePrefix,
 			},
 			nil,
 		)
 		require.NoError(t, err)
 
-		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,
@@ -543,8 +580,8 @@ func TestOptimizeForWithOverride(t *testing.T) {
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t,
-				overrideOptimizeFor,
-				descriptor.GetOptions().GetOptimizeFor(),
+				normalpath.Dir(overrideGoPackagePrefix+"/"+imageFile.Path()),
+				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
@@ -556,31 +593,29 @@ func TestOptimizeForWithOverride(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(
+		modifier, err := GoPackage(
 			zap.NewNop(),
 			sweeper,
-			descriptorpb.FileOptions_CODE_SIZE,
+			testImportPathPrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
-				testModuleIdentity: overrideOptimizeFor,
+			map[bufmoduleref.ModuleIdentity]string{
+				testModuleIdentity: overrideGoPackagePrefix,
 			},
 			nil,
 		)
 		require.NoError(t, err)
-
-		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t,
-				overrideOptimizeFor,
-				descriptor.GetOptions().GetOptimizeFor(),
+				normalpath.Dir(overrideGoPackagePrefix+"/"+imageFile.Path()),
+				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
@@ -592,21 +627,19 @@ func TestOptimizeForWithOverride(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(
+		goPackageModifier, err := GoPackage(
 			zap.NewNop(),
 			sweeper,
-			descriptorpb.FileOptions_CODE_SIZE,
+			testImportPathPrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
-				testModuleIdentity: overrideOptimizeFor,
+			map[bufmoduleref.ModuleIdentity]string{
+				testModuleIdentity: overrideGoPackagePrefix,
 			},
-			map[string]string{
-				"a.proto": "CODE_SIZE",
-			},
+			map[string]string{"a.proto": "override"},
 		)
 		require.NoError(t, err)
 
-		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,
@@ -616,10 +649,7 @@ func TestOptimizeForWithOverride(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t,
-				descriptorpb.FileOptions_CODE_SIZE,
-				descriptor.GetOptions().GetOptimizeFor(),
-			)
+			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
@@ -630,34 +660,27 @@ func TestOptimizeForWithOverride(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(
+		modifier, err := GoPackage(
 			zap.NewNop(),
 			sweeper,
-			descriptorpb.FileOptions_CODE_SIZE,
+			testImportPathPrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
-				testModuleIdentity: overrideOptimizeFor,
+			map[bufmoduleref.ModuleIdentity]string{
+				testModuleIdentity: overrideGoPackagePrefix,
 			},
-			map[string]string{
-				"a.proto": "CODE_SIZE",
-			},
+			map[string]string{"a.proto": "override"},
 		)
 		require.NoError(t, err)
-
-		modifier := NewMultiModifier(optimizeForModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t,
-				descriptorpb.FileOptions_CODE_SIZE,
-				descriptor.GetOptions().GetOptimizeFor(),
-			)
+			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})

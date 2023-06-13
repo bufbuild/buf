@@ -22,7 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv1"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -165,7 +165,7 @@ func TestReadConfigV1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 			Override: map[string]map[string]string{
-				bufimagemodify.JavaPackageID: {"a.proto": "override"},
+				bufimagemodifyv1.JavaPackageID: {"a.proto": "override"},
 			},
 		},
 		TypesConfig: &TypesConfig{
