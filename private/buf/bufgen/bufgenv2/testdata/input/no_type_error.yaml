@@ -1,0 +1,4 @@
+version: v2
+inputs:
+  - types:
+      - "a.b.C"

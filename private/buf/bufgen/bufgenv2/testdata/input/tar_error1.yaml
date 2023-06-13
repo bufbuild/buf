@@ -1,0 +1,4 @@
+version: v2
+inputs:
+  - tarball: a/b/c.tar
+    compression: abcd

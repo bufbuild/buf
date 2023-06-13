@@ -180,6 +180,7 @@ func ReadFromConfig[V any](
 
 // ConfigGetter is a function that interpret a slice of bytes as a value of type V.
 type ConfigGetter[V any] func(
+	ctx context.Context,
 	logger *zap.Logger,
 	unmarshalNonStrict func([]byte, interface{}) error,
 	unmarshalStrict func([]byte, interface{}) error,

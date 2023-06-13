@@ -1,0 +1,5 @@
+version: v2
+inputs:
+  - module: buf.build/acme/weather
+    # depth is not allowed for module
+    depth: 0

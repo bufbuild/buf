@@ -1,0 +1,5 @@
+version: v2
+inputs:
+  - module: buf.build/acme/weather
+    # recurse_submodules is not allowed for module
+    recurse_submodules: false

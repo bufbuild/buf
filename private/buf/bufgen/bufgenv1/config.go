@@ -49,6 +49,7 @@ func readConfigV1(
 }
 
 func getConfig(
+	_ context.Context,
 	logger *zap.Logger,
 	unmarshalNonStrict func([]byte, interface{}) error,
 	unmarshalStrict func([]byte, interface{}) error,

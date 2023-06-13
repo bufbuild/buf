@@ -1,0 +1,41 @@
+{
+  "version": "v2",
+  "inputs": [
+    {
+      "tarball": "a/b/c",
+      "compression": "gzip",
+      "strip_components": 6,
+      "subdir": "x/y",
+      "types": [
+        "a.b.c1",
+        "a.b.c2"
+      ],
+      "exclude_paths": [
+        "x/y/z1",
+        "x/y/z2"
+      ],
+      "include_paths": [
+        "x/y/w1",
+        "x/y/w2"
+      ]
+    },
+    {
+      "tarball": "a/b/c.tar.gz"
+    },
+    {
+      "tarball": "a/b/c.tgz"
+    },
+    {
+      "tarball": "a/b/c.tar.zst"
+    },
+    {
+      "tarball": "a/b/c.tar"
+    },
+    {
+      "tarball": "a/b/c"
+    },
+    {
+      "tarball": "-"
+    }
+  ]
+}

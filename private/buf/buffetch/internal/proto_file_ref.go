@@ -37,6 +37,14 @@ func newProtoFileRef(format string, path string, includePackageFiles bool) (*pro
 	}, nil
 }
 
+func newDirectProtoFileRef(format string, path string, includePackageFiles bool) *protoFileRef {
+	return &protoFileRef{
+		format:              format,
+		path:                path,
+		includePackageFiles: includePackageFiles,
+	}
+}
+
 func (s *protoFileRef) Format() string {
 	return s.format
 }
