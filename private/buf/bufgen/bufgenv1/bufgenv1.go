@@ -22,10 +22,7 @@ import (
 	"encoding/json"
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
-	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
-	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -58,69 +55,6 @@ type Config struct {
 	ManagedConfig *ManagedConfig
 	// Optional
 	TypesConfig *TypesConfig
-}
-
-// PluginConfig is a plugin configuration.
-type PluginConfig struct {
-	// One of Plugin, Name or Remote is required
-	Plugin string
-	Name   string
-	Remote string
-	// Optional, used with Plugin to pin a specific revision
-	Revision int
-	// Required
-	Out string
-	// Optional
-	Opt string
-	// Optional, exclusive with Remote
-	Path []string
-	// Required
-	Strategy internal.Strategy
-	// Optional
-	ProtocPath string
-}
-
-// PluginName returns this PluginConfig's plugin name.
-// Only one of Plugin, Name or Remote will be set.
-func (p *PluginConfig) PluginName() string {
-	if p == nil {
-		return ""
-	}
-	if p.Plugin != "" {
-		return p.Plugin
-	}
-	if p.Name != "" {
-		return p.Name
-	}
-	if p.Remote != "" {
-		return p.Remote
-	}
-	return ""
-}
-
-// IsRemote returns true if the PluginConfig uses a remotely executed plugin.
-func (p *PluginConfig) IsRemote() bool {
-	return p.GetRemoteHostname() != ""
-}
-
-// GetRemoteHostname returns the hostname of the remote plugin.
-func (p *PluginConfig) GetRemoteHostname() string {
-	if p == nil {
-		return ""
-	}
-	if identity, err := bufpluginref.PluginIdentityForString(p.Plugin); err == nil {
-		return identity.Remote()
-	}
-	if reference, err := bufpluginref.PluginReferenceForString(p.Plugin, 0); err == nil {
-		return reference.Remote()
-	}
-	if p.Remote == "" {
-		return ""
-	}
-	if remote, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(p.Remote); err == nil {
-		return remote
-	}
-	return ""
 }
 
 // ManagedConfig is the managed mode configuration.
