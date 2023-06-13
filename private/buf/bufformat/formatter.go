@@ -2226,6 +2226,13 @@ func (f *formatter) leadingCommentsContainBlankLine(n ast.Node) bool {
 }
 
 func (f *formatter) importHasComment(importNode *ast.ImportNode) bool {
+	if f.nodeHasComment(importNode) {
+		return true
+	}
+	if importNode == nil {
+		return false
+	}
+
 	return f.nodeHasComment(importNode.Keyword) ||
 		f.nodeHasComment(importNode.Name) ||
 		f.nodeHasComment(importNode.Semicolon) ||
