@@ -15,6 +15,8 @@
 package bufsync
 
 import (
+	"fmt"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
@@ -22,6 +24,7 @@ import (
 type syncableModule struct {
 	dir            string
 	remoteIdentity bufmoduleref.ModuleIdentity
+	formatted      string
 }
 
 func newSyncableModule(
@@ -35,6 +38,7 @@ func newSyncableModule(
 	return &syncableModule{
 		dir:            normalized,
 		remoteIdentity: remoteIdentity,
+		formatted:      fmt.Sprintf("%s:%s", dir, remoteIdentity.IdentityString()),
 	}, nil
 }
 
@@ -44,4 +48,8 @@ func (s *syncableModule) Dir() string {
 
 func (s *syncableModule) RemoteIdentity() bufmoduleref.ModuleIdentity {
 	return s.remoteIdentity
+}
+
+func (s *syncableModule) String() string {
+	return s.formatted
 }
