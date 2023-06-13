@@ -38,6 +38,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -869,6 +870,21 @@ func ValidateErrorFormatFlag(errorFormatString string, errorFormatFlagName strin
 // ValidateErrorFormatFlagLint validates the error format flag for lint.
 func ValidateErrorFormatFlagLint(errorFormatString string, errorFormatFlagName string) error {
 	return validateErrorFormatFlag(buflint.AllFormatStrings, errorFormatString, errorFormatFlagName)
+}
+
+// DiscoverRemote returns the first remote in a list of dependencies that is not "buf.build", if
+// any. If not, it defaults to "buf.build". It skips any nil reference. It's useful for targeting
+// single-tenant BSR addresses.
+func DiscoverRemote(refs []bufmoduleref.ModuleReference) string {
+	for _, ref := range refs {
+		if ref == nil {
+			continue
+		}
+		if ref.Remote() != bufconnect.DefaultRemote {
+			return ref.Remote()
+		}
+	}
+	return bufconnect.DefaultRemote
 }
 
 func validateErrorFormatFlag(validFormatStrings []string, errorFormatString string, errorFormatFlagName string) error {

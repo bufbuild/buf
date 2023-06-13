@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmoduleref
+package bufcli
 
 import (
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -89,9 +90,9 @@ func TestDiscoverRemote(t *testing.T) {
 		func(tc testCase) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
-				var references []ModuleReference
+				var references []bufmoduleref.ModuleReference
 				for _, r := range tc.references {
-					ref, _ := ModuleReferenceForString(r)
+					ref, _ := bufmoduleref.ModuleReferenceForString(r)
 					references = append(references, ref)
 				}
 				assert.Equal(t, tc.expectedRemote, DiscoverRemote(references))
