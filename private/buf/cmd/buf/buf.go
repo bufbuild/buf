@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/version/versionget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
@@ -226,6 +227,19 @@ func NewRootCommand(name string) *appcmd.Command {
 									tokenget.NewCommand("get", builder),
 									tokenlist.NewCommand("list", builder),
 									tokendelete.NewCommand("delete", builder),
+								},
+							},
+						},
+					},
+					{
+						Use:   "package",
+						Short: "Manage remote packages",
+						SubCommands: []*appcmd.Command{
+							{
+								Use:   "version",
+								Short: "Manage remote package versions",
+								SubCommands: []*appcmd.Command{
+									versionget.NewCommand("get", builder),
 								},
 							},
 						},

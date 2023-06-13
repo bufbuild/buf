@@ -93,6 +93,18 @@ func PluginReferenceForString(reference string, revision int) (PluginReference, 
 	return parsePluginReference(reference, revision)
 }
 
+func PluginReferenceOptionalVersion(rawReference string) (PluginReference, error) {
+	if reference, err := PluginReferenceForString(rawReference, 0); err == nil {
+		return reference, nil
+	}
+	// Try parsing as a plugin identity (no version information)
+	identity, err := PluginIdentityForString(rawReference)
+	if err != nil {
+		return nil, fmt.Errorf("invalid remote plugin %s", rawReference)
+	}
+	return &pluginReference{identity: identity}, nil
+}
+
 // IsPluginReferenceOrIdentity returns true if the argument matches a plugin
 // reference (with version) or a plugin identity (without version).
 func IsPluginReferenceOrIdentity(plugin string) bool {
