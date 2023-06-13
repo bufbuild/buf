@@ -24,66 +24,66 @@ import (
 func TestDiscoverRemote(t *testing.T) {
 	t.Parallel()
 	type testCase struct {
-		name           string
-		references     []string
-		expectedRemote string
+		name                string
+		references          []string
+		expectedSelectedRef string
 	}
 	testCases := []testCase{
 		{
-			name:           "nil_references",
-			expectedRemote: "buf.build",
+			name:                "nil_references",
+			expectedSelectedRef: "",
 		},
 		{
-			name:           "no_references",
-			references:     []string{},
-			expectedRemote: "buf.build",
+			name:                "no_references",
+			references:          []string{},
+			expectedSelectedRef: "",
 		},
 		{
 			name: "some_references",
 			references: []string{
-				"buf.build/foo/bar",
-				"buf.build/foo/baz",
-				"buf.build/bar/baz",
+				"buf.build/foo/repo1",
+				"buf.build/foo/repo2",
+				"buf.build/foo/repo3",
 			},
-			expectedRemote: "buf.build",
+			expectedSelectedRef: "buf.build/foo/repo1",
 		},
 		{
 			name: "some_invalid_references",
 			references: []string{
-				"buf.build/foo/bar",
+				"buf.build/foo/repo1",
 				"",
-				"buf.build/bar/baz",
+				"buf.build/foo/repo3",
 			},
-			expectedRemote: "buf.build",
+			expectedSelectedRef: "buf.build/foo/repo1",
 		},
 		{
 			name: "all_single_tenant_references",
 			references: []string{
-				"buf.acme.com/foo/bar",
-				"buf.acme.com/foo/baz",
-				"buf.acme.com/bar/baz",
+				"buf.acme.com/foo/repo1",
+				"buf.acme.com/foo/repo2",
+				"buf.acme.com/foo/repo3",
 			},
-			expectedRemote: "buf.acme.com",
+			expectedSelectedRef: "buf.acme.com/foo/repo1",
 		},
 		{
 			name: "some_single_tenant_references",
 			references: []string{
-				"buf.build/foo/bar",
-				"buf.build/foo/baz",
-				"buf.first.com/bar/baz",
-				"buf.second.com/bar/baz",
+				"buf.build/foo/repo1",
+				"buf.build/foo/repo2",
+				"buf.first.com/foo/repo3",
+				"buf.second.com/foo/repo4",
 			},
-			expectedRemote: "buf.first.com",
+			expectedSelectedRef: "buf.first.com/foo/repo3",
 		},
 		{
 			name: "some_invalid_references_with_single_tenant",
 			references: []string{
-				"buf.build/foo/bar",
+				"buf.build/foo/repo1",
+				"buf.first.com/foo/repo2",
 				"",
-				"buf.first.com/bar/baz",
-				"buf.second.com/bar/baz",
+				"buf.second.com/foo/repo3",
 			},
-			expectedRemote: "buf.first.com",
+			expectedSelectedRef: "buf.first.com/foo/repo2",
 		},
 	}
 	for _, tc := range testCases {
@@ -95,7 +95,12 @@ func TestDiscoverRemote(t *testing.T) {
 					ref, _ := bufmoduleref.ModuleReferenceForString(r)
 					references = append(references, ref)
 				}
-				assert.Equal(t, tc.expectedRemote, DiscoverRemote(references))
+				selectedRef := SelectReferenceForRemote(references)
+				if tc.expectedSelectedRef == "" {
+					assert.Nil(t, selectedRef)
+				} else {
+					assert.Equal(t, tc.expectedSelectedRef, selectedRef.IdentityString())
+				}
 			})
 		}(tc)
 	}

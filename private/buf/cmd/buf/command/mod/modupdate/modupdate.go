@@ -174,13 +174,20 @@ func getDependencies(
 	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
 		remote = moduleConfig.ModuleIdentity.Remote()
 	} else {
-		// At this point we know there's at least one dependency. If it's an unnamed module, discover
+		// At this point we know there's at least one dependency. If it's an unnamed module, select
 		// the right remote from the list of dependencies.
-		remote = bufcli.DiscoverRemote(moduleConfig.Build.DependencyModuleReferences)
+		selectedRef := bufcli.SelectReferenceForRemote(moduleConfig.Build.DependencyModuleReferences)
+		if selectedRef == nil {
+			return nil, fmt.Errorf(`File %q has invalid "deps" references`, existingConfigFilePath)
+		}
+		remote = selectedRef.Remote()
 		container.Logger().Debug(fmt.Sprintf(
-			`%q does not specify a "name". From your dependencies, Buf is defaulting to using remote %q for dependency resolution. This remote may be unable to resolve some of your dependencies. Did you mean to specify a "name: %s/..." on this module?`,
+			`File %q does not specify the "name" field. Based on the dependency %q, it appears that you are using a BSR instance at %q. Did you mean to specify "name: %s/..." within %q?`,
 			existingConfigFilePath,
-			remote, remote,
+			selectedRef.IdentityString(),
+			remote,
+			remote,
+			existingConfigFilePath,
 		))
 	}
 	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
