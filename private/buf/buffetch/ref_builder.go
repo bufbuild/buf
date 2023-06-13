@@ -208,7 +208,7 @@ func (r *refBuilder) GetTarballRef(
 	}
 	if compression := getTarballRefOptions.compression; compression != "" {
 		var err error
-		compressionType, err = internal.NewCompressionType(compression)
+		compressionType, err = internal.ParseCompressionType(compression)
 		if err != nil {
 			return nil, err
 		}
@@ -330,7 +330,7 @@ func (r *refBuilder) getImageRef(format string, encoding ImageEncoding, path str
 	}
 	if compression := getImageRefOptions.compression; compression != "" {
 		var err error
-		compressionType, err = internal.NewCompressionType(compression)
+		compressionType, err = internal.ParseCompressionType(compression)
 		if err != nil {
 			return nil, err
 		}

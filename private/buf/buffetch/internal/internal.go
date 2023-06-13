@@ -90,9 +90,9 @@ type ArchiveType int
 // CompressionType is a compression type.
 type CompressionType int
 
-// NewCompressionType returns a CompressionType from the compression name,
+// ParseCompressionType returns a CompressionType from the compression name,
 // and returns CompressionTypeNone if name is empty.
-func NewCompressionType(name string) (CompressionType, error) {
+func ParseCompressionType(name string) (CompressionType, error) {
 	if name == "" {
 		return CompressionTypeNone, nil
 	}
