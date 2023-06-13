@@ -39,7 +39,20 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository[:ref]> <buf.build/owner/plugin[:version]>",
 		Short: "Resolve module and plugin reference to a specific remote package version",
-		Args:  cobra.ExactArgs(2),
+		Long: `This command returns the version of the asset to be used with one of the supported remote package registries.
+For example npm, go proxy, maven, swift.
+
+Examples:
+
+Get the version of the eliza module and the connect-go plugin for use with go modules:
+    $ buf alpha package version get buf.build/bufbuild/eliza buf.build/bufbuild/connect-go
+        v1.7.0-20230609151053-e682db0d9918.1
+
+Use a specific module version and plugin version:
+    $ buf alpha package version get buf.build/bufbuild/eliza:e682db0d99184be88b41c4405ea8a417 buf.build/bufbuild/connect-go:v1.7.0
+        v1.7.0-20230609151053-e682db0d9918.1
+`,
+		Args: cobra.ExactArgs(2),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
