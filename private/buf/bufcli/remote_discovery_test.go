@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcli
+package bufcli_test
 
 import (
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/stretchr/testify/assert"
 )
@@ -95,7 +96,7 @@ func TestDiscoverRemote(t *testing.T) {
 					ref, _ := bufmoduleref.ModuleReferenceForString(r)
 					references = append(references, ref)
 				}
-				selectedRef := SelectReferenceForRemote(references)
+				selectedRef := bufcli.SelectReferenceForRemote(references)
 				if tc.expectedSelectedRef == "" {
 					assert.Nil(t, selectedRef)
 				} else {
