@@ -69,11 +69,11 @@ func readFromConfig[V any](
 	if override := readConfigOptions.override; override != "" {
 		switch filepath.Ext(override) {
 		case ".json":
-			return getConfigJSONFile(logger, override, configGetter)
+			return getConfigJSONFile(ctx, logger, override, configGetter)
 		case ".yaml", ".yml":
-			return getConfigYAMLFile(logger, override, configGetter)
+			return getConfigYAMLFile(ctx, logger, override, configGetter)
 		default:
-			return getConfigJSONOrYAMLData(logger, override, configGetter)
+			return getConfigJSONOrYAMLData(ctx, logger, override, configGetter)
 		}
 	}
 	data, id, err := provider.GetConfigData(ctx, readBucket)
@@ -81,6 +81,7 @@ func readFromConfig[V any](
 		return nil, err
 	}
 	return configGetter(
+		ctx,
 		logger,
 		encoding.UnmarshalYAMLNonStrict,
 		encoding.UnmarshalYAMLStrict,
@@ -90,6 +91,7 @@ func readFromConfig[V any](
 }
 
 func getConfigJSONFile[V any](
+	ctx context.Context,
 	logger *zap.Logger,
 	file string,
 	configGetter ConfigGetter[V],
@@ -99,6 +101,7 @@ func getConfigJSONFile[V any](
 		return nil, fmt.Errorf("could not read file %s: %v", file, err)
 	}
 	return configGetter(
+		ctx,
 		logger,
 		encoding.UnmarshalJSONNonStrict,
 		encoding.UnmarshalJSONStrict,
@@ -108,6 +111,7 @@ func getConfigJSONFile[V any](
 }
 
 func getConfigYAMLFile[V any](
+	ctx context.Context,
 	logger *zap.Logger,
 	file string,
 	configGetter ConfigGetter[V],
@@ -117,6 +121,7 @@ func getConfigYAMLFile[V any](
 		return nil, fmt.Errorf("could not read file %s: %v", file, err)
 	}
 	return configGetter(
+		ctx,
 		logger,
 		encoding.UnmarshalYAMLNonStrict,
 		encoding.UnmarshalYAMLStrict,
@@ -126,11 +131,13 @@ func getConfigYAMLFile[V any](
 }
 
 func getConfigJSONOrYAMLData[V any](
+	ctx context.Context,
 	logger *zap.Logger,
 	data string,
 	configGetter ConfigGetter[V],
 ) (*V, error) {
 	return configGetter(
+		ctx,
 		logger,
 		encoding.UnmarshalJSONOrYAMLNonStrict,
 		encoding.UnmarshalJSONOrYAMLStrict,
@@ -140,6 +147,7 @@ func getConfigJSONOrYAMLData[V any](
 }
 
 func getConfigVersion(
+	_ context.Context,
 	_ *zap.Logger,
 	unmarshalNonStrict func([]byte, interface{}) error,
 	_ func([]byte, interface{}) error,

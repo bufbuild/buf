@@ -214,12 +214,7 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 			return nil, NewCannotSpecifyTagWithRefError()
 		}
 		if rawRef.GitDepth == 0 {
-			// Default to 1
-			rawRef.GitDepth = 1
-			if rawRef.GitRef != "" {
-				// Default to 50 when using ref
-				rawRef.GitDepth = 50
-			}
+			rawRef.GitDepth = getDefaultGitDepth(rawRef.GitRef)
 		}
 	} else {
 		if rawRef.GitBranch != "" || rawRef.GitTag != "" || rawRef.GitRef != "" || rawRef.GitRecurseSubmodules || rawRef.GitDepth > 0 {
@@ -295,14 +290,12 @@ func getDirRef(
 func getGitRef(
 	rawRef *RawRef,
 ) (ParsedGitRef, error) {
-	gitRefName, err := getGitRefName(rawRef.Path, rawRef.GitBranch, rawRef.GitTag, rawRef.GitRef)
-	if err != nil {
-		return nil, err
-	}
 	return newGitRef(
 		rawRef.Format,
 		rawRef.Path,
-		gitRefName,
+		rawRef.GitBranch,
+		rawRef.GitTag,
+		rawRef.GitRef,
 		rawRef.GitDepth,
 		rawRef.GitRecurseSubmodules,
 		rawRef.SubDirPath,

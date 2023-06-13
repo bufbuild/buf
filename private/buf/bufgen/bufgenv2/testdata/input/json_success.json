@@ -1,0 +1,36 @@
+{
+  "version": "v2",
+  "inputs": [
+    {
+      "json_image": "a/b/c",
+      "compression": "gzip",
+      "types": [
+        "a.b.c1",
+        "a.b.c2"
+      ],
+      "exclude_paths": [
+        "x/y/z1",
+        "x/y/z2"
+      ],
+      "include_paths": [
+        "x/y/w1",
+        "x/y/w2"
+      ]
+    },
+    {
+      "json_image": "a/b/c.json.gz"
+    },
+    {
+      "json_image": "a/b/c.json.zst"
+    },
+    {
+      "json_image": "a/b/c.json"
+    },
+    {
+      "json_image": "a/b/c"
+    },
+    {
+      "json_image": "-"
+    }
+  ]
+}

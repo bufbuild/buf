@@ -1,0 +1,4 @@
+version: v2
+inputs:
+  - directory: a/b
+    subdir: c/d

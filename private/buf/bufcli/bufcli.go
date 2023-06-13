@@ -368,6 +368,15 @@ func GetInputValue(
 	return defaultValue, nil
 }
 
+// IsInputSpecified returns whether an input is specified, based on
+// container arguments and input hash tag, without validating them.
+func IsInputSpecified(
+	container app.Container,
+	inputHashTag string,
+) bool {
+	return inputHashTag != "" && container.NumArgs() > 0
+}
+
 // WarnAlphaCommand prints a warning for a alpha command unless the alphaSuppressWarningsEnvKey
 // environment variable is set.
 func WarnAlphaCommand(_ context.Context, container appflag.Container) {

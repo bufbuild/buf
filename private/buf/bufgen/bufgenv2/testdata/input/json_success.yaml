@@ -1,0 +1,23 @@
+version: v2
+inputs:
+  - json_image: a/b/c
+    compression: gzip
+    types:
+      - a.b.c1
+      - a.b.c2
+    exclude_paths:
+      - x/y/z1
+      - x/y/z2
+    include_paths:
+      - x/y/w1
+      - x/y/w2
+  # should infer compression type gzip
+  - json_image: a/b/c.json.gz
+  # should infer compression type zstd
+  - json_image: a/b/c.json.zst
+  # should infer compression type none
+  - json_image: a/b/c.json
+  # should infer compression type none
+  - json_image: a/b/c
+  # read from stdin
+  - json_image: "-"

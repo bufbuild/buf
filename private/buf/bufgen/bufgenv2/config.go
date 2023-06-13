@@ -15,11 +15,15 @@
 package bufgenv2
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/zap"
 )
 
 // TODO: remove this
@@ -34,6 +38,49 @@ func SilenceLinter() {
 	mergeDisabledFuncs(nil)
 	mergeOverrideFuncs(nil)
 	mergeFileOptionToOverrideFuncs(nil)
+}
+
+func readConfigV2(
+	ctx context.Context,
+	logger *zap.Logger,
+	provider bufgen.ConfigDataProvider,
+	readBucket storage.ReadBucket,
+	options ...bufgen.ReadConfigOption,
+) (*Config, error) {
+	return bufgen.ReadFromConfig(
+		ctx,
+		logger,
+		provider,
+		readBucket,
+		getConfig,
+		options...,
+	)
+}
+
+func getConfig(
+	ctx context.Context,
+	logger *zap.Logger,
+	_ func([]byte, interface{}) error,
+	unmarshalStrict func([]byte, interface{}) error,
+	data []byte,
+	id string,
+) (*Config, error) {
+	var externalConfigV2 ExternalConfigV2
+	if err := unmarshalStrict(data, &externalConfigV2); err != nil {
+		return nil, err
+	}
+	if err := validateExternalConfigV2(externalConfigV2, id); err != nil {
+		return nil, err
+	}
+	config := Config{}
+	for _, externalInputConfig := range externalConfigV2.Inputs {
+		inputConfig, err := newInputConfig(ctx, externalInputConfig)
+		if err != nil {
+			return nil, err
+		}
+		config.Inputs = append(config.Inputs, inputConfig)
+	}
+	return &config, nil
 }
 
 func newManagedConfig(externalConfig ExternalManagedConfigV2) (*ManagedConfig, error) {
@@ -71,6 +118,11 @@ func newManagedConfig(externalConfig ExternalManagedConfigV2) (*ManagedConfig, e
 		DisabledFunc:             mergeDisabledFuncs(disabledFuncs),
 		FileOptionToOverrideFunc: mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs),
 	}, nil
+}
+
+func validateExternalConfigV2(externalConfig ExternalConfigV2, id string) error {
+	// TODO: implement this
+	return nil
 }
 
 func validateExternalManagedConfigV2(externalConfig ExternalManagedConfigV2) error {
