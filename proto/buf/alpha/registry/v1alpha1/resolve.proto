@@ -34,9 +34,9 @@ service ResolveService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
-  // ResolveReference resolves the given plugin and module references to a version.
+  // GetRegistryVersion resolves the given plugin and module references to a version.
   // The format of the version is determined by the plugin type.
-  rpc ResolveReference(ResolveReferenceRequest) returns (ResolveReferenceResponse) {
+  rpc GetRegistryVersion(GetRegistryVersionRequest) returns (GetRegistryVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -114,16 +114,16 @@ message GetLocalModulePinsResponse {
   repeated buf.alpha.module.v1alpha1.ModulePin dependencies = 2;
 }
 
-message ResolveReferenceRequest {
+message GetRegistryVersionRequest {
   // The plugin reference to resolve.
-  ResolveReferencePlugin plugin_reference = 1;
+  GetRegistryVersionPlugin plugin_reference = 1;
   // The module reference to resolve.
   LocalModuleReference module_reference = 2;
 }
 
-// ResolveReferencePlugin is a plugin reference.
+// GetRegistryVersionPlugin is a plugin reference.
 // If the version is empty, this is a reference to the latest version.
-message ResolveReferencePlugin {
+message GetRegistryVersionPlugin {
   // The owner of the plugin.
   // example: bufbuild
   string owner = 1;
@@ -136,7 +136,7 @@ message ResolveReferencePlugin {
   string version = 3;
 }
 
-message ResolveReferenceResponse {
+message GetRegistryVersionResponse {
   // version is the resolved version that can be sent to a registry.
   string version = 1;
 }
