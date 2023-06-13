@@ -97,7 +97,7 @@ func (m *moduleReference) IdentityString() string {
 
 // DiscoverRemote returns the first remote in a list of dependencies that is not "buf.build", if
 // any. If not, it defaults to "buf.build". It skips any nil reference. It's useful for targeting
-// right single-tenant BSR addresses.
+// single-tenant BSR addresses.
 func DiscoverRemote(refs []ModuleReference) string {
 	for _, ref := range refs {
 		if ref == nil {

@@ -2,9 +2,9 @@
 
 ## [Unreleased]
 
-- Remove an import warning in case such import statement points to a local unnamed module.
+- Remove an import warning in case the import statement points to a local unnamed module.
 - Discover the correct remote to use for fetching dependencies in the `mod update` and `mod prune`
-  commands, in case it's an unnamed module and there is a mix of remotes in the `buf.yaml`
+  commands, in case it's an unnamed module and there are a mix of remotes in the `buf.yaml`
   configuration file.
 
 ## [v1.21.0] - 2023-06-05
