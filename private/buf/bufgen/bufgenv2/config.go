@@ -80,6 +80,13 @@ func getConfig(
 		}
 		config.Inputs = append(config.Inputs, inputConfig)
 	}
+	for _, externalPluginConfig := range externalConfigV2.Plugins {
+		pluginConfig, err := newPluginConfig(externalPluginConfig)
+		if err != nil {
+			return nil, err
+		}
+		config.Plugins = append(config.Plugins, pluginConfig)
+	}
 	return &config, nil
 }
 

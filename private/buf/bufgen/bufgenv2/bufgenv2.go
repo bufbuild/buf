@@ -71,7 +71,7 @@ func ReadConfigV2(
 // Config is a configuration.
 type Config struct {
 	Managed *ManagedConfig
-	Plugins []*PluginConfig
+	Plugins []bufgen.PluginConfig
 	Inputs  []*InputConfig
 }
 
