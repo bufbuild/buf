@@ -165,8 +165,8 @@ message Event {
     PayloadRepositoryLabelCreated repository_label_created = 35;
     PayloadRepositoryLabelMoved repository_label_moved = 36;
     PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
-    PayloadServerBreakingChangesEnabled server_breaking_changes_enabled = 38;
-    PayloadServerBreakingChangesDisabled server_breaking_changes_disabled = 39;
+    PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
+    PayloadServerBreakingChangePolicyDisabled payload_server_breaking_change_policy_disabled = 39;
   }
 }
 
@@ -422,11 +422,11 @@ message PayloadRepositoryLabelMoved {
   string from_commit_id = 7;
 }
 
-message PayloadServerBreakingChangesEnabled {
+message PayloadServerBreakingChangePolicyEnabled {
   // category is the category of breaking changes.
   buf.alpha.registry.v1alpha1.BreakingChangeCategory category = 1;
   // ignore_unstable_packages tracks breaking change enforcement for unstable packages.
   optional bool ignore_unstable_packages = 2;
 }
 
-message PayloadServerBreakingChangesDisabled {}
+message PayloadServerBreakingChangePolicyDisabled {}
