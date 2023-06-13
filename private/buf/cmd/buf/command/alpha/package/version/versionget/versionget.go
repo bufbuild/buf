@@ -44,11 +44,11 @@ For example npm, go proxy, maven, swift.
 
 Examples:
 
-Get the version of the eliza module and the connect-go plugin for use with go modules:
+Get the version of the eliza module and the connect-go plugin for use with go modules.
     $ buf alpha package version get buf.build/bufbuild/eliza buf.build/bufbuild/connect-go
         v1.7.0-20230609151053-e682db0d9918.1
 
-Use a specific module version and plugin version:
+Use a specific module version and plugin version.
     $ buf alpha package version get buf.build/bufbuild/eliza:e682db0d99184be88b41c4405ea8a417 buf.build/bufbuild/connect-go:v1.7.0
         v1.7.0-20230609151053-e682db0d9918.1
 `,
