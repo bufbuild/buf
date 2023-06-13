@@ -81,6 +81,15 @@ func run(
 	if err != nil {
 		return err
 	}
+	remote := bufconnect.DefaultRemote
+	if config.ModuleIdentity != nil && config.ModuleIdentity.Remote() != "" {
+		remote = config.ModuleIdentity.Remote()
+	}
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	if err != nil {
+		return err
+	}
+	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
 
 	module, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
 	if err != nil {
@@ -93,24 +102,6 @@ func run(
 	}
 	var dependencyModulePins []bufmoduleref.ModulePin
 	if len(requestReferences) > 0 {
-		var remote string
-		if config.ModuleIdentity != nil && config.ModuleIdentity.Remote() != "" {
-			remote = config.ModuleIdentity.Remote()
-		} else {
-			// At this point we know there's at least one dependency. If it's an unnamed module, discover
-			// the right remote from the list of dependencies.
-			remote = bufmoduleref.DiscoverRemote(config.Build.DependencyModuleReferences)
-			container.Logger().Debug(fmt.Sprintf(
-				`%q does not specify a "name". From your dependencies, Buf is defaulting to using remote %q for dependency resolution. This remote may be unable to resolve some of your dependencies. Did you mean to specify a "name: %s/..." on this module?`,
-				existingConfigFilePath,
-				remote, remote,
-			))
-		}
-		clientConfig, err := bufcli.NewConnectClientConfig(container)
-		if err != nil {
-			return err
-		}
-		service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
 		resp, err := service.GetModulePins(
 			ctx,
 			connect.NewRequest(&registryv1alpha1.GetModulePinsRequest{

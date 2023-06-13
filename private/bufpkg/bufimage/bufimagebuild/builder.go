@@ -137,9 +137,9 @@ func (b *builder) build(
 	return image, nil, nil
 }
 
-// warnInvalidImports checks that all the target image files have valid imports statements that
-// point to files in the local module, in a direct dependency, or in a workspace local unnamed
-// module. It outputs WARN messages otherwise, one per invalid import statement.
+// warnInvalidImports checks that all the target image files have valid imports statements that come
+// from the local module target files or from a direct dependency. It outputs a WARN message per
+// invalid import statement.
 func (b *builder) warnInvalidImports(
 	ctx context.Context,
 	builtImage bufimage.Image,
@@ -249,18 +249,14 @@ func (b *builder) warnInvalidImports(
 			)
 			if workspaceModule, ok := workspaceFilesToModule[importFilePath]; ok {
 				if workspaceModule == "" {
-					// If dependency comes from an unnamed module, that is probably a local dependency, and
-					// that module won't be pushed to the BSR. We can skip this warning.
-					continue
+					warnMsg += ", but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml."
+				} else {
+					warnMsg += fmt.Sprintf(
+						", but is found in local workspace module %q. Declare dependency %q in the deps key in buf.yaml.",
+						workspaceModule,
+						workspaceModule,
+					)
 				}
-				// If dependency comes from a named module, we _could_ skip this warning as it _might_
-				// fail when pushing trying to build, but we better keep it in case it is a transitive
-				// dependency too, and both direct and transitive dependencies live in the same workspace.
-				warnMsg += fmt.Sprintf(
-					", but is found in local workspace module %q. Declare dependency %q in the deps key in buf.yaml.",
-					workspaceModule,
-					workspaceModule,
-				)
 			} else if transitiveDepModule, ok := transitiveDepsFilesToModule[importFilePath]; ok {
 				warnMsg += fmt.Sprintf(
 					", but is found in the transitive dependency %q. Declare dependency %q in the deps key in buf.yaml.",
