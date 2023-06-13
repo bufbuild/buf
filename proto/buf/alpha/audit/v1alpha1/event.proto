@@ -102,7 +102,8 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_COMMIT_DELETED = 28;
   EVENT_TYPE_REPOSITORY_LABEL_CREATED = 29;
   EVENT_TYPE_REPOSITORY_LABEL_MOVED = 30;
-  EVENT_TYPE_SERVER_BREAKING_CHANGES_CHANGED = 32;
+  EVENT_TYPE_SERVER_BREAKING_CHANGES_ENABLED = 32;
+  EVENT_TYPE_SERVER_BREAKING_CHANGES_DISABLED = 33;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -164,7 +165,8 @@ message Event {
     PayloadRepositoryLabelCreated repository_label_created = 35;
     PayloadRepositoryLabelMoved repository_label_moved = 36;
     PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
-    PayloadServerBreakingChangesChanged server_breaking_changes_changed = 38;
+    PayloadServerBreakingChangesEnabled server_breaking_changes_enabled = 38;
+    PayloadServerBreakingChangesDisabled server_breaking_changes_disabled = 39;
   }
 }
 
@@ -420,11 +422,11 @@ message PayloadRepositoryLabelMoved {
   string from_commit_id = 7;
 }
 
-message PayloadServerBreakingChangesChanged {
-  // enabled tracks whether breaking changes were enabled or disabled.
-  optional bool enabled = 1;
+message PayloadServerBreakingChangesEnabled {
   // category is the category of breaking changes.
-  buf.alpha.registry.v1alpha1.BreakingChangeCategory category = 2;
-  // ignore_unstable_packages tracks whether breaking changes were enabled or disabled for unstable packages.
-  optional bool ignore_unstable_packages = 3;
+  buf.alpha.registry.v1alpha1.BreakingChangeCategory category = 1;
+  // ignore_unstable_packages tracks breaking change enforcement for unstable packages.
+  optional bool ignore_unstable_packages = 2;
 }
+
+message PayloadServerBreakingChangesDisabled {}
