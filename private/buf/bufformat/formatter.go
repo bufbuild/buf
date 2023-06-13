@@ -256,8 +256,8 @@ func (f *formatter) writeFileHeader() {
 		iName := importNodes[i].Name.AsString()
 		jName := importNodes[j].Name.AsString()
 		// sort by public > None > weak
-		iLevel := importLevel(importNodes[i])
-		jLevel := importLevel(importNodes[j])
+		iOrder := importSortOrder(importNodes[i])
+		jOrder := importSortOrder(importNodes[j])
 
 		if iName < jName {
 			return true
@@ -265,10 +265,10 @@ func (f *formatter) writeFileHeader() {
 		if iName > jName {
 			return false
 		}
-		if iLevel > jLevel {
+		if iOrder > jOrder {
 			return true
 		}
-		if iLevel < jLevel {
+		if iOrder < jOrder {
 			return false
 		}
 
@@ -2242,16 +2242,16 @@ func (f *formatter) nodeHasComment(node ast.Node) bool {
 		nodeinfo.TrailingComments().Len() > 0
 }
 
-// importLevel maps import types to a level, so it can be compared and sorted.
-// `import public`=3, `import`=2; `import weak` =1
-func importLevel(node *ast.ImportNode) int {
+// importSortOrder maps import types to a sort order number, so it can be compared and sorted.
+// `import`=3, `import public`=2, `import weak`=1
+func importSortOrder(node *ast.ImportNode) int {
 	switch {
 	case node.Public != nil:
-		return 3
+		return 2
 	case node.Weak != nil:
 		return 1
 	default:
-		return 2
+		return 3
 	}
 }
 
