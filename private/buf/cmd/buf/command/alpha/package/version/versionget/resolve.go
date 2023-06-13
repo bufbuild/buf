@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resolve
+package versionget
 
 import (
 	"context"
@@ -38,7 +38,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository[:ref]> <buf.build/owner/plugin[:version]>",
-		Short: "Resolve module and plugin version to a specific registry version",
+		Short: "Resolve module and plugin reference to a specific remote package version",
 		Args:  cobra.ExactArgs(2),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
