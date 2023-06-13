@@ -44,7 +44,7 @@ type DisabledFunc func(FileOption, bufimage.ImageFile) bool
 // TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
 // OverrideFunc is specific to a file option, and returns what thie file option
 // should be overridden to for this file.
-type OverrideFunc func(bufimage.ImageFile) (string, error)
+type OverrideFunc func(bufimage.ImageFile) (bufimagemodifyv2.Override, error)
 
 // Config is a configuration.
 type Config struct {
@@ -173,7 +173,7 @@ func applyManagementForFile(
 		if managedConfig.DisabledFunc(fileOption, imageFile) {
 			continue
 		}
-		var valueOrPrefix string
+		var valueOrPrefix bufimagemodifyv2.Override
 		var err error
 		overrideFunc, ok := managedConfig.FileOptionToOverrideFunc[fileOption]
 		if ok {
@@ -186,8 +186,8 @@ func applyManagementForFile(
 		switch fileOption {
 		case FileOptionJavaPackage:
 			// Will need to do *string or similar for unset
-			if valueOrPrefix == "" {
-				valueOrPrefix = defaultJavaPackagePrefix
+			if valueOrPrefix == nil {
+				valueOrPrefix = bufimagemodifyv2.NewPrefix(defaultJavaPackagePrefix)
 			}
 			if err := bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, valueOrPrefix); err != nil {
 				return err

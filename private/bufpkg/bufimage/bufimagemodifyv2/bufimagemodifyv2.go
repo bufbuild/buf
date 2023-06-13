@@ -15,6 +15,8 @@
 package bufimagemodifyv2
 
 import (
+	"errors"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -36,6 +38,32 @@ var (
 	// rubyPackagePath          = []int32{8, 45}
 )
 
+type Override interface {
+	override()
+}
+
+type ValueOverride[T string | bool] interface {
+	Override
+	Get() T
+
+	valueOverride()
+}
+
+type PrefixOverride interface {
+	Override
+	Get() string
+
+	prefixOverride()
+}
+
+func NewValue[T string | bool](v T) Override {
+	return newValue[T](v)
+}
+
+func NewPrefix(p string) Override {
+	return newPrefix(p)
+}
+
 type Marker interface {
 	Mark(bufimage.ImageFile, []int32)
 }
@@ -56,13 +84,25 @@ func NewMarkSweeper(image bufimage.Image) MarkSweeper {
 func ModifyJavaPackage(
 	marker Marker,
 	imageFile bufimage.ImageFile,
-	prefix string,
+	override Override,
 ) error {
 	descriptor := imageFile.Proto()
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
-	descriptor.Options.JavaPackage = proto.String(getJavaPackageValue(imageFile, prefix))
+	switch t := override.(type) {
+	case ValueOverride[string]:
+		descriptor.Options.JavaPackage = proto.String(
+			t.Get(),
+		)
+	case prefix:
+		descriptor.Options.JavaPackage = proto.String(
+			getJavaPackageValue(imageFile, t.Get()),
+		)
+	default:
+		// this should not happen
+		return errors.New("a valid override is needed")
+	}
 	marker.Mark(imageFile, javaPackagePath)
 	return nil
 }

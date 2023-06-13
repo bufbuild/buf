@@ -19,22 +19,9 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodifyv2"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
-
-// TODO: remove this
-func SilenceLinter() {
-	empty := ExternalConfigV2{}
-	_, _ = newManagedConfig(empty.Managed)
-	_ = validateExternalManagedConfigV2(empty.Managed)
-	_, _ = newDisabledFunc(ExternalManagedDisableConfigV2{})
-	_, _ = newOverrideFunc(ExternalManagedOverrideConfigV2{})
-	matchesModule(nil, "")
-	matchesPath(nil, "")
-	mergeDisabledFuncs(nil)
-	mergeOverrideFuncs(nil)
-	mergeFileOptionToOverrideFuncs(nil)
-}
 
 func newManagedConfig(externalConfig ExternalManagedConfigV2) (*ManagedConfig, error) {
 	if externalConfig.IsEmpty() {
@@ -115,25 +102,25 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (OverrideFu
 		// This should never happen because we already validated that this is set and non-empty
 		return nil, err
 	}
-	return func(imageFile bufimage.ImageFile) (string, error) {
+	return func(imageFile bufimage.ImageFile) (bufimagemodifyv2.Override, error) {
 		// We don't need to match on FileOption - we only call this OverrideFunc when we
 		// know we are applying for a given FileOption.
 		// The FileOption we parsed above is assumed to be the FileOption.
 
 		if !matchesModule(imageFile, externalConfig.Module) {
-			return "", nil
+			return nil, nil
 		}
 		if !matchesPath(imageFile, externalConfig.Path) {
-			return "", nil
+			return nil, nil
 		}
 
 		switch t := fileOption.Type(); t {
 		case FileOptionTypeValue:
-			return externalConfig.Value, nil
+			return bufimagemodifyv2.NewValue(externalConfig.Value), nil
 		case FileOptionTypePrefix:
-			return externalConfig.Prefix, nil
+			return bufimagemodifyv2.NewPrefix(externalConfig.Prefix), nil
 		default:
-			return "", fmt.Errorf("unknown FileOptionType: %q", t)
+			return nil, fmt.Errorf("unknown FileOptionType: %q", t)
 		}
 	}, nil
 }
@@ -187,15 +174,15 @@ func mergeDisabledFuncs(disabledFuncs []DisabledFunc) DisabledFunc {
 
 func mergeOverrideFuncs(overrideFuncs []OverrideFunc) OverrideFunc {
 	// Last override listed wins
-	return func(imageFile bufimage.ImageFile) (string, error) {
-		var override string
+	return func(imageFile bufimage.ImageFile) (bufimagemodifyv2.Override, error) {
+		var override bufimagemodifyv2.Override
 		for _, overrideFunc := range overrideFuncs {
 			iOverride, err := overrideFunc(imageFile)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			// TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
-			if iOverride != "" {
+			if iOverride != nil {
 				override = iOverride
 			}
 		}
