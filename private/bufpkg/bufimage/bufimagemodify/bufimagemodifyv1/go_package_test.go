@@ -35,7 +35,7 @@ func TestGoPackageError(t *testing.T) {
 
 func TestGoPackageEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -137,7 +137,7 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 
 func TestGoPackageAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDataDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -235,7 +235,7 @@ func TestGoPackageAllOptions(t *testing.T) {
 
 func TestGoPackagePackageVersion(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "packageversion")
+	dirPath := filepath.Join(testDataDir, "packageversion")
 	packageSuffix := "weatherv1alpha1"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
@@ -364,7 +364,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 
 func TestGoPackageWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDataDir, "wktimport")
 	packageSuffix := "weatherv1alpha1"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
@@ -433,7 +433,7 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 
 func TestGoPackageWithExcept(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,
 		testRepositoryOwner,
@@ -542,7 +542,7 @@ func TestGoPackageWithExcept(t *testing.T) {
 
 func TestGoPackageWithOverride(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	overrideGoPackagePrefix := "github.com/foo/bar/private/private/gen/proto/go"
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,

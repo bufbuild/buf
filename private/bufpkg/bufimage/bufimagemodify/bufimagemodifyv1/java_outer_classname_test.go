@@ -28,7 +28,7 @@ import (
 
 func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -144,7 +144,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 
 func TestJavaOuterClassnameAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDataDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -258,7 +258,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 
 func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "javaoptions")
+	dirPath := filepath.Join(testDataDir, "javaoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -354,7 +354,7 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 
 func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDataDir, "wktimport")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)

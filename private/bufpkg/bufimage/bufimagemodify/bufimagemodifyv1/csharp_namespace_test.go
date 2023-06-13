@@ -29,7 +29,7 @@ import (
 
 func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -104,7 +104,7 @@ func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 
 func TestCsharpNamespaceAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDataDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -194,10 +194,10 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 
 func TestCsharpNamespaceOptions(t *testing.T) {
 	t.Parallel()
-	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "single"), "Acme.V1")
-	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "double"), "Acme.Weather.V1")
-	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "triple"), "Acme.Weather.Data.V1")
-	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "underscore"), "Acme.Weather.FooBar.V1")
+	testCsharpNamespaceOptions(t, filepath.Join(testDataDir, "csharpoptions", "single"), "Acme.V1")
+	testCsharpNamespaceOptions(t, filepath.Join(testDataDir, "csharpoptions", "double"), "Acme.Weather.V1")
+	testCsharpNamespaceOptions(t, filepath.Join(testDataDir, "csharpoptions", "triple"), "Acme.Weather.Data.V1")
+	testCsharpNamespaceOptions(t, filepath.Join(testDataDir, "csharpoptions", "underscore"), "Acme.Weather.FooBar.V1")
 }
 
 func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
@@ -300,7 +300,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 
 func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDataDir, "wktimport")
 	modifiedCsharpNamespace := "Acme.Weather.V1alpha1"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
@@ -359,7 +359,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 
 func TestCsharpNamespaceWithExcept(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,
 		testRepositoryOwner,
@@ -472,7 +472,7 @@ func TestCsharpNamespaceWithExcept(t *testing.T) {
 
 func TestCsharpNamespaceWithOverride(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	overrideCsharpNamespacePrefix := "x.y.z"
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,

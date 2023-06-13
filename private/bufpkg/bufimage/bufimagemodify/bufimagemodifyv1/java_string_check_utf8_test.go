@@ -26,7 +26,7 @@ import (
 
 func TestJavaStringCheckUtf8EmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -100,7 +100,7 @@ func TestJavaStringCheckUtf8EmptyOptions(t *testing.T) {
 
 func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDataDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -198,7 +198,7 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 
 func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "javaoptions")
+	dirPath := filepath.Join(testDataDir, "javaoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -296,7 +296,7 @@ func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 
 func TestJavaStringCheckUtf8WellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDataDir, "wktimport")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)

@@ -26,7 +26,7 @@ import (
 
 func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -126,7 +126,7 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 
 func TestJavaMultipleFilesAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDataDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -257,7 +257,7 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 
 func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "javaoptions")
+	dirPath := filepath.Join(testDataDir, "javaoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -385,7 +385,7 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 
 func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDataDir, "wktimport")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)

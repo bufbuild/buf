@@ -28,7 +28,7 @@ import (
 
 func TestOptimizeForEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -132,7 +132,7 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 
 func TestOptimizeForAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDataDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -237,7 +237,7 @@ func TestOptimizeForAllOptions(t *testing.T) {
 
 func TestOptimizeForCcOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "ccoptions")
+	dirPath := filepath.Join(testDataDir, "ccoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -342,7 +342,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 
 func TestOptimizeForWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDataDir, "wktimport")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -388,7 +388,7 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 
 func TestOptimizeForWithExcept(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,
 		testRepositoryOwner,
@@ -505,7 +505,7 @@ func TestOptimizeForWithExcept(t *testing.T) {
 
 func TestOptimizeForWithOverride(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	overrideOptimizeFor := descriptorpb.FileOptions_LITE_RUNTIME
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,

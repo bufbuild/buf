@@ -24,9 +24,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const testDataDir = "../testdata"
+
 func TestCcEnableArenasEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDataDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -130,7 +132,7 @@ func TestCcEnableArenasEmptyOptions(t *testing.T) {
 
 func TestCcEnableArenasAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDataDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -236,7 +238,7 @@ func TestCcEnableArenasAllOptions(t *testing.T) {
 
 func TestCcEnableArenasCcOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "ccoptions")
+	dirPath := filepath.Join(testDataDir, "ccoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -342,7 +344,7 @@ func TestCcEnableArenasCcOptions(t *testing.T) {
 
 func TestCcEnableArenasWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDataDir, "wktimport")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
