@@ -25,24 +25,28 @@ import (
 )
 
 // modifyImage modifies the image according to the given configuration (i.e. managed mode).
-func ModifyImage(
-	ctx context.Context,
+func NewModifier(
 	logger *zap.Logger,
 	config *Config,
-	image bufimage.Image,
-) error {
+) (bufimagemodify.Modifier, error) {
 	if config.ManagedConfig == nil {
 		// If the config is nil, it implies that the
 		// user has not enabled managed mode.
-		return nil
+		return &nopModifier{}, nil
 	}
 	sweeper := bufimagemodify.NewFileOptionSweeper()
 	modifier, err := newModifier(logger, config.ManagedConfig, sweeper)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	modifier = bufimagemodify.Merge(modifier, bufimagemodify.ModifierFunc(sweeper.Sweep))
-	return modifier.Modify(ctx, image)
+	return modifier, nil
+}
+
+type nopModifier struct{}
+
+func (a *nopModifier) Modify(_ context.Context, _ bufimage.Image) error {
+	return nil
 }
 
 func newModifier(
