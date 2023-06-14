@@ -37,7 +37,6 @@ message ListRepositoryBranchesRequest {
   uint32 page_size = 2;
   // The first page is returned if this is empty.
   string page_token = 3;
-  bool reverse = 4;
 }
 
 message ListRepositoryBranchesResponse {
