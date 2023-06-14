@@ -29,9 +29,9 @@ enum BreakingChangeCategory {
   BREAKING_CHANGE_CATEGORY_WIRE_JSON = 2;
 }
 
-message BreakingChangeSettings {
-  bool enabled = 1;
-  bool ignore_unstable_packages = 2;
+message BreakingChangePolicy {
+  optional bool enabled = 1;
+  optional bool ignore_unstable_packages = 2;
   BreakingChangeCategory category = 3;
 }
 
@@ -50,12 +50,12 @@ service AdminService {
   rpc CreateMachineUser(CreateMachineUserRequest) returns (CreateMachineUserResponse) {
     option idempotency_level = IDEMPOTENT;
   }
-  // Get breaking change settings for the server.
-  rpc GetBreakingChangeSettings(GetBreakingChangeSettingsRequest) returns (GetBreakingChangeSettingsResponse) {
+  // Get breaking change policy for the server.
+  rpc GetBreakingChangePolicy(GetBreakingChangePolicyRequest) returns (GetBreakingChangePolicyResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // Update breaking change settings for the server.
-  rpc UpdateBreakingChangeSettings(UpdateBreakingChangeSettingsRequest) returns (UpdateBreakingChangeSettingsResponse);
+  // Update breaking change policy for the server.
+  rpc UpdateBreakingChangePolicy(UpdateBreakingChangePolicyRequest) returns (UpdateBreakingChangePolicyResponse);
 }
 
 message ForceDeleteUserRequest {
@@ -97,14 +97,14 @@ message CreateMachineUserResponse {
   User user = 1;
 }
 
-message GetBreakingChangeSettingsRequest {}
+message GetBreakingChangePolicyRequest {}
 
-message GetBreakingChangeSettingsResponse {
-  BreakingChangeSettings settings = 1;
+message GetBreakingChangePolicyResponse {
+  BreakingChangePolicy policy = 1;
 }
 
-message UpdateBreakingChangeSettingsRequest {
-  BreakingChangeSettings settings = 1;
+message UpdateBreakingChangePolicyRequest {
+  BreakingChangePolicy policy = 1;
 }
 
-message UpdateBreakingChangeSettingsResponse {}
+message UpdateBreakingChangePolicyResponse {}
