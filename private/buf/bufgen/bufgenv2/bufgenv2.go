@@ -82,26 +82,6 @@ type ManagedConfig struct {
 	FileOptionToOverrideFunc map[FileOption]OverrideFunc
 }
 
-// PluginConfig is a plugin configuration.
-type PluginConfig struct {
-	Remote        *string
-	Binary        *[]string
-	ProtocBuiltin *string
-	Wasm          *string
-	// Only valid with Remote
-	Revision int
-	// Only valid with ProtocBuiltin
-	ProtocPath string
-	// Required
-	Out            string
-	Opt            string
-	IncludeImports bool
-	IncludeWKT     bool
-	// Required
-	// TODO: Strategy enum in bufgen
-	Strategy string
-}
-
 // InputConfig is an input configuration.
 type InputConfig struct {
 	InputRef     buffetch.Ref

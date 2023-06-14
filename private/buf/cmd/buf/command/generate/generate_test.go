@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv1"
+	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv2"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -62,7 +63,7 @@ func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 		command.NewRunner(),
 		googleapisDirPath,
 		[]*testPluginInfo{
-			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
+			{name: "go", opt: "Mgoogle/api/auth.proto=foo", isBinary: true},
 		},
 	)
 }
@@ -337,6 +338,61 @@ func testCompareGeneratedStubs(
 ) {
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 100)
 	actualProtocDir := t.TempDir()
+	var actualProtocPluginFlags []string
+	for _, testPluginInfo := range testPluginInfos {
+		actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_out=%s", testPluginInfo.name, actualProtocDir))
+		if testPluginInfo.opt != "" {
+			actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_opt=%s", testPluginInfo.name, testPluginInfo.opt))
+		}
+	}
+	buftesting.RunActualProtoc(
+		t,
+		runner,
+		false,
+		false,
+		dirPath,
+		filePaths,
+		map[string]string{
+			"PATH": os.Getenv("PATH"),
+		},
+		nil,
+		actualProtocPluginFlags...,
+	)
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	actualReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		actualProtocDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+
+	bufGenDir := t.TempDir()
+	bufReadWriteBucket := generateIntoBucket(
+		t,
+		bufGenDir,
+		storageosProvider,
+		dirPath,
+		testPluginInfos,
+		filePaths,
+	)
+	diff, err := storage.DiffBytes(
+		context.Background(),
+		runner,
+		actualReadWriteBucket,
+		bufReadWriteBucket,
+		transformGolangProtocVersionToUnknown(t),
+	)
+	require.NoError(t, err)
+	assert.Empty(t, string(diff))
+}
+
+func testV2CompareGeneratedStubs(
+	t *testing.T,
+	runner command.Runner,
+	dirPath string,
+	testPluginInfos []*testPluginInfo,
+) {
+	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 100)
+	actualProtocDir := t.TempDir()
 	bufGenDir := t.TempDir()
 	var actualProtocPluginFlags []string
 	for _, testPluginInfo := range testPluginInfos {
@@ -361,7 +417,7 @@ func testCompareGeneratedStubs(
 	genFlags := []string{
 		dirPath,
 		"--template",
-		newExternalConfigV1String(t, testPluginInfos, bufGenDir),
+		newExternalConfigV2String(t, testPluginInfos, bufGenDir),
 	}
 	for _, filePath := range filePaths {
 		genFlags = append(
@@ -525,6 +581,47 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 	)
 }
 
+func generateIntoBucket(
+	t *testing.T,
+	out string,
+	storageosProvider storageos.Provider,
+	dirPath string,
+	testPluginInfos []*testPluginInfo,
+	filePaths []string,
+) storage.ReadWriteBucket {
+	genFlags := []string{
+		dirPath,
+		"--template",
+		newExternalConfigV1String(t, testPluginInfos, out),
+	}
+	for _, filePath := range filePaths {
+		genFlags = append(
+			genFlags,
+			"--path",
+			filePath,
+		)
+	}
+	appcmdtesting.RunCommandSuccess(
+		t,
+		func(name string) *appcmd.Command {
+			return NewCommand(
+				name,
+				appflag.NewBuilder(name),
+			)
+		},
+		internaltesting.NewEnvFunc(t),
+		nil,
+		nil,
+		genFlags...,
+	)
+	bufReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		out,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+	return bufReadWriteBucket
+}
+
 func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out string) string {
 	externalConfig := bufgenv1.ExternalConfigV1{
 		Version: "v1",
@@ -544,9 +641,39 @@ func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out stri
 	return string(data)
 }
 
+func newExternalConfigV2String(t *testing.T, plugins []*testPluginInfo, out string) string {
+	externalConfig := bufgenv2.ExternalConfigV2{
+		Version: "v2",
+	}
+	for _, plugin := range plugins {
+		var pluginConfig bufgenv2.ExternalPluginConfigV2
+		if plugin.isBinary {
+			pluginConfig = bufgenv2.ExternalPluginConfigV2{
+				Binary: fmt.Sprintf("protoc-gen-%s", plugin.name),
+				Opt:    plugin.opt,
+				Out:    out,
+			}
+		} else {
+			pluginConfig = bufgenv2.ExternalPluginConfigV2{
+				ProtocBuiltin: &plugin.name,
+				Opt:           plugin.opt,
+				Out:           out,
+			}
+		}
+		externalConfig.Plugins = append(
+			externalConfig.Plugins,
+			pluginConfig,
+		)
+	}
+	data, err := json.Marshal(externalConfig)
+	require.NoError(t, err)
+	return string(data)
+}
+
 type testPluginInfo struct {
-	name string
-	opt  string
+	name     string
+	opt      string
+	isBinary bool
 }
 
 func transformGolangProtocVersionToUnknown(t *testing.T) storage.DiffOption {

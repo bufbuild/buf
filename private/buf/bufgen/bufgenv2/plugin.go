@@ -80,7 +80,9 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (bufgen.PluginConfig
 			revision,
 			externalConfig.Out,
 			opt,
-		), nil
+			externalConfig.IncludeImports,
+			externalConfig.IncludeWKT,
+		)
 	case typeBinary:
 		path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Binary)
 		if err != nil {
@@ -92,6 +94,8 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (bufgen.PluginConfig
 			strategy,
 			externalConfig.Out,
 			opt,
+			externalConfig.IncludeImports,
+			externalConfig.IncludeWKT,
 		)
 	case typeProtocBuiltin:
 		var protocPath string
@@ -103,8 +107,10 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (bufgen.PluginConfig
 			protocPath,
 			externalConfig.Out,
 			opt,
+			externalConfig.IncludeImports,
+			externalConfig.IncludeWKT,
 			strategy,
-		), nil
+		)
 	default:
 		// this should not happen
 		return nil, fmt.Errorf("must specify one of %s, %s and %s", typeRemote, typeBinary, typeProtocBuiltin)

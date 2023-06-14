@@ -21,10 +21,12 @@ import (
 )
 
 type localPluginConfig struct {
-	name     string
-	strategy internal.Strategy
-	out      string
-	opt      string
+	name           string
+	strategy       internal.Strategy
+	out            string
+	opt            string
+	includeImports bool
+	includeWKT     bool
 }
 
 func newLocalPluginConfig(
@@ -32,12 +34,16 @@ func newLocalPluginConfig(
 	strategy internal.Strategy,
 	out string,
 	opt string,
+	includeImports bool,
+	includeWKT bool,
 ) *localPluginConfig {
 	return &localPluginConfig{
-		name:     name,
-		strategy: strategy,
-		out:      out,
-		opt:      opt,
+		name:           name,
+		strategy:       strategy,
+		out:            out,
+		opt:            opt,
+		includeImports: includeImports,
+		includeWKT:     includeWKT,
 	}
 }
 
@@ -57,15 +63,25 @@ func (c *localPluginConfig) Strategy() internal.Strategy {
 	return c.strategy
 }
 
+func (c *localPluginConfig) IncludeImports() bool {
+	return c.includeImports
+}
+
+func (c *localPluginConfig) IncludeWKT() bool {
+	return c.includeWKT
+}
+
 func (c *localPluginConfig) pluginConfig()      {}
 func (c *localPluginConfig) localPluginConfig() {}
 
 type binaryPluginConfig struct {
-	name     string
-	out      string
-	opt      string
-	strategy internal.Strategy
-	path     []string
+	name           string
+	out            string
+	opt            string
+	strategy       internal.Strategy
+	path           []string
+	includeImports bool
+	includeWKT     bool
 }
 
 func newBinaryPluginConfig(
@@ -74,16 +90,20 @@ func newBinaryPluginConfig(
 	strategy internal.Strategy,
 	out string,
 	opt string,
+	includeImports bool,
+	includeWKT bool,
 ) (*binaryPluginConfig, error) {
 	if len(path) == 0 {
 		return nil, errors.New("must specify a path to the plugin")
 	}
 	return &binaryPluginConfig{
-		name:     name,
-		path:     path,
-		strategy: strategy,
-		out:      out,
-		opt:      opt,
+		name:           name,
+		path:           path,
+		strategy:       strategy,
+		out:            out,
+		opt:            opt,
+		includeImports: includeImports,
+		includeWKT:     includeWKT,
 	}, nil
 }
 
@@ -110,16 +130,26 @@ func (c *binaryPluginConfig) Strategy() internal.Strategy {
 	return c.strategy
 }
 
+func (c *binaryPluginConfig) IncludeImports() bool {
+	return c.includeImports
+}
+
+func (c *binaryPluginConfig) IncludeWKT() bool {
+	return c.includeWKT
+}
+
 func (c *binaryPluginConfig) pluginConfig()       {}
 func (c *binaryPluginConfig) localPluginConfig()  {}
 func (c *binaryPluginConfig) binaryPluginConfig() {}
 
 type protocBuiltinPluginConfig struct {
-	out        string
-	opt        string
-	strategy   internal.Strategy
-	name       string
-	protocPath string
+	out            string
+	opt            string
+	strategy       internal.Strategy
+	name           string
+	protocPath     string
+	includeImports bool
+	includeWKT     bool
 }
 
 func newProtocBuiltinPluginConfig(
@@ -127,14 +157,18 @@ func newProtocBuiltinPluginConfig(
 	protocPath string,
 	out string,
 	opt string,
+	includeImports bool,
+	includeWKT bool,
 	strategy internal.Strategy,
 ) *protocBuiltinPluginConfig {
 	return &protocBuiltinPluginConfig{
-		name:       name,
-		protocPath: protocPath,
-		out:        out,
-		opt:        opt,
-		strategy:   strategy,
+		name:           name,
+		protocPath:     protocPath,
+		out:            out,
+		opt:            opt,
+		strategy:       strategy,
+		includeImports: includeImports,
+		includeWKT:     includeWKT,
 	}
 }
 
@@ -150,6 +184,14 @@ func (c *protocBuiltinPluginConfig) Strategy() internal.Strategy {
 	return c.strategy
 }
 
+func (c *protocBuiltinPluginConfig) IncludeImports() bool {
+	return c.includeImports
+}
+
+func (c *protocBuiltinPluginConfig) IncludeWKT() bool {
+	return c.includeWKT
+}
+
 func (c *protocBuiltinPluginConfig) Out() string {
 	return c.out
 }
@@ -163,10 +205,12 @@ func (c *protocBuiltinPluginConfig) localPluginConfig()         {}
 func (c *protocBuiltinPluginConfig) protocBuiltinPluginConfig() {}
 
 type curatedPluginConfig struct {
-	plugin   string
-	revision int
-	out      string
-	opt      string
+	plugin         string
+	revision       int
+	out            string
+	opt            string
+	includeImports bool
+	includeWKT     bool
 }
 
 func newCuratedPluginConfig(
@@ -174,12 +218,16 @@ func newCuratedPluginConfig(
 	revision int,
 	out string,
 	opt string,
+	includeImports bool,
+	includeWKT bool,
 ) *curatedPluginConfig {
 	return &curatedPluginConfig{
-		plugin:   plugin,
-		revision: revision,
-		out:      out,
-		opt:      opt,
+		plugin:         plugin,
+		revision:       revision,
+		out:            out,
+		opt:            opt,
+		includeImports: includeImports,
+		includeWKT:     includeWKT,
 	}
 }
 
@@ -202,25 +250,39 @@ func (c *curatedPluginConfig) Opt() string {
 	return c.opt
 }
 
+func (c *curatedPluginConfig) IncludeImports() bool {
+	return c.includeImports
+}
+
+func (c *curatedPluginConfig) IncludeWKT() bool {
+	return c.includeWKT
+}
+
 func (c *curatedPluginConfig) pluginConfig()        {}
 func (c *curatedPluginConfig) remotePluginConfig()  {}
 func (c *curatedPluginConfig) curatedPluginConfig() {}
 
 type legacyRemotePluginConfig struct {
-	out    string
-	opt    string
-	remote string
+	out            string
+	opt            string
+	remote         string
+	includeImports bool
+	includeWKT     bool
 }
 
 func newLegacyRemotePluginConfig(
 	remote string,
 	out string,
 	opt string,
+	includeImports bool,
+	includeWKT bool,
 ) *legacyRemotePluginConfig {
 	return &legacyRemotePluginConfig{
-		remote: remote,
-		out:    out,
-		opt:    opt,
+		remote:         remote,
+		out:            out,
+		opt:            opt,
+		includeImports: includeImports,
+		includeWKT:     includeWKT,
 	}
 }
 
@@ -238,6 +300,14 @@ func (c *legacyRemotePluginConfig) Out() string {
 
 func (c *legacyRemotePluginConfig) Opt() string {
 	return c.opt
+}
+
+func (c *legacyRemotePluginConfig) IncludeImports() bool {
+	return c.includeImports
+}
+
+func (c *legacyRemotePluginConfig) IncludeWKT() bool {
+	return c.includeWKT
 }
 
 func (c *legacyRemotePluginConfig) pluginConfig()             {}

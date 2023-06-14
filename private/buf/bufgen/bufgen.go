@@ -16,6 +16,7 @@ package bufgen
 
 import (
 	"context"
+	"errors"
 
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -193,6 +194,8 @@ type PluginConfig interface {
 	PluginName() string
 	Out() string
 	Opt() string
+	IncludeImports() bool
+	IncludeWKT() bool
 
 	pluginConfig()
 }
@@ -212,13 +215,20 @@ func NewLocalPluginConfig(
 	strategy internal.Strategy,
 	out string,
 	opt string,
-) LocalPluginConfig {
+	includeImports bool,
+	includeWKT bool,
+) (LocalPluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
 	return newLocalPluginConfig(
 		name,
 		strategy,
 		out,
 		opt,
-	)
+		includeImports,
+		includeWKT,
+	), nil
 }
 
 // BinaryPluginConfig is a binary plugin configuration.
@@ -236,13 +246,20 @@ func NewBinaryPluginConfig(
 	strategy internal.Strategy,
 	out string,
 	opt string,
+	includeImports bool,
+	includeWKT bool,
 ) (BinaryPluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
 	return newBinaryPluginConfig(
 		name,
 		path,
 		strategy,
 		out,
 		opt,
+		includeImports,
+		includeWKT,
 	)
 }
 
@@ -260,15 +277,22 @@ func NewProtocBuiltinPluginConfig(
 	protocPath string,
 	out string,
 	opt string,
+	includeImports bool,
+	includeWKT bool,
 	strategy internal.Strategy,
-) ProtocBuiltinPluginConfig {
+) (ProtocBuiltinPluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
 	return newProtocBuiltinPluginConfig(
 		name,
 		protocPath,
 		out,
 		opt,
+		includeImports,
+		includeWKT,
 		strategy,
-	)
+	), nil
 }
 
 // RemotePluginConfig is a remote plugin configuration.
@@ -293,13 +317,20 @@ func NewCuratedPluginConfig(
 	revision int, // TODO: maybe pointer to indicate absence
 	out string,
 	opt string,
-) CuratedPluginConfig {
+	includeImports bool,
+	includeWKT bool,
+) (CuratedPluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
 	return newCuratedPluginConfig(
 		plugin,
 		revision,
 		out,
 		opt,
-	)
+		includeImports,
+		includeWKT,
+	), nil
 }
 
 // LegacyRemotePluginConfig is a legacy remote plugin configuration.
@@ -314,10 +345,17 @@ func NewLegacyRemotePluginConfig(
 	remote string,
 	out string,
 	opt string,
-) LegacyRemotePluginConfig {
+	includeImports bool,
+	includeWKT bool,
+) (LegacyRemotePluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
 	return newLegacyRemotePluginConfig(
 		remote,
 		out,
 		opt,
-	)
+		includeImports,
+		includeWKT,
+	), nil
 }

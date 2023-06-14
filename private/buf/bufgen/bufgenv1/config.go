@@ -134,6 +134,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 		if err != nil {
 			return nil, err
 		}
+		var pluginConfig bufgen.PluginConfig
 		switch {
 		case plugin.Plugin != "":
 			if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
@@ -141,47 +142,49 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 				if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
 					return nil, err
 				}
-				curatedPluginConfig := bufgen.NewCuratedPluginConfig(
+				pluginConfig, err = bufgen.NewCuratedPluginConfig(
 					plugin.Plugin,
 					plugin.Revision,
 					plugin.Out,
 					opt,
+					false,
+					false,
 				)
-				pluginConfigs = append(pluginConfigs, curatedPluginConfig)
 			} else {
 				// plugin.Plugin is a local plugin - verify it isn't using an legacy remote plugin path
 				if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
 					return nil, fmt.Errorf("%s: invalid local plugin", id)
 				}
-				var currentPluginConfig bufgen.PluginConfig
 				if len(path) > 0 {
-					currentPluginConfig, err = bufgen.NewBinaryPluginConfig(
+					pluginConfig, err = bufgen.NewBinaryPluginConfig(
 						plugin.Plugin,
 						path,
 						strategy,
 						plugin.Out,
 						opt,
+						false,
+						false,
 					)
-					if err != nil {
-						return nil, err
-					}
 				} else if plugin.ProtocPath != "" {
-					currentPluginConfig = bufgen.NewProtocBuiltinPluginConfig(
+					pluginConfig, err = bufgen.NewProtocBuiltinPluginConfig(
 						plugin.Plugin,
 						plugin.ProtocPath,
 						plugin.Out,
 						opt,
+						false,
+						false,
 						strategy,
 					)
 				} else {
-					currentPluginConfig = bufgen.NewLocalPluginConfig(
+					pluginConfig, err = bufgen.NewLocalPluginConfig(
 						plugin.Plugin,
 						strategy,
 						plugin.Out,
 						opt,
+						false,
+						false,
 					)
 				}
-				pluginConfigs = append(pluginConfigs, currentPluginConfig)
 			}
 		case plugin.Remote != "":
 			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err != nil {
@@ -190,13 +193,12 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 			if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
 				return nil, err
 			}
-			pluginConfigs = append(
-				pluginConfigs,
-				bufgen.NewLegacyRemotePluginConfig(
-					plugin.Remote,
-					plugin.Out,
-					opt,
-				),
+			pluginConfig, err = bufgen.NewLegacyRemotePluginConfig(
+				plugin.Remote,
+				plugin.Out,
+				opt,
+				false,
+				false,
 			)
 		case plugin.Name != "":
 			// Check that the plugin name doesn't look like a plugin reference
@@ -207,39 +209,44 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
 				return nil, fmt.Errorf("%s: invalid plugin name %s, did you mean to use a remote plugin?", id, pluginIdentifier)
 			}
-			var currentPluginConfig bufgen.PluginConfig
 			if len(path) > 0 {
-				currentPluginConfig, err = bufgen.NewBinaryPluginConfig(
+				pluginConfig, err = bufgen.NewBinaryPluginConfig(
 					plugin.Name,
 					path,
 					strategy,
 					plugin.Out,
 					opt,
+					false,
+					false,
 				)
-				if err != nil {
-					return nil, err
-				}
 			} else if plugin.ProtocPath != "" {
-				currentPluginConfig = bufgen.NewProtocBuiltinPluginConfig(
+				pluginConfig, err = bufgen.NewProtocBuiltinPluginConfig(
 					plugin.Name,
 					plugin.ProtocPath,
 					plugin.Out,
 					opt,
+					false,
+					false,
 					strategy,
 				)
 			} else {
-				currentPluginConfig = bufgen.NewLocalPluginConfig(
+				pluginConfig, err = bufgen.NewLocalPluginConfig(
 					plugin.Name,
 					strategy,
 					plugin.Out,
 					opt,
+					false,
+					false,
 				)
 			}
-			pluginConfigs = append(pluginConfigs, currentPluginConfig)
 		default:
 			// unreachable - validated above
 			return nil, errors.New("one of plugin, name, or remote is required")
 		}
+		if err != nil {
+			return nil, err
+		}
+		pluginConfigs = append(pluginConfigs, pluginConfig)
 	}
 	return pluginConfigs, nil
 }
@@ -600,17 +607,21 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 				strategy,
 				plugin.Out,
 				opt,
+				false,
+				false,
 			)
-			if err != nil {
-				return nil, err
-			}
 		} else {
-			pluginConfig = bufgen.NewLocalPluginConfig(
+			pluginConfig, err = bufgen.NewLocalPluginConfig(
 				plugin.Name,
 				strategy,
 				plugin.Out,
 				opt,
+				false,
+				false,
 			)
+		}
+		if err != nil {
+			return nil, err
 		}
 		pluginConfigs = append(pluginConfigs, pluginConfig)
 	}

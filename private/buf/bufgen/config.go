@@ -152,11 +152,16 @@ func getConfigVersion(
 	unmarshalNonStrict func([]byte, interface{}) error,
 	_ func([]byte, interface{}) error,
 	data []byte,
-	_ string,
+	id string,
 ) (*string, error) {
 	var externalConfigVersion ExternalConfigVersion
 	if err := unmarshalNonStrict(data, &externalConfigVersion); err != nil {
 		return nil, err
 	}
-	return &externalConfigVersion.Version, nil
+	switch version := externalConfigVersion.Version; version {
+	case V1Version, V1Beta1Version, V2Version:
+		return &version, nil
+	default:
+		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, V2Version)
+	}
 }

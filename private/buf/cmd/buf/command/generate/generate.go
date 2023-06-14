@@ -464,7 +464,8 @@ func run(
 			return err
 		}
 		inputImages = append(inputImages, inputImage)
-
+	default:
+		return fmt.Errorf(`no version set. Please add "version: %s"`, bufgen.V2Version)
 	}
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),

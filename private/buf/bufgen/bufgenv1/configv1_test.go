@@ -103,7 +103,8 @@ func TestReadConfigV1Beta1(t *testing.T) {
 			},
 		},
 		PluginConfigs: []bufgen.PluginConfig{
-			bufgen.NewLocalPluginConfig(
+			mustCreateLocalPlugin(
+				t,
 				"go",
 				internal.StrategyAll,
 				"gen/go",
@@ -220,7 +221,8 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	successConfig4 := &Config{
 		PluginConfigs: []bufgen.PluginConfig{
-			bufgen.NewLegacyRemotePluginConfig(
+			mustCreateLegacyRemotePlugin(
+				t,
 				"someremote.com/owner/plugins/myplugin:v1.1.0-1",
 				"gen/go",
 				"",
@@ -229,7 +231,8 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	successConfig5 := &Config{
 		PluginConfigs: []bufgen.PluginConfig{
-			bufgen.NewLegacyRemotePluginConfig(
+			mustCreateLegacyRemotePlugin(
+				t,
 				"someremote.com/owner/plugins/myplugin",
 				"gen/go",
 				"",
@@ -251,7 +254,8 @@ func TestReadConfigV1(t *testing.T) {
 			},
 		},
 		PluginConfigs: []bufgen.PluginConfig{
-			bufgen.NewLegacyRemotePluginConfig(
+			mustCreateLegacyRemotePlugin(
+				t,
 				"someremote.com/owner/plugins/myplugin",
 				"gen/go",
 				"",
@@ -330,7 +334,8 @@ func TestReadConfigV1(t *testing.T) {
 			},
 		},
 		PluginConfigs: []bufgen.PluginConfig{
-			bufgen.NewLegacyRemotePluginConfig(
+			mustCreateLegacyRemotePlugin(
+				t,
 				"someremote.com/owner/plugins/myplugin",
 				"gen/go",
 				"",
@@ -372,7 +377,8 @@ func TestReadConfigV1(t *testing.T) {
 			},
 		},
 		PluginConfigs: []bufgen.PluginConfig{
-			bufgen.NewLegacyRemotePluginConfig(
+			mustCreateLegacyRemotePlugin(
+				t,
 				"someremote.com/owner/plugins/myplugin",
 				"gen/go",
 				"",
@@ -757,6 +763,44 @@ func mustCreateBinaryPlugin(
 		strategy,
 		out,
 		opt,
+		false,
+		false,
+	)
+	require.NoError(t, err)
+	return plugin
+}
+
+func mustCreateLocalPlugin(
+	t *testing.T,
+	name string,
+	strategy internal.Strategy,
+	out string,
+	opt string,
+) bufgen.LocalPluginConfig {
+	plugin, err := bufgen.NewLocalPluginConfig(
+		name,
+		strategy,
+		out,
+		opt,
+		false,
+		false,
+	)
+	require.NoError(t, err)
+	return plugin
+}
+
+func mustCreateLegacyRemotePlugin(
+	t *testing.T,
+	remote string,
+	out string,
+	opt string,
+) bufgen.LegacyRemotePluginConfig {
+	plugin, err := bufgen.NewLegacyRemotePluginConfig(
+		remote,
+		out,
+		opt,
+		false,
+		false,
 	)
 	require.NoError(t, err)
 	return plugin
