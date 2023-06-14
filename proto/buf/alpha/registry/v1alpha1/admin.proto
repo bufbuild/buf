@@ -100,11 +100,11 @@ message CreateMachineUserResponse {
 message GetBreakingChangePolicyRequest {}
 
 message GetBreakingChangePolicyResponse {
-  BreakingChangePolicy settings = 1;
+  BreakingChangePolicy policy = 1;
 }
 
 message UpdateBreakingChangePolicyRequest {
-  BreakingChangePolicy settings = 1;
+  BreakingChangePolicy policy = 1;
 }
 
 message UpdateBreakingChangePolicyResponse {}
