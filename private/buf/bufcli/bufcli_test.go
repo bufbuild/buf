@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcli
+package bufcli_test
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -38,6 +40,91 @@ func (m *mockBucketProvider) NewReadWriteBucket(
 	_ ...storageos.ReadWriteBucketOption,
 ) (storage.ReadWriteBucket, error) {
 	return storagemem.NewReadWriteBucketWithOptions(storagemem.WithFiles(m.files))
+}
+
+func TestDiscoverRemote(t *testing.T) {
+	t.Parallel()
+	type testCase struct {
+		name                string
+		references          []string
+		expectedSelectedRef string
+	}
+	testCases := []testCase{
+		{
+			name:                "nil_references",
+			expectedSelectedRef: "",
+		},
+		{
+			name:                "no_references",
+			references:          []string{},
+			expectedSelectedRef: "",
+		},
+		{
+			name: "some_references",
+			references: []string{
+				"buf.build/foo/repo1",
+				"buf.build/foo/repo2",
+				"buf.build/foo/repo3",
+			},
+			expectedSelectedRef: "buf.build/foo/repo1",
+		},
+		{
+			name: "some_invalid_references",
+			references: []string{
+				"buf.build/foo/repo1",
+				"",
+				"buf.build/foo/repo3",
+			},
+			expectedSelectedRef: "buf.build/foo/repo1",
+		},
+		{
+			name: "all_single_tenant_references",
+			references: []string{
+				"buf.acme.com/foo/repo1",
+				"buf.acme.com/foo/repo2",
+				"buf.acme.com/foo/repo3",
+			},
+			expectedSelectedRef: "buf.acme.com/foo/repo1",
+		},
+		{
+			name: "some_single_tenant_references",
+			references: []string{
+				"buf.build/foo/repo1",
+				"buf.build/foo/repo2",
+				"buf.first.com/foo/repo3",
+				"buf.second.com/foo/repo4",
+			},
+			expectedSelectedRef: "buf.first.com/foo/repo3",
+		},
+		{
+			name: "some_invalid_references_with_single_tenant",
+			references: []string{
+				"buf.build/foo/repo1",
+				"buf.first.com/foo/repo2",
+				"",
+				"buf.second.com/foo/repo3",
+			},
+			expectedSelectedRef: "buf.first.com/foo/repo2",
+		},
+	}
+	for _, tc := range testCases {
+		func(tc testCase) {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+				var references []bufmoduleref.ModuleReference
+				for _, r := range tc.references {
+					ref, _ := bufmoduleref.ModuleReferenceForString(r)
+					references = append(references, ref)
+				}
+				selectedRef := bufcli.SelectReferenceForRemote(references)
+				if tc.expectedSelectedRef == "" {
+					assert.Nil(t, selectedRef)
+				} else {
+					assert.Equal(t, tc.expectedSelectedRef, selectedRef.IdentityString())
+				}
+			})
+		}(tc)
+	}
 }
 
 func TestBucketAndConfigForSource(t *testing.T) {
@@ -70,7 +157,7 @@ func TestBucketAndConfigForSource(t *testing.T) {
 		"no config file",
 		nil,
 		".",
-		ErrNoConfigFile,
+		bufcli.ErrNoConfigFile,
 		"",
 	)
 	testBucketAndConfigForSource(
@@ -78,7 +165,7 @@ func TestBucketAndConfigForSource(t *testing.T) {
 		"no module name",
 		moduleFiles(""),
 		".",
-		ErrNoModuleName,
+		bufcli.ErrNoModuleName,
 		"",
 	)
 }
@@ -104,7 +191,7 @@ func bucketAndConfig(
 		files: files,
 	}
 	runner := command.NewRunner()
-	return BucketAndConfigForSource(
+	return bufcli.BucketAndConfigForSource(
 		ctx,
 		logger,
 		container,
