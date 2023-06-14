@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"sort"
 	"strings"
 	"unicode"
@@ -2241,12 +2242,13 @@ func (f *formatter) importHasComment(importNode *ast.ImportNode) bool {
 }
 
 func (f *formatter) nodeHasComment(node ast.Node) bool {
-	if node == nil {
-		return false
+	// when node != nil, node's value could be nil, see: https://go.dev/doc/faq#nil_error
+	if node != nil && reflect.ValueOf(node).Pointer() != 0x0 {
+		nodeinfo := f.fileNode.NodeInfo(node)
+		return nodeinfo.LeadingComments().Len() > 0 ||
+			nodeinfo.TrailingComments().Len() > 0
 	}
-	nodeinfo := f.fileNode.NodeInfo(node)
-	return nodeinfo.LeadingComments().Len() > 0 ||
-		nodeinfo.TrailingComments().Len() > 0
+	return false
 }
 
 // importSortOrder maps import types to a sort order number, so it can be compared and sorted.
