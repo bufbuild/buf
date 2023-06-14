@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"sort"
 	"strings"
 	"unicode"
@@ -253,12 +254,40 @@ func (f *formatter) writeFileHeader() {
 		f.writePackage(packageNode)
 	}
 	sort.Slice(importNodes, func(i, j int) bool {
-		return importNodes[i].Name.AsString() < importNodes[j].Name.AsString()
+		iName := importNodes[i].Name.AsString()
+		jName := importNodes[j].Name.AsString()
+		// sort by public > None > weak
+		iOrder := importSortOrder(importNodes[i])
+		jOrder := importSortOrder(importNodes[j])
+
+		if iName < jName {
+			return true
+		}
+		if iName > jName {
+			return false
+		}
+		if iOrder > jOrder {
+			return true
+		}
+		if iOrder < jOrder {
+			return false
+		}
+
+		// put commented import first
+		return !f.importHasComment(importNodes[j])
 	})
 	for i, importNode := range importNodes {
 		if i == 0 && f.previousNode != nil && !f.leadingCommentsContainBlankLine(importNode) {
 			f.P("")
 		}
+
+		// since the imports are sorted, this will skip write imports
+		// if they have appear before and dont have comment
+		if i > 0 && importNode.Name.AsString() == importNodes[i-1].Name.AsString() &&
+			!f.importHasComment(importNode) {
+			continue
+		}
+
 		f.writeImport(importNode, i > 0)
 	}
 	sort.Slice(optionNodes, func(i, j int) bool {
@@ -2195,6 +2224,45 @@ func (f *formatter) leadingCommentsContainBlankLine(n ast.Node) bool {
 		}
 	}
 	return newlineCount(info.LeadingWhitespace()) > 1
+}
+
+func (f *formatter) importHasComment(importNode *ast.ImportNode) bool {
+	if f.nodeHasComment(importNode) {
+		return true
+	}
+	if importNode == nil {
+		return false
+	}
+
+	return f.nodeHasComment(importNode.Keyword) ||
+		f.nodeHasComment(importNode.Name) ||
+		f.nodeHasComment(importNode.Semicolon) ||
+		f.nodeHasComment(importNode.Public) ||
+		f.nodeHasComment(importNode.Weak)
+}
+
+func (f *formatter) nodeHasComment(node ast.Node) bool {
+	// when node != nil, node's value could be nil, see: https://go.dev/doc/faq#nil_error
+	if node == nil || reflect.ValueOf(node).IsNil() {
+		return false
+	}
+
+	nodeinfo := f.fileNode.NodeInfo(node)
+	return nodeinfo.LeadingComments().Len() > 0 ||
+		nodeinfo.TrailingComments().Len() > 0
+}
+
+// importSortOrder maps import types to a sort order number, so it can be compared and sorted.
+// `import`=3, `import public`=2, `import weak`=1
+func importSortOrder(node *ast.ImportNode) int {
+	switch {
+	case node.Public != nil:
+		return 2
+	case node.Weak != nil:
+		return 1
+	default:
+		return 3
+	}
 }
 
 // stringForOptionName returns the string representation of the given option name node.
