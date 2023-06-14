@@ -56,6 +56,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"github.com/bufbuild/connect-go"
+	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -601,6 +602,7 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 		connectclient.WithInterceptors([]connect.Interceptor{
 			bufconnect.NewSetCLIVersionInterceptor(Version),
 			bufconnect.NewCLIWarningInterceptor(container),
+			otelconnect.NewInterceptor(),
 		}),
 	}
 	options = append(options, opts...)
