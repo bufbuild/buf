@@ -49,6 +49,7 @@ const (
 	moduleFlagName           = "module"
 	createFlagName           = "create"
 	createVisibilityFlagName = "create-visibility"
+	branchFlagName           = "branch"
 )
 
 // NewCommand returns a new Command.
@@ -69,7 +70,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
+			// bufcli.NewErrorInterceptor(), // TODO re-enable
 		),
 		BindFlags: flags.Bind,
 	}
@@ -80,6 +81,7 @@ type flags struct {
 	Modules          []string
 	Create           bool
 	CreateVisibility string
+	Branch           string
 }
 
 func newFlags() *flags {
@@ -102,6 +104,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		moduleFlagName,
 		nil,
 		"The module(s) to sync to the BSR; this must be in the format <module>:<module-identity>",
+	)
+	flagSet.StringVar(
+		&f.Branch,
+		branchFlagName,
+		"",
+		"The branch to sync to the BSR", // TODO support multiple
 	)
 	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
 	flagSet.BoolVar(
@@ -136,6 +144,7 @@ func run(
 		ctx,
 		container,
 		flags.Modules,
+		flags.Branch,
 		// No need to pass `flags.Create`, this is not empty iff `flags.Create`
 		flags.CreateVisibility,
 	)
@@ -145,13 +154,18 @@ func sync(
 	ctx context.Context,
 	container appflag.Container,
 	modules []string,
+	branch string,
 	createWithVisibility string,
 ) error {
+	if len(modules) == 0 {
+		container.Logger().Info("no modules to sync")
+		return nil
+	}
 	// Assume that this command is run from the repository root. If not, `OpenRepository` will return
 	// a dir not found error.
-	repo, err := git.OpenRepository(git.DotGitDir, command.NewRunner())
+	repo, err := git.OpenRepository(git.DotGitDir, command.NewRunner(), git.OpenRepositoryWithBaseBranch(branch))
 	if err != nil {
-		return err
+		return fmt.Errorf("open repository: %w", err)
 	}
 	defer repo.Close()
 	storageProvider := storagegit.NewProvider(
@@ -169,16 +183,16 @@ func sync(
 		var moduleIdentityOverride bufmoduleref.ModuleIdentity
 		colon := strings.IndexRune(module, ':')
 		if colon == -1 {
-			return appcmd.NewInvalidArgumentErrorf("module %s is missing an identity", module)
+			return appcmd.NewInvalidArgumentErrorf("module %q is missing an identity", module)
 		}
 		moduleIdentityOverride, err = bufmoduleref.ModuleIdentityForString(module[colon+1:])
 		if err != nil {
-			return err
+			return fmt.Errorf("module identity: %w", err)
 		}
 		module = normalpath.Normalize(module[:colon])
 		syncModule, err := bufsync.NewModule(module, moduleIdentityOverride)
 		if err != nil {
-			return err
+			return fmt.Errorf("prepare module for sync: %w", err)
 		}
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(syncModule))
 	}
@@ -190,7 +204,7 @@ func sync(
 		syncerOptions...,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("new syncer: %w", err)
 	}
 	return syncer.Sync(ctx, func(ctx context.Context, commit bufsync.ModuleCommit) error {
 		syncPoint, err := pushOrCreate(
@@ -234,7 +248,7 @@ func syncPointResolver(clientConfig *connectclient.Config) bufsync.SyncPointReso
 				// No syncpoint
 				return nil, nil
 			}
-			return nil, err
+			return nil, fmt.Errorf("get git sync point: %w", err)
 		}
 		hash, err := git.NewHashFromHex(syncPoint.Msg.GetSyncPoint().GitCommitHash)
 		if err != nil {
@@ -354,7 +368,7 @@ func pushOrCreate(
 		// a GetRepository RPC call for every call to push --create.
 		if createWithVisibility != "" && connect.CodeOf(err) == connect.CodeNotFound {
 			if err := create(ctx, clientConfig, moduleIdentity, createWithVisibility); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("create repo: %w", err)
 			}
 			return push(
 				ctx,
@@ -367,7 +381,7 @@ func pushOrCreate(
 				moduleBucket,
 			)
 		}
-		return nil, err
+		return nil, fmt.Errorf("push: %w", err)
 	}
 	return modulePin, nil
 }

@@ -96,7 +96,7 @@ func (s *syncer) resolveSyncPoints(ctx context.Context, branch string) (map[Modu
 func (s *syncer) resolveSyncPoint(ctx context.Context, module Module, branch string) (git.Hash, error) {
 	syncPoint, err := s.syncPointResolver(ctx, module.RemoteIdentity(), branch)
 	if err != nil {
-		return nil, fmt.Errorf("resolve syncPoint for module %s: %w", module.RemoteIdentity(), err)
+		return nil, fmt.Errorf("resolve syncPoint for module %s: %w", module.RemoteIdentity().IdentityString(), err)
 	}
 	if syncPoint == nil {
 		return nil, nil
@@ -118,14 +118,17 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	}
 	// TODO: sync other branches
 	for _, branch := range []string{s.repo.BaseBranch()} {
+		logger := s.logger.With(zap.String("branch", branch))
 		syncPoints, err := s.resolveSyncPoints(ctx, branch)
 		if err != nil {
-			return err
+			return fmt.Errorf("resolve sync points: %w", err)
 		}
 		// We sync all modules in a commit before advancing to the next commit so that
 		// inter-module dependencies across commits can be resolved.
 		if err := s.repo.ForEachCommit(branch, func(commit git.Commit) error {
+			logger := logger.With(zap.String("commit", commit.Hash().String()))
 			for _, module := range s.modulesToSync {
+				logger.Debug("sync", zap.String("module", module.String()))
 				if syncPoint := syncPoints[module]; syncPoint != nil {
 					// This module has a sync point. We need to check if we've encountered the sync point.
 					if syncPoint.Hex() == commit.Hash().Hex() {
