@@ -61,7 +61,7 @@ message SyncGitCommitRequest {
   // Repository is the name of the BSR repository.
   string repository = 2;
   // Branch is the Git branch that this commit belongs to.
-  string branch = 3;
+  Branch branch = 3;
   // Manifest with all the module files being pushed.
   buf.alpha.module.v1alpha1.Blob manifest = 4;
   // Referenced blobs in the manifest. Keep in mind there is not necessarily one
@@ -81,4 +81,12 @@ message SyncGitCommitRequest {
 message SyncGitCommitResponse {
   // SyncPoint is the latest syncpoint for the SyncGitCommit request.
   GitSyncPoint sync_point = 1;
+}
+
+// Branch holds branch information when pushed as a sync git point.
+message Branch {
+  // Name of the branch.
+  string name = 1;
+  // Is this branch the default branch in the repo.
+  bool is_repo_default = 2;
 }
