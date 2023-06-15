@@ -402,8 +402,11 @@ func push(
 		Manifest:   bucketManifest,
 		Blobs:      blobs,
 		Hash:       commit.Hash().Hex(),
-		Branch:     branch,
-		Tags:       tags,
+		Branch: &registryv1alpha1.Branch{
+			Name:          branch,
+			IsRepoDefault: branch == repo.BaseBranch(),
+		},
+		Tags: tags,
 		Author: &registryv1alpha1.GitIdentity{
 			Name:  commit.Author().Name(),
 			Email: commit.Author().Email(),
