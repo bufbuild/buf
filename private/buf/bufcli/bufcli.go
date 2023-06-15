@@ -38,6 +38,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -56,6 +57,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"github.com/bufbuild/connect-go"
+	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -610,6 +612,7 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 		connectclient.WithInterceptors([]connect.Interceptor{
 			bufconnect.NewSetCLIVersionInterceptor(Version),
 			bufconnect.NewCLIWarningInterceptor(container),
+			otelconnect.NewInterceptor(),
 		}),
 	}
 	options = append(options, opts...)
@@ -878,6 +881,26 @@ func ValidateErrorFormatFlag(errorFormatString string, errorFormatFlagName strin
 // ValidateErrorFormatFlagLint validates the error format flag for lint.
 func ValidateErrorFormatFlagLint(errorFormatString string, errorFormatFlagName string) error {
 	return validateErrorFormatFlag(buflint.AllFormatStrings, errorFormatString, errorFormatFlagName)
+}
+
+// SelectReferenceForRemote receives a list of module references and selects one for remote
+// operations. In most cases, all references will have the same remote, which will result in the
+// first reference being selected. In cases in which there is a mix of remotes, the first reference
+// with a remote different than "buf.build" will be selected. This func is useful for targeting
+// single-tenant BSR addresses.
+func SelectReferenceForRemote(references []bufmoduleref.ModuleReference) bufmoduleref.ModuleReference {
+	if len(references) == 0 {
+		return nil
+	}
+	for _, ref := range references {
+		if ref == nil {
+			continue
+		}
+		if ref.Remote() != bufconnect.DefaultRemote {
+			return ref
+		}
+	}
+	return references[0]
 }
 
 func validateErrorFormatFlag(validFormatStrings []string, errorFormatString string, errorFormatFlagName string) error {

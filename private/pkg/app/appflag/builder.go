@@ -67,7 +67,7 @@ func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
 	flagSet.BoolVar(&b.debug, "debug", false, "Turn on debug logging")
 	flagSet.StringVar(&b.logFormat, "log-format", "color", "The log format [text,color,json]")
 	if b.defaultTimeout > 0 {
-		flagSet.DurationVar(&b.timeout, "timeout", b.defaultTimeout, `The duration until timing out`)
+		flagSet.DurationVar(&b.timeout, "timeout", b.defaultTimeout, `The duration until timing out, setting it to zero means no timeout`)
 	}
 
 	flagSet.BoolVar(&b.profile, "profile", false, "Run profiling")

@@ -87,10 +87,6 @@ func NewRootCommand(name string) *appcmd.Command {
 		appflag.BuilderWithTimeout(120*time.Second),
 		appflag.BuilderWithTracing(),
 	)
-	noTimeoutBuilder := appflag.NewBuilder(
-		name,
-		appflag.BuilderWithTracing(),
-	)
 	globalFlags := bufcli.NewGlobalFlags()
 	return &appcmd.Command{
 		Use:                 name,
@@ -137,7 +133,7 @@ func NewRootCommand(name string) *appcmd.Command {
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
 					migratev1beta1.NewCommand("migrate-v1beta1", builder),
-					studioagent.NewCommand("studio-agent", noTimeoutBuilder),
+					studioagent.NewCommand("studio-agent", builder),
 					{
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
@@ -234,10 +230,7 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "repo",
 						Short: "Manage Git repositories",
 						SubCommands: []*appcmd.Command{
-							// No timeout for the sync command as it may run for a while
-							// that first time, and then again depending on how often it
-							// is invoked.
-							reposync.NewCommand("sync", noTimeoutBuilder),
+							reposync.NewCommand("sync", builder),
 						},
 					},
 					{

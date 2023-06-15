@@ -300,11 +300,13 @@ message GenerateCodeRequest {
   // If you want to include imports, set include_imports.
   buf.alpha.image.v1.Image image = 1;
   repeated PluginGenerationRequest requests = 2;
-  // Include imports from the Image in generation.
+  // Include imports from the Image in generation. If include_imports is also set
+  // in one of requests, use the request's value for that plugin.
   bool include_imports = 3;
   // Include Well-Known Types from the Image in generation.
   //
-  // include_imports must be set if include_well_known_types is set.
+  // include_imports must be set if include_well_known_types is set. If include_well_known_types
+  // is also set in one of requests, use the request's value for that plugin.
   bool include_well_known_types = 4;
 }
 
@@ -321,6 +323,12 @@ message PluginGenerationRequest {
   // The options to pass to the plugin. These will
   // be merged into a single, comma-separated string.
   repeated string options = 2;
+  // Include imports from the Image in generation.
+  optional bool include_imports = 3;
+  // Include Well-Known Types from the Image in generation.
+  //
+  // include_imports must be set if include_well_known_types is set.
+  optional bool include_well_known_types = 4;
 }
 
 // Response from code generation for a given plugin.
