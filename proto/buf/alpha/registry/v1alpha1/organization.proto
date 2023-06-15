@@ -255,8 +255,6 @@ message UpdateOrganizationSettingsRequest {
   optional string description = 5;
   // optional, update to url will only be made when this is present
   optional string url = 6;
-  // optional, update to enforce_breaking_changes will only be made when this is present
-  optional bool enforce_breaking_changes = 7;
 }
 
 message UpdateOrganizationSettingsResponse {}
