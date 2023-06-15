@@ -17,12 +17,14 @@ package bufsync
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 )
 
@@ -34,7 +36,11 @@ type syncer struct {
 	modulesToSync      []Module
 	syncPointResolver  SyncPointResolver
 
+	// scanned information from the repo on sync start
 	knownTagsByCommitHash map[string][]string
+	remoteBranches        map[string]struct{}
+	commitHashToBranch    map[string]string
+	sortedCommits         []git.Commit
 }
 
 func newSyncer(
@@ -109,72 +115,125 @@ func (s *syncer) resolveSyncPoint(ctx context.Context, module Module, branch str
 }
 
 func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
-	s.knownTagsByCommitHash = map[string][]string{}
+	if err := s.scanRepo(); err != nil {
+		return fmt.Errorf("scan repo: %w", err)
+	}
+	allBranchesSyncPoints := make(map[string]map[Module]git.Hash)
+	for branch := range s.remoteBranches {
+		syncPoints, err := s.resolveSyncPoints(ctx, branch)
+		if err != nil {
+			return fmt.Errorf("resolve sync points for branch %q: %w", branch, err)
+		}
+		allBranchesSyncPoints[branch] = syncPoints
+	}
+	for _, commit := range s.sortedCommits {
+		branch, ok := s.commitHashToBranch[commit.Hash().Hex()]
+		if !ok {
+			return fmt.Errorf("commit %q has no associated branch", commit.Hash().Hex())
+		}
+		logger := s.logger.With(
+			zap.String("branch", branch),
+			zap.String("commit", commit.Hash().Hex()),
+		)
+		for _, module := range s.modulesToSync {
+			logger := logger.With(zap.String("module", module.String()))
+			var syncPoint git.Hash
+			if allBranchesSyncPoints != nil &&
+				allBranchesSyncPoints[branch] != nil &&
+				allBranchesSyncPoints[branch][module] != nil {
+				syncPoint = allBranchesSyncPoints[branch][module]
+			}
+			if syncPoint != nil {
+				logger := logger.With(zap.Stringer("syncPoint", syncPoint))
+				// This module has a sync point for this branch. We need to check if we've encountered the
+				// sync point.
+				if syncPoint.Hex() == commit.Hash().Hex() {
+					delete(allBranchesSyncPoints[branch], module)
+					logger.Debug("syncPoint encountered, will resume syncing next commit")
+				} else {
+					logger.Debug("syncPoint not encountered yet, skipping commit")
+				}
+				continue
+			}
+			logger.Debug("sync")
+			if err := s.visitCommit(ctx, module, branch, commit, syncFunc); err != nil {
+				return fmt.Errorf("process commit %s (%s): %w", commit.Hash().Hex(), branch, err)
+			}
+		}
+	}
+	// If we have any sync points left, they were not encountered during sync, which is unexpected
+	// behavior.
+	for branch, modulesSyncPoints := range allBranchesSyncPoints {
+		for module, syncPoint := range modulesSyncPoints {
+			if err := s.errorHandler.SyncPointNotEncountered(module, branch, syncPoint); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// scanRepo gathers repo information and stores it in the syncer: gathers all tags, all
+// remote/origin branches, and visits each commit on them, starting from the base branch, to assign
+// it to a unique branch and sort them by aithor timestamp.
+func (s *syncer) scanRepo() error {
+	s.knownTagsByCommitHash = make(map[string][]string)
 	if err := s.repo.ForEachTag(func(tag string, commitHash git.Hash) error {
 		s.knownTagsByCommitHash[commitHash.Hex()] = append(s.knownTagsByCommitHash[commitHash.Hex()], tag)
 		return nil
 	}); err != nil {
 		return fmt.Errorf("load tags: %w", err)
 	}
-	allRepoBranches := make(map[string]struct{})
+	s.remoteBranches = make(map[string]struct{})
 	if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
-		allRepoBranches[branch] = struct{}{}
+		s.remoteBranches[branch] = struct{}{}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("looping over repo branches: %w", err)
 	}
-	s.logger.Debug("all branches", zap.Any("branches", allRepoBranches))
-	// TODO: sync other branches
-	for _, branch := range []string{s.repo.BaseBranch()} {
-		logger := s.logger.With(zap.String("branch", branch))
-		syncPoints, err := s.resolveSyncPoints(ctx, branch)
-		if err != nil {
-			return fmt.Errorf("resolve sync points: %w", err)
-		}
-		// We sync all modules in a commit before advancing to the next commit so that
-		// inter-module dependencies across commits can be resolved.
+	baseBranch := s.repo.BaseBranch()
+	if _, baseBranchPushedInRemote := s.remoteBranches[baseBranch]; !baseBranchPushedInRemote {
+		return fmt.Errorf(`repo base branch %q is not present in "origin" remote`, baseBranch)
+	}
+	s.commitHashToBranch = make(map[string]string)
+	s.sortedCommits = make([]git.Commit, 0)
+	loopOverBranchCommits := func(branch string) error {
 		if err := s.repo.ForEachCommit(branch, func(commit git.Commit) error {
-			logger := logger.With(zap.String("commit", commit.Hash().String()))
-			for _, module := range s.modulesToSync {
-				logger.Debug("sync", zap.String("module", module.String()))
-				if syncPoint := syncPoints[module]; syncPoint != nil {
-					// This module has a sync point. We need to check if we've encountered the sync point.
-					if syncPoint.Hex() == commit.Hash().Hex() {
-						// We have found the syncPoint! We can resume syncing _after_ this point.
-						delete(syncPoints, module)
-						s.logger.Debug(
-							"syncPoint encountered, skipping commit",
-							zap.Stringer("commit", commit.Hash()),
-							zap.Stringer("module", module),
-							zap.Stringer("syncPoint", syncPoint),
-						)
-					} else {
-						// We have not encountered the syncPoint yet. Skip this commit and keep looking
-						// for the syncPoint.
-						s.logger.Debug(
-							"syncPoint not encountered, skipping commit",
-							zap.Stringer("commit", commit.Hash()),
-							zap.Stringer("module", module),
-							zap.Stringer("syncPoint", syncPoint),
-						)
-					}
-					continue
-				}
-				if err := s.visitCommit(ctx, module, branch, commit, syncFunc); err != nil {
-					return fmt.Errorf("process commit %s (%s): %w", commit.Hash().Hex(), branch, err)
-				}
+			if _, alreadyVisited := s.commitHashToBranch[commit.Hash().Hex()]; !alreadyVisited {
+				s.commitHashToBranch[commit.Hash().Hex()] = branch
+				s.sortedCommits = append(s.sortedCommits, commit)
 			}
 			return nil
 		}); err != nil {
-			return fmt.Errorf("process commits: %w", err)
+			return fmt.Errorf("looping over commits in branch %q: %w", baseBranch, err)
 		}
-		// If we have any sync points left, they were not encountered during sync, which is unexpected behavior.
-		for module, syncPoint := range syncPoints {
-			if err := s.errorHandler.SyncPointNotEncountered(module, branch, syncPoint); err != nil {
-				return err
-			}
+		return nil
+	}
+	// first, assign all commits in base branch, then the remaining ones in a deterministic order.
+	if err := loopOverBranchCommits(baseBranch); err != nil {
+		return err
+	}
+	sortedBranches := stringutil.MapToSortedSlice(s.remoteBranches)
+	for _, branch := range sortedBranches {
+		if branch == baseBranch {
+			continue // this one was already visited
+		}
+		if err := loopOverBranchCommits(branch); err != nil {
+			return err
 		}
 	}
+	// sort all commits by author timestamp
+	sort.Slice(s.sortedCommits, func(i, j int) bool {
+		return s.sortedCommits[i].Author().Timestamp().Before(s.sortedCommits[j].Author().Timestamp())
+	})
+	// TODO remove, this will be extra verbose
+	s.logger.Debug(
+		"repo scan",
+		zap.Any("tags", s.knownTagsByCommitHash),
+		zap.Any("branches", s.remoteBranches),
+		zap.Any("commit to branch", s.commitHashToBranch),
+		zap.Stringers("sorted commits", s.sortedCommits),
+	)
 	return nil
 }
 

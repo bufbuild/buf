@@ -140,6 +140,8 @@ func (r *repository) BaseBranch() string {
 	return r.baseBranch
 }
 
+// ForEachCommit loops over all commits in the passed branch, if present in the "origin" remote, in
+// chronological order.
 func (r *repository) ForEachCommit(branch string, f func(Commit) error) error {
 	branch = normalpath.Unnormalize(branch)
 	commit, err := r.resolveBranch(branch)
@@ -242,6 +244,7 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	return nil
 }
 
+// resolveBranch resolves a commit from branch name if its present in the "origin" remote.
 func (r *repository) resolveBranch(branch string) (Commit, error) {
 	commitBytes, err := os.ReadFile(path.Join(r.gitDirPath, "refs", "remotes", defaultRemoteName, branch))
 	if errors.Is(err, fs.ErrNotExist) {

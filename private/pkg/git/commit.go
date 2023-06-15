@@ -48,6 +48,9 @@ func (c *commit) Committer() Ident {
 func (c *commit) Message() string {
 	return c.message
 }
+func (c *commit) String() string {
+	return c.author.Timestamp().String() + " " + c.hash.String()
+}
 
 func parseCommit(hash Hash, data []byte) (*commit, error) {
 	c := &commit{
