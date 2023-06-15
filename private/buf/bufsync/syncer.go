@@ -116,6 +116,14 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	}); err != nil {
 		return fmt.Errorf("load tags: %w", err)
 	}
+	allRepoBranches := make(map[string]struct{})
+	if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
+		allRepoBranches[branch] = struct{}{}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("looping over repo branches: %w", err)
+	}
+	s.logger.Debug("all branches", zap.Any("branches", allRepoBranches))
 	// TODO: sync other branches
 	for _, branch := range []string{s.repo.BaseBranch()} {
 		logger := s.logger.With(zap.String("branch", branch))
@@ -182,6 +190,10 @@ func (s *syncer) visitCommit(
 	commit git.Commit,
 	syncFunc SyncFunc,
 ) error {
+	logger := s.logger.With(
+		zap.Stringer("commit", commit.Hash()),
+		zap.Stringer("module", module),
+	)
 	sourceBucket, err := s.storageGitProvider.NewReadBucket(
 		commit.Tree(),
 		storagegit.ReadBucketWithSymlinksIfSupported(),
@@ -195,12 +207,7 @@ func (s *syncer) visitCommit(
 		return err
 	}
 	if foundModule == "" {
-		// We did not find a module. Carry on to the next commit.
-		s.logger.Debug(
-			"module not found, skipping commit",
-			zap.Stringer("commit", commit.Hash()),
-			zap.Stringer("module", module),
-		)
+		logger.Debug("module not found, skipping commit")
 		return nil
 	}
 	sourceConfig, err := bufconfig.GetConfigForBucket(ctx, sourceBucket)
@@ -208,12 +215,7 @@ func (s *syncer) visitCommit(
 		return s.errorHandler.InvalidModuleConfig(module, commit, err)
 	}
 	if sourceConfig.ModuleIdentity == nil {
-		// Unnamed module. Carry on.
-		s.logger.Debug(
-			"unnamed module, skipping commit",
-			zap.Stringer("commit", commit.Hash()),
-			zap.Stringer("module", module),
-		)
+		logger.Debug("unnamed module, skipping commit")
 		return nil
 	}
 	builtModule, err := bufmodulebuild.BuildForBucket(

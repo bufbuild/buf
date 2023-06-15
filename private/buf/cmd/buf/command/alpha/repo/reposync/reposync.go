@@ -49,7 +49,6 @@ const (
 	moduleFlagName           = "module"
 	createFlagName           = "create"
 	createVisibilityFlagName = "create-visibility"
-	branchFlagName           = "branch"
 )
 
 // NewCommand returns a new Command.
@@ -81,7 +80,6 @@ type flags struct {
 	Modules          []string
 	Create           bool
 	CreateVisibility string
-	Branch           string
 }
 
 func newFlags() *flags {
@@ -104,12 +102,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		moduleFlagName,
 		nil,
 		"The module(s) to sync to the BSR; this must be in the format <module>:<module-identity>",
-	)
-	flagSet.StringVar(
-		&f.Branch,
-		branchFlagName,
-		"",
-		"The branch to sync to the BSR", // TODO support multiple
 	)
 	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
 	flagSet.BoolVar(
@@ -144,7 +136,6 @@ func run(
 		ctx,
 		container,
 		flags.Modules,
-		flags.Branch,
 		// No need to pass `flags.Create`, this is not empty iff `flags.Create`
 		flags.CreateVisibility,
 	)
@@ -154,7 +145,6 @@ func sync(
 	ctx context.Context,
 	container appflag.Container,
 	modules []string,
-	branch string,
 	createWithVisibility string,
 ) error {
 	if len(modules) == 0 {
@@ -163,7 +153,7 @@ func sync(
 	}
 	// Assume that this command is run from the repository root. If not, `OpenRepository` will return
 	// a dir not found error.
-	repo, err := git.OpenRepository(git.DotGitDir, command.NewRunner(), git.OpenRepositoryWithBaseBranch(branch))
+	repo, err := git.OpenRepository(git.DotGitDir, command.NewRunner())
 	if err != nil {
 		return fmt.Errorf("open repository: %w", err)
 	}
@@ -275,7 +265,7 @@ func (s *syncErrorHandler) BuildFailure(module bufsync.Module, commit git.Commit
 	// Note that because of resumption, Syncer will typically only come
 	// across this commit once, we will not log this warning again.
 	s.logger.Warn(
-		"invalid module",
+		"module build failure",
 		zap.Stringer("commit", commit.Hash()),
 		zap.Stringer("module", module),
 		zap.Error(err),
@@ -288,7 +278,7 @@ func (s *syncErrorHandler) InvalidModuleConfig(module bufsync.Module, commit git
 	// and carry on. Note that because of resumption, Syncer will typically only come
 	// across this commit once, we will not log this warning again.
 	s.logger.Warn(
-		"invalid module",
+		"invalid module config",
 		zap.Stringer("commit", commit.Hash()),
 		zap.Stringer("module", module),
 		zap.Error(err),
