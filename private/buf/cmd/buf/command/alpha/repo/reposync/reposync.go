@@ -405,12 +405,7 @@ func push(
 	if err != nil {
 		return nil, err
 	}
-	if repo.BaseBranch() == branch {
-		// We are pushing a commit on the base branch of this repository.
-		// The BSR represents the base track as "main", and this is not configurable
-		// per module.
-		branch = bufmoduleref.Main
-	}
+	// TODO: also label the label in the BSR_MAIN namespace if repo.BaseBranch() == branch
 	resp, err := service.SyncGitCommit(ctx, connect.NewRequest(&registryv1alpha1.SyncGitCommitRequest{
 		Owner:      moduleIdentity.Owner(),
 		Repository: moduleIdentity.Repository(),
