@@ -1,4 +1,7 @@
 version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
 inputs:
   - zip_archive: a/b/c.zip
     subdir: /m/n

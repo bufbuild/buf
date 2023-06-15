@@ -1,5 +1,11 @@
 {
   "version": "v2",
+  "plugins": [
+    {
+      "binary": "protoc-gen-go",
+      "out": "gen/out"
+    }
+  ],
   "inputs": [
     {
       "binary_image": "a/b/c",

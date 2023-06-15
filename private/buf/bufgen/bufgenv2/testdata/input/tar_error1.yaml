@@ -1,4 +1,7 @@
 version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
 inputs:
   - tarball: a/b/c.tar
     compression: abcd

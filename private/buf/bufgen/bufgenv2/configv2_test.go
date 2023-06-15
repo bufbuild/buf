@@ -37,6 +37,18 @@ func TestConfigSuccess(t *testing.T) {
 	provider := bufgen.NewConfigDataProvider(zap.NewNop())
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
+	placeHolderPlugins := []bufgen.PluginConfig{
+		mustCreateBinaryPlugin(
+			t,
+			"",
+			[]string{"protoc-gen-go"},
+			internal.StrategyDirectory,
+			"gen/out",
+			"",
+			false,
+			false,
+		),
+	}
 
 	tests := []struct {
 		testName       string
@@ -47,6 +59,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test git",
 			file:     filepath.Join("input", "git_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetGitRef(
@@ -105,6 +118,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test module",
 			file:     filepath.Join("input", "module_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetModuleRef(
@@ -141,6 +155,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test proto file",
 			file:     filepath.Join("input", "proto_file_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetProtoFileRef(
@@ -186,6 +201,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test directory",
 			file:     filepath.Join("input", "dir_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetDirRef(
@@ -230,6 +246,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test tarball",
 			file:     filepath.Join("input", "tar_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetTarballRef(
@@ -314,6 +331,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test zip archive",
 			file:     filepath.Join("input", "zip_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetZipArchiveRef(
@@ -360,6 +378,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test json image",
 			file:     filepath.Join("input", "json_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetJSONImageRef(
@@ -434,6 +453,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test bin image",
 			file:     filepath.Join("input", "bin_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetBinaryImageRef(

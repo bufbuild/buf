@@ -48,6 +48,21 @@ var allowedOptionsForType = map[string](map[string]bool){
 	},
 }
 
+func newPluginConfigs(externalConfigs []ExternalPluginConfigV2, id string) ([]bufgen.PluginConfig, error) {
+	if len(externalConfigs) == 0 {
+		return nil, fmt.Errorf("%s: no plugins set", id)
+	}
+	pluginConfigs := make([]bufgen.PluginConfig, 0, len(externalConfigs))
+	for _, externalConfig := range externalConfigs {
+		pluginConfig, err := newPluginConfig(externalConfig)
+		if err != nil {
+			return nil, err
+		}
+		pluginConfigs = append(pluginConfigs, pluginConfig)
+	}
+	return pluginConfigs, nil
+}
+
 func newPluginConfig(externalConfig ExternalPluginConfigV2) (bufgen.PluginConfig, error) {
 	pluginTypes, options, err := getTypesAndOptions(externalConfig)
 	if err != nil {

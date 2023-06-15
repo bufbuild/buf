@@ -1,4 +1,7 @@
 version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
 inputs:
   - module: buf.build/acme/weather
     # recurse_submodules is not allowed for module
