@@ -37,10 +37,10 @@ type syncer struct {
 	syncPointResolver  SyncPointResolver
 
 	// scanned information from the repo on sync start
-	knownTagsByCommitHash map[string][]string
-	remoteBranches        map[string]struct{}
-	commitHashToBranch    map[string]string
-	sortedCommits         []git.Commit
+	tagsByCommitHash   map[string][]string
+	remoteBranches     map[string]struct{}
+	commitHashToBranch map[string]string
+	sortedCommits      []git.Commit
 }
 
 func newSyncer(
@@ -177,9 +177,9 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 // remote/origin branches, and visits each commit on them, starting from the base branch, to assign
 // it to a unique branch and sort them by aithor timestamp.
 func (s *syncer) scanRepo() error {
-	s.knownTagsByCommitHash = make(map[string][]string)
+	s.tagsByCommitHash = make(map[string][]string)
 	if err := s.repo.ForEachTag(func(tag string, commitHash git.Hash) error {
-		s.knownTagsByCommitHash[commitHash.Hex()] = append(s.knownTagsByCommitHash[commitHash.Hex()], tag)
+		s.tagsByCommitHash[commitHash.Hex()] = append(s.tagsByCommitHash[commitHash.Hex()], tag)
 		return nil
 	}); err != nil {
 		return fmt.Errorf("load tags: %w", err)
@@ -229,7 +229,7 @@ func (s *syncer) scanRepo() error {
 	// TODO remove, this will be extra verbose
 	s.logger.Debug(
 		"repo scan",
-		zap.Any("tags", s.knownTagsByCommitHash),
+		zap.Any("tags", s.tagsByCommitHash),
 		zap.Any("branches", s.remoteBranches),
 		zap.Any("commit to branch", s.commitHashToBranch),
 		zap.Stringers("sorted commits", s.sortedCommits),
@@ -292,7 +292,7 @@ func (s *syncer) visitCommit(
 			builtModule.Bucket,
 			commit,
 			branch,
-			s.knownTagsByCommitHash[commit.Hash().Hex()],
+			s.tagsByCommitHash[commit.Hash().Hex()],
 		),
 	)
 }
