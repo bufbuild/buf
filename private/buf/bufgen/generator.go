@@ -109,21 +109,17 @@ func (g *generator) generate(
 	pluginConfigs []PluginConfig,
 	image bufimage.Image,
 	baseOutDirPath string,
-	includeImports bool,
-	includeWellKnownTypes bool,
+	alwaysIncludeImports bool,
+	alwaysIncludeWellKnownTypes bool,
 	wasmEnabled bool,
 ) error {
-	// TODO: move this somewhere
-	// if err := modifyImage(ctx, g.logger, config, image); err != nil {
-	// 	return err
-	// }
 	responses, err := g.execPlugins(
 		ctx,
 		container,
 		pluginConfigs,
 		image,
-		includeImports,
-		includeWellKnownTypes,
+		alwaysIncludeImports,
+		alwaysIncludeWellKnownTypes,
 		wasmEnabled,
 	)
 	if err != nil {
@@ -163,8 +159,8 @@ func (g *generator) execPlugins(
 	container app.EnvStdioContainer,
 	pluginConfigs []PluginConfig,
 	image bufimage.Image,
-	includeImports bool,
-	includeWellKnownTypes bool,
+	alwaysIncludeImports bool,
+	alwaysIncludeWellKnownTypes bool,
 	wasmEnabled bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
 	imageProvider := newImageProvider(image)
@@ -192,8 +188,8 @@ func (g *generator) execPlugins(
 					container,
 					imageProvider,
 					t,
-					includeImports,
-					includeWellKnownTypes,
+					alwaysIncludeImports,
+					alwaysIncludeWellKnownTypes,
 					wasmEnabled,
 				)
 				if err != nil {
@@ -238,8 +234,8 @@ func (g *generator) execPlugins(
 					image,
 					remote,
 					v1Args,
-					includeImports,
-					includeWellKnownTypes,
+					alwaysIncludeImports,
+					alwaysIncludeWellKnownTypes,
 				)
 				if err != nil {
 					return err
@@ -258,8 +254,8 @@ func (g *generator) execPlugins(
 					image,
 					remote,
 					v2Args,
-					includeImports,
-					includeWellKnownTypes,
+					alwaysIncludeImports,
+					alwaysIncludeWellKnownTypes,
 				)
 				if err != nil {
 					return err
@@ -307,13 +303,21 @@ func (g *generator) execLocalPlugin(
 	container app.EnvStdioContainer,
 	imageProvider *imageProvider,
 	pluginConfig LocalPluginConfig,
-	includeImports bool,
-	includeWellKnownTypes bool,
+	alwaysIncludeImports bool,
+	alwaysIncludeWellKnownTypes bool,
 	wasmEnabled bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	pluginImages, err := imageProvider.GetImages(pluginConfig.Strategy())
 	if err != nil {
 		return nil, err
+	}
+	includeImports := pluginConfig.IncludeImports()
+	if alwaysIncludeImports {
+		includeImports = alwaysIncludeImports
+	}
+	includeWellKnownTypes := pluginConfig.IncludeWKT()
+	if alwaysIncludeWellKnownTypes {
+		includeWellKnownTypes = alwaysIncludeWellKnownTypes
 	}
 	requests := bufimage.ImagesToCodeGeneratorRequests(
 		pluginImages,
@@ -454,12 +458,27 @@ func (g *generator) execRemotePluginsV2(
 	image bufimage.Image,
 	remote string,
 	pluginConfigs []*curatedPluginExecArgs,
-	includeImports bool,
-	includeWellKnownTypes bool,
+	alwaysIncludeImports bool,
+	alwaysIncludeWellKnownTypes bool,
 ) ([]*remotePluginExecutionResult, error) {
 	requests := make([]*registryv1alpha1.PluginGenerationRequest, len(pluginConfigs))
 	for i, pluginConfig := range pluginConfigs {
-		request, err := getPluginGenerationRequest(pluginConfig.PluginConfig)
+		curatedPlugin := pluginConfig.PluginConfig
+		includeImports := curatedPlugin.IncludeImports()
+		if alwaysIncludeImports {
+			includeImports = alwaysIncludeImports
+		}
+		includeWellKnownTypes := curatedPlugin.IncludeWKT()
+		if alwaysIncludeWellKnownTypes {
+			includeWellKnownTypes = alwaysIncludeWellKnownTypes
+		}
+		request, err := getPluginGenerationRequest(
+			curatedPlugin.Remote(),
+			curatedPlugin.Revision(),
+			curatedPlugin.Opt(),
+			includeImports,
+			includeWellKnownTypes,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -470,10 +489,8 @@ func (g *generator) execRemotePluginsV2(
 		ctx,
 		connect.NewRequest(
 			&registryv1alpha1.GenerateCodeRequest{
-				Image:                 bufimage.ImageToProtoImage(image),
-				Requests:              requests,
-				IncludeImports:        includeImports,
-				IncludeWellKnownTypes: includeWellKnownTypes,
+				Image:    bufimage.ImageToProtoImage(image),
+				Requests: requests,
 			},
 		),
 	)
@@ -499,27 +516,33 @@ func (g *generator) execRemotePluginsV2(
 }
 
 func getPluginGenerationRequest(
-	pluginConfig CuratedPluginConfig,
+	remote string,
+	revision int,
+	opt string,
+	includeImports bool,
+	includeWellKnownTypes bool,
 ) (*registryv1alpha1.PluginGenerationRequest, error) {
 	var curatedPluginReference *registryv1alpha1.CuratedPluginReference
-	if reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Remote(), pluginConfig.Revision()); err == nil {
+	if reference, err := bufpluginref.PluginReferenceForString(remote, revision); err == nil {
 		curatedPluginReference = bufplugin.PluginReferenceToProtoCuratedPluginReference(reference)
 	} else {
 		// Try parsing as a plugin identity (no version information)
-		identity, err := bufpluginref.PluginIdentityForString(pluginConfig.Remote())
+		identity, err := bufpluginref.PluginIdentityForString(remote)
 		if err != nil {
-			return nil, fmt.Errorf("invalid remote plugin %q", pluginConfig.Remote())
+			return nil, fmt.Errorf("invalid remote plugin %q", remote)
 		}
 		curatedPluginReference = bufplugin.PluginIdentityToProtoCuratedPluginReference(identity)
 	}
 	var options []string
-	if len(pluginConfig.Opt()) > 0 {
+	if len(opt) > 0 {
 		// Only include parameters if they're not empty.
-		options = []string{pluginConfig.Opt()}
+		options = []string{opt}
 	}
 	return &registryv1alpha1.PluginGenerationRequest{
-		PluginReference: curatedPluginReference,
-		Options:         options,
+		PluginReference:       curatedPluginReference,
+		Options:               options,
+		IncludeImports:        &includeImports,
+		IncludeWellKnownTypes: &includeWellKnownTypes,
 	}, nil
 }
 
