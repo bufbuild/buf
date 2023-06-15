@@ -16,11 +16,15 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "google/protobuf/timestamp.proto";
+
 message RepositoryBranch {
   // The name of the repository branch.
   string name = 1;
   // The name of the latest commit on the branch.
   string latest_commit_name = 2;
+  bool is_main_branch = 3;
+  google.protobuf.Timestamp last_update_time = 4;
 }
 
 // RepositoryBranchService is the Repository branch service.
