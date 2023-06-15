@@ -52,9 +52,9 @@ const (
 	// ResolveServiceGetModulePinsProcedure is the fully-qualified name of the ResolveService's
 	// GetModulePins RPC.
 	ResolveServiceGetModulePinsProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetModulePins"
-	// ResolveServiceResolveReferenceProcedure is the fully-qualified name of the ResolveService's
-	// ResolveReference RPC.
-	ResolveServiceResolveReferenceProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/ResolveReference"
+	// ResolveServiceGetRemotePackageVersionProcedure is the fully-qualified name of the
+	// ResolveService's GetRemotePackageVersion RPC.
+	ResolveServiceGetRemotePackageVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetRemotePackageVersion"
 	// LocalResolveServiceGetLocalModulePinsProcedure is the fully-qualified name of the
 	// LocalResolveService's GetLocalModulePins RPC.
 	LocalResolveServiceGetLocalModulePinsProcedure = "/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins"
@@ -70,9 +70,9 @@ type ResolveServiceClient interface {
 	//
 	// This function also deals with tiebreaking what ModulePin wins for the same repository.
 	GetModulePins(context.Context, *connect_go.Request[v1alpha1.GetModulePinsRequest]) (*connect_go.Response[v1alpha1.GetModulePinsResponse], error)
-	// ResolveReference resolves the given plugin and module references to a version.
+	// GetRemotePackageVersion resolves the given plugin and module references to a version.
 	// The format of the version is determined by the plugin type.
-	ResolveReference(context.Context, *connect_go.Request[v1alpha1.ResolveReferenceRequest]) (*connect_go.Response[v1alpha1.ResolveReferenceResponse], error)
+	GetRemotePackageVersion(context.Context, *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error)
 }
 
 // NewResolveServiceClient constructs a client for the buf.alpha.registry.v1alpha1.ResolveService
@@ -91,9 +91,9 @@ func NewResolveServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
-		resolveReference: connect_go.NewClient[v1alpha1.ResolveReferenceRequest, v1alpha1.ResolveReferenceResponse](
+		getRemotePackageVersion: connect_go.NewClient[v1alpha1.GetRemotePackageVersionRequest, v1alpha1.GetRemotePackageVersionResponse](
 			httpClient,
-			baseURL+ResolveServiceResolveReferenceProcedure,
+			baseURL+ResolveServiceGetRemotePackageVersionProcedure,
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
@@ -102,8 +102,8 @@ func NewResolveServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 
 // resolveServiceClient implements ResolveServiceClient.
 type resolveServiceClient struct {
-	getModulePins    *connect_go.Client[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse]
-	resolveReference *connect_go.Client[v1alpha1.ResolveReferenceRequest, v1alpha1.ResolveReferenceResponse]
+	getModulePins           *connect_go.Client[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse]
+	getRemotePackageVersion *connect_go.Client[v1alpha1.GetRemotePackageVersionRequest, v1alpha1.GetRemotePackageVersionResponse]
 }
 
 // GetModulePins calls buf.alpha.registry.v1alpha1.ResolveService.GetModulePins.
@@ -111,9 +111,9 @@ func (c *resolveServiceClient) GetModulePins(ctx context.Context, req *connect_g
 	return c.getModulePins.CallUnary(ctx, req)
 }
 
-// ResolveReference calls buf.alpha.registry.v1alpha1.ResolveService.ResolveReference.
-func (c *resolveServiceClient) ResolveReference(ctx context.Context, req *connect_go.Request[v1alpha1.ResolveReferenceRequest]) (*connect_go.Response[v1alpha1.ResolveReferenceResponse], error) {
-	return c.resolveReference.CallUnary(ctx, req)
+// GetRemotePackageVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetRemotePackageVersion.
+func (c *resolveServiceClient) GetRemotePackageVersion(ctx context.Context, req *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error) {
+	return c.getRemotePackageVersion.CallUnary(ctx, req)
 }
 
 // ResolveServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.ResolveService
@@ -127,9 +127,9 @@ type ResolveServiceHandler interface {
 	//
 	// This function also deals with tiebreaking what ModulePin wins for the same repository.
 	GetModulePins(context.Context, *connect_go.Request[v1alpha1.GetModulePinsRequest]) (*connect_go.Response[v1alpha1.GetModulePinsResponse], error)
-	// ResolveReference resolves the given plugin and module references to a version.
+	// GetRemotePackageVersion resolves the given plugin and module references to a version.
 	// The format of the version is determined by the plugin type.
-	ResolveReference(context.Context, *connect_go.Request[v1alpha1.ResolveReferenceRequest]) (*connect_go.Response[v1alpha1.ResolveReferenceResponse], error)
+	GetRemotePackageVersion(context.Context, *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error)
 }
 
 // NewResolveServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -145,9 +145,9 @@ func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect_go.Hand
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle(ResolveServiceResolveReferenceProcedure, connect_go.NewUnaryHandler(
-		ResolveServiceResolveReferenceProcedure,
-		svc.ResolveReference,
+	mux.Handle(ResolveServiceGetRemotePackageVersionProcedure, connect_go.NewUnaryHandler(
+		ResolveServiceGetRemotePackageVersionProcedure,
+		svc.GetRemotePackageVersion,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	))
@@ -161,8 +161,8 @@ func (UnimplementedResolveServiceHandler) GetModulePins(context.Context, *connec
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetModulePins is not implemented"))
 }
 
-func (UnimplementedResolveServiceHandler) ResolveReference(context.Context, *connect_go.Request[v1alpha1.ResolveReferenceRequest]) (*connect_go.Response[v1alpha1.ResolveReferenceResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.ResolveReference is not implemented"))
+func (UnimplementedResolveServiceHandler) GetRemotePackageVersion(context.Context, *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetRemotePackageVersion is not implemented"))
 }
 
 // LocalResolveServiceClient is a client for the buf.alpha.registry.v1alpha1.LocalResolveService
