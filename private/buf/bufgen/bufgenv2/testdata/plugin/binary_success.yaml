@@ -1,0 +1,25 @@
+version: v2
+plugins:
+  - binary:
+      - protoc-gen-go
+      - arg1
+      - arg2
+    out: "gen/out/bin"
+    opt:
+      - paths=source_relative
+      - foo=bar
+      - baz
+    include_imports: true
+    include_wkt: true
+    strategy: directory
+  - binary: ["./relative", "argX", "argY"]
+    out: "gen/out/bin2"
+    opt: ["a=b", "x=y"]
+    include_imports: false
+    include_wkt: false
+    strategy: all
+  - binary: "/absolute-plugin"
+    out: "/some/out"
+    opt: "paths=source_relative"
+  - binary: "protoc-gen-go"
+    out: "gen/out"

@@ -16,6 +16,7 @@ package bufgenv2
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
@@ -31,15 +32,19 @@ const (
 const (
 	optionRevision   = "revision"
 	optionProtocPath = "protoc_path"
+	optionStrategy   = "strategy"
 )
 
 var allowedOptionsForType = map[string](map[string]bool){
 	typeRemote: {
 		optionRevision: true,
 	},
-	typeBinary: nil,
+	typeBinary: {
+		optionStrategy: true,
+	},
 	typeProtocBuiltin: {
 		optionProtocPath: true,
+		optionStrategy:   true,
 	},
 }
 
@@ -58,10 +63,14 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (bufgen.PluginConfig
 	allowedOptions := allowedOptionsForType[pluginType]
 	for _, option := range options {
 		if !allowedOptions[option] {
-			return nil, fmt.Errorf("%s is not allowed for %s", option, pluginType)
+			return nil, fmt.Errorf("%s is not allowed for %s plugin", option, pluginType)
 		}
 	}
-	strategy, err := internal.ParseStrategy(externalConfig.Strategy)
+	var strategy string
+	if externalConfig.Strategy != nil {
+		strategy = *externalConfig.Strategy
+	}
+	parsedStrategy, err := internal.ParseStrategy(strategy)
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +83,9 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (bufgen.PluginConfig
 		var revision int
 		if externalConfig.Revision != nil {
 			revision = *externalConfig.Revision
+		}
+		if revision < 0 || revision > math.MaxInt32 {
+			return nil, fmt.Errorf("revision %d is out of accepted range %d-%d", revision, 0, math.MaxInt32)
 		}
 		return bufgen.NewCuratedPluginConfig(
 			*externalConfig.Remote,
@@ -91,7 +103,7 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (bufgen.PluginConfig
 		return bufgen.NewBinaryPluginConfig(
 			"",
 			path,
-			strategy,
+			parsedStrategy,
 			externalConfig.Out,
 			opt,
 			externalConfig.IncludeImports,
@@ -109,7 +121,7 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (bufgen.PluginConfig
 			opt,
 			externalConfig.IncludeImports,
 			externalConfig.IncludeWKT,
-			strategy,
+			parsedStrategy,
 		)
 	default:
 		// this should not happen
@@ -140,6 +152,9 @@ func getTypesAndOptions(externalConfig ExternalPluginConfigV2) ([]string, []stri
 	}
 	if externalConfig.ProtocPath != nil {
 		options = append(options, optionProtocPath)
+	}
+	if externalConfig.Strategy != nil {
+		options = append(options, optionStrategy)
 	}
 	return types, options, nil
 }

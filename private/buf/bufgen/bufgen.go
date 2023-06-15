@@ -314,7 +314,7 @@ type CuratedPluginConfig interface {
 // NewCuratedPluginConfig returns a new curated plugin configuration.
 func NewCuratedPluginConfig(
 	plugin string,
-	revision int, // TODO: maybe pointer to indicate absence
+	revision int,
 	out string,
 	opt string,
 	includeImports bool,
