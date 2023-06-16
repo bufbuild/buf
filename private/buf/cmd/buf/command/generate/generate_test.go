@@ -155,16 +155,16 @@ func TestOutputFlag(t *testing.T) {
 	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
 	require.NoError(t, err)
 
-	tempDirPath2 := t.TempDir()
+	tempDirPath = t.TempDir()
 	testRunSuccess(
 		t,
 		"--output",
-		tempDirPath2,
+		tempDirPath,
 		"--template",
-		filepath.Join("testdata", "simple", "buf.gen2.yaml"),
+		filepath.Join("testdata", "simple", "buf.genv2.yaml"),
 		filepath.Join("testdata", "simple"),
 	)
-	_, err = os.Stat(filepath.Join(tempDirPath2, "java", "a", "v1", "A.java"))
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
 	require.NoError(t, err)
 }
 
@@ -183,18 +183,18 @@ func TestProtoFileRefIncludePackageFiles(t *testing.T) {
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "B.java"))
 	require.NoError(t, err)
 
-	tempDirPath2 := t.TempDir()
+	tempDirPath = t.TempDir()
 	testRunSuccess(
 		t,
 		"--output",
-		tempDirPath2,
+		tempDirPath,
 		"--template",
 		filepath.Join("testdata", "protofileref", "buf.gen.yaml"),
 		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "a", "v1", "a.proto")),
 	)
-	_, err = os.Stat(filepath.Join(tempDirPath2, "java", "a", "v1", "A.java"))
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
 	require.NoError(t, err)
-	_, err = os.Stat(filepath.Join(tempDirPath2, "java", "a", "v1", "B.java"))
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "B.java"))
 	require.NoError(t, err)
 }
 
@@ -212,6 +212,20 @@ func TestGenerateDuplicatePlugins(t *testing.T) {
 	require.NoError(t, err)
 	_, err = os.Stat(filepath.Join(tempDirPath, "bar", "a", "v1", "A.java"))
 	require.NoError(t, err)
+
+	tempDirPath = t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "duplicate_plugins", "buf.genv2.yaml"),
+		filepath.Join("testdata", "duplicate_plugins"),
+	)
+	_, err = os.Stat(filepath.Join(tempDirPath, "foo", "a", "v1", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "bar", "a", "v1", "A.java"))
+	require.NoError(t, err)
 }
 
 func TestOutputWithPathEqualToExclude(t *testing.T) {
@@ -226,6 +240,24 @@ func TestOutputWithPathEqualToExclude(t *testing.T) {
 		tempDirPath,
 		"--template",
 		filepath.Join("testdata", "paths", "buf.gen.yaml"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
+		filepath.Join("testdata", "paths"),
+	)
+
+	tempDirPath = t.TempDir()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		filepath.FromSlash(`Failure: cannot set the same path for both --path and --exclude-path flags: a/v1/a.proto`),
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "paths", "buf.genv2.yaml"),
 		"--exclude-path",
 		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
 		"--path",
@@ -264,6 +296,27 @@ plugins:
 		"-o",
 		t.TempDir(),
 	)
+
+	successTemplate = `
+version: v2
+plugins:
+  - binary: protoc-gen-insertion-point-receiver
+    out: gen/proto/insertion
+  - binary: protoc-gen-insertion-point-writer
+    out: .
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: plugin protoc-gen-insertion-point-writer: test.txt: does not exist`,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
 }
 
 func TestGenerateDuplicateFileFail(t *testing.T) {
@@ -288,6 +341,27 @@ plugins:
 		"-o",
 		t.TempDir(),
 	)
+
+	successTemplate = `
+version: v2
+plugins:
+  - binary: protoc-gen-insertion-point-receiver
+    out: .
+  - binary: protoc-gen-insertion-point-receiver
+    out: .
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: file "test.txt" was generated multiple times: once by plugin "protoc-gen-insertion-point-receiver" and again by plugin "protoc-gen-insertion-point-receiver"`,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
 }
 
 func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
@@ -305,12 +379,72 @@ func testGenerateInsertionPoint(
 	writerOut string,
 	expectedOutputPath string,
 ) {
+	testGenerateInsertionPointV1(
+		t,
+		runner,
+		receiverOut,
+		writerOut,
+		expectedOutputPath,
+	)
+	testGenerateInsertionPointV2(
+		t,
+		runner,
+		receiverOut,
+		writerOut,
+		expectedOutputPath,
+	)
+}
+
+func testGenerateInsertionPointV1(
+	t *testing.T,
+	runner command.Runner,
+	receiverOut string,
+	writerOut string,
+	expectedOutputPath string,
+) {
 	successTemplate := `
 version: v1
 plugins:
   - name: insertion-point-receiver
     out: %s
   - name: insertion-point-writer
+    out: %s
+`
+	storageosProvider := storageos.NewProvider()
+	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(
+		context.Background(),
+		t,
+		storageosProvider,
+		storagemem.NewReadWriteBucket(),
+	)
+	testRunSuccess(
+		t,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		fmt.Sprintf(successTemplate, receiverOut, writerOut),
+		"-o",
+		tempDir,
+	)
+	expectedOutput, err := storageosProvider.NewReadWriteBucket(expectedOutputPath)
+	require.NoError(t, err)
+	diff, err := storage.DiffBytes(context.Background(), runner, expectedOutput, readWriteBucket)
+	require.NoError(t, err)
+	require.Empty(t, string(diff))
+}
+
+func testGenerateInsertionPointV2(
+	t *testing.T,
+	runner command.Runner,
+	receiverOut string,
+	writerOut string,
+	expectedOutputPath string,
+) {
+	successTemplate := `
+version: v2
+plugins:
+  - binary: protoc-gen-insertion-point-receiver
+    out: %s
+  - binary: protoc-gen-insertion-point-writer
     out: %s
 `
 	storageosProvider := storageos.NewProvider()
@@ -353,6 +487,27 @@ plugins:
 		1,
 		``,
 		`Failure: plugin insertion-point-writer: test.txt: does not exist`,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		fmt.Sprintf(successTemplate, receiverOut, writerOut),
+		"-o",
+		t.TempDir(),
+	)
+
+	successTemplate = `
+version: v2
+plugins:
+  - binary: protoc-gen-insertion-point-receiver
+    out: %s
+  - binary: protoc-gen-insertion-point-writer
+    out: %s
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: plugin protoc-gen-insertion-point-writer: test.txt: does not exist`,
 		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
 		"--template",
 		fmt.Sprintf(successTemplate, receiverOut, writerOut),

@@ -362,7 +362,6 @@ func run(
 		imageModifier = nopModifier{}
 		plugins = genConfigV2.Plugins
 		if bufcli.IsInputSpecified(container, flags.InputHashtag) {
-			print("SOME INPUT SPECIFIED\n")
 			inputRef, err := getInputRefFromCLI(
 				ctx,
 				container,
