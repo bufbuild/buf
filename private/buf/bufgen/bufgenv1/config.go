@@ -176,6 +176,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 						strategy,
 					)
 				} else {
+					// It could be either binary or protoc built-in.
 					pluginConfig, err = bufgen.NewLocalPluginConfig(
 						plugin.Plugin,
 						strategy,
@@ -230,6 +231,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 					strategy,
 				)
 			} else {
+				// It could be either binary or protoc built-in.
 				pluginConfig, err = bufgen.NewLocalPluginConfig(
 					plugin.Name,
 					strategy,
