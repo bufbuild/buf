@@ -23,7 +23,7 @@ type EditKind int
 
 const (
 	// EditKindDelete is a delete.
-	EditKindDelete EditKind = iota
+	EditKindDelete EditKind = iota + 1
 	// EditKindInsert is an insert.
 	EditKindInsert
 )
