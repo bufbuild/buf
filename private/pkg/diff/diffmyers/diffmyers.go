@@ -16,6 +16,8 @@ package diffmyers
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 )
 
 // EditKind is the kind of edit.
@@ -49,6 +51,107 @@ type Edit struct {
 // same algorithm used by git.
 func Diff(from, to [][]byte) []Edit {
 	return shortestEdits(from, to, 0, 0)
+}
+
+// Print prints the edits in the unified diff format without the header.
+//
+// Ref: https://www.gnu.org/software/diffutils/manual/html_node/Detailed-Unified.html
+func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
+	const contextThreshold = 2
+	type printLine struct {
+		EditKind EditKind
+		line     []byte
+		hunk     bool
+	}
+	// If the last line of from is not a newline append one.
+	if len(from) > 0 && from[len(from)-1] != nil {
+		last := from[len(from)-1]
+		if last[len(last)-1] != '\n' {
+			from[len(from)-1] = append(last, '\n')
+		}
+	}
+	// We preallocate the slice to avoid reallocations.
+	//
+	// Each edit is either a delete or an insert so the total number of lines
+	// in the diff is the number of edits plus the number of lines in the
+	// original sequence. The worst case for the hunk headers are
+	// as many edits.
+	out := make([]*printLine, 0, len(from)+2*len(edits))
+	var fromIndex, toIndex, bufferSize int
+	for i := 0; i < len(edits); i++ {
+		// Remember the start of the hunk. We add 1 to the indexes because
+		// we want to print the line number and they start at 1.
+		hunkOldStart := fromIndex + 1
+		hunkNewStart := toIndex + 1
+		// Reserve the space for the hunk header.
+		hunk := &printLine{hunk: true}
+		out = append(out, hunk)
+		var insertCount, deleteCount int
+		// Print the lines in the edit.
+		for j := i; j < len(edits); j++ {
+			// Print the lines before the edit.
+			var advance int
+			for _, line := range from[fromIndex:edits[i].FromPosition] {
+				out = append(out, &printLine{line: line})
+				bufferSize += len(line) + 1
+				advance++
+			}
+			// Advance the indexes.
+			toIndex += advance
+			fromIndex += advance
+			insertCount += advance
+			deleteCount += advance
+			if advance > contextThreshold {
+				break
+			}
+			switch edits[j].Kind {
+			case EditKindDelete:
+				deleteCount++
+				fromIndex++
+				out = append(out, &printLine{
+					EditKind: EditKindDelete,
+					line:     from[edits[j].FromPosition],
+				})
+			case EditKindInsert:
+				insertCount++
+				toIndex++
+				out = append(out, &printLine{
+					EditKind: EditKindInsert,
+					line:     to[edits[j].ToPosition],
+				})
+			default:
+				return nil, errors.New("unknown edit kind")
+			}
+			bufferSize += len(out[len(out)-1].line) + 1
+			i++
+		}
+		// Print the hunk header.
+		hunk.line = []byte(fmt.Sprintf("@@ -%d,%d +%d,%d @@\n", hunkOldStart, deleteCount, hunkNewStart, insertCount))
+		bufferSize += len(hunk.line) + 1
+	}
+	// Print the lines after the last edit.
+	for _, line := range from[fromIndex:] {
+		out = append(out, &printLine{line: line})
+		bufferSize += len(line) + 1
+	}
+	var buffer bytes.Buffer
+	buffer.Grow(bufferSize)
+	for _, line := range out {
+		if line.hunk {
+			buffer.Write(line.line)
+			continue
+		}
+		switch line.EditKind {
+		case EditKindDelete:
+			buffer.WriteByte('-')
+		case EditKindInsert:
+			buffer.WriteByte('+')
+		default:
+			buffer.WriteByte(' ')
+		}
+		buffer.Write(line.line)
+	}
+	return buffer.Bytes(), nil
 }
 
 func shortestEdits(from, to [][]byte, fromOffset, toOffset int) []Edit {
