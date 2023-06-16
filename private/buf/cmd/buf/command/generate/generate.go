@@ -361,7 +361,8 @@ func run(
 		// TODO: implement managed mode
 		imageModifier = nopModifier{}
 		plugins = genConfigV2.Plugins
-		if !bufcli.IsInputSpecified(container, flags.InputHashtag) {
+		if bufcli.IsInputSpecified(container, flags.InputHashtag) {
+			print("SOME INPUT SPECIFIED\n")
 			inputRef, err := getInputRefFromCLI(
 				ctx,
 				container,
@@ -555,11 +556,11 @@ func getInputImage(
 		ctx,
 		container,
 		ref,
-		configLocationOverride, // flags.Config,
-		includedPaths,          // flags.Paths,            // we filter on files
-		excludedPaths,          // flags.ExcludePaths,     // we exclude these paths
-		false,                  // input files must exist
-		false,                  // we must include source info for generation
+		configLocationOverride,
+		includedPaths,
+		excludedPaths,
+		false, // input files must exist
+		false, // we must include source info for generation
 	)
 	if err != nil {
 		return nil, err

@@ -1,0 +1,8 @@
+version: v2
+plugins:
+  - protoc_builtin: java
+    out: java
+inputs:
+  - directory: testdata/paths
+    exclude_paths:
+      - testdata/paths/a/v2

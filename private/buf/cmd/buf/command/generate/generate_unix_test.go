@@ -41,6 +41,22 @@ func TestProtoFileRef(t *testing.T) {
 	require.Contains(t, err.Error(), "no such file or directory")
 }
 
+func TestProtoFileConfigIncludePackageFiles(t *testing.T) {
+	tempDirPath := t.TempDir()
+	genConfig := filepath.Join("testdata", "protofileref", "UnixIncludePackageFiles.yaml")
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		genConfig,
+	)
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "B.java"))
+	require.NoError(t, err)
+}
+
 func TestOutputWithExclude(t *testing.T) {
 	tempDirPath := t.TempDir()
 	testRunSuccess(
@@ -50,6 +66,38 @@ func TestOutputWithExclude(t *testing.T) {
 		tempDirPath,
 		"--template",
 		filepath.Join("testdata", "paths", "buf.gen.yaml"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v1"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+	)
+
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "b", "v1", "B.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "A.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "foo", "Foo.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "bar", "Bar.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+}
+
+func TestExcludeFlagOverridesConfig(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "paths", "exclude_unix.yaml"),
 		"--exclude-path",
 		filepath.Join("testdata", "paths", "a", "v1"),
 		"--exclude-path",
