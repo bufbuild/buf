@@ -298,7 +298,7 @@ func NewProtocBuiltinPluginConfig(
 // RemotePluginConfig is a remote plugin configuration.
 type RemotePluginConfig interface {
 	PluginConfig
-	Remote() string
+	RemoteHost() string
 
 	remotePluginConfig()
 }
@@ -330,7 +330,7 @@ func NewCuratedPluginConfig(
 		opt,
 		includeImports,
 		includeWKT,
-	), nil
+	)
 }
 
 // LegacyRemotePluginConfig is a legacy remote plugin configuration.
@@ -357,5 +357,5 @@ func NewLegacyRemotePluginConfig(
 		opt,
 		includeImports,
 		includeWKT,
-	), nil
+	)
 }

@@ -174,8 +174,8 @@ func (g *generator) execPlugins(
 		currentPluginConfig := pluginConfig
 		switch t := currentPluginConfig.(type) {
 		case RemotePluginConfig:
-			remotePluginConfigTable[t.Remote()] = append(
-				remotePluginConfigTable[t.Remote()],
+			remotePluginConfigTable[t.RemoteHost()] = append(
+				remotePluginConfigTable[t.RemoteHost()],
 				&remotePluginExecArgs{
 					Index:        index,
 					PluginConfig: t,
@@ -473,7 +473,7 @@ func (g *generator) execRemotePluginsV2(
 			includeWellKnownTypes = alwaysIncludeWellKnownTypes
 		}
 		request, err := getPluginGenerationRequest(
-			curatedPlugin.Remote(),
+			curatedPlugin.PluginName(),
 			curatedPlugin.Revision(),
 			curatedPlugin.Opt(),
 			includeImports,
@@ -516,20 +516,20 @@ func (g *generator) execRemotePluginsV2(
 }
 
 func getPluginGenerationRequest(
-	remote string,
+	fullName string,
 	revision int,
 	opt string,
 	includeImports bool,
 	includeWellKnownTypes bool,
 ) (*registryv1alpha1.PluginGenerationRequest, error) {
 	var curatedPluginReference *registryv1alpha1.CuratedPluginReference
-	if reference, err := bufpluginref.PluginReferenceForString(remote, revision); err == nil {
+	if reference, err := bufpluginref.PluginReferenceForString(fullName, revision); err == nil {
 		curatedPluginReference = bufplugin.PluginReferenceToProtoCuratedPluginReference(reference)
 	} else {
 		// Try parsing as a plugin identity (no version information)
-		identity, err := bufpluginref.PluginIdentityForString(remote)
+		identity, err := bufpluginref.PluginIdentityForString(fullName)
 		if err != nil {
-			return nil, fmt.Errorf("invalid remote plugin %q", remote)
+			return nil, fmt.Errorf("invalid remote plugin %q", fullName)
 		}
 		curatedPluginReference = bufplugin.PluginIdentityToProtoCuratedPluginReference(identity)
 	}
@@ -548,7 +548,7 @@ func getPluginGenerationRequest(
 
 // getPluginReference returns the plugin reference and remote for the given plugin configuration.
 func getPluginReference(pluginConfig LegacyRemotePluginConfig) (*registryv1alpha1.PluginReference, error) {
-	_, owner, name, version, err := bufremoteplugin.ParsePluginVersionPath(pluginConfig.Remote())
+	_, owner, name, version, err := bufremoteplugin.ParsePluginVersionPath(pluginConfig.PluginName())
 	if err != nil {
 		return nil, fmt.Errorf("invalid plugin path: %w", err)
 	}

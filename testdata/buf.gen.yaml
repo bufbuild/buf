@@ -1,0 +1,6 @@
+version: v2
+plugins:
+  - remote: bufbuild.internal/protocolbuffers/go
+    out: gen
+    opt:
+      - paths=source_relative

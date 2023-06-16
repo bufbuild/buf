@@ -18,6 +18,8 @@ import (
 	"errors"
 
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 )
 
 type localPluginConfig struct {
@@ -205,7 +207,8 @@ func (c *protocBuiltinPluginConfig) localPluginConfig()         {}
 func (c *protocBuiltinPluginConfig) protocBuiltinPluginConfig() {}
 
 type curatedPluginConfig struct {
-	plugin         string
+	fullName       string
+	remoteHost     string
 	revision       int
 	out            string
 	opt            string
@@ -214,30 +217,36 @@ type curatedPluginConfig struct {
 }
 
 func newCuratedPluginConfig(
-	plugin string,
+	fullName string,
 	revision int,
 	out string,
 	opt string,
 	includeImports bool,
 	includeWKT bool,
-) *curatedPluginConfig {
+) (*curatedPluginConfig, error) {
+	remoteHost, err := parseCuratedRemoteHostName(fullName)
+	if err != nil {
+		return nil, err
+	}
 	return &curatedPluginConfig{
-		plugin:         plugin,
+		fullName:       fullName,
+		remoteHost:     remoteHost,
 		revision:       revision,
 		out:            out,
 		opt:            opt,
 		includeImports: includeImports,
 		includeWKT:     includeWKT,
-	}
+	}, nil
 }
 
 func (c *curatedPluginConfig) PluginName() string {
-	return c.plugin
+	return c.fullName
 }
 
-func (c *curatedPluginConfig) Remote() string {
-	return c.plugin
+func (c *curatedPluginConfig) RemoteHost() string {
+	return c.remoteHost
 }
+
 func (c *curatedPluginConfig) Revision() int {
 	return c.revision
 }
@@ -263,35 +272,41 @@ func (c *curatedPluginConfig) remotePluginConfig()  {}
 func (c *curatedPluginConfig) curatedPluginConfig() {}
 
 type legacyRemotePluginConfig struct {
+	fullName       string
+	remoteHost     string
 	out            string
 	opt            string
-	remote         string
 	includeImports bool
 	includeWKT     bool
 }
 
 func newLegacyRemotePluginConfig(
-	remote string,
+	fullName string,
 	out string,
 	opt string,
 	includeImports bool,
 	includeWKT bool,
-) *legacyRemotePluginConfig {
+) (*legacyRemotePluginConfig, error) {
+	remoteHost, err := parseLegacyRemoteHostName(fullName)
+	if err != nil {
+		return nil, err
+	}
 	return &legacyRemotePluginConfig{
-		remote:         remote,
+		fullName:       fullName,
+		remoteHost:     remoteHost,
 		out:            out,
 		opt:            opt,
 		includeImports: includeImports,
 		includeWKT:     includeWKT,
-	}
+	}, nil
 }
 
 func (c *legacyRemotePluginConfig) PluginName() string {
-	return c.remote
+	return c.fullName
 }
 
-func (c *legacyRemotePluginConfig) Remote() string {
-	return c.remote
+func (c *legacyRemotePluginConfig) RemoteHost() string {
+	return c.remoteHost
 }
 
 func (c *legacyRemotePluginConfig) Out() string {
@@ -313,3 +328,22 @@ func (c *legacyRemotePluginConfig) IncludeWKT() bool {
 func (c *legacyRemotePluginConfig) pluginConfig()             {}
 func (c *legacyRemotePluginConfig) remotePluginConfig()       {}
 func (c *legacyRemotePluginConfig) legacyRemotePluginConfig() {}
+
+func parseCuratedRemoteHostName(fullName string) (string, error) {
+	if identity, err := bufpluginref.PluginIdentityForString(fullName); err == nil {
+		return identity.Remote(), nil
+	}
+	reference, err := bufpluginref.PluginReferenceForString(fullName, 0)
+	if err == nil {
+		return reference.Remote(), nil
+	}
+	return "", err
+}
+
+func parseLegacyRemoteHostName(fullName string) (string, error) {
+	remote, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(fullName)
+	if err != nil {
+		return "", err
+	}
+	return remote, nil
+}
