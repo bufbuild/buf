@@ -747,7 +747,7 @@ func verifyEndpointURL(urlArg string) (endpointURL *url.URL, service, method, ba
 		return nil, "", "", "", fmt.Errorf("%q is not a valid endpoint URL: %w", urlArg, err)
 	}
 	if endpointURL.Scheme != "http" && endpointURL.Scheme != "https" {
-		return nil, "", "", "", fmt.Errorf("invalid endpoint URL: sceme %q is not supported", endpointURL.Scheme)
+		return nil, "", "", "", fmt.Errorf("invalid endpoint URL: scheme %q is not supported", endpointURL.Scheme)
 	}
 
 	if strings.HasSuffix(endpointURL.Path, "/") {
