@@ -239,7 +239,8 @@ type BinaryPluginConfig interface {
 	binaryPluginConfig()
 }
 
-// NewBinaryPluginConfig returns a new binary plugin configuration.
+// NewBinaryPluginConfig returns a new binary plugin configuration, with a name in the
+// form of "protoc-gen-go" instead of "go".
 func NewBinaryPluginConfig(
 	name string,
 	path []string,
@@ -271,7 +272,8 @@ type ProtocBuiltinPluginConfig interface {
 	protocBuiltinPluginConfig()
 }
 
-// NewProtocBuiltinPluginConfig returns a new protoc built-in plugin configuration.
+// NewProtocBuiltinPluginConfig returns a new protoc built-in plugin configuration,
+// with a name in the form of "cpp" as opposed to "protoc-gen-cpp".
 func NewProtocBuiltinPluginConfig(
 	name string,
 	protocPath string,

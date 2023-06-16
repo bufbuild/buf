@@ -145,10 +145,10 @@ func (c *binaryPluginConfig) localPluginConfig()  {}
 func (c *binaryPluginConfig) binaryPluginConfig() {}
 
 type protocBuiltinPluginConfig struct {
+	name           string
 	out            string
 	opt            string
 	strategy       internal.Strategy
-	name           string
 	protocPath     string
 	includeImports bool
 	includeWKT     bool
