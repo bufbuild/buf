@@ -315,7 +315,7 @@ type CuratedPluginConfig interface {
 
 // NewCuratedPluginConfig returns a new curated plugin configuration.
 func NewCuratedPluginConfig(
-	plugin string,
+	fullName string,
 	revision int,
 	out string,
 	opt string,
@@ -326,7 +326,7 @@ func NewCuratedPluginConfig(
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
 	return newCuratedPluginConfig(
-		plugin,
+		fullName,
 		revision,
 		out,
 		opt,
@@ -344,7 +344,7 @@ type LegacyRemotePluginConfig interface {
 
 // NewLegacyRemotePluginConfig returns a new legacy remote plugin configuration.
 func NewLegacyRemotePluginConfig(
-	remote string,
+	fullName string,
 	out string,
 	opt string,
 	includeImports bool,
@@ -354,7 +354,7 @@ func NewLegacyRemotePluginConfig(
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
 	return newLegacyRemotePluginConfig(
-		remote,
+		fullName,
 		out,
 		opt,
 		includeImports,
