@@ -41,9 +41,9 @@ func TestProtoFileRef(t *testing.T) {
 	require.Contains(t, err.Error(), "no such file or directory")
 }
 
-func TestProtoFileConfigIncludePackageFiles(t *testing.T) {
+func TestProtoFileConfig(t *testing.T) {
 	tempDirPath := t.TempDir()
-	genConfig := filepath.Join("testdata", "protofileref", "UnixIncludePackageFiles.yaml")
+	genConfig := filepath.Join("testdata", "protofileref", "proto_file_unix.yaml")
 	testRunSuccess(
 		t,
 		"--output",
@@ -98,6 +98,7 @@ func TestExcludeFlagOverridesConfig(t *testing.T) {
 		tempDirPath,
 		"--template",
 		filepath.Join("testdata", "paths", "exclude_unix.yaml"),
+		// these override testdata/paths/a/v2 specified in the config file
 		"--exclude-path",
 		filepath.Join("testdata", "paths", "a", "v1"),
 		"--exclude-path",
@@ -122,6 +123,62 @@ func TestExcludeFlagOverridesConfig(t *testing.T) {
 	require.Contains(t, err.Error(), "no such file or directory")
 }
 
+func TestIncludePathConfig(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		// Only testdata/paths/a/v2 is included.
+		filepath.Join("testdata", "paths", "include_unix.yaml"),
+	)
+
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "b", "v1", "B.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "A.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "foo", "FooOuterClass.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "foo", "BarOuterClass.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+}
+
+func TestExcludePathConfig(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		// Only testdata/paths/a/v2 is excluded.
+		filepath.Join("testdata", "paths", "exclude_unix.yaml"),
+	)
+
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "b", "v1", "B.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "foo", "FooOuterClass.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "foo", "BarOuterClass.java"))
+	require.NoError(t, err)
+}
+
 func TestOutputWithPathWithinExclude(t *testing.T) {
 	tempDirPath := t.TempDir()
 	testRunSuccess(
@@ -130,6 +187,26 @@ func TestOutputWithPathWithinExclude(t *testing.T) {
 		tempDirPath,
 		"--template",
 		filepath.Join("testdata", "paths", "buf.gen.yaml"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a"),
+	)
+
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
+	require.Contains(t, err.Error(), "no such file or directory")
+}
+
+func TestOutputWithConfigIncludeWithinExclude(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "paths", "include_exclude_unix.yaml"),
 		"--path",
 		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
 		"--exclude-path",
