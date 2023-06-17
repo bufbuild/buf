@@ -116,9 +116,9 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (OverrideFu
 
 		switch t := fileOption.Type(); t {
 		case FileOptionTypeValue:
-			return bufimagemodifyv2.NewValue(externalConfig.Value), nil
+			return bufimagemodifyv2.NewValueOverride(externalConfig.Value), nil
 		case FileOptionTypePrefix:
-			return bufimagemodifyv2.NewPrefix(externalConfig.Prefix), nil
+			return bufimagemodifyv2.NewPrefixOverride(externalConfig.Prefix), nil
 		default:
 			return nil, fmt.Errorf("unknown FileOptionType: %q", t)
 		}

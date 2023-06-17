@@ -14,35 +14,35 @@
 
 package bufimagemodifyv2
 
-type value[T string | bool] struct {
+type valueOverride[T string | bool] struct {
 	value T
 }
 
-func newValue[T string | bool](val T) value[T] {
-	return value[T]{
+func newValueOverride[T string | bool](val T) valueOverride[T] {
+	return valueOverride[T]{
 		value: val,
 	}
 }
 
-func (v value[T]) Get() T {
+func (v valueOverride[T]) Get() T {
 	type underlyingType struct {
 		value T
 	}
 	return (underlyingType(v)).value
 }
 
-func (v value[T]) override()      {}
-func (v value[T]) valueOverride() {}
+func (v valueOverride[T]) override()      {}
+func (v valueOverride[T]) valueOverride() {}
 
-type prefix string
+type prefixOverride string
 
-func newPrefix(p string) prefix {
-	return prefix(p)
+func newPrefixOverride(p string) prefixOverride {
+	return prefixOverride(p)
 }
 
-func (p prefix) Get() string {
+func (p prefixOverride) Get() string {
 	return string(p)
 }
 
-func (p prefix) override()       {}
-func (p prefix) prefixOverride() {}
+func (p prefixOverride) override()       {}
+func (p prefixOverride) prefixOverride() {}

@@ -187,7 +187,7 @@ func applyManagementForFile(
 		case FileOptionJavaPackage:
 			// Will need to do *string or similar for unset
 			if valueOrPrefix == nil {
-				valueOrPrefix = bufimagemodifyv2.NewPrefix(defaultJavaPackagePrefix)
+				valueOrPrefix = bufimagemodifyv2.NewPrefixOverride(defaultJavaPackagePrefix)
 			}
 			if err := bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, valueOrPrefix); err != nil {
 				return err

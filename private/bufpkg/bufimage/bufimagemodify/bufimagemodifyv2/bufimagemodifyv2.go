@@ -56,12 +56,12 @@ type PrefixOverride interface {
 	prefixOverride()
 }
 
-func NewValue[T string | bool](v T) Override {
-	return newValue[T](v)
+func NewValueOverride[T string | bool](v T) Override {
+	return newValueOverride[T](v)
 }
 
-func NewPrefix(p string) Override {
-	return newPrefix(p)
+func NewPrefixOverride(p string) Override {
+	return newPrefixOverride(p)
 }
 
 type Marker interface {
@@ -95,7 +95,7 @@ func ModifyJavaPackage(
 		descriptor.Options.JavaPackage = proto.String(
 			t.Get(),
 		)
-	case prefix:
+	case prefixOverride:
 		descriptor.Options.JavaPackage = proto.String(
 			getJavaPackageValue(imageFile, t.Get()),
 		)
