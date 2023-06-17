@@ -41,22 +41,11 @@ func (n *Node) String() string {
 	return n.Value
 }
 
-// ModuleNodePair is a Module with a Node that identifies it.
-//
-// TODO: this is hacky, determine a better way to identify Modules
-// that we produce from disk. May want to expose the ModuleIdentity/commit
-// information on Module, and may want to provide a way to add a Ref-like
-// thingto a Module.
-type ModuleNodePair struct {
-	Module bufmodule.Module
-	Node   Node
-}
-
 // Builder builds dependency graphs.
 type Builder interface {
 	Build(
 		ctx context.Context,
-		moduleNodePairs []ModuleNodePair,
+		modules []bufmodule.Module,
 		options ...BuildOption,
 	) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error)
 }

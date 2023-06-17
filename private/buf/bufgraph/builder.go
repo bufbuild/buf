@@ -16,6 +16,7 @@ package bufgraph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufbuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -51,7 +52,7 @@ func newBuilder(
 
 func (b *builder) Build(
 	ctx context.Context,
-	moduleNodePairs []ModuleNodePair,
+	modules []bufmodule.Module,
 	options ...BuildOption,
 ) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error) {
 	buildOptions := newBuildOptions()
@@ -60,22 +61,32 @@ func (b *builder) Build(
 	}
 	return b.build(
 		ctx,
-		moduleNodePairs,
+		modules,
 		buildOptions.workspace,
 	)
 }
 
 func (b *builder) build(
 	ctx context.Context,
-	moduleNodePairs []ModuleNodePair,
+	modules []bufmodule.Module,
 	workspace bufmodule.Workspace,
 ) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error) {
 	graph := dag.NewGraph[Node]()
-	for _, moduleNodePair := range moduleNodePairs {
+	for i, module := range modules {
+		// TODO: this is because we don't have an identifier for Module
+		// We likely want to use the ModuleIdentityOptionalCommit if present,
+		// or the path on disk otherwise. This will optimally require refactors
+		// to the Module and the workspace-related code.
+		node := Node{
+			Value: "root",
+		}
+		if i > 1 {
+			node.Value += fmt.Sprintf("-%d", i)
+		}
 		fileAnnotations, err := b.buildForModule(
 			ctx,
-			moduleNodePair.Module,
-			moduleNodePair.Node,
+			module,
+			node,
 			workspace,
 			graph,
 		)
