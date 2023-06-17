@@ -160,6 +160,12 @@ func (b *builder) getModuleForModuleIdentityOptionalCommit(
 			return module, nil
 		}
 	}
+	// TODO: perhaps we should error here if we don't have a commit? The only
+	// case we should likely not have a commit is when we are using a workspace.
+	// There's no enforcement of this property, so erroring here is a bit weird,
+	// but it might be better to check our assumptions and figure out if there
+	// are exceptions after the fact, as opposed to resolving a ModulePin for
+	// main when we don't know if main is what we want.
 	modulePin, err := b.moduleResolver.GetModulePin(
 		ctx,
 		bufmoduleref.NewModuleReferenceForModuleIdentityOptionalCommit(
