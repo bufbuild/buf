@@ -23,6 +23,7 @@ package bufbuild
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"go.uber.org/zap"
@@ -34,7 +35,7 @@ type Builder interface {
 		ctx context.Context,
 		modules bufmodule.Module,
 		options ...BuildOption,
-	) (bufimage.Image, error)
+	) (bufimage.Image, []bufanalysis.FileAnnotation, error)
 }
 
 // NewBuilder returns a new Builder.
@@ -56,5 +57,12 @@ type BuildOption func(*buildOptions)
 func BuildWithWorkspace(workspace bufmodule.Workspace) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.workspace = workspace
+	}
+}
+
+// BuildWithExcludeSourceCodeInfo returns a BuildOption that excludes SourceCodeInfo.
+func BuildWithExcludeSourceCodeInfo() BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.excludeSourceCodeInfo = true
 	}
 }

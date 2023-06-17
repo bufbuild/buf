@@ -19,6 +19,7 @@ import (
 	"errors"
 
 	"github.com/bufbuild/buf/private/buf/bufbuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -53,7 +54,7 @@ func (b *builder) Build(
 	ctx context.Context,
 	modules []bufmodule.Module,
 	options ...BuildOption,
-) (*dag.Graph[Node], error) {
+) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error) {
 	buildOptions := newBuildOptions()
 	for _, option := range options {
 		option(buildOptions)
@@ -69,19 +70,23 @@ func (b *builder) build(
 	ctx context.Context,
 	modules []bufmodule.Module,
 	workspace bufmodule.Workspace,
-) (*dag.Graph[Node], error) {
+) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error) {
 	graph := dag.NewGraph[Node]()
 	for _, module := range modules {
-		if err := b.buildForModule(
+		fileAnnotations, err := b.buildForModule(
 			ctx,
 			module,
 			workspace,
 			graph,
-		); err != nil {
-			return nil, err
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(fileAnnotations) > 0 {
+			return nil, fileAnnotations, nil
 		}
 	}
-	return graph, nil
+	return graph, nil, nil
 }
 
 func (b *builder) buildForModule(
@@ -89,14 +94,17 @@ func (b *builder) buildForModule(
 	module bufmodule.Module,
 	workspace bufmodule.Workspace,
 	graph *dag.Graph[Node],
-) error {
-	image, err := b.buildBuilder.Build(
+) ([]bufanalysis.FileAnnotation, error) {
+	image, fileAnnotations, err := b.buildBuilder.Build(
 		ctx,
 		module,
 		bufbuild.BuildWithWorkspace(workspace),
 	)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	if len(fileAnnotations) > 0 {
+		return fileAnnotations, nil
 	}
 	for _, imageModuleDependency := range bufimage.ImageModuleDependencies(image) {
 		if imageModuleDependency.IsDirect() {
@@ -108,21 +116,25 @@ func (b *builder) buildForModule(
 				imageModuleDependency,
 			)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			// TODO: do not build if the graph already contains a node
 			// that represents this module
-			if err := b.buildForModule(
+			fileAnnotations, err := b.buildForModule(
 				ctx,
 				dependencyModule,
 				workspace,
 				graph,
-			); err != nil {
-				return err
+			)
+			if err != nil {
+				return nil, err
+			}
+			if len(fileAnnotations) > 0 {
+				return fileAnnotations, nil
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func (b *builder) getModuleForModuleIdentityOptionalCommit(

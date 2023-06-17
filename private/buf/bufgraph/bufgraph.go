@@ -17,6 +17,7 @@ package bufgraph
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"go.uber.org/zap"
@@ -56,7 +57,7 @@ type Builder interface {
 		ctx context.Context,
 		modules []bufmodule.Module,
 		options ...BuildOption,
-	) (*dag.Graph[Node], error)
+	) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error)
 }
 
 // NewBuilder returns a new Builder.
