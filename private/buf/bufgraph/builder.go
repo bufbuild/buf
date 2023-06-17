@@ -19,6 +19,7 @@ import (
 	"errors"
 
 	"github.com/bufbuild/buf/private/buf/bufbuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/dag"
@@ -26,16 +27,21 @@ import (
 )
 
 type builder struct {
-	logger       *zap.Logger
-	buildBuilder bufbuild.Builder
+	logger         *zap.Logger
+	moduleReader   bufmodule.ModuleReader
+	moduleResolver bufmodule.ModuleResolver
+	buildBuilder   bufbuild.Builder
 }
 
 func newBuilder(
 	logger *zap.Logger,
 	moduleReader bufmodule.ModuleReader,
+	moduleResolver bufmodule.ModuleResolver,
 ) *builder {
 	return &builder{
-		logger: logger,
+		logger:         logger,
+		moduleReader:   moduleReader,
+		moduleResolver: moduleResolver,
 		buildBuilder: bufbuild.NewBuilder(
 			logger,
 			moduleReader,
@@ -84,7 +90,46 @@ func (b *builder) buildForModule(
 	workspace bufmodule.Workspace,
 	graph *dag.Graph[Node],
 ) error {
-	return errors.New("TODO")
+	image, err := b.buildBuilder.Build(
+		ctx,
+		module,
+		bufbuild.BuildWithWorkspace(workspace),
+	)
+	if err != nil {
+		return err
+	}
+	for _, imageModuleDependency := range bufimage.ImageModuleDependencies(image) {
+		if imageModuleDependency.IsDirect() {
+			// TODO: add to graph
+			// TODO: need an identity for the input module to be able to do this
+		} else {
+			dependencyModule, err := b.getModuleForModuleIdentityOptionalCommit(
+				ctx,
+				imageModuleDependency,
+			)
+			if err != nil {
+				return err
+			}
+			// TODO: do not build if the graph already contains a node
+			// that represents this module
+			if err := b.buildForModule(
+				ctx,
+				dependencyModule,
+				workspace,
+				graph,
+			); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (b *builder) getModuleForModuleIdentityOptionalCommit(
+	ctx context.Context,
+	moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit,
+) (bufmodule.Module, error) {
+	return nil, errors.New("TODO")
 }
 
 func newNode(moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit) *Node {
