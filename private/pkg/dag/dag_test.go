@@ -168,6 +168,43 @@ func TestForEachEdge(t *testing.T) {
 	)
 }
 
+func TestForEachEdge2(t *testing.T) {
+	t.Parallel()
+	testForEachEdgeSuccess(
+		t,
+		func(graph *Graph[string]) {
+			// a -> b
+			// a -> d
+			// b -> c
+			// c -> d
+			// purposefully not the same start key
+			graph.AddEdge("a", "b")
+			graph.AddEdge("a", "d")
+			graph.AddEdge("b", "c")
+			graph.AddEdge("c", "d")
+		},
+		"a",
+		[]stringEdge{
+			{
+				From: "a",
+				To:   "b",
+			},
+			{
+				From: "b",
+				To:   "c",
+			},
+			{
+				From: "c",
+				To:   "d",
+			},
+			{
+				From: "a",
+				To:   "d",
+			},
+		},
+	)
+}
+
 func testTopoSortSuccess(
 	t *testing.T,
 	setupGraph func(*Graph[string]),
