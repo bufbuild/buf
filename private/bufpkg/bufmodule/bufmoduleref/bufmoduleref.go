@@ -223,6 +223,18 @@ func NewModuleReference(
 	return newModuleReference(remote, owner, repository, reference)
 }
 
+// NewModuleReferenceForModuleIdentityOptionalCommit returns a new ModuleReference
+// for the given ModuleIdentityOptionalCommit.
+//
+// If commit is not set, Main is used as the reference.
+//
+// No error is returned as the ModuleIdentityOptionalCommit is already validated.
+func NewModuleReferenceForModuleIdentityOptionalCommit(
+	moduleIdentityOptionalCommit ModuleIdentityOptionalCommit,
+) ModuleReference {
+	return newModuleReferenceForModuleIdentityOptionalCommit(moduleIdentityOptionalCommit)
+}
+
 // NewModuleReferenceForProto returns a new ModuleReference for the given proto ModuleReference.
 func NewModuleReferenceForProto(protoModuleReference *modulev1alpha1.ModuleReference) (ModuleReference, error) {
 	return newModuleReferenceForProto(protoModuleReference)

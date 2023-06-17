@@ -16,7 +16,6 @@ package bufgraph
 
 import (
 	"context"
-	"errors"
 
 	"github.com/bufbuild/buf/private/buf/bufbuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -52,7 +51,7 @@ func newBuilder(
 
 func (b *builder) Build(
 	ctx context.Context,
-	modules []bufmodule.Module,
+	moduleNodePairs []ModuleNodePair,
 	options ...BuildOption,
 ) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error) {
 	buildOptions := newBuildOptions()
@@ -61,21 +60,22 @@ func (b *builder) Build(
 	}
 	return b.build(
 		ctx,
-		modules,
+		moduleNodePairs,
 		buildOptions.workspace,
 	)
 }
 
 func (b *builder) build(
 	ctx context.Context,
-	modules []bufmodule.Module,
+	moduleNodePairs []ModuleNodePair,
 	workspace bufmodule.Workspace,
 ) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error) {
 	graph := dag.NewGraph[Node]()
-	for _, module := range modules {
+	for _, moduleNodePair := range moduleNodePairs {
 		fileAnnotations, err := b.buildForModule(
 			ctx,
-			module,
+			moduleNodePair.Module,
+			moduleNodePair.Node,
 			workspace,
 			graph,
 		)
@@ -92,6 +92,7 @@ func (b *builder) build(
 func (b *builder) buildForModule(
 	ctx context.Context,
 	module bufmodule.Module,
+	node Node,
 	workspace bufmodule.Workspace,
 	graph *dag.Graph[Node],
 ) ([]bufanalysis.FileAnnotation, error) {
@@ -107,30 +108,33 @@ func (b *builder) buildForModule(
 		return fileAnnotations, nil
 	}
 	for _, imageModuleDependency := range bufimage.ImageModuleDependencies(image) {
+		dependencyNode := newNodeForModuleIdentityOptionalCommit(imageModuleDependency)
 		if imageModuleDependency.IsDirect() {
-			// TODO: add to graph
-			// TODO: need an identity for the input module to be able to do this
+			graph.AddEdge(node, dependencyNode)
 		} else {
 			dependencyModule, err := b.getModuleForModuleIdentityOptionalCommit(
 				ctx,
 				imageModuleDependency,
-			)
-			if err != nil {
-				return nil, err
-			}
-			// TODO: do not build if the graph already contains a node
-			// that represents this module
-			fileAnnotations, err := b.buildForModule(
-				ctx,
-				dependencyModule,
 				workspace,
-				graph,
 			)
 			if err != nil {
 				return nil, err
 			}
-			if len(fileAnnotations) > 0 {
-				return fileAnnotations, nil
+			// TODO: deal with the case where there are differing commits for a given ModuleIdentity.
+			if !graph.ContainsNode(dependencyNode) {
+				fileAnnotations, err := b.buildForModule(
+					ctx,
+					dependencyModule,
+					dependencyNode,
+					workspace,
+					graph,
+				)
+				if err != nil {
+					return nil, err
+				}
+				if len(fileAnnotations) > 0 {
+					return fileAnnotations, nil
+				}
 			}
 		}
 	}
@@ -140,16 +144,34 @@ func (b *builder) buildForModule(
 func (b *builder) getModuleForModuleIdentityOptionalCommit(
 	ctx context.Context,
 	moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit,
+	workspace bufmodule.Workspace,
 ) (bufmodule.Module, error) {
-	return nil, errors.New("TODO")
+	if workspace != nil {
+		module, ok := workspace.GetModule(moduleIdentityOptionalCommit)
+		if ok {
+			return module, nil
+		}
+	}
+	modulePin, err := b.moduleResolver.GetModulePin(
+		ctx,
+		bufmoduleref.NewModuleReferenceForModuleIdentityOptionalCommit(
+			moduleIdentityOptionalCommit,
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return b.moduleReader.GetModule(
+		ctx,
+		modulePin,
+	)
 }
 
-func newNode(moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit) *Node {
-	return &Node{
-		Remote:     moduleIdentityOptionalCommit.Remote(),
-		Owner:      moduleIdentityOptionalCommit.Owner(),
-		Repository: moduleIdentityOptionalCommit.Repository(),
-		Commit:     moduleIdentityOptionalCommit.Commit(),
+func newNodeForModuleIdentityOptionalCommit(
+	moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit,
+) Node {
+	return Node{
+		Value: moduleIdentityOptionalCommit.String(),
 	}
 }
 

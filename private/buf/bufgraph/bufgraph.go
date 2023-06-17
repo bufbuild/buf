@@ -25,37 +25,38 @@ import (
 
 // Node is a node in a dependency graph.
 //
-// This is effectively the same as a ModuleIdentityOptionalCommit, however
-// ModuleIdentityOptionalCommits are not comparable, and the current
-// implementation of *dag.Graph requires comparable keys.
+// We want this to represent structured information such as a ModuleIdentityOptionalCommit
+// however we make this a bit more abstract for now since we don't have a good way
+// to universally represent things like modules on disk, or in workspaces.
+//
+// This is a struct because this needs to be comparable for the *dag.Graph.
 //
 // TODO: Don't have the duplication across Node and ModuleIdentityOptionalCommit.
-// TODO: deal with the case where there are differing commits for a given ModuleIdentity.
 type Node struct {
-	// required
-	Remote string
-	// required
-	Owner string
-	// required
-	Repository string
-	// optional
-	Commit string
+	Value string
 }
 
 // String implements fmt.Stringer.
 func (n *Node) String() string {
-	s := n.Remote + "/" + n.Owner + "/" + n.Repository
-	if n.Commit == "" {
-		return s
-	}
-	return s + ":" + n.Commit
+	return n.Value
+}
+
+// ModuleNodePair is a Module with a Node that identifies it.
+//
+// TODO: this is hacky, determine a better way to identify Modules
+// that we produce from disk. May want to expose the ModuleIdentity/commit
+// information on Module, and may want to provide a way to add a Ref-like
+// thingto a Module.
+type ModuleNodePair struct {
+	Module bufmodule.Module
+	Node   Node
 }
 
 // Builder builds dependency graphs.
 type Builder interface {
 	Build(
 		ctx context.Context,
-		modules []bufmodule.Module,
+		moduleNodePairs []ModuleNodePair,
 		options ...BuildOption,
 	) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error)
 }

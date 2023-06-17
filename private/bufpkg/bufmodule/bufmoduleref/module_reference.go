@@ -40,6 +40,22 @@ func newModuleReference(
 	return newModuleReferenceForProto(protoModuleReference)
 }
 
+func newModuleReferenceForModuleIdentityOptionalCommit(
+	moduleIdentityOptionalCommit ModuleIdentityOptionalCommit,
+) *moduleReference {
+	// Already validated courtesy of the ModuleIdentityOptionalCommit validation
+	moduleReference := &moduleReference{
+		remote:     moduleIdentityOptionalCommit.Remote(),
+		owner:      moduleIdentityOptionalCommit.Owner(),
+		repository: moduleIdentityOptionalCommit.Repository(),
+		reference:  moduleIdentityOptionalCommit.Commit(),
+	}
+	if moduleReference.reference == "" {
+		moduleReference.reference = Main
+	}
+	return moduleReference
+}
+
 func newModuleReferenceForProto(
 	protoModuleReference *modulev1alpha1.ModuleReference,
 ) (*moduleReference, error) {
