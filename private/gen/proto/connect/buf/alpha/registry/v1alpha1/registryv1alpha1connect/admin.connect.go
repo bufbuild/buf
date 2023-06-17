@@ -59,6 +59,12 @@ const (
 	// AdminServiceCreateMachineUserProcedure is the fully-qualified name of the AdminService's
 	// CreateMachineUser RPC.
 	AdminServiceCreateMachineUserProcedure = "/buf.alpha.registry.v1alpha1.AdminService/CreateMachineUser"
+	// AdminServiceGetBreakingChangePolicyProcedure is the fully-qualified name of the AdminService's
+	// GetBreakingChangePolicy RPC.
+	AdminServiceGetBreakingChangePolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetBreakingChangePolicy"
+	// AdminServiceUpdateBreakingChangePolicyProcedure is the fully-qualified name of the AdminService's
+	// UpdateBreakingChangePolicy RPC.
+	AdminServiceUpdateBreakingChangePolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateBreakingChangePolicy"
 )
 
 // AdminServiceClient is a client for the buf.alpha.registry.v1alpha1.AdminService service.
@@ -72,6 +78,10 @@ type AdminServiceClient interface {
 	UpdateOrganizationVerificationStatus(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error)
 	// Create a new machine user on the server.
 	CreateMachineUser(context.Context, *connect_go.Request[v1alpha1.CreateMachineUserRequest]) (*connect_go.Response[v1alpha1.CreateMachineUserResponse], error)
+	// Get breaking change policy for the server.
+	GetBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.GetBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.GetBreakingChangePolicyResponse], error)
+	// Update breaking change policy for the server.
+	UpdateBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AdminService
@@ -106,6 +116,17 @@ func NewAdminServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 			connect_go.WithClientOptions(opts...),
 		),
+		getBreakingChangePolicy: connect_go.NewClient[v1alpha1.GetBreakingChangePolicyRequest, v1alpha1.GetBreakingChangePolicyResponse](
+			httpClient,
+			baseURL+AdminServiceGetBreakingChangePolicyProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
+		),
+		updateBreakingChangePolicy: connect_go.NewClient[v1alpha1.UpdateBreakingChangePolicyRequest, v1alpha1.UpdateBreakingChangePolicyResponse](
+			httpClient,
+			baseURL+AdminServiceUpdateBreakingChangePolicyProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -115,6 +136,8 @@ type adminServiceClient struct {
 	updateUserVerificationStatus         *connect_go.Client[v1alpha1.UpdateUserVerificationStatusRequest, v1alpha1.UpdateUserVerificationStatusResponse]
 	updateOrganizationVerificationStatus *connect_go.Client[v1alpha1.UpdateOrganizationVerificationStatusRequest, v1alpha1.UpdateOrganizationVerificationStatusResponse]
 	createMachineUser                    *connect_go.Client[v1alpha1.CreateMachineUserRequest, v1alpha1.CreateMachineUserResponse]
+	getBreakingChangePolicy              *connect_go.Client[v1alpha1.GetBreakingChangePolicyRequest, v1alpha1.GetBreakingChangePolicyResponse]
+	updateBreakingChangePolicy           *connect_go.Client[v1alpha1.UpdateBreakingChangePolicyRequest, v1alpha1.UpdateBreakingChangePolicyResponse]
 }
 
 // ForceDeleteUser calls buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser.
@@ -139,6 +162,17 @@ func (c *adminServiceClient) CreateMachineUser(ctx context.Context, req *connect
 	return c.createMachineUser.CallUnary(ctx, req)
 }
 
+// GetBreakingChangePolicy calls buf.alpha.registry.v1alpha1.AdminService.GetBreakingChangePolicy.
+func (c *adminServiceClient) GetBreakingChangePolicy(ctx context.Context, req *connect_go.Request[v1alpha1.GetBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.GetBreakingChangePolicyResponse], error) {
+	return c.getBreakingChangePolicy.CallUnary(ctx, req)
+}
+
+// UpdateBreakingChangePolicy calls
+// buf.alpha.registry.v1alpha1.AdminService.UpdateBreakingChangePolicy.
+func (c *adminServiceClient) UpdateBreakingChangePolicy(ctx context.Context, req *connect_go.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error) {
+	return c.updateBreakingChangePolicy.CallUnary(ctx, req)
+}
+
 // AdminServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AdminService service.
 type AdminServiceHandler interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
@@ -150,6 +184,10 @@ type AdminServiceHandler interface {
 	UpdateOrganizationVerificationStatus(context.Context, *connect_go.Request[v1alpha1.UpdateOrganizationVerificationStatusRequest]) (*connect_go.Response[v1alpha1.UpdateOrganizationVerificationStatusResponse], error)
 	// Create a new machine user on the server.
 	CreateMachineUser(context.Context, *connect_go.Request[v1alpha1.CreateMachineUserRequest]) (*connect_go.Response[v1alpha1.CreateMachineUserResponse], error)
+	// Get breaking change policy for the server.
+	GetBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.GetBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.GetBreakingChangePolicyResponse], error)
+	// Update breaking change policy for the server.
+	UpdateBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -181,6 +219,17 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
 	))
+	mux.Handle(AdminServiceGetBreakingChangePolicyProcedure, connect_go.NewUnaryHandler(
+		AdminServiceGetBreakingChangePolicyProcedure,
+		svc.GetBreakingChangePolicy,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
+	))
+	mux.Handle(AdminServiceUpdateBreakingChangePolicyProcedure, connect_go.NewUnaryHandler(
+		AdminServiceUpdateBreakingChangePolicyProcedure,
+		svc.UpdateBreakingChangePolicy,
+		opts...,
+	))
 	return "/buf.alpha.registry.v1alpha1.AdminService/", mux
 }
 
@@ -201,4 +250,12 @@ func (UnimplementedAdminServiceHandler) UpdateOrganizationVerificationStatus(con
 
 func (UnimplementedAdminServiceHandler) CreateMachineUser(context.Context, *connect_go.Request[v1alpha1.CreateMachineUserRequest]) (*connect_go.Response[v1alpha1.CreateMachineUserResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.CreateMachineUser is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) GetBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.GetBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.GetBreakingChangePolicyResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetBreakingChangePolicy is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) UpdateBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.UpdateBreakingChangePolicy is not implemented"))
 }

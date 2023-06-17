@@ -16,6 +16,7 @@ package reposync
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -100,8 +101,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Modules,
 		moduleFlagName,
 		nil,
-		"The module(s) to sync to the BSR; you can provide a module override in the format "+
-			"<module>:<module-identity>",
+		"The module(s) to sync to the BSR; this must be in the format <module>:<module-identity>",
 	)
 	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
 	flagSet.BoolVar(
@@ -162,16 +162,20 @@ func sync(
 	if err != nil {
 		return fmt.Errorf("create connect client %w", err)
 	}
-	var syncerOptions []bufsync.SyncerOption
+	syncerOptions := []bufsync.SyncerOption{
+		bufsync.SyncerWithResumption(syncPointResolver(clientConfig)),
+	}
 	for _, module := range modules {
 		var moduleIdentityOverride bufmoduleref.ModuleIdentity
-		if colon := strings.IndexRune(module, ':'); colon != -1 {
-			moduleIdentityOverride, err = bufmoduleref.ModuleIdentityForString(module[colon+1:])
-			if err != nil {
-				return err
-			}
-			module = normalpath.Normalize(module[:colon])
+		colon := strings.IndexRune(module, ':')
+		if colon == -1 {
+			return appcmd.NewInvalidArgumentErrorf("module %s is missing an identity", module)
 		}
+		moduleIdentityOverride, err = bufmoduleref.ModuleIdentityForString(module[colon+1:])
+		if err != nil {
+			return err
+		}
+		module = normalpath.Normalize(module[:colon])
 		syncModule, err := bufsync.NewModule(module, moduleIdentityOverride)
 		if err != nil {
 			return err
@@ -217,6 +221,33 @@ func sync(
 	})
 }
 
+func syncPointResolver(clientConfig *connectclient.Config) bufsync.SyncPointResolver {
+	return func(ctx context.Context, identity bufmoduleref.ModuleIdentity, branch string) (git.Hash, error) {
+		service := connectclient.Make(clientConfig, identity.Remote(), registryv1alpha1connect.NewSyncServiceClient)
+		syncPoint, err := service.GetGitSyncPoint(ctx, connect.NewRequest(&registryv1alpha1.GetGitSyncPointRequest{
+			Owner:      identity.Owner(),
+			Repository: identity.Repository(),
+			Branch:     branch,
+		}))
+		if err != nil {
+			if connect.CodeOf(err) == connect.CodeNotFound {
+				// No syncpoint
+				return nil, nil
+			}
+			return nil, err
+		}
+		hash, err := git.NewHashFromHex(syncPoint.Msg.GetSyncPoint().GitCommitHash)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"invalid sync point from BSR %q: %w",
+				syncPoint.Msg.GetSyncPoint().GetGitCommitHash(),
+				err,
+			)
+		}
+		return hash, nil
+	}
+}
+
 type syncErrorHandler struct {
 	logger *zap.Logger
 }
@@ -225,30 +256,72 @@ func newErrorHandler(logger *zap.Logger) bufsync.ErrorHandler {
 	return &syncErrorHandler{logger: logger}
 }
 
-func (s *syncErrorHandler) BuildFailure(module string, moduleIdentity bufmoduleref.ModuleIdentity, commit git.Commit, err error) error {
+func (s *syncErrorHandler) BuildFailure(module bufsync.Module, commit git.Commit, err error) error {
 	// We failed to build the module. We can warn on this and carry on.
 	// Note that because of resumption, Syncer will typically only come
 	// across this commit once, we will not log this warning again.
 	s.logger.Warn(
 		"invalid module",
-		zap.String("commit", commit.Hash().String()),
-		zap.String("module", module),
+		zap.Stringer("commit", commit.Hash()),
+		zap.Stringer("module", module),
 		zap.Error(err),
 	)
 	return nil
 }
 
-func (s *syncErrorHandler) InvalidModuleConfig(module string, commit git.Commit, err error) error {
+func (s *syncErrorHandler) InvalidModuleConfig(module bufsync.Module, commit git.Commit, err error) error {
 	// We found a module but the module config is invalid. We can warn on this
 	// and carry on. Note that because of resumption, Syncer will typically only come
 	// across this commit once, we will not log this warning again.
 	s.logger.Warn(
 		"invalid module",
-		zap.String("commit", commit.Hash().String()),
-		zap.String("module", module),
+		zap.Stringer("commit", commit.Hash()),
+		zap.Stringer("module", module),
 		zap.Error(err),
 	)
 	return nil
+}
+
+func (s *syncErrorHandler) InvalidSyncPoint(
+	module bufsync.Module,
+	branch string,
+	syncPoint git.Hash,
+	err error,
+) error {
+	// The most likely culprit for an invalid sync point is a rebase, where the last known
+	// commit has been garbage collected. In this case, let's present a better error message.
+	//
+	// We may want to provide a flag for sync to continue despite this, accumulating the error,
+	// and error at the end, so that other branches can continue to sync, but this branch is
+	// out of date. This is not trivial if the branch that's been rebased is a long-lived
+	// branch (like main) whose artifacts are consumed by other branches, as we may fail to
+	// sync those commits if we continue. So we now we simply error.
+	if errors.Is(err, git.ErrObjectNotFound) {
+		return fmt.Errorf(
+			"last synced commit %s was not found for module %s; did you rebase?",
+			syncPoint,
+			module,
+		)
+	}
+	// Otherwise, we still want this to fail sync, let's bubble this up.
+	return err
+}
+
+func (s *syncErrorHandler) SyncPointNotEncountered(
+	module bufsync.Module,
+	branch string,
+	syncPoint git.Hash,
+) error {
+	// This can happen if the user rebased, but Git has not garbage collected the old commits,
+	// so the sync point was considered valid. Maybe there are other cases in which this can happen...
+	// This is a hard failure for now, but similar to InvalidSyncPoint, we can maybe accumulate
+	// these and error at the end, so that other branches continue to sync.
+	return fmt.Errorf(
+		"sync point %s for %s on branch %s was not encountered; did you rebase? Try running `git gc` and running sync again",
+		syncPoint,
+		module,
+		branch,
+	)
 }
 
 func pushOrCreate(

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.21.0] - 2023-06-05
+
 - Fix issue where locally-produced images did not have module information if the corresponding
   module was stored in the new cache.
 - Remove `buf beta registry template`.
@@ -894,7 +898,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.20.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.21.0...HEAD
+[v1.21.0]: https://github.com/bufbuild/buf/compare/v1.20.0...v1.21.0
 [v1.20.0]: https://github.com/bufbuild/buf/compare/v1.19.0...v1.20.0
 [v1.19.0]: https://github.com/bufbuild/buf/compare/v1.18.0...v1.19.0
 [v1.18.0]: https://github.com/bufbuild/buf/compare/v1.17.0...v1.18.0

@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.audit.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/admin.proto";
 import "buf/alpha/registry/v1alpha1/plugin.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
@@ -54,6 +55,7 @@ enum ResourceType {
   RESOURCE_TYPE_TOKEN = 10;
   RESOURCE_TYPE_SCIM_TOKEN = 11;
   RESOURCE_TYPE_REPOSITORY_LABEL = 12;
+  RESOURCE_TYPE_SERVER = 13;
 }
 
 // Resource is the affected resource by the audited event.
@@ -86,6 +88,7 @@ enum EventType {
   EVENT_TYPE_PLUGIN_CREATED = 13 [deprecated = true];
   EVENT_TYPE_PLUGIN_DELETED = 14 [deprecated = true];
   EVENT_TYPE_CURATED_PLUGIN_CREATED = 20;
+  EVENT_TYPE_CURATED_PLUGIN_DELETED = 31;
   EVENT_TYPE_USER_CREATED = 15;
   EVENT_TYPE_USER_DELETED = 16;
   EVENT_TYPE_USER_DEACTIVATED = 17;
@@ -99,6 +102,8 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_COMMIT_DELETED = 28;
   EVENT_TYPE_REPOSITORY_LABEL_CREATED = 29;
   EVENT_TYPE_REPOSITORY_LABEL_MOVED = 30;
+  EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED = 32;
+  EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED = 33;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -159,6 +164,9 @@ message Event {
     PayloadRepositoryCommitDeleted repository_commit_deleted = 34;
     PayloadRepositoryLabelCreated repository_label_created = 35;
     PayloadRepositoryLabelMoved repository_label_moved = 36;
+    PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
+    PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
+    PayloadServerBreakingChangePolicyDisabled payload_server_breaking_change_policy_disabled = 39;
   }
 }
 
@@ -343,6 +351,13 @@ message PayloadCuratedPluginCreated {
   string owner_name = 2;
 }
 
+message PayloadCuratedPluginDeleted {
+  // owner_id is the id of the owner of the plugin.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the plugin.
+  string owner_name = 2;
+}
+
 message PayloadTokenCreated {
   // owner_id is the id of the owner of the token.
   string owner_id = 1;
@@ -406,3 +421,12 @@ message PayloadRepositoryLabelMoved {
   // from_commit_id is the id of the commit on which the label was moved from.
   string from_commit_id = 7;
 }
+
+message PayloadServerBreakingChangePolicyEnabled {
+  // category is the category of breaking changes.
+  buf.alpha.registry.v1alpha1.BreakingChangeCategory category = 1;
+  // ignore_unstable_packages tracks breaking change enforcement for unstable packages.
+  optional bool ignore_unstable_packages = 2;
+}
+
+message PayloadServerBreakingChangePolicyDisabled {}

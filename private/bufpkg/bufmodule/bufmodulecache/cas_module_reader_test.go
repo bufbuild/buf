@@ -80,14 +80,15 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 		time.Now(),
 	)
 	require.NoError(t, err)
-	_, err = moduleReader.GetModule(context.Background(), pin)
+	_, err = moduleReader.GetModule(context.Background(), pin) // non-cached
 	require.NoError(t, err)
 	assert.Equal(t, 1, moduleReader.stats.Count())
 	assert.Equal(t, 0, moduleReader.stats.Hits())
 	verifyCache(t, storageBucket, pin, moduleManifest, blobs)
 
-	_, err = moduleReader.GetModule(context.Background(), pin)
+	cachedMod, err := moduleReader.GetModule(context.Background(), pin)
 	require.NoError(t, err)
+	assertModuleIdentity(t, cachedMod, pin.IdentityString(), pin.Commit())
 	assert.Equal(t, 2, moduleReader.stats.Count())
 	assert.Equal(t, 1, moduleReader.stats.Hits()) // We should have a cache hit the second time
 	verifyCache(t, storageBucket, pin, moduleManifest, blobs)
@@ -210,6 +211,24 @@ func verifyBlobContents(t *testing.T, bucket storage.ReadWriteBucket, basedir st
 	cachedModule, err := io.ReadAll(f)
 	require.NoError(t, err)
 	assert.Equal(t, bb.Bytes(), cachedModule)
+}
+
+func assertModuleIdentity(t *testing.T, module bufmodule.Module, expectedModuleIdentity string, expectedCommit string) {
+	require.NotNil(t, module)
+	require.NotEmpty(t, expectedCommit)
+	fileInfos, err := module.SourceFileInfos(context.Background())
+	require.NoError(t, err)
+	for _, fileInfo := range fileInfos {
+		require.NotNil(t, fileInfo.ModuleIdentity())
+		assert.Equalf(
+			t, expectedModuleIdentity, fileInfo.ModuleIdentity().IdentityString(),
+			"unexpected module identity for file %q", fileInfo.Path(),
+		)
+		assert.Equalf(
+			t, expectedCommit, fileInfo.Commit(),
+			"unexpected commit for file %q", fileInfo.Path(),
+		)
+	}
 }
 
 type testModuleReader struct {
