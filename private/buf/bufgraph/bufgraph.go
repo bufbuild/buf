@@ -53,13 +53,13 @@ type Builder interface {
 // NewBuilder returns a new Builder.
 func NewBuilder(
 	logger *zap.Logger,
-	moduleReader bufmodule.ModuleReader,
 	moduleResolver bufmodule.ModuleResolver,
+	moduleReader bufmodule.ModuleReader,
 ) Builder {
 	return newBuilder(
 		logger,
-		moduleReader,
 		moduleResolver,
+		moduleReader,
 	)
 }
 

@@ -29,20 +29,20 @@ import (
 
 type builder struct {
 	logger         *zap.Logger
-	moduleReader   bufmodule.ModuleReader
 	moduleResolver bufmodule.ModuleResolver
+	moduleReader   bufmodule.ModuleReader
 	buildBuilder   bufbuild.Builder
 }
 
 func newBuilder(
 	logger *zap.Logger,
-	moduleReader bufmodule.ModuleReader,
 	moduleResolver bufmodule.ModuleResolver,
+	moduleReader bufmodule.ModuleReader,
 ) *builder {
 	return &builder{
 		logger:         logger,
-		moduleReader:   moduleReader,
 		moduleResolver: moduleResolver,
+		moduleReader:   moduleReader,
 		buildBuilder: bufbuild.NewBuilder(
 			logger,
 			moduleReader,
