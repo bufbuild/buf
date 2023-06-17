@@ -12,51 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufgraph
+// Package bufbuild implements convenience functionality that takes a Module
+// and turns it into an Image. This contains logic that used to be in bufwire
+// but is abstracted out in a cleaner manner so we can start deprecating bufwire
+// over time.
+//
+// TODO: we could argue that this should replace bufimagebuild.Builder altogether.
+package bufbuild
 
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/dag"
 	"go.uber.org/zap"
 )
 
-// Node is a node in a dependency graph.
-//
-// This is effectively the same as a ModuleIdentityOptionalCommit, however
-// ModuleIdentityOptionalCommits are not comparable, and the current
-// implementation of *dag.Graph requires comparable keys.
-//
-// TODO: Don't have the duplication across Node and ModuleIdentityOptionalCommit.
-// TODO: deal with the case where there are differing commits for a given ModuleIdentity.
-type Node struct {
-	// required
-	Remote string
-	// required
-	Owner string
-	// required
-	Repository string
-	// optional
-	Commit string
-}
-
-// String implements fmt.Stringer.
-func (n *Node) String() string {
-	s := n.Remote + "/" + n.Owner + "/" + n.Repository
-	if n.Commit == "" {
-		return s
-	}
-	return s + ":" + n.Commit
-}
-
-// Builder builds dependency graphs.
+// Builder builds Images from Modules.
 type Builder interface {
 	Build(
 		ctx context.Context,
-		modules []bufmodule.Module,
+		modules bufmodule.Module,
 		options ...BuildOption,
-	) (*dag.Graph[Node], error)
+	) (bufimage.Image, error)
 }
 
 // NewBuilder returns a new Builder.

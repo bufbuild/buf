@@ -12,22 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufgraph
+package bufbuild
 
 import (
 	"context"
 	"errors"
 
-	"github.com/bufbuild/buf/private/buf/bufbuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/dag"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"go.uber.org/zap"
 )
 
 type builder struct {
-	logger       *zap.Logger
-	buildBuilder bufbuild.Builder
+	logger               *zap.Logger
+	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder
+	imageBuilder         bufimagebuild.Builder
 }
 
 func newBuilder(
@@ -36,64 +37,38 @@ func newBuilder(
 ) *builder {
 	return &builder{
 		logger: logger,
-		buildBuilder: bufbuild.NewBuilder(
+		moduleFileSetBuilder: bufmodulebuild.NewModuleFileSetBuilder(
 			logger,
 			moduleReader,
+		),
+		imageBuilder: bufimagebuild.NewBuilder(
+			logger,
 		),
 	}
 }
 
 func (b *builder) Build(
 	ctx context.Context,
-	modules []bufmodule.Module,
+	module bufmodule.Module,
 	options ...BuildOption,
-) (*dag.Graph[Node], error) {
+) (bufimage.Image, error) {
 	buildOptions := newBuildOptions()
 	for _, option := range options {
 		option(buildOptions)
 	}
 	return b.build(
 		ctx,
-		modules,
+		module,
 		buildOptions.workspace,
 	)
 }
 
 func (b *builder) build(
 	ctx context.Context,
-	modules []bufmodule.Module,
-	workspace bufmodule.Workspace,
-) (*dag.Graph[Node], error) {
-	graph := dag.NewGraph[Node]()
-	for _, module := range modules {
-		if err := b.buildForModule(
-			ctx,
-			module,
-			workspace,
-			graph,
-		); err != nil {
-			return nil, err
-		}
-	}
-	return graph, nil
-}
-
-func (b *builder) buildForModule(
-	ctx context.Context,
 	module bufmodule.Module,
 	workspace bufmodule.Workspace,
-	graph *dag.Graph[Node],
-) error {
-	return errors.New("TODO")
-}
-
-func newNode(moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit) *Node {
-	return &Node{
-		Remote:     moduleIdentityOptionalCommit.Remote(),
-		Owner:      moduleIdentityOptionalCommit.Owner(),
-		Repository: moduleIdentityOptionalCommit.Repository(),
-		Commit:     moduleIdentityOptionalCommit.Commit(),
-	}
+) (bufimage.Image, error) {
+	return nil, errors.New("TODO")
 }
 
 type buildOptions struct {
