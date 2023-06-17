@@ -229,6 +229,12 @@ func NewModuleReference(
 // If commit is not set, Main is used as the reference.
 //
 // No error is returned as the ModuleIdentityOptionalCommit is already validated.
+//
+// TODO: this is basically wrong, you can't really infer that you mean "main" from an empty
+// commit. This is used when calling the ModuleResolver - re-evaluate that logic.
+// The main problem is that when we don't have a commit for a ModuleIdentityOptionalCommit,
+// it's because we read the Module from disk, not from the BSR. Optimally, we could denote this
+// as meaning "we expect you not to need to use the ModuleReader if you do not have a commit".
 func NewModuleReferenceForModuleIdentityOptionalCommit(
 	moduleIdentityOptionalCommit ModuleIdentityOptionalCommit,
 ) ModuleReference {
