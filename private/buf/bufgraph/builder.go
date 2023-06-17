@@ -122,6 +122,7 @@ func (b *builder) buildForModule(
 		dependencyNode := newNodeForModuleIdentityOptionalCommit(imageModuleDependency)
 		if imageModuleDependency.IsDirect() {
 			graph.AddEdge(node, dependencyNode)
+			//fmt.Printf("adding %v to %v nodes\n", node, dependencyNode)
 		} else {
 			dependencyModule, err := b.getModuleForModuleIdentityOptionalCommit(
 				ctx,
@@ -132,20 +133,18 @@ func (b *builder) buildForModule(
 				return nil, err
 			}
 			// TODO: deal with the case where there are differing commits for a given ModuleIdentity.
-			if !graph.ContainsNode(dependencyNode) {
-				fileAnnotations, err := b.buildForModule(
-					ctx,
-					dependencyModule,
-					dependencyNode,
-					workspace,
-					graph,
-				)
-				if err != nil {
-					return nil, err
-				}
-				if len(fileAnnotations) > 0 {
-					return fileAnnotations, nil
-				}
+			fileAnnotations, err := b.buildForModule(
+				ctx,
+				dependencyModule,
+				dependencyNode,
+				workspace,
+				graph,
+			)
+			if err != nil {
+				return nil, err
+			}
+			if len(fileAnnotations) > 0 {
+				return fileAnnotations, nil
 			}
 		}
 	}
