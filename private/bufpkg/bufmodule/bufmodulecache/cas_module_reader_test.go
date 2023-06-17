@@ -219,13 +219,13 @@ func assertModuleIdentity(t *testing.T, module bufmodule.Module, expectedModuleI
 	fileInfos, err := module.SourceFileInfos(context.Background())
 	require.NoError(t, err)
 	for _, fileInfo := range fileInfos {
-		require.NotNil(t, fileInfo.ModuleIdentity())
+		require.NotNil(t, fileInfo.ModuleIdentityOptionalCommit())
 		assert.Equalf(
-			t, expectedModuleIdentity, fileInfo.ModuleIdentity().IdentityString(),
+			t, expectedModuleIdentity, fileInfo.ModuleIdentityOptionalCommit().IdentityString(),
 			"unexpected module identity for file %q", fileInfo.Path(),
 		)
 		assert.Equalf(
-			t, expectedCommit, fileInfo.Commit(),
+			t, expectedCommit, fileInfo.ModuleIdentityOptionalCommit().Commit(),
 			"unexpected commit for file %q", fileInfo.Path(),
 		)
 	}
