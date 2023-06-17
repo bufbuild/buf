@@ -18,6 +18,7 @@
 // over time.
 //
 // TODO: we could argue that this should replace bufimagebuild.Builder altogether.
+// TODO: convert bufwire to use this in ImageConfigReader.
 package bufbuild
 
 import (
