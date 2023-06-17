@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/dag"
@@ -27,15 +28,18 @@ import (
 type builder struct {
 	logger               *zap.Logger
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder
+	imageBuilder         bufimagebuild.Builder
 }
 
 func newBuilder(
 	logger *zap.Logger,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
+	imageBuilder bufimagebuild.Builder,
 ) *builder {
 	return &builder{
 		logger:               logger,
 		moduleFileSetBuilder: moduleFileSetBuilder,
+		imageBuilder:         imageBuilder,
 	}
 }
 

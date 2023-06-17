@@ -17,6 +17,7 @@ package bufgraph
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/dag"
@@ -64,10 +65,12 @@ type Builder interface {
 func NewBuilder(
 	logger *zap.Logger,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
+	imageBuilder bufimagebuild.Builder,
 ) Builder {
 	return newBuilder(
 		logger,
 		moduleFileSetBuilder,
+		imageBuilder,
 	)
 }
 
