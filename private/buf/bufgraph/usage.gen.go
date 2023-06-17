@@ -12,24 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buftree
+// Generated. DO NOT EDIT.
 
-import (
-	"context"
+package bufgraph
 
-	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufwire"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/dag"
-)
-
-// DependencyGraph builds the dependency graph.
-func DependencyGraph(
-	ctx context.Context,
-	container app.EnvStdinContainer,
-	imageConfigReader bufwire.ImageConfigReader,
-	sourceOrModuleRef buffetch.SourceOrModuleRef,
-	configOverride string,
-) (*dag.Graph[string], error) {
-	return nil, nil
-}
+import _ "github.com/bufbuild/buf/private/usage"
