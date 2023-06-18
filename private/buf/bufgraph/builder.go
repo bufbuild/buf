@@ -80,7 +80,7 @@ func (b *builder) build(
 		node := Node{
 			Value: "root",
 		}
-		if i > 1 {
+		if i > 0 {
 			node.Value += fmt.Sprintf("-%d", i)
 		}
 		fileAnnotations, err := b.buildForModule(
