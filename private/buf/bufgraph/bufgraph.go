@@ -43,6 +43,11 @@ func (n *Node) String() string {
 
 // Builder builds dependency graphs.
 type Builder interface {
+	// Build builds the dependency graph.
+	//
+	// Returns the graph, along with the graph's root.
+	// If there was one input module, the root will be the Node representing the input module.
+	// If there was more than one input module, and all the modules have
 	Build(
 		ctx context.Context,
 		modules []bufmodule.Module,

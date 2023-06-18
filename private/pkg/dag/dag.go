@@ -16,6 +16,7 @@ package dag
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -55,6 +56,10 @@ func (c *CycleError[Key]) Error() string {
 // Graph is a directed acyclic graph structure with comparable keys.
 type Graph[Key comparable] struct {
 	keyToNode map[Key]*node[Key]
+	// need to store order so that we can create a deterministic CycleError
+	// in the case of Walk where we have no source nodes, and create a sentinel
+	// root node so that we can Walk and find the cycle.
+	keys []Key
 }
 
 // NewGraph returns a new Graph.
@@ -76,8 +81,9 @@ func (g *Graph[Key]) AddNode(key Key) {
 func (g *Graph[Key]) AddEdge(from Key, to Key) {
 	g.init()
 	fromNode := g.getOrAddNode(from)
-	g.AddNode(to)
-	fromNode.addEdge(to)
+	toNode := g.getOrAddNode(to)
+	fromNode.addOutboundEdge(to)
+	toNode.addInboundEdge(from)
 }
 
 // ContainsNode returns true if the graph contains the given node.
@@ -87,12 +93,54 @@ func (g *Graph[Key]) ContainsNode(key Key) bool {
 	return ok
 }
 
-// ForEachEdge visits each edge in the Graph starting at the given key.
+// Walk visits each edge in the Graph starting at the source keys.
 //
 // Returns a *CycleError if there is a cycle in the graph.
-func (g *Graph[Key]) ForEachEdge(start Key, f func(Key, Key) error) error {
+func (g *Graph[Key]) Walk(f func(Key, Key) error) error {
 	g.init()
-	return g.edgeVisit(start, f, newOrderedSet[Key]())
+	sourceKeys, err := g.getSourceKeys()
+	if err != nil {
+		return err
+	}
+	switch len(sourceKeys) {
+	case 0:
+		// If we have no source nodes, we have a cycle in the graph. To print the cycle,
+		// we walk starting at all keys We will hit a cycle in this process, however just to check our
+		// assumptions, we also verify the the walk returns a CycleError, and if not,
+		// return a system error.
+		allVisited := make(map[Key]struct{})
+		for _, key := range g.keys {
+			if err := g.edgeVisit(
+				key,
+				func(Key, Key) error { return nil },
+				newOrderedSet[Key](),
+				allVisited,
+			); err != nil {
+				return err
+			}
+		}
+		return errors.New("graph had cycle based on source node count being zero, but this was not detected during edge walking")
+	case 1:
+		return g.edgeVisit(
+			sourceKeys[0],
+			f,
+			newOrderedSet[Key](),
+			make(map[Key]struct{}),
+		)
+	default:
+		allVisited := make(map[Key]struct{})
+		for _, key := range sourceKeys {
+			if err := g.edgeVisit(
+				key,
+				f,
+				newOrderedSet[Key](),
+				allVisited,
+			); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 }
 
 // TopoSort topologically sorts the nodes in the Graph starting at the given key.
@@ -107,17 +155,16 @@ func (g *Graph[Key]) TopoSort(start Key) ([]Key, error) {
 	return results.keys, nil
 }
 
-// DOTString returns a DOT representation of the graph starting at the given Key.
+// DOTString returns a DOT representation of the graph.
 //
 // keyToString is used to print out the label for each node.
 // https://graphviz.org/doc/info/lang.html
-func (g *Graph[Key]) DOTString(start Key, keyToString func(Key) string) (string, error) {
+func (g *Graph[Key]) DOTString(keyToString func(Key) string) (string, error) {
 	keyToIndex := make(map[Key]int)
 	nextIndex := 1
 	var nodeStrings []string
 	var edgeStrings []string
-	if err := g.ForEachEdge(
-		start,
+	if err := g.Walk(
 		func(from Key, to Key) error {
 			fromIndex, ok := keyToIndex[from]
 			if !ok {
@@ -176,24 +223,58 @@ func (g *Graph[Key]) getOrAddNode(key Key) *node[Key] {
 	if !ok {
 		node = newNode[Key]()
 		g.keyToNode[key] = node
+		g.keys = append(g.keys, key)
 	}
 	return node
 }
 
-func (g *Graph[Key]) edgeVisit(key Key, f func(Key, Key) error, visited *orderedSet[Key]) error {
-	added := visited.add(key)
-	if !added {
-		index := visited.index(key)
-		cycle := append(visited.keys[index:], key)
+func (g *Graph[Key]) getSourceKeys() ([]Key, error) {
+	var sourceKeys []Key
+	// need to get in deterministic order
+	for _, key := range g.keys {
+		node, ok := g.keyToNode[key]
+		if !ok {
+			return nil, fmt.Errorf("key not present in keyToNode: %v", key)
+		}
+		if len(node.inboundEdgeMap) == 0 {
+			sourceKeys = append(sourceKeys, key)
+		}
+	}
+	return sourceKeys, nil
+}
+
+func (g *Graph[Key]) edgeVisit(
+	from Key,
+	f func(Key, Key) error,
+	thisSourceVisited *orderedSet[Key],
+	allSourcesVisited map[Key]struct{},
+) error {
+	// this is based on this source. we want to make sure we don't
+	// have any cycles based on starting at a single source.
+	if !thisSourceVisited.add(from) {
+		index := thisSourceVisited.index(from)
+		cycle := append(thisSourceVisited.keys[index:], from)
 		return &CycleError[Key]{Keys: cycle}
 	}
+	// If we visited this from all edge visiting from other
+	// sources, do nothing, we've evaluated all cycles and visited this
+	// node properly. It's OK to return here, as we've already checked
+	// for cycles with thisSourceVisited.
+	if _, ok := allSourcesVisited[from]; ok {
+		return nil
+	}
+	// Add to the map. We'll be needing this for future iterations.
+	allSourcesVisited[from] = struct{}{}
 
-	node := g.keyToNode[key]
-	for _, edge := range node.edges {
-		if err := f(key, edge); err != nil {
+	fromNode, ok := g.keyToNode[from]
+	if !ok {
+		return fmt.Errorf("key not present: %v", from)
+	}
+	for _, to := range fromNode.outboundEdges {
+		if err := f(from, to); err != nil {
 			return err
 		}
-		if err := g.edgeVisit(edge, f, visited.copy()); err != nil {
+		if err := g.edgeVisit(to, f, thisSourceVisited.copy(), allSourcesVisited); err != nil {
 			return err
 		}
 	}
@@ -201,41 +282,55 @@ func (g *Graph[Key]) edgeVisit(key Key, f func(Key, Key) error, visited *ordered
 	return nil
 }
 
-func (g *Graph[Key]) topoVisit(key Key, results *orderedSet[Key], visited *orderedSet[Key]) error {
-	added := visited.add(key)
-	if !added {
-		index := visited.index(key)
-		cycle := append(visited.keys[index:], key)
+func (g *Graph[Key]) topoVisit(
+	from Key,
+	results *orderedSet[Key],
+	visited *orderedSet[Key],
+) error {
+	if !visited.add(from) {
+		index := visited.index(from)
+		cycle := append(visited.keys[index:], from)
 		return &CycleError[Key]{Keys: cycle}
 	}
 
-	node := g.keyToNode[key]
-	for _, edge := range node.edges {
-		if err := g.topoVisit(edge, results, visited.copy()); err != nil {
+	fromNode, ok := g.keyToNode[from]
+	if !ok {
+		return fmt.Errorf("key not present: %v", from)
+	}
+	for _, to := range fromNode.outboundEdges {
+		if err := g.topoVisit(to, results, visited.copy()); err != nil {
 			return err
 		}
 	}
 
-	results.add(key)
+	results.add(from)
 	return nil
 }
 
-// need to store order for deterministic visits
 type node[Key comparable] struct {
-	edges   []Key
-	edgeMap map[Key]struct{}
+	outboundEdgeMap map[Key]struct{}
+	// need to store order for deterministic visits
+	outboundEdges  []Key
+	inboundEdgeMap map[Key]struct{}
 }
 
 func newNode[Key comparable]() *node[Key] {
 	return &node[Key]{
-		edgeMap: make(map[Key]struct{}),
+		outboundEdgeMap: make(map[Key]struct{}),
+		inboundEdgeMap:  make(map[Key]struct{}),
 	}
 }
 
-func (n *node[Key]) addEdge(key Key) {
-	if _, ok := n.edgeMap[key]; !ok {
-		n.edgeMap[key] = struct{}{}
-		n.edges = append(n.edges, key)
+func (n *node[Key]) addOutboundEdge(key Key) {
+	if _, ok := n.outboundEdgeMap[key]; !ok {
+		n.outboundEdgeMap[key] = struct{}{}
+		n.outboundEdges = append(n.outboundEdges, key)
+	}
+}
+
+func (n *node[Key]) addInboundEdge(key Key) {
+	if _, ok := n.inboundEdgeMap[key]; !ok {
+		n.inboundEdgeMap[key] = struct{}{}
 	}
 }
 
@@ -251,15 +346,15 @@ func newOrderedSet[Key comparable]() *orderedSet[Key] {
 	}
 }
 
-// returns true if already added
+// returns false if already added
 func (s *orderedSet[Key]) add(key Key) bool {
-	_, ok := s.keyToIndex[key]
-	if !ok {
+	if _, ok := s.keyToIndex[key]; !ok {
 		s.keyToIndex[key] = s.length
 		s.keys = append(s.keys, key)
 		s.length++
+		return true
 	}
-	return !ok
+	return false
 }
 
 func (s *orderedSet[Key]) copy() *orderedSet[Key] {

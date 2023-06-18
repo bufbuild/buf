@@ -181,10 +181,6 @@ func run(
 		return bufcli.ErrFileAnnotation
 	}
 	dotString, err := graph.DOTString(
-		// TODO: need identifier on modules
-		bufgraph.Node{
-			Value: "root",
-		},
 		func(node bufgraph.Node) string {
 			return node.String()
 		},
