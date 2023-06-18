@@ -173,11 +173,11 @@ func applyManagementForFile(
 		if managedConfig.DisabledFunc(fileOption, imageFile) {
 			continue
 		}
-		var valueOrPrefix bufimagemodifyv2.Override
+		var override bufimagemodifyv2.Override
 		var err error
 		overrideFunc, ok := managedConfig.FileOptionToOverrideFunc[fileOption]
 		if ok {
-			valueOrPrefix, err = overrideFunc(imageFile)
+			override, err = overrideFunc(imageFile)
 			if err != nil {
 				return err
 			}
@@ -185,11 +185,10 @@ func applyManagementForFile(
 		// TODO do the rest
 		switch fileOption {
 		case FileOptionJavaPackage:
-			// Will need to do *string or similar for unset
-			if valueOrPrefix == nil {
-				valueOrPrefix = bufimagemodifyv2.NewPrefixOverride(defaultJavaPackagePrefix)
+			if override == nil {
+				override = bufimagemodifyv2.NewPrefixOverride(defaultJavaPackagePrefix)
 			}
-			if err := bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, valueOrPrefix); err != nil {
+			if err := bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, override); err != nil {
 				return err
 			}
 		default:
