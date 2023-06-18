@@ -15,6 +15,7 @@
 package dag
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 )
@@ -104,6 +105,64 @@ func (g *Graph[Key]) TopoSort(start Key) ([]Key, error) {
 		return nil, err
 	}
 	return results.keys, nil
+}
+
+// DOTString returns a DOT representation of the graph starting at the given Key.
+//
+// keyToString is used to print out the label for each node.
+// https://graphviz.org/doc/info/lang.html
+func (g *Graph[Key]) DOTString(start Key, keyToString func(Key) string) (string, error) {
+	keyToIndex := make(map[Key]int)
+	nextIndex := 1
+	var nodeStrings []string
+	var edgeStrings []string
+	if err := g.ForEachEdge(
+		start,
+		func(from Key, to Key) error {
+			fromIndex, ok := keyToIndex[from]
+			if !ok {
+				fromIndex = nextIndex
+				nextIndex++
+				keyToIndex[from] = fromIndex
+				nodeStrings = append(
+					nodeStrings,
+					fmt.Sprintf("%d [label=%q]", fromIndex, keyToString(from)),
+				)
+			}
+			toIndex, ok := keyToIndex[to]
+			if !ok {
+				toIndex = nextIndex
+				nextIndex++
+				keyToIndex[to] = toIndex
+				nodeStrings = append(
+					nodeStrings,
+					fmt.Sprintf("%d [label=%q]", toIndex, keyToString(to)),
+				)
+			}
+			edgeStrings = append(
+				edgeStrings,
+				fmt.Sprintf("%d -> %d", fromIndex, toIndex),
+			)
+			return nil
+		},
+	); err != nil {
+		return "", err
+	}
+	buffer := bytes.NewBuffer(nil)
+	_, _ = buffer.WriteString("digraph {\n\n")
+	for _, nodeString := range nodeStrings {
+		_, _ = buffer.WriteString("  ")
+		_, _ = buffer.WriteString(nodeString)
+		_, _ = buffer.WriteString("\n")
+	}
+	_, _ = buffer.WriteString("\n")
+	for _, edgeString := range edgeStrings {
+		_, _ = buffer.WriteString("  ")
+		_, _ = buffer.WriteString(edgeString)
+		_, _ = buffer.WriteString("\n")
+	}
+	_, _ = buffer.WriteString("\n}")
+	return buffer.String(), nil
 }
 
 func (g *Graph[Key]) init() {

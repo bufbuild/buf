@@ -180,14 +180,18 @@ func run(
 		}
 		return bufcli.ErrFileAnnotation
 	}
-	// TODO: need identifier on modules
-	return graph.ForEachEdge(
+	dotString, err := graph.DOTString(
+		// TODO: need identifier on modules
 		bufgraph.Node{
 			Value: "root",
 		},
-		func(from bufgraph.Node, to bufgraph.Node) error {
-			_, err := fmt.Fprintf(container.Stdout(), "%s -> %s\n", from.String(), to.String())
-			return err
+		func(node bufgraph.Node) string {
+			return node.String()
 		},
 	)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintln(container.Stdout(), dotString)
+	return err
 }
