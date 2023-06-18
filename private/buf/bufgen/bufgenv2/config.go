@@ -102,26 +102,36 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (OverrideFu
 		// This should never happen because we already validated that this is set and non-empty
 		return nil, err
 	}
-	return func(imageFile bufimage.ImageFile) (bufimagemodifyv2.Override, error) {
+	if externalConfig.Prefix != nil && externalConfig.Value != nil {
+		return nil, errors.New("only one of value and prefix can be set")
+	}
+	if externalConfig.Prefix == nil && externalConfig.Value == nil {
+		return nil, errors.New("one of value and prefix must be set")
+	}
+	var override bufimagemodifyv2.Override
+	if externalConfig.Prefix != nil {
+		override = bufimagemodifyv2.NewPrefixOverride(*externalConfig.Prefix)
+	} else if externalConfig.Value != nil {
+		switch t := externalConfig.Value.(type) {
+		case string:
+			override = bufimagemodifyv2.NewValueOverride[string](t)
+		case bool:
+			override = bufimagemodifyv2.NewValueOverride[bool](t)
+		default:
+			return nil, fmt.Errorf("invalid override specified for %v", fileOption)
+		}
+	}
+	return func(imageFile bufimage.ImageFile) bufimagemodifyv2.Override {
 		// We don't need to match on FileOption - we only call this OverrideFunc when we
 		// know we are applying for a given FileOption.
 		// The FileOption we parsed above is assumed to be the FileOption.
-
 		if !matchesModule(imageFile, externalConfig.Module) {
-			return nil, nil
+			return nil
 		}
 		if !matchesPath(imageFile, externalConfig.Path) {
-			return nil, nil
+			return nil
 		}
-
-		switch t := fileOption.Type(); t {
-		case FileOptionTypeValue:
-			return bufimagemodifyv2.NewValueOverride(externalConfig.Value), nil
-		case FileOptionTypePrefix:
-			return bufimagemodifyv2.NewPrefixOverride(externalConfig.Prefix), nil
-		default:
-			return nil, fmt.Errorf("unknown FileOptionType: %q", t)
-		}
+		return override
 	}, nil
 }
 
@@ -174,18 +184,15 @@ func mergeDisabledFuncs(disabledFuncs []DisabledFunc) DisabledFunc {
 
 func mergeOverrideFuncs(overrideFuncs []OverrideFunc) OverrideFunc {
 	// Last override listed wins
-	return func(imageFile bufimage.ImageFile) (bufimagemodifyv2.Override, error) {
+	return func(imageFile bufimage.ImageFile) bufimagemodifyv2.Override {
 		var override bufimagemodifyv2.Override
 		for _, overrideFunc := range overrideFuncs {
-			iOverride, err := overrideFunc(imageFile)
-			if err != nil {
-				return nil, err
-			}
+			iOverride := overrideFunc(imageFile)
 			// TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
 			if iOverride != nil {
 				override = iOverride
 			}
 		}
-		return override, nil
+		return override
 	}
 }

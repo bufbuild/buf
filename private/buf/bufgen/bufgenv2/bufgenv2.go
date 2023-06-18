@@ -44,7 +44,7 @@ type DisabledFunc func(FileOption, bufimage.ImageFile) bool
 // TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
 // OverrideFunc is specific to a file option, and returns what thie file option
 // should be overridden to for this file.
-type OverrideFunc func(bufimage.ImageFile) (bufimagemodifyv2.Override, error)
+type OverrideFunc func(bufimage.ImageFile) bufimagemodifyv2.Override
 
 // Config is a configuration.
 type Config struct {
@@ -129,9 +129,9 @@ type ExternalManagedOverrideConfigV2 struct {
 	// Must be normalized and validated
 	Path string `json:"path,omitempty" yaml:"path,omitempty"`
 	// Only one of Value and Prefix can be set
-	// TODO: may be interface{}, what to do about boo, optimize_mode, etc
-	Value  string `json:"value,omitempty" yaml:"value,omitempty"`
-	Prefix string `json:"prefix,omitempty" yaml:"prefix,omitempty"`
+	// Must be either string or bool
+	Value  interface{} `json:"value,omitempty" yaml:"value,omitempty"`
+	Prefix *string     `json:"prefix,omitempty" yaml:"prefix,omitempty"`
 }
 
 // ExternalPluginConfigV2 is an external plugin configuration.
@@ -174,13 +174,9 @@ func applyManagementForFile(
 			continue
 		}
 		var override bufimagemodifyv2.Override
-		var err error
 		overrideFunc, ok := managedConfig.FileOptionToOverrideFunc[fileOption]
 		if ok {
-			override, err = overrideFunc(imageFile)
-			if err != nil {
-				return err
-			}
+			override = overrideFunc(imageFile)
 		}
 		// TODO do the rest
 		switch fileOption {

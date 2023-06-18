@@ -68,20 +68,20 @@ var (
 	// TODO: this type vs prefix thing isn't great
 	// fill it out if we want to use it, this isn't filled out
 	// except for JavaPackage
-	fileOptionToFileOptionType = map[FileOption]FileOptionType{
-		FileOptionJavaPackage:          FileOptionTypePrefix,
-		FileOptionJavaOuterClassname:   FileOptionTypeValue,
-		FileOptionJavaMultipleFiles:    FileOptionTypeValue,
-		FileOptionJavaStringCheckUtf8:  FileOptionTypeValue,
-		FileOptionOptimizeFor:          FileOptionTypeValue,
-		FileOptionGoPackage:            FileOptionTypeValue,
-		FileOptionCcEnableArenas:       FileOptionTypeValue,
-		FileOptionObjcClassPrefix:      FileOptionTypeValue,
-		FileOptionCsharpNamespace:      FileOptionTypeValue,
-		FileOptionPhpNamespace:         FileOptionTypeValue,
-		FileOptionPhpMetadataNamespace: FileOptionTypeValue,
-		FileOptionRubyPackage:          FileOptionTypeValue,
-	}
+	// fileOptionToFileOptionType = map[FileOption]FileOptionType{
+	// 	FileOptionJavaPackage:          FileOptionTypePrefix,
+	// 	FileOptionJavaOuterClassname:   FileOptionTypeValue,
+	// 	FileOptionJavaMultipleFiles:    FileOptionTypeValue,
+	// 	FileOptionJavaStringCheckUtf8:  FileOptionTypeValue,
+	// 	FileOptionOptimizeFor:          FileOptionTypeValue,
+	// 	FileOptionGoPackage:            FileOptionTypeValue,
+	// 	FileOptionCcEnableArenas:       FileOptionTypeValue,
+	// 	FileOptionObjcClassPrefix:      FileOptionTypeValue,
+	// 	FileOptionCsharpNamespace:      FileOptionTypeValue,
+	// 	FileOptionPhpNamespace:         FileOptionTypeValue,
+	// 	FileOptionPhpMetadataNamespace: FileOptionTypeValue,
+	// 	FileOptionRubyPackage:          FileOptionTypeValue,
+	// }
 	fileOptionToString = map[FileOption]string{
 		FileOptionJavaPackage:          "java_package",
 		FileOptionJavaOuterClassname:   "java_outer_classname",
@@ -116,13 +116,13 @@ var (
 type FileOption int
 
 // Type returns the FileOptionType or 0 if unknown..
-func (f FileOption) Type() FileOptionType {
-	t, ok := fileOptionToFileOptionType[f]
-	if !ok {
-		return 0
-	}
-	return t
-}
+// func (f FileOption) Type() FileOptionType {
+// 	t, ok := fileOptionToFileOptionType[f]
+// 	if !ok {
+// 		return 0
+// 	}
+// 	return t
+// }
 
 // String implements fmt.Stringer.
 func (f FileOption) String() string {
