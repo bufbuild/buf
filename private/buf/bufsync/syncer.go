@@ -32,6 +32,7 @@ type syncer struct {
 	storageGitProvider storagegit.Provider
 	errorHandler       ErrorHandler
 	modulesToSync      []Module
+	syncPointResolver  SyncPointResolver
 
 	knownTagsByCommitHash map[string][]string
 }
@@ -56,32 +57,111 @@ func newSyncer(
 	return s, nil
 }
 
+// resolveSyncPoints resolves sync points for all known modules for the specified branch,
+// returning all modules for which sync points were found, along with their sync points.
+//
+// If a SyncPointResolver is not configured, this returns an empty map immediately.
+func (s *syncer) resolveSyncPoints(ctx context.Context, branch string) (map[Module]git.Hash, error) {
+	syncPoints := map[Module]git.Hash{}
+	// If resumption is not enabled, we can bail early.
+	if s.syncPointResolver == nil {
+		return syncPoints, nil
+	}
+	for _, module := range s.modulesToSync {
+		syncPoint, err := s.resolveSyncPoint(ctx, module, branch)
+		if err != nil {
+			return nil, err
+		}
+		if syncPoint != nil {
+			s.logger.Debug(
+				"resolved sync point, will sync after this commit",
+				zap.String("branch", branch),
+				zap.Stringer("module", module),
+				zap.Stringer("syncPoint", syncPoint),
+			)
+			syncPoints[module] = syncPoint
+		} else {
+			s.logger.Debug(
+				"no sync point, syncing from the beginning",
+				zap.String("branch", branch),
+				zap.Stringer("module", module),
+			)
+		}
+	}
+	return syncPoints, nil
+}
+
+// resolveSyncPoint resolves a sync point for a particular module and branch. It assumes
+// that a SyncPointResolver is configured.
+func (s *syncer) resolveSyncPoint(ctx context.Context, module Module, branch string) (git.Hash, error) {
+	syncPoint, err := s.syncPointResolver(ctx, module.RemoteIdentity(), branch)
+	if err != nil {
+		return nil, fmt.Errorf("resolve syncPoint for module %s: %w", module.RemoteIdentity(), err)
+	}
+	if syncPoint == nil {
+		return nil, nil
+	}
+	// Validate that the commit pointed to by the sync point exists.
+	if _, err := s.repo.Objects().Commit(syncPoint); err != nil {
+		return nil, s.errorHandler.InvalidSyncPoint(module, branch, syncPoint, err)
+	}
+	return syncPoint, nil
+}
+
 func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	s.knownTagsByCommitHash = map[string][]string{}
 	if err := s.repo.ForEachTag(func(tag string, commitHash git.Hash) error {
 		s.knownTagsByCommitHash[commitHash.Hex()] = append(s.knownTagsByCommitHash[commitHash.Hex()], tag)
 		return nil
 	}); err != nil {
-		return fmt.Errorf("process tags: %w", err)
+		return fmt.Errorf("load tags: %w", err)
 	}
 	// TODO: sync other branches
 	for _, branch := range []string{s.repo.BaseBranch()} {
-		// TODO: resume from last sync point
+		syncPoints, err := s.resolveSyncPoints(ctx, branch)
+		if err != nil {
+			return err
+		}
+		// We sync all modules in a commit before advancing to the next commit so that
+		// inter-module dependencies across commits can be resolved.
 		if err := s.repo.ForEachCommit(branch, func(commit git.Commit) error {
 			for _, module := range s.modulesToSync {
-				if err := s.visitCommit(
-					ctx,
-					module,
-					branch,
-					commit,
-					syncFunc,
-				); err != nil {
-					return fmt.Errorf("process commit %s: %w", commit.Hash().Hex(), err)
+				if syncPoint := syncPoints[module]; syncPoint != nil {
+					// This module has a sync point. We need to check if we've encountered the sync point.
+					if syncPoint.Hex() == commit.Hash().Hex() {
+						// We have found the syncPoint! We can resume syncing _after_ this point.
+						delete(syncPoints, module)
+						s.logger.Debug(
+							"syncPoint encountered, skipping commit",
+							zap.Stringer("commit", commit.Hash()),
+							zap.Stringer("module", module),
+							zap.Stringer("syncPoint", syncPoint),
+						)
+					} else {
+						// We have not encountered the syncPoint yet. Skip this commit and keep looking
+						// for the syncPoint.
+						s.logger.Debug(
+							"syncPoint not encountered, skipping commit",
+							zap.Stringer("commit", commit.Hash()),
+							zap.Stringer("module", module),
+							zap.Stringer("syncPoint", syncPoint),
+						)
+					}
+					continue
+				}
+				if err := s.visitCommit(ctx, module, branch, commit, syncFunc); err != nil {
+					return fmt.Errorf("process commit %s (%s): %w", commit.Hash().Hex(), branch, err)
 				}
 			}
 			return nil
 		}); err != nil {
 			return fmt.Errorf("process commits: %w", err)
+		}
+		// If we have any sync points left, they were not encountered during sync, which is unexpected behavior.
+		for module, syncPoint := range syncPoints {
+			if err := s.errorHandler.SyncPointNotEncountered(module, branch, syncPoint); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -115,21 +195,21 @@ func (s *syncer) visitCommit(
 		// We did not find a module. Carry on to the next commit.
 		s.logger.Debug(
 			"module not found, skipping commit",
-			zap.String("commit", commit.Hash().String()),
-			zap.String("module", module.Dir()),
+			zap.Stringer("commit", commit.Hash()),
+			zap.Stringer("module", module),
 		)
 		return nil
 	}
 	sourceConfig, err := bufconfig.GetConfigForBucket(ctx, sourceBucket)
 	if err != nil {
-		return s.errorHandler.InvalidModuleConfig(module.Dir(), commit, err)
+		return s.errorHandler.InvalidModuleConfig(module, commit, err)
 	}
 	if sourceConfig.ModuleIdentity == nil {
 		// Unnamed module. Carry on.
 		s.logger.Debug(
 			"unnamed module, skipping commit",
-			zap.String("commit", commit.Hash().String()),
-			zap.String("module", module.Dir()),
+			zap.Stringer("commit", commit.Hash()),
+			zap.Stringer("module", module),
 		)
 		return nil
 	}
@@ -139,7 +219,7 @@ func (s *syncer) visitCommit(
 		sourceConfig.Build,
 	)
 	if err != nil {
-		return s.errorHandler.BuildFailure(module.Dir(), module.RemoteIdentity(), commit, err)
+		return s.errorHandler.BuildFailure(module, commit, err)
 	}
 	return syncFunc(
 		ctx,

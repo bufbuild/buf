@@ -1,0 +1,4 @@
+version: v2
+inputs:
+  - zip_archive: a/b/c.zip
+    compression: gzip

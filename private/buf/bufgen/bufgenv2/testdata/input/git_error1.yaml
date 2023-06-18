@@ -1,0 +1,5 @@
+version: v2
+inputs:
+  - git_repo: github.com/acme/weather0.git
+    # compression is not allowed for Git
+    compression: ""

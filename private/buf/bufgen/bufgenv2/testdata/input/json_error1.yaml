@@ -1,0 +1,5 @@
+version: v2
+inputs:
+  - json_image: a/b/c
+    # invalid compression
+    compression: xyz

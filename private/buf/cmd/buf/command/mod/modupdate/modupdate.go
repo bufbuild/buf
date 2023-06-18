@@ -111,32 +111,13 @@ func run(
 		return err
 	}
 
-	remote := bufconnect.DefaultRemote
-	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
-		remote = moduleConfig.ModuleIdentity.Remote()
-	} else {
-		for _, moduleReference := range moduleConfig.Build.DependencyModuleReferences {
-			if moduleReference.Remote() != bufconnect.DefaultRemote {
-				warnMsg := fmt.Sprintf(
-					`%q does not specify a "name", so Buf is defaulting to using remote %q for dependency resolution. This remote may be unable to resolve %q if it's an enterprise BSR module. Did you mean to specify a "name: %s/..." on this module?`,
-					existingConfigFilePath,
-					bufconnect.DefaultRemote,
-					moduleReference.IdentityString(),
-					moduleReference.Remote(),
-				)
-				container.Logger().Warn(warnMsg)
-				break
-			}
-		}
-	}
-
 	pinnedRepositories, err := getDependencies(
 		ctx,
 		container,
 		flags,
-		remote,
 		moduleConfig,
 		readWriteBucket,
+		existingConfigFilePath,
 	)
 	if err != nil {
 		return err
@@ -178,9 +159,9 @@ func getDependencies(
 	ctx context.Context,
 	container appflag.Container,
 	flags *flags,
-	remote string,
 	moduleConfig *bufconfig.Config,
 	readWriteBucket storage.ReadWriteBucket,
+	existingConfigFilePath string,
 ) ([]*pinnedRepository, error) {
 	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
 		return nil, nil
@@ -188,6 +169,26 @@ func getDependencies(
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return nil, err
+	}
+	var remote string
+	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
+		remote = moduleConfig.ModuleIdentity.Remote()
+	} else {
+		// At this point we know there's at least one dependency. If it's an unnamed module, select
+		// the right remote from the list of dependencies.
+		selectedRef := bufcli.SelectReferenceForRemote(moduleConfig.Build.DependencyModuleReferences)
+		if selectedRef == nil {
+			return nil, fmt.Errorf(`File %q has invalid "deps" references`, existingConfigFilePath)
+		}
+		remote = selectedRef.Remote()
+		container.Logger().Debug(fmt.Sprintf(
+			`File %q does not specify the "name" field. Based on the dependency %q, it appears that you are using a BSR instance at %q. Did you mean to specify "name: %s/..." within %q?`,
+			existingConfigFilePath,
+			selectedRef.IdentityString(),
+			remote,
+			remote,
+			existingConfigFilePath,
+		))
 	}
 	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
 	var protoDependencyModuleReferences []*modulev1alpha1.ModuleReference

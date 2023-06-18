@@ -1,0 +1,8 @@
+{
+  "version": "v2",
+  "inputs": [
+    {
+      "json_image": "/dev/null"
+    }
+  ]
+}

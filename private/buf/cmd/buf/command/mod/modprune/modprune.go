@@ -81,15 +81,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	remote := bufconnect.DefaultRemote
-	if config.ModuleIdentity != nil && config.ModuleIdentity.Remote() != "" {
-		remote = config.ModuleIdentity.Remote()
-	}
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
-	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
 
 	module, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
 	if err != nil {
@@ -102,6 +93,31 @@ func run(
 	}
 	var dependencyModulePins []bufmoduleref.ModulePin
 	if len(requestReferences) > 0 {
+		var remote string
+		if config.ModuleIdentity != nil && config.ModuleIdentity.Remote() != "" {
+			remote = config.ModuleIdentity.Remote()
+		} else {
+			// At this point we know there's at least one dependency. If it's an unnamed module, select
+			// the right remote from the list of dependencies.
+			selectedRef := bufcli.SelectReferenceForRemote(config.Build.DependencyModuleReferences)
+			if selectedRef == nil {
+				return fmt.Errorf(`File %q has invalid "deps" references`, existingConfigFilePath)
+			}
+			remote = selectedRef.Remote()
+			container.Logger().Debug(fmt.Sprintf(
+				`File %q does not specify the "name" field. Based on the dependency %q, it appears that you are using a BSR instance at %q. Did you mean to specify "name: %s/..." within %q?`,
+				existingConfigFilePath,
+				selectedRef.IdentityString(),
+				remote,
+				remote,
+				existingConfigFilePath,
+			))
+		}
+		clientConfig, err := bufcli.NewConnectClientConfig(container)
+		if err != nil {
+			return err
+		}
+		service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
 		resp, err := service.GetModulePins(
 			ctx,
 			connect.NewRequest(&registryv1alpha1.GetModulePinsRequest{

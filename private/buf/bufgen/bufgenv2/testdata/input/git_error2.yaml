@@ -1,0 +1,5 @@
+version: v2
+inputs:
+  # test that subdir is validated
+  - git_repo: github.com/acme/weather0.git
+    subdir: /a/b
