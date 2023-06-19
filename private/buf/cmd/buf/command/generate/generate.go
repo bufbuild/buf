@@ -17,19 +17,10 @@ package generate
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen"
-	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv1"
-	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv2"
-	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -309,15 +300,6 @@ func run(
 		return err
 	}
 	logger := container.Logger()
-	configVersion, err := bufgen.ReadConfigVersion(
-		ctx,
-		logger,
-		readWriteBucket,
-		bufgen.ReadConfigWithOverride(flags.Template),
-	)
-	if err != nil {
-		return err
-	}
 	runner := command.NewRunner()
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
@@ -339,257 +321,298 @@ func run(
 		includedTypesFromCLI = append(flags.Types, flags.TypesDeprecated...)
 	}
 
-	var (
-		inputImages   []bufimage.Image
-		imageModifier bufimagemodify.Modifier
-		plugins       []bufgen.PluginConfig
-	)
-	switch configVersion {
-	case bufgen.V2Version:
-		genConfigV2, err := bufgenv2.ReadConfigV2(
-			ctx,
-			logger,
-			readWriteBucket,
-			bufgen.ReadConfigWithOverride(flags.Template),
-		)
-		if err != nil {
-			return err
-		}
-		// TODO: implement managed mode
-		imageModifier = nopModifier{}
-		plugins = genConfigV2.Plugins
-		if bufcli.IsInputSpecified(container, flags.InputHashtag) {
-			inputRef, err := getInputRefFromCLI(
-				ctx,
-				container,
-				flags.InputHashtag,
-			)
-			if err != nil {
-				return err
-			}
-			inputImage, err := getInputImage(
-				ctx,
-				container,
-				inputRef,
-				imageConfigReader,
-				flags.Config,
-				flags.Paths,
-				flags.ExcludePaths,
-				flags.ErrorFormat,
-				includedTypesFromCLI,
-			)
-			if err != nil {
-				return err
-			}
-			inputImages = append(inputImages, inputImage)
-			break
-		}
-		for _, inputConfig := range genConfigV2.Inputs {
-			includePaths := inputConfig.IncludePaths
-			if len(flags.Paths) > 0 {
-				includePaths = flags.Paths
-			}
-			excludePaths := inputConfig.ExcludePaths
-			if len(flags.ExcludePaths) > 0 {
-				excludePaths = flags.ExcludePaths
-			}
-			includedTypes := inputConfig.Types
-			if len(includedTypesFromCLI) > 0 {
-				includedTypes = includedTypesFromCLI
-			}
-			inputImage, err := getInputImage(
-				ctx,
-				container,
-				inputConfig.InputRef,
-				imageConfigReader,
-				flags.Config,
-				includePaths,
-				excludePaths,
-				flags.ErrorFormat,
-				includedTypes,
-			)
-			if err != nil {
-				return err
-			}
-			inputImages = append(inputImages, inputImage)
-		}
-	case bufgen.V1Version, bufgen.V1Beta1Version:
-		genConfigV1, err := bufgenv1.ReadConfigV1(
-			ctx,
-			logger,
-			readWriteBucket,
-			bufgen.ReadConfigWithOverride(flags.Template),
-		)
-		if err != nil {
-			return err
-		}
-		if imageModifier, err = bufgenv1.NewModifier(
-			logger,
-			genConfigV1,
-		); err != nil {
-			return err
-		}
-		plugins = genConfigV1.PluginConfigs
-		inputRef, err := getInputRefFromCLI(
-			ctx,
-			container,
-			flags.InputHashtag,
-		)
-		if err != nil {
-			return err
-		}
-		var includedTypes []string
-		if typesConfig := genConfigV1.TypesConfig; typesConfig != nil {
-			includedTypes = typesConfig.Include
-		}
-		if len(includedTypesFromCLI) > 0 {
-			includedTypes = includedTypesFromCLI
-		}
-		inputImage, err := getInputImage(
-			ctx,
-			container,
-			inputRef,
-			imageConfigReader,
-			flags.Config,
-			flags.Paths,
-			flags.ExcludePaths,
-			flags.ErrorFormat,
-			includedTypes,
-		)
-		if err != nil {
-			return err
-		}
-		inputImages = append(inputImages, inputImage)
-	default:
-		return fmt.Errorf(`no version set. Please add "version: %s"`, bufgen.V2Version)
-	}
-	generateOptions := []bufgen.GenerateOption{
-		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
-	}
-	if flags.IncludeImports {
-		generateOptions = append(
-			generateOptions,
-			bufgen.GenerateWithIncludeImports(),
-		)
-	}
-	if flags.IncludeWKT {
-		generateOptions = append(
-			generateOptions,
-			bufgen.GenerateWithIncludeWellKnownTypes(),
-		)
-	}
-	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
-	if err != nil {
-		return err
-	}
-	if wasmEnabled {
-		generateOptions = append(
-			generateOptions,
-			bufgen.GenerateWithWASMEnabled(),
-		)
-	}
-	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
-		filepath.Join(
-			container.CacheDirPath(),
-			bufcli.WASMCompilationCacheDir,
-		),
-	)
-	if err != nil {
-		return err
-	}
-	generator := bufgen.NewGenerator(
+	///// New stuff begins
+	/////
+
+	tmpGenerator := bufgen.NewTmpGenerator(
 		logger,
 		storageosProvider,
+		readWriteBucket,
 		runner,
-		wasmPluginExecutor,
 		clientConfig,
+		imageConfigReader,
 	)
-	for _, image := range inputImages {
-		if err := imageModifier.Modify(
-			ctx,
-			image,
-		); err != nil {
-			return err
-		}
-		if err := generator.Generate(
-			ctx,
-			container,
-			plugins,
-			image,
-			generateOptions...,
-		); err != nil {
-			return err
-		}
+	var tmpGenerateOptions []bufgen.TmpGenerateOption
+	if flags.Template != "" {
+		tmpGenerateOptions = append(
+			tmpGenerateOptions,
+			bufgen.TmpGenerateWithConfigOverride(flags.Template),
+		)
 	}
-	return nil
-}
-
-func getInputRefFromCLI(
-	ctx context.Context,
-	container appflag.Container,
-	inputHashtag string,
-) (buffetch.Ref, error) {
-	input, err := bufcli.GetInputValue(container, inputHashtag, ".")
-	if err != nil {
-		return nil, err
-	}
-	return buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
-}
-
-func getInputImage(
-	ctx context.Context,
-	container appflag.Container,
-	ref buffetch.Ref,
-	imageConfigReader bufwire.ImageConfigReader,
-	configLocationOverride string,
-	includedPaths []string,
-	excludedPaths []string,
-	errorFormat string,
-	includedTypes []string,
-) (bufimage.Image, error) {
-	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
+	tmpGenerateOptions = append(
+		tmpGenerateOptions,
+		bufgen.TmpGenerateWithTypesIncludedOverride(includedTypesFromCLI),
+	)
+	tmpGenerator.Generate(
 		ctx,
 		container,
-		ref,
-		configLocationOverride,
-		includedPaths,
-		excludedPaths,
-		false, // input files must exist
-		false, // we must include source info for generation
+		flags.BaseOutDirPath,
+		tmpGenerateOptions...,
 	)
-	if err != nil {
-		return nil, err
-	}
-	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, errorFormat); err != nil {
-			return nil, err
-		}
-		return nil, bufcli.ErrFileAnnotation
-	}
-	images := make([]bufimage.Image, 0, len(imageConfigs))
-	for _, imageConfig := range imageConfigs {
-		images = append(images, imageConfig.Image())
-	}
-	image, err := bufimage.MergeImages(images...)
-	if err != nil {
-		return nil, err
-	}
-	if len(includedTypes) > 0 {
-		image, err = bufimageutil.ImageFilteredByTypes(image, includedTypes...)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return image, nil
-}
 
-// A placeholder for V2 managed mode image modifier.
-// TODO: remove this
-type nopModifier struct{}
+	/////
+	//// new stuff ends
 
-func (a nopModifier) Modify(
-	ctx context.Context,
-	image bufimage.Image,
-) error {
+	// configVersion, err := bufgen.ReadConfigVersion(
+	// 	ctx,
+	// 	logger,
+	// 	readWriteBucket,
+	// 	bufgen.ReadConfigWithOverride(flags.Template),
+	// )
+	// if err != nil {
+	// 	return err
+	// }
+	// var (
+	// 	inputImages   []bufimage.Image
+	// 	imageModifier bufimagemodify.Modifier
+	// 	plugins       []bufgen.PluginConfig
+	// )
+	// switch configVersion {
+	// case bufgen.V2Version:
+	// 	genConfigV2, err := bufgenv2.ReadConfigV2(
+	// 		ctx,
+	// 		logger,
+	// 		readWriteBucket,
+	// 		bufgen.ReadConfigWithOverride(flags.Template),
+	// 	)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	// TODO: implement managed mode
+	// 	imageModifier = nopModifier{}
+	// 	plugins = genConfigV2.Plugins
+	// 	if bufcli.IsInputSpecified(container, flags.InputHashtag) {
+	// 		inputRef, err := getInputRefFromCLI(
+	// 			ctx,
+	// 			container,
+	// 			flags.InputHashtag,
+	// 		)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		inputImage, err := getInputImage(
+	// 			ctx,
+	// 			container,
+	// 			inputRef,
+	// 			imageConfigReader,
+	// 			flags.Config,
+	// 			flags.Paths,
+	// 			flags.ExcludePaths,
+	// 			flags.ErrorFormat,
+	// 			includedTypesFromCLI,
+	// 		)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		inputImages = append(inputImages, inputImage)
+	// 		break
+	// 	}
+	// 	for _, inputConfig := range genConfigV2.Inputs {
+	// 		includePaths := inputConfig.IncludePaths
+	// 		if len(flags.Paths) > 0 {
+	// 			includePaths = flags.Paths
+	// 		}
+	// 		excludePaths := inputConfig.ExcludePaths
+	// 		if len(flags.ExcludePaths) > 0 {
+	// 			excludePaths = flags.ExcludePaths
+	// 		}
+	// 		includedTypes := inputConfig.Types
+	// 		if len(includedTypesFromCLI) > 0 {
+	// 			includedTypes = includedTypesFromCLI
+	// 		}
+	// 		inputImage, err := getInputImage(
+	// 			ctx,
+	// 			container,
+	// 			inputConfig.InputRef,
+	// 			imageConfigReader,
+	// 			flags.Config,
+	// 			includePaths,
+	// 			excludePaths,
+	// 			flags.ErrorFormat,
+	// 			includedTypes,
+	// 		)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		inputImages = append(inputImages, inputImage)
+	// 	}
+	// case bufgen.V1Version, bufgen.V1Beta1Version:
+	// 	genConfigV1, err := bufgenv1.ReadConfigV1(
+	// 		ctx,
+	// 		logger,
+	// 		readWriteBucket,
+	// 		bufgen.ReadConfigWithOverride(flags.Template),
+	// 	)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if imageModifier, err = bufgenv1.NewModifier(
+	// 		logger,
+	// 		genConfigV1,
+	// 	); err != nil {
+	// 		return err
+	// 	}
+	// 	plugins = genConfigV1.PluginConfigs
+	// 	inputRef, err := getInputRefFromCLI(
+	// 		ctx,
+	// 		container,
+	// 		flags.InputHashtag,
+	// 	)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	var includedTypes []string
+	// 	if typesConfig := genConfigV1.TypesConfig; typesConfig != nil {
+	// 		includedTypes = typesConfig.Include
+	// 	}
+	// 	if len(includedTypesFromCLI) > 0 {
+	// 		includedTypes = includedTypesFromCLI
+	// 	}
+	// 	inputImage, err := getInputImage(
+	// 		ctx,
+	// 		container,
+	// 		inputRef,
+	// 		imageConfigReader,
+	// 		flags.Config,
+	// 		flags.Paths,
+	// 		flags.ExcludePaths,
+	// 		flags.ErrorFormat,
+	// 		includedTypes,
+	// 	)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	inputImages = append(inputImages, inputImage)
+	// default:
+	// 	return fmt.Errorf(`no version set. Please add "version: %s"`, bufgen.V2Version)
+	// }
+	// generateOptions := []bufgen.GenerateOption{
+	// 	bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
+	// }
+	// if flags.IncludeImports {
+	// 	generateOptions = append(
+	// 		generateOptions,
+	// 		bufgen.GenerateWithIncludeImports(),
+	// 	)
+	// }
+	// if flags.IncludeWKT {
+	// 	generateOptions = append(
+	// 		generateOptions,
+	// 		bufgen.GenerateWithIncludeWellKnownTypes(),
+	// 	)
+	// }
+	// wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
+	// if err != nil {
+	// 	return err
+	// }
+	// if wasmEnabled {
+	// 	generateOptions = append(
+	// 		generateOptions,
+	// 		bufgen.GenerateWithWASMEnabled(),
+	// 	)
+	// }
+	// wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
+	// 	filepath.Join(
+	// 		container.CacheDirPath(),
+	// 		bufcli.WASMCompilationCacheDir,
+	// 	),
+	// )
+	// if err != nil {
+	// 	return err
+	// }
+	// generator := bufgen.NewGenerator(
+	// 	logger,
+	// 	storageosProvider,
+	// 	runner,
+	// 	wasmPluginExecutor,
+	// 	clientConfig,
+	// )
+	// for _, image := range inputImages {
+	// 	if err := imageModifier.Modify(
+	// 		ctx,
+	// 		image,
+	// 	); err != nil {
+	// 		return err
+	// 	}
+	// 	if err := generator.Generate(
+	// 		ctx,
+	// 		container,
+	// 		plugins,
+	// 		image,
+	// 		generateOptions...,
+	// 	); err != nil {
+	// 		return err
+	// 	}
+	// }
 	return nil
 }
+
+// func getInputRefFromCLI(
+// 	ctx context.Context,
+// 	container appflag.Container,
+// 	inputHashtag string,
+// ) (buffetch.Ref, error) {
+// 	input, err := bufcli.GetInputValue(container, inputHashtag, ".")
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
+// }
+
+// func getInputImage(
+// 	ctx context.Context,
+// 	container appflag.Container,
+// 	ref buffetch.Ref,
+// 	imageConfigReader bufwire.ImageConfigReader,
+// 	configLocationOverride string,
+// 	includedPaths []string,
+// 	excludedPaths []string,
+// 	errorFormat string,
+// 	includedTypes []string,
+// ) (bufimage.Image, error) {
+// 	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
+// 		ctx,
+// 		container,
+// 		ref,
+// 		configLocationOverride,
+// 		includedPaths,
+// 		excludedPaths,
+// 		false, // input files must exist
+// 		false, // we must include source info for generation
+// 	)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if len(fileAnnotations) > 0 {
+// 		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, errorFormat); err != nil {
+// 			return nil, err
+// 		}
+// 		return nil, bufcli.ErrFileAnnotation
+// 	}
+// 	images := make([]bufimage.Image, 0, len(imageConfigs))
+// 	for _, imageConfig := range imageConfigs {
+// 		images = append(images, imageConfig.Image())
+// 	}
+// 	image, err := bufimage.MergeImages(images...)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if len(includedTypes) > 0 {
+// 		image, err = bufimageutil.ImageFilteredByTypes(image, includedTypes...)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+// 	return image, nil
+// }
+
+// // A placeholder for V2 managed mode image modifier.
+// // TODO: remove this
+// type nopModifier struct{}
+
+// func (a nopModifier) Modify(
+// 	ctx context.Context,
+// 	image bufimage.Image,
+// ) error {
+// 	return nil
+// }
