@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleprotocompile"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
@@ -44,20 +45,25 @@ const (
 )
 
 type builder struct {
-	logger *zap.Logger
-	tracer trace.Tracer
+	logger               *zap.Logger
+	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder
+	tracer               trace.Tracer
 }
 
-func newBuilder(logger *zap.Logger) *builder {
+func newBuilder(logger *zap.Logger, moduleReader bufmodule.ModuleReader) *builder {
 	return &builder{
 		logger: logger.Named(loggerName),
+		moduleFileSetBuilder: bufmodulebuild.NewModuleFileSetBuilder(
+			logger,
+			moduleReader,
+		),
 		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
 func (b *builder) Build(
 	ctx context.Context,
-	moduleFileSet bufmodule.ModuleFileSet,
+	module bufmodule.Module,
 	options ...BuildOption,
 ) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
 	buildOptions := newBuildOptions()
@@ -66,7 +72,7 @@ func (b *builder) Build(
 	}
 	return b.build(
 		ctx,
-		moduleFileSet,
+		module,
 		buildOptions.excludeSourceCodeInfo,
 		buildOptions.directDependencies,
 		buildOptions.workspace,
@@ -75,10 +81,10 @@ func (b *builder) Build(
 
 func (b *builder) build(
 	ctx context.Context,
-	moduleFileSet bufmodule.ModuleFileSet,
+	module bufmodule.Module,
 	excludeSourceCodeInfo bool,
 	directDeps []bufmoduleref.ModuleReference,
-	localWorkspace bufmodule.Workspace,
+	workspace bufmodule.Workspace,
 ) (_ bufimage.Image, _ []bufanalysis.FileAnnotation, retErr error) {
 	ctx, span := b.tracer.Start(ctx, "build")
 	defer span.End()
@@ -88,6 +94,23 @@ func (b *builder) build(
 			span.SetStatus(codes.Error, retErr.Error())
 		}
 	}()
+
+	// TODO: remove this once bufmodule.ModuleFileSet is deleted or no longer inherits from Module
+	// We still need to handle the ModuleFileSet case for buf export, as we actually need the
+	// ModuleFileSet there.
+	moduleFileSet, ok := module.(bufmodule.ModuleFileSet)
+	if !ok {
+		// If we just had a Module, convert it to a ModuleFileSet.
+		var err error
+		moduleFileSet, err = b.moduleFileSetBuilder.Build(
+			ctx,
+			module,
+			bufmodulebuild.WithWorkspace(workspace),
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
 
 	parserAccessorHandler := bufmoduleprotocompile.NewParserAccessorHandler(ctx, moduleFileSet)
 	targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
@@ -131,7 +154,7 @@ func (b *builder) build(
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := b.warnInvalidImports(ctx, image, directDeps, localWorkspace); err != nil {
+	if err := b.warnInvalidImports(ctx, image, directDeps, workspace); err != nil {
 		b.logger.Error("warn_invalid_imports", zap.Error(err))
 	}
 	return image, nil, nil
