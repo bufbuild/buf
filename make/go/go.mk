@@ -58,6 +58,9 @@ ci:
 	@$(MAKE) lint
 	@$(MAKE) test
 
+.PHONY: postupgradegodeps
+postupgradegodeps::
+
 .PHONY: upgradegodeps
 upgradegodeps:
 	rm -f go.mod go.sum
@@ -68,6 +71,7 @@ ifneq ($(GO_GET_PKGS),)
 endif
 	go get -u -t $(GO_ALL_REPO_PKGS) $(GO_GET_PKGS)
 	go mod tidy -v
+	@$(MAKE) postupgradegodeps
 
 preupgrade:: upgradegodeps
 
@@ -83,7 +87,7 @@ gofmtmodtidy:
 	@gofmt -s -w $(shell find . -name '*.go')
 	go mod tidy -v
 
-postgenerate:: gofmtmodtidy
+format:: gofmtmodtidy
 
 .PHONY: checknonolint
 checknonolint:

@@ -15,27 +15,16 @@
 package bufremoteplugin
 
 import (
-	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/encoding"
 )
 
 const (
 	// PluginsPathName is the path prefix used to signify that
 	// a name belongs to a plugin.
 	PluginsPathName = "plugins"
-
-	// TemplatesPathName is the path prefix used to signify that
-	// a name belongs to a template.
-	TemplatesPathName = "templates"
-
-	v1Version = "v1"
 )
 
 // ParsePluginPath parses a string in the format <buf.build/owner/plugins/name>
@@ -67,125 +56,4 @@ func ParsePluginVersionPath(pluginVersionPath string) (remote string, owner stri
 	default:
 		return "", "", "", "", fmt.Errorf("invalid version: %q", name)
 	}
-}
-
-// ParseTemplatePath parses a string in the format <buf.build/owner/templates/name>
-// into remote, owner and name.
-func ParseTemplatePath(templatePath string) (remote string, owner string, name string, _ error) {
-	if templatePath == "" {
-		return "", "", "", appcmd.NewInvalidArgumentError("you must specify a template path")
-	}
-	components := strings.Split(templatePath, "/")
-	if len(components) != 4 || components[2] != TemplatesPathName {
-		return "", "", "", appcmd.NewInvalidArgumentErrorf("%s is not a valid template path", templatePath)
-	}
-	return components[0], components[1], components[3], nil
-}
-
-// TemplateConfig is the config used to describe the plugins
-// of a new template.
-type TemplateConfig struct {
-	Plugins []PluginConfig
-}
-
-// TemplateConfigToProtoPluginConfigs converts the template config to a slice of proto plugin configs,
-// suitable for use with the Plugin Service CreateTemplate RPC.
-func TemplateConfigToProtoPluginConfigs(templateConfig *TemplateConfig) []*registryv1alpha1.PluginConfig {
-	pluginConfigs := make([]*registryv1alpha1.PluginConfig, 0, len(templateConfig.Plugins))
-	for _, plugin := range templateConfig.Plugins {
-		pluginConfigs = append(
-			pluginConfigs,
-			&registryv1alpha1.PluginConfig{
-				PluginOwner: plugin.Owner,
-				PluginName:  plugin.Name,
-				Parameters:  plugin.Parameters,
-			},
-		)
-	}
-	return pluginConfigs
-}
-
-// PluginConfig is the config used to describe a plugin in
-// a new template.
-type PluginConfig struct {
-	Owner      string
-	Name       string
-	Parameters []string
-}
-
-// ParseTemplateConfig parses the input template config as a path or JSON/YAML literal.
-func ParseTemplateConfig(config string) (*TemplateConfig, error) {
-	var data []byte
-	var err error
-	switch filepath.Ext(config) {
-	case ".json", ".yaml", ".yml":
-		data, err = os.ReadFile(config)
-		if err != nil {
-			return nil, fmt.Errorf("could not read file: %v", err)
-		}
-	default:
-		data = []byte(config)
-	}
-	var version externalTemplateConfigVersion
-	if err := encoding.UnmarshalJSONOrYAMLNonStrict(data, &version); err != nil {
-		return nil, fmt.Errorf("failed to determine version of template config: %w", err)
-	}
-	switch version.Version {
-	case "":
-		return nil, errors.New("template config version is required")
-	case v1Version:
-	default:
-		return nil, fmt.Errorf("unknown template config version: %q", version.Version)
-	}
-	var externalConfig externalTemplateConfig
-	if err := encoding.UnmarshalJSONOrYAMLStrict(data, &externalConfig); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal template config: %w", err)
-	}
-	templateConfig := &TemplateConfig{
-		Plugins: make([]PluginConfig, 0, len(externalConfig.Plugins)),
-	}
-	for _, plugin := range externalConfig.Plugins {
-		templatePlugin := PluginConfig{
-			Owner: plugin.Owner,
-			Name:  plugin.Name,
-		}
-		parameterString, err := encoding.InterfaceSliceOrStringToCommaSepString(plugin.Options)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse options: %w", err)
-		}
-		if parameterString != "" {
-			templatePlugin.Parameters = strings.Split(parameterString, ",")
-		}
-		templateConfig.Plugins = append(templateConfig.Plugins, templatePlugin)
-	}
-	return templateConfig, nil
-}
-
-// TemplateVersionConfig is the config used to describe the plugin
-// version of a new template version.
-type TemplateVersionConfig struct {
-	PluginVersions []PluginVersion
-}
-
-// PluginVersion describes a version of a plugin for
-// use in a template version.
-type PluginVersion struct {
-	Owner   string
-	Name    string
-	Version string
-}
-
-type externalTemplateConfig struct {
-	Version string                 `json:"version,omitempty" yaml:"version,omitempty"`
-	Plugins []externalPluginConfig `json:"plugins,omitempty" yaml:"plugins,omitempty"`
-}
-
-type externalPluginConfig struct {
-	Owner   string      `json:"owner,omitempty" yaml:"owner,omitempty"`
-	Name    string      `json:"name,omitempty" yaml:"name,omitempty"`
-	Options interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
-}
-
-type externalTemplateConfigVersion struct {
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }

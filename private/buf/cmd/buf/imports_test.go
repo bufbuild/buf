@@ -113,22 +113,13 @@ func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 	)
 }
 
-func TestInvalidImportFromTransitiveWorkspaceUnnamedModule(t *testing.T) {
+func TestValidImportFromLocalOnlyWorkspaceUnnamedModules(t *testing.T) {
 	t.Parallel()
-	testRunStderrWithCache(
+	testRunStdoutStderr(
 		t, nil, 0,
-		[]string{
-			"WARN",
-			"bufimagebuild",
-			// a -> b
-			`File "a.proto" imports "b.proto", which is not found in your local files or direct dependencies, but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml.`,
-			// a -> c
-			`File "a.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml.`,
-			// b -> c
-			`File "b.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in a local workspace unnamed module. Name the module and declare it in the deps key in buf.yaml.`,
-		},
+		"", // no warnings
 		"build",
-		filepath.Join("testdata", "imports", "failure", "workspace", "transitive_imports_unnamed"),
+		filepath.Join("testdata", "imports", "success", "workspace", "unnamed_local_only_modules"),
 	)
 }
 

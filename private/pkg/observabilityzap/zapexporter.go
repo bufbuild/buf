@@ -43,7 +43,7 @@ func (z *zapExporter) ExportSpans(ctx context.Context, spans []trace.ReadOnlySpa
 				zap.Duration("duration", span.EndTime().Sub(span.StartTime())),
 			}
 			for _, attribute := range span.Attributes() {
-				fields = append(fields, zap.Any(string(attribute.Key), attribute.Value))
+				fields = append(fields, zap.Any(string(attribute.Key), attribute.Value.AsInterface()))
 			}
 			checkedEntry.Write(fields...)
 		}
