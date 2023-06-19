@@ -30,6 +30,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
+const (
+	PluginFlagName = "plugin"
+	ModuleFlagName = "module"
+)
+
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
@@ -37,7 +42,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository[:ref]> <buf.build/owner/plugin[:version]>",
+		Use:   name + " --module=<buf.build/owner/repository[:ref]> --plugin=<buf.build/owner/plugin[:version]>",
 		Short: "Resolve module and plugin reference to a specific remote package version",
 		Long: `This command returns the version of the asset to be used with one of the supported remote package registries.
 For example npm, go proxy, maven, swift.
@@ -45,14 +50,14 @@ For example npm, go proxy, maven, swift.
 Examples:
 
 Get the version of the eliza module and the connect-go plugin for use with go modules.
-    $ buf alpha package version get buf.build/bufbuild/eliza buf.build/bufbuild/connect-go
+    $ buf alpha package version get --module=buf.build/bufbuild/eliza --plugin=buf.build/bufbuild/connect-go
         v1.7.0-20230609151053-e682db0d9918.1
 
 Use a specific module version and plugin version.
-    $ buf alpha package version get buf.build/bufbuild/eliza:e682db0d99184be88b41c4405ea8a417 buf.build/bufbuild/connect-go:v1.7.0
+    $ buf alpha package version get --module=buf.build/bufbuild/eliza:e682db0d99184be88b41c4405ea8a417 --plugin=buf.build/bufbuild/connect-go:v1.7.0
         v1.7.0-20230609151053-e682db0d9918.1
 `,
-		Args: cobra.ExactArgs(2),
+		Args: cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -63,25 +68,33 @@ Use a specific module version and plugin version.
 	}
 }
 
-type flags struct{}
+type flags struct {
+	Plugin string
+	Module string
+}
 
 func newFlags() *flags {
 	return &flags{}
 }
 
-func (f *flags) Bind(_ *pflag.FlagSet) {}
+func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.Module, ModuleFlagName, "", "The module reference to resolve")
+	flagSet.StringVar(&f.Plugin, PluginFlagName, "", "The plugin reference to resolve")
+	_ = cobra.MarkFlagRequired(flagSet, ModuleFlagName)
+	_ = cobra.MarkFlagRequired(flagSet, PluginFlagName)
+}
 
 func run(
 	ctx context.Context,
 	container appflag.Container,
-	_ *flags,
+	flags *flags,
 ) error {
 	bufcli.WarnAlphaCommand(ctx, container)
-	moduleReference, err := bufmoduleref.ModuleReferenceForString(container.Arg(0))
+	moduleReference, err := bufmoduleref.ModuleReferenceForString(flags.Module)
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("failed parsing module reference: %s", err.Error())
 	}
-	pluginReference, err := bufpluginref.PluginReferenceOptionalVersion(container.Arg(1))
+	pluginReference, err := bufpluginref.PluginReferenceOptionalVersion(flags.Plugin)
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("failed parsing plugin reference: %s", err.Error())
 	}
