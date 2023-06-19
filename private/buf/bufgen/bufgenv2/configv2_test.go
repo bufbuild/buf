@@ -23,6 +23,8 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -652,6 +654,157 @@ func TestInputConfigError(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestManagedConfig(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	nopLogger := zap.NewNop()
+	provider := bufgen.NewConfigDataProvider(zap.NewNop())
+	readBucket, err := storagemem.NewReadBucket(nil)
+	require.NoError(t, err)
+	tests := []struct {
+		testName                string
+		file                    string
+		expectedDisableResults  map[FileOption]map[ImageFileIdentity]bool
+		expectedOverrideResults map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override
+	}{
+		{
+			testName: "Test override",
+			file:     filepath.Join("managed", "buf.gen"),
+			expectedDisableResults: map[FileOption]map[ImageFileIdentity]bool{
+				FileOptionJavaPackage: {
+					&fakeImageFileIdentity{
+						path: "ok.proto",
+					}: true,
+					&fakeImageFileIdentity{
+						path: "ok.protooo",
+					}: false,
+					&fakeImageFileIdentity{
+						path: "notok.proto",
+					}: false,
+					&fakeImageFileIdentity{
+						path: "a/b/x.proto",
+					}: true,
+					&fakeImageFileIdentity{
+						path: "a/y.proto",
+					}: true,
+					&fakeImageFileIdentity{
+						path: "m/x.proto",
+					}: false,
+					&fakeImageFileIdentity{
+						path: "m/n/y.proto",
+					}: false,
+					&fakeImageFileIdentity{
+						path: "a.proto",
+					}: false,
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: false,
+					&fakeImageFileIdentity{}: false,
+				},
+			},
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionJavaPackage: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("workspace.default"),
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "owner1", "mod1"),
+					}: bufimagemodifyv2.NewPrefixOverride("workspace.default"),
+					&fakeImageFileIdentity{
+						path: "b/c/d/file.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("bcd.prefix"),
+					&fakeImageFileIdentity{
+						path: "b/c/d/x.proto",
+					}: bufimagemodifyv2.NewValueOverride("x.override"),
+					&fakeImageFileIdentity{
+						path: "b/c/d/e.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("bcd.prefix"),
+					&fakeImageFileIdentity{
+						path: "b/c/d/e/file.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("bcde"),
+					&fakeImageFileIdentity{
+						path: "b/c/d/e/f.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("bcde"),
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+						path:   "b/c/d/e/f.proto",
+					}: bufimagemodifyv2.NewValueOverride("override.value.bcdef"),
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		for _, fileExtension := range []string{".yaml" /* ,".json" */} {
+			fileExtension := fileExtension
+			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
+				t.Parallel()
+				file := filepath.Join("testdata", test.file+fileExtension)
+				config, err := ReadConfigV2(
+					ctx,
+					nopLogger,
+					provider,
+					readBucket,
+					bufgen.ReadConfigWithOverride(file),
+				)
+				require.NoError(t, err)
+				require.NotNil(t, config)
+				require.NotNil(t, config.Managed)
+				require.NotNil(t, config.Managed.DisabledFunc)
+				for fileOption, resultsForFiles := range test.expectedDisableResults {
+					for imageFile, expectedResult := range resultsForFiles {
+						actual := config.Managed.DisabledFunc(fileOption, imageFile)
+						require.Equal(
+							t,
+							expectedResult,
+							actual,
+							"whether to disable %v for %v should be %v", fileOption, imageFile, expectedResult,
+						)
+					}
+				}
+				for fileOption, resultsForFiles := range test.expectedOverrideResults {
+					for imageFile, expectedOverride := range resultsForFiles {
+						overrideFunc, ok := config.Managed.FileOptionToOverrideFunc[fileOption]
+						require.True(t, ok)
+						actual := overrideFunc(imageFile)
+						require.Equal(
+							t,
+							expectedOverride,
+							actual,
+							"%v override for %v should be %v, not %v", fileOption, imageFile, expectedOverride, actual,
+						)
+					}
+				}
+			})
+		}
+	}
+}
+
+type fakeImageFileIdentity struct {
+	path   string
+	module bufmoduleref.ModuleIdentity
+}
+
+func (f *fakeImageFileIdentity) Path() string {
+	return f.path
+}
+
+func (f *fakeImageFileIdentity) ModuleIdentity() bufmoduleref.ModuleIdentity {
+	return f.module
+}
+
+func mustCreateModuleIdentity(
+	t *testing.T,
+	remote string,
+	owner string,
+	repository string,
+) bufmoduleref.ModuleIdentity {
+	moduleIdentity, err := bufmoduleref.NewModuleIdentity(remote, owner, repository)
+	require.NoError(t, err)
+	return moduleIdentity
 }
 
 func mustGetGitRef(t *testing.T, ctx context.Context, refBuilder buffetch.RefBuilder, path string, options ...buffetch.GetGitRefOption) buffetch.Ref {

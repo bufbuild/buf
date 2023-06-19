@@ -16,7 +16,6 @@ package bufimagemodifyv2
 
 import "testing"
 
-func TestManagedMode(t *testing.T) {
+func TestModify(t *testing.T) {
 	t.Parallel()
-
 }

@@ -14,11 +14,13 @@
 
 package bufimagemodifyv2
 
-type valueOverride[T string | bool] struct {
+import "google.golang.org/protobuf/types/descriptorpb"
+
+type valueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode] struct {
 	value T
 }
 
-func newValueOverride[T string | bool](val T) valueOverride[T] {
+func newValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](val T) valueOverride[T] {
 	return valueOverride[T]{
 		value: val,
 	}

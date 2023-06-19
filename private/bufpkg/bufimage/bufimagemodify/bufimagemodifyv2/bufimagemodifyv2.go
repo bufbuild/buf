@@ -56,7 +56,7 @@ type PrefixOverride interface {
 	prefixOverride()
 }
 
-func NewValueOverride[T string | bool](v T) Override {
+func NewValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](v T) Override {
 	return newValueOverride[T](v)
 }
 
@@ -79,6 +79,15 @@ type MarkSweeper interface {
 
 func NewMarkSweeper(image bufimage.Image) MarkSweeper {
 	return nil
+}
+
+func ValidateOverrideForJavaPackage(override Override) error {
+	switch override.(type) {
+	case ValueOverride[string], prefixOverride:
+		return nil
+	default:
+		return errors.New("a valid override is needed for JAVA_PACKAGE")
+	}
 }
 
 func ModifyJavaPackage(

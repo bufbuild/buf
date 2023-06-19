@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -34,8 +33,6 @@ func SilenceLinter() {
 	_ = validateExternalManagedConfigV2(empty.Managed)
 	_, _ = newDisabledFunc(ExternalManagedDisableConfigV2{})
 	_, _ = newOverrideFunc(ExternalManagedOverrideConfigV2{})
-	matchesModule(nil, "")
-	matchesPath(nil, "")
 	mergeDisabledFuncs(nil)
 	mergeOverrideFuncs(nil)
 	mergeFileOptionToOverrideFuncs(nil)
@@ -81,6 +78,11 @@ func getConfig(
 		}
 		config.Inputs = append(config.Inputs, inputConfig)
 	}
+	managedConfig, err := newManagedConfig(externalConfigV2.Managed)
+	if err != nil {
+		return nil, err
+	}
+	config.Managed = managedConfig
 	return &config, nil
 }
 
@@ -153,12 +155,14 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (DisabledFun
 			return nil, err
 		}
 	}
+	module := externalConfig.Module
+	path := normalpath.Normalize(externalConfig.Path)
 	// You could simplify this, but this helped me reason about it
-	return func(fileOption FileOption, imageFile bufimage.ImageFile) bool {
+	return func(fileOption FileOption, imageFile ImageFileIdentity) bool {
 		// If we did not specify a file option, we match all file options
 		return (selectorFileOption == 0 || fileOption == selectorFileOption) &&
-			matchesModule(imageFile, externalConfig.Module) &&
-			matchesPath(imageFile, externalConfig.Path)
+			matchesPathAndModule(path, module, imageFile)
+
 	}, nil
 }
 
@@ -176,56 +180,58 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (OverrideFu
 	}
 	var override bufimagemodifyv2.Override
 	if externalConfig.Prefix != nil {
+		if !fileOption.AllowPrefix() {
+			return nil, fmt.Errorf("prefix is not allowed for %v", fileOption)
+		}
 		override = bufimagemodifyv2.NewPrefixOverride(*externalConfig.Prefix)
 	} else if externalConfig.Value != nil {
-		switch t := externalConfig.Value.(type) {
-		case string:
-			override = bufimagemodifyv2.NewValueOverride[string](t)
-		case bool:
-			override = bufimagemodifyv2.NewValueOverride[bool](t)
-		default:
-			return nil, fmt.Errorf("invalid override specified for %v", fileOption)
+		getOverride := fileOption.ValueOverrideGetter()
+		if getOverride == nil {
+			// this should not happen
+			return nil, fmt.Errorf("unable to parse value for %v", fileOption)
+		}
+		override, err = getOverride(externalConfig.Value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for %v", fileOption)
 		}
 	}
-	return func(imageFile bufimage.ImageFile) bufimagemodifyv2.Override {
+	return func(imageFile ImageFileIdentity) bufimagemodifyv2.Override {
 		// We don't need to match on FileOption - we only call this OverrideFunc when we
 		// know we are applying for a given FileOption.
 		// The FileOption we parsed above is assumed to be the FileOption.
-		if !matchesModule(imageFile, externalConfig.Module) {
-			return nil
-		}
-		if !matchesPath(imageFile, externalConfig.Path) {
+		if !matchesPathAndModule(externalConfig.Path, externalConfig.Module, imageFile) {
 			return nil
 		}
 		return override
 	}, nil
 }
 
-// matchesModule returns true if the given external module config value matches the ImageFile.
-//
-// An empty value matches - this means we did not filter on modules.
-func matchesModule(imageFile bufimage.ImageFile, module string) bool {
-	// If we did not specify a module, we match all modules
-	if len(module) == 0 {
+func matchesPathAndModule(
+	pathRequired string,
+	moduleRequired string,
+	imageFile ImageFileIdentity,
+) bool {
+	// If neither is required, it matches.
+	if pathRequired == "" && moduleRequired == "" {
 		return true
 	}
-	// If we do not have a module, the module filter does nothing
-	moduleIdentity := imageFile.ModuleIdentity()
-	if moduleIdentity == nil {
+	// If path is required, it must match on path.
+	path := normalpath.Normalize(imageFile.Path())
+	if pathRequired != "" && !normalpath.EqualsOrContainsPath(pathRequired, path, normalpath.Relative) {
+		return false
+	}
+	// At this point, path requirement is met. If module is not required, it matches.
+	if moduleRequired == "" {
 		return true
 	}
-	return module == moduleIdentity.IdentityString()
-}
-
-// matchesPath returns true if the given external path config value matches the ImageFile.
-//
-// An empty value matches - this means we did not filter on modules.
-func matchesPath(imageFile bufimage.ImageFile, path string) bool {
-	// If we did not specify a path, we match all paths
-	if len(path) == 0 {
-		return true
+	// Module is required, now check if it matches.
+	if imageFile.ModuleIdentity() == nil {
+		return false
 	}
-	return normalpath.EqualsOrContainsPath(path, imageFile.Path(), normalpath.Relative)
+	if imageFile.ModuleIdentity().IdentityString() != moduleRequired {
+		return false
+	}
+	return true
 }
 
 func mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs map[FileOption][]OverrideFunc) map[FileOption]OverrideFunc {
@@ -238,7 +244,7 @@ func mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs map[FileOption][]O
 
 func mergeDisabledFuncs(disabledFuncs []DisabledFunc) DisabledFunc {
 	// If any disables, then we disable for this FileOption and ImageFile
-	return func(fileOption FileOption, imageFile bufimage.ImageFile) bool {
+	return func(fileOption FileOption, imageFile ImageFileIdentity) bool {
 		for _, disabledFunc := range disabledFuncs {
 			if disabledFunc(fileOption, imageFile) {
 				return true
@@ -250,7 +256,7 @@ func mergeDisabledFuncs(disabledFuncs []DisabledFunc) DisabledFunc {
 
 func mergeOverrideFuncs(overrideFuncs []OverrideFunc) OverrideFunc {
 	// Last override listed wins
-	return func(imageFile bufimage.ImageFile) bufimagemodifyv2.Override {
+	return func(imageFile ImageFileIdentity) bufimagemodifyv2.Override {
 		var override bufimagemodifyv2.Override
 		for _, overrideFunc := range overrideFuncs {
 			iOverride := overrideFunc(imageFile)

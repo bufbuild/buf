@@ -19,6 +19,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -110,19 +113,45 @@ var (
 		"php_metadata_namespace": FileOptionPhpMetadataNamespace,
 		"ruby_package":           FileOptionRubyPackage,
 	}
+	fileOptionToParseInfo = map[FileOption]parseInfo{
+		FileOptionJavaPackage: {
+			allowPrefix:         true,
+			valueOverrideGetter: getValueOverride[string],
+		},
+		// TODO:
+		FileOptionJavaOuterClassname: {},
+		// TODO:
+		FileOptionJavaMultipleFiles: {},
+		// TODO:
+		FileOptionJavaStringCheckUtf8: {},
+		FileOptionOptimizeFor: {
+			valueOverrideGetter: getValueOverride[descriptorpb.FileOptions_OptimizeMode],
+		},
+		// TODO:
+		FileOptionGoPackage: {},
+		FileOptionCcEnableArenas: {
+			valueOverrideGetter: getValueOverride[bool],
+		},
+		// TODO:
+		FileOptionObjcClassPrefix: {},
+		// TODO:
+		FileOptionCsharpNamespace: {},
+		// TODO:
+		FileOptionPhpNamespace: {},
+		// TODO:
+		FileOptionPhpMetadataNamespace: {},
+		// TODO:
+		FileOptionRubyPackage: {},
+	}
 )
 
 // FileOption is a descriptor.proto file option that can be managed.
 type FileOption int
 
-// Type returns the FileOptionType or 0 if unknown..
-// func (f FileOption) Type() FileOptionType {
-// 	t, ok := fileOptionToFileOptionType[f]
-// 	if !ok {
-// 		return 0
-// 	}
-// 	return t
-// }
+type parseInfo struct {
+	allowPrefix         bool
+	valueOverrideGetter func(override interface{}) (bufimagemodifyv2.Override, error)
+}
 
 // String implements fmt.Stringer.
 func (f FileOption) String() string {
@@ -131,6 +160,24 @@ func (f FileOption) String() string {
 		return strconv.Itoa(int(f))
 	}
 	return s
+}
+
+func (f FileOption) AllowPrefix() bool {
+	parseInfo, ok := fileOptionToParseInfo[f]
+	if !ok {
+		// this should not happen
+		return false
+	}
+	return parseInfo.allowPrefix
+}
+
+func (f FileOption) ValueOverrideGetter() func(override interface{}) (bufimagemodifyv2.Override, error) {
+	parseInfo, ok := fileOptionToParseInfo[f]
+	if !ok {
+		// this should not happen
+		return nil
+	}
+	return parseInfo.valueOverrideGetter
 }
 
 // ParseFileOption parses the FileOption.
@@ -146,4 +193,12 @@ func ParseFileOption(s string) (FileOption, error) {
 		return f, nil
 	}
 	return 0, fmt.Errorf("unknown FileOption: %q", s)
+}
+
+func getValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](override interface{}) (bufimagemodifyv2.Override, error) {
+	overrideValue, ok := override.(T)
+	if !ok {
+		return nil, errors.New("invalid override")
+	}
+	return bufimagemodifyv2.NewValueOverride[T](overrideValue), nil
 }

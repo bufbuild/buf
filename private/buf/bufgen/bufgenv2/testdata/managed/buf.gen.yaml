@@ -1,0 +1,30 @@
+version: v2
+plugins:
+  - binary: protoc-gen-go
+    out: gen/out
+managed:
+  enable: true
+  disable:
+    - file_option: java_package
+      path: a/
+    - file_option: java_package
+      path: ok.proto
+  override:
+    - file_option: java_package
+      prefix: workspace.default
+    - file_option: java_package
+      module: buf.build/acme/weather
+      prefix: module1.default
+    - file_option: java_package
+      path: b/c/d
+      prefix: bcd.prefix
+    - file_option: java_package
+      path: b/c/d/x.proto
+      value: x.override
+    - file_option: java_package
+      path: b/c/d/e
+      prefix: bcde
+    - file_option: java_package
+      module: buf.build/acme/weather
+      path: b/c/d/e/f.proto
+      value: override.value.bcdef
