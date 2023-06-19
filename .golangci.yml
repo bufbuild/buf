@@ -188,3 +188,9 @@ issues:
         - gosec
       text: "G404:"
       path: private/bufpkg/bufimage/bufimageutil/.*_test\.go
+    # valueOverride() {} is used to implement a private interface and removing this
+    # line would cause compilation to fail. It is likely that the linter has a bug
+    # when it the struct uses generics.
+    - linters:
+        - unused
+      path: private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2/override.go

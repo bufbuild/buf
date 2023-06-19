@@ -162,7 +162,6 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (DisabledFun
 		// If we did not specify a file option, we match all file options
 		return (selectorFileOption == 0 || fileOption == selectorFileOption) &&
 			matchesPathAndModule(path, module, imageFile)
-
 	}, nil
 }
 

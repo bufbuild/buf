@@ -42,7 +42,7 @@ type Override interface {
 	override()
 }
 
-type ValueOverride[T string | bool] interface {
+type ValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode] interface {
 	Override
 	Get() T
 
@@ -56,11 +56,11 @@ type PrefixOverride interface {
 	prefixOverride()
 }
 
-func NewValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](v T) Override {
+func NewValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](v T) ValueOverride[T] {
 	return newValueOverride[T](v)
 }
 
-func NewPrefixOverride(p string) Override {
+func NewPrefixOverride(p string) PrefixOverride {
 	return newPrefixOverride(p)
 }
 

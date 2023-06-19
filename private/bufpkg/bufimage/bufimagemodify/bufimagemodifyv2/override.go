@@ -20,7 +20,7 @@ type valueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode] stru
 	value T
 }
 
-func newValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](val T) valueOverride[T] {
+func newValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](val T) ValueOverride[T] {
 	return valueOverride[T]{
 		value: val,
 	}
@@ -33,12 +33,13 @@ func (v valueOverride[T]) Get() T {
 	return (underlyingType(v)).value
 }
 
-func (v valueOverride[T]) override()      {}
+func (v valueOverride[T]) override() {}
+
 func (v valueOverride[T]) valueOverride() {}
 
 type prefixOverride string
 
-func newPrefixOverride(p string) prefixOverride {
+func newPrefixOverride(p string) PrefixOverride {
 	return prefixOverride(p)
 }
 
