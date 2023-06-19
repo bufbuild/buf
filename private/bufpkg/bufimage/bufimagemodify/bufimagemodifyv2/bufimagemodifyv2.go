@@ -81,15 +81,6 @@ func NewMarkSweeper(image bufimage.Image) MarkSweeper {
 	return nil
 }
 
-func ValidateOverrideForJavaPackage(override Override) error {
-	switch override.(type) {
-	case ValueOverride[string], prefixOverride:
-		return nil
-	default:
-		return errors.New("a valid override is needed for JAVA_PACKAGE")
-	}
-}
-
 func ModifyJavaPackage(
 	marker Marker,
 	imageFile bufimage.ImageFile,
