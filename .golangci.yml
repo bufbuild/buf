@@ -17,8 +17,8 @@ linters-settings:
       # Ban debug statements
       - '^fmt\.Print'
       - '^log\.'
-      - "^print$"
-      - "^println$"
+      - '^print$'
+      - '^println$'
   importas:
     alias:
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1
@@ -234,5 +234,4 @@ issues:
     # makes this test flaky.
     - linters:
         - paralleltest
-      text: "missing the call to method parallel"
       path: private/bufpkg/bufstudioagent/bufstudioagent_test.go
