@@ -309,11 +309,9 @@ func run(
 		return err
 	}
 	logger := container.Logger()
-	configDataProvider := bufgen.NewConfigDataProvider(logger)
 	configVersion, err := bufgen.ReadConfigVersion(
 		ctx,
 		logger,
-		configDataProvider,
 		readWriteBucket,
 		bufgen.ReadConfigWithOverride(flags.Template),
 	)
@@ -351,7 +349,6 @@ func run(
 		genConfigV2, err := bufgenv2.ReadConfigV2(
 			ctx,
 			logger,
-			configDataProvider,
 			readWriteBucket,
 			bufgen.ReadConfigWithOverride(flags.Template),
 		)
@@ -420,7 +417,6 @@ func run(
 		genConfigV1, err := bufgenv1.ReadConfigV1(
 			ctx,
 			logger,
-			configDataProvider,
 			readWriteBucket,
 			bufgen.ReadConfigWithOverride(flags.Template),
 		)

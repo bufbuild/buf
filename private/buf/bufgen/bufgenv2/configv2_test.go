@@ -34,7 +34,6 @@ func TestConfigSuccess(t *testing.T) {
 	ctx := context.Background()
 	nopLogger := zap.NewNop()
 	refBuilder := buffetch.NewRefBuilder()
-	provider := bufgen.NewConfigDataProvider(zap.NewNop())
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
 	placeHolderPlugins := []bufgen.PluginConfig{
@@ -664,7 +663,6 @@ func TestConfigSuccess(t *testing.T) {
 				config, err := ReadConfigV2(
 					ctx,
 					nopLogger,
-					provider,
 					readBucket,
 					bufgen.ReadConfigWithOverride(file),
 				)
@@ -672,7 +670,7 @@ func TestConfigSuccess(t *testing.T) {
 				require.Equal(t, test.expectedConfig, config)
 				data, err := os.ReadFile(file)
 				require.NoError(t, err)
-				config, err = ReadConfigV2(ctx, nopLogger, provider, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+				config, err = ReadConfigV2(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
 				require.NoError(t, err)
 				require.Equal(t, test.expectedConfig, config)
 			})
@@ -684,7 +682,6 @@ func TestConfigError(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	nopLogger := zap.NewNop()
-	provider := bufgen.NewConfigDataProvider(zap.NewNop())
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
 
@@ -840,7 +837,6 @@ func TestConfigError(t *testing.T) {
 				config, err := ReadConfigV2(
 					ctx,
 					nopLogger,
-					provider,
 					readBucket,
 					bufgen.ReadConfigWithOverride(file),
 				)

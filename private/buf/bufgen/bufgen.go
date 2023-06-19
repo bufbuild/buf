@@ -153,14 +153,12 @@ func ReadConfigWithOverride(override string) ReadConfigOption {
 func ReadConfigVersion(
 	ctx context.Context,
 	logger *zap.Logger,
-	provider ConfigDataProvider,
 	readBucket storage.ReadBucket,
 	options ...ReadConfigOption,
 ) (string, error) {
 	return readConfigVersion(
 		ctx,
 		logger,
-		provider,
 		readBucket,
 		options...,
 	)

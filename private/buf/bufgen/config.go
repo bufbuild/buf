@@ -36,10 +36,10 @@ type readConfigOptions struct {
 func readConfigVersion(
 	ctx context.Context,
 	logger *zap.Logger,
-	provider ConfigDataProvider,
 	readBucket storage.ReadBucket,
 	options ...ReadConfigOption,
 ) (string, error) {
+	provider := NewConfigDataProvider(logger)
 	version, err := ReadFromConfig(
 		ctx,
 		logger,

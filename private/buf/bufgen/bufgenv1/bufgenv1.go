@@ -34,14 +34,12 @@ import (
 func ReadConfigV1(
 	ctx context.Context,
 	logger *zap.Logger,
-	provider bufgen.ConfigDataProvider,
 	readBucket storage.ReadBucket,
 	options ...bufgen.ReadConfigOption,
 ) (*Config, error) {
 	return readConfigV1(
 		ctx,
 		logger,
-		provider,
 		readBucket,
 		options...,
 	)

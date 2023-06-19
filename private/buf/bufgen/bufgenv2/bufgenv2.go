@@ -55,10 +55,10 @@ type OverrideFunc func(bufimage.ImageFile) (string, error)
 func ReadConfigV2(
 	ctx context.Context,
 	logger *zap.Logger,
-	provider bufgen.ConfigDataProvider,
 	readBucket storage.ReadBucket,
 	options ...bufgen.ReadConfigOption,
 ) (*Config, error) {
+	provider := bufgen.NewConfigDataProvider(logger)
 	return readConfigV2(
 		ctx,
 		logger,
