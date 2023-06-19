@@ -120,14 +120,14 @@ func (g *generator) GenerateWithProtocBuiltin(
 	requests []*pluginpb.CodeGeneratorRequest,
 	options ...GenerateWithProtocBuiltinOption,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	generateOptions := newGenerateWithProtocBuiltinOptions()
+	generateWithProtocBuiltinOptions := newGenerateWithProtocBuiltinOptions()
 	for _, option := range options {
-		option(generateOptions)
+		option(generateWithProtocBuiltinOptions)
 	}
 	handler, err := NewProtocProxyHandler(
 		g.storageosProvider,
 		g.runner,
-		generateOptions.protocPath,
+		generateWithProtocBuiltinOptions.protocPath,
 		pluginName,
 	)
 	if err != nil {
