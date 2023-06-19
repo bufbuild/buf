@@ -57,8 +57,8 @@ func (c *CycleError[Key]) Error() string {
 type Graph[Key comparable] struct {
 	keyToNode map[Key]*node[Key]
 	// need to store order so that we can create a deterministic CycleError
-	// in the case of Walk where we have no source nodes, and create a sentinel
-	// root node so that we can Walk and find the cycle.
+	// in the case of Walk where we have no source nodes, so that we can Walk
+	// deterministically and find the cycle.
 	keys []Key
 }
 
