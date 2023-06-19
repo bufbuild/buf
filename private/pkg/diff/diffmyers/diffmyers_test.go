@@ -127,6 +127,7 @@ func TestDiff(t *testing.T) {
 	})
 	// The example from https://www.gnu.org/software/diffutils/manual/html_node/Sample-diff-Input.html
 	t.Run("lao-tzu", func(t *testing.T) {
+		t.Parallel()
 		const lao = `The Way that can be told of is not the eternal Way;
 The name that can be named is not the eternal name.
 The Nameless is the origin of Heaven and Earth;
