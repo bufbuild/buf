@@ -12,41 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodifyv1
+package bufimagemodifyv2
 
 import (
-	"context"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 )
 
-type fileOptionSweeper struct {
+type markSweeper struct {
+	image bufimage.Image
 	// Filepath -> SourceCodeInfo_Location.Path keys.
 	sourceCodeInfoPaths map[string]map[string]struct{}
 }
 
-func newFileOptionSweeper() *fileOptionSweeper {
-	return &fileOptionSweeper{
+func newMarkSweeper(image bufimage.Image) *markSweeper {
+	return &markSweeper{
+		image:               image,
 		sourceCodeInfoPaths: make(map[string]map[string]struct{}),
 	}
 }
 
-// mark is used to mark the given SourceCodeInfo_Location indices for
-// deletion. This method should be called in each of the file option
-// modifiers.
-func (s *fileOptionSweeper) mark(imageFilePath string, path []int32) {
-	paths, ok := s.sourceCodeInfoPaths[imageFilePath]
+func (s *markSweeper) Mark(imageFile bufimage.ImageFile, path []int32) {
+	paths, ok := s.sourceCodeInfoPaths[imageFile.Path()]
 	if !ok {
 		paths = make(map[string]struct{})
-		s.sourceCodeInfoPaths[imageFilePath] = paths
+		s.sourceCodeInfoPaths[imageFile.Path()] = paths
 	}
 	paths[internal.GetPathKey(path)] = struct{}{}
 }
 
-// Sweep applies all of the marks and sweeps the file option SourceCodeInfo_Locations.
-func (s *fileOptionSweeper) Sweep(ctx context.Context, image bufimage.Image) error {
-	for _, imageFile := range image.Files() {
+func (s *markSweeper) Sweep() error {
+	for _, imageFile := range s.image.Files() {
 		descriptor := imageFile.Proto()
 		if descriptor.SourceCodeInfo == nil {
 			continue

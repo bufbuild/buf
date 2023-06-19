@@ -311,19 +311,6 @@ func isWellKnownType(ctx context.Context, imageFile bufimage.ImageFile) bool {
 	return datawkt.Exists(imageFile.Path())
 }
 
-// int32SliceIsEqual returns true if x and y contain the same elements.
-func int32SliceIsEqual(x []int32, y []int32) bool {
-	if len(x) != len(y) {
-		return false
-	}
-	for i, elem := range x {
-		if elem != y[i] {
-			return false
-		}
-	}
-	return true
-}
-
 func stringOverridesToBoolOverrides(stringOverrides map[string]string) (map[string]bool, error) {
 	validatedOverrides := make(map[string]bool, len(stringOverrides))
 	for fileImportPath, overrideString := range stringOverrides {
