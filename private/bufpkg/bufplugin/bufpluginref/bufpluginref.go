@@ -93,6 +93,9 @@ func PluginReferenceForString(reference string, revision int) (PluginReference, 
 	return parsePluginReference(reference, revision)
 }
 
+// PluginReferenceOptionalVersion returns a new PluginReference for the given string.
+// If the string does not contain a version, the version is assumed to be an empty string.
+// This parses the path in the form remote/owner/plugin:version.
 func PluginReferenceOptionalVersion(rawReference string) (PluginReference, error) {
 	if reference, err := PluginReferenceForString(rawReference, 0); err == nil {
 		return reference, nil
