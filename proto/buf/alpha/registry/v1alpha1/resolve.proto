@@ -33,12 +33,6 @@ service ResolveService {
   rpc GetModulePins(GetModulePinsRequest) returns (GetModulePinsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-
-  // GetRemotePackageVersion resolves the given plugin and module references to a version.
-  // The format of the version is determined by the plugin type.
-  rpc GetRemotePackageVersion(GetRemotePackageVersionRequest) returns (GetRemotePackageVersionResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
   // GetGoVersion resolves the given plugin and module references to a version.
   // The format of the version is determined by the plugin type.
   rpc GetGoVersion(GetGoVersionRequest) returns (GetGoVersionResponse) {
@@ -134,13 +128,6 @@ message GetLocalModulePinsResponse {
   repeated buf.alpha.module.v1alpha1.ModulePin dependencies = 2;
 }
 
-message GetRemotePackageVersionRequest {
-  // The plugin reference to resolve.
-  GetRemotePackageVersionPlugin plugin_reference = 1;
-  // The module reference to resolve.
-  LocalModuleReference module_reference = 2;
-}
-
 message GetGoVersionRequest {
   // The plugin reference to resolve.
   GetRemotePackageVersionPlugin plugin_reference = 1;
@@ -202,9 +189,4 @@ message GetRemotePackageVersionPlugin {
   // If empty, this is a reference to the latest version.
   // example: v1.0.0
   string version = 3;
-}
-
-message GetRemotePackageVersionResponse {
-  // version is the resolved version that can be sent to a registry.
-  string version = 1;
 }

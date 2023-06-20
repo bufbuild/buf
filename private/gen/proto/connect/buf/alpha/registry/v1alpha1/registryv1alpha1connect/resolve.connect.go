@@ -52,9 +52,6 @@ const (
 	// ResolveServiceGetModulePinsProcedure is the fully-qualified name of the ResolveService's
 	// GetModulePins RPC.
 	ResolveServiceGetModulePinsProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetModulePins"
-	// ResolveServiceGetRemotePackageVersionProcedure is the fully-qualified name of the
-	// ResolveService's GetRemotePackageVersion RPC.
-	ResolveServiceGetRemotePackageVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetRemotePackageVersion"
 	// ResolveServiceGetGoVersionProcedure is the fully-qualified name of the ResolveService's
 	// GetGoVersion RPC.
 	ResolveServiceGetGoVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetGoVersion"
@@ -82,9 +79,6 @@ type ResolveServiceClient interface {
 	//
 	// This function also deals with tiebreaking what ModulePin wins for the same repository.
 	GetModulePins(context.Context, *connect_go.Request[v1alpha1.GetModulePinsRequest]) (*connect_go.Response[v1alpha1.GetModulePinsResponse], error)
-	// GetRemotePackageVersion resolves the given plugin and module references to a version.
-	// The format of the version is determined by the plugin type.
-	GetRemotePackageVersion(context.Context, *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error)
 	// GetGoVersion resolves the given plugin and module references to a version.
 	// The format of the version is determined by the plugin type.
 	GetGoVersion(context.Context, *connect_go.Request[v1alpha1.GetGoVersionRequest]) (*connect_go.Response[v1alpha1.GetGoVersionResponse], error)
@@ -112,12 +106,6 @@ func NewResolveServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 		getModulePins: connect_go.NewClient[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse](
 			httpClient,
 			baseURL+ResolveServiceGetModulePinsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		getRemotePackageVersion: connect_go.NewClient[v1alpha1.GetRemotePackageVersionRequest, v1alpha1.GetRemotePackageVersionResponse](
-			httpClient,
-			baseURL+ResolveServiceGetRemotePackageVersionProcedure,
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
@@ -150,22 +138,16 @@ func NewResolveServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 
 // resolveServiceClient implements ResolveServiceClient.
 type resolveServiceClient struct {
-	getModulePins           *connect_go.Client[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse]
-	getRemotePackageVersion *connect_go.Client[v1alpha1.GetRemotePackageVersionRequest, v1alpha1.GetRemotePackageVersionResponse]
-	getGoVersion            *connect_go.Client[v1alpha1.GetGoVersionRequest, v1alpha1.GetGoVersionResponse]
-	getSwiftVersion         *connect_go.Client[v1alpha1.GetSwiftVersionRequest, v1alpha1.GetSwiftVersionResponse]
-	getMavenVersion         *connect_go.Client[v1alpha1.GetMavenVersionRequest, v1alpha1.GetMavenVersionResponse]
-	getNPMVersion           *connect_go.Client[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse]
+	getModulePins   *connect_go.Client[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse]
+	getGoVersion    *connect_go.Client[v1alpha1.GetGoVersionRequest, v1alpha1.GetGoVersionResponse]
+	getSwiftVersion *connect_go.Client[v1alpha1.GetSwiftVersionRequest, v1alpha1.GetSwiftVersionResponse]
+	getMavenVersion *connect_go.Client[v1alpha1.GetMavenVersionRequest, v1alpha1.GetMavenVersionResponse]
+	getNPMVersion   *connect_go.Client[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse]
 }
 
 // GetModulePins calls buf.alpha.registry.v1alpha1.ResolveService.GetModulePins.
 func (c *resolveServiceClient) GetModulePins(ctx context.Context, req *connect_go.Request[v1alpha1.GetModulePinsRequest]) (*connect_go.Response[v1alpha1.GetModulePinsResponse], error) {
 	return c.getModulePins.CallUnary(ctx, req)
-}
-
-// GetRemotePackageVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetRemotePackageVersion.
-func (c *resolveServiceClient) GetRemotePackageVersion(ctx context.Context, req *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error) {
-	return c.getRemotePackageVersion.CallUnary(ctx, req)
 }
 
 // GetGoVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion.
@@ -199,9 +181,6 @@ type ResolveServiceHandler interface {
 	//
 	// This function also deals with tiebreaking what ModulePin wins for the same repository.
 	GetModulePins(context.Context, *connect_go.Request[v1alpha1.GetModulePinsRequest]) (*connect_go.Response[v1alpha1.GetModulePinsResponse], error)
-	// GetRemotePackageVersion resolves the given plugin and module references to a version.
-	// The format of the version is determined by the plugin type.
-	GetRemotePackageVersion(context.Context, *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error)
 	// GetGoVersion resolves the given plugin and module references to a version.
 	// The format of the version is determined by the plugin type.
 	GetGoVersion(context.Context, *connect_go.Request[v1alpha1.GetGoVersionRequest]) (*connect_go.Response[v1alpha1.GetGoVersionResponse], error)
@@ -226,12 +205,6 @@ func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect_go.Hand
 	mux.Handle(ResolveServiceGetModulePinsProcedure, connect_go.NewUnaryHandler(
 		ResolveServiceGetModulePinsProcedure,
 		svc.GetModulePins,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(ResolveServiceGetRemotePackageVersionProcedure, connect_go.NewUnaryHandler(
-		ResolveServiceGetRemotePackageVersionProcedure,
-		svc.GetRemotePackageVersion,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	))
@@ -267,10 +240,6 @@ type UnimplementedResolveServiceHandler struct{}
 
 func (UnimplementedResolveServiceHandler) GetModulePins(context.Context, *connect_go.Request[v1alpha1.GetModulePinsRequest]) (*connect_go.Response[v1alpha1.GetModulePinsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetModulePins is not implemented"))
-}
-
-func (UnimplementedResolveServiceHandler) GetRemotePackageVersion(context.Context, *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetRemotePackageVersion is not implemented"))
 }
 
 func (UnimplementedResolveServiceHandler) GetGoVersion(context.Context, *connect_go.Request[v1alpha1.GetGoVersionRequest]) (*connect_go.Response[v1alpha1.GetGoVersionResponse], error) {
