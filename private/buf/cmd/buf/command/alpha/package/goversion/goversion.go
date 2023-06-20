@@ -20,7 +20,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/bufpkg/bufpackageversion"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -46,8 +45,8 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " --module=<buf.build/owner/repository[:ref]> --plugin=<buf.build/owner/plugin[:version]>",
-		Short: bufpackageversion.ShortDescription(registryName),
-		Long:  bufpackageversion.LongDescription(registryName, name, "buf.build/bufbuild/connect-go"),
+		Short: bufcli.PackageVersionShortDescription(registryName),
+		Long:  bufcli.PackageVersionLongDescription(registryName, name, "buf.build/bufbuild/connect-go"),
 		Args:  cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
