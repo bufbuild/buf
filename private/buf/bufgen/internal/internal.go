@@ -17,8 +17,6 @@ package internal
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strconv"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -27,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -135,7 +132,8 @@ func ReadConfigVersion(
 // ReadDataFromConfig reads generation config data from the default path,
 // or an override path, or override data, and returns these data, a file ID
 // useful for building error messages, and two unmarshallers.
-func ReadDataFromConfig(ctx context.Context,
+func ReadDataFromConfig(
+	ctx context.Context,
 	logger *zap.Logger,
 	provider ConfigDataProvider,
 	readBucket storage.ReadBucket,
@@ -147,33 +145,13 @@ func ReadDataFromConfig(ctx context.Context,
 	unmarshalStrict func(data []byte, v interface{}) error,
 	err error,
 ) {
-	readConfigOptions := newReadConfigOptions()
-	for _, option := range options {
-		option(readConfigOptions)
-	}
-	if override := readConfigOptions.override; override != "" {
-		switch filepath.Ext(override) {
-		case ".json":
-			data, err := os.ReadFile(override)
-			if err != nil {
-				return nil, "", nil, nil, fmt.Errorf("could not read file %s: %v", override, err)
-			}
-			return data, override, encoding.UnmarshalJSONNonStrict, encoding.UnmarshalJSONStrict, nil
-		case ".yaml", ".yml":
-			data, err := os.ReadFile(override)
-			if err != nil {
-				return nil, "", nil, nil, fmt.Errorf("could not read file %s: %v", override, err)
-			}
-			return data, override, encoding.UnmarshalYAMLNonStrict, encoding.UnmarshalYAMLStrict, nil
-		default:
-			return []byte(override), "Generate configuration data", encoding.UnmarshalYAMLNonStrict, encoding.UnmarshalYAMLStrict, nil
-		}
-	}
-	data, id, err := provider.GetConfigData(ctx, readBucket)
-	if err != nil {
-		return nil, "", nil, nil, err
-	}
-	return data, id, encoding.UnmarshalYAMLNonStrict, encoding.UnmarshalYAMLStrict, nil
+	return readDataFromConfig(
+		ctx,
+		logger,
+		provider,
+		readBucket,
+		options...,
+	)
 }
 
 // GetInputImage returns an image from the given ref.

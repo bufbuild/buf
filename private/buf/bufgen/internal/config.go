@@ -17,7 +17,10 @@ package internal
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 
+	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -57,4 +60,46 @@ func readConfigVersion(
 	default:
 		return "", fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, V2Version)
 	}
+}
+
+func readDataFromConfig(
+	ctx context.Context,
+	logger *zap.Logger,
+	provider ConfigDataProvider,
+	readBucket storage.ReadBucket,
+	options ...ReadConfigOption,
+) (
+	data []byte,
+	fileID string,
+	unmarshalNonStrict func(data []byte, v interface{}) error,
+	unmarshalStrict func(data []byte, v interface{}) error,
+	err error,
+) {
+	readConfigOptions := newReadConfigOptions()
+	for _, option := range options {
+		option(readConfigOptions)
+	}
+	if override := readConfigOptions.override; override != "" {
+		switch filepath.Ext(override) {
+		case ".json":
+			data, err := os.ReadFile(override)
+			if err != nil {
+				return nil, "", nil, nil, fmt.Errorf("could not read file %s: %v", override, err)
+			}
+			return data, override, encoding.UnmarshalJSONNonStrict, encoding.UnmarshalJSONStrict, nil
+		case ".yaml", ".yml":
+			data, err := os.ReadFile(override)
+			if err != nil {
+				return nil, "", nil, nil, fmt.Errorf("could not read file %s: %v", override, err)
+			}
+			return data, override, encoding.UnmarshalYAMLNonStrict, encoding.UnmarshalYAMLStrict, nil
+		default:
+			return []byte(override), "Generate configuration data", encoding.UnmarshalYAMLNonStrict, encoding.UnmarshalYAMLStrict, nil
+		}
+	}
+	data, id, err := provider.GetConfigData(ctx, readBucket)
+	if err != nil {
+		return nil, "", nil, nil, err
+	}
+	return data, id, encoding.UnmarshalYAMLNonStrict, encoding.UnmarshalYAMLStrict, nil
 }
