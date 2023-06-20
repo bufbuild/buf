@@ -176,6 +176,7 @@ func ReadDataFromConfig(ctx context.Context,
 	return data, id, encoding.UnmarshalYAMLNonStrict, encoding.UnmarshalYAMLStrict, nil
 }
 
+// GetInputImage returns an image from the given ref.
 func GetInputImage(
 	ctx context.Context,
 	container appflag.Container,
