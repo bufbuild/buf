@@ -92,17 +92,17 @@ func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResul
 
 // fuzzBuild does a builder.Build for a fuzz test.
 func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
-	moduleFileSet, err := fuzzGetModuleFileSet(ctx, dirPath)
+	module, err := fuzzGetModule(ctx, dirPath)
 	if err != nil {
 		return nil, nil, err
 	}
-	builder := bufimagebuild.NewBuilder(zap.NewNop())
+	builder := bufimagebuild.NewBuilder(zap.NewNop(), bufmodule.NewNopModuleReader())
 	opt := bufimagebuild.WithExcludeSourceCodeInfo()
-	return builder.Build(ctx, moduleFileSet, opt)
+	return builder.Build(ctx, module, opt)
 }
 
-// fuzzGetModuleFileSet gets the bufmodule.ModuleFileSet for a fuzz test.
-func fuzzGetModuleFileSet(ctx context.Context, dirPath string) (bufmodule.ModuleFileSet, error) {
+// fuzzGetModule gets the bufmodule.Module for a fuzz test.
+func fuzzGetModule(ctx context.Context, dirPath string) (bufmodule.Module, error) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
@@ -115,20 +115,10 @@ func fuzzGetModuleFileSet(ctx context.Context, dirPath string) (bufmodule.Module
 	if err != nil {
 		return nil, err
 	}
-	module, err := bufmodulebuild.BuildForBucket(
+	return bufmodulebuild.BuildForBucket(
 		ctx,
 		readWriteBucket,
 		config,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return bufmodulebuild.NewModuleFileSetBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
-		ctx,
-		module,
 	)
 }
 

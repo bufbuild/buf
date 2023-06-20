@@ -156,9 +156,8 @@ func bucketWithBufLock(t *testing.T, pin ModulePin) storage.ReadWriteBucket {
 			},
 		},
 	}
-	bucket, err := storagemem.NewReadWriteBucketWithOptions()
-	require.NoError(t, err)
-	err = buflock.WriteConfig(context.Background(), bucket, bufLock)
+	bucket := storagemem.NewReadWriteBucket()
+	err := buflock.WriteConfig(context.Background(), bucket, bufLock)
 	require.NoError(t, err)
 	return bucket
 }

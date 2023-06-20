@@ -37,14 +37,14 @@ type Builder interface {
 	// FileAnnotations will use external file paths.
 	Build(
 		ctx context.Context,
-		moduleFileSet bufmodule.ModuleFileSet,
+		module bufmodule.Module,
 		options ...BuildOption,
 	) (bufimage.Image, []bufanalysis.FileAnnotation, error)
 }
 
 // NewBuilder returns a new Builder.
-func NewBuilder(logger *zap.Logger) Builder {
-	return newBuilder(logger)
+func NewBuilder(logger *zap.Logger, moduleReader bufmodule.ModuleReader) Builder {
+	return newBuilder(logger, moduleReader)
 }
 
 // BuildOption is an option for Build.
@@ -64,8 +64,8 @@ func WithDirectDependencies(directDependencies []bufmoduleref.ModuleReference) B
 	}
 }
 
-// WithLocalWorkspace sets a local workspace, so imports from it are not warned.
-func WithLocalWorkspace(workspace bufmodule.Workspace) BuildOption {
+// WithWorkspace sets the workspace to be read from instead of ModuleReader, and to not warn imports for.
+func WithWorkspace(workspace bufmodule.Workspace) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.workspace = workspace
 	}
