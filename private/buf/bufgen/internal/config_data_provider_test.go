@@ -62,6 +62,4 @@ func testProvider(t *testing.T, version string) {
 	require.NoError(t, err)
 	expected := []byte(fmt.Sprintf(testConfigFileData, version))
 	assert.Equal(t, expected, actual)
-
-	// TODO: write tests (not necessarily in this file) on the unmarshalled configs, for both V1 and V2.
 }

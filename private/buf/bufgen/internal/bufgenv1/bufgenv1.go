@@ -21,9 +21,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
 	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
@@ -40,7 +40,7 @@ const defaultInput = "."
 
 type Generator struct {
 	logger            *zap.Logger
-	generator         internal.Generator
+	generator         plugingen.Generator
 	imageConfigReader bufwire.ImageConfigReader
 	readWriteBucket   storage.ReadWriteBucket
 }
@@ -56,7 +56,7 @@ func NewGenerator(
 ) *Generator {
 	return &Generator{
 		logger: logger,
-		generator: internal.NewGenerator(
+		generator: plugingen.NewGenerator(
 			logger,
 			storageosProvider,
 			runner,
@@ -81,6 +81,7 @@ func (g *Generator) Generate(
 	includeImports bool,
 	includeWellKnownTypes bool,
 	errorFormat string,
+	wasmEnabled bool,
 ) error {
 	genConfig, err := readConfigV1(
 		ctx,
@@ -133,29 +134,25 @@ func (g *Generator) Generate(
 	); err != nil {
 		return err
 	}
-	generateOptions := []internal.GenerateOption{
-		internal.GenerateWithBaseOutDirPath(baseOutDir),
+	generateOptions := []plugingen.GenerateOption{
+		plugingen.GenerateWithBaseOutDirPath(baseOutDir),
 	}
 	if includeImports {
 		generateOptions = append(
 			generateOptions,
-			internal.GenerateWithAlwaysIncludeImports(),
+			plugingen.GenerateWithAlwaysIncludeImports(),
 		)
 	}
 	if includeWellKnownTypes {
 		generateOptions = append(
 			generateOptions,
-			internal.GenerateWithAlwaysIncludeWellKnownTypes(),
+			plugingen.GenerateWithAlwaysIncludeWellKnownTypes(),
 		)
-	}
-	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
-	if err != nil {
-		return err
 	}
 	if wasmEnabled {
 		generateOptions = append(
 			generateOptions,
-			internal.GenerateWithWASMEnabled(),
+			plugingen.GenerateWithWASMEnabled(),
 		)
 	}
 	if err := g.generator.Generate(
@@ -173,7 +170,7 @@ func (g *Generator) Generate(
 // Config is a configuration.
 type Config struct {
 	// Required
-	PluginConfigs []internal.PluginConfig
+	PluginConfigs []plugingen.PluginConfig
 	// Optional
 	ManagedConfig *ManagedConfig
 	// Optional

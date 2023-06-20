@@ -19,6 +19,7 @@ import (
 	"math"
 
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 )
 
@@ -47,11 +48,11 @@ var allowedOptionsForType = map[string](map[string]bool){
 	},
 }
 
-func newPluginConfigs(externalConfigs []ExternalPluginConfigV2, id string) ([]internal.PluginConfig, error) {
+func newPluginConfigs(externalConfigs []ExternalPluginConfigV2, id string) ([]plugingen.PluginConfig, error) {
 	if len(externalConfigs) == 0 {
 		return nil, fmt.Errorf("%s: no plugins set", id)
 	}
-	pluginConfigs := make([]internal.PluginConfig, 0, len(externalConfigs))
+	pluginConfigs := make([]plugingen.PluginConfig, 0, len(externalConfigs))
 	for _, externalConfig := range externalConfigs {
 		pluginConfig, err := newPluginConfig(externalConfig)
 		if err != nil {
@@ -62,7 +63,7 @@ func newPluginConfigs(externalConfigs []ExternalPluginConfigV2, id string) ([]in
 	return pluginConfigs, nil
 }
 
-func newPluginConfig(externalConfig ExternalPluginConfigV2) (internal.PluginConfig, error) {
+func newPluginConfig(externalConfig ExternalPluginConfigV2) (plugingen.PluginConfig, error) {
 	pluginTypes, options, err := getTypesAndOptions(externalConfig)
 	if err != nil {
 		return nil, err
@@ -101,7 +102,7 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (internal.PluginConf
 		if revision < 0 || revision > math.MaxInt32 {
 			return nil, fmt.Errorf("revision %d is out of accepted range %d-%d", revision, 0, math.MaxInt32)
 		}
-		return internal.NewCuratedPluginConfig(
+		return plugingen.NewCuratedPluginConfig(
 			*externalConfig.Remote,
 			revision,
 			externalConfig.Out,
@@ -114,7 +115,7 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (internal.PluginConf
 		if err != nil {
 			return nil, err
 		}
-		return internal.NewBinaryPluginConfig(
+		return plugingen.NewBinaryPluginConfig(
 			"",
 			path,
 			parsedStrategy,
@@ -128,7 +129,7 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (internal.PluginConf
 		if externalConfig.ProtocPath != nil {
 			protocPath = *externalConfig.ProtocPath
 		}
-		return internal.NewProtocBuiltinPluginConfig(
+		return plugingen.NewProtocBuiltinPluginConfig(
 			*externalConfig.ProtocBuiltin,
 			protocPath,
 			externalConfig.Out,

@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
@@ -89,11 +90,11 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 	}, nil
 }
 
-func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]internal.PluginConfig, error) {
+func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]plugingen.PluginConfig, error) {
 	if len(externalConfig.Plugins) == 0 {
 		return nil, fmt.Errorf("%s: no plugins set", id)
 	}
-	var pluginConfigs []internal.PluginConfig
+	var pluginConfigs []plugingen.PluginConfig
 	for _, plugin := range externalConfig.Plugins {
 		var numPluginIdentifiers int
 		var pluginIdentifier string
@@ -125,7 +126,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]internal.Pl
 		if err != nil {
 			return nil, err
 		}
-		var pluginConfig internal.PluginConfig
+		var pluginConfig plugingen.PluginConfig
 		switch {
 		case plugin.Plugin != "":
 			if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
@@ -133,7 +134,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]internal.Pl
 				if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
 					return nil, err
 				}
-				pluginConfig, err = internal.NewCuratedPluginConfig(
+				pluginConfig, err = plugingen.NewCuratedPluginConfig(
 					plugin.Plugin,
 					plugin.Revision,
 					plugin.Out,
@@ -147,7 +148,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]internal.Pl
 					return nil, fmt.Errorf("%s: invalid local plugin", id)
 				}
 				if len(path) > 0 {
-					pluginConfig, err = internal.NewBinaryPluginConfig(
+					pluginConfig, err = plugingen.NewBinaryPluginConfig(
 						plugin.Plugin,
 						path,
 						strategy,
@@ -157,7 +158,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]internal.Pl
 						false,
 					)
 				} else if plugin.ProtocPath != "" {
-					pluginConfig, err = internal.NewProtocBuiltinPluginConfig(
+					pluginConfig, err = plugingen.NewProtocBuiltinPluginConfig(
 						plugin.Plugin,
 						plugin.ProtocPath,
 						plugin.Out,
@@ -168,7 +169,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]internal.Pl
 					)
 				} else {
 					// It could be either binary or protoc built-in.
-					pluginConfig, err = internal.NewLocalPluginConfig(
+					pluginConfig, err = plugingen.NewLocalPluginConfig(
 						plugin.Plugin,
 						strategy,
 						plugin.Out,
@@ -185,7 +186,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]internal.Pl
 			if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
 				return nil, err
 			}
-			pluginConfig, err = internal.NewLegacyRemotePluginConfig(
+			pluginConfig, err = plugingen.NewLegacyRemotePluginConfig(
 				plugin.Remote,
 				plugin.Out,
 				opt,
@@ -202,7 +203,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]internal.Pl
 				return nil, fmt.Errorf("%s: invalid plugin name %s, did you mean to use a remote plugin?", id, pluginIdentifier)
 			}
 			if len(path) > 0 {
-				pluginConfig, err = internal.NewBinaryPluginConfig(
+				pluginConfig, err = plugingen.NewBinaryPluginConfig(
 					plugin.Name,
 					path,
 					strategy,
@@ -212,7 +213,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]internal.Pl
 					false,
 				)
 			} else if plugin.ProtocPath != "" {
-				pluginConfig, err = internal.NewProtocBuiltinPluginConfig(
+				pluginConfig, err = plugingen.NewProtocBuiltinPluginConfig(
 					plugin.Name,
 					plugin.ProtocPath,
 					plugin.Out,
@@ -223,7 +224,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]internal.Pl
 				)
 			} else {
 				// It could be either binary or protoc built-in.
-				pluginConfig, err = internal.NewLocalPluginConfig(
+				pluginConfig, err = plugingen.NewLocalPluginConfig(
 					plugin.Name,
 					strategy,
 					plugin.Out,
@@ -582,7 +583,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 	if err != nil {
 		return nil, err
 	}
-	pluginConfigs := make([]internal.PluginConfig, 0, len(externalConfig.Plugins))
+	pluginConfigs := make([]plugingen.PluginConfig, 0, len(externalConfig.Plugins))
 	for _, plugin := range externalConfig.Plugins {
 		strategy, err := internal.ParseStrategy(plugin.Strategy)
 		if err != nil {
@@ -592,9 +593,9 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 		if err != nil {
 			return nil, err
 		}
-		var pluginConfig internal.PluginConfig
+		var pluginConfig plugingen.PluginConfig
 		if plugin.Path != "" {
-			pluginConfig, err = internal.NewBinaryPluginConfig(
+			pluginConfig, err = plugingen.NewBinaryPluginConfig(
 				plugin.Name,
 				[]string{plugin.Path},
 				strategy,
@@ -604,7 +605,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 				false,
 			)
 		} else {
-			pluginConfig, err = internal.NewLocalPluginConfig(
+			pluginConfig, err = plugingen.NewLocalPluginConfig(
 				plugin.Name,
 				strategy,
 				plugin.Out,

@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
 	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodifyv2"
@@ -40,7 +40,7 @@ const (
 
 type Generator struct {
 	logger            *zap.Logger
-	generator         internal.Generator
+	generator         plugingen.Generator
 	imageConfigReader bufwire.ImageConfigReader
 	readWriteBucket   storage.ReadWriteBucket
 }
@@ -56,7 +56,7 @@ func NewGenerator(
 ) *Generator {
 	return &Generator{
 		logger: logger,
-		generator: internal.NewGenerator(
+		generator: plugingen.NewGenerator(
 			logger,
 			storageosProvider,
 			runner,
@@ -81,6 +81,8 @@ func (g *Generator) Generate(
 	includeImportsOverride bool,
 	includeWellKnownTypesOverride bool,
 	errorFormat string,
+	// wasm is turned off in v2
+	_ bool,
 ) error {
 	genConfig, err := ReadConfigV2(
 		ctx,
@@ -147,29 +149,19 @@ func (g *Generator) Generate(
 			inputImages = append(inputImages, inputImage)
 		}
 	}
-	generateOptions := []internal.GenerateOption{
-		internal.GenerateWithBaseOutDirPath(baseOutDir),
+	generateOptions := []plugingen.GenerateOption{
+		plugingen.GenerateWithBaseOutDirPath(baseOutDir),
 	}
 	if includeImportsOverride {
 		generateOptions = append(
 			generateOptions,
-			internal.GenerateWithAlwaysIncludeImports(),
+			plugingen.GenerateWithAlwaysIncludeImports(),
 		)
 	}
 	if includeWellKnownTypesOverride {
 		generateOptions = append(
 			generateOptions,
-			internal.GenerateWithAlwaysIncludeWellKnownTypes(),
-		)
-	}
-	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
-	if err != nil {
-		return err
-	}
-	if wasmEnabled {
-		generateOptions = append(
-			generateOptions,
-			internal.GenerateWithWASMEnabled(),
+			plugingen.GenerateWithAlwaysIncludeWellKnownTypes(),
 		)
 	}
 	for _, inputImage := range inputImages {
@@ -228,7 +220,7 @@ func ReadConfigV2(
 // Config is a configuration.
 type Config struct {
 	Managed *ManagedConfig
-	Plugins []internal.PluginConfig
+	Plugins []plugingen.PluginConfig
 	Inputs  []*InputConfig
 }
 

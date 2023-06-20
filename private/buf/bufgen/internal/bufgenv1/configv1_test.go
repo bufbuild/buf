@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -34,7 +35,7 @@ import (
 func TestReadConfigV1Beta1(t *testing.T) {
 	truth := true
 	successConfig := &Config{
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -63,7 +64,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -82,7 +83,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -101,7 +102,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateLocalPlugin(
 				t,
 				"go",
@@ -145,7 +146,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 func TestReadConfigV1(t *testing.T) {
 	truth := true
 	successConfig := &Config{
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -187,7 +188,7 @@ func TestReadConfigV1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -206,7 +207,7 @@ func TestReadConfigV1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -218,7 +219,7 @@ func TestReadConfigV1(t *testing.T) {
 		},
 	}
 	successConfig4 := &Config{
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateLegacyRemotePlugin(
 				t,
 				"someremote.com/owner/plugins/myplugin:v1.1.0-1",
@@ -228,7 +229,7 @@ func TestReadConfigV1(t *testing.T) {
 		},
 	}
 	successConfig5 := &Config{
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateLegacyRemotePlugin(
 				t,
 				"someremote.com/owner/plugins/myplugin",
@@ -251,7 +252,7 @@ func TestReadConfigV1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]string),
 			},
 		},
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateLegacyRemotePlugin(
 				t,
 				"someremote.com/owner/plugins/myplugin",
@@ -261,7 +262,7 @@ func TestReadConfigV1(t *testing.T) {
 		},
 	}
 	successConfig7 := &Config{
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -331,7 +332,7 @@ func TestReadConfigV1(t *testing.T) {
 				},
 			},
 		},
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateLegacyRemotePlugin(
 				t,
 				"someremote.com/owner/plugins/myplugin",
@@ -374,7 +375,7 @@ func TestReadConfigV1(t *testing.T) {
 				},
 			},
 		},
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateLegacyRemotePlugin(
 				t,
 				"someremote.com/owner/plugins/myplugin",
@@ -618,7 +619,7 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, nopLogger, readBucket, filepath.Join("testdata", "v1", "gen_error14.yaml"))
 
 	successConfig = &Config{
-		PluginConfigs: []internal.PluginConfig{
+		PluginConfigs: []plugingen.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -753,8 +754,8 @@ func mustCreateBinaryPlugin(
 	strategy internal.Strategy,
 	out string,
 	opt string,
-) internal.BinaryPluginConfig {
-	plugin, err := internal.NewBinaryPluginConfig(
+) plugingen.BinaryPluginConfig {
+	plugin, err := plugingen.NewBinaryPluginConfig(
 		name,
 		path,
 		strategy,
@@ -773,8 +774,8 @@ func mustCreateLocalPlugin(
 	strategy internal.Strategy,
 	out string,
 	opt string,
-) internal.LocalPluginConfig {
-	plugin, err := internal.NewLocalPluginConfig(
+) plugingen.LocalPluginConfig {
+	plugin, err := plugingen.NewLocalPluginConfig(
 		name,
 		strategy,
 		out,
@@ -791,8 +792,8 @@ func mustCreateLegacyRemotePlugin(
 	remote string,
 	out string,
 	opt string,
-) internal.LegacyRemotePluginConfig {
-	plugin, err := internal.NewLegacyRemotePluginConfig(
+) plugingen.LegacyRemotePluginConfig {
+	plugin, err := plugingen.NewLegacyRemotePluginConfig(
 		remote,
 		out,
 		opt,

@@ -135,6 +135,7 @@ func (g *generator) Generate(
 		options.includeImports,
 		options.includeWellKnownTypes,
 		options.errorFormat,
+		options.wasmEnbaled,
 	)
 }
 
@@ -152,5 +153,6 @@ type versionSpecificGenerator interface {
 		includeImportsOverride bool,
 		includeWellKnownTypesOverride bool,
 		errorFormat string,
+		wasmEnabled bool,
 	) error
 }
