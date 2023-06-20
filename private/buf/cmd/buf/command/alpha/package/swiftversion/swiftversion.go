@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package versionget
+package swiftversion
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufpackageversion"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -33,6 +35,7 @@ import (
 const (
 	PluginFlagName = "plugin"
 	ModuleFlagName = "module"
+	RegistryName   = "swift"
 )
 
 // NewCommand returns a new Command
@@ -43,21 +46,9 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " --module=<buf.build/owner/repository[:ref]> --plugin=<buf.build/owner/plugin[:version]>",
-		Short: "Resolve module and plugin reference to a specific remote package version",
-		Long: `This command returns the version of the asset to be used with one of the supported remote package registries.
-For example npm, go proxy, maven, swift.
-
-Examples:
-
-Get the version of the eliza module and the connect-go plugin for use with go modules.
-    $ buf alpha package version get --module=buf.build/bufbuild/eliza --plugin=buf.build/bufbuild/connect-go
-        v1.7.0-20230609151053-e682db0d9918.1
-
-Use a specific module version and plugin version.
-    $ buf alpha package version get --module=buf.build/bufbuild/eliza:e682db0d99184be88b41c4405ea8a417 --plugin=buf.build/bufbuild/connect-go:v1.7.0
-        v1.7.0-20230609151053-e682db0d9918.1
-`,
-		Args: cobra.NoArgs,
+		Short: bufpackageversion.ShortDescription(RegistryName),
+		Long:  bufpackageversion.LongDescription(RegistryName, name, "buf.build/bufbuild/connect-swift"),
+		Args:  cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -79,7 +70,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(&f.Module, ModuleFlagName, "", "The module reference to resolve")
-	flagSet.StringVar(&f.Plugin, PluginFlagName, "", "The plugin reference to resolve")
+	flagSet.StringVar(&f.Plugin, PluginFlagName, "", fmt.Sprintf("The %s plugin reference to resolve", RegistryName))
 	_ = cobra.MarkFlagRequired(flagSet, ModuleFlagName)
 	_ = cobra.MarkFlagRequired(flagSet, PluginFlagName)
 }
@@ -90,6 +81,10 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnAlphaCommand(ctx, container)
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	if err != nil {
+		return err
+	}
 	moduleReference, err := bufmoduleref.ModuleReferenceForString(flags.Module)
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("failed parsing module reference: %s", err.Error())
@@ -101,17 +96,13 @@ func run(
 	if pluginReference.Remote() != moduleReference.Remote() {
 		return appcmd.NewInvalidArgumentError("module and plugin must be from the same remote")
 	}
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
 	resolver := connectclient.Make(
 		clientConfig,
 		moduleReference.Remote(),
 		registryv1alpha1connect.NewResolveServiceClient,
 	)
-	packageVersion, err := resolver.GetRemotePackageVersion(ctx, connect.NewRequest(
-		&registryv1alpha1.GetRemotePackageVersionRequest{
+	packageVersion, err := resolver.GetSwiftVersion(ctx, connect.NewRequest(
+		&registryv1alpha1.GetSwiftVersionRequest{
 			ModuleReference: &registryv1alpha1.LocalModuleReference{
 				Owner:      moduleReference.Owner(),
 				Repository: moduleReference.Repository(),
@@ -127,6 +118,8 @@ func run(
 	if err != nil {
 		return err
 	}
-	_, err = container.Stdout().Write([]byte(packageVersion.Msg.Version))
-	return err
+	if _, err := container.Stdout().Write([]byte(packageVersion.Msg.Version)); err != nil {
+		return err
+	}
+	return nil
 }

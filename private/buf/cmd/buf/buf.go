@@ -19,7 +19,10 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/version/versionget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/goversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/mavenversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/npmversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/swiftversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
@@ -235,13 +238,10 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "package",
 						Short: "Manage remote packages",
 						SubCommands: []*appcmd.Command{
-							{
-								Use:   "version",
-								Short: "Manage remote package versions",
-								SubCommands: []*appcmd.Command{
-									versionget.NewCommand("get", builder),
-								},
-							},
+							goversion.NewCommand("go-version", builder),
+							mavenversion.NewCommand("maven-version", builder),
+							npmversion.NewCommand("npm-version", builder),
+							swiftversion.NewCommand("swift-version", builder),
 						},
 					},
 					{
