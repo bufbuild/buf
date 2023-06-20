@@ -81,6 +81,7 @@ func (g *Generator) Generate(
 	includeImportsOverride bool,
 	includeWellKnownTypesOverride bool,
 	errorFormat string,
+	fileAnnotationErr error,
 	// wasm is turned off in v2
 	_ bool,
 ) error {
@@ -113,6 +114,7 @@ func (g *Generator) Generate(
 			pathsExcludedOverride,
 			errorFormat,
 			typesIncludedOverride,
+			fileAnnotationErr,
 		)
 		if err != nil {
 			return err
@@ -142,6 +144,7 @@ func (g *Generator) Generate(
 				pathsExcluded,
 				errorFormat,
 				typesIncluded,
+				fileAnnotationErr,
 			)
 			if err != nil {
 				return err

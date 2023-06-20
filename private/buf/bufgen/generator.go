@@ -42,6 +42,7 @@ type generateOptions struct {
 	pathsSpecified        []string
 	pathsExcluded         []string
 	errorFormat           string
+	fileAnnotationErr     error
 	wasmEnbaled           bool
 }
 
@@ -135,6 +136,7 @@ func (g *generator) Generate(
 		options.includeImports,
 		options.includeWellKnownTypes,
 		options.errorFormat,
+		options.fileAnnotationErr,
 		options.wasmEnbaled,
 	)
 }
@@ -153,6 +155,7 @@ type versionSpecificGenerator interface {
 		includeImportsOverride bool,
 		includeWellKnownTypesOverride bool,
 		errorFormat string,
+		fileAnnotationErr error,
 		wasmEnabled bool,
 	) error
 }

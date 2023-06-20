@@ -81,6 +81,7 @@ func (g *Generator) Generate(
 	includeImports bool,
 	includeWellKnownTypes bool,
 	errorFormat string,
+	fileAnnotationErr error,
 	wasmEnabled bool,
 ) error {
 	genConfig, err := readConfigV1(
@@ -117,6 +118,7 @@ func (g *Generator) Generate(
 		pathsExcluded,
 		errorFormat,
 		typesIncluded,
+		fileAnnotationErr,
 	)
 	if err != nil {
 		return err

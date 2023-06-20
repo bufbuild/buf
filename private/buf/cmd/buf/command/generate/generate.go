@@ -352,6 +352,7 @@ func run(
 		bufgen.GenerateWithPathsExcluded(flags.ExcludePaths),
 		bufgen.GenerateWithTypesIncluded(includedTypesFromCLI),
 		bufgen.GenerateWithErrorFormat(flags.ErrorFormat),
+		bufgen.GenerateWithFileAnnotationErr(bufcli.ErrFileAnnotation),
 	}
 	if flags.IncludeImports {
 		generateOptions = append(

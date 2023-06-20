@@ -156,6 +156,14 @@ func GenerateWithErrorFormat(errorFormat string) GenerateOption {
 	}
 }
 
+// GenerateWithFileAnnotationErr sets the error to return when file annotations
+// are printed.
+func GenerateWithFileAnnotationErr(annotationErr error) GenerateOption {
+	return func(options *generateOptions) {
+		options.fileAnnotationErr = annotationErr
+	}
+}
+
 // GenerateWithWasmEnabled enables Wasm plugins.
 func GenerateWithWasmEnabled() GenerateOption {
 	return func(options *generateOptions) {

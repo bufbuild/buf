@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -187,6 +186,7 @@ func GetInputImage(
 	excludedPaths []string,
 	errorFormat string,
 	includedTypes []string,
+	fileAnnotationErr error,
 ) (bufimage.Image, error) {
 	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
 		ctx,
@@ -205,7 +205,7 @@ func GetInputImage(
 		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, errorFormat); err != nil {
 			return nil, err
 		}
-		return nil, bufcli.ErrFileAnnotation
+		return nil, fileAnnotationErr
 	}
 	images := make([]bufimage.Image, 0, len(imageConfigs))
 	for _, imageConfig := range imageConfigs {
