@@ -124,7 +124,7 @@ func (g *generator) GenerateWithProtocBuiltin(
 	for _, option := range options {
 		option(generateWithProtocBuiltinOptions)
 	}
-	handler, err := NewProtocProxyHandler(
+	handler, err := newProtocProxyHandler(
 		g.storageosProvider,
 		g.runner,
 		generateWithProtocBuiltinOptions.protocPath,

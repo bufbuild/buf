@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -47,21 +46,6 @@ type protocProxyHandler struct {
 	protocPath        string
 	pluginName        string
 	tracer            trace.Tracer
-}
-
-func newProtocProxyHandler(
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	protocPath string,
-	pluginName string,
-) *protocProxyHandler {
-	return &protocProxyHandler{
-		storageosProvider: storageosProvider,
-		runner:            runner,
-		protocPath:        protocPath,
-		pluginName:        pluginName,
-		tracer:            otel.GetTracerProvider().Tracer("bufbuild/buf"),
-	}
 }
 
 func (h *protocProxyHandler) Handle(
