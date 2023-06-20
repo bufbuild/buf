@@ -304,7 +304,7 @@ func filterImageConfigs(imageConfigs []ImageConfig, protoFileRef buffetch.ProtoF
 	} else {
 		paths = []string{path}
 	}
-	prunedImage, err := bufimage.ImageWithOnlyPaths(image, paths, nyou can do bufimage.ImageWithOnlyPackages, bufimage.ImageWithOnlyPaths, and then reuse bufimage.MergeImage?
+	prunedImage, err := bufimage.ImageWithOnlyPaths(image, paths, nil)
 	if err != nil {
 		return nil, err
 	}

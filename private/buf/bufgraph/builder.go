@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/bufbuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/dag"
@@ -31,7 +31,7 @@ type builder struct {
 	logger         *zap.Logger
 	moduleResolver bufmodule.ModuleResolver
 	moduleReader   bufmodule.ModuleReader
-	buildBuilder   bufbuild.Builder
+	imageBuilder   bufimagebuild.Builder
 }
 
 func newBuilder(
@@ -43,7 +43,7 @@ func newBuilder(
 		logger:         logger,
 		moduleResolver: moduleResolver,
 		moduleReader:   moduleReader,
-		buildBuilder: bufbuild.NewBuilder(
+		imageBuilder: bufimagebuild.NewBuilder(
 			logger,
 			moduleReader,
 		),
@@ -107,10 +107,10 @@ func (b *builder) buildForModule(
 	workspace bufmodule.Workspace,
 	graph *dag.Graph[Node],
 ) ([]bufanalysis.FileAnnotation, error) {
-	image, fileAnnotations, err := b.buildBuilder.Build(
+	image, fileAnnotations, err := b.imageBuilder.Build(
 		ctx,
 		module,
-		bufbuild.BuildWithWorkspace(workspace),
+		bufimagebuild.WithWorkspace(workspace),
 	)
 	if err != nil {
 		return nil, err
