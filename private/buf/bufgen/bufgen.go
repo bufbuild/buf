@@ -30,6 +30,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// The following are used by either v1beta1_migrator.go or generate_test.go.
 type ExternalConfigVersion = internal.ExternalConfigVersion
 type ExternalConfigV2 = bufgenv2.ExternalConfigV2
 type ExternalPluginConfigV2 = bufgenv2.ExternalPluginConfigV2
@@ -39,6 +40,7 @@ type ExternalManagedConfigV1 = bufgenv1.ExternalManagedConfigV1
 type ExternalOptimizeForConfigV1 = bufgenv1.ExternalOptimizeForConfigV1
 type ExternalConfigV1Beta1 = bufgenv1.ExternalConfigV1Beta1
 
+// The following are used by v1beta1_migrator.go.
 const (
 	// ExternalConfigFilePath is the default external configuration file path.
 	ExternalConfigFilePath = internal.ExternalConfigFilePath
@@ -46,8 +48,6 @@ const (
 	V1Version = internal.V1Version
 	// V1Beta1Version is the string used to identify the v1beta1 version of the generate template.
 	V1Beta1Version = internal.V1Beta1Version
-	// V2Version is the string used to identify the v2 version of the generate template.
-	V2Version = internal.V2Version
 )
 
 // Generators generates.
