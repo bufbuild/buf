@@ -96,6 +96,9 @@ func (g *Generator) Generate(
 		input = inputSpecified
 	}
 	inputRef, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
+	if err != nil {
+		return err
+	}
 	var typesIncluded []string
 	if typesConfig := genConfig.TypesConfig; typesConfig != nil {
 		typesIncluded = typesConfig.Include

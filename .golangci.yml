@@ -17,8 +17,8 @@ linters-settings:
       # Ban debug statements
       - '^fmt\.Print'
       - '^log\.'
-      - '^print$'
-      - '^println$'
+      - "^print$"
+      - "^println$"
   importas:
     alias:
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1
@@ -163,7 +163,7 @@ issues:
         - dogsled
       # One function call doesn't care about most of the returned destructured values, which are
       # parts of a URL. The dogsled linter complains about it. (Value of this linter is unclear...)
-      path: private/buf/bufgen/plugin_config.go
+      path: private/buf/bufgen/internal/plugin_config.go
     - linters:
         - containedctx
       # Type must implement an interface whose methods do not accept context. But this

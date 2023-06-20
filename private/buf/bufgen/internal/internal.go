@@ -210,19 +210,9 @@ func ReadConfigVersion(
 	)
 }
 
-// ReadFromConfig reads the configuration as bytes from the OS or an override, if any,
-// and interprets these bytes as a value of V, with configGetter.
-func ReadFromConfig[V any](
-	ctx context.Context,
-	logger *zap.Logger,
-	provider ConfigDataProvider,
-	readBucket storage.ReadBucket,
-	configGetter ConfigGetter[V],
-	options ...ReadConfigOption,
-) (*V, error) {
-	return readFromConfig(ctx, logger, provider, readBucket, configGetter, options...)
-}
-
+// ReadDataFromConfig reads generation config data from the default path,
+// or an override path, or override data, and returns these data, a file ID
+// useful for building error messages, and two unmarshallers.
 func ReadDataFromConfig(ctx context.Context,
 	logger *zap.Logger,
 	provider ConfigDataProvider,
@@ -263,16 +253,6 @@ func ReadDataFromConfig(ctx context.Context,
 	}
 	return data, id, encoding.UnmarshalYAMLNonStrict, encoding.UnmarshalYAMLStrict, nil
 }
-
-// ConfigGetter is a function that interpret a slice of bytes as a value of type V.
-type ConfigGetter[V any] func(
-	ctx context.Context,
-	logger *zap.Logger,
-	unmarshalNonStrict func([]byte, interface{}) error,
-	unmarshalStrict func([]byte, interface{}) error,
-	data []byte,
-	id string,
-) (*V, error)
 
 // PluginConfig is a plugin configuration.
 type PluginConfig interface {

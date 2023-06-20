@@ -17,10 +17,7 @@ package internal
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -60,96 +57,4 @@ func readConfigVersion(
 	default:
 		return "", fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, V2Version)
 	}
-}
-
-func readFromConfig[V any](
-	ctx context.Context,
-	logger *zap.Logger,
-	provider ConfigDataProvider,
-	readBucket storage.ReadBucket,
-	configGetter ConfigGetter[V],
-	options ...ReadConfigOption,
-) (*V, error) {
-	readConfigOptions := newReadConfigOptions()
-	for _, option := range options {
-		option(readConfigOptions)
-	}
-	if override := readConfigOptions.override; override != "" {
-		switch filepath.Ext(override) {
-		case ".json":
-			return getConfigJSONFile(ctx, logger, override, configGetter)
-		case ".yaml", ".yml":
-			return getConfigYAMLFile(ctx, logger, override, configGetter)
-		default:
-			return getConfigJSONOrYAMLData(ctx, logger, override, configGetter)
-		}
-	}
-	data, id, err := provider.GetConfigData(ctx, readBucket)
-	if err != nil {
-		return nil, err
-	}
-	return configGetter(
-		ctx,
-		logger,
-		encoding.UnmarshalYAMLNonStrict,
-		encoding.UnmarshalYAMLStrict,
-		data,
-		id,
-	)
-}
-
-func getConfigJSONFile[V any](
-	ctx context.Context,
-	logger *zap.Logger,
-	file string,
-	configGetter ConfigGetter[V],
-) (*V, error) {
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return nil, fmt.Errorf("could not read file %s: %v", file, err)
-	}
-	return configGetter(
-		ctx,
-		logger,
-		encoding.UnmarshalJSONNonStrict,
-		encoding.UnmarshalJSONStrict,
-		data,
-		file,
-	)
-}
-
-func getConfigYAMLFile[V any](
-	ctx context.Context,
-	logger *zap.Logger,
-	file string,
-	configGetter ConfigGetter[V],
-) (*V, error) {
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return nil, fmt.Errorf("could not read file %s: %v", file, err)
-	}
-	return configGetter(
-		ctx,
-		logger,
-		encoding.UnmarshalYAMLNonStrict,
-		encoding.UnmarshalYAMLStrict,
-		data,
-		file,
-	)
-}
-
-func getConfigJSONOrYAMLData[V any](
-	ctx context.Context,
-	logger *zap.Logger,
-	data string,
-	configGetter ConfigGetter[V],
-) (*V, error) {
-	return configGetter(
-		ctx,
-		logger,
-		encoding.UnmarshalJSONOrYAMLNonStrict,
-		encoding.UnmarshalJSONOrYAMLStrict,
-		[]byte(data),
-		"Generate configuration data",
-	)
 }
