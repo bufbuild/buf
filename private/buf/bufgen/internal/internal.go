@@ -96,6 +96,31 @@ func NewConfigDataProvider(logger *zap.Logger) ConfigDataProvider {
 	return newConfigDataProvider(logger)
 }
 
+// ReadDataFromConfig reads generation config data from the default path,
+// or an override path, or override data, and returns these data, a file ID
+// useful for building error messages, and two unmarshallers.
+func ReadDataFromConfig(
+	ctx context.Context,
+	logger *zap.Logger,
+	provider ConfigDataProvider,
+	readBucket storage.ReadBucket,
+	options ...ReadConfigOption,
+) (
+	data []byte,
+	fileID string,
+	unmarshalNonStrict func(data []byte, v interface{}) error,
+	unmarshalStrict func(data []byte, v interface{}) error,
+	err error,
+) {
+	return readDataFromConfig(
+		ctx,
+		logger,
+		provider,
+		readBucket,
+		options...,
+	)
+}
+
 // ReadConfigOption is an option for ReadConfig.
 type ReadConfigOption func(*readConfigOptions)
 
@@ -124,31 +149,6 @@ func ReadConfigVersion(
 	return readConfigVersion(
 		ctx,
 		logger,
-		readBucket,
-		options...,
-	)
-}
-
-// ReadDataFromConfig reads generation config data from the default path,
-// or an override path, or override data, and returns these data, a file ID
-// useful for building error messages, and two unmarshallers.
-func ReadDataFromConfig(
-	ctx context.Context,
-	logger *zap.Logger,
-	provider ConfigDataProvider,
-	readBucket storage.ReadBucket,
-	options ...ReadConfigOption,
-) (
-	data []byte,
-	fileID string,
-	unmarshalNonStrict func(data []byte, v interface{}) error,
-	unmarshalStrict func(data []byte, v interface{}) error,
-	err error,
-) {
-	return readDataFromConfig(
-		ctx,
-		logger,
-		provider,
 		readBucket,
 		options...,
 	)
