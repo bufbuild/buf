@@ -37,14 +37,14 @@ type Builder interface {
 	// FileAnnotations will use external file paths.
 	Build(
 		ctx context.Context,
-		moduleFileSet bufmodule.ModuleFileSet,
+		module bufmodule.Module,
 		options ...BuildOption,
 	) (bufimage.Image, []bufanalysis.FileAnnotation, error)
 }
 
 // NewBuilder returns a new Builder.
-func NewBuilder(logger *zap.Logger) Builder {
-	return newBuilder(logger)
+func NewBuilder(logger *zap.Logger, moduleReader bufmodule.ModuleReader) Builder {
+	return newBuilder(logger, moduleReader)
 }
 
 // BuildOption is an option for Build.
@@ -66,14 +66,14 @@ func WithExpectedDirectDependencies(expectedDirectDependencies []bufmoduleref.Mo
 	}
 }
 
-// WithLocalWorkspace sets a local workspace, so imports from it are not warned.
+// WithWorkspace sets the workspace to be read from instead of ModuleReader, and to not warn imports for.
 //
 // TODO: this can probably be dealt with by finding out if a ModuleIdentityOptionalCommit has a commit
 // or not, although that is hacky, that's an implementation detail in practice, but perhaps
 // we could justify it - transitive dependencies without commits don't make sense?
 //
 // TODO: shouldn't buf.yamls in workspaces have deps properly declared in them anyways? Why not warn?
-func WithLocalWorkspace(workspace bufmodule.Workspace) BuildOption {
+func WithWorkspace(workspace bufmodule.Workspace) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.workspace = workspace
 	}

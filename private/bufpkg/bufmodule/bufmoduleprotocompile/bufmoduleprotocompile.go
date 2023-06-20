@@ -43,12 +43,9 @@ type ParserAccessorHandler interface {
 
 // NewParserAccessorHandler returns a new ParserAccessorHandler.
 //
-// The given module should be a bufmodule.ModuleFileSet for image builds, as it needs
-// access to not just the target files, but all dependency files as well.
-//
-// For AST building, this can just be a bufmodule.Module.
-func NewParserAccessorHandler(ctx context.Context, module bufmodule.Module) ParserAccessorHandler {
-	return newParserAccessorHandler(ctx, module)
+// TODO: make this dependent on whatever derivative getter type we create to replace ModuleFileSet.
+func NewParserAccessorHandler(ctx context.Context, moduleFileSet bufmodule.ModuleFileSet) ParserAccessorHandler {
+	return newParserAccessorHandler(ctx, moduleFileSet)
 }
 
 // GetFileAnnotations gets the FileAnnotations for the ErrorWithPos errors.

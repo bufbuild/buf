@@ -27,9 +27,14 @@ import (
 	"go.uber.org/multierr"
 )
 
+// TODO: remove when we remove ModuleFileSet
+type moduleFileReader interface {
+	GetModuleFile(context.Context, string) (bufmodule.ModuleFile, error)
+}
+
 type parserAccessorHandler struct {
 	ctx                                context.Context
-	module                             bufmodule.Module
+	moduleFileReader                   moduleFileReader
 	pathToExternalPath                 map[string]string
 	nonImportPaths                     map[string]struct{}
 	pathToModuleIdentityOptionalCommit map[string]bufmoduleref.ModuleIdentityOptionalCommit
@@ -38,11 +43,11 @@ type parserAccessorHandler struct {
 
 func newParserAccessorHandler(
 	ctx context.Context,
-	module bufmodule.Module,
+	moduleFileReader moduleFileReader,
 ) *parserAccessorHandler {
 	return &parserAccessorHandler{
 		ctx:                                ctx,
-		module:                             module,
+		moduleFileReader:                   moduleFileReader,
 		pathToExternalPath:                 make(map[string]string),
 		nonImportPaths:                     make(map[string]struct{}),
 		pathToModuleIdentityOptionalCommit: make(map[string]bufmoduleref.ModuleIdentityOptionalCommit),
@@ -50,7 +55,7 @@ func newParserAccessorHandler(
 }
 
 func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error) {
-	moduleFile, moduleErr := p.module.GetModuleFile(p.ctx, path)
+	moduleFile, moduleErr := p.moduleFileReader.GetModuleFile(p.ctx, path)
 	if moduleErr != nil {
 		if !storage.IsNotExist(moduleErr) {
 			return nil, moduleErr

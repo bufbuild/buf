@@ -30,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -159,18 +158,12 @@ func getProtosourceFiles(
 	if err != nil {
 		return nil, err
 	}
-	moduleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(
+	image, fileAnnotations, err := bufimagebuild.NewBuilder(
 		container.Logger(),
 		bufmodule.NewNopModuleReader(),
 	).Build(
 		ctx,
 		module,
-	)
-	if err != nil {
-		return nil, err
-	}
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(container.Logger()).Build(
-		ctx, moduleFileSet,
 		bufimagebuild.WithExcludeSourceCodeInfo(),
 	)
 	if err != nil {
