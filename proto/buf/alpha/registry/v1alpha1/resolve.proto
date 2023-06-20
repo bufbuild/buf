@@ -39,6 +39,26 @@ service ResolveService {
   rpc GetRemotePackageVersion(GetRemotePackageVersionRequest) returns (GetRemotePackageVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // GetGoVersion resolves the given plugin and module references to a version.
+  // The format of the version is determined by the plugin type.
+  rpc GetGoVersion(GetGoVersionRequest) returns (GetGoVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetSwiftVersion resolves the given plugin and module references to a version.
+  // The format of the version is determined by the plugin type.
+  rpc GetSwiftVersion(GetSwiftVersionRequest) returns (GetSwiftVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetMavenVersion resolves the given plugin and module references to a version.
+  // The format of the version is determined by the plugin type.
+  rpc GetMavenVersion(GetMavenVersionRequest) returns (GetMavenVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetNPMVersion resolves the given plugin and module references to a version.
+  // The format of the version is determined by the plugin type.
+  rpc GetNPMVersion(GetNPMVersionRequest) returns (GetNPMVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetModulePinsRequest {
@@ -119,6 +139,54 @@ message GetRemotePackageVersionRequest {
   GetRemotePackageVersionPlugin plugin_reference = 1;
   // The module reference to resolve.
   LocalModuleReference module_reference = 2;
+}
+
+message GetGoVersionRequest {
+  // The plugin reference to resolve.
+  GetRemotePackageVersionPlugin plugin_reference = 1;
+  // The module reference to resolve.
+  LocalModuleReference module_reference = 2;
+}
+
+message GetGoVersionResponse {
+  // version is the resolved version to be used with the go module proxy.
+  string version = 1;
+}
+
+message GetMavenVersionRequest {
+  // The plugin reference to resolve.
+  GetRemotePackageVersionPlugin plugin_reference = 1;
+  // The module reference to resolve.
+  LocalModuleReference module_reference = 2;
+}
+
+message GetMavenVersionResponse {
+  // version is the resolved version to be used with the go module proxy.
+  string version = 1;
+}
+
+message GetNPMVersionRequest {
+  // The plugin reference to resolve.
+  GetRemotePackageVersionPlugin plugin_reference = 1;
+  // The module reference to resolve.
+  LocalModuleReference module_reference = 2;
+}
+
+message GetNPMVersionResponse {
+  // version is the resolved version to be used with the go module proxy.
+  string version = 1;
+}
+
+message GetSwiftVersionRequest {
+  // The plugin reference to resolve.
+  GetRemotePackageVersionPlugin plugin_reference = 1;
+  // The module reference to resolve.
+  LocalModuleReference module_reference = 2;
+}
+
+message GetSwiftVersionResponse {
+  // version is the resolved version to be used with the go module proxy.
+  string version = 1;
 }
 
 // GetRemotePackageVersionPlugin is a plugin reference.
