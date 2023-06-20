@@ -74,7 +74,7 @@ func (b *builder) Build(
 		ctx,
 		module,
 		buildOptions.excludeSourceCodeInfo,
-		buildOptions.directDependencies,
+		buildOptions.expectedDirectDependencies,
 		buildOptions.workspace,
 	)
 }
@@ -83,7 +83,7 @@ func (b *builder) build(
 	ctx context.Context,
 	module bufmodule.Module,
 	excludeSourceCodeInfo bool,
-	directDeps []bufmoduleref.ModuleReference,
+	expectedDirectDeps []bufmoduleref.ModuleReference,
 	workspace bufmodule.Workspace,
 ) (_ bufimage.Image, _ []bufanalysis.FileAnnotation, retErr error) {
 	ctx, span := b.tracer.Start(ctx, "build")
@@ -154,7 +154,7 @@ func (b *builder) build(
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := b.warnInvalidImports(ctx, image, directDeps, workspace); err != nil {
+	if err := b.warnInvalidImports(ctx, image, expectedDirectDeps, workspace); err != nil {
 		b.logger.Error("warn_invalid_imports", zap.Error(err))
 	}
 	return image, nil, nil
@@ -166,18 +166,18 @@ func (b *builder) build(
 func (b *builder) warnInvalidImports(
 	ctx context.Context,
 	builtImage bufimage.Image,
-	directModuleDeps []bufmoduleref.ModuleReference,
+	expectedDirectDeps []bufmoduleref.ModuleReference,
 	localWorkspace bufmodule.Workspace,
 ) error {
-	if directModuleDeps == nil && localWorkspace == nil {
+	if expectedDirectDeps == nil && localWorkspace == nil {
 		// Bail out early in case the caller didn't send explicitly send direct module dependencies nor
 		// workspace. TODO: We should always send direct deps, so this imports warning can always
 		// happen.
 		return nil
 	}
-	directDepsIdentities := make(map[string]struct{}, len(directModuleDeps))
-	for _, directDep := range directModuleDeps {
-		directDepsIdentities[directDep.IdentityString()] = struct{}{}
+	expectedDirectDepsIdentities := make(map[string]struct{}, len(expectedDirectDeps))
+	for _, expectedDirectDep := range expectedDirectDeps {
+		expectedDirectDepsIdentities[expectedDirectDep.IdentityString()] = struct{}{}
 	}
 	workspaceIdentities := make(map[string]struct{})
 	if localWorkspace != nil {
@@ -201,16 +201,16 @@ func (b *builder) warnInvalidImports(
 	}
 	b.logger.Debug(
 		"module_identities",
-		zap.Any("from_direct_dependencies", directDepsIdentities),
+		zap.Any("from_direct_dependencies", expectedDirectDepsIdentities),
 		zap.Any("from_workspace", workspaceIdentities),
 	)
 
 	// categorize image files into direct vs transitive dependencies
-	allImgFiles := make(map[string]map[string][]string)    // for logging purposes only, modIdentity:filepath:imports
-	targetFiles := make(map[string]struct{})               // filepath
-	directDepsFilesToModule := make(map[string]string)     // filepath:modIdentity
-	workspaceFilesToModule := make(map[string]string)      // filepath:modIdentity
-	transitiveDepsFilesToModule := make(map[string]string) // filepath:modIdentity
+	allImgFiles := make(map[string]map[string][]string)        // for logging purposes only, modIdentity:filepath:imports
+	targetFiles := make(map[string]struct{})                   // filepath
+	expectedDirectDepsFilesToModule := make(map[string]string) // filepath:modIdentity
+	workspaceFilesToModule := make(map[string]string)          // filepath:modIdentity
+	transitiveDepsFilesToModule := make(map[string]string)     // filepath:modIdentity
 	for _, file := range builtImage.Files() {
 		{ // populate allImgFiles
 			modIdentity := "local"
@@ -233,8 +233,8 @@ func (b *builder) warnInvalidImports(
 		// file is import and comes from a named module. It's either a direct dep, a workspace module,
 		// or a transitive dep.
 		modIdentity := file.ModuleIdentity().IdentityString()
-		if _, ok := directDepsIdentities[modIdentity]; ok {
-			directDepsFilesToModule[file.Path()] = modIdentity
+		if _, ok := expectedDirectDepsIdentities[modIdentity]; ok {
+			expectedDirectDepsFilesToModule[file.Path()] = modIdentity
 		} else if _, ok := workspaceIdentities[modIdentity]; ok {
 			workspaceFilesToModule[file.Path()] = modIdentity
 		} else {
@@ -246,7 +246,7 @@ func (b *builder) warnInvalidImports(
 		zap.Any("all_with_imports", allImgFiles),
 		zap.Any("local_target", targetFiles),
 		zap.Any("from_workspace", workspaceFilesToModule),
-		zap.Any("from_direct_dependencies", directDepsFilesToModule),
+		zap.Any("from_expected_direct_dependencies", expectedDirectDepsFilesToModule),
 		zap.Any("from_transitive_dependencies", transitiveDepsFilesToModule),
 	)
 
@@ -260,7 +260,7 @@ func (b *builder) warnInvalidImports(
 			if _, ok := targetFiles[importFilePath]; ok {
 				continue // import comes from local
 			}
-			if _, ok := directDepsFilesToModule[importFilePath]; ok {
+			if _, ok := expectedDirectDepsFilesToModule[importFilePath]; ok {
 				continue // import comes from direct dep
 			}
 			if datawkt.Exists(importFilePath) {
@@ -636,9 +636,9 @@ func newBuildResult(
 }
 
 type buildOptions struct {
-	excludeSourceCodeInfo bool
-	directDependencies    []bufmoduleref.ModuleReference
-	workspace             bufmodule.Workspace
+	excludeSourceCodeInfo      bool
+	expectedDirectDependencies []bufmoduleref.ModuleReference
+	workspace                  bufmodule.Workspace
 }
 
 func newBuildOptions() *buildOptions {

@@ -32,18 +32,18 @@ import (
 )
 
 type module struct {
-	sourceReadBucket     storage.ReadBucket
-	directDependencies   []bufmoduleref.ModuleReference
-	dependencyModulePins []bufmoduleref.ModulePin
-	moduleIdentity       bufmoduleref.ModuleIdentity
-	commit               string
-	documentation        string
-	documentationPath    string
-	license              string
-	breakingConfig       *bufbreakingconfig.Config
-	lintConfig           *buflintconfig.Config
-	manifest             *manifest.Manifest
-	blobSet              *manifest.BlobSet
+	sourceReadBucket           storage.ReadBucket
+	declaredDirectDependencies []bufmoduleref.ModuleReference
+	dependencyModulePins       []bufmoduleref.ModulePin
+	moduleIdentity             bufmoduleref.ModuleIdentity
+	commit                     string
+	documentation              string
+	documentationPath          string
+	license                    string
+	breakingConfig             *bufbreakingconfig.Config
+	lintConfig                 *buflintconfig.Config
+	manifest                   *manifest.Manifest
+	blobSet                    *manifest.BlobSet
 }
 
 func newModuleForProto(
@@ -226,7 +226,7 @@ func newModule(
 	ctx context.Context,
 	// must only contain .proto files
 	sourceReadBucket storage.ReadBucket,
-	directDependencies []bufmoduleref.ModuleReference,
+	declaredDirectDependencies []bufmoduleref.ModuleReference,
 	dependencyModulePins []bufmoduleref.ModulePin,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	documentation string,
@@ -236,25 +236,25 @@ func newModule(
 	lintConfig *buflintconfig.Config,
 	options ...ModuleOption,
 ) (_ *module, retErr error) {
-	if err := bufmoduleref.ValidateModuleReferencesUniqueByIdentity(directDependencies); err != nil {
+	if err := bufmoduleref.ValidateModuleReferencesUniqueByIdentity(declaredDirectDependencies); err != nil {
 		return nil, err
 	}
 	if err := bufmoduleref.ValidateModulePinsUniqueByIdentity(dependencyModulePins); err != nil {
 		return nil, err
 	}
 	// we rely on this being sorted here
-	bufmoduleref.SortModuleReferences(directDependencies)
+	bufmoduleref.SortModuleReferences(declaredDirectDependencies)
 	bufmoduleref.SortModulePins(dependencyModulePins)
 	module := &module{
-		sourceReadBucket:     sourceReadBucket,
-		directDependencies:   directDependencies,
-		dependencyModulePins: dependencyModulePins,
-		moduleIdentity:       moduleIdentity,
-		documentation:        documentation,
-		documentationPath:    documentationPath,
-		license:              license,
-		breakingConfig:       breakingConfig,
-		lintConfig:           lintConfig,
+		sourceReadBucket:           sourceReadBucket,
+		declaredDirectDependencies: declaredDirectDependencies,
+		dependencyModulePins:       dependencyModulePins,
+		moduleIdentity:             moduleIdentity,
+		documentation:              documentation,
+		documentationPath:          documentationPath,
+		license:                    license,
+		breakingConfig:             breakingConfig,
+		lintConfig:                 lintConfig,
 	}
 	for _, option := range options {
 		option(module)
@@ -314,9 +314,9 @@ func (m *module) GetModuleFile(ctx context.Context, path string) (ModuleFile, er
 	return newModuleFile(fileInfo, readObjectCloser), nil
 }
 
-func (m *module) DirectDependencies() []bufmoduleref.ModuleReference {
+func (m *module) DeclaredDirectDependencies() []bufmoduleref.ModuleReference {
 	// already sorted in constructor
-	return m.directDependencies
+	return m.declaredDirectDependencies
 }
 
 func (m *module) DependencyModulePins() []bufmoduleref.ModulePin {
