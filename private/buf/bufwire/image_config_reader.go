@@ -273,6 +273,15 @@ func (i *imageConfigReader) buildModule(
 // The image merge is needed because if the `include_package_files=true` option is set, we
 // need to gather all the files for the package, including files spread out across workspace
 // directories, which would result in multiple image configs.
+//
+// As a reminder, with ProtoFileRefs, we actually return an Image that contains all the files
+// in the same package as the referenced file. filterImageConfigs deals with an edge case where
+// files from the same package are split across multiple Images, i.e. in a workspace. Obviously,
+// this is bad Protobuf design, but this is possible.
+//
+// TODO: Make a function such as bufimage.MergeImagesWithOnlyPaths([]bufimage.Image, options) that
+// takes an option that includes files within the package. Even better, create functions such that
+// you can do bufimage.ImageWithOnlyPackages, bufimage.ImageWithOnlyPaths, and then reuse bufimage.MergeImage?
 func filterImageConfigs(imageConfigs []ImageConfig, protoFileRef buffetch.ProtoFileRef) ([]ImageConfig, error) {
 	var pkg string
 	var path string
@@ -300,6 +309,8 @@ func filterImageConfigs(imageConfigs []ImageConfig, protoFileRef buffetch.ProtoF
 	if err != nil {
 		return nil, err
 	}
+	// If include_package_files is set, we then need to go get the rest of the files for the package,
+	// and see comment on Godoc. Otherwise, we just return an image that contains the given file.
 	var paths []string
 	if protoFileRef.IncludePackageFiles() {
 		for _, imageFile := range image.Files() {
