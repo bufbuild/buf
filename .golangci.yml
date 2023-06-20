@@ -17,8 +17,8 @@ linters-settings:
       # Ban debug statements
       - '^fmt\.Print'
       - '^log\.'
-      - "^print$"
-      - "^println$"
+      - '^print$'
+      - '^println$'
   importas:
     alias:
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1
