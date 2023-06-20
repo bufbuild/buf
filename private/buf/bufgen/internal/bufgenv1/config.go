@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
@@ -35,10 +34,10 @@ func readConfigV1(
 	ctx context.Context,
 	logger *zap.Logger,
 	readBucket storage.ReadBucket,
-	options ...bufgen.ReadConfigOption,
+	options ...internal.ReadConfigOption,
 ) (*Config, error) {
-	provider := bufgen.NewConfigDataProvider(logger)
-	return bufgen.ReadFromConfig(
+	provider := internal.NewConfigDataProvider(logger)
+	return internal.ReadFromConfig(
 		ctx,
 		logger,
 		provider,
@@ -56,12 +55,12 @@ func getConfig(
 	data []byte,
 	id string,
 ) (*Config, error) {
-	var externalConfigVersion bufgen.ExternalConfigVersion
+	var externalConfigVersion internal.ExternalConfigVersion
 	if err := unmarshalNonStrict(data, &externalConfigVersion); err != nil {
 		return nil, err
 	}
 	switch externalConfigVersion.Version {
-	case bufgen.V1Beta1Version:
+	case internal.V1Beta1Version:
 		var externalConfigV1Beta1 ExternalConfigV1Beta1
 		if err := unmarshalStrict(data, &externalConfigV1Beta1); err != nil {
 			return nil, err
@@ -70,14 +69,14 @@ func getConfig(
 			return nil, err
 		}
 		return newConfigV1Beta1(externalConfigV1Beta1, id)
-	case bufgen.V1Version:
+	case internal.V1Version:
 		var externalConfigV1 ExternalConfigV1
 		if err := unmarshalStrict(data, &externalConfigV1); err != nil {
 			return nil, err
 		}
 		return newConfigV1(logger, externalConfigV1, id)
 	default:
-		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, bufgen.V1Version)
+		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, internal.V1Version)
 	}
 }
 
@@ -98,11 +97,11 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 	}, nil
 }
 
-func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.PluginConfig, error) {
+func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]internal.PluginConfig, error) {
 	if len(externalConfig.Plugins) == 0 {
 		return nil, fmt.Errorf("%s: no plugins set", id)
 	}
-	var pluginConfigs []bufgen.PluginConfig
+	var pluginConfigs []internal.PluginConfig
 	for _, plugin := range externalConfig.Plugins {
 		var numPluginIdentifiers int
 		var pluginIdentifier string
@@ -134,7 +133,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 		if err != nil {
 			return nil, err
 		}
-		var pluginConfig bufgen.PluginConfig
+		var pluginConfig internal.PluginConfig
 		switch {
 		case plugin.Plugin != "":
 			if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
@@ -142,7 +141,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 				if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
 					return nil, err
 				}
-				pluginConfig, err = bufgen.NewCuratedPluginConfig(
+				pluginConfig, err = internal.NewCuratedPluginConfig(
 					plugin.Plugin,
 					plugin.Revision,
 					plugin.Out,
@@ -156,7 +155,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 					return nil, fmt.Errorf("%s: invalid local plugin", id)
 				}
 				if len(path) > 0 {
-					pluginConfig, err = bufgen.NewBinaryPluginConfig(
+					pluginConfig, err = internal.NewBinaryPluginConfig(
 						plugin.Plugin,
 						path,
 						strategy,
@@ -166,7 +165,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 						false,
 					)
 				} else if plugin.ProtocPath != "" {
-					pluginConfig, err = bufgen.NewProtocBuiltinPluginConfig(
+					pluginConfig, err = internal.NewProtocBuiltinPluginConfig(
 						plugin.Plugin,
 						plugin.ProtocPath,
 						plugin.Out,
@@ -177,7 +176,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 					)
 				} else {
 					// It could be either binary or protoc built-in.
-					pluginConfig, err = bufgen.NewLocalPluginConfig(
+					pluginConfig, err = internal.NewLocalPluginConfig(
 						plugin.Plugin,
 						strategy,
 						plugin.Out,
@@ -194,7 +193,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 			if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
 				return nil, err
 			}
-			pluginConfig, err = bufgen.NewLegacyRemotePluginConfig(
+			pluginConfig, err = internal.NewLegacyRemotePluginConfig(
 				plugin.Remote,
 				plugin.Out,
 				opt,
@@ -211,7 +210,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 				return nil, fmt.Errorf("%s: invalid plugin name %s, did you mean to use a remote plugin?", id, pluginIdentifier)
 			}
 			if len(path) > 0 {
-				pluginConfig, err = bufgen.NewBinaryPluginConfig(
+				pluginConfig, err = internal.NewBinaryPluginConfig(
 					plugin.Name,
 					path,
 					strategy,
@@ -221,7 +220,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 					false,
 				)
 			} else if plugin.ProtocPath != "" {
-				pluginConfig, err = bufgen.NewProtocBuiltinPluginConfig(
+				pluginConfig, err = internal.NewProtocBuiltinPluginConfig(
 					plugin.Name,
 					plugin.ProtocPath,
 					plugin.Out,
@@ -232,7 +231,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgen.Plug
 				)
 			} else {
 				// It could be either binary or protoc built-in.
-				pluginConfig, err = bufgen.NewLocalPluginConfig(
+				pluginConfig, err = internal.NewLocalPluginConfig(
 					plugin.Name,
 					strategy,
 					plugin.Out,
@@ -591,7 +590,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 	if err != nil {
 		return nil, err
 	}
-	pluginConfigs := make([]bufgen.PluginConfig, 0, len(externalConfig.Plugins))
+	pluginConfigs := make([]internal.PluginConfig, 0, len(externalConfig.Plugins))
 	for _, plugin := range externalConfig.Plugins {
 		strategy, err := internal.ParseStrategy(plugin.Strategy)
 		if err != nil {
@@ -601,9 +600,9 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 		if err != nil {
 			return nil, err
 		}
-		var pluginConfig bufgen.PluginConfig
+		var pluginConfig internal.PluginConfig
 		if plugin.Path != "" {
-			pluginConfig, err = bufgen.NewBinaryPluginConfig(
+			pluginConfig, err = internal.NewBinaryPluginConfig(
 				plugin.Name,
 				[]string{plugin.Path},
 				strategy,
@@ -613,7 +612,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 				false,
 			)
 		} else {
-			pluginConfig, err = bufgen.NewLocalPluginConfig(
+			pluginConfig, err = internal.NewLocalPluginConfig(
 				plugin.Name,
 				strategy,
 				plugin.Out,

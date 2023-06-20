@@ -21,7 +21,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
@@ -35,7 +35,7 @@ func ReadConfigV1(
 	ctx context.Context,
 	logger *zap.Logger,
 	readBucket storage.ReadBucket,
-	options ...bufgen.ReadConfigOption,
+	options ...internal.ReadConfigOption,
 ) (*Config, error) {
 	return readConfigV1(
 		ctx,
@@ -48,7 +48,7 @@ func ReadConfigV1(
 // Config is a configuration.
 type Config struct {
 	// Required
-	PluginConfigs []bufgen.PluginConfig
+	PluginConfigs []internal.PluginConfig
 	// Optional
 	ManagedConfig *ManagedConfig
 	// Optional

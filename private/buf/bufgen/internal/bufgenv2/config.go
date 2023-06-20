@@ -19,7 +19,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -43,11 +43,11 @@ func SilenceLinter() {
 func readConfigV2(
 	ctx context.Context,
 	logger *zap.Logger,
-	provider bufgen.ConfigDataProvider,
+	provider internal.ConfigDataProvider,
 	readBucket storage.ReadBucket,
-	options ...bufgen.ReadConfigOption,
+	options ...internal.ReadConfigOption,
 ) (*Config, error) {
-	return bufgen.ReadFromConfig(
+	return internal.ReadFromConfig(
 		ctx,
 		logger,
 		provider,

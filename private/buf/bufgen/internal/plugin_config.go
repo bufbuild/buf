@@ -12,19 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufgen
+package internal
 
 import (
 	"errors"
 
-	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 )
 
 type localPluginConfig struct {
 	name           string
-	strategy       internal.Strategy
+	strategy       Strategy
 	out            string
 	opt            string
 	includeImports bool
@@ -33,7 +32,7 @@ type localPluginConfig struct {
 
 func newLocalPluginConfig(
 	name string,
-	strategy internal.Strategy,
+	strategy Strategy,
 	out string,
 	opt string,
 	includeImports bool,
@@ -61,7 +60,7 @@ func (c *localPluginConfig) Opt() string {
 	return c.opt
 }
 
-func (c *localPluginConfig) Strategy() internal.Strategy {
+func (c *localPluginConfig) Strategy() Strategy {
 	return c.strategy
 }
 
@@ -80,7 +79,7 @@ type binaryPluginConfig struct {
 	name           string
 	out            string
 	opt            string
-	strategy       internal.Strategy
+	strategy       Strategy
 	path           []string
 	includeImports bool
 	includeWKT     bool
@@ -89,7 +88,7 @@ type binaryPluginConfig struct {
 func newBinaryPluginConfig(
 	name string,
 	path []string,
-	strategy internal.Strategy,
+	strategy Strategy,
 	out string,
 	opt string,
 	includeImports bool,
@@ -128,7 +127,7 @@ func (c *binaryPluginConfig) Opt() string {
 	return c.opt
 }
 
-func (c *binaryPluginConfig) Strategy() internal.Strategy {
+func (c *binaryPluginConfig) Strategy() Strategy {
 	return c.strategy
 }
 
@@ -148,7 +147,7 @@ type protocBuiltinPluginConfig struct {
 	name           string
 	out            string
 	opt            string
-	strategy       internal.Strategy
+	strategy       Strategy
 	protocPath     string
 	includeImports bool
 	includeWKT     bool
@@ -161,7 +160,7 @@ func newProtocBuiltinPluginConfig(
 	opt string,
 	includeImports bool,
 	includeWKT bool,
-	strategy internal.Strategy,
+	strategy Strategy,
 ) *protocBuiltinPluginConfig {
 	return &protocBuiltinPluginConfig{
 		name:           name,
@@ -182,7 +181,7 @@ func (c *protocBuiltinPluginConfig) ProtocPath() string {
 	return c.protocPath
 }
 
-func (c *protocBuiltinPluginConfig) Strategy() internal.Strategy {
+func (c *protocBuiltinPluginConfig) Strategy() Strategy {
 	return c.strategy
 }
 

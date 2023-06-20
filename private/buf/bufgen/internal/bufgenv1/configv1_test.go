@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -35,7 +34,7 @@ import (
 func TestReadConfigV1Beta1(t *testing.T) {
 	truth := true
 	successConfig := &Config{
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -64,7 +63,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -83,7 +82,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -102,7 +101,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateLocalPlugin(
 				t,
 				"go",
@@ -119,12 +118,12 @@ func TestReadConfigV1Beta1(t *testing.T) {
 
 	testReadConfigSuccess := func(t *testing.T, configPath string, expected *Config) {
 		t.Helper()
-		config, err := ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(configPath))
+		config, err := ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(configPath))
 		require.NoError(t, err)
 		assert.Equal(t, expected, config)
 		data, err := os.ReadFile(configPath)
 		require.NoError(t, err)
-		config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+		config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 		require.NoError(t, err)
 		assert.Equal(t, expected, config)
 	}
@@ -146,7 +145,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 func TestReadConfigV1(t *testing.T) {
 	truth := true
 	successConfig := &Config{
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -188,7 +187,7 @@ func TestReadConfigV1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -207,7 +206,7 @@ func TestReadConfigV1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -219,7 +218,7 @@ func TestReadConfigV1(t *testing.T) {
 		},
 	}
 	successConfig4 := &Config{
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateLegacyRemotePlugin(
 				t,
 				"someremote.com/owner/plugins/myplugin:v1.1.0-1",
@@ -229,7 +228,7 @@ func TestReadConfigV1(t *testing.T) {
 		},
 	}
 	successConfig5 := &Config{
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateLegacyRemotePlugin(
 				t,
 				"someremote.com/owner/plugins/myplugin",
@@ -252,7 +251,7 @@ func TestReadConfigV1(t *testing.T) {
 				Override: make(map[bufmoduleref.ModuleIdentity]string),
 			},
 		},
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateLegacyRemotePlugin(
 				t,
 				"someremote.com/owner/plugins/myplugin",
@@ -262,7 +261,7 @@ func TestReadConfigV1(t *testing.T) {
 		},
 	}
 	successConfig7 := &Config{
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -332,7 +331,7 @@ func TestReadConfigV1(t *testing.T) {
 				},
 			},
 		},
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateLegacyRemotePlugin(
 				t,
 				"someremote.com/owner/plugins/myplugin",
@@ -375,7 +374,7 @@ func TestReadConfigV1(t *testing.T) {
 				},
 			},
 		},
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateLegacyRemotePlugin(
 				t,
 				"someremote.com/owner/plugins/myplugin",
@@ -389,217 +388,217 @@ func TestReadConfigV1(t *testing.T) {
 	nopLogger := zap.NewNop()
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
-	config, err := ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success1.yaml")))
+	config, err := ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success1.yaml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
 	data, err := os.ReadFile(filepath.Join("testdata", "v1", "gen_success1.yaml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success1.json")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success1.json")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success1.json"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
 
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success2.yaml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success2.yaml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig2, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success2.yaml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig2, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success2.json")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success2.json")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig2, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success2.json"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig2, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success3.yaml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success3.yaml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig3, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success3.yaml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig3, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success3.json")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success3.json")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig3, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success3.json"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig3, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success3.yml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success3.yml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig3, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success3.yml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig3, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success4.yaml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success4.yaml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig4, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success4.yaml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig4, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success4.json")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success4.json")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig4, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success4.json"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig4, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success4.yml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success4.yml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig4, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success4.yml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig4, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success5.yaml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success5.yaml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig5, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success5.yaml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig5, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success5.json")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success5.json")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig5, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success5.json"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig5, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success5.yml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success5.yml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig5, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success5.yml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig5, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success6.yaml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success6.yaml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig6, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success6.yaml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig6, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success6.json")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success6.json")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig6, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success6.json"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig6, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success6.yml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success6.yml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig6, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success6.yml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig6, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success7.yaml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success7.yaml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig7, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success7.yaml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig7, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success7.json")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success7.json")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig7, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success7.json"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig7, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success7.yml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success7.yml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig7, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success7.yml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig7, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.yaml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.yaml")))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.yaml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.json")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.json")))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.json"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.yml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success8.yml")))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success8.yml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualCsharpnamespace(t, successConfig8, config)
 	assertConfigsWithEqualObjcPrefix(t, successConfig8, config)
 	assertConfigsWithEqualRubyPackage(t, successConfig8, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yaml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yaml")))
 	require.NoError(t, err)
 	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success9.yaml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.json")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.json")))
 	require.NoError(t, err)
 	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success9.json"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success9.yml")))
 	require.NoError(t, err)
 	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success9.yml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	assertConfigsWithEqualOptimizeFor(t, successConfig9, config)
 
@@ -619,7 +618,7 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, nopLogger, readBucket, filepath.Join("testdata", "v1", "gen_error14.yaml"))
 
 	successConfig = &Config{
-		PluginConfigs: []bufgen.PluginConfig{
+		PluginConfigs: []internal.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
 				"go",
@@ -639,20 +638,20 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	readBucket, err = storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "go_gen_success1.yaml")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "go_gen_success1.yaml")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "go_gen_success1.yaml"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(filepath.Join("testdata", "v1", "go_gen_success1.json")))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(filepath.Join("testdata", "v1", "go_gen_success1.json")))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "v1", "go_gen_success1.json"))
 	require.NoError(t, err)
-	config, err = ReadConfigV1(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	config, err = ReadConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
 
@@ -665,11 +664,11 @@ func TestReadConfigV1(t *testing.T) {
 
 func testReadConfigError(t *testing.T, logger *zap.Logger, readBucket storage.ReadBucket, testFilePath string) {
 	ctx := context.Background()
-	_, err := ReadConfigV1(ctx, logger, readBucket, bufgen.ReadConfigWithOverride(testFilePath))
+	_, err := ReadConfigV1(ctx, logger, readBucket, internal.ReadConfigWithOverride(testFilePath))
 	require.Error(t, err)
 	data, err := os.ReadFile(testFilePath)
 	require.NoError(t, err)
-	_, err = ReadConfigV1(ctx, logger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+	_, err = ReadConfigV1(ctx, logger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.Error(t, err)
 }
 
@@ -754,8 +753,8 @@ func mustCreateBinaryPlugin(
 	strategy internal.Strategy,
 	out string,
 	opt string,
-) bufgen.BinaryPluginConfig {
-	plugin, err := bufgen.NewBinaryPluginConfig(
+) internal.BinaryPluginConfig {
+	plugin, err := internal.NewBinaryPluginConfig(
 		name,
 		path,
 		strategy,
@@ -774,8 +773,8 @@ func mustCreateLocalPlugin(
 	strategy internal.Strategy,
 	out string,
 	opt string,
-) bufgen.LocalPluginConfig {
-	plugin, err := bufgen.NewLocalPluginConfig(
+) internal.LocalPluginConfig {
+	plugin, err := internal.NewLocalPluginConfig(
 		name,
 		strategy,
 		out,
@@ -792,8 +791,8 @@ func mustCreateLegacyRemotePlugin(
 	remote string,
 	out string,
 	opt string,
-) bufgen.LegacyRemotePluginConfig {
-	plugin, err := bufgen.NewLegacyRemotePluginConfig(
+) internal.LegacyRemotePluginConfig {
+	plugin, err := internal.NewLegacyRemotePluginConfig(
 		remote,
 		out,
 		opt,

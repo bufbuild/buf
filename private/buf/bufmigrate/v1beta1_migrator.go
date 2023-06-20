@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
-	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv1"
 	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
@@ -342,7 +341,7 @@ func (m *v1beta1Migrator) maybeMigrateGenTemplate(dirPath string) (bool, error) 
 	default:
 		return false, fmt.Errorf("unknown config file version: %s", versionedConfig.Version)
 	}
-	var v1beta1GenTemplate bufgenv1.ExternalConfigV1Beta1
+	var v1beta1GenTemplate bufgen.ExternalConfigV1Beta1
 	if err := encoding.UnmarshalYAMLStrict(oldConfigBytes, &v1beta1GenTemplate); err != nil {
 		return false, fmt.Errorf(
 			"failed to unmarshal %s as %s version v1beta1: %w",
@@ -351,17 +350,17 @@ func (m *v1beta1Migrator) maybeMigrateGenTemplate(dirPath string) (bool, error) 
 			err,
 		)
 	}
-	v1GenTemplate := bufgenv1.ExternalConfigV1{
+	v1GenTemplate := bufgen.ExternalConfigV1{
 		Version: bufgen.V1Version,
-		Managed: bufgenv1.ExternalManagedConfigV1{
+		Managed: bufgen.ExternalManagedConfigV1{
 			Enabled:           v1beta1GenTemplate.Managed,
 			CcEnableArenas:    v1beta1GenTemplate.Options.CcEnableArenas,
 			JavaMultipleFiles: v1beta1GenTemplate.Options.JavaMultipleFiles,
-			OptimizeFor:       bufgenv1.ExternalOptimizeForConfigV1{Default: v1beta1GenTemplate.Options.OptimizeFor},
+			OptimizeFor:       bufgen.ExternalOptimizeForConfigV1{Default: v1beta1GenTemplate.Options.OptimizeFor},
 		},
 	}
 	for _, plugin := range v1beta1GenTemplate.Plugins {
-		pluginConfig := bufgenv1.ExternalPluginConfigV1{
+		pluginConfig := bufgen.ExternalPluginConfigV1{
 			Name:     plugin.Name,
 			Out:      plugin.Out,
 			Opt:      plugin.Opt,
@@ -384,7 +383,7 @@ func (m *v1beta1Migrator) maybeMigrateGenTemplate(dirPath string) (bool, error) 
 // If we fail to marshal or write, the old config file is not touched.
 func (m *v1beta1Migrator) writeV1GenTemplate(
 	configPath string,
-	config bufgenv1.ExternalConfigV1,
+	config bufgen.ExternalConfigV1,
 ) (retErr error) {
 	v1ConfigData, err := encoding.MarshalYAML(&config)
 	if err != nil {

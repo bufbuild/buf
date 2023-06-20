@@ -24,8 +24,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv1"
-	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv2"
+	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -804,13 +803,13 @@ func generateZipIntoBucket(
 }
 
 func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out string) string {
-	externalConfig := bufgenv1.ExternalConfigV1{
+	externalConfig := bufgen.ExternalConfigV1{
 		Version: "v1",
 	}
 	for _, plugin := range plugins {
 		externalConfig.Plugins = append(
 			externalConfig.Plugins,
-			bufgenv1.ExternalPluginConfigV1{
+			bufgen.ExternalPluginConfigV1{
 				Name: plugin.name,
 				Out:  out,
 				Opt:  plugin.opt,
@@ -823,19 +822,19 @@ func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out stri
 }
 
 func newExternalConfigV2String(t *testing.T, plugins []*testPluginInfo, out string) string {
-	externalConfig := bufgenv2.ExternalConfigV2{
+	externalConfig := bufgen.ExternalConfigV2{
 		Version: "v2",
 	}
 	for _, plugin := range plugins {
-		var pluginConfig bufgenv2.ExternalPluginConfigV2
+		var pluginConfig bufgen.ExternalPluginConfigV2
 		if plugin.isBinary {
-			pluginConfig = bufgenv2.ExternalPluginConfigV2{
+			pluginConfig = bufgen.ExternalPluginConfigV2{
 				Binary: fmt.Sprintf("protoc-gen-%s", plugin.name),
 				Opt:    plugin.opt,
 				Out:    out,
 			}
 		} else {
-			pluginConfig = bufgenv2.ExternalPluginConfigV2{
+			pluginConfig = bufgen.ExternalPluginConfigV2{
 				ProtocBuiltin: &plugin.name,
 				Opt:           plugin.opt,
 				Out:           out,

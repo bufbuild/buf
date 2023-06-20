@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodifyv2"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -56,9 +56,9 @@ func ReadConfigV2(
 	ctx context.Context,
 	logger *zap.Logger,
 	readBucket storage.ReadBucket,
-	options ...bufgen.ReadConfigOption,
+	options ...internal.ReadConfigOption,
 ) (*Config, error) {
-	provider := bufgen.NewConfigDataProvider(logger)
+	provider := internal.NewConfigDataProvider(logger)
 	return readConfigV2(
 		ctx,
 		logger,
@@ -71,7 +71,7 @@ func ReadConfigV2(
 // Config is a configuration.
 type Config struct {
 	Managed *ManagedConfig
-	Plugins []bufgen.PluginConfig
+	Plugins []internal.PluginConfig
 	Inputs  []*InputConfig
 }
 

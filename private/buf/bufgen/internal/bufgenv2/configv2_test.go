@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
@@ -36,7 +35,7 @@ func TestConfigSuccess(t *testing.T) {
 	refBuilder := buffetch.NewRefBuilder()
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
-	placeHolderPlugins := []bufgen.PluginConfig{
+	placeHolderPlugins := []internal.PluginConfig{
 		mustCreateBinaryPlugin(
 			t,
 			"",
@@ -534,7 +533,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test binary plugin",
 			file:     filepath.Join("plugin", "binary_success"),
 			expectedConfig: &Config{
-				Plugins: []bufgen.PluginConfig{
+				Plugins: []internal.PluginConfig{
 					mustCreateBinaryPlugin(
 						t,
 						"",
@@ -582,7 +581,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test protoc built-in plugin",
 			file:     filepath.Join("plugin", "protoc_success"),
 			expectedConfig: &Config{
-				Plugins: []bufgen.PluginConfig{
+				Plugins: []internal.PluginConfig{
 					mustCreateProtocBuiltinPluginConfig(
 						t,
 						"java",
@@ -620,7 +619,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test remote plugins",
 			file:     filepath.Join("plugin", "remote_success"),
 			expectedConfig: &Config{
-				Plugins: []bufgen.PluginConfig{
+				Plugins: []internal.PluginConfig{
 					mustCreateNewCuratedPluginConfig(
 						t,
 						"buf.build/protocolbuffers/go",
@@ -664,13 +663,13 @@ func TestConfigSuccess(t *testing.T) {
 					ctx,
 					nopLogger,
 					readBucket,
-					bufgen.ReadConfigWithOverride(file),
+					internal.ReadConfigWithOverride(file),
 				)
 				require.Nil(t, err)
 				require.Equal(t, test.expectedConfig, config)
 				data, err := os.ReadFile(file)
 				require.NoError(t, err)
-				config, err = ReadConfigV2(ctx, nopLogger, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+				config, err = ReadConfigV2(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 				require.NoError(t, err)
 				require.Equal(t, test.expectedConfig, config)
 			})
@@ -838,7 +837,7 @@ func TestConfigError(t *testing.T) {
 					ctx,
 					nopLogger,
 					readBucket,
-					bufgen.ReadConfigWithOverride(file),
+					internal.ReadConfigWithOverride(file),
 				)
 				require.Nil(t, config)
 				require.ErrorContains(t, err, test.expectedError)
@@ -904,8 +903,8 @@ func mustCreateBinaryPlugin(
 	opt string,
 	includeImports bool,
 	includeWKT bool,
-) bufgen.BinaryPluginConfig {
-	config, err := bufgen.NewBinaryPluginConfig(
+) internal.BinaryPluginConfig {
+	config, err := internal.NewBinaryPluginConfig(
 		name,
 		path,
 		strategy,
@@ -927,8 +926,8 @@ func mustCreateProtocBuiltinPluginConfig(
 	includeImports bool,
 	includeWKT bool,
 	strategy internal.Strategy,
-) bufgen.ProtocBuiltinPluginConfig {
-	config, err := bufgen.NewProtocBuiltinPluginConfig(
+) internal.ProtocBuiltinPluginConfig {
+	config, err := internal.NewProtocBuiltinPluginConfig(
 		name,
 		protocPath,
 		out,
@@ -949,8 +948,8 @@ func mustCreateNewCuratedPluginConfig(
 	opt string,
 	includeImports bool,
 	includeWKT bool,
-) bufgen.CuratedPluginConfig {
-	config, err := bufgen.NewCuratedPluginConfig(
+) internal.CuratedPluginConfig {
+	config, err := internal.NewCuratedPluginConfig(
 		plugin,
 		revision,
 		out,
