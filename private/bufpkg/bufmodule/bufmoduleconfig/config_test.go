@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmoduleconfig
+package bufmoduleconfig_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/stretchr/testify/assert"
@@ -194,7 +196,7 @@ func TestNewConfigV1Beta1Equal1(t *testing.T) {
 			bufmoduletesting.TestModuleReferenceFooBarV1String,
 			bufmoduletesting.TestModuleReferenceFooBazCommitString,
 		},
-		&Config{
+		&bufmoduleconfig.Config{
 			RootToExcludes: map[string][]string{
 				"a": {
 					"foob",
@@ -224,7 +226,7 @@ func TestNewConfigV1Beta1Equal2(t *testing.T) {
 			"b/barr",
 		},
 		[]string{},
-		&Config{
+		&bufmoduleconfig.Config{
 			RootToExcludes: map[string][]string{
 				"a": {
 					"foob",
@@ -349,7 +351,7 @@ func TestNewConfigV1Equal1(t *testing.T) {
 			bufmoduletesting.TestModuleReferenceFooBarV1String,
 			bufmoduletesting.TestModuleReferenceFooBazCommitString,
 		},
-		&Config{
+		&bufmoduleconfig.Config{
 			RootToExcludes: map[string][]string{
 				".": {
 					"a/foob",
@@ -374,7 +376,7 @@ func TestNewConfigV1Equal2(t *testing.T) {
 			"b/barr",
 		},
 		[]string{},
-		&Config{
+		&bufmoduleconfig.Config{
 			RootToExcludes: map[string][]string{
 				".": {
 					"a/foob",
@@ -387,12 +389,12 @@ func TestNewConfigV1Equal2(t *testing.T) {
 }
 
 func testNewConfigV1Beta1Success(t *testing.T, roots []string, excludes []string, deps []string) {
-	_, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
+	_, err := bufmoduleconfig.NewConfigV1Beta1(bufmoduleconfig.ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.NoError(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 }
 
 func testNewConfigV1Beta1Error(t *testing.T, roots []string, excludes []string, deps []string) {
-	_, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
+	_, err := bufmoduleconfig.NewConfigV1Beta1(bufmoduleconfig.ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.Error(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 }
 
@@ -401,20 +403,20 @@ func testNewConfigV1Beta1Equal(
 	roots []string,
 	excludes []string,
 	deps []string,
-	expectedConfig *Config,
+	expectedConfig *bufmoduleconfig.Config,
 ) {
-	config, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
+	config, err := bufmoduleconfig.NewConfigV1Beta1(bufmoduleconfig.ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.NoError(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 	assert.Equal(t, expectedConfig, config)
 }
 
 func testNewConfigV1Success(t *testing.T, excludes []string, deps []string) {
-	_, err := NewConfigV1(ExternalConfigV1{Excludes: excludes}, deps...)
+	_, err := bufmoduleconfig.NewConfigV1(bufmoduleconfig.ExternalConfigV1{Excludes: excludes}, deps...)
 	assert.NoError(t, err, fmt.Sprintf("%v %v", excludes, deps))
 }
 
 func testNewConfigV1Error(t *testing.T, excludes []string, deps []string) {
-	_, err := NewConfigV1(ExternalConfigV1{Excludes: excludes}, deps...)
+	_, err := bufmoduleconfig.NewConfigV1(bufmoduleconfig.ExternalConfigV1{Excludes: excludes}, deps...)
 	assert.Error(t, err, fmt.Sprintf("%v %v", excludes, deps))
 }
 
@@ -422,15 +424,25 @@ func testNewConfigV1Equal(
 	t *testing.T,
 	excludes []string,
 	deps []string,
-	expectedConfig *Config,
+	expectedConfig *bufmoduleconfig.Config,
 ) {
-	config, err := NewConfigV1(ExternalConfigV1{Excludes: excludes}, deps...)
+	config, err := bufmoduleconfig.NewConfigV1(bufmoduleconfig.ExternalConfigV1{Excludes: excludes}, deps...)
 	assert.NoError(t, err, fmt.Sprintf("%v %v", excludes, deps))
 	assert.Equal(t, expectedConfig, config)
 }
 
 func testParseDependencyModuleReferences(t *testing.T, deps ...string) []bufmoduleref.ModuleReference {
-	moduleReferences, err := parseDependencyModuleReferences(deps...)
+	if len(deps) == 0 {
+		return nil
+	}
+	moduleReferences := make([]bufmoduleref.ModuleReference, 0, len(deps))
+	for _, dep := range deps {
+		dep := strings.TrimSpace(dep)
+		moduleReference, err := bufmoduleref.ModuleReferenceForString(dep)
+		require.NoError(t, err)
+		moduleReferences = append(moduleReferences, moduleReference)
+	}
+	err := bufmoduleref.ValidateModuleReferencesUniqueByIdentity(moduleReferences)
 	require.NoError(t, err)
 	return moduleReferences
 }

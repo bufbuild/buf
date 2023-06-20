@@ -38,6 +38,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -56,6 +57,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"github.com/bufbuild/connect-go"
+	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -413,8 +415,7 @@ func NewWireImageConfigReader(
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
-		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
-		bufimagebuild.NewBuilder(logger),
+		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
 }
 
@@ -485,8 +486,7 @@ func NewWireFileLister(
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
-		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
-		bufimagebuild.NewBuilder(logger),
+		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
 }
 
@@ -601,6 +601,7 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 		connectclient.WithInterceptors([]connect.Interceptor{
 			bufconnect.NewSetCLIVersionInterceptor(Version),
 			bufconnect.NewCLIWarningInterceptor(container),
+			otelconnect.NewInterceptor(),
 		}),
 	}
 	options = append(options, opts...)
@@ -822,7 +823,7 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType s
 	if err != nil {
 		return nil, err
 	}
-	image, _, err := bufimagebuild.NewBuilder(logger).Build(ctx, bufmodule.NewModuleFileSet(module, nil))
+	image, _, err := bufimagebuild.NewBuilder(logger, bufmodule.NewNopModuleReader()).Build(ctx, module)
 	if err != nil {
 		return nil, err
 	}
@@ -889,6 +890,26 @@ Use a specific module version and plugin version.
     $ buf alpha package %s --module=buf.build/bufbuild/eliza:e682db0d99184be88b41c4405ea8a417 --plugin=%s:v1.0.0
         v1.0.0-20230609151053-e682db0d9918.1
 `, registryName, registryName, examplePlugin, registryName, commandName, examplePlugin, commandName, examplePlugin)
+}
+
+// SelectReferenceForRemote receives a list of module references and selects one for remote
+// operations. In most cases, all references will have the same remote, which will result in the
+// first reference being selected. In cases in which there is a mix of remotes, the first reference
+// with a remote different than "buf.build" will be selected. This func is useful for targeting
+// single-tenant BSR addresses.
+func SelectReferenceForRemote(references []bufmoduleref.ModuleReference) bufmoduleref.ModuleReference {
+	if len(references) == 0 {
+		return nil
+	}
+	for _, ref := range references {
+		if ref == nil {
+			continue
+		}
+		if ref.Remote() != bufconnect.DefaultRemote {
+			return ref
+		}
+	}
+	return references[0]
 }
 
 func validateErrorFormatFlag(validFormatStrings []string, errorFormatString string, errorFormatFlagName string) error {
