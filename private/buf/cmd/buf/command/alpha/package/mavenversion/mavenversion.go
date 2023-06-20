@@ -33,9 +33,9 @@ import (
 )
 
 const (
-	PluginFlagName = "plugin"
-	ModuleFlagName = "module"
-	RegistryName   = "maven"
+	pluginFlagName = "plugin"
+	moduleFlagName = "module"
+	registryName   = "maven"
 )
 
 // NewCommand returns a new Command
@@ -46,8 +46,8 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " --module=<buf.build/owner/repository[:ref]> --plugin=<buf.build/owner/plugin[:version]>",
-		Short: bufpackageversion.ShortDescription(RegistryName),
-		Long:  bufpackageversion.LongDescription(RegistryName, name, "buf.build/bufbuild/connect-kotlin"),
+		Short: bufpackageversion.ShortDescription(registryName),
+		Long:  bufpackageversion.LongDescription(registryName, name, "buf.build/bufbuild/connect-kotlin"),
 		Args:  cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -69,10 +69,10 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.Module, ModuleFlagName, "", "The module reference to resolve")
-	flagSet.StringVar(&f.Plugin, PluginFlagName, "", fmt.Sprintf("The %s plugin reference to resolve", RegistryName))
-	_ = cobra.MarkFlagRequired(flagSet, ModuleFlagName)
-	_ = cobra.MarkFlagRequired(flagSet, PluginFlagName)
+	flagSet.StringVar(&f.Module, moduleFlagName, "", "The module reference to resolve")
+	flagSet.StringVar(&f.Plugin, pluginFlagName, "", fmt.Sprintf("The %s plugin reference to resolve", registryName))
+	_ = cobra.MarkFlagRequired(flagSet, moduleFlagName)
+	_ = cobra.MarkFlagRequired(flagSet, pluginFlagName)
 }
 
 func run(
