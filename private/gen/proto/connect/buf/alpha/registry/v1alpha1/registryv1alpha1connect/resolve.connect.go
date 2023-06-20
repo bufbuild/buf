@@ -55,6 +55,18 @@ const (
 	// ResolveServiceGetRemotePackageVersionProcedure is the fully-qualified name of the
 	// ResolveService's GetRemotePackageVersion RPC.
 	ResolveServiceGetRemotePackageVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetRemotePackageVersion"
+	// ResolveServiceGetGoVersionProcedure is the fully-qualified name of the ResolveService's
+	// GetGoVersion RPC.
+	ResolveServiceGetGoVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetGoVersion"
+	// ResolveServiceGetSwiftVersionProcedure is the fully-qualified name of the ResolveService's
+	// GetSwiftVersion RPC.
+	ResolveServiceGetSwiftVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetSwiftVersion"
+	// ResolveServiceGetMavenVersionProcedure is the fully-qualified name of the ResolveService's
+	// GetMavenVersion RPC.
+	ResolveServiceGetMavenVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetMavenVersion"
+	// ResolveServiceGetNPMVersionProcedure is the fully-qualified name of the ResolveService's
+	// GetNPMVersion RPC.
+	ResolveServiceGetNPMVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetNPMVersion"
 	// LocalResolveServiceGetLocalModulePinsProcedure is the fully-qualified name of the
 	// LocalResolveService's GetLocalModulePins RPC.
 	LocalResolveServiceGetLocalModulePinsProcedure = "/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins"
@@ -73,6 +85,18 @@ type ResolveServiceClient interface {
 	// GetRemotePackageVersion resolves the given plugin and module references to a version.
 	// The format of the version is determined by the plugin type.
 	GetRemotePackageVersion(context.Context, *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error)
+	// GetGoVersion resolves the given plugin and module references to a version.
+	// The format of the version is determined by the plugin type.
+	GetGoVersion(context.Context, *connect_go.Request[v1alpha1.GetGoVersionRequest]) (*connect_go.Response[v1alpha1.GetGoVersionResponse], error)
+	// GetSwiftVersion resolves the given plugin and module references to a version.
+	// The format of the version is determined by the plugin type.
+	GetSwiftVersion(context.Context, *connect_go.Request[v1alpha1.GetSwiftVersionRequest]) (*connect_go.Response[v1alpha1.GetSwiftVersionResponse], error)
+	// GetMavenVersion resolves the given plugin and module references to a version.
+	// The format of the version is determined by the plugin type.
+	GetMavenVersion(context.Context, *connect_go.Request[v1alpha1.GetMavenVersionRequest]) (*connect_go.Response[v1alpha1.GetMavenVersionResponse], error)
+	// GetNPMVersion resolves the given plugin and module references to a version.
+	// The format of the version is determined by the plugin type.
+	GetNPMVersion(context.Context, *connect_go.Request[v1alpha1.GetNPMVersionRequest]) (*connect_go.Response[v1alpha1.GetNPMVersionResponse], error)
 }
 
 // NewResolveServiceClient constructs a client for the buf.alpha.registry.v1alpha1.ResolveService
@@ -97,6 +121,30 @@ func NewResolveServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
+		getGoVersion: connect_go.NewClient[v1alpha1.GetGoVersionRequest, v1alpha1.GetGoVersionResponse](
+			httpClient,
+			baseURL+ResolveServiceGetGoVersionProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
+		),
+		getSwiftVersion: connect_go.NewClient[v1alpha1.GetSwiftVersionRequest, v1alpha1.GetSwiftVersionResponse](
+			httpClient,
+			baseURL+ResolveServiceGetSwiftVersionProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
+		),
+		getMavenVersion: connect_go.NewClient[v1alpha1.GetMavenVersionRequest, v1alpha1.GetMavenVersionResponse](
+			httpClient,
+			baseURL+ResolveServiceGetMavenVersionProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
+		),
+		getNPMVersion: connect_go.NewClient[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse](
+			httpClient,
+			baseURL+ResolveServiceGetNPMVersionProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -104,6 +152,10 @@ func NewResolveServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 type resolveServiceClient struct {
 	getModulePins           *connect_go.Client[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse]
 	getRemotePackageVersion *connect_go.Client[v1alpha1.GetRemotePackageVersionRequest, v1alpha1.GetRemotePackageVersionResponse]
+	getGoVersion            *connect_go.Client[v1alpha1.GetGoVersionRequest, v1alpha1.GetGoVersionResponse]
+	getSwiftVersion         *connect_go.Client[v1alpha1.GetSwiftVersionRequest, v1alpha1.GetSwiftVersionResponse]
+	getMavenVersion         *connect_go.Client[v1alpha1.GetMavenVersionRequest, v1alpha1.GetMavenVersionResponse]
+	getNPMVersion           *connect_go.Client[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse]
 }
 
 // GetModulePins calls buf.alpha.registry.v1alpha1.ResolveService.GetModulePins.
@@ -114,6 +166,26 @@ func (c *resolveServiceClient) GetModulePins(ctx context.Context, req *connect_g
 // GetRemotePackageVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetRemotePackageVersion.
 func (c *resolveServiceClient) GetRemotePackageVersion(ctx context.Context, req *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error) {
 	return c.getRemotePackageVersion.CallUnary(ctx, req)
+}
+
+// GetGoVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion.
+func (c *resolveServiceClient) GetGoVersion(ctx context.Context, req *connect_go.Request[v1alpha1.GetGoVersionRequest]) (*connect_go.Response[v1alpha1.GetGoVersionResponse], error) {
+	return c.getGoVersion.CallUnary(ctx, req)
+}
+
+// GetSwiftVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetSwiftVersion.
+func (c *resolveServiceClient) GetSwiftVersion(ctx context.Context, req *connect_go.Request[v1alpha1.GetSwiftVersionRequest]) (*connect_go.Response[v1alpha1.GetSwiftVersionResponse], error) {
+	return c.getSwiftVersion.CallUnary(ctx, req)
+}
+
+// GetMavenVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetMavenVersion.
+func (c *resolveServiceClient) GetMavenVersion(ctx context.Context, req *connect_go.Request[v1alpha1.GetMavenVersionRequest]) (*connect_go.Response[v1alpha1.GetMavenVersionResponse], error) {
+	return c.getMavenVersion.CallUnary(ctx, req)
+}
+
+// GetNPMVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion.
+func (c *resolveServiceClient) GetNPMVersion(ctx context.Context, req *connect_go.Request[v1alpha1.GetNPMVersionRequest]) (*connect_go.Response[v1alpha1.GetNPMVersionResponse], error) {
+	return c.getNPMVersion.CallUnary(ctx, req)
 }
 
 // ResolveServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.ResolveService
@@ -130,6 +202,18 @@ type ResolveServiceHandler interface {
 	// GetRemotePackageVersion resolves the given plugin and module references to a version.
 	// The format of the version is determined by the plugin type.
 	GetRemotePackageVersion(context.Context, *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error)
+	// GetGoVersion resolves the given plugin and module references to a version.
+	// The format of the version is determined by the plugin type.
+	GetGoVersion(context.Context, *connect_go.Request[v1alpha1.GetGoVersionRequest]) (*connect_go.Response[v1alpha1.GetGoVersionResponse], error)
+	// GetSwiftVersion resolves the given plugin and module references to a version.
+	// The format of the version is determined by the plugin type.
+	GetSwiftVersion(context.Context, *connect_go.Request[v1alpha1.GetSwiftVersionRequest]) (*connect_go.Response[v1alpha1.GetSwiftVersionResponse], error)
+	// GetMavenVersion resolves the given plugin and module references to a version.
+	// The format of the version is determined by the plugin type.
+	GetMavenVersion(context.Context, *connect_go.Request[v1alpha1.GetMavenVersionRequest]) (*connect_go.Response[v1alpha1.GetMavenVersionResponse], error)
+	// GetNPMVersion resolves the given plugin and module references to a version.
+	// The format of the version is determined by the plugin type.
+	GetNPMVersion(context.Context, *connect_go.Request[v1alpha1.GetNPMVersionRequest]) (*connect_go.Response[v1alpha1.GetNPMVersionResponse], error)
 }
 
 // NewResolveServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -151,6 +235,30 @@ func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect_go.Hand
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	))
+	mux.Handle(ResolveServiceGetGoVersionProcedure, connect_go.NewUnaryHandler(
+		ResolveServiceGetGoVersionProcedure,
+		svc.GetGoVersion,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
+	))
+	mux.Handle(ResolveServiceGetSwiftVersionProcedure, connect_go.NewUnaryHandler(
+		ResolveServiceGetSwiftVersionProcedure,
+		svc.GetSwiftVersion,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
+	))
+	mux.Handle(ResolveServiceGetMavenVersionProcedure, connect_go.NewUnaryHandler(
+		ResolveServiceGetMavenVersionProcedure,
+		svc.GetMavenVersion,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
+	))
+	mux.Handle(ResolveServiceGetNPMVersionProcedure, connect_go.NewUnaryHandler(
+		ResolveServiceGetNPMVersionProcedure,
+		svc.GetNPMVersion,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
+	))
 	return "/buf.alpha.registry.v1alpha1.ResolveService/", mux
 }
 
@@ -163,6 +271,22 @@ func (UnimplementedResolveServiceHandler) GetModulePins(context.Context, *connec
 
 func (UnimplementedResolveServiceHandler) GetRemotePackageVersion(context.Context, *connect_go.Request[v1alpha1.GetRemotePackageVersionRequest]) (*connect_go.Response[v1alpha1.GetRemotePackageVersionResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetRemotePackageVersion is not implemented"))
+}
+
+func (UnimplementedResolveServiceHandler) GetGoVersion(context.Context, *connect_go.Request[v1alpha1.GetGoVersionRequest]) (*connect_go.Response[v1alpha1.GetGoVersionResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetGoVersion is not implemented"))
+}
+
+func (UnimplementedResolveServiceHandler) GetSwiftVersion(context.Context, *connect_go.Request[v1alpha1.GetSwiftVersionRequest]) (*connect_go.Response[v1alpha1.GetSwiftVersionResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetSwiftVersion is not implemented"))
+}
+
+func (UnimplementedResolveServiceHandler) GetMavenVersion(context.Context, *connect_go.Request[v1alpha1.GetMavenVersionRequest]) (*connect_go.Response[v1alpha1.GetMavenVersionResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetMavenVersion is not implemented"))
+}
+
+func (UnimplementedResolveServiceHandler) GetNPMVersion(context.Context, *connect_go.Request[v1alpha1.GetNPMVersionRequest]) (*connect_go.Response[v1alpha1.GetNPMVersionResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion is not implemented"))
 }
 
 // LocalResolveServiceClient is a client for the buf.alpha.registry.v1alpha1.LocalResolveService
