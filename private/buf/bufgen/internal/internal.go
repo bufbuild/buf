@@ -20,9 +20,15 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufwire"
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -132,20 +138,20 @@ func GenerateWithBaseOutDirPath(baseOutDirPath string) GenerateOption {
 	}
 }
 
-// GenerateWithIncludeImports says to also generate imports.
+// GenerateWithAlwaysIncludeImports says to also generate imports.
 //
 // Note that this does NOT result in the Well-Known Types being generated, use
-// GenerateWithIncludeWellKnownTypes to include the Well-Known Types.
-func GenerateWithIncludeImports() GenerateOption {
+// GenerateWithAlwaysIncludeWellKnownTypes to include the Well-Known Types.
+func GenerateWithAlwaysIncludeImports() GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.includeImports = true
 	}
 }
 
-// GenerateWithIncludeWellKnownTypes says to also generate well known types.
+// GenerateWithAlwaysIncludeWellKnownTypes says to also generate well known types.
 //
-// This option has no effect if GenerateWithIncludeImports is not set.
-func GenerateWithIncludeWellKnownTypes() GenerateOption {
+// This option has no effect if GenerateWithAlwaysIncludeImports is not set.
+func GenerateWithAlwaysIncludeWellKnownTypes() GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.includeWellKnownTypes = true
 	}
@@ -397,4 +403,51 @@ func NewLegacyRemotePluginConfig(
 		includeImports,
 		includeWKT,
 	)
+}
+
+func GetInputImage(
+	ctx context.Context,
+	container appflag.Container,
+	ref buffetch.Ref,
+	imageConfigReader bufwire.ImageConfigReader,
+	configLocationOverride string,
+	includedPaths []string,
+	excludedPaths []string,
+	errorFormat string,
+	includedTypes []string,
+) (bufimage.Image, error) {
+	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
+		ctx,
+		container,
+		ref,
+		configLocationOverride,
+		includedPaths,
+		excludedPaths,
+		false, // input files must exist
+		false, // we must include source info for generation
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(fileAnnotations) > 0 {
+		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, errorFormat); err != nil {
+			return nil, err
+		}
+		return nil, bufcli.ErrFileAnnotation
+	}
+	images := make([]bufimage.Image, 0, len(imageConfigs))
+	for _, imageConfig := range imageConfigs {
+		images = append(images, imageConfig.Image())
+	}
+	image, err := bufimage.MergeImages(images...)
+	if err != nil {
+		return nil, err
+	}
+	if len(includedTypes) > 0 {
+		image, err = bufimageutil.ImageFilteredByTypes(image, includedTypes...)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return image, nil
 }

@@ -188,7 +188,7 @@ func TestProtoFileRefIncludePackageFiles(t *testing.T) {
 		"--output",
 		tempDirPath,
 		"--template",
-		filepath.Join("testdata", "protofileref", "buf.gen.yaml"),
+		filepath.Join("testdata", "protofileref", "buf.gen2.yaml"),
 		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "a", "v1", "a.proto")),
 	)
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))

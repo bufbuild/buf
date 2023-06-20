@@ -18,17 +18,178 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodifyv2"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
+	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
 
 const (
 	defaultJavaPackagePrefix = "com"
 )
+
+const (
+	defaultInput = "."
+)
+
+type Generator struct {
+	logger            *zap.Logger
+	generator         internal.Generator
+	imageConfigReader bufwire.ImageConfigReader
+	readWriteBucket   storage.ReadWriteBucket
+}
+
+func NewGenerator(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	runner command.Runner,
+	wasmPluginExecutor *bufwasm.WASMPluginExecutor,
+	clientConfig *connectclient.Config,
+	imageConfigReader bufwire.ImageConfigReader,
+	readWriteBucket storage.ReadWriteBucket,
+) *Generator {
+	return &Generator{
+		logger: logger,
+		generator: internal.NewGenerator(
+			logger,
+			storageosProvider,
+			runner,
+			wasmPluginExecutor,
+			clientConfig,
+		),
+		imageConfigReader: imageConfigReader,
+		readWriteBucket:   readWriteBucket,
+	}
+}
+
+func (g *Generator) Generate(
+	ctx context.Context,
+	container appflag.Container,
+	genTemplatePath string,
+	moduleConfigPathOverride string,
+	inputSpecified string,
+	baseOutDir string,
+	typesIncludedOverride []string,
+	pathsSpecifiedOverride []string,
+	pathsExcludedOverride []string,
+	includeImportsOverride bool,
+	includeWellKnownTypesOverride bool,
+	errorFormat string,
+) error {
+	genConfig, err := ReadConfigV2(
+		ctx,
+		g.logger,
+		g.readWriteBucket,
+		internal.ReadConfigWithOverride(genTemplatePath),
+	)
+	if err != nil {
+		return err
+	}
+	var inputImages []bufimage.Image
+	if inputSpecified != "" || len(genConfig.Inputs) == 0 {
+		input := defaultInput
+		if inputSpecified != "" {
+			input = inputSpecified
+		}
+		inputRef, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
+		if err != nil {
+			return err
+		}
+		inputImage, err := internal.GetInputImage(
+			ctx,
+			container,
+			inputRef,
+			g.imageConfigReader,
+			moduleConfigPathOverride,
+			pathsSpecifiedOverride,
+			pathsExcludedOverride,
+			errorFormat,
+			typesIncludedOverride,
+		)
+		if err != nil {
+			return err
+		}
+		inputImages = []bufimage.Image{inputImage}
+	} else {
+		for _, inputConfig := range genConfig.Inputs {
+			pathsSpecified := inputConfig.IncludePaths
+			if len(pathsSpecifiedOverride) > 0 {
+				pathsSpecified = pathsSpecifiedOverride
+			}
+			pathsExcluded := inputConfig.ExcludePaths
+			if len(pathsExcludedOverride) > 0 {
+				pathsExcluded = pathsExcludedOverride
+			}
+			typesIncluded := inputConfig.Types
+			if len(typesIncludedOverride) > 0 {
+				typesIncluded = typesIncludedOverride
+			}
+			inputImage, err := internal.GetInputImage(
+				ctx,
+				container,
+				inputConfig.InputRef,
+				g.imageConfigReader,
+				moduleConfigPathOverride,
+				pathsSpecified,
+				pathsExcluded,
+				errorFormat,
+				typesIncluded,
+			)
+			if err != nil {
+				return err
+			}
+			inputImages = append(inputImages, inputImage)
+		}
+	}
+
+	generateOptions := []internal.GenerateOption{
+		internal.GenerateWithBaseOutDirPath(baseOutDir),
+	}
+	if includeImportsOverride {
+		generateOptions = append(
+			generateOptions,
+			internal.GenerateWithAlwaysIncludeImports(),
+		)
+	}
+	if includeWellKnownTypesOverride {
+		generateOptions = append(
+			generateOptions,
+			internal.GenerateWithAlwaysIncludeWellKnownTypes(),
+		)
+	}
+	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
+	if err != nil {
+		return err
+	}
+	if wasmEnabled {
+		generateOptions = append(
+			generateOptions,
+			internal.GenerateWithWASMEnabled(),
+		)
+	}
+	for _, inputImage := range inputImages {
+		// TODO: modify this image
+		if err := g.generator.Generate(
+			ctx,
+			container,
+			genConfig.Plugins,
+			inputImage,
+			generateOptions...,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // TODO this would be part of a runner or likewise
 // this is just for demonstration of bringing the management stuff into one function

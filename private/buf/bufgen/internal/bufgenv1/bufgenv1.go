@@ -21,28 +21,150 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
+	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// ReadConfigV1 reads the configuration from the OS or an override, if any.
-//
-// Only use in CLI tools.
-func ReadConfigV1(
-	ctx context.Context,
+const defaultInput = "."
+
+type Generator struct {
+	logger            *zap.Logger
+	generator         internal.Generator
+	imageConfigReader bufwire.ImageConfigReader
+	readWriteBucket   storage.ReadWriteBucket
+}
+
+func NewGenerator(
 	logger *zap.Logger,
-	readBucket storage.ReadBucket,
-	options ...internal.ReadConfigOption,
-) (*Config, error) {
-	return readConfigV1(
+	storageosProvider storageos.Provider,
+	runner command.Runner,
+	wasmPluginExecutor *bufwasm.WASMPluginExecutor,
+	clientConfig *connectclient.Config,
+	imageConfigReader bufwire.ImageConfigReader,
+	readWriteBucket storage.ReadWriteBucket,
+) *Generator {
+	return &Generator{
+		logger: logger,
+		generator: internal.NewGenerator(
+			logger,
+			storageosProvider,
+			runner,
+			wasmPluginExecutor,
+			clientConfig,
+		),
+		imageConfigReader: imageConfigReader,
+		readWriteBucket:   readWriteBucket,
+	}
+}
+
+func (g *Generator) Generate(
+	ctx context.Context,
+	container appflag.Container,
+	genTemplatePath string,
+	moduleConfigPathOverride string,
+	inputSpecified string,
+	baseOutDir string,
+	typesIncludedOverride []string,
+	pathsSpecified []string,
+	pathsExcluded []string,
+	includeImports bool,
+	includeWellKnownTypes bool,
+	errorFormat string,
+) error {
+	genConfig, err := readConfigV1(
 		ctx,
-		logger,
-		readBucket,
-		options...,
+		g.logger,
+		g.readWriteBucket,
+		internal.ReadConfigWithOverride(genTemplatePath),
 	)
+	if err != nil {
+		return err
+	}
+	input := defaultInput
+	if inputSpecified != "" {
+		input = inputSpecified
+	}
+	inputRef, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
+	var typesIncluded []string
+	if typesConfig := genConfig.TypesConfig; typesConfig != nil {
+		typesIncluded = typesConfig.Include
+	}
+	if len(typesIncludedOverride) > 0 {
+		typesIncluded = typesIncludedOverride
+	}
+	inputImage, err := internal.GetInputImage(
+		ctx,
+		container,
+		inputRef,
+		g.imageConfigReader,
+		moduleConfigPathOverride,
+		pathsSpecified,
+		pathsExcluded,
+		errorFormat,
+		typesIncluded,
+	)
+	if err != nil {
+		return err
+	}
+	imageModifier, err := NewModifier(
+		g.logger,
+		genConfig,
+	)
+	if err != nil {
+		return err
+	}
+	if err := imageModifier.Modify(
+		ctx,
+		inputImage,
+	); err != nil {
+		return err
+	}
+	generateOptions := []internal.GenerateOption{
+		internal.GenerateWithBaseOutDirPath(baseOutDir),
+	}
+	if includeImports {
+		generateOptions = append(
+			generateOptions,
+			internal.GenerateWithAlwaysIncludeImports(),
+		)
+	}
+	if includeWellKnownTypes {
+		generateOptions = append(
+			generateOptions,
+			internal.GenerateWithAlwaysIncludeWellKnownTypes(),
+		)
+	}
+	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
+	if err != nil {
+		return err
+	}
+	if wasmEnabled {
+		generateOptions = append(
+			generateOptions,
+			internal.GenerateWithWASMEnabled(),
+		)
+	}
+	if err := g.generator.Generate(
+		ctx,
+		container,
+		genConfig.PluginConfigs,
+		inputImage,
+		generateOptions...,
+	); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Config is a configuration.
