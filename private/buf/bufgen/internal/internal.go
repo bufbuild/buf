@@ -18,6 +18,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -31,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -55,43 +58,6 @@ const (
 	// StrategyAll is the strategy that says to generate with all files at once.
 	StrategyAll Strategy = 2
 )
-
-// Strategy is a generation stategy.
-type Strategy int
-
-// ParseStrategy parses the Strategy.
-//
-// If the empty string is provided, this is interpreted as StrategyDirectory.
-func ParseStrategy(s string) (Strategy, error) {
-	switch s {
-	case "", "directory":
-		return StrategyDirectory, nil
-	case "all":
-		return StrategyAll, nil
-	default:
-		return 0, fmt.Errorf("unknown strategy: %s", s)
-	}
-}
-
-// String implements fmt.Stringer.
-func (s Strategy) String() string {
-	switch s {
-	case StrategyDirectory:
-		return "directory"
-	case StrategyAll:
-		return "all"
-	default:
-		return strconv.Itoa(int(s))
-	}
-}
-
-// ExternalConfigVersion defines the subset of all config
-// file versions that is used to determine the configuration version.
-// TODO: investigate if this can be hidden in internal and if v1beta1_migrator
-// can call ReadConfigVersion.
-type ExternalConfigVersion struct {
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
-}
 
 // Generator generates Protobuf stubs based on configurations.
 type Generator interface {
@@ -164,6 +130,41 @@ func GenerateWithWASMEnabled() GenerateOption {
 	}
 }
 
+// Strategy is a generation stategy.
+type Strategy int
+
+// ParseStrategy parses the Strategy.
+//
+// If the empty string is provided, this is interpreted as StrategyDirectory.
+func ParseStrategy(s string) (Strategy, error) {
+	switch s {
+	case "", "directory":
+		return StrategyDirectory, nil
+	case "all":
+		return StrategyAll, nil
+	default:
+		return 0, fmt.Errorf("unknown strategy: %s", s)
+	}
+}
+
+// String implements fmt.Stringer.
+func (s Strategy) String() string {
+	switch s {
+	case StrategyDirectory:
+		return "directory"
+	case StrategyAll:
+		return "all"
+	default:
+		return strconv.Itoa(int(s))
+	}
+}
+
+// ExternalConfigVersion defines the subset of all config
+// file versions that is used to determine the configuration version.
+type ExternalConfigVersion struct {
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
 // ConfigDataProvider is a provider for config data.
 type ConfigDataProvider interface {
 	// GetConfigData gets the Config's data in bytes at ExternalConfigFilePath,
@@ -220,6 +221,47 @@ func ReadFromConfig[V any](
 	options ...ReadConfigOption,
 ) (*V, error) {
 	return readFromConfig(ctx, logger, provider, readBucket, configGetter, options...)
+}
+
+func ReadDataFromConfig(ctx context.Context,
+	logger *zap.Logger,
+	provider ConfigDataProvider,
+	readBucket storage.ReadBucket,
+	options ...ReadConfigOption,
+) (
+	data []byte,
+	fileID string,
+	unmarshalNonStrict func(data []byte, v interface{}) error,
+	unmarshalStrict func(data []byte, v interface{}) error,
+	err error,
+) {
+	readConfigOptions := newReadConfigOptions()
+	for _, option := range options {
+		option(readConfigOptions)
+	}
+	if override := readConfigOptions.override; override != "" {
+		switch filepath.Ext(override) {
+		case ".json":
+			data, err := os.ReadFile(override)
+			if err != nil {
+				return nil, "", nil, nil, fmt.Errorf("could not read file %s: %v", override, err)
+			}
+			return data, override, encoding.UnmarshalJSONNonStrict, encoding.UnmarshalJSONStrict, nil
+		case ".yaml", ".yml":
+			data, err := os.ReadFile(override)
+			if err != nil {
+				return nil, "", nil, nil, fmt.Errorf("could not read file %s: %v", override, err)
+			}
+			return data, override, encoding.UnmarshalYAMLNonStrict, encoding.UnmarshalYAMLStrict, nil
+		default:
+			return []byte(override), "Generate configuration data", encoding.UnmarshalYAMLNonStrict, encoding.UnmarshalYAMLStrict, nil
+		}
+	}
+	data, id, err := provider.GetConfigData(ctx, readBucket)
+	if err != nil {
+		return nil, "", nil, nil, err
+	}
+	return data, id, encoding.UnmarshalYAMLNonStrict, encoding.UnmarshalYAMLStrict, nil
 }
 
 // ConfigGetter is a function that interpret a slice of bytes as a value of type V.

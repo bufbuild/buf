@@ -47,24 +47,23 @@ func readConfigV2(
 	readBucket storage.ReadBucket,
 	options ...internal.ReadConfigOption,
 ) (*Config, error) {
-	return internal.ReadFromConfig(
+	data, id, unmarshalNonStrict, unmarshalStrict, err := internal.ReadDataFromConfig(
 		ctx,
 		logger,
 		provider,
 		readBucket,
-		getConfig,
 		options...,
 	)
-}
-
-func getConfig(
-	ctx context.Context,
-	logger *zap.Logger,
-	_ func([]byte, interface{}) error,
-	unmarshalStrict func([]byte, interface{}) error,
-	data []byte,
-	id string,
-) (*Config, error) {
+	if err != nil {
+		return nil, err
+	}
+	var externalConfigVersion internal.ExternalConfigVersion
+	if err := unmarshalNonStrict(data, &externalConfigVersion); err != nil {
+		return nil, err
+	}
+	if externalConfigVersion.Version != internal.V2Version {
+		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, internal.V2Version)
+	}
 	var externalConfigV2 ExternalConfigV2
 	if err := unmarshalStrict(data, &externalConfigV2); err != nil {
 		return nil, err

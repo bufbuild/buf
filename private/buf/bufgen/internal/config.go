@@ -40,18 +40,26 @@ func readConfigVersion(
 	options ...ReadConfigOption,
 ) (string, error) {
 	provider := NewConfigDataProvider(logger)
-	version, err := ReadFromConfig(
+	data, id, unmarshalNonStrict, _, err := ReadDataFromConfig(
 		ctx,
 		logger,
 		provider,
 		readBucket,
-		getConfigVersion,
 		options...,
 	)
-	if err != nil || version == nil {
+	if err != nil {
 		return "", err
 	}
-	return *version, nil
+	var externalConfigVersion ExternalConfigVersion
+	if err := unmarshalNonStrict(data, &externalConfigVersion); err != nil {
+		return "", err
+	}
+	switch version := externalConfigVersion.Version; version {
+	case V1Version, V1Beta1Version, V2Version:
+		return version, nil
+	default:
+		return "", fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, V2Version)
+	}
 }
 
 func readFromConfig[V any](
@@ -144,24 +152,4 @@ func getConfigJSONOrYAMLData[V any](
 		[]byte(data),
 		"Generate configuration data",
 	)
-}
-
-func getConfigVersion(
-	_ context.Context,
-	_ *zap.Logger,
-	unmarshalNonStrict func([]byte, interface{}) error,
-	_ func([]byte, interface{}) error,
-	data []byte,
-	id string,
-) (*string, error) {
-	var externalConfigVersion ExternalConfigVersion
-	if err := unmarshalNonStrict(data, &externalConfigVersion); err != nil {
-		return nil, err
-	}
-	switch version := externalConfigVersion.Version; version {
-	case V1Version, V1Beta1Version, V2Version:
-		return &version, nil
-	default:
-		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, V2Version)
-	}
 }

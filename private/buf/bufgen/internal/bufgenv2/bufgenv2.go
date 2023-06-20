@@ -35,10 +35,7 @@ import (
 
 const (
 	defaultJavaPackagePrefix = "com"
-)
-
-const (
-	defaultInput = "."
+	defaultInput             = "."
 )
 
 type Generator struct {
@@ -150,7 +147,6 @@ func (g *Generator) Generate(
 			inputImages = append(inputImages, inputImage)
 		}
 	}
-
 	generateOptions := []internal.GenerateOption{
 		internal.GenerateWithBaseOutDirPath(baseOutDir),
 	}

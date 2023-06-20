@@ -37,24 +37,16 @@ func readConfigV1(
 	options ...internal.ReadConfigOption,
 ) (*Config, error) {
 	provider := internal.NewConfigDataProvider(logger)
-	return internal.ReadFromConfig(
+	data, id, unmarshalNonStrict, unmarshalStrict, err := internal.ReadDataFromConfig(
 		ctx,
 		logger,
 		provider,
 		readBucket,
-		getConfig,
 		options...,
 	)
-}
-
-func getConfig(
-	_ context.Context,
-	logger *zap.Logger,
-	unmarshalNonStrict func([]byte, interface{}) error,
-	unmarshalStrict func([]byte, interface{}) error,
-	data []byte,
-	id string,
-) (*Config, error) {
+	if err != nil {
+		return nil, err
+	}
 	var externalConfigVersion internal.ExternalConfigVersion
 	if err := unmarshalNonStrict(data, &externalConfigVersion); err != nil {
 		return nil, err
