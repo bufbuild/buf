@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
@@ -28,10 +29,6 @@ import (
 
 // CsharpNamespaceID is the ID of the csharp_namespace modifier.
 const CsharpNamespaceID = "CSHARP_NAMESPACE"
-
-// csharpNamespacePath is the SourceCodeInfo path for the csharp_namespace option.
-// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L428
-var csharpNamespacePath = []int32{8, 37}
 
 func csharpNamespace(
 	logger *zap.Logger,
@@ -110,7 +107,7 @@ func csharpNamespaceForFile(
 	}
 	descriptor.Options.CsharpNamespace = proto.String(csharpNamespaceValue)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), csharpNamespacePath)
+		sweeper.mark(imageFile.Path(), internal.CsharpNamespacePath)
 	}
 	return nil
 }

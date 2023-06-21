@@ -20,6 +20,45 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+var (
+	// CCEnableArenas is the SourceCodeInfo path for the cc_enable_arenas option.
+	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L420
+	CCEnableArenasPath = []int32{8, 31}
+	// CsharpNamespacePath is the SourceCodeInfo path for the csharp_namespace option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L428
+	CsharpNamespacePath = []int32{8, 37}
+	// GoPackagePath is the SourceCodeInfo path for the go_package option.
+	// https://github.com/protocolbuffers/protobuf/blob/ee04809540c098718121e092107fbc0abc231725/src/google/protobuf/descriptor.proto#L392
+	GoPackagePath = []int32{8, 11}
+	// JavaMultipleFilesPath is the SourceCodeInfo path for the java_multiple_files option.
+	// https://github.com/protocolbuffers/protobuf/blob/ee04809540c098718121e092107fbc0abc231725/src/google/protobuf/descriptor.proto#L364
+	JavaMultipleFilesPath = []int32{8, 10}
+	// JavaOuterClassnamePath is the SourceCodeInfo path for the java_outer_classname option.
+	// https://github.com/protocolbuffers/protobuf/blob/87d140f851131fb8a6e8a80449cf08e73e568259/src/google/protobuf/descriptor.proto#L356
+	JavaOuterClassnamePath = []int32{8, 8}
+	// JavaPackagePath is the SourceCodeInfo path for the java_package option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L348
+	JavaPackagePath = []int32{8, 1}
+	// JavaStringCheckUtf8Path is the SourceCodeInfo path for the java_string_check_utf8 option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L375
+	JavaStringCheckUtf8Path = []int32{8, 27}
+	// ObjcClassPrefixPath is the SourceCodeInfo path for the objc_class_prefix option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L425
+	ObjcClassPrefixPath = []int32{8, 36}
+	// optimizeFor is the SourceCodeInfo path for the optimize_for option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L385
+	OptimizeForPath = []int32{8, 9}
+	// PhpMetadataNamespacePath is the SourceCodeInfo path for the php_metadata_namespace option.
+	// Ref: https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L448
+	PhpMetadataNamespacePath = []int32{8, 44}
+	// PhpNamespacePath is the SourceCodeInfo path for the php_namespace option.
+	// Ref: https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L443
+	PhpNamespacePath = []int32{8, 41}
+	// RubyPackagePath is the SourceCodeInfo path for the ruby_package option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L453
+	RubyPackagePath = []int32{8, 45}
+)
+
 // fileOptionPath is the path prefix used for FileOptions.
 // All file option locations are preceded by a location
 // with a path set to the fileOptionPath.

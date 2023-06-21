@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -32,10 +33,6 @@ const (
 	// JavaPackageID is the ID of the java_package modifier.
 	JavaPackageID = "JAVA_PACKAGE"
 )
-
-// javaPackagePath is the SourceCodeInfo path for the java_package option.
-// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L348
-var javaPackagePath = []int32{8, 1}
 
 func javaPackage(
 	logger *zap.Logger,
@@ -117,7 +114,7 @@ func javaPackageForFile(
 	}
 	descriptor.Options.JavaPackage = proto.String(javaPackageValue)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), javaPackagePath)
+		sweeper.mark(imageFile.Path(), internal.JavaPackagePath)
 	}
 	return nil
 }

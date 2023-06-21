@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifytesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
@@ -52,13 +53,13 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
@@ -73,13 +74,13 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
@@ -102,13 +103,13 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 			}
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
@@ -127,7 +128,7 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 			}
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 	})
 }
 
@@ -137,7 +138,7 @@ func TestOptimizeForAllOptions(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.OptimizeForPath)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
@@ -157,13 +158,13 @@ func TestOptimizeForAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, nil)
@@ -178,13 +179,13 @@ func TestOptimizeForAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.OptimizeForPath)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
@@ -207,13 +208,13 @@ func TestOptimizeForAllOptions(t *testing.T) {
 			}
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.OptimizeForPath)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_LITE_RUNTIME, nil, nil, map[string]string{"a.proto": "SPEED"})
@@ -232,7 +233,7 @@ func TestOptimizeForAllOptions(t *testing.T) {
 			}
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 	})
 }
 
@@ -242,7 +243,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.OptimizeForPath)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, nil)
@@ -262,13 +263,13 @@ func TestOptimizeForCcOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, nil)
@@ -284,13 +285,13 @@ func TestOptimizeForCcOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.OptimizeForPath)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, map[string]string{"a.proto": "LITE_RUNTIME"})
@@ -318,7 +319,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(zap.NewNop(), sweeper, descriptorpb.FileOptions_SPEED, nil, nil, map[string]string{"a.proto": "LITE_RUNTIME"})
@@ -337,7 +338,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 			}
 			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 	})
 }
 
@@ -395,7 +396,7 @@ func TestOptimizeForWithExcept(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(
@@ -415,13 +416,13 @@ func TestOptimizeForWithExcept(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(
@@ -441,13 +442,13 @@ func TestOptimizeForWithExcept(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(
@@ -468,13 +469,13 @@ func TestOptimizeForWithExcept(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(
@@ -495,7 +496,7 @@ func TestOptimizeForWithExcept(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 	})
 }
 
@@ -508,7 +509,7 @@ func TestOptimizeForWithOverride(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(
@@ -538,13 +539,13 @@ func TestOptimizeForWithOverride(t *testing.T) {
 				descriptor.GetOptions().GetOptimizeFor(),
 			)
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(
@@ -574,13 +575,13 @@ func TestOptimizeForWithOverride(t *testing.T) {
 				descriptor.GetOptions().GetOptimizeFor(),
 			)
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(
@@ -612,13 +613,13 @@ func TestOptimizeForWithOverride(t *testing.T) {
 				descriptor.GetOptions().GetOptimizeFor(),
 			)
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		optimizeForModifier, err := OptimizeFor(
@@ -650,6 +651,6 @@ func TestOptimizeForWithOverride(t *testing.T) {
 				descriptor.GetOptions().GetOptimizeFor(),
 			)
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.OptimizeForPath, false)
 	})
 }

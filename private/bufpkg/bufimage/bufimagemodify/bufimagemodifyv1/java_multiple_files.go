@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -30,10 +31,6 @@ const (
 	// JavaMultipleFilesID is the ID of the java_multiple_files modifier.
 	JavaMultipleFilesID = "JAVA_MULTIPLE_FILES"
 )
-
-// javaMultipleFilesPath is the SourceCodeInfo path for the java_multiple_files option.
-// https://github.com/protocolbuffers/protobuf/blob/ee04809540c098718121e092107fbc0abc231725/src/google/protobuf/descriptor.proto#L364
-var javaMultipleFilesPath = []int32{8, 10}
 
 func javaMultipleFiles(
 	logger *zap.Logger,
@@ -97,7 +94,7 @@ func javaMultipleFilesForFile(
 	}
 	descriptor.Options.JavaMultipleFiles = proto.Bool(value)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), javaMultipleFilesPath)
+		sweeper.mark(imageFile.Path(), internal.JavaMultipleFilesPath)
 	}
 	return nil
 }

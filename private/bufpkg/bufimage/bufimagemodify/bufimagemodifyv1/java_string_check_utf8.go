@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -25,10 +26,6 @@ import (
 
 // JavaStringCheckUtf8ID is the ID of the java_string_check_utf8 modifier.
 const JavaStringCheckUtf8ID = "JAVA_STRING_CHECK_UTF8"
-
-// javaStringCheckUtf8Path is the SourceCodeInfo path for the java_string_check_utf8 option.
-// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L375
-var javaStringCheckUtf8Path = []int32{8, 27}
 
 func javaStringCheckUtf8(
 	logger *zap.Logger,
@@ -84,7 +81,7 @@ func javaStringCheckUtf8ForFile(
 	}
 	descriptor.Options.JavaStringCheckUtf8 = proto.Bool(value)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), javaStringCheckUtf8Path)
+		sweeper.mark(imageFile.Path(), internal.JavaStringCheckUtf8Path)
 	}
 	return nil
 }

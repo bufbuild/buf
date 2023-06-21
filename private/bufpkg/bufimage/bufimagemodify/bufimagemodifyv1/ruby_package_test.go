@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifytesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,7 +33,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, nil)
@@ -49,7 +50,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, nil)
@@ -64,7 +65,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, map[string]string{"a.proto": "override"})
@@ -83,7 +84,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, map[string]string{"a.proto": "override"})
@@ -104,7 +105,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.RubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, nil)
@@ -120,13 +121,13 @@ func TestRubyPackageAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.RubyPackagePath)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, nil)
@@ -140,13 +141,13 @@ func TestRubyPackageAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.RubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, map[string]string{"a.proto": "override"})
@@ -166,13 +167,13 @@ func TestRubyPackageAllOptions(t *testing.T) {
 			}
 			assert.Equal(t, "foo", descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, map[string]string{"a.proto": "override"})
@@ -190,7 +191,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 			}
 			assert.Equal(t, "foo", descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 	})
 }
 
@@ -206,7 +207,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.RubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, nil)
@@ -223,13 +224,13 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, nil)
@@ -244,13 +245,13 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.RubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, map[string]string{"override.proto": "override"})
@@ -270,13 +271,13 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 			}
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := RubyPackage(zap.NewNop(), sweeper, nil, nil, map[string]string{"override.proto": "override"})
@@ -294,7 +295,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 			}
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 	})
 }
 
@@ -364,7 +365,7 @@ func TestRubyPackageExcept(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.RubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(
@@ -382,12 +383,12 @@ func TestRubyPackageExcept(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 		// Still not empty, because the module is in except
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.RubyPackagePath)
 	})
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(
@@ -404,12 +405,12 @@ func TestRubyPackageExcept(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 	})
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.RubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(
@@ -428,12 +429,12 @@ func TestRubyPackageExcept(t *testing.T) {
 		// not modified even though a file has override, because the module is in except
 		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 		// Still not empty, because the module is in except
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.RubyPackagePath)
 	})
 	t.Run("without SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(
@@ -450,7 +451,7 @@ func TestRubyPackageExcept(t *testing.T) {
 		)
 		require.NoError(t, err)
 		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 	})
 }
 
@@ -462,7 +463,7 @@ func TestRubyPackageOverride(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.RubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(
@@ -484,12 +485,12 @@ func TestRubyPackageOverride(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, overrideRubyPackage, descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, true)
 	})
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(
@@ -511,12 +512,12 @@ func TestRubyPackageOverride(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, overrideRubyPackage, descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 	})
 	t.Run("with SourceCodeInfo with per-file override", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.RubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(
@@ -542,12 +543,12 @@ func TestRubyPackageOverride(t *testing.T) {
 			}
 			assert.Equal(t, overrideRubyPackage, descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, true)
 	})
 	t.Run("without SourceCodeInfo and per-file override", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		rubyPackageModifier := RubyPackage(
@@ -573,6 +574,6 @@ func TestRubyPackageOverride(t *testing.T) {
 			}
 			assert.Equal(t, overrideRubyPackage, descriptor.GetOptions().GetRubyPackage())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.RubyPackagePath, false)
 	})
 }

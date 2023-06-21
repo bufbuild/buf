@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -25,10 +26,6 @@ import (
 
 // CcEnableArenasID is the ID of the cc_enable_arenas modifier.
 const CcEnableArenasID = "CC_ENABLE_ARENAS"
-
-// ccEnableArenas is the SourceCodeInfo path for the cc_enable_arenas option.
-// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L420
-var ccEnableArenasPath = []int32{8, 31}
 
 func ccEnableArenas(
 	logger *zap.Logger,
@@ -84,7 +81,7 @@ func ccEnableArenasForFile(
 	}
 	descriptor.Options.CcEnableArenas = proto.Bool(value)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), ccEnableArenasPath)
+		sweeper.mark(imageFile.Path(), internal.CCEnableArenasPath)
 	}
 	return nil
 }
