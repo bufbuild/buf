@@ -152,7 +152,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 			continue
 		}
 		buildOpts := []bufimagebuild.BuildOption{
-			bufimagebuild.WithDirectDependencies(moduleConfig.Module().DirectDependencies()),
+			bufimagebuild.WithExpectedDirectDependencies(moduleConfig.Module().DeclaredDirectDependencies()),
 			bufimagebuild.WithWorkspace(moduleConfig.Workspace()),
 		}
 		if excludeSourceCodeInfo {

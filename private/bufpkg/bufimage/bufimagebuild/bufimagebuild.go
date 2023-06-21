@@ -57,10 +57,12 @@ func WithExcludeSourceCodeInfo() BuildOption {
 	}
 }
 
-// WithDirectDependencies sets direct module dependencies, so transitive imports can be warned.
-func WithDirectDependencies(directDependencies []bufmoduleref.ModuleReference) BuildOption {
+// WithExpectedDirectDependencies sets the module dependencies that are expected, usually because
+// they are in a configuration file (buf.yaml). If the build detects that there are direct dependencies
+// outside of this list, a warning will be printed.
+func WithExpectedDirectDependencies(expectedDirectDependencies []bufmoduleref.ModuleReference) BuildOption {
 	return func(buildOptions *buildOptions) {
-		buildOptions.directDependencies = directDependencies
+		buildOptions.expectedDirectDependencies = expectedDirectDependencies
 	}
 }
 
