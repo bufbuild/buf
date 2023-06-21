@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodify
+package bufimagemodifyv1
 
 import (
 	"context"
@@ -35,7 +35,7 @@ func TestJavaPackageError(t *testing.T) {
 
 func TestJavaPackageEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -111,7 +111,7 @@ func TestJavaPackageEmptyOptions(t *testing.T) {
 
 func TestJavaPackageAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -211,7 +211,7 @@ func TestJavaPackageAllOptions(t *testing.T) {
 
 func TestJavaPackageJavaOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "javaoptions")
+	dirPath := filepath.Join(testDir, "javaoptions")
 	modifiedJavaPackage := "com.acme.weather"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
@@ -316,7 +316,7 @@ func TestJavaPackageJavaOptions(t *testing.T) {
 
 func TestJavaPackageWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDir, "wktimport")
 	javaPackagePrefix := "org"
 	modifiedJavaPackage := "org.acme.weather.v1alpha1"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
@@ -378,7 +378,7 @@ func TestJavaPackageWellKnownTypes(t *testing.T) {
 
 func TestJavaPackageWithExcept(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "javaemptyoptions")
+	dirPath := filepath.Join(testDir, "javaemptyoptions")
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,
 		testRepositoryOwner,
@@ -487,7 +487,7 @@ func TestJavaPackageWithExcept(t *testing.T) {
 
 func TestJavaPackageWithOverride(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "javaemptyoptions")
+	dirPath := filepath.Join(testDir, "javaemptyoptions")
 	overrideJavaPackagePrefix := "foo.bar"
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,

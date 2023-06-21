@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodify
+package bufimagemodifyv1
 
 import (
 	"context"
@@ -27,7 +27,7 @@ import (
 
 func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -99,7 +99,7 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 
 func TestObjcClassPrefixAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -195,11 +195,11 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 
 func TestObjcClassPrefixObjcOptions(t *testing.T) {
 	t.Parallel()
-	testObjcClassPrefixOptions(t, filepath.Join("testdata", "objcoptions", "single"), "AXX")
-	testObjcClassPrefixOptions(t, filepath.Join("testdata", "objcoptions", "double"), "AWX")
-	testObjcClassPrefixOptions(t, filepath.Join("testdata", "objcoptions", "triple"), "AWD")
-	testObjcClassPrefixOptions(t, filepath.Join("testdata", "objcoptions", "unversioned"), "AWD")
-	testObjcClassPrefixOptions(t, filepath.Join("testdata", "objcoptions", "gpb"), "GPX")
+	testObjcClassPrefixOptions(t, filepath.Join(testDir, "objcoptions", "single"), "AXX")
+	testObjcClassPrefixOptions(t, filepath.Join(testDir, "objcoptions", "double"), "AWX")
+	testObjcClassPrefixOptions(t, filepath.Join(testDir, "objcoptions", "triple"), "AWD")
+	testObjcClassPrefixOptions(t, filepath.Join(testDir, "objcoptions", "unversioned"), "AWD")
+	testObjcClassPrefixOptions(t, filepath.Join(testDir, "objcoptions", "gpb"), "GPX")
 }
 
 func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string) {
@@ -302,7 +302,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 
 func TestObjcClassPrefixWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDir, "wktimport")
 	modifiedObjcClassPrefix := "AWX"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
@@ -361,7 +361,7 @@ func TestObjcClassPrefixWellKnownTypes(t *testing.T) {
 
 func TestObjcClassPrefixWithDefault(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "objcoptions", "single")
+	dirPath := filepath.Join(testDir, "objcoptions", "single")
 	defaultClassPrefix := "DEFAULT"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
@@ -482,7 +482,7 @@ func TestObjcClassPrefixWithDefault(t *testing.T) {
 
 func TestObjcClassPrefixWithExcept(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "objcoptions", "single")
+	dirPath := filepath.Join(testDir, "objcoptions", "single")
 	defaultClassPrefix := "DEFAULT"
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,
@@ -591,7 +591,7 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 
 func TestObjcClassPrefixWithOverride(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "objcoptions", "single")
+	dirPath := filepath.Join(testDir, "objcoptions", "single")
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,
 		testRepositoryOwner,

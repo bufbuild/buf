@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodify
+package bufimagemodifyv1
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 
 func TestCcEnableArenasEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -130,7 +130,7 @@ func TestCcEnableArenasEmptyOptions(t *testing.T) {
 
 func TestCcEnableArenasAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -236,7 +236,7 @@ func TestCcEnableArenasAllOptions(t *testing.T) {
 
 func TestCcEnableArenasCcOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "ccoptions")
+	dirPath := filepath.Join(testDir, "ccoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -342,7 +342,7 @@ func TestCcEnableArenasCcOptions(t *testing.T) {
 
 func TestCcEnableArenasWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDir, "wktimport")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)

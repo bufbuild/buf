@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodify
+package bufimagemodifyv1
 
 import (
 	"context"
@@ -35,6 +35,7 @@ const (
 	testRemote           = "modulerepo.internal"
 	testRepositoryOwner  = "testowner"
 	testRepositoryName   = "testrepository"
+	testDir              = "../testdata"
 )
 
 func assertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32, includeSourceInfo bool) {

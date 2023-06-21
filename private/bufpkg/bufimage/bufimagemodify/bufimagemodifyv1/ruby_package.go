@@ -12,31 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodify
+package bufimagemodifyv1
 
 import (
 	"context"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// OptimizeForID is the ID for the optimize_for modifier.
-const OptimizeForID = "OPTIMIZE_FOR"
+// RubyPackageID is the ID of the ruby_package modifier.
+const RubyPackageID = "RUBY_PACKAGE"
 
-// optimizeFor is the SourceCodeInfo path for the optimize_for option.
-// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L385
-var optimizeForPath = []int32{8, 9}
+// rubyPackagePath is the SourceCodeInfo path for the ruby_package option.
+// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L453
+var rubyPackagePath = []int32{8, 45}
 
-func optimizeFor(
+func rubyPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
-	defaultOptimizeFor descriptorpb.FileOptions_OptimizeMode,
 	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode,
-	overrides map[string]descriptorpb.FileOptions_OptimizeMode,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
+	overrides map[string]string,
 ) Modifier {
 	// Convert the bufmoduleref.ModuleIdentity types into
 	// strings so that they're comparable.
@@ -44,35 +46,32 @@ func optimizeFor(
 	for _, moduleIdentity := range except {
 		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
 	}
-	overrideModuleIdentityStrings := make(
-		map[string]descriptorpb.FileOptions_OptimizeMode,
-		len(moduleOverrides),
-	)
-	for moduleIdentity, optimizeFor := range moduleOverrides {
-		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = optimizeFor
+	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
+	for moduleIdentity, rubyPackage := range moduleOverrides {
+		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = rubyPackage
 	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				modifierValue := defaultOptimizeFor
+				rubyPackageValue := rubyPackageValue(imageFile)
 				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
 					moduleIdentityString := moduleIdentity.IdentityString()
-					if optimizeForOverrdie, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
-						modifierValue = optimizeForOverrdie
+					if moduleNamespaceOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
 						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+						rubyPackageValue = moduleNamespaceOverride
 					}
 				}
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
-					modifierValue = overrideValue
+					rubyPackageValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
-				if err := optimizeForForFile(
+				if err := rubyPackageForFile(
 					ctx,
 					sweeper,
 					imageFile,
-					modifierValue,
+					rubyPackageValue,
 					exceptModuleIdentityStrings,
 				); err != nil {
 					return err
@@ -80,12 +79,12 @@ func optimizeFor(
 			}
 			for moduleIdentityString := range overrideModuleIdentityStrings {
 				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
-					logger.Sugar().Warnf("optimize_for override for %q was unused", moduleIdentityString)
+					logger.Sugar().Warnf("ruby_package override for %q was unused", moduleIdentityString)
 				}
 			}
 			for overrideFile := range overrides {
 				if _, ok := seenOverrideFiles[overrideFile]; !ok {
-					logger.Sugar().Warnf("%s override for %q was unused", OptimizeForID, overrideFile)
+					logger.Sugar().Warnf("%s override for %q was unused", RubyPackageID, overrideFile)
 				}
 			}
 			return nil
@@ -93,25 +92,17 @@ func optimizeFor(
 	)
 }
 
-func optimizeForForFile(
+func rubyPackageForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
-	value descriptorpb.FileOptions_OptimizeMode,
+	rubyPackageValue string,
 	exceptModuleIdentityStrings map[string]struct{},
 ) error {
 	descriptor := imageFile.Proto()
-	options := descriptor.GetOptions()
-	switch {
-	case isWellKnownType(ctx, imageFile):
-		// The file is a well-known type, don't do anything.
-		return nil
-	case options != nil && options.GetOptimizeFor() == value:
-		// The option is already set to the same value, don't do anything.
-		return nil
-	case options == nil && descriptorpb.Default_FileOptions_OptimizeFor == value:
-		// The option is not set, but the value we want to set is the
-		// same as the default, don't do anything.
+	if isWellKnownType(ctx, imageFile) || rubyPackageValue == "" {
+		// This is a well-known type or we could not resolve a non-empty ruby_package
+		// value, so this is a no-op.
 		return nil
 	}
 	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
@@ -119,12 +110,27 @@ func optimizeForForFile(
 			return nil
 		}
 	}
-	if options == nil {
+	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
-	descriptor.Options.OptimizeFor = &value
+	descriptor.Options.RubyPackage = proto.String(rubyPackageValue)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), optimizeForPath)
+		sweeper.mark(imageFile.Path(), rubyPackagePath)
 	}
 	return nil
+}
+
+// rubyPackageValue returns the ruby_package for the given ImageFile based on its
+// package declaration. If the image file doesn't have a package declaration, an
+// empty string is returned.
+func rubyPackageValue(imageFile bufimage.ImageFile) string {
+	pkg := imageFile.Proto().GetPackage()
+	if pkg == "" {
+		return ""
+	}
+	packageParts := strings.Split(pkg, ".")
+	for i, part := range packageParts {
+		packageParts[i] = stringutil.ToPascalCase(part)
+	}
+	return strings.Join(packageParts, "::")
 }

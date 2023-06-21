@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodify
+package bufimagemodifyv1
 
 import (
 	"context"
@@ -23,14 +23,14 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// JavaStringCheckUtf8ID is the ID of the java_string_check_utf8 modifier.
-const JavaStringCheckUtf8ID = "JAVA_STRING_CHECK_UTF8"
+// CcEnableArenasID is the ID of the cc_enable_arenas modifier.
+const CcEnableArenasID = "CC_ENABLE_ARENAS"
 
-// javaStringCheckUtf8Path is the SourceCodeInfo path for the java_string_check_utf8 option.
-// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L375
-var javaStringCheckUtf8Path = []int32{8, 27}
+// ccEnableArenas is the SourceCodeInfo path for the cc_enable_arenas option.
+// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L420
+var ccEnableArenasPath = []int32{8, 31}
 
-func javaStringCheckUtf8(
+func ccEnableArenas(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	value bool,
@@ -45,13 +45,13 @@ func javaStringCheckUtf8(
 					modifierValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
-				if err := javaStringCheckUtf8ForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
+				if err := ccEnableArenasForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
 					return err
 				}
 			}
 			for overrideFile := range overrides {
 				if _, ok := seenOverrideFiles[overrideFile]; !ok {
-					logger.Sugar().Warnf("%s override for %q was unused", JavaStringCheckUtf8ID, overrideFile)
+					logger.Sugar().Warnf("%s override for %q was unused", CcEnableArenasID, overrideFile)
 				}
 			}
 			return nil
@@ -59,7 +59,7 @@ func javaStringCheckUtf8(
 	)
 }
 
-func javaStringCheckUtf8ForFile(
+func ccEnableArenasForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
@@ -71,10 +71,10 @@ func javaStringCheckUtf8ForFile(
 	case isWellKnownType(ctx, imageFile):
 		// The file is a well-known type, don't do anything.
 		return nil
-	case options != nil && options.GetJavaStringCheckUtf8() == value:
+	case options != nil && options.GetCcEnableArenas() == value:
 		// The option is already set to the same value, don't do anything.
 		return nil
-	case options == nil && descriptorpb.Default_FileOptions_JavaStringCheckUtf8 == value:
+	case options == nil && descriptorpb.Default_FileOptions_CcEnableArenas == value:
 		// The option is not set, but the value we want to set is the
 		// same as the default, don't do anything.
 		return nil
@@ -82,9 +82,9 @@ func javaStringCheckUtf8ForFile(
 	if options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
-	descriptor.Options.JavaStringCheckUtf8 = proto.Bool(value)
+	descriptor.Options.CcEnableArenas = proto.Bool(value)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), javaStringCheckUtf8Path)
+		sweeper.mark(imageFile.Path(), ccEnableArenasPath)
 	}
 	return nil
 }

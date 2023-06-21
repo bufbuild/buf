@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodify
+package bufimagemodifyv1
 
 import (
 	"context"
@@ -27,7 +27,7 @@ import (
 
 func TestRubyPackageEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -99,7 +99,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 
 func TestRubyPackageAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -195,10 +195,10 @@ func TestRubyPackageAllOptions(t *testing.T) {
 
 func TestRubyPackageOptions(t *testing.T) {
 	t.Parallel()
-	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "single"), `Acme::V1`)
-	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "double"), `Acme::Weather::V1`)
-	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "triple"), `Acme::Weather::Data::V1`)
-	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "underscore"), `Acme::Weather::FooBar::V1`)
+	testRubyPackageOptions(t, filepath.Join(testDir, "rubyoptions", "single"), `Acme::V1`)
+	testRubyPackageOptions(t, filepath.Join(testDir, "rubyoptions", "double"), `Acme::Weather::V1`)
+	testRubyPackageOptions(t, filepath.Join(testDir, "rubyoptions", "triple"), `Acme::Weather::Data::V1`)
+	testRubyPackageOptions(t, filepath.Join(testDir, "rubyoptions", "underscore"), `Acme::Weather::FooBar::V1`)
 }
 
 func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
@@ -299,7 +299,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 
 func TestRubyPackageWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDir, "wktimport")
 	modifiedRubyPackage := `Acme::Weather::V1alpha1`
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
@@ -358,7 +358,7 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 
 func TestRubyPackageExcept(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "rubyoptions", "single")
+	dirPath := filepath.Join(testDir, "rubyoptions", "single")
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,
 		testRepositoryOwner,
@@ -460,7 +460,7 @@ func TestRubyPackageExcept(t *testing.T) {
 
 func TestRubyPackageOverride(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "rubyoptions", "single")
+	dirPath := filepath.Join(testDir, "rubyoptions", "single")
 	overrideRubyPackage := "MODULE"
 	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,

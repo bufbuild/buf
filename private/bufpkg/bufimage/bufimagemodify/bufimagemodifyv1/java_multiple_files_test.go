@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodify
+package bufimagemodifyv1
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 
 func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "emptyoptions")
+	dirPath := filepath.Join(testDir, "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -126,7 +126,7 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 
 func TestJavaMultipleFilesAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "alloptions")
+	dirPath := filepath.Join(testDir, "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -257,7 +257,7 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 
 func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "javaoptions")
+	dirPath := filepath.Join(testDir, "javaoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
@@ -385,7 +385,7 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 
 func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "wktimport")
+	dirPath := filepath.Join(testDir, "wktimport")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
