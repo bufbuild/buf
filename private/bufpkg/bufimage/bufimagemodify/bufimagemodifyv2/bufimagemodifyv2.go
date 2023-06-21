@@ -66,7 +66,7 @@ func NewPrefixOverride(prefix string) Override {
 
 // NewValueOverride returns a new override on value.
 func NewValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](val T) Override {
-	return NewValueOverride[T](val)
+	return newValueOverride[T](val)
 }
 
 func ModifyJavaPackage(
