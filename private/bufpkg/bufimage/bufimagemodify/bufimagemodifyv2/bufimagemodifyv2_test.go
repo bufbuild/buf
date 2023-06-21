@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifytesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -29,47 +30,184 @@ func TestModifySingleOption(t *testing.T) {
 	t.Parallel()
 	baseDir := filepath.Join("..", "testdata")
 	tests := []struct {
-		description    string
-		subDir         string
-		modifyFunc     func(Marker, bufimage.ImageFile, Override) error
-		file           string
-		override       Override
-		expectedValue  interface{}
-		assertFunc     func(*testing.T, interface{}, *descriptorpb.FileDescriptorProto)
-		fileOptionPath []int32
+		description             string
+		subDir                  string
+		file                    string
+		fileHasNoSourceCodeInfo bool
+		modifyFunc              func(Marker, bufimage.ImageFile, Override) error
+		fileOptionPath          []int32
+		override                Override
+		expectedValue           interface{}
+		assertFunc              func(*testing.T, interface{}, *descriptorpb.FileDescriptorProto)
 	}{
 		{
-			description:   "Java Package",
-			subDir:        "emptyoptions",
-			modifyFunc:    ModifyJavaPackage,
-			file:          "a.proto",
-			override:      NewValueOverride[string]("valueoverride"),
-			expectedValue: "valueoverride",
+			description:             "Java Package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaPackage,
+			fileOptionPath:          internal.JavaPackagePath,
+			override:                NewValueOverride("valueoverride"),
+			expectedValue:           "valueoverride",
+			assertFunc:              assertJavaPackage,
+		},
+		{
+			description:             "Java Package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaPackage,
+			fileOptionPath:          internal.JavaPackagePath,
+			override:                NewPrefixOverride("prefixoverride"),
+			// emptyoptions/a.proto does not have a proto package, thus the result is an empty string
+			expectedValue: "",
 			assertFunc:    assertJavaPackage,
+		},
+		{
+			description:    "Java Package",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyJavaPackage,
+			fileOptionPath: internal.JavaPackagePath,
+			override:       NewPrefixOverride("prefixoverride"),
+			// all/options/a.proto does not have a proto package, thus the result is an empty string
+			expectedValue: "",
+			assertFunc:    assertJavaPackage,
+		},
+		{
+			description:    "Java Package",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyJavaPackage,
+			fileOptionPath: internal.JavaPackagePath,
+			override:       NewValueOverride("alloverride"),
+			expectedValue:  "alloverride",
+			assertFunc:     assertJavaPackage,
+		},
+		{
+			description:             "Java Package",
+			subDir:                  "javaemptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaPackage,
+			fileOptionPath:          internal.JavaPackagePath,
+			override:                NewPrefixOverride("override.pre"),
+			expectedValue:           "override.pre.foo",
+			assertFunc:              assertJavaPackage,
+		},
+		{
+			description:    "Java Package",
+			subDir:         "javaoptions",
+			file:           "java_file.proto",
+			modifyFunc:     ModifyJavaPackage,
+			fileOptionPath: internal.JavaPackagePath,
+			override:       NewPrefixOverride("prefix"),
+			expectedValue:  "prefix.acme.weather",
+			assertFunc:     assertJavaPackage,
+		},
+		{
+			description:    "Java Package",
+			subDir:         "javaoptions",
+			file:           "java_file.proto",
+			modifyFunc:     ModifyJavaPackage,
+			fileOptionPath: internal.JavaPackagePath,
+			override:       NewPrefixOverride(""),
+			// use the package name when prefix is empty
+			expectedValue: "acme.weather",
+			assertFunc:    assertJavaPackage,
+		},
+
+		{
+			description:    "Java Package",
+			subDir:         "javaoptions",
+			file:           "java_file.proto",
+			modifyFunc:     ModifyJavaPackage,
+			fileOptionPath: internal.JavaPackagePath,
+			override:       NewValueOverride("pkg.pkg"),
+			expectedValue:  "pkg.pkg",
+			assertFunc:     assertJavaPackage,
 		},
 	}
 	for _, test := range tests {
 		test := test
 		t.Run(test.description, func(t *testing.T) {
 			t.Parallel()
-			image := bufimagemodifytesting.GetTestImage(
-				t,
-				filepath.Join(baseDir, test.subDir),
-				true,
-			)
-			bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaPackagePath, true)
-			markSweeper := NewMarkSweeper(image)
-			require.NotNil(t, markSweeper)
-			imageFile := image.GetFile(test.file)
-			require.NotNil(t, imageFile)
-			err := ModifyJavaPackage(
-				markSweeper,
-				imageFile,
-				newValueOverride[string]("valueoverride"),
-			)
-			require.NoError(t, err)
-			require.NotNil(t, imageFile.Proto())
-			test.assertFunc(t, test.expectedValue, imageFile.Proto())
+			{
+				// Get image with source code info.
+				image := bufimagemodifytesting.GetTestImage(
+					t,
+					filepath.Join(baseDir, test.subDir),
+					true,
+				)
+				if test.fileHasNoSourceCodeInfo {
+					bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(
+						t,
+						image,
+						test.fileOptionPath,
+						true,
+					)
+				} else {
+					bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(
+						t,
+						image,
+						test.fileOptionPath,
+					)
+				}
+				markSweeper := NewMarkSweeper(image)
+				require.NotNil(t, markSweeper)
+				imageFile := image.GetFile(test.file)
+				require.NotNil(t, imageFile)
+				err := ModifyJavaPackage(
+					markSweeper,
+					imageFile,
+					test.override,
+				)
+				require.NoError(t, err)
+				err = markSweeper.Sweep()
+				require.NoError(t, err)
+				require.NotNil(t, imageFile.Proto())
+				test.assertFunc(t, test.expectedValue, imageFile.Proto())
+				bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmptyForFile(
+					t,
+					imageFile,
+					test.fileOptionPath,
+					true,
+				)
+			}
+			{
+				// Get image without source code info.
+				image := bufimagemodifytesting.GetTestImage(
+					t,
+					filepath.Join(baseDir, test.subDir),
+					false,
+				)
+				bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(
+					t,
+					image,
+					test.fileOptionPath,
+					false,
+				)
+				markSweeper := NewMarkSweeper(image)
+				require.NotNil(t, markSweeper)
+				imageFile := image.GetFile(test.file)
+				require.NotNil(t, imageFile)
+				err := ModifyJavaPackage(
+					markSweeper,
+					imageFile,
+					test.override,
+				)
+				require.NoError(t, err)
+				err = markSweeper.Sweep()
+				require.NoError(t, err)
+				require.NotNil(t, imageFile.Proto())
+				test.assertFunc(t, test.expectedValue, imageFile.Proto())
+				bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(
+					t,
+					image,
+					test.fileOptionPath,
+					false,
+				)
+			}
 		})
 	}
 }

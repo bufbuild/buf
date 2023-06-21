@@ -16,6 +16,7 @@ package bufimagemodifyv2
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -73,7 +74,7 @@ func ModifyJavaPackage(
 	case valueOverride[string]:
 		descriptor.Options.JavaPackage = proto.String(t.get())
 	}
-	marker.Mark(imageFile, javaPackagePath)
+	marker.Mark(imageFile, internal.JavaPackagePath)
 	return nil
 }
 
