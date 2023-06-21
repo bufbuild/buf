@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Change default for `--origin` flag of `buf beta studio-agent` to `https://buf.build`
+- Remove the `api.` prefix when invoking RPCs to the BSR.
 
 ## [v1.21.0] - 2023-06-05
 
