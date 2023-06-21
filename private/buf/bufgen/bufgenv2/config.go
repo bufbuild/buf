@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -159,7 +158,7 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (DisabledFun
 		}
 	}
 	// You could simplify this, but this helped me reason about it
-	return func(fileOption FileOption, imageFile bufimage.ImageFile) bool {
+	return func(fileOption FileOption, imageFile ImageFileIdentity) bool {
 		// If we did not specify a file option, we match all file options
 		return (selectorFileOption == 0 || fileOption == selectorFileOption) &&
 			matchesModule(imageFile, externalConfig.Module) &&
@@ -188,7 +187,7 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (OverrideFu
 	if err != nil {
 		return nil, err
 	}
-	return func(imageFile bufimage.ImageFile) bufimagemodifyv2.Override {
+	return func(imageFile ImageFileIdentity) bufimagemodifyv2.Override {
 		// We don't need to match on FileOption - we only call this OverrideFunc when we
 		// know we are applying for a given FileOption.
 		// The FileOption we parsed above is assumed to be the FileOption.
@@ -206,7 +205,7 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (OverrideFu
 // matchesModule returns true if the given external module config value matches the ImageFile.
 //
 // An empty value matches - this means we did not filter on modules.
-func matchesModule(imageFile bufimage.ImageFile, module string) bool {
+func matchesModule(imageFile ImageFileIdentity, module string) bool {
 	// If we did not specify a module, we match all modules
 	if len(module) == 0 {
 		return true
@@ -222,7 +221,7 @@ func matchesModule(imageFile bufimage.ImageFile, module string) bool {
 // matchesPath returns true if the given external path config value matches the ImageFile.
 //
 // An empty value matches - this means we did not filter on modules.
-func matchesPath(imageFile bufimage.ImageFile, path string) bool {
+func matchesPath(imageFile ImageFileIdentity, path string) bool {
 	// If we did not specify a path, we match all paths
 	if len(path) == 0 {
 		return true
@@ -240,7 +239,7 @@ func mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs map[FileOption][]O
 
 func mergeDisabledFuncs(disabledFuncs []DisabledFunc) DisabledFunc {
 	// If any disables, then we disable for this FileOption and ImageFile
-	return func(fileOption FileOption, imageFile bufimage.ImageFile) bool {
+	return func(fileOption FileOption, imageFile ImageFileIdentity) bool {
 		for _, disabledFunc := range disabledFuncs {
 			if disabledFunc(fileOption, imageFile) {
 				return true
@@ -252,7 +251,7 @@ func mergeDisabledFuncs(disabledFuncs []DisabledFunc) DisabledFunc {
 
 func mergeOverrideFuncs(overrideFuncs []OverrideFunc) OverrideFunc {
 	// Last override listed wins
-	return func(imageFile bufimage.ImageFile) bufimagemodifyv2.Override {
+	return func(imageFile ImageFileIdentity) bufimagemodifyv2.Override {
 		var override bufimagemodifyv2.Override
 		for _, overrideFunc := range overrideFuncs {
 			if iOverride := overrideFunc(imageFile); iOverride != nil {

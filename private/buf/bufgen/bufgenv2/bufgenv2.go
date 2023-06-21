@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -43,13 +44,18 @@ func ApplyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
 	return markSweeper.Sweep()
 }
 
+type ImageFileIdentity interface {
+	Path() string
+	ModuleIdentity() bufmoduleref.ModuleIdentity
+}
+
 // DisableFunc decides whether a file option should be disabled for a file.
-type DisabledFunc func(FileOption, bufimage.ImageFile) bool
+type DisabledFunc func(FileOption, ImageFileIdentity) bool
 
 // TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
 // OverrideFunc is specific to a file option, and returns what thie file option
 // should be overridden to for this file.
-type OverrideFunc func(bufimage.ImageFile) bufimagemodifyv2.Override
+type OverrideFunc func(ImageFileIdentity) bufimagemodifyv2.Override
 
 // ReadConfigV2 reads V2 configuration.
 func ReadConfigV2(
