@@ -36,21 +36,27 @@ var (
 	// rubyPackagePath          = []int32{8, 45}
 )
 
+// Marker marks SourceCodeInfo_Location indices.
 type Marker interface {
+	// Mark marks the given SourceCodeInfo_Location indices.
 	Mark(bufimage.ImageFile, []int32)
 }
 
+// Sweeper sweeps SourceCodeInfo_Locations.
 type Sweeper interface {
+	// Sweep removes SourceCodeInfo_Locations.
 	Sweep() error
 }
 
+// MarkSweeper marks SourceCodeInfo_Location indices and sweeps source code info
+// to remove marked SourceCodeInfo_Locations.
 type MarkSweeper interface {
 	Marker
 	Sweeper
 }
 
 func NewMarkSweeper(image bufimage.Image) MarkSweeper {
-	return nil
+	return newMarkSweeper(image)
 }
 
 // Override describes how to modify a file option, and
