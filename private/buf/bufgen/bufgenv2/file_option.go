@@ -19,6 +19,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -64,24 +67,6 @@ var (
 		FileOptionPhpMetadataNamespace,
 		FileOptionRubyPackage,
 	}
-
-	// TODO: this type vs prefix thing isn't great
-	// fill it out if we want to use it, this isn't filled out
-	// except for JavaPackage
-	fileOptionToFileOptionType = map[FileOption]FileOptionType{
-		FileOptionJavaPackage:          FileOptionTypePrefix,
-		FileOptionJavaOuterClassname:   FileOptionTypeValue,
-		FileOptionJavaMultipleFiles:    FileOptionTypeValue,
-		FileOptionJavaStringCheckUtf8:  FileOptionTypeValue,
-		FileOptionOptimizeFor:          FileOptionTypeValue,
-		FileOptionGoPackage:            FileOptionTypeValue,
-		FileOptionCcEnableArenas:       FileOptionTypeValue,
-		FileOptionObjcClassPrefix:      FileOptionTypeValue,
-		FileOptionCsharpNamespace:      FileOptionTypeValue,
-		FileOptionPhpNamespace:         FileOptionTypeValue,
-		FileOptionPhpMetadataNamespace: FileOptionTypeValue,
-		FileOptionRubyPackage:          FileOptionTypeValue,
-	}
 	fileOptionToString = map[FileOption]string{
 		FileOptionJavaPackage:          "java_package",
 		FileOptionJavaOuterClassname:   "java_outer_classname",
@@ -110,19 +95,40 @@ var (
 		"php_metadata_namespace": FileOptionPhpMetadataNamespace,
 		"ruby_package":           FileOptionRubyPackage,
 	}
+	fileOptionToParser = map[FileOption]parser{
+		FileOptionJavaPackage: {
+			allowPrefix:            true,
+			valueOverrideParseFunc: parseValueOverride[string],
+		},
+		// TODO:
+		FileOptionJavaOuterClassname: {},
+		// TODO:
+		FileOptionJavaMultipleFiles: {},
+		// TODO:
+		FileOptionJavaStringCheckUtf8: {},
+		FileOptionOptimizeFor: {
+			valueOverrideParseFunc: parseValueOverrideOptmizeMode,
+		},
+		// TODO:
+		FileOptionGoPackage: {},
+		FileOptionCcEnableArenas: {
+			valueOverrideParseFunc: parseValueOverride[bool],
+		},
+		// TODO:
+		FileOptionObjcClassPrefix: {},
+		// TODO:
+		FileOptionCsharpNamespace: {},
+		// TODO:
+		FileOptionPhpNamespace: {},
+		// TODO:
+		FileOptionPhpMetadataNamespace: {},
+		// TODO:
+		FileOptionRubyPackage: {},
+	}
 )
 
 // FileOption is a descriptor.proto file option that can be managed.
 type FileOption int
-
-// Type returns the FileOptionType or 0 if unknown..
-func (f FileOption) Type() FileOptionType {
-	t, ok := fileOptionToFileOptionType[f]
-	if !ok {
-		return 0
-	}
-	return t
-}
 
 // String implements fmt.Stringer.
 func (f FileOption) String() string {
@@ -146,4 +152,47 @@ func ParseFileOption(s string) (FileOption, error) {
 		return f, nil
 	}
 	return 0, fmt.Errorf("unknown FileOption: %q", s)
+}
+
+type parser struct {
+	allowPrefix            bool
+	valueOverrideParseFunc func(interface{}, FileOption) (bufimagemodifyv2.Override, error)
+}
+
+func (p parser) parse(prefix *string, value interface{}, fileOption FileOption) (bufimagemodifyv2.Override, error) {
+	if prefix != nil && value != nil {
+		return nil, fmt.Errorf("%v: only one of value and prefix can be set", fileOption)
+	}
+	if prefix == nil && value == nil {
+		return nil, fmt.Errorf("%v: value or prefix must be set", fileOption)
+	}
+	if prefix != nil {
+		if !p.allowPrefix {
+			return nil, fmt.Errorf("%v: prefix is not allowed", fileOption)
+		}
+		return bufimagemodifyv2.NewPrefixOverride(*prefix), nil
+	}
+	return p.valueOverrideParseFunc(value, fileOption)
+}
+
+// Pass type T to construct a function that only accepts type T and creates an override from it.
+func parseValueOverride[T string | bool](value interface{}, fileOption FileOption) (bufimagemodifyv2.Override, error) {
+	overrideValue, ok := value.(T)
+	if !ok {
+		return nil, fmt.Errorf("invalid override for %v", fileOption)
+	}
+	return bufimagemodifyv2.NewValueOverride[T](overrideValue), nil
+}
+
+func parseValueOverrideOptmizeMode(override interface{}, fileOption FileOption) (bufimagemodifyv2.Override, error) {
+	optimizeModeName, ok := override.(string)
+	if !ok {
+		return nil, fmt.Errorf("a valid optimize mode string is required for %v", fileOption)
+	}
+	optimizeModeEnum, ok := descriptorpb.FileOptions_OptimizeMode_value[optimizeModeName]
+	if !ok {
+		return nil, fmt.Errorf("invalid optimize mode %s set for %v", optimizeModeName, fileOption)
+	}
+	optimizeMode := descriptorpb.FileOptions_OptimizeMode(optimizeModeEnum)
+	return bufimagemodifyv2.NewValueOverride[descriptorpb.FileOptions_OptimizeMode](optimizeMode), nil
 }

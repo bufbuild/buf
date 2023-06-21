@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
@@ -80,6 +81,11 @@ func getConfig(
 		}
 		config.Inputs = append(config.Inputs, inputConfig)
 	}
+	managedConfig, err := newManagedConfig(externalConfigV2.Managed)
+	if err != nil {
+		return nil, err
+	}
+	config.Managed = managedConfig
 	return &config, nil
 }
 
@@ -167,26 +173,33 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (OverrideFu
 		// This should never happen because we already validated that this is set and non-empty
 		return nil, err
 	}
-	return func(imageFile bufimage.ImageFile) (string, error) {
+	if externalConfig.Prefix != nil && externalConfig.Value != nil {
+		return nil, errors.New("only one of value and prefix can be set")
+	}
+	if externalConfig.Prefix == nil && externalConfig.Value == nil {
+		return nil, errors.New("one of value and prefix must be set")
+	}
+	overrideParser, ok := fileOptionToParser[fileOption]
+	if !ok {
+		// this should not happen
+		return nil, fmt.Errorf("unable to parse override for %v", fileOption)
+	}
+	override, err := overrideParser.parse(externalConfig.Prefix, externalConfig.Value, fileOption)
+	if err != nil {
+		return nil, err
+	}
+	return func(imageFile bufimage.ImageFile) bufimagemodifyv2.Override {
 		// We don't need to match on FileOption - we only call this OverrideFunc when we
 		// know we are applying for a given FileOption.
 		// The FileOption we parsed above is assumed to be the FileOption.
 
 		if !matchesModule(imageFile, externalConfig.Module) {
-			return "", nil
+			return nil
 		}
 		if !matchesPath(imageFile, externalConfig.Path) {
-			return "", nil
+			return nil
 		}
-
-		switch t := fileOption.Type(); t {
-		case FileOptionTypeValue:
-			return externalConfig.Value, nil
-		case FileOptionTypePrefix:
-			return externalConfig.Prefix, nil
-		default:
-			return "", fmt.Errorf("unknown FileOptionType: %q", t)
-		}
+		return override
 	}, nil
 }
 
@@ -239,18 +252,13 @@ func mergeDisabledFuncs(disabledFuncs []DisabledFunc) DisabledFunc {
 
 func mergeOverrideFuncs(overrideFuncs []OverrideFunc) OverrideFunc {
 	// Last override listed wins
-	return func(imageFile bufimage.ImageFile) (string, error) {
-		var override string
+	return func(imageFile bufimage.ImageFile) bufimagemodifyv2.Override {
+		var override bufimagemodifyv2.Override
 		for _, overrideFunc := range overrideFuncs {
-			iOverride, err := overrideFunc(imageFile)
-			if err != nil {
-				return "", err
-			}
-			// TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
-			if iOverride != "" {
+			if iOverride := overrideFunc(imageFile); iOverride != nil {
 				override = iOverride
 			}
 		}
-		return override, nil
+		return override
 	}
 }
