@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -49,7 +50,7 @@ func assertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fil
 
 		var hasFileOption bool
 		for _, location := range descriptor.SourceCodeInfo.Location {
-			if len(location.Path) > 0 && int32SliceIsEqual(location.Path, fileOptionPath) {
+			if len(location.Path) > 0 && internal.Int32SliceIsEqual(location.Path, fileOptionPath) {
 				hasFileOption = true
 				break
 			}
@@ -64,7 +65,7 @@ func assertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, 
 
 		var hasFileOption bool
 		for _, location := range descriptor.SourceCodeInfo.Location {
-			if len(location.Path) > 0 && int32SliceIsEqual(location.Path, fileOptionPath) {
+			if len(location.Path) > 0 && internal.Int32SliceIsEqual(location.Path, fileOptionPath) {
 				hasFileOption = true
 				break
 			}
