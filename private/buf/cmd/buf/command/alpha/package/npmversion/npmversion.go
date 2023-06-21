@@ -88,11 +88,11 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("failed parsing module reference: %s", err.Error())
 	}
-	pluginReference, err := bufpluginref.PluginReferenceOptionalVersion(flags.Plugin)
+	pluginIdentity, pluginVersion, err := bufpluginref.ParsePluginIdentityOptionalVersion(flags.Plugin)
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("failed parsing plugin reference: %s", err.Error())
 	}
-	if pluginReference.Remote() != moduleReference.Remote() {
+	if pluginIdentity.Remote() != moduleReference.Remote() {
 		return appcmd.NewInvalidArgumentError("module and plugin must be from the same remote")
 	}
 	resolver := connectclient.Make(
@@ -108,9 +108,9 @@ func run(
 				Reference:  moduleReference.Reference(),
 			},
 			PluginReference: &registryv1alpha1.GetRemotePackageVersionPlugin{
-				Owner:   pluginReference.Owner(),
-				Name:    pluginReference.Plugin(),
-				Version: pluginReference.Version(),
+				Owner:   pluginIdentity.Owner(),
+				Name:    pluginIdentity.Plugin(),
+				Version: pluginVersion,
 			},
 		},
 	))
