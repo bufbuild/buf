@@ -27,8 +27,6 @@ import (
 // PhpMetadataNamespaceID is the ID of the php_metadata_namespace modifier.
 const PhpMetadataNamespaceID = "PHP_METADATA_NAMESPACE"
 
-var ()
-
 func phpMetadataNamespace(
 	logger *zap.Logger,
 	sweeper Sweeper,
