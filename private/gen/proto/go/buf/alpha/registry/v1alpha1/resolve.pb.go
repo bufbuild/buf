@@ -537,7 +537,7 @@ type GetMavenVersionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// version is the resolved version to be used with the go module proxy.
+	// version is the resolved version to be used with the maven module proxy.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -642,7 +642,7 @@ type GetNPMVersionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// version is the resolved version to be used with the go module proxy.
+	// version is the resolved version to be used with the NPM module proxy.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -747,7 +747,7 @@ type GetSwiftVersionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// version is the resolved version to be used with the go module proxy.
+	// version is the resolved version to be used with the swift module proxy.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 }
 

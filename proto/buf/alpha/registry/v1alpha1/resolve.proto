@@ -144,7 +144,7 @@ message GetMavenVersionRequest {
 }
 
 message GetMavenVersionResponse {
-  // version is the resolved version to be used with the go module proxy.
+  // version is the resolved version to be used with the maven module proxy.
   string version = 1;
 }
 
@@ -156,7 +156,7 @@ message GetNPMVersionRequest {
 }
 
 message GetNPMVersionResponse {
-  // version is the resolved version to be used with the go module proxy.
+  // version is the resolved version to be used with the NPM module proxy.
   string version = 1;
 }
 
@@ -168,7 +168,7 @@ message GetSwiftVersionRequest {
 }
 
 message GetSwiftVersionResponse {
-  // version is the resolved version to be used with the go module proxy.
+  // version is the resolved version to be used with the swift module proxy.
   string version = 1;
 }
 
