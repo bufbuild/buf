@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
@@ -28,10 +29,6 @@ import (
 
 // RubyPackageID is the ID of the ruby_package modifier.
 const RubyPackageID = "RUBY_PACKAGE"
-
-// rubyPackagePath is the SourceCodeInfo path for the ruby_package option.
-// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L453
-var rubyPackagePath = []int32{8, 45}
 
 func rubyPackage(
 	logger *zap.Logger,
@@ -115,7 +112,7 @@ func rubyPackageForFile(
 	}
 	descriptor.Options.RubyPackage = proto.String(rubyPackageValue)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), rubyPackagePath)
+		sweeper.mark(imageFile.Path(), internal.RubyPackagePath)
 	}
 	return nil
 }

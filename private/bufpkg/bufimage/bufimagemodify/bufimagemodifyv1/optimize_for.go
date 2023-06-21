@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -25,10 +26,6 @@ import (
 
 // OptimizeForID is the ID for the optimize_for modifier.
 const OptimizeForID = "OPTIMIZE_FOR"
-
-// optimizeFor is the SourceCodeInfo path for the optimize_for option.
-// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L385
-var optimizeForPath = []int32{8, 9}
 
 func optimizeFor(
 	logger *zap.Logger,
@@ -124,7 +121,7 @@ func optimizeForForFile(
 	}
 	descriptor.Options.OptimizeFor = &value
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), optimizeForPath)
+		sweeper.mark(imageFile.Path(), internal.OptimizeForPath)
 	}
 	return nil
 }

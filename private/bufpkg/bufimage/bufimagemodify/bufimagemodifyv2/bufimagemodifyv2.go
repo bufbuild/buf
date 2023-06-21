@@ -16,24 +16,9 @@ package bufimagemodifyv2
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
-)
-
-var (
-	// TODO: double-check these
-	javaPackagePath = []int32{8, 1}
-	// javaOuterClassnamePath   = []int32{8, 8}
-	// javaMultipleFilesPath    = []int32{8, 10}
-	// javaStringCheckUtf8Path  = []int32{8, 27}
-	// optimizeForPath          = []int32{8, 9}
-	// goPackagePath            = []int32{8, 11}
-	// ccEnableArenasPath       = []int32{8, 31}
-	// objcClassPrefixPath      = []int32{8, 36}
-	// csharpNamespacePath      = []int32{8, 37}
-	// phpNamespacePath         = []int32{8, 41}
-	// phpMetadataNamespacePath = []int32{8, 44}
-	// rubyPackagePath          = []int32{8, 45}
 )
 
 type Marker interface {
@@ -63,7 +48,7 @@ func ModifyJavaPackage(
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.JavaPackage = proto.String(getJavaPackageValue(imageFile, prefix))
-	marker.Mark(imageFile, javaPackagePath)
+	marker.Mark(imageFile, internal.JavaPackagePath)
 	return nil
 }
 

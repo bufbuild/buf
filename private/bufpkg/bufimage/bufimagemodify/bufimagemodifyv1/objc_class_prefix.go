@@ -20,6 +20,7 @@ import (
 	"unicode"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"go.uber.org/zap"
@@ -29,10 +30,6 @@ import (
 
 // ObjcClassPrefixID is the ID of the objc_class_prefix modifier.
 const ObjcClassPrefixID = "OBJC_CLASS_PREFIX"
-
-// objcClassPrefixPath is the SourceCodeInfo path for the objc_class_prefix option.
-// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L425
-var objcClassPrefixPath = []int32{8, 36}
 
 func objcClassPrefix(
 	logger *zap.Logger,
@@ -114,7 +111,7 @@ func objcClassPrefixForFile(
 	}
 	descriptor.Options.ObjcClassPrefix = proto.String(objcClassPrefixValue)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), objcClassPrefixPath)
+		sweeper.mark(imageFile.Path(), internal.ObjcClassPrefixPath)
 	}
 	return nil
 }

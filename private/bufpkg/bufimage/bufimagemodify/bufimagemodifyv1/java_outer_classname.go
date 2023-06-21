@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
@@ -27,10 +28,6 @@ import (
 
 // JavaOuterClassNameID is the ID for the java_outer_classname modifier.
 const JavaOuterClassNameID = "JAVA_OUTER_CLASSNAME"
-
-// javaOuterClassnamePath is the SourceCodeInfo path for the java_outer_classname option.
-// https://github.com/protocolbuffers/protobuf/blob/87d140f851131fb8a6e8a80449cf08e73e568259/src/google/protobuf/descriptor.proto#L356
-var javaOuterClassnamePath = []int32{8, 8}
 
 func javaOuterClassname(
 	logger *zap.Logger,
@@ -87,7 +84,7 @@ func javaOuterClassnameForFile(
 	}
 	descriptor.Options.JavaOuterClassname = proto.String(javaOuterClassnameValue)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), javaOuterClassnamePath)
+		sweeper.mark(imageFile.Path(), internal.JavaOuterClassnamePath)
 	}
 	return nil
 }

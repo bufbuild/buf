@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifytesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -31,7 +32,7 @@ func TestJavaStringCheckUtf8EmptyOptions(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, true)
 
 		sweeper := NewFileOptionSweeper()
 		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, false, nil)
@@ -48,7 +49,7 @@ func TestJavaStringCheckUtf8EmptyOptions(t *testing.T) {
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, false, nil)
@@ -64,7 +65,7 @@ func TestJavaStringCheckUtf8EmptyOptions(t *testing.T) {
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, true)
 
 		sweeper := NewFileOptionSweeper()
 		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, false, map[string]string{"a.proto": "true"})
@@ -83,7 +84,7 @@ func TestJavaStringCheckUtf8EmptyOptions(t *testing.T) {
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, false, map[string]string{"a.proto": "true"})
@@ -105,7 +106,7 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaStringCheckUtf8Path)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.JavaStringCheckUtf8Path)
 
 		sweeper := NewFileOptionSweeper()
 		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, false, nil)
@@ -121,13 +122,13 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaStringCheckUtf8Path)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.JavaStringCheckUtf8Path)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, false, nil)
@@ -142,13 +143,13 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaStringCheckUtf8Path)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.JavaStringCheckUtf8Path)
 
 		sweeper := NewFileOptionSweeper()
 		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, false, map[string]string{"a.proto": "true"})
@@ -168,13 +169,13 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 			}
 			assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, false, map[string]string{"a.proto": "true"})
@@ -193,7 +194,7 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 			}
 			assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, false)
 	})
 }
 
@@ -203,7 +204,7 @@ func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaStringCheckUtf8Path)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.JavaStringCheckUtf8Path)
 
 		sweeper := NewFileOptionSweeper()
 		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, true, nil)
@@ -220,13 +221,13 @@ func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.True(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, true, nil)
@@ -242,13 +243,13 @@ func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.True(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 		}
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaStringCheckUtf8Path)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, internal.JavaStringCheckUtf8Path)
 
 		sweeper := NewFileOptionSweeper()
 		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, true, map[string]string{"override.proto": "false"})
@@ -273,7 +274,7 @@ func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
-		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, internal.JavaStringCheckUtf8Path, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := JavaStringCheckUtf8(zap.NewNop(), sweeper, true, map[string]string{"override.proto": "false"})
