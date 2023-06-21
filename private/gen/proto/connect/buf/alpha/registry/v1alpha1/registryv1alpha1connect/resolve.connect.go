@@ -80,16 +80,12 @@ type ResolveServiceClient interface {
 	// This function also deals with tiebreaking what ModulePin wins for the same repository.
 	GetModulePins(context.Context, *connect_go.Request[v1alpha1.GetModulePinsRequest]) (*connect_go.Response[v1alpha1.GetModulePinsResponse], error)
 	// GetGoVersion resolves the given plugin and module references to a version.
-	// The format of the version is determined by the plugin type.
 	GetGoVersion(context.Context, *connect_go.Request[v1alpha1.GetGoVersionRequest]) (*connect_go.Response[v1alpha1.GetGoVersionResponse], error)
 	// GetSwiftVersion resolves the given plugin and module references to a version.
-	// The format of the version is determined by the plugin type.
 	GetSwiftVersion(context.Context, *connect_go.Request[v1alpha1.GetSwiftVersionRequest]) (*connect_go.Response[v1alpha1.GetSwiftVersionResponse], error)
 	// GetMavenVersion resolves the given plugin and module references to a version.
-	// The format of the version is determined by the plugin type.
 	GetMavenVersion(context.Context, *connect_go.Request[v1alpha1.GetMavenVersionRequest]) (*connect_go.Response[v1alpha1.GetMavenVersionResponse], error)
 	// GetNPMVersion resolves the given plugin and module references to a version.
-	// The format of the version is determined by the plugin type.
 	GetNPMVersion(context.Context, *connect_go.Request[v1alpha1.GetNPMVersionRequest]) (*connect_go.Response[v1alpha1.GetNPMVersionResponse], error)
 }
 
@@ -182,16 +178,12 @@ type ResolveServiceHandler interface {
 	// This function also deals with tiebreaking what ModulePin wins for the same repository.
 	GetModulePins(context.Context, *connect_go.Request[v1alpha1.GetModulePinsRequest]) (*connect_go.Response[v1alpha1.GetModulePinsResponse], error)
 	// GetGoVersion resolves the given plugin and module references to a version.
-	// The format of the version is determined by the plugin type.
 	GetGoVersion(context.Context, *connect_go.Request[v1alpha1.GetGoVersionRequest]) (*connect_go.Response[v1alpha1.GetGoVersionResponse], error)
 	// GetSwiftVersion resolves the given plugin and module references to a version.
-	// The format of the version is determined by the plugin type.
 	GetSwiftVersion(context.Context, *connect_go.Request[v1alpha1.GetSwiftVersionRequest]) (*connect_go.Response[v1alpha1.GetSwiftVersionResponse], error)
 	// GetMavenVersion resolves the given plugin and module references to a version.
-	// The format of the version is determined by the plugin type.
 	GetMavenVersion(context.Context, *connect_go.Request[v1alpha1.GetMavenVersionRequest]) (*connect_go.Response[v1alpha1.GetMavenVersionResponse], error)
 	// GetNPMVersion resolves the given plugin and module references to a version.
-	// The format of the version is determined by the plugin type.
 	GetNPMVersion(context.Context, *connect_go.Request[v1alpha1.GetNPMVersionRequest]) (*connect_go.Response[v1alpha1.GetNPMVersionResponse], error)
 }
 

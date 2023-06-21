@@ -34,22 +34,18 @@ service ResolveService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetGoVersion resolves the given plugin and module references to a version.
-  // The format of the version is determined by the plugin type.
   rpc GetGoVersion(GetGoVersionRequest) returns (GetGoVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetSwiftVersion resolves the given plugin and module references to a version.
-  // The format of the version is determined by the plugin type.
   rpc GetSwiftVersion(GetSwiftVersionRequest) returns (GetSwiftVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetMavenVersion resolves the given plugin and module references to a version.
-  // The format of the version is determined by the plugin type.
   rpc GetMavenVersion(GetMavenVersionRequest) returns (GetMavenVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetNPMVersion resolves the given plugin and module references to a version.
-  // The format of the version is determined by the plugin type.
   rpc GetNPMVersion(GetNPMVersionRequest) returns (GetNPMVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
