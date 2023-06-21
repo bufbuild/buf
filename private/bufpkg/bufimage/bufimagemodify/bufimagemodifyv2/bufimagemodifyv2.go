@@ -53,16 +53,37 @@ func NewMarkSweeper(image bufimage.Image) MarkSweeper {
 	return nil
 }
 
+// Override describes how to modify a file option, and
+// is passed to ModifyXYZ.
+type Override interface {
+	override()
+}
+
+// NewPrefixOverride returns a new override on prefix.
+func NewPrefixOverride(prefix string) Override {
+	return newPrefixOverride(prefix)
+}
+
+// NewValueOverride returns a new override on value.
+func NewValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](val T) Override {
+	return NewValueOverride[T](val)
+}
+
 func ModifyJavaPackage(
 	marker Marker,
 	imageFile bufimage.ImageFile,
-	prefix string,
+	override Override,
 ) error {
 	descriptor := imageFile.Proto()
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
-	descriptor.Options.JavaPackage = proto.String(getJavaPackageValue(imageFile, prefix))
+	switch t := override.(type) {
+	case prefixOverride:
+		descriptor.Options.JavaPackage = proto.String(getJavaPackageValue(imageFile, t.get()))
+	case valueOverride[string]:
+		descriptor.Options.JavaPackage = proto.String(t.get())
+	}
 	marker.Mark(imageFile, javaPackagePath)
 	return nil
 }
