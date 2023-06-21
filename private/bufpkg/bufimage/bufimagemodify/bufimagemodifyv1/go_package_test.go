@@ -20,12 +20,15 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifytesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
+
+const testImportPathPrefix = "github.com/foo/bar/private/gen/proto/go"
 
 func TestGoPackageError(t *testing.T) {
 	t.Parallel()
@@ -35,11 +38,11 @@ func TestGoPackageError(t *testing.T) {
 
 func TestGoPackageEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "emptyoptions")
+	dirPath := filepath.Join("..", "testdata", "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
@@ -51,7 +54,7 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -60,13 +63,13 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
@@ -76,7 +79,7 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -85,13 +88,13 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
@@ -103,19 +106,19 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
@@ -125,23 +128,23 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 }
 
 func TestGoPackageAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "alloptions")
+	dirPath := filepath.Join("..", "testdata", "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{})
@@ -161,13 +164,13 @@ func TestGoPackageAllOptions(t *testing.T) {
 				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
@@ -185,13 +188,13 @@ func TestGoPackageAllOptions(t *testing.T) {
 				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
@@ -208,13 +211,13 @@ func TestGoPackageAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
@@ -229,18 +232,18 @@ func TestGoPackageAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 }
 
 func TestGoPackagePackageVersion(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "packageversion")
+	dirPath := filepath.Join("..", "testdata", "packageversion")
 	packageSuffix := "weatherv1alpha1"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
@@ -252,7 +255,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -264,13 +267,13 @@ func TestGoPackagePackageVersion(t *testing.T) {
 				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
@@ -280,7 +283,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -292,13 +295,13 @@ func TestGoPackagePackageVersion(t *testing.T) {
 				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
 
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
@@ -310,7 +313,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -326,13 +329,13 @@ func TestGoPackagePackageVersion(t *testing.T) {
 				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
@@ -342,7 +345,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -358,17 +361,17 @@ func TestGoPackagePackageVersion(t *testing.T) {
 				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 }
 
 func TestGoPackageWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "wktimport")
+	dirPath := filepath.Join("..", "testdata", "wktimport")
 	packageSuffix := "weatherv1alpha1"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
@@ -401,7 +404,7 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(zap.NewNop(), sweeper, testImportPathPrefix, nil, nil, nil)
@@ -433,18 +436,13 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 
 func TestGoPackageWithExcept(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "emptyoptions")
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
-		testRemote,
-		testRepositoryOwner,
-		testRepositoryName,
-	)
-	require.NoError(t, err)
+	dirPath := filepath.Join("..", "testdata", "emptyoptions")
+	testModuleIdentity := bufimagemodifytesting.GetTestModuleIdentity(t)
 
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(
@@ -463,14 +461,14 @@ func TestGoPackageWithExcept(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.Equal(t, testGetImage(t, dirPath, true), image)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(
@@ -487,14 +485,14 @@ func TestGoPackageWithExcept(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.Equal(t, testGetImage(t, dirPath, false), image)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(
@@ -513,13 +511,13 @@ func TestGoPackageWithExcept(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(
@@ -536,25 +534,20 @@ func TestGoPackageWithExcept(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 }
 
 func TestGoPackageWithOverride(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "emptyoptions")
+	dirPath := filepath.Join("..", "testdata", "emptyoptions")
 	overrideGoPackagePrefix := "github.com/foo/bar/private/private/gen/proto/go"
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
-		testRemote,
-		testRepositoryOwner,
-		testRepositoryName,
-	)
-	require.NoError(t, err)
+	testModuleIdentity := bufimagemodifytesting.GetTestModuleIdentity(t)
 
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(
@@ -575,7 +568,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -584,13 +577,13 @@ func TestGoPackageWithOverride(t *testing.T) {
 				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(
@@ -609,7 +602,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -618,13 +611,13 @@ func TestGoPackageWithOverride(t *testing.T) {
 				descriptor.GetOptions().GetGoPackage(),
 			)
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(
@@ -645,19 +638,19 @@ func TestGoPackageWithOverride(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(
@@ -676,12 +669,12 @@ func TestGoPackageWithOverride(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 	})
 }

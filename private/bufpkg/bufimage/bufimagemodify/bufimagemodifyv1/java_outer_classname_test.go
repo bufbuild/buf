@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifytesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
@@ -28,11 +29,11 @@ import (
 
 func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "emptyoptions")
+	dirPath := filepath.Join("..", "testdata", "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
@@ -44,19 +45,19 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "AProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		err := JavaOuterClassname(zap.NewNop(), sweeper, nil, false).Modify(
@@ -64,19 +65,19 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "AProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
@@ -88,19 +89,19 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		err := JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"}, false).Modify(
@@ -108,19 +109,19 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 	})
 
 	t.Run("with preserveExistingValue", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
@@ -132,23 +133,23 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "AProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
 	})
 }
 
 func TestJavaOuterClassnameAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "alloptions")
+	dirPath := filepath.Join("..", "testdata", "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
@@ -160,19 +161,19 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "AProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		err := JavaOuterClassname(zap.NewNop(), sweeper, nil, false).Modify(
@@ -185,13 +186,13 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "AProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
@@ -203,19 +204,19 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		err := JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"}, false).Modify(
@@ -228,13 +229,13 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 	})
 
 	t.Run("with preserveExistingValue", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
@@ -246,23 +247,23 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.Equal(t, testGetImage(t, dirPath, true), image)
+		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
 	})
 }
 
 func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "javaoptions")
+	dirPath := filepath.Join("..", "testdata", "javaoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
@@ -279,13 +280,13 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, stringutil.ToPascalCase(normalpath.Base(imageFile.Path())), descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		err := JavaOuterClassname(zap.NewNop(), sweeper, nil, false).Modify(
@@ -298,13 +299,13 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, stringutil.ToPascalCase(normalpath.Base(imageFile.Path())), descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
@@ -325,13 +326,13 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 			}
 			assert.Equal(t, "JavaFileProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		err := JavaOuterClassname(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"}, false).Modify(
@@ -348,16 +349,16 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 			}
 			assert.Equal(t, "JavaFileProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 	})
 }
 
 func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "wktimport")
+	dirPath := filepath.Join("..", "testdata", "wktimport")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
@@ -385,7 +386,7 @@ func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		err := JavaOuterClassname(zap.NewNop(), sweeper, nil, false).Modify(

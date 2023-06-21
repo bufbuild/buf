@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifytesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -26,11 +27,11 @@ import (
 
 func TestPhpNamespaceEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "emptyoptions")
+	dirPath := filepath.Join("..", "testdata", "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil)
@@ -41,13 +42,13 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.Equal(t, testGetImage(t, dirPath, true), image)
+		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := PhpNamespace(zap.NewNop(), sweeper, nil)
@@ -56,13 +57,13 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.Equal(t, testGetImage(t, dirPath, false), image)
+		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
 
 		sweeper := NewFileOptionSweeper()
 		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
@@ -80,8 +81,8 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
@@ -98,11 +99,11 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 
 func TestPhpNamespaceAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "alloptions")
+	dirPath := filepath.Join("..", "testdata", "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
 		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil)
@@ -118,13 +119,13 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpNamespace())
 		}
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := PhpNamespace(zap.NewNop(), sweeper, nil)
@@ -138,13 +139,13 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpNamespace())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
 		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
@@ -164,13 +165,13 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 			}
 			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpNamespace())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
@@ -188,24 +189,24 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 			}
 			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpNamespace())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 	})
 }
 
 func TestPhpNamespaceOptions(t *testing.T) {
 	t.Parallel()
-	testPhpNamespaceOptions(t, filepath.Join(testDir, "phpoptions", "single"), `Acme\V1`)
-	testPhpNamespaceOptions(t, filepath.Join(testDir, "phpoptions", "double"), `Acme\Weather\V1`)
-	testPhpNamespaceOptions(t, filepath.Join(testDir, "phpoptions", "triple"), `Acme\Weather\Data\V1`)
-	testPhpNamespaceOptions(t, filepath.Join(testDir, "phpoptions", "reserved"), `Acme\Error_\V1`)
-	testPhpNamespaceOptions(t, filepath.Join(testDir, "phpoptions", "underscore"), `Acme\Weather\FooBar\V1`)
+	testPhpNamespaceOptions(t, filepath.Join("..", "testdata", "phpoptions", "single"), `Acme\V1`)
+	testPhpNamespaceOptions(t, filepath.Join("..", "testdata", "phpoptions", "double"), `Acme\Weather\V1`)
+	testPhpNamespaceOptions(t, filepath.Join("..", "testdata", "phpoptions", "triple"), `Acme\Weather\Data\V1`)
+	testPhpNamespaceOptions(t, filepath.Join("..", "testdata", "phpoptions", "reserved"), `Acme\Error_\V1`)
+	testPhpNamespaceOptions(t, filepath.Join("..", "testdata", "phpoptions", "underscore"), `Acme\Weather\FooBar\V1`)
 }
 
 func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
 		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil)
@@ -216,19 +217,19 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpNamespace())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := PhpNamespace(zap.NewNop(), sweeper, nil)
@@ -237,19 +238,19 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpNamespace())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
 		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"})
@@ -260,7 +261,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -270,13 +271,13 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 			}
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpNamespace())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := PhpNamespace(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"})
@@ -285,7 +286,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -295,17 +296,17 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 			}
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpNamespace())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 	})
 }
 
 func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "wktimport")
+	dirPath := filepath.Join("..", "testdata", "wktimport")
 	modifiedPhpNamespace := `Acme\Weather\V1alpha1`
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		phpNamespaceModifier := PhpNamespace(zap.NewNop(), sweeper, nil)
@@ -333,7 +334,7 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := PhpNamespace(zap.NewNop(), sweeper, nil)

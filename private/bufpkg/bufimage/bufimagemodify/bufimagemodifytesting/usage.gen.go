@@ -12,4 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodifyv1
+// Generated. DO NOT EDIT.
+
+package bufimagemodifytesting
+
+import _ "github.com/bufbuild/buf/private/usage"

@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifytesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,11 +28,11 @@ import (
 
 func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "emptyoptions")
+	dirPath := filepath.Join("..", "testdata", "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, nil)
@@ -42,13 +43,13 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.Equal(t, testGetImage(t, dirPath, true), image)
+		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, nil)
@@ -57,13 +58,13 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.Equal(t, testGetImage(t, dirPath, false), image)
+		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, map[string]string{"a.proto": "override"})
@@ -81,8 +82,8 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, map[string]string{"a.proto": "override"})
@@ -99,11 +100,11 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 
 func TestObjcClassPrefixAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "alloptions")
+	dirPath := filepath.Join("..", "testdata", "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, nil)
@@ -119,13 +120,13 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, nil)
@@ -139,13 +140,13 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, map[string]string{"a.proto": "override"})
@@ -165,13 +166,13 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 			}
 			assert.Equal(t, "foo", descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, map[string]string{"a.proto": "override"})
@@ -189,24 +190,24 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 			}
 			assert.Equal(t, "foo", descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 	})
 }
 
 func TestObjcClassPrefixObjcOptions(t *testing.T) {
 	t.Parallel()
-	testObjcClassPrefixOptions(t, filepath.Join(testDir, "objcoptions", "single"), "AXX")
-	testObjcClassPrefixOptions(t, filepath.Join(testDir, "objcoptions", "double"), "AWX")
-	testObjcClassPrefixOptions(t, filepath.Join(testDir, "objcoptions", "triple"), "AWD")
-	testObjcClassPrefixOptions(t, filepath.Join(testDir, "objcoptions", "unversioned"), "AWD")
-	testObjcClassPrefixOptions(t, filepath.Join(testDir, "objcoptions", "gpb"), "GPX")
+	testObjcClassPrefixOptions(t, filepath.Join("..", "testdata", "objcoptions", "single"), "AXX")
+	testObjcClassPrefixOptions(t, filepath.Join("..", "testdata", "objcoptions", "double"), "AWX")
+	testObjcClassPrefixOptions(t, filepath.Join("..", "testdata", "objcoptions", "triple"), "AWD")
+	testObjcClassPrefixOptions(t, filepath.Join("..", "testdata", "objcoptions", "unversioned"), "AWD")
+	testObjcClassPrefixOptions(t, filepath.Join("..", "testdata", "objcoptions", "gpb"), "GPX")
 }
 
 func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, nil)
@@ -217,19 +218,19 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, nil)
@@ -238,19 +239,19 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, map[string]string{"override.proto": "override"})
@@ -261,7 +262,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -271,13 +272,13 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 			}
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, map[string]string{"override.proto": "override"})
@@ -286,7 +287,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -296,17 +297,17 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 			}
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 	})
 }
 
 func TestObjcClassPrefixWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "wktimport")
+	dirPath := filepath.Join("..", "testdata", "wktimport")
 	modifiedObjcClassPrefix := "AWX"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, nil)
@@ -334,7 +335,7 @@ func TestObjcClassPrefixWellKnownTypes(t *testing.T) {
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, "", nil, nil, nil)
@@ -361,12 +362,12 @@ func TestObjcClassPrefixWellKnownTypes(t *testing.T) {
 
 func TestObjcClassPrefixWithDefault(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "objcoptions", "single")
+	dirPath := filepath.Join("..", "testdata", "objcoptions", "single")
 	defaultClassPrefix := "DEFAULT"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -387,13 +388,13 @@ func TestObjcClassPrefixWithDefault(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, defaultClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -414,13 +415,13 @@ func TestObjcClassPrefixWithDefault(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, defaultClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -445,13 +446,13 @@ func TestObjcClassPrefixWithDefault(t *testing.T) {
 			}
 			assert.Equal(t, defaultClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -476,24 +477,19 @@ func TestObjcClassPrefixWithDefault(t *testing.T) {
 			}
 			assert.Equal(t, defaultClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 	})
 }
 
 func TestObjcClassPrefixWithExcept(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "objcoptions", "single")
+	dirPath := filepath.Join("..", "testdata", "objcoptions", "single")
 	defaultClassPrefix := "DEFAULT"
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
-		testRemote,
-		testRepositoryOwner,
-		testRepositoryName,
-	)
-	require.NoError(t, err)
+	testModuleIdentity := bufimagemodifytesting.GetTestModuleIdentity(t)
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -505,20 +501,20 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 			nil,
 		)
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
-		err = modifier.Modify(
+		err := modifier.Modify(
 			context.Background(),
 			image,
 		)
 		require.NoError(t, err)
-		assert.Equal(t, testGetImage(t, dirPath, true), image)
+		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 		// Should still be non-empty because the module is skipped.
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -535,14 +531,14 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.Equal(t, testGetImage(t, dirPath, false), image)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -559,15 +555,15 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.Equal(t, testGetImage(t, dirPath, true), image)
+		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 		// Should still be non-empty because the module is skipped.
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -584,26 +580,21 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.Equal(t, testGetImage(t, dirPath, false), image)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		assert.Equal(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 	})
 }
 
 func TestObjcClassPrefixWithOverride(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "objcoptions", "single")
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
-		testRemote,
-		testRepositoryOwner,
-		testRepositoryName,
-	)
-	require.NoError(t, err)
+	dirPath := filepath.Join("..", "testdata", "objcoptions", "single")
+	testModuleIdentity := bufimagemodifytesting.GetTestModuleIdentity(t)
 	defaultClassPrefix := "DEFAULT"
 	overrideClassPrefix := "MODULE_OVERRIDE"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -624,13 +615,13 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, overrideClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -651,13 +642,13 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.Equal(t, overrideClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -682,13 +673,13 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 			}
 			assert.Equal(t, overrideClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		objcClassPrefixModifier := ObjcClassPrefix(
@@ -713,6 +704,6 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 			}
 			assert.Equal(t, overrideClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 	})
 }

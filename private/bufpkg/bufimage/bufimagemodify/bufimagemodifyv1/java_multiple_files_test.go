@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifytesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -26,11 +27,11 @@ import (
 
 func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "emptyoptions")
+	dirPath := filepath.Join("..", "testdata", "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
@@ -44,19 +45,19 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
@@ -66,19 +67,19 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"}, false)
@@ -92,19 +93,19 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"}, false)
@@ -114,23 +115,23 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 	})
 }
 
 func TestJavaMultipleFilesAllOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "alloptions")
+	dirPath := filepath.Join("..", "testdata", "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
@@ -144,19 +145,19 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
@@ -171,13 +172,13 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"}, false)
@@ -191,7 +192,7 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+		assert.NotEqual(t, bufimagemodifytesting.GetTestImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
@@ -201,13 +202,13 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 			}
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, map[string]string{"a.proto": "false"}, false)
@@ -226,13 +227,13 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 			}
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 	})
 
 	t.Run("with preserveExistingValue", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, true)
@@ -251,17 +252,17 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 			}
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 	})
 }
 
 func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "javaoptions")
+	dirPath := filepath.Join("..", "testdata", "javaoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, nil, false)
@@ -280,13 +281,13 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, nil, false)
@@ -305,13 +306,13 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 			}
 			assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 	})
 
 	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, map[string]string{"override.proto": "true"}, false)
@@ -338,8 +339,8 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, map[string]string{"override.proto": "true"}, false)
@@ -358,13 +359,13 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 			}
 			assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 	})
 
 	t.Run("with preserveExistingValue", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, false, nil, true)
@@ -379,16 +380,16 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 			descriptor := imageFile.Proto()
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
+		bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 	})
 }
 
 func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 	t.Parallel()
-	dirPath := filepath.Join(testDir, "wktimport")
+	dirPath := filepath.Join("..", "testdata", "wktimport")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, true)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
@@ -410,7 +411,7 @@ func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := testGetImage(t, dirPath, false)
+		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
 		javaMultipleFilesModifier, err := JavaMultipleFiles(zap.NewNop(), sweeper, true, nil, false)
