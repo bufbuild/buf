@@ -41,7 +41,7 @@ func TestModifySingleOption(t *testing.T) {
 		assertFunc              func(*testing.T, interface{}, *descriptorpb.FileDescriptorProto)
 	}{
 		{
-			description:             "Java Package",
+			description:             "Modify Java Package with value on file with empty options",
 			subDir:                  "emptyoptions",
 			file:                    "a.proto",
 			fileHasNoSourceCodeInfo: true,
@@ -52,7 +52,7 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:              assertJavaPackage,
 		},
 		{
-			description:             "Java Package",
+			description:             "Modify Java Package with prefix on file with empty options and empty proto package",
 			subDir:                  "emptyoptions",
 			file:                    "a.proto",
 			fileHasNoSourceCodeInfo: true,
@@ -64,7 +64,7 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:    assertJavaPackage,
 		},
 		{
-			description:    "Java Package",
+			description:    "Modify Java Package with prefix on file with all options and empty proto package",
 			subDir:         "alloptions",
 			file:           "a.proto",
 			modifyFunc:     ModifyJavaPackage,
@@ -75,7 +75,7 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:    assertJavaPackage,
 		},
 		{
-			description:    "Java Package",
+			description:    "Modify Java Package with value on file with all options and empty proto package",
 			subDir:         "alloptions",
 			file:           "a.proto",
 			modifyFunc:     ModifyJavaPackage,
@@ -85,7 +85,7 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:     assertJavaPackage,
 		},
 		{
-			description:             "Java Package",
+			description:             "Modify Java Package with value on file with empty options and a proto package",
 			subDir:                  "javaemptyoptions",
 			file:                    "a.proto",
 			fileHasNoSourceCodeInfo: true,
@@ -96,7 +96,7 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:              assertJavaPackage,
 		},
 		{
-			description:    "Java Package",
+			description:    "Modify Java Package with prefix on file with jav options and a proto package",
 			subDir:         "javaoptions",
 			file:           "java_file.proto",
 			modifyFunc:     ModifyJavaPackage,
@@ -106,7 +106,7 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:     assertJavaPackage,
 		},
 		{
-			description:    "Java Package",
+			description:    "Modify Java Package with empty prefix on file with empty options and a proto package",
 			subDir:         "javaoptions",
 			file:           "java_file.proto",
 			modifyFunc:     ModifyJavaPackage,
@@ -118,7 +118,7 @@ func TestModifySingleOption(t *testing.T) {
 		},
 
 		{
-			description:    "Java Package",
+			description:    "Modify Java Package with value on file with java options and a proto package",
 			subDir:         "javaoptions",
 			file:           "java_file.proto",
 			modifyFunc:     ModifyJavaPackage,
@@ -236,7 +236,6 @@ func TestModifyError(t *testing.T) {
 		test := test
 		t.Run(test.description, func(t *testing.T) {
 			t.Parallel()
-			// Get image with source code info.
 			image := bufimagemodifytesting.GetTestImage(
 				t,
 				filepath.Join(baseDir, test.subDir),
