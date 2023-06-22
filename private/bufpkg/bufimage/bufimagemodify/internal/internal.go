@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -134,6 +133,6 @@ func GetPathKey(path []int32) string {
 }
 
 // IsWellKnownType returns true if the given path is one of the well-known types.
-func IsWellKnownType(ctx context.Context, imageFile bufimage.ImageFile) bool {
+func IsWellKnownType(imageFile bufimage.ImageFile) bool {
 	return datawkt.Exists(imageFile.Path())
 }

@@ -321,7 +321,7 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if internal.IsWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(imageFile) {
 				// php_namespace is unset for the well-known types
 				assert.Empty(t, descriptor.GetOptions().GetPhpNamespace())
 				continue
@@ -347,7 +347,7 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if internal.IsWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(imageFile) {
 				// php_namespace is unset for the well-known types
 				assert.Empty(t, descriptor.GetOptions().GetPhpNamespace())
 				continue

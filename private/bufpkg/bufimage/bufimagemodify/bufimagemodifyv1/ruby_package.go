@@ -97,7 +97,7 @@ func rubyPackageForFile(
 	exceptModuleIdentityStrings map[string]struct{},
 ) error {
 	descriptor := imageFile.Proto()
-	if internal.IsWellKnownType(ctx, imageFile) || rubyPackageValue == "" {
+	if internal.IsWellKnownType(imageFile) || rubyPackageValue == "" {
 		// This is a well-known type or we could not resolve a non-empty ruby_package
 		// value, so this is a no-op.
 		return nil

@@ -320,7 +320,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if internal.IsWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetCsharpNamespace())
 				assert.NotEqual(t, modifiedCsharpNamespace, descriptor.GetOptions().GetCsharpNamespace())
 				continue
@@ -346,7 +346,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if internal.IsWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetCsharpNamespace())
 				assert.NotEqual(t, modifiedCsharpNamespace, descriptor.GetOptions().GetCsharpNamespace())
 				continue
