@@ -34,22 +34,18 @@ service ResolveService {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetGoVersion resolves the given plugin and module references to a version.
-  // The format of the version is determined by the plugin type.
   rpc GetGoVersion(GetGoVersionRequest) returns (GetGoVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetSwiftVersion resolves the given plugin and module references to a version.
-  // The format of the version is determined by the plugin type.
   rpc GetSwiftVersion(GetSwiftVersionRequest) returns (GetSwiftVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetMavenVersion resolves the given plugin and module references to a version.
-  // The format of the version is determined by the plugin type.
   rpc GetMavenVersion(GetMavenVersionRequest) returns (GetMavenVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetNPMVersion resolves the given plugin and module references to a version.
-  // The format of the version is determined by the plugin type.
   rpc GetNPMVersion(GetNPMVersionRequest) returns (GetNPMVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -148,7 +144,7 @@ message GetMavenVersionRequest {
 }
 
 message GetMavenVersionResponse {
-  // version is the resolved version to be used with the go module proxy.
+  // version is the resolved version to be used with the maven repository.
   string version = 1;
 }
 
@@ -160,7 +156,7 @@ message GetNPMVersionRequest {
 }
 
 message GetNPMVersionResponse {
-  // version is the resolved version to be used with the go module proxy.
+  // version is the resolved version to be used with the npm registry.
   string version = 1;
 }
 
@@ -172,7 +168,7 @@ message GetSwiftVersionRequest {
 }
 
 message GetSwiftVersionResponse {
-  // version is the resolved version to be used with the go module proxy.
+  // version is the resolved version to be used with the swift registry.
   string version = 1;
 }
 
