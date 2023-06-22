@@ -116,6 +116,22 @@ func AssertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, 
 	}
 }
 
+func AssertFileOptionSourceCodeInfoNotEmptyForFile(
+	t *testing.T,
+	imageFile bufimage.ImageFile,
+	fileOptionPath []int32,
+) {
+	descriptor := imageFile.Proto()
+	var hasFileOption bool
+	for _, location := range descriptor.SourceCodeInfo.Location {
+		if len(location.Path) > 0 && internal.Int32SliceIsEqual(location.Path, fileOptionPath) {
+			hasFileOption = true
+			break
+		}
+	}
+	assert.True(t, hasFileOption)
+}
+
 func GetTestImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage.Image {
 	moduleFileSet := GetTestModuleFileSet(t, dirPath)
 	var options []bufimagebuild.BuildOption

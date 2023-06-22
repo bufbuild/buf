@@ -27,10 +27,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	defaultJavaPackagePrefix = "com"
-)
-
 // TODO this would be part of a runner or likewise
 // this is just for demonstration of bringing the management stuff into one function
 // ApplyManagement modifies an image based on managed mode configuration.
@@ -231,9 +227,6 @@ func applyManagementForFile(
 		// TODO do the rest
 		switch fileOption {
 		case FileOptionJavaPackage:
-			if valueOrPrefix == nil {
-				valueOrPrefix = bufimagemodifyv2.NewPrefixOverride(defaultJavaPackagePrefix)
-			}
 			if err := bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, valueOrPrefix); err != nil {
 				return err
 			}
