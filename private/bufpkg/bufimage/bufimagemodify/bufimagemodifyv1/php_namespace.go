@@ -165,7 +165,7 @@ func phpNamespaceForFile(
 	phpNamespaceValue string,
 ) error {
 	descriptor := imageFile.Proto()
-	if isWellKnownType(ctx, imageFile) || phpNamespaceValue == "" {
+	if internal.IsWellKnownType(ctx, imageFile) || phpNamespaceValue == "" {
 		// This is a well-known type or we could not resolve a non-empty php_namespace
 		// value, so this is a no-op.
 		return nil
