@@ -157,7 +157,7 @@ func TestModifySingleOption(t *testing.T) {
 				require.NotNil(t, markSweeper)
 				imageFile := image.GetFile(test.file)
 				require.NotNil(t, imageFile)
-				err := ModifyJavaPackage(
+				err := test.modifyFunc(
 					markSweeper,
 					imageFile,
 					test.override,
@@ -191,7 +191,7 @@ func TestModifySingleOption(t *testing.T) {
 				require.NotNil(t, markSweeper)
 				imageFile := image.GetFile(test.file)
 				require.NotNil(t, imageFile)
-				err := ModifyJavaPackage(
+				err := test.modifyFunc(
 					markSweeper,
 					imageFile,
 					test.override,
@@ -245,7 +245,7 @@ func TestModifyError(t *testing.T) {
 			require.NotNil(t, markSweeper)
 			imageFile := image.GetFile(test.file)
 			require.NotNil(t, imageFile)
-			err := ModifyJavaPackage(
+			err := test.modifyFunc(
 				markSweeper,
 				imageFile,
 				test.override,
