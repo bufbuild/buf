@@ -671,7 +671,7 @@ func TestManagedConfig(t *testing.T) {
 	}{
 		{
 			testName: "Test override",
-			file:     filepath.Join("managed", "buf.gen"),
+			file:     filepath.Join("managed", "java_package"),
 			expectedDisableResults: map[FileOption]map[ImageFileIdentity]bool{
 				FileOptionJavaPackage: {
 					&fakeImageFileIdentity{
@@ -731,6 +731,53 @@ func TestManagedConfig(t *testing.T) {
 						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
 						path:   "b/c/d/e/f.proto",
 					}: bufimagemodifyv2.NewValueOverride("override.value.bcdef"),
+				},
+			},
+		},
+		{
+			testName: "Test CC Enable arenas",
+			file:     filepath.Join("managed", "cc_enable_arenas"),
+			expectedDisableResults: map[FileOption]map[ImageFileIdentity]bool{
+				FileOptionCcEnableArenas: {
+					&fakeImageFileIdentity{
+						path: "ok.proto",
+					}: true,
+					&fakeImageFileIdentity{
+						path: "ok.protooo",
+					}: false,
+					&fakeImageFileIdentity{
+						path: "notok.proto",
+					}: false,
+					&fakeImageFileIdentity{
+						path: "a/b/x.proto",
+					}: true,
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: false,
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: true,
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis2"),
+					}: false,
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis2"),
+						path:   "x/y.proto",
+					}: true,
+					&fakeImageFileIdentity{}: false,
+				},
+			},
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionCcEnableArenas: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewValueOverride(true),
+					&fakeImageFileIdentity{
+						path: "m/n/a.proto",
+					}: bufimagemodifyv2.NewValueOverride(true),
+					&fakeImageFileIdentity{
+						path: "m/k/b.proto",
+					}: bufimagemodifyv2.NewValueOverride(false),
 				},
 			},
 		},
