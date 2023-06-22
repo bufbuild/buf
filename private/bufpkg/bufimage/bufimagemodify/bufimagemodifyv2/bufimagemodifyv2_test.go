@@ -126,6 +126,68 @@ func TestModifySingleOption(t *testing.T) {
 			expectedValue:  "pkg.pkg",
 			assertFunc:     assertJavaPackage,
 		},
+		{
+			description:             "Modify CC Enable Arenas to true on a file with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyCcEnableArenas,
+			fileOptionPath:          internal.CCEnableArenasPath,
+			override:                NewValueOverride(true),
+			expectedValue:           true,
+			assertFunc:              assertCcEnableArenas,
+		},
+		{
+			description:             "Modify CC Enable Arenas to false on a file with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyCcEnableArenas,
+			fileOptionPath:          internal.CCEnableArenasPath,
+			override:                NewValueOverride(false),
+			expectedValue:           false,
+			assertFunc:              assertCcEnableArenas,
+		},
+		{
+			description:    "Modify CC Enable Arenas to true on a file with all options",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyCcEnableArenas,
+			fileOptionPath: internal.CCEnableArenasPath,
+			override:       NewValueOverride(true),
+			expectedValue:  true,
+			assertFunc:     assertCcEnableArenas,
+		},
+		{
+			description:    "Modify CC Enable Arenas to false on a file with all options",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyCcEnableArenas,
+			fileOptionPath: internal.CCEnableArenasPath,
+			override:       NewValueOverride(false),
+			expectedValue:  false,
+			assertFunc:     assertCcEnableArenas,
+		},
+		{
+			description:    "Modify CC Enable Arenas to true on a file with cc options",
+			subDir:         "ccoptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyCcEnableArenas,
+			fileOptionPath: internal.CCEnableArenasPath,
+			override:       NewValueOverride(true),
+			expectedValue:  true,
+			assertFunc:     assertCcEnableArenas,
+		},
+		{
+			description:    "Modify CC Enable Arenas to false on a file with cc options",
+			subDir:         "ccoptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyCcEnableArenas,
+			fileOptionPath: internal.CCEnableArenasPath,
+			override:       NewValueOverride(false),
+			expectedValue:  false,
+			assertFunc:     assertCcEnableArenas,
+		},
 	}
 	for _, test := range tests {
 		test := test
@@ -156,7 +218,7 @@ func TestModifySingleOption(t *testing.T) {
 				require.NotNil(t, markSweeper)
 				imageFile := image.GetFile(test.file)
 				require.NotNil(t, imageFile)
-				err := ModifyJavaPackage(
+				err := test.modifyFunc(
 					markSweeper,
 					imageFile,
 					test.override,
@@ -191,7 +253,7 @@ func TestModifySingleOption(t *testing.T) {
 				require.NotNil(t, markSweeper)
 				imageFile := image.GetFile(test.file)
 				require.NotNil(t, imageFile)
-				err := ModifyJavaPackage(
+				err := test.modifyFunc(
 					markSweeper,
 					imageFile,
 					test.override,
@@ -231,6 +293,30 @@ func TestModifyError(t *testing.T) {
 			override:           NewValueOverride(true),
 			expectedErrMessage: "a valid override is required for java_package",
 		},
+		{
+			description:        "Test optimize mode override for java package",
+			subDir:             "javaoptions",
+			file:               "java_file.proto",
+			modifyFunc:         ModifyJavaPackage,
+			override:           NewValueOverride[descriptorpb.FileOptions_OptimizeMode](descriptorpb.FileOptions_CODE_SIZE),
+			expectedErrMessage: "a valid override is required for java_package",
+		},
+		{
+			description:        "Test string override for CC Enable Arenas",
+			subDir:             "ccoptions",
+			file:               "a.proto",
+			modifyFunc:         ModifyCcEnableArenas,
+			override:           NewValueOverride("string"),
+			expectedErrMessage: "a valid override is required for cc_enable_arenas",
+		},
+		{
+			description:        "Test prefix override for CC Enable Arenas",
+			subDir:             "ccoptions",
+			file:               "a.proto",
+			modifyFunc:         ModifyCcEnableArenas,
+			override:           NewPrefixOverride("string"),
+			expectedErrMessage: "a valid override is required for cc_enable_arenas",
+		},
 	}
 	for _, test := range tests {
 		test := test
@@ -245,7 +331,7 @@ func TestModifyError(t *testing.T) {
 			require.NotNil(t, markSweeper)
 			imageFile := image.GetFile(test.file)
 			require.NotNil(t, imageFile)
-			err := ModifyJavaPackage(
+			err := test.modifyFunc(
 				markSweeper,
 				imageFile,
 				test.override,
@@ -257,4 +343,8 @@ func TestModifyError(t *testing.T) {
 
 func assertJavaPackage(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetJavaPackage())
+}
+
+func assertCcEnableArenas(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+	assert.Equal(t, expectedValue, descriptor.GetOptions().GetCcEnableArenas())
 }

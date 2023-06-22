@@ -82,6 +82,25 @@ func ModifyJavaPackage(
 	return nil
 }
 
+func ModifyCcEnableArenas(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	override Override,
+) error {
+	descriptor := imageFile.Proto()
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	switch t := override.(type) {
+	case valueOverride[bool]:
+		descriptor.Options.CcEnableArenas = proto.Bool(t.get())
+	default:
+		return errors.New("a valid override is required for cc_enable_arenas")
+	}
+	marker.Mark(imageFile, internal.CCEnableArenasPath)
+	return nil
+}
+
 func getJavaPackageValue(imageFile bufimage.ImageFile, prefix string) string {
 	if pkg := imageFile.Proto().GetPackage(); pkg != "" {
 		if prefix == "" {
