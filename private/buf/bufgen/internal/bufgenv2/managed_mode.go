@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodifyv2"
 )
 
-// TODO: move these two functions to a separate
 // TODO this would be part of a runner or likewise
 // this is just for demonstration of bringing the management stuff into one function
 // applyManagement modifies an image based on managed mode configuration.
