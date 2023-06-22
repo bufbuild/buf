@@ -537,7 +537,7 @@ type GetMavenVersionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// version is the resolved version to be used with the maven registry.
+	// version is the resolved version to be used with the maven repository.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 }
 

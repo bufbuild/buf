@@ -144,7 +144,7 @@ message GetMavenVersionRequest {
 }
 
 message GetMavenVersionResponse {
-  // version is the resolved version to be used with the maven registry.
+  // version is the resolved version to be used with the maven repository.
   string version = 1;
 }
 
