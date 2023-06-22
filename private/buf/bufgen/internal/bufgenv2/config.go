@@ -40,6 +40,7 @@ func SilenceLinter() {
 	mergeDisabledFuncs(nil)
 	mergeOverrideFuncs(nil)
 	mergeFileOptionToOverrideFuncs(nil)
+	_ = applyManagement(nil, nil)
 }
 
 // DisableFunc decides whether a file option should be disabled for a file.
