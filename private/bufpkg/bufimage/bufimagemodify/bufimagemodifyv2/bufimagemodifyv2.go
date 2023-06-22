@@ -119,6 +119,36 @@ func ModifyCcEnableArenas(
 	return nil
 }
 
+func ModifyCsharpNamespace(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	override Override,
+) error {
+	var csharpNamespaceValue string
+	switch t := override.(type) {
+	case valueOverride[string]:
+		csharpNamespaceValue = t.get()
+	case nil:
+		csharpNamespaceValue = internal.GetDefaultCsharpNamespace(imageFile)
+	default:
+		return errors.New("a valid override is required for csharp_namespace")
+	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetCsharpNamespace() == csharpNamespaceValue {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.CsharpNamespace = proto.String(csharpNamespaceValue)
+	marker.Mark(imageFile, internal.CsharpNamespacePath)
+	return nil
+}
+
 func getJavaPackageValue(imageFile bufimage.ImageFile, prefix string) string {
 	if pkg := imageFile.Proto().GetPackage(); pkg != "" {
 		if prefix == "" {

@@ -16,9 +16,11 @@ package internal
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -135,4 +137,19 @@ func GetPathKey(path []int32) string {
 // IsWellKnownType returns true if the given path is one of the well-known types.
 func IsWellKnownType(imageFile bufimage.ImageFile) bool {
 	return datawkt.Exists(imageFile.Path())
+}
+
+// GetDefaultCsharpNamespace returns the csharp_namespace for the given ImageFile based on its
+// package declaration. If the image file doesn't have a package declaration, an
+// empty string is returned.
+func GetDefaultCsharpNamespace(imageFile bufimage.ImageFile) string {
+	pkg := imageFile.Proto().GetPackage()
+	if pkg == "" {
+		return ""
+	}
+	packageParts := strings.Split(pkg, ".")
+	for i, part := range packageParts {
+		packageParts[i] = stringutil.ToPascalCase(part)
+	}
+	return strings.Join(packageParts, ".")
 }

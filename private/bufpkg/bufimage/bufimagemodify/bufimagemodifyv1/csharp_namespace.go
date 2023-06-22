@@ -16,12 +16,10 @@ package bufimagemodifyv1
 
 import (
 	"context"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -52,7 +50,7 @@ func csharpNamespace(
 			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				csharpNamespaceValue := csharpNamespaceValue(imageFile)
+				csharpNamespaceValue := internal.GetDefaultCsharpNamespace(imageFile)
 				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
 					moduleIdentityString := moduleIdentity.IdentityString()
 					if moduleNamespaceOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
@@ -130,19 +128,4 @@ func shouldSkipCsharpNamespaceForFile(
 		}
 	}
 	return false
-}
-
-// csharpNamespaceValue returns the csharp_namespace for the given ImageFile based on its
-// package declaration. If the image file doesn't have a package declaration, an
-// empty string is returned.
-func csharpNamespaceValue(imageFile bufimage.ImageFile) string {
-	pkg := imageFile.Proto().GetPackage()
-	if pkg == "" {
-		return ""
-	}
-	packageParts := strings.Split(pkg, ".")
-	for i, part := range packageParts {
-		packageParts[i] = stringutil.ToPascalCase(part)
-	}
-	return strings.Join(packageParts, ".")
 }
