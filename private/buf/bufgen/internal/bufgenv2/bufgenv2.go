@@ -16,14 +16,12 @@ package bufgenv2
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
 	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodifyv2"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -85,7 +83,7 @@ func (g *Generator) Generate(
 	// wasm is turned off in v2
 	_ bool,
 ) error {
-	genConfig, err := ReadConfigV2(
+	genConfig, err := readConfigV2(
 		ctx,
 		g.logger,
 		g.readWriteBucket,
@@ -182,66 +180,6 @@ func (g *Generator) Generate(
 	return nil
 }
 
-// TODO this would be part of a runner or likewise
-// this is just for demonstration of bringing the management stuff into one function
-// ApplyManagement modifies an image based on managed mode configuration.
-func ApplyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
-	markSweeper := bufimagemodifyv2.NewMarkSweeper(image)
-	for _, imageFile := range image.Files() {
-		if err := applyManagementForFile(markSweeper, imageFile, managedConfig); err != nil {
-			return err
-		}
-	}
-	return markSweeper.Sweep()
-}
-
-// DisableFunc decides whether a file option should be disabled for a file.
-type DisabledFunc func(FileOption, bufimage.ImageFile) bool
-
-// TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
-// OverrideFunc is specific to a file option, and returns what thie file option
-// should be overridden to for this file.
-type OverrideFunc func(bufimage.ImageFile) (string, error)
-
-// ReadConfigV2 reads V2 configuration.
-func ReadConfigV2(
-	ctx context.Context,
-	logger *zap.Logger,
-	readBucket storage.ReadBucket,
-	options ...internal.ReadConfigOption,
-) (*Config, error) {
-	provider := internal.NewConfigDataProvider(logger)
-	return readConfigV2(
-		ctx,
-		logger,
-		provider,
-		readBucket,
-		options...,
-	)
-}
-
-// Config is a configuration.
-type Config struct {
-	Managed *ManagedConfig
-	Plugins []plugingen.PluginConfig
-	Inputs  []*InputConfig
-}
-
-// TODO: We use nil or not to denote enabled or not, but that deems dangerous
-// ManagedConfig is a managed mode configuration.
-type ManagedConfig struct {
-	DisabledFunc             DisabledFunc
-	FileOptionToOverrideFunc map[FileOption]OverrideFunc
-}
-
-// InputConfig is an input configuration.
-type InputConfig struct {
-	InputRef     buffetch.Ref
-	Types        []string
-	ExcludePaths []string
-	IncludePaths []string
-}
-
 // ExternalConfigV2 is an external configuration.
 type ExternalConfigV2 struct {
 	// Must be V2 in this current code setup, but we'd want this to be alongside V1
@@ -258,8 +196,8 @@ type ExternalManagedConfigV2 struct {
 	Override []ExternalManagedOverrideConfigV2 `json:"override,omitempty" yaml:"override,omitempty"`
 }
 
-// IsEmpty returns true if the config is empty.
-func (m ExternalManagedConfigV2) IsEmpty() bool {
+// isEmpty returns true if the config is empty.
+func (m ExternalManagedConfigV2) isEmpty() bool {
 	return !m.Enable && len(m.Disable) == 0 && len(m.Override) == 0
 }
 
@@ -339,39 +277,4 @@ type ExternalInputConfigV2 struct {
 	Types        []string `json:"types,omitempty" yaml:"types,omitempty"`
 	IncludePaths []string `json:"include_paths,omitempty" yaml:"include_paths,omitempty"`
 	ExcludePaths []string `json:"exclude_paths,omitempty" yaml:"exclude_paths,omitempty"`
-}
-
-func applyManagementForFile(
-	marker bufimagemodifyv2.Marker,
-	imageFile bufimage.ImageFile,
-	managedConfig *ManagedConfig,
-) error {
-	for _, fileOption := range AllFileOptions {
-		if managedConfig.DisabledFunc(fileOption, imageFile) {
-			continue
-		}
-		var valueOrPrefix string
-		var err error
-		overrideFunc, ok := managedConfig.FileOptionToOverrideFunc[fileOption]
-		if ok {
-			valueOrPrefix, err = overrideFunc(imageFile)
-			if err != nil {
-				return err
-			}
-		}
-		// TODO do the rest
-		switch fileOption {
-		case FileOptionJavaPackage:
-			// Will need to do *string or similar for unset
-			if valueOrPrefix == "" {
-				valueOrPrefix = defaultJavaPackagePrefix
-			}
-			if err := bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, valueOrPrefix); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unknown FileOption: %q", fileOption)
-		}
-	}
-	return nil
 }

@@ -27,7 +27,7 @@ import (
 // modifyImage modifies the image according to the given configuration (i.e. managed mode).
 func NewModifier(
 	logger *zap.Logger,
-	config *Config,
+	config *config,
 ) (bufimagemodify.Modifier, error) {
 	if config.ManagedConfig == nil {
 		// If the config is nil, it implies that the

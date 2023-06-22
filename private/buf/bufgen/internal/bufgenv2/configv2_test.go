@@ -660,7 +660,7 @@ func TestConfigSuccess(t *testing.T) {
 			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
 				t.Parallel()
 				file := filepath.Join("testdata", test.file+fileExtension)
-				config, err := ReadConfigV2(
+				config, err := readConfigV2(
 					ctx,
 					nopLogger,
 					readBucket,
@@ -670,7 +670,7 @@ func TestConfigSuccess(t *testing.T) {
 				require.Equal(t, test.expectedConfig, config)
 				data, err := os.ReadFile(file)
 				require.NoError(t, err)
-				config, err = ReadConfigV2(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
+				config, err = readConfigV2(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 				require.NoError(t, err)
 				require.Equal(t, test.expectedConfig, config)
 			})
@@ -834,7 +834,7 @@ func TestConfigError(t *testing.T) {
 			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
 				t.Parallel()
 				file := filepath.Join("testdata", test.file+fileExtension)
-				config, err := ReadConfigV2(
+				config, err := readConfigV2(
 					ctx,
 					nopLogger,
 					readBucket,

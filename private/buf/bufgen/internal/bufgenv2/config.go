@@ -19,7 +19,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -40,13 +42,46 @@ func SilenceLinter() {
 	mergeFileOptionToOverrideFuncs(nil)
 }
 
+// DisableFunc decides whether a file option should be disabled for a file.
+type disabledFunc func(FileOption, bufimage.ImageFile) bool
+
+// TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
+// overrideFunc is specific to a file option, and returns what thie file option
+// should be overridden to for this file.
+type overrideFunc func(bufimage.ImageFile) (string, error)
+
+// TODO: unexport these names
+
+// Config is a configuration.
+type Config struct {
+	Managed *ManagedConfig
+	Plugins []plugingen.PluginConfig
+	Inputs  []*InputConfig
+}
+
+// TODO: We use nil or not to denote enabled or not, but that deems dangerous
+// ManagedConfig is a managed mode configuration.
+type ManagedConfig struct {
+	DisabledFunc             disabledFunc
+	FileOptionToOverrideFunc map[FileOption]overrideFunc
+}
+
+// InputConfig is an input configuration.
+type InputConfig struct {
+	InputRef     buffetch.Ref
+	Types        []string
+	ExcludePaths []string
+	IncludePaths []string
+}
+
+// readConfigV2 reads V2 configuration.
 func readConfigV2(
 	ctx context.Context,
 	logger *zap.Logger,
-	provider internal.ConfigDataProvider,
 	readBucket storage.ReadBucket,
 	options ...internal.ReadConfigOption,
 ) (*Config, error) {
+	provider := internal.NewConfigDataProvider(logger)
 	data, id, unmarshalNonStrict, unmarshalStrict, err := internal.ReadDataFromConfig(
 		ctx,
 		logger,
@@ -88,14 +123,14 @@ func readConfigV2(
 }
 
 func newManagedConfig(externalConfig ExternalManagedConfigV2) (*ManagedConfig, error) {
-	if externalConfig.IsEmpty() {
+	if externalConfig.isEmpty() {
 		return nil, nil
 	}
 	if err := validateExternalManagedConfigV2(externalConfig); err != nil {
 		return nil, err
 	}
-	var disabledFuncs []DisabledFunc
-	fileOptionToOverrideFuncs := make(map[FileOption][]OverrideFunc)
+	var disabledFuncs []disabledFunc
+	fileOptionToOverrideFuncs := make(map[FileOption][]overrideFunc)
 	for _, externalDisableConfig := range externalConfig.Disable {
 		disabledFunc, err := newDisabledFunc(externalDisableConfig)
 		if err != nil {
@@ -130,7 +165,7 @@ func validateExternalConfigV2(externalConfig ExternalConfigV2, id string) error 
 }
 
 func validateExternalManagedConfigV2(externalConfig ExternalManagedConfigV2) error {
-	if externalConfig.IsEmpty() {
+	if externalConfig.isEmpty() {
 		return nil
 	}
 	for _, externalDisableConfig := range externalConfig.Disable {
@@ -146,7 +181,7 @@ func validateExternalManagedConfigV2(externalConfig ExternalManagedConfigV2) err
 	return nil
 }
 
-func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (DisabledFunc, error) {
+func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFunc, error) {
 	var selectorFileOption FileOption
 	var err error
 	if len(externalConfig.FileOption) > 0 {
@@ -165,7 +200,7 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (DisabledFun
 	}, nil
 }
 
-func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (OverrideFunc, error) {
+func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (overrideFunc, error) {
 	fileOption, err := ParseFileOption(externalConfig.FileOption)
 	if err != nil {
 		// This should never happen because we already validated that this is set and non-empty
@@ -221,15 +256,15 @@ func matchesPath(imageFile bufimage.ImageFile, path string) bool {
 	return normalpath.EqualsOrContainsPath(path, imageFile.Path(), normalpath.Relative)
 }
 
-func mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs map[FileOption][]OverrideFunc) map[FileOption]OverrideFunc {
-	fileOptionToOverrideFunc := make(map[FileOption]OverrideFunc, len(fileOptionToOverrideFuncs))
+func mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs map[FileOption][]overrideFunc) map[FileOption]overrideFunc {
+	fileOptionToOverrideFunc := make(map[FileOption]overrideFunc, len(fileOptionToOverrideFuncs))
 	for fileOption, overrideFuncs := range fileOptionToOverrideFuncs {
 		fileOptionToOverrideFunc[fileOption] = mergeOverrideFuncs(overrideFuncs)
 	}
 	return fileOptionToOverrideFunc
 }
 
-func mergeDisabledFuncs(disabledFuncs []DisabledFunc) DisabledFunc {
+func mergeDisabledFuncs(disabledFuncs []disabledFunc) disabledFunc {
 	// If any disables, then we disable for this FileOption and ImageFile
 	return func(fileOption FileOption, imageFile bufimage.ImageFile) bool {
 		for _, disabledFunc := range disabledFuncs {
@@ -241,7 +276,7 @@ func mergeDisabledFuncs(disabledFuncs []DisabledFunc) DisabledFunc {
 	}
 }
 
-func mergeOverrideFuncs(overrideFuncs []OverrideFunc) OverrideFunc {
+func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
 	// Last override listed wins
 	return func(imageFile bufimage.ImageFile) (string, error) {
 		var override string

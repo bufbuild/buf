@@ -170,7 +170,7 @@ func (g *Generator) Generate(
 }
 
 // Config is a configuration.
-type Config struct {
+type config struct {
 	// Required
 	PluginConfigs []plugingen.PluginConfig
 	// Optional
