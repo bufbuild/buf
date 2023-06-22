@@ -19,7 +19,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -66,18 +65,27 @@ func ModifyJavaPackage(
 	imageFile bufimage.ImageFile,
 	override Override,
 ) error {
-	descriptor := imageFile.Proto()
-	if descriptor.Options == nil {
-		descriptor.Options = &descriptorpb.FileOptions{}
-	}
+	var javaPackageValue string
 	switch t := override.(type) {
 	case prefixOverride:
-		descriptor.Options.JavaPackage = proto.String(getJavaPackageValue(imageFile, t.get()))
+		javaPackageValue = getJavaPackageValue(imageFile, t.get())
 	case valueOverride[string]:
-		descriptor.Options.JavaPackage = proto.String(t.get())
+		javaPackageValue = t.get()
 	default:
 		return errors.New("a valid override is required for java_package")
 	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetJavaPackage() == javaPackageValue {
+		// The option is already set to the same value, don't do anything.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.JavaPackage = &javaPackageValue
 	marker.Mark(imageFile, internal.JavaPackagePath)
 	return nil
 }
