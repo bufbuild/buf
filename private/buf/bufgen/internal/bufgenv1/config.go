@@ -31,6 +31,80 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// Config is a configuration.
+type config struct {
+	// Required
+	PluginConfigs []plugingen.PluginConfig
+	// Optional
+	ManagedConfig *ManagedConfig
+	// Optional
+	TypesConfig *TypesConfig
+}
+
+// ManagedConfig is the managed mode configuration.
+type ManagedConfig struct {
+	CcEnableArenas          *bool
+	JavaMultipleFiles       *bool
+	JavaStringCheckUtf8     *bool
+	JavaPackagePrefixConfig *JavaPackagePrefixConfig
+	CsharpNameSpaceConfig   *CsharpNameSpaceConfig
+	OptimizeForConfig       *OptimizeForConfig
+	GoPackagePrefixConfig   *GoPackagePrefixConfig
+	ObjcClassPrefixConfig   *ObjcClassPrefixConfig
+	RubyPackageConfig       *RubyPackageConfig
+	Override                map[string]map[string]string
+}
+
+// JavaPackagePrefixConfig is the java_package prefix configuration.
+type JavaPackagePrefixConfig struct {
+	Default string
+	Except  []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> java_package prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+type OptimizeForConfig struct {
+	Default descriptorpb.FileOptions_OptimizeMode
+	Except  []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> optimize_for.
+	Override map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode
+}
+
+// GoPackagePrefixConfig is the go_package prefix configuration.
+type GoPackagePrefixConfig struct {
+	Default string
+	Except  []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> go_package prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// ObjcClassPrefixConfig is the objc_class_prefix configuration.
+type ObjcClassPrefixConfig struct {
+	Default string
+	Except  []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> objc_class_prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// RubyPackgeConfig is the ruby_package configuration.
+type RubyPackageConfig struct {
+	Except []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> ruby_package.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// CsharpNameSpaceConfig is the csharp_namespace configuration.
+type CsharpNameSpaceConfig struct {
+	Except []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> csharp_namespace prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
+}
+
+// TypesConfig is a types configuration
+type TypesConfig struct {
+	Include []string
+}
+
 func readConfigV1(
 	ctx context.Context,
 	logger *zap.Logger,

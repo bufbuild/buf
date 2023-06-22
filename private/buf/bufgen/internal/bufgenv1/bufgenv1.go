@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
 	"github.com/bufbuild/buf/private/buf/bufwire"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -33,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const defaultInput = "."
@@ -167,80 +165,6 @@ func (g *Generator) Generate(
 		return err
 	}
 	return nil
-}
-
-// Config is a configuration.
-type config struct {
-	// Required
-	PluginConfigs []plugingen.PluginConfig
-	// Optional
-	ManagedConfig *ManagedConfig
-	// Optional
-	TypesConfig *TypesConfig
-}
-
-// ManagedConfig is the managed mode configuration.
-type ManagedConfig struct {
-	CcEnableArenas          *bool
-	JavaMultipleFiles       *bool
-	JavaStringCheckUtf8     *bool
-	JavaPackagePrefixConfig *JavaPackagePrefixConfig
-	CsharpNameSpaceConfig   *CsharpNameSpaceConfig
-	OptimizeForConfig       *OptimizeForConfig
-	GoPackagePrefixConfig   *GoPackagePrefixConfig
-	ObjcClassPrefixConfig   *ObjcClassPrefixConfig
-	RubyPackageConfig       *RubyPackageConfig
-	Override                map[string]map[string]string
-}
-
-// JavaPackagePrefixConfig is the java_package prefix configuration.
-type JavaPackagePrefixConfig struct {
-	Default string
-	Except  []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> java_package prefix.
-	Override map[bufmoduleref.ModuleIdentity]string
-}
-
-type OptimizeForConfig struct {
-	Default descriptorpb.FileOptions_OptimizeMode
-	Except  []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> optimize_for.
-	Override map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode
-}
-
-// GoPackagePrefixConfig is the go_package prefix configuration.
-type GoPackagePrefixConfig struct {
-	Default string
-	Except  []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> go_package prefix.
-	Override map[bufmoduleref.ModuleIdentity]string
-}
-
-// ObjcClassPrefixConfig is the objc_class_prefix configuration.
-type ObjcClassPrefixConfig struct {
-	Default string
-	Except  []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> objc_class_prefix.
-	Override map[bufmoduleref.ModuleIdentity]string
-}
-
-// RubyPackgeConfig is the ruby_package configuration.
-type RubyPackageConfig struct {
-	Except []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> ruby_package.
-	Override map[bufmoduleref.ModuleIdentity]string
-}
-
-// CsharpNameSpaceConfig is the csharp_namespace configuration.
-type CsharpNameSpaceConfig struct {
-	Except []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> csharp_namespace prefix.
-	Override map[bufmoduleref.ModuleIdentity]string
-}
-
-// TypesConfig is a types configuration
-type TypesConfig struct {
-	Include []string
 }
 
 // ExternalConfigV1 is an external configuration.
