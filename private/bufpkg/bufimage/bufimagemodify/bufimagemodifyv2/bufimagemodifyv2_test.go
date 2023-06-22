@@ -254,12 +254,21 @@ func TestModifySingleOption(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				test.assertFunc(t, test.expectedValue, imageFile.Proto())
-				bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmptyForFile(
-					t,
-					imageFile,
-					test.fileOptionPath,
-					true,
-				)
+				if test.shouldKeepSourceCodeInfo {
+					bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmptyForFile(
+						t,
+						imageFile,
+						test.fileOptionPath,
+					)
+				} else {
+					bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmptyOnlyForFile(
+						t,
+						image,
+						test.file,
+						test.fileOptionPath,
+						true,
+					)
+				}
 			}
 			{
 				// Get image without source code info.

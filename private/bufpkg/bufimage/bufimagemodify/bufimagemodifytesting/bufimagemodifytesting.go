@@ -37,6 +37,8 @@ const (
 	testRepositoryName  = "testrepository"
 )
 
+// AssertFileOptionSourceCodeInfoEmpty asserts that a the source code info location
+// for the given file path is not set for files in an image.
 func AssertFileOptionSourceCodeInfoEmpty(
 	t *testing.T,
 	image bufimage.Image,
@@ -71,6 +73,7 @@ func AssertFileOptionSourceCodeInfoEmpty(
 	}
 }
 
+// AssertSourceCodeInfoWithIgnoreWKT skips well known types.
 func AssertSourceCodeInfoWithIgnoreWKT() AssertSourceCodeInfoOption {
 	return func(options *assertSourceCodeInfoOptions) {
 		options.ignoreWKT = true
@@ -83,7 +86,16 @@ type assertSourceCodeInfoOptions struct {
 	ignoreWKT bool
 }
 
-func AssertFileOptionSourceCodeInfoEmptyOnlyForFile(t *testing.T, image bufimage.Image, fileName string, fileOptionPath []int32, includeSourceInfo bool) {
+// AssertFileOptionSourceCodeInfoEmptyOnlyForFile asserts that the source code
+// info for the given file option is not present for the given file, which must
+// exist, and that all other files in the image has this path in source code info.
+func AssertFileOptionSourceCodeInfoEmptyOnlyForFile(
+	t *testing.T,
+	image bufimage.Image,
+	fileName string,
+	fileOptionPath []int32,
+	includeSourceInfo bool,
+) {
 	fileChecked := false
 	for _, imageFile := range image.Files() {
 		descriptor := imageFile.Proto()
@@ -111,7 +123,12 @@ func AssertFileOptionSourceCodeInfoEmptyOnlyForFile(t *testing.T, image bufimage
 	assert.True(t, fileChecked)
 }
 
-func AssertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32) {
+// Asserts the source code info location for the given file option path is present.
+func AssertFileOptionSourceCodeInfoNotEmpty(
+	t *testing.T,
+	image bufimage.Image,
+	fileOptionPath []int32,
+) {
 	for _, imageFile := range image.Files() {
 		descriptor := imageFile.Proto()
 
@@ -126,8 +143,32 @@ func AssertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, 
 	}
 }
 
-func GetTestImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage.Image {
-	moduleFileSet := GetTestModuleFileSet(t, dirPath)
+// AssertFileOptionSourceCodeInfoNotEmptyForFile asserts that
+// the source code info for the file option path is present for the file.
+func AssertFileOptionSourceCodeInfoNotEmptyForFile(
+	t *testing.T,
+	imageFile bufimage.ImageFile,
+	fileOptionPath []int32,
+) {
+	descriptor := imageFile.Proto()
+
+	var hasFileOption bool
+	for _, location := range descriptor.SourceCodeInfo.Location {
+		if len(location.Path) > 0 && internal.Int32SliceIsEqual(location.Path, fileOptionPath) {
+			hasFileOption = true
+			break
+		}
+	}
+	assert.True(t, hasFileOption)
+}
+
+// GetTestImage returns an image from a directory.
+func GetTestImage(
+	t *testing.T,
+	dirPath string,
+	includeSourceInfo bool,
+) bufimage.Image {
+	moduleFileSet := getTestModuleFileSet(t, dirPath)
 	var options []bufimagebuild.BuildOption
 	if !includeSourceInfo {
 		options = []bufimagebuild.BuildOption{bufimagebuild.WithExcludeSourceCodeInfo()}
@@ -142,7 +183,18 @@ func GetTestImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage
 	return image
 }
 
-func GetTestModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet {
+// GetTestModuleIdentity returns a module identify for testing.
+func GetTestModuleIdentity(t *testing.T) bufmoduleref.ModuleIdentity {
+	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
+		testRemote,
+		testRepositoryOwner,
+		testRepositoryName,
+	)
+	require.NoError(t, err)
+	return moduleIdentity
+}
+
+func getTestModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet {
 	storageosProvider := storageos.NewProvider()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
@@ -169,14 +221,4 @@ func GetTestModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet 
 	)
 	require.NoError(t, err)
 	return moduleFileSet
-}
-
-func GetTestModuleIdentity(t *testing.T) bufmoduleref.ModuleIdentity {
-	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
-		testRemote,
-		testRepositoryOwner,
-		testRepositoryName,
-	)
-	require.NoError(t, err)
-	return moduleIdentity
 }
