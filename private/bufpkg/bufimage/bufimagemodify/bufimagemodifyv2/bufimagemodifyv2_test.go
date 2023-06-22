@@ -116,7 +116,6 @@ func TestModifySingleOption(t *testing.T) {
 			expectedValue: "acme.weather",
 			assertFunc:    assertJavaPackage,
 		},
-
 		{
 			description:    "Modify Java Package with value on file with java options and a proto package",
 			subDir:         "javaoptions",
@@ -167,9 +166,10 @@ func TestModifySingleOption(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				test.assertFunc(t, test.expectedValue, imageFile.Proto())
-				bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmptyForFile(
+				bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmptyOnlyForFile(
 					t,
-					imageFile,
+					image,
+					test.file,
 					test.fileOptionPath,
 					true,
 				)

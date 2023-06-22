@@ -57,22 +57,32 @@ func AssertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fil
 	}
 }
 
-func AssertFileOptionSourceCodeInfoEmptyForFile(t *testing.T, imageFile bufimage.ImageFile, fileOptionPath []int32, includeSourceInfo bool) {
-	descriptor := imageFile.Proto()
+func AssertFileOptionSourceCodeInfoEmptyOnlyForFile(t *testing.T, image bufimage.Image, fileName string, fileOptionPath []int32, includeSourceInfo bool) {
+	fileChecked := false
+	for _, imageFile := range image.Files() {
+		descriptor := imageFile.Proto()
 
-	if !includeSourceInfo {
-		assert.Empty(t, descriptor.SourceCodeInfo)
-		return
-	}
+		if !includeSourceInfo {
+			assert.Empty(t, descriptor.SourceCodeInfo)
+			continue
+		}
 
-	var hasFileOption bool
-	for _, location := range descriptor.SourceCodeInfo.Location {
-		if len(location.Path) > 0 && internal.Int32SliceIsEqual(location.Path, fileOptionPath) {
-			hasFileOption = true
-			break
+		var hasFileOption bool
+		for _, location := range descriptor.SourceCodeInfo.Location {
+			if len(location.Path) > 0 && internal.Int32SliceIsEqual(location.Path, fileOptionPath) {
+				hasFileOption = true
+				break
+			}
+		}
+
+		if fileName == imageFile.Path() {
+			fileChecked = true
+			assert.False(t, hasFileOption)
+		} else {
+			assert.True(t, hasFileOption)
 		}
 	}
-	assert.False(t, hasFileOption)
+	assert.True(t, fileChecked)
 }
 
 func AssertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32) {
