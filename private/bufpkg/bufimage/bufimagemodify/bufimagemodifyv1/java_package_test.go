@@ -338,7 +338,7 @@ func TestJavaPackageWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(context.Background(), imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetJavaPackage())
 				assert.NotEqual(t, modifiedJavaPackage, descriptor.GetOptions().GetJavaPackage())
 				continue
@@ -365,7 +365,7 @@ func TestJavaPackageWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(context.Background(), imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetJavaPackage())
 				assert.NotEqual(t, modifiedJavaPackage, descriptor.GetOptions().GetJavaPackage())
 				continue

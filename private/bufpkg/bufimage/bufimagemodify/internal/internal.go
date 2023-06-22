@@ -15,8 +15,11 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -128,4 +131,9 @@ func GetPathKey(path []int32) string {
 		j += 4
 	}
 	return string(key)
+}
+
+// IsWellKnownType returns true if the given path is one of the well-known types.
+func IsWellKnownType(ctx context.Context, imageFile bufimage.ImageFile) bool {
+	return datawkt.Exists(imageFile.Path())
 }

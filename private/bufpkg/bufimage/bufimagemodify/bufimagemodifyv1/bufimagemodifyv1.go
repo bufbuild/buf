@@ -23,7 +23,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -304,11 +303,6 @@ func RubyPackage(
 		moduleOverrides,
 		overrides,
 	)
-}
-
-// isWellKnownType returns true if the given path is one of the well-known types.
-func isWellKnownType(ctx context.Context, imageFile bufimage.ImageFile) bool {
-	return datawkt.Exists(imageFile.Path())
 }
 
 func stringOverridesToBoolOverrides(stringOverrides map[string]string) (map[string]bool, error) {
