@@ -80,7 +80,7 @@ func ModifyJavaPackage(
 	}
 	descriptor := imageFile.Proto()
 	if descriptor.Options != nil && descriptor.Options.GetJavaPackage() == javaPackageValue {
-		// The option is already set to the same value, don't do anything.
+		// The option is already set to the same value, don't modify or mark it.
 		return nil
 	}
 	if descriptor.Options == nil {
@@ -96,16 +96,25 @@ func ModifyCcEnableArenas(
 	imageFile bufimage.ImageFile,
 	override Override,
 ) error {
-	descriptor := imageFile.Proto()
-	if descriptor.Options == nil {
-		descriptor.Options = &descriptorpb.FileOptions{}
-	}
+	var ccEnableArenasValue bool
 	switch t := override.(type) {
 	case valueOverride[bool]:
-		descriptor.Options.CcEnableArenas = proto.Bool(t.get())
+		ccEnableArenasValue = t.get()
 	default:
 		return errors.New("a valid override is required for cc_enable_arenas")
 	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetCcEnableArenas() == ccEnableArenasValue {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.CcEnableArenas = proto.Bool(ccEnableArenasValue)
 	marker.Mark(imageFile, internal.CCEnableArenasPath)
 	return nil
 }
