@@ -119,7 +119,7 @@ func shouldSkipGoPackageForFile(
 	imageFile bufimage.ImageFile,
 	exceptModuleIdentityStrings map[string]struct{},
 ) bool {
-	if internal.IsWellKnownType(ctx, imageFile) && imageFile.Proto().GetOptions().GetGoPackage() != "" {
+	if internal.IsWellKnownType(imageFile) && imageFile.Proto().GetOptions().GetGoPackage() != "" {
 		// The well-known type defines the go_package option, so this is a no-op.
 		// If a well-known type ever omits the go_package option, we make sure
 		// to include it.

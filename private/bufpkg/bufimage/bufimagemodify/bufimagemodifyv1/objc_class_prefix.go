@@ -96,7 +96,7 @@ func objcClassPrefixForFile(
 	exceptModuleIdentityStrings map[string]struct{},
 ) error {
 	descriptor := imageFile.Proto()
-	if internal.IsWellKnownType(ctx, imageFile) || objcClassPrefixValue == "" {
+	if internal.IsWellKnownType(imageFile) || objcClassPrefixValue == "" {
 		// This is a well-known type or we could not resolve a non-empty objc_class_prefix
 		// value, so this is a no-op.
 		return nil

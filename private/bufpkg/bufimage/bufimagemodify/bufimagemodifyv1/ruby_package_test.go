@@ -319,7 +319,7 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if internal.IsWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(imageFile) {
 				// php_namespace is unset for the well-known types
 				assert.Empty(t, descriptor.GetOptions().GetRubyPackage())
 				continue
@@ -345,7 +345,7 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if internal.IsWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(imageFile) {
 				// php_namespace is unset for the well-known types
 				assert.Empty(t, descriptor.GetOptions().GetRubyPackage())
 				continue
