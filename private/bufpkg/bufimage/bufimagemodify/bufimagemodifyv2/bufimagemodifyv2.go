@@ -15,6 +15,8 @@
 package bufimagemodifyv2
 
 import (
+	"errors"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"google.golang.org/protobuf/proto"
@@ -73,6 +75,8 @@ func ModifyJavaPackage(
 		descriptor.Options.JavaPackage = proto.String(getJavaPackageValue(imageFile, t.get()))
 	case valueOverride[string]:
 		descriptor.Options.JavaPackage = proto.String(t.get())
+	default:
+		return errors.New("a valid override is required for java_package")
 	}
 	marker.Mark(imageFile, internal.JavaPackagePath)
 	return nil

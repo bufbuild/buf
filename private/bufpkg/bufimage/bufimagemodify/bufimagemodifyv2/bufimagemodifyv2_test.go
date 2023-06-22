@@ -212,6 +212,50 @@ func TestModifySingleOption(t *testing.T) {
 	}
 }
 
+func TestModifyError(t *testing.T) {
+	t.Parallel()
+	baseDir := filepath.Join("..", "testdata")
+	tests := []struct {
+		description        string
+		subDir             string
+		file               string
+		modifyFunc         func(Marker, bufimage.ImageFile, Override) error
+		override           Override
+		expectedErrMessage string
+	}{
+		{
+			description:        "Test bool override for java package",
+			subDir:             "javaoptions",
+			file:               "java_file.proto",
+			modifyFunc:         ModifyJavaPackage,
+			override:           NewValueOverride(true),
+			expectedErrMessage: "a valid override is required for java_package",
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.description, func(t *testing.T) {
+			t.Parallel()
+			// Get image with source code info.
+			image := bufimagemodifytesting.GetTestImage(
+				t,
+				filepath.Join(baseDir, test.subDir),
+				true,
+			)
+			markSweeper := NewMarkSweeper(image)
+			require.NotNil(t, markSweeper)
+			imageFile := image.GetFile(test.file)
+			require.NotNil(t, imageFile)
+			err := ModifyJavaPackage(
+				markSweeper,
+				imageFile,
+				test.override,
+			)
+			require.ErrorContains(t, err, test.expectedErrMessage)
+		})
+	}
+}
+
 func assertJavaPackage(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetJavaPackage())
 }
