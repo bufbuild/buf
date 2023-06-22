@@ -37,12 +37,26 @@ const (
 	testRepositoryName  = "testrepository"
 )
 
-func AssertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32, includeSourceInfo bool) {
+func AssertFileOptionSourceCodeInfoEmpty(
+	t *testing.T,
+	image bufimage.Image,
+	fileOptionPath []int32,
+	includeSourceInfo bool,
+	assertOptions ...AssertSourceCodeInfoOption,
+) {
+	options := &assertSourceCodeInfoOptions{}
+	for _, option := range assertOptions {
+		option(options)
+	}
 	for _, imageFile := range image.Files() {
 		descriptor := imageFile.Proto()
 
 		if !includeSourceInfo {
 			assert.Empty(t, descriptor.SourceCodeInfo)
+			continue
+		}
+
+		if options.ignoreWKT && internal.IsWellKnownType(imageFile) {
 			continue
 		}
 
@@ -55,6 +69,18 @@ func AssertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fil
 		}
 		assert.False(t, hasFileOption)
 	}
+}
+
+func AssertSourceCodeInfoWithIgnoreWKT() AssertSourceCodeInfoOption {
+	return func(options *assertSourceCodeInfoOptions) {
+		options.ignoreWKT = true
+	}
+}
+
+type AssertSourceCodeInfoOption func(*assertSourceCodeInfoOptions)
+
+type assertSourceCodeInfoOptions struct {
+	ignoreWKT bool
 }
 
 func AssertFileOptionSourceCodeInfoEmptyOnlyForFile(t *testing.T, image bufimage.Image, fileName string, fileOptionPath []int32, includeSourceInfo bool) {

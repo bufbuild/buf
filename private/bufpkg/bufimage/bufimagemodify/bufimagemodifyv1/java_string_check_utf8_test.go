@@ -315,7 +315,7 @@ func TestJavaStringCheckUtf8WellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(imageFile) {
 				assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 				continue
 			}
@@ -338,7 +338,7 @@ func TestJavaStringCheckUtf8WellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(imageFile) {
 				assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 				continue
 			}

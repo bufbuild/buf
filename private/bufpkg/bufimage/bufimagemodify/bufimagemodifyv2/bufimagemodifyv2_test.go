@@ -38,7 +38,10 @@ func TestModifySingleOption(t *testing.T) {
 		fileOptionPath          []int32
 		override                Override
 		expectedValue           interface{}
-		assertFunc              func(*testing.T, interface{}, *descriptorpb.FileDescriptorProto)
+		// This should be set to true when an override has no effect,
+		// i.e. override is the same as defined in proto file.
+		shouldKeepSourceCodeInfo bool
+		assertFunc               func(*testing.T, interface{}, *descriptorpb.FileDescriptorProto)
 	}{
 		{
 			description:             "Modify Java Package with value on file with empty options",
@@ -96,7 +99,7 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:              assertJavaPackage,
 		},
 		{
-			description:    "Modify Java Package with prefix on file with jav options and a proto package",
+			description:    "Modify Java Package with prefix on file with java options and a proto package",
 			subDir:         "javaoptions",
 			file:           "java_file.proto",
 			modifyFunc:     ModifyJavaPackage,
@@ -106,7 +109,29 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:     assertJavaPackage,
 		},
 		{
-			description:    "Modify Java Package with empty prefix on file with empty options and a proto package",
+			description:              "Modify Java Package with override value the same as java package",
+			subDir:                   "javaoptions",
+			file:                     "java_file.proto",
+			modifyFunc:               ModifyJavaPackage,
+			fileOptionPath:           internal.JavaPackagePath,
+			override:                 NewValueOverride("foo"),
+			expectedValue:            "foo",
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertJavaPackage,
+		},
+		{
+			description:             "Modify Java Package with wkt",
+			subDir:                  "wktimport",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaPackage,
+			fileOptionPath:          internal.JavaPackagePath,
+			override:                NewValueOverride("override.value"),
+			expectedValue:           "override.value",
+			assertFunc:              assertJavaPackage,
+		},
+		{
+			description:    "Modify Java Package with empty prefix on file with java options and a proto package",
 			subDir:         "javaoptions",
 			file:           "java_file.proto",
 			modifyFunc:     ModifyJavaPackage,
@@ -206,6 +231,7 @@ func TestModifySingleOption(t *testing.T) {
 						image,
 						test.fileOptionPath,
 						true,
+						bufimagemodifytesting.AssertSourceCodeInfoWithIgnoreWKT(),
 					)
 				} else {
 					bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(
@@ -228,10 +254,9 @@ func TestModifySingleOption(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				test.assertFunc(t, test.expectedValue, imageFile.Proto())
-				bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmptyOnlyForFile(
+				bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmptyForFile(
 					t,
-					image,
-					test.file,
+					imageFile,
 					test.fileOptionPath,
 					true,
 				)

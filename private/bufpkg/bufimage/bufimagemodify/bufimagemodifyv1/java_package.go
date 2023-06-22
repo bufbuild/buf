@@ -125,7 +125,7 @@ func shouldSkipJavaPackageForFile(
 	javaPackageValue string,
 	exceptModuleIdentityStrings map[string]struct{},
 ) bool {
-	if isWellKnownType(ctx, imageFile) || javaPackageValue == "" {
+	if internal.IsWellKnownType(imageFile) || javaPackageValue == "" {
 		// This is a well-known type or we could not resolve a non-empty java_package
 		// value, so this is a no-op.
 		return true

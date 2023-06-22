@@ -118,7 +118,7 @@ func shouldSkipCsharpNamespaceForFile(
 	csharpNamespaceValue string,
 	exceptModuleIdentityStrings map[string]struct{},
 ) bool {
-	if isWellKnownType(ctx, imageFile) || csharpNamespaceValue == "" {
+	if internal.IsWellKnownType(imageFile) || csharpNamespaceValue == "" {
 		// This is a well-known type or we could not resolve a non-empty csharp_namespace
 		// value, so this is a no-op.
 		return true

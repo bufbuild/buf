@@ -391,7 +391,7 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 				packageSuffix,
 			)
 			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetGoPackage())
 				assert.NotEqual(t, modifiedGoPackage, descriptor.GetOptions().GetGoPackage())
 				continue
@@ -422,7 +422,7 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 				packageSuffix,
 			)
 			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
+			if internal.IsWellKnownType(imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetGoPackage())
 				assert.NotEqual(t, modifiedGoPackage, descriptor.GetOptions().GetGoPackage())
 				continue

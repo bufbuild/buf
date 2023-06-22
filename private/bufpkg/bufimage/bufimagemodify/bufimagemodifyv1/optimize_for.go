@@ -100,7 +100,7 @@ func optimizeForForFile(
 	descriptor := imageFile.Proto()
 	options := descriptor.GetOptions()
 	switch {
-	case isWellKnownType(ctx, imageFile):
+	case internal.IsWellKnownType(imageFile):
 		// The file is a well-known type, don't do anything.
 		return nil
 	case options != nil && options.GetOptimizeFor() == value:

@@ -65,7 +65,7 @@ func javaOuterClassnameForFile(
 	javaOuterClassnameValue string,
 	preserveExistingValue bool,
 ) error {
-	if isWellKnownType(ctx, imageFile) {
+	if internal.IsWellKnownType(imageFile) {
 		// The file is a well-known type - don't override the value.
 		return nil
 	}
