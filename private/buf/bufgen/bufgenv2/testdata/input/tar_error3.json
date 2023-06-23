@@ -1,9 +1,0 @@
-{
-  "version": "v2",
-  "inputs": [
-    {
-      "tarball": "a/b/c.tar",
-      "subdir": "/x/y"
-    }
-  ]
-}

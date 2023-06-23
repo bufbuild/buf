@@ -160,6 +160,11 @@ issues:
       # dogsled linter complains about it. (Value of this linter is unclear...)
       path: private/buf/cmd/buf/command/curl/curl.go
     - linters:
+        - dogsled
+      # One function call doesn't care about most of the returned destructured values, which are
+      # parts of a URL. The dogsled linter complains about it. (Value of this linter is unclear...)
+      path: private/buf/bufgen/internal/bufgenplugin/plugin_config.go
+    - linters:
         - containedctx
       # Type must implement an interface whose methods do not accept context. But this
       # implementation makes RPC calls, which need a context. So we allow creator of the

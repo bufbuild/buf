@@ -1,9 +1,0 @@
-{
-  "version": "v2",
-  "inputs": [
-    {
-      "json_image": "a/b/c",
-      "compression": "xyz"
-    }
-  ]
-}

@@ -1,0 +1,8 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+inputs:
+  # test that subdir is validated
+  - git_repo: github.com/acme/weather0.git
+    subdir: /a/b

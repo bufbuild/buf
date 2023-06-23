@@ -1,0 +1,34 @@
+{
+  "version": "v2",
+  "plugins": [
+    {
+      "binary": "protoc-gen-go",
+      "out": "gen/out"
+    }
+  ],
+  "inputs": [
+    {
+      "zip_archive": "a/b/c.zip",
+      "strip_components": 10,
+      "subdir": "x/y",
+      "types": [
+        "a.b.c1",
+        "a.b.c2"
+      ],
+      "exclude_paths": [
+        "x/y/z1",
+        "x/y/z2"
+      ],
+      "include_paths": [
+        "x/y/w1",
+        "x/y/w2"
+      ]
+    },
+    {
+      "zip_archive": "a/b/c"
+    },
+    {
+      "zip_archive": "-"
+    }
+  ]
+}

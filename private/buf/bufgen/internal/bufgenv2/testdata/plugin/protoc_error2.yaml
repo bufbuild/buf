@@ -1,0 +1,6 @@
+version: v2
+plugins:
+  - protoc_builtin: java
+    out: "gen/out/bin"
+    include_imports: false
+    include_wkt: true

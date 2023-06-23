@@ -17,95 +17,158 @@ package bufgen
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenv1"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenv2"
+	"github.com/bufbuild/buf/private/buf/bufwire"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
+	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
 
+// The following are used by either v1beta1_migrator.go or generate_test.go.
+// If these references were not to exist, then these types would remain internal.
+
+type ExternalConfigVersion = internal.ExternalConfigVersion
+type ExternalConfigV2 = bufgenv2.ExternalConfigV2
+type ExternalPluginConfigV2 = bufgenv2.ExternalPluginConfigV2
+type ExternalConfigV1 = bufgenv1.ExternalConfigV1
+type ExternalPluginConfigV1 = bufgenv1.ExternalPluginConfigV1
+type ExternalManagedConfigV1 = bufgenv1.ExternalManagedConfigV1
+type ExternalOptimizeForConfigV1 = bufgenv1.ExternalOptimizeForConfigV1
+type ExternalConfigV1Beta1 = bufgenv1.ExternalConfigV1Beta1
+
+// The following are used by v1beta1_migrator.go.
 const (
 	// ExternalConfigFilePath is the default external configuration file path.
-	ExternalConfigFilePath = "buf.gen.yaml"
+	ExternalConfigFilePath = internal.ExternalConfigFilePath
 	// V1Version is the string used to identify the v1 version of the generate template.
-	V1Version = "v1"
+	V1Version = internal.V1Version
 	// V1Beta1Version is the string used to identify the v1beta1 version of the generate template.
-	V1Beta1Version = "v1beta1"
-	// V2Version is the string used to identify the v2 version of the generate template.
-	V2Version = "v2"
+	V1Beta1Version = internal.V1Beta1Version
 )
 
-// ExternalConfigVersion defines the subset of all config
-// file versions that is used to determine the configuration version.
-// TODO: investigate if this can be hidden in internal and if v1beta1_migrator
-// can call ReadConfigVersion.
-type ExternalConfigVersion struct {
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+// Generators generates.
+type Generator interface {
+	// Generate reads inputs into images, modifies them and generates code.
+	Generate(
+		ctx context.Context,
+		container appflag.Container,
+		generateOptions ...GenerateOption,
+	) error
 }
 
-// ConfigDataProvider is a provider for config data.
-type ConfigDataProvider interface {
-	// GetConfigData gets the Config's data in bytes at ExternalConfigFilePath,
-	// as well as the id of the file, in the form of `File "<path>"`.
-	GetConfigData(context.Context, storage.ReadBucket) ([]byte, string, error)
-}
-
-// New ConfigDataProvider returns a new ConfigDataProvider.
-func NewConfigDataProvider(logger *zap.Logger) ConfigDataProvider {
-	return newConfigDataProvider(logger)
-}
-
-// ReadConfigOption is an option for ReadConfig.
-type ReadConfigOption func(*readConfigOptions)
-
-// ReadConfigWithOverride sets the override.
-//
-// If override is set, this will first check if the override ends in .json or .yaml, if so,
-// this reads the file at this path and uses it. Otherwise, this assumes this is configuration
-// data in either JSON or YAML format, and unmarshals it.
-//
-// If no override is set, this reads ExternalConfigFilePath in the bucket.
-func ReadConfigWithOverride(override string) ReadConfigOption {
-	return func(readConfigOptions *readConfigOptions) {
-		readConfigOptions.override = override
-	}
-}
-
-// ReadConfig reads the configuration version from the OS or an override, if any.
-//
-// Only use in CLI tools.
-func ReadConfigVersion(
-	ctx context.Context,
+// NewGenerator returns a new Generator.
+func NewGenerator(
 	logger *zap.Logger,
-	provider ConfigDataProvider,
-	readBucket storage.ReadBucket,
-	options ...ReadConfigOption,
-) (string, error) {
-	return readConfigVersion(
-		ctx,
+	storageosProvider storageos.Provider,
+	readWriteBucket storage.ReadWriteBucket,
+	runner command.Runner,
+	clientConfig *connectclient.Config,
+	imageConfigReader bufwire.ImageConfigReader,
+	wasmPluginExecutor *bufwasm.WASMPluginExecutor,
+) Generator {
+	return newGenerator(
 		logger,
-		provider,
-		readBucket,
-		options...,
+		storageosProvider,
+		readWriteBucket,
+		runner,
+		clientConfig,
+		imageConfigReader,
+		wasmPluginExecutor,
 	)
 }
 
-// ReadFromConfig reads the configuration as bytes from the OS or an override, if any,
-// and interprets these bytes as a value of V, with configGetter.
-func ReadFromConfig[V any](
-	ctx context.Context,
-	logger *zap.Logger,
-	provider ConfigDataProvider,
-	readBucket storage.ReadBucket,
-	configGetter ConfigGetter[V],
-	options ...ReadConfigOption,
-) (*V, error) {
-	return readFromConfig(ctx, logger, provider, readBucket, configGetter, options...)
+// GenerateOption is an option for Generate.
+type GenerateOption func(*generateOptions)
+
+// GenerateWithGenConfig sets generation configuration, which can be
+// a path to a local file or config data in json.
+func GenerateWithGenConfig(genConfig string) GenerateOption {
+	return func(options *generateOptions) {
+		options.genConfig = genConfig
+	}
 }
 
-// ConfigGetter is a function that interpret a slice of bytes as a value of type V.
-type ConfigGetter[V any] func(
-	ctx context.Context,
-	logger *zap.Logger,
-	unmarshalNonStrict func([]byte, interface{}) error,
-	unmarshalStrict func([]byte, interface{}) error,
-	data []byte,
-	id string,
-) (*V, error)
+// GenerateWithModuleConfig sets module configuration, which can be
+// a path to a local file or config data in json.
+func GenerateWithModuleConfig(moduleConfig string) GenerateOption {
+	return func(options *generateOptions) {
+		options.moduleConfig = moduleConfig
+	}
+}
+
+// GenerateWithInputSpecified sets the input to generate code for.
+func GenerateWithInputSpecified(input string) GenerateOption {
+	return func(options *generateOptions) {
+		options.input = input
+	}
+}
+
+// GenerateWithBaseOutDir sets the base output directory.
+func GenerateWithBaseOutDir(baseoutDir string) GenerateOption {
+	return func(options *generateOptions) {
+		options.baseOutDir = baseoutDir
+	}
+}
+
+// GenerateWithTypesIncluded sets types to generate code for.
+func GenerateWithTypesIncluded(typesIncluded []string) GenerateOption {
+	return func(options *generateOptions) {
+		options.typesIncluded = typesIncluded
+	}
+}
+
+// GenerateWithIncludeImports includes inputs' imports.
+func GenerateWithIncludeImports() GenerateOption {
+	return func(options *generateOptions) {
+		options.includeImports = true
+	}
+}
+
+// GenerateWithIncludeWellKnownTypes includes Well-Known Types.
+func GenerateWithIncludeWellKnownTypes() GenerateOption {
+	return func(options *generateOptions) {
+		options.includeWellKnownTypes = true
+	}
+}
+
+// GenerateWithPathsSpecified sets the paths in inputs to generate code for.
+func GenerateWithPathsSpecified(pathsSpecified []string) GenerateOption {
+	return func(options *generateOptions) {
+		options.pathsSpecified = pathsSpecified
+	}
+}
+
+// GenerateWithPathsExcluded sets the paths to exclude from code generation.
+func GenerateWithPathsExcluded(pathsExcluded []string) GenerateOption {
+	return func(options *generateOptions) {
+		options.pathsExcluded = pathsExcluded
+	}
+}
+
+// GenerateWithErrorFormat sets the error format.
+func GenerateWithErrorFormat(errorFormat string) GenerateOption {
+	return func(options *generateOptions) {
+		options.errorFormat = errorFormat
+	}
+}
+
+// GenerateWithFileAnnotationErr sets the error to return when file annotations
+// are printed.
+func GenerateWithFileAnnotationErr(annotationErr error) GenerateOption {
+	return func(options *generateOptions) {
+		options.fileAnnotationErr = annotationErr
+	}
+}
+
+// GenerateWithWasmEnabled enables Wasm plugins.
+func GenerateWithWasmEnabled() GenerateOption {
+	return func(options *generateOptions) {
+		options.wasmEnbaled = true
+	}
+}

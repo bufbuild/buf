@@ -1,0 +1,7 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+inputs:
+  - types:
+      - "a.b.C"

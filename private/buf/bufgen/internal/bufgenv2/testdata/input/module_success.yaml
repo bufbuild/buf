@@ -1,0 +1,17 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+inputs:
+  - module: buf.build/acme/weather
+    types:
+      - "foo.v1.User"
+      - "foo.v1.UserService"
+    include_paths:
+      - "protos/a"
+      - "protos/b"
+    exclude_paths:
+      - "protos/c"
+      - "protos/d"
+  # It's ok to specify the same module twice
+  - module: buf.build/acme/weather
