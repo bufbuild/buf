@@ -340,6 +340,7 @@ jobs:
             })
   trigger-buf-setup-action-release:
     runs-on: ubuntu-latest
+    needs: post-release
     steps:
       - name: Generate token
         id: generate_token
