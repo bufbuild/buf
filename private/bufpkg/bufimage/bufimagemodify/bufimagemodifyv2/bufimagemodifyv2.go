@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -92,7 +93,7 @@ func ModifyJavaPackage(
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
-	descriptor.Options.JavaPackage = &javaPackageValue
+	descriptor.Options.JavaPackage = proto.String(javaPackageValue)
 	marker.Mark(imageFile, internal.JavaPackagePath)
 	return nil
 }
