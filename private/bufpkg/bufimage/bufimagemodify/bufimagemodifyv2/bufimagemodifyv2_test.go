@@ -333,6 +333,29 @@ func TestModifySingleOption(t *testing.T) {
 			expectedValue:  "csharp",
 			assertFunc:     assertCsharpNamespace,
 		},
+		{
+			description:             "Modify Csharp Namespace on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyCsharpNamespace,
+			fileOptionPath:          internal.CsharpNamespacePath,
+			override:                NewValueOverride("override.value"),
+			expectedValue:           "override.value",
+			assertFunc:              assertCsharpNamespace,
+		},
+		{
+			description:              "Modify Csharp Namespace on a wkt file",
+			subDir:                   "wktimport",
+			file:                     "google/protobuf/timestamp.proto",
+			fileHasNoSourceCodeInfo:  true,
+			modifyFunc:               ModifyCsharpNamespace,
+			fileOptionPath:           internal.CsharpNamespacePath,
+			override:                 NewValueOverride("override.value"),
+			expectedValue:            "Google.Protobuf.WellKnownTypes",
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertCsharpNamespace,
+		},
 	}
 	for _, test := range tests {
 		test := test
