@@ -23,6 +23,10 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+var (
+	defaultJavaPackageOverride = NewPrefixOverride("com")
+)
+
 type Marker interface {
 	// Mark marks the given SourceCodeInfo_Location indices.
 	Mark(bufimage.ImageFile, []int32)
@@ -66,6 +70,9 @@ func ModifyJavaPackage(
 	imageFile bufimage.ImageFile,
 	override Override,
 ) error {
+	if override == nil {
+		override = defaultJavaPackageOverride
+	}
 	var javaPackageValue string
 	switch t := override.(type) {
 	case prefixOverride:

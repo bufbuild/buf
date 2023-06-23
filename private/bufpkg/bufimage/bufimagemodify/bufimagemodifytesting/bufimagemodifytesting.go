@@ -151,7 +151,6 @@ func AssertFileOptionSourceCodeInfoNotEmptyForFile(
 	fileOptionPath []int32,
 ) {
 	descriptor := imageFile.Proto()
-
 	var hasFileOption bool
 	for _, location := range descriptor.SourceCodeInfo.Location {
 		if len(location.Path) > 0 && internal.Int32SliceIsEqual(location.Path, fileOptionPath) {

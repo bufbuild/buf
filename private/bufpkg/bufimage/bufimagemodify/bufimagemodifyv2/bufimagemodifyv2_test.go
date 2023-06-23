@@ -131,6 +131,18 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:              assertJavaPackage,
 		},
 		{
+			description:              "Modify Java Package with wkt",
+			subDir:                   "wktimport",
+			file:                     "google/protobuf/timestamp.proto",
+			fileHasNoSourceCodeInfo:  true,
+			modifyFunc:               ModifyJavaPackage,
+			fileOptionPath:           internal.JavaPackagePath,
+			override:                 NewValueOverride("override.value"),
+			expectedValue:            "com.google.protobuf",
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertJavaPackage,
+		},
+		{
 			description:    "Modify Java Package with empty prefix on file with java options and a proto package",
 			subDir:         "javaoptions",
 			file:           "java_file.proto",
@@ -139,6 +151,17 @@ func TestModifySingleOption(t *testing.T) {
 			override:       NewPrefixOverride(""),
 			// use the package name when prefix is empty
 			expectedValue: "acme.weather",
+			assertFunc:    assertJavaPackage,
+		},
+		{
+			description:    "Modify Java Package with nil override on file with java options and a proto package",
+			subDir:         "javaoptions",
+			file:           "java_file.proto",
+			modifyFunc:     ModifyJavaPackage,
+			fileOptionPath: internal.JavaPackagePath,
+			override:       nil,
+			// prepend the default prefix "com" to the package name
+			expectedValue: "com.acme.weather",
 			assertFunc:    assertJavaPackage,
 		},
 		{
