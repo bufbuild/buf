@@ -19,7 +19,7 @@ import (
 	"math"
 
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
-	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 )
 
@@ -48,11 +48,11 @@ var allowedOptionsForType = map[string](map[string]bool){
 	},
 }
 
-func newPluginConfigs(externalConfigs []ExternalPluginConfigV2, id string) ([]plugingen.PluginConfig, error) {
+func newPluginConfigs(externalConfigs []ExternalPluginConfigV2, id string) ([]bufgenplugin.PluginConfig, error) {
 	if len(externalConfigs) == 0 {
 		return nil, fmt.Errorf("%s: no plugins set", id)
 	}
-	pluginConfigs := make([]plugingen.PluginConfig, 0, len(externalConfigs))
+	pluginConfigs := make([]bufgenplugin.PluginConfig, 0, len(externalConfigs))
 	for _, externalConfig := range externalConfigs {
 		pluginConfig, err := newPluginConfig(externalConfig)
 		if err != nil {
@@ -63,7 +63,7 @@ func newPluginConfigs(externalConfigs []ExternalPluginConfigV2, id string) ([]pl
 	return pluginConfigs, nil
 }
 
-func newPluginConfig(externalConfig ExternalPluginConfigV2) (plugingen.PluginConfig, error) {
+func newPluginConfig(externalConfig ExternalPluginConfigV2) (bufgenplugin.PluginConfig, error) {
 	pluginTypes, options, err := getTypesAndOptions(externalConfig)
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (plugingen.PluginCon
 		if revision < 0 || revision > math.MaxInt32 {
 			return nil, fmt.Errorf("revision %d is out of accepted range %d-%d", revision, 0, math.MaxInt32)
 		}
-		return plugingen.NewCuratedPluginConfig(
+		return bufgenplugin.NewCuratedPluginConfig(
 			*externalConfig.Remote,
 			revision,
 			externalConfig.Out,
@@ -115,7 +115,7 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (plugingen.PluginCon
 		if err != nil {
 			return nil, err
 		}
-		return plugingen.NewBinaryPluginConfig(
+		return bufgenplugin.NewBinaryPluginConfig(
 			"",
 			path,
 			parsedStrategy,
@@ -129,7 +129,7 @@ func newPluginConfig(externalConfig ExternalPluginConfigV2) (plugingen.PluginCon
 		if externalConfig.ProtocPath != nil {
 			protocPath = *externalConfig.ProtocPath
 		}
-		return plugingen.NewProtocBuiltinPluginConfig(
+		return bufgenplugin.NewProtocBuiltinPluginConfig(
 			*externalConfig.ProtocBuiltin,
 			protocPath,
 			externalConfig.Out,

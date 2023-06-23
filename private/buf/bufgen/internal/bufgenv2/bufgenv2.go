@@ -19,7 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
-	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenplugin"
 	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
@@ -38,7 +38,7 @@ const (
 
 type Generator struct {
 	logger            *zap.Logger
-	generator         plugingen.Generator
+	generator         bufgenplugin.Generator
 	imageConfigReader bufwire.ImageConfigReader
 	readWriteBucket   storage.ReadWriteBucket
 }
@@ -54,7 +54,7 @@ func NewGenerator(
 ) *Generator {
 	return &Generator{
 		logger: logger,
-		generator: plugingen.NewGenerator(
+		generator: bufgenplugin.NewGenerator(
 			logger,
 			storageosProvider,
 			runner,
@@ -150,19 +150,19 @@ func (g *Generator) Generate(
 			inputImages = append(inputImages, inputImage)
 		}
 	}
-	generateOptions := []plugingen.GenerateOption{
-		plugingen.GenerateWithBaseOutDirPath(baseOutDir),
+	generateOptions := []bufgenplugin.GenerateOption{
+		bufgenplugin.GenerateWithBaseOutDirPath(baseOutDir),
 	}
 	if includeImportsOverride {
 		generateOptions = append(
 			generateOptions,
-			plugingen.GenerateWithAlwaysIncludeImports(),
+			bufgenplugin.GenerateWithAlwaysIncludeImports(),
 		)
 	}
 	if includeWellKnownTypesOverride {
 		generateOptions = append(
 			generateOptions,
-			plugingen.GenerateWithAlwaysIncludeWellKnownTypes(),
+			bufgenplugin.GenerateWithAlwaysIncludeWellKnownTypes(),
 		)
 	}
 	for _, inputImage := range inputImages {

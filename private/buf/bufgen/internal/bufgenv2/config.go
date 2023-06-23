@@ -21,7 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
-	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -56,7 +56,7 @@ type overrideFunc func(bufimage.ImageFile) (string, error)
 // Config is a configuration.
 type Config struct {
 	Managed *ManagedConfig
-	Plugins []plugingen.PluginConfig
+	Plugins []bufgenplugin.PluginConfig
 	Inputs  []*InputConfig
 }
 

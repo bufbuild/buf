@@ -23,7 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
-	"github.com/bufbuild/buf/private/buf/bufgen/internal/plugingen"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenplugin"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -36,7 +36,7 @@ func TestConfigSuccess(t *testing.T) {
 	refBuilder := buffetch.NewRefBuilder()
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
-	placeHolderPlugins := []plugingen.PluginConfig{
+	placeHolderPlugins := []bufgenplugin.PluginConfig{
 		mustCreateBinaryPlugin(
 			t,
 			"",
@@ -534,7 +534,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test binary plugin",
 			file:     filepath.Join("plugin", "binary_success"),
 			expectedConfig: &Config{
-				Plugins: []plugingen.PluginConfig{
+				Plugins: []bufgenplugin.PluginConfig{
 					mustCreateBinaryPlugin(
 						t,
 						"",
@@ -582,7 +582,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test protoc built-in plugin",
 			file:     filepath.Join("plugin", "protoc_success"),
 			expectedConfig: &Config{
-				Plugins: []plugingen.PluginConfig{
+				Plugins: []bufgenplugin.PluginConfig{
 					mustCreateProtocBuiltinPluginConfig(
 						t,
 						"java",
@@ -620,7 +620,7 @@ func TestConfigSuccess(t *testing.T) {
 			testName: "Test remote plugins",
 			file:     filepath.Join("plugin", "remote_success"),
 			expectedConfig: &Config{
-				Plugins: []plugingen.PluginConfig{
+				Plugins: []bufgenplugin.PluginConfig{
 					mustCreateNewCuratedPluginConfig(
 						t,
 						"buf.build/protocolbuffers/go",
@@ -904,8 +904,8 @@ func mustCreateBinaryPlugin(
 	opt string,
 	includeImports bool,
 	includeWKT bool,
-) plugingen.BinaryPluginConfig {
-	config, err := plugingen.NewBinaryPluginConfig(
+) bufgenplugin.BinaryPluginConfig {
+	config, err := bufgenplugin.NewBinaryPluginConfig(
 		name,
 		path,
 		strategy,
@@ -927,8 +927,8 @@ func mustCreateProtocBuiltinPluginConfig(
 	includeImports bool,
 	includeWKT bool,
 	strategy internal.Strategy,
-) plugingen.ProtocBuiltinPluginConfig {
-	config, err := plugingen.NewProtocBuiltinPluginConfig(
+) bufgenplugin.ProtocBuiltinPluginConfig {
+	config, err := bufgenplugin.NewProtocBuiltinPluginConfig(
 		name,
 		protocPath,
 		out,
@@ -949,8 +949,8 @@ func mustCreateNewCuratedPluginConfig(
 	opt string,
 	includeImports bool,
 	includeWKT bool,
-) plugingen.CuratedPluginConfig {
-	config, err := plugingen.NewCuratedPluginConfig(
+) bufgenplugin.CuratedPluginConfig {
+	config, err := bufgenplugin.NewCuratedPluginConfig(
 		plugin,
 		revision,
 		out,
