@@ -22,20 +22,34 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
-func TestIntputConfigSuccess(t *testing.T) {
+func TestConfigSuccess(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	nopLogger := zap.NewNop()
 	refBuilder := buffetch.NewRefBuilder()
-	provider := bufgen.NewConfigDataProvider(zap.NewNop())
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
+	placeHolderPlugins := []bufgenplugin.PluginConfig{
+		mustCreateBinaryPlugin(
+			t,
+			"",
+			[]string{"protoc-gen-go"},
+			internal.StrategyDirectory,
+			"gen/out",
+			"",
+			false,
+			false,
+		),
+	}
 
 	tests := []struct {
 		testName       string
@@ -44,8 +58,9 @@ func TestIntputConfigSuccess(t *testing.T) {
 	}{
 		{
 			testName: "Test git",
-			file:     "git_success",
+			file:     filepath.Join("input", "git_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetGitRef(
@@ -102,8 +117,9 @@ func TestIntputConfigSuccess(t *testing.T) {
 		},
 		{
 			testName: "Test module",
-			file:     "module_success",
+			file:     filepath.Join("input", "module_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetModuleRef(
@@ -138,8 +154,9 @@ func TestIntputConfigSuccess(t *testing.T) {
 		},
 		{
 			testName: "Test proto file",
-			file:     "proto_file_success",
+			file:     filepath.Join("input", "proto_file_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetProtoFileRef(
@@ -183,8 +200,9 @@ func TestIntputConfigSuccess(t *testing.T) {
 		},
 		{
 			testName: "Test directory",
-			file:     "dir_success",
+			file:     filepath.Join("input", "dir_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetDirRef(
@@ -227,8 +245,9 @@ func TestIntputConfigSuccess(t *testing.T) {
 		},
 		{
 			testName: "Test tarball",
-			file:     "tar_success",
+			file:     filepath.Join("input", "tar_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetTarballRef(
@@ -311,8 +330,9 @@ func TestIntputConfigSuccess(t *testing.T) {
 		},
 		{
 			testName: "Test zip archive",
-			file:     "zip_success",
+			file:     filepath.Join("input", "zip_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetZipArchiveRef(
@@ -357,8 +377,9 @@ func TestIntputConfigSuccess(t *testing.T) {
 		},
 		{
 			testName: "Test json image",
-			file:     "json_success",
+			file:     filepath.Join("input", "json_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetJSONImageRef(
@@ -431,8 +452,9 @@ func TestIntputConfigSuccess(t *testing.T) {
 		},
 		{
 			testName: "Test bin image",
-			file:     "bin_success",
+			file:     filepath.Join("input", "bin_success"),
 			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
 				Inputs: []*InputConfig{
 					{
 						InputRef: mustGetBinaryImageRef(
@@ -510,6 +532,127 @@ func TestIntputConfigSuccess(t *testing.T) {
 				},
 			},
 		},
+		{
+			testName: "Test binary plugin",
+			file:     filepath.Join("plugin", "binary_success"),
+			expectedConfig: &Config{
+				Plugins: []bufgenplugin.PluginConfig{
+					mustCreateBinaryPlugin(
+						t,
+						"",
+						[]string{"protoc-gen-go", "arg1", "arg2"},
+						internal.StrategyDirectory,
+						"gen/out/bin",
+						"paths=source_relative,foo=bar,baz",
+						true,
+						true,
+					),
+					mustCreateBinaryPlugin(
+						t,
+						"",
+						[]string{"./relative", "argX", "argY"},
+						internal.StrategyAll,
+						"gen/out/bin2",
+						"a=b,x=y",
+						false,
+						false,
+					),
+					mustCreateBinaryPlugin(
+						t,
+						"",
+						[]string{"/absolute-plugin"},
+						internal.StrategyDirectory,
+						"/some/out",
+						"paths=source_relative",
+						false,
+						false,
+					),
+					mustCreateBinaryPlugin(
+						t,
+						"",
+						[]string{"protoc-gen-go"},
+						internal.StrategyDirectory,
+						"gen/out",
+						"",
+						false,
+						false,
+					),
+				},
+			},
+		},
+		{
+			testName: "Test protoc built-in plugin",
+			file:     filepath.Join("plugin", "protoc_success"),
+			expectedConfig: &Config{
+				Plugins: []bufgenplugin.PluginConfig{
+					mustCreateProtocBuiltinPluginConfig(
+						t,
+						"java",
+						"relative/protoc",
+						"gen/out/builtin",
+						"paths=source_relative",
+						true,
+						true,
+						internal.StrategyDirectory,
+					),
+					mustCreateProtocBuiltinPluginConfig(
+						t,
+						"cpp",
+						"/absolute",
+						"gen/out/builtin2",
+						"a=b,x=y",
+						false,
+						false,
+						internal.StrategyAll,
+					),
+					mustCreateProtocBuiltinPluginConfig(
+						t,
+						"cpp",
+						"",
+						"gen/out",
+						"",
+						false,
+						false,
+						internal.StrategyDirectory,
+					),
+				},
+			},
+		},
+		{
+			testName: "Test remote plugins",
+			file:     filepath.Join("plugin", "remote_success"),
+			expectedConfig: &Config{
+				Plugins: []bufgenplugin.PluginConfig{
+					mustCreateNewCuratedPluginConfig(
+						t,
+						"buf.build/protocolbuffers/go",
+						2,
+						"gen/out/remote",
+						"paths=source_relative",
+						true,
+						true,
+					),
+					mustCreateNewCuratedPluginConfig(
+						t,
+						"buf.build/bufbuild/connect-go:v1.8.0",
+						0,
+						"gen/out/remote2",
+						"a=b,x=y",
+						false,
+						false,
+					),
+					mustCreateNewCuratedPluginConfig(
+						t,
+						"buf.build/protocolbuffers/go",
+						0,
+						"gen/out",
+						"",
+						false,
+						false,
+					),
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -518,19 +661,18 @@ func TestIntputConfigSuccess(t *testing.T) {
 			fileExtension := fileExtension
 			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
 				t.Parallel()
-				file := filepath.Join("testdata", "input", test.file+fileExtension)
-				config, err := ReadConfigV2(
+				file := filepath.Join("testdata", test.file+fileExtension)
+				config, err := readConfigV2(
 					ctx,
 					nopLogger,
-					provider,
 					readBucket,
-					bufgen.ReadConfigWithOverride(file),
+					internal.ReadConfigWithOverride(file),
 				)
 				require.Nil(t, err)
 				require.Equal(t, test.expectedConfig, config)
 				data, err := os.ReadFile(file)
 				require.NoError(t, err)
-				config, err = ReadConfigV2(ctx, nopLogger, provider, readBucket, bufgen.ReadConfigWithOverride(string(data)))
+				config, err = readConfigV2(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(string(data)))
 				require.NoError(t, err)
 				require.Equal(t, test.expectedConfig, config)
 			})
@@ -538,11 +680,159 @@ func TestIntputConfigSuccess(t *testing.T) {
 	}
 }
 
-func TestInputConfigError(t *testing.T) {
+func TestManagedConfig(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	nopLogger := zap.NewNop()
-	provider := bufgen.NewConfigDataProvider(zap.NewNop())
+	readBucket, err := storagemem.NewReadBucket(nil)
+	require.NoError(t, err)
+	tests := []struct {
+		testName                string
+		file                    string
+		expectedDisableResults  map[FileOption]map[ImageFileIdentity]bool
+		expectedOverrideResults map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override
+	}{
+		{
+			testName: "Test override",
+			file:     filepath.Join("managed", "buf.gen"),
+			expectedDisableResults: map[FileOption]map[ImageFileIdentity]bool{
+				FileOptionJavaPackage: {
+					&fakeImageFileIdentity{
+						path: "ok.proto",
+					}: true,
+					&fakeImageFileIdentity{
+						path: "ok.protooo",
+					}: false,
+					&fakeImageFileIdentity{
+						path: "notok.proto",
+					}: false,
+					&fakeImageFileIdentity{
+						path: "a/b/x.proto",
+					}: true,
+					&fakeImageFileIdentity{
+						path: "a/y.proto",
+					}: true,
+					&fakeImageFileIdentity{
+						path: "m/x.proto",
+					}: false,
+					&fakeImageFileIdentity{
+						path: "m/n/y.proto",
+					}: false,
+					&fakeImageFileIdentity{
+						path: "a.proto",
+					}: false,
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: false,
+					&fakeImageFileIdentity{}: false,
+				},
+			},
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionJavaPackage: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("workspace.default"),
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "owner1", "mod1"),
+					}: bufimagemodifyv2.NewPrefixOverride("workspace.default"),
+					&fakeImageFileIdentity{
+						path: "b/c/d/file.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("bcd.prefix"),
+					&fakeImageFileIdentity{
+						path: "b/c/d/x.proto",
+					}: bufimagemodifyv2.NewValueOverride("x.override"),
+					&fakeImageFileIdentity{
+						path: "b/c/d/e.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("bcd.prefix"),
+					&fakeImageFileIdentity{
+						path: "b/c/d/e/file.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("bcde"),
+					&fakeImageFileIdentity{
+						path: "b/c/d/e/f.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("bcde"),
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+						path:   "b/c/d/e/f.proto",
+					}: bufimagemodifyv2.NewValueOverride("override.value.bcdef"),
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		for _, fileExtension := range []string{".yaml" /* ,".json" */} {
+			fileExtension := fileExtension
+			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
+				t.Parallel()
+				file := filepath.Join("testdata", test.file+fileExtension)
+				config, err := readConfigV2(
+					ctx,
+					nopLogger,
+					readBucket,
+					internal.ReadConfigWithOverride(file),
+				)
+				require.NoError(t, err)
+				require.NotNil(t, config)
+				require.NotNil(t, config.Managed)
+				require.NotNil(t, config.Managed.DisabledFunc)
+				for fileOption, resultsForFiles := range test.expectedDisableResults {
+					for imageFile, expectedResult := range resultsForFiles {
+						actual := config.Managed.DisabledFunc(fileOption, imageFile)
+						require.Equal(
+							t,
+							expectedResult,
+							actual,
+							"whether to disable %v for %v should be %v", fileOption, imageFile, expectedResult,
+						)
+					}
+				}
+				for fileOption, resultsForFiles := range test.expectedOverrideResults {
+					for imageFile, expectedOverride := range resultsForFiles {
+						overrideFunc, ok := config.Managed.FileOptionToOverrideFunc[fileOption]
+						require.True(t, ok)
+						actual := overrideFunc(imageFile)
+						require.Equal(
+							t,
+							expectedOverride,
+							actual,
+							"%v override for %v should be %v, not %v", fileOption, imageFile, expectedOverride, actual,
+						)
+					}
+				}
+			})
+		}
+	}
+}
+
+type fakeImageFileIdentity struct {
+	path   string
+	module bufmoduleref.ModuleIdentity
+}
+
+func (f *fakeImageFileIdentity) Path() string {
+	return f.path
+}
+
+func (f *fakeImageFileIdentity) ModuleIdentity() bufmoduleref.ModuleIdentity {
+	return f.module
+}
+
+func mustCreateModuleIdentity(
+	t *testing.T,
+	remote string,
+	owner string,
+	repository string,
+) bufmoduleref.ModuleIdentity {
+	moduleIdentity, err := bufmoduleref.NewModuleIdentity(remote, owner, repository)
+	require.NoError(t, err)
+	return moduleIdentity
+}
+
+func TestConfigError(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	nopLogger := zap.NewNop()
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
 
@@ -553,83 +843,138 @@ func TestInputConfigError(t *testing.T) {
 	}{
 		{
 			testName:      "Test compression is not allowed for Git",
-			file:          "git_error1",
-			expectedError: newOptionNotAllowedForIntMessage("compression", "git_repo"),
+			file:          filepath.Join("input", "git_error1"),
+			expectedError: newOptionNotAllowedForInputMessage("compression", "git_repo"),
 		},
 		{
 			testName:      "Test subdir is validated for Git",
-			file:          "git_error2",
+			file:          filepath.Join("input", "git_error2"),
 			expectedError: "/a/b: expected to be relative",
 		},
 		{
 			testName:      "Test two input types not allowed",
-			file:          "two_types_error",
+			file:          filepath.Join("input", "two_types_error"),
 			expectedError: "each input can only have one format, already have format json_image",
 		},
 		{
 			testName:      "Test input type required",
-			file:          "no_type_error",
+			file:          filepath.Join("input", "no_type_error"),
 			expectedError: "must specify input type",
 		},
 		{
 			testName:      "Test depth not allowed for module",
-			file:          "module_error1",
-			expectedError: newOptionNotAllowedForIntMessage("depth", "module"),
+			file:          filepath.Join("input", "module_error1"),
+			expectedError: newOptionNotAllowedForInputMessage("depth", "module"),
 		},
 		{
 			testName:      "Test recurse_submodules not allowed for module",
-			file:          "module_error2",
-			expectedError: newOptionNotAllowedForIntMessage("recurse_submodules", "module"),
+			file:          filepath.Join("input", "module_error2"),
+			expectedError: newOptionNotAllowedForInputMessage("recurse_submodules", "module"),
 		},
 		{
 			testName:      "Test tag is not allowed for proto file",
-			file:          "proto_file_error1",
-			expectedError: newOptionNotAllowedForIntMessage("tag", "proto_file"),
+			file:          filepath.Join("input", "proto_file_error1"),
+			expectedError: newOptionNotAllowedForInputMessage("tag", "proto_file"),
 		},
 		{
 			testName:      "Test subdir is not allowed for directory",
-			file:          "dir_error1",
-			expectedError: newOptionNotAllowedForIntMessage("subdir", "directory"),
+			file:          filepath.Join("input", "dir_error1"),
+			expectedError: newOptionNotAllowedForInputMessage("subdir", "directory"),
 		},
 		{
 			testName:      "Test stdin is not allowed for directory",
-			file:          "dir_error2",
+			file:          filepath.Join("input", "dir_error2"),
 			expectedError: `invalid directory path: "-"`,
 		},
 		{
 			testName:      "Test invalid compression not allowed",
-			file:          "tar_error1",
+			file:          filepath.Join("input", "tar_error1"),
 			expectedError: `unknown compression: "abcd" (valid values are "none,gzip,zstd")`,
 		},
 		{
 			testName:      "Test depth not allowed for tarball",
-			file:          "tar_error2",
-			expectedError: newOptionNotAllowedForIntMessage("depth", "tarball"),
+			file:          filepath.Join("input", "tar_error2"),
+			expectedError: newOptionNotAllowedForInputMessage("depth", "tarball"),
 		},
 		{
 			testName:      "Test subdir is validated for tarball",
-			file:          "tar_error3",
+			file:          filepath.Join("input", "tar_error3"),
 			expectedError: "/x/y: expected to be relative",
 		},
 		{
 			testName:      "Test compression not allowed for zip archive",
-			file:          "zip_error1",
-			expectedError: newOptionNotAllowedForIntMessage("compression", "zip_archive"),
+			file:          filepath.Join("input", "zip_error1"),
+			expectedError: newOptionNotAllowedForInputMessage("compression", "zip_archive"),
 		},
 		{
 			testName:      "Test subdir is validated for zip archive",
-			file:          "zip_error2",
+			file:          filepath.Join("input", "zip_error2"),
 			expectedError: "/m/n: expected to be relative",
 		},
 		{
 			testName:      "Test compression is validated for JSON image",
-			file:          "json_error1",
+			file:          filepath.Join("input", "json_error1"),
 			expectedError: `unknown compression: "xyz" (valid values are "none,gzip,zstd")`,
 		},
 		{
 			testName:      "Test include package files is not allowed for JSON image",
-			file:          "json_error2",
-			expectedError: newOptionNotAllowedForIntMessage("include_package_files", "json_image"),
+			file:          filepath.Join("input", "json_error2"),
+			expectedError: newOptionNotAllowedForInputMessage("include_package_files", "json_image"),
+		},
+		{
+			testName:      "Test parsing invalid strategy",
+			file:          filepath.Join("plugin", "binary_error1"),
+			expectedError: newUnknowStategyMessage("invalid"),
+		},
+		{
+			testName:      "Test include imports and include WKT for binary plugin",
+			file:          filepath.Join("plugin", "binary_error2"),
+			expectedError: "cannot include well-known types without including imports",
+		},
+		{
+			testName:      "Test revision not allowed for binary plugin",
+			file:          filepath.Join("plugin", "binary_error3"),
+			expectedError: newOptionNotAllowedForPluginMessage("revision", "binary"),
+		},
+		{
+			testName:      "Test protoc path not allowed for binary plugin",
+			file:          filepath.Join("plugin", "binary_error4"),
+			expectedError: newOptionNotAllowedForPluginMessage("protoc_path", "binary"),
+		},
+		{
+			testName:      "Test invalid strategy for protoc built-in plugin",
+			file:          filepath.Join("plugin", "protoc_error1"),
+			expectedError: "unknown strategy: invalid",
+		},
+		{
+			testName:      "Test invalid include imports and include WKT for protoc built-in plugin",
+			file:          filepath.Join("plugin", "protoc_error2"),
+			expectedError: "cannot include well-known types without including imports",
+		},
+		{
+			testName:      "Test revision with protoc built-in plugin",
+			file:          filepath.Join("plugin", "protoc_error3"),
+			expectedError: newOptionNotAllowedForPluginMessage("revision", "protoc_builtin"),
+		},
+		{
+			testName:      "Test invalid revision for remote plugin",
+			file:          filepath.Join("plugin", "remote_error1"),
+			expectedError: "revision -1 is out of accepted range 0-2147483647",
+		},
+		{
+			testName:      "Test invalid include imports and include WKT for remote plugin",
+			file:          filepath.Join("plugin", "remote_error2"),
+			expectedError: "cannot include well-known types without including imports",
+		},
+		{
+			testName:      "Test strategy for remote plugin",
+			file:          filepath.Join("plugin", "remote_error3"),
+			expectedError: newOptionNotAllowedForPluginMessage("strategy", "remote"),
+		},
+		{
+			testName:      "Test protoc path for remote plugin",
+			file:          filepath.Join("plugin", "remote_error4"),
+			expectedError: newOptionNotAllowedForPluginMessage("protoc_path", "remote"),
 		},
 	}
 
@@ -639,13 +984,12 @@ func TestInputConfigError(t *testing.T) {
 			fileExtension := fileExtension
 			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
 				t.Parallel()
-				file := filepath.Join("testdata", "input", test.file+fileExtension)
-				config, err := ReadConfigV2(
+				file := filepath.Join("testdata", test.file+fileExtension)
+				config, err := readConfigV2(
 					ctx,
 					nopLogger,
-					provider,
 					readBucket,
-					bufgen.ReadConfigWithOverride(file),
+					internal.ReadConfigWithOverride(file),
 				)
 				require.Nil(t, config)
 				require.ErrorContains(t, err, test.expectedError)
@@ -702,7 +1046,74 @@ func mustGetJSONImageRef(t *testing.T, ctx context.Context, refBuilder buffetch.
 	return ref
 }
 
-func newOptionNotAllowedForIntMessage(option string, input string) string {
+func mustCreateBinaryPlugin(
+	t *testing.T,
+	name string,
+	path []string,
+	strategy internal.Strategy,
+	out string,
+	opt string,
+	includeImports bool,
+	includeWKT bool,
+) bufgenplugin.BinaryPluginConfig {
+	config, err := bufgenplugin.NewBinaryPluginConfig(
+		name,
+		path,
+		strategy,
+		out,
+		opt,
+		includeImports,
+		includeWKT,
+	)
+	require.NoError(t, err)
+	return config
+}
+
+func mustCreateProtocBuiltinPluginConfig(
+	t *testing.T,
+	name string,
+	protocPath string,
+	out string,
+	opt string,
+	includeImports bool,
+	includeWKT bool,
+	strategy internal.Strategy,
+) bufgenplugin.ProtocBuiltinPluginConfig {
+	config, err := bufgenplugin.NewProtocBuiltinPluginConfig(
+		name,
+		protocPath,
+		out,
+		opt,
+		includeImports,
+		includeWKT,
+		strategy,
+	)
+	require.NoError(t, err)
+	return config
+}
+
+func mustCreateNewCuratedPluginConfig(
+	t *testing.T,
+	plugin string,
+	revision int,
+	out string,
+	opt string,
+	includeImports bool,
+	includeWKT bool,
+) bufgenplugin.CuratedPluginConfig {
+	config, err := bufgenplugin.NewCuratedPluginConfig(
+		plugin,
+		revision,
+		out,
+		opt,
+		includeImports,
+		includeImports,
+	)
+	require.NoError(t, err)
+	return config
+}
+
+func newOptionNotAllowedForInputMessage(option string, input string) string {
 	return fmt.Sprintf("option %s is not allowed for format %s", option, input)
 }
 

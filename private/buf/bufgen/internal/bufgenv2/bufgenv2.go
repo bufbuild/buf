@@ -223,9 +223,8 @@ type ExternalManagedOverrideConfigV2 struct {
 	// Must be normalized and validated
 	Path string `json:"path,omitempty" yaml:"path,omitempty"`
 	// Only one of Value and Prefix can be set
-	// TODO: may be interface{}, what to do about boo, optimize_mode, etc
-	Value  string `json:"value,omitempty" yaml:"value,omitempty"`
-	Prefix string `json:"prefix,omitempty" yaml:"prefix,omitempty"`
+	Value  interface{} `json:"value,omitempty" yaml:"value,omitempty"`
+	Prefix *string     `json:"prefix,omitempty" yaml:"prefix,omitempty"`
 }
 
 // ExternalPluginConfigV2 is an external plugin configuration.
