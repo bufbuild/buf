@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -252,33 +251,6 @@ func NewBinaryHandler(runner command.Runner, pluginPath string, pluginArgs []str
 		return nil, err
 	}
 	return newBinaryHandler(runner, pluginPath, pluginArgs), nil
-}
-
-// newProtocProxyHandler returns a new Handler that invokes the protoc built-in
-// plugin specified by pluginName, in the form of "java".
-func newProtocProxyHandler(
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	protocPath string,
-	pluginName string,
-) (*protocProxyHandler, error) {
-	if _, ok := ProtocProxyPluginNames[pluginName]; !ok {
-		return nil, fmt.Errorf("could not find protoc plugin for name %s", pluginName)
-	}
-	if protocPath == "" {
-		protocPath = "protoc"
-	}
-	if protocPath, err := unsafeLookPath(protocPath); err != nil {
-		return nil, err
-	} else {
-		return &protocProxyHandler{
-			storageosProvider: storageosProvider,
-			runner:            runner,
-			protocPath:        protocPath,
-			pluginName:        pluginName,
-			tracer:            otel.GetTracerProvider().Tracer("bufbuild/buf"),
-		}, nil
-	}
 }
 
 type handlerOptions struct {

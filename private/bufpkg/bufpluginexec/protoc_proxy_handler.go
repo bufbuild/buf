@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -46,6 +47,33 @@ type protocProxyHandler struct {
 	protocPath        string
 	pluginName        string
 	tracer            trace.Tracer
+}
+
+// newProtocProxyHandler returns a new Handler that invokes the protoc built-in
+// plugin specified by pluginName, in the form of "java".
+func newProtocProxyHandler(
+	storageosProvider storageos.Provider,
+	runner command.Runner,
+	protocPath string,
+	pluginName string,
+) (*protocProxyHandler, error) {
+	if _, ok := ProtocProxyPluginNames[pluginName]; !ok {
+		return nil, fmt.Errorf("could not find protoc plugin for name %s", pluginName)
+	}
+	if protocPath == "" {
+		protocPath = "protoc"
+	}
+	if protocPath, err := unsafeLookPath(protocPath); err != nil {
+		return nil, err
+	} else {
+		return &protocProxyHandler{
+			storageosProvider: storageosProvider,
+			runner:            runner,
+			protocPath:        protocPath,
+			pluginName:        pluginName,
+			tracer:            otel.GetTracerProvider().Tracer("bufbuild/buf"),
+		}, nil
+	}
 }
 
 func (h *protocProxyHandler) Handle(
