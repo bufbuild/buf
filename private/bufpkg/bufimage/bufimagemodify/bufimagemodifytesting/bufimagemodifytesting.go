@@ -172,9 +172,12 @@ func GetTestImage(
 	if !includeSourceInfo {
 		options = []bufimagebuild.BuildOption{bufimagebuild.WithExcludeSourceCodeInfo()}
 	}
-	image, annotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
+	image, annotations, err := bufimagebuild.NewBuilder(
+		zap.NewNop(),
+		bufmodule.NewNopModuleReader(),
+	).Build(
 		context.Background(),
-		moduleFileSet,
+		module,
 		options...,
 	)
 	require.NoError(t, err)

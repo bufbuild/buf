@@ -1,5 +1,0 @@
-version: v2
-inputs:
-  - json_image: a/b/c
-    # include_package_files is not allowed for JSON
-    include_package_files: false

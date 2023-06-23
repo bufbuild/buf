@@ -39,7 +39,13 @@ func (m *mockBucketProvider) NewReadWriteBucket(
 	_ string,
 	_ ...storageos.ReadWriteBucketOption,
 ) (storage.ReadWriteBucket, error) {
-	return storagemem.NewReadWriteBucketWithOptions(storagemem.WithFiles(m.files))
+	bucket := storagemem.NewReadWriteBucket()
+	for path, data := range m.files {
+		if err := storage.PutPath(context.Background(), bucket, path, data); err != nil {
+			return nil, err
+		}
+	}
+	return bucket, nil
 }
 
 func TestDiscoverRemote(t *testing.T) {

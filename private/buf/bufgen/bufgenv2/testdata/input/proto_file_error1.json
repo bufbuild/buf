@@ -1,9 +1,0 @@
-{
-  "version": "v2",
-  "inputs": [
-    {
-      "proto_file": "a.proto",
-      "tag": "v1"
-    }
-  ]
-}

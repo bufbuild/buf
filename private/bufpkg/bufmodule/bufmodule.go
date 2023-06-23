@@ -99,14 +99,16 @@ type Module interface {
 	//
 	// Returns storage.IsNotExist error if the file does not exist.
 	GetModuleFile(ctx context.Context, path string) (ModuleFile, error)
-	// DirectDependencies returns the direct dependencies declared in the configuration file.
+	// DeclaredDirectDependencies returns the direct dependencies declared in the configuration file.
 	//
 	// The returned ModuleReferences are sorted by remote, owner, repository, and reference (if
 	// present). The returned ModulePins are unique by remote, owner, repository.
 	//
-	// This does not include any transitive dependencies, but it maps 1:1 to one of the dependencies
-	// from the DependencyModulePins.
-	DirectDependencies() []bufmoduleref.ModuleReference
+	// This does not include any transitive dependencies, but if the declarations are correct,
+	// this should be a subset of the dependencies from DependencyModulePins.
+	//
+	// TODO: validate that this is a subset? This may mess up construction.
+	DeclaredDirectDependencies() []bufmoduleref.ModuleReference
 	// DependencyModulePins gets the dependency ModulePins.
 	//
 	// The returned ModulePins are sorted by remote, owner, repository, branch, commit, and then digest.

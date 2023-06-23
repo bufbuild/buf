@@ -1,0 +1,30 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+inputs:
+  - tarball: a/b/c
+    compression: gzip
+    strip_components: 6
+    subdir: x/y
+    types:
+      - a.b.c1
+      - a.b.c2
+    exclude_paths:
+      - x/y/z1
+      - x/y/z2
+    include_paths:
+      - x/y/w1
+      - x/y/w2
+  # should infer compression type gzip
+  - tarball: a/b/c.tar.gz
+  # should infer compression type gzip
+  - tarball: a/b/c.tgz
+  # should infer compression type zstd
+  - tarball: a/b/c.tar.zst
+  # should infer compression type none
+  - tarball: a/b/c.tar
+  # should infer compression type none
+  - tarball: a/b/c
+  # read from stdin
+  - tarball: "-"

@@ -1,0 +1,9 @@
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    revision: -1
+    out: "gen/out/remote"
+    opt:
+      - paths=source_relative
+    include_imports: true
+    include_wkt: true

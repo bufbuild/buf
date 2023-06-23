@@ -1,0 +1,32 @@
+{
+  "version": "v2",
+  "plugins": [
+    {
+      "binary": "protoc-gen-go",
+      "out": "gen/out"
+    }
+  ],
+  "inputs": [
+    {
+      "directory": "a/b",
+      "types": [
+        "a.b.c1",
+        "a.b.c2"
+      ],
+      "exclude_paths": [
+        "x/y/z1",
+        "x/y/z2"
+      ],
+      "include_paths": [
+        "x/y/w1",
+        "x/y/w2"
+      ]
+    },
+    {
+      "directory": "/c/d"
+    },
+    {
+      "directory": "/e/f/g/"
+    }
+  ]
+}

@@ -93,7 +93,7 @@ func ModifyJavaPackage(
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
-	descriptor.Options.JavaPackage = &javaPackageValue
+	descriptor.Options.JavaPackage = proto.String(javaPackageValue)
 	marker.Mark(imageFile, internal.JavaPackagePath)
 	return nil
 }

@@ -299,10 +299,10 @@ func TestDuplicateSyntheticOneofs(t *testing.T) {
 func TestOptionPanic(t *testing.T) {
 	t.Parallel()
 	require.NotPanics(t, func() {
-		moduleFileSet := testGetModuleFileSet(t, filepath.Join("testdata", "optionpanic"))
-		_, _, err := NewBuilder(zap.NewNop()).Build(
+		module := testGetModule(t, filepath.Join("testdata", "optionpanic"))
+		_, _, err := NewBuilder(zap.NewNop(), bufmodule.NewNopModuleReader()).Build(
 			context.Background(),
-			moduleFileSet,
+			module,
 		)
 		require.NoError(t, err)
 	})
@@ -333,21 +333,21 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
 }
 
 func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation) {
-	moduleFileSet := testGetModuleFileSet(t, dirPath)
+	module := testGetModule(t, dirPath)
 	var options []BuildOption
 	if !includeSourceInfo {
 		options = append(options, WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := NewBuilder(zap.NewNop()).Build(
+	image, fileAnnotations, err := NewBuilder(zap.NewNop(), bufmodule.NewNopModuleReader()).Build(
 		context.Background(),
-		moduleFileSet,
+		module,
 		options...,
 	)
 	require.NoError(t, err)
 	return image, fileAnnotations
 }
 
-func testGetModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet {
+func testGetModule(t *testing.T, dirPath string) bufmodule.Module {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
@@ -362,15 +362,7 @@ func testGetModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet 
 		config,
 	)
 	require.NoError(t, err)
-	moduleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
-		context.Background(),
-		module,
-	)
-	require.NoError(t, err)
-	return moduleFileSet
+	return module
 }
 
 func testGetImageFilePaths(image bufimage.Image) []string {

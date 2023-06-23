@@ -743,17 +743,12 @@ func testBreaking(
 		previousConfig.Build,
 	)
 	require.NoError(t, err)
-	previousModuleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(
+	previousImage, previousFileAnnotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
 		bufmodule.NewNopModuleReader(),
 	).Build(
-		context.Background(),
-		previousModule,
-	)
-	require.NoError(t, err)
-	previousImage, previousFileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
 		ctx,
-		previousModuleFileSet,
+		previousModule,
 		bufimagebuild.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
@@ -766,17 +761,12 @@ func testBreaking(
 		config.Build,
 	)
 	require.NoError(t, err)
-	moduleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(
+	image, fileAnnotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
 		bufmodule.NewNopModuleReader(),
 	).Build(
-		context.Background(),
-		module,
-	)
-	require.NoError(t, err)
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
 		ctx,
-		moduleFileSet,
+		module,
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)

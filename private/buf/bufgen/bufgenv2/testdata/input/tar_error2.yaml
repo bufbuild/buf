@@ -1,4 +1,0 @@
-version: v2
-inputs:
-  - tarball: a/b/c.tar
-    depth: 5

@@ -127,24 +127,14 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(
-		zap.NewNop(),
-		moduleReader,
-	).Build(
-		ctx,
-		module,
-	)
-	if err != nil {
-		return err
-	}
 	var buildOptions []bufimagebuild.BuildOption
 	// we always need source code info if we are doing generation
 	if len(env.PluginNameToPluginInfo) == 0 && !env.IncludeSourceInfo {
 		buildOptions = append(buildOptions, bufimagebuild.WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(container.Logger()).Build(
+	image, fileAnnotations, err := bufimagebuild.NewBuilder(container.Logger(), moduleReader).Build(
 		ctx,
-		moduleFileSet,
+		module,
 		buildOptions...,
 	)
 	if err != nil {

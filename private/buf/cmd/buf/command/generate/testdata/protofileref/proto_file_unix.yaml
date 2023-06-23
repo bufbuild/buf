@@ -1,0 +1,8 @@
+version: v2
+plugins:
+  - protoc_builtin: java
+    out: java
+inputs:
+  # unix test
+  - proto_file: testdata/protofileref/a/v1/a.proto
+    include_package_files: true

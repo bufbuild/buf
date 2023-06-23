@@ -15,9 +15,15 @@
 package bufmoduletesting
 
 import (
+	"context"
+
+	"github.com/bufbuild/buf/private/bufpkg/buflock"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
 	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
@@ -191,6 +197,74 @@ var (
 	// TestModuleReferenceFooBazCommitString is a valid module reference string.
 	TestModuleReferenceFooBazCommitString string
 )
+
+// NewTestModuleReader returns a new ModuleReader that will return the mapped module
+// for any ModulePin that has the IdentityString matching the key.
+//
+// For example:
+//
+//	{"buf.build/foo/bar" -> testModule }
+//
+// For any ModulePin that has remote "buf.build", owner "foo", and repository "bar",
+// testModule will be returned.
+//
+// Will typically need to be used in conjunction with WriteTestLockFileToBucket.
+// A bucket will be built with .proto files and a lock file that references the moduleIdentities,
+// and then a test ModuleReader will be created with these Modules.
+//
+// Example:
+//
+//	bucket := storagemem.NewReadWriteBucket()
+//	err := storage.PutPaths(ctx, bucket, map[string][]data{...}) // put the .proto files
+//	require.NoError(t, err)
+//	err = WriteTestLockFileToBucket(ctx, bucket, "buf.build/acme/bar", "buf.build/acme/baz")
+//	require.NoError(t, err)
+//	fooModule, err := bufmodule.NewModuleForBucket(ctx, bucket)
+//	require.NoError(t, err)
+//	imageBuilder := bufimagebuild.NewBuilder(
+//	  zap.NewNop(),
+//	  bufmoduletesting.NewTestModuleReader(
+//	    map[string]bufmodule.Module{
+//	      "buf.build/acme/bar": barModule,
+//	      "buf.build/acme/baz": bazModule,
+//	    },
+//	  ),
+//	)
+//	err = imageBuilder.Build(ctx, fooModule)
+//
+// TODO: change this to moduleCommitToModule if we ever introduce a ModuleCommit type to
+// replace ModulePin.
+func NewTestModuleReader(moduleIdentityStringToModule map[string]bufmodule.Module) bufmodule.ModuleReader {
+	return newTestModuleReader(moduleIdentityStringToModule)
+}
+
+// WriteTestLockFileToBucket write a test buf.lock to the given bucket with the given IdentityStrings.
+//
+// Must be used with a ModuleReader created with NewTestModuleReader.
+// See NewTestModuleReader for example usage.
+func WriteTestLockFileToBucket(ctx context.Context, writeBucket storage.WriteBucket, moduleIdentityStrings ...string) error {
+	moduleIdentities := make([]bufmoduleref.ModuleIdentity, len(moduleIdentityStrings))
+	for i, moduleIdentityString := range moduleIdentityStrings {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleIdentityString)
+		if err != nil {
+			return err
+		}
+		moduleIdentities[i] = moduleIdentity
+	}
+	lockConfig := &buflock.Config{
+		Dependencies: make([]buflock.Dependency, len(moduleIdentities)),
+	}
+	for i, moduleIdentity := range moduleIdentities {
+		lockConfig.Dependencies[i] = buflock.Dependency{
+			Remote:     moduleIdentity.Remote(),
+			Owner:      moduleIdentity.Owner(),
+			Repository: moduleIdentity.Repository(),
+			Commit:     TestCommit,
+			Digest:     TestDigest,
+		}
+	}
+	return buflock.WriteConfig(ctx, writeBucket, lockConfig)
+}
 
 func init() {
 	testCommitUUID, err := uuidutil.New()

@@ -1,9 +1,0 @@
-{
-  "version": "v2",
-  "inputs": [
-    {
-      "git_repo": "github.com/acme/weather0.git",
-      "json_image": "file.json"
-    }
-  ]
-}
