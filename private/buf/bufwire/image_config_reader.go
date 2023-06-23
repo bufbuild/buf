@@ -28,20 +28,17 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/zap"
 )
 
 type imageConfigReader struct {
-	logger               *zap.Logger
-	storageosProvider    storageos.Provider
-	fetchReader          buffetch.Reader
-	moduleBucketBuilder  bufmodulebuild.ModuleBucketBuilder
-	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder
-	imageBuilder         bufimagebuild.Builder
-	moduleConfigReader   *moduleConfigReader
-	imageReader          *imageReader
+	logger              *zap.Logger
+	storageosProvider   storageos.Provider
+	fetchReader         buffetch.Reader
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
+	imageBuilder        bufimagebuild.Builder
+	moduleConfigReader  *moduleConfigReader
+	imageReader         *imageReader
 }
 
 func newImageConfigReader(
@@ -49,16 +46,14 @@ func newImageConfigReader(
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
 ) *imageConfigReader {
 	return &imageConfigReader{
-		logger:               logger.Named("bufwire"),
-		storageosProvider:    storageosProvider,
-		fetchReader:          fetchReader,
-		moduleBucketBuilder:  moduleBucketBuilder,
-		moduleFileSetBuilder: moduleFileSetBuilder,
-		imageBuilder:         imageBuilder,
+		logger:              logger.Named("bufwire"),
+		storageosProvider:   storageosProvider,
+		fetchReader:         fetchReader,
+		moduleBucketBuilder: moduleBucketBuilder,
+		imageBuilder:        imageBuilder,
 		moduleConfigReader: newModuleConfigReader(
 			logger,
 			storageosProvider,
@@ -147,26 +142,18 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	imageConfigs := make([]ImageConfig, 0, len(moduleConfigs))
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, moduleConfig := range moduleConfigs {
-		moduleFileSet, err := i.moduleFileSetBuilder.Build(
-			ctx,
-			moduleConfig.Module(),
-			bufmodulebuild.WithWorkspace(moduleConfig.Workspace()),
-		)
-		if err != nil {
-			return nil, nil, err
-		}
-		targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
+		targetFileInfos, err := moduleConfig.Module().TargetFileInfos(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
 		if len(targetFileInfos) == 0 {
-			// This ModuleFileSet doesn't have any targets, so we shouldn't build
+			// This Module doesn't have any targets, so we shouldn't build
 			// an image for it.
 			continue
 		}
 		buildOpts := []bufimagebuild.BuildOption{
-			bufimagebuild.WithDirectDependencies(moduleConfig.Module().DirectDependencies()),
-			bufimagebuild.WithLocalWorkspace(moduleConfig.Workspace()),
+			bufimagebuild.WithExpectedDirectDependencies(moduleConfig.Module().DeclaredDirectDependencies()),
+			bufimagebuild.WithWorkspace(moduleConfig.Workspace()),
 		}
 		if excludeSourceCodeInfo {
 			buildOpts = append(buildOpts, bufimagebuild.WithExcludeSourceCodeInfo())
@@ -174,7 +161,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 		imageConfig, fileAnnotations, err := i.buildModule(
 			ctx,
 			moduleConfig.Config(),
-			moduleFileSet,
+			moduleConfig.Module(),
 			buildOpts...,
 		)
 		if err != nil {
@@ -245,19 +232,15 @@ func (i *imageConfigReader) getImageImageConfig(
 func (i *imageConfigReader) buildModule(
 	ctx context.Context,
 	config *bufconfig.Config,
-	moduleFileSet bufmodule.ModuleFileSet,
+	module bufmodule.Module,
 	buildOpts ...bufimagebuild.BuildOption,
 ) (ImageConfig, []bufanalysis.FileAnnotation, error) {
-	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "build_module")
-	defer span.End()
 	image, fileAnnotations, err := i.imageBuilder.Build(
 		ctx,
-		moduleFileSet,
+		module,
 		buildOpts...,
 	)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return nil, nil, err
 	}
 	if len(fileAnnotations) > 0 {
@@ -273,6 +256,15 @@ func (i *imageConfigReader) buildModule(
 // The image merge is needed because if the `include_package_files=true` option is set, we
 // need to gather all the files for the package, including files spread out across workspace
 // directories, which would result in multiple image configs.
+//
+// As a reminder, with ProtoFileRefs, we actually return an Image that contains all the files
+// in the same package as the referenced file. filterImageConfigs deals with an edge case where
+// files from the same package are split across multiple Images, i.e. in a workspace. Obviously,
+// this is bad Protobuf design, but this is possible.
+//
+// TODO: Make a function such as bufimage.MergeImagesWithOnlyPaths([]bufimage.Image, options) that
+// takes an option that includes files within the package. Even better, create functions such that
+// you can do bufimage.ImageWithOnlyPackages, bufimage.ImageWithOnlyPaths, and then reuse bufimage.MergeImage?
 func filterImageConfigs(imageConfigs []ImageConfig, protoFileRef buffetch.ProtoFileRef) ([]ImageConfig, error) {
 	var pkg string
 	var path string
@@ -300,6 +292,8 @@ func filterImageConfigs(imageConfigs []ImageConfig, protoFileRef buffetch.ProtoF
 	if err != nil {
 		return nil, err
 	}
+	// If include_package_files is set, we then need to go get the rest of the files for the package,
+	// and see comment on Godoc. Otherwise, we just return an image that contains the given file.
 	var paths []string
 	if protoFileRef.IncludePackageFiles() {
 		for _, imageFile := range image.Files() {
