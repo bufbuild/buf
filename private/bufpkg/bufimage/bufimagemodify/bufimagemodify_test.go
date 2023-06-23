@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -73,14 +72,17 @@ func assertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, 
 }
 
 func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage.Image {
-	moduleFileSet := testGetModuleFileSet(t, dirPath)
+	module := testGetModule(t, dirPath)
 	var options []bufimagebuild.BuildOption
 	if !includeSourceInfo {
 		options = []bufimagebuild.BuildOption{bufimagebuild.WithExcludeSourceCodeInfo()}
 	}
-	image, annotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
+	image, annotations, err := bufimagebuild.NewBuilder(
+		zap.NewNop(),
+		bufmodule.NewNopModuleReader(),
+	).Build(
 		context.Background(),
-		moduleFileSet,
+		module,
 		options...,
 	)
 	require.NoError(t, err)
@@ -88,7 +90,7 @@ func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage
 	return image
 }
 
-func testGetModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet {
+func testGetModule(t *testing.T, dirPath string) bufmodule.Module {
 	storageosProvider := storageos.NewProvider()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
@@ -106,13 +108,5 @@ func testGetModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet 
 		bufmodule.ModuleWithModuleIdentityAndCommit(moduleIdentity, bufmoduletesting.TestCommit),
 	)
 	require.NoError(t, err)
-	moduleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
-		context.Background(),
-		module,
-	)
-	require.NoError(t, err)
-	return moduleFileSet
+	return module
 }

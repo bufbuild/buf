@@ -424,8 +424,7 @@ func NewWireImageConfigReader(
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
-		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
-		bufimagebuild.NewBuilder(logger),
+		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
 }
 
@@ -496,8 +495,7 @@ func NewWireFileLister(
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
-		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
-		bufimagebuild.NewBuilder(logger),
+		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
 }
 
@@ -834,7 +832,7 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType s
 	if err != nil {
 		return nil, err
 	}
-	image, _, err := bufimagebuild.NewBuilder(logger).Build(ctx, bufmodule.NewModuleFileSet(module, nil))
+	image, _, err := bufimagebuild.NewBuilder(logger, bufmodule.NewNopModuleReader()).Build(ctx, module)
 	if err != nil {
 		return nil, err
 	}
@@ -881,6 +879,26 @@ func ValidateErrorFormatFlag(errorFormatString string, errorFormatFlagName strin
 // ValidateErrorFormatFlagLint validates the error format flag for lint.
 func ValidateErrorFormatFlagLint(errorFormatString string, errorFormatFlagName string) error {
 	return validateErrorFormatFlag(buflint.AllFormatStrings, errorFormatString, errorFormatFlagName)
+}
+
+// PackageVersionShortDescription returns the long description for the <package>-version command.
+func PackageVersionShortDescription(name string) string {
+	return fmt.Sprintf("Resolve module and %s plugin reference to a specific remote package version", name)
+}
+
+// PackageVersionLongDescription returns the long description for the <package>-version command.
+func PackageVersionLongDescription(registryName, commandName, examplePlugin string) string {
+	return fmt.Sprintf(`This command returns the version of the %s asset to be used with the %s registry.
+Examples:
+
+Get the version of the eliza module and the %s plugin for use with %s.
+    $ buf alpha package %s --module=buf.build/bufbuild/eliza --plugin=%s
+        v1.7.0-20230609151053-e682db0d9918.1
+
+Use a specific module version and plugin version.
+    $ buf alpha package %s --module=buf.build/bufbuild/eliza:e682db0d99184be88b41c4405ea8a417 --plugin=%s:v1.0.0
+        v1.0.0-20230609151053-e682db0d9918.1
+`, registryName, registryName, examplePlugin, registryName, commandName, examplePlugin, commandName, examplePlugin)
 }
 
 // SelectReferenceForRemote receives a list of module references and selects one for remote

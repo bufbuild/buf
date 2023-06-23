@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodule
+package bufmodule_test
 
 import (
 	"bytes"
@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/manifest"
@@ -28,39 +29,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func testNewModuleForBucket(
-	t *testing.T,
-	desc string,
-	files map[string][]byte,
-	isError bool,
-	isNil bool,
-	pins []bufmoduleref.ModulePin,
-	documentation string,
-	license string,
-) {
-	t.Run(desc, func(t *testing.T) {
-		t.Parallel()
-		ctx := context.Background()
-		bucket, err := storagemem.NewReadBucket(files)
-		require.NoError(t, err)
-		module, err := newModuleForBucket(ctx, bucket)
-		if isError {
-			assert.Error(t, err, "isError")
-			return
-		}
-		require.NoError(t, err)
-		if isNil {
-			assert.Nil(t, module, "isNil")
-			return
-		}
-		require.NotNil(t, module, "!isNil")
-
-		assert.Equal(t, pins, module.dependencyModulePins, "pins")
-		assert.Equal(t, documentation, module.documentation, "documentation")
-		assert.Equal(t, license, module.license, "license")
-	})
-}
 
 func TestNewModuleForBucket(t *testing.T) {
 	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
@@ -131,4 +99,37 @@ deps:
 		"",
 		"",
 	)
+}
+
+func testNewModuleForBucket(
+	t *testing.T,
+	desc string,
+	files map[string][]byte,
+	isError bool,
+	isNil bool,
+	pins []bufmoduleref.ModulePin,
+	documentation string,
+	license string,
+) {
+	t.Run(desc, func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		bucket, err := storagemem.NewReadBucket(files)
+		require.NoError(t, err)
+		module, err := bufmodule.NewModuleForBucket(ctx, bucket)
+		if isError {
+			assert.Error(t, err, "isError")
+			return
+		}
+		require.NoError(t, err)
+		if isNil {
+			assert.Nil(t, module, "isNil")
+			return
+		}
+		require.NotNil(t, module, "!isNil")
+
+		assert.Equal(t, pins, module.DependencyModulePins(), "pins")
+		assert.Equal(t, documentation, module.Documentation(), "documentation")
+		assert.Equal(t, license, module.License(), "license")
+	})
 }
