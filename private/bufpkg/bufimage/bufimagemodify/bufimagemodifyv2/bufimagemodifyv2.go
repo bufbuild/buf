@@ -107,6 +107,8 @@ func ModifyCcEnableArenas(
 	switch t := override.(type) {
 	case valueOverride[bool]:
 		ccEnableArenasValue = t.get()
+	case nil:
+		return nil
 	default:
 		return errors.New("a valid override is required for cc_enable_arenas")
 	}
@@ -153,6 +155,38 @@ func ModifyCsharpNamespace(
 	}
 	descriptor.Options.CsharpNamespace = proto.String(csharpNamespaceValue)
 	marker.Mark(imageFile, internal.CsharpNamespacePath)
+	return nil
+}
+
+func ModifyGoPackage(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	override Override,
+) error {
+	var goPackageValue string
+	switch t := override.(type) {
+	case valueOverride[string]:
+		goPackageValue = t.get()
+	case prefixOverride:
+		goPackageValue = internal.GoPackageImportPathForFile(imageFile, t.get())
+	case nil:
+		return nil
+	default:
+		return errors.New("a valid override is required for csharp_namespace")
+	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetGoPackage() == goPackageValue {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.GoPackage = proto.String(goPackageValue)
+	marker.Mark(imageFile, internal.GoPackagePath)
 	return nil
 }
 

@@ -17,13 +17,10 @@ package bufimagemodifyv1
 import (
 	"context"
 	"fmt"
-	"path"
 	"strconv"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -208,25 +205,6 @@ func OptimizeFor(
 		return nil, fmt.Errorf("invalid override for %s: %w", OptimizeForID, err)
 	}
 	return optimizeFor(logger, sweeper, defaultOptimizeFor, except, moduleOverrides, validatedOverrides), nil
-}
-
-// GoPackageImportPathForFile returns the go_package import path for the given
-// ImageFile. If the package contains a version suffix, and if there are more
-// than two components, concatenate the final two components. Otherwise, we
-// exclude the ';' separator and adopt the default behavior from the import path.
-//
-// For example, an ImageFile with `package acme.weather.v1;` will include `;weatherv1`
-// in the `go_package` declaration so that the generated package is named as such.
-func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix string) string {
-	goPackageImportPath := path.Join(importPathPrefix, path.Dir(imageFile.Path()))
-	packageName := imageFile.FileDescriptor().GetPackage()
-	if _, ok := protoversion.NewPackageVersionForPackage(packageName); ok {
-		parts := strings.Split(packageName, ".")
-		if len(parts) >= 2 {
-			goPackageImportPath += ";" + parts[len(parts)-2] + parts[len(parts)-1]
-		}
-	}
-	return goPackageImportPath
 }
 
 // ObjcClassPrefix returns a Modifier that sets the objc_class_prefix file option

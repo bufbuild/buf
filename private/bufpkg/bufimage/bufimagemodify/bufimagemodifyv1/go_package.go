@@ -63,7 +63,7 @@ func goPackage(
 						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
 					}
 				}
-				goPackageValue := GoPackageImportPathForFile(imageFile, importPathPrefix)
+				goPackageValue := internal.GoPackageImportPathForFile(imageFile, importPathPrefix)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					goPackageValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
