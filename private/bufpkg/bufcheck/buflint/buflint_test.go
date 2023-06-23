@@ -931,17 +931,12 @@ func testLintConfigModifier(
 		config.Build,
 	)
 	require.NoError(t, err)
-	moduleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(
+	image, fileAnnotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
 		bufmodule.NewNopModuleReader(),
 	).Build(
-		context.Background(),
-		module,
-	)
-	require.NoError(t, err)
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
 		ctx,
-		moduleFileSet,
+		module,
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)

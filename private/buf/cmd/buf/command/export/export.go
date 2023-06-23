@@ -64,7 +64,7 @@ Export proto files in <source> to an output directory.
 
     $ buf export <source> --output=<output-dir>
 
-Export current directory to another local directory. 
+Export current directory to another local directory.
 
     $ buf export . --output=<output-dir>
 
@@ -178,6 +178,7 @@ func run(
 		container.Logger(),
 		moduleReader,
 	)
+	// TODO: this is going to be a mess when we want to remove ModuleFileSet
 	moduleFileSets := make([]bufmodule.ModuleFileSet, len(moduleConfigs))
 	for i, moduleConfig := range moduleConfigs {
 		moduleFileSet, err := moduleFileSetBuilder.Build(
@@ -205,7 +206,7 @@ func run(
 	// We gate on flags.ExcludeImports/buffetch.ProtoFileRef so that we don't waste time building if the
 	// result of the build is not relevant.
 	if !flags.ExcludeImports {
-		imageBuilder := bufimagebuild.NewBuilder(container.Logger())
+		imageBuilder := bufimagebuild.NewBuilder(container.Logger(), moduleReader)
 		for _, moduleFileSet := range moduleFileSets {
 			targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 			if err != nil {
