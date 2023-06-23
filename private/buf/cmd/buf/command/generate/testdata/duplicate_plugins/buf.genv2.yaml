@@ -1,0 +1,8 @@
+# The same plugin can be executed more than once, as long as they are written
+# to different output directories.
+version: v2
+plugins:
+  - protoc_builtin: java
+    out: foo
+  - protoc_builtin: java
+    out: bar

@@ -1,0 +1,15 @@
+{
+  "version": "v2",
+  "plugins": [
+    {
+      "binary": "protoc-gen-go",
+      "out": "gen/out"
+    }
+  ],
+  "inputs": [
+    {
+      "proto_file": "a.proto",
+      "tag": "v1"
+    }
+  ]
+}

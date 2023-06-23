@@ -25,7 +25,6 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
-	"github.com/bufbuild/buf/private/buf/bufgen/bufgenv1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -54,6 +53,11 @@ var buftestingDirPath = filepath.Join(
 	"buftesting",
 )
 
+const (
+	v1 = "v1"
+	v2 = "v2"
+)
+
 func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
@@ -63,7 +67,7 @@ func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 		command.NewRunner(),
 		googleapisDirPath,
 		[]*testPluginInfo{
-			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
+			{name: "go", opt: "Mgoogle/api/auth.proto=foo", isBinary: true},
 		},
 	)
 }
@@ -77,7 +81,7 @@ func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
 		command.NewRunner(),
 		googleapisDirPath,
 		[]*testPluginInfo{
-			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
+			{name: "go", opt: "Mgoogle/api/auth.proto=foo", isBinary: true},
 		},
 		false,
 	)
@@ -92,7 +96,7 @@ func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
 		command.NewRunner(),
 		googleapisDirPath,
 		[]*testPluginInfo{
-			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
+			{name: "go", opt: "Mgoogle/api/auth.proto=foo", isBinary: true},
 		},
 		true,
 	)
@@ -131,8 +135,8 @@ func TestCompareInsertionPointOutput(t *testing.T) {
 		command.NewRunner(),
 		insertionTestdataDirPath,
 		[]*testPluginInfo{
-			{name: "insertion-point-receiver"},
-			{name: "insertion-point-writer"},
+			{name: "insertion-point-receiver", isBinary: true},
+			{name: "insertion-point-writer", isBinary: true},
 		},
 	)
 }
@@ -149,19 +153,18 @@ func TestOutputFlag(t *testing.T) {
 	)
 	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
 	require.NoError(t, err)
-}
 
-func TestVersion(t *testing.T) {
-	configFile := filepath.Join("testdata", "recognize_v2", "buf.gen.yaml")
-	testRunStdoutStderr(
+	tempDirPath = t.TempDir()
+	testRunSuccess(
 		t,
-		nil,
-		1,
-		``,
-		fmt.Sprintf(`Failure: %s has no version set. Please add "version: %s"`, configFile, bufgen.V1Version),
+		"--output",
+		tempDirPath,
 		"--template",
-		configFile,
+		filepath.Join("testdata", "simple", "buf.genv2.yaml"),
+		filepath.Join("testdata", "simple"),
 	)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.NoError(t, err)
 }
 
 func TestProtoFileRefIncludePackageFiles(t *testing.T) {
@@ -175,6 +178,20 @@ func TestProtoFileRefIncludePackageFiles(t *testing.T) {
 		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "a", "v1", "a.proto")),
 	)
 	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "B.java"))
+	require.NoError(t, err)
+
+	tempDirPath = t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "protofileref", "buf.gen2.yaml"),
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "a", "v1", "a.proto")),
+	)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
 	require.NoError(t, err)
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "B.java"))
 	require.NoError(t, err)
@@ -194,6 +211,20 @@ func TestGenerateDuplicatePlugins(t *testing.T) {
 	require.NoError(t, err)
 	_, err = os.Stat(filepath.Join(tempDirPath, "bar", "a", "v1", "A.java"))
 	require.NoError(t, err)
+
+	tempDirPath = t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "duplicate_plugins", "buf.genv2.yaml"),
+		filepath.Join("testdata", "duplicate_plugins"),
+	)
+	_, err = os.Stat(filepath.Join(tempDirPath, "foo", "a", "v1", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "bar", "a", "v1", "A.java"))
+	require.NoError(t, err)
 }
 
 func TestOutputWithPathEqualToExclude(t *testing.T) {
@@ -208,6 +239,24 @@ func TestOutputWithPathEqualToExclude(t *testing.T) {
 		tempDirPath,
 		"--template",
 		filepath.Join("testdata", "paths", "buf.gen.yaml"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
+		filepath.Join("testdata", "paths"),
+	)
+
+	tempDirPath = t.TempDir()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		filepath.FromSlash(`Failure: cannot set the same path for both --path and --exclude-path flags: a/v1/a.proto`),
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "paths", "buf.genv2.yaml"),
 		"--exclude-path",
 		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
 		"--path",
@@ -246,6 +295,27 @@ plugins:
 		"-o",
 		t.TempDir(),
 	)
+
+	successTemplate = `
+version: v2
+plugins:
+  - binary: protoc-gen-insertion-point-receiver
+    out: gen/proto/insertion
+  - binary: protoc-gen-insertion-point-writer
+    out: .
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: plugin protoc-gen-insertion-point-writer: test.txt: does not exist`,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
 }
 
 func TestGenerateDuplicateFileFail(t *testing.T) {
@@ -270,6 +340,27 @@ plugins:
 		"-o",
 		t.TempDir(),
 	)
+
+	successTemplate = `
+version: v2
+plugins:
+  - binary: protoc-gen-insertion-point-receiver
+    out: .
+  - binary: protoc-gen-insertion-point-receiver
+    out: .
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: file "test.txt" was generated multiple times: once by plugin "protoc-gen-insertion-point-receiver" and again by plugin "protoc-gen-insertion-point-receiver"`,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
 }
 
 func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
@@ -287,12 +378,72 @@ func testGenerateInsertionPoint(
 	writerOut string,
 	expectedOutputPath string,
 ) {
+	testGenerateInsertionPointV1(
+		t,
+		runner,
+		receiverOut,
+		writerOut,
+		expectedOutputPath,
+	)
+	testGenerateInsertionPointV2(
+		t,
+		runner,
+		receiverOut,
+		writerOut,
+		expectedOutputPath,
+	)
+}
+
+func testGenerateInsertionPointV1(
+	t *testing.T,
+	runner command.Runner,
+	receiverOut string,
+	writerOut string,
+	expectedOutputPath string,
+) {
 	successTemplate := `
 version: v1
 plugins:
   - name: insertion-point-receiver
     out: %s
   - name: insertion-point-writer
+    out: %s
+`
+	storageosProvider := storageos.NewProvider()
+	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(
+		context.Background(),
+		t,
+		storageosProvider,
+		storagemem.NewReadWriteBucket(),
+	)
+	testRunSuccess(
+		t,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		fmt.Sprintf(successTemplate, receiverOut, writerOut),
+		"-o",
+		tempDir,
+	)
+	expectedOutput, err := storageosProvider.NewReadWriteBucket(expectedOutputPath)
+	require.NoError(t, err)
+	diff, err := storage.DiffBytes(context.Background(), runner, expectedOutput, readWriteBucket)
+	require.NoError(t, err)
+	require.Empty(t, string(diff))
+}
+
+func testGenerateInsertionPointV2(
+	t *testing.T,
+	runner command.Runner,
+	receiverOut string,
+	writerOut string,
+	expectedOutputPath string,
+) {
+	successTemplate := `
+version: v2
+plugins:
+  - binary: protoc-gen-insertion-point-receiver
+    out: %s
+  - binary: protoc-gen-insertion-point-writer
     out: %s
 `
 	storageosProvider := storageos.NewProvider()
@@ -341,6 +492,27 @@ plugins:
 		"-o",
 		t.TempDir(),
 	)
+
+	successTemplate = `
+version: v2
+plugins:
+  - binary: protoc-gen-insertion-point-receiver
+    out: %s
+  - binary: protoc-gen-insertion-point-writer
+    out: %s
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: plugin protoc-gen-insertion-point-writer: test.txt: does not exist`,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		fmt.Sprintf(successTemplate, receiverOut, writerOut),
+		"-o",
+		t.TempDir(),
+	)
 }
 
 func testCompareGeneratedStubs(
@@ -351,7 +523,6 @@ func testCompareGeneratedStubs(
 ) {
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 100)
 	actualProtocDir := t.TempDir()
-	bufGenDir := t.TempDir()
 	var actualProtocPluginFlags []string
 	for _, testPluginInfo := range testPluginInfos {
 		actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_out=%s", testPluginInfo.name, actualProtocDir))
@@ -372,43 +543,40 @@ func testCompareGeneratedStubs(
 		nil,
 		actualProtocPluginFlags...,
 	)
-	genFlags := []string{
-		dirPath,
-		"--template",
-		newExternalConfigV1String(t, testPluginInfos, bufGenDir),
-	}
-	for _, filePath := range filePaths {
-		genFlags = append(
-			genFlags,
-			"--path",
-			filePath,
-		)
-	}
-	appcmdtesting.RunCommandSuccess(
-		t,
-		func(name string) *appcmd.Command {
-			return NewCommand(
-				name,
-				appflag.NewBuilder(name),
-			)
-		},
-		internaltesting.NewEnvFunc(t),
-		nil,
-		nil,
-		genFlags...,
-	)
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	actualReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		actualProtocDir,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	bufReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		bufGenDir,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+
+	bufReadWriteBucket := generateIntoBucket(
+		t,
+		v1,
+		storageosProvider,
+		dirPath,
+		testPluginInfos,
+		filePaths,
+	)
+	diff, err := storage.DiffBytes(
+		context.Background(),
+		runner,
+		actualReadWriteBucket,
+		bufReadWriteBucket,
+		transformGolangProtocVersionToUnknown(t),
 	)
 	require.NoError(t, err)
-	diff, err := storage.DiffBytes(
+	assert.Empty(t, string(diff))
+
+	bufReadWriteBucket = generateIntoBucket(
+		t,
+		v2,
+		storageosProvider,
+		dirPath,
+		testPluginInfos,
+		filePaths,
+	)
+	diff, err = storage.DiffBytes(
 		context.Background(),
 		runner,
 		actualReadWriteBucket,
@@ -433,7 +601,6 @@ func testCompareGeneratedStubsArchive(
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 100)
 	tempDir := t.TempDir()
 	actualProtocFile := filepath.Join(tempDir, "actual-protoc"+fileExt)
-	bufGenFile := filepath.Join(tempDir, "buf-generate"+fileExt)
 	var actualProtocPluginFlags []string
 	for _, testPluginInfo := range testPluginInfos {
 		actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_out=%s", testPluginInfo.name, actualProtocFile))
@@ -454,22 +621,6 @@ func testCompareGeneratedStubsArchive(
 		nil,
 		actualProtocPluginFlags...,
 	)
-	genFlags := []string{
-		dirPath,
-		"--template",
-		newExternalConfigV1String(t, testPluginInfos, bufGenFile),
-	}
-	for _, filePath := range filePaths {
-		genFlags = append(
-			genFlags,
-			"--path",
-			filePath,
-		)
-	}
-	testRunSuccess(
-		t,
-		genFlags...,
-	)
 	actualData, err := os.ReadFile(actualProtocFile)
 	require.NoError(t, err)
 	actualReadWriteBucket := storagemem.NewReadWriteBucket()
@@ -482,19 +633,34 @@ func testCompareGeneratedStubsArchive(
 		0,
 	)
 	require.NoError(t, err)
-	bufData, err := os.ReadFile(bufGenFile)
-	require.NoError(t, err)
-	bufReadWriteBucket := storagemem.NewReadWriteBucket()
-	err = storagearchive.Unzip(
+
+	bufReadWriteBucket := generateZipIntoBucket(
+		t,
+		v1,
+		fileExt,
+		dirPath,
+		testPluginInfos,
+		filePaths,
+	)
+	diff, err := storage.DiffBytes(
 		context.Background(),
-		bytes.NewReader(bufData),
-		int64(len(bufData)),
+		runner,
+		actualReadWriteBucket,
 		bufReadWriteBucket,
-		nil,
-		0,
+		transformGolangProtocVersionToUnknown(t),
 	)
 	require.NoError(t, err)
-	diff, err := storage.DiffBytes(
+	assert.Empty(t, string(diff))
+
+	bufReadWriteBucket = generateZipIntoBucket(
+		t,
+		v2,
+		fileExt,
+		dirPath,
+		testPluginInfos,
+		filePaths,
+	)
+	diff, err = storage.DiffBytes(
 		context.Background(),
 		runner,
 		actualReadWriteBucket,
@@ -539,14 +705,111 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 	)
 }
 
+func generateIntoBucket(
+	t *testing.T,
+	version string,
+	storageosProvider storageos.Provider,
+	dirPath string,
+	testPluginInfos []*testPluginInfo,
+	filePaths []string,
+) storage.ReadWriteBucket {
+	out := t.TempDir()
+	var genFlags []string
+	switch version {
+	case v1:
+		genFlags = []string{
+			dirPath,
+			"--template",
+			newExternalConfigV1String(t, testPluginInfos, out),
+		}
+	case v2:
+		genFlags = []string{
+			dirPath,
+			"--template",
+			newExternalConfigV2String(t, testPluginInfos, out),
+		}
+	default:
+		require.Fail(t, "invalid test case")
+	}
+	for _, filePath := range filePaths {
+		genFlags = append(
+			genFlags,
+			"--path",
+			filePath,
+		)
+	}
+	testRunSuccess(
+		t,
+		genFlags...,
+	)
+	bufReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		out,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+	return bufReadWriteBucket
+}
+
+func generateZipIntoBucket(
+	t *testing.T,
+	version string,
+	fileExt string,
+	dirPath string,
+	testPluginInfos []*testPluginInfo,
+	filePaths []string,
+) storage.ReadWriteBucket {
+	out := filepath.Join(t.TempDir(), "buf-generate"+fileExt)
+	var genFlags []string
+	switch version {
+	case v1:
+		genFlags = []string{
+			dirPath,
+			"--template",
+			newExternalConfigV1String(t, testPluginInfos, out),
+		}
+	case v2:
+		genFlags = []string{
+			dirPath,
+			"--template",
+			newExternalConfigV2String(t, testPluginInfos, out),
+		}
+	default:
+		require.Fail(t, "invalid test case")
+	}
+	for _, filePath := range filePaths {
+		genFlags = append(
+			genFlags,
+			"--path",
+			filePath,
+		)
+	}
+	testRunSuccess(
+		t,
+		genFlags...,
+	)
+	bufData, err := os.ReadFile(out)
+	require.NoError(t, err)
+	bufReadWriteBucket := storagemem.NewReadWriteBucket()
+	err = storagearchive.Unzip(
+		context.Background(),
+		bytes.NewReader(bufData),
+		int64(len(bufData)),
+		bufReadWriteBucket,
+		nil,
+		0,
+	)
+	require.NoError(t, err)
+	return bufReadWriteBucket
+}
+
 func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out string) string {
-	externalConfig := bufgenv1.ExternalConfigV1{
+	externalConfig := bufgen.ExternalConfigV1{
 		Version: "v1",
 	}
 	for _, plugin := range plugins {
 		externalConfig.Plugins = append(
 			externalConfig.Plugins,
-			bufgenv1.ExternalPluginConfigV1{
+			bufgen.ExternalPluginConfigV1{
 				Name: plugin.name,
 				Out:  out,
 				Opt:  plugin.opt,
@@ -558,9 +821,39 @@ func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out stri
 	return string(data)
 }
 
+func newExternalConfigV2String(t *testing.T, plugins []*testPluginInfo, out string) string {
+	externalConfig := bufgen.ExternalConfigV2{
+		Version: "v2",
+	}
+	for _, plugin := range plugins {
+		var pluginConfig bufgen.ExternalPluginConfigV2
+		if plugin.isBinary {
+			pluginConfig = bufgen.ExternalPluginConfigV2{
+				Binary: fmt.Sprintf("protoc-gen-%s", plugin.name),
+				Opt:    plugin.opt,
+				Out:    out,
+			}
+		} else {
+			pluginConfig = bufgen.ExternalPluginConfigV2{
+				ProtocBuiltin: &plugin.name,
+				Opt:           plugin.opt,
+				Out:           out,
+			}
+		}
+		externalConfig.Plugins = append(
+			externalConfig.Plugins,
+			pluginConfig,
+		)
+	}
+	data, err := json.Marshal(externalConfig)
+	require.NoError(t, err)
+	return string(data)
+}
+
 type testPluginInfo struct {
-	name string
-	opt  string
+	name     string
+	opt      string
+	isBinary bool
 }
 
 func transformGolangProtocVersionToUnknown(t *testing.T) storage.DiffOption {

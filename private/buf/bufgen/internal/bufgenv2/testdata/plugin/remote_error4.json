@@ -1,0 +1,13 @@
+{
+  "version": "v2",
+  "plugins": [
+    {
+      "remote": "buf.build/protocolbuffers/go",
+      "out": "gen/out/remote",
+      "opt": [
+        "paths=source_relative"
+      ],
+      "protoc_path": "protoc"
+    }
+  ]
+}

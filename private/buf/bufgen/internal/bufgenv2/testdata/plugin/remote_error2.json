@@ -1,0 +1,10 @@
+{
+  "version": "v2",
+  "plugins": [
+    {
+      "remote": "buf.build/protocolbuffers/go",
+      "include_imports": false,
+      "include_wkt": true
+    }
+  ]
+}
