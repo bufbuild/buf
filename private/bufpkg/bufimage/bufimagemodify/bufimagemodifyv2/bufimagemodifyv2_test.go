@@ -457,6 +457,85 @@ func TestModifySingleOption(t *testing.T) {
 			shouldKeepSourceCodeInfo: true,
 			assertFunc:               assertGoPackage,
 		},
+		{
+			description:             "Modify Java Multiple Files with true on file with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaMultipleFiles,
+			fileOptionPath:          internal.JavaMultipleFilesPath,
+			override:                NewValueOverride(true),
+			expectedValue:           true,
+			assertFunc:              assertJavaMultipleFiles,
+		},
+		{
+			description:             "Modify Java Multiple Files with false on file with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaMultipleFiles,
+			fileOptionPath:          internal.JavaMultipleFilesPath,
+			override:                NewValueOverride(false),
+			expectedValue:           false,
+			assertFunc:              assertJavaMultipleFiles,
+		},
+		{
+			description:             "Modify Java Multiple Files with nil on file with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaMultipleFiles,
+			fileOptionPath:          internal.JavaMultipleFilesPath,
+			override:                nil,
+			// use default, which is true
+			expectedValue: true,
+			assertFunc:    assertJavaMultipleFiles,
+		},
+		{
+			description:    "Modify Java Multiple Files with true on file with all options",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyJavaMultipleFiles,
+			fileOptionPath: internal.JavaMultipleFilesPath,
+			override:       NewValueOverride(true),
+			expectedValue:  true,
+			assertFunc:     assertJavaMultipleFiles,
+		},
+		{
+			description:              "Modify Java Multiple Files with true on file with all options",
+			subDir:                   "alloptions",
+			file:                     "a.proto",
+			modifyFunc:               ModifyJavaMultipleFiles,
+			fileOptionPath:           internal.JavaMultipleFilesPath,
+			override:                 NewValueOverride(false),
+			expectedValue:            false,
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertJavaMultipleFiles,
+		},
+		{
+			description:             "Modify Java Multiple Files on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaMultipleFiles,
+			fileOptionPath:          internal.JavaMultipleFilesPath,
+			override:                NewValueOverride(true),
+			expectedValue:           true,
+			assertFunc:              assertJavaMultipleFiles,
+		},
+		{
+			description:             "Modify Java Multiple Files with wkt",
+			subDir:                  "wktimport",
+			file:                    "google/protobuf/timestamp.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaMultipleFiles,
+			fileOptionPath:          internal.JavaMultipleFilesPath,
+			override:                NewValueOverride(false),
+			// should take no effect
+			expectedValue:            true,
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertJavaMultipleFiles,
+		},
 	}
 	for _, test := range tests {
 		test := test
@@ -633,4 +712,8 @@ func assertCsharpNamespace(t *testing.T, expectedValue interface{}, descriptor *
 
 func assertGoPackage(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetGoPackage())
+}
+
+func assertJavaMultipleFiles(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+	assert.Equal(t, expectedValue, descriptor.GetOptions().GetJavaMultipleFiles())
 }
