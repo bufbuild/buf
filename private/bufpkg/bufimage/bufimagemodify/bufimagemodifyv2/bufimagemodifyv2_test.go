@@ -207,6 +207,17 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:     assertCcEnableArenas,
 		},
 		{
+			description:             "Modify CC Enable Arenas with nil override",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyCcEnableArenas,
+			fileOptionPath:          internal.CCEnableArenasPath,
+			override:                nil,
+			expectedValue:           true,
+			assertFunc:              assertCcEnableArenas,
+		},
+		{
 			description:              "Modify CC Enable Arenas to false on a file with all options",
 			subDir:                   "alloptions",
 			file:                     "a.proto",
@@ -259,6 +270,68 @@ func TestModifySingleOption(t *testing.T) {
 			override:                NewValueOverride(false),
 			expectedValue:           false,
 			assertFunc:              assertCcEnableArenas,
+		},
+		{
+			description:             "Modify Csharp Namespace with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyCsharpNamespace,
+			fileOptionPath:          internal.CsharpNamespacePath,
+			override:                NewValueOverride("csharp"),
+			expectedValue:           "csharp",
+			assertFunc:              assertCsharpNamespace,
+		},
+		{
+			description:             "Modify Csharp Namespace with nil override and empty package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyCsharpNamespace,
+			fileOptionPath:          internal.CsharpNamespacePath,
+			override:                nil,
+			expectedValue:           "",
+			assertFunc:              assertCsharpNamespace,
+		},
+		{
+			description:    "Modify Csharp Namespace with nil override with a two-part package name",
+			subDir:         filepath.Join("csharpoptions", "single"),
+			file:           "csharp.proto",
+			modifyFunc:     ModifyCsharpNamespace,
+			fileOptionPath: internal.CsharpNamespacePath,
+			override:       nil,
+			expectedValue:  "Acme.V1",
+			assertFunc:     assertCsharpNamespace,
+		},
+		{
+			description:    "Modify Csharp Namespace with nil override with a three-part package name",
+			subDir:         filepath.Join("csharpoptions", "double"),
+			file:           "csharp.proto",
+			modifyFunc:     ModifyCsharpNamespace,
+			fileOptionPath: internal.CsharpNamespacePath,
+			override:       nil,
+			expectedValue:  "Acme.Weather.V1",
+			assertFunc:     assertCsharpNamespace,
+		},
+		{
+			description:    "Modify Csharp Namespace with nil override with a four-part package name",
+			subDir:         filepath.Join("csharpoptions", "triple"),
+			file:           "csharp.proto",
+			modifyFunc:     ModifyCsharpNamespace,
+			fileOptionPath: internal.CsharpNamespacePath,
+			override:       nil,
+			expectedValue:  "Acme.Weather.Data.V1",
+			assertFunc:     assertCsharpNamespace,
+		},
+		{
+			description:    "Modify Csharp Namespace with all options",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyCsharpNamespace,
+			fileOptionPath: internal.CsharpNamespacePath,
+			override:       NewValueOverride("csharp"),
+			expectedValue:  "csharp",
+			assertFunc:     assertCsharpNamespace,
 		},
 	}
 	for _, test := range tests {
@@ -428,4 +501,8 @@ func assertJavaPackage(t *testing.T, expectedValue interface{}, descriptor *desc
 
 func assertCcEnableArenas(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetCcEnableArenas())
+}
+
+func assertCsharpNamespace(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+	assert.Equal(t, expectedValue, descriptor.GetOptions().GetCsharpNamespace())
 }
