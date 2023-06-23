@@ -380,6 +380,17 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:    assertGoPackage,
 		},
 		{
+			description:             "Modify Go Package with nil on file with empty options and empty proto package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyGoPackage,
+			fileOptionPath:          internal.GoPackagePath,
+			override:                nil,
+			expectedValue:           "",
+			assertFunc:              assertGoPackage,
+		},
+		{
 			description:    "Modify Go Package with prefix on file with all options and empty proto package",
 			subDir:         "alloptions",
 			file:           "a.proto",
@@ -400,6 +411,18 @@ func TestModifySingleOption(t *testing.T) {
 			// a.proto is in somedir
 			expectedValue: "prefixoverride/somedir",
 			assertFunc:    assertGoPackage,
+		},
+		{
+			description:    "Modify Go Package with nil on file with go options and empty proto package",
+			subDir:         "gooptions",
+			file:           filepath.Join("somedir", "a.proto"),
+			modifyFunc:     ModifyGoPackage,
+			fileOptionPath: internal.GoPackagePath,
+			override:       nil,
+			// a.proto is in somedir
+			expectedValue:            "foo",
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertGoPackage,
 		},
 		{
 			description:    "Modify Go Package with value on file with all options and empty proto package",
