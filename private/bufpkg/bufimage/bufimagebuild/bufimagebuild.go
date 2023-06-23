@@ -37,14 +37,14 @@ type Builder interface {
 	// FileAnnotations will use external file paths.
 	Build(
 		ctx context.Context,
-		moduleFileSet bufmodule.ModuleFileSet,
+		module bufmodule.Module,
 		options ...BuildOption,
 	) (bufimage.Image, []bufanalysis.FileAnnotation, error)
 }
 
 // NewBuilder returns a new Builder.
-func NewBuilder(logger *zap.Logger) Builder {
-	return newBuilder(logger)
+func NewBuilder(logger *zap.Logger, moduleReader bufmodule.ModuleReader) Builder {
+	return newBuilder(logger, moduleReader)
 }
 
 // BuildOption is an option for Build.
@@ -57,15 +57,17 @@ func WithExcludeSourceCodeInfo() BuildOption {
 	}
 }
 
-// WithDirectDependencies sets direct module dependencies, so transitive imports can be warned.
-func WithDirectDependencies(directDependencies []bufmoduleref.ModuleReference) BuildOption {
+// WithExpectedDirectDependencies sets the module dependencies that are expected, usually because
+// they are in a configuration file (buf.yaml). If the build detects that there are direct dependencies
+// outside of this list, a warning will be printed.
+func WithExpectedDirectDependencies(expectedDirectDependencies []bufmoduleref.ModuleReference) BuildOption {
 	return func(buildOptions *buildOptions) {
-		buildOptions.directDependencies = directDependencies
+		buildOptions.expectedDirectDependencies = expectedDirectDependencies
 	}
 }
 
-// WithLocalWorkspace sets a local workspace, so imports from it are not warned.
-func WithLocalWorkspace(workspace bufmodule.Workspace) BuildOption {
+// WithWorkspace sets the workspace to be read from instead of ModuleReader, and to not warn imports for.
+func WithWorkspace(workspace bufmodule.Workspace) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.workspace = workspace
 	}

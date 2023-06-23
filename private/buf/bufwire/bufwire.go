@@ -64,7 +64,6 @@ func NewImageConfigReader(
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
 ) ImageConfigReader {
 	return newImageConfigReader(
@@ -72,7 +71,6 @@ func NewImageConfigReader(
 		storageosProvider,
 		fetchReader,
 		moduleBucketBuilder,
-		moduleFileSetBuilder,
 		imageBuilder,
 	)
 }
@@ -140,7 +138,6 @@ func NewFileLister(
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
 ) FileLister {
 	return newFileLister(
@@ -148,7 +145,6 @@ func NewFileLister(
 		storageosProvider,
 		fetchReader,
 		moduleBucketBuilder,
-		moduleFileSetBuilder,
 		imageBuilder,
 	)
 }
