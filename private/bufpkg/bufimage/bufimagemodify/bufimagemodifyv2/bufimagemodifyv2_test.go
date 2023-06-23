@@ -356,6 +356,84 @@ func TestModifySingleOption(t *testing.T) {
 			shouldKeepSourceCodeInfo: true,
 			assertFunc:               assertCsharpNamespace,
 		},
+		{
+			description:             "Modify Go Package with value on file with empty options and empty proto package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyGoPackage,
+			fileOptionPath:          internal.GoPackagePath,
+			override:                NewValueOverride("valueoverride"),
+			expectedValue:           "valueoverride",
+			assertFunc:              assertGoPackage,
+		},
+		{
+			description:             "Modify Go Package with prefix on file with empty options and empty proto package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyGoPackage,
+			fileOptionPath:          internal.GoPackagePath,
+			override:                NewPrefixOverride("prefixoverride"),
+			// a.proto is in top-level
+			expectedValue: "prefixoverride",
+			assertFunc:    assertGoPackage,
+		},
+		{
+			description:    "Modify Go Package with prefix on file with all options and empty proto package",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyGoPackage,
+			fileOptionPath: internal.GoPackagePath,
+			override:       NewPrefixOverride("prefixoverride"),
+			// a.proto is in top level
+			expectedValue: "prefixoverride",
+			assertFunc:    assertGoPackage,
+		},
+		{
+			description:    "Modify Go Package with prefix on file with go options and empty proto package",
+			subDir:         "gooptions",
+			file:           filepath.Join("somedir", "a.proto"),
+			modifyFunc:     ModifyGoPackage,
+			fileOptionPath: internal.GoPackagePath,
+			override:       NewPrefixOverride("prefixoverride"),
+			// a.proto is in somedir
+			expectedValue: "prefixoverride/somedir",
+			assertFunc:    assertGoPackage,
+		},
+		{
+			description:    "Modify Go Package with value on file with all options and empty proto package",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyGoPackage,
+			fileOptionPath: internal.GoPackagePath,
+			override:       NewValueOverride("alloverride"),
+			expectedValue:  "alloverride",
+			assertFunc:     assertGoPackage,
+		},
+		{
+			description:             "Modify Go Package on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyGoPackage,
+			fileOptionPath:          internal.GoPackagePath,
+			override:                NewValueOverride("override.value"),
+			expectedValue:           "override.value",
+			assertFunc:              assertGoPackage,
+		},
+		{
+			description:              "Modify Go Package on a wkt file",
+			subDir:                   "wktimport",
+			file:                     "google/protobuf/timestamp.proto",
+			fileHasNoSourceCodeInfo:  true,
+			modifyFunc:               ModifyGoPackage,
+			fileOptionPath:           internal.GoPackagePath,
+			override:                 NewValueOverride("override.value"),
+			expectedValue:            "google.golang.org/protobuf/types/known/timestamppb",
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertGoPackage,
+		},
 	}
 	for _, test := range tests {
 		test := test
@@ -528,4 +606,8 @@ func assertCcEnableArenas(t *testing.T, expectedValue interface{}, descriptor *d
 
 func assertCsharpNamespace(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetCsharpNamespace())
+}
+
+func assertGoPackage(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+	assert.Equal(t, expectedValue, descriptor.GetOptions().GetGoPackage())
 }
