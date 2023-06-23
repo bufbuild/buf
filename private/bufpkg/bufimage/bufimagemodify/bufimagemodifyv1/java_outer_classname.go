@@ -19,8 +19,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -39,7 +37,7 @@ func javaOuterClassname(
 		func(ctx context.Context, image bufimage.Image) error {
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				javaOuterClassnameValue := javaOuterClassnameValue(imageFile)
+				javaOuterClassnameValue := internal.GetDefaultJavaOuterClassname(imageFile)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					javaOuterClassnameValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
@@ -87,8 +85,4 @@ func javaOuterClassnameForFile(
 		sweeper.mark(imageFile.Path(), internal.JavaOuterClassnamePath)
 	}
 	return nil
-}
-
-func javaOuterClassnameValue(imageFile bufimage.ImageFile) string {
-	return stringutil.ToPascalCase(normalpath.Base(imageFile.Path()))
 }

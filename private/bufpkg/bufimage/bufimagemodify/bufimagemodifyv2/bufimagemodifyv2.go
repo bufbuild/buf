@@ -108,6 +108,7 @@ func ModifyCcEnableArenas(
 	case valueOverride[bool]:
 		ccEnableArenasValue = t.get()
 	case nil:
+		// Do nothing and use Protobuf's default.
 		return nil
 	default:
 		return errors.New("a valid override is required for cc_enable_arenas")
@@ -170,9 +171,10 @@ func ModifyGoPackage(
 	case prefixOverride:
 		goPackageValue = internal.GoPackageImportPathForFile(imageFile, t.get())
 	case nil:
+		// Do nothing and use Protobuf's default.
 		return nil
 	default:
-		return errors.New("a valid override is required for csharp_namespace")
+		return errors.New("a valid override is required for go_package")
 	}
 	if internal.IsWellKnownType(imageFile) {
 		return nil
@@ -187,6 +189,248 @@ func ModifyGoPackage(
 	}
 	descriptor.Options.GoPackage = proto.String(goPackageValue)
 	marker.Mark(imageFile, internal.GoPackagePath)
+	return nil
+}
+
+func ModifyJavaMultipleFiles(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	override Override,
+) error {
+	var javaMultipleFilesValue bool
+	switch t := override.(type) {
+	case valueOverride[bool]:
+		javaMultipleFilesValue = t.get()
+	case nil:
+		javaMultipleFilesValue = internal.DefaultJavaMultipleFilesValue
+	default:
+		return errors.New("a valid override is required for java_multiple_files")
+	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetJavaMultipleFiles() == javaMultipleFilesValue {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.JavaMultipleFiles = proto.Bool(javaMultipleFilesValue)
+	marker.Mark(imageFile, internal.JavaMultipleFilesPath)
+	return nil
+}
+
+func ModifyJavaOuterClassname(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	override Override,
+) error {
+	var javaOuterClassname string
+	switch t := override.(type) {
+	case valueOverride[string]:
+		javaOuterClassname = t.get()
+	case nil:
+		javaOuterClassname = internal.GetDefaultJavaOuterClassname(imageFile)
+	default:
+		return errors.New("a valid override is required for java_outer_classname")
+	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetJavaOuterClassname() == javaOuterClassname {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.JavaOuterClassname = proto.String(javaOuterClassname)
+	marker.Mark(imageFile, internal.JavaOuterClassnamePath)
+	return nil
+}
+
+func ModifyJavaStringCheck(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	override Override,
+) error {
+	var javaStringCheckUtf8Value bool
+	switch t := override.(type) {
+	case valueOverride[bool]:
+		javaStringCheckUtf8Value = t.get()
+	case nil:
+		// Do nothing and use Protobuf's default.
+		return nil
+	default:
+		return errors.New("a valid override is required for java_string_check_utf8")
+	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetJavaStringCheckUtf8() == javaStringCheckUtf8Value {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.JavaStringCheckUtf8 = proto.Bool(javaStringCheckUtf8Value)
+	marker.Mark(imageFile, internal.JavaStringCheckUtf8Path)
+	return nil
+}
+
+func ModifyObjcClassPrefix(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	override Override,
+) error {
+	var objcClassPrefixValue string
+	switch t := override.(type) {
+	case valueOverride[string]:
+		objcClassPrefixValue = t.get()
+	case nil:
+		objcClassPrefixValue = internal.GetDefaultObjcClassPrefixValue(imageFile)
+	default:
+		return errors.New("a valid override is required for objc_class_prefix")
+	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetObjcClassPrefix() == objcClassPrefixValue {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.ObjcClassPrefix = proto.String(objcClassPrefixValue)
+	marker.Mark(imageFile, internal.ObjcClassPrefixPath)
+	return nil
+}
+
+func ModifyOptimizeFor(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	override Override,
+) error {
+	var optimizeForValue descriptorpb.FileOptions_OptimizeMode
+	switch t := override.(type) {
+	case valueOverride[descriptorpb.FileOptions_OptimizeMode]:
+		optimizeForValue = t.get()
+	case nil:
+		// Do nothing and use Protobuf's default.
+		return nil
+	default:
+		return errors.New("a valid override is required for optimize_for")
+	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetOptimizeFor() == optimizeForValue {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.OptimizeFor = &optimizeForValue
+	marker.Mark(imageFile, internal.OptimizeForPath)
+	return nil
+}
+
+func ModifyPhpMetadataNamespace(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	override Override,
+) error {
+	var phpMetadataNamespaceValue string
+	switch t := override.(type) {
+	case valueOverride[string]:
+		phpMetadataNamespaceValue = t.get()
+	case nil:
+		phpMetadataNamespaceValue = internal.GetDefaultPhpMetadataNamespaceValue(imageFile)
+	default:
+		return errors.New("a valid override is required for php_metadata_namespace")
+	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetPhpMetadataNamespace() == phpMetadataNamespaceValue {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.PhpMetadataNamespace = proto.String(phpMetadataNamespaceValue)
+	marker.Mark(imageFile, internal.PhpMetadataNamespacePath)
+	return nil
+}
+
+func ModifyPhpNamespace(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	override Override,
+) error {
+	var phpNamespaceValue string
+	switch t := override.(type) {
+	case valueOverride[string]:
+		phpNamespaceValue = t.get()
+	case nil:
+		phpNamespaceValue = internal.GetDefaultPhpNamespaceValue(imageFile)
+	default:
+		return errors.New("a valid override is required for php_namespace")
+	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetPhpNamespace() == phpNamespaceValue {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.PhpNamespace = proto.String(phpNamespaceValue)
+	marker.Mark(imageFile, internal.PhpNamespacePath)
+	return nil
+}
+
+func ModifyRubyPackage(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	override Override,
+) error {
+	var rubyPackageValue string
+	switch t := override.(type) {
+	case valueOverride[string]:
+		rubyPackageValue = t.get()
+	case nil:
+		rubyPackageValue = internal.GetDefaultRubyPackageValue(imageFile)
+	default:
+		return errors.New("a valid override is required for ruby_package")
+	}
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options != nil && descriptor.Options.GetRubyPackage() == rubyPackageValue {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.RubyPackage = proto.String(rubyPackageValue)
+	marker.Mark(imageFile, internal.RubyPackagePath)
 	return nil
 }
 

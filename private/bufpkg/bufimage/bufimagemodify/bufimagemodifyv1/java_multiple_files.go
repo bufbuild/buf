@@ -26,7 +26,7 @@ import (
 
 const (
 	// DefaultJavaMultipleFilesValue is the default value for the java_multiple_files modifier.
-	DefaultJavaMultipleFilesValue = true
+	DefaultJavaMultipleFilesValue = internal.DefaultJavaMultipleFilesValue
 
 	// JavaMultipleFilesID is the ID of the java_multiple_files modifier.
 	JavaMultipleFilesID = "JAVA_MULTIPLE_FILES"

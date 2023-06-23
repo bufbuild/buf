@@ -16,11 +16,9 @@ package bufimagemodifyv1
 
 import (
 	"context"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -28,107 +26,6 @@ import (
 
 // PhpNamespaceID is the ID of the php_namespace modifier.
 const PhpNamespaceID = "PHP_NAMESPACE"
-
-var (
-
-	// Keywords and classes that could be produced by our heuristic.
-	// They must not be used in a php_namespace.
-	// Ref: https://www.php.net/manual/en/reserved.php
-	phpReservedKeywords = map[string]struct{}{
-		// Reserved classes as per above.
-		"directory":           {},
-		"exception":           {},
-		"errorexception":      {},
-		"closure":             {},
-		"generator":           {},
-		"arithmeticerror":     {},
-		"assertionerror":      {},
-		"divisionbyzeroerror": {},
-		"error":               {},
-		"throwable":           {},
-		"parseerror":          {},
-		"typeerror":           {},
-		// Keywords avoided by protoc.
-		// Ref: https://github.com/protocolbuffers/protobuf/blob/66d749188ff2a2e30e932110222d58da7c6a8d49/src/google/protobuf/compiler/php/php_generator.cc#L50-L66
-		"abstract":     {},
-		"and":          {},
-		"array":        {},
-		"as":           {},
-		"break":        {},
-		"callable":     {},
-		"case":         {},
-		"catch":        {},
-		"class":        {},
-		"clone":        {},
-		"const":        {},
-		"continue":     {},
-		"declare":      {},
-		"default":      {},
-		"die":          {},
-		"do":           {},
-		"echo":         {},
-		"else":         {},
-		"elseif":       {},
-		"empty":        {},
-		"enddeclare":   {},
-		"endfor":       {},
-		"endforeach":   {},
-		"endif":        {},
-		"endswitch":    {},
-		"endwhile":     {},
-		"eval":         {},
-		"exit":         {},
-		"extends":      {},
-		"final":        {},
-		"finally":      {},
-		"fn":           {},
-		"for":          {},
-		"foreach":      {},
-		"function":     {},
-		"global":       {},
-		"goto":         {},
-		"if":           {},
-		"implements":   {},
-		"include":      {},
-		"include_once": {},
-		"instanceof":   {},
-		"insteadof":    {},
-		"interface":    {},
-		"isset":        {},
-		"list":         {},
-		"match":        {},
-		"namespace":    {},
-		"new":          {},
-		"or":           {},
-		"print":        {},
-		"private":      {},
-		"protected":    {},
-		"public":       {},
-		"require":      {},
-		"require_once": {},
-		"return":       {},
-		"static":       {},
-		"switch":       {},
-		"throw":        {},
-		"trait":        {},
-		"try":          {},
-		"unset":        {},
-		"use":          {},
-		"var":          {},
-		"while":        {},
-		"xor":          {},
-		"yield":        {},
-		"int":          {},
-		"float":        {},
-		"bool":         {},
-		"string":       {},
-		"true":         {},
-		"false":        {},
-		"null":         {},
-		"void":         {},
-		"iterable":     {},
-	}
-)
 
 func phpNamespace(
 	logger *zap.Logger,
@@ -139,7 +36,7 @@ func phpNamespace(
 		func(ctx context.Context, image bufimage.Image) error {
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				phpNamespaceValue := phpNamespaceValue(imageFile)
+				phpNamespaceValue := internal.GetDefaultPhpNamespaceValue(imageFile)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					phpNamespaceValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
@@ -178,24 +75,4 @@ func phpNamespaceForFile(
 		sweeper.mark(imageFile.Path(), internal.PhpNamespacePath)
 	}
 	return nil
-}
-
-// phpNamespaceValue returns the php_namespace for the given ImageFile based on its
-// package declaration. If the image file doesn't have a package declaration, an
-// empty string is returned.
-func phpNamespaceValue(imageFile bufimage.ImageFile) string {
-	pkg := imageFile.Proto().GetPackage()
-	if pkg == "" {
-		return ""
-	}
-	packageParts := strings.Split(pkg, ".")
-	for i, part := range packageParts {
-		packagePart := stringutil.ToPascalCase(part)
-		if _, ok := phpReservedKeywords[strings.ToLower(part)]; ok {
-			// Append _ to the package part if it is a reserved keyword.
-			packagePart += "_"
-		}
-		packageParts[i] = packagePart
-	}
-	return strings.Join(packageParts, `\`)
 }

@@ -36,7 +36,7 @@ func phpMetadataNamespace(
 		func(ctx context.Context, image bufimage.Image) error {
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				phpMetadataNamespaceValue := phpMetadataNamespaceValue(imageFile)
+				phpMetadataNamespaceValue := internal.GetDefaultPhpMetadataNamespaceValue(imageFile)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					phpMetadataNamespaceValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
@@ -75,15 +75,4 @@ func phpMetadataNamespaceForFile(
 		sweeper.mark(imageFile.Path(), internal.PhpMetadataNamespacePath)
 	}
 	return nil
-}
-
-// phpMetadataNamespaceValue returns the php_metadata_namespace for the given ImageFile based on its
-// package declaration. If the image file doesn't have a package declaration, an
-// empty string is returned.
-func phpMetadataNamespaceValue(imageFile bufimage.ImageFile) string {
-	phpNamespace := phpNamespaceValue(imageFile)
-	if phpNamespace == "" {
-		return ""
-	}
-	return phpNamespace + `\GPBMetadata`
 }
