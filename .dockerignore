@@ -16,6 +16,7 @@ private/bufpkg/bufstyle/cmd/bufstyle/bufstyle
 private/bufpkg/buftesting/cache/
 private/bufpkg/bufwkt/cmd/wkt-go-data/wkt-go-data
 private/pkg/bandeps/cmd/bandeps/bandeps
+private/pkg/changelog/cmd/update-changelog/update-changelog
 private/pkg/git/cmd/git-ls-files-unstaged/git-ls-files-unstaged
 private/pkg/licenseheader/cmd/license-header/license-header
 private/pkg/spdx/cmd/spdx-go-data/spdx-go-data
