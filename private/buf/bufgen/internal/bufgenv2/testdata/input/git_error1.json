@@ -1,0 +1,15 @@
+{
+  "version": "v2",
+  "plugins": [
+    {
+      "binary": "protoc-gen-go",
+      "out": "gen/out"
+    }
+  ],
+  "inputs": [
+    {
+      "git_repo": "github.com/acme/weather0.git",
+      "compression": ""
+    }
+  ]
+}

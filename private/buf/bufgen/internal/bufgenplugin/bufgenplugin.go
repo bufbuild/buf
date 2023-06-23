@@ -1,0 +1,273 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package bufgenplugin
+
+import (
+	"context"
+	"errors"
+
+	"github.com/bufbuild/buf/private/buf/bufgen/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"go.uber.org/zap"
+)
+
+// Generator generates Protobuf stubs based on configurations.
+type Generator interface {
+	// Generate calls the generation logic.
+	//
+	// The config is assumed to be valid. If created by ReadConfig, it will
+	// always be valid.
+	Generate(
+		ctx context.Context,
+		container app.EnvStdioContainer,
+		pluginConfigs []PluginConfig,
+		image bufimage.Image,
+		options ...GenerateOption,
+	) error
+}
+
+// NewGenerator returns a new Generator.
+func NewGenerator(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	runner command.Runner,
+	wasmPluginExecutor bufwasm.PluginExecutor,
+	clientConfig *connectclient.Config,
+) Generator {
+	return newGenerator(
+		logger,
+		storageosProvider,
+		runner,
+		wasmPluginExecutor,
+		clientConfig,
+	)
+}
+
+// GenerateOption is an option for Generate.
+type GenerateOption func(*generateOptions)
+
+// GenerateWithBaseOutDirPath returns a new GenerateOption that uses the given
+// base directory as the output directory.
+//
+// The default is to use the current directory.
+func GenerateWithBaseOutDirPath(baseOutDirPath string) GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.baseOutDirPath = baseOutDirPath
+	}
+}
+
+// GenerateWithAlwaysIncludeImports says to also generate imports.
+//
+// Note that this does NOT result in the Well-Known Types being generated, use
+// GenerateWithAlwaysIncludeWellKnownTypes to include the Well-Known Types.
+func GenerateWithAlwaysIncludeImports() GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.includeImports = true
+	}
+}
+
+// GenerateWithAlwaysIncludeWellKnownTypes says to also generate well known types.
+//
+// This option has no effect if GenerateWithAlwaysIncludeImports is not set.
+func GenerateWithAlwaysIncludeWellKnownTypes() GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.includeWellKnownTypes = true
+	}
+}
+
+// GenerateWithWASMEnabled says to enable WASM support.
+func GenerateWithWASMEnabled() GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.wasmEnabled = true
+	}
+}
+
+// PluginConfig is a plugin configuration.
+type PluginConfig interface {
+	PluginName() string
+	Out() string
+	Opt() string
+	IncludeImports() bool
+	IncludeWKT() bool
+
+	pluginConfig()
+}
+
+// LocalPluginConfig is a local plugin configuration.
+type LocalPluginConfig interface {
+	PluginConfig
+	Strategy() internal.Strategy
+
+	localPluginConfig()
+}
+
+// NewLocalPluginConfig creates a new local plugin configuration whose exact
+// type is not yet determined, which could be either binary or protoc built-in.
+func NewLocalPluginConfig(
+	name string,
+	strategy internal.Strategy,
+	out string,
+	opt string,
+	includeImports bool,
+	includeWKT bool,
+) (LocalPluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
+	return newLocalPluginConfig(
+		name,
+		strategy,
+		out,
+		opt,
+		includeImports,
+		includeWKT,
+	), nil
+}
+
+// BinaryPluginConfig is a binary plugin configuration.
+type BinaryPluginConfig interface {
+	LocalPluginConfig
+	Path() []string
+
+	binaryPluginConfig()
+}
+
+// NewBinaryPluginConfig returns a new binary plugin configuration, with a name in the
+// form of "protoc-gen-go" instead of "go".
+func NewBinaryPluginConfig(
+	name string,
+	path []string,
+	strategy internal.Strategy,
+	out string,
+	opt string,
+	includeImports bool,
+	includeWKT bool,
+) (BinaryPluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
+	return newBinaryPluginConfig(
+		name,
+		path,
+		strategy,
+		out,
+		opt,
+		includeImports,
+		includeWKT,
+	)
+}
+
+// ProtocBuiltinPluginConfig is a protoc built-in plugin configuration.
+type ProtocBuiltinPluginConfig interface {
+	LocalPluginConfig
+	ProtocPath() string
+
+	protocBuiltinPluginConfig()
+}
+
+// NewProtocBuiltinPluginConfig returns a new protoc built-in plugin configuration,
+// with a name in the form of "cpp" as opposed to "protoc-gen-cpp".
+func NewProtocBuiltinPluginConfig(
+	name string,
+	protocPath string,
+	out string,
+	opt string,
+	includeImports bool,
+	includeWKT bool,
+	strategy internal.Strategy,
+) (ProtocBuiltinPluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
+	return newProtocBuiltinPluginConfig(
+		name,
+		protocPath,
+		out,
+		opt,
+		includeImports,
+		includeWKT,
+		strategy,
+	), nil
+}
+
+// RemotePluginConfig is a remote plugin configuration.
+type RemotePluginConfig interface {
+	PluginConfig
+	RemoteHost() string
+
+	remotePluginConfig()
+}
+
+// CuratedPluginConfig is a curated plugin configuration.
+type CuratedPluginConfig interface {
+	RemotePluginConfig
+	Revision() int
+
+	curatedPluginConfig()
+}
+
+// NewCuratedPluginConfig returns a new curated plugin configuration.
+func NewCuratedPluginConfig(
+	fullName string,
+	revision int,
+	out string,
+	opt string,
+	includeImports bool,
+	includeWKT bool,
+) (CuratedPluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
+	return newCuratedPluginConfig(
+		fullName,
+		revision,
+		out,
+		opt,
+		includeImports,
+		includeWKT,
+	)
+}
+
+// LegacyRemotePluginConfig is a legacy remote plugin configuration.
+type LegacyRemotePluginConfig interface {
+	RemotePluginConfig
+
+	legacyRemotePluginConfig()
+}
+
+// NewLegacyRemotePluginConfig returns a new legacy remote plugin configuration.
+func NewLegacyRemotePluginConfig(
+	fullName string,
+	out string,
+	opt string,
+	includeImports bool,
+	includeWKT bool,
+) (LegacyRemotePluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
+	return newLegacyRemotePluginConfig(
+		fullName,
+		out,
+		opt,
+		includeImports,
+		includeWKT,
+	)
+}

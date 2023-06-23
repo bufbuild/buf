@@ -1,0 +1,32 @@
+{
+  "version": "v2",
+  "plugins": [
+    {
+      "protoc_builtin": "java",
+      "protoc_path": "relative/protoc",
+      "out": "gen/out/builtin",
+      "opt": [
+        "paths=source_relative"
+      ],
+      "include_imports": true,
+      "include_wkt": true,
+      "strategy": "directory"
+    },
+    {
+      "protoc_builtin": "cpp",
+      "protoc_path": "/absolute",
+      "out": "gen/out/builtin2",
+      "opt": [
+        "a=b",
+        "x=y"
+      ],
+      "include_imports": false,
+      "include_wkt": false,
+      "strategy": "all"
+    },
+    {
+      "protoc_builtin": "cpp",
+      "out": "gen/out"
+    }
+  ]
+}

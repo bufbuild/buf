@@ -1,0 +1,14 @@
+{
+  "version": "v2",
+  "plugins": [
+    {
+      "binary": "protoc-gen-go",
+      "out": "gen/out"
+    }
+  ],
+  "inputs": [
+    {
+      "json_image": "/dev/null"
+    }
+  ]
+}
