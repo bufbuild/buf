@@ -31,6 +31,8 @@ import (
 )
 
 // The following are used by either v1beta1_migrator.go or generate_test.go.
+// If these references were not to exist, then these types would remain internal.
+
 type ExternalConfigVersion = internal.ExternalConfigVersion
 type ExternalConfigV2 = bufgenv2.ExternalConfigV2
 type ExternalPluginConfigV2 = bufgenv2.ExternalPluginConfigV2
