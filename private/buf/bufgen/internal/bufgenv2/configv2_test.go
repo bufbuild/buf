@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func TestConfigSuccess(t *testing.T) {
@@ -693,7 +694,7 @@ func TestManagedConfig(t *testing.T) {
 		expectedOverrideResults map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override
 	}{
 		{
-			testName: "Test Override and Disable",
+			testName: "test override and disable",
 			file:     filepath.Join("managed", "java_package"),
 			expectedDisableResults: map[FileOption]map[ImageFileIdentity]bool{
 				FileOptionJavaPackage: {
@@ -758,7 +759,7 @@ func TestManagedConfig(t *testing.T) {
 			},
 		},
 		{
-			testName: "Test CC Enable Arenas Success",
+			testName: "test cc enable arenas success",
 			file:     filepath.Join("managed", "cc_enable_arenas"),
 			expectedDisableResults: map[FileOption]map[ImageFileIdentity]bool{
 				FileOptionCcEnableArenas: {
@@ -805,9 +806,8 @@ func TestManagedConfig(t *testing.T) {
 			},
 		},
 		{
-			testName:               "Test Csharp Namespace Success",
-			file:                   filepath.Join("managed", "csharp_namespace"),
-			expectedDisableResults: nil,
+			testName: "test csharp namespace success",
+			file:     filepath.Join("managed", "csharp_namespace"),
 			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionCsharpNamespace: {
 					&fakeImageFileIdentity{
@@ -819,6 +819,112 @@ func TestManagedConfig(t *testing.T) {
 					&fakeImageFileIdentity{
 						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
 					}: bufimagemodifyv2.NewValueOverride("ValueMod"),
+				},
+			},
+		},
+		{
+			testName: "test go package success",
+			file:     filepath.Join("managed", "go_package"),
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionGoPackage: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewValueOverride("val"),
+					&fakeImageFileIdentity{
+						path: "dir1/a.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("pre"),
+				},
+			},
+		},
+		{
+			testName: "test java multiple files",
+			file:     filepath.Join("managed", "go_package"),
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionGoPackage: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewValueOverride("val"),
+					&fakeImageFileIdentity{
+						path: "dir1/a.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("pre"),
+				},
+			},
+		},
+		{
+			testName: "test java outer classname",
+			file:     filepath.Join("managed", "java_outer_classname"),
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionJavaOuterClassname: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewValueOverride("OverrideVal"),
+				},
+			},
+		},
+		{
+			testName: "test java string check utf 8",
+			file:     filepath.Join("managed", "java_string_check_utf8"),
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionJavaStringCheckUtf8: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewValueOverride(true),
+					&fakeImageFileIdentity{
+						path: "dir1/a.proto",
+					}: bufimagemodifyv2.NewValueOverride(false),
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: bufimagemodifyv2.NewValueOverride(true),
+				},
+			},
+		},
+		{
+			testName: "test objc prefix",
+			file:     filepath.Join("managed", "objc_class_prefix"),
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionObjcClassPrefix: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewValueOverride("pre"),
+				},
+			},
+		},
+		{
+			testName: "test optimize for",
+			file:     filepath.Join("managed", "optimize_for"),
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionOptimizeFor: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FileOptions_CODE_SIZE),
+					&fakeImageFileIdentity{
+						path: "dir1/a.proto",
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FileOptions_LITE_RUNTIME),
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FileOptions_SPEED),
+				},
+			},
+		},
+		{
+			testName: "test php metadata namespace",
+			file:     filepath.Join("managed", "php_metadata_namespace"),
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionPhpMetadataNamespace: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewValueOverride("namespaceValue"),
+				},
+			},
+		},
+		{
+			testName: "test php namespace",
+			file:     filepath.Join("managed", "php_namespace"),
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionPhpNamespace: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewValueOverride("namespaceValue"),
 				},
 			},
 		},
@@ -1064,22 +1170,77 @@ func TestConfigError(t *testing.T) {
 		{
 			testName:      "Test prefix cannot appear cc enable arenas",
 			file:          filepath.Join("managed", "cc_enable_arenas_error_2"),
-			expectedError: "prefix is not allowed for cc_enable_arenas",
+			expectedError: newPrefixNotAllowedMessage("cc_enable_arenas"),
 		},
 		{
 			testName:      "Test prefix cannot appear along with value for cc enable arenas",
 			file:          filepath.Join("managed", "cc_enable_arenas_error_3"),
-			expectedError: "prefix is not allowed for cc_enable_arenas",
+			expectedError: newPrefixNotAllowedMessage("cc_enable_arenas"),
 		},
 		{
 			testName:      "Test prefix not allowed for csharp namespace",
 			file:          filepath.Join("managed", "csharp_namespace_error_1"),
-			expectedError: "prefix is not allowed for csharp_namespace",
+			expectedError: newPrefixNotAllowedMessage("csharp_namespace"),
 		},
 		{
 			testName:      "Test prefix not allowed for csharp namespace",
 			file:          filepath.Join("managed", "csharp_namespace_error_2"),
 			expectedError: newInvalidOverrideMessage("csharp_namespace"),
+		},
+		{
+			testName:      "Test bool not allowed for go package",
+			file:          filepath.Join("managed", "go_package_error_1"),
+			expectedError: newInvalidOverrideMessage("go_package"),
+		},
+		{
+			testName:      "Test prefix not allowed for java multiple files",
+			file:          filepath.Join("managed", "java_multiple_files_error"),
+			expectedError: newPrefixNotAllowedMessage("java_multiple_files"),
+		},
+		{
+			testName:      "Test prefix not allowed for java outer classname",
+			file:          filepath.Join("managed", "java_outer_classname_error"),
+			expectedError: newPrefixNotAllowedMessage("java_outer_classname"),
+		},
+		{
+			testName:      "Test prefix not allowed for java string check utf8",
+			file:          filepath.Join("managed", "java_string_check_utf8_error_1"),
+			expectedError: newPrefixNotAllowedMessage("java_string_check_utf8"),
+		},
+		{
+			testName:      "Test integer not allowed for java string check utf8",
+			file:          filepath.Join("managed", "java_string_check_utf8_error_2"),
+			expectedError: newInvalidOverrideMessage("java_string_check_utf8"),
+		},
+		{
+			testName:      "Test prefix not allowed for objc class prefix",
+			file:          filepath.Join("managed", "objc_class_prefix_error_1"),
+			expectedError: newPrefixNotAllowedMessage("objc_class_prefix"),
+		},
+		{
+			testName:      "Test prefix not allowed for optmize for",
+			file:          filepath.Join("managed", "optimize_for_error_1"),
+			expectedError: newPrefixNotAllowedMessage("optimize_for"),
+		},
+		{
+			testName:      "Test random string not allowed for optimze for",
+			file:          filepath.Join("managed", "optimize_for_error_2"),
+			expectedError: "optimize_for: xyz is not a valid optmize_for value",
+		},
+		{
+			testName:      "Test bool is not allowed for optimize for",
+			file:          filepath.Join("managed", "optimize_for_error_3"),
+			expectedError: newInvalidOverrideMessage("optimize_for"),
+		},
+		{
+			testName:      "Test prefix is not allowed for php metadata namespace",
+			file:          filepath.Join("managed", "php_metadata_namespace_error_1"),
+			expectedError: newPrefixNotAllowedMessage("php_metadata_namespace"),
+		},
+		{
+			testName:      "Test prefix is not allowed for php namespace",
+			file:          filepath.Join("managed", "php_namespace_error_1"),
+			expectedError: newPrefixNotAllowedMessage("php_namespace"),
 		},
 	}
 
@@ -1232,4 +1393,8 @@ func newUnknowStategyMessage(strategy string) string {
 
 func newInvalidOverrideMessage(fileOption string) string {
 	return fmt.Sprintf("invalid override for %s", fileOption)
+}
+
+func newPrefixNotAllowedMessage(fileOption string) string {
+	return fmt.Sprintf("prefix is not allowed for %s", fileOption)
 }

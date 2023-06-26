@@ -1,0 +1,9 @@
+version: v2
+plugins:
+  - binary: protoc-gen-go
+    out: gen/out
+managed:
+  enable: true
+  override:
+    - file_option: objc_class_prefix
+      prefix: pre

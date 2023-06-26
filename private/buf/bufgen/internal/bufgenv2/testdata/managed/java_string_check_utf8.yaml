@@ -1,0 +1,12 @@
+version: v2
+plugins:
+  - binary: protoc-gen-go
+    out: gen/out
+managed:
+  enable: true
+  override:
+    - file_option: java_string_check_utf8
+      value: true
+    - file_option: java_string_check_utf8
+      value: false
+      path: dir1

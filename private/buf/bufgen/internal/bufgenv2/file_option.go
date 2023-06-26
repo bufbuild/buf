@@ -200,11 +200,11 @@ func parseValueOverride[T string | bool](value interface{}, fileOption FileOptio
 func parseValueOverrideOptmizeMode(override interface{}, fileOption FileOption) (bufimagemodifyv2.Override, error) {
 	optimizeModeName, ok := override.(string)
 	if !ok {
-		return nil, fmt.Errorf("a valid optimize mode string is required for %v", fileOption)
+		return nil, fmt.Errorf("invalid override for %v", fileOption)
 	}
 	optimizeModeEnum, ok := descriptorpb.FileOptions_OptimizeMode_value[optimizeModeName]
 	if !ok {
-		return nil, fmt.Errorf("invalid optimize mode %s set for %v", optimizeModeName, fileOption)
+		return nil, fmt.Errorf("%v: %s is not a valid optmize_for value", fileOption, optimizeModeName)
 	}
 	optimizeMode := descriptorpb.FileOptions_OptimizeMode(optimizeModeEnum)
 	return bufimagemodifyv2.NewValueOverride[descriptorpb.FileOptions_OptimizeMode](optimizeMode), nil
