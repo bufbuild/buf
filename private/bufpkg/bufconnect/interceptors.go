@@ -17,6 +17,7 @@ package bufconnect
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/bufbuild/buf/private/pkg/app/applog"
@@ -60,7 +61,12 @@ func NewCLIWarningInterceptor(container applog.Container) connect.UnaryIntercept
 func logWarningFromHeader(container applog.Container, header http.Header) {
 	encoded := header.Get(CLIWarningHeaderName)
 	if encoded != "" {
-		if warning, err := connect.DecodeBinaryHeader(encoded); err == nil && len(warning) > 0 {
+		warning, err := connect.DecodeBinaryHeader(encoded)
+		if err != nil {
+			container.Logger().Debug(fmt.Errorf("failed to decode warning header: %w", err).Error())
+			return
+		}
+		if len(warning) > 0 {
 			container.Logger().Warn(string(warning))
 		}
 	}
