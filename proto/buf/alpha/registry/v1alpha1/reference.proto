@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/git_metadata.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
@@ -58,6 +59,11 @@ service ReferenceService {
   rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // ListGitCommitMetadataForReference takes a string reference and returns all the git commit
+  // metadata associated with the resolved reference commit.
+  rpc ListGitCommitMetadataForReference(ListGitCommitMetadataForReferenceRequest) returns (ListGitCommitMetadataForReferenceResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetReferenceByNameRequest {
@@ -71,4 +77,18 @@ message GetReferenceByNameRequest {
 
 message GetReferenceByNameResponse {
   Reference reference = 1;
+}
+
+message ListGitCommitMetadataForReferenceRequest {
+  // Name of the requested reference.
+  string name = 1;
+  // Owner of the repository the reference belongs to.
+  string owner = 2;
+  // Name of the repository the reference belongs to.
+  string repository_name = 3;
+}
+
+message ListGitCommitMetadataForReferenceResponse {
+  // List of git commits and metadata associated with the resolved reference.
+  repeated GitCommitMetadata git_commit_metadatas = 1;
 }
