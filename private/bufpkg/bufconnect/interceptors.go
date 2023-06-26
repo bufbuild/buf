@@ -46,8 +46,7 @@ func NewCLIWarningInterceptor(container applog.Container) connect.UnaryIntercept
 			resp, err := next(ctx, req)
 			if resp != nil && resp.Header() != nil {
 				logWarningFromHeader(container, resp.Header())
-			}
-			if err != nil {
+			} else if err != nil {
 				if connectErr := new(connect.Error); errors.As(err, &connectErr) {
 					logWarningFromHeader(container, connectErr.Meta())
 				}
