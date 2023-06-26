@@ -536,6 +536,61 @@ func TestModifySingleOption(t *testing.T) {
 			shouldKeepSourceCodeInfo: true,
 			assertFunc:               assertJavaMultipleFiles,
 		},
+		{
+			description:             "Modify Java Outer Class Name on a file with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaOuterClassname,
+			fileOptionPath:          internal.JavaOuterClassnamePath,
+			override:                NewValueOverride("OverrideClass"),
+			expectedValue:           "OverrideClass",
+			assertFunc:              assertJavaOuterClassName,
+		},
+		{
+			description:             "Modify Java Outer Class Name with nil on a file with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaOuterClassname,
+			fileOptionPath:          internal.JavaOuterClassnamePath,
+			override:                nil,
+			expectedValue:           "AProto",
+			assertFunc:              assertJavaOuterClassName,
+		},
+		{
+			description:    "Modify Java Outer Class Name with all options and empty proto package",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyJavaOuterClassname,
+			fileOptionPath: internal.JavaOuterClassnamePath,
+			override:       NewValueOverride("OverrideOuter"),
+			expectedValue:  "OverrideOuter",
+			assertFunc:     assertJavaOuterClassName,
+		},
+		{
+			description:             "Modify Java Outer Class Name on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaOuterClassname,
+			fileOptionPath:          internal.JavaOuterClassnamePath,
+			override:                NewValueOverride("OverrideValue"),
+			expectedValue:           "OverrideValue",
+			assertFunc:              assertJavaOuterClassName,
+		},
+		{
+			description:              "Modify Java Outer Class Name on a wkt file",
+			subDir:                   "wktimport",
+			file:                     "google/protobuf/timestamp.proto",
+			fileHasNoSourceCodeInfo:  true,
+			modifyFunc:               ModifyJavaOuterClassname,
+			fileOptionPath:           internal.JavaOuterClassnamePath,
+			override:                 NewValueOverride("OverrideValue"),
+			expectedValue:            "TimestampProto",
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertJavaOuterClassName,
+		},
 	}
 	for _, test := range tests {
 		test := test
@@ -548,6 +603,10 @@ func TestModifySingleOption(t *testing.T) {
 					filepath.Join(baseDir, test.subDir),
 					true,
 				)
+				markSweeper := NewMarkSweeper(image)
+				require.NotNil(t, markSweeper)
+				imageFile := image.GetFile(test.file)
+				require.NotNil(t, imageFile)
 				if test.fileHasNoSourceCodeInfo {
 					bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmpty(
 						t,
@@ -557,16 +616,12 @@ func TestModifySingleOption(t *testing.T) {
 						bufimagemodifytesting.AssertSourceCodeInfoWithIgnoreWKT(),
 					)
 				} else {
-					bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmpty(
+					bufimagemodifytesting.AssertFileOptionSourceCodeInfoNotEmptyForFile(
 						t,
-						image,
+						imageFile,
 						test.fileOptionPath,
 					)
 				}
-				markSweeper := NewMarkSweeper(image)
-				require.NotNil(t, markSweeper)
-				imageFile := image.GetFile(test.file)
-				require.NotNil(t, imageFile)
 				err := test.modifyFunc(
 					markSweeper,
 					imageFile,
@@ -716,4 +771,8 @@ func assertGoPackage(t *testing.T, expectedValue interface{}, descriptor *descri
 
 func assertJavaMultipleFiles(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetJavaMultipleFiles())
+}
+
+func assertJavaOuterClassName(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+	assert.Equal(t, expectedValue, descriptor.GetOptions().GetJavaOuterClassname())
 }
