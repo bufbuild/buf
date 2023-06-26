@@ -53,11 +53,54 @@ func applyManagementForFile(
 		// our default value for the option, or leave the option alone, implicitly
 		// using Protobuf's default value.
 		switch fileOption {
+		case FileOptionCcEnableArenas:
+			if err := bufimagemodifyv2.ModifyCcEnableArenas(marker, imageFile, override); err != nil {
+				return err
+			}
+		case FileOptionCsharpNamespace:
+			if err := bufimagemodifyv2.ModifyCsharpNamespace(marker, imageFile, override); err != nil {
+				return err
+			}
+		case FileOptionGoPackage:
+			if err := bufimagemodifyv2.ModifyGoPackage(marker, imageFile, override); err != nil {
+				return err
+			}
+		case FileOptionJavaMultipleFiles:
+			if err := bufimagemodifyv2.ModifyJavaMultipleFiles(marker, imageFile, override); err != nil {
+				return err
+			}
+		case FileOptionJavaOuterClassname:
+			if err := bufimagemodifyv2.ModifyJavaOuterClassname(marker, imageFile, override); err != nil {
+				return err
+			}
 		case FileOptionJavaPackage:
 			if err := bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, override); err != nil {
 				return err
 			}
-		// TODO: do the rest
+		case FileOptionJavaStringCheckUtf8:
+			if err := bufimagemodifyv2.ModifyJavaStringCheckUTF8(marker, imageFile, override); err != nil {
+				return err
+			}
+		case FileOptionObjcClassPrefix:
+			if err := bufimagemodifyv2.ModifyObjcClassPrefix(marker, imageFile, override); err != nil {
+				return err
+			}
+		case FileOptionOptimizeFor:
+			if err := bufimagemodifyv2.ModifyOptimizeFor(marker, imageFile, override); err != nil {
+				return err
+			}
+		case FileOptionPhpMetadataNamespace:
+			if err := bufimagemodifyv2.ModifyPhpMetadataNamespace(marker, imageFile, override); err != nil {
+				return err
+			}
+		case FileOptionPhpNamespace:
+			if err := bufimagemodifyv2.ModifyPhpNamespace(marker, imageFile, override); err != nil {
+				return err
+			}
+		case FileOptionRubyPackage:
+			if err := bufimagemodifyv2.ModifyRubyPackage(marker, imageFile, override); err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("unknown FileOption: %q", fileOption)
 		}

@@ -28,19 +28,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// TODO: remove this
-func SilenceLinter() {
-	empty := ExternalConfigV2{}
-	_, _ = newManagedConfig(empty.Managed)
-	_ = validateExternalManagedConfigV2(empty.Managed)
-	_, _ = newDisabledFunc(ExternalManagedDisableConfigV2{})
-	_, _ = newOverrideFunc(ExternalManagedOverrideConfigV2{})
-	mergeDisabledFuncs(nil)
-	mergeOverrideFuncs(nil)
-	mergeFileOptionToOverrideFuncs(nil)
-	_ = applyManagement(nil, nil)
-}
-
 // TODO: unexport these names
 
 // Config is a configuration.

@@ -100,30 +100,40 @@ var (
 			allowPrefix:            true,
 			valueOverrideParseFunc: parseValueOverride[string],
 		},
-		// TODO:
-		FileOptionJavaOuterClassname: {},
-		// TODO:
-		FileOptionJavaMultipleFiles: {},
-		// TODO:
-		FileOptionJavaStringCheckUtf8: {},
+		FileOptionJavaOuterClassname: {
+			valueOverrideParseFunc: parseValueOverride[string],
+		},
+		FileOptionJavaMultipleFiles: {
+			valueOverrideParseFunc: parseValueOverride[bool],
+		},
+		FileOptionJavaStringCheckUtf8: {
+			valueOverrideParseFunc: parseValueOverride[bool],
+		},
 		FileOptionOptimizeFor: {
 			valueOverrideParseFunc: parseValueOverrideOptmizeMode,
 		},
-		// TODO:
-		FileOptionGoPackage: {},
+		FileOptionGoPackage: {
+			allowPrefix:            true,
+			valueOverrideParseFunc: parseValueOverride[string],
+		},
 		FileOptionCcEnableArenas: {
 			valueOverrideParseFunc: parseValueOverride[bool],
 		},
-		// TODO:
-		FileOptionObjcClassPrefix: {},
-		// TODO:
-		FileOptionCsharpNamespace: {},
-		// TODO:
-		FileOptionPhpNamespace: {},
-		// TODO:
-		FileOptionPhpMetadataNamespace: {},
-		// TODO:
-		FileOptionRubyPackage: {},
+		FileOptionObjcClassPrefix: {
+			valueOverrideParseFunc: parseValueOverride[string],
+		},
+		FileOptionCsharpNamespace: {
+			valueOverrideParseFunc: parseValueOverride[string],
+		},
+		FileOptionPhpNamespace: {
+			valueOverrideParseFunc: parseValueOverride[string],
+		},
+		FileOptionPhpMetadataNamespace: {
+			valueOverrideParseFunc: parseValueOverride[string],
+		},
+		FileOptionRubyPackage: {
+			valueOverrideParseFunc: parseValueOverride[string],
+		},
 	}
 )
 

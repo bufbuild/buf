@@ -166,7 +166,14 @@ func (g *Generator) Generate(
 		)
 	}
 	for _, inputImage := range inputImages {
-		// TODO: modify this image
+		if genConfig.Managed != nil {
+			if err := applyManagement(
+				inputImage,
+				genConfig.Managed,
+			); err != nil {
+				return err
+			}
+		}
 		if err := g.generator.Generate(
 			ctx,
 			container,
