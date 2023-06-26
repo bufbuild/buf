@@ -1,0 +1,15 @@
+version: v2
+plugins:
+  - binary: protoc-gen-go
+    out: gen/out
+managed:
+  enable: true
+  override:
+    - file_option: csharp_namespace
+      value: ValueDefault
+    - file_option: csharp_namespace
+      value: ValuePath
+      path: dir1
+    - file_option: csharp_namespace
+      value: ValueMod
+      module: buf.build/acme/weather

@@ -693,7 +693,7 @@ func TestManagedConfig(t *testing.T) {
 		expectedOverrideResults map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override
 	}{
 		{
-			testName: "Test override",
+			testName: "Test Override and Disable",
 			file:     filepath.Join("managed", "java_package"),
 			expectedDisableResults: map[FileOption]map[ImageFileIdentity]bool{
 				FileOptionJavaPackage: {
@@ -758,7 +758,7 @@ func TestManagedConfig(t *testing.T) {
 			},
 		},
 		{
-			testName: "Test CC Enable arenas",
+			testName: "Test CC Enable Arenas Success",
 			file:     filepath.Join("managed", "cc_enable_arenas"),
 			expectedDisableResults: map[FileOption]map[ImageFileIdentity]bool{
 				FileOptionCcEnableArenas: {
@@ -801,6 +801,24 @@ func TestManagedConfig(t *testing.T) {
 					&fakeImageFileIdentity{
 						path: "m/k/b.proto",
 					}: bufimagemodifyv2.NewValueOverride(false),
+				},
+			},
+		},
+		{
+			testName:               "Test Csharp Namespace Success",
+			file:                   filepath.Join("managed", "csharp_namespace"),
+			expectedDisableResults: nil,
+			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+				FileOptionCsharpNamespace: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewValueOverride("ValueDefault"),
+					&fakeImageFileIdentity{
+						path: "dir1/a.proto",
+					}: bufimagemodifyv2.NewValueOverride("ValuePath"),
+					&fakeImageFileIdentity{
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride("ValueMod"),
 				},
 			},
 		},
@@ -1052,6 +1070,16 @@ func TestConfigError(t *testing.T) {
 			testName:      "Test prefix cannot appear along with value for cc enable arenas",
 			file:          filepath.Join("managed", "cc_enable_arenas_error_3"),
 			expectedError: "prefix is not allowed for cc_enable_arenas",
+		},
+		{
+			testName:      "Test prefix not allowed for csharp namespace",
+			file:          filepath.Join("managed", "csharp_namespace_error_1"),
+			expectedError: "prefix is not allowed for csharp_namespace",
+		},
+		{
+			testName:      "Test prefix not allowed for csharp namespace",
+			file:          filepath.Join("managed", "csharp_namespace_error_2"),
+			expectedError: newInvalidOverrideMessage("csharp_namespace"),
 		},
 	}
 

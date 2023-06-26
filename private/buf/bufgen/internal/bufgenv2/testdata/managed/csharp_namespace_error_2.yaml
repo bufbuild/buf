@@ -1,0 +1,10 @@
+version: v2
+plugins:
+  - binary: protoc-gen-go
+    out: gen/out
+managed:
+  enable: true
+  override:
+    - file_option: csharp_namespace
+      # integer is not a valid value for csharp_namespace
+      value: 1
