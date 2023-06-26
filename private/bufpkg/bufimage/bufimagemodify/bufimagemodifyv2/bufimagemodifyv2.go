@@ -252,7 +252,7 @@ func ModifyJavaOuterClassname(
 	return nil
 }
 
-func ModifyJavaStringCheck(
+func ModifyJavaStringCheckUTF8(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	override Override,

@@ -524,13 +524,12 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:              assertJavaMultipleFiles,
 		},
 		{
-			description:             "Modify Java Multiple Files with wkt",
-			subDir:                  "wktimport",
-			file:                    "google/protobuf/timestamp.proto",
-			fileHasNoSourceCodeInfo: true,
-			modifyFunc:              ModifyJavaMultipleFiles,
-			fileOptionPath:          internal.JavaMultipleFilesPath,
-			override:                NewValueOverride(false),
+			description:    "Modify Java Multiple Files with wkt",
+			subDir:         "wktimport",
+			file:           "google/protobuf/timestamp.proto",
+			modifyFunc:     ModifyJavaMultipleFiles,
+			fileOptionPath: internal.JavaMultipleFilesPath,
+			override:       NewValueOverride(false),
 			// should take no effect
 			expectedValue:            true,
 			shouldKeepSourceCodeInfo: true,
@@ -583,13 +582,99 @@ func TestModifySingleOption(t *testing.T) {
 			description:              "Modify Java Outer Class Name on a wkt file",
 			subDir:                   "wktimport",
 			file:                     "google/protobuf/timestamp.proto",
-			fileHasNoSourceCodeInfo:  true,
 			modifyFunc:               ModifyJavaOuterClassname,
 			fileOptionPath:           internal.JavaOuterClassnamePath,
 			override:                 NewValueOverride("OverrideValue"),
 			expectedValue:            "TimestampProto",
 			shouldKeepSourceCodeInfo: true,
 			assertFunc:               assertJavaOuterClassName,
+		},
+		{
+			description:             "Modify Java String Check UTF8 to true on file with empty options and empty proto package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaStringCheckUTF8,
+			fileOptionPath:          internal.JavaStringCheckUtf8Path,
+			override:                NewValueOverride(true),
+			expectedValue:           true,
+			assertFunc:              assertJavaStringCheckUTF8,
+		},
+		{
+			description:             "Modify Java String Check UTF8 to false on file with empty options and empty proto package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaStringCheckUTF8,
+			fileOptionPath:          internal.JavaStringCheckUtf8Path,
+			override:                NewValueOverride(false),
+			expectedValue:           false,
+			assertFunc:              assertJavaStringCheckUTF8,
+		},
+		{
+			description:             "Modify Java String Check UTF8 with nil on file with empty options and empty proto package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaStringCheckUTF8,
+			fileOptionPath:          internal.JavaStringCheckUtf8Path,
+			override:                nil,
+			expectedValue:           false,
+			assertFunc:              assertJavaStringCheckUTF8,
+		},
+		{
+			description:    "Modify Java String Check UTF8 on file with all options and empty proto package",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyJavaStringCheckUTF8,
+			fileOptionPath: internal.JavaStringCheckUtf8Path,
+			override:       NewValueOverride(true),
+			expectedValue:  true,
+			assertFunc:     assertJavaStringCheckUTF8,
+		},
+		{
+			description:              "Modify Java String Check UTF8 with nil on file with all options and empty proto package",
+			subDir:                   "alloptions",
+			file:                     "a.proto",
+			modifyFunc:               ModifyJavaStringCheckUTF8,
+			fileOptionPath:           internal.JavaStringCheckUtf8Path,
+			override:                 nil,
+			expectedValue:            false,
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertJavaStringCheckUTF8,
+		},
+		{
+			description:              "Modify Java String Check UTF8 with false on file with all options and empty proto package",
+			subDir:                   "alloptions",
+			file:                     "a.proto",
+			modifyFunc:               ModifyJavaStringCheckUTF8,
+			fileOptionPath:           internal.JavaStringCheckUtf8Path,
+			override:                 NewValueOverride(false),
+			expectedValue:            false,
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertJavaStringCheckUTF8,
+		},
+		{
+			description:             "Modify Java String Check UTF8 on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaStringCheckUTF8,
+			fileOptionPath:          internal.JavaStringCheckUtf8Path,
+			override:                NewValueOverride(true),
+			expectedValue:           true,
+			assertFunc:              assertJavaStringCheckUTF8,
+		},
+		{
+			description:             "Modify Java String Check UTF8 on a wkt file",
+			subDir:                  "wktimport",
+			file:                    "google/protobuf/timestamp.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyJavaStringCheckUTF8,
+			fileOptionPath:          internal.JavaStringCheckUtf8Path,
+			override:                NewValueOverride(true),
+			expectedValue:           false,
+			assertFunc:              assertJavaStringCheckUTF8,
 		},
 	}
 	for _, test := range tests {
@@ -639,10 +724,9 @@ func TestModifySingleOption(t *testing.T) {
 						test.fileOptionPath,
 					)
 				} else {
-					bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmptyOnlyForFile(
+					bufimagemodifytesting.AssertFileOptionSourceCodeInfoEmptyForFile(
 						t,
-						image,
-						test.file,
+						imageFile,
 						test.fileOptionPath,
 						true,
 					)
@@ -775,4 +859,8 @@ func assertJavaMultipleFiles(t *testing.T, expectedValue interface{}, descriptor
 
 func assertJavaOuterClassName(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetJavaOuterClassname())
+}
+
+func assertJavaStringCheckUTF8(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+	assert.Equal(t, expectedValue, descriptor.GetOptions().GetJavaStringCheckUtf8())
 }

@@ -85,41 +85,30 @@ type assertSourceCodeInfoOptions struct {
 	ignoreWKT bool
 }
 
-// AssertFileOptionSourceCodeInfoEmptyOnlyForFile asserts that the source code
+// AssertFileOptionSourceCodeInfoEmptyForFile asserts that the source code
 // info for the given file option is not present for the given file, which must
 // exist, and that all other files in the image has this path in source code info.
-func AssertFileOptionSourceCodeInfoEmptyOnlyForFile(
+func AssertFileOptionSourceCodeInfoEmptyForFile(
 	t *testing.T,
-	image bufimage.Image,
-	fileName string,
+	imageFile bufimage.ImageFile,
 	fileOptionPath []int32,
 	includeSourceInfo bool,
 ) {
-	fileChecked := false
-	for _, imageFile := range image.Files() {
-		descriptor := imageFile.Proto()
+	descriptor := imageFile.Proto()
 
-		if !includeSourceInfo {
-			assert.Empty(t, descriptor.SourceCodeInfo)
-			continue
-		}
+	if !includeSourceInfo {
+		assert.Empty(t, descriptor.SourceCodeInfo)
+		return
+	}
 
-		var hasFileOption bool
-		for _, location := range descriptor.SourceCodeInfo.Location {
-			if len(location.Path) > 0 && internal.Int32SliceIsEqual(location.Path, fileOptionPath) {
-				hasFileOption = true
-				break
-			}
-		}
-
-		if fileName == imageFile.Path() {
-			fileChecked = true
-			assert.False(t, hasFileOption)
-		} else {
-			assert.True(t, hasFileOption)
+	var hasFileOption bool
+	for _, location := range descriptor.SourceCodeInfo.Location {
+		if len(location.Path) > 0 && internal.Int32SliceIsEqual(location.Path, fileOptionPath) {
+			hasFileOption = true
+			break
 		}
 	}
-	assert.True(t, fileChecked)
+	assert.False(t, hasFileOption)
 }
 
 // Asserts the source code info location for the given file option path is present.
