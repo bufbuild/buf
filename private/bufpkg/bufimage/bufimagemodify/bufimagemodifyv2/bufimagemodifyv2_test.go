@@ -930,6 +930,79 @@ func TestModifySingleOption(t *testing.T) {
 			expectedValue:           "",
 			assertFunc:              assertPhpMetadataNamespace,
 		},
+		{
+			description:             "Modify Ruby package on a file with empty options and empty packages",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyRubyPackage,
+			fileOptionPath:          internal.RubyPackagePath,
+			override:                NewValueOverride("valueoverride"),
+			expectedValue:           "valueoverride",
+			assertFunc:              assertRubyPackage,
+		},
+		{
+			description:    "Modify Ruby package with nil on a file with a package name with one part",
+			subDir:         filepath.Join("rubyoptions", "single"),
+			file:           "ruby.proto",
+			modifyFunc:     ModifyRubyPackage,
+			fileOptionPath: internal.RubyPackagePath,
+			override:       nil,
+			expectedValue:  `Acme::V1`,
+			assertFunc:     assertRubyPackage,
+		},
+		{
+			description:    "Modify Ruby package with nil on a file with a package name with two parts",
+			subDir:         filepath.Join("rubyoptions", "double"),
+			file:           "ruby.proto",
+			modifyFunc:     ModifyRubyPackage,
+			fileOptionPath: internal.RubyPackagePath,
+			override:       nil,
+			expectedValue:  `Acme::Weather::V1`,
+			assertFunc:     assertRubyPackage,
+		},
+		{
+			description:    "Modify Ruby package with nil on a file with a package name with three parts",
+			subDir:         filepath.Join("rubyoptions", "triple"),
+			file:           "ruby.proto",
+			modifyFunc:     ModifyRubyPackage,
+			fileOptionPath: internal.RubyPackagePath,
+			override:       nil,
+			expectedValue:  `Acme::Weather::Data::V1`,
+			assertFunc:     assertRubyPackage,
+		},
+		{
+			description:    "Modify Ruby package with nil on a file with a package name with underscore",
+			subDir:         filepath.Join("rubyoptions", "underscore"),
+			file:           "ruby.proto",
+			modifyFunc:     ModifyRubyPackage,
+			fileOptionPath: internal.RubyPackagePath,
+			override:       nil,
+			expectedValue:  `Acme::Weather::FooBar::V1`,
+			assertFunc:     assertRubyPackage,
+		},
+		{
+			description:             "Modify Ruby package on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyRubyPackage,
+			fileOptionPath:          internal.RubyPackagePath,
+			override:                NewValueOverride("Override"),
+			expectedValue:           "Override",
+			assertFunc:              assertRubyPackage,
+		},
+		{
+			description:             "Modify Ruby package on a wkt file",
+			subDir:                  "wktimport",
+			file:                    "google/protobuf/timestamp.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyRubyPackage,
+			fileOptionPath:          internal.RubyPackagePath,
+			override:                NewValueOverride("Override"),
+			expectedValue:           "",
+			assertFunc:              assertRubyPackage,
+		},
 	}
 	for _, test := range tests {
 		test := test
@@ -1129,4 +1202,8 @@ func assertOptimizeFor(t *testing.T, expectedValue interface{}, descriptor *desc
 
 func assertPhpMetadataNamespace(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetPhpMetadataNamespace())
+}
+
+func assertRubyPackage(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+	assert.Equal(t, expectedValue, descriptor.GetOptions().GetRubyPackage())
 }
