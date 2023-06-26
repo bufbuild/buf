@@ -931,6 +931,48 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:              assertPhpMetadataNamespace,
 		},
 		{
+			description:    "Modify Php Namespace on a file with empty options",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyPhpNamespace,
+			fileOptionPath: internal.PhpNamespacePath,
+			override:       NewValueOverride("ValueOverride"),
+			expectedValue:  "ValueOverride",
+			assertFunc:     assertPhpNamespace,
+		},
+		{
+			description:             "Modify Php Namespace on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyPhpNamespace,
+			fileOptionPath:          internal.PhpNamespacePath,
+			override:                NewValueOverride("ValueOverride"),
+			expectedValue:           "ValueOverride",
+			assertFunc:              assertPhpNamespace,
+		},
+		{
+			description:    "Modify Php Namespace default value",
+			subDir:         filepath.Join("phpoptions", "double"),
+			file:           "php.proto",
+			modifyFunc:     ModifyPhpNamespace,
+			fileOptionPath: internal.PhpNamespacePath,
+			override:       nil,
+			expectedValue:  `Acme\Weather\V1`,
+			assertFunc:     assertPhpNamespace,
+		},
+		{
+			description:             "Modify Php Namespace on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "google/protobuf/timestamp.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyPhpNamespace,
+			fileOptionPath:          internal.PhpNamespacePath,
+			override:                NewValueOverride("ValueOverride"),
+			expectedValue:           "",
+			assertFunc:              assertPhpNamespace,
+		},
+		{
 			description:             "Modify Ruby package on a file with empty options and empty packages",
 			subDir:                  "emptyoptions",
 			file:                    "a.proto",
@@ -1202,6 +1244,10 @@ func assertOptimizeFor(t *testing.T, expectedValue interface{}, descriptor *desc
 
 func assertPhpMetadataNamespace(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetPhpMetadataNamespace())
+}
+
+func assertPhpNamespace(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+	assert.Equal(t, expectedValue, descriptor.GetOptions().GetPhpNamespace())
 }
 
 func assertRubyPackage(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
