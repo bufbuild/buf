@@ -676,6 +676,78 @@ func TestModifySingleOption(t *testing.T) {
 			expectedValue:           false,
 			assertFunc:              assertJavaStringCheckUTF8,
 		},
+		{
+			description:             "Modify Objc Class Prefix on file with empty options and empty proto package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyObjcClassPrefix,
+			fileOptionPath:          internal.ObjcClassPrefixPath,
+			override:                NewValueOverride("Override"),
+			expectedValue:           "Override",
+			assertFunc:              assertObjcClassPrefix,
+		},
+		{
+			description:             "Modify Objc Class Prefix with nil on file with empty options and empty proto package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyObjcClassPrefix,
+			fileOptionPath:          internal.ObjcClassPrefixPath,
+			override:                nil,
+			expectedValue:           "",
+			assertFunc:              assertObjcClassPrefix,
+		},
+		{
+			description:    "Modify Objc Class Prefix with nil on package name with one part and version",
+			subDir:         filepath.Join("objcoptions", "single"),
+			file:           "objc.proto",
+			modifyFunc:     ModifyObjcClassPrefix,
+			fileOptionPath: internal.ObjcClassPrefixPath,
+			override:       nil,
+			expectedValue:  "AXX",
+			assertFunc:     assertObjcClassPrefix,
+		},
+		{
+			description:    "Modify Objc Class Prefix with nil on package name with two parts and version",
+			subDir:         filepath.Join("objcoptions", "double"),
+			file:           "objc.proto",
+			modifyFunc:     ModifyObjcClassPrefix,
+			fileOptionPath: internal.ObjcClassPrefixPath,
+			override:       nil,
+			expectedValue:  "AWX",
+			assertFunc:     assertObjcClassPrefix,
+		},
+		{
+			description:    "Modify Objc Class Prefix with nil on package name with three parts and a version",
+			subDir:         filepath.Join("objcoptions", "triple"),
+			file:           "objc.proto",
+			modifyFunc:     ModifyObjcClassPrefix,
+			fileOptionPath: internal.ObjcClassPrefixPath,
+			override:       nil,
+			expectedValue:  "AWD",
+			assertFunc:     assertObjcClassPrefix,
+		},
+		{
+			description:    "Modify Objc Class Prefix with nil on package name with three parts without version",
+			subDir:         filepath.Join("objcoptions", "unversioned"),
+			file:           "objc.proto",
+			modifyFunc:     ModifyObjcClassPrefix,
+			fileOptionPath: internal.ObjcClassPrefixPath,
+			override:       nil,
+			expectedValue:  "AWD",
+			assertFunc:     assertObjcClassPrefix,
+		},
+		{
+			description:    "Modify Objc Class Prefix with nil on google protobuf file",
+			subDir:         filepath.Join("objcoptions", "gpb"),
+			file:           "objc.proto",
+			modifyFunc:     ModifyObjcClassPrefix,
+			fileOptionPath: internal.ObjcClassPrefixPath,
+			override:       nil,
+			expectedValue:  "GPX",
+			assertFunc:     assertObjcClassPrefix,
+		},
 	}
 	for _, test := range tests {
 		test := test
@@ -863,4 +935,8 @@ func assertJavaOuterClassName(t *testing.T, expectedValue interface{}, descripto
 
 func assertJavaStringCheckUTF8(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetJavaStringCheckUtf8())
+}
+
+func assertObjcClassPrefix(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+	assert.Equal(t, expectedValue, descriptor.GetOptions().GetObjcClassPrefix())
 }
