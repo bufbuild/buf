@@ -404,7 +404,7 @@ func TestModifySingleOption(t *testing.T) {
 		{
 			description:    "Modify Go Package with prefix on file with go options and empty proto package",
 			subDir:         "gooptions",
-			file:           filepath.Join("somedir", "a.proto"),
+			file:           "somedir/a.proto",
 			modifyFunc:     ModifyGoPackage,
 			fileOptionPath: internal.GoPackagePath,
 			override:       NewPrefixOverride("prefixoverride"),
@@ -415,7 +415,7 @@ func TestModifySingleOption(t *testing.T) {
 		{
 			description:    "Modify Go Package with nil on file with go options and empty proto package",
 			subDir:         "gooptions",
-			file:           filepath.Join("somedir", "a.proto"),
+			file:           "somedir/a.proto",
 			modifyFunc:     ModifyGoPackage,
 			fileOptionPath: internal.GoPackagePath,
 			override:       nil,
