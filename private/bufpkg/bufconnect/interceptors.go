@@ -16,6 +16,8 @@ package bufconnect
 
 import (
 	"context"
+	"errors"
+	"net/http"
 
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/connect-go"
@@ -43,17 +45,26 @@ func NewCLIWarningInterceptor(container applog.Container) connect.UnaryIntercept
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 			resp, err := next(ctx, req)
 			if resp != nil && resp.Header() != nil {
-				encoded := resp.Header().Get(CLIWarningHeaderName)
-				if encoded != "" {
-					if warning, err := connect.DecodeBinaryHeader(encoded); err == nil && len(warning) > 0 {
-						container.Logger().Warn(string(warning))
-					}
+				logWarningFromHeader(container, resp.Header())
+			}
+			if err != nil {
+				if connectErr := new(connect.Error); errors.As(err, &connectErr) {
+					logWarningFromHeader(container, connectErr.Meta())
 				}
 			}
 			return resp, err
 		}
 	}
 	return interceptor
+}
+
+func logWarningFromHeader(container applog.Container, header http.Header) {
+	encoded := header.Get(CLIWarningHeaderName)
+	if encoded != "" {
+		if warning, err := connect.DecodeBinaryHeader(encoded); err == nil && len(warning) > 0 {
+			container.Logger().Warn(string(warning))
+		}
+	}
 }
 
 // TokenProvider finds the token for NewAuthorizationInterceptorProvider.
