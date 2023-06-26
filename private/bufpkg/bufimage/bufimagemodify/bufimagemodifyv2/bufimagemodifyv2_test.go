@@ -846,6 +846,90 @@ func TestModifySingleOption(t *testing.T) {
 			expectedValue:           descriptorpb.FileOptions_SPEED,
 			assertFunc:              assertOptimizeFor,
 		},
+		{
+			description:             "Modify Php metadata namespace with value on file with empty options and empty proto package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyPhpMetadataNamespace,
+			fileOptionPath:          internal.PhpMetadataNamespacePath,
+			override:                NewValueOverride("valueoverride"),
+			expectedValue:           "valueoverride",
+			assertFunc:              assertPhpMetadataNamespace,
+		},
+		{
+			description:             "Modify Php metadata namespace with nil on file with empty options and empty proto package",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyPhpMetadataNamespace,
+			fileOptionPath:          internal.PhpMetadataNamespacePath,
+			override:                nil,
+			expectedValue:           "",
+			assertFunc:              assertPhpMetadataNamespace,
+		},
+		{
+			description:    "Modify Php metadata namespace with nil on file with package name with one part",
+			subDir:         filepath.Join("phpoptions", "single"),
+			file:           "php.proto",
+			modifyFunc:     ModifyPhpMetadataNamespace,
+			fileOptionPath: internal.PhpMetadataNamespacePath,
+			override:       nil,
+			expectedValue:  `Acme\V1\GPBMetadata`,
+			assertFunc:     assertPhpMetadataNamespace,
+		},
+		{
+			description:    "Modify Php metadata namespace with nil on file with package name with two parts",
+			subDir:         filepath.Join("phpoptions", "double"),
+			file:           "php.proto",
+			modifyFunc:     ModifyPhpMetadataNamespace,
+			fileOptionPath: internal.PhpMetadataNamespacePath,
+			override:       nil,
+			expectedValue:  `Acme\Weather\V1\GPBMetadata`,
+			assertFunc:     assertPhpMetadataNamespace,
+		},
+		{
+			description:    "Modify Php metadata namespace with nil on file with package name with three parts",
+			subDir:         filepath.Join("phpoptions", "triple"),
+			file:           "php.proto",
+			modifyFunc:     ModifyPhpMetadataNamespace,
+			fileOptionPath: internal.PhpMetadataNamespacePath,
+			override:       nil,
+			expectedValue:  `Acme\Weather\Data\V1\GPBMetadata`,
+			assertFunc:     assertPhpMetadataNamespace,
+		},
+		{
+			description:    "Modify Php metadata namespace with nil on file with package name with a reserved keyword",
+			subDir:         filepath.Join("phpoptions", "reserved"),
+			file:           "php.proto",
+			modifyFunc:     ModifyPhpMetadataNamespace,
+			fileOptionPath: internal.PhpMetadataNamespacePath,
+			override:       nil,
+			expectedValue:  `Acme\Error_\V1\GPBMetadata`,
+			assertFunc:     assertPhpMetadataNamespace,
+		},
+		{
+			description:             "Modify Php metadata namespace on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyPhpMetadataNamespace,
+			fileOptionPath:          internal.PhpMetadataNamespacePath,
+			override:                NewValueOverride("Override"),
+			expectedValue:           "Override",
+			assertFunc:              assertPhpMetadataNamespace,
+		},
+		{
+			description:             "Modify Php metadata namespace on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "google/protobuf/timestamp.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyPhpMetadataNamespace,
+			fileOptionPath:          internal.PhpMetadataNamespacePath,
+			override:                NewValueOverride("Override"),
+			expectedValue:           "",
+			assertFunc:              assertPhpMetadataNamespace,
+		},
 	}
 	for _, test := range tests {
 		test := test
@@ -1041,4 +1125,8 @@ func assertObjcClassPrefix(t *testing.T, expectedValue interface{}, descriptor *
 
 func assertOptimizeFor(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetOptimizeFor())
+}
+
+func assertPhpMetadataNamespace(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+	assert.Equal(t, expectedValue, descriptor.GetOptions().GetPhpMetadataNamespace())
 }
