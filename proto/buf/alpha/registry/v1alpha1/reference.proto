@@ -89,6 +89,8 @@ message ListGitCommitMetadataForReferenceRequest {
 }
 
 message ListGitCommitMetadataForReferenceResponse {
+  // ID of the BSR commit the reference resolved to.
+  string commit_id = 1;
   // List of git commits and metadata associated with the resolved reference.
-  repeated GitCommitMetadata git_commit_metadatas = 1;
+  repeated GitCommitMetadata git_commit_metadatas = 2;
 }
