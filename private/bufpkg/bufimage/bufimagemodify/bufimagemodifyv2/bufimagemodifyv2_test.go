@@ -759,6 +759,93 @@ func TestModifySingleOption(t *testing.T) {
 			shouldKeepSourceCodeInfo: true,
 			assertFunc:               assertObjcClassPrefix,
 		},
+		{
+			description:             "Modify Optimize For to SPEED on a file with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyOptimizeFor,
+			fileOptionPath:          internal.OptimizeForPath,
+			override:                NewValueOverride(descriptorpb.FileOptions_SPEED),
+			expectedValue:           descriptorpb.FileOptions_SPEED,
+			assertFunc:              assertOptimizeFor,
+		},
+		{
+			description:             "Modify Optimize For to CODE_SIZE on a file with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyOptimizeFor,
+			fileOptionPath:          internal.OptimizeForPath,
+			override:                NewValueOverride(descriptorpb.FileOptions_CODE_SIZE),
+			expectedValue:           descriptorpb.FileOptions_CODE_SIZE,
+			assertFunc:              assertOptimizeFor,
+		},
+		{
+			description:             "Modify Optimize For to LITE_RUNTIME on a file with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyOptimizeFor,
+			fileOptionPath:          internal.OptimizeForPath,
+			override:                NewValueOverride(descriptorpb.FileOptions_LITE_RUNTIME),
+			expectedValue:           descriptorpb.FileOptions_LITE_RUNTIME,
+			assertFunc:              assertOptimizeFor,
+		},
+		{
+			description:             "Modify Optimize For with nil on a file with empty options",
+			subDir:                  "emptyoptions",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyOptimizeFor,
+			fileOptionPath:          internal.OptimizeForPath,
+			override:                nil,
+			expectedValue:           descriptorpb.FileOptions_SPEED,
+			assertFunc:              assertOptimizeFor,
+		},
+		{
+			description:    "Modify Optimize For to CODE_SIZE on a file with all options",
+			subDir:         "alloptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyOptimizeFor,
+			fileOptionPath: internal.OptimizeForPath,
+			override:       NewValueOverride(descriptorpb.FileOptions_CODE_SIZE),
+			expectedValue:  descriptorpb.FileOptions_CODE_SIZE,
+			assertFunc:     assertOptimizeFor,
+		},
+		{
+			description:              "Modify Optimize For to SPEED on a file with all options",
+			subDir:                   "alloptions",
+			file:                     "a.proto",
+			modifyFunc:               ModifyOptimizeFor,
+			fileOptionPath:           internal.OptimizeForPath,
+			override:                 NewValueOverride(descriptorpb.FileOptions_SPEED),
+			expectedValue:            descriptorpb.FileOptions_SPEED,
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertOptimizeFor,
+		},
+		{
+			description:             "Modify Optimize For to CODE_SIZE on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "a.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyOptimizeFor,
+			fileOptionPath:          internal.OptimizeForPath,
+			override:                NewValueOverride(descriptorpb.FileOptions_CODE_SIZE),
+			expectedValue:           descriptorpb.FileOptions_CODE_SIZE,
+			assertFunc:              assertOptimizeFor,
+		},
+		{
+			description:             "Modify Optimize For to CODE_SIZE on a file that imports wkt",
+			subDir:                  "wktimport",
+			file:                    "google/protobuf/timestamp.proto",
+			fileHasNoSourceCodeInfo: true,
+			modifyFunc:              ModifyOptimizeFor,
+			fileOptionPath:          internal.OptimizeForPath,
+			override:                NewValueOverride(descriptorpb.FileOptions_CODE_SIZE),
+			expectedValue:           descriptorpb.FileOptions_SPEED,
+			assertFunc:              assertOptimizeFor,
+		},
 	}
 	for _, test := range tests {
 		test := test
@@ -950,4 +1037,8 @@ func assertJavaStringCheckUTF8(t *testing.T, expectedValue interface{}, descript
 
 func assertObjcClassPrefix(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetObjcClassPrefix())
+}
+
+func assertOptimizeFor(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+	assert.Equal(t, expectedValue, descriptor.GetOptions().GetOptimizeFor())
 }
