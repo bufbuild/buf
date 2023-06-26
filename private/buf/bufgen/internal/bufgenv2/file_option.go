@@ -170,17 +170,20 @@ type parser struct {
 }
 
 func (p parser) parse(prefix *string, value interface{}, fileOption FileOption) (bufimagemodifyv2.Override, error) {
-	if prefix != nil && value != nil {
-		return nil, fmt.Errorf("%v: only one of value and prefix can be set", fileOption)
-	}
-	if prefix == nil && value == nil {
-		return nil, fmt.Errorf("%v: value or prefix must be set", fileOption)
-	}
 	if prefix != nil {
 		if !p.allowPrefix {
-			return nil, fmt.Errorf("%v: prefix is not allowed", fileOption)
+			return nil, fmt.Errorf("prefix is not allowed for %v", fileOption)
+		}
+		if value != nil {
+			return nil, fmt.Errorf("only one of value and prefix can be set for %v", fileOption)
 		}
 		return bufimagemodifyv2.NewPrefixOverride(*prefix), nil
+	}
+	if value == nil {
+		if p.allowPrefix {
+			return nil, fmt.Errorf("must provide override value or prefix for %v", fileOption)
+		}
+		return nil, fmt.Errorf("must provide override value for %v", fileOption)
 	}
 	return p.valueOverrideParseFunc(value, fileOption)
 }

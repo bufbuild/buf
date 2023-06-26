@@ -1,0 +1,10 @@
+version: v2
+plugins:
+  - binary: protoc-gen-go
+    out: gen/out
+managed:
+  enable: true
+  override:
+    - file_option: cc_enable_arenas
+      # prefix is not allowed for this option
+      prefix: value

@@ -1,0 +1,11 @@
+version: v2
+plugins:
+  - binary: protoc-gen-go
+    out: gen/out
+managed:
+  enable: true
+  override:
+    - file_option: java_package
+      # value and prefix cannot be set at the same time
+      value: Value
+      prefix: Prefix

@@ -1,0 +1,11 @@
+version: v2
+plugins:
+  - binary: protoc-gen-go
+    out: gen/out
+managed:
+  enable: true
+  override:
+    - file_option: cc_enable_arenas
+      # prefix should not appear
+      value: bool
+      prefix: px

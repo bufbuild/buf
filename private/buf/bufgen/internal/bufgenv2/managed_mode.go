@@ -15,7 +15,6 @@
 package bufgenv2
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -170,12 +169,6 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (overrideFu
 	if err != nil {
 		// This should never happen because we already validated that this is set and non-empty
 		return nil, err
-	}
-	if externalConfig.Prefix != nil && externalConfig.Value != nil {
-		return nil, errors.New("only one of value and prefix can be set")
-	}
-	if externalConfig.Prefix == nil && externalConfig.Value == nil {
-		return nil, errors.New("one of value and prefix must be set")
 	}
 	overrideParser, ok := fileOptionToParser[fileOption]
 	if !ok {

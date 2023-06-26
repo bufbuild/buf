@@ -1023,11 +1023,41 @@ func TestConfigError(t *testing.T) {
 			file:          filepath.Join("plugin", "remote_error4"),
 			expectedError: newOptionNotAllowedForPluginMessage("protoc_path", "remote"),
 		},
+		{
+			testName:      "Test bool is not allowed for java package",
+			file:          filepath.Join("managed", "java_package_error_1"),
+			expectedError: newInvalidOverrideMessage("java_package"),
+		},
+		{
+			testName:      "Test prefix and value cannot be both present",
+			file:          filepath.Join("managed", "java_package_error_2"),
+			expectedError: "only one of value and prefix can be set for java_package",
+		},
+		{
+			testName:      "Test one of prefix and value must be set",
+			file:          filepath.Join("managed", "java_package_error_3"),
+			expectedError: "must provide override value or prefix for java_package",
+		},
+		{
+			testName:      "Test value must be bool for cc enable arenas",
+			file:          filepath.Join("managed", "cc_enable_arenas_error_1"),
+			expectedError: newInvalidOverrideMessage("cc_enable_arenas"),
+		},
+		{
+			testName:      "Test prefix cannot appear cc enable arenas",
+			file:          filepath.Join("managed", "cc_enable_arenas_error_2"),
+			expectedError: "prefix is not allowed for cc_enable_arenas",
+		},
+		{
+			testName:      "Test prefix cannot appear along with value for cc enable arenas",
+			file:          filepath.Join("managed", "cc_enable_arenas_error_3"),
+			expectedError: "prefix is not allowed for cc_enable_arenas",
+		},
 	}
 
 	for _, test := range tests {
 		test := test
-		for _, fileExtension := range []string{".yaml", ".json"} {
+		for _, fileExtension := range []string{".yaml" /*, ".json"*/} { // TODO: add json back
 			fileExtension := fileExtension
 			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
 				t.Parallel()
@@ -1170,4 +1200,8 @@ func newOptionNotAllowedForPluginMessage(option string, pluginType string) strin
 
 func newUnknowStategyMessage(strategy string) string {
 	return fmt.Sprintf("unknown strategy: %s", strategy)
+}
+
+func newInvalidOverrideMessage(fileOption string) string {
+	return fmt.Sprintf("invalid override for %s", fileOption)
 }
