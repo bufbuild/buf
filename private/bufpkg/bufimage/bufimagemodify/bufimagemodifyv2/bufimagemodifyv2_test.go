@@ -748,6 +748,17 @@ func TestModifySingleOption(t *testing.T) {
 			expectedValue:  "GPX",
 			assertFunc:     assertObjcClassPrefix,
 		},
+		{
+			description:              "Modify Objc Class Prefix on a wkt file",
+			subDir:                   "wktimport",
+			file:                     "google/protobuf/timestamp.proto",
+			modifyFunc:               ModifyObjcClassPrefix,
+			fileOptionPath:           internal.ObjcClassPrefixPath,
+			override:                 NewValueOverride("Override"),
+			expectedValue:            "GPB",
+			shouldKeepSourceCodeInfo: true,
+			assertFunc:               assertObjcClassPrefix,
+		},
 	}
 	for _, test := range tests {
 		test := test
