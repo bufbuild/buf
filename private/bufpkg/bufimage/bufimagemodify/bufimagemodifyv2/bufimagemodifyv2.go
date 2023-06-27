@@ -42,6 +42,7 @@ type MarkSweeper interface {
 	Sweeper
 }
 
+// NewMarkSweeper returns a MarkSweeper.
 func NewMarkSweeper(image bufimage.Image) MarkSweeper {
 	return newMarkSweeper(image)
 }

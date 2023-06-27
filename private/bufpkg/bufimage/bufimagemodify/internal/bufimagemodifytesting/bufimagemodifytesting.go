@@ -79,6 +79,7 @@ func AssertSourceCodeInfoWithIgnoreWKT() AssertSourceCodeInfoOption {
 	}
 }
 
+// AssertSourceCodeInfoOption is an option for AssertFileOptionSourceCodeEmpty
 type AssertSourceCodeInfoOption func(*assertSourceCodeInfoOptions)
 
 type assertSourceCodeInfoOptions struct {
@@ -149,7 +150,8 @@ func AssertFileOptionSourceCodeInfoNotEmptyForFile(
 	assert.True(t, hasFileOption)
 }
 
-// GetTestImage returns an image from a directory.
+// GetTestImage returns an image from a directory, with a test remote, repository owner,
+// and repository name.
 func GetTestImage(
 	t *testing.T,
 	dirPath string,
