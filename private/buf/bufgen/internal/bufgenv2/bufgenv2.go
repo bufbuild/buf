@@ -208,7 +208,7 @@ func (m ExternalManagedConfigV2) isEmpty() bool {
 }
 
 func (m ExternalManagedConfigV2) isSpecified() bool {
-	return len(m.Disable) == 0 && len(m.Override) == 0
+	return len(m.Disable) > 0 || len(m.Override) > 0
 }
 
 // ExternalManagedDisableConfigV2 is an external configuration that disables file options in
