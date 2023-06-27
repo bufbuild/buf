@@ -375,7 +375,7 @@ func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			if internal.IsWellKnownType(imageFile) {
-				assert.Equal(t, internal.GetDefaultJavaOuterClassname(imageFile), descriptor.GetOptions().GetJavaOuterClassname())
+				assert.Equal(t, internal.DefaultJavaOuterClassname(imageFile), descriptor.GetOptions().GetJavaOuterClassname())
 				continue
 			}
 			assert.Equal(t,
@@ -399,7 +399,7 @@ func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			if internal.IsWellKnownType(imageFile) {
-				assert.Equal(t, internal.GetDefaultJavaOuterClassname(imageFile), descriptor.GetOptions().GetJavaOuterClassname())
+				assert.Equal(t, internal.DefaultJavaOuterClassname(imageFile), descriptor.GetOptions().GetJavaOuterClassname())
 				continue
 			}
 			assert.Equal(t,

@@ -28,6 +28,13 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+const (
+	// DefaultJavaMultipleFilesValue is the default value for the java_multiple_files modifier.
+	DefaultJavaMultipleFilesValue = true
+	// DefaultJavaPackagePrefix is the default java_package prefix used in the java_package modifier.
+	DefaultJavaPackagePrefix = "com"
+)
+
 var (
 	// CCEnableArenas is the SourceCodeInfo path for the cc_enable_arenas option.
 	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L420
@@ -65,161 +72,11 @@ var (
 	// RubyPackagePath is the SourceCodeInfo path for the ruby_package option.
 	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L453
 	RubyPackagePath = []int32{8, 45}
-)
-
-const (
-	// DefaultJavaMultipleFilesValue is the default value for the java_multiple_files modifier.
-	DefaultJavaMultipleFilesValue = true
-)
-
-// fileOptionPath is the path prefix used for FileOptions.
-// All file option locations are preceded by a location
-// with a path set to the fileOptionPath.
-// https://github.com/protocolbuffers/protobuf/blob/053966b4959bdd21e4a24e657bcb97cb9de9e8a4/src/google/protobuf/descriptor.proto#L80
-var fileOptionPath = []int32{8}
-
-func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeInfo, paths map[string]struct{}) error {
-	// We can't just match on an exact path match because the target
-	// file option's parent path elements would remain (i.e [8]).
-	// Instead, we perform an initial pass to validate that the paths
-	// are structured as expect, and collect all of the indices that
-	// we need to delete.
-	indices := make(map[int]struct{}, len(paths)*2)
-	for i, location := range sourceCodeInfo.Location {
-		if _, ok := paths[GetPathKey(location.Path)]; !ok {
-			continue
-		}
-		if i == 0 {
-			return fmt.Errorf("path %v must have a preceding parent path", location.Path)
-		}
-		if !Int32SliceIsEqual(sourceCodeInfo.Location[i-1].Path, fileOptionPath) {
-			return fmt.Errorf("path %v must have a preceding parent path equal to %v", location.Path, fileOptionPath)
-		}
-		// Add the target path and its parent.
-		indices[i-1] = struct{}{}
-		indices[i] = struct{}{}
-	}
-	// Now that we know exactly which indices to exclude, we can
-	// filter the SourceCodeInfo_Locations as needed.
-	locations := make(
-		[]*descriptorpb.SourceCodeInfo_Location,
-		0,
-		len(sourceCodeInfo.Location)-len(indices),
-	)
-	for i, location := range sourceCodeInfo.Location {
-		if _, ok := indices[i]; ok {
-			continue
-		}
-		locations = append(locations, location)
-	}
-	sourceCodeInfo.Location = locations
-	return nil
-}
-
-// Int32SliceIsEqual returns true if x and y contain the same elements.
-func Int32SliceIsEqual(x []int32, y []int32) bool {
-	if len(x) != len(y) {
-		return false
-	}
-	for i, elem := range x {
-		if elem != y[i] {
-			return false
-		}
-	}
-	return true
-}
-
-// GetPathKey returns a unique key for the given path.
-func GetPathKey(path []int32) string {
-	key := make([]byte, len(path)*4)
-	j := 0
-	for _, elem := range path {
-		key[j] = byte(elem)
-		key[j+1] = byte(elem >> 8)
-		key[j+2] = byte(elem >> 16)
-		key[j+3] = byte(elem >> 24)
-		j += 4
-	}
-	return string(key)
-}
-
-// IsWellKnownType returns true if the given path is one of the well-known types.
-func IsWellKnownType(imageFile bufimage.ImageFile) bool {
-	return datawkt.Exists(imageFile.Path())
-}
-
-// GetDefaultCsharpNamespace returns the csharp_namespace for the given ImageFile based on its
-// package declaration. If the image file doesn't have a package declaration, an
-// empty string is returned.
-func GetDefaultCsharpNamespace(imageFile bufimage.ImageFile) string {
-	pkg := imageFile.Proto().GetPackage()
-	if pkg == "" {
-		return ""
-	}
-	packageParts := strings.Split(pkg, ".")
-	for i, part := range packageParts {
-		packageParts[i] = stringutil.ToPascalCase(part)
-	}
-	return strings.Join(packageParts, ".")
-}
-
-// GoPackageImportPathForFile returns the go_package import path for the given
-// ImageFile. If the package contains a version suffix, and if there are more
-// than two components, concatenate the final two components. Otherwise, we
-// exclude the ';' separator and adopt the default behavior from the import path.
-//
-// For example, an ImageFile with `package acme.weather.v1;` will include `;weatherv1`
-// in the `go_package` declaration so that the generated package is named as such.
-func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix string) string {
-	goPackageImportPath := path.Join(importPathPrefix, path.Dir(imageFile.Path()))
-	packageName := imageFile.FileDescriptor().GetPackage()
-	if _, ok := protoversion.NewPackageVersionForPackage(packageName); ok {
-		parts := strings.Split(packageName, ".")
-		if len(parts) >= 2 {
-			goPackageImportPath += ";" + parts[len(parts)-2] + parts[len(parts)-1]
-		}
-	}
-	return goPackageImportPath
-}
-
-// GetDefaultJavaOuterClassname returns the default outer class name for an image file.
-func GetDefaultJavaOuterClassname(imageFile bufimage.ImageFile) string {
-	return stringutil.ToPascalCase(normalpath.Base(imageFile.Path()))
-}
-
-// GetDefaultObjcClassPrefixValue returns the objc_class_prefix for the given ImageFile based on its
-// package declaration. If the image file doesn't have a package declaration, an
-// empty string is returned.
-func GetDefaultObjcClassPrefixValue(imageFile bufimage.ImageFile) string {
-	pkg := imageFile.Proto().GetPackage()
-	if pkg == "" {
-		return ""
-	}
-	_, hasPackageVersion := protoversion.NewPackageVersionForPackage(pkg)
-	packageParts := strings.Split(pkg, ".")
-	var prefixParts []rune
-	for i, part := range packageParts {
-		// Check if last part is a version before appending.
-		if i == len(packageParts)-1 && hasPackageVersion {
-			continue
-		}
-		// Probably should never be a non-ASCII character,
-		// but why not support it just in case?
-		runeSlice := []rune(part)
-		prefixParts = append(prefixParts, unicode.ToUpper(runeSlice[0]))
-	}
-	for len(prefixParts) < 3 {
-		prefixParts = append(prefixParts, 'X')
-	}
-	prefix := string(prefixParts)
-	if prefix == "GPB" {
-		prefix = "GPX"
-	}
-	return prefix
-}
-
-var (
-
+	// fileOptionPath is the path prefix used for FileOptions.
+	// All file option locations are preceded by a location
+	// with a path set to the fileOptionPath.
+	// https://github.com/protocolbuffers/protobuf/blob/053966b4959bdd21e4a24e657bcb97cb9de9e8a4/src/google/protobuf/descriptor.proto#L80
+	fileOptionPath = []int32{8}
 	// Keywords and classes that could be produced by our heuristic.
 	// They must not be used in a php_namespace.
 	// Ref: https://www.php.net/manual/en/reserved.php
@@ -319,21 +176,179 @@ var (
 	}
 )
 
-// GetDefaultPhpMetadataNamespaceValue returns the php_metadata_namespace for the given ImageFile based on its
+// RemoveLocationsFromSourceCodeInfo removes from source code info the locations
+// that match the paths provided.
+func RemoveLocationsFromSourceCodeInfo(
+	sourceCodeInfo *descriptorpb.SourceCodeInfo,
+	paths map[string]struct{},
+) error {
+	// We can't just match on an exact path match because the target
+	// file option's parent path elements would remain (i.e [8]).
+	// Instead, we perform an initial pass to validate that the paths
+	// are structured as expect, and collect all of the indices that
+	// we need to delete.
+	indices := make(map[int]struct{}, len(paths)*2)
+	for i, location := range sourceCodeInfo.Location {
+		if _, ok := paths[GetPathKey(location.Path)]; !ok {
+			continue
+		}
+		if i == 0 {
+			return fmt.Errorf("path %v must have a preceding parent path", location.Path)
+		}
+		if !Int32SliceIsEqual(sourceCodeInfo.Location[i-1].Path, fileOptionPath) {
+			return fmt.Errorf("path %v must have a preceding parent path equal to %v", location.Path, fileOptionPath)
+		}
+		// Add the target path and its parent.
+		indices[i-1] = struct{}{}
+		indices[i] = struct{}{}
+	}
+	// Now that we know exactly which indices to exclude, we can
+	// filter the SourceCodeInfo_Locations as needed.
+	locations := make(
+		[]*descriptorpb.SourceCodeInfo_Location,
+		0,
+		len(sourceCodeInfo.Location)-len(indices),
+	)
+	for i, location := range sourceCodeInfo.Location {
+		if _, ok := indices[i]; ok {
+			continue
+		}
+		locations = append(locations, location)
+	}
+	sourceCodeInfo.Location = locations
+	return nil
+}
+
+// Int32SliceIsEqual returns true if x and y contain the same elements.
+func Int32SliceIsEqual(x []int32, y []int32) bool {
+	if len(x) != len(y) {
+		return false
+	}
+	for i, elem := range x {
+		if elem != y[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// GetPathKey returns a unique key for the given path.
+func GetPathKey(path []int32) string {
+	key := make([]byte, len(path)*4)
+	j := 0
+	for _, elem := range path {
+		key[j] = byte(elem)
+		key[j+1] = byte(elem >> 8)
+		key[j+2] = byte(elem >> 16)
+		key[j+3] = byte(elem >> 24)
+		j += 4
+	}
+	return string(key)
+}
+
+// IsWellKnownType returns true if the given path is one of the well-known types.
+func IsWellKnownType(imageFile bufimage.ImageFile) bool {
+	return datawkt.Exists(imageFile.Path())
+}
+
+// DefaultCsharpNamespace returns the csharp_namespace for the given ImageFile based on its
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
-func GetDefaultPhpMetadataNamespaceValue(imageFile bufimage.ImageFile) string {
-	phpNamespace := GetDefaultPhpNamespaceValue(imageFile)
+func DefaultCsharpNamespace(imageFile bufimage.ImageFile) string {
+	pkg := imageFile.Proto().GetPackage()
+	if pkg == "" {
+		return ""
+	}
+	packageParts := strings.Split(pkg, ".")
+	for i, part := range packageParts {
+		packageParts[i] = stringutil.ToPascalCase(part)
+	}
+	return strings.Join(packageParts, ".")
+}
+
+// GoPackageImportPathForFile returns the go_package import path for the given
+// ImageFile. If the package contains a version suffix, and if there are more
+// than two components, concatenate the final two components. Otherwise, we
+// exclude the ';' separator and adopt the default behavior from the import path.
+//
+// For example, an ImageFile with `package acme.weather.v1;` will include `;weatherv1`
+// in the `go_package` declaration so that the generated package is named as such.
+func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix string) string {
+	goPackageImportPath := path.Join(importPathPrefix, path.Dir(imageFile.Path()))
+	packageName := imageFile.FileDescriptor().GetPackage()
+	if _, ok := protoversion.NewPackageVersionForPackage(packageName); ok {
+		parts := strings.Split(packageName, ".")
+		if len(parts) >= 2 {
+			goPackageImportPath += ";" + parts[len(parts)-2] + parts[len(parts)-1]
+		}
+	}
+	return goPackageImportPath
+}
+
+// DefaultJavaOuterClassname returns the default outer class name for an image file.
+func DefaultJavaOuterClassname(imageFile bufimage.ImageFile) string {
+	return stringutil.ToPascalCase(normalpath.Base(imageFile.Path()))
+}
+
+// JavaPackageValue returns the java_package for the given ImageFile based on its
+// package declaration. If the image file doesn't have a package declaration, an
+// empty string is returned.
+func JavaPackageValue(imageFile bufimage.ImageFile, packagePrefix string) string {
+	if pkg := imageFile.Proto().GetPackage(); pkg != "" {
+		if packagePrefix == "" {
+			return pkg
+		}
+		return packagePrefix + "." + pkg
+	}
+	return ""
+}
+
+// DefaultObjcClassPrefixValue returns the objc_class_prefix for the given ImageFile based on its
+// package declaration. If the image file doesn't have a package declaration, an
+// empty string is returned.
+func DefaultObjcClassPrefixValue(imageFile bufimage.ImageFile) string {
+	pkg := imageFile.Proto().GetPackage()
+	if pkg == "" {
+		return ""
+	}
+	_, hasPackageVersion := protoversion.NewPackageVersionForPackage(pkg)
+	packageParts := strings.Split(pkg, ".")
+	var prefixParts []rune
+	for i, part := range packageParts {
+		// Check if last part is a version before appending.
+		if i == len(packageParts)-1 && hasPackageVersion {
+			continue
+		}
+		// Probably should never be a non-ASCII character,
+		// but why not support it just in case?
+		runeSlice := []rune(part)
+		prefixParts = append(prefixParts, unicode.ToUpper(runeSlice[0]))
+	}
+	for len(prefixParts) < 3 {
+		prefixParts = append(prefixParts, 'X')
+	}
+	prefix := string(prefixParts)
+	if prefix == "GPB" {
+		prefix = "GPX"
+	}
+	return prefix
+}
+
+// DefaultPhpMetadataNamespaceValue returns the php_metadata_namespace for the given ImageFile based on its
+// package declaration. If the image file doesn't have a package declaration, an
+// empty string is returned.
+func DefaultPhpMetadataNamespaceValue(imageFile bufimage.ImageFile) string {
+	phpNamespace := DefaultPhpNamespaceValue(imageFile)
 	if phpNamespace == "" {
 		return ""
 	}
 	return phpNamespace + `\GPBMetadata`
 }
 
-// GetDefaultPhpNamespaceValue returns the php_namespace for the given ImageFile based on its
+// DefaultPhpNamespaceValue returns the php_namespace for the given ImageFile based on its
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
-func GetDefaultPhpNamespaceValue(imageFile bufimage.ImageFile) string {
+func DefaultPhpNamespaceValue(imageFile bufimage.ImageFile) string {
 	pkg := imageFile.Proto().GetPackage()
 	if pkg == "" {
 		return ""
@@ -350,10 +365,10 @@ func GetDefaultPhpNamespaceValue(imageFile bufimage.ImageFile) string {
 	return strings.Join(packageParts, `\`)
 }
 
-// GetDefaultRubyPackageValue returns the ruby_package for the given ImageFile based on its
+// DefaultRubyPackageValue returns the ruby_package for the given ImageFile based on its
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
-func GetDefaultRubyPackageValue(imageFile bufimage.ImageFile) string {
+func DefaultRubyPackageValue(imageFile bufimage.ImageFile) string {
 	pkg := imageFile.Proto().GetPackage()
 	if pkg == "" {
 		return ""

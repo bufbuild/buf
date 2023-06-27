@@ -28,7 +28,7 @@ import (
 
 const (
 	// DefaultJavaPackagePrefix is the default java_package prefix used in the java_package modifier.
-	DefaultJavaPackagePrefix = "com"
+	DefaultJavaPackagePrefix = internal.DefaultJavaPackagePrefix
 
 	// JavaPackageID is the ID of the java_package modifier.
 	JavaPackageID = "JAVA_PACKAGE"
@@ -68,7 +68,7 @@ func javaPackage(
 						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
 					}
 				}
-				javaPackageValue := javaPackageValue(imageFile, packagePrefix)
+				javaPackageValue := internal.JavaPackageValue(imageFile, packagePrefix)
 				if overridePackagePrefix, ok := overrides[imageFile.Path()]; ok {
 					javaPackageValue = overridePackagePrefix
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
@@ -137,14 +137,4 @@ func shouldSkipJavaPackageForFile(
 		}
 	}
 	return false
-}
-
-// javaPackageValue returns the java_package for the given ImageFile based on its
-// package declaration. If the image file doesn't have a package declaration, an
-// empty string is returned.
-func javaPackageValue(imageFile bufimage.ImageFile, packagePrefix string) string {
-	if pkg := imageFile.Proto().GetPackage(); pkg != "" {
-		return packagePrefix + "." + pkg
-	}
-	return ""
 }

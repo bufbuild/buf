@@ -51,7 +51,7 @@ func objcClassPrefix(
 			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				objcClassPrefixValue := internal.GetDefaultObjcClassPrefixValue(imageFile)
+				objcClassPrefixValue := internal.DefaultObjcClassPrefixValue(imageFile)
 				if defaultPrefix != "" {
 					objcClassPrefixValue = defaultPrefix
 				}

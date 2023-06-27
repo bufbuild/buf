@@ -149,6 +149,8 @@ func (f FileOption) String() string {
 	return s
 }
 
+// TODO: unexport ParseFileOption
+
 // ParseFileOption parses the FileOption.
 //
 // The empty string is an error.

@@ -36,7 +36,7 @@ func phpNamespace(
 		func(ctx context.Context, image bufimage.Image) error {
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				phpNamespaceValue := internal.GetDefaultPhpNamespaceValue(imageFile)
+				phpNamespaceValue := internal.DefaultPhpNamespaceValue(imageFile)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					phpNamespaceValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}

@@ -16,7 +16,6 @@ package bufgenv2
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -93,9 +92,6 @@ func readConfigV2(
 	if err := unmarshalStrict(data, &externalConfigV2); err != nil {
 		return nil, err
 	}
-	if err := validateExternalConfigV2(externalConfigV2, id); err != nil {
-		return nil, err
-	}
 	config := Config{}
 	for _, externalInputConfig := range externalConfigV2.Inputs {
 		inputConfig, err := newInputConfig(ctx, externalInputConfig)
@@ -109,32 +105,10 @@ func readConfigV2(
 		return nil, err
 	}
 	config.Plugins = pluginConfigs
-	managedConfig, err := newManagedConfig(externalConfigV2.Managed)
+	managedConfig, err := newManagedConfig(logger, externalConfigV2.Managed)
 	if err != nil {
 		return nil, err
 	}
 	config.Managed = managedConfig
 	return &config, nil
-}
-
-func validateExternalConfigV2(externalConfig ExternalConfigV2, id string) error {
-	// TODO: implement this
-	return nil
-}
-
-func validateExternalManagedConfigV2(externalConfig ExternalManagedConfigV2) error {
-	if externalConfig.isEmpty() {
-		return nil
-	}
-	for _, externalDisableConfig := range externalConfig.Disable {
-		if len(externalDisableConfig.FileOption) == 0 && len(externalDisableConfig.Module) == 0 && len(externalDisableConfig.Path) == 0 {
-			return errors.New("must set one of file_option, module, path for a disable rule")
-		}
-		// TODO
-	}
-	for _, externalOverrideConfig := range externalConfig.Override {
-		// TODO
-		_ = externalOverrideConfig
-	}
-	return nil
 }

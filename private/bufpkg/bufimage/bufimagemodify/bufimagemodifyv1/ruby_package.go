@@ -50,7 +50,7 @@ func rubyPackage(
 			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				rubyPackageValue := internal.GetDefaultRubyPackageValue(imageFile)
+				rubyPackageValue := internal.DefaultRubyPackageValue(imageFile)
 				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
 					moduleIdentityString := moduleIdentity.IdentityString()
 					if moduleNamespaceOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {

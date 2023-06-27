@@ -36,7 +36,7 @@ func phpMetadataNamespace(
 		func(ctx context.Context, image bufimage.Image) error {
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				phpMetadataNamespaceValue := internal.GetDefaultPhpMetadataNamespaceValue(imageFile)
+				phpMetadataNamespaceValue := internal.DefaultPhpMetadataNamespaceValue(imageFile)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					phpMetadataNamespaceValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}

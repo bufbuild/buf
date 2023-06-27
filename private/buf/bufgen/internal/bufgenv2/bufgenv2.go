@@ -32,8 +32,7 @@ import (
 )
 
 const (
-	defaultJavaPackagePrefix = "com"
-	defaultInput             = "."
+	defaultInput = "."
 )
 
 type Generator struct {
@@ -206,6 +205,10 @@ type ExternalManagedConfigV2 struct {
 // isEmpty returns true if the config is empty.
 func (m ExternalManagedConfigV2) isEmpty() bool {
 	return !m.Enable && len(m.Disable) == 0 && len(m.Override) == 0
+}
+
+func (m ExternalManagedConfigV2) isSpecified() bool {
+	return len(m.Disable) == 0 && len(m.Override) == 0
 }
 
 // ExternalManagedDisableConfigV2 is an external configuration that disables file options in

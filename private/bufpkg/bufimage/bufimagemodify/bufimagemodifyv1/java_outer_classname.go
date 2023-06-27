@@ -37,7 +37,7 @@ func javaOuterClassname(
 		func(ctx context.Context, image bufimage.Image) error {
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
-				javaOuterClassnameValue := internal.GetDefaultJavaOuterClassname(imageFile)
+				javaOuterClassnameValue := internal.DefaultJavaOuterClassname(imageFile)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					javaOuterClassnameValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}

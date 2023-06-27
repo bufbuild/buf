@@ -15,16 +15,15 @@
 package bufgenv2
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"go.uber.org/zap"
 )
 
-// TODO this would be part of a runner or likewise
-// this is just for demonstration of bringing the management stuff into one function
-// applyManagement modifies an image based on managed mode configuration.
 func applyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
 	markSweeper := bufimagemodifyv2.NewMarkSweeper(image)
 	for _, imageFile := range image.Files() {
@@ -42,15 +41,14 @@ func applyManagementForFile(
 ) error {
 	for _, fileOption := range AllFileOptions {
 		if managedConfig.DisabledFunc(fileOption, imageFile) {
+			// disable has a higher precedence over override
 			continue
 		}
 		var override bufimagemodifyv2.Override
 		if overrideFunc, ok := managedConfig.FileOptionToOverrideFunc[fileOption]; ok {
 			override = overrideFunc(imageFile)
 		}
-		// override can be nil at this point, in which case ModifyXYZ will either use
-		// our default value for the option, or leave the option alone, implicitly
-		// using Protobuf's default value.
+		// override can be nil at this point, which is a valid argument to ModifyXYZ
 		switch fileOption {
 		case FileOptionCcEnableArenas:
 			if err := bufimagemodifyv2.ModifyCcEnableArenas(marker, imageFile, override); err != nil {
@@ -107,12 +105,13 @@ func applyManagementForFile(
 	return nil
 }
 
-func newManagedConfig(externalConfig ExternalManagedConfigV2) (*ManagedConfig, error) {
+func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2) (*ManagedConfig, error) {
 	if externalConfig.isEmpty() {
 		return nil, nil
 	}
-	if err := validateExternalManagedConfigV2(externalConfig); err != nil {
-		return nil, err
+	if !externalConfig.Enable && !externalConfig.isSpecified() && logger != nil {
+		logger.Sugar().Warn("managed mode options are set but are not enabled")
+		return nil, nil
 	}
 	var disabledFuncs []disabledFunc
 	fileOptionToOverrideFuncs := make(map[FileOption][]overrideFunc)
@@ -145,18 +144,19 @@ func newManagedConfig(externalConfig ExternalManagedConfigV2) (*ManagedConfig, e
 }
 
 func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFunc, error) {
+	if len(externalConfig.FileOption) == 0 && len(externalConfig.Module) == 0 && len(externalConfig.Path) == 0 {
+		return nil, errors.New("must set one of file_option, module, path for a disable rule")
+	}
 	var selectorFileOption FileOption
 	var err error
 	if len(externalConfig.FileOption) > 0 {
 		selectorFileOption, err = ParseFileOption(externalConfig.FileOption)
 		if err != nil {
-			// This should never happen because we already validated
 			return nil, err
 		}
 	}
 	module := externalConfig.Module
 	path := normalpath.Normalize(externalConfig.Path)
-	// You could simplify this, but this helped me reason about it
 	return func(fileOption FileOption, imageFile ImageFileIdentity) bool {
 		// If we did not specify a file option, we match all file options
 		return (selectorFileOption == 0 || fileOption == selectorFileOption) &&

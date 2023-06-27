@@ -23,10 +23,6 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-var (
-	defaultJavaPackageOverride = NewPrefixOverride("com")
-)
-
 type Marker interface {
 	// Mark marks the given SourceCodeInfo_Location indices.
 	Mark(bufimage.ImageFile, []int32)
@@ -65,20 +61,21 @@ func NewValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](v
 	return newValueOverride[T](val)
 }
 
+// ModifyJavaPackage modifies java_package. If override is nil, it uses managed
+// mode's default.
 func ModifyJavaPackage(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	override Override,
 ) error {
-	if override == nil {
-		override = defaultJavaPackageOverride
-	}
 	var javaPackageValue string
 	switch t := override.(type) {
 	case prefixOverride:
-		javaPackageValue = getJavaPackageValue(imageFile, t.get())
+		javaPackageValue = internal.JavaPackageValue(imageFile, t.get())
 	case valueOverride[string]:
 		javaPackageValue = t.get()
+	case nil:
+		javaPackageValue = internal.JavaPackageValue(imageFile, internal.DefaultJavaPackagePrefix)
 	default:
 		return errors.New("a valid override is required for java_package")
 	}
@@ -98,6 +95,8 @@ func ModifyJavaPackage(
 	return nil
 }
 
+// ModifyCcEnableArenas modifies cc_enable_arenas. If override is nil, it
+// does not modify this option.
 func ModifyCcEnableArenas(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -129,6 +128,8 @@ func ModifyCcEnableArenas(
 	return nil
 }
 
+// ModifyCsharpNamespace modifies csharp_namespace. If override is nil, it uses
+// managed mode's default.
 func ModifyCsharpNamespace(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -139,7 +140,7 @@ func ModifyCsharpNamespace(
 	case valueOverride[string]:
 		csharpNamespaceValue = t.get()
 	case nil:
-		csharpNamespaceValue = internal.GetDefaultCsharpNamespace(imageFile)
+		csharpNamespaceValue = internal.DefaultCsharpNamespace(imageFile)
 	default:
 		return errors.New("a valid override is required for csharp_namespace")
 	}
@@ -159,6 +160,8 @@ func ModifyCsharpNamespace(
 	return nil
 }
 
+// ModifyGoPackage modifies go_package. If override is nil, it
+// does not modify this option.
 func ModifyGoPackage(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -192,6 +195,8 @@ func ModifyGoPackage(
 	return nil
 }
 
+// ModifyJavaMultipleFiles modifies java_multiple_files. If override is nil, it
+// uses managed mode's default.
 func ModifyJavaMultipleFiles(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -222,6 +227,8 @@ func ModifyJavaMultipleFiles(
 	return nil
 }
 
+// ModifyJavaOuterClassname modifies java_outer_classname. If override is nil, it
+// uses managed mode's default.
 func ModifyJavaOuterClassname(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -232,7 +239,7 @@ func ModifyJavaOuterClassname(
 	case valueOverride[string]:
 		javaOuterClassname = t.get()
 	case nil:
-		javaOuterClassname = internal.GetDefaultJavaOuterClassname(imageFile)
+		javaOuterClassname = internal.DefaultJavaOuterClassname(imageFile)
 	default:
 		return errors.New("a valid override is required for java_outer_classname")
 	}
@@ -252,6 +259,8 @@ func ModifyJavaOuterClassname(
 	return nil
 }
 
+// ModifyJavaStringCheckUTF8 modifies java_string_check_utf8. If override is nil,
+// it does not modify this option.
 func ModifyJavaStringCheckUTF8(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -283,6 +292,8 @@ func ModifyJavaStringCheckUTF8(
 	return nil
 }
 
+// ModifyObjcClassPrefix modifies objc_class_prefix. If override is nil, it
+// uses managed mode's default.
 func ModifyObjcClassPrefix(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -293,7 +304,7 @@ func ModifyObjcClassPrefix(
 	case valueOverride[string]:
 		objcClassPrefixValue = t.get()
 	case nil:
-		objcClassPrefixValue = internal.GetDefaultObjcClassPrefixValue(imageFile)
+		objcClassPrefixValue = internal.DefaultObjcClassPrefixValue(imageFile)
 	default:
 		return errors.New("a valid override is required for objc_class_prefix")
 	}
@@ -313,6 +324,8 @@ func ModifyObjcClassPrefix(
 	return nil
 }
 
+// ModifyOptimizeFor modifies optimize_for. If override is nil,
+// it does not modify this option.
 func ModifyOptimizeFor(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -344,6 +357,8 @@ func ModifyOptimizeFor(
 	return nil
 }
 
+// ModifyPhpMetadataNamespace modifies php_metadata_namespace. If override is nil,
+// it uses managed mode's default.
 func ModifyPhpMetadataNamespace(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -354,7 +369,7 @@ func ModifyPhpMetadataNamespace(
 	case valueOverride[string]:
 		phpMetadataNamespaceValue = t.get()
 	case nil:
-		phpMetadataNamespaceValue = internal.GetDefaultPhpMetadataNamespaceValue(imageFile)
+		phpMetadataNamespaceValue = internal.DefaultPhpMetadataNamespaceValue(imageFile)
 	default:
 		return errors.New("a valid override is required for php_metadata_namespace")
 	}
@@ -374,6 +389,8 @@ func ModifyPhpMetadataNamespace(
 	return nil
 }
 
+// ModifyPhpNamespace modifies php_namespace. If override is nil,
+// it uses managed mode's default.
 func ModifyPhpNamespace(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -384,7 +401,7 @@ func ModifyPhpNamespace(
 	case valueOverride[string]:
 		phpNamespaceValue = t.get()
 	case nil:
-		phpNamespaceValue = internal.GetDefaultPhpNamespaceValue(imageFile)
+		phpNamespaceValue = internal.DefaultPhpNamespaceValue(imageFile)
 	default:
 		return errors.New("a valid override is required for php_namespace")
 	}
@@ -404,6 +421,8 @@ func ModifyPhpNamespace(
 	return nil
 }
 
+// ModifyRubyPackage modifies ruby_package. If override is nil, it uses managed
+// mode's default.
 func ModifyRubyPackage(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -414,7 +433,7 @@ func ModifyRubyPackage(
 	case valueOverride[string]:
 		rubyPackageValue = t.get()
 	case nil:
-		rubyPackageValue = internal.GetDefaultRubyPackageValue(imageFile)
+		rubyPackageValue = internal.DefaultRubyPackageValue(imageFile)
 	default:
 		return errors.New("a valid override is required for ruby_package")
 	}
@@ -432,14 +451,4 @@ func ModifyRubyPackage(
 	descriptor.Options.RubyPackage = proto.String(rubyPackageValue)
 	marker.Mark(imageFile, internal.RubyPackagePath)
 	return nil
-}
-
-func getJavaPackageValue(imageFile bufimage.ImageFile, prefix string) string {
-	if pkg := imageFile.Proto().GetPackage(); pkg != "" {
-		if prefix == "" {
-			return pkg
-		}
-		return prefix + "." + pkg
-	}
-	return ""
 }
