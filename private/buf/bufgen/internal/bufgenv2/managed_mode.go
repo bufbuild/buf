@@ -157,7 +157,7 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFun
 	}
 	module := externalConfig.Module
 	path := normalpath.Normalize(externalConfig.Path)
-	return func(fileOption FileOption, imageFile ImageFileIdentity) bool {
+	return func(fileOption FileOption, imageFile imageFileIdentity) bool {
 		// If we did not specify a file option, we match all file options
 		return (selectorFileOption == 0 || fileOption == selectorFileOption) &&
 			matchesPathAndModule(path, module, imageFile)
@@ -179,7 +179,7 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (overrideFu
 	if err != nil {
 		return nil, err
 	}
-	return func(imageFile ImageFileIdentity) bufimagemodifyv2.Override {
+	return func(imageFile imageFileIdentity) bufimagemodifyv2.Override {
 		// We don't need to match on FileOption - we only call this OverrideFunc when we
 		// know we are applying for a given FileOption.
 		// The FileOption we parsed above is assumed to be the FileOption.
@@ -193,7 +193,7 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (overrideFu
 func matchesPathAndModule(
 	pathRequired string,
 	moduleRequired string,
-	imageFile ImageFileIdentity,
+	imageFile imageFileIdentity,
 ) bool {
 	// If neither is required, it matches.
 	if pathRequired == "" && moduleRequired == "" {
@@ -228,7 +228,7 @@ func mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs map[FileOption][]o
 
 func mergeDisabledFuncs(disabledFuncs []disabledFunc) disabledFunc {
 	// If any disables, then we disable for this FileOption and ImageFile
-	return func(fileOption FileOption, imageFile ImageFileIdentity) bool {
+	return func(fileOption FileOption, imageFile imageFileIdentity) bool {
 		for _, disabledFunc := range disabledFuncs {
 			if disabledFunc(fileOption, imageFile) {
 				return true
@@ -240,7 +240,7 @@ func mergeDisabledFuncs(disabledFuncs []disabledFunc) disabledFunc {
 
 func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
 	// Last override listed wins
-	return func(imageFile ImageFileIdentity) bufimagemodifyv2.Override {
+	return func(imageFile imageFileIdentity) bufimagemodifyv2.Override {
 		var override bufimagemodifyv2.Override
 		for _, overrideFunc := range overrideFuncs {
 			if iOverride := overrideFunc(imageFile); iOverride != nil {

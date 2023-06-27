@@ -44,13 +44,16 @@ type ManagedConfig struct {
 }
 
 // disableFunc decides whether a file option should be disabled for a file.
-type disabledFunc func(FileOption, ImageFileIdentity) bool
+type disabledFunc func(FileOption, imageFileIdentity) bool
 
 // overrideFunc is specific to a file option, and returns what thie file option
 // should be overridden to for this file.
-type overrideFunc func(ImageFileIdentity) bufimagemodifyv2.Override
+type overrideFunc func(imageFileIdentity) bufimagemodifyv2.Override
 
-type ImageFileIdentity interface {
+// imageFileIdentity is an image file that can be identified by a path and module identity.
+// There two (path and module) are the only information needed to decide whether to disable
+// or override a file option for a specific file. Using an interface to for easier testing.
+type imageFileIdentity interface {
 	Path() string
 	ModuleIdentity() bufmoduleref.ModuleIdentity
 }

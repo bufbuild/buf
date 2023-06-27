@@ -690,13 +690,13 @@ func TestManagedConfig(t *testing.T) {
 	tests := []struct {
 		testName                string
 		file                    string
-		expectedDisableResults  map[FileOption]map[ImageFileIdentity]bool
-		expectedOverrideResults map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override
+		expectedDisableResults  map[FileOption]map[imageFileIdentity]bool
+		expectedOverrideResults map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override
 	}{
 		{
 			testName: "test override and disable",
 			file:     filepath.Join("managed", "java_package"),
-			expectedDisableResults: map[FileOption]map[ImageFileIdentity]bool{
+			expectedDisableResults: map[FileOption]map[imageFileIdentity]bool{
 				FileOptionJavaPackage: {
 					&fakeImageFileIdentity{
 						path: "ok.proto",
@@ -728,7 +728,7 @@ func TestManagedConfig(t *testing.T) {
 					&fakeImageFileIdentity{}: false,
 				},
 			},
-			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+			expectedOverrideResults: map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionJavaPackage: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
@@ -761,7 +761,7 @@ func TestManagedConfig(t *testing.T) {
 		{
 			testName: "test cc enable arenas success",
 			file:     filepath.Join("managed", "cc_enable_arenas"),
-			expectedDisableResults: map[FileOption]map[ImageFileIdentity]bool{
+			expectedDisableResults: map[FileOption]map[imageFileIdentity]bool{
 				FileOptionCcEnableArenas: {
 					&fakeImageFileIdentity{
 						path: "ok.proto",
@@ -791,7 +791,7 @@ func TestManagedConfig(t *testing.T) {
 					&fakeImageFileIdentity{}: false,
 				},
 			},
-			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+			expectedOverrideResults: map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionCcEnableArenas: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
@@ -808,7 +808,7 @@ func TestManagedConfig(t *testing.T) {
 		{
 			testName: "test csharp namespace success",
 			file:     filepath.Join("managed", "csharp_namespace"),
-			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+			expectedOverrideResults: map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionCsharpNamespace: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
@@ -825,7 +825,7 @@ func TestManagedConfig(t *testing.T) {
 		{
 			testName: "test go package success",
 			file:     filepath.Join("managed", "go_package"),
-			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+			expectedOverrideResults: map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionGoPackage: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
@@ -839,7 +839,7 @@ func TestManagedConfig(t *testing.T) {
 		{
 			testName: "test java multiple files",
 			file:     filepath.Join("managed", "go_package"),
-			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+			expectedOverrideResults: map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionGoPackage: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
@@ -853,7 +853,7 @@ func TestManagedConfig(t *testing.T) {
 		{
 			testName: "test java outer classname",
 			file:     filepath.Join("managed", "java_outer_classname"),
-			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+			expectedOverrideResults: map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionJavaOuterClassname: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
@@ -864,7 +864,7 @@ func TestManagedConfig(t *testing.T) {
 		{
 			testName: "test java string check utf 8",
 			file:     filepath.Join("managed", "java_string_check_utf8"),
-			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+			expectedOverrideResults: map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionJavaStringCheckUtf8: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
@@ -881,7 +881,7 @@ func TestManagedConfig(t *testing.T) {
 		{
 			testName: "test objc prefix",
 			file:     filepath.Join("managed", "objc_class_prefix"),
-			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+			expectedOverrideResults: map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionObjcClassPrefix: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
@@ -892,7 +892,7 @@ func TestManagedConfig(t *testing.T) {
 		{
 			testName: "test optimize for",
 			file:     filepath.Join("managed", "optimize_for"),
-			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+			expectedOverrideResults: map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionOptimizeFor: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
@@ -909,7 +909,7 @@ func TestManagedConfig(t *testing.T) {
 		{
 			testName: "test php metadata namespace",
 			file:     filepath.Join("managed", "php_metadata_namespace"),
-			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+			expectedOverrideResults: map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionPhpMetadataNamespace: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
@@ -920,7 +920,7 @@ func TestManagedConfig(t *testing.T) {
 		{
 			testName: "test php namespace",
 			file:     filepath.Join("managed", "php_namespace"),
-			expectedOverrideResults: map[FileOption]map[ImageFileIdentity]bufimagemodifyv2.Override{
+			expectedOverrideResults: map[FileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
 				FileOptionPhpNamespace: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
