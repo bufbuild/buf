@@ -13,7 +13,6 @@
 // limitations under the License.
 
 package bufimagemodifyv1
-package bufimagemodifyv1
 
 import (
 	"context"

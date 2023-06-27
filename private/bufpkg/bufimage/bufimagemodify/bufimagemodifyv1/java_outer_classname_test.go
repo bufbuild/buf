@@ -13,7 +13,6 @@
 // limitations under the License.
 
 package bufimagemodifyv1
-package bufimagemodifyv1
 
 import (
 	"context"
@@ -388,7 +387,6 @@ func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
-		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
 		image := bufimagemodifytesting.GetTestImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
