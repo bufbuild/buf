@@ -27,7 +27,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// TODO: unexport these names
+// TODO: unexport these names and their fields
 
 // Config is a configuration.
 type Config struct {
@@ -36,9 +36,9 @@ type Config struct {
 	Inputs  []*InputConfig
 }
 
-// TODO: We use nil or not to denote enabled or not, but that deems dangerous
 // ManagedConfig is a managed mode configuration.
 type ManagedConfig struct {
+	Enabled                  bool
 	DisabledFunc             disabledFunc
 	FileOptionToOverrideFunc map[FileOption]overrideFunc
 }

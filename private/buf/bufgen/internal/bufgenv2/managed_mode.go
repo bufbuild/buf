@@ -109,9 +109,9 @@ func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2
 	if externalConfig.isEmpty() {
 		return nil, nil
 	}
-	if !externalConfig.Enable && !externalConfig.isSpecified() && logger != nil {
+	if !externalConfig.Enable && !externalConfig.isEmpty() {
 		logger.Sugar().Warn("managed mode options are set but are not enabled")
-		return nil, nil
+		// continue to validate this config
 	}
 	var disabledFuncs []disabledFunc
 	fileOptionToOverrideFuncs := make(map[FileOption][]overrideFunc)
@@ -137,6 +137,7 @@ func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2
 		)
 	}
 	return &ManagedConfig{
+		Enabled:                  externalConfig.Enable,
 		DisabledFunc:             mergeDisabledFuncs(disabledFuncs),
 		FileOptionToOverrideFunc: mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs),
 	}, nil

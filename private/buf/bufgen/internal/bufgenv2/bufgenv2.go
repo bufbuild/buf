@@ -165,7 +165,7 @@ func (g *Generator) Generate(
 		)
 	}
 	for _, inputImage := range inputImages {
-		if genConfig.Managed != nil {
+		if genConfig.Managed != nil && genConfig.Managed.Enabled {
 			if err := applyManagement(
 				inputImage,
 				genConfig.Managed,
@@ -205,10 +205,6 @@ type ExternalManagedConfigV2 struct {
 // isEmpty returns true if the config is empty.
 func (m ExternalManagedConfigV2) isEmpty() bool {
 	return !m.Enable && len(m.Disable) == 0 && len(m.Override) == 0
-}
-
-func (m ExternalManagedConfigV2) isSpecified() bool {
-	return len(m.Disable) > 0 || len(m.Override) > 0
 }
 
 // ExternalManagedDisableConfigV2 is an external configuration that disables file options in
