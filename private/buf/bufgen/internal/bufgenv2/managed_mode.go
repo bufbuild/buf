@@ -125,7 +125,6 @@ func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2
 	for _, externalOverrideConfig := range externalConfig.Override {
 		fileOption, err := ParseFileOption(externalOverrideConfig.FileOption)
 		if err != nil {
-			// This should never happen because we already validated
 			return nil, err
 		}
 		overrideFunc, err := newOverrideFunc(externalOverrideConfig)
