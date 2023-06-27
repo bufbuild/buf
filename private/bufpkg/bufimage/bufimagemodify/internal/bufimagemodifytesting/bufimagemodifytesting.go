@@ -151,8 +151,8 @@ func AssertFileOptionSourceCodeInfoNotEmptyForFile(
 }
 
 // TODO: move this to bufimagetesting
-// GetTestImage returns an image from a directory, with a test remote, repository owner,
-// and repository name.
+// GetTestImage returns an image from a directory, with a convenience module created with
+// a test remote, repository owner, and repository name.
 func GetTestImage(
 	t *testing.T,
 	dirPath string,
