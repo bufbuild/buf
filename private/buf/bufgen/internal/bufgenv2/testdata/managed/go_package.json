@@ -1,0 +1,23 @@
+{
+  "version": "v2",
+  "plugins": [
+    {
+      "binary": "protoc-gen-go",
+      "out": "gen/out"
+    }
+  ],
+  "managed": {
+    "enable": true,
+    "override": [
+      {
+        "file_option": "go_package",
+        "value": "val"
+      },
+      {
+        "file_option": "go_package",
+        "prefix": "pre",
+        "path": "dir1"
+      }
+    ]
+  }
+}

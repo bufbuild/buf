@@ -1,0 +1,52 @@
+{
+  "version": "v2",
+  "plugins": [
+    {
+      "binary": "protoc-gen-go",
+      "out": "gen/out"
+    }
+  ],
+  "managed": {
+    "enable": true,
+    "disable": [
+      {
+        "file_option": "cc_enable_arenas",
+        "path": "a/"
+      },
+      {
+        "file_option": "cc_enable_arenas",
+        "path": "ok.proto"
+      },
+      {
+        "file_option": "cc_enable_arenas",
+        "module": "buf.build/acme/petapis"
+      },
+      {
+        "file_option": "cc_enable_arenas",
+        "module": "buf.build/acme/petapis2",
+        "path": "x/y.proto"
+      }
+    ],
+    "override": [
+      {
+        "file_option": "cc_enable_arenas",
+        "value": true
+      },
+      {
+        "file_option": "cc_enable_arenas",
+        "path": "m/n",
+        "value": false
+      },
+      {
+        "file_option": "cc_enable_arenas",
+        "path": "m",
+        "value": true
+      },
+      {
+        "file_option": "cc_enable_arenas",
+        "path": "m/k",
+        "value": false
+      }
+    ]
+  }
+}

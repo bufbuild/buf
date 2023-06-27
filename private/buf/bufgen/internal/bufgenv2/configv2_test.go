@@ -932,7 +932,7 @@ func TestManagedConfig(t *testing.T) {
 
 	for _, test := range tests {
 		test := test
-		for _, fileExtension := range []string{".yaml" /* ,".json" */} {
+		for _, fileExtension := range []string{".yaml", ".json"} {
 			fileExtension := fileExtension
 			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
 				t.Parallel()
@@ -1246,7 +1246,7 @@ func TestConfigError(t *testing.T) {
 
 	for _, test := range tests {
 		test := test
-		for _, fileExtension := range []string{".yaml" /*, ".json"*/} { // TODO: add json back
+		for _, fileExtension := range []string{".yaml", ".json"} {
 			fileExtension := fileExtension
 			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
 				t.Parallel()
