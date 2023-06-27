@@ -150,6 +150,7 @@ func AssertFileOptionSourceCodeInfoNotEmptyForFile(
 	assert.True(t, hasFileOption)
 }
 
+// TODO: move this to bufimagetesting
 // GetTestImage returns an image from a directory, with a test remote, repository owner,
 // and repository name.
 func GetTestImage(
