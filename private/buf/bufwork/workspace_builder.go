@@ -60,9 +60,6 @@ func (w *workspaceBuilder) BuildWorkspace(
 	allModules := make([]bufmodule.Module, 0, len(workspaceConfig.Directories))
 	for _, directory := range workspaceConfig.Directories {
 		if cachedModule, ok := w.moduleCache[directory]; ok {
-			if directory == targetSubDirPath {
-				continue
-			}
 			// We've already built this module, so we can use the cached-equivalent.
 			if moduleIdentity := cachedModule.moduleConfig.ModuleIdentity; moduleIdentity != nil {
 				if _, ok := namedModules[moduleIdentity.IdentityString()]; ok {
@@ -157,12 +154,6 @@ func (w *workspaceBuilder) BuildWorkspace(
 			module,
 			moduleConfig,
 		)
-		if directory == targetSubDirPath {
-			// We don't want to include the module found at the targetSubDirPath
-			// since it would otherwise be included twice. Note that we include
-			// this check here so that the module is still built and cached upfront.
-			continue
-		}
 		if moduleIdentity := moduleConfig.ModuleIdentity; moduleIdentity != nil {
 			if _, ok := namedModules[moduleIdentity.IdentityString()]; ok {
 				return nil, fmt.Errorf(
