@@ -40,6 +40,10 @@ func newSingleModuleReadBucket(
 	}
 }
 
+func (r *singleModuleReadBucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
+	return r.StatModuleFile(ctx, path)
+}
+
 func (r *singleModuleReadBucket) StatModuleFile(ctx context.Context, path string) (*moduleObjectInfo, error) {
 	objectInfo, err := r.ReadBucket.Stat(ctx, path)
 	if err != nil {

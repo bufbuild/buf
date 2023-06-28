@@ -15,6 +15,8 @@
 package bufmodule
 
 import (
+	"fmt"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -45,4 +47,11 @@ func (o *moduleObjectInfo) ModuleIdentity() bufmoduleref.ModuleIdentity {
 
 func (o *moduleObjectInfo) Commit() string {
 	return o.commit
+}
+
+func (o *moduleObjectInfo) ExternalPath() string {
+	if o.moduleIdentity != nil {
+		return fmt.Sprintf("%s/%s", o.moduleIdentity, o.ObjectInfo.ExternalPath())
+	}
+	return o.ObjectInfo.ExternalPath()
 }
