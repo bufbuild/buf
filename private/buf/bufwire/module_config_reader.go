@@ -490,51 +490,6 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (ModuleConfig, error) {
-	moduleConfig, err := m.getModuleConfig(
-		ctx,
-		sourceRef,
-		readBucket,
-		relativeRootPath,
-		subDirPath,
-		configOverride,
-		workspaceBuilder,
-		workspaceConfig,
-		workspace,
-		externalDirOrFilePaths,
-		externalExcludeDirOrFilePaths,
-		externalDirOrFilePathsAllowNotExist,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if missingReferences := detectMissingDependencies(
-		moduleConfig.Config().Build.DependencyModuleReferences,
-		moduleConfig.Module().DependencyModulePins(),
-	); len(missingReferences) > 0 {
-		var builder strings.Builder
-		_, _ = builder.WriteString(`Specified deps are not covered in your buf.lock, run "buf mod update":`)
-		for _, moduleReference := range missingReferences {
-			_, _ = builder.WriteString("\n\t- " + moduleReference.IdentityString())
-		}
-		m.logger.Warn(builder.String())
-	}
-	return moduleConfig, nil
-}
-
-func (m *moduleConfigReader) getModuleConfig(
-	ctx context.Context,
-	sourceRef buffetch.SourceRef,
-	readBucket storage.ReadBucket,
-	relativeRootPath string,
-	subDirPath string,
-	configOverride string,
-	workspaceBuilder bufwork.WorkspaceBuilder,
-	workspaceConfig *bufwork.Config,
-	workspace bufmodule.Workspace,
-	externalDirOrFilePaths []string,
-	externalExcludeDirOrFilePaths []string,
-	externalDirOrFilePathsAllowNotExist bool,
-) (ModuleConfig, error) {
 	if module, moduleConfig, ok := workspaceBuilder.GetModuleConfig(subDirPath); ok {
 		// The module was already built while we were constructing the workspace.
 		// However, we still need to perform some additional validation based on
@@ -676,6 +631,18 @@ func (m *moduleConfigReader) getModuleConfig(
 	if err != nil {
 		return nil, err
 	}
+	if missingReferences := detectMissingDependencies(
+		moduleConfig.Build.DependencyModuleReferences,
+		module.DependencyModulePins(),
+		workspace,
+	); len(missingReferences) > 0 {
+		var builder strings.Builder
+		_, _ = builder.WriteString(`Specified deps are not covered in your buf.lock, run "buf mod update":`)
+		for _, moduleReference := range missingReferences {
+			_, _ = builder.WriteString("\n\t- " + moduleReference.IdentityString())
+		}
+		m.logger.Warn(builder.String())
+	}
 	return newModuleConfig(module, moduleConfig, workspace), nil
 }
 
@@ -691,7 +658,11 @@ func workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig *bufwork.Confi
 	return false
 }
 
-func detectMissingDependencies(references []bufmoduleref.ModuleReference, pins []bufmoduleref.ModulePin) []bufmoduleref.ModuleReference {
+func detectMissingDependencies(
+	references []bufmoduleref.ModuleReference,
+	pins []bufmoduleref.ModulePin,
+	workspace bufmodule.Workspace,
+) []bufmoduleref.ModuleReference {
 	pinSet := make(map[string]struct{})
 	for _, pin := range pins {
 		pinSet[pin.IdentityString()] = struct{}{}
@@ -700,7 +671,13 @@ func detectMissingDependencies(references []bufmoduleref.ModuleReference, pins [
 	var missingReferences []bufmoduleref.ModuleReference
 	for _, reference := range references {
 		if _, ok := pinSet[reference.IdentityString()]; !ok {
-			missingReferences = append(missingReferences, reference)
+			if workspace != nil {
+				if _, ok := workspace.GetModule(reference); !ok {
+					missingReferences = append(missingReferences, reference)
+				}
+			} else {
+				missingReferences = append(missingReferences, reference)
+			}
 		}
 	}
 	return missingReferences
