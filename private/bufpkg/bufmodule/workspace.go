@@ -14,7 +14,12 @@
 
 package bufmodule
 
-import "github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+import (
+	"context"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/pkg/storage"
+)
 
 type workspace struct {
 	// bufmoduleref.ModuleIdentity -> bufmodule.Module
@@ -23,13 +28,30 @@ type workspace struct {
 }
 
 func newWorkspace(
+	ctx context.Context,
 	namedModules map[string]Module,
 	allModules []Module,
-) *workspace {
+) (*workspace, error) {
+	pathToExternalPaths := make(map[string][]string)
+	for _, module := range allModules {
+		fileInfos, err := module.SourceFileInfos(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, fileInfo := range fileInfos {
+			pathToExternalPaths[fileInfo.Path()] = append(pathToExternalPaths[fileInfo.Path()], fileInfo.ExternalPath())
+		}
+	}
+	for path, externalPaths := range pathToExternalPaths {
+		// Will be >1 even if the externalPaths are equal, we mostly care ab0out the count
+		if len(externalPaths) > 1 {
+			return nil, storage.NewErrExistsMultipleLocations(path, externalPaths...)
+		}
+	}
 	return &workspace{
 		namedModules: namedModules,
 		allModules:   allModules,
-	}
+	}, nil
 }
 
 func (w *workspace) GetModule(moduleIdentity bufmoduleref.ModuleIdentity) (Module, bool) {

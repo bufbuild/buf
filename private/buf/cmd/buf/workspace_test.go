@@ -920,6 +920,19 @@ func TestWorkspaceDuplicateFail(t *testing.T) {
 	)
 }
 
+func TestWorkspaceDuplicateFailSpecificModule(t *testing.T) {
+	// The workspace includes multiple images that define the same file.
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		1,
+		``,
+		filepath.FromSlash(`Failure: foo.proto exists in multiple locations: testdata/workspace/fail/duplicate/other/proto/foo.proto testdata/workspace/fail/duplicate/proto/foo.proto`),
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "duplicate", "proto"),
+	)
+}
+
 func TestWorkspaceNotExistFail(t *testing.T) {
 	// The directory defined in the workspace does not exist.
 	testRunStdoutStderrNoWarn(
