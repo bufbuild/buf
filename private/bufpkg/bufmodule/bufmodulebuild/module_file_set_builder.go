@@ -86,13 +86,19 @@ func (m *moduleFileSetBuilder) build(
 		// same .proto file paths. If they have the same .proto file paths, then we do not
 		// add the Module as a dependency.
 		//
+		// We know from bufmodule.Workspace that no two Modules in a Workspace will have overlapping
+		// file paths, therefore if the Module is in the Workspace and has equivalent file paths,
+		// we know that it must be the same module. If the Module is not in the workspace...why
+		// did we provide a workspace?
+		//
 		// We could use other methods for equivalence or to say "do not add":
 		//
 		//   - If there are any overlapping files: for example, one module has a.proto, one module
 		//     has b.proto, and both have c.proto. We don't use this heuristic as what we are looking
 		//     for here is a situation where based on our Module construction, we have two actually-equivalent
 		//     Modules. The existence of any overlapping files will result in an error during build, which
-		//     is what we want.
+		//     is what we want. This would also indicate this Module did not come from the Workspace, given
+		//     the property of file uniqueness in Workspaces.
 		//   - Golang object equivalence: for example, doing "module != potentialDependencyModule". This
 		//     happens to work since we only construct Modules once, but it's error-prone: it's totally
 		//     possible to create two Module objects from the same source, and if they represent the
