@@ -15,10 +15,12 @@
 package bufmodulebuild
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/sha3"
 )
 
 type moduleFileSetBuilder struct {
@@ -58,6 +60,10 @@ func (m *moduleFileSetBuilder) build(
 ) (bufmodule.ModuleFileSet, error) {
 	var dependencyModules []bufmodule.Module
 	if workspace != nil {
+		moduleProtoPathsHash, err := protoPathsHash(ctx, module)
+		if err != nil {
+			return nil, err
+		}
 		// From the perspective of the ModuleFileSet, we include all of the files
 		// specified in the workspace. When we build the Image from the ModuleFileSet,
 		// we construct it based on the TargetFileInfos, and thus only include the files
@@ -68,6 +74,13 @@ func (m *moduleFileSetBuilder) build(
 		// used. We already get this for free in Image construction, so it's simplest and
 		// most efficient to bundle all of the modules together like so.
 		for _, potentialDependencyModule := range workspace.GetModules() {
+			potentialDependencyModuleProtoPathsHash, err := protoPathsHash(ctx, potentialDependencyModule)
+			if err != nil {
+				return nil, err
+			}
+			if !bytes.Equal(moduleProtoPathsHash, potentialDependencyModuleProtoPathsHash) {
+				dependencyModules = append(dependencyModules, potentialDependencyModule)
+			}
 			// We have to make sure that the dependency module is not the input source modules
 			//
 			// TODO: this is hacky and relies on Golang semantics, and that the Module objects
@@ -75,9 +88,6 @@ func (m *moduleFileSetBuilder) build(
 			// better way to ID Modules, as this is still a bug in its current form. In the
 			// best case, we could use ModuleIdentity and Commit to ID a module, but we aren't
 			// guaranteed that these are set.
-			if potentialDependencyModule != module {
-				dependencyModules = append(dependencyModules, potentialDependencyModule)
-			}
 		}
 	}
 	// We know these are unique by remote, owner, repository and
@@ -97,4 +107,23 @@ func (m *moduleFileSetBuilder) build(
 		dependencyModules = append(dependencyModules, dependencyModule)
 	}
 	return bufmodule.NewModuleFileSet(module, dependencyModules), nil
+}
+
+func protoPathsHash(ctx context.Context, module bufmodule.Module) ([]byte, error) {
+	fileInfos, err := module.SourceFileInfos(ctx)
+	if err != nil {
+		return nil, err
+	}
+	shakeHash := sha3.NewShake256()
+	for _, fileInfo := range fileInfos {
+		_, err := shakeHash.Write([]byte(fileInfo.Path()))
+		if err != nil {
+			return nil, err
+		}
+	}
+	data := make([]byte, 64)
+	if _, err := shakeHash.Read(data); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
