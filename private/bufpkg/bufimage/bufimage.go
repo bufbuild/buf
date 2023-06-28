@@ -508,9 +508,9 @@ type ImageModuleDependency interface {
 	//
 	// Example:
 	//
-	//		a.proto, module buf.build/foo/a, non-import, imports b.proto
-	//		b.proto, module buf.build/foo/b, import, imports c.proto
-	//		c.proto, module buf.build/foo/c, import
+	//		a.proto, module buf.build/foo/a, is non-import, imports b.proto
+	//		b.proto, module buf.build/foo/b, is import, imports c.proto
+	//		c.proto, module buf.build/foo/c, is import
 	//
 	// In this case, the list would contain only buf.build/foo/b, as buf.build/foo/a
 	// for a.proto is a non-import, and buf.build/foo/c for c.proto is only imported
