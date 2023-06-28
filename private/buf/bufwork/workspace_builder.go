@@ -180,9 +180,10 @@ func (w *workspaceBuilder) BuildWorkspace(
 		allModules = append(allModules, module)
 	}
 	return bufmodule.NewWorkspace(
+		ctx,
 		namedModules,
 		allModules,
-	), nil
+	)
 }
 
 // GetModuleConfig returns the bufmodule.Module and *bufconfig.Config, associated with the given
