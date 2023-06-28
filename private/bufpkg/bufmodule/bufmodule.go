@@ -150,19 +150,21 @@ type Module interface {
 	BlobSet() *manifest.BlobSet
 
 	getSourceReadBucket() storage.ReadBucket
+	// ModuleIdentity returns the ModuleIdentity for the Module, if it was
+	// provided at construction time via ModuleWithModuleIdentity or ModuleWithModuleIdentityAndCommit.
+	//
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
 	// nil checking should work since the backing type is always a pointer.
-	//
-	// TODO: We can remove the getModuleReference method on the if we fetch
-	// FileInfos from the Module and plumb in the ModuleReference here.
-	//
-	// This approach assumes that all of the FileInfos returned
-	// from SourceFileInfos will have their ModuleReference
-	// set to the same value, which can be validated.
-	getModuleIdentity() bufmoduleref.ModuleIdentity
+	ModuleIdentity() bufmoduleref.ModuleIdentity
+	// Commit returns the commit for the Module, if it was
+	// provided at construction time via ModuleWithModuleIdentityAndCommit.
+
 	// Note this can be empty.
-	getCommit() string
+	// This will only be set if ModuleIdentity is set. but may not be set
+	// even if ModuleIdentity is set, that is commit is optional information
+	// even if we know what module this file came from.
+	Commit() string
 	isModule()
 }
 
@@ -177,6 +179,9 @@ func ModuleWithModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) Module
 }
 
 // ModuleWithModuleIdentityAndCommit is used to construct a Module with a ModuleIdentity and commit.
+//
+// If the moduleIdentity is nil, the commit must be empty, that is it is not valid to have
+// a non-empty commit and a nil moduleIdentity.
 func ModuleWithModuleIdentityAndCommit(moduleIdentity bufmoduleref.ModuleIdentity, commit string) ModuleOption {
 	return func(module *module) {
 		module.moduleIdentity = moduleIdentity
@@ -427,7 +432,7 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
-	if moduleIdentity := module.getModuleIdentity(); moduleIdentity != nil {
+	if moduleIdentity := module.ModuleIdentity(); moduleIdentity != nil {
 		if _, err := hash.Write([]byte(moduleIdentity.IdentityString())); err != nil {
 			return "", err
 		}
@@ -524,7 +529,7 @@ func ModuleToBucket(
 		version = breakingConfigVersion
 	}
 	writeConfigOptions := []bufconfig.WriteConfigOption{
-		bufconfig.WriteConfigWithModuleIdentity(module.getModuleIdentity()),
+		bufconfig.WriteConfigWithModuleIdentity(module.ModuleIdentity()),
 		bufconfig.WriteConfigWithBreakingConfig(module.BreakingConfig()),
 		bufconfig.WriteConfigWithLintConfig(module.LintConfig()),
 		bufconfig.WriteConfigWithVersion(version),

@@ -43,8 +43,8 @@ func newModuleFileSet(
 	moduleReadBuckets := []moduleReadBucket{
 		newSingleModuleReadBucket(
 			module.getSourceReadBucket(),
-			module.getModuleIdentity(),
-			module.getCommit(),
+			module.ModuleIdentity(),
+			module.Commit(),
 		),
 	}
 	for _, dependency := range dependencies {
@@ -52,8 +52,8 @@ func newModuleFileSet(
 			moduleReadBuckets,
 			newSingleModuleReadBucket(
 				dependency.getSourceReadBucket(),
-				dependency.getModuleIdentity(),
-				dependency.getCommit(),
+				dependency.ModuleIdentity(),
+				dependency.Commit(),
 			),
 		)
 	}
