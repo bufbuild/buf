@@ -117,10 +117,8 @@ type WorkspaceBuilder interface {
 }
 
 // NewWorkspaceBuilder returns a new WorkspaceBuilder.
-func NewWorkspaceBuilder(
-	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-) WorkspaceBuilder {
-	return newWorkspaceBuilder(moduleBucketBuilder)
+func NewWorkspaceBuilder() WorkspaceBuilder {
+	return newWorkspaceBuilder()
 }
 
 // BuildOptionsForWorkspaceDirectory returns the bufmodulebuild.BuildOptions required for

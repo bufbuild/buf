@@ -28,16 +28,12 @@ import (
 )
 
 type workspaceBuilder struct {
-	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
-	moduleCache         map[string]*cachedModule
+	moduleCache map[string]*cachedModule
 }
 
-func newWorkspaceBuilder(
-	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-) *workspaceBuilder {
+func newWorkspaceBuilder() *workspaceBuilder {
 	return &workspaceBuilder{
-		moduleBucketBuilder: moduleBucketBuilder,
-		moduleCache:         make(map[string]*cachedModule),
+		moduleCache: make(map[string]*cachedModule),
 	}
 }
 
