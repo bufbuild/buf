@@ -14,37 +14,10 @@
 
 package buftransport
 
-import (
-	"strings"
-
-	"github.com/bufbuild/buf/private/pkg/app"
-)
-
 const (
-	// APISubdomain is the subdomain used for calls to the BSR API
-	APISubdomain = "api"
-
 	schemeHTTP  = "http"
 	schemeHTTPS = "https"
-
-	// TODO: change to based on "use"
-	disableAPISubdomainEnvKey = "BUF_DISABLE_API_SUBDOMAIN"
 )
-
-// IsAPISubdomainEnabled returns true if the container says to use the API subdomain.
-func IsAPISubdomainEnabled(container app.EnvContainer) bool {
-	return strings.TrimSpace(strings.ToLower(container.Env(disableAPISubdomainEnvKey))) == ""
-}
-
-// SetDisableAPISubdomain sets the environment map to disable the API subdomain.
-func SetDisableAPISubdomain(env map[string]string) {
-	env[disableAPISubdomainEnvKey] = "disable"
-}
-
-// PrependAPISubdomain prepends the API subdomain to the given address.
-func PrependAPISubdomain(address string) string {
-	return APISubdomain + "." + address
-}
 
 // PrependHTTP prepends an http scheme to the given address
 func PrependHTTP(address string) string {
