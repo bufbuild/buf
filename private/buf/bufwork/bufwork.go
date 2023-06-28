@@ -98,7 +98,9 @@ var (
 // WorkspaceBuilder builds workspaces. A single WorkspaceBuilder should NOT be persisted
 // acorss calls because the WorkspaceBuilder caches the modules used in each workspace.
 type WorkspaceBuilder interface {
-	// BuildWorkspace builds a bufmodule.Workspace for the given targetSubDirPath.
+	// BuildWorkspace builds a bufmodule.Workspace.
+	//
+	// The given targetSubDirPath is the only path that will have the configOverride applied to it.
 	BuildWorkspace(
 		ctx context.Context,
 		workspaceConfig *Config,
