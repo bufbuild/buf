@@ -15,8 +15,9 @@
 package bufmodulebuild
 
 import (
-	"bytes"
 	"context"
+	"encoding/hex"
+	"errors"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"go.uber.org/zap"
@@ -59,35 +60,64 @@ func (m *moduleFileSetBuilder) build(
 	workspace bufmodule.Workspace,
 ) (bufmodule.ModuleFileSet, error) {
 	var dependencyModules []bufmodule.Module
+	hashes := make(map[string]struct{})
+	moduleHash, err := protoPathsHash(ctx, module)
+	if err != nil {
+		return nil, err
+	}
+	hashes[moduleHash] = struct{}{}
 	if workspace != nil {
-		moduleProtoPathsHash, err := protoPathsHash(ctx, module)
-		if err != nil {
-			return nil, err
-		}
 		// From the perspective of the ModuleFileSet, we include all of the files
 		// specified in the workspace. When we build the Image from the ModuleFileSet,
 		// we construct it based on the TargetFileInfos, and thus only include the files
 		// in the transitive closure.
 		//
-		// We *could* determine which modules could be omitted here, but it would incur
+		// This is defensible as we're saying that everything in the workspace is a potential
+		// dependency, even if some are not actual dependencies of this specific module. In this
+		// case, the extra modules are no different than unused dependencies in a buf.yaml/buf.lock.
+		//
+		// By including all the Modules from the workspace, we are potentially including the input
+		// Module itself. This is bad, and will result in errors when using the result ModuleFileSet.
+		// The ModuleFileSet expects a Module, and its dependency Modules, but it is not OK for
+		// a Module to both be the input Module and a dependency Module. We have no concept
+		// of Module "ID" - a Module may have a ModuleIdentity and commit associated with it,
+		// but there is no guarantee of this. To get around this, we do a hash of the .proto file
+		// paths within a Module, and say that Modules are equivalent if they contain the exact
+		// same .proto file paths. If they have the same .proto file paths, then we do not
+		// add the Module as a dependency.
+		//
+		// We could use other methods for equivalence or to say "do not add":
+		//
+		//   - If there are any overlapping files: for example, one module has a.proto, one module
+		//     has b.proto, and both have c.proto. We don't use this heuristic as what we are looking
+		//     for here is a situation where based on our Module construction, we have two actually-equivalent
+		//     Modules. The existence of any overlapping files will result in an error during build, which
+		//     is what we want.
+		//   - Golang object equivalence: for example, doing "module != potentialDependencyModule". This
+		//     happens to work since we only construct Modules once, but it's error-prone: it's totally
+		//     possible to create two Module objects from the same source, and if they represent the
+		//     same Module on disk/in the BSR, we don't want to include these as duplicates.
+		//   - Full module digest and/or proto file content: We could include buf.yaml, buf.lock,
+		//     README.md, etc, and also hash the actual content of the .proto files, but we're saying
+		//     that this doesn't help us any more than just comparing .proto files, and may lead to
+		//     false negatives. However, this is the most likely candidate as an alternative, as you
+		//     could argue that at the ModuleFileSetBuilder level, we should say "assume any difference
+		//     is a real difference".
+		//
+		// We could also determine which modules could be omitted here, but it would incur
 		// the cost of parsing the target files and detecting exactly which imports are
 		// used. We already get this for free in Image construction, so it's simplest and
 		// most efficient to bundle all of the modules together like so.
 		for _, potentialDependencyModule := range workspace.GetModules() {
-			potentialDependencyModuleProtoPathsHash, err := protoPathsHash(ctx, potentialDependencyModule)
+			potentialDependencyModuleHash, err := protoPathsHash(ctx, potentialDependencyModule)
 			if err != nil {
 				return nil, err
 			}
-			if !bytes.Equal(moduleProtoPathsHash, potentialDependencyModuleProtoPathsHash) {
+			if _, ok := hashes[potentialDependencyModuleHash]; !ok {
 				dependencyModules = append(dependencyModules, potentialDependencyModule)
+			} else {
+				hashes[potentialDependencyModuleHash] = struct{}{}
 			}
-			// We have to make sure that the dependency module is not the input source modules
-			//
-			// TODO: this is hacky and relies on Golang semantics, and that the Module objects
-			// in the Workspace are the same as the potential source module. We really need a
-			// better way to ID Modules, as this is still a bug in its current form. In the
-			// best case, we could use ModuleIdentity and Commit to ID a module, but we aren't
-			// guaranteed that these are set.
 		}
 	}
 	// We know these are unique by remote, owner, repository and
@@ -104,26 +134,36 @@ func (m *moduleFileSetBuilder) build(
 		if err != nil {
 			return nil, err
 		}
+		dependencyModuleHash, err := protoPathsHash(ctx, dependencyModule)
+		if err != nil {
+			return nil, err
+		}
+		// At this point, this is really just a safety check.
+		if _, ok := hashes[dependencyModuleHash]; ok {
+			return nil, errors.New("module declared in DependencyModulePins but not in workspace was already added to the dependency Module set, this is a system error")
+		}
 		dependencyModules = append(dependencyModules, dependencyModule)
+		hashes[dependencyModuleHash] = struct{}{}
 	}
 	return bufmodule.NewModuleFileSet(module, dependencyModules), nil
 }
 
-func protoPathsHash(ctx context.Context, module bufmodule.Module) ([]byte, error) {
+// protoPathsHash returns a hash representing the paths of the .proto files within the Module.
+func protoPathsHash(ctx context.Context, module bufmodule.Module) (string, error) {
 	fileInfos, err := module.SourceFileInfos(ctx)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	shakeHash := sha3.NewShake256()
 	for _, fileInfo := range fileInfos {
 		_, err := shakeHash.Write([]byte(fileInfo.Path()))
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 	data := make([]byte, 64)
 	if _, err := shakeHash.Read(data); err != nil {
-		return nil, err
+		return "", err
 	}
-	return data, nil
+	return hex.EncodeToString(data), nil
 }
