@@ -158,6 +158,7 @@ func run(
 			if workspace != nil && workspace != moduleWorkspace {
 				return errors.New("two workspaces detected, this is a system error")
 			}
+			workspace = moduleWorkspace
 		}
 		modules[i] = moduleConfig.Module()
 	}

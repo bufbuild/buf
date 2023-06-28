@@ -73,20 +73,10 @@ func (b *builder) build(
 ) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error) {
 	graph := dag.NewGraph[Node]()
 	for i, module := range modules {
-		// TODO: this is because we don't have an identifier for Module
-		// We likely want to use the ModuleIdentity if present,
-		// or the path on disk otherwise. This will optimally require refactors
-		// to the Module and the workspace-related code.
-		node := Node{
-			Value: "root",
-		}
-		if i > 0 {
-			node.Value += fmt.Sprintf("-%d", i)
-		}
 		fileAnnotations, err := b.buildForModule(
 			ctx,
 			module,
-			node,
+			newNodeForModule(module, i),
 			workspace,
 			graph,
 		)
@@ -193,11 +183,22 @@ func (b *builder) getModuleForImageModuleDependency(
 	)
 }
 
-func newNodeForImageModuleDependency(
-	imageModuleDependency bufimage.ImageModuleDependency,
-) Node {
+func newNodeForImageModuleDependency(imageModuleDependency bufimage.ImageModuleDependency) Node {
 	return Node{
 		Value: imageModuleDependency.String(),
+	}
+}
+
+func newNodeForModule(module bufmodule.Module, i int) Node {
+	value := fmt.Sprintf("root-%d", i)
+	if moduleIdentity := module.ModuleIdentity(); moduleIdentity != nil {
+		value = moduleIdentity.IdentityString()
+		if commit := module.Commit(); commit != "" {
+			value = value + ":" + commit
+		}
+	}
+	return Node{
+		Value: value,
 	}
 }
 
