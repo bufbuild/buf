@@ -67,7 +67,18 @@ func (m *moduleFileSetBuilder) build(
 		// the cost of parsing the target files and detecting exactly which imports are
 		// used. We already get this for free in Image construction, so it's simplest and
 		// most efficient to bundle all of the modules together like so.
-		dependencyModules = workspace.GetModules()
+		for _, potentialDependencyModule := range workspace.GetModules() {
+			// We have to make sure that the dependency module is not the input source modules
+			//
+			// TODO: this is hacky and relies on Golang semantics, and that the Module objects
+			// in the Workspace are the same as the potential source module. We really need a
+			// better way to ID Modules, as this is still a bug in its current form. In the
+			// best case, we could use ModuleIdentity and Commit to ID a module, but we aren't
+			// guaranteed that these are set.
+			if potentialDependencyModule != module {
+				dependencyModules = append(dependencyModules, potentialDependencyModule)
+			}
+		}
 	}
 	// We know these are unique by remote, owner, repository and
 	// contain all transitive dependencies.
