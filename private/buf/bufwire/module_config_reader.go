@@ -79,7 +79,7 @@ func (m *moduleConfigReader) GetModuleConfigs(
 		}
 	}()
 	// We construct a new WorkspaceBuilder here so that the cache is only used for a single call.
-	workspaceBuilder := bufwork.NewWorkspaceBuilder(m.moduleBucketBuilder)
+	workspaceBuilder := bufwork.NewWorkspaceBuilder()
 	switch t := sourceOrModuleRef.(type) {
 	case buffetch.ProtoFileRef:
 		return m.getProtoFileModuleSourceConfigs(

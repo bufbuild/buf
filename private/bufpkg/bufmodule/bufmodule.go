@@ -323,20 +323,27 @@ func NewModuleFileSet(
 	return newModuleFileSet(module, dependencies)
 }
 
-// Workspace represents a module workspace.
+// Workspace represents a workspace.
+//
+// It is guaranteed that all Modules within this workspace have no overlapping file paths.
 type Workspace interface {
 	// GetModule gets the module identified by the given ModuleIdentity.
+	//
 	GetModule(moduleIdentity bufmoduleref.ModuleIdentity) (Module, bool)
 	// GetModules returns all of the modules found in the workspace.
 	GetModules() []Module
 }
 
 // NewWorkspace returns a new module workspace.
+//
+// The Context is not retained, and is only used for validation during construction.
 func NewWorkspace(
+	ctx context.Context,
 	namedModules map[string]Module,
 	allModules []Module,
-) Workspace {
+) (Workspace, error) {
 	return newWorkspace(
+		ctx,
 		namedModules,
 		allModules,
 	)
