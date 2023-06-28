@@ -29,6 +29,10 @@ func newInputFile(imageFile bufimage.ImageFile) *inputFile {
 	}
 }
 
-func (i *inputFile) ModuleIdentityOptionalCommit() protosource.ModuleIdentityOptionalCommit {
-	return i.ImageFile.ModuleIdentityOptionalCommit()
+func (i *inputFile) ModuleIdentity() protosource.ModuleIdentity {
+	return i.ImageFile.ModuleIdentity()
+}
+
+func (i *inputFile) Commit() string {
+	return i.ImageFile.Commit()
 }

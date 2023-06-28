@@ -322,7 +322,8 @@ func imageFileToProtoImageFile(imageFile ImageFile) *imagev1.ImageFile {
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
-		imageFile.ModuleIdentityOptionalCommit(),
+		imageFile.ModuleIdentity(),
+		imageFile.Commit(),
 	)
 }
 
@@ -331,18 +332,19 @@ func fileDescriptorProtoToProtoImageFile(
 	isImport bool,
 	isSyntaxUnspecified bool,
 	unusedDependencyIndexes []int32,
-	moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleCommit string,
 ) *imagev1.ImageFile {
 	var protoModuleInfo *imagev1.ModuleInfo
-	if moduleIdentityOptionalCommit != nil {
+	if moduleIdentity != nil {
 		protoModuleInfo = &imagev1.ModuleInfo{
 			Name: &imagev1.ModuleName{
-				Remote:     proto.String(moduleIdentityOptionalCommit.Remote()),
-				Owner:      proto.String(moduleIdentityOptionalCommit.Owner()),
-				Repository: proto.String(moduleIdentityOptionalCommit.Repository()),
+				Remote:     proto.String(moduleIdentity.Remote()),
+				Owner:      proto.String(moduleIdentity.Owner()),
+				Repository: proto.String(moduleIdentity.Repository()),
 			},
 		}
-		if moduleCommit := moduleIdentityOptionalCommit.Commit(); moduleCommit != "" {
+		if moduleCommit != "" {
 			protoModuleInfo.Commit = proto.String(moduleCommit)
 		}
 	}
@@ -522,23 +524,33 @@ func imageModuleDependencyCompareTo(a ImageModuleDependency, b ImageModuleDepend
 	if a != nil && b == nil {
 		return 1
 	}
-	if a.Remote() < b.Remote() {
-		return -1
-	}
-	if a.Remote() > b.Remote() {
-		return 1
-	}
-	if a.Owner() < b.Owner() {
-		return -1
-	}
-	if a.Owner() > b.Owner() {
-		return 1
-	}
-	if a.Repository() < b.Repository() {
-		return -1
-	}
-	if a.Repository() > b.Repository() {
-		return 1
+	aModuleIdentity := a.ModuleIdentity()
+	bModuleIdentity := b.ModuleIdentity()
+	if aModuleIdentity != nil || bModuleIdentity != nil {
+		if aModuleIdentity == nil && bModuleIdentity != nil {
+			return -1
+		}
+		if aModuleIdentity != nil && bModuleIdentity == nil {
+			return 1
+		}
+		if aModuleIdentity.Remote() < bModuleIdentity.Remote() {
+			return -1
+		}
+		if aModuleIdentity.Remote() > bModuleIdentity.Remote() {
+			return 1
+		}
+		if aModuleIdentity.Owner() < bModuleIdentity.Owner() {
+			return -1
+		}
+		if aModuleIdentity.Owner() > bModuleIdentity.Owner() {
+			return 1
+		}
+		if aModuleIdentity.Repository() < bModuleIdentity.Repository() {
+			return -1
+		}
+		if aModuleIdentity.Repository() > bModuleIdentity.Repository() {
+			return 1
+		}
 	}
 	if a.Commit() < b.Commit() {
 		return -1

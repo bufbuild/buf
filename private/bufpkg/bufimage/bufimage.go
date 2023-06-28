@@ -230,7 +230,7 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest, opt
 	for i, fileDescriptorProto := range request.GetProtoFile() {
 		// we filter whether something is an import or not in ImageWithOnlyPaths
 		// we cannot determine if the syntax was unset
-		protoImageFiles[i] = fileDescriptorProtoToProtoImageFile(fileDescriptorProto, false, false, nil, nil)
+		protoImageFiles[i] = fileDescriptorProtoToProtoImageFile(fileDescriptorProto, false, false, nil, nil, "")
 	}
 	image, err := NewImageForProto(
 		&imagev1.Image{
@@ -486,7 +486,7 @@ func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.Fi
 // If this became part of ImageFile or bufmoduleref.FileInfo, you would get
 // all the ImageDependencies from the ImageFiles, and then sort | uniq them
 // to get the ImageDependencies for an Image. This would remove the requirement
-// of this associated type to have a ModuleIdentityOptionalCommit, so in
+// of this associated type to have a ModuleIdentity and commit, so in
 // the IsDirect example  below, d.proto would not be "ignored" - it would
 // be an ImageFile like any other, with ImportType DIRECT.
 //
@@ -494,7 +494,13 @@ func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.Fi
 // that all ImageFiles with the same ModuleIdentity have the same commit. This
 // validation will likely have to be moved around.
 type ImageModuleDependency interface {
-	bufmoduleref.ModuleIdentityOptionalCommit
+	// String() returns hostname/owner/repository[:commit].
+	fmt.Stringer
+
+	// Required. Will never be nil.
+	ModuleIdentity() bufmoduleref.ModuleIdentity
+	// Optional. May be empty.
+	Commit() string
 
 	// IsDirect returns true if the dependency is a direct dependency.
 	//
@@ -534,12 +540,14 @@ func ImageModuleDependencies(image Image) []ImageModuleDependency {
 	stringToImageModuleDependency := make(map[string]ImageModuleDependency)
 	for _, imageFile := range image.Files() {
 		if imageFile.IsImport() {
-			if moduleIdentityOptionalCommit := imageFile.ModuleIdentityOptionalCommit(); moduleIdentityOptionalCommit != nil {
+			if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
 				_, isDirect := importsOfNonImports[imageFile.Path()]
-				stringToImageModuleDependency[moduleIdentityOptionalCommit.String()] = newImageModuleDependency(
-					moduleIdentityOptionalCommit,
+				imageModuleDependency := newImageModuleDependency(
+					moduleIdentity,
+					imageFile.Commit(),
 					isDirect,
 				)
+				stringToImageModuleDependency[imageModuleDependency.String()] = imageModuleDependency
 			}
 		}
 	}

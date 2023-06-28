@@ -165,7 +165,7 @@ func (b *builder) build(
 // module. It outputs WARN messages otherwise, one per invalid import statement.
 //
 // TODO: Understand this code before doing anything
-// TODO: switch to use bufimage.ImageDirectDependencyModuleIdentityOptionalCommits
+// TODO: switch to use bufimage.ImageModuleDependencies
 func (b *builder) warnInvalidImports(
 	ctx context.Context,
 	builtImage bufimage.Image,
@@ -195,8 +195,8 @@ func (b *builder) warnInvalidImports(
 				return fmt.Errorf("workspace module target file infos: %w", err)
 			}
 			for _, file := range targetFiles {
-				if file.ModuleIdentityOptionalCommit() != nil {
-					workspaceIdentities[file.ModuleIdentityOptionalCommit().IdentityString()] = struct{}{}
+				if file.ModuleIdentity() != nil {
+					workspaceIdentities[file.ModuleIdentity().IdentityString()] = struct{}{}
 					break
 				}
 			}
@@ -217,8 +217,8 @@ func (b *builder) warnInvalidImports(
 	for _, file := range builtImage.Files() {
 		{ // populate allImgFiles
 			modIdentity := "local"
-			if file.ModuleIdentityOptionalCommit() != nil {
-				modIdentity = file.ModuleIdentityOptionalCommit().IdentityString()
+			if file.ModuleIdentity() != nil {
+				modIdentity = file.ModuleIdentity().IdentityString()
 			}
 			if _, ok := allImgFiles[modIdentity]; !ok {
 				allImgFiles[modIdentity] = make(map[string][]string)
@@ -229,13 +229,13 @@ func (b *builder) warnInvalidImports(
 			targetFiles[file.Path()] = struct{}{}
 			continue
 		}
-		if file.ModuleIdentityOptionalCommit() == nil {
+		if file.ModuleIdentity() == nil {
 			workspaceFilesToModule[file.Path()] = "" // local workspace unnamed module
 			continue
 		}
 		// file is import and comes from a named module. It's either a direct dep, a workspace module,
 		// or a transitive dep.
-		modIdentity := file.ModuleIdentityOptionalCommit().IdentityString()
+		modIdentity := file.ModuleIdentity().IdentityString()
 		if _, ok := expectedDirectDepsIdentities[modIdentity]; ok {
 			expectedDirectDepsFilesToModule[file.Path()] = modIdentity
 		} else if _, ok := workspaceIdentities[modIdentity]; ok {
@@ -571,15 +571,10 @@ func getImageFilesRec(
 	}
 	_, isNotImport := nonImportFilenames[path]
 	_, syntaxUnspecified := syntaxUnspecifiedFilenames[path]
-	moduleIdentityOptionalCommit := parserAccessorHandler.ModuleIdentityOptionalCommit(path)
-	var commit string
-	if moduleIdentityOptionalCommit != nil {
-		commit = moduleIdentityOptionalCommit.Commit()
-	}
 	imageFile, err := bufimage.NewImageFile(
 		fileDescriptorProto,
-		moduleIdentityOptionalCommit,
-		commit,
+		parserAccessorHandler.ModuleIdentity(path),
+		parserAccessorHandler.Commit(path),
 		// if empty, defaults to path
 		parserAccessorHandler.ExternalPath(path),
 		!isNotImport,

@@ -21,23 +21,41 @@ import (
 var _ ImageModuleDependency = &imageModuleDependency{}
 
 type imageModuleDependency struct {
-	bufmoduleref.ModuleIdentityOptionalCommit
-
-	isDirect bool
+	moduleIdentity bufmoduleref.ModuleIdentity
+	commit         string
+	isDirect       bool
 }
 
 func newImageModuleDependency(
-	moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	commit string,
 	isDirect bool,
 ) *imageModuleDependency {
 	return &imageModuleDependency{
-		ModuleIdentityOptionalCommit: moduleIdentityOptionalCommit,
-		isDirect:                     isDirect,
+		moduleIdentity: moduleIdentity,
+		commit:         commit,
+		isDirect:       isDirect,
 	}
+}
+
+func (i *imageModuleDependency) ModuleIdentity() bufmoduleref.ModuleIdentity {
+	return i.moduleIdentity
+}
+
+func (i *imageModuleDependency) Commit() string {
+	return i.commit
 }
 
 func (i *imageModuleDependency) IsDirect() bool {
 	return i.isDirect
+}
+
+func (i *imageModuleDependency) String() string {
+	moduleIdentityString := i.moduleIdentity.IdentityString()
+	if i.commit != "" {
+		return moduleIdentityString + ":" + i.commit
+	}
+	return moduleIdentityString
 }
 
 func (*imageModuleDependency) isImageModuleDependency() {}

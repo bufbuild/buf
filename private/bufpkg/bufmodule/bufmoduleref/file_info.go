@@ -21,10 +21,11 @@ import (
 var _ FileInfo = &fileInfo{}
 
 type fileInfo struct {
-	path                         string
-	externalPath                 string
-	isImport                     bool
-	moduleIdentityOptionalCommit ModuleIdentityOptionalCommit
+	path           string
+	externalPath   string
+	isImport       bool
+	moduleIdentity ModuleIdentity
+	commit         string
 }
 
 func newFileInfo(
@@ -40,29 +41,12 @@ func newFileInfo(
 	if externalPath == "" {
 		externalPath = path
 	}
-	if moduleIdentity != nil {
-		moduleIdentityOptionalCommit, err := NewModuleIdentityOptionalCommit(
-			moduleIdentity.Remote(),
-			moduleIdentity.Owner(),
-			moduleIdentity.Repository(),
-			commit,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return newFileInfoNoValidate(
-			path,
-			externalPath,
-			isImport,
-			moduleIdentityOptionalCommit,
-		), nil
-	}
-	// NEED TO DO EXPLICIT NIL, OTHERWISE WE GET THE NIL INTERFACE ISSUE
 	return newFileInfoNoValidate(
 		path,
 		externalPath,
 		isImport,
-		nil,
+		moduleIdentity,
+		commit,
 	), nil
 }
 
@@ -70,13 +54,15 @@ func newFileInfoNoValidate(
 	path string,
 	externalPath string,
 	isImport bool,
-	moduleIdentityOptionalCommit ModuleIdentityOptionalCommit,
+	moduleIdentity ModuleIdentity,
+	commit string,
 ) *fileInfo {
 	return &fileInfo{
-		path:                         path,
-		externalPath:                 externalPath,
-		isImport:                     isImport,
-		moduleIdentityOptionalCommit: moduleIdentityOptionalCommit,
+		path:           path,
+		externalPath:   externalPath,
+		isImport:       isImport,
+		moduleIdentity: moduleIdentity,
+		commit:         commit,
 	}
 }
 
@@ -92,8 +78,12 @@ func (f *fileInfo) IsImport() bool {
 	return f.isImport
 }
 
-func (f *fileInfo) ModuleIdentityOptionalCommit() ModuleIdentityOptionalCommit {
-	return f.moduleIdentityOptionalCommit
+func (f *fileInfo) ModuleIdentity() ModuleIdentity {
+	return f.moduleIdentity
+}
+
+func (f *fileInfo) Commit() string {
+	return f.commit
 }
 
 func (f *fileInfo) WithIsImport(isImport bool) FileInfo {
@@ -101,7 +91,8 @@ func (f *fileInfo) WithIsImport(isImport bool) FileInfo {
 		f.path,
 		f.externalPath,
 		isImport,
-		f.moduleIdentityOptionalCommit,
+		f.moduleIdentity,
+		f.commit,
 	)
 }
 

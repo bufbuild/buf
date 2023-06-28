@@ -17,8 +17,6 @@ package bufimage
 import (
 	"errors"
 	"fmt"
-
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 )
 
 var _ Image = &image{}
@@ -33,22 +31,22 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 		return nil, errors.New("image contains no files")
 	}
 	pathToImageFile := make(map[string]ImageFile, len(files))
-	identityStringToModuleIdentityOptionalCommit := make(map[string]bufmoduleref.ModuleIdentityOptionalCommit)
+	identityStringToCommit := make(map[string]string)
 	for _, file := range files {
 		path := file.Path()
 		if _, ok := pathToImageFile[path]; ok {
 			return nil, fmt.Errorf("duplicate file: %s", path)
 		}
 		pathToImageFile[path] = file
-		if moduleIdentityOptionalCommit := file.ModuleIdentityOptionalCommit(); moduleIdentityOptionalCommit != nil {
-			identityString := moduleIdentityOptionalCommit.IdentityString()
-			existingModuleIdentityOptionalCommit, ok := identityStringToModuleIdentityOptionalCommit[identityString]
+		if moduleIdentity := file.ModuleIdentity(); moduleIdentity != nil {
+			identityString := moduleIdentity.IdentityString()
+			existingCommit, ok := identityStringToCommit[identityString]
 			if ok {
-				if !bufmoduleref.ModuleIdentityOptionalCommitEqual(moduleIdentityOptionalCommit, existingModuleIdentityOptionalCommit) {
-					return nil, fmt.Errorf("image had two different ModuleIdentityOptionalCommits for the same module: %q and %q", moduleIdentityOptionalCommit.String(), existingModuleIdentityOptionalCommit.String())
+				if existingCommit != file.Commit() {
+					return nil, fmt.Errorf("image had two different commits for the same module: %q and %q", existingCommit, file.Commit())
 				}
 			} else {
-				identityStringToModuleIdentityOptionalCommit[identityString] = moduleIdentityOptionalCommit
+				identityStringToCommit[identityString] = file.Commit()
 			}
 		}
 	}

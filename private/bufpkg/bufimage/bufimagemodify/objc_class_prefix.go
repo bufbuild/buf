@@ -61,7 +61,7 @@ func objcClassPrefix(
 				if defaultPrefix != "" {
 					objcClassPrefixValue = defaultPrefix
 				}
-				if moduleIdentity := imageFile.ModuleIdentityOptionalCommit(); moduleIdentity != nil {
+				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
 					moduleIdentityString := moduleIdentity.IdentityString()
 					if modulePrefixOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
 						objcClassPrefixValue = modulePrefixOverride
@@ -104,7 +104,7 @@ func objcClassPrefixForFile(
 		// value, so this is a no-op.
 		return nil
 	}
-	if moduleIdentity := imageFile.ModuleIdentityOptionalCommit(); moduleIdentity != nil {
+	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
 		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
 			return nil
 		}

@@ -54,12 +54,18 @@ type FileInfo interface {
 	ExternalPath() string
 	// IsImport returns true if this file is an import.
 	IsImport() bool
-	// ModuleIdentityOptionalCommit is the module that this file came from, along with an optional commit.
+	// ModuleIdentity is the module that this file came from.
 	//
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
 	// Note that nil checking should work since the backing type is always a pointer.
-	ModuleIdentityOptionalCommit() ModuleIdentityOptionalCommit
+	ModuleIdentity() ModuleIdentity
+	// Commit is the commit for the module that this file came from.
+	//
+	// This will only be set if ModuleIdentity is set, but may not be set
+	// even if ModuleIdentity is set, that is commit is optional information
+	// even if we know what module this file came from.
+	Commit() string
 	// WithIsImport returns this FileInfo with the given IsImport value.
 	WithIsImport(isImport bool) FileInfo
 
@@ -163,38 +169,6 @@ func ModuleIdentityForString(path string) (ModuleIdentity, error) {
 	return NewModuleIdentity(remote, owner, repository)
 }
 
-// ModuleIdentityOptionalCommit is a ModuleIdentity with an optional commit.
-//
-// Commit may or may not be set depending on the situation.
-//
-// You may not have a commit for i.e. a locally-built Module that has a name,
-// but was pulled from disk and not from the BSR.
-//
-// Note that in most cases, all imports that have a ModuleIdentity will have a commit,
-// but workspaces are a situation where imports have a ModuleIdentity but no commits.
-type ModuleIdentityOptionalCommit interface {
-	ModuleIdentity
-
-	// Prints remote/owner/repository[:commit].
-	fmt.Stringer
-
-	Commit() string
-
-	isModuleIdentityOptionalCommit()
-}
-
-// NewModuleIdentityOptionalCommit returns a new validated ModuleIdentityOptionalCommit.
-//
-// commit is optional.
-func NewModuleIdentityOptionalCommit(
-	remote string,
-	owner string,
-	repository string,
-	commit string,
-) (ModuleIdentityOptionalCommit, error) {
-	return newModuleIdentityOptionalCommit(remote, owner, repository, commit)
-}
-
 // ModuleReference is a module reference.
 //
 // It references either a branch, tag, or a commit.
@@ -221,24 +195,6 @@ func NewModuleReference(
 	reference string,
 ) (ModuleReference, error) {
 	return newModuleReference(remote, owner, repository, reference)
-}
-
-// NewModuleReferenceForModuleIdentityOptionalCommit returns a new ModuleReference
-// for the given ModuleIdentityOptionalCommit.
-//
-// If commit is not set, Main is used as the reference.
-//
-// No error is returned as the ModuleIdentityOptionalCommit is already validated.
-//
-// TODO: this is basically wrong, you can't really infer that you mean "main" from an empty
-// commit. This is used when calling the ModuleResolver - re-evaluate that logic.
-// The main problem is that when we don't have a commit for a ModuleIdentityOptionalCommit,
-// it's because we read the Module from disk, not from the BSR. Optimally, we could denote this
-// as meaning "we expect you not to need to use the ModuleReader if you do not have a commit".
-func NewModuleReferenceForModuleIdentityOptionalCommit(
-	moduleIdentityOptionalCommit ModuleIdentityOptionalCommit,
-) ModuleReference {
-	return newModuleReferenceForModuleIdentityOptionalCommit(moduleIdentityOptionalCommit)
 }
 
 // NewModuleReferenceForProto returns a new ModuleReference for the given proto ModuleReference.
@@ -460,20 +416,6 @@ func ValidateModulePinsConsistentDigests(
 	return changedErrors
 }
 
-// ModuleIdentityOptionalCommitEqual returns true if a equals b.
-func ModuleIdentityOptionalCommitEqual(a ModuleIdentityOptionalCommit, b ModuleIdentityOptionalCommit) bool {
-	if (a == nil) != (b == nil) {
-		return false
-	}
-	if a == nil {
-		return true
-	}
-	return a.Remote() == b.Remote() &&
-		a.Owner() == b.Owner() &&
-		a.Repository() == b.Repository() &&
-		a.Commit() == b.Commit()
-}
-
 // ModuleReferenceEqual returns true if a equals b.
 func ModuleReferenceEqual(a ModuleReference, b ModuleReference) bool {
 	if (a == nil) != (b == nil) {
@@ -592,13 +534,6 @@ func SortFileInfosByExternalPath(fileInfos []FileInfo) {
 			return fileInfos[i].ExternalPath() < fileInfos[j].ExternalPath()
 		},
 	)
-}
-
-// SortModuleIdentityOptionalCommits sorts the ModuleIdentityOptionalCommits.
-func SortModuleIdentityOptionalCommits(moduleIdentityOptionalCommits []ModuleIdentityOptionalCommit) {
-	sort.Slice(moduleIdentityOptionalCommits, func(i, j int) bool {
-		return moduleIdentityOptionalCommitLess(moduleIdentityOptionalCommits[i], moduleIdentityOptionalCommits[j])
-	})
 }
 
 // SortModuleReferences sorts the ModuleReferences lexicographically by their identity.

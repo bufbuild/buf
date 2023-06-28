@@ -169,13 +169,11 @@ type Location interface {
 	LeadingDetachedComments() []string
 }
 
-// ModuleIdentityOptionalCommit is a module identity and an optional commit.
-type ModuleIdentityOptionalCommit interface {
+// ModuleIdentity is a module identity.
+type ModuleIdentity interface {
 	Remote() string
 	Owner() string
 	Repository() string
-	// optional
-	Commit() string
 }
 
 // FileInfo contains Protobuf file info.
@@ -196,12 +194,18 @@ type FileInfo interface {
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto
 	ExternalPath() string
-	// ModuleIdentityOptionalCommit is the module that this file came from.
+	// ModuleIdentity is the module that this file came from.
 	//
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
 	// Note that nil checking should work since the backing type is always a pointer.
-	ModuleIdentityOptionalCommit() ModuleIdentityOptionalCommit
+	ModuleIdentity() ModuleIdentity
+	// Commit is the commit for the module that this file came from.
+	//
+	// This will only be set if ModuleIdentity is set, but may not be set
+	// even if ModuleIdentity is set, that is commit is optional information
+	// even if we know what module this file came from.
+	Commit() string
 }
 
 // File is a file descriptor.

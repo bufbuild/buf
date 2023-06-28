@@ -33,12 +33,13 @@ type moduleFileReader interface {
 }
 
 type parserAccessorHandler struct {
-	ctx                                context.Context
-	moduleFileReader                   moduleFileReader
-	pathToExternalPath                 map[string]string
-	nonImportPaths                     map[string]struct{}
-	pathToModuleIdentityOptionalCommit map[string]bufmoduleref.ModuleIdentityOptionalCommit
-	lock                               sync.RWMutex
+	ctx                  context.Context
+	moduleFileReader     moduleFileReader
+	pathToExternalPath   map[string]string
+	nonImportPaths       map[string]struct{}
+	pathToModuleIdentity map[string]bufmoduleref.ModuleIdentity
+	pathToCommit         map[string]string
+	lock                 sync.RWMutex
 }
 
 func newParserAccessorHandler(
@@ -46,11 +47,12 @@ func newParserAccessorHandler(
 	moduleFileReader moduleFileReader,
 ) *parserAccessorHandler {
 	return &parserAccessorHandler{
-		ctx:                                ctx,
-		moduleFileReader:                   moduleFileReader,
-		pathToExternalPath:                 make(map[string]string),
-		nonImportPaths:                     make(map[string]struct{}),
-		pathToModuleIdentityOptionalCommit: make(map[string]bufmoduleref.ModuleIdentityOptionalCommit),
+		ctx:                  ctx,
+		moduleFileReader:     moduleFileReader,
+		pathToExternalPath:   make(map[string]string),
+		nonImportPaths:       make(map[string]struct{}),
+		pathToModuleIdentity: make(map[string]bufmoduleref.ModuleIdentity),
+		pathToCommit:         make(map[string]string),
 	}
 }
 
@@ -65,7 +67,7 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 				// this should never happen, but just in case
 				return nil, fmt.Errorf("parser accessor requested path %q but got %q", path, wktModuleFile.Path())
 			}
-			if err := p.addPath(path, path, true, nil); err != nil {
+			if err := p.addPath(path, path, true, nil, ""); err != nil {
 				return nil, err
 			}
 			return wktModuleFile, nil
@@ -85,7 +87,8 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 		path,
 		moduleFile.ExternalPath(),
 		moduleFile.IsImport(),
-		moduleFile.ModuleIdentityOptionalCommit(),
+		moduleFile.ModuleIdentity(),
+		moduleFile.Commit(),
 	); err != nil {
 		return nil, err
 	}
@@ -108,17 +111,24 @@ func (p *parserAccessorHandler) IsImport(path string) bool {
 	return !isNotImport
 }
 
-func (p *parserAccessorHandler) ModuleIdentityOptionalCommit(path string) bufmoduleref.ModuleIdentityOptionalCommit {
+func (p *parserAccessorHandler) ModuleIdentity(path string) bufmoduleref.ModuleIdentity {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	return p.pathToModuleIdentityOptionalCommit[path] // nil is a valid value.
+	return p.pathToModuleIdentity[path] // nil is a valid value.
+}
+
+func (p *parserAccessorHandler) Commit(path string) string {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.pathToCommit[path] // empty is a valid value.
 }
 
 func (p *parserAccessorHandler) addPath(
 	path string,
 	externalPath string,
 	isImport bool,
-	moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	commit string,
 ) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -133,8 +143,11 @@ func (p *parserAccessorHandler) addPath(
 	if !isImport {
 		p.nonImportPaths[path] = struct{}{}
 	}
-	if moduleIdentityOptionalCommit != nil {
-		p.pathToModuleIdentityOptionalCommit[path] = moduleIdentityOptionalCommit
+	if moduleIdentity != nil {
+		p.pathToModuleIdentity[path] = moduleIdentity
+	}
+	if commit != "" {
+		p.pathToCommit[path] = commit
 	}
 	return nil
 }

@@ -64,7 +64,7 @@ func javaPackage(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
 				packagePrefix := defaultPackagePrefix
-				if moduleIdentity := imageFile.ModuleIdentityOptionalCommit(); moduleIdentity != nil {
+				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
 					moduleIdentityString := moduleIdentity.IdentityString()
 					if modulePrefixOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
 						packagePrefix = modulePrefixOverride
@@ -134,7 +134,7 @@ func shouldSkipJavaPackageForFile(
 		return true
 	}
 
-	if moduleIdentity := imageFile.ModuleIdentityOptionalCommit(); moduleIdentity != nil {
+	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
 		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
 			return true
 		}

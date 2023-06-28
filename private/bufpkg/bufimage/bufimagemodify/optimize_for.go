@@ -57,7 +57,7 @@ func optimizeFor(
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				modifierValue := defaultOptimizeFor
-				if moduleIdentity := imageFile.ModuleIdentityOptionalCommit(); moduleIdentity != nil {
+				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
 					moduleIdentityString := moduleIdentity.IdentityString()
 					if optimizeForOverrdie, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
 						modifierValue = optimizeForOverrdie
@@ -114,7 +114,7 @@ func optimizeForForFile(
 		// same as the default, don't do anything.
 		return nil
 	}
-	if moduleIdentity := imageFile.ModuleIdentityOptionalCommit(); moduleIdentity != nil {
+	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
 		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
 			return nil
 		}
