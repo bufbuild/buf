@@ -74,7 +74,7 @@ func (b *builder) build(
 	graph := dag.NewGraph[Node]()
 	for i, module := range modules {
 		// TODO: this is because we don't have an identifier for Module
-		// We likely want to use the ModuleIdentityOptionalCommit if present,
+		// We likely want to use the ModuleIdentity if present,
 		// or the path on disk otherwise. This will optimally require refactors
 		// to the Module and the workspace-related code.
 		node := Node{
@@ -119,11 +119,11 @@ func (b *builder) buildForModule(
 		return fileAnnotations, nil
 	}
 	for _, imageModuleDependency := range bufimage.ImageModuleDependencies(image) {
-		dependencyNode := newNodeForModuleIdentityOptionalCommit(imageModuleDependency)
+		dependencyNode := newNodeForImageModuleDependency(imageModuleDependency)
 		if imageModuleDependency.IsDirect() {
 			graph.AddEdge(node, dependencyNode)
 		}
-		dependencyModule, err := b.getModuleForModuleIdentityOptionalCommit(
+		dependencyModule, err := b.getModuleForImageModuleDependency(
 			ctx,
 			imageModuleDependency,
 			workspace,
@@ -149,28 +149,40 @@ func (b *builder) buildForModule(
 	return nil, nil
 }
 
-func (b *builder) getModuleForModuleIdentityOptionalCommit(
+func (b *builder) getModuleForImageModuleDependency(
 	ctx context.Context,
-	moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit,
+	imageModuleDependency bufimage.ImageModuleDependency,
 	workspace bufmodule.Workspace,
 ) (bufmodule.Module, error) {
+	moduleIdentity := imageModuleDependency.ModuleIdentity()
+	commit := imageModuleDependency.Commit()
 	if workspace != nil {
-		module, ok := workspace.GetModule(moduleIdentityOptionalCommit)
+		module, ok := workspace.GetModule(moduleIdentity)
 		if ok {
 			return module, nil
 		}
 	}
-	// TODO: perhaps we should error here if we don't have a commit? The only
-	// case we should likely not have a commit is when we are using a workspace.
-	// There's no enforcement of this property, so erroring here is a bit weird,
-	// but it might be better to check our assumptions and figure out if there
-	// are exceptions after the fact, as opposed to resolving a ModulePin for
-	// main when we don't know if main is what we want.
+	if commit == "" {
+		// TODO: can we error here? The only
+		// case we should likely not have a commit is when we are using a workspace.
+		// There's no enforcement of this property, so erroring here is a bit weird,
+		// but it might be better to check our assumptions and figure out if there
+		// are exceptions after the fact, as opposed to resolving a ModulePin for
+		// main when we don't know if main is what we want.
+		return nil, fmt.Errorf("had ModuleIdentity %v with no associated commit, but did not have the module in a workspace", moduleIdentity)
+	}
+	moduleReference, err := bufmoduleref.NewModuleReference(
+		moduleIdentity.Remote(),
+		moduleIdentity.Owner(),
+		moduleIdentity.Repository(),
+		commit,
+	)
+	if err != nil {
+		return nil, err
+	}
 	modulePin, err := b.moduleResolver.GetModulePin(
 		ctx,
-		bufmoduleref.NewModuleReferenceForModuleIdentityOptionalCommit(
-			moduleIdentityOptionalCommit,
-		),
+		moduleReference,
 	)
 	if err != nil {
 		return nil, err
@@ -181,11 +193,11 @@ func (b *builder) getModuleForModuleIdentityOptionalCommit(
 	)
 }
 
-func newNodeForModuleIdentityOptionalCommit(
-	moduleIdentityOptionalCommit bufmoduleref.ModuleIdentityOptionalCommit,
+func newNodeForImageModuleDependency(
+	imageModuleDependency bufimage.ImageModuleDependency,
 ) Node {
 	return Node{
-		Value: moduleIdentityOptionalCommit.String(),
+		Value: imageModuleDependency.String(),
 	}
 }
 

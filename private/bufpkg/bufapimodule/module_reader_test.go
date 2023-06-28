@@ -138,7 +138,7 @@ func testDownload(
 			for _, path := range module.Manifest().Paths() {
 				moduleFile, err := module.GetModuleFile(ctx, path)
 				require.NoError(t, err)
-				assert.Equal(t, pin.Commit(), moduleFile.ModuleIdentityOptionalCommit().Commit())
+				assert.Equal(t, pin.Commit(), moduleFile.Commit())
 			}
 		}
 	})

@@ -494,7 +494,7 @@ func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.Fi
 // that all ImageFiles with the same ModuleIdentity have the same commit. This
 // validation will likely have to be moved around.
 type ImageModuleDependency interface {
-	// String() returns hostname/owner/repository[:commit].
+	// String() returns remote/owner/repository[:commit].
 	fmt.Stringer
 
 	// Required. Will never be nil.
@@ -523,7 +523,7 @@ type ImageModuleDependency interface {
 // ImageModuleDependency returns all ImageModuleDependencies for the Image.
 //
 // Does not return any ImageModuleDependencies for non-imports, that is the
-// ModuleIdentityOptionalCommits represented by non-imports are not represented
+// ModuleIdentities and commits represented by non-imports are not represented
 // in this list.
 func ImageModuleDependencies(image Image) []ImageModuleDependency {
 	importsOfNonImports := make(map[string]struct{})
@@ -534,7 +534,7 @@ func ImageModuleDependencies(image Image) []ImageModuleDependency {
 			}
 		}
 	}
-	// We know that all ModuleIdentityOptionalCommits with the same ModuleIdentity
+	// We know that all ImageFiles with the same ModuleIdentity
 	// have the same commit or no commit, so using String() will properly identify
 	// unique dependencies.
 	stringToImageModuleDependency := make(map[string]ImageModuleDependency)

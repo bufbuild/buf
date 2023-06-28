@@ -25,13 +25,13 @@ import (
 
 // Node is a node in a dependency graph.
 //
-// We want this to represent structured information such as a ModuleIdentityOptionalCommit
+// We want this to represent structured information such as a ImageModuleDependency
 // however we make this a bit more abstract for now since we don't have a good way
 // to universally represent things like modules on disk, or in workspaces.
 //
 // This is a struct because this needs to be comparable for the *dag.Graph.
 //
-// TODO: Don't have the duplication across Node and ModuleIdentityOptionalCommit.
+// TODO: Don't have the duplication across Node and ImageModuleDependency.
 type Node struct {
 	Value string
 }
