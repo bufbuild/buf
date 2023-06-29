@@ -20,10 +20,10 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufgraph"
 	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufgraph"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
