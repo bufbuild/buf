@@ -16,7 +16,6 @@ package graph
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -138,7 +137,7 @@ func run(
 		moduleResolver,
 		moduleReader,
 	)
-	moduleConfigs, err := moduleConfigReader.GetModuleConfigs(
+	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
 		ctx,
 		container,
 		sourceOrModuleRef,
@@ -150,22 +149,15 @@ func run(
 	if err != nil {
 		return err
 	}
+	moduleConfigs := moduleConfigSet.ModuleConfigs()
 	modules := make([]bufmodule.Module, len(moduleConfigs))
-	var workspace bufmodule.Workspace
 	for i, moduleConfig := range moduleConfigs {
-		if moduleWorkspace := moduleConfig.Workspace(); moduleWorkspace != nil {
-			// TODO: hacky, we should refactor GetModuleConfigs to return a single Workspace
-			if workspace != nil && workspace != moduleWorkspace {
-				return errors.New("two workspaces detected, this is a system error")
-			}
-			workspace = moduleWorkspace
-		}
 		modules[i] = moduleConfig.Module()
 	}
 	graph, fileAnnotations, err := graphBuilder.Build(
 		ctx,
 		modules,
-		bufgraph.BuildWithWorkspace(workspace),
+		bufgraph.BuildWithWorkspace(moduleConfigSet.Workspace()),
 	)
 	if err != nil {
 		return err
