@@ -75,22 +75,28 @@ func NewImageConfigReader(
 	)
 }
 
-// ModuleConfig is an module and configuration.
+// ModuleConfig is a Module and configuration.
 type ModuleConfig interface {
 	Module() bufmodule.Module
 	Config() *bufconfig.Config
+}
+
+// ModuleConfigSet is a set of ModuleConfigs with a potentially associated Workspace.
+type ModuleConfigSet interface {
+	ModuleConfigs() []ModuleConfig
+	// Optional. May be nil.
 	Workspace() bufmodule.Workspace
 }
 
 // ModuleConfigReader is a ModuleConfig reader.
 type ModuleConfigReader interface {
-	// GetModuleConfigs gets the ModuleConfig for the fetch value.
+	// GetModuleConfigSet gets the ModuleConfigSet for the fetch value.
 	//
 	// If externalDirOrFilePaths is empty, this builds all files under Buf control.
 	//
-	// Note that as opposed to ModuleReader, this will return a Module for either
+	// Note that as opposed to ModuleReader, this will return Modules for either
 	// a source or module reference, not just a module reference.
-	GetModuleConfigs(
+	GetModuleConfigSet(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		sourceOrModuleRef buffetch.SourceOrModuleRef,
@@ -98,7 +104,7 @@ type ModuleConfigReader interface {
 		externalDirOrFilePaths []string,
 		externalExcludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
-	) ([]ModuleConfig, error)
+	) (ModuleConfigSet, error)
 }
 
 // NewModuleConfigReader returns a new ModuleConfigReader

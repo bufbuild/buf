@@ -127,7 +127,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) ([]ImageConfig, []bufanalysis.FileAnnotation, error) {
-	moduleConfigs, err := i.moduleConfigReader.GetModuleConfigs(
+	moduleConfigSet, err := i.moduleConfigReader.GetModuleConfigSet(
 		ctx,
 		container,
 		sourceOrModuleRef,
@@ -139,6 +139,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	if err != nil {
 		return nil, nil, err
 	}
+	moduleConfigs := moduleConfigSet.ModuleConfigs()
 	imageConfigs := make([]ImageConfig, 0, len(moduleConfigs))
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, moduleConfig := range moduleConfigs {
@@ -153,7 +154,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 		}
 		buildOpts := []bufimagebuild.BuildOption{
 			bufimagebuild.WithExpectedDirectDependencies(moduleConfig.Module().DeclaredDirectDependencies()),
-			bufimagebuild.WithWorkspace(moduleConfig.Workspace()),
+			bufimagebuild.WithWorkspace(moduleConfigSet.Workspace()),
 		}
 		if excludeSourceCodeInfo {
 			buildOpts = append(buildOpts, bufimagebuild.WithExcludeSourceCodeInfo())

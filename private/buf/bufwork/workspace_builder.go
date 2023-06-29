@@ -211,6 +211,18 @@ func validateWorkspaceDirectoryNonEmpty(
 // overlap in either direction. The last argument is only used for
 // error reporting.
 //
+// This verifies that ie we do not mistakenly target a directory input that is
+// within a Workspace, but is not listed as a directory in the Workspace, which
+// could cause issues. If we say "we have a workspace with directory proto, but
+// we are targeting proto/a", then we will still detect the buf.work.yaml and
+// bring in all the directories within it, making them available for import,
+// but potentially in two ways. If there was proto/a/a.proto, we could theoretically
+// import it as both a/a.proto, and a.proto.
+//
+// TODO: See if the above explanation is nonsense. It should be nonsense if we
+// did our job right here. And regardless, this shouldn't need to be validated
+// at this level.
+//
 //	validateInputOverlap("foo", "bar", "buf.work.yaml")     -> OK
 //	validateInputOverlap("foo/bar", "foo", "buf.work.yaml") -> NOT OK
 //	validateInputOverlap("foo", "foo/bar", "buf.work.yaml") -> NOT OK
@@ -219,6 +231,15 @@ func validateInputOverlap(
 	targetSubDirPath string,
 	workspaceID string,
 ) error {
+	// If we are targeting the whole workspace and not a specific directory,
+	// we do not do this check.
+	//
+	// TODO: targetSubDirPath needs to be completely removed from WorkspaceBuilder
+	// and validateInputOverlap needs to be done somewhere else at a higher level,
+	// as the "target" is just a CLI argument concept, not a pure Workspace concept.
+	if targetSubDirPath == "." {
+		return nil
+	}
 	if normalpath.ContainsPath(workspaceDirectory, targetSubDirPath, normalpath.Relative) {
 		return fmt.Errorf(
 			`failed to build input "%s" because it is contained by directory "%s" listed in %s`,

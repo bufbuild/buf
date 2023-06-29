@@ -80,16 +80,16 @@ Most people will want to rewrite the files defined in the current directory in-p
 
 Display a diff between the original and formatted content with -d
 Write a diff instead of the formatted file:
-    
+
     $ buf format simple/simple.proto -d
-    
+
     $ diff -u simple/simple.proto.orig simple/simple.proto
     --- simple/simple.proto.orig	2022-03-24 09:44:10.000000000 -0700
     +++ simple/simple.proto	2022-03-24 09:44:10.000000000 -0700
     @@ -2,8 +2,7 @@
-    
+
      package simple;
-    
+
     -
      message Object {
     -    string key = 1;
@@ -106,13 +106,13 @@ Use the --exit-code flag to exit with a non-zero exit code if there is a diff:
 
 Format a file, directory, or module reference by specifying a source e.g.
 Write the formatted file to stdout:
-    
+
     $ buf format simple/simple.proto
-    
+
     syntax = "proto3";
-    
+
     package simple;
-    
+
     message Object {
       string key = 1;
       bytes value = 2;
@@ -285,7 +285,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleConfigs, err := moduleConfigReader.GetModuleConfigs(
+	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
 		ctx,
 		container,
 		sourceOrModuleRef,
@@ -297,6 +297,7 @@ func run(
 	if err != nil {
 		return err
 	}
+	moduleConfigs := moduleConfigSet.ModuleConfigs()
 	var outputDirectory string
 	var singleFileOutputFilename string
 	if flags.Output != "-" {
