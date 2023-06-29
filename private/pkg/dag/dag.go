@@ -258,6 +258,7 @@ func (g *Graph[Key]) DOTString(keyToString func(Key) string) (string, error) {
 					fmt.Sprintf("%d", nextIndex),
 				)
 				nextIndex++
+				return nil
 			}
 			// This is a system error.
 			return fmt.Errorf("got node %v with %d inbound edges and %d outbound edges, but this was not processed during WalkEdges", key, len(inboundEdges), len(outboundEdges))
