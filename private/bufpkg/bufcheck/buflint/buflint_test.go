@@ -925,7 +925,7 @@ func testLintConfigModifier(
 		configModifier(config)
 	}
 
-	module, err := bufmodulebuild.BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config.Build,
