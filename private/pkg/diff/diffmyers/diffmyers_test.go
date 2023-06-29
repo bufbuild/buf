@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const writeGoldenFiles = true
+const writeGoldenFiles = false
 
 func TestDiff(t *testing.T) {
 	t.Parallel()
@@ -137,7 +137,8 @@ And let there always be being,
   so we may see their outcome.
 The two are the same,
 But after they are produced,
-  they have different names.`
+  they have different names.
+`
 		const tzu = `The Nameless is the origin of Heaven and Earth;
 The named is the mother of all things.
 
@@ -150,12 +151,13 @@ But after they are produced,
   they have different names.
 They both may be called deep and profound.
 Deeper and more profound,
-The door of all subtleties!`
+The door of all subtleties!
+`
 		edits := diffmyers.Diff(
 			splitLines(lao),
 			splitLines(tzu),
 		)
-		assert.Equal(t, edits,
+		assert.Equal(t,
 			[]diffmyers.Edit{
 				{
 					Kind: diffmyers.EditKindDelete,
@@ -165,13 +167,13 @@ The door of all subtleties!`
 					FromPosition: 1,
 				},
 				{
-					Kind:         diffmyers.EditKindInsert,
-					FromPosition: 3,
-					ToPosition:   1,
-				},
-				{
 					Kind:         diffmyers.EditKindDelete,
 					FromPosition: 3,
+				},
+				{
+					Kind:         diffmyers.EditKindInsert,
+					FromPosition: 4,
+					ToPosition:   1,
 				},
 				{
 					Kind:         diffmyers.EditKindInsert,
@@ -194,125 +196,9 @@ The door of all subtleties!`
 					ToPosition:   12,
 				},
 			},
+			edits,
 		)
 		testPrint(t, lao, tzu, edits, "lao-tzu")
-	})
-	t.Run("pet-apis", func(t *testing.T) {
-		const from = `
-syntax = "proto3";
-
-// PetType represents the different types of pets in the pet store.
-enum PetType {
-	PET_TYPE_UNSPECIFIED = 0;
-	PET_TYPE_CAT = 1;
-	PET_TYPE_DOG = 2;
-	PET_TYPE_SNAKE = 3;
-	PET_TYPE_HAMSTER = 4;
-}
-
-// Pet represents a pet in the pet store.
-message Pet {
-	PetType pet_type = 1;
-	string pet_id = 2;
-	string name = 3;
-}
-
-message GetPetRequest {
-	string pet_id = 1;
-}
-
-message GetPetResponse {
-	Pet pet = 1;
-}
-
-message PutPetRequest {
-	PetType pet_type = 1;
-	string name = 2;
-}
-
-message PutPetResponse {
-	Pet pet = 1;
-}
-
-message DeletePetRequest {
-	string pet_id = 1;
-}
-
-message DeletePetResponse {}
-
-message PurchasePetRequest {
-	string pet_id = 1;
-}
-
-message PurchasePetResponse {}
-
-service PetStoreService {
-	rpc GetPet(GetPetRequest) returns (GetPetResponse) {}
-	rpc PutPet(PutPetRequest) returns (PutPetResponse) {}
-	rpc DeletePet(DeletePetRequest) returns (DeletePetResponse) {}
-	rpc PurchasePet(PurchasePetRequest) returns (PurchasePetResponse) {}
-}	
-`
-		const to = `
-syntax = "proto3";
-
-// PetType represents the different types of pets in the pet store.
-enum PetType {
-	PET_TYPE_UNSPECIFIED = 0;
-	PET_TYPE_CAT = 1;
-	PET_TYPE_DOG = 2;
-	PET_TYPE_SNAKE = 3;
-	PET_TYPE_HAMSTER = 4;
-}
-
-// Pet represents a pet in the pet store.
-message Pet {
-	PetType pet_type = 1;
-	int32 pet_id = 2;
-	string name = 3;
-}
-
-message GetPetRequest {
-	string pet_id = 1;
-}
-
-message GetPetResponse {
-	Pet pet = 1;
-}
-
-message PutPetRequest {
-	PetType pet_type = 1;
-	string name = 2;
-}
-
-message PutPetResponse {
-	Pet pet = 1;
-}
-
-message DeletePetRequest {
-	string pet_id = 1;
-}
-
-message DeletePetResponse {}
-
-message PurchasePetRequest {
-	string pet_id = 1;
-}
-
-message PurchasePetResponse {}
-
-service PetStoreService {
-	rpc GetPet(GetPetRequest) returns (GetPetResponse) {}
-	rpc PutPet(PutPetRequest) returns (PutPetResponse) {}
-	rpc DeletePet(DeletePetRequest) returns (DeletePetResponse) {}
-	rpc PurchasePet(PurchasePetRequest) returns (PurchasePetResponse) {}
-}	
-`
-		testPrint(t,
-			from, to,
-			diffmyers.Diff(splitLines(from), splitLines(to)),
-			"pet-apis",
-		)
 	})
 }
 

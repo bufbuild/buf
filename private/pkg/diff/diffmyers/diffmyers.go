@@ -86,7 +86,10 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 		// Reserve the space for the hunk header.
 		hunk := &printLine{hunk: true}
 		out = append(out, hunk)
-		var insertCount, deleteCount int
+		var (
+			insertCount, deleteCount int
+			printHunk                bool
+		)
 		// Print the lines in the edit.
 		for j := i; j < len(edits); j++ {
 			// Print the lines before the edit.
@@ -102,8 +105,10 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 			insertCount += advance
 			deleteCount += advance
 			if advance > contextThreshold {
+				i--
 				break
 			}
+			printHunk = true
 			switch edits[j].Kind {
 			case EditKindDelete:
 				deleteCount++
@@ -125,9 +130,11 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 			bufferSize += len(out[len(out)-1].line) + 1
 			i++
 		}
-		// Print the hunk header.
-		hunk.line = []byte(fmt.Sprintf("@@ -%d,%d +%d,%d @@\n", hunkOldStart, deleteCount, hunkNewStart, insertCount))
-		bufferSize += len(hunk.line) + 1
+		if printHunk {
+			// Print the hunk header.
+			hunk.line = []byte(fmt.Sprintf("@@ -%d,%d +%d,%d @@\n", hunkOldStart, deleteCount, hunkNewStart, insertCount))
+			bufferSize += len(hunk.line) + 1
+		}
 	}
 	// Print the lines after the last edit.
 	for _, line := range from[fromIndex:] {
@@ -137,7 +144,7 @@ func Print(from, to [][]byte, edits []Edit) ([]byte, error) {
 	var buffer bytes.Buffer
 	buffer.Grow(bufferSize)
 	for _, line := range out {
-		if line.hunk {
+		if line.hunk && len(line.line) > 0 {
 			buffer.Write(line.line)
 			continue
 		}
@@ -202,6 +209,12 @@ func findMiddleSnake(from, to [][]byte) (d int, x int, y int, u int, v int) {
 	// Wherever we access them we just offset by maxD.
 	vf := make([]int, 2*maxD+1)
 	vb := make([]int, 2*maxD+1)
+	for i := 0; i < len(vf); i++ {
+		vf[i] = -1
+		vb[i] = -1
+	}
+	vf[1+maxD] = 0
+	vb[1+maxD] = 0
 	delta := n - m
 	for d := 0; d <= maxD; d++ {
 		for k := -d; k <= d; k += 2 { // Forward snake
@@ -222,8 +235,10 @@ func findMiddleSnake(from, to [][]byte) (d int, x int, y int, u int, v int) {
 				y++
 			}
 			vf[k+maxD] = x
-			if (delta%2 != 0) && -(k-delta) >= -(d-1) && -(k-delta) <= (d-1) && vf[k+maxD]+vb[(-(k-delta))+maxD] >= n {
-				return 2*d - 1, xi, yi, x, y
+			if (delta&1 == 1) && -(k-delta) >= -(d-1) && -(k-delta) <= (d-1) && vb[(-(k-delta))+maxD] != -1 {
+				if x+vb[(-(k-delta))+maxD] >= n {
+					return 2*d - 1, xi, yi, x, y
+				}
 			}
 		}
 		for k := -d; k <= d; k += 2 { // Backward snake
@@ -241,8 +256,10 @@ func findMiddleSnake(from, to [][]byte) (d int, x int, y int, u int, v int) {
 				y++
 			}
 			vb[k+maxD] = x
-			if (delta%2 == 0) && -(k-delta) >= -d && -(k-delta) <= d && vb[k+maxD]+vf[(-(k-delta))+maxD] >= n {
-				return 2 * d, n - x, m - y, n - xi, m - yi
+			if (delta&1 == 0) && -(k-delta) >= -d && -(k-delta) <= d && vf[(-(k-delta))+maxD] != -1 {
+				if x+vf[(-(k-delta))+maxD] >= n {
+					return 2 * d, n - x, m - y, n - xi, m - yi
+				}
 			}
 		}
 	}
