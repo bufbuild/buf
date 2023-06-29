@@ -18,7 +18,9 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
@@ -50,14 +52,33 @@ func WithWorkspace(workspace bufmodule.Workspace) BuildModuleFileSetOption {
 	}
 }
 
+// BuiltModule ties a bufmodule.Module with the configuration and a bucket
+// containing just the files required to build it.
+type BuiltModule struct {
+	bufmodule.Module
+	Bucket storage.ReadBucket
+}
+
 // ModuleBucketBuilder builds modules for buckets.
-type ModuleBucketBuilder = *moduleBucketBuilder
+type ModuleBucketBuilder interface {
+	// BuildForBucket constructs a minimal bucket from the passed readBucket and
+	// builds a module from it.
+	//
+	// config's value is used even if the bucket contains configuration (buf.yaml).
+	// This means the module is built differently than described in storage, which
+	// may cause building to fail or succeed when it shouldn't. For your own
+	// sanity, you should pass a config value read from the provided bucket.
+	BuildForBucket(
+		ctx context.Context,
+		readBucket storage.ReadBucket,
+		config *bufmoduleconfig.Config,
+		options ...BuildOption,
+	) (*BuiltModule, error)
+}
 
 // NewModuleBucketBuilder returns a new BucketBuilder.
-func NewModuleBucketBuilder(
-	options ...BuildOption,
-) ModuleBucketBuilder {
-	return newModuleBucketBuilder(options...)
+func NewModuleBucketBuilder() ModuleBucketBuilder {
+	return newModuleBucketBuilder()
 }
 
 // ModuleIncludeBuilder builds modules for includes.
