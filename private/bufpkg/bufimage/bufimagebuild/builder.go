@@ -163,6 +163,9 @@ func (b *builder) build(
 // warnInvalidImports checks that all the target image files have valid imports statements that
 // point to files in the local module, in a direct dependency, or in a workspace local unnamed
 // module. It outputs WARN messages otherwise, one per invalid import statement.
+//
+// TODO: Understand this code before doing anything
+// TODO: switch to use bufimage.ImageModuleDependencies
 func (b *builder) warnInvalidImports(
 	ctx context.Context,
 	builtImage bufimage.Image,
