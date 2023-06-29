@@ -101,6 +101,12 @@ type WorkspaceBuilder interface {
 	// BuildWorkspace builds a bufmodule.Workspace.
 	//
 	// The given targetSubDirPath is the only path that will have the configOverride applied to it.
+	// TODO: delete targetSubDirPath entirely. We are building a Workspace, we don't necessarily
+	// have a specific target directory within it. This would mean doing the config override at
+	// a higher level for any specific modules within the Workspace. The only thing in the config
+	// we care about is the build.excludes, so in theory we should be able to figure out a way
+	// to say "exclude these files from these modules when you are building". Even better, the
+	// WorkspaceBuilder has nothing to do with building modules.
 	BuildWorkspace(
 		ctx context.Context,
 		workspaceConfig *Config,
