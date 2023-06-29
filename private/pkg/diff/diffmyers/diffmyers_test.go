@@ -137,7 +137,8 @@ And let there always be being,
   so we may see their outcome.
 The two are the same,
 But after they are produced,
-  they have different names.`
+  they have different names.
+`
 		const tzu = `The Nameless is the origin of Heaven and Earth;
 The named is the mother of all things.
 
@@ -150,12 +151,13 @@ But after they are produced,
   they have different names.
 They both may be called deep and profound.
 Deeper and more profound,
-The door of all subtleties!`
+The door of all subtleties!
+`
 		edits := diffmyers.Diff(
 			splitLines(lao),
 			splitLines(tzu),
 		)
-		assert.Equal(t, edits,
+		assert.Equal(t,
 			[]diffmyers.Edit{
 				{
 					Kind: diffmyers.EditKindDelete,
@@ -165,13 +167,13 @@ The door of all subtleties!`
 					FromPosition: 1,
 				},
 				{
-					Kind:         diffmyers.EditKindInsert,
-					FromPosition: 3,
-					ToPosition:   1,
-				},
-				{
 					Kind:         diffmyers.EditKindDelete,
 					FromPosition: 3,
+				},
+				{
+					Kind:         diffmyers.EditKindInsert,
+					FromPosition: 4,
+					ToPosition:   1,
 				},
 				{
 					Kind:         diffmyers.EditKindInsert,
@@ -194,6 +196,7 @@ The door of all subtleties!`
 					ToPosition:   12,
 				},
 			},
+			edits,
 		)
 		testPrint(t, lao, tzu, edits, "lao-tzu")
 	})
