@@ -162,7 +162,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleConfigs, err := moduleConfigReader.GetModuleConfigs(
+	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
 		ctx,
 		container,
 		sourceOrModuleRef,
@@ -174,6 +174,7 @@ func run(
 	if err != nil {
 		return err
 	}
+	moduleConfigs := moduleConfigSet.ModuleConfigs()
 	moduleFileSetBuilder := bufmodulebuild.NewModuleFileSetBuilder(
 		container.Logger(),
 		moduleReader,
@@ -184,7 +185,7 @@ func run(
 		moduleFileSet, err := moduleFileSetBuilder.Build(
 			ctx,
 			moduleConfig.Module(),
-			bufmodulebuild.WithWorkspace(moduleConfig.Workspace()),
+			bufmodulebuild.WithWorkspace(moduleConfigSet.Workspace()),
 		)
 		if err != nil {
 			return err
