@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/graph"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/goversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/mavenversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/npmversion"
@@ -30,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/repo/reposync"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/workspace/workspacepush"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
@@ -135,6 +135,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
+					graph.NewCommand("graph", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
 					migratev1beta1.NewCommand("migrate-v1beta1", builder),
@@ -215,7 +216,6 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted",
 				Hidden: true,
 				SubCommands: []*appcmd.Command{
-					graph.NewCommand("graph", builder),
 					protoc.NewCommand("protoc", builder),
 					{
 						Use:   "registry",
