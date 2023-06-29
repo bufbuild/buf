@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf beta graph` to print the dependency graph for a module in DOT format.
+- Various small bug fixes.
 
 ## [v1.22.0] - 2023-06-23
 
