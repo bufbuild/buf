@@ -356,7 +356,7 @@ func testGetModule(t *testing.T, dirPath string) bufmodule.Module {
 	require.NoError(t, err)
 	config, err := bufmoduleconfig.NewConfigV1(bufmoduleconfig.ExternalConfigV1{})
 	require.NoError(t, err)
-	module, err := bufmodulebuild.BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,

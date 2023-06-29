@@ -213,7 +213,7 @@ func (s *syncer) visitCommit(
 		)
 		return nil
 	}
-	builtModule, err := bufmodulebuild.BuildForBucket(
+	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		sourceBucket,
 		sourceConfig.Build,
