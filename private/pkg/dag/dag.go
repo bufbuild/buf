@@ -244,7 +244,6 @@ func (g *Graph[Key]) DOTString(keyToString func(Key) string) (string, error) {
 	// We also want to pick up any nodes that do not have edges, and display them.
 	if err := g.WalkNodes(
 		func(key Key, inboundEdges []Key, outboundEdges []Key) error {
-			//
 			if _, ok := keyToIndex[key]; ok {
 				return nil
 			}

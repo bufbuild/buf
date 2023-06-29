@@ -97,6 +97,7 @@ func (b *builder) buildForModule(
 	workspace bufmodule.Workspace,
 	graph *dag.Graph[Node],
 ) ([]bufanalysis.FileAnnotation, error) {
+	graph.AddNode(node)
 	image, fileAnnotations, err := b.imageBuilder.Build(
 		ctx,
 		module,
