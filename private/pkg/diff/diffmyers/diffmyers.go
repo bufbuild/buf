@@ -222,7 +222,7 @@ func findMiddleSnake(from, to [][]byte) (d int, x int, y int, u int, v int) {
 				y++
 			}
 			vf[k+maxD] = x
-			if (delta%2 == 1) && k >= delta-(d-1) && k <= delta+(d-1) && vf[k+maxD]+vb[(-(k-delta))+maxD] >= n {
+			if (delta%2 != 0) && -(k-delta) >= -(d-1) && -(k-delta) <= (d-1) && vf[k+maxD]+vb[(-(k-delta))+maxD] >= n {
 				return 2*d - 1, xi, yi, x, y
 			}
 		}
@@ -241,7 +241,7 @@ func findMiddleSnake(from, to [][]byte) (d int, x int, y int, u int, v int) {
 				y++
 			}
 			vb[k+maxD] = x
-			if (delta%2 == 0) && k+delta >= -d && k+delta <= d && vb[k+maxD]+vf[(-(k-delta))+maxD] >= n {
+			if (delta%2 == 0) && -(k-delta) >= -d && -(k-delta) <= d && vb[k+maxD]+vf[(-(k-delta))+maxD] >= n {
 				return 2 * d, n - x, m - y, n - xi, m - yi
 			}
 		}

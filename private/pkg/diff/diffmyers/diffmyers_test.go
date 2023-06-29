@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const writeGoldenFiles = false
+const writeGoldenFiles = true
 
 func TestDiff(t *testing.T) {
 	t.Parallel()
@@ -196,6 +196,123 @@ The door of all subtleties!`
 			},
 		)
 		testPrint(t, lao, tzu, edits, "lao-tzu")
+	})
+	t.Run("pet-apis", func(t *testing.T) {
+		const from = `
+syntax = "proto3";
+
+// PetType represents the different types of pets in the pet store.
+enum PetType {
+	PET_TYPE_UNSPECIFIED = 0;
+	PET_TYPE_CAT = 1;
+	PET_TYPE_DOG = 2;
+	PET_TYPE_SNAKE = 3;
+	PET_TYPE_HAMSTER = 4;
+}
+
+// Pet represents a pet in the pet store.
+message Pet {
+	PetType pet_type = 1;
+	string pet_id = 2;
+	string name = 3;
+}
+
+message GetPetRequest {
+	string pet_id = 1;
+}
+
+message GetPetResponse {
+	Pet pet = 1;
+}
+
+message PutPetRequest {
+	PetType pet_type = 1;
+	string name = 2;
+}
+
+message PutPetResponse {
+	Pet pet = 1;
+}
+
+message DeletePetRequest {
+	string pet_id = 1;
+}
+
+message DeletePetResponse {}
+
+message PurchasePetRequest {
+	string pet_id = 1;
+}
+
+message PurchasePetResponse {}
+
+service PetStoreService {
+	rpc GetPet(GetPetRequest) returns (GetPetResponse) {}
+	rpc PutPet(PutPetRequest) returns (PutPetResponse) {}
+	rpc DeletePet(DeletePetRequest) returns (DeletePetResponse) {}
+	rpc PurchasePet(PurchasePetRequest) returns (PurchasePetResponse) {}
+}	
+`
+		const to = `
+syntax = "proto3";
+
+// PetType represents the different types of pets in the pet store.
+enum PetType {
+	PET_TYPE_UNSPECIFIED = 0;
+	PET_TYPE_CAT = 1;
+	PET_TYPE_DOG = 2;
+	PET_TYPE_SNAKE = 3;
+	PET_TYPE_HAMSTER = 4;
+}
+
+// Pet represents a pet in the pet store.
+message Pet {
+	PetType pet_type = 1;
+	int32 pet_id = 2;
+	string name = 3;
+}
+
+message GetPetRequest {
+	string pet_id = 1;
+}
+
+message GetPetResponse {
+	Pet pet = 1;
+}
+
+message PutPetRequest {
+	PetType pet_type = 1;
+	string name = 2;
+}
+
+message PutPetResponse {
+	Pet pet = 1;
+}
+
+message DeletePetRequest {
+	string pet_id = 1;
+}
+
+message DeletePetResponse {}
+
+message PurchasePetRequest {
+	string pet_id = 1;
+}
+
+message PurchasePetResponse {}
+
+service PetStoreService {
+	rpc GetPet(GetPetRequest) returns (GetPetResponse) {}
+	rpc PutPet(PutPetRequest) returns (PutPetResponse) {}
+	rpc DeletePet(DeletePetRequest) returns (DeletePetResponse) {}
+	rpc PurchasePet(PurchasePetRequest) returns (PurchasePetResponse) {}
+}	
+`
+		testPrint(t,
+			from, to,
+			diffmyers.Diff(splitLines(from), splitLines(to)),
+			"pet-apis",
+		)
 	})
 }
 
