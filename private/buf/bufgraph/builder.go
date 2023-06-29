@@ -72,11 +72,11 @@ func (b *builder) build(
 	workspace bufmodule.Workspace,
 ) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error) {
 	graph := dag.NewGraph[Node]()
-	for i, module := range modules {
+	for _, module := range modules {
 		fileAnnotations, err := b.buildForModule(
 			ctx,
 			module,
-			newNodeForModule(module, i),
+			newNodeForModule(module),
 			workspace,
 			graph,
 		)
@@ -192,9 +192,9 @@ func newNodeForImageModuleDependency(imageModuleDependency bufimage.ImageModuleD
 	}
 }
 
-func newNodeForModule(module bufmodule.Module, i int) Node {
+func newNodeForModule(module bufmodule.Module) Node {
 	// TODO: deal with unnamed Modules
-	node := Node{}
+	var node Node
 	if moduleIdentity := module.ModuleIdentity(); moduleIdentity != nil {
 		node.Remote = moduleIdentity.Remote()
 		node.Owner = moduleIdentity.Owner()
