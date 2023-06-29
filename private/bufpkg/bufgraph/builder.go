@@ -112,6 +112,7 @@ func (b *builder) buildForModule(
 		ctx,
 		module,
 		bufimagebuild.WithWorkspace(workspace),
+		bufimagebuild.WithExpectedDirectDependencies(module.DeclaredDirectDependencies()),
 	)
 	if err != nil {
 		return nil, err
