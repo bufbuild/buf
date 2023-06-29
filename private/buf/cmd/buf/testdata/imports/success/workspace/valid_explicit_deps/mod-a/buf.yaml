@@ -1,0 +1,4 @@
+version: v1
+name: buf.build/foo/mod-a
+deps:
+  - buf.build/foo/mod-b

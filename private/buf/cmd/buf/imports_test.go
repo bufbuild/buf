@@ -123,6 +123,16 @@ func TestValidImportFromLocalOnlyWorkspaceUnnamedModules(t *testing.T) {
 	)
 }
 
+func TestGraphNoWarningsValidImportFromWorkspaceNamedModules(t *testing.T) {
+	t.Parallel()
+	testRunStdoutStderr(
+		t, nil, 0,
+		"", // no warnings
+		"beta", "graph",
+		filepath.Join("testdata", "imports", "success", "workspace", "valid_explicit_deps"),
+	)
+}
+
 func testRunStderrWithCache(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStderrContains(
 		t,
