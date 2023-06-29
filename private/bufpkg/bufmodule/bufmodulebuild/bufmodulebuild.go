@@ -68,6 +68,8 @@ type ModuleBucketBuilder interface {
 	// This means the module is built differently than described in storage, which
 	// may cause building to fail or succeed when it shouldn't. For your own
 	// sanity, you should pass a config value read from the provided bucket.
+	//
+	// TODO: why do we pass a config here?! This parameter should be removed.
 	BuildForBucket(
 		ctx context.Context,
 		readBucket storage.ReadBucket,

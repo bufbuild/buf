@@ -1,0 +1,108 @@
+package bufgraph
+
+import (
+	"context"
+	"path/filepath"
+	"testing"
+
+	"github.com/bufbuild/buf/private/buf/bufwork"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+)
+
+func TestBasic(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	workspace, err := testBuildWorkspace(ctx, filepath.Join("testdata", "basic"))
+	require.NoError(t, err)
+	builder := NewBuilder(
+		zap.NewNop(),
+		bufmodule.NewNopModuleResolver(),
+		bufmodule.NewNopModuleReader(),
+	)
+	graph, fileAnnotations, err := builder.Build(
+		ctx,
+		workspace.GetModules(),
+		BuildWithWorkspace(workspace),
+	)
+	require.NoError(t, err)
+	require.Empty(t, fileAnnotations)
+	dotString, err := graph.DOTString(func(key Node) string { return key.String() })
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		`digraph {
+
+  1 [label="bsr.internal/foo/test-a"]
+  2 [label="bsr.internal/foo/test-b"]
+  3 [label="bsr.internal/foo/test-c"]
+  4 [label="bsr.internal/foo/test-d"]
+  5 [label="bsr.internal/foo/test-e"]
+  6 [label="bsr.internal/foo/test-f"]
+  7 [label="bsr.internal/foo/test-g"]
+
+  1 -> 2
+  2 -> 3
+  3 -> 4
+  1 -> 4
+  1 -> 5
+  5 -> 6
+  7
+
+}`,
+		dotString,
+	)
+}
+
+// TODO: This entire function is all you should need to do to build workspaces, and even
+// this is overly complicated because of the wonkiness of bufmodulebuild and NewWorkspace.
+// We should have this in a common place for at least testing.
+func testBuildWorkspace(ctx context.Context, workspacePath string) (bufmodule.Workspace, error) {
+	workspaceBucket, err := storageos.NewProvider().NewReadWriteBucket(workspacePath)
+	if err != nil {
+		return nil, err
+	}
+	workspaceConfig, err := bufwork.GetConfigForBucket(ctx, workspaceBucket, ".")
+	if err != nil {
+		return nil, err
+	}
+	moduleBucketBuilder := bufmodulebuild.NewModuleBucketBuilder()
+	namedModules := make(map[string]bufmodule.Module, len(workspaceConfig.Directories))
+	allModules := make([]bufmodule.Module, 0, len(workspaceConfig.Directories))
+	for _, directory := range workspaceConfig.Directories {
+		moduleBucket := storage.MapReadBucket(
+			workspaceBucket,
+			storage.MapOnPrefix(directory),
+		)
+		moduleConfig, err := bufconfig.GetConfigForBucket(ctx, moduleBucket)
+		if err != nil {
+			return nil, err
+		}
+		module, err := moduleBucketBuilder.BuildForBucket(
+			ctx,
+			moduleBucket,
+			moduleConfig.Build,
+			bufmodulebuild.WithModuleIdentity(
+				moduleConfig.ModuleIdentity,
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+		if moduleConfig.ModuleIdentity != nil {
+			namedModules[moduleConfig.ModuleIdentity.IdentityString()] = module
+		}
+		allModules = append(allModules, module)
+	}
+	return bufmodule.NewWorkspace(
+		ctx,
+		namedModules,
+		allModules,
+	)
+}

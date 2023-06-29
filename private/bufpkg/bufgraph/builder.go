@@ -72,6 +72,7 @@ func (b *builder) build(
 	workspace bufmodule.Workspace,
 ) (*dag.Graph[Node], []bufanalysis.FileAnnotation, error) {
 	graph := dag.NewGraph[Node]()
+	alreadyProcessedNodes := make(map[Node]struct{})
 	for _, module := range modules {
 		fileAnnotations, err := b.buildForModule(
 			ctx,
@@ -79,6 +80,7 @@ func (b *builder) build(
 			newNodeForModule(module),
 			workspace,
 			graph,
+			alreadyProcessedNodes,
 		)
 		if err != nil {
 			return nil, nil, err
@@ -96,7 +98,15 @@ func (b *builder) buildForModule(
 	node Node,
 	workspace bufmodule.Workspace,
 	graph *dag.Graph[Node],
+	alreadyProcessedNodes map[Node]struct{},
 ) ([]bufanalysis.FileAnnotation, error) {
+	// We can't rely on the existence of a node in the graph for this, as when we add an edge
+	// to the graph, the node is added, and we still need to process the node as a potential
+	// source node.
+	if _, ok := alreadyProcessedNodes[node]; ok {
+		return nil, nil
+	}
+	alreadyProcessedNodes[node] = struct{}{}
 	graph.AddNode(node)
 	image, fileAnnotations, err := b.imageBuilder.Build(
 		ctx,
@@ -129,6 +139,7 @@ func (b *builder) buildForModule(
 			dependencyNode,
 			workspace,
 			graph,
+			alreadyProcessedNodes,
 		)
 		if err != nil {
 			return nil, err
