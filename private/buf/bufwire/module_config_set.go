@@ -15,26 +15,25 @@
 package bufwire
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 )
 
-type moduleConfig struct {
-	module bufmodule.Module
-	config *bufconfig.Config
+type moduleConfigSet struct {
+	moduleConfigs []ModuleConfig
+	workspace     bufmodule.Workspace
 }
 
-func newModuleConfig(module bufmodule.Module, config *bufconfig.Config) *moduleConfig {
-	return &moduleConfig{
-		module: module,
-		config: config,
+func newModuleConfigSet(moduleConfigs []ModuleConfig, workspace bufmodule.Workspace) *moduleConfigSet {
+	return &moduleConfigSet{
+		moduleConfigs: moduleConfigs,
+		workspace:     workspace,
 	}
 }
 
-func (m *moduleConfig) Module() bufmodule.Module {
-	return m.module
+func (m *moduleConfigSet) ModuleConfigs() []ModuleConfig {
+	return m.moduleConfigs
 }
 
-func (m *moduleConfig) Config() *bufconfig.Config {
-	return m.config
+func (m *moduleConfigSet) Workspace() bufmodule.Workspace {
+	return m.workspace
 }
