@@ -93,9 +93,9 @@ type AdminServiceClient interface {
 	UpdateBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error)
 	// Get fqn uniqueness policy for the server.
 	GetUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.GetUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.GetUniquenessPolicyResponse], error)
-	// Update fqn uniqueness policy for the server.
+	// Update uniqueness policy enforcement for the server.
 	UpdateUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
-	// Get FQN uniqueness state for the server
+	// Get state of uniqueness collisions for the server
 	GetUniquenessState(context.Context, *connect_go.Request[v1alpha1.GetUniquenessStateRequest]) (*connect_go.Response[v1alpha1.GetUniquenessStateResponse], error)
 }
 
@@ -240,9 +240,9 @@ type AdminServiceHandler interface {
 	UpdateBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error)
 	// Get fqn uniqueness policy for the server.
 	GetUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.GetUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.GetUniquenessPolicyResponse], error)
-	// Update fqn uniqueness policy for the server.
+	// Update uniqueness policy enforcement for the server.
 	UpdateUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
-	// Get FQN uniqueness state for the server
+	// Get state of uniqueness collisions for the server
 	GetUniquenessState(context.Context, *connect_go.Request[v1alpha1.GetUniquenessStateRequest]) (*connect_go.Response[v1alpha1.GetUniquenessStateResponse], error)
 }
 

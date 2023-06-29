@@ -35,33 +35,43 @@ message BreakingChangePolicy {
   BreakingChangeCategory category = 3;
 }
 
+// UniquenessPolicy is the policy for uniqueness on the server.
 message UniquenessPolicy {
-  optional bool enabled = 1;
+  // Whether uniqueness policy is enforced.
+  bool enabled = 1;
 }
 
+// UniquenessState is the state of collisions on the server.
 message UniquenessState {
-  bool has_collisions = 1;
-  repeated Collision collisions = 2;
+  // The existing collisions on the server.
+  repeated Collision collisions = 1;
 }
 
+// Collision is a collision that has occurred.
 message Collision {
-  string id = 1;
+  // The reference that has collisions.
+  string reference = 1;
+  // The type of collision.
   CollisionType type = 2;
-  string reference = 3;
-  repeated CollisionSource sources = 4;
+  // The sources of the collision.
+  repeated CollisionSource sources = 3;
 }
 
+// CollisionSource is the source of a collision
 message CollisionSource {
-  string id = 1;
-  string organization_id = 2;
-  string repository_id = 3;
-  string filepath = 4;
+  string owner_id = 1;
+  string repository_id = 2;
+  string path = 3;
 }
 
+// CollisionType is the type of collisions that can occur.
 enum CollisionType {
+  // Unspecified collision type.
   COLLISION_TYPE_UNSPECIFIED = 0;
-  COLLISION_TYPE_FQN = 1;
-  COLLISION_TYPE_FILEPATH = 2;
+  // A fully qualified proto name
+  COLLISION_TYPE_FULLY_QUALIFIED_NAME = 1;
+  // A proto file path
+  COLLISION_TYPE_PATH = 2;
 }
 
 // AdminService is the Admin service.
@@ -89,9 +99,9 @@ service AdminService {
   rpc GetUniquenessPolicy(GetUniquenessPolicyRequest) returns (GetUniquenessPolicyResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // Update fqn uniqueness policy for the server.
+  // Update uniqueness policy enforcement for the server.
   rpc UpdateUniquenessPolicy(UpdateUniquenessPolicyRequest) returns (UpdateUniquenessPolicyResponse);
-  // Get FQN uniqueness state for the server
+  // Get state of uniqueness collisions for the server
   rpc GetUniquenessState(GetUniquenessStateRequest) returns (GetUniquenessStateResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
