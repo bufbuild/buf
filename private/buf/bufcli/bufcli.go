@@ -413,7 +413,7 @@ func NewWireImageConfigReader(
 	return bufwire.NewImageConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
@@ -438,7 +438,7 @@ func NewWireModuleConfigReader(
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
@@ -460,7 +460,7 @@ func NewWireModuleConfigReaderForModuleReader(
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
@@ -484,7 +484,7 @@ func NewWireFileLister(
 	return bufwire.NewFileLister(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
@@ -635,6 +635,26 @@ func NewConnectClientConfigWithToken(container appflag.Container, token string) 
 		connectclient.WithAuthInterceptorProvider(
 			bufconnect.NewAuthorizationInterceptorProvider(tokenProvider),
 		),
+	)
+}
+
+// NewFetchReader creates a new buffetch.Reader with the default HTTP client
+// and git cloner.
+func NewFetchReader(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	runner command.Runner,
+	moduleResolver bufmodule.ModuleResolver,
+	moduleReader bufmodule.ModuleReader,
+) buffetch.Reader {
+	return buffetch.NewReader(
+		logger,
+		storageosProvider,
+		defaultHTTPClient,
+		defaultHTTPAuthenticator,
+		git.NewCloner(logger, storageosProvider, runner, defaultGitClonerOptions),
+		moduleResolver,
+		moduleReader,
 	)
 }
 
@@ -981,26 +1001,6 @@ func promptUser(container app.Container, prompt string, isPassword bool) (string
 		}
 	}
 	return "", NewTooManyEmptyAnswersError(userPromptAttempts)
-}
-
-// newFetchReader creates a new buffetch.Reader with the default HTTP client
-// and git cloner.
-func newFetchReader(
-	logger *zap.Logger,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
-) buffetch.Reader {
-	return buffetch.NewReader(
-		logger,
-		storageosProvider,
-		defaultHTTPClient,
-		defaultHTTPAuthenticator,
-		git.NewCloner(logger, storageosProvider, runner, defaultGitClonerOptions),
-		moduleResolver,
-		moduleReader,
-	)
 }
 
 // newFetchSourceReader creates a new buffetch.SourceReader with the default HTTP client
