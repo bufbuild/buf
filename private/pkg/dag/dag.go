@@ -266,6 +266,9 @@ func (g *Graph[Key]) DOTString(keyToString func(Key) string) (string, error) {
 	); err != nil {
 		return "", err
 	}
+	if len(nodeStrings) == 0 {
+		return "digraph {}", nil
+	}
 	buffer := bytes.NewBuffer(nil)
 	_, _ = buffer.WriteString("digraph {\n\n")
 	for _, nodeString := range nodeStrings {
