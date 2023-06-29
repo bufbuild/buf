@@ -35,6 +35,35 @@ message BreakingChangePolicy {
   BreakingChangeCategory category = 3;
 }
 
+message UniquenessPolicy {
+  optional bool enabled = 1;
+}
+
+message UniquenessState {
+  bool has_collisions = 1;
+  repeated Collision collisions = 2;
+}
+
+message Collision {
+  string id = 1;
+  CollisionType type = 2;
+  string reference = 3;
+  repeated CollisionSource sources = 4;
+}
+
+message CollisionSource {
+  string id = 1;
+  string organization_id = 2;
+  string repository_id = 3;
+  string filepath = 4;
+}
+
+enum CollisionType {
+  COLLISION_TYPE_UNSPECIFIED = 0;
+  COLLISION_TYPE_FQN = 1;
+  COLLISION_TYPE_FILEPATH = 2;
+}
+
 // AdminService is the Admin service.
 service AdminService {
   // ForceDeleteUser forces to delete a user. Resources and organizations that are
@@ -56,6 +85,16 @@ service AdminService {
   }
   // Update breaking change policy for the server.
   rpc UpdateBreakingChangePolicy(UpdateBreakingChangePolicyRequest) returns (UpdateBreakingChangePolicyResponse);
+  // Get fqn uniqueness policy for the server.
+  rpc GetUniquenessPolicy(GetUniquenessPolicyRequest) returns (GetUniquenessPolicyResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // Update fqn uniqueness policy for the server.
+  rpc UpdateUniquenessPolicy(UpdateUniquenessPolicyRequest) returns (UpdateUniquenessPolicyResponse);
+  // Get FQN uniqueness state for the server
+  rpc GetUniquenessState(GetUniquenessStateRequest) returns (GetUniquenessStateResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message ForceDeleteUserRequest {
@@ -108,3 +147,21 @@ message UpdateBreakingChangePolicyRequest {
 }
 
 message UpdateBreakingChangePolicyResponse {}
+
+message GetUniquenessPolicyRequest {}
+
+message GetUniquenessPolicyResponse {
+  UniquenessPolicy policy = 1;
+}
+
+message UpdateUniquenessPolicyRequest {
+  UniquenessPolicy policy = 1;
+}
+
+message UpdateUniquenessPolicyResponse {}
+
+message GetUniquenessStateRequest {}
+
+message GetUniquenessStateResponse {
+  UniquenessState state = 1;
+}

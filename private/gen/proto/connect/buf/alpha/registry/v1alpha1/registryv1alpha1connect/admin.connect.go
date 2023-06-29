@@ -65,6 +65,15 @@ const (
 	// AdminServiceUpdateBreakingChangePolicyProcedure is the fully-qualified name of the AdminService's
 	// UpdateBreakingChangePolicy RPC.
 	AdminServiceUpdateBreakingChangePolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateBreakingChangePolicy"
+	// AdminServiceGetFQNUniquenessPolicyProcedure is the fully-qualified name of the AdminService's
+	// GetFQNUniquenessPolicy RPC.
+	AdminServiceGetFQNUniquenessPolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetFQNUniquenessPolicy"
+	// AdminServiceUpdateFQNUniquenessPolicyProcedure is the fully-qualified name of the AdminService's
+	// UpdateFQNUniquenessPolicy RPC.
+	AdminServiceUpdateFQNUniquenessPolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateFQNUniquenessPolicy"
+	// AdminServiceGetFQNUniquenessStateProcedure is the fully-qualified name of the AdminService's
+	// GetFQNUniquenessState RPC.
+	AdminServiceGetFQNUniquenessStateProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetFQNUniquenessState"
 )
 
 // AdminServiceClient is a client for the buf.alpha.registry.v1alpha1.AdminService service.
@@ -82,6 +91,12 @@ type AdminServiceClient interface {
 	GetBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.GetBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.GetBreakingChangePolicyResponse], error)
 	// Update breaking change policy for the server.
 	UpdateBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error)
+	// Get fqn uniqueness policy for the server.
+	GetFQNUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.GetFQNUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.GetFQNUniquenessPolicyResponse], error)
+	// Update fqn uniqueness policy for the server.
+	UpdateFQNUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateFQNUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateFQNUniquenessPolicyResponse], error)
+	// Get FQN uniqueness state for the server
+	GetFQNUniquenessState(context.Context, *connect_go.Request[v1alpha1.GetFQNUniquenessStateRequest]) (*connect_go.Response[v1alpha1.GetFQNUniquenessStateResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AdminService
@@ -127,6 +142,23 @@ func NewAdminServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 			baseURL+AdminServiceUpdateBreakingChangePolicyProcedure,
 			opts...,
 		),
+		getFQNUniquenessPolicy: connect_go.NewClient[v1alpha1.GetFQNUniquenessPolicyRequest, v1alpha1.GetFQNUniquenessPolicyResponse](
+			httpClient,
+			baseURL+AdminServiceGetFQNUniquenessPolicyProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
+		),
+		updateFQNUniquenessPolicy: connect_go.NewClient[v1alpha1.UpdateFQNUniquenessPolicyRequest, v1alpha1.UpdateFQNUniquenessPolicyResponse](
+			httpClient,
+			baseURL+AdminServiceUpdateFQNUniquenessPolicyProcedure,
+			opts...,
+		),
+		getFQNUniquenessState: connect_go.NewClient[v1alpha1.GetFQNUniquenessStateRequest, v1alpha1.GetFQNUniquenessStateResponse](
+			httpClient,
+			baseURL+AdminServiceGetFQNUniquenessStateProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -138,6 +170,9 @@ type adminServiceClient struct {
 	createMachineUser                    *connect_go.Client[v1alpha1.CreateMachineUserRequest, v1alpha1.CreateMachineUserResponse]
 	getBreakingChangePolicy              *connect_go.Client[v1alpha1.GetBreakingChangePolicyRequest, v1alpha1.GetBreakingChangePolicyResponse]
 	updateBreakingChangePolicy           *connect_go.Client[v1alpha1.UpdateBreakingChangePolicyRequest, v1alpha1.UpdateBreakingChangePolicyResponse]
+	getFQNUniquenessPolicy               *connect_go.Client[v1alpha1.GetFQNUniquenessPolicyRequest, v1alpha1.GetFQNUniquenessPolicyResponse]
+	updateFQNUniquenessPolicy            *connect_go.Client[v1alpha1.UpdateFQNUniquenessPolicyRequest, v1alpha1.UpdateFQNUniquenessPolicyResponse]
+	getFQNUniquenessState                *connect_go.Client[v1alpha1.GetFQNUniquenessStateRequest, v1alpha1.GetFQNUniquenessStateResponse]
 }
 
 // ForceDeleteUser calls buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser.
@@ -173,6 +208,22 @@ func (c *adminServiceClient) UpdateBreakingChangePolicy(ctx context.Context, req
 	return c.updateBreakingChangePolicy.CallUnary(ctx, req)
 }
 
+// GetFQNUniquenessPolicy calls buf.alpha.registry.v1alpha1.AdminService.GetFQNUniquenessPolicy.
+func (c *adminServiceClient) GetFQNUniquenessPolicy(ctx context.Context, req *connect_go.Request[v1alpha1.GetFQNUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.GetFQNUniquenessPolicyResponse], error) {
+	return c.getFQNUniquenessPolicy.CallUnary(ctx, req)
+}
+
+// UpdateFQNUniquenessPolicy calls
+// buf.alpha.registry.v1alpha1.AdminService.UpdateFQNUniquenessPolicy.
+func (c *adminServiceClient) UpdateFQNUniquenessPolicy(ctx context.Context, req *connect_go.Request[v1alpha1.UpdateFQNUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateFQNUniquenessPolicyResponse], error) {
+	return c.updateFQNUniquenessPolicy.CallUnary(ctx, req)
+}
+
+// GetFQNUniquenessState calls buf.alpha.registry.v1alpha1.AdminService.GetFQNUniquenessState.
+func (c *adminServiceClient) GetFQNUniquenessState(ctx context.Context, req *connect_go.Request[v1alpha1.GetFQNUniquenessStateRequest]) (*connect_go.Response[v1alpha1.GetFQNUniquenessStateResponse], error) {
+	return c.getFQNUniquenessState.CallUnary(ctx, req)
+}
+
 // AdminServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AdminService service.
 type AdminServiceHandler interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
@@ -188,6 +239,12 @@ type AdminServiceHandler interface {
 	GetBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.GetBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.GetBreakingChangePolicyResponse], error)
 	// Update breaking change policy for the server.
 	UpdateBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error)
+	// Get fqn uniqueness policy for the server.
+	GetFQNUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.GetFQNUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.GetFQNUniquenessPolicyResponse], error)
+	// Update fqn uniqueness policy for the server.
+	UpdateFQNUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateFQNUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateFQNUniquenessPolicyResponse], error)
+	// Get FQN uniqueness state for the server
+	GetFQNUniquenessState(context.Context, *connect_go.Request[v1alpha1.GetFQNUniquenessStateRequest]) (*connect_go.Response[v1alpha1.GetFQNUniquenessStateResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -230,6 +287,23 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 		svc.UpdateBreakingChangePolicy,
 		opts...,
 	))
+	mux.Handle(AdminServiceGetFQNUniquenessPolicyProcedure, connect_go.NewUnaryHandler(
+		AdminServiceGetFQNUniquenessPolicyProcedure,
+		svc.GetFQNUniquenessPolicy,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
+	))
+	mux.Handle(AdminServiceUpdateFQNUniquenessPolicyProcedure, connect_go.NewUnaryHandler(
+		AdminServiceUpdateFQNUniquenessPolicyProcedure,
+		svc.UpdateFQNUniquenessPolicy,
+		opts...,
+	))
+	mux.Handle(AdminServiceGetFQNUniquenessStateProcedure, connect_go.NewUnaryHandler(
+		AdminServiceGetFQNUniquenessStateProcedure,
+		svc.GetFQNUniquenessState,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
+	))
 	return "/buf.alpha.registry.v1alpha1.AdminService/", mux
 }
 
@@ -258,4 +332,16 @@ func (UnimplementedAdminServiceHandler) GetBreakingChangePolicy(context.Context,
 
 func (UnimplementedAdminServiceHandler) UpdateBreakingChangePolicy(context.Context, *connect_go.Request[v1alpha1.UpdateBreakingChangePolicyRequest]) (*connect_go.Response[v1alpha1.UpdateBreakingChangePolicyResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.UpdateBreakingChangePolicy is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) GetFQNUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.GetFQNUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.GetFQNUniquenessPolicyResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetFQNUniquenessPolicy is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) UpdateFQNUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateFQNUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateFQNUniquenessPolicyResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.UpdateFQNUniquenessPolicy is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) GetFQNUniquenessState(context.Context, *connect_go.Request[v1alpha1.GetFQNUniquenessStateRequest]) (*connect_go.Response[v1alpha1.GetFQNUniquenessStateResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetFQNUniquenessState is not implemented"))
 }
