@@ -48,7 +48,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Print the dependency graph",
+		Short: "Print the dependency graph in DOT format",
 		Long:  bufcli.GetSourceOrModuleLong(`the source or module to print for`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(

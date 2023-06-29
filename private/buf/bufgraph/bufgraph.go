@@ -25,29 +25,37 @@ import (
 
 // Node is a node in a dependency graph.
 //
-// We want this to represent structured information such as a ImageModuleDependency
-// however we make this a bit more abstract for now since we don't have a good way
-// to universally represent things like modules on disk, or in workspaces.
-//
 // This is a struct because this needs to be comparable for the *dag.Graph.
 //
 // TODO: Don't have the duplication across Node and ImageModuleDependency.
 type Node struct {
-	Value string
+	// Required,
+	Remote string
+	// Required.
+	Owner string
+	// Required.
+	Repository string
+	// Optional. Will not bet set for modules read from workspaces.
+	Commit string
 }
 
-// String implements fmt.Stringer.
+// IdentityString prints remote/owner/repository.
+func (n *Node) IdentityString() string {
+	return n.Remote + "/" + n.Owner + "/" + n.Repository
+}
+
+// String prints remote/owner/repository[:commit].
 func (n *Node) String() string {
-	return n.Value
+	s := n.IdentityString()
+	if n.Commit != "" {
+		return s + ":" + n.Commit
+	}
+	return s
 }
 
 // Builder builds dependency graphs.
 type Builder interface {
 	// Build builds the dependency graph.
-	//
-	// Returns the graph, along with the graph's root.
-	// If there was one input module, the root will be the Node representing the input module.
-	// If there was more than one input module, and all the modules have
 	Build(
 		ctx context.Context,
 		modules []bufmodule.Module,

@@ -185,21 +185,23 @@ func (b *builder) getModuleForImageModuleDependency(
 
 func newNodeForImageModuleDependency(imageModuleDependency bufimage.ImageModuleDependency) Node {
 	return Node{
-		Value: imageModuleDependency.String(),
+		Remote:     imageModuleDependency.ModuleIdentity().Remote(),
+		Owner:      imageModuleDependency.ModuleIdentity().Owner(),
+		Repository: imageModuleDependency.ModuleIdentity().Repository(),
+		Commit:     imageModuleDependency.Commit(),
 	}
 }
 
 func newNodeForModule(module bufmodule.Module, i int) Node {
-	value := fmt.Sprintf("root-%d", i)
+	// TODO: deal with unnamed Modules
+	node := Node{}
 	if moduleIdentity := module.ModuleIdentity(); moduleIdentity != nil {
-		value = moduleIdentity.IdentityString()
-		if commit := module.Commit(); commit != "" {
-			value = value + ":" + commit
-		}
+		node.Remote = moduleIdentity.Remote()
+		node.Owner = moduleIdentity.Owner()
+		node.Repository = moduleIdentity.Repository()
+		node.Commit = module.Commit()
 	}
-	return Node{
-		Value: value,
-	}
+	return node
 }
 
 type buildOptions struct {
