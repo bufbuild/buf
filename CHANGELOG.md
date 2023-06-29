@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.23.0] - 2023-06-29
 
 - Add `buf beta graph` to print the dependency graph for a module in DOT format.
@@ -903,6 +907,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.23.0...HEAD
 [v1.23.0]: https://github.com/bufbuild/buf/compare/v1.22.0...v1.23.0
 [v1.22.0]: https://github.com/bufbuild/buf/compare/v1.21.0...v1.22.0
 [v1.21.0]: https://github.com/bufbuild/buf/compare/v1.20.0...v1.21.0
