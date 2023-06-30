@@ -7,7 +7,6 @@
 [![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)][badges_ci]
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)][badges_docker]
 [![Homebrew](https://img.shields.io/homebrew/v/buf)][badges_homebrew]
-[![AUR](https://img.shields.io/aur/version/buf-bin)][badges_aur]
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges_slack]
 
 The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf].
