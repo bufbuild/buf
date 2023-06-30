@@ -132,6 +132,7 @@ func TestCLIWarningInterceptor(t *testing.T) {
 }
 
 func TestCLIWarningInterceptorFromError(t *testing.T) {
+	t.Parallel()
 	warningMessage := "This is a warning message from the BSR"
 	var buf bytes.Buffer
 	logger, err := applog.NewLogger(&buf, "warn", "text")
