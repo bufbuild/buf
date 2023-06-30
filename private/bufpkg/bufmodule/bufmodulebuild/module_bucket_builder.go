@@ -26,58 +26,36 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
-// BuiltModule ties a bufmodule.Module with the configuration and a bucket
-// containing just the files required to build it.
-type BuiltModule struct {
-	bufmodule.Module
-	Bucket storage.ReadBucket
-}
-
 type moduleBucketBuilder struct {
-	opt buildOptions
 }
 
-func newModuleBucketBuilder(
-	options ...BuildOption,
-) *moduleBucketBuilder {
-	opt := buildOptions{}
-	for _, option := range options {
-		option(&opt)
-	}
-	return &moduleBucketBuilder{opt: opt}
+func newModuleBucketBuilder() *moduleBucketBuilder {
+	return &moduleBucketBuilder{}
 }
 
-// BuildForBucket is an alternative constructor of NewModuleBucketBuilder
-// followed by calling the BuildForBucket method.
-func BuildForBucket(
+func (b *moduleBucketBuilder) BuildForBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	config *bufmoduleconfig.Config,
 	options ...BuildOption,
 ) (*BuiltModule, error) {
-	builder := newModuleBucketBuilder(options...)
-	bm, err := builder.BuildForBucket(
+	buildOptions := &buildOptions{}
+	for _, option := range options {
+		option(buildOptions)
+	}
+	return b.buildForBucket(
 		ctx,
 		readBucket,
 		config,
+		buildOptions,
 	)
-	if err != nil {
-		return nil, err
-	}
-	return bm, nil
 }
 
-// BuildForBucket constructs a minimal bucket from the passed readBucket and
-// builds a module from it.
-//
-// config's value is used even if the bucket contains configuration (buf.yaml).
-// This means the module is built differently than described in storage, which
-// may cause building to fail or succeed when it shouldn't. For your own
-// sanity, you should pass a config value read from the provided bucket.
-func (b *moduleBucketBuilder) BuildForBucket(
+func (b *moduleBucketBuilder) buildForBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	config *bufmoduleconfig.Config,
+	buildOptions *buildOptions,
 ) (*BuiltModule, error) {
 	// proxy plain files
 	externalPaths := []string{
@@ -145,7 +123,7 @@ func (b *moduleBucketBuilder) BuildForBucket(
 		ctx,
 		bucket,
 		bufmodule.ModuleWithModuleIdentity(
-			b.opt.moduleIdentity, // This may be nil
+			buildOptions.moduleIdentity, // This may be nil
 		),
 	)
 	if err != nil {
@@ -154,9 +132,9 @@ func (b *moduleBucketBuilder) BuildForBucket(
 	appliedModule, err := applyModulePaths(
 		module,
 		roots,
-		b.opt.paths,
-		b.opt.excludePaths,
-		b.opt.pathsAllowNotExist,
+		buildOptions.paths,
+		buildOptions.excludePaths,
+		buildOptions.pathsAllowNotExist,
 		normalpath.Relative,
 	)
 	if err != nil {

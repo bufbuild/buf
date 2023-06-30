@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -171,9 +172,12 @@ func TestTransitivePublic(t *testing.T) {
 	require.NoError(t, err)
 	module, err := bufmodule.NewModuleForBucket(ctx, bucket)
 	require.NoError(t, err)
-	image, analysis, err := bufimagebuild.NewBuilder(zaptest.NewLogger(t)).Build(
+	image, analysis, err := bufimagebuild.NewBuilder(
+		zaptest.NewLogger(t),
+		bufmodule.NewNopModuleReader(),
+	).Build(
 		ctx,
-		bufmodule.NewModuleFileSet(module, nil),
+		module,
 		bufimagebuild.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
@@ -190,25 +194,33 @@ func TestTypesFromMainModule(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	bucket, err := storagemem.NewReadBucket(map[string][]byte{
-		"a.proto": []byte(`syntax = "proto3";import "b.proto";package pkg;message Foo { dependency.Dep bar = 1;}`),
-	})
+	moduleIdentityString := "buf.build/repo/main"
+	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleIdentityString)
 	require.NoError(t, err)
-	moduleIdentity, err := bufmoduleref.NewModuleIdentity("buf.build", "repo", "main")
+	moduleIdentityDepString := "buf.build/repo/dep"
+	moduleIdentityDep, err := bufmoduleref.ModuleIdentityForString(moduleIdentityDepString)
 	require.NoError(t, err)
+	bucket := storagemem.NewReadWriteBucket()
+	require.NoError(t, storage.PutPath(ctx, bucket, "a.proto", []byte(`syntax = "proto3";import "b.proto";package pkg;message Foo { dependency.Dep bar = 1;}`)))
+	require.NoError(t, bufmoduletesting.WriteTestLockFileToBucket(ctx, bucket, moduleIdentityDepString))
 	module, err := bufmodule.NewModuleForBucket(ctx, bucket, bufmodule.ModuleWithModuleIdentity(moduleIdentity))
 	require.NoError(t, err)
 	bucketDep, err := storagemem.NewReadBucket(map[string][]byte{
 		"b.proto": []byte(`syntax = "proto3";package dependency; message Dep{}`),
 	})
 	require.NoError(t, err)
-	moduleIdentityDep, err := bufmoduleref.NewModuleIdentity("buf.build", "repo", "dep")
-	require.NoError(t, err)
 	moduleDep, err := bufmodule.NewModuleForBucket(ctx, bucketDep, bufmodule.ModuleWithModuleIdentity(moduleIdentityDep))
 	require.NoError(t, err)
-	image, analysis, err := bufimagebuild.NewBuilder(zaptest.NewLogger(t)).Build(
+	image, analysis, err := bufimagebuild.NewBuilder(
+		zaptest.NewLogger(t),
+		bufmoduletesting.NewTestModuleReader(
+			map[string]bufmodule.Module{
+				moduleIdentityDep.IdentityString(): moduleDep,
+			},
+		),
+	).Build(
 		ctx,
-		bufmodule.NewModuleFileSet(module, []bufmodule.Module{moduleDep}),
+		module,
 		bufimagebuild.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
@@ -239,10 +251,10 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 	if err != nil {
 		return nil, nil, err
 	}
-	builder := bufimagebuild.NewBuilder(logger)
+	builder := bufimagebuild.NewBuilder(logger, bufmodule.NewNopModuleReader())
 	image, analysis, err := builder.Build(
 		ctx,
-		bufmodule.NewModuleFileSet(module, nil),
+		module,
 		options...,
 	)
 	if err != nil {

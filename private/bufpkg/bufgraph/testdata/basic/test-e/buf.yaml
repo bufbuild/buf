@@ -1,0 +1,4 @@
+version: v1
+name: bsr.internal/foo/test-e
+deps:
+  - bsr.internal/foo/test-f

@@ -49,7 +49,6 @@ func newFileLister(
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
 ) *fileLister {
 	return &fileLister{
@@ -66,7 +65,6 @@ func newFileLister(
 			storageosProvider,
 			fetchReader,
 			moduleBucketBuilder,
-			moduleFileSetBuilder,
 			imageBuilder,
 		),
 	}
@@ -258,7 +256,7 @@ func (e *fileLister) sourceFileInfosForDirectory(
 	if err != nil {
 		return nil, err
 	}
-	module, err := bufmodulebuild.BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		mappedReadBucket,
 		config.Build,

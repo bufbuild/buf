@@ -47,7 +47,7 @@ jobs:
         run: make updateversion
       - name: Create PR
         id: cpr
-        uses: peter-evans/create-pull-request@284f54f989303d2699d373481a0cfa13ad5a6666
+        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
         with:
           add-paths: .
           commit-message: "Update version to v${{env.VERSION}}"
@@ -187,7 +187,7 @@ jobs:
       - name: update home brew badge
         run: make updatehomebrewbadge VERSION=${{github.ref_name}}
       - name: create PR
-        uses: peter-evans/create-pull-request@284f54f989303d2699d373481a0cfa13ad5a6666
+        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
         with:
           add-paths: .
           commit-message: "Back to development"
@@ -207,12 +207,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: post-release
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{secrets.BUF_MAVEN_PUBLISH_APP_ID}}
+          private_key: ${{ secrets.BUF_MAVEN_PUBLISH_APP_PRIVATE_KEY }}
+          repository: "bufbuild/buf-maven-publish"
+          permissions: >-
+            {"actions": "write"}
       - name: trigger maven update
         uses: actions/github-script@v6
         with:
+          github-token: ${{steps.generate_token.outputs.token}}
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: github.repository_owner,
+              owner: "bufbuild",
               repo: "buf-maven-publish",
               workflow_id: "update-buf-version.yaml",
               ref: "main",
@@ -224,12 +234,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: post-release
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{secrets.BUF_NPM_PUBLISH_RELEASE_APP_ID}}
+          private_key: ${{ secrets.BUF_NPM_PUBLISH_RELEASE_APP_PRIVATE_KEY }}
+          repository: "bufbuild/buf-npm-publish"
+          permissions: >-
+            {"actions": "write"}
       - name: trigger npm publish
         uses: actions/github-script@v6
         with:
+          github-token: ${{steps.generate_token.outputs.token}}
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: github.repository_owner,
+              owner: "bufbuild",
               repo: "buf-npm-publish",
               workflow_id: "npm-publish.yaml",
               ref: "main",
@@ -241,12 +261,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: post-release
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{secrets.HOMEBREW_RELEASE_APP_ID}}
+          private_key: ${{ secrets.HOMEBREW_RELEASE_APP_PRIVATE_KEY }}
+          repository: "bufbuild/homebrew-buf"
+          permissions: >-
+            {"actions": "write"}
       - name: trigger homebrew-buf release
         uses: actions/github-script@v6
         with:
+          github-token: ${{steps.generate_token.outputs.token}}
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: github.repository_owner,
+              owner: "bufbuild",
               repo: "homebrew-buf",
               workflow_id: "release.yaml",
               ref: "main",
@@ -258,12 +288,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: post-release
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{secrets.VIM_BUF_RELEASE_APP_ID}}
+          private_key: ${{ secrets.VIM_BUF_RELEASE_APP_PRIVATE_KEY }}
+          repository: "bufbuild/vim-buf"
+          permissions: >-
+            {"actions": "write"}
       - name: trigger vim-buf release
         uses: actions/github-script@v6
         with:
+          github-token: ${{steps.generate_token.outputs.token}}
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: github.repository_owner,
+              owner: "bufbuild",
               repo: "vim-buf",
               workflow_id: "release.yaml",
               ref: "main",
@@ -275,12 +315,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: post-release
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{secrets.BUF_BUILD_RELEASE_APP_ID}}
+          private_key: ${{ secrets.BUF_BUILD_RELEASE_APP_PRIVATE_KEY }}
+          repository: "bufbuild/buf.build"
+          permissions: >-
+            {"actions": "write"}
       - name: trigger buf.build release
         uses: actions/github-script@v6
         with:
+          github-token: ${{steps.generate_token.outputs.token}}
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: github.repository_owner,
+              owner: "bufbuild",
               repo: "buf.build",
               workflow_id: "release.yaml",
               ref: "main",
@@ -292,12 +342,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: post-release
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        with:
+          app_id: ${{secrets.BUF_SETUP_ACTION_RELEASE_APP_ID}}
+          private_key: ${{ secrets.BUF_SETUP_ACTION_RELEASE_APP_PRIVATE_KEY }}
+          repository: "bufbuild/buf-setup-action"
+          permissions: >-
+            {"actions": "write"}
       - name: trigger buf-setup-action release
         uses: actions/github-script@v6
         with:
+          github-token: ${{steps.generate_token.outputs.token}}
           script: |
             github.rest.actions.createWorkflowDispatch({
-              owner: github.repository_owner,
+              owner: "bufbuild",
               repo: "buf-setup-action",
               workflow_id: "release.yaml",
               ref: "main",

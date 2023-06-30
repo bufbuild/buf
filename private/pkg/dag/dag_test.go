@@ -43,7 +43,6 @@ func TestTopoSort(t *testing.T) {
 	testTopoSortSuccess(
 		t,
 		func(graph *Graph[string]) {
-			// a -> b -> c
 			graph.AddEdge("a", "b")
 			graph.AddEdge("b", "c")
 		},
@@ -57,9 +56,6 @@ func TestTopoSort2(t *testing.T) {
 	testTopoSortSuccess(
 		t,
 		func(graph *Graph[string]) {
-			// a -> c
-			// a -> b
-			// b -> c
 			graph.AddEdge("a", "c")
 			graph.AddEdge("a", "b")
 			graph.AddEdge("b", "c")
@@ -74,14 +70,12 @@ func TestTopoSort3(t *testing.T) {
 	testTopoSortSuccess(
 		t,
 		func(graph *Graph[string]) {
-			// a -> b
-			// a -> d
-			// d -> c
-			// c -> b
+			// e -> b not part of traversal to a on purpose
 			graph.AddEdge("a", "b")
 			graph.AddEdge("a", "d")
 			graph.AddEdge("d", "c")
 			graph.AddEdge("c", "b")
+			graph.AddEdge("e", "b")
 		},
 		"a",
 		[]string{"b", "c", "d", "a"},
@@ -93,8 +87,6 @@ func TestTopoSortCycleError(t *testing.T) {
 	testTopoSortCycleError(
 		t,
 		func(graph *Graph[string]) {
-			// a -> b
-			// b -> a
 			graph.AddEdge("a", "b")
 			graph.AddEdge("b", "a")
 		},
@@ -108,9 +100,6 @@ func TestTopoSortCycleError2(t *testing.T) {
 	testTopoSortCycleError(
 		t,
 		func(graph *Graph[string]) {
-			// a -> b
-			// b -> c
-			// c -> a
 			graph.AddEdge("a", "b")
 			graph.AddEdge("b", "c")
 			graph.AddEdge("c", "a")
@@ -125,9 +114,6 @@ func TestTopoSortCycleError3(t *testing.T) {
 	testTopoSortCycleError(
 		t,
 		func(graph *Graph[string]) {
-			// a -> b
-			// b -> c
-			// c -> b
 			graph.AddEdge("a", "b")
 			graph.AddEdge("b", "c")
 			graph.AddEdge("c", "b")
@@ -137,20 +123,15 @@ func TestTopoSortCycleError3(t *testing.T) {
 	)
 }
 
-func TestForEachEdge(t *testing.T) {
+func TestWalkEdges(t *testing.T) {
 	t.Parallel()
-	testForEachEdgeSuccess(
+	testWalkEdgesSuccess(
 		t,
 		func(graph *Graph[string]) {
-			// b -> c
-			// a -> c
-			// a -> b
-			// purposefully not the same start key
 			graph.AddEdge("b", "c")
 			graph.AddEdge("a", "c")
 			graph.AddEdge("a", "b")
 		},
-		"a",
 		[]stringEdge{
 			{
 				From: "a",
@@ -165,6 +146,217 @@ func TestForEachEdge(t *testing.T) {
 				To:   "c",
 			},
 		},
+	)
+}
+
+func TestWalkEdges2(t *testing.T) {
+	t.Parallel()
+	testWalkEdgesSuccess(
+		t,
+		func(graph *Graph[string]) {
+			graph.AddEdge("a", "b")
+			graph.AddEdge("a", "d")
+			graph.AddEdge("b", "c")
+			graph.AddEdge("c", "d")
+		},
+		[]stringEdge{
+			{
+				From: "a",
+				To:   "b",
+			},
+			{
+				From: "b",
+				To:   "c",
+			},
+			{
+				From: "c",
+				To:   "d",
+			},
+			{
+				From: "a",
+				To:   "d",
+			},
+		},
+	)
+}
+
+func TestWalkEdges3(t *testing.T) {
+	t.Parallel()
+	testWalkEdgesSuccess(
+		t,
+		func(graph *Graph[string]) {
+			graph.AddEdge("a", "b")
+			graph.AddEdge("a", "d")
+			graph.AddEdge("b", "c")
+			graph.AddEdge("c", "d")
+			graph.AddEdge("e", "b")
+		},
+		[]stringEdge{
+			{
+				From: "a",
+				To:   "b",
+			},
+			{
+				From: "b",
+				To:   "c",
+			},
+			{
+				From: "c",
+				To:   "d",
+			},
+			{
+				From: "a",
+				To:   "d",
+			},
+			{
+				From: "e",
+				To:   "b",
+			},
+		},
+	)
+}
+
+func TestWalkEdgesCycleError(t *testing.T) {
+	t.Parallel()
+	testWalkEdgesCycleError(
+		t,
+		func(graph *Graph[string]) {
+			graph.AddEdge("a", "b")
+			graph.AddEdge("a", "d")
+			graph.AddEdge("b", "c")
+			graph.AddEdge("c", "d")
+			graph.AddEdge("e", "b")
+			graph.AddEdge("d", "b")
+		},
+		[]string{"b", "c", "d", "b"},
+	)
+}
+
+func TestWalkEdgesCycleError2(t *testing.T) {
+	t.Parallel()
+	testWalkEdgesCycleError(
+		t,
+		func(graph *Graph[string]) {
+			// there are no sources
+			graph.AddEdge("a", "b")
+			graph.AddEdge("b", "c")
+			graph.AddEdge("c", "d")
+			graph.AddEdge("e", "b")
+			graph.AddEdge("d", "e")
+			graph.AddEdge("d", "a")
+		},
+		[]string{"b", "c", "d", "e", "b"},
+	)
+}
+
+func TestWalkNodes(t *testing.T) {
+	t.Parallel()
+	testWalkNodesSuccess(
+		t,
+		func(graph *Graph[string]) {
+			graph.AddEdge("a", "b")
+			graph.AddEdge("a", "d")
+			graph.AddEdge("b", "c")
+			graph.AddEdge("c", "d")
+			graph.AddEdge("e", "b")
+			graph.AddNode("f")
+		},
+		[]stringNode{
+			{
+				Key:      "a",
+				Inbound:  []string{},
+				Outbound: []string{"b", "d"},
+			},
+			{
+				Key:      "b",
+				Inbound:  []string{"a", "e"},
+				Outbound: []string{"c"},
+			},
+			{
+				Key:      "d",
+				Inbound:  []string{"a", "c"},
+				Outbound: []string{},
+			},
+			{
+				Key:      "c",
+				Inbound:  []string{"b"},
+				Outbound: []string{"d"},
+			},
+			{
+				Key:      "e",
+				Inbound:  []string{},
+				Outbound: []string{"b"},
+			},
+			{
+				Key:      "f",
+				Inbound:  []string{},
+				Outbound: []string{},
+			},
+		},
+	)
+}
+
+func TestNumNodes(t *testing.T) {
+	t.Parallel()
+	testNumNodesSuccess(
+		t,
+		func(graph *Graph[string]) {
+			graph.AddEdge("a", "b")
+			graph.AddEdge("a", "d")
+			graph.AddEdge("b", "c")
+			graph.AddEdge("c", "d")
+			graph.AddEdge("e", "b")
+			graph.AddNode("f")
+		},
+		6,
+	)
+}
+
+func TestNumEdges(t *testing.T) {
+	t.Parallel()
+	testNumEdgesSuccess(
+		t,
+		func(graph *Graph[string]) {
+			graph.AddEdge("a", "b")
+			graph.AddEdge("a", "d")
+			graph.AddEdge("b", "c")
+			graph.AddEdge("c", "d")
+			graph.AddEdge("e", "b")
+			graph.AddNode("f")
+		},
+		5,
+	)
+}
+
+func TestDOTString(t *testing.T) {
+	t.Parallel()
+	testDOTStringSuccess(
+		t,
+		func(graph *Graph[string]) {
+			graph.AddEdge("a", "b")
+			graph.AddEdge("a", "d")
+			graph.AddEdge("b", "c")
+			graph.AddEdge("c", "d")
+			graph.AddEdge("e", "b")
+			graph.AddNode("f")
+		},
+		`digraph {
+
+  1 [label="a"]
+  2 [label="b"]
+  3 [label="c"]
+  4 [label="d"]
+  5 [label="e"]
+  6 [label="f"]
+
+  1 -> 2
+  2 -> 3
+  3 -> 4
+  1 -> 4
+  5 -> 2
+  6
+
+}`,
 	)
 }
 
@@ -199,17 +391,15 @@ func testTopoSortCycleError(
 	)
 }
 
-func testForEachEdgeSuccess(
+func testWalkEdgesSuccess(
 	t *testing.T,
 	setupGraph func(*Graph[string]),
-	start string,
 	expected []stringEdge,
 ) {
 	graph := &Graph[string]{}
 	setupGraph(graph)
 	var results []stringEdge
-	err := graph.ForEachEdge(
-		start,
+	err := graph.WalkEdges(
 		func(from string, to string) error {
 			results = append(
 				results,
@@ -225,7 +415,87 @@ func testForEachEdgeSuccess(
 	require.Equal(t, expected, results)
 }
 
+func testWalkEdgesCycleError(
+	t *testing.T,
+	setupGraph func(*Graph[string]),
+	expectedCycle []string,
+) {
+	graph := &Graph[string]{}
+	setupGraph(graph)
+	err := graph.WalkEdges(func(string, string) error { return nil })
+	require.Equal(
+		t,
+		&CycleError[string]{
+			Keys: expectedCycle,
+		},
+		err,
+	)
+}
+
+func testWalkNodesSuccess(
+	t *testing.T,
+	setupGraph func(*Graph[string]),
+	expected []stringNode,
+) {
+	graph := &Graph[string]{}
+	setupGraph(graph)
+	var results []stringNode
+	err := graph.WalkNodes(
+		func(key string, inbound []string, outbound []string) error {
+			results = append(
+				results,
+				stringNode{
+					Key:      key,
+					Inbound:  inbound,
+					Outbound: outbound,
+				},
+			)
+			return nil
+		},
+	)
+	require.NoError(t, err)
+	require.Equal(t, expected, results)
+}
+
+func testNumNodesSuccess(
+	t *testing.T,
+	setupGraph func(*Graph[string]),
+	expected int,
+) {
+	graph := &Graph[string]{}
+	setupGraph(graph)
+	require.Equal(t, expected, graph.NumNodes())
+}
+
+func testNumEdgesSuccess(
+	t *testing.T,
+	setupGraph func(*Graph[string]),
+	expected int,
+) {
+	graph := &Graph[string]{}
+	setupGraph(graph)
+	require.Equal(t, expected, graph.NumEdges())
+}
+
+func testDOTStringSuccess(
+	t *testing.T,
+	setupGraph func(*Graph[string]),
+	expected string,
+) {
+	graph := &Graph[string]{}
+	setupGraph(graph)
+	s, err := graph.DOTString(func(key string) string { return key })
+	require.NoError(t, err)
+	require.Equal(t, expected, s)
+}
+
 type stringEdge struct {
 	From string
 	To   string
+}
+
+type stringNode struct {
+	Key      string
+	Inbound  []string
+	Outbound []string
 }
