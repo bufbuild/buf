@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix issue where `buf beta graph` would not print modules within a workspace that
+  had no dependencies or dependents.
+- Fix issue where `buf beta graph` would print warnings for missing dependencies
+  that were actually present.
 
 ## [v1.23.0] - 2023-06-29
 
