@@ -47,7 +47,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Convert a message from binary to JSON or vice versa",
+		Short: "Convert a message between binary, text, and JSON",
 		Long: `
 Use an input proto to interpret a proto/json message and convert it to a different format.
 
