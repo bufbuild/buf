@@ -77,6 +77,7 @@ type TextMarshalerOption func(*textMarshaler)
 func TextMarshalerWithIndent() TextMarshalerOption {
 	return func(textMarshaler *textMarshaler) {
 		textMarshaler.multiline = true
+		textMarshaler.indent = "  "
 	}
 }
 

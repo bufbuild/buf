@@ -59,7 +59,7 @@ func TestConvertDir(t *testing.T) {
 			t,
 			cmd,
 			0,
-			`one: 55`,
+			`one:  55`,
 			nil,
 			nil,
 			"--type",
