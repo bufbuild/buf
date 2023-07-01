@@ -40,6 +40,36 @@ func TestConvertDir(t *testing.T) {
 			"testdata/convert/bin_json/payload.bin",
 		)
 	})
+	t.Run("binproto-input", func(t *testing.T) {
+		appcmdtesting.RunCommandExitCodeStdout(
+			t,
+			cmd,
+			0,
+			`{"one":"55"}`,
+			nil,
+			nil,
+			"--type",
+			"buf.Foo",
+			"--from",
+			"testdata/convert/bin_json/payload.bin#format=binproto",
+		)
+	})
+	t.Run("textproto-out", func(t *testing.T) {
+		appcmdtesting.RunCommandExitCodeStdout(
+			t,
+			cmd,
+			0,
+			`one: 55`,
+			nil,
+			nil,
+			"--type",
+			"buf.Foo",
+			"--from",
+			"testdata/convert/bin_json/payload.bin",
+			"--to",
+			"-#format=textproto",
+		)
+	})
 	t.Run("from-stdin", func(t *testing.T) {
 		appcmdtesting.RunCommandExitCodeStdoutStdinFile(
 			t,

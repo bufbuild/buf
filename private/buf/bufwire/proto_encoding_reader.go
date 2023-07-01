@@ -75,6 +75,8 @@ func (p *protoEncodingReader) GetMessage(
 	switch messageRef.MessageEncoding() {
 	case bufconvert.MessageEncodingBin:
 		unmarshaler = protoencoding.NewWireUnmarshaler(resolver)
+	case bufconvert.MessageEncodingText:
+		unmarshaler = protoencoding.NewTextUnmarshaler(resolver)
 	case bufconvert.MessageEncodingJSON:
 		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
 	default:

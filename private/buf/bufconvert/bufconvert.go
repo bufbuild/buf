@@ -30,10 +30,16 @@ import (
 const (
 	// MessageEncodingBin is the binary image encoding.
 	MessageEncodingBin MessageEncoding = iota + 1
+	// MessageEncodingText is the text image encoding.
+	MessageEncodingText
 	// MessageEncodingJSON is the JSON image encoding.
 	MessageEncodingJSON
 	// formatBin is the binary format.
 	formatBin = "bin"
+	// formatBinProto is also used for binary proto format.
+	formatBinProto = "binproto"
+	// formatText is the proto text format.
+	formatTextProto = "textproto"
 	// formatJSON is the JSON format.
 	formatJSON = "json"
 )
@@ -46,6 +52,8 @@ var (
 	// sorted
 	messageEncodingFormats = []string{
 		formatBin,
+		formatBinProto,
+		formatTextProto,
 		formatJSON,
 	}
 )
@@ -105,8 +113,10 @@ func getPathAndMessageEncoding(
 
 func parseMessageEncodingExt(ext string, defaultEncoding MessageEncoding) MessageEncoding {
 	switch strings.TrimPrefix(ext, ".") {
-	case formatBin:
+	case formatBin, formatBinProto:
 		return MessageEncodingBin
+	case formatTextProto:
+		return MessageEncodingText
 	case formatJSON:
 		return MessageEncodingJSON
 	default:
@@ -116,8 +126,10 @@ func parseMessageEncodingExt(ext string, defaultEncoding MessageEncoding) Messag
 
 func parseMessageEncodingFormat(format string) (MessageEncoding, error) {
 	switch format {
-	case formatBin:
+	case formatBin, formatBinProto:
 		return MessageEncodingBin, nil
+	case formatTextProto:
+		return MessageEncodingText, nil
 	case formatJSON:
 		return MessageEncodingJSON, nil
 	default:

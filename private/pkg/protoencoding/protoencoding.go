@@ -67,6 +67,24 @@ func NewWireMarshaler() Marshaler {
 //
 // This has the potential to be unstable over time.
 // resolver can be nil if unknown and are only needed for extensions.
+func NewTextMarshaler(resolver Resolver, options ...TextMarshalerOption) Marshaler {
+	return newTextMarshaler(resolver, options...)
+}
+
+type TextMarshalerOption func(*textMarshaler)
+
+// TextMarshalerWithIndent says to use an indent of two spaces.
+func TextMarshalerWithIndent() TextMarshalerOption {
+	return func(textMarshaler *textMarshaler) {
+		textMarshaler.indent = "  "
+		textMarshaler.multiline = true
+	}
+}
+
+// NewJSONMarshaler returns a new Marshaler for JSON.
+//
+// This has the potential to be unstable over time.
+// resolver can be nil if unknown and are only needed for extensions.
 func NewJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshaler {
 	return newJSONMarshaler(resolver, options...)
 }
@@ -105,6 +123,13 @@ type Unmarshaler interface {
 // resolver can be nil if unknown and are only needed for extensions.
 func NewWireUnmarshaler(resolver Resolver) Unmarshaler {
 	return newWireUnmarshaler(resolver)
+}
+
+// NewTextUnmarshaler returns a new Unmarshaler for prototext.
+//
+// resolver can be nil if unknown and are only needed for extensions.
+func NewTextUnmarshaler(resolver Resolver) Unmarshaler {
+	return newTextUnmarshaler(resolver)
 }
 
 // NewJSONUnmarshaler returns a new Unmarshaler for json.

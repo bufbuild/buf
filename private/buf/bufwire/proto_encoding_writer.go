@@ -63,6 +63,9 @@ func (p *protoEncodingWriter) PutMessage(
 	switch messageRef.MessageEncoding() {
 	case bufconvert.MessageEncodingBin:
 		marshaler = protoencoding.NewWireMarshaler()
+	case bufconvert.MessageEncodingText:
+		// TODO: Make indent configurable.
+		marshaler = protoencoding.NewTextMarshaler(resolver, protoencoding.TextMarshalerWithIndent())
 	case bufconvert.MessageEncodingJSON:
 		marshaler = protoencoding.NewJSONMarshaler(resolver)
 	default:

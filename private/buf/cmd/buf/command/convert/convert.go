@@ -205,7 +205,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	defaultToEncoding, err := inverseEncoding(fromMessageRef.MessageEncoding())
+	defaultToEncoding, err := getDefaultEncoding(fromMessageRef.MessageEncoding())
 	if err != nil {
 		return err
 	}
@@ -226,10 +226,12 @@ func run(
 
 // inverseEncoding returns the opposite encoding of the provided encoding,
 // which will be the default output encoding for a given payload encoding.
-func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
+func getDefaultEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
 	switch encoding {
 	case bufconvert.MessageEncodingBin:
 		return bufconvert.MessageEncodingJSON, nil
+	case bufconvert.MessageEncodingText:
+		return bufconvert.MessageEncodingBin, nil
 	case bufconvert.MessageEncodingJSON:
 		return bufconvert.MessageEncodingBin, nil
 	default:
