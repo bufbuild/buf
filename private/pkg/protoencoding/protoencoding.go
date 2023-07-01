@@ -76,7 +76,6 @@ type TextMarshalerOption func(*textMarshaler)
 // TextMarshalerWithIndent says to use an indent of two spaces.
 func TextMarshalerWithIndent() TextMarshalerOption {
 	return func(textMarshaler *textMarshaler) {
-		textMarshaler.indent = "  "
 		textMarshaler.multiline = true
 	}
 }

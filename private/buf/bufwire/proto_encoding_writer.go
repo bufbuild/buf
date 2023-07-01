@@ -49,6 +49,7 @@ func (p *protoEncodingWriter) PutMessage(
 	image bufimage.Image,
 	message proto.Message,
 	messageRef bufconvert.MessageEncodingRef,
+	indent bool,
 ) (retErr error) {
 	// Currently, this support bin and JSON format.
 	resolver, err := protoencoding.NewResolver(
@@ -64,10 +65,17 @@ func (p *protoEncodingWriter) PutMessage(
 	case bufconvert.MessageEncodingBin:
 		marshaler = protoencoding.NewWireMarshaler()
 	case bufconvert.MessageEncodingText:
-		// TODO: Make indent configurable.
-		marshaler = protoencoding.NewTextMarshaler(resolver, protoencoding.TextMarshalerWithIndent())
+		if indent {
+			marshaler = protoencoding.NewTextMarshaler(resolver, protoencoding.TextMarshalerWithIndent())
+		} else {
+			marshaler = protoencoding.NewTextMarshaler(resolver)
+		}
 	case bufconvert.MessageEncodingJSON:
-		marshaler = protoencoding.NewJSONMarshaler(resolver)
+		if indent {
+			marshaler = protoencoding.NewJSONMarshaler(resolver, protoencoding.JSONMarshalerWithIndent())
+		} else {
+			marshaler = protoencoding.NewJSONMarshaler(resolver)
+		}
 	default:
 		return errors.New("unknown message encoding type")
 	}

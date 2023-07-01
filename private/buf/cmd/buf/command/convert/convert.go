@@ -36,6 +36,7 @@ const (
 	typeFlagName        = "type"
 	fromFlagName        = "from"
 	outputFlagName      = "to"
+	indentFlagName      = "indent"
 )
 
 // NewCommand returns a new Command.
@@ -94,6 +95,7 @@ type flags struct {
 	Type        string
 	From        string
 	To          string
+	Indent      bool
 
 	// special
 	InputHashtag string
@@ -137,6 +139,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			`The output location of the conversion. Supported formats are %s`,
 			bufconvert.MessageEncodingFormatsString,
 		),
+	)
+	flagSet.BoolVar(
+		&f.Indent,
+		indentFlagName,
+		false,
+		`If set, the output will be indented, if the format supports it.`,
 	)
 }
 
@@ -221,6 +229,7 @@ func run(
 		image,
 		message,
 		outputMessageRef,
+		flags.Indent,
 	)
 }
 

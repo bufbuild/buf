@@ -38,7 +38,7 @@ const (
 	formatBin = "bin"
 	// formatBinProto is also used for binary proto format.
 	formatBinProto = "binproto"
-	// formatText is the proto text format.
+	// formatTextProto is the proto text format.
 	formatTextProto = "textproto"
 	// formatJSON is the JSON format.
 	formatJSON = "json"

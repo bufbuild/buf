@@ -242,6 +242,7 @@ type ProtoEncodingWriter interface {
 		image bufimage.Image,
 		message proto.Message,
 		messageRef bufconvert.MessageEncodingRef,
+		indent bool,
 	) error
 }
 
