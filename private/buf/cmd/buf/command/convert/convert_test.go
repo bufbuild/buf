@@ -59,7 +59,7 @@ func TestConvertDir(t *testing.T) {
 			t,
 			cmd,
 			0,
-			`one:  55`,
+			`one:55`,
 			nil,
 			nil,
 			"--type",
@@ -68,7 +68,6 @@ func TestConvertDir(t *testing.T) {
 			"testdata/convert/bin_json/payload.bin",
 			"--to",
 			"-#format=textproto",
-			"--indent",
 		)
 	})
 	t.Run("from-stdin", func(t *testing.T) {
