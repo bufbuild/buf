@@ -32,6 +32,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -123,6 +124,8 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 	}
 	imageName := fmt.Sprintf("%s:%s", pluginIdentity, stringid.GenerateRandomID())
 	cmd := command.NewRunner()
+	envContainer, err := app.NewEnvContainerForOS()
+	require.NoError(t, err)
 	if err := cmd.Run(
 		context.Background(),
 		docker,
@@ -130,6 +133,7 @@ func buildDockerPlugin(t testing.TB, dockerfilePath string, pluginIdentity strin
 		command.RunWithDir(filepath.Dir(dockerfilePath)),
 		command.RunWithStdout(os.Stdout),
 		command.RunWithStderr(os.Stderr),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
 	); err != nil {
 		return "", err
 	}
