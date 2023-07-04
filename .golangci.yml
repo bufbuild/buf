@@ -196,7 +196,7 @@ issues:
       path: private/bufpkg/bufimage/bufimagebuild/builder_unix_test.go
     # TestWorkspaceArchiveDir, TestWorkspaceWithInvalidArchivePathFail
     # and TestWorkspaceWithInvalidArchiveAbsolutePathFail cannot run in parallel
-    # because they all call createZipFromDir on the same path.
+    # because they all call createZipFromDir on the same path, writing to the same file.
     - linters:
         - paralleltest
       text: "missing the call to method parallel"
