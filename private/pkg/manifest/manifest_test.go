@@ -122,6 +122,7 @@ func TestAddEntry(t *testing.T) {
 }
 
 func TestInvalidManifests(t *testing.T) {
+	t.Parallel()
 	testInvalidManifest(
 		t,
 		"invalid entry",

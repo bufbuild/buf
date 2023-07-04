@@ -32,6 +32,7 @@ import (
 )
 
 func TestGetParsedRefSuccess(t *testing.T) {
+	t.Parallel()
 	// This allows us to test an os-agnostic root directory
 	root, err := filepath.Abs("/")
 	require.NoError(t, err)
@@ -902,6 +903,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 }
 
 func TestGetParsedRefError(t *testing.T) {
+	t.Parallel()
 	testGetParsedRefError(
 		t,
 		internal.NewInvalidPathError(formatDir, "-"),

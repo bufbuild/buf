@@ -25,6 +25,7 @@ import (
 )
 
 func TestParseFlags(t *testing.T) {
+	t.Parallel()
 	absFilePath, err := filepath.Abs("out")
 	require.NoError(t, err)
 	testCases := []struct {
@@ -590,6 +591,7 @@ func TestParseFlags(t *testing.T) {
 		name := fmt.Sprintf("%d", i)
 		testCase := testCase
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			env, err := testParseFlags(name, testCase.Args)
 			if testCase.ExpectedError != nil {
 				assert.Equal(t, testCase.ExpectedError, err)

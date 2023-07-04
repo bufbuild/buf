@@ -31,6 +31,7 @@ import (
 )
 
 func TestNewModuleForBucket(t *testing.T) {
+	t.Parallel()
 	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
 	require.NoError(t, err)
 	nullDigest, err := digester.Digest(&bytes.Buffer{})

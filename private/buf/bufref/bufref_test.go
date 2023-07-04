@@ -21,6 +21,7 @@ import (
 )
 
 func TestGetRawPathAndOptionsError(t *testing.T) {
+	t.Parallel()
 	testGetRawPathAndOptionsError(
 		t,
 		newValueEmptyError(),

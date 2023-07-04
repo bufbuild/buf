@@ -22,6 +22,7 @@ import (
 )
 
 func TestNewTokenProviderFromContainer(t *testing.T) {
+	t.Parallel()
 	tokenSet, err := NewTokenProviderFromContainer(app.NewEnvContainer(map[string]string{
 		tokenEnvKey: "default",
 	}))
@@ -32,6 +33,7 @@ func TestNewTokenProviderFromContainer(t *testing.T) {
 }
 
 func TestNewTokenProviderFromString(t *testing.T) {
+	t.Parallel()
 	tokenProvider, err := NewTokenProviderFromString("default")
 	assert.NoError(t, err)
 	assert.Equal(t, "default", tokenProvider.RemoteToken("host"))
@@ -47,6 +49,7 @@ func TestNewTokenProviderFromString(t *testing.T) {
 }
 
 func TestInvalidTokens(t *testing.T) {
+	t.Parallel()
 	invalidTokens := []string{
 		"user1@remote1,user2@remote1",
 		"user1@remote1,user2@remote2,",

@@ -884,6 +884,7 @@ testdata/workspace/success/roots/module2/root3/d/d.proto:3:1:Package name "d" sh
 }
 
 func TestWorkspaceBreakingFail(t *testing.T) {
+	t.Parallel()
 	// The two workspaces define a different number of
 	// images, so it's impossible to verify compatibility.
 	testRunStdout(
@@ -908,6 +909,7 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 }
 
 func TestWorkspaceDuplicateFail(t *testing.T) {
+	t.Parallel()
 	// The workspace includes multiple images that define the same file.
 	testRunStdoutStderrNoWarn(
 		t,
@@ -934,6 +936,7 @@ func TestWorkspaceDuplicateFailSpecificModule(t *testing.T) {
 }
 
 func TestWorkspaceNotExistFail(t *testing.T) {
+	t.Parallel()
 	// The directory defined in the workspace does not exist.
 	testRunStdoutStderrNoWarn(
 		t,
@@ -947,6 +950,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 }
 
 func TestWorkspaceJumpContextFail(t *testing.T) {
+	t.Parallel()
 	// The workspace directories cannot jump context.
 	testRunStdoutStderrNoWarn(
 		t,
@@ -964,6 +968,7 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 }
 
 func TestWorkspaceDirOverlapFail(t *testing.T) {
+	t.Parallel()
 	// The buf.work.yaml file cannot specify overlapping diretories.
 	testRunStdoutStderrNoWarn(
 		t,
@@ -979,6 +984,7 @@ func TestWorkspaceDirOverlapFail(t *testing.T) {
 func TestWorkspaceInputOverlapFail(t *testing.T) {
 	// The target input cannot overlap with any of the directories defined
 	// in the workspace.
+	t.Parallel()
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
@@ -1001,6 +1007,7 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 
 func TestWorkspaceNoVersionFail(t *testing.T) {
 	// The buf.work.yaml must specify a version.
+	t.Parallel()
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
@@ -1014,6 +1021,7 @@ func TestWorkspaceNoVersionFail(t *testing.T) {
 
 func TestWorkspaceInvalidVersionFail(t *testing.T) {
 	// The buf.work.yaml must specify a valid version.
+	t.Parallel()
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
@@ -1026,6 +1034,7 @@ func TestWorkspaceInvalidVersionFail(t *testing.T) {
 }
 
 func TestWorkspaceNoDirectoriesFail(t *testing.T) {
+	t.Parallel()
 	// The buf.work.yaml must specify at least one directory.
 	testRunStdoutStderrNoWarn(
 		t,
@@ -1039,6 +1048,7 @@ func TestWorkspaceNoDirectoriesFail(t *testing.T) {
 }
 
 func TestWorkspaceWithWorkspacePathFail(t *testing.T) {
+	t.Parallel()
 	// The --path flag cannot match the workspace directory (i.e. root requirements).
 	testRunStdoutStderrNoWarn(
 		t,
@@ -1054,6 +1064,7 @@ func TestWorkspaceWithWorkspacePathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithWorkspaceDirectoryPathFail(t *testing.T) {
+	t.Parallel()
 	// The --path flag cannot match one of the workspace directories (i.e. root requirements).
 	testRunStdoutStderrNoWarn(
 		t,
@@ -1073,6 +1084,7 @@ func TestWorkspaceWithWorkspaceDirectoryPathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidWorkspaceDirectoryPathFail(t *testing.T) {
+	t.Parallel()
 	// The --path flag did not reference a file found in either of the
 	// workspace directories.
 	testRunStdoutStderrNoWarn(
@@ -1089,6 +1101,7 @@ func TestWorkspaceWithInvalidWorkspaceDirectoryPathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
+	t.Parallel()
 	// The --path flag did not reference a file found outside of
 	// one of the workspace directories.
 	testRunStdoutStderrNoWarn(

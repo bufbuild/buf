@@ -29,6 +29,7 @@ import (
 )
 
 func TestFormatter(t *testing.T) {
+	t.Parallel()
 	testFormatCustomOptions(t)
 	testFormatProto2(t)
 	testFormatProto3(t)

@@ -28,6 +28,7 @@ import (
 )
 
 func TestRoundTripBin(t *testing.T) {
+	t.Parallel()
 	testRoundTripLocalFile(
 		t,
 		"file.bin",
@@ -38,6 +39,7 @@ func TestRoundTripBin(t *testing.T) {
 }
 
 func TestRoundTripBinGz(t *testing.T) {
+	t.Parallel()
 	testRoundTripLocalFile(
 		t,
 		"file.bin.gz",
@@ -48,6 +50,7 @@ func TestRoundTripBinGz(t *testing.T) {
 }
 
 func TestRoundTripBinZst(t *testing.T) {
+	t.Parallel()
 	testRoundTripLocalFile(
 		t,
 		"file.bin.zst",
@@ -64,8 +67,6 @@ func testRoundTripLocalFile(
 	expectedFormat string,
 	expectedCompressionType internal.CompressionType,
 ) {
-	t.Parallel()
-
 	logger := zap.NewNop()
 	refParser := newRefParser(logger)
 	reader := testNewFetchReader(logger)

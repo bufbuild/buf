@@ -46,6 +46,7 @@ import (
 )
 
 func TestPushManifest(t *testing.T) {
+	t.Parallel()
 	testPushManifest(
 		t,
 		"success",

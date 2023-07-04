@@ -28,6 +28,7 @@ import (
 )
 
 func TestBasic(t *testing.T) {
+	t.Parallel()
 	var foo string
 	var bar int
 
@@ -86,6 +87,7 @@ func TestBasic(t *testing.T) {
 }
 
 func TestError(t *testing.T) {
+	t.Parallel()
 	rootCommand := &Command{
 		Use: "test",
 		SubCommands: []*Command{
@@ -109,6 +111,7 @@ func TestError(t *testing.T) {
 }
 
 func TestVersionToStdout(t *testing.T) {
+	t.Parallel()
 	version := "0.0.1-dev"
 	rootCommand := &Command{
 		Use:     "test",
@@ -155,6 +158,7 @@ func TestVersionToStdout(t *testing.T) {
 }
 
 func TestHelpToStdout(t *testing.T) {
+	t.Parallel()
 	rootCommand := &Command{
 		Use: "test",
 		// need a sub-command for "help" to work
@@ -200,6 +204,7 @@ func TestHelpToStdout(t *testing.T) {
 }
 
 func TestIncorrectFlagEmptyStdout(t *testing.T) {
+	t.Parallel()
 	rootCommand := &Command{
 		Use: "test",
 		Run: func(context.Context, app.Container) error {

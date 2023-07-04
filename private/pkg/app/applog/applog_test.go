@@ -23,6 +23,7 @@ import (
 )
 
 func TestGetZapLevel(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		levelString string
 		expected    zapcore.Level
@@ -50,6 +51,7 @@ func TestGetZapLevel(t *testing.T) {
 }
 
 func TestGetZapEncoder(t *testing.T) {
+	t.Parallel()
 	// Test valid formats
 	testCases := []struct {
 		format string
@@ -62,7 +64,9 @@ func TestGetZapEncoder(t *testing.T) {
 		{"JSON"},
 	}
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(fmt.Sprintf("valid format %s", tc.format), func(t *testing.T) {
+			t.Parallel()
 			encoder, err := getZapEncoder(tc.format)
 			assert.NoError(t, err)
 			assert.NotNil(t, encoder)
