@@ -277,7 +277,7 @@ func (s *syncer) visitCommit(
 		logger.Debug("unnamed module, skipping commit")
 		return nil
 	}
-	builtModule, err := bufmodulebuild.BuildForBucket(
+	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		sourceBucket,
 		sourceConfig.Build,

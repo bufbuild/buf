@@ -737,46 +737,36 @@ func testBreaking(
 	previousConfig := testGetConfig(t, previousReadWriteBucket)
 	config := testGetConfig(t, readWriteBucket)
 
-	previousModule, err := bufmodulebuild.BuildForBucket(
+	previousModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		previousReadWriteBucket,
 		previousConfig.Build,
 	)
 	require.NoError(t, err)
-	previousModuleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(
+	previousImage, previousFileAnnotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
 		bufmodule.NewNopModuleReader(),
 	).Build(
-		context.Background(),
-		previousModule,
-	)
-	require.NoError(t, err)
-	previousImage, previousFileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
 		ctx,
-		previousModuleFileSet,
+		previousModule,
 		bufimagebuild.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
 	require.Empty(t, previousFileAnnotations)
 	previousImage = bufimage.ImageWithoutImports(previousImage)
 
-	module, err := bufmodulebuild.BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config.Build,
 	)
 	require.NoError(t, err)
-	moduleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(
+	image, fileAnnotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
 		bufmodule.NewNopModuleReader(),
 	).Build(
-		context.Background(),
-		module,
-	)
-	require.NoError(t, err)
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
 		ctx,
-		moduleFileSet,
+		module,
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)

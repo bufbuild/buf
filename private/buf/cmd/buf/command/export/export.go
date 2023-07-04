@@ -64,7 +64,7 @@ Export proto files in <source> to an output directory.
 
     $ buf export <source> --output=<output-dir>
 
-Export current directory to another local directory. 
+Export current directory to another local directory.
 
     $ buf export . --output=<output-dir>
 
@@ -162,7 +162,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleConfigs, err := moduleConfigReader.GetModuleConfigs(
+	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
 		ctx,
 		container,
 		sourceOrModuleRef,
@@ -174,16 +174,18 @@ func run(
 	if err != nil {
 		return err
 	}
+	moduleConfigs := moduleConfigSet.ModuleConfigs()
 	moduleFileSetBuilder := bufmodulebuild.NewModuleFileSetBuilder(
 		container.Logger(),
 		moduleReader,
 	)
+	// TODO: this is going to be a mess when we want to remove ModuleFileSet
 	moduleFileSets := make([]bufmodule.ModuleFileSet, len(moduleConfigs))
 	for i, moduleConfig := range moduleConfigs {
 		moduleFileSet, err := moduleFileSetBuilder.Build(
 			ctx,
 			moduleConfig.Module(),
-			bufmodulebuild.WithWorkspace(moduleConfig.Workspace()),
+			bufmodulebuild.WithWorkspace(moduleConfigSet.Workspace()),
 		)
 		if err != nil {
 			return err
@@ -205,7 +207,7 @@ func run(
 	// We gate on flags.ExcludeImports/buffetch.ProtoFileRef so that we don't waste time building if the
 	// result of the build is not relevant.
 	if !flags.ExcludeImports {
-		imageBuilder := bufimagebuild.NewBuilder(container.Logger())
+		imageBuilder := bufimagebuild.NewBuilder(container.Logger(), moduleReader)
 		for _, moduleFileSet := range moduleFileSets {
 			targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 			if err != nil {

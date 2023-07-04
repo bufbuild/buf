@@ -62,7 +62,7 @@ type FileInfo interface {
 	ModuleIdentity() ModuleIdentity
 	// Commit is the commit for the module that this file came from.
 	//
-	// This will only be set if ModuleIdentity is set. but may not be set
+	// This will only be set if ModuleIdentity is set, but may not be set
 	// even if ModuleIdentity is set, that is commit is optional information
 	// even if we know what module this file came from.
 	Commit() string

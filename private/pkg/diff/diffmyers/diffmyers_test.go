@@ -16,14 +16,21 @@ package diffmyers_test
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/diff/diffmyers"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
+const writeGoldenFiles = false
+
 func TestDiff(t *testing.T) {
+	t.Parallel()
 	t.Run("delete-and-insert", func(t *testing.T) {
+		t.Parallel()
 		const from = "Hello, world!\n"
 		const to = "Goodbye, world!\n"
 		edits := diffmyers.Diff(
@@ -39,8 +46,10 @@ func TestDiff(t *testing.T) {
 				FromPosition: 1,
 			},
 		})
+		testPrint(t, from, to, edits, "delete-and-insert")
 	})
-	t.Run("insert", func(t *testing.T) {
+	t.Run("insert-one", func(t *testing.T) {
+		t.Parallel()
 		const from = "Hello, world!\n"
 		const to = "Hello, world!\nGoodbye, world!\n"
 		edits := diffmyers.Diff(
@@ -54,8 +63,10 @@ func TestDiff(t *testing.T) {
 				ToPosition:   1,
 			},
 		})
+		testPrint(t, from, to, edits, "insert")
 	})
-	t.Run("delete", func(t *testing.T) {
+	t.Run("delete-one", func(t *testing.T) {
+		t.Parallel()
 		const from = "Hello, world!\nGoodbye, world!\n"
 		const to = "Hello, world!\n"
 		edits := diffmyers.Diff(
@@ -68,8 +79,43 @@ func TestDiff(t *testing.T) {
 				FromPosition: 1,
 			},
 		})
+		testPrint(t, from, to, edits, "delete")
+	})
+	t.Run("create-file", func(t *testing.T) {
+		t.Parallel()
+		const from = ""
+		const to = "Hello, world!\n"
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		assert.Equal(t, edits, []diffmyers.Edit{
+			{
+				Kind:         diffmyers.EditKindInsert,
+				FromPosition: 0,
+				ToPosition:   0,
+			},
+		})
+		testPrint(t, from, to, edits, "create")
+	})
+	t.Run("remove", func(t *testing.T) {
+		t.Parallel()
+		const from = "Hello, world!\n"
+		const to = ""
+		edits := diffmyers.Diff(
+			splitLines(from),
+			splitLines(to),
+		)
+		assert.Equal(t, edits, []diffmyers.Edit{
+			{
+				Kind:         diffmyers.EditKindDelete,
+				FromPosition: 0,
+			},
+		})
+		testPrint(t, from, to, edits, "remove")
 	})
 	t.Run("equal", func(t *testing.T) {
+		t.Parallel()
 		const from = "Hello, world!\n"
 		const to = "Hello, world!\n"
 		edits := diffmyers.Diff(
@@ -77,6 +123,7 @@ func TestDiff(t *testing.T) {
 			splitLines(to),
 		)
 		assert.Len(t, edits, 0)
+		testPrint(t, from, to, edits, "equal")
 	})
 	// The example from https://www.gnu.org/software/diffutils/manual/html_node/Sample-diff-Input.html
 	t.Run("lao-tzu", func(t *testing.T) {
@@ -90,7 +137,8 @@ And let there always be being,
   so we may see their outcome.
 The two are the same,
 But after they are produced,
-  they have different names.`
+  they have different names.
+`
 		const tzu = `The Nameless is the origin of Heaven and Earth;
 The named is the mother of all things.
 
@@ -103,12 +151,13 @@ But after they are produced,
   they have different names.
 They both may be called deep and profound.
 Deeper and more profound,
-The door of all subtleties!`
+The door of all subtleties!
+`
 		edits := diffmyers.Diff(
 			splitLines(lao),
 			splitLines(tzu),
 		)
-		assert.Equal(t, edits,
+		assert.Equal(t,
 			[]diffmyers.Edit{
 				{
 					Kind: diffmyers.EditKindDelete,
@@ -118,13 +167,13 @@ The door of all subtleties!`
 					FromPosition: 1,
 				},
 				{
-					Kind:         diffmyers.EditKindInsert,
-					FromPosition: 3,
-					ToPosition:   1,
-				},
-				{
 					Kind:         diffmyers.EditKindDelete,
 					FromPosition: 3,
+				},
+				{
+					Kind:         diffmyers.EditKindInsert,
+					FromPosition: 4,
+					ToPosition:   1,
 				},
 				{
 					Kind:         diffmyers.EditKindInsert,
@@ -147,7 +196,27 @@ The door of all subtleties!`
 					ToPosition:   12,
 				},
 			},
+			edits,
 		)
+		testPrint(t, lao, tzu, edits, "lao-tzu")
+	})
+}
+
+func testPrint(t *testing.T, from, to string, edits []diffmyers.Edit, golden string) {
+	t.Run("print", func(t *testing.T) {
+		diff, err := diffmyers.Print(
+			splitLines(from),
+			splitLines(to),
+			edits,
+		)
+		require.NoError(t, err)
+		goldenFilePath := filepath.Join("testdata", golden)
+		if writeGoldenFiles {
+			require.NoError(t, os.WriteFile(goldenFilePath, diff, os.ModePerm))
+		}
+		diffGolden, err := os.ReadFile(goldenFilePath)
+		require.NoError(t, err)
+		assert.Equal(t, string(diff), string(diffGolden))
 	})
 }
 

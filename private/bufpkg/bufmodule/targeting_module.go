@@ -104,8 +104,8 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 							objectInfo.Path(),
 							objectInfo.ExternalPath(),
 							false,
-							m.Module.getModuleIdentity(),
-							m.Module.getCommit(),
+							m.Module.ModuleIdentity(),
+							m.Module.Commit(),
 						)
 						if err != nil {
 							return nil, err
@@ -196,8 +196,8 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 					objectInfo.Path(),
 					objectInfo.ExternalPath(),
 					false,
-					m.Module.getModuleIdentity(),
-					m.Module.getCommit(),
+					m.Module.ModuleIdentity(),
+					m.Module.Commit(),
 				)
 				if err != nil {
 					return err

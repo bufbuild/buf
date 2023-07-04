@@ -28,16 +28,12 @@ import (
 )
 
 type workspaceBuilder struct {
-	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
-	moduleCache         map[string]*cachedModule
+	moduleCache map[string]*cachedModule
 }
 
-func newWorkspaceBuilder(
-	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-) *workspaceBuilder {
+func newWorkspaceBuilder() *workspaceBuilder {
 	return &workspaceBuilder{
-		moduleBucketBuilder: moduleBucketBuilder,
-		moduleCache:         make(map[string]*cachedModule),
+		moduleCache: make(map[string]*cachedModule),
 	}
 }
 
@@ -64,9 +60,6 @@ func (w *workspaceBuilder) BuildWorkspace(
 	allModules := make([]bufmodule.Module, 0, len(workspaceConfig.Directories))
 	for _, directory := range workspaceConfig.Directories {
 		if cachedModule, ok := w.moduleCache[directory]; ok {
-			if directory == targetSubDirPath {
-				continue
-			}
 			// We've already built this module, so we can use the cached-equivalent.
 			if moduleIdentity := cachedModule.moduleConfig.ModuleIdentity; moduleIdentity != nil {
 				if _, ok := namedModules[moduleIdentity.IdentityString()]; ok {
@@ -143,7 +136,7 @@ func (w *workspaceBuilder) BuildWorkspace(
 		if err != nil {
 			return nil, err
 		}
-		module, err := bufmodulebuild.BuildForBucket(
+		module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 			ctx,
 			readBucketForDirectory,
 			moduleConfig.Build,
@@ -161,12 +154,6 @@ func (w *workspaceBuilder) BuildWorkspace(
 			module,
 			moduleConfig,
 		)
-		if directory == targetSubDirPath {
-			// We don't want to include the module found at the targetSubDirPath
-			// since it would otherwise be included twice. Note that we include
-			// this check here so that the module is still built and cached upfront.
-			continue
-		}
 		if moduleIdentity := moduleConfig.ModuleIdentity; moduleIdentity != nil {
 			if _, ok := namedModules[moduleIdentity.IdentityString()]; ok {
 				return nil, fmt.Errorf(
@@ -180,9 +167,10 @@ func (w *workspaceBuilder) BuildWorkspace(
 		allModules = append(allModules, module)
 	}
 	return bufmodule.NewWorkspace(
+		ctx,
 		namedModules,
 		allModules,
-	), nil
+	)
 }
 
 // GetModuleConfig returns the bufmodule.Module and *bufconfig.Config, associated with the given
@@ -223,6 +211,18 @@ func validateWorkspaceDirectoryNonEmpty(
 // overlap in either direction. The last argument is only used for
 // error reporting.
 //
+// This verifies that ie we do not mistakenly target a directory input that is
+// within a Workspace, but is not listed as a directory in the Workspace, which
+// could cause issues. If we say "we have a workspace with directory proto, but
+// we are targeting proto/a", then we will still detect the buf.work.yaml and
+// bring in all the directories within it, making them available for import,
+// but potentially in two ways. If there was proto/a/a.proto, we could theoretically
+// import it as both a/a.proto, and a.proto.
+//
+// TODO: See if the above explanation is nonsense. It should be nonsense if we
+// did our job right here. And regardless, this shouldn't need to be validated
+// at this level.
+//
 //	validateInputOverlap("foo", "bar", "buf.work.yaml")     -> OK
 //	validateInputOverlap("foo/bar", "foo", "buf.work.yaml") -> NOT OK
 //	validateInputOverlap("foo", "foo/bar", "buf.work.yaml") -> NOT OK
@@ -231,6 +231,15 @@ func validateInputOverlap(
 	targetSubDirPath string,
 	workspaceID string,
 ) error {
+	// If we are targeting the whole workspace and not a specific directory,
+	// we do not do this check.
+	//
+	// TODO: targetSubDirPath needs to be completely removed from WorkspaceBuilder
+	// and validateInputOverlap needs to be done somewhere else at a higher level,
+	// as the "target" is just a CLI argument concept, not a pure Workspace concept.
+	if targetSubDirPath == "." {
+		return nil
+	}
 	if normalpath.ContainsPath(workspaceDirectory, targetSubDirPath, normalpath.Relative) {
 		return fmt.Errorf(
 			`failed to build input "%s" because it is contained by directory "%s" listed in %s`,

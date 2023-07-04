@@ -65,7 +65,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.21.1-dev"
+	Version = "1.23.2-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -413,10 +413,9 @@ func NewWireImageConfigReader(
 	return bufwire.NewImageConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
-		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
-		bufimagebuild.NewBuilder(logger),
+		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
 }
 
@@ -439,7 +438,7 @@ func NewWireModuleConfigReader(
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
@@ -461,7 +460,7 @@ func NewWireModuleConfigReaderForModuleReader(
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
@@ -485,10 +484,9 @@ func NewWireFileLister(
 	return bufwire.NewFileLister(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
-		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
-		bufimagebuild.NewBuilder(logger),
+		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
 }
 
@@ -592,9 +590,6 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 	client := httpclient.NewClient(config.TLS)
 	options := []connectclient.ConfigOption{
 		connectclient.WithAddressMapper(func(address string) string {
-			if buftransport.IsAPISubdomainEnabled(container) {
-				address = buftransport.PrependAPISubdomain(address)
-			}
 			if config.TLS == nil {
 				return buftransport.PrependHTTP(address)
 			}
@@ -640,6 +635,26 @@ func NewConnectClientConfigWithToken(container appflag.Container, token string) 
 		connectclient.WithAuthInterceptorProvider(
 			bufconnect.NewAuthorizationInterceptorProvider(tokenProvider),
 		),
+	)
+}
+
+// NewFetchReader creates a new buffetch.Reader with the default HTTP client
+// and git cloner.
+func NewFetchReader(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	runner command.Runner,
+	moduleResolver bufmodule.ModuleResolver,
+	moduleReader bufmodule.ModuleReader,
+) buffetch.Reader {
+	return buffetch.NewReader(
+		logger,
+		storageosProvider,
+		defaultHTTPClient,
+		defaultHTTPAuthenticator,
+		git.NewCloner(logger, storageosProvider, runner, defaultGitClonerOptions),
+		moduleResolver,
+		moduleReader,
 	)
 }
 
@@ -817,7 +832,8 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType s
 	if err != nil {
 		return nil, err
 	}
-	module, err := bufmodulebuild.BuildForBucket(
+
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		datawkt.ReadBucket,
 		sourceConfig.Build,
@@ -825,7 +841,7 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType s
 	if err != nil {
 		return nil, err
 	}
-	image, _, err := bufimagebuild.NewBuilder(logger).Build(ctx, bufmodule.NewModuleFileSet(module, nil))
+	image, _, err := bufimagebuild.NewBuilder(logger, bufmodule.NewNopModuleReader()).Build(ctx, module)
 	if err != nil {
 		return nil, err
 	}
@@ -872,6 +888,26 @@ func ValidateErrorFormatFlag(errorFormatString string, errorFormatFlagName strin
 // ValidateErrorFormatFlagLint validates the error format flag for lint.
 func ValidateErrorFormatFlagLint(errorFormatString string, errorFormatFlagName string) error {
 	return validateErrorFormatFlag(buflint.AllFormatStrings, errorFormatString, errorFormatFlagName)
+}
+
+// PackageVersionShortDescription returns the long description for the <package>-version command.
+func PackageVersionShortDescription(name string) string {
+	return fmt.Sprintf("Resolve module and %s plugin reference to a specific remote package version", name)
+}
+
+// PackageVersionLongDescription returns the long description for the <package>-version command.
+func PackageVersionLongDescription(registryName, commandName, examplePlugin string) string {
+	return fmt.Sprintf(`This command returns the version of the %s asset to be used with the %s registry.
+Examples:
+
+Get the version of the eliza module and the %s plugin for use with %s.
+    $ buf alpha package %s --module=buf.build/bufbuild/eliza --plugin=%s
+        v1.7.0-20230609151053-e682db0d9918.1
+
+Use a specific module version and plugin version.
+    $ buf alpha package %s --module=buf.build/bufbuild/eliza:e682db0d99184be88b41c4405ea8a417 --plugin=%s:v1.0.0
+        v1.0.0-20230609151053-e682db0d9918.1
+`, registryName, registryName, examplePlugin, registryName, commandName, examplePlugin, commandName, examplePlugin)
 }
 
 // SelectReferenceForRemote receives a list of module references and selects one for remote
@@ -965,26 +1001,6 @@ func promptUser(container app.Container, prompt string, isPassword bool) (string
 		}
 	}
 	return "", NewTooManyEmptyAnswersError(userPromptAttempts)
-}
-
-// newFetchReader creates a new buffetch.Reader with the default HTTP client
-// and git cloner.
-func newFetchReader(
-	logger *zap.Logger,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
-) buffetch.Reader {
-	return buffetch.NewReader(
-		logger,
-		storageosProvider,
-		defaultHTTPClient,
-		defaultHTTPAuthenticator,
-		git.NewCloner(logger, storageosProvider, runner, defaultGitClonerOptions),
-		moduleResolver,
-		moduleReader,
-	)
 }
 
 // newFetchSourceReader creates a new buffetch.SourceReader with the default HTTP client
