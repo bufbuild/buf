@@ -206,3 +206,4 @@ issues:
     - linters:
         - paralleltest
       path: private/bufpkg/bufstudioagent/bufstudioagent_test.go
+      text: "missing the call to method parallel"
