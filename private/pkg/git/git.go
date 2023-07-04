@@ -210,6 +210,8 @@ type Commit interface {
 	Committer() Ident
 	// Message is the commit message.
 	Message() string
+	// String outputs the Author timestamp and Hex.
+	String() string
 }
 
 // AnnotatedTag represents an annotated tag object.
@@ -271,7 +273,7 @@ type Repository interface {
 	BaseBranch() string
 	// ForEachBranch ranges over branches in the repository in an undefined order.
 	//
-	// Only pushed (i.e., remote) branches are visited.
+	// Only branches pushed to a remote named "origin" are visited.
 	ForEachBranch(func(branch string, headHash Hash) error) error
 	// ForEachCommit ranges over commits for the target branch in reverse topological order.
 	//
