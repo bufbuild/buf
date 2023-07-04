@@ -194,35 +194,6 @@ issues:
         - paralleltest
       text: "missing the call to method parallel"
       path: private/bufpkg/bufimage/bufimagebuild/builder_unix_test.go
-    # Every test in this file calls one of testLintConfigModifier and testLint,
-    # both of which call t.Parallel().
-    - linters:
-        - paralleltest
-      text: "missing the call to method parallel"
-      path: private/bufpkg/bufcheck/buflint/buflint_test.go
-    # TestConfigInclusion and TestLicense already call T.parallel(), but the other
-    # tests in this file calls one of testBucketGetFileInfos, testBucketGetAllFileInfosError,
-    # testBucketGetFileInfosForExternalPathsError, and testDocumentationBucket,
-    # all of which call t.Parallel().
-    - linters:
-        - paralleltest
-      text: "missing the call to method parallel"
-      path: private/bufpkg/bufmodule/bufmodulebuild/module_bucket_builder_test.go
-    # Every test in this file calls testRunLint, which calls t.Parallel().
-    - linters:
-        - paralleltest
-      text: "missing the call to method parallel"
-      path: private/buf/cmd/protoc-gen-buf-lint/lint_test.go
-    # Every test in this file calls testBreaking, which calls t.Parallel().
-    - linters:
-        - paralleltest
-      text: "missing the call to method parallel"
-      path: private/bufpkg/bufcheck/bufbreaking/bufbreaking_test.go
-    # Every test in this file calls testRoundTripLocalFile, which calls t.Paralell().
-    - linters:
-        - paralleltest
-      text: "missing the call to method parallel"
-      path: private/buf/buffetch/buffetch_test.go
     # TestWorkspaceArchiveDir, TestWorkspaceWithInvalidArchivePathFail
     # and TestWorkspaceWithInvalidArchiveAbsolutePathFail cannot run in parallel
     # because they all call createZipFromDir on the same path.

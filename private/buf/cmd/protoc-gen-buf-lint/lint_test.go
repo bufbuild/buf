@@ -33,6 +33,7 @@ import (
 )
 
 func TestRunLint1(t *testing.T) {
+	t.Parallel()
 	testRunLint(
 		t,
 		filepath.Join("testdata", "fail"),
@@ -58,6 +59,7 @@ func TestRunLint1(t *testing.T) {
 }
 
 func TestRunLint2(t *testing.T) {
+	t.Parallel()
 	testRunLint(
 		t,
 		filepath.Join("testdata", "fail"),
@@ -79,6 +81,7 @@ func TestRunLint2(t *testing.T) {
 }
 
 func TestRunLint3(t *testing.T) {
+	t.Parallel()
 	testRunLint(
 		t,
 		filepath.Join("testdata", "fail"),
@@ -98,6 +101,7 @@ func TestRunLint3(t *testing.T) {
 }
 
 func TestRunLint4(t *testing.T) {
+	t.Parallel()
 	testRunLint(
 		t,
 		filepath.Join("testdata", "fail"),
@@ -117,6 +121,7 @@ func TestRunLint4(t *testing.T) {
 }
 
 func TestRunLint5(t *testing.T) {
+	t.Parallel()
 	testRunLint(
 		t,
 		filepath.Join("testdata", "fail"),
@@ -137,6 +142,7 @@ func TestRunLint5(t *testing.T) {
 
 func TestRunLint6(t *testing.T) {
 	// specifically testing that output is stable
+	t.Parallel()
 	testRunLint(
 		t,
 		filepath.Join("testdata", "fail"),
@@ -156,6 +162,7 @@ func TestRunLint6(t *testing.T) {
 }
 
 func TestRunLint7(t *testing.T) {
+	t.Parallel()
 	testRunLint(
 		t,
 		filepath.Join("testdata", "fail"),
@@ -201,6 +208,7 @@ func TestRunLint_UnusedImports(t *testing.T) {
 	for i, components := range unusedImportsFileComponents {
 		unusedImportFiles[i] = normalpath.Join(components...)
 	}
+	t.Parallel()
 	testRunLint(
 		t,
 		filepath.Join("testdata", "unused-imports"),
@@ -229,7 +237,6 @@ func testRunLint(
 	expectedExitCode int,
 	expectedErrorString string,
 ) {
-	t.Parallel()
 	runner := command.NewRunner()
 	testRunHandlerFunc(
 		t,
