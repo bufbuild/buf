@@ -86,6 +86,8 @@ message ListGitCommitMetadataForReferenceRequest {
   string owner = 2;
   // Name of the repository the reference belongs to.
   string repository_name = 3;
+  // String that represents the name of the reference.
+  string reference = 4;
 }
 
 message ListGitCommitMetadataForReferenceResponse {
