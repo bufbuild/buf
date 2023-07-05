@@ -243,56 +243,76 @@ type DisplayServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewDisplayServiceHandler(svc DisplayServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(DisplayServiceDisplayOrganizationElementsProcedure, connect_go.NewUnaryHandler(
+	displayServiceDisplayOrganizationElementsHandler := connect_go.NewUnaryHandler(
 		DisplayServiceDisplayOrganizationElementsProcedure,
 		svc.DisplayOrganizationElements,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceDisplayRepositoryElementsProcedure, connect_go.NewUnaryHandler(
+	)
+	displayServiceDisplayRepositoryElementsHandler := connect_go.NewUnaryHandler(
 		DisplayServiceDisplayRepositoryElementsProcedure,
 		svc.DisplayRepositoryElements,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceDisplayUserElementsProcedure, connect_go.NewUnaryHandler(
+	)
+	displayServiceDisplayUserElementsHandler := connect_go.NewUnaryHandler(
 		DisplayServiceDisplayUserElementsProcedure,
 		svc.DisplayUserElements,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceDisplayServerElementsProcedure, connect_go.NewUnaryHandler(
+	)
+	displayServiceDisplayServerElementsHandler := connect_go.NewUnaryHandler(
 		DisplayServiceDisplayServerElementsProcedure,
 		svc.DisplayServerElements,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceDisplayOwnerEntitledElementsProcedure, connect_go.NewUnaryHandler(
+	)
+	displayServiceDisplayOwnerEntitledElementsHandler := connect_go.NewUnaryHandler(
 		DisplayServiceDisplayOwnerEntitledElementsProcedure,
 		svc.DisplayOwnerEntitledElements,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceDisplayRepositoryEntitledElementsProcedure, connect_go.NewUnaryHandler(
+	)
+	displayServiceDisplayRepositoryEntitledElementsHandler := connect_go.NewUnaryHandler(
 		DisplayServiceDisplayRepositoryEntitledElementsProcedure,
 		svc.DisplayRepositoryEntitledElements,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceListManageableRepositoryRolesProcedure, connect_go.NewUnaryHandler(
+	)
+	displayServiceListManageableRepositoryRolesHandler := connect_go.NewUnaryHandler(
 		DisplayServiceListManageableRepositoryRolesProcedure,
 		svc.ListManageableRepositoryRoles,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DisplayServiceListManageableUserRepositoryRolesProcedure, connect_go.NewUnaryHandler(
+	)
+	displayServiceListManageableUserRepositoryRolesHandler := connect_go.NewUnaryHandler(
 		DisplayServiceListManageableUserRepositoryRolesProcedure,
 		svc.ListManageableUserRepositoryRoles,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.DisplayService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.DisplayService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case DisplayServiceDisplayOrganizationElementsProcedure:
+			displayServiceDisplayOrganizationElementsHandler.ServeHTTP(w, r)
+		case DisplayServiceDisplayRepositoryElementsProcedure:
+			displayServiceDisplayRepositoryElementsHandler.ServeHTTP(w, r)
+		case DisplayServiceDisplayUserElementsProcedure:
+			displayServiceDisplayUserElementsHandler.ServeHTTP(w, r)
+		case DisplayServiceDisplayServerElementsProcedure:
+			displayServiceDisplayServerElementsHandler.ServeHTTP(w, r)
+		case DisplayServiceDisplayOwnerEntitledElementsProcedure:
+			displayServiceDisplayOwnerEntitledElementsHandler.ServeHTTP(w, r)
+		case DisplayServiceDisplayRepositoryEntitledElementsProcedure:
+			displayServiceDisplayRepositoryEntitledElementsHandler.ServeHTTP(w, r)
+		case DisplayServiceListManageableRepositoryRolesProcedure:
+			displayServiceListManageableRepositoryRolesHandler.ServeHTTP(w, r)
+		case DisplayServiceListManageableUserRepositoryRolesProcedure:
+			displayServiceListManageableUserRepositoryRolesHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedDisplayServiceHandler returns CodeUnimplemented from all methods.

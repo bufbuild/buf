@@ -136,26 +136,36 @@ type SearchServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(SearchServiceSearchProcedure, connect_go.NewUnaryHandler(
+	searchServiceSearchHandler := connect_go.NewUnaryHandler(
 		SearchServiceSearchProcedure,
 		svc.Search,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(SearchServiceSearchTagProcedure, connect_go.NewUnaryHandler(
+	)
+	searchServiceSearchTagHandler := connect_go.NewUnaryHandler(
 		SearchServiceSearchTagProcedure,
 		svc.SearchTag,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(SearchServiceSearchDraftProcedure, connect_go.NewUnaryHandler(
+	)
+	searchServiceSearchDraftHandler := connect_go.NewUnaryHandler(
 		SearchServiceSearchDraftProcedure,
 		svc.SearchDraft,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.SearchService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.SearchService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case SearchServiceSearchProcedure:
+			searchServiceSearchHandler.ServeHTTP(w, r)
+		case SearchServiceSearchTagProcedure:
+			searchServiceSearchTagHandler.ServeHTTP(w, r)
+		case SearchServiceSearchDraftProcedure:
+			searchServiceSearchDraftHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedSearchServiceHandler returns CodeUnimplemented from all methods.

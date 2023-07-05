@@ -165,32 +165,44 @@ type PluginCurationServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(PluginCurationServiceListCuratedPluginsProcedure, connect_go.NewUnaryHandler(
+	pluginCurationServiceListCuratedPluginsHandler := connect_go.NewUnaryHandler(
 		PluginCurationServiceListCuratedPluginsProcedure,
 		svc.ListCuratedPlugins,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginCurationServiceCreateCuratedPluginProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginCurationServiceCreateCuratedPluginHandler := connect_go.NewUnaryHandler(
 		PluginCurationServiceCreateCuratedPluginProcedure,
 		svc.CreateCuratedPlugin,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginCurationServiceGetLatestCuratedPluginProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginCurationServiceGetLatestCuratedPluginHandler := connect_go.NewUnaryHandler(
 		PluginCurationServiceGetLatestCuratedPluginProcedure,
 		svc.GetLatestCuratedPlugin,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginCurationServiceDeleteCuratedPluginProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginCurationServiceDeleteCuratedPluginHandler := connect_go.NewUnaryHandler(
 		PluginCurationServiceDeleteCuratedPluginProcedure,
 		svc.DeleteCuratedPlugin,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.PluginCurationService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.PluginCurationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case PluginCurationServiceListCuratedPluginsProcedure:
+			pluginCurationServiceListCuratedPluginsHandler.ServeHTTP(w, r)
+		case PluginCurationServiceCreateCuratedPluginProcedure:
+			pluginCurationServiceCreateCuratedPluginHandler.ServeHTTP(w, r)
+		case PluginCurationServiceGetLatestCuratedPluginProcedure:
+			pluginCurationServiceGetLatestCuratedPluginHandler.ServeHTTP(w, r)
+		case PluginCurationServiceDeleteCuratedPluginProcedure:
+			pluginCurationServiceDeleteCuratedPluginHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedPluginCurationServiceHandler returns CodeUnimplemented from all methods.
@@ -261,13 +273,19 @@ type CodeGenerationServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewCodeGenerationServiceHandler(svc CodeGenerationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(CodeGenerationServiceGenerateCodeProcedure, connect_go.NewUnaryHandler(
+	codeGenerationServiceGenerateCodeHandler := connect_go.NewUnaryHandler(
 		CodeGenerationServiceGenerateCodeProcedure,
 		svc.GenerateCode,
 		opts...,
-	))
-	return "/buf.alpha.registry.v1alpha1.CodeGenerationService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.CodeGenerationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case CodeGenerationServiceGenerateCodeProcedure:
+			codeGenerationServiceGenerateCodeHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedCodeGenerationServiceHandler returns CodeUnimplemented from all methods.

@@ -193,38 +193,52 @@ type ResolveServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(ResolveServiceGetModulePinsProcedure, connect_go.NewUnaryHandler(
+	resolveServiceGetModulePinsHandler := connect_go.NewUnaryHandler(
 		ResolveServiceGetModulePinsProcedure,
 		svc.GetModulePins,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(ResolveServiceGetGoVersionProcedure, connect_go.NewUnaryHandler(
+	)
+	resolveServiceGetGoVersionHandler := connect_go.NewUnaryHandler(
 		ResolveServiceGetGoVersionProcedure,
 		svc.GetGoVersion,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(ResolveServiceGetSwiftVersionProcedure, connect_go.NewUnaryHandler(
+	)
+	resolveServiceGetSwiftVersionHandler := connect_go.NewUnaryHandler(
 		ResolveServiceGetSwiftVersionProcedure,
 		svc.GetSwiftVersion,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(ResolveServiceGetMavenVersionProcedure, connect_go.NewUnaryHandler(
+	)
+	resolveServiceGetMavenVersionHandler := connect_go.NewUnaryHandler(
 		ResolveServiceGetMavenVersionProcedure,
 		svc.GetMavenVersion,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(ResolveServiceGetNPMVersionProcedure, connect_go.NewUnaryHandler(
+	)
+	resolveServiceGetNPMVersionHandler := connect_go.NewUnaryHandler(
 		ResolveServiceGetNPMVersionProcedure,
 		svc.GetNPMVersion,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.ResolveService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.ResolveService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ResolveServiceGetModulePinsProcedure:
+			resolveServiceGetModulePinsHandler.ServeHTTP(w, r)
+		case ResolveServiceGetGoVersionProcedure:
+			resolveServiceGetGoVersionHandler.ServeHTTP(w, r)
+		case ResolveServiceGetSwiftVersionProcedure:
+			resolveServiceGetSwiftVersionHandler.ServeHTTP(w, r)
+		case ResolveServiceGetMavenVersionProcedure:
+			resolveServiceGetMavenVersionHandler.ServeHTTP(w, r)
+		case ResolveServiceGetNPMVersionProcedure:
+			resolveServiceGetNPMVersionHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedResolveServiceHandler returns CodeUnimplemented from all methods.
@@ -322,14 +336,20 @@ type LocalResolveServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewLocalResolveServiceHandler(svc LocalResolveServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(LocalResolveServiceGetLocalModulePinsProcedure, connect_go.NewUnaryHandler(
+	localResolveServiceGetLocalModulePinsHandler := connect_go.NewUnaryHandler(
 		LocalResolveServiceGetLocalModulePinsProcedure,
 		svc.GetLocalModulePins,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.LocalResolveService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.LocalResolveService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case LocalResolveServiceGetLocalModulePinsProcedure:
+			localResolveServiceGetLocalModulePinsHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedLocalResolveServiceHandler returns CodeUnimplemented from all methods.

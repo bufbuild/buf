@@ -128,25 +128,35 @@ type LabelServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewLabelServiceHandler(svc LabelServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(LabelServiceCreateLabelProcedure, connect_go.NewUnaryHandler(
+	labelServiceCreateLabelHandler := connect_go.NewUnaryHandler(
 		LabelServiceCreateLabelProcedure,
 		svc.CreateLabel,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(LabelServiceMoveLabelProcedure, connect_go.NewUnaryHandler(
+	)
+	labelServiceMoveLabelHandler := connect_go.NewUnaryHandler(
 		LabelServiceMoveLabelProcedure,
 		svc.MoveLabel,
 		opts...,
-	))
-	mux.Handle(LabelServiceGetLabelsProcedure, connect_go.NewUnaryHandler(
+	)
+	labelServiceGetLabelsHandler := connect_go.NewUnaryHandler(
 		LabelServiceGetLabelsProcedure,
 		svc.GetLabels,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.LabelService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.LabelService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case LabelServiceCreateLabelProcedure:
+			labelServiceCreateLabelHandler.ServeHTTP(w, r)
+		case LabelServiceMoveLabelProcedure:
+			labelServiceMoveLabelHandler.ServeHTTP(w, r)
+		case LabelServiceGetLabelsProcedure:
+			labelServiceGetLabelsHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedLabelServiceHandler returns CodeUnimplemented from all methods.
