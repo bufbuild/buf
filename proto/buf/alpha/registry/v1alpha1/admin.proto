@@ -41,12 +41,6 @@ message UniquenessPolicy {
   bool enabled = 1;
 }
 
-// UniquenessState is the state of collisions on the server.
-message UniquenessState {
-  // The existing collisions on the server.
-  repeated Collision collisions = 1;
-}
-
 // Collision is a collision that has occurred.
 message Collision {
   // The reference that has collisions.
@@ -55,7 +49,8 @@ message Collision {
   CollisionType type = 2;
   // The sources of the collision that the user is authorized to see.
   repeated CollisionSource sources = 3;
-  // The number of collisions that were not returned, the user should contact a server admin for more information.
+  // The number of collisions that were not returned.
+  // The user should contact a server admin for more information about these collisions.
   uint64 num_other_collisions = 4;
 }
 
@@ -66,7 +61,6 @@ message CollisionSource {
   // The name of the repository of the source.
   string repository_name = 2;
   // The path of the file that is the source of the collision.
-  // This is provided for FQN collisions, and implied/empty for path collisions.
   string path = 3;
 }
 
@@ -108,7 +102,7 @@ service AdminService {
   // Update uniqueness policy enforcement for the server.
   rpc UpdateUniquenessPolicy(UpdateUniquenessPolicyRequest) returns (UpdateUniquenessPolicyResponse);
   // Get state of uniqueness collisions for the server
-  rpc GetUniquenessState(GetUniquenessStateRequest) returns (GetUniquenessStateResponse) {
+  rpc GetServerUniquenessCollisions(GetServerUniquenessCollisionsRequest) returns (GetServerUniquenessCollisionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -176,8 +170,8 @@ message UpdateUniquenessPolicyRequest {
 
 message UpdateUniquenessPolicyResponse {}
 
-message GetUniquenessStateRequest {}
+message GetServerUniquenessCollisionsRequest {}
 
-message GetUniquenessStateResponse {
-  UniquenessState state = 1;
+message GetServerUniquenessCollisionsResponse {
+  repeated Collision collisions = 1;
 }
