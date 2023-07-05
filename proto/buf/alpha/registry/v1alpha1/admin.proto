@@ -59,8 +59,12 @@ message Collision {
 
 // CollisionSource is the source of a collision
 message CollisionSource {
-  string owner_id = 1;
-  string repository_id = 2;
+  // The name of the owner of the source.
+  string owner_name = 1;
+  // The name of the repository of the source.
+  string repository_name = 2;
+  // The path of the file that is the source of the collision.
+  // This is provided for FQN collisions, and implied/empty for path collisions.
   string path = 3;
 }
 
