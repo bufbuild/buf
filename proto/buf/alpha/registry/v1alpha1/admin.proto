@@ -53,8 +53,10 @@ message Collision {
   string reference = 1;
   // The type of collision.
   CollisionType type = 2;
-  // The sources of the collision.
+  // The sources of the collision that the user is authorized to see.
   repeated CollisionSource sources = 3;
+  // The number of collisions that were not returned, the user should contact a server admin for more information.
+  uint64 num_other_collisions = 4;
 }
 
 // CollisionSource is the source of a collision
