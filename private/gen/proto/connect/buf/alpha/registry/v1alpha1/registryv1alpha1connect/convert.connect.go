@@ -100,13 +100,19 @@ type ConvertServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewConvertServiceHandler(svc ConvertServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(ConvertServiceConvertProcedure, connect_go.NewUnaryHandler(
+	convertServiceConvertHandler := connect_go.NewUnaryHandler(
 		ConvertServiceConvertProcedure,
 		svc.Convert,
 		opts...,
-	))
-	return "/buf.alpha.registry.v1alpha1.ConvertService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.ConvertService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ConvertServiceConvertProcedure:
+			convertServiceConvertHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedConvertServiceHandler returns CodeUnimplemented from all methods.

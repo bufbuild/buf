@@ -252,58 +252,80 @@ type AdminServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(AdminServiceForceDeleteUserProcedure, connect_go.NewUnaryHandler(
+	adminServiceForceDeleteUserHandler := connect_go.NewUnaryHandler(
 		AdminServiceForceDeleteUserProcedure,
 		svc.ForceDeleteUser,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(AdminServiceUpdateUserVerificationStatusProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceUpdateUserVerificationStatusHandler := connect_go.NewUnaryHandler(
 		AdminServiceUpdateUserVerificationStatusProcedure,
 		svc.UpdateUserVerificationStatus,
 		opts...,
-	))
-	mux.Handle(AdminServiceUpdateOrganizationVerificationStatusProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceUpdateOrganizationVerificationStatusHandler := connect_go.NewUnaryHandler(
 		AdminServiceUpdateOrganizationVerificationStatusProcedure,
 		svc.UpdateOrganizationVerificationStatus,
 		opts...,
-	))
-	mux.Handle(AdminServiceCreateMachineUserProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceCreateMachineUserHandler := connect_go.NewUnaryHandler(
 		AdminServiceCreateMachineUserProcedure,
 		svc.CreateMachineUser,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(AdminServiceGetBreakingChangePolicyProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceGetBreakingChangePolicyHandler := connect_go.NewUnaryHandler(
 		AdminServiceGetBreakingChangePolicyProcedure,
 		svc.GetBreakingChangePolicy,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(AdminServiceUpdateBreakingChangePolicyProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceUpdateBreakingChangePolicyHandler := connect_go.NewUnaryHandler(
 		AdminServiceUpdateBreakingChangePolicyProcedure,
 		svc.UpdateBreakingChangePolicy,
 		opts...,
-	))
-	mux.Handle(AdminServiceGetUniquenessPolicyProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceGetUniquenessPolicyHandler := connect_go.NewUnaryHandler(
 		AdminServiceGetUniquenessPolicyProcedure,
 		svc.GetUniquenessPolicy,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(AdminServiceUpdateUniquenessPolicyProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceUpdateUniquenessPolicyHandler := connect_go.NewUnaryHandler(
 		AdminServiceUpdateUniquenessPolicyProcedure,
 		svc.UpdateUniquenessPolicy,
 		opts...,
-	))
-	mux.Handle(AdminServiceGetUniquenessStateProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceGetUniquenessStateHandler := connect_go.NewUnaryHandler(
 		AdminServiceGetUniquenessStateProcedure,
 		svc.GetUniquenessState,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.AdminService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case AdminServiceForceDeleteUserProcedure:
+			adminServiceForceDeleteUserHandler.ServeHTTP(w, r)
+		case AdminServiceUpdateUserVerificationStatusProcedure:
+			adminServiceUpdateUserVerificationStatusHandler.ServeHTTP(w, r)
+		case AdminServiceUpdateOrganizationVerificationStatusProcedure:
+			adminServiceUpdateOrganizationVerificationStatusHandler.ServeHTTP(w, r)
+		case AdminServiceCreateMachineUserProcedure:
+			adminServiceCreateMachineUserHandler.ServeHTTP(w, r)
+		case AdminServiceGetBreakingChangePolicyProcedure:
+			adminServiceGetBreakingChangePolicyHandler.ServeHTTP(w, r)
+		case AdminServiceUpdateBreakingChangePolicyProcedure:
+			adminServiceUpdateBreakingChangePolicyHandler.ServeHTTP(w, r)
+		case AdminServiceGetUniquenessPolicyProcedure:
+			adminServiceGetUniquenessPolicyHandler.ServeHTTP(w, r)
+		case AdminServiceUpdateUniquenessPolicyProcedure:
+			adminServiceUpdateUniquenessPolicyHandler.ServeHTTP(w, r)
+		case AdminServiceGetUniquenessStateProcedure:
+			adminServiceGetUniquenessStateHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedAdminServiceHandler returns CodeUnimplemented from all methods.

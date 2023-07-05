@@ -101,14 +101,20 @@ type OwnerServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewOwnerServiceHandler(svc OwnerServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(OwnerServiceGetOwnerByNameProcedure, connect_go.NewUnaryHandler(
+	ownerServiceGetOwnerByNameHandler := connect_go.NewUnaryHandler(
 		OwnerServiceGetOwnerByNameProcedure,
 		svc.GetOwnerByName,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.OwnerService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.OwnerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case OwnerServiceGetOwnerByNameProcedure:
+			ownerServiceGetOwnerByNameHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedOwnerServiceHandler returns CodeUnimplemented from all methods.

@@ -29,6 +29,7 @@ import (
 )
 
 func TestCorpus(t *testing.T) {
+	t.Parallel()
 	// To focus on just one test in the corpus, put its file name here. Don't forget to revert before committing.
 	focus := ""
 	ctx := context.Background()

@@ -120,20 +120,28 @@ type SyncServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewSyncServiceHandler(svc SyncServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(SyncServiceGetGitSyncPointProcedure, connect_go.NewUnaryHandler(
+	syncServiceGetGitSyncPointHandler := connect_go.NewUnaryHandler(
 		SyncServiceGetGitSyncPointProcedure,
 		svc.GetGitSyncPoint,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(SyncServiceSyncGitCommitProcedure, connect_go.NewUnaryHandler(
+	)
+	syncServiceSyncGitCommitHandler := connect_go.NewUnaryHandler(
 		SyncServiceSyncGitCommitProcedure,
 		svc.SyncGitCommit,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.SyncService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.SyncService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case SyncServiceGetGitSyncPointProcedure:
+			syncServiceGetGitSyncPointHandler.ServeHTTP(w, r)
+		case SyncServiceSyncGitCommitProcedure:
+			syncServiceSyncGitCommitHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedSyncServiceHandler returns CodeUnimplemented from all methods.

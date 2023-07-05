@@ -22,6 +22,7 @@ import (
 )
 
 func TestEnvContainer(t *testing.T) {
+	t.Parallel()
 	envContainer := NewEnvContainer(
 		map[string]string{
 			"foo1": "bar1",
@@ -120,11 +121,13 @@ func TestEnvContainer(t *testing.T) {
 }
 
 func TestArgContainer(t *testing.T) {
+	t.Parallel()
 	args := []string{"foo", "bar", "baz"}
 	assert.Equal(t, args, Args(NewArgContainer(args...)))
 }
 
 func TestIsDev(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, DevStdinFilePath != "", IsDevStdin(DevStdinFilePath))
 	assert.Equal(t, DevStdoutFilePath != "", IsDevStdout(DevStdoutFilePath))
 	assert.Equal(t, DevStderrFilePath != "", IsDevStderr(DevStderrFilePath))
@@ -136,6 +139,7 @@ func TestIsDev(t *testing.T) {
 }
 
 func TestEnvBool(t *testing.T) {
+	t.Parallel()
 	envContainer := NewEnvContainer(
 		map[string]string{
 			"foo1": "bar1",

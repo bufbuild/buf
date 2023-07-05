@@ -45,6 +45,7 @@ func (testMachine) Password() string {
 }
 
 func TestNewAuthorizationInterceptorProvider(t *testing.T) {
+	t.Parallel()
 	tokenSet, err := NewTokenProviderFromString("token1@host1,token2@host2")
 	assert.NoError(t, err)
 	_, err = NewAuthorizationInterceptorProvider(tokenSet)("host1")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -107,6 +108,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 }
 
 func TestCLIWarningInterceptor(t *testing.T) {
+	t.Parallel()
 	warningMessage := "This is a warning message from the BSR"
 	var buf bytes.Buffer
 	logger, err := applog.NewLogger(&buf, "warn", "text")
@@ -130,6 +132,7 @@ func TestCLIWarningInterceptor(t *testing.T) {
 }
 
 func TestCLIWarningInterceptorFromError(t *testing.T) {
+	t.Parallel()
 	warningMessage := "This is a warning message from the BSR"
 	var buf bytes.Buffer
 	logger, err := applog.NewLogger(&buf, "warn", "text")

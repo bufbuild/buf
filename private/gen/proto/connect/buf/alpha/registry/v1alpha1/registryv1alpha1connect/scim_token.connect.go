@@ -150,25 +150,35 @@ type SCIMTokenServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewSCIMTokenServiceHandler(svc SCIMTokenServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(SCIMTokenServiceCreateSCIMTokenProcedure, connect_go.NewUnaryHandler(
+	sCIMTokenServiceCreateSCIMTokenHandler := connect_go.NewUnaryHandler(
 		SCIMTokenServiceCreateSCIMTokenProcedure,
 		svc.CreateSCIMToken,
 		opts...,
-	))
-	mux.Handle(SCIMTokenServiceListSCIMTokensProcedure, connect_go.NewUnaryHandler(
+	)
+	sCIMTokenServiceListSCIMTokensHandler := connect_go.NewUnaryHandler(
 		SCIMTokenServiceListSCIMTokensProcedure,
 		svc.ListSCIMTokens,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(SCIMTokenServiceDeleteSCIMTokenProcedure, connect_go.NewUnaryHandler(
+	)
+	sCIMTokenServiceDeleteSCIMTokenHandler := connect_go.NewUnaryHandler(
 		SCIMTokenServiceDeleteSCIMTokenProcedure,
 		svc.DeleteSCIMToken,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.SCIMTokenService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.SCIMTokenService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case SCIMTokenServiceCreateSCIMTokenProcedure:
+			sCIMTokenServiceCreateSCIMTokenHandler.ServeHTTP(w, r)
+		case SCIMTokenServiceListSCIMTokensProcedure:
+			sCIMTokenServiceListSCIMTokensHandler.ServeHTTP(w, r)
+		case SCIMTokenServiceDeleteSCIMTokenProcedure:
+			sCIMTokenServiceDeleteSCIMTokenHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedSCIMTokenServiceHandler returns CodeUnimplemented from all methods.

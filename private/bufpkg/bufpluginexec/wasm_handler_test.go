@@ -23,19 +23,23 @@ import (
 )
 
 func TestValidateWASMFilePath(t *testing.T) {
+	t.Parallel()
 	wasmPath := t.TempDir() + "/test.wasm"
 	notWasmPath := t.TempDir() + "/test.txt"
 	assert.NoError(t, os.WriteFile(wasmPath, []byte("a"), 0600))
 	assert.NoError(t, os.WriteFile(notWasmPath, []byte("a"), 0600))
 	t.Run("pass for valid wasm", func(t *testing.T) {
+		t.Parallel()
 		_, err := validateWASMFilePath(wasmPath)
 		assert.NoError(t, err)
 	})
 	t.Run("fail if not found", func(t *testing.T) {
+		t.Parallel()
 		_, err := validateWASMFilePath("notfound")
 		assert.True(t, errors.Is(err, os.ErrNotExist))
 	})
 	t.Run("fail if invalid extension", func(t *testing.T) {
+		t.Parallel()
 		_, err := validateWASMFilePath(notWasmPath)
 		assert.Error(t, err)
 	})

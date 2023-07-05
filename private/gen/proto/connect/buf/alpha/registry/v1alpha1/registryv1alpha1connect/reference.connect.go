@@ -125,20 +125,28 @@ type ReferenceServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewReferenceServiceHandler(svc ReferenceServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(ReferenceServiceGetReferenceByNameProcedure, connect_go.NewUnaryHandler(
+	referenceServiceGetReferenceByNameHandler := connect_go.NewUnaryHandler(
 		ReferenceServiceGetReferenceByNameProcedure,
 		svc.GetReferenceByName,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(ReferenceServiceListGitCommitMetadataForReferenceProcedure, connect_go.NewUnaryHandler(
+	)
+	referenceServiceListGitCommitMetadataForReferenceHandler := connect_go.NewUnaryHandler(
 		ReferenceServiceListGitCommitMetadataForReferenceProcedure,
 		svc.ListGitCommitMetadataForReference,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.ReferenceService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.ReferenceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ReferenceServiceGetReferenceByNameProcedure:
+			referenceServiceGetReferenceByNameHandler.ServeHTTP(w, r)
+		case ReferenceServiceListGitCommitMetadataForReferenceProcedure:
+			referenceServiceListGitCommitMetadataForReferenceHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedReferenceServiceHandler returns CodeUnimplemented from all methods.

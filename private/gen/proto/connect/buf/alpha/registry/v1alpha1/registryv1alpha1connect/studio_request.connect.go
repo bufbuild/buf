@@ -161,30 +161,42 @@ type StudioRequestServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewStudioRequestServiceHandler(svc StudioRequestServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(StudioRequestServiceCreateStudioRequestProcedure, connect_go.NewUnaryHandler(
+	studioRequestServiceCreateStudioRequestHandler := connect_go.NewUnaryHandler(
 		StudioRequestServiceCreateStudioRequestProcedure,
 		svc.CreateStudioRequest,
 		opts...,
-	))
-	mux.Handle(StudioRequestServiceRenameStudioRequestProcedure, connect_go.NewUnaryHandler(
+	)
+	studioRequestServiceRenameStudioRequestHandler := connect_go.NewUnaryHandler(
 		StudioRequestServiceRenameStudioRequestProcedure,
 		svc.RenameStudioRequest,
 		opts...,
-	))
-	mux.Handle(StudioRequestServiceDeleteStudioRequestProcedure, connect_go.NewUnaryHandler(
+	)
+	studioRequestServiceDeleteStudioRequestHandler := connect_go.NewUnaryHandler(
 		StudioRequestServiceDeleteStudioRequestProcedure,
 		svc.DeleteStudioRequest,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(StudioRequestServiceListStudioRequestsProcedure, connect_go.NewUnaryHandler(
+	)
+	studioRequestServiceListStudioRequestsHandler := connect_go.NewUnaryHandler(
 		StudioRequestServiceListStudioRequestsProcedure,
 		svc.ListStudioRequests,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.StudioRequestService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.StudioRequestService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case StudioRequestServiceCreateStudioRequestProcedure:
+			studioRequestServiceCreateStudioRequestHandler.ServeHTTP(w, r)
+		case StudioRequestServiceRenameStudioRequestProcedure:
+			studioRequestServiceRenameStudioRequestHandler.ServeHTTP(w, r)
+		case StudioRequestServiceDeleteStudioRequestProcedure:
+			studioRequestServiceDeleteStudioRequestHandler.ServeHTTP(w, r)
+		case StudioRequestServiceListStudioRequestsProcedure:
+			studioRequestServiceListStudioRequestsHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedStudioRequestServiceHandler returns CodeUnimplemented from all methods.

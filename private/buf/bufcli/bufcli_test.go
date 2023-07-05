@@ -134,6 +134,7 @@ func TestDiscoverRemote(t *testing.T) {
 }
 
 func TestBucketAndConfigForSource(t *testing.T) {
+	t.Parallel()
 	testBucketAndConfigForSource(
 		t,
 		"minimal module",

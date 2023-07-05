@@ -119,20 +119,28 @@ type PushServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewPushServiceHandler(svc PushServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(PushServicePushProcedure, connect_go.NewUnaryHandler(
+	pushServicePushHandler := connect_go.NewUnaryHandler(
 		PushServicePushProcedure,
 		svc.Push,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PushServicePushManifestAndBlobsProcedure, connect_go.NewUnaryHandler(
+	)
+	pushServicePushManifestAndBlobsHandler := connect_go.NewUnaryHandler(
 		PushServicePushManifestAndBlobsProcedure,
 		svc.PushManifestAndBlobs,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.PushService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.PushService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case PushServicePushProcedure:
+			pushServicePushHandler.ServeHTTP(w, r)
+		case PushServicePushManifestAndBlobsProcedure:
+			pushServicePushManifestAndBlobsHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedPushServiceHandler returns CodeUnimplemented from all methods.

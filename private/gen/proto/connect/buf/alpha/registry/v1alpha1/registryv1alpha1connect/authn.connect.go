@@ -126,20 +126,28 @@ type AuthnServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewAuthnServiceHandler(svc AuthnServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(AuthnServiceGetCurrentUserProcedure, connect_go.NewUnaryHandler(
+	authnServiceGetCurrentUserHandler := connect_go.NewUnaryHandler(
 		AuthnServiceGetCurrentUserProcedure,
 		svc.GetCurrentUser,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(AuthnServiceGetCurrentUserSubjectProcedure, connect_go.NewUnaryHandler(
+	)
+	authnServiceGetCurrentUserSubjectHandler := connect_go.NewUnaryHandler(
 		AuthnServiceGetCurrentUserSubjectProcedure,
 		svc.GetCurrentUserSubject,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.AuthnService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.AuthnService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case AuthnServiceGetCurrentUserProcedure:
+			authnServiceGetCurrentUserHandler.ServeHTTP(w, r)
+		case AuthnServiceGetCurrentUserSubjectProcedure:
+			authnServiceGetCurrentUserSubjectHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedAuthnServiceHandler returns CodeUnimplemented from all methods.

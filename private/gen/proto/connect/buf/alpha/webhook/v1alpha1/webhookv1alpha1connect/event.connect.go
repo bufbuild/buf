@@ -97,13 +97,19 @@ type EventServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewEventServiceHandler(svc EventServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(EventServiceEventProcedure, connect_go.NewUnaryHandler(
+	eventServiceEventHandler := connect_go.NewUnaryHandler(
 		EventServiceEventProcedure,
 		svc.Event,
 		opts...,
-	))
-	return "/buf.alpha.webhook.v1alpha1.EventService/", mux
+	)
+	return "/buf.alpha.webhook.v1alpha1.EventService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case EventServiceEventProcedure:
+			eventServiceEventHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedEventServiceHandler returns CodeUnimplemented from all methods.
