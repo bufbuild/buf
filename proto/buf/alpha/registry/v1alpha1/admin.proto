@@ -101,7 +101,7 @@ service AdminService {
   }
   // Update breaking change policy for the server.
   rpc UpdateBreakingChangePolicy(UpdateBreakingChangePolicyRequest) returns (UpdateBreakingChangePolicyResponse);
-  // Get fqn uniqueness policy for the server.
+  // Get uniqueness policy for the server.
   rpc GetUniquenessPolicy(GetUniquenessPolicyRequest) returns (GetUniquenessPolicyResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
