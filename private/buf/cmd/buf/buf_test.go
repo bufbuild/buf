@@ -2279,7 +2279,7 @@ func TestConvertRoundTrip(t *testing.T) {
 	)
 	t.Run("stdin and stdout", func(t *testing.T) {
 		t.Parallel()
-		stdin := bytes.NewBuffer([]byte(`{"one":"55"}`))
+		stdin := bytes.NewBufferString(`{"one":"55"}`)
 		encodedMessage := bytes.NewBuffer(nil)
 		decodedMessage := bytes.NewBuffer(nil)
 		testRun(
@@ -2308,7 +2308,7 @@ func TestConvertRoundTrip(t *testing.T) {
 	})
 	t.Run("stdin and stdout with type specified", func(t *testing.T) {
 		t.Parallel()
-		stdin := bytes.NewBuffer([]byte(`{"one":"55"}`))
+		stdin := bytes.NewBufferString(`{"one":"55"}`)
 		encodedMessage := bytes.NewBuffer(nil)
 		decodedMessage := bytes.NewBuffer(nil)
 		testRun(
@@ -2343,7 +2343,7 @@ func TestConvertRoundTrip(t *testing.T) {
 	})
 	t.Run("file output and input", func(t *testing.T) {
 		t.Parallel()
-		stdin := bytes.NewBuffer([]byte(`{"one":"55"}`))
+		stdin := bytes.NewBufferString(`{"one":"55"}`)
 		decodedMessage := bytes.NewBuffer(nil)
 		testRun(
 			t,

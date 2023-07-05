@@ -100,14 +100,20 @@ type ImageServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewImageServiceHandler(svc ImageServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(ImageServiceGetImageProcedure, connect_go.NewUnaryHandler(
+	imageServiceGetImageHandler := connect_go.NewUnaryHandler(
 		ImageServiceGetImageProcedure,
 		svc.GetImage,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.ImageService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.ImageService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ImageServiceGetImageProcedure:
+			imageServiceGetImageHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedImageServiceHandler returns CodeUnimplemented from all methods.

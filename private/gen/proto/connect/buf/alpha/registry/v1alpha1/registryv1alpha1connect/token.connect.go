@@ -165,31 +165,43 @@ type TokenServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewTokenServiceHandler(svc TokenServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(TokenServiceCreateTokenProcedure, connect_go.NewUnaryHandler(
+	tokenServiceCreateTokenHandler := connect_go.NewUnaryHandler(
 		TokenServiceCreateTokenProcedure,
 		svc.CreateToken,
 		opts...,
-	))
-	mux.Handle(TokenServiceGetTokenProcedure, connect_go.NewUnaryHandler(
+	)
+	tokenServiceGetTokenHandler := connect_go.NewUnaryHandler(
 		TokenServiceGetTokenProcedure,
 		svc.GetToken,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(TokenServiceListTokensProcedure, connect_go.NewUnaryHandler(
+	)
+	tokenServiceListTokensHandler := connect_go.NewUnaryHandler(
 		TokenServiceListTokensProcedure,
 		svc.ListTokens,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(TokenServiceDeleteTokenProcedure, connect_go.NewUnaryHandler(
+	)
+	tokenServiceDeleteTokenHandler := connect_go.NewUnaryHandler(
 		TokenServiceDeleteTokenProcedure,
 		svc.DeleteToken,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.TokenService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.TokenService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case TokenServiceCreateTokenProcedure:
+			tokenServiceCreateTokenHandler.ServeHTTP(w, r)
+		case TokenServiceGetTokenProcedure:
+			tokenServiceGetTokenHandler.ServeHTTP(w, r)
+		case TokenServiceListTokensProcedure:
+			tokenServiceListTokensHandler.ServeHTTP(w, r)
+		case TokenServiceDeleteTokenProcedure:
+			tokenServiceDeleteTokenHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedTokenServiceHandler returns CodeUnimplemented from all methods.

@@ -444,112 +444,152 @@ type RepositoryServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(RepositoryServiceGetRepositoryProcedure, connect_go.NewUnaryHandler(
+	repositoryServiceGetRepositoryHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositoryProcedure,
 		svc.GetRepository,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceGetRepositoryByFullNameProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceGetRepositoryByFullNameHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositoryByFullNameProcedure,
 		svc.GetRepositoryByFullName,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceListRepositoriesProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceListRepositoriesHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceListRepositoriesProcedure,
 		svc.ListRepositories,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceListUserRepositoriesProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceListUserRepositoriesHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceListUserRepositoriesProcedure,
 		svc.ListUserRepositories,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceListRepositoriesUserCanAccessProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceListRepositoriesUserCanAccessHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceListRepositoriesUserCanAccessProcedure,
 		svc.ListRepositoriesUserCanAccess,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceListOrganizationRepositoriesProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceListOrganizationRepositoriesHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceListOrganizationRepositoriesProcedure,
 		svc.ListOrganizationRepositories,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceCreateRepositoryByFullNameProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceCreateRepositoryByFullNameHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceCreateRepositoryByFullNameProcedure,
 		svc.CreateRepositoryByFullName,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceDeleteRepositoryProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceDeleteRepositoryHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceDeleteRepositoryProcedure,
 		svc.DeleteRepository,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceDeleteRepositoryByFullNameProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceDeleteRepositoryByFullNameHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceDeleteRepositoryByFullNameProcedure,
 		svc.DeleteRepositoryByFullName,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceDeprecateRepositoryByNameProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceDeprecateRepositoryByNameHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceDeprecateRepositoryByNameProcedure,
 		svc.DeprecateRepositoryByName,
 		opts...,
-	))
-	mux.Handle(RepositoryServiceUndeprecateRepositoryByNameProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceUndeprecateRepositoryByNameHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceUndeprecateRepositoryByNameProcedure,
 		svc.UndeprecateRepositoryByName,
 		opts...,
-	))
-	mux.Handle(RepositoryServiceGetRepositoriesByFullNameProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceGetRepositoriesByFullNameHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositoriesByFullNameProcedure,
 		svc.GetRepositoriesByFullName,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceSetRepositoryContributorProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceSetRepositoryContributorHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceSetRepositoryContributorProcedure,
 		svc.SetRepositoryContributor,
 		opts...,
-	))
-	mux.Handle(RepositoryServiceListRepositoryContributorsProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceListRepositoryContributorsHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceListRepositoryContributorsProcedure,
 		svc.ListRepositoryContributors,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceGetRepositoryContributorProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceGetRepositoryContributorHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositoryContributorProcedure,
 		svc.GetRepositoryContributor,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceGetRepositorySettingsProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceGetRepositorySettingsHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositorySettingsProcedure,
 		svc.GetRepositorySettings,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryServiceUpdateRepositorySettingsByNameProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceUpdateRepositorySettingsByNameHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceUpdateRepositorySettingsByNameProcedure,
 		svc.UpdateRepositorySettingsByName,
 		opts...,
-	))
-	mux.Handle(RepositoryServiceGetRepositoriesMetadataProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryServiceGetRepositoriesMetadataHandler := connect_go.NewUnaryHandler(
 		RepositoryServiceGetRepositoriesMetadataProcedure,
 		svc.GetRepositoriesMetadata,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.RepositoryService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.RepositoryService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case RepositoryServiceGetRepositoryProcedure:
+			repositoryServiceGetRepositoryHandler.ServeHTTP(w, r)
+		case RepositoryServiceGetRepositoryByFullNameProcedure:
+			repositoryServiceGetRepositoryByFullNameHandler.ServeHTTP(w, r)
+		case RepositoryServiceListRepositoriesProcedure:
+			repositoryServiceListRepositoriesHandler.ServeHTTP(w, r)
+		case RepositoryServiceListUserRepositoriesProcedure:
+			repositoryServiceListUserRepositoriesHandler.ServeHTTP(w, r)
+		case RepositoryServiceListRepositoriesUserCanAccessProcedure:
+			repositoryServiceListRepositoriesUserCanAccessHandler.ServeHTTP(w, r)
+		case RepositoryServiceListOrganizationRepositoriesProcedure:
+			repositoryServiceListOrganizationRepositoriesHandler.ServeHTTP(w, r)
+		case RepositoryServiceCreateRepositoryByFullNameProcedure:
+			repositoryServiceCreateRepositoryByFullNameHandler.ServeHTTP(w, r)
+		case RepositoryServiceDeleteRepositoryProcedure:
+			repositoryServiceDeleteRepositoryHandler.ServeHTTP(w, r)
+		case RepositoryServiceDeleteRepositoryByFullNameProcedure:
+			repositoryServiceDeleteRepositoryByFullNameHandler.ServeHTTP(w, r)
+		case RepositoryServiceDeprecateRepositoryByNameProcedure:
+			repositoryServiceDeprecateRepositoryByNameHandler.ServeHTTP(w, r)
+		case RepositoryServiceUndeprecateRepositoryByNameProcedure:
+			repositoryServiceUndeprecateRepositoryByNameHandler.ServeHTTP(w, r)
+		case RepositoryServiceGetRepositoriesByFullNameProcedure:
+			repositoryServiceGetRepositoriesByFullNameHandler.ServeHTTP(w, r)
+		case RepositoryServiceSetRepositoryContributorProcedure:
+			repositoryServiceSetRepositoryContributorHandler.ServeHTTP(w, r)
+		case RepositoryServiceListRepositoryContributorsProcedure:
+			repositoryServiceListRepositoryContributorsHandler.ServeHTTP(w, r)
+		case RepositoryServiceGetRepositoryContributorProcedure:
+			repositoryServiceGetRepositoryContributorHandler.ServeHTTP(w, r)
+		case RepositoryServiceGetRepositorySettingsProcedure:
+			repositoryServiceGetRepositorySettingsHandler.ServeHTTP(w, r)
+		case RepositoryServiceUpdateRepositorySettingsByNameProcedure:
+			repositoryServiceUpdateRepositorySettingsByNameHandler.ServeHTTP(w, r)
+		case RepositoryServiceGetRepositoriesMetadataProcedure:
+			repositoryServiceGetRepositoriesMetadataHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedRepositoryServiceHandler returns CodeUnimplemented from all methods.

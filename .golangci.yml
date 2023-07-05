@@ -35,7 +35,7 @@ linters:
     - containedctx
     # - contextcheck
     - decorder
-    - depguard
+    # - depguard
     - dogsled
     - errcheck
     - execinquery
@@ -57,6 +57,7 @@ linters:
     - ineffassign
     - logrlint
     - makezero
+    - mirror
     - misspell
     - nakedret
     - nilerr

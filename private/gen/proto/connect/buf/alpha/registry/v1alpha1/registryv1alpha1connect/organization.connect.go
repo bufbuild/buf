@@ -392,101 +392,137 @@ type OrganizationServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(OrganizationServiceGetOrganizationProcedure, connect_go.NewUnaryHandler(
+	organizationServiceGetOrganizationHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceGetOrganizationProcedure,
 		svc.GetOrganization,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceGetOrganizationByNameProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceGetOrganizationByNameHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceGetOrganizationByNameProcedure,
 		svc.GetOrganizationByName,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceListOrganizationsProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceListOrganizationsHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceListOrganizationsProcedure,
 		svc.ListOrganizations,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceListUserOrganizationsProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceListUserOrganizationsHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceListUserOrganizationsProcedure,
 		svc.ListUserOrganizations,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceGetUserOrganizationProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceGetUserOrganizationHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceGetUserOrganizationProcedure,
 		svc.GetUserOrganization,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceCreateOrganizationProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceCreateOrganizationHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceCreateOrganizationProcedure,
 		svc.CreateOrganization,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceDeleteOrganizationProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceDeleteOrganizationHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceDeleteOrganizationProcedure,
 		svc.DeleteOrganization,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceDeleteOrganizationByNameProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceDeleteOrganizationByNameHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceDeleteOrganizationByNameProcedure,
 		svc.DeleteOrganizationByName,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceAddOrganizationMemberProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceAddOrganizationMemberHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceAddOrganizationMemberProcedure,
 		svc.AddOrganizationMember,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceUpdateOrganizationMemberProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceUpdateOrganizationMemberHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceUpdateOrganizationMemberProcedure,
 		svc.UpdateOrganizationMember,
 		opts...,
-	))
-	mux.Handle(OrganizationServiceRemoveOrganizationMemberProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceRemoveOrganizationMemberHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceRemoveOrganizationMemberProcedure,
 		svc.RemoveOrganizationMember,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceSetOrganizationMemberProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceSetOrganizationMemberHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceSetOrganizationMemberProcedure,
 		svc.SetOrganizationMember,
 		opts...,
-	))
-	mux.Handle(OrganizationServiceGetOrganizationSettingsProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceGetOrganizationSettingsHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceGetOrganizationSettingsProcedure,
 		svc.GetOrganizationSettings,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceUpdateOrganizationSettingsProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceUpdateOrganizationSettingsHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceUpdateOrganizationSettingsProcedure,
 		svc.UpdateOrganizationSettings,
 		opts...,
-	))
-	mux.Handle(OrganizationServiceAddOrganizationGroupProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceAddOrganizationGroupHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceAddOrganizationGroupProcedure,
 		svc.AddOrganizationGroup,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(OrganizationServiceRemoveOrganizationGroupProcedure, connect_go.NewUnaryHandler(
+	)
+	organizationServiceRemoveOrganizationGroupHandler := connect_go.NewUnaryHandler(
 		OrganizationServiceRemoveOrganizationGroupProcedure,
 		svc.RemoveOrganizationGroup,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.OrganizationService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.OrganizationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case OrganizationServiceGetOrganizationProcedure:
+			organizationServiceGetOrganizationHandler.ServeHTTP(w, r)
+		case OrganizationServiceGetOrganizationByNameProcedure:
+			organizationServiceGetOrganizationByNameHandler.ServeHTTP(w, r)
+		case OrganizationServiceListOrganizationsProcedure:
+			organizationServiceListOrganizationsHandler.ServeHTTP(w, r)
+		case OrganizationServiceListUserOrganizationsProcedure:
+			organizationServiceListUserOrganizationsHandler.ServeHTTP(w, r)
+		case OrganizationServiceGetUserOrganizationProcedure:
+			organizationServiceGetUserOrganizationHandler.ServeHTTP(w, r)
+		case OrganizationServiceCreateOrganizationProcedure:
+			organizationServiceCreateOrganizationHandler.ServeHTTP(w, r)
+		case OrganizationServiceDeleteOrganizationProcedure:
+			organizationServiceDeleteOrganizationHandler.ServeHTTP(w, r)
+		case OrganizationServiceDeleteOrganizationByNameProcedure:
+			organizationServiceDeleteOrganizationByNameHandler.ServeHTTP(w, r)
+		case OrganizationServiceAddOrganizationMemberProcedure:
+			organizationServiceAddOrganizationMemberHandler.ServeHTTP(w, r)
+		case OrganizationServiceUpdateOrganizationMemberProcedure:
+			organizationServiceUpdateOrganizationMemberHandler.ServeHTTP(w, r)
+		case OrganizationServiceRemoveOrganizationMemberProcedure:
+			organizationServiceRemoveOrganizationMemberHandler.ServeHTTP(w, r)
+		case OrganizationServiceSetOrganizationMemberProcedure:
+			organizationServiceSetOrganizationMemberHandler.ServeHTTP(w, r)
+		case OrganizationServiceGetOrganizationSettingsProcedure:
+			organizationServiceGetOrganizationSettingsHandler.ServeHTTP(w, r)
+		case OrganizationServiceUpdateOrganizationSettingsProcedure:
+			organizationServiceUpdateOrganizationSettingsHandler.ServeHTTP(w, r)
+		case OrganizationServiceAddOrganizationGroupProcedure:
+			organizationServiceAddOrganizationGroupHandler.ServeHTTP(w, r)
+		case OrganizationServiceRemoveOrganizationGroupProcedure:
+			organizationServiceRemoveOrganizationGroupHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedOrganizationServiceHandler returns CodeUnimplemented from all methods.

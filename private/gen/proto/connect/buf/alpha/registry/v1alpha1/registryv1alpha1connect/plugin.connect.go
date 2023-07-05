@@ -381,98 +381,132 @@ type PluginServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(PluginServiceListPluginsProcedure, connect_go.NewUnaryHandler(
+	pluginServiceListPluginsHandler := connect_go.NewUnaryHandler(
 		PluginServiceListPluginsProcedure,
 		svc.ListPlugins,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceListUserPluginsProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceListUserPluginsHandler := connect_go.NewUnaryHandler(
 		PluginServiceListUserPluginsProcedure,
 		svc.ListUserPlugins,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceListOrganizationPluginsProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceListOrganizationPluginsHandler := connect_go.NewUnaryHandler(
 		PluginServiceListOrganizationPluginsProcedure,
 		svc.ListOrganizationPlugins,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceGetPluginVersionProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceGetPluginVersionHandler := connect_go.NewUnaryHandler(
 		PluginServiceGetPluginVersionProcedure,
 		svc.GetPluginVersion,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceListPluginVersionsProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceListPluginVersionsHandler := connect_go.NewUnaryHandler(
 		PluginServiceListPluginVersionsProcedure,
 		svc.ListPluginVersions,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceGetPluginProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceGetPluginHandler := connect_go.NewUnaryHandler(
 		PluginServiceGetPluginProcedure,
 		svc.GetPlugin,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceDeletePluginProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceDeletePluginHandler := connect_go.NewUnaryHandler(
 		PluginServiceDeletePluginProcedure,
 		svc.DeletePlugin,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceGetTemplateProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceGetTemplateHandler := connect_go.NewUnaryHandler(
 		PluginServiceGetTemplateProcedure,
 		svc.GetTemplate,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceListTemplatesProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceListTemplatesHandler := connect_go.NewUnaryHandler(
 		PluginServiceListTemplatesProcedure,
 		svc.ListTemplates,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceListTemplatesUserCanAccessProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceListTemplatesUserCanAccessHandler := connect_go.NewUnaryHandler(
 		PluginServiceListTemplatesUserCanAccessProcedure,
 		svc.ListTemplatesUserCanAccess,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceListUserTemplatesProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceListUserTemplatesHandler := connect_go.NewUnaryHandler(
 		PluginServiceListUserTemplatesProcedure,
 		svc.ListUserTemplates,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceListOrganizationTemplatesProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceListOrganizationTemplatesHandler := connect_go.NewUnaryHandler(
 		PluginServiceListOrganizationTemplatesProcedure,
 		svc.ListOrganizationTemplates,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceGetTemplateVersionProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceGetTemplateVersionHandler := connect_go.NewUnaryHandler(
 		PluginServiceGetTemplateVersionProcedure,
 		svc.GetTemplateVersion,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceListTemplateVersionsProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceListTemplateVersionsHandler := connect_go.NewUnaryHandler(
 		PluginServiceListTemplateVersionsProcedure,
 		svc.ListTemplateVersions,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(PluginServiceDeleteTemplateProcedure, connect_go.NewUnaryHandler(
+	)
+	pluginServiceDeleteTemplateHandler := connect_go.NewUnaryHandler(
 		PluginServiceDeleteTemplateProcedure,
 		svc.DeleteTemplate,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.PluginService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.PluginService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case PluginServiceListPluginsProcedure:
+			pluginServiceListPluginsHandler.ServeHTTP(w, r)
+		case PluginServiceListUserPluginsProcedure:
+			pluginServiceListUserPluginsHandler.ServeHTTP(w, r)
+		case PluginServiceListOrganizationPluginsProcedure:
+			pluginServiceListOrganizationPluginsHandler.ServeHTTP(w, r)
+		case PluginServiceGetPluginVersionProcedure:
+			pluginServiceGetPluginVersionHandler.ServeHTTP(w, r)
+		case PluginServiceListPluginVersionsProcedure:
+			pluginServiceListPluginVersionsHandler.ServeHTTP(w, r)
+		case PluginServiceGetPluginProcedure:
+			pluginServiceGetPluginHandler.ServeHTTP(w, r)
+		case PluginServiceDeletePluginProcedure:
+			pluginServiceDeletePluginHandler.ServeHTTP(w, r)
+		case PluginServiceGetTemplateProcedure:
+			pluginServiceGetTemplateHandler.ServeHTTP(w, r)
+		case PluginServiceListTemplatesProcedure:
+			pluginServiceListTemplatesHandler.ServeHTTP(w, r)
+		case PluginServiceListTemplatesUserCanAccessProcedure:
+			pluginServiceListTemplatesUserCanAccessHandler.ServeHTTP(w, r)
+		case PluginServiceListUserTemplatesProcedure:
+			pluginServiceListUserTemplatesHandler.ServeHTTP(w, r)
+		case PluginServiceListOrganizationTemplatesProcedure:
+			pluginServiceListOrganizationTemplatesHandler.ServeHTTP(w, r)
+		case PluginServiceGetTemplateVersionProcedure:
+			pluginServiceGetTemplateVersionHandler.ServeHTTP(w, r)
+		case PluginServiceListTemplateVersionsProcedure:
+			pluginServiceListTemplateVersionsHandler.ServeHTTP(w, r)
+		case PluginServiceDeleteTemplateProcedure:
+			pluginServiceDeleteTemplateHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedPluginServiceHandler returns CodeUnimplemented from all methods.

@@ -121,20 +121,28 @@ type RepositoryTagServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewRepositoryTagServiceHandler(svc RepositoryTagServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(RepositoryTagServiceCreateRepositoryTagProcedure, connect_go.NewUnaryHandler(
+	repositoryTagServiceCreateRepositoryTagHandler := connect_go.NewUnaryHandler(
 		RepositoryTagServiceCreateRepositoryTagProcedure,
 		svc.CreateRepositoryTag,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryTagServiceListRepositoryTagsProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryTagServiceListRepositoryTagsHandler := connect_go.NewUnaryHandler(
 		RepositoryTagServiceListRepositoryTagsProcedure,
 		svc.ListRepositoryTags,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.RepositoryTagService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.RepositoryTagService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case RepositoryTagServiceCreateRepositoryTagProcedure:
+			repositoryTagServiceCreateRepositoryTagHandler.ServeHTTP(w, r)
+		case RepositoryTagServiceListRepositoryTagsProcedure:
+			repositoryTagServiceListRepositoryTagsHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedRepositoryTagServiceHandler returns CodeUnimplemented from all methods.

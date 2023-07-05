@@ -140,26 +140,36 @@ type WebhookServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewWebhookServiceHandler(svc WebhookServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(WebhookServiceCreateWebhookProcedure, connect_go.NewUnaryHandler(
+	webhookServiceCreateWebhookHandler := connect_go.NewUnaryHandler(
 		WebhookServiceCreateWebhookProcedure,
 		svc.CreateWebhook,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(WebhookServiceDeleteWebhookProcedure, connect_go.NewUnaryHandler(
+	)
+	webhookServiceDeleteWebhookHandler := connect_go.NewUnaryHandler(
 		WebhookServiceDeleteWebhookProcedure,
 		svc.DeleteWebhook,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(WebhookServiceListWebhooksProcedure, connect_go.NewUnaryHandler(
+	)
+	webhookServiceListWebhooksHandler := connect_go.NewUnaryHandler(
 		WebhookServiceListWebhooksProcedure,
 		svc.ListWebhooks,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.WebhookService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.WebhookService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case WebhookServiceCreateWebhookProcedure:
+			webhookServiceCreateWebhookHandler.ServeHTTP(w, r)
+		case WebhookServiceDeleteWebhookProcedure:
+			webhookServiceDeleteWebhookHandler.ServeHTTP(w, r)
+		case WebhookServiceListWebhooksProcedure:
+			webhookServiceListWebhooksHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedWebhookServiceHandler returns CodeUnimplemented from all methods.
