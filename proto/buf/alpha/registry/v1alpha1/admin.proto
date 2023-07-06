@@ -182,11 +182,11 @@ message ListServerUniquenessCollisionsRequest {
 }
 
 message ListServerUniquenessCollisionsResponse {
+  // The collisions.
+  repeated Collision collisions = 1;
   // Pagination token used to retrieve the next page of results.
   // Pass the content of this string as the `page_token` attribute of
   // the next request. `next_page_token` is not returned for the last
   // page.
-  string next_page_token = 1;
-  // The collisions.
-  repeated Collision collisions = 2;
+  string next_page_token = 2;
 }
