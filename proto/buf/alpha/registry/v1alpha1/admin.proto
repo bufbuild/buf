@@ -49,9 +49,9 @@ message Collision {
   CollisionType type = 2;
   // The sources of the collision that the user is authorized to see.
   repeated CollisionSource sources = 3;
-  // The number of collisions that were not returned.
+  // Whether there are other collision sources that the user is not authorized to see.
   // The user should contact a server admin for more information about these collisions.
-  uint64 num_other_collisions = 4;
+  bool has_other_collision_sources = 4;
 }
 
 // CollisionSource is the source of a collision
@@ -102,7 +102,7 @@ service AdminService {
   // Update uniqueness policy enforcement for the server.
   rpc UpdateUniquenessPolicy(UpdateUniquenessPolicyRequest) returns (UpdateUniquenessPolicyResponse);
   // Get state of uniqueness collisions for the server
-  rpc GetServerUniquenessCollisions(GetServerUniquenessCollisionsRequest) returns (GetServerUniquenessCollisionsResponse) {
+  rpc ListServerUniquenessCollisions(ListServerUniquenessCollisionsRequest) returns (ListServerUniquenessCollisionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -170,8 +170,23 @@ message UpdateUniquenessPolicyRequest {
 
 message UpdateUniquenessPolicyResponse {}
 
-message GetServerUniquenessCollisionsRequest {}
+message ListServerUniquenessCollisionsRequest {
+  // Token of the page to retrieve. If not specified, the first page of
+  // results will be returned. Use the value obtained from `next_page_token`
+  // in the previous response in order to request the next page of results.
+  string page_token = 1;
+  // Number of elements to retrieve in a single page.
+  // When too large a page is requested, the server may decide to further
+  // limit the number of returned resources.
+  int32 page_size = 2;
+}
 
-message GetServerUniquenessCollisionsResponse {
-  repeated Collision collisions = 1;
+message ListServerUniquenessCollisionsResponse {
+  // Pagination token used to retrieve the next page of results.
+  // Pass the content of this string as the `page_token` attribute of
+  // the next request. `next_page_token` is not returned for the last
+  // page.
+  string next_page_token = 1;
+  // The collisions.
+  repeated Collision collisions = 2;
 }

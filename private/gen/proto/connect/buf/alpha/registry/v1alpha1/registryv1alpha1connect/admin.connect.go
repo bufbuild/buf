@@ -71,9 +71,9 @@ const (
 	// AdminServiceUpdateUniquenessPolicyProcedure is the fully-qualified name of the AdminService's
 	// UpdateUniquenessPolicy RPC.
 	AdminServiceUpdateUniquenessPolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateUniquenessPolicy"
-	// AdminServiceGetServerUniquenessCollisionsProcedure is the fully-qualified name of the
-	// AdminService's GetServerUniquenessCollisions RPC.
-	AdminServiceGetServerUniquenessCollisionsProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetServerUniquenessCollisions"
+	// AdminServiceListServerUniquenessCollisionsProcedure is the fully-qualified name of the
+	// AdminService's ListServerUniquenessCollisions RPC.
+	AdminServiceListServerUniquenessCollisionsProcedure = "/buf.alpha.registry.v1alpha1.AdminService/ListServerUniquenessCollisions"
 )
 
 // AdminServiceClient is a client for the buf.alpha.registry.v1alpha1.AdminService service.
@@ -96,7 +96,7 @@ type AdminServiceClient interface {
 	// Update uniqueness policy enforcement for the server.
 	UpdateUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
 	// Get state of uniqueness collisions for the server
-	GetServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.GetServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.GetServerUniquenessCollisionsResponse], error)
+	ListServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AdminService
@@ -153,9 +153,9 @@ func NewAdminServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 			baseURL+AdminServiceUpdateUniquenessPolicyProcedure,
 			opts...,
 		),
-		getServerUniquenessCollisions: connect_go.NewClient[v1alpha1.GetServerUniquenessCollisionsRequest, v1alpha1.GetServerUniquenessCollisionsResponse](
+		listServerUniquenessCollisions: connect_go.NewClient[v1alpha1.ListServerUniquenessCollisionsRequest, v1alpha1.ListServerUniquenessCollisionsResponse](
 			httpClient,
-			baseURL+AdminServiceGetServerUniquenessCollisionsProcedure,
+			baseURL+AdminServiceListServerUniquenessCollisionsProcedure,
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
@@ -172,7 +172,7 @@ type adminServiceClient struct {
 	updateBreakingChangePolicy           *connect_go.Client[v1alpha1.UpdateBreakingChangePolicyRequest, v1alpha1.UpdateBreakingChangePolicyResponse]
 	getUniquenessPolicy                  *connect_go.Client[v1alpha1.GetUniquenessPolicyRequest, v1alpha1.GetUniquenessPolicyResponse]
 	updateUniquenessPolicy               *connect_go.Client[v1alpha1.UpdateUniquenessPolicyRequest, v1alpha1.UpdateUniquenessPolicyResponse]
-	getServerUniquenessCollisions        *connect_go.Client[v1alpha1.GetServerUniquenessCollisionsRequest, v1alpha1.GetServerUniquenessCollisionsResponse]
+	listServerUniquenessCollisions       *connect_go.Client[v1alpha1.ListServerUniquenessCollisionsRequest, v1alpha1.ListServerUniquenessCollisionsResponse]
 }
 
 // ForceDeleteUser calls buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser.
@@ -218,10 +218,10 @@ func (c *adminServiceClient) UpdateUniquenessPolicy(ctx context.Context, req *co
 	return c.updateUniquenessPolicy.CallUnary(ctx, req)
 }
 
-// GetServerUniquenessCollisions calls
-// buf.alpha.registry.v1alpha1.AdminService.GetServerUniquenessCollisions.
-func (c *adminServiceClient) GetServerUniquenessCollisions(ctx context.Context, req *connect_go.Request[v1alpha1.GetServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.GetServerUniquenessCollisionsResponse], error) {
-	return c.getServerUniquenessCollisions.CallUnary(ctx, req)
+// ListServerUniquenessCollisions calls
+// buf.alpha.registry.v1alpha1.AdminService.ListServerUniquenessCollisions.
+func (c *adminServiceClient) ListServerUniquenessCollisions(ctx context.Context, req *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error) {
+	return c.listServerUniquenessCollisions.CallUnary(ctx, req)
 }
 
 // AdminServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AdminService service.
@@ -244,7 +244,7 @@ type AdminServiceHandler interface {
 	// Update uniqueness policy enforcement for the server.
 	UpdateUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
 	// Get state of uniqueness collisions for the server
-	GetServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.GetServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.GetServerUniquenessCollisionsResponse], error)
+	ListServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -297,9 +297,9 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 		svc.UpdateUniquenessPolicy,
 		opts...,
 	)
-	adminServiceGetServerUniquenessCollisionsHandler := connect_go.NewUnaryHandler(
-		AdminServiceGetServerUniquenessCollisionsProcedure,
-		svc.GetServerUniquenessCollisions,
+	adminServiceListServerUniquenessCollisionsHandler := connect_go.NewUnaryHandler(
+		AdminServiceListServerUniquenessCollisionsProcedure,
+		svc.ListServerUniquenessCollisions,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	)
@@ -321,8 +321,8 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 			adminServiceGetUniquenessPolicyHandler.ServeHTTP(w, r)
 		case AdminServiceUpdateUniquenessPolicyProcedure:
 			adminServiceUpdateUniquenessPolicyHandler.ServeHTTP(w, r)
-		case AdminServiceGetServerUniquenessCollisionsProcedure:
-			adminServiceGetServerUniquenessCollisionsHandler.ServeHTTP(w, r)
+		case AdminServiceListServerUniquenessCollisionsProcedure:
+			adminServiceListServerUniquenessCollisionsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -364,6 +364,6 @@ func (UnimplementedAdminServiceHandler) UpdateUniquenessPolicy(context.Context, 
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.UpdateUniquenessPolicy is not implemented"))
 }
 
-func (UnimplementedAdminServiceHandler) GetServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.GetServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.GetServerUniquenessCollisionsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetServerUniquenessCollisions is not implemented"))
+func (UnimplementedAdminServiceHandler) ListServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.ListServerUniquenessCollisions is not implemented"))
 }
