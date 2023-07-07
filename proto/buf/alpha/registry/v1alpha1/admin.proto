@@ -179,6 +179,11 @@ message ListServerUniquenessCollisionsRequest {
   // When too large a page is requested, the server may decide to further
   // limit the number of returned resources.
   int32 page_size = 2;
+  // The desired collision type to filter by.
+  // This must be specified. Only collisions of the specified type will be returned,
+  // continue to page through results until no more collisions of the specified
+  // type are returned.
+  CollisionType collision_type = 3;
 }
 
 message ListServerUniquenessCollisionsResponse {
