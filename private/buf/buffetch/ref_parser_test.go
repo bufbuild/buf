@@ -471,7 +471,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			formatBinpb,
 			"path/to/file.bin",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
@@ -481,12 +481,32 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			formatBinpb,
 			"path/to/file.bin.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
 		),
 		"path/to/file.bin.gz",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBinpb,
+			"path/to/file.binpb",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+		),
+		"path/to/file.binpb",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBinpb,
+			"path/to/file.binpb.gz",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
+		),
+		"path/to/file.binpb.gz",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -531,7 +551,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			formatBinpb,
 			"",
 			internal.FileSchemeStdio,
 			internal.CompressionTypeNone,
@@ -551,7 +571,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			formatBinpb,
 			"",
 			internal.FileSchemeNull,
 			internal.CompressionTypeNone,
@@ -587,6 +607,36 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.CompressionTypeGzip,
 		),
 		"path/to/dir#format=bin,compression=gzip",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBinpb,
+			"path/to/dir",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+		),
+		"path/to/dir#format=binpb",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBinpb,
+			"path/to/dir",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+		),
+		"path/to/dir#format=binpb,compression=none",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBinpb,
+			"path/to/dir",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
+		),
+		"path/to/dir#format=binpb,compression=gzip",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -835,12 +885,32 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			formatBinpb,
 			"path/to/file.bin.zst",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeZstd,
 		),
 		"path/to/file.bin.zst",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBinpb,
+			"path/to/file",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeZstd,
+		),
+		"path/to/file#format=binpb,compression=zstd",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBinpb,
+			"path/to/file.binpb.zst",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeZstd,
+		),
+		"path/to/file.binpb.zst",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -873,7 +943,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			formatBinpb,
 			"github.com/path/to/file.bin",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
@@ -899,6 +969,36 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.CompressionTypeNone,
 		),
 		"https://gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.bin?private_token=bar#format=bin",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBinpb,
+			"github.com/path/to/file.binpb",
+			internal.FileSchemeHTTPS,
+			internal.CompressionTypeNone,
+		),
+		"https://github.com/path/to/file.binpb",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBinpb,
+			"github.com/path/to/file.ext",
+			internal.FileSchemeHTTPS,
+			internal.CompressionTypeNone,
+		),
+		"https://github.com/path/to/file.ext#format=binpb",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBinpb,
+			"gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.binpb?private_token=bar",
+			internal.FileSchemeHTTPS,
+			internal.CompressionTypeNone,
+		),
+		"https://gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.binpb?private_token=bar#format=binpb",
 	)
 }
 
@@ -1048,26 +1148,23 @@ func testGetParsedRef(
 	expectedErr error,
 	value string,
 ) {
-	t.Run(value, func(t *testing.T) {
-		t.Parallel()
-		parsedRef, err := newRefParser(zap.NewNop()).getParsedRef(
-			context.Background(),
-			value,
-			allFormats,
-		)
-		if expectedErr != nil {
-			if err == nil {
-				assert.Equal(t, nil, parsedRef, "expected error")
-			} else {
-				assert.Equal(t, expectedErr, err)
-			}
+	parsedRef, err := newRefParser(zap.NewNop()).getParsedRef(
+		context.Background(),
+		value,
+		allFormats,
+	)
+	if expectedErr != nil {
+		if err == nil {
+			assert.Equal(t, nil, parsedRef, "expected error")
 		} else {
-			assert.NoError(t, err)
-			if err == nil {
-				assert.Equal(t, expectedParsedRef, parsedRef)
-			}
+			assert.Equal(t, expectedErr, err)
 		}
-	})
+	} else {
+		assert.NoError(t, err)
+		if err == nil {
+			assert.Equal(t, expectedParsedRef, parsedRef)
+		}
+	}
 }
 
 func testNewModuleReference(

@@ -1483,16 +1483,16 @@ testdata/paths/a/v3/foo/foo.proto:3:1:Package name "a.v3.foo" should be suffixed
 func TestBreakingWithPaths(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
-	testRunStdout(t, nil, 0, ``, "build", filepath.Join("command", "generate", "testdata", "paths"), "-o", filepath.Join(tempDir, "previous.bin"))
-	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "-o", filepath.Join(tempDir, "current.bin"))
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("command", "generate", "testdata", "paths"), "-o", filepath.Join(tempDir, "previous.binpb"))
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "-o", filepath.Join(tempDir, "current.binpb"))
 	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
 	require.NoError(t, err)
 	storagetesting.AssertPaths(
 		t,
 		readWriteBucket,
 		"",
-		"previous.bin",
-		"current.bin",
+		"previous.binpb",
+		"current.binpb",
 	)
 	testRunStdoutStderrNoWarn(
 		t,
@@ -1503,9 +1503,9 @@ a/v3/a.proto:7:3:Field "2" with name "Value" on message "Foo" changed option "js
 a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value".`,
 		"",
 		"breaking",
-		filepath.Join(tempDir, "current.bin"),
+		filepath.Join(tempDir, "current.binpb"),
 		"--against",
-		filepath.Join(tempDir, "previous.bin"),
+		filepath.Join(tempDir, "previous.binpb"),
 		"--path",
 		filepath.Join("a", "v3"),
 		"--exclude-path",
@@ -1728,12 +1728,12 @@ func TestConvertWithImage(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "success"),
 		"-o",
-		filepath.Join(tempDir, "image.bin"),
+		filepath.Join(tempDir, "image.binpb"),
 	)
 
 	t.Run("stdin input", func(t *testing.T) {
 		t.Parallel()
-		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.binpb"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		stdout := bytes.NewBuffer(nil)
@@ -1743,7 +1743,7 @@ func TestConvertWithImage(t *testing.T) {
 			stdin,
 			stdout,
 			"convert",
-			filepath.Join(tempDir, "image.bin"),
+			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
 		)
@@ -1759,7 +1759,7 @@ func TestConvertWithImage(t *testing.T) {
 			"",
 			"Failure: size of input message must not be zero",
 			"convert",
-			filepath.Join(tempDir, "image.bin"),
+			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
 		)
@@ -1777,11 +1777,11 @@ func TestConvertOutput(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "success"),
 		"-o",
-		filepath.Join(tempDir, "image.bin"),
+		filepath.Join(tempDir, "image.binpb"),
 	)
 	t.Run("json file output", func(t *testing.T) {
 		t.Parallel()
-		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.binpb"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		outputTempDir := t.TempDir()
@@ -1791,7 +1791,7 @@ func TestConvertOutput(t *testing.T) {
 			0,
 			``,
 			"convert",
-			filepath.Join(tempDir, "image.bin"),
+			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
 			"--to",
@@ -1810,7 +1810,7 @@ func TestConvertOutput(t *testing.T) {
 	})
 	t.Run("txt file output", func(t *testing.T) {
 		t.Parallel()
-		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.binpb"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		outputTempDir := t.TempDir()
@@ -1820,7 +1820,7 @@ func TestConvertOutput(t *testing.T) {
 			0,
 			``,
 			"convert",
-			filepath.Join(tempDir, "image.bin"),
+			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
 			"--to",
@@ -1839,7 +1839,7 @@ func TestConvertOutput(t *testing.T) {
 	})
 	t.Run("stdout with dash", func(t *testing.T) {
 		t.Parallel()
-		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.binpb"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		stdout := bytes.NewBuffer(nil)
@@ -1849,7 +1849,7 @@ func TestConvertOutput(t *testing.T) {
 			stdin,
 			stdout,
 			"convert",
-			filepath.Join(tempDir, "image.bin"),
+			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
 			"--to",
@@ -1870,9 +1870,9 @@ func TestConvertInvalidTypeName(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "success"),
 		"-o",
-		filepath.Join(tempDir, "image.bin"),
+		filepath.Join(tempDir, "image.binpb"),
 	)
-	stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.bin"))
+	stdin, err := os.Open(filepath.Join(convertTestDataDir, "descriptor.plain.binpb"))
 	require.NoError(t, err)
 	defer stdin.Close()
 	testRunStdoutStderrNoWarn(
@@ -1882,7 +1882,7 @@ func TestConvertInvalidTypeName(t *testing.T) {
 		"",
 		`Failure: ".foo" is not a valid fully qualified type name`,
 		"convert",
-		filepath.Join(tempDir, "image.bin"),
+		filepath.Join(tempDir, "image.binpb"),
 		"--type",
 		".foo",
 	)
@@ -1890,7 +1890,7 @@ func TestConvertInvalidTypeName(t *testing.T) {
 
 func TestConvert(t *testing.T) {
 	t.Parallel()
-	t.Run("bin-to-json-file-proto", func(t *testing.T) {
+	t.Run("binpb-to-json-file-proto", func(t *testing.T) {
 		t.Parallel()
 		testRunStdoutFile(t,
 			nil,
@@ -1898,28 +1898,28 @@ func TestConvert(t *testing.T) {
 			convertTestDataDir+"/bin_json/payload.json",
 			"convert",
 			"--type=buf.Foo",
-			"--from="+convertTestDataDir+"/bin_json/payload.bin",
+			"--from="+convertTestDataDir+"/bin_json/payload.binpb",
 			convertTestDataDir+"/bin_json/buf.proto",
 		)
 	})
-	t.Run("json-to-bin-file-proto", func(t *testing.T) {
+	t.Run("json-to-binpb-file-proto", func(t *testing.T) {
 		t.Parallel()
 		testRunStdoutFile(t,
 			nil,
 			0,
-			convertTestDataDir+"/bin_json/payload.bin",
+			convertTestDataDir+"/bin_json/payload.binpb",
 			"convert",
 			"--type=buf.Foo",
 			"--from="+convertTestDataDir+"/bin_json/payload.json",
 			convertTestDataDir+"/bin_json/buf.proto",
 		)
 	})
-	t.Run("stdin-json-to-bin-proto", func(t *testing.T) {
+	t.Run("stdin-json-to-binpb-proto", func(t *testing.T) {
 		t.Parallel()
 		testRunStdoutFile(t,
 			strings.NewReader(`{"one":"55"}`),
 			0,
-			convertTestDataDir+"/bin_json/payload.bin",
+			convertTestDataDir+"/bin_json/payload.binpb",
 			"convert",
 			"--type=buf.Foo",
 			"--from",
@@ -1927,9 +1927,9 @@ func TestConvert(t *testing.T) {
 			convertTestDataDir+"/bin_json/buf.proto",
 		)
 	})
-	t.Run("stdin-bin-to-json-proto", func(t *testing.T) {
+	t.Run("stdin-binpb-to-json-proto", func(t *testing.T) {
 		t.Parallel()
-		file, err := os.Open(convertTestDataDir + "/bin_json/payload.bin")
+		file, err := os.Open(convertTestDataDir + "/bin_json/payload.binpb")
 		require.NoError(t, err)
 		testRunStdoutFile(t, file,
 			0,
@@ -1937,7 +1937,7 @@ func TestConvert(t *testing.T) {
 			"convert",
 			"--type=buf.Foo",
 			"--from",
-			"-#format=bin",
+			"-#format=binpb",
 			convertTestDataDir+"/bin_json/buf.proto",
 		)
 	})
@@ -1957,7 +1957,7 @@ func TestConvert(t *testing.T) {
 	})
 	t.Run("stdin-input-to-json-image", func(t *testing.T) {
 		t.Parallel()
-		file, err := os.Open(convertTestDataDir + "/bin_json/image.bin")
+		file, err := os.Open(convertTestDataDir + "/bin_json/image.binpb")
 		require.NoError(t, err)
 		testRunStdoutFile(t, file,
 			0,
@@ -1965,14 +1965,14 @@ func TestConvert(t *testing.T) {
 			"convert",
 			"--type=buf.Foo",
 			"-",
-			"--from="+convertTestDataDir+"/bin_json/payload.bin",
+			"--from="+convertTestDataDir+"/bin_json/payload.binpb",
 			"--to",
 			"-#format=json",
 		)
 	})
 	t.Run("stdin-json-to-json-image", func(t *testing.T) {
 		t.Parallel()
-		file, err := os.Open(convertTestDataDir + "/bin_json/payload.bin")
+		file, err := os.Open(convertTestDataDir + "/bin_json/payload.binpb")
 		require.NoError(t, err)
 		testRunStdoutFile(t,
 			file,
@@ -1980,15 +1980,15 @@ func TestConvert(t *testing.T) {
 			convertTestDataDir+"/bin_json/payload.json",
 			"convert",
 			"--type=buf.Foo",
-			convertTestDataDir+"/bin_json/image.bin",
+			convertTestDataDir+"/bin_json/image.binpb",
 			"--from",
-			"-#format=bin",
+			"-#format=binpb",
 			"--to",
 			"-#format=json")
 	})
-	t.Run("stdin-bin-payload-to-json-with-image", func(t *testing.T) {
+	t.Run("stdin-binpb-payload-to-json-with-image", func(t *testing.T) {
 		t.Parallel()
-		file, err := os.Open(convertTestDataDir + "/bin_json/payload.bin")
+		file, err := os.Open(convertTestDataDir + "/bin_json/payload.binpb")
 		require.NoError(t, err)
 		testRunStdoutFile(t,
 			file,
@@ -1996,42 +1996,42 @@ func TestConvert(t *testing.T) {
 			convertTestDataDir+"/bin_json/payload.json",
 			"convert",
 			"--type=buf.Foo",
-			convertTestDataDir+"/bin_json/image.bin",
+			convertTestDataDir+"/bin_json/image.binpb",
 			"--to",
 			"-#format=json",
 		)
 	})
-	t.Run("stdin-json-payload-to-bin-with-image", func(t *testing.T) {
+	t.Run("stdin-json-payload-to-binpb-with-image", func(t *testing.T) {
 		t.Parallel()
 		file, err := os.Open(convertTestDataDir + "/bin_json/payload.json")
 		require.NoError(t, err)
 		testRunStdoutFile(t,
 			file,
 			0,
-			convertTestDataDir+"/bin_json/payload.bin",
+			convertTestDataDir+"/bin_json/payload.binpb",
 			"convert",
 			"--type=buf.Foo",
-			convertTestDataDir+"/bin_json/image.bin",
+			convertTestDataDir+"/bin_json/image.binpb",
 			"--from",
 			"-#format=json",
 			"--to",
-			"-#format=bin",
+			"-#format=binpb",
 		)
 	})
-	t.Run("stdin-image-json-to-bin", func(t *testing.T) {
+	t.Run("stdin-image-json-to-binpb", func(t *testing.T) {
 		t.Parallel()
 		file, err := os.Open(convertTestDataDir + "/bin_json/image.json")
 		require.NoError(t, err)
 		testRunStdoutFile(t,
 			file,
 			0,
-			convertTestDataDir+"/bin_json/payload.bin",
+			convertTestDataDir+"/bin_json/payload.binpb",
 			"convert",
 			"--type=buf.Foo",
 			"-#format=json",
 			"--from="+convertTestDataDir+"/bin_json/payload.json",
 			"--to",
-			"-#format=bin",
+			"-#format=binpb",
 		)
 	})
 }
@@ -2158,7 +2158,7 @@ func TestFormatEquivalence(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "format", "complex"),
 		"-o",
-		filepath.Join(tempDir, "image.bin"),
+		filepath.Join(tempDir, "image.binpb"),
 		"--exclude-source-info",
 	)
 	testRunStdout(
@@ -2179,12 +2179,12 @@ func TestFormatEquivalence(t *testing.T) {
 		"build",
 		filepath.Join(tempDir, "formatted"),
 		"-o",
-		filepath.Join(tempDir, "formatted.bin"),
+		filepath.Join(tempDir, "formatted.binpb"),
 		"--exclude-source-info",
 	)
-	originalImageData, err := os.ReadFile(filepath.Join(tempDir, "image.bin"))
+	originalImageData, err := os.ReadFile(filepath.Join(tempDir, "image.binpb"))
 	require.NoError(t, err)
-	formattedImageData, err := os.ReadFile(filepath.Join(tempDir, "formatted.bin"))
+	formattedImageData, err := os.ReadFile(filepath.Join(tempDir, "formatted.binpb"))
 	require.NoError(t, err)
 	require.Equal(t, originalImageData, formattedImageData)
 }
@@ -2275,7 +2275,7 @@ func TestConvertRoundTrip(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "success"),
 		"-o",
-		filepath.Join(tempDir, "image.bin"),
+		filepath.Join(tempDir, "image.binpb"),
 	)
 	t.Run("stdin and stdout", func(t *testing.T) {
 		t.Parallel()
@@ -2288,7 +2288,7 @@ func TestConvertRoundTrip(t *testing.T) {
 			stdin,
 			encodedMessage,
 			"convert",
-			filepath.Join(tempDir, "image.bin"),
+			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
 			"--from",
@@ -2300,7 +2300,7 @@ func TestConvertRoundTrip(t *testing.T) {
 			encodedMessage,
 			decodedMessage,
 			"convert",
-			filepath.Join(tempDir, "image.bin"),
+			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
 		)
@@ -2317,13 +2317,13 @@ func TestConvertRoundTrip(t *testing.T) {
 			stdin,
 			encodedMessage,
 			"convert",
-			filepath.Join(tempDir, "image.bin"),
+			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
 			"--from",
 			"-#format=json",
 			"--to",
-			"-#format=bin",
+			"-#format=binpb",
 		)
 		testRun(
 			t,
@@ -2331,11 +2331,11 @@ func TestConvertRoundTrip(t *testing.T) {
 			encodedMessage,
 			decodedMessage,
 			"convert",
-			filepath.Join(tempDir, "image.bin"),
+			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
 			"--from",
-			"-#format=bin",
+			"-#format=binpb",
 			"--to",
 			"-#format=json",
 		)
@@ -2351,13 +2351,13 @@ func TestConvertRoundTrip(t *testing.T) {
 			stdin,
 			nil,
 			"convert",
-			filepath.Join(tempDir, "image.bin"),
+			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
 			"--from",
 			"-#format=json",
 			"--to",
-			filepath.Join(tempDir, "decoded_message.bin"),
+			filepath.Join(tempDir, "decoded_message.binpb"),
 		)
 		testRun(
 			t,
@@ -2365,11 +2365,11 @@ func TestConvertRoundTrip(t *testing.T) {
 			nil,
 			decodedMessage,
 			"convert",
-			filepath.Join(tempDir, "image.bin"),
+			filepath.Join(tempDir, "image.binpb"),
 			"--type",
 			"buf.Foo",
 			"--from",
-			filepath.Join(tempDir, "decoded_message.bin"),
+			filepath.Join(tempDir, "decoded_message.binpb"),
 		)
 		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
 	})
