@@ -80,14 +80,12 @@ message GetReferenceByNameResponse {
 }
 
 message ListGitCommitMetadataForReferenceRequest {
-  // Name of the requested reference.
-  string name = 1;
+  // String that represents the name of the reference.
+  string reference = 1;
   // Owner of the repository the reference belongs to.
   string owner = 2;
   // Name of the repository the reference belongs to.
   string repository_name = 3;
-  // String that represents the name of the reference.
-  string reference = 4;
 }
 
 message ListGitCommitMetadataForReferenceResponse {
