@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Replace `bin` format with `binpb` format, and support the `.binpb` file extension.
+  `.binpb` is now the canonical file extension for binary-encoded Protobuf data.
+  The `bin` format and the `.bin` file extension continue to be accepted.
 - Update `buf beta price` with the latest pricing information.
 
 ## [v1.23.1] - 2023-06-30
