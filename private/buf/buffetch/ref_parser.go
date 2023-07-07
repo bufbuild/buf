@@ -50,6 +50,7 @@ func newRefParser(logger *zap.Logger) *refParser {
 			logger,
 			internal.WithRawRefProcessor(newRawRefProcessor()),
 			internal.WithSingleFormat(formatBin),
+			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(formatJSON),
 			internal.WithSingleFormat(
 				formatBingz,
@@ -93,6 +94,7 @@ func newImageRefParser(logger *zap.Logger) *refParser {
 			logger,
 			internal.WithRawRefProcessor(processRawRefImage),
 			internal.WithSingleFormat(formatBin),
+			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(formatJSON),
 			internal.WithSingleFormat(
 				formatBingz,
@@ -361,11 +363,11 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 		var format string
 		var compressionType internal.CompressionType
 		if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
-			format = formatBin
+			format = formatBinpb
 		} else {
 			switch filepath.Ext(rawRef.Path) {
-			case ".bin":
-				format = formatBin
+			case ".bin", ".binpb":
+				format = formatBinpb
 			case ".json":
 				format = formatJSON
 			case ".tar":
@@ -376,7 +378,7 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 				compressionType = internal.CompressionTypeGzip
 				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 				case ".bin":
-					format = formatBin
+					format = formatBinpb
 				case ".json":
 					format = formatJSON
 				case ".tar":
@@ -388,7 +390,7 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 				compressionType = internal.CompressionTypeZstd
 				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 				case ".bin":
-					format = formatBin
+					format = formatBinpb
 				case ".json":
 					format = formatJSON
 				case ".tar":
@@ -511,18 +513,18 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 	var format string
 	var compressionType internal.CompressionType
 	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
-		format = formatBin
+		format = formatBinpb
 	} else {
 		switch filepath.Ext(rawRef.Path) {
-		case ".bin":
-			format = formatBin
+		case ".bin", ".binpb":
+			format = formatBinpb
 		case ".json":
 			format = formatJSON
 		case ".gz":
 			compressionType = internal.CompressionTypeGzip
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-			case ".bin":
-				format = formatBin
+			case ".bin", ".binpb":
+				format = formatBinpb
 			case ".json":
 				format = formatJSON
 			default:
@@ -530,16 +532,16 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 			}
 		case ".zst":
 			compressionType = internal.CompressionTypeZstd
-			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-			case ".bin":
-				format = formatBin
+			switch ext := filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))); ext {
+			case ".bin", ".binpb":
+				format = formatBinpb
 			case ".json":
 				format = formatJSON
 			default:
-				return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
+				return fmt.Errorf("path %q had .zst extension with unknown format %q", rawRef.Path, ext)
 			}
 		default:
-			format = formatBin
+			format = formatBinpb
 		}
 	}
 	rawRef.Format = format
@@ -554,7 +556,7 @@ func processRawRefModule(rawRef *internal.RawRef) error {
 
 func parseImageEncoding(format string) (ImageEncoding, error) {
 	switch format {
-	case formatBin, formatBingz:
+	case formatBin, formatBinpb, formatBingz:
 		return ImageEncodingBin, nil
 	case formatJSON, formatJSONGZ:
 		return ImageEncodingJSON, nil

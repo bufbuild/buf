@@ -15,41 +15,45 @@
 package buffetch
 
 const (
-	// formatBin is the binary format.
-	formatBin = "bin"
-	// formatBingz is the binary gzipped format.
-	formatBingz = "bingz"
+	// formatBinpb is the binary format.
+	formatBinpb = "binpb"
 	// formatDir is the directory format.
 	formatDir = "dir"
 	// formatGit is the git format.
 	formatGit = "git"
 	// formatJSON is the JSON format.
 	formatJSON = "json"
-	// formatJSONGZ is the JSON gzipped format.
-	formatJSONGZ = "jsongz"
 	// formatMod is the module format.
 	formatMod = "mod"
 	// formatTar is the tar format.
 	formatTar = "tar"
-	// formatTargz is the tar gzipped format.
-	formatTargz = "targz"
 	// formatZip is the zip format.
 	formatZip = "zip"
-	// formatProtoFile is the proto file format
+	// formatProtoFile is the proto file format.
 	formatProtoFile = "protofile"
+
+	// formatBin is the binary format's old form, now deprecated.
+	formatBin = "bin"
+	// formatBingz is the binary gzipped format, now deprecated.
+	formatBingz = "bingz"
+	// formatJSONGZ is the JSON gzipped format, now deprecated.
+	formatJSONGZ = "jsongz"
+	// formatTargz is the tar gzipped format, now deprecated.
+	formatTargz = "targz"
 )
 
 var (
 	// sorted
 	imageFormats = []string{
 		formatBin,
+		formatBinpb,
 		formatBingz,
 		formatJSON,
 		formatJSONGZ,
 	}
 	// sorted
 	imageFormatsNotDeprecated = []string{
-		formatBin,
+		formatBinpb,
 		formatJSON,
 	}
 	// sorted
@@ -105,6 +109,7 @@ var (
 	// sorted
 	allFormats = []string{
 		formatBin,
+		formatBinpb,
 		formatBingz,
 		formatDir,
 		formatGit,
@@ -118,7 +123,7 @@ var (
 	}
 	// sorted
 	allFormatsNotDeprecated = []string{
-		formatBin,
+		formatBinpb,
 		formatDir,
 		formatGit,
 		formatJSON,
@@ -129,7 +134,7 @@ var (
 	}
 
 	deprecatedCompressionFormatToReplacementFormat = map[string]string{
-		formatBingz:  formatBin,
+		formatBingz:  formatBinpb,
 		formatJSONGZ: formatJSON,
 		formatTargz:  formatTar,
 	}
