@@ -33,7 +33,7 @@ func TestRoundTripBin(t *testing.T) {
 		t,
 		"file.bin",
 		[]byte("one"),
-		formatBin,
+		formatBinpb,
 		internal.CompressionTypeNone,
 	)
 }
@@ -44,7 +44,7 @@ func TestRoundTripBinGz(t *testing.T) {
 		t,
 		"file.bin.gz",
 		[]byte("one"),
-		formatBin,
+		formatBinpb,
 		internal.CompressionTypeGzip,
 	)
 }
@@ -55,7 +55,7 @@ func TestRoundTripBinZst(t *testing.T) {
 		t,
 		"file.bin.zst",
 		[]byte("one"),
-		formatBin,
+		formatBinpb,
 		internal.CompressionTypeZstd,
 	)
 }

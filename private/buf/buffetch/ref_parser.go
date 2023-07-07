@@ -377,7 +377,7 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 			case ".gz":
 				compressionType = internal.CompressionTypeGzip
 				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-				case ".bin":
+				case ".bin", ".binpb":
 					format = formatBinpb
 				case ".json":
 					format = formatJSON
@@ -389,7 +389,7 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 			case ".zst":
 				compressionType = internal.CompressionTypeZstd
 				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-				case ".bin":
+				case ".bin", ".binpb":
 					format = formatBinpb
 				case ".json":
 					format = formatJSON
@@ -532,13 +532,13 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 			}
 		case ".zst":
 			compressionType = internal.CompressionTypeZstd
-			switch ext := filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))); ext {
+			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 			case ".bin", ".binpb":
 				format = formatBinpb
 			case ".json":
 				format = formatJSON
 			default:
-				return fmt.Errorf("path %q had .zst extension with unknown format %q", rawRef.Path, ext)
+				return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
 			}
 		default:
 			format = formatBinpb
