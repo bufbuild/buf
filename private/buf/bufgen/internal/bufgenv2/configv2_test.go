@@ -763,6 +763,47 @@ func TestManagedConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			testName: "test java package options",
+			file:     filepath.Join("managed", "java_package"),
+			expectedOverrideResults: map[fileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
+				fileOptionJavaPackage: {
+					&fakeImageFileIdentity{
+						path: "file.proto",
+					}: bufimagemodifyv2.NewPrefixSuffixOverride(
+						bufimagemodifyv2.NewPrefixOverride("org"),
+						bufimagemodifyv2.NewSuffixOverride("proto"),
+					),
+					&fakeImageFileIdentity{
+						path: "special/file.proto",
+					}: bufimagemodifyv2.NewPrefixSuffixOverride(
+						bufimagemodifyv2.NewPrefixOverride("special.prefix"),
+						bufimagemodifyv2.NewSuffixOverride("special.suffix"),
+					),
+					&fakeImageFileIdentity{
+						path: "a/b/c.proto",
+					}: bufimagemodifyv2.NewValueOverride("com.example.pb"),
+					&fakeImageFileIdentity{
+						path: "special/x/file.proto",
+					}: bufimagemodifyv2.NewValueOverride("com.special.x"),
+					&fakeImageFileIdentity{
+						path: "special/p/file.proto",
+					}: bufimagemodifyv2.NewPrefixSuffixOverride(
+						bufimagemodifyv2.NewPrefixOverride("net"),
+						bufimagemodifyv2.NewSuffixOverride("special.suffix"),
+					),
+					&fakeImageFileIdentity{
+						path: "special/s/file.proto",
+					}: bufimagemodifyv2.NewPrefixSuffixOverride(
+						bufimagemodifyv2.NewPrefixOverride("special.prefix"),
+						bufimagemodifyv2.NewSuffixOverride("protos"),
+					),
+					&fakeImageFileIdentity{
+						path: "special/p/v.proto",
+					}: bufimagemodifyv2.NewValueOverride("net.example"),
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
