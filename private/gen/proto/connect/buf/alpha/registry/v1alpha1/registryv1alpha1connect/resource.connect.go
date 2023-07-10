@@ -102,14 +102,20 @@ type ResourceServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewResourceServiceHandler(svc ResourceServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(ResourceServiceGetResourceByNameProcedure, connect_go.NewUnaryHandler(
+	resourceServiceGetResourceByNameHandler := connect_go.NewUnaryHandler(
 		ResourceServiceGetResourceByNameProcedure,
 		svc.GetResourceByName,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.ResourceService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.ResourceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ResourceServiceGetResourceByNameProcedure:
+			resourceServiceGetResourceByNameHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedResourceServiceHandler returns CodeUnimplemented from all methods.

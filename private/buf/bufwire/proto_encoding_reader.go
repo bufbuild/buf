@@ -62,7 +62,7 @@ func (p *protoEncodingReader) GetMessage(
 			span.SetStatus(codes.Error, retErr.Error())
 		}
 	}()
-	// Currently, this support bin and JSON format.
+	// Currently, this support binpb and JSON format.
 	resolver, err := protoencoding.NewResolver(
 		bufimage.ImageToFileDescriptors(
 			image,
@@ -73,7 +73,7 @@ func (p *protoEncodingReader) GetMessage(
 	}
 	var unmarshaler protoencoding.Unmarshaler
 	switch messageRef.MessageEncoding() {
-	case bufconvert.MessageEncodingBin:
+	case bufconvert.MessageEncodingBinpb:
 		unmarshaler = protoencoding.NewWireUnmarshaler(resolver)
 	case bufconvert.MessageEncodingJSON:
 		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)

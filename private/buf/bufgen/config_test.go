@@ -31,6 +31,7 @@ import (
 )
 
 func TestReadConfigV1Beta1(t *testing.T) {
+	t.Parallel()
 	truth := true
 	successConfig := &Config{
 		PluginConfigs: []*PluginConfig{
@@ -137,6 +138,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 }
 
 func TestReadConfigV1(t *testing.T) {
+	t.Parallel()
 	truth := true
 	successConfig := &Config{
 		PluginConfigs: []*PluginConfig{

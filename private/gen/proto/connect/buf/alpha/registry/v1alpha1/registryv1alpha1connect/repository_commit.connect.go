@@ -217,44 +217,60 @@ type RepositoryCommitServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewRepositoryCommitServiceHandler(svc RepositoryCommitServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(RepositoryCommitServiceListRepositoryCommitsByBranchProcedure, connect_go.NewUnaryHandler(
+	repositoryCommitServiceListRepositoryCommitsByBranchHandler := connect_go.NewUnaryHandler(
 		RepositoryCommitServiceListRepositoryCommitsByBranchProcedure,
 		svc.ListRepositoryCommitsByBranch,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryCommitServiceListRepositoryCommitsByReferenceHandler := connect_go.NewUnaryHandler(
 		RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure,
 		svc.ListRepositoryCommitsByReference,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryCommitServiceGetRepositoryCommitByReferenceHandler := connect_go.NewUnaryHandler(
 		RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure,
 		svc.GetRepositoryCommitByReference,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryCommitServiceGetRepositoryCommitBySequenceIdHandler := connect_go.NewUnaryHandler(
 		RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure,
 		svc.GetRepositoryCommitBySequenceId,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryCommitServiceListRepositoryDraftCommitsProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryCommitServiceListRepositoryDraftCommitsHandler := connect_go.NewUnaryHandler(
 		RepositoryCommitServiceListRepositoryDraftCommitsProcedure,
 		svc.ListRepositoryDraftCommits,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryCommitServiceDeleteRepositoryDraftCommitHandler := connect_go.NewUnaryHandler(
 		RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure,
 		svc.DeleteRepositoryDraftCommit,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.RepositoryCommitService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.RepositoryCommitService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case RepositoryCommitServiceListRepositoryCommitsByBranchProcedure:
+			repositoryCommitServiceListRepositoryCommitsByBranchHandler.ServeHTTP(w, r)
+		case RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure:
+			repositoryCommitServiceListRepositoryCommitsByReferenceHandler.ServeHTTP(w, r)
+		case RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure:
+			repositoryCommitServiceGetRepositoryCommitByReferenceHandler.ServeHTTP(w, r)
+		case RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure:
+			repositoryCommitServiceGetRepositoryCommitBySequenceIdHandler.ServeHTTP(w, r)
+		case RepositoryCommitServiceListRepositoryDraftCommitsProcedure:
+			repositoryCommitServiceListRepositoryDraftCommitsHandler.ServeHTTP(w, r)
+		case RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure:
+			repositoryCommitServiceDeleteRepositoryDraftCommitHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedRepositoryCommitServiceHandler returns CodeUnimplemented from all methods.

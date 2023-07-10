@@ -29,6 +29,7 @@ import (
 )
 
 func TestRoundTrip1(t *testing.T) {
+	t.Parallel()
 	tempDir := t.TempDir()
 	testRoundTrip(
 		t,
@@ -41,6 +42,7 @@ func TestRoundTrip1(t *testing.T) {
 }
 
 func TestRoundTrip2(t *testing.T) {
+	t.Parallel()
 	tempDir := t.TempDir()
 	testRoundTrip(
 		t,
@@ -53,6 +55,7 @@ func TestRoundTrip2(t *testing.T) {
 }
 
 func TestRoundTrip3(t *testing.T) {
+	t.Parallel()
 	tempDir := t.TempDir()
 	testRoundTrip(
 		t,
@@ -65,6 +68,7 @@ func TestRoundTrip3(t *testing.T) {
 }
 
 func TestPort1(t *testing.T) {
+	t.Parallel()
 	testPort(
 		t,
 		"foo-bar",
@@ -76,6 +80,7 @@ func TestPort1(t *testing.T) {
 }
 
 func TestPort2(t *testing.T) {
+	t.Parallel()
 	testPort(
 		t,
 		"foo-bar",
@@ -88,6 +93,7 @@ func TestPort2(t *testing.T) {
 }
 
 func TestPort3(t *testing.T) {
+	t.Parallel()
 	testPort(
 		t,
 		"foo-bar",
@@ -99,6 +105,7 @@ func TestPort3(t *testing.T) {
 }
 
 func TestPort4(t *testing.T) {
+	t.Parallel()
 	testPort(
 		t,
 		"foo-bar",

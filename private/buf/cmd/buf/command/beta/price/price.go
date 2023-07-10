@@ -17,6 +17,7 @@ package price
 import (
 	"context"
 	"fmt"
+	"math"
 	"text/template"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -36,17 +37,18 @@ const (
 	proDollarsPerType             = float64(1.50)
 	teamsDollarsPerTypeDiscounted = float64(0.40)
 	proDollarsPerTypeDiscounted   = float64(1.20)
+	proDollarsMinimumSpend        = float64(600)
 	tmplCopy                      = `Current BSR pricing:
 
   - Teams: $0.50 per type
-  - Pro: $1.50 per type
+  - Pro: $1.50 per type, with a minimum spend of $600 per month
 
 If you sign up before October 15, 2023, we will give you a 20% discount for the first year:
 
   - Teams: $0.40 per type for the first year
-  - Pro: $1.20 per type for the first year
+  - Pro: $1.20 per type for the first year, with a minimum spend of $600 per month
 
-Pricing data last updated on April 4, 2023.
+Pricing data last updated on July 5, 2023.
 
 Make sure you are on the latest version of the Buf CLI to get the most updated pricing
 information, and see buf.build/pricing if in doubt - this command runs completely locally
@@ -192,8 +194,14 @@ func newTmplData(stats *protostat.Stats) *tmplData {
 		NumTypes: stats.NumMessages + stats.NumEnums + stats.NumMethods,
 	}
 	tmplData.TeamsDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*teamsDollarsPerType)
-	tmplData.ProDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*proDollarsPerType)
+	tmplData.ProDollarsPerMonth = fmt.Sprintf(
+		"%.2f",
+		math.Max(float64(tmplData.NumTypes)*proDollarsPerType, proDollarsMinimumSpend),
+	)
 	tmplData.TeamsDollarsPerMonthDiscounted = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*teamsDollarsPerTypeDiscounted)
-	tmplData.ProDollarsPerMonthDiscounted = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*proDollarsPerTypeDiscounted)
+	tmplData.ProDollarsPerMonthDiscounted = fmt.Sprintf(
+		"%.2f",
+		math.Max(float64(tmplData.NumTypes)*proDollarsPerTypeDiscounted, proDollarsMinimumSpend),
+	)
 	return tmplData
 }

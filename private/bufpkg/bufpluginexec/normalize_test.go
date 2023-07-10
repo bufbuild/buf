@@ -26,6 +26,7 @@ import (
 )
 
 func TestNormalizeCodeGeneratorResponse(t *testing.T) {
+	t.Parallel()
 	for i, testCase := range []struct {
 		Input    *pluginpb.CodeGeneratorResponse
 		Expected *pluginpb.CodeGeneratorResponse

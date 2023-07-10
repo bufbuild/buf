@@ -265,66 +265,90 @@ type UserServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewUserServiceHandler(svc UserServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(UserServiceCreateUserProcedure, connect_go.NewUnaryHandler(
+	userServiceCreateUserHandler := connect_go.NewUnaryHandler(
 		UserServiceCreateUserProcedure,
 		svc.CreateUser,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(UserServiceGetUserProcedure, connect_go.NewUnaryHandler(
+	)
+	userServiceGetUserHandler := connect_go.NewUnaryHandler(
 		UserServiceGetUserProcedure,
 		svc.GetUser,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(UserServiceGetUserByUsernameProcedure, connect_go.NewUnaryHandler(
+	)
+	userServiceGetUserByUsernameHandler := connect_go.NewUnaryHandler(
 		UserServiceGetUserByUsernameProcedure,
 		svc.GetUserByUsername,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(UserServiceListUsersProcedure, connect_go.NewUnaryHandler(
+	)
+	userServiceListUsersHandler := connect_go.NewUnaryHandler(
 		UserServiceListUsersProcedure,
 		svc.ListUsers,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(UserServiceListOrganizationUsersProcedure, connect_go.NewUnaryHandler(
+	)
+	userServiceListOrganizationUsersHandler := connect_go.NewUnaryHandler(
 		UserServiceListOrganizationUsersProcedure,
 		svc.ListOrganizationUsers,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(UserServiceDeleteUserProcedure, connect_go.NewUnaryHandler(
+	)
+	userServiceDeleteUserHandler := connect_go.NewUnaryHandler(
 		UserServiceDeleteUserProcedure,
 		svc.DeleteUser,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(UserServiceDeactivateUserProcedure, connect_go.NewUnaryHandler(
+	)
+	userServiceDeactivateUserHandler := connect_go.NewUnaryHandler(
 		UserServiceDeactivateUserProcedure,
 		svc.DeactivateUser,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(UserServiceUpdateUserServerRoleProcedure, connect_go.NewUnaryHandler(
+	)
+	userServiceUpdateUserServerRoleHandler := connect_go.NewUnaryHandler(
 		UserServiceUpdateUserServerRoleProcedure,
 		svc.UpdateUserServerRole,
 		opts...,
-	))
-	mux.Handle(UserServiceCountUsersProcedure, connect_go.NewUnaryHandler(
+	)
+	userServiceCountUsersHandler := connect_go.NewUnaryHandler(
 		UserServiceCountUsersProcedure,
 		svc.CountUsers,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(UserServiceUpdateUserSettingsProcedure, connect_go.NewUnaryHandler(
+	)
+	userServiceUpdateUserSettingsHandler := connect_go.NewUnaryHandler(
 		UserServiceUpdateUserSettingsProcedure,
 		svc.UpdateUserSettings,
 		opts...,
-	))
-	return "/buf.alpha.registry.v1alpha1.UserService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case UserServiceCreateUserProcedure:
+			userServiceCreateUserHandler.ServeHTTP(w, r)
+		case UserServiceGetUserProcedure:
+			userServiceGetUserHandler.ServeHTTP(w, r)
+		case UserServiceGetUserByUsernameProcedure:
+			userServiceGetUserByUsernameHandler.ServeHTTP(w, r)
+		case UserServiceListUsersProcedure:
+			userServiceListUsersHandler.ServeHTTP(w, r)
+		case UserServiceListOrganizationUsersProcedure:
+			userServiceListOrganizationUsersHandler.ServeHTTP(w, r)
+		case UserServiceDeleteUserProcedure:
+			userServiceDeleteUserHandler.ServeHTTP(w, r)
+		case UserServiceDeactivateUserProcedure:
+			userServiceDeactivateUserHandler.ServeHTTP(w, r)
+		case UserServiceUpdateUserServerRoleProcedure:
+			userServiceUpdateUserServerRoleHandler.ServeHTTP(w, r)
+		case UserServiceCountUsersProcedure:
+			userServiceCountUsersHandler.ServeHTTP(w, r)
+		case UserServiceUpdateUserSettingsProcedure:
+			userServiceUpdateUserSettingsHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedUserServiceHandler returns CodeUnimplemented from all methods.

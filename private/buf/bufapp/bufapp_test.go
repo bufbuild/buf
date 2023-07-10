@@ -21,5 +21,6 @@ import (
 )
 
 func TestExternalConfigIsEmpty(t *testing.T) {
+	t.Parallel()
 	assert.True(t, ExternalConfig{}.IsEmpty())
 }

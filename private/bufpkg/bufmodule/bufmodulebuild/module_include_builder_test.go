@@ -30,6 +30,7 @@ import (
 )
 
 func TestIncludeGetFileInfos1(t *testing.T) {
+	t.Parallel()
 	testIncludeGetFileInfos(
 		t,
 		"testdata/1",
@@ -52,6 +53,7 @@ func TestIncludeGetFileInfos1(t *testing.T) {
 }
 
 func TestIncludeGetFileInfos2(t *testing.T) {
+	t.Parallel()
 	testIncludeGetFileInfos(
 		t,
 		"testdata/3",
@@ -62,6 +64,7 @@ func TestIncludeGetFileInfos2(t *testing.T) {
 }
 
 func TestIncludeGetFileInfosForExternalPathsError1(t *testing.T) {
+	t.Parallel()
 	testIncludeGetFileInfosForExternalPathsError(
 		t,
 		"testdata/2",

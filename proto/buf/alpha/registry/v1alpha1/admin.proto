@@ -35,6 +35,45 @@ message BreakingChangePolicy {
   BreakingChangeCategory category = 3;
 }
 
+// UniquenessPolicy is the policy for uniqueness on the server.
+message UniquenessPolicy {
+  // Whether uniqueness policy is enforced.
+  bool enabled = 1;
+}
+
+// Collision is a collision that has occurred.
+message Collision {
+  // The reference that has collisions.
+  string reference = 1;
+  // The type of collision.
+  CollisionType type = 2;
+  // The sources of the collision that the user is authorized to see.
+  repeated CollisionSource sources = 3;
+  // Whether there are other collision sources that the user is not authorized to see.
+  // The user should contact a server admin for more information about these collisions.
+  bool has_other_collision_sources = 4;
+}
+
+// CollisionSource is the source of a collision
+message CollisionSource {
+  // The name of the owner of the source.
+  string owner_name = 1;
+  // The name of the repository of the source.
+  string repository_name = 2;
+  // The path of the file that is the source of the collision.
+  string path = 3;
+}
+
+// CollisionType is the type of collisions that can occur.
+enum CollisionType {
+  // Unspecified collision type.
+  COLLISION_TYPE_UNSPECIFIED = 0;
+  // A fully qualified proto name
+  COLLISION_TYPE_FULLY_QUALIFIED_NAME = 1;
+  // A proto file path
+  COLLISION_TYPE_PATH = 2;
+}
+
 // AdminService is the Admin service.
 service AdminService {
   // ForceDeleteUser forces to delete a user. Resources and organizations that are
@@ -56,6 +95,16 @@ service AdminService {
   }
   // Update breaking change policy for the server.
   rpc UpdateBreakingChangePolicy(UpdateBreakingChangePolicyRequest) returns (UpdateBreakingChangePolicyResponse);
+  // Get uniqueness policy for the server.
+  rpc GetUniquenessPolicy(GetUniquenessPolicyRequest) returns (GetUniquenessPolicyResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // Update uniqueness policy enforcement for the server.
+  rpc UpdateUniquenessPolicy(UpdateUniquenessPolicyRequest) returns (UpdateUniquenessPolicyResponse);
+  // Get state of uniqueness collisions for the server
+  rpc ListServerUniquenessCollisions(ListServerUniquenessCollisionsRequest) returns (ListServerUniquenessCollisionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message ForceDeleteUserRequest {
@@ -108,3 +157,41 @@ message UpdateBreakingChangePolicyRequest {
 }
 
 message UpdateBreakingChangePolicyResponse {}
+
+message GetUniquenessPolicyRequest {}
+
+message GetUniquenessPolicyResponse {
+  UniquenessPolicy policy = 1;
+}
+
+message UpdateUniquenessPolicyRequest {
+  UniquenessPolicy policy = 1;
+}
+
+message UpdateUniquenessPolicyResponse {}
+
+message ListServerUniquenessCollisionsRequest {
+  // Token of the page to retrieve. If not specified, the first page of
+  // results will be returned. Use the value obtained from `next_page_token`
+  // in the previous response in order to request the next page of results.
+  string page_token = 1;
+  // Number of elements to retrieve in a single page.
+  // When too large a page is requested, the server may decide to further
+  // limit the number of returned resources.
+  uint32 page_size = 2;
+  // The desired collision type to filter by.
+  // This must be specified. Only collisions of the specified type will be returned,
+  // continue to page through results until no more collisions of the specified
+  // type are returned.
+  CollisionType collision_type = 3;
+}
+
+message ListServerUniquenessCollisionsResponse {
+  // The collisions.
+  repeated Collision collisions = 1;
+  // Pagination token used to retrieve the next page of results.
+  // Pass the content of this string as the `page_token` attribute of
+  // the next request. `next_page_token` is not returned for the last
+  // page.
+  string next_page_token = 2;
+}

@@ -21,6 +21,7 @@ import (
 )
 
 func TestPluginConfig_GetRemoteHostname(t *testing.T) {
+	t.Parallel()
 	assertPluginConfigRemoteHostname := func(config *PluginConfig, expected string) {
 		t.Helper()
 		assert.Equal(t, config.GetRemoteHostname(), expected)

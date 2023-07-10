@@ -122,20 +122,28 @@ type DownloadServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewDownloadServiceHandler(svc DownloadServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(DownloadServiceDownloadProcedure, connect_go.NewUnaryHandler(
+	downloadServiceDownloadHandler := connect_go.NewUnaryHandler(
 		DownloadServiceDownloadProcedure,
 		svc.Download,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DownloadServiceDownloadManifestAndBlobsProcedure, connect_go.NewUnaryHandler(
+	)
+	downloadServiceDownloadManifestAndBlobsHandler := connect_go.NewUnaryHandler(
 		DownloadServiceDownloadManifestAndBlobsProcedure,
 		svc.DownloadManifestAndBlobs,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.DownloadService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.DownloadService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case DownloadServiceDownloadProcedure:
+			downloadServiceDownloadHandler.ServeHTTP(w, r)
+		case DownloadServiceDownloadManifestAndBlobsProcedure:
+			downloadServiceDownloadManifestAndBlobsHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedDownloadServiceHandler returns CodeUnimplemented from all methods.

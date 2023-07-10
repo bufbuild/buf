@@ -26,6 +26,7 @@ import (
 )
 
 func TestWriteConfigSuccess(t *testing.T) {
+	t.Parallel()
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
@@ -68,6 +69,7 @@ lint:
 func TestWriteConfigMismatchedConfigVersions(t *testing.T) {
 	t.Parallel()
 	t.Run("invalid breaking config", func(t *testing.T) {
+		t.Parallel()
 		storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 		readWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
 		require.NoError(t, err)
@@ -83,6 +85,7 @@ func TestWriteConfigMismatchedConfigVersions(t *testing.T) {
 		require.Equal(t, err.Error(), `version "v1" found for breaking config, does not match top level config version: "v1beta1"`)
 	})
 	t.Run("invalid lint config", func(t *testing.T) {
+		t.Parallel()
 		storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 		readWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
 		require.NoError(t, err)

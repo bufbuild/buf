@@ -206,12 +206,10 @@ func inner(
 			username,
 			token,
 		),
-		netrc.NewMachine(
-			"go."+remote,
-			username,
-			token,
-		),
 	); err != nil {
+		return err
+	}
+	if _, err := netrc.DeleteMachineForName(container, "go."+remote); err != nil {
 		return err
 	}
 	netrcFilePath, err := netrc.GetFilePath(container)

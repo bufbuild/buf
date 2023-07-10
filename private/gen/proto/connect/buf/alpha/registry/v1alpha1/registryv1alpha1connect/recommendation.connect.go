@@ -169,32 +169,44 @@ type RecommendationServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewRecommendationServiceHandler(svc RecommendationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(RecommendationServiceRecommendedRepositoriesProcedure, connect_go.NewUnaryHandler(
+	recommendationServiceRecommendedRepositoriesHandler := connect_go.NewUnaryHandler(
 		RecommendationServiceRecommendedRepositoriesProcedure,
 		svc.RecommendedRepositories,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RecommendationServiceRecommendedTemplatesProcedure, connect_go.NewUnaryHandler(
+	)
+	recommendationServiceRecommendedTemplatesHandler := connect_go.NewUnaryHandler(
 		RecommendationServiceRecommendedTemplatesProcedure,
 		svc.RecommendedTemplates,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RecommendationServiceListRecommendedResourcesProcedure, connect_go.NewUnaryHandler(
+	)
+	recommendationServiceListRecommendedResourcesHandler := connect_go.NewUnaryHandler(
 		RecommendationServiceListRecommendedResourcesProcedure,
 		svc.ListRecommendedResources,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RecommendationServiceSetRecommendedResourcesProcedure, connect_go.NewUnaryHandler(
+	)
+	recommendationServiceSetRecommendedResourcesHandler := connect_go.NewUnaryHandler(
 		RecommendationServiceSetRecommendedResourcesProcedure,
 		svc.SetRecommendedResources,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.RecommendationService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.RecommendationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case RecommendationServiceRecommendedRepositoriesProcedure:
+			recommendationServiceRecommendedRepositoriesHandler.ServeHTTP(w, r)
+		case RecommendationServiceRecommendedTemplatesProcedure:
+			recommendationServiceRecommendedTemplatesHandler.ServeHTTP(w, r)
+		case RecommendationServiceListRecommendedResourcesProcedure:
+			recommendationServiceListRecommendedResourcesHandler.ServeHTTP(w, r)
+		case RecommendationServiceSetRecommendedResourcesProcedure:
+			recommendationServiceSetRecommendedResourcesHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedRecommendationServiceHandler returns CodeUnimplemented from all methods.

@@ -94,6 +94,7 @@ func TestNewBlobSetWithNilBlobs(t *testing.T) {
 	t.Parallel()
 	blobsWithNil := append(newBlobsArray(t), nil)
 	t.Run("DefaultRejectNils", func(t *testing.T) {
+		t.Parallel()
 		_, err := manifest.NewBlobSet(
 			context.Background(),
 			blobsWithNil,
@@ -101,6 +102,7 @@ func TestNewBlobSetWithNilBlobs(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("AllowNils", func(t *testing.T) {
+		t.Parallel()
 		blobSet, err := manifest.NewBlobSet(
 			context.Background(),
 			blobsWithNil,
@@ -162,6 +164,7 @@ func (e *errAtEndReader) Read(p []byte) (int, error) {
 }
 
 func TestBlobEqual(t *testing.T) {
+	t.Parallel()
 	testBlobEqual(
 		t,
 		"does equal",
