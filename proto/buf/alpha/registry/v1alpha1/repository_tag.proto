@@ -43,6 +43,11 @@ service RepositoryTagService {
   rpc ListRepositoryTags(ListRepositoryTagsRequest) returns (ListRepositoryTagsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // ListRepositoryTagsForReference lists the repository tags associated with a repository
+  // reference name.
+  rpc ListRepositoryTagsForReference(ListRepositoryTagsForReferenceRequest) returns (ListRepositoryTagsForReferenceResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message CreateRepositoryTagRequest {
@@ -68,6 +73,23 @@ message ListRepositoryTagsRequest {
 }
 
 message ListRepositoryTagsResponse {
+  repeated RepositoryTag repository_tags = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message ListRepositoryTagsForReferenceRequest {
+  // The ID of the repository whose tags should be listed.
+  string repository_id = 1;
+  // The name of the reference.
+  string reference = 2;
+  uint32 page_size = 3;
+  // The first page is returned if this is empty.
+  string page_token = 4;
+  bool reverse = 5;
+}
+
+message ListRepositoryTagsForReferenceResponse {
   repeated RepositoryTag repository_tags = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
