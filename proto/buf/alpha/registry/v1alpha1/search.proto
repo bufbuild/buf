@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/plugin.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
@@ -67,18 +66,6 @@ message TeamSearchResult {
   string organization_name = 3;
 }
 
-message PluginSearchResult {
-  option deprecated = true;
-  string id = 1;
-  string name = 2;
-  // The name of the user or organization
-  // who is the owner of this plugin.
-  string owner = 3;
-  // The visibility of the plugin.
-  PluginVisibility visibility = 4;
-  bool deprecated = 5;
-}
-
 message CuratedPluginSearchResult {
   string id = 1;
   string name = 2;
@@ -88,26 +75,12 @@ message CuratedPluginSearchResult {
   bool deprecated = 4;
 }
 
-message TemplateSearchResult {
-  option deprecated = true;
-  string id = 1;
-  string name = 2;
-  // The name of the user or organization
-  // who is the owner of this template.
-  string owner = 3;
-  // The visibility of the template.
-  PluginVisibility visibility = 4;
-  bool deprecated = 5;
-}
-
 message SearchResult {
   oneof item {
     RepositorySearchResult repository = 1;
     OrganizationSearchResult organization = 2;
     UserSearchResult user = 3;
     TeamSearchResult team = 4;
-    PluginSearchResult plugin = 5 [deprecated = true];
-    TemplateSearchResult template = 6 [deprecated = true];
     CuratedPluginSearchResult curated_plugin = 7;
   }
 }

@@ -17,7 +17,6 @@ syntax = "proto3";
 package buf.alpha.audit.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/admin.proto";
-import "buf/alpha/registry/v1alpha1/plugin.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "google/protobuf/timestamp.proto";
@@ -42,6 +41,9 @@ message Actor {
 // ResourceType is the type of the resource that was affected by the audited
 // event.
 enum ResourceType {
+  reserved 7;
+  reserved "RESOURCE_TYPE_PLUGIN";
+
   RESOURCE_TYPE_UNSPECIFIED = 0;
   RESOURCE_TYPE_USER = 1;
   RESOURCE_TYPE_ORGANIZATION = 2;
@@ -50,7 +52,6 @@ enum ResourceType {
   RESOURCE_TYPE_REPOSITORY = 4;
   RESOURCE_TYPE_REPOSITORY_CONTRIBUTOR = 5;
   RESOURCE_TYPE_REPOSITORY_COMMIT = 6;
-  RESOURCE_TYPE_PLUGIN = 7 [deprecated = true];
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
   RESOURCE_TYPE_TOKEN = 10;
   RESOURCE_TYPE_SCIM_TOKEN = 11;
@@ -120,6 +121,9 @@ message EventMetadata {
 // what happened, when it happened, who did it, which resource was affected, and
 // more contextual information on the event.
 message Event {
+  reserved 19, 20;
+  reserved "plugin_created", "plugin_deleted";
+  
   // Unique id of the audited event.
   string event_id = 1;
   // Type of the audited event. It specifies "what" happened.
@@ -146,8 +150,6 @@ message Event {
     PayloadRepositoryContributorRoleChanged repository_contributor_role_changed = 16;
     PayloadRepositoryContributorRemoved repository_contributor_removed = 17;
     PayloadRepositoryVisibilityChanged repository_visibility_changed = 18;
-    PayloadPluginCreated plugin_created = 19 [deprecated = true];
-    PayloadPluginDeleted plugin_deleted = 20 [deprecated = true];
     PayloadUserCreated user_created = 21;
     PayloadUserDeactivated user_deactivated = 22;
     PayloadUserDeleted user_deleted = 23;
@@ -310,26 +312,6 @@ message PayloadRepositoryVisibilityChanged {
   buf.alpha.registry.v1alpha1.Visibility old_visibility = 3;
   // new_visibility is the new visibility of the repository.
   buf.alpha.registry.v1alpha1.Visibility new_visibility = 4;
-}
-
-message PayloadPluginCreated {
-  option deprecated = true;
-  // owner_id is the id of the owner of the plugin.
-  string owner_id = 1;
-  // owner_name is the name of the owner of the plugin.
-  string owner_name = 2;
-  // visibility is the visibility of the plugin.
-  buf.alpha.registry.v1alpha1.PluginVisibility visibility = 3;
-}
-
-message PayloadPluginDeleted {
-  option deprecated = true;
-  // owner_id is the id of the owner of the plugin.
-  string owner_id = 1;
-  // owner_name is the name of the owner of the plugin.
-  string owner_name = 2;
-  // visibility is the visibility of the plugin.
-  buf.alpha.registry.v1alpha1.PluginVisibility visibility = 3;
 }
 
 message PayloadUserCreated {}
