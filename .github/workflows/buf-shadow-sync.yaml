@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      # set a HEAD for remote/origin, so buf sync can pickup the current default branch
+      - run: git remote set-head origin --auto
       - uses: bufbuild/buf-setup-action@v1.23.1
         with:
           github_token: ${{ github.token }}
