@@ -123,7 +123,7 @@ message EventMetadata {
 message Event {
   reserved 19, 20;
   reserved "plugin_created", "plugin_deleted";
-  
+
   // Unique id of the audited event.
   string event_id = 1;
   // Type of the audited event. It specifies "what" happened.
