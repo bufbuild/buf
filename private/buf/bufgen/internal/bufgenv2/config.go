@@ -54,9 +54,9 @@ type Config struct {
 	Inputs  []*InputConfig
 }
 
-// TODO: We use nil or not to denote enabled or not, but that deems dangerous
 // ManagedConfig is a managed mode configuration.
 type ManagedConfig struct {
+	Enabled                  bool
 	DisabledFunc             disabledFunc
 	FileOptionToOverrideFunc map[fileOption]overrideFunc
 }
@@ -163,6 +163,7 @@ func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2
 		)
 	}
 	return &ManagedConfig{
+		Enabled:                  externalConfig.Enabled,
 		DisabledFunc:             mergeDisabledFuncs(disabledFuncs),
 		FileOptionToOverrideFunc: mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs),
 	}, nil
