@@ -57,6 +57,7 @@ const (
 	managedOptionJavaPackageSuffix
 	// managedOptionOptimizeFor is the managed mode option optimize_for.
 	managedOptionOptimizeFor
+	// TODO: add the rest
 )
 
 var (
@@ -103,6 +104,7 @@ var (
 		"php_metadata_namespace": fileOptionPhpMetadataNamespace,
 		"ruby_package":           fileOptionRubyPackage,
 	}
+	// TODO: fill in the following lists
 	stringToManagedOption = map[string]managedOption{
 		"java_package":        managedOptionJavaPackage,
 		"java_package_prefix": managedOptionJavaPackagePrefix,
@@ -162,7 +164,7 @@ func parseFileOption(s string) (fileOption, error) {
 	if ok {
 		return f, nil
 	}
-	return 0, fmt.Errorf("unknown file option: %q", s)
+	return 0, fmt.Errorf("unknown fileOption: %q", s)
 }
 
 // parseManagedOption parses the managedOption.
@@ -171,13 +173,13 @@ func parseFileOption(s string) (fileOption, error) {
 func parseManagedOption(s string) (managedOption, error) {
 	s = strings.ToLower(strings.TrimSpace(s))
 	if s == "" {
-		return 0, errors.New("empty managed mode option")
+		return 0, errors.New("empty manageOption")
 	}
 	f, ok := stringToManagedOption[s]
 	if ok {
 		return f, nil
 	}
-	return 0, fmt.Errorf("unknown managed mode option: %q", s)
+	return 0, fmt.Errorf("unknown managedOption: %q", s)
 }
 
 // Pass type T to construct a function that only accepts type T and creates an override from it.

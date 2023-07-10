@@ -29,10 +29,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// DisableFunc decides whether a file option should be disabled for a file.
+// disableFunc decides whether a file option should be disabled for a file.
 type disabledFunc func(fileOption, imageFileIdentity) bool
 
-// TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
 // overrideFunc is specific to a file option, and returns what thie file option
 // should be overridden to for this file.
 type overrideFunc func(imageFileIdentity) bufimagemodifyv2.Override

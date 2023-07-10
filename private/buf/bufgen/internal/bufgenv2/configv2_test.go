@@ -687,10 +687,10 @@ func TestManagedConfig(t *testing.T) {
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
 	tests := []struct {
-		testName               string
-		file                   string
-		expectedDisableResults map[fileOption]map[imageFileIdentity]bool
+		testName string
+		file     string
 		// true means disabled
+		expectedDisableResults  map[fileOption]map[imageFileIdentity]bool
 		expectedOverrideResults map[fileOption]map[imageFileIdentity]bufimagemodifyv2.Override
 	}{
 		{
