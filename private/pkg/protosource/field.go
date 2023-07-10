@@ -35,7 +35,7 @@ type field struct {
 	jsType         descriptorpb.FieldOptions_JSType
 	cType          descriptorpb.FieldOptions_CType
 	retention      descriptorpb.FieldOptions_OptionRetention
-	target         descriptorpb.FieldOptions_OptionTargetType
+	targets        []descriptorpb.FieldOptions_OptionTargetType
 	debugRedact    bool
 	packed         *bool
 	deprecated     bool
@@ -64,7 +64,7 @@ func newField(
 	jsType descriptorpb.FieldOptions_JSType,
 	cType descriptorpb.FieldOptions_CType,
 	retention descriptorpb.FieldOptions_OptionRetention,
-	target descriptorpb.FieldOptions_OptionTargetType,
+	targets []descriptorpb.FieldOptions_OptionTargetType,
 	debugRedact bool,
 	packed *bool,
 	deprecated bool,
@@ -92,7 +92,7 @@ func newField(
 		jsType:                    jsType,
 		cType:                     cType,
 		retention:                 retention,
-		target:                    target,
+		targets:                   targets,
 		debugRedact:               debugRedact,
 		packed:                    packed,
 		deprecated:                deprecated,
@@ -160,8 +160,8 @@ func (f *field) Retention() descriptorpb.FieldOptions_OptionRetention {
 	return f.retention
 }
 
-func (f *field) Target() descriptorpb.FieldOptions_OptionTargetType {
-	return f.target
+func (f *field) Targets() []descriptorpb.FieldOptions_OptionTargetType {
+	return f.targets
 }
 
 func (f *field) DebugRedact() bool {
