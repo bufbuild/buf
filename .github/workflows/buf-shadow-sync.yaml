@@ -1,16 +1,14 @@
-name: Buf sync
+name: Buf shadow sync
 
-# TODO run in PRs? in merges/pushes to main? Probably we'd want the same config as buf's action
-# on:
-#   push:
-#     paths:
-#       - 'proto/**'
 on:
+  # Same config as buf.yaml workflow
   push:
-  workflow_dispatch:
+    paths:
+      - 'proto/**'
+  workflow_dispatch: # also allow manual trigger
 
 jobs:
-  push:
+  sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
