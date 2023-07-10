@@ -215,17 +215,15 @@ type ExternalManagedDisableConfigV2 struct {
 // ExternalManagedOverrideConfigV2 is an external configuration that overrides file options in
 // managed mode.
 type ExternalManagedOverrideConfigV2 struct {
-	// Must be validated to be a valid FileOption
+	// Must be validated to be a valid Option
 	// Required
-	FileOption string `json:"file_option,omitempty" yaml:"file_option,omitempty"`
+	Option string `json:"option,omitempty" yaml:"option,omitempty"`
 	// Must be validated to be a valid module path
 	Module string `json:"module,omitempty" yaml:"module,omitempty"`
 	// Must be normalized and validated
 	Path string `json:"path,omitempty" yaml:"path,omitempty"`
-	// Only one of Value and Prefix can be set
-	// TODO: may be interface{}, what to do about boo, optimize_mode, etc
-	Value  string `json:"value,omitempty" yaml:"value,omitempty"`
-	Prefix string `json:"prefix,omitempty" yaml:"prefix,omitempty"`
+	// Required
+	Value interface{} `json:"value,omitempty" yaml:"value,omitempty"`
 }
 
 // ExternalPluginConfigV2 is an external plugin configuration.

@@ -22,6 +22,13 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+const (
+	// DefaultJavaPackagePrefix is the default java_package prefix used in the java_package modifier.
+	DefaultJavaPackagePrefix = "com"
+	// DefaultJavaPackageSuffix is the default java_package suffix used in the java_package modifier.
+	DefaultJavaPackageSuffix = ""
+)
+
 var (
 	// CCEnableArenas is the SourceCodeInfo path for the cc_enable_arenas option.
 	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L420

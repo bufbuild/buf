@@ -39,29 +39,32 @@ func applyManagementForFile(
 	imageFile bufimage.ImageFile,
 	managedConfig *ManagedConfig,
 ) error {
-	for _, fileOption := range AllFileOptions {
+	for _, fileOption := range allFileOptions {
+		// disable has higher priority
 		if managedConfig.DisabledFunc(fileOption, imageFile) {
 			continue
 		}
-		var valueOrPrefix string
-		var err error
+		var (
+			err           error
+			override      bufimagemodifyv2.Override
+			modifyOptions []bufimagemodifyv2.ModifyOption
+		)
 		overrideFunc, ok := managedConfig.FileOptionToOverrideFunc[fileOption]
 		if ok {
-			valueOrPrefix, err = overrideFunc(imageFile)
+			override = overrideFunc(imageFile)
 			if err != nil {
 				return err
 			}
+			overrideOption, err := bufimagemodifyv2.ModifyWithOverride(override)
+			if err != nil {
+				return err
+			}
+			modifyOptions = append(modifyOptions, overrideOption)
 		}
 		// TODO do the rest
 		switch fileOption {
-		case FileOptionJavaPackage:
-			// Will need to do *string or similar for unset
-			if valueOrPrefix == "" {
-				valueOrPrefix = defaultJavaPackagePrefix
-			}
-			if err := bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, valueOrPrefix); err != nil {
-				return err
-			}
+		case fileOptionJavaPackage:
+			return bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, modifyOptions...)
 		default:
 			return fmt.Errorf("unknown FileOption: %q", fileOption)
 		}
