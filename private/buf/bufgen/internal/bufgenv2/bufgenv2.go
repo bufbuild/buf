@@ -191,14 +191,14 @@ type ExternalConfigV2 struct {
 
 // ExternalManagedConfigV2 is an external managed mode configuration.
 type ExternalManagedConfigV2 struct {
-	Enable   bool                              `json:"enable,omitempty" yaml:"enable,omitempty"`
+	Enabled  bool                              `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 	Disable  []ExternalManagedDisableConfigV2  `json:"disable,omitempty" yaml:"disable,omitempty"`
 	Override []ExternalManagedOverrideConfigV2 `json:"override,omitempty" yaml:"override,omitempty"`
 }
 
 // isEmpty returns true if the config is empty.
 func (m ExternalManagedConfigV2) isEmpty() bool {
-	return !m.Enable && len(m.Disable) == 0 && len(m.Override) == 0
+	return !m.Enabled && len(m.Disable) == 0 && len(m.Override) == 0
 }
 
 // ExternalManagedDisableConfigV2 is an external configuration that disables file options in

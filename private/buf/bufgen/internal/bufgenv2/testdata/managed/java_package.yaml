@@ -1,0 +1,17 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - option: java_package_prefix
+      value: org
+    - option: java_package_suffix
+      value: proto
+    - option: java_package
+      value: com.example.pb
+      path: a/b
+    - option: java_package_prefix
+      value: net
+      path: a/b/c

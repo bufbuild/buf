@@ -29,19 +29,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// TODO: remove this
-func SilenceLinter() {
-	empty := ExternalConfigV2{}
-	_, _ = newManagedConfig(empty.Managed)
-	_ = validateExternalManagedConfigV2(empty.Managed)
-	_, _ = newDisabledFunc(ExternalManagedDisableConfigV2{})
-	_, _ = newOverrideFunc(ExternalManagedOverrideConfigV2{})
-	mergeDisabledFuncs(nil)
-	mergeOverrideFuncs(nil)
-	mergeFileOptionToOverrideFuncs(nil)
-	_ = applyManagement(nil, nil)
-}
-
 // DisableFunc decides whether a file option should be disabled for a file.
 type disabledFunc func(fileOption, imageFileIdentity) bool
 
@@ -127,12 +114,21 @@ func readConfigV2(
 		return nil, err
 	}
 	config.Plugins = pluginConfigs
+	managedConfig, err := newManagedConfig(logger, externalConfigV2.Managed)
+	if err != nil {
+		return nil, err
+	}
+	config.Managed = managedConfig
 	return &config, nil
 }
 
-func newManagedConfig(externalConfig ExternalManagedConfigV2) (*ManagedConfig, error) {
+func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2) (*ManagedConfig, error) {
 	if externalConfig.isEmpty() {
 		return nil, nil
+	}
+	if !externalConfig.Enabled && !externalConfig.isEmpty() {
+		logger.Sugar().Warn("managed mode options are set but are not enabled")
+		// continue to validate this config
 	}
 	if err := validateExternalManagedConfigV2(externalConfig); err != nil {
 		return nil, err
@@ -206,12 +202,10 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFun
 			return nil, err
 		}
 	}
-	module := externalConfig.Module
-	path := normalpath.Normalize(externalConfig.Path)
 	return func(fileOption fileOption, imageFile imageFileIdentity) bool {
 		// If we did not specify a file option, we match all file options
 		return (selectorFileOption == 0 || fileOption == selectorFileOption) &&
-			matchesPathAndModule(path, module, imageFile)
+			matchesPathAndModule(externalConfig.Path, externalConfig.Module, imageFile)
 	}, nil
 }
 
@@ -252,6 +246,7 @@ func matchesPathAndModule(
 	}
 	// If path is required, it must match on path.
 	path := normalpath.Normalize(imageFile.Path())
+	pathRequired = normalpath.Normalize(pathRequired)
 	if pathRequired != "" && !normalpath.EqualsOrContainsPath(pathRequired, path, normalpath.Relative) {
 		return false
 	}
