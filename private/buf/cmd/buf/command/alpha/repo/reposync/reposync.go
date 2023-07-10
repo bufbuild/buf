@@ -395,18 +395,14 @@ func push(
 	if err != nil {
 		return nil, err
 	}
-	// TODO: also label the label in the BSR_MAIN namespace if repo.BaseBranch() == branch
 	resp, err := service.SyncGitCommit(ctx, connect.NewRequest(&registryv1alpha1.SyncGitCommitRequest{
 		Owner:      moduleIdentity.Owner(),
 		Repository: moduleIdentity.Repository(),
 		Manifest:   bucketManifest,
 		Blobs:      blobs,
 		Hash:       commit.Hash().Hex(),
-		Branch: &registryv1alpha1.Branch{
-			Name:          branch,
-			IsRepoDefault: branch == repo.BaseBranch(),
-		},
-		Tags: tags,
+		Branch:     branch,
+		Tags:       tags,
 		Author: &registryv1alpha1.GitIdentity{
 			Name:  commit.Author().Name(),
 			Email: commit.Author().Email(),
