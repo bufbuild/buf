@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/bufbuild/connect-go v1.8.0
-	github.com/bufbuild/connect-opentelemetry-go v0.3.0
+	github.com/bufbuild/connect-opentelemetry-go v0.4.0
 	github.com/bufbuild/protocompile v0.5.1
 	github.com/docker/docker v24.0.2+incompatible
 	github.com/go-chi/chi/v5 v5.0.8
