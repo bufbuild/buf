@@ -2,6 +2,7 @@ name: Buf sync
 
 # TODO run in PRs? in merges/pushes to main?
 on:
+  push:
   workflow_dispatch:
 
 jobs:
