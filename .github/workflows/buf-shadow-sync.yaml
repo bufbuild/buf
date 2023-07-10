@@ -12,5 +12,5 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1.23.1
         with:
           github_token: ${{ github.token }}
-      - run: buf alpha repo sync -v --debug --timeout 0 --module proto:buf.build/bufbuild/buf-sync-shadow --create --create-visibility private
+      - run: buf alpha repo sync -v --debug --timeout 0 --module proto:buf.build/buftest/buf-shadow-sync --create --create-visibility private
         # TODO: how do I auth?
