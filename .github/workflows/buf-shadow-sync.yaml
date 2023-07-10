@@ -1,6 +1,10 @@
 name: Buf sync
 
-# TODO run in PRs? in merges/pushes to main?
+# TODO run in PRs? in merges/pushes to main? Probably we'd want the same config as buf's action
+# on:
+#   push:
+#     paths:
+#       - 'proto/**'
 on:
   push:
   workflow_dispatch:
@@ -12,10 +16,10 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all branches and commits, so we can loop them
-      # set a HEAD for remote/origin, so buf sync can pickup the current default branch
-      - run: git remote set-head origin --auto
+      - run: git remote set-head origin --auto # set a HEAD for remote/origin, so buf sync can pickup the current default branch
       - uses: bufbuild/buf-setup-action@v1.23.1
         with:
           github_token: ${{ github.token }}
+          buf_user: bufbot
+          buf_api_token: ${{ secrets.BUF_TOKEN }}
       - run: buf alpha repo sync -v --debug --timeout 0 --module proto:buf.build/buftest/buf-shadow-sync --create --create-visibility private
-        # TODO: how do I auth?
