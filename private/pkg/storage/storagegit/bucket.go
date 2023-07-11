@@ -46,6 +46,10 @@ func newBucket(
 }
 
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
+	path, err := storageutil.ValidatePath(path)
+	if err != nil {
+		return nil, err
+	}
 	node, err := b.root.Descendant(path, b.objectReader)
 	if err != nil {
 		if errors.Is(err, git.ErrTreeNodeNotFound) {
@@ -76,7 +80,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 		path, err := normalpath.NormalizeAndValidate(
 			normalpath.Join(
 				normalpath.Base(path),
-				normalpath.Normalize(string(data)),
+				string(data),
 			),
 		)
 		if err != nil {
@@ -110,6 +114,10 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 }
 
 func (b *bucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
+	prefix, err := storageutil.ValidatePrefix(prefix)
+	if err != nil {
+		return err
+	}
 	walkChecker := storageutil.NewWalkChecker()
 	return b.walk(b.root, b.objectReader, prefix, func(path string) error {
 		if err := walkChecker.Check(ctx); err != nil {
@@ -125,7 +133,6 @@ func (b *bucket) walk(
 	prefix string,
 	walkFn func(string) error,
 ) error {
-	prefix = normalpath.Normalize(prefix)
 	if prefix != "." {
 		node, err := parent.Descendant(prefix, b.objectReader)
 		if err != nil {
@@ -180,10 +187,11 @@ func (b *bucket) walkTree(
 	return nil
 }
 
+// path is expected to be normalized by calling cunrions
 func (b *bucket) newObjectInfo(path string) storage.ObjectInfo {
 	return storageutil.NewObjectInfo(
-		normalpath.Normalize(path),
-		normalpath.Unnormalize(path),
+		path,
+		path,
 	)
 }
 
