@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -110,9 +111,13 @@ func run(
 	if err != nil {
 		return err
 	}
-
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	if err != nil {
+		return bufcli.NewInternalError(err)
+	}
 	pinnedRepositories, err := getDependencies(
 		ctx,
+		clientConfig,
 		container,
 		flags,
 		moduleConfig,
@@ -149,6 +154,44 @@ func run(
 		}
 		return bufcli.NewInternalError(err)
 	}
+	// Before updating buf.lock file, verify that no file path exists in more than one module.
+	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
+	if err != nil {
+		return bufcli.NewInternalError(err)
+	}
+	filePathToOwnerModule := make(map[string]string)
+	for _, modulePin := range dependencyModulePins {
+		module, err := moduleReader.GetModule(ctx, modulePin)
+		if err != nil {
+			return bufcli.NewInternalError(err)
+		}
+		sourceFileInfos, err := module.SourceFileInfos(ctx)
+		if err != nil {
+			return bufcli.NewInternalError(err)
+		}
+		for _, sourceFileInfo := range sourceFileInfos {
+			path := sourceFileInfo.Path()
+			if ownerModule, ok := filePathToOwnerModule[path]; ok {
+				return fmt.Errorf("%s is found in both %s and %s", path, ownerModule, modulePin.IdentityString())
+			}
+			filePathToOwnerModule[path] = modulePin.IdentityString()
+		}
+	}
+	module, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
+	if err != nil {
+		return bufcli.NewInternalError(err)
+	}
+	sourceFileInfos, err := module.SourceFileInfos(ctx)
+	if err != nil {
+		return bufcli.NewInternalError(err)
+	}
+	for _, sourceFileInfo := range sourceFileInfos {
+		path := sourceFileInfo.Path()
+		if ownerModule, ok := filePathToOwnerModule[path]; ok {
+			return fmt.Errorf("%s is found both locally and in %s", path, ownerModule)
+		}
+	}
+
 	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
 		return bufcli.NewInternalError(err)
 	}
@@ -157,6 +200,7 @@ func run(
 
 func getDependencies(
 	ctx context.Context,
+	clientConfig *connectclient.Config,
 	container appflag.Container,
 	flags *flags,
 	moduleConfig *bufconfig.Config,
@@ -165,10 +209,6 @@ func getDependencies(
 ) ([]*pinnedRepository, error) {
 	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
 		return nil, nil
-	}
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return nil, err
 	}
 	var remote string
 	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
