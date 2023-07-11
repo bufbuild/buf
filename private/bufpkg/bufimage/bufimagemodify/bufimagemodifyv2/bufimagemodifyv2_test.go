@@ -71,7 +71,7 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:     assertJavaPackage,
 		},
 		{
-			description:    "Modify Java Package with prefix and suffix on file without a proto package",
+			description:    "Modify Java Package without override on file without a proto package",
 			subDir:         "alloptions",
 			file:           "a.proto",
 			modifyFunc:     ModifyJavaPackage,
@@ -99,6 +99,16 @@ func TestModifySingleOption(t *testing.T) {
 			fileOptionPath: internal.JavaPackagePath,
 			modifyOptions:  modifyWithValue(t, "bar"),
 			expectedValue:  "bar",
+			assertFunc:     assertJavaPackage,
+		},
+		{
+			description:    "Modify Java Package without override on a file with a proto package",
+			subDir:         "javaemptyoptions",
+			file:           "a.proto",
+			modifyFunc:     ModifyJavaPackage,
+			fileOptionPath: internal.JavaPackagePath,
+			modifyOptions:  make([]ModifyOption, 0),
+			expectedValue:  "com.foo",
 			assertFunc:     assertJavaPackage,
 		},
 		{
