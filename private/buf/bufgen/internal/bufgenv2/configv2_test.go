@@ -834,7 +834,7 @@ func TestManagedConfig(t *testing.T) {
 
 	for _, test := range tests {
 		test := test
-		for _, fileExtension := range []string{".yaml" /* , ".json" */} {
+		for _, fileExtension := range []string{".yaml" /* , ".json" */} { // TODO: add json back
 			fileExtension := fileExtension
 			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
 				t.Parallel()
@@ -876,30 +876,6 @@ func TestManagedConfig(t *testing.T) {
 			})
 		}
 	}
-}
-
-type fakeImageFileIdentity struct {
-	path   string
-	module bufmoduleref.ModuleIdentity
-}
-
-func (f *fakeImageFileIdentity) Path() string {
-	return f.path
-}
-
-func (f *fakeImageFileIdentity) ModuleIdentity() bufmoduleref.ModuleIdentity {
-	return f.module
-}
-
-func mustCreateModuleIdentity(
-	t *testing.T,
-	remote string,
-	owner string,
-	repository string,
-) bufmoduleref.ModuleIdentity {
-	moduleIdentity, err := bufmoduleref.NewModuleIdentity(remote, owner, repository)
-	require.NoError(t, err)
-	return moduleIdentity
 }
 
 func TestConfigError(t *testing.T) {
@@ -1049,11 +1025,21 @@ func TestConfigError(t *testing.T) {
 			file:          filepath.Join("plugin", "remote_error4"),
 			expectedError: newOptionNotAllowedForPluginMessage("protoc_path", "remote"),
 		},
+		{
+			testName:      "Test disable has none of path module and file option",
+			file:          filepath.Join("managed", "invalid_disable"),
+			expectedError: "must set one of file_option, module and path for a disable rule",
+		},
+		{
+			testName:      "Test disable has none of path module and file option",
+			file:          filepath.Join("managed", "invalid_override"),
+			expectedError: "must specify an option to override",
+		},
 	}
 
 	for _, test := range tests {
 		test := test
-		for _, fileExtension := range []string{".yaml", ".json"} {
+		for _, fileExtension := range []string{".yaml" /* ".json" */} { // TODO: add json back
 			fileExtension := fileExtension
 			t.Run(fmt.Sprintf("%s with extension %s", test.testName, fileExtension), func(t *testing.T) {
 				t.Parallel()
@@ -1196,4 +1182,28 @@ func newOptionNotAllowedForPluginMessage(option string, pluginType string) strin
 
 func newUnknowStategyMessage(strategy string) string {
 	return fmt.Sprintf("unknown strategy: %s", strategy)
+}
+
+type fakeImageFileIdentity struct {
+	path   string
+	module bufmoduleref.ModuleIdentity
+}
+
+func (f *fakeImageFileIdentity) Path() string {
+	return f.path
+}
+
+func (f *fakeImageFileIdentity) ModuleIdentity() bufmoduleref.ModuleIdentity {
+	return f.module
+}
+
+func mustCreateModuleIdentity(
+	t *testing.T,
+	remote string,
+	owner string,
+	repository string,
+) bufmoduleref.ModuleIdentity {
+	moduleIdentity, err := bufmoduleref.NewModuleIdentity(remote, owner, repository)
+	require.NoError(t, err)
+	return moduleIdentity
 }

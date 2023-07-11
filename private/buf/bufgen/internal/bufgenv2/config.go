@@ -179,20 +179,23 @@ func validateExternalManagedConfigV2(externalConfig ExternalManagedConfigV2) err
 	}
 	for _, externalDisableConfig := range externalConfig.Disable {
 		if len(externalDisableConfig.FileOption) == 0 && len(externalDisableConfig.Module) == 0 && len(externalDisableConfig.Path) == 0 {
-			return errors.New("must set one of file_option, module, path for a disable rule")
+			return errors.New("must set one of file_option, module and path for a disable rule")
 		}
-		// TODO
 	}
 	for _, externalOverrideConfig := range externalConfig.Override {
-		// TODO
-		_ = externalOverrideConfig
+		if len(externalOverrideConfig.Option) == 0 {
+			return errors.New("must specify an option to override")
+		}
+		if externalOverrideConfig.Value == nil {
+			return errors.New("must specify an value to override")
+		}
 	}
 	return nil
 }
 
 func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFunc, error) {
 	if len(externalConfig.FileOption) == 0 && len(externalConfig.Module) == 0 && len(externalConfig.Path) == 0 {
-		return nil, errors.New("must set one of file_option, module, path for a disable rule")
+		return nil, errors.New("must set one of file_option, module and path for a disable rule")
 	}
 	var selectorFileOption fileOption
 	var err error

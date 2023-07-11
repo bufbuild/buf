@@ -21,8 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
 )
 
-// TODO this would be part of a runner or likewise
-// this is just for demonstration of bringing the management stuff into one function
 // applyManagement modifies an image based on managed mode configuration.
 func applyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
 	markSweeper := bufimagemodifyv2.NewMarkSweeper(image)
@@ -40,7 +38,7 @@ func applyManagementForFile(
 	managedConfig *ManagedConfig,
 ) error {
 	for _, fileOption := range allFileOptions {
-		// disable has higher priority
+		// disable has higher precedence
 		if managedConfig.DisabledFunc(fileOption, imageFile) {
 			continue
 		}

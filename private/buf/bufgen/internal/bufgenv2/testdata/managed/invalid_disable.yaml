@@ -1,0 +1,9 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  disable:
+    # must specify one of file_option, path and module
+    - file_option: ""
