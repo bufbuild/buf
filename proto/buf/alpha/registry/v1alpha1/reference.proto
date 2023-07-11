@@ -86,6 +86,9 @@ message ListGitCommitMetadataForReferenceRequest {
   string owner = 2;
   // Name of the repository the reference belongs to.
   string repository_name = 3;
+  uint32 page_size = 4;
+  // The first page is returned if this is empty.
+  string page_token = 5;
 }
 
 message ListGitCommitMetadataForReferenceResponse {
@@ -93,4 +96,6 @@ message ListGitCommitMetadataForReferenceResponse {
   string commit_id = 1;
   // List of git commits and metadata associated with the resolved reference.
   repeated GitCommitMetadata git_commit_metadatas = 2;
+  // There are no more pages if this is empty.
+  string next_page_token = 3;
 }

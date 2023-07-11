@@ -37,6 +37,14 @@ service RepositoryBranchService {
   rpc ListRepositoryBranches(ListRepositoryBranchesRequest) returns (ListRepositoryBranchesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // GetDefaultBranch returns the branch name that is mapped to the main/BSR_HEAD.
+  rpc GetDefaultBranch(GetDefaultBranchRequest) returns (GetDefaultBranchResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ListRepositoryNonDefaultBranches returns a paginated list of non-default branches in the BSR.
+  rpc ListRepositoryNonDefaultBranches(ListRepositoryNonDefaultBranchesRequest) returns (ListRepositoryNonDefaultBranchesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message ListRepositoryBranchesRequest {
@@ -48,6 +56,29 @@ message ListRepositoryBranchesRequest {
 }
 
 message ListRepositoryBranchesResponse {
+  repeated RepositoryBranch repository_branches = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message GetDefaultBranchRequest {
+  // The ID of the repository whose branches should be listed.
+  string repository_id = 1;
+}
+
+message GetDefaultBranchResponse {
+  RepositoryBranch default_branch = 1;
+}
+
+message ListRepositoryNonDefaultBranchesRequest {
+  // The ID of the repository whose branches should be listed.
+  string repository_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+}
+
+message ListRepositoryNonDefaultBranchesResponse {
   repeated RepositoryBranch repository_branches = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
