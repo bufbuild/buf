@@ -285,35 +285,35 @@ func mergeDisabledFuncs(disabledFuncs []disabledFunc) disabledFunc {
 }
 
 func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
-	// Last override listed wins
+	// Last override listed wins, but if the last two are prefix and suffix, both win.
 	return func(imageFile imageFileIdentity) bufimagemodifyv2.Override {
 		var (
-			override           bufimagemodifyv2.Override
-			lastPrefixOverride bufimagemodifyv2.PrefixOverride
-			lastSuffixOverride bufimagemodifyv2.SuffixOverride
+			secondLastOverride bufimagemodifyv2.Override
+			lastOverride       bufimagemodifyv2.Override
 		)
 		for _, overrideFunc := range overrideFuncs {
-			iOverride := overrideFunc(imageFile)
-			switch t := iOverride.(type) {
-			case bufimagemodifyv2.PrefixOverride:
-				lastPrefixOverride = t
-			case bufimagemodifyv2.SuffixOverride:
-				lastSuffixOverride = t
-			}
-			if iOverride != nil {
-				override = iOverride
+			currentOverride := overrideFunc(imageFile)
+			if currentOverride != nil {
+				secondLastOverride = lastOverride
+				lastOverride = currentOverride
 			}
 		}
-		switch t := override.(type) {
-		case bufimagemodifyv2.PrefixOverride:
-			if lastSuffixOverride != nil {
-				return bufimagemodifyv2.CombinePrefixSuffixOverride(t, lastSuffixOverride)
-			}
-		case bufimagemodifyv2.SuffixOverride:
-			if lastPrefixOverride != nil {
-				return bufimagemodifyv2.CombinePrefixSuffixOverride(lastPrefixOverride, t)
+		if prefixOverride, ok := secondLastOverride.(bufimagemodifyv2.PrefixOverride); ok {
+			if suffixOverride, ok := lastOverride.(bufimagemodifyv2.SuffixOverride); ok {
+				return bufimagemodifyv2.CombinePrefixSuffixOverride(
+					prefixOverride,
+					suffixOverride,
+				)
 			}
 		}
-		return override
+		if suffixOverride, ok := secondLastOverride.(bufimagemodifyv2.SuffixOverride); ok {
+			if prefixOverride, ok := lastOverride.(bufimagemodifyv2.PrefixOverride); ok {
+				return bufimagemodifyv2.CombinePrefixSuffixOverride(
+					prefixOverride,
+					suffixOverride,
+				)
+			}
+		}
+		return lastOverride
 	}
 }

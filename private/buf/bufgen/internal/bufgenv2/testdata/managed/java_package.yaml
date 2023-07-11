@@ -7,11 +7,11 @@ managed:
   override:
     - option: java_package_prefix
       value: org
+    - option: java_package_suffix
+      value: proto
     - option: java_package_prefix
       value: special.prefix
       path: special
-    - option: java_package_suffix
-      value: proto
     - option: java_package_suffix
       path: special
       value: special.suffix
@@ -26,8 +26,32 @@ managed:
       value: net
       path: special/p
     - option: java_package_suffix
-      value: protos
+      value: s.suffix
       path: special/s
+    - option: java_package_prefix
+      value: xyz.prefix
+      path: special/s/xyz
+    - option: java_package_suffix
+      value: final.suffix
+      path: special/s/xyz/final
     - option: java_package
       value: net.example
-      path: special/p/v.proto
+      path: special/p/
+    - option: java_package
+      value: com.something
+      path: special/p/something.proto
+    - option: java_package
+      value: base.double
+      path: double
+    - option: java_package_prefix
+      value: dp1
+      path: double/pre
+    - option: java_package_prefix
+      value: dp2
+      path: double/pre/pre
+    - option: java_package_suffix
+      value: ds1
+      path: double/suf
+    - option: java_package_suffix
+      value: ds2
+      path: double/suf/suf

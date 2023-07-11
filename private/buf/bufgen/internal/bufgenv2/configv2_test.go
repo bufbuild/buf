@@ -780,6 +780,7 @@ func TestManagedConfig(t *testing.T) {
 						bufimagemodifyv2.NewPrefixOverride("special.prefix"),
 						bufimagemodifyv2.NewSuffixOverride("special.suffix"),
 					),
+					// test the last two overrides are suffix and value
 					&fakeImageFileIdentity{
 						path: "a/b/c.proto",
 					}: bufimagemodifyv2.NewValueOverride("com.example.pb"),
@@ -788,19 +789,44 @@ func TestManagedConfig(t *testing.T) {
 					}: bufimagemodifyv2.NewValueOverride("com.special.x"),
 					&fakeImageFileIdentity{
 						path: "special/p/file.proto",
-					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
-						bufimagemodifyv2.NewPrefixOverride("net"),
-						bufimagemodifyv2.NewSuffixOverride("special.suffix"),
-					),
+					}: bufimagemodifyv2.NewValueOverride("net.example"),
 					&fakeImageFileIdentity{
 						path: "special/s/file.proto",
-					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
-						bufimagemodifyv2.NewPrefixOverride("special.prefix"),
-						bufimagemodifyv2.NewSuffixOverride("protos"),
-					),
+					}: bufimagemodifyv2.NewSuffixOverride("s.suffix"),
+					// test the last two overrides are both values
 					&fakeImageFileIdentity{
-						path: "special/p/v.proto",
-					}: bufimagemodifyv2.NewValueOverride("net.example"),
+						path: "special/p/something.proto",
+					}: bufimagemodifyv2.NewValueOverride("com.something"),
+					// test the last two overrides are suffix and prefix
+					&fakeImageFileIdentity{
+						path: "special/s/xyz/file.proto",
+					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
+						bufimagemodifyv2.NewPrefixOverride("xyz.prefix"),
+						bufimagemodifyv2.NewSuffixOverride("s.suffix"),
+					),
+					// test the last two overrides are prefix and suffix
+					&fakeImageFileIdentity{
+						path: "special/s/xyz/final/file.proto",
+					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
+						bufimagemodifyv2.NewPrefixOverride("xyz.prefix"),
+						bufimagemodifyv2.NewSuffixOverride("final.suffix"),
+					),
+					// test the last two overrides are both prefixes
+					&fakeImageFileIdentity{
+						path: "double/pre/pre/file.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("dp2"),
+					// test the last two overrides are both suffixes
+					&fakeImageFileIdentity{
+						path: "double/suf/suf/file.proto",
+					}: bufimagemodifyv2.NewSuffixOverride("ds2"),
+					// test the last two overrides are value and prefix
+					&fakeImageFileIdentity{
+						path: "double/pre/file.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("dp1"),
+					// test the last two overrides are value and suffix
+					&fakeImageFileIdentity{
+						path: "double/suf/file.proto",
+					}: bufimagemodifyv2.NewSuffixOverride("ds1"),
 				},
 			},
 		},
