@@ -54,6 +54,7 @@ type Override interface {
 	override()
 }
 
+// PrefixOverride is an override that applies a prefix.
 type PrefixOverride interface {
 	Override
 	get() string
@@ -65,6 +66,7 @@ func NewPrefixOverride(prefix string) PrefixOverride {
 	return newPrefixOverride(prefix)
 }
 
+// SuffixOverride is an override that applies a suffix.
 type SuffixOverride interface {
 	Override
 	get() string
@@ -76,16 +78,21 @@ func NewSuffixOverride(suffix string) SuffixOverride {
 	return newSuffixOverride(suffix)
 }
 
+// PrefixSuffixOverride is an override that applies a suffix and a prefix.
 type PrefixSuffixOverride interface {
 	Override
 	prefixSuffixOverride()
 }
 
 // NewPrefixSuffixOverride returns an override on both prefix and suffix.
-func NewPrefixSuffixOverride(prefixOverride PrefixOverride, suffixOverride SuffixOverride) PrefixSuffixOverride {
+func NewPrefixSuffixOverride(
+	prefixOverride PrefixOverride,
+	suffixOverride SuffixOverride,
+) PrefixSuffixOverride {
 	return newPrefixSuffixOverride(prefixOverride.get(), suffixOverride.get())
 }
 
+// ValueOverride is an override that directly modifies a file option.
 type ValueOverride interface {
 	Override
 	valueOverride()
