@@ -84,8 +84,8 @@ type PrefixSuffixOverride interface {
 	prefixSuffixOverride()
 }
 
-// NewPrefixSuffixOverride returns an override on both prefix and suffix.
-func NewPrefixSuffixOverride(
+// CombinePrefixSuffixOverride returns an override on both prefix and suffix.
+func CombinePrefixSuffixOverride(
 	prefixOverride PrefixOverride,
 	suffixOverride SuffixOverride,
 ) PrefixSuffixOverride {

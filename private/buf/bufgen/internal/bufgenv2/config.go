@@ -307,11 +307,11 @@ func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
 		switch t := override.(type) {
 		case bufimagemodifyv2.PrefixOverride:
 			if lastSuffixOverride != nil {
-				return bufimagemodifyv2.NewPrefixSuffixOverride(t, lastSuffixOverride)
+				return bufimagemodifyv2.CombinePrefixSuffixOverride(t, lastSuffixOverride)
 			}
 		case bufimagemodifyv2.SuffixOverride:
 			if lastPrefixOverride != nil {
-				return bufimagemodifyv2.NewPrefixSuffixOverride(lastPrefixOverride, t)
+				return bufimagemodifyv2.CombinePrefixSuffixOverride(lastPrefixOverride, t)
 			}
 		}
 		return override

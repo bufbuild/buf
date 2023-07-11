@@ -770,13 +770,13 @@ func TestManagedConfig(t *testing.T) {
 				fileOptionJavaPackage: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
-					}: bufimagemodifyv2.NewPrefixSuffixOverride(
+					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
 						bufimagemodifyv2.NewPrefixOverride("org"),
 						bufimagemodifyv2.NewSuffixOverride("proto"),
 					),
 					&fakeImageFileIdentity{
 						path: "special/file.proto",
-					}: bufimagemodifyv2.NewPrefixSuffixOverride(
+					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
 						bufimagemodifyv2.NewPrefixOverride("special.prefix"),
 						bufimagemodifyv2.NewSuffixOverride("special.suffix"),
 					),
@@ -788,13 +788,13 @@ func TestManagedConfig(t *testing.T) {
 					}: bufimagemodifyv2.NewValueOverride("com.special.x"),
 					&fakeImageFileIdentity{
 						path: "special/p/file.proto",
-					}: bufimagemodifyv2.NewPrefixSuffixOverride(
+					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
 						bufimagemodifyv2.NewPrefixOverride("net"),
 						bufimagemodifyv2.NewSuffixOverride("special.suffix"),
 					),
 					&fakeImageFileIdentity{
 						path: "special/s/file.proto",
-					}: bufimagemodifyv2.NewPrefixSuffixOverride(
+					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
 						bufimagemodifyv2.NewPrefixOverride("special.prefix"),
 						bufimagemodifyv2.NewSuffixOverride("protos"),
 					),
