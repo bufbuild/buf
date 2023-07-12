@@ -17,6 +17,7 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/git_metadata.proto";
+import "buf/alpha/registry/v1alpha1/labels.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
@@ -64,6 +65,11 @@ service ReferenceService {
   rpc ListGitCommitMetadataForReference(ListGitCommitMetadataForReferenceRequest) returns (ListGitCommitMetadataForReferenceResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // ListGitCommitsNoMetadataForReference takes a string reference and returns all the git commit
+  // labels without metadata associated with the resolved reference commit.
+  rpc ListGitCommitsNoMetadataForReference(ListGitCommitsNoMetadataForReferenceRequest) returns (ListGitCommitsNoMetadataForReferenceResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetReferenceByNameRequest {
@@ -86,6 +92,9 @@ message ListGitCommitMetadataForReferenceRequest {
   string owner = 2;
   // Name of the repository the reference belongs to.
   string repository_name = 3;
+  uint32 page_size = 4;
+  // The first page is returned if this is empty.
+  string page_token = 5;
 }
 
 message ListGitCommitMetadataForReferenceResponse {
@@ -93,4 +102,27 @@ message ListGitCommitMetadataForReferenceResponse {
   string commit_id = 1;
   // List of git commits and metadata associated with the resolved reference.
   repeated GitCommitMetadata git_commit_metadatas = 2;
+  // There are no more pages if this is empty.
+  string next_page_token = 3;
+}
+
+message ListGitCommitsNoMetadataForReferenceRequest {
+  // String that represents the name of the reference.
+  string reference = 1;
+  // Owner of the repository the reference belongs to.
+  string owner = 2;
+  // Name of the repository the reference belongs to.
+  string repository_name = 3;
+  uint32 page_size = 4;
+  // The first page is returned if this is empty.
+  string page_token = 5;
+}
+
+message ListGitCommitsNoMetadataForReferenceResponse {
+  // ID of the BSR commit the reference resolved to.
+  string commit_id = 1;
+  // List of git commits labels without metadata associated with the resolved reference.
+  repeated Label git_commit_labels = 2;
+  // There are no more pages if this is empty.
+  string next_page_token = 3;
 }
