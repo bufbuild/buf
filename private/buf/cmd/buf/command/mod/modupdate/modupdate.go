@@ -188,7 +188,7 @@ func run(
 	for _, sourceFileInfo := range sourceFileInfos {
 		path := sourceFileInfo.Path()
 		if ownerModule, ok := filePathToOwnerModule[path]; ok {
-			return fmt.Errorf("%s is found both locally and in %s", path, ownerModule)
+			return fmt.Errorf("%s is found both in the current module and in %s", path, ownerModule)
 		}
 	}
 
