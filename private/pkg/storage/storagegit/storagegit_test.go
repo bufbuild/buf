@@ -19,7 +19,6 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/require"
 )
@@ -58,7 +57,7 @@ func TestNewBucketAtTreeHash(t *testing.T) {
 		t,
 		bucket,
 		"proto/acme/grocerystore/v1/c.proto",
-		normalpath.Unnormalize("proto/acme/grocerystore/v1/c.proto"),
+		"proto/acme/grocerystore/v1/c.proto",
 	)
 	storagetesting.AssertNotExist(t, bucket, "random-path")
 	storagetesting.AssertPathToContent(
