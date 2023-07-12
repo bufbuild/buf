@@ -172,17 +172,6 @@ var (
 	}
 )
 
-// GlobalFlags contains global flags for buf commands.
-type GlobalFlags struct{}
-
-// NewGlobalFlags creates a new GlobalFlags with default values..
-func NewGlobalFlags() *GlobalFlags {
-	return &GlobalFlags{}
-}
-
-// BindRoot binds the global flags to the root command flag set.
-func (*GlobalFlags) BindRoot(*pflag.FlagSet) {}
-
 // BindAsFileDescriptorSet binds the exclude-imports flag.
 func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 	flagSet.BoolVar(
