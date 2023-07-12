@@ -187,7 +187,7 @@ func (b *bucket) walkTree(
 	return nil
 }
 
-// path is expected to be normalized by calling cunrions
+// path is expected to be normalized by calling functions
 func (b *bucket) newObjectInfo(path string) storage.ObjectInfo {
 	return storageutil.NewObjectInfo(
 		path,
