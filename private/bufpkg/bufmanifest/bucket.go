@@ -16,19 +16,18 @@ package bufmanifest
 
 import (
 	"context"
-	"fmt"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemanifest"
 )
 
-// NewBucketFromManifestBlobs builds a storage bucket from a manifest blob and a
+// NewReadBucketFromManifestBlobs builds a storage bucket from a manifest blob and a
 // set of other blobs, provided in protobuf form. It makes sure that all blobs
 // (including manifest) content match with their digest, and additionally checks
 // that the blob set matches completely with the manifest paths (no missing nor
 // extra blobs). This bucket is suitable for building or exporting.
-func NewBucketFromManifestBlobs(
+func NewReadBucketFromManifestBlobs(
 	ctx context.Context,
 	manifestBlob *modulev1alpha1.Blob,
 	blobs []*modulev1alpha1.Blob,
@@ -41,14 +40,10 @@ func NewBucketFromManifestBlobs(
 	if err != nil {
 		return nil, err
 	}
-	manifestBucket, err := manifest.NewBucket(
-		*parsedManifest,
-		*blobSet,
-		manifest.BucketWithAllManifestBlobsValidation(),
-		manifest.BucketWithNoExtraBlobsValidation(),
+	return storagemanifest.NewReadBucket(
+		parsedManifest,
+		blobSet,
+		storagemanifest.ReadBucketWithAllManifestBlobs(),
+		storagemanifest.ReadBucketWithNoExtraBlobs(),
 	)
-	if err != nil {
-		return nil, fmt.Errorf("new manifest bucket: %w", err)
-	}
-	return manifestBucket, nil
 }
