@@ -17,6 +17,7 @@ package modupdate
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -155,11 +156,27 @@ func run(
 		return bufcli.NewInternalError(err)
 	}
 	// Before updating buf.lock file, verify that no file path exists in more than one module.
+	pathToModuleIdentityStrings := make(map[string][]string)
+	currentModule, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
+	if err != nil {
+		return bufcli.NewInternalError(err)
+	}
+	currentModuleIdentityString := "the current module"
+	if currentModuleIdentity := currentModule.ModuleIdentity(); currentModuleIdentity != nil {
+		currentModuleIdentityString = currentModuleIdentity.IdentityString()
+	}
+	currentModuleSourceFileInfos, err := currentModule.SourceFileInfos(ctx)
+	if err != nil {
+		return bufcli.NewInternalError(err)
+	}
+	for _, sourceFileInfo := range currentModuleSourceFileInfos {
+		path := sourceFileInfo.Path()
+		pathToModuleIdentityStrings[path] = append(pathToModuleIdentityStrings[path], currentModuleIdentityString)
+	}
 	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
 		return bufcli.NewInternalError(err)
 	}
-	filePathToOwnerModule := make(map[string]string)
 	for _, modulePin := range dependencyModulePins {
 		module, err := moduleReader.GetModule(ctx, modulePin)
 		if err != nil {
@@ -171,24 +188,12 @@ func run(
 		}
 		for _, sourceFileInfo := range sourceFileInfos {
 			path := sourceFileInfo.Path()
-			if ownerModule, ok := filePathToOwnerModule[path]; ok {
-				return fmt.Errorf("%s is found in both %s and %s", path, ownerModule, modulePin.IdentityString())
-			}
-			filePathToOwnerModule[path] = modulePin.IdentityString()
+			pathToModuleIdentityStrings[path] = append(pathToModuleIdentityStrings[path], modulePin.IdentityString())
 		}
 	}
-	currentModule, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
-	if err != nil {
-		return bufcli.NewInternalError(err)
-	}
-	currentModuleSourceFileInfos, err := currentModule.SourceFileInfos(ctx)
-	if err != nil {
-		return bufcli.NewInternalError(err)
-	}
-	for _, sourceFileInfo := range currentModuleSourceFileInfos {
-		path := sourceFileInfo.Path()
-		if ownerModule, ok := filePathToOwnerModule[path]; ok {
-			return fmt.Errorf("%s is found both in the current module and in %s", path, ownerModule)
+	for path, moduleIdentityStrings := range pathToModuleIdentityStrings {
+		if len(moduleIdentityStrings) > 1 {
+			return fmt.Errorf("%s is found in multiple modules: %s", path, strings.Join(moduleIdentityStrings, ", "))
 		}
 	}
 	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
