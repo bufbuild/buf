@@ -25,9 +25,9 @@ type readObjectCloser struct {
 	io.ReadCloser
 }
 
-func newReadObjectCloser(path string, readCloser io.ReadCloser) *readObjectCloser {
+func newReadObjectCloser(path string, externalPath string, readCloser io.ReadCloser) *readObjectCloser {
 	return &readObjectCloser{
-		ObjectInfo: storageutil.NewObjectInfo(path, path),
+		ObjectInfo: storageutil.NewObjectInfo(path, externalPath),
 		ReadCloser: readCloser,
 	}
 }

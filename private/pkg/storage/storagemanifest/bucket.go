@@ -25,8 +25,9 @@ import (
 )
 
 type bucket struct {
-	manifest *manifest.Manifest
-	blobSet  *manifest.BlobSet
+	manifest                *manifest.Manifest
+	blobSet                 *manifest.BlobSet
+	externalPathTransformer func(string) string
 }
 
 func newBucket(
@@ -58,9 +59,13 @@ func newBucket(
 			}
 		}
 	}
+	if readBucketOptions.externalPathTransformer == nil {
+		readBucketOptions.externalPathTransformer = func(path string) string { return path }
+	}
 	return &bucket{
-		manifest: m,
-		blobSet:  blobSet,
+		manifest:                m,
+		blobSet:                 blobSet,
+		externalPathTransformer: readBucketOptions.externalPathTransformer,
 	}, nil
 }
 
@@ -77,7 +82,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 	if err != nil {
 		return nil, err
 	}
-	return newReadObjectCloser(path, file), nil
+	return newReadObjectCloser(path, b.externalPathTransformer(path), file), nil
 }
 
 func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
@@ -88,7 +93,7 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 	if _, ok := b.blobFor(path); !ok {
 		return nil, storage.NewErrNotExist(path)
 	}
-	return storageutil.NewObjectInfo(path, path), nil
+	return storageutil.NewObjectInfo(path, b.externalPathTransformer(path)), nil
 }
 
 func (b *bucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
@@ -108,7 +113,7 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectI
 			// this could happen if the bucket was built with partial blobs
 			continue
 		}
-		if err := f(storageutil.NewObjectInfo(path, path)); err != nil {
+		if err := f(storageutil.NewObjectInfo(path, b.externalPathTransformer(path))); err != nil {
 			return err
 		}
 	}
@@ -131,8 +136,9 @@ func (b *bucket) blobFor(path string) (_ manifest.Blob, ok bool) {
 }
 
 type readBucketOptions struct {
-	allManifestBlobs bool
-	noExtraBlobs     bool
+	allManifestBlobs        bool
+	noExtraBlobs            bool
+	externalPathTransformer func(string) string
 }
 
 func newReadBucketOptions() *readBucketOptions {

@@ -48,3 +48,11 @@ func ReadBucketWithNoExtraBlobs() ReadBucketOption {
 		readBucketOptions.noExtraBlobs = true
 	}
 }
+
+// ReadBucketWithExternalPathTransformer transforms paths to external paths for
+// this bucket.
+func ReadBucketWithExternalPathTransformer(externalPathTransformer func(path string) string) ReadBucketOption {
+	return func(readBucketOptions *readBucketOptions) {
+		readBucketOptions.externalPathTransformer = externalPathTransformer
+	}
+}

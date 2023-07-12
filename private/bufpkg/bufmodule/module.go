@@ -204,11 +204,35 @@ func newModuleForManifestAndBlobSet(
 	blobSet *manifest.BlobSet,
 	options ...ModuleOption,
 ) (*module, error) {
+	// TODO: this is just for POC to see if this externalPathTransformer
+	// stuff works
+	fakeModule := &module{}
+	for _, option := range options {
+		option(fakeModule)
+	}
+	bucketOptions := []storagemanifest.ReadBucketOption{
+		storagemanifest.ReadBucketWithAllManifestBlobs(),
+		storagemanifest.ReadBucketWithNoExtraBlobs(),
+	}
+	if fakeModule.moduleIdentity != nil {
+		identityString := fakeModule.moduleIdentity.IdentityString()
+		bucketOptions = append(
+			bucketOptions,
+			storagemanifest.ReadBucketWithExternalPathTransformer(
+				func(path string) string {
+					// Just defensive programming for now.
+					if path == "" || path == "." {
+						return path
+					}
+					return identityString + ":" + path
+				},
+			),
+		)
+	}
 	bucket, err := storagemanifest.NewReadBucket(
 		moduleManifest,
 		blobSet,
-		storagemanifest.ReadBucketWithAllManifestBlobs(),
-		storagemanifest.ReadBucketWithNoExtraBlobs(),
+		bucketOptions...,
 	)
 	if err != nil {
 		return nil, err
