@@ -177,15 +177,15 @@ func run(
 			filePathToOwnerModule[path] = modulePin.IdentityString()
 		}
 	}
-	module, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
+	currentModule, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
 	if err != nil {
 		return bufcli.NewInternalError(err)
 	}
-	sourceFileInfos, err := module.SourceFileInfos(ctx)
+	currentModuleSourceFileInfos, err := currentModule.SourceFileInfos(ctx)
 	if err != nil {
 		return bufcli.NewInternalError(err)
 	}
-	for _, sourceFileInfo := range sourceFileInfos {
+	for _, sourceFileInfo := range currentModuleSourceFileInfos {
 		path := sourceFileInfo.Path()
 		if ownerModule, ok := filePathToOwnerModule[path]; ok {
 			return fmt.Errorf("%s is found both in the current module and in %s", path, ownerModule)
