@@ -40,7 +40,9 @@ type RepositoryTag struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// primary key, unique, immutable
+	// primary key, unique.
+	// tags are based on labels, so if a label has been moved, the ID will point to the
+	// updated entry in the labels table.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// immutable
 	CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`

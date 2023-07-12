@@ -40,7 +40,9 @@ type RepositoryBranch struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// primary key, unique, immutable
+	// primary key, unique.
+	// branches are based on labels, so when a branch is pushed to, the ID will point to the
+	// updated entry in the labels table.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The name of the repository branch.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`

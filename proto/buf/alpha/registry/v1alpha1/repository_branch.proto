@@ -19,7 +19,9 @@ package buf.alpha.registry.v1alpha1;
 import "google/protobuf/timestamp.proto";
 
 message RepositoryBranch {
-  // primary key, unique, immutable
+  // primary key, unique.
+  // branches are based on labels, so when a branch is pushed to, the ID will point to the
+  // updated entry in the labels table.
   string id = 1;
   // The name of the repository branch.
   string name = 2;

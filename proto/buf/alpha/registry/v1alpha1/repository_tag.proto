@@ -19,7 +19,9 @@ package buf.alpha.registry.v1alpha1;
 import "google/protobuf/timestamp.proto";
 
 message RepositoryTag {
-  // primary key, unique, immutable
+  // primary key, unique.
+  // tags are based on labels, so if a label has been moved, the ID will point to the
+  // updated entry in the labels table.
   string id = 1;
   // immutable
   google.protobuf.Timestamp create_time = 2;
