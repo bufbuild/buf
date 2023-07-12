@@ -122,7 +122,7 @@ message ListGitCommitsNoMetadataForReferenceResponse {
   // ID of the BSR commit the reference resolved to.
   string commit_id = 1;
   // List of git commits labels without metadata associated with the resolved reference.
-  repeated Label git_commit_labels_no_metadatas = 2;
+  repeated Label git_commit_labels = 2;
   // There are no more pages if this is empty.
   string next_page_token = 3;
 }
