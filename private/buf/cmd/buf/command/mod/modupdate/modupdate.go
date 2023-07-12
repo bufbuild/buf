@@ -191,7 +191,6 @@ func run(
 			return fmt.Errorf("%s is found both in the current module and in %s", path, ownerModule)
 		}
 	}
-
 	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
 		return bufcli.NewInternalError(err)
 	}
