@@ -43,6 +43,7 @@ package manifest
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding"
 	"errors"
 	"fmt"
@@ -51,6 +52,8 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/multierr"
 )
 
 var errNoFinalNewline = errors.New("partial record: missing newline")
@@ -65,6 +68,8 @@ func newErrorWrapped(lineno int, err error) error {
 
 // Manifest represents a list of paths and their digests.
 type Manifest struct {
+	// needed for ordering
+	paths         []string
 	pathToDigest  map[string]Digest
 	digestToPaths map[string][]string
 }
@@ -102,6 +107,41 @@ func NewFromReader(manifest io.Reader) (*Manifest, error) {
 	return &m, nil
 }
 
+// NewFromBucket creates a manifest and blob set from the bucket's files. Blobs
+// in the blob set use the [DigestTypeShake256] digest.
+func NewFromBucket(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+) (*Manifest, *BlobSet, error) {
+	var m Manifest
+	digester, err := NewDigester(DigestTypeShake256)
+	if err != nil {
+		return nil, nil, err
+	}
+	var blobs []Blob
+	if walkErr := bucket.Walk(ctx, "", func(info storage.ObjectInfo) (retErr error) {
+		path := info.Path()
+		obj, err := bucket.Get(ctx, path)
+		if err != nil {
+			return err
+		}
+		defer func() { retErr = multierr.Append(retErr, obj.Close()) }()
+		blob, err := NewMemoryBlobFromReaderWithDigester(obj, digester)
+		if err != nil {
+			return err
+		}
+		blobs = append(blobs, blob)
+		return m.AddEntry(path, *blob.Digest())
+	}); walkErr != nil {
+		return nil, nil, walkErr
+	}
+	blobSet, err := NewBlobSet(ctx, blobs) // no need to pass validation options, we're building and digesting the blobs
+	if err != nil {
+		return nil, nil, err
+	}
+	return &m, blobSet, nil
+}
+
 // AddEntry adds an entry to the manifest with a path and its digest. It fails
 // if the path already exists in the manifest with a different digest.
 func (m *Manifest) AddEntry(path string, digest Digest) error {
@@ -124,6 +164,8 @@ func (m *Manifest) AddEntry(path string, digest Digest) error {
 			digest.String(), path, existingDigest.String(),
 		)
 	}
+	// Already guaranteed that the path is not in the slice due to above check
+	m.paths = append(m.paths, path)
 	if m.pathToDigest == nil {
 		m.pathToDigest = make(map[string]Digest)
 	}
@@ -136,24 +178,26 @@ func (m *Manifest) AddEntry(path string, digest Digest) error {
 	return nil
 }
 
-// Paths returns all unique paths in the manifest, order not guaranteed. If you want to iterate the
-// paths and their digests, consider using `Range` instead.
+// Paths returns all unique paths in the manifest by insertion order.
 func (m *Manifest) Paths() []string {
-	paths := make([]string, 0, len(m.pathToDigest))
-	for path := range m.pathToDigest {
-		paths = append(paths, path)
-	}
-	return paths
+	pathsCopy := make([]string, len(m.paths))
+	copy(pathsCopy, m.paths)
+	return pathsCopy
 }
 
-// Digests returns all unique digests in the manifest, order not guaranteed. If you want to iterate
-// the paths and their digests, consider using `Range` instead.
+// Digests returns all unique digests in the manifest.
+// Order is by insertion order.
 func (m *Manifest) Digests() []Digest {
 	digests := make([]Digest, 0, len(m.digestToPaths))
 	addedDigests := make(map[string]struct{}, len(m.digestToPaths))
-	// iterating over `pathToDigest` instead of `digestToPaths` to avoid handling/returning/panic on
-	// error if string -> digest parsing fails. It shouldn't.
-	for _, digest := range m.pathToDigest {
+	// Iterating over paths to guarantee ordering.
+	for _, path := range m.paths {
+		digest, ok := m.pathToDigest[path]
+		if !ok {
+			// This should be an error in the style of the rest of the codebase but
+			// this was refactored and we didn't want to change the function signature.
+			panic(fmt.Sprintf("path %q not present in pathToDigest", path))
+		}
 		if _, alreadyAdded := addedDigests[digest.String()]; alreadyAdded {
 			continue
 		}
@@ -163,11 +207,18 @@ func (m *Manifest) Digests() []Digest {
 	return digests
 }
 
-// Range invokes a function for all the paths in the manifest, passing the path and its digest. The
-// order in which the paths are iterated is not guaranteed. This func will stop iterating if an
-// error is returned.
+// Range invokes a function for all the paths in the manifest, passing the path and its digest.
+// Paths are invoked by insertion order.
+// This func will stop iterating if an error is returned.
 func (m *Manifest) Range(f func(path string, digest Digest) error) error {
-	for path, digest := range m.pathToDigest {
+	// Iterating over paths to guarantee ordering.
+	for _, path := range m.paths {
+		digest, ok := m.pathToDigest[path]
+		if !ok {
+			// This should be an error in the style of the rest of the codebase but
+			// this was refactored and we didn't want to change the function signature.
+			panic(fmt.Sprintf("path %q not present in pathToDigest", path))
+		}
 		if err := f(path, digest); err != nil {
 			return err
 		}
@@ -176,7 +227,7 @@ func (m *Manifest) Range(f func(path string, digest Digest) error) error {
 }
 
 // PathsFor returns one or more matching path for a given digest. The digest is
-// expected to be a lower-case hex encoded value. Returned paths are unordered.
+// expected to be a lower-case hex encoded value. Returned paths are ordered by insertion time.
 // Paths is nil and ok is false if no paths are found.
 func (m *Manifest) PathsFor(digest string) ([]string, bool) {
 	paths, ok := m.digestToPaths[digest]
@@ -218,6 +269,7 @@ func (m *Manifest) UnmarshalText(text []byte) error {
 	if err != nil {
 		return err
 	}
+	m.paths = newm.paths
 	m.pathToDigest = newm.pathToDigest
 	m.digestToPaths = newm.digestToPaths
 	return nil
@@ -234,7 +286,7 @@ func (m *Manifest) Blob() (Blob, error) {
 
 // Empty returns true if the manifest has no entries.
 func (m *Manifest) Empty() bool {
-	return len(m.pathToDigest) == 0 && len(m.digestToPaths) == 0
+	return len(m.paths) == 0 && len(m.pathToDigest) == 0 && len(m.digestToPaths) == 0
 }
 
 func splitManifest(data []byte, atEOF bool) (int, []byte, error) {

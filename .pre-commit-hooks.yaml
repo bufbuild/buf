@@ -22,3 +22,15 @@
   entry: buf format -w --exit-code
   types: [proto]
   pass_filenames: false
+- id: buf-mod-update
+  name: buf mod update
+  language: golang
+  entry: buf mod update
+  files: '(buf\.lock|buf\.yaml)'
+  pass_filenames: false
+- id: buf-mod-prune
+  name: buf mod prune
+  language: golang
+  entry: buf mod prune
+  files: '(buf\.lock|buf\.yaml)'
+  pass_filenames: false

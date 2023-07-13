@@ -12,54 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifest_test
+package storagemanifest
 
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestFromBucket(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-	bucket, err := storagemem.NewReadBucket(
-		map[string][]byte{
-			"null": nil,
-			"foo":  []byte("bar"),
-		})
-	require.NoError(t, err)
-	m, blobSet, err := manifest.NewFromBucket(ctx, bucket)
-	require.NoError(t, err)
-	// sorted by paths
-	var (
-		fooDigest  = mustDigestShake256(t, []byte("bar"))
-		nullDigest = mustDigestShake256(t, nil)
-	)
-	expected := fmt.Sprintf("%s  foo\n", fooDigest)
-	expected += fmt.Sprintf("%s  null\n", nullDigest)
-	retContent, err := m.MarshalText()
-	assert.NoError(t, err)
-	assert.Equal(t, expected, string(retContent))
-	// blobs
-	fooBlob, ok := blobSet.BlobFor(fooDigest.String())
-	require.True(t, ok)
-	assert.True(t, fooDigest.Equal(*fooBlob.Digest()))
-	nullBlob, ok := blobSet.BlobFor(nullDigest.String())
-	require.True(t, ok)
-	assert.True(t, nullDigest.Equal(*nullBlob.Digest()))
-}
+// TODO: adapt to the storagetesting framework
 
-func TestNewBucket(t *testing.T) {
+func TestNewReadBucket(t *testing.T) {
 	t.Parallel()
 	files := map[string][]byte{
 		"some_empty_file":    {},
@@ -70,7 +40,7 @@ func TestNewBucket(t *testing.T) {
 		// same "mypkg" prefix for `Walk` test purposes
 		"mypkglongername/v1/baz.proto": []byte("repeated proto content"),
 	}
-	var m manifest.Manifest
+	m := &manifest.Manifest{}
 	var blobs []manifest.Blob
 	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
 	require.NoError(t, err)
@@ -93,7 +63,7 @@ func TestNewBucket(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	t.Run("BucketWithAllManifestBlobsValidation", func(t *testing.T) {
+	t.Run("BucketWithAllManifestBlobs", func(t *testing.T) {
 		t.Parallel()
 		// only send 3 blobs: there are 6 files with 4 different contents,
 		// regardless of which blobs are sent, there will always be missing at least
@@ -105,13 +75,13 @@ func TestNewBucket(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		_, err = manifest.NewBucket(
-			m, *incompleteBlobSet,
-			manifest.BucketWithAllManifestBlobsValidation(),
+		_, err = NewReadBucket(
+			m, incompleteBlobSet,
+			ReadBucketWithAllManifestBlobs(),
 		)
 		assert.Error(t, err)
 
-		bucket, err := manifest.NewBucket(m, *incompleteBlobSet)
+		bucket, err := NewReadBucket(m, incompleteBlobSet)
 		assert.NoError(t, err)
 		assert.NotNil(t, bucket)
 		var bucketFilesCount int
@@ -122,7 +92,7 @@ func TestNewBucket(t *testing.T) {
 		assert.Less(t, bucketFilesCount, len(files)) // incomplete bucket
 	})
 
-	t.Run("BucketWithNoExtraBlobsValidation", func(t *testing.T) {
+	t.Run("BucketWithNoExtraBlobs", func(t *testing.T) {
 		t.Parallel()
 		const content = "some other file contents"
 		digest := mustDigestShake256(t, []byte(content))
@@ -133,19 +103,19 @@ func TestNewBucket(t *testing.T) {
 			append(blobs, orphanBlob),
 		)
 		require.NoError(t, err)
-		_, err = manifest.NewBucket(
-			m, *tooLargeBlobSet,
-			manifest.BucketWithNoExtraBlobsValidation(),
+		_, err = NewReadBucket(
+			m, tooLargeBlobSet,
+			ReadBucketWithNoExtraBlobs(),
 		)
 		assert.Error(t, err)
 	})
 
 	t.Run("Valid", func(t *testing.T) {
 		t.Parallel()
-		bucket, err := manifest.NewBucket(
-			m, *blobSet,
-			manifest.BucketWithAllManifestBlobsValidation(),
-			manifest.BucketWithNoExtraBlobsValidation(),
+		bucket, err := NewReadBucket(
+			m, blobSet,
+			ReadBucketWithAllManifestBlobs(),
+			ReadBucketWithNoExtraBlobs(),
 		)
 		require.NoError(t, err)
 
@@ -195,14 +165,22 @@ func TestNewBucket(t *testing.T) {
 	})
 }
 
-func TestToBucketEmpty(t *testing.T) {
+func TestNewReadBucketEmpty(t *testing.T) {
 	t.Parallel()
-	var m manifest.Manifest
-	bucket, err := manifest.NewBucket(m, manifest.BlobSet{})
+	bucket, err := NewReadBucket(&manifest.Manifest{}, &manifest.BlobSet{})
 	require.NoError(t, err)
 	// make sure there are no files in the bucket
 	require.NoError(t, bucket.Walk(context.Background(), "", func(obj storage.ObjectInfo) error {
 		require.Fail(t, "unexpected file %q in the bucket", obj.Path())
 		return nil
 	}))
+}
+
+func mustDigestShake256(t *testing.T, content []byte) *manifest.Digest {
+	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
+	require.NoError(t, err)
+	require.NotNil(t, digester)
+	digest, err := digester.Digest(bytes.NewReader(content))
+	require.NoError(t, err)
+	return digest
 }

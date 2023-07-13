@@ -49,6 +49,12 @@ message RepositoryCommit {
   string spdx_license_id = 10;
   // The manifest digest of the commit.
   string manifest_digest = 11;
+  // Number of tags associated with the commit.
+  int64 tag_count = 12;
+  // Number of git commits with metadata associated with the BSR commit.
+  int64 git_commit_metadata_count = 13;
+  // Number of git commits without metadata associated with the BSR commit.
+  int64 git_commit_no_metadata_count = 14;
 }
 
 // RepositoryCommitService is the Repository commit service.

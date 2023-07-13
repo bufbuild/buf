@@ -2,9 +2,19 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.24.0] - 2023-07-13
+
+- Update `buf mod update` to block updates that will result in conflicting `.proto`
+  files across dependencies.
 - Replace `bin` format with `binpb` format, and support the `.binpb` file extension.
   `.binpb` is now the canonical file extension for binary-encoded Protobuf data.
   The `bin` format and the `.bin` file extension continue to be accepted.
+- Remove support for `go` subdomain in `.netrc`. This was used as part of the
+  remote generation alpha, which has been fully deprecated in favor of remote
+  plugins and remote packages. See https://buf.build/blog/remote-packages-remote-plugins-approaching-v1
+  for more details.
 - Update `buf beta price` with the latest pricing information.
 
 ## [v1.23.1] - 2023-06-30
@@ -917,7 +927,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.23.1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.24.0...HEAD
+[v1.24.0]: https://github.com/bufbuild/buf/compare/v1.23.1...v1.24.0
 [v1.23.1]: https://github.com/bufbuild/buf/compare/v1.23.0...v1.23.1
 [v1.23.0]: https://github.com/bufbuild/buf/compare/v1.22.0...v1.23.0
 [v1.22.0]: https://github.com/bufbuild/buf/compare/v1.21.0...v1.22.0
