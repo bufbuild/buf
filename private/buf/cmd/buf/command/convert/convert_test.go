@@ -57,6 +57,24 @@ func TestConvertDir(t *testing.T) {
 			"testdata/convert/bin_json/payload.binpb",
 		)
 	})
+	t.Run("default-input-binpb-indent", func(t *testing.T) {
+		t.Parallel()
+		appcmdtesting.RunCommandExitCodeStdout(
+			t,
+			cmd,
+			0,
+			`{
+"one": "55"
+}`,
+			nil,
+			nil,
+			"--type",
+			"buf.Foo",
+			"--from",
+			"testdata/convert/bin_json/payload.binpb",
+			"--indent",
+		)
+	})
 	t.Run("from-stdin-bin", func(t *testing.T) {
 		t.Parallel()
 		appcmdtesting.RunCommandExitCodeStdoutStdinFile(

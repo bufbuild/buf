@@ -61,6 +61,11 @@ type MessageEncodingRef interface {
 	MessageEncoding() MessageEncoding
 }
 
+// The encoding options common to all 'text' encodings, currently just JSON.
+type TextEncodingOptions struct {
+	Indent bool // If the output should be indented for human readability.
+}
+
 // NewMessageEncodingRef returns a new MessageEncodingRef.
 func NewMessageEncodingRef(
 	ctx context.Context,

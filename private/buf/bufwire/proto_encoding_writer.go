@@ -49,6 +49,7 @@ func (p *protoEncodingWriter) PutMessage(
 	image bufimage.Image,
 	message proto.Message,
 	messageRef bufconvert.MessageEncodingRef,
+	textOptions *bufconvert.TextEncodingOptions,
 ) (retErr error) {
 	// Currently, this support binpb and JSON format.
 	resolver, err := protoencoding.NewResolver(
@@ -64,7 +65,13 @@ func (p *protoEncodingWriter) PutMessage(
 	case bufconvert.MessageEncodingBinpb:
 		marshaler = protoencoding.NewWireMarshaler()
 	case bufconvert.MessageEncodingJSON:
-		marshaler = protoencoding.NewJSONMarshaler(resolver)
+		var options []protoencoding.JSONMarshalerOption
+		if textOptions != nil {
+			if textOptions.Indent {
+				options = append(options, protoencoding.JSONMarshalerWithIndent())
+			}
+		}
+		marshaler = protoencoding.NewJSONMarshaler(resolver, options...)
 	default:
 		return errors.New("unknown message encoding type")
 	}
