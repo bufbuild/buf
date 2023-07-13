@@ -193,7 +193,7 @@ func run(
 	}
 	for path, moduleIdentityStrings := range pathToModuleIdentityStrings {
 		if len(moduleIdentityStrings) > 1 {
-			explanation := "Multiple files with the same path are not allowed because Protobuf files import each other by their paths, and each imported file should be uniquely identified by a path."
+			explanation := "Multiple files with the same path are not allowed because Protobuf files import each other by their paths, and import path must uniquely identify a file"
 			return fmt.Errorf("%s is found in multiple modules: %s\n%s", path, stringutil.SliceToHumanString(moduleIdentityStrings), explanation)
 		}
 	}
