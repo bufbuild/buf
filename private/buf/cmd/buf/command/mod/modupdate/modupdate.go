@@ -17,7 +17,6 @@ package modupdate
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -33,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -193,7 +193,8 @@ func run(
 	}
 	for path, moduleIdentityStrings := range pathToModuleIdentityStrings {
 		if len(moduleIdentityStrings) > 1 {
-			return fmt.Errorf("%s is found in multiple modules: %s", path, strings.Join(moduleIdentityStrings, ", "))
+			explanation := "Multiple files with the same path are not allowed because Protobuf files import each other by their paths, and each imported file should be uniquely identified by a path."
+			return fmt.Errorf("%s is found in multiple modules: %s\n%s", path, stringutil.SliceToHumanString(moduleIdentityStrings), explanation)
 		}
 	}
 	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
