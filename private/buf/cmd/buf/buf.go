@@ -92,13 +92,12 @@ func NewRootCommand(name string) *appcmd.Command {
 		appflag.BuilderWithTimeout(120*time.Second),
 		appflag.BuilderWithTracing(),
 	)
-	globalFlags := bufcli.NewGlobalFlags()
 	return &appcmd.Command{
 		Use:                 name,
 		Short:               "The Buf CLI",
 		Long:                "A tool for working with Protocol Buffers and managing resources on the Buf Schema Registry (BSR)",
 		Version:             bufcli.Version,
-		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
+		BindPersistentFlags: builder.BindRoot,
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder),
 			export.NewCommand("export", builder),
