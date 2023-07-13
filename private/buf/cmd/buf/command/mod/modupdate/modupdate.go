@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -31,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -110,9 +112,13 @@ func run(
 	if err != nil {
 		return err
 	}
-
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	if err != nil {
+		return bufcli.NewInternalError(err)
+	}
 	pinnedRepositories, err := getDependencies(
 		ctx,
+		clientConfig,
 		container,
 		flags,
 		moduleConfig,
@@ -149,6 +155,48 @@ func run(
 		}
 		return bufcli.NewInternalError(err)
 	}
+	// Before updating buf.lock file, verify that no file path exists in more than one module.
+	pathToModuleIdentityStrings := make(map[string][]string)
+	currentModule, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
+	if err != nil {
+		return bufcli.NewInternalError(err)
+	}
+	currentModuleIdentityString := "the current module"
+	if currentModuleIdentity := currentModule.ModuleIdentity(); currentModuleIdentity != nil {
+		currentModuleIdentityString = currentModuleIdentity.IdentityString()
+	}
+	currentModuleSourceFileInfos, err := currentModule.SourceFileInfos(ctx)
+	if err != nil {
+		return bufcli.NewInternalError(err)
+	}
+	for _, sourceFileInfo := range currentModuleSourceFileInfos {
+		path := sourceFileInfo.Path()
+		pathToModuleIdentityStrings[path] = append(pathToModuleIdentityStrings[path], currentModuleIdentityString)
+	}
+	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
+	if err != nil {
+		return bufcli.NewInternalError(err)
+	}
+	for _, modulePin := range dependencyModulePins {
+		module, err := moduleReader.GetModule(ctx, modulePin)
+		if err != nil {
+			return bufcli.NewInternalError(err)
+		}
+		sourceFileInfos, err := module.SourceFileInfos(ctx)
+		if err != nil {
+			return bufcli.NewInternalError(err)
+		}
+		for _, sourceFileInfo := range sourceFileInfos {
+			path := sourceFileInfo.Path()
+			pathToModuleIdentityStrings[path] = append(pathToModuleIdentityStrings[path], modulePin.IdentityString())
+		}
+	}
+	for path, moduleIdentityStrings := range pathToModuleIdentityStrings {
+		if len(moduleIdentityStrings) > 1 {
+			explanation := "Multiple files with the same path are not allowed because Protobuf files import each other by their paths, and each import path must uniquely identify a file."
+			return fmt.Errorf("%s is found in multiple modules: %s\n%s", path, stringutil.SliceToHumanString(moduleIdentityStrings), explanation)
+		}
+	}
 	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
 		return bufcli.NewInternalError(err)
 	}
@@ -157,6 +205,7 @@ func run(
 
 func getDependencies(
 	ctx context.Context,
+	clientConfig *connectclient.Config,
 	container appflag.Container,
 	flags *flags,
 	moduleConfig *bufconfig.Config,
@@ -165,10 +214,6 @@ func getDependencies(
 ) ([]*pinnedRepository, error) {
 	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
 		return nil, nil
-	}
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return nil, err
 	}
 	var remote string
 	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
