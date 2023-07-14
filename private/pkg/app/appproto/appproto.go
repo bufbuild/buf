@@ -20,14 +20,10 @@
 package appproto
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"path/filepath"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
@@ -255,44 +251,4 @@ func newRunFunc(handler Handler) func(context.Context, app.Container) error {
 // NewResponseBuilder returns a new ResponseBuilder.
 func NewResponseBuilder(container app.StderrContainer) ResponseBuilder {
 	return newResponseBuilder(container)
-}
-
-// leadingWhitespace iterates through the given string,
-// and returns the leading whitespace substring, if any,
-// respecting utf-8 encoding.
-//
-//	leadingWhitespace("\u205F   foo ") -> "\u205F   "
-func leadingWhitespace(buf []byte) []byte {
-	leadingSize := 0
-	iterBuf := buf
-	for len(iterBuf) > 0 {
-		r, size := utf8.DecodeRune(iterBuf)
-		// protobuf strings must always be valid UTF8
-		// https://developers.google.com/protocol-buffers/docs/proto3#scalar
-		// Additionally, utf8.RuneError is not a space so we'll terminate
-		// and return the leading, valid, UTF8 whitespace sequence.
-		if !unicode.IsSpace(r) {
-			out := make([]byte, leadingSize)
-			copy(out, buf)
-			return out
-		}
-		leadingSize += size
-		iterBuf = iterBuf[size:]
-	}
-	return buf
-}
-
-// scanWithPrefixAndLineEnding iterates over each of the given scanner's lines
-// prepends prefix, and appends the newline sequence.
-func scanWithPrefixAndLineEnding(scanner *bufio.Scanner, prefix []byte, newline []byte) []byte {
-	result := bytes.NewBuffer(nil)
-	result.Grow(averageInsertionPointSize)
-	for scanner.Scan() {
-		// These writes cannot fail, they will panic if they cannot
-		// allocate
-		_, _ = result.Write(prefix)
-		_, _ = result.Write(scanner.Bytes())
-		_, _ = result.Write(newline)
-	}
-	return result.Bytes()
 }
