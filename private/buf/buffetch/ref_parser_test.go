@@ -551,6 +551,46 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
+			formatTxtpb,
+			"path/to/file.txtpb",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+		),
+		"path/to/file.txtpb",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatTxtpb,
+			"path/to/file.txtpb.gz",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
+		),
+		"path/to/file.txtpb.gz",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatTxtpb,
+			"path/to/file.txtpb.gz",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+		),
+		"path/to/file.txtpb.gz#compression=none",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatTxtpb,
+			"path/to/file.txtpb.gz",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
+		),
+		"path/to/file.txtpb.gz#compression=gzip",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
 			formatBinpb,
 			"",
 			internal.FileSchemeStdio,
@@ -567,6 +607,16 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.CompressionTypeNone,
 		),
 		"-#format=json",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatTxtpb,
+			"",
+			internal.FileSchemeStdio,
+			internal.CompressionTypeNone,
+		),
+		"-#format=txtpb",
 	)
 	testGetParsedRefSuccess(
 		t,

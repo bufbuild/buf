@@ -97,31 +97,11 @@ func (i *imageReader) GetImage(
 		}
 		span.End()
 	case buffetch.ImageEncodingJSON:
-		firstProtoImage := &imagev1.Image{}
-		_, span := i.tracer.Start(ctx, "first_json_unmarshal")
-		if err := protoencoding.NewJSONUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-			span.End()
-			return nil, fmt.Errorf("could not unmarshal image: %v", err)
-		}
-		// TODO right now, NewResolver sets AllowUnresolvable to true all the time
-		// we want to make this into a check, and we verify if we need this for the individual command
-		span.End()
-		_, newResolverSpan := i.tracer.Start(ctx, "new_resolver")
-		resolver, err := protoencoding.NewResolver(
-			bufimage.ProtoImageToFileDescriptors(
-				firstProtoImage,
-			)...,
-		)
+		resolver, err := i.boolStrapResolver(ctx, protoencoding.NewJSONUnmarshaler(nil), data)
 		if err != nil {
-			newResolverSpan.RecordError(err)
-			newResolverSpan.SetStatus(codes.Error, err.Error())
-			newResolverSpan.End()
 			return nil, err
 		}
-		newResolverSpan.End()
-		_, jsonUnmarshalSpan := i.tracer.Start(ctx, "second_json_unmarshal")
+		_, jsonUnmarshalSpan := i.tracer.Start(ctx, "json_unmarshal")
 		if err := protoencoding.NewJSONUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
 			jsonUnmarshalSpan.RecordError(err)
 			jsonUnmarshalSpan.SetStatus(codes.Error, err.Error())
@@ -129,6 +109,21 @@ func (i *imageReader) GetImage(
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		jsonUnmarshalSpan.End()
+		// we've already re-parsed, by unmarshalling 2x above
+		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
+	case buffetch.ImageEncodingTxtpb:
+		resolver, err := i.boolStrapResolver(ctx, protoencoding.NewTxtpbUnmarshaler(nil), data)
+		if err != nil {
+			return nil, err
+		}
+		_, txtpbUnmarshalSpan := i.tracer.Start(ctx, "txtpb_unmarshal")
+		if err := protoencoding.NewTxtpbUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
+			txtpbUnmarshalSpan.RecordError(err)
+			txtpbUnmarshalSpan.SetStatus(codes.Error, err.Error())
+			txtpbUnmarshalSpan.End()
+			return nil, fmt.Errorf("could not unmarshal image: %v", err)
+		}
+		txtpbUnmarshalSpan.End()
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	default:
@@ -167,4 +162,34 @@ func (i *imageReader) GetImage(
 		return bufimage.ImageWithOnlyPathsAllowNotExist(image, imagePaths, excludePaths)
 	}
 	return bufimage.ImageWithOnlyPaths(image, imagePaths, excludePaths)
+}
+
+func (i *imageReader) boolStrapResolver(
+	ctx context.Context,
+	unresolving protoencoding.Unmarshaler,
+	data []byte,
+) (protoencoding.Resolver, error) {
+	firstProtoImage := &imagev1.Image{}
+	_, span := i.tracer.Start(ctx, "bootstrap_unmarshal")
+	if err := unresolving.Unmarshal(data, firstProtoImage); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		span.End()
+		return nil, fmt.Errorf("could not unmarshal image: %v", err)
+	}
+	span.End()
+	_, newResolverSpan := i.tracer.Start(ctx, "new_resolver")
+	resolver, err := protoencoding.NewResolver(
+		bufimage.ProtoImageToFileDescriptors(
+			firstProtoImage,
+		)...,
+	)
+	if err != nil {
+		newResolverSpan.RecordError(err)
+		newResolverSpan.SetStatus(codes.Error, err.Error())
+		newResolverSpan.End()
+		return nil, err
+	}
+	newResolverSpan.End()
+	return resolver, nil
 }

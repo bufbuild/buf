@@ -2034,6 +2034,22 @@ func TestConvert(t *testing.T) {
 			"-#format=binpb",
 		)
 	})
+	t.Run("stdin-image-txtpb-to-binpb", func(t *testing.T) {
+		t.Parallel()
+		file, err := os.Open(convertTestDataDir + "/bin_json/image.txtpb")
+		require.NoError(t, err)
+		testRunStdoutFile(t,
+			file,
+			0,
+			convertTestDataDir+"/bin_json/payload.binpb",
+			"convert",
+			"--type=buf.Foo",
+			"-#format=txtpb",
+			"--from="+convertTestDataDir+"/bin_json/payload.txtpb",
+			"--to",
+			"-#format=binpb",
+		)
+	})
 }
 
 func TestFormat(t *testing.T) {
