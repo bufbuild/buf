@@ -1,0 +1,23 @@
+name: Buf shadow sync
+
+on:
+  # Same config as buf.yaml workflow
+  push:
+    paths:
+      - 'proto/**'
+  workflow_dispatch: # also allow manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all branches and commits, so we can loop them
+      - run: git remote set-head origin --auto # set a HEAD for remote/origin, so buf sync can pickup the current default branch
+      - uses: bufbuild/buf-setup-action@v1.23.1
+        with:
+          github_token: ${{ github.token }}
+          buf_user: bufbot
+          buf_api_token: ${{ secrets.BUF_TOKEN }}
+      - run: buf alpha repo sync -v --debug --timeout 0 --module proto:buf.build/buftest/buf-shadow-sync --create --create-visibility private

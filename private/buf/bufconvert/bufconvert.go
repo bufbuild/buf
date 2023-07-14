@@ -33,11 +33,12 @@ const (
 	// MessageEncodingJSON is the JSON image encoding.
 	MessageEncodingJSON
 	// formatBinpb is the binary format.
-	formatBinpb = "bin"
+	formatBinpb = "binpb"
 	// formatJSON is the JSON format.
 	formatJSON = "json"
+
 	// formatBin is the binary format's old form, now deprecated.
-	formatBin = "binpb"
+	formatBin = "bin"
 )
 
 var (

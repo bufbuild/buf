@@ -65,7 +65,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.23.2-dev"
+	Version = "1.24.1-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -171,17 +171,6 @@ var (
 		privateVisibility,
 	}
 )
-
-// GlobalFlags contains global flags for buf commands.
-type GlobalFlags struct{}
-
-// NewGlobalFlags creates a new GlobalFlags with default values..
-func NewGlobalFlags() *GlobalFlags {
-	return &GlobalFlags{}
-}
-
-// BindRoot binds the global flags to the root command flag set.
-func (*GlobalFlags) BindRoot(*pflag.FlagSet) {}
 
 // BindAsFileDescriptorSet binds the exclude-imports flag.
 func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string) {
