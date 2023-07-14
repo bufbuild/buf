@@ -35,14 +35,14 @@ const (
 	// MessageEncodingTextpb is the protobuf text image encoding.
 	MessageEncodingTextpb
 	// formatBinpb is the binary format.
-	formatBinpb = "bin"
+	formatBinpb = "binpb"
 	// formatJSON is the JSON format.
 	formatJSON = "json"
 	// formatTxtpb is the protobuf text format.
 	formatTxtpb = "txtpb"
 
 	// formatBin is the binary format's old form, now deprecated.
-	formatBin = "binpb"
+	formatBin = "bin"
 )
 
 var (
