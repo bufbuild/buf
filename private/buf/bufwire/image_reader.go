@@ -97,7 +97,7 @@ func (i *imageReader) GetImage(
 		}
 		span.End()
 	case buffetch.ImageEncodingJSON:
-		resolver, err := i.boolstrapResolver(ctx, protoencoding.NewJSONUnmarshaler(nil), data)
+		resolver, err := i.bootstrapResolver(ctx, protoencoding.NewJSONUnmarshaler(nil), data)
 		if err != nil {
 			return nil, err
 		}
@@ -112,7 +112,7 @@ func (i *imageReader) GetImage(
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	case buffetch.ImageEncodingTxtpb:
-		resolver, err := i.boolstrapResolver(ctx, protoencoding.NewTxtpbUnmarshaler(nil), data)
+		resolver, err := i.bootstrapResolver(ctx, protoencoding.NewTxtpbUnmarshaler(nil), data)
 		if err != nil {
 			return nil, err
 		}
@@ -164,7 +164,7 @@ func (i *imageReader) GetImage(
 	return bufimage.ImageWithOnlyPaths(image, imagePaths, excludePaths)
 }
 
-func (i *imageReader) boolstrapResolver(
+func (i *imageReader) bootstrapResolver(
 	ctx context.Context,
 	unresolving protoencoding.Unmarshaler,
 	data []byte,
