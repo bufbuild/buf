@@ -23,10 +23,12 @@ import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
 message Reference {
-  reserved 1, 4;
+  reserved 4;
   reserved "track";
 
   oneof reference {
+    // The requested reference is a branch.
+    RepositoryBranch branch = 1;
     // The requested reference is a tag.
     RepositoryTag tag = 2;
     // The requested reference is a commit.
@@ -35,8 +37,6 @@ message Reference {
     RepositoryMainReference main = 5;
     // The requested reference is a draft commit.
     RepositoryDraft draft = 6;
-    // The requested reference is a branch.
-    RepositoryBranch branch = 7;
   }
 }
 
