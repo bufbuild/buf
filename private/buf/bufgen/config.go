@@ -211,7 +211,7 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 		case plugin.Remote != "":
 			// Remote generation alpha features have been deprecated, but we continue to detect
 			// the remote field to surface a better error message.
-			return fmt.Errorf("%s: the remote field is no longer supported, see the migration guide: %s",
+			return fmt.Errorf("%s: the remote field no longer works as the remote generation alpha has been deprecated, see the migration guide to now-stable remote plugins: %s",
 				id,
 				"https://buf.build/docs/migration-guides/migrate-remote-generation-alpha/#migrate-to-remote-plugins",
 			)

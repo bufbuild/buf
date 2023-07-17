@@ -604,7 +604,7 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error13.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error14.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error15.yaml"))
-	assertContainsReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error15.yaml"), "the remote field is no longer supported")
+	assertContainsReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error15.yaml"), "the remote field no longer works")
 
 	successConfig = &Config{
 		PluginConfigs: []*PluginConfig{
