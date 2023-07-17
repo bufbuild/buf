@@ -205,16 +205,16 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 			} else {
 				// plugin.Plugin is a local plugin - verify it isn't using an alpha remote plugin path
 				if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
-					return fmt.Errorf("%s: invalid local plugin", id)
+					return fmt.Errorf("%s: invalid plugin reference: %s", id, pluginIdentifier)
 				}
 			}
 		case plugin.Remote != "":
-			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err != nil {
-				return fmt.Errorf("%s: invalid remote plugin name: %w", id, err)
-			}
-			if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
-				return err
-			}
+			// Remote generation alpha features have been deprecated, but we continue to detect
+			// the remote field to surface a better error message.
+			return fmt.Errorf("%s: the remote field is no longer supported, see the migration guide: %s",
+				id,
+				"https://buf.build/docs/migration-guides/migrate-remote-generation-alpha/#migrate-to-remote-plugins",
+			)
 		case plugin.Name != "":
 			// Check that the plugin name doesn't look like a plugin reference
 			if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
