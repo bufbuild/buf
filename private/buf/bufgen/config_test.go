@@ -212,7 +212,7 @@ func TestReadConfigV1(t *testing.T) {
 	successConfig4 := &Config{
 		PluginConfigs: []*PluginConfig{
 			{
-				Remote:   "someremote.com/owner/plugins/myplugin:v1.1.0-1",
+				Plugin:   "someremote.com/owner/myplugin:v1.1.0-1",
 				Out:      "gen/go",
 				Strategy: StrategyAll,
 			},
@@ -221,7 +221,7 @@ func TestReadConfigV1(t *testing.T) {
 	successConfig5 := &Config{
 		PluginConfigs: []*PluginConfig{
 			{
-				Remote:   "someremote.com/owner/plugins/myplugin",
+				Plugin:   "someremote.com/owner/myplugin",
 				Out:      "gen/go",
 				Strategy: StrategyAll,
 			},
@@ -243,7 +243,7 @@ func TestReadConfigV1(t *testing.T) {
 		},
 		PluginConfigs: []*PluginConfig{
 			{
-				Remote:   "someremote.com/owner/plugins/myplugin",
+				Plugin:   "someremote.com/owner/myplugin",
 				Out:      "gen/go",
 				Strategy: StrategyAll,
 			},
@@ -321,7 +321,7 @@ func TestReadConfigV1(t *testing.T) {
 		},
 		PluginConfigs: []*PluginConfig{
 			{
-				Remote:   "someremote.com/owner/plugins/myplugin",
+				Plugin:   "someremote.com/owner/myplugin",
 				Out:      "gen/go",
 				Strategy: StrategyAll,
 			},
@@ -363,7 +363,7 @@ func TestReadConfigV1(t *testing.T) {
 		},
 		PluginConfigs: []*PluginConfig{
 			{
-				Remote:   "someremote.com/owner/plugins/myplugin",
+				Plugin:   "someremote.com/owner/myplugin",
 				Out:      "gen/go",
 				Strategy: StrategyAll,
 			},
@@ -603,6 +603,8 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error12.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error13.yaml"))
 	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error14.yaml"))
+	testReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error15.yaml"))
+	assertContainsReadConfigError(t, nopLogger, provider, readBucket, filepath.Join("testdata", "v1", "gen_error15.yaml"), "the remote field is no longer supported")
 
 	successConfig = &Config{
 		PluginConfigs: []*PluginConfig{
@@ -656,6 +658,17 @@ func testReadConfigError(t *testing.T, logger *zap.Logger, provider Provider, re
 	require.NoError(t, err)
 	_, err = ReadConfig(ctx, logger, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.Error(t, err)
+}
+
+func assertContainsReadConfigError(t *testing.T, logger *zap.Logger, provider Provider, readBucket storage.ReadBucket, testFilePath string, message string) {
+	ctx := context.Background()
+	_, err := ReadConfig(ctx, logger, provider, readBucket, ReadConfigWithOverride(testFilePath))
+	require.Error(t, err)
+	data, err := os.ReadFile(testFilePath)
+	require.NoError(t, err)
+	_, err = ReadConfig(ctx, logger, provider, readBucket, ReadConfigWithOverride(string(data)))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), message)
 }
 
 func mustCreateModuleIdentity(
