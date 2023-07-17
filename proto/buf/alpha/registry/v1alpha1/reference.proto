@@ -18,12 +18,13 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/git_metadata.proto";
 import "buf/alpha/registry/v1alpha1/labels.proto";
+import "buf/alpha/registry/v1alpha1/repository_branch.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
 message Reference {
   reserved 1, 4;
-  reserved "branch", "track";
+  reserved "track";
 
   oneof reference {
     // The requested reference is a tag.
@@ -34,6 +35,8 @@ message Reference {
     RepositoryMainReference main = 5;
     // The requested reference is a draft commit.
     RepositoryDraft draft = 6;
+    // The requested reference is a branch.
+    RepositoryBranch branch = 7;
   }
 }
 
