@@ -201,7 +201,7 @@ func (e *WASMPluginExecutor) CompilePlugin(ctx context.Context, plugin []byte) (
 	// Instantiate host functions required by the plugin guest.
 	switch compiledPlugin.ABI() {
 	case wasmpluginv1.WasmABI_WASM_ABI_GOJS:
-		if _, err := gojs.Instantiate(ctx, runtime); err != nil {
+		if _, err := gojs.Instantiate(ctx, runtime, compiledModule); err != nil {
 			return nil, fmt.Errorf("error instantiating gojs: %w", err)
 		}
 	case wasmpluginv1.WasmABI_WASM_ABI_WASI_SNAPSHOT_PREVIEW1:
