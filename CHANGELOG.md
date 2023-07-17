@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `txtpb` format to handle the Protobuf text format. and automatically recognize
+  `.txtpb` files as Protobuf text files. The `txtpb` format can now be used with
+  all `buf` commands that take images as input or output, such as `build`, `convert`,
+  and `curl`.
 
 ## [v1.24.0] - 2023-07-13
 

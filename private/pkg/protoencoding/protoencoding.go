@@ -95,6 +95,13 @@ func JSONMarshalerWithEmitUnpopulated() JSONMarshalerOption {
 	}
 }
 
+// NewTxtpbMarshaler returns a new Marshaler for txtpb.
+//
+// resolver can be nil if unknown and are only needed for extensions.
+func NewTxtpbMarshaler(resolver Resolver) Marshaler {
+	return newTxtpbMarshaler(resolver)
+}
+
 // Unmarshaler unmarshals Messages.
 type Unmarshaler interface {
 	Unmarshal(data []byte, message proto.Message) error
@@ -112,4 +119,11 @@ func NewWireUnmarshaler(resolver Resolver) Unmarshaler {
 // resolver can be nil if unknown and are only needed for extensions.
 func NewJSONUnmarshaler(resolver Resolver) Unmarshaler {
 	return newJSONUnmarshaler(resolver)
+}
+
+// NewTxtpbUnmarshaler returns a new Unmarshaler for txtpb.
+//
+// resolver can be nil if unknown and are only needed for extensions.
+func NewTxtpbUnmarshaler(resolver Resolver) Unmarshaler {
+	return newTxtpbUnmarshaler(resolver)
 }
