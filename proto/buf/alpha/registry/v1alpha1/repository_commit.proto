@@ -31,7 +31,7 @@ message RepositoryCommit {
   // Unique, immutable.
   string name = 4;
   // The branch on which this commit was created.
-  string branch = 5 [deprecated = true];
+  string branch = 5;
   // The commit sequence ID for this commit. This
   // is essentially what number commit this is on
   // the branch.
