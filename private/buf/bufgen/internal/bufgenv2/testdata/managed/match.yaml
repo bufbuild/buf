@@ -18,29 +18,29 @@ managed:
     - file_option: java_package
       path: exact.proto
   override:
-    - field_option: java_package
+    - file_option: java_package
       value: global.default
-    - field_option: java_package
+    - file_option: java_package
       module: buf.build/acme/weather
       value: module1.default
-    - field_option: java_package
+    - file_option: java_package
       path: b/c/d
       value: bcd.override
-    - field_option: java_package
+    - file_option: java_package
       path: b/c/d/x.proto
       value: x.override
-    - field_option: java_package
+    - file_option: java_package
       path: b/c/d/e
       value: net.bcde
-    - field_option: java_package
+    - file_option: java_package
       module: buf.build/acme/weather
       path: b/c/d/e/f.proto
       value: override.value.bcdef
-    - field_option: java_package
+    - file_option: java_package
       module: buf.build/acme/weather
       path: m/n/xyz.proto
       value: ignored.value
-    - field_option: java_package
+    - file_option: java_package
       module: buf.build/acme/weather
       path: m/
       value: m.override

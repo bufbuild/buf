@@ -5,53 +5,53 @@ plugins:
 managed:
   enabled: true
   override:
-    - field_option: java_package_prefix
+    - file_option: java_package_prefix
       value: org
-    - field_option: java_package_suffix
+    - file_option: java_package_suffix
       value: proto
-    - field_option: java_package_prefix
+    - file_option: java_package_prefix
       value: special.prefix
       path: special
-    - field_option: java_package_suffix
+    - file_option: java_package_suffix
       path: special
       value: special.suffix
-    - field_option: java_package
+    - file_option: java_package
       value: com.example.pb
       path: a/b/
-    - field_option: java_package
+    - file_option: java_package
       value: com.special.x
       path: special/x
     # overrides until this point are normal workflow
-    - field_option: java_package_prefix
+    - file_option: java_package_prefix
       value: net
       path: special/p
-    - field_option: java_package_suffix
+    - file_option: java_package_suffix
       value: s.suffix
       path: special/s
-    - field_option: java_package_prefix
+    - file_option: java_package_prefix
       value: xyz.prefix
       path: special/s/xyz
-    - field_option: java_package_suffix
+    - file_option: java_package_suffix
       value: final.suffix
       path: special/s/xyz/final
-    - field_option: java_package
+    - file_option: java_package
       value: net.example
       path: special/p/
-    - field_option: java_package
+    - file_option: java_package
       value: com.something
       path: special/p/something.proto
-    - field_option: java_package
+    - file_option: java_package
       value: base.double
       path: double
-    - field_option: java_package_prefix
+    - file_option: java_package_prefix
       value: dp1
       path: double/pre
-    - field_option: java_package_prefix
+    - file_option: java_package_prefix
       value: dp2
       path: double/pre/pre
-    - field_option: java_package_suffix
+    - file_option: java_package_suffix
       value: ds1
       path: double/suf
-    - field_option: java_package_suffix
+    - file_option: java_package_suffix
       value: ds2
       path: double/suf/suf
