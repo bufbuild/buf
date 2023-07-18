@@ -139,13 +139,13 @@ func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2
 		disabledFuncs = append(disabledFuncs, disabledFunc)
 	}
 	for _, externalOverrideConfig := range externalConfig.Override {
-		if len(externalOverrideConfig.Option) == 0 {
+		if len(externalOverrideConfig.FieldOption) == 0 {
 			return nil, errors.New("must set a file option to override")
 		}
 		if externalOverrideConfig.Value == nil {
 			return nil, errors.New("must set an value to override")
 		}
-		fileOption, err := parseFileOption(externalOverrideConfig.Option)
+		fileOption, err := parseFileOption(externalOverrideConfig.FieldOption)
 		if err != nil {
 			// This should never happen because we already validated
 			return nil, err
@@ -201,7 +201,7 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFun
 }
 
 func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (overrideFunc, error) {
-	fileOption, err := parseFileOption(externalConfig.Option)
+	fileOption, err := parseFileOption(externalConfig.FieldOption)
 	if err != nil {
 		// This should never happen because we already validated
 		return nil, err
