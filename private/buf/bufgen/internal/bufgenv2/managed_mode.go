@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	defaultJavaPrefix = "com"
+	defaultJavaPackagePrefix = "com"
 )
 
 // applyManagement modifies an image based on managed mode configuration.

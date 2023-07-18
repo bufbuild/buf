@@ -32,8 +32,7 @@ import (
 )
 
 const (
-	defaultJavaPackagePrefix = "com"
-	defaultInput             = "."
+	defaultInput = "."
 )
 
 type Generator struct {

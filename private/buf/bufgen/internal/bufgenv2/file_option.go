@@ -106,6 +106,7 @@ var (
 		fileOptionJavaPackage:       parseValueOverride[string],
 		fileOptionJavaPackagePrefix: parsePrefixOverride,
 		fileOptionJavaPackageSuffix: parseSuffixOverride,
+		fileOptionOptimizeFor:       parseValueOverrideOptmizeMode,
 		// TODO: fill the rest
 	}
 	fileOptionToGroup = map[fileOption]fileOptionGroup{
@@ -157,7 +158,7 @@ func parseValueOverride[T string | bool](value interface{}, fileOption fileOptio
 	if !ok {
 		return nil, fmt.Errorf("invalid value for %v", fileOption)
 	}
-	return bufimagemodifyv2.NewValueOverride[T](overrideValue), nil
+	return bufimagemodifyv2.NewValueOverride(overrideValue), nil
 }
 
 func parsePrefixOverride(value interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {

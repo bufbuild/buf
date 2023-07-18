@@ -132,6 +132,16 @@ func TestModifySingleOption(t *testing.T) {
 			assertFunc:     assertJavaPackage,
 		},
 		{
+			description:    "Modify Java Package with suffix on file with a proto package",
+			subDir:         "javaoptions",
+			file:           "java_file.proto",
+			modifyFunc:     ModifyJavaPackage,
+			fileOptionPath: internal.JavaPackagePath,
+			modifyOptions:  modifyWithSuffix(t, "override.suffix"),
+			expectedValue:  "acme.weather.override.suffix",
+			assertFunc:     assertJavaPackage,
+		},
+		{
 			description:    "Modify Java Package with prefix and suffix on a wkt file",
 			subDir:         "wktimport",
 			file:           "google/protobuf/timestamp.proto",
