@@ -15,8 +15,10 @@
 package buffetch
 
 const (
-	// formatBinpb is the binary format.
+	// formatBinpb is the protobuf binary format.
 	formatBinpb = "binpb"
+	// formatTxtpb is the protobuf text format.
+	formatTxtpb = "txtpb"
 	// formatDir is the directory format.
 	formatDir = "dir"
 	// formatGit is the git format.
@@ -50,11 +52,13 @@ var (
 		formatBingz,
 		formatJSON,
 		formatJSONGZ,
+		formatTxtpb,
 	}
 	// sorted
 	imageFormatsNotDeprecated = []string{
 		formatBinpb,
 		formatJSON,
+		formatTxtpb,
 	}
 	// sorted
 	sourceFormats = []string{
@@ -119,6 +123,7 @@ var (
 		formatProtoFile,
 		formatTar,
 		formatTargz,
+		formatTxtpb,
 		formatZip,
 	}
 	// sorted
@@ -130,6 +135,7 @@ var (
 		formatMod,
 		formatProtoFile,
 		formatTar,
+		formatTxtpb,
 		formatZip,
 	}
 
