@@ -57,7 +57,7 @@ type Override interface {
 // PrefixOverride is an override that applies a prefix.
 type PrefixOverride interface {
 	Override
-	get() string
+	Get() string
 	prefixOverride()
 }
 
@@ -69,7 +69,7 @@ func NewPrefixOverride(prefix string) PrefixOverride {
 // SuffixOverride is an override that applies a suffix.
 type SuffixOverride interface {
 	Override
-	get() string
+	Get() string
 	suffixOverride()
 }
 
@@ -81,15 +81,17 @@ func NewSuffixOverride(suffix string) SuffixOverride {
 // PrefixSuffixOverride is an override that applies a suffix and a prefix.
 type PrefixSuffixOverride interface {
 	Override
+	GetPrefix() string
+	GetSuffix() string
 	prefixSuffixOverride()
 }
 
-// CombinePrefixSuffixOverride returns an override on both prefix and suffix.
-func CombinePrefixSuffixOverride(
-	prefixOverride PrefixOverride,
-	suffixOverride SuffixOverride,
+// NewPrefxiSuffixOverride returns an override on both prefix and suffix.
+func NewPrefxiSuffixOverride(
+	prefix string,
+	suffix string,
 ) PrefixSuffixOverride {
-	return newPrefixSuffixOverride(prefixOverride.get(), suffixOverride.get())
+	return newPrefixSuffixOverride(prefix, suffix)
 }
 
 // ValueOverride is an override that directly modifies a file option.
@@ -100,7 +102,7 @@ type ValueOverride interface {
 
 // NewValueOverride returns a new override on value.
 func NewValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](val T) ValueOverride {
-	return newValueOverride[T](val)
+	return newValueOverride(val)
 }
 
 // ModifyOption is an option for ModifyXYZ.
@@ -120,7 +122,9 @@ type modifyOptions struct {
 	override Override
 }
 
-// ModifyJavaPackage modifies java_package.
+// ModifyJavaPackage modifies java_package. By default, it modifies java_package to
+// the file's proto package. Specify an override option to add prefix and/or suffix,
+// or set a value for this option.
 func ModifyJavaPackage(
 	marker Marker,
 	imageFile bufimage.ImageFile,
@@ -132,16 +136,16 @@ func ModifyJavaPackage(
 	}
 	var javaPackageValue string
 	switch t := options.override.(type) {
-	case prefixOverride:
-		javaPackageValue = getJavaPackageValue(imageFile, t.get(), internal.DefaultJavaPackageSuffix)
-	case suffixOverride:
-		return errors.New("cannot modify java_package with a suffix but without a prefix")
 	case prefixSuffixOverride:
 		javaPackageValue = getJavaPackageValue(imageFile, t.prefix, t.suffix)
+	case suffixOverride:
+		javaPackageValue = getJavaPackageValue(imageFile, "", t.Get())
+	case prefixOverride:
+		javaPackageValue = getJavaPackageValue(imageFile, t.Get(), "")
 	case valueOverride[string]:
 		javaPackageValue = t.get()
 	case nil:
-		javaPackageValue = getJavaPackageValue(imageFile, internal.DefaultJavaPackagePrefix, internal.DefaultJavaPackageSuffix)
+		javaPackageValue = getJavaPackageValue(imageFile, "", "")
 	default:
 		return fmt.Errorf("unknown Override type: %T", options.override)
 	}

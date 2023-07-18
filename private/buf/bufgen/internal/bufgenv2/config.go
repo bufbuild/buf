@@ -55,9 +55,9 @@ type Config struct {
 
 // ManagedConfig is a managed mode configuration.
 type ManagedConfig struct {
-	Enabled                  bool
-	DisabledFunc             disabledFunc
-	FileOptionToOverrideFunc map[fileOption]overrideFunc
+	Enabled                       bool
+	DisabledFunc                  disabledFunc
+	FileOptionGroupToOverrideFunc map[fileOptionGroup]overrideFunc
 }
 
 // InputConfig is an input configuration.
@@ -97,9 +97,6 @@ func readConfigV2(
 	if err := unmarshalStrict(data, &externalConfigV2); err != nil {
 		return nil, err
 	}
-	if err := validateExternalConfigV2(externalConfigV2, id); err != nil {
-		return nil, err
-	}
 	config := Config{}
 	for _, externalInputConfig := range externalConfigV2.Inputs {
 		inputConfig, err := newInputConfig(ctx, externalInputConfig)
@@ -129,12 +126,12 @@ func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2
 		logger.Sugar().Warn("managed mode options are set but are not enabled")
 		// continue to validate this config
 	}
-	if err := validateExternalManagedConfigV2(externalConfig); err != nil {
-		return nil, err
-	}
 	var disabledFuncs []disabledFunc
-	fileOptionToOverrideFuncs := make(map[fileOption][]overrideFunc)
+	fileOptionGroupToOverrideFuncs := make(map[fileOptionGroup][]overrideFunc)
 	for _, externalDisableConfig := range externalConfig.Disable {
+		if len(externalDisableConfig.FileOption) == 0 && len(externalDisableConfig.Module) == 0 && len(externalDisableConfig.Path) == 0 {
+			return nil, errors.New("must set one of file_option, module and path for a disable rule")
+		}
 		disabledFunc, err := newDisabledFunc(externalDisableConfig)
 		if err != nil {
 			return nil, err
@@ -142,55 +139,46 @@ func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2
 		disabledFuncs = append(disabledFuncs, disabledFunc)
 	}
 	for _, externalOverrideConfig := range externalConfig.Override {
-		managedOption, err := parseManagedOption(externalOverrideConfig.Option)
+		if len(externalOverrideConfig.Option) == 0 {
+			return nil, errors.New("must set a file option to override")
+		}
+		if externalOverrideConfig.Value == nil {
+			return nil, errors.New("must set an value to override")
+		}
+		fileOption, err := parseFileOption(externalOverrideConfig.Option)
 		if err != nil {
 			// This should never happen because we already validated
 			return nil, err
 		}
-		fileOption, ok := managedOptionToFileOption[managedOption]
+		fileOptionGroup, ok := fileOptionToGroup[fileOption]
 		if !ok {
-			// this should not happen
-			return nil, fmt.Errorf("invalid option: %v", managedOption)
+			// this should not happen, the map should cover all valid file options.
+			return nil, err
 		}
 		overrideFunc, err := newOverrideFunc(externalOverrideConfig)
 		if err != nil {
 			return nil, err
 		}
-		fileOptionToOverrideFuncs[fileOption] = append(
-			fileOptionToOverrideFuncs[fileOption],
+		// Putting rules from the same group in the same list preserves the order among them.
+		// An example where this is useful:
+		// override: ## values omitted
+		//   - file_option: java_package
+		//   - file_option: java_package_prefix
+		// and
+		// override:
+		//   - file_option: java_package_prefix
+		//   - file_option: java_package
+		// have different effects.
+		fileOptionGroupToOverrideFuncs[fileOptionGroup] = append(
+			fileOptionGroupToOverrideFuncs[fileOptionGroup],
 			overrideFunc,
 		)
 	}
 	return &ManagedConfig{
-		Enabled:                  externalConfig.Enabled,
-		DisabledFunc:             mergeDisabledFuncs(disabledFuncs),
-		FileOptionToOverrideFunc: mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs),
+		Enabled:                       externalConfig.Enabled,
+		DisabledFunc:                  mergeDisabledFuncs(disabledFuncs),
+		FileOptionGroupToOverrideFunc: mergeFileOptionToOverrideFuncs(fileOptionGroupToOverrideFuncs),
 	}, nil
-}
-
-func validateExternalConfigV2(externalConfig ExternalConfigV2, id string) error {
-	// TODO: implement this
-	return nil
-}
-
-func validateExternalManagedConfigV2(externalConfig ExternalManagedConfigV2) error {
-	if externalConfig.isEmpty() {
-		return nil
-	}
-	for _, externalDisableConfig := range externalConfig.Disable {
-		if len(externalDisableConfig.FileOption) == 0 && len(externalDisableConfig.Module) == 0 && len(externalDisableConfig.Path) == 0 {
-			return errors.New("must set one of file_option, module and path for a disable rule")
-		}
-	}
-	for _, externalOverrideConfig := range externalConfig.Override {
-		if len(externalOverrideConfig.Option) == 0 {
-			return errors.New("must specify an option to override")
-		}
-		if externalOverrideConfig.Value == nil {
-			return errors.New("must specify an value to override")
-		}
-	}
-	return nil
 }
 
 func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFunc, error) {
@@ -213,17 +201,17 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFun
 }
 
 func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (overrideFunc, error) {
-	managedOption, err := parseManagedOption(externalConfig.Option)
+	fileOption, err := parseFileOption(externalConfig.Option)
 	if err != nil {
 		// This should never happen because we already validated
 		return nil, err
 	}
-	parseFunc, ok := managedOptionToOverrideParseFunc[managedOption]
+	parseFunc, ok := fileOptionToOverrideParseFunc[fileOption]
 	if !ok {
 		// this should not happen
-		return nil, fmt.Errorf("invalid option: %v", managedOption)
+		return nil, fmt.Errorf("invalid file option: %v", fileOption)
 	}
-	override, err := parseFunc(externalConfig.Value, managedOption)
+	override, err := parseFunc(externalConfig.Value, fileOption)
 	if err != nil {
 		return nil, err
 	}
@@ -267,10 +255,10 @@ func matchesPathAndModule(
 	return true
 }
 
-func mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs map[fileOption][]overrideFunc) map[fileOption]overrideFunc {
-	fileOptionToOverrideFunc := make(map[fileOption]overrideFunc, len(fileOptionToOverrideFuncs))
-	for fileOption, overrideFuncs := range fileOptionToOverrideFuncs {
-		fileOptionToOverrideFunc[fileOption] = mergeOverrideFuncs(overrideFuncs)
+func mergeFileOptionToOverrideFuncs(fileOptionGroupToOverrideFuncs map[fileOptionGroup][]overrideFunc) map[fileOptionGroup]overrideFunc {
+	fileOptionToOverrideFunc := make(map[fileOptionGroup]overrideFunc, len(fileOptionGroupToOverrideFuncs))
+	for fileOptionGroup, overrideFuncs := range fileOptionGroupToOverrideFuncs {
+		fileOptionToOverrideFunc[fileOptionGroup] = mergeOverrideFuncs(overrideFuncs)
 	}
 	return fileOptionToOverrideFunc
 }
@@ -303,17 +291,17 @@ func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
 		}
 		if prefixOverride, ok := secondLastOverride.(bufimagemodifyv2.PrefixOverride); ok {
 			if suffixOverride, ok := lastOverride.(bufimagemodifyv2.SuffixOverride); ok {
-				return bufimagemodifyv2.CombinePrefixSuffixOverride(
-					prefixOverride,
-					suffixOverride,
+				return bufimagemodifyv2.NewPrefxiSuffixOverride(
+					prefixOverride.Get(),
+					suffixOverride.Get(),
 				)
 			}
 		}
 		if suffixOverride, ok := secondLastOverride.(bufimagemodifyv2.SuffixOverride); ok {
 			if prefixOverride, ok := lastOverride.(bufimagemodifyv2.PrefixOverride); ok {
-				return bufimagemodifyv2.CombinePrefixSuffixOverride(
-					prefixOverride,
-					suffixOverride,
+				return bufimagemodifyv2.NewPrefxiSuffixOverride(
+					prefixOverride.Get(),
+					suffixOverride.Get(),
 				)
 			}
 		}

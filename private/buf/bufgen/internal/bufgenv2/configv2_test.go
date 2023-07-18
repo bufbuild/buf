@@ -691,7 +691,7 @@ func TestManagedConfig(t *testing.T) {
 		file     string
 		// true means disabled
 		expectedDisableResults  map[fileOption]map[imageFileIdentity]bool
-		expectedOverrideResults map[fileOption]map[imageFileIdentity]bufimagemodifyv2.Override
+		expectedOverrideResults map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override
 	}{
 		{
 			testName: "test override and disable matching",
@@ -729,8 +729,8 @@ func TestManagedConfig(t *testing.T) {
 					&fakeImageFileIdentity{}: false,
 				},
 			},
-			expectedOverrideResults: map[fileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
-				fileOptionJavaPackage: {
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupJavaPackage: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
 					}: bufimagemodifyv2.NewValueOverride("global.default"),
@@ -766,19 +766,19 @@ func TestManagedConfig(t *testing.T) {
 		{
 			testName: "test java package options",
 			file:     filepath.Join("managed", "java_package"),
-			expectedOverrideResults: map[fileOption]map[imageFileIdentity]bufimagemodifyv2.Override{
-				fileOptionJavaPackage: {
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupJavaPackage: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
-					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
-						bufimagemodifyv2.NewPrefixOverride("org"),
-						bufimagemodifyv2.NewSuffixOverride("proto"),
+					}: bufimagemodifyv2.NewPrefxiSuffixOverride(
+						"org",
+						"proto",
 					),
 					&fakeImageFileIdentity{
 						path: "special/file.proto",
-					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
-						bufimagemodifyv2.NewPrefixOverride("special.prefix"),
-						bufimagemodifyv2.NewSuffixOverride("special.suffix"),
+					}: bufimagemodifyv2.NewPrefxiSuffixOverride(
+						"special.prefix",
+						"special.suffix",
 					),
 					// test the last two overrides are suffix and value
 					&fakeImageFileIdentity{
@@ -800,16 +800,16 @@ func TestManagedConfig(t *testing.T) {
 					// test the last two overrides are suffix and prefix
 					&fakeImageFileIdentity{
 						path: "special/s/xyz/file.proto",
-					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
-						bufimagemodifyv2.NewPrefixOverride("xyz.prefix"),
-						bufimagemodifyv2.NewSuffixOverride("s.suffix"),
+					}: bufimagemodifyv2.NewPrefxiSuffixOverride(
+						"xyz.prefix",
+						"s.suffix",
 					),
 					// test the last two overrides are prefix and suffix
 					&fakeImageFileIdentity{
 						path: "special/s/xyz/final/file.proto",
-					}: bufimagemodifyv2.CombinePrefixSuffixOverride(
-						bufimagemodifyv2.NewPrefixOverride("xyz.prefix"),
-						bufimagemodifyv2.NewSuffixOverride("final.suffix"),
+					}: bufimagemodifyv2.NewPrefxiSuffixOverride(
+						"xyz.prefix",
+						"final.suffix",
 					),
 					// test the last two overrides are both prefixes
 					&fakeImageFileIdentity{
@@ -862,7 +862,7 @@ func TestManagedConfig(t *testing.T) {
 				}
 				for fileOption, resultsForFiles := range test.expectedOverrideResults {
 					for imageFile, expectedOverride := range resultsForFiles {
-						overrideFunc, ok := config.Managed.FileOptionToOverrideFunc[fileOption]
+						overrideFunc, ok := config.Managed.FileOptionGroupToOverrideFunc[fileOption]
 						require.True(t, ok)
 						actual := overrideFunc(imageFile)
 						require.Equal(
@@ -1033,7 +1033,7 @@ func TestConfigError(t *testing.T) {
 		{
 			testName:      "Test disable has none of path module and file option",
 			file:          filepath.Join("managed", "invalid_override"),
-			expectedError: "must specify an option to override",
+			expectedError: "must set a file option to override",
 		},
 	}
 

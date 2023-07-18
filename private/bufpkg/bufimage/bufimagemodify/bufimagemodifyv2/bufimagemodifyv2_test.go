@@ -56,7 +56,7 @@ func TestModifySingleOption(t *testing.T) {
 			file:           "a.proto",
 			modifyFunc:     ModifyJavaPackage,
 			fileOptionPath: internal.JavaPackagePath,
-			modifyOptions:  modifyWithValue(t, "com.example"),
+			modifyOptions:  modifyWithStringValue(t, "com.example"),
 			expectedValue:  "com.example",
 			assertFunc:     assertJavaPackage,
 		},
@@ -86,7 +86,7 @@ func TestModifySingleOption(t *testing.T) {
 			file:           "java_file.proto",
 			modifyFunc:     ModifyJavaPackage,
 			fileOptionPath: internal.JavaPackagePath,
-			modifyOptions:  modifyWithValue(t, "foo"),
+			modifyOptions:  modifyWithStringValue(t, "foo"),
 			expectedValue:  "foo",
 			assertFunc:     assertJavaPackage,
 			shouldNotMark:  true,
@@ -97,7 +97,7 @@ func TestModifySingleOption(t *testing.T) {
 			file:           "java_file.proto",
 			modifyFunc:     ModifyJavaPackage,
 			fileOptionPath: internal.JavaPackagePath,
-			modifyOptions:  modifyWithValue(t, "bar"),
+			modifyOptions:  modifyWithStringValue(t, "bar"),
 			expectedValue:  "bar",
 			assertFunc:     assertJavaPackage,
 		},
@@ -108,7 +108,7 @@ func TestModifySingleOption(t *testing.T) {
 			modifyFunc:     ModifyJavaPackage,
 			fileOptionPath: internal.JavaPackagePath,
 			modifyOptions:  make([]ModifyOption, 0),
-			expectedValue:  "com.foo",
+			expectedValue:  "foo",
 			assertFunc:     assertJavaPackage,
 		},
 		{
@@ -148,7 +148,7 @@ func TestModifySingleOption(t *testing.T) {
 			file:           "google/protobuf/timestamp.proto",
 			modifyFunc:     ModifyJavaPackage,
 			fileOptionPath: internal.JavaPackagePath,
-			modifyOptions:  modifyWithValue(t, "value"),
+			modifyOptions:  modifyWithStringValue(t, "value"),
 			expectedValue:  "com.google.protobuf",
 			assertFunc:     assertJavaPackage,
 			shouldNotMark:  true,
@@ -192,54 +192,11 @@ func TestModifySingleOption(t *testing.T) {
 	}
 }
 
-func TestModifyError(t *testing.T) {
-	t.Parallel()
-	baseDir := filepath.Join("..", "testdata")
-	tests := []struct {
-		description        string
-		subDir             string
-		file               string
-		modifyFunc         func(Marker, bufimage.ImageFile, ...ModifyOption) error
-		modifyOptions      []ModifyOption
-		expectedErrMessage string
-	}{
-		{
-			description:        "Test suffix without prefix for java_package",
-			subDir:             "javaoptions",
-			file:               "java_file.proto",
-			modifyFunc:         ModifyJavaPackage,
-			modifyOptions:      modifyWithSuffix(t, "suffix"),
-			expectedErrMessage: "cannot modify java_package with a suffix but without a prefix",
-		},
-	}
-	for _, test := range tests {
-		test := test
-		t.Run(test.description, func(t *testing.T) {
-			t.Parallel()
-			image := bufimagemodifytesting.GetTestImage(
-				t,
-				filepath.Join(baseDir, test.subDir),
-				true,
-			)
-			markSweeper := NewMarkSweeper(image)
-			require.NotNil(t, markSweeper)
-			imageFile := image.GetFile(test.file)
-			require.NotNil(t, imageFile)
-			err := test.modifyFunc(
-				markSweeper,
-				imageFile,
-				test.modifyOptions...,
-			)
-			require.ErrorContains(t, err, test.expectedErrMessage)
-		})
-	}
-}
-
 func TestSweep(t *testing.T) {
 	// TODO
 }
 
-func modifyWithValue(t *testing.T, value string) []ModifyOption {
+func modifyWithStringValue(t *testing.T, value string) []ModifyOption {
 	option, err := ModifyWithOverride(NewValueOverride(value))
 	require.NoError(t, err)
 	return []ModifyOption{option}
@@ -259,9 +216,9 @@ func modifyWithSuffix(t *testing.T, prefix string) []ModifyOption {
 
 func modifyWithPrefixAndSuffix(t *testing.T, prefix string, suffix string) []ModifyOption {
 	option, err := ModifyWithOverride(
-		CombinePrefixSuffixOverride(
-			NewPrefixOverride(prefix),
-			NewSuffixOverride(suffix),
+		NewPrefxiSuffixOverride(
+			prefix,
+			suffix,
 		),
 	)
 	require.NoError(t, err)
