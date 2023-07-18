@@ -35,23 +35,6 @@ service AuthzService {
   rpc UserCanSeeOrganizationSettings(UserCanSeeOrganizationSettingsRequest) returns (UserCanSeeOrganizationSettingsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // UserCanReadPlugin returns whether the user has read access to the specified plugin.
-  rpc UserCanReadPlugin(UserCanReadPluginRequest) returns (UserCanReadPluginResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
-  // a plugin in an organization.
-  rpc UserCanCreateOrganizationPlugin(UserCanCreateOrganizationPluginRequest) returns (UserCanCreateOrganizationPluginResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
-  // a template in an organization.
-  rpc UserCanCreateOrganizationTemplate(UserCanCreateOrganizationTemplateRequest) returns (UserCanCreateOrganizationTemplateResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
   // UserCanAddOrganizationMember returns whether the user is authorized to add
   // any members to the organization and the list of roles they can add.
   rpc UserCanAddOrganizationMember(UserCanAddOrganizationMemberRequest) returns (UserCanAddOrganizationMemberResponse) {
@@ -121,43 +104,6 @@ message UserCanSeeOrganizationSettingsRequest {
 }
 
 message UserCanSeeOrganizationSettingsResponse {
-  bool authorized = 1;
-}
-
-message UserCanReadPluginRequest {
-  option deprecated = true;
-  // The owner of the plugin.
-  string owner = 1;
-  // The name of the plugin.
-  string name = 2;
-}
-
-message UserCanReadPluginResponse {
-  option deprecated = true;
-  bool authorized = 1;
-}
-
-message UserCanCreateOrganizationPluginRequest {
-  option deprecated = true;
-  // The ID of the organization for which to check
-  // whether the user is authorized.
-  string organization_id = 1;
-}
-
-message UserCanCreateOrganizationPluginResponse {
-  option deprecated = true;
-  bool authorized = 1;
-}
-
-message UserCanCreateOrganizationTemplateRequest {
-  option deprecated = true;
-  // The ID of the organization for which to check
-  // whether the user is authorized.
-  string organization_id = 1;
-}
-
-message UserCanCreateOrganizationTemplateResponse {
-  option deprecated = true;
   bool authorized = 1;
 }
 

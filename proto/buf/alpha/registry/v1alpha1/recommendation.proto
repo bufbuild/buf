@@ -29,16 +29,6 @@ message RecommendedRepository {
   string repository_id = 5;
 }
 
-// RecommendedTemplate is the information needed to recommend a template and link
-// to its owner page.
-message RecommendedTemplate {
-  option deprecated = true;
-  string owner = 1;
-  string name = 2;
-  string description = 3;
-  string template_id = 4;
-}
-
 // SetRecommendedResource is the information needed to configure a resource recommendation
 message SetRecommendedResource {
   string owner = 1;

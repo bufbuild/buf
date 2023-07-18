@@ -56,15 +56,6 @@ const (
 	// AuthzServiceUserCanSeeOrganizationSettingsProcedure is the fully-qualified name of the
 	// AuthzService's UserCanSeeOrganizationSettings RPC.
 	AuthzServiceUserCanSeeOrganizationSettingsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeOrganizationSettings"
-	// AuthzServiceUserCanReadPluginProcedure is the fully-qualified name of the AuthzService's
-	// UserCanReadPlugin RPC.
-	AuthzServiceUserCanReadPluginProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanReadPlugin"
-	// AuthzServiceUserCanCreateOrganizationPluginProcedure is the fully-qualified name of the
-	// AuthzService's UserCanCreateOrganizationPlugin RPC.
-	AuthzServiceUserCanCreateOrganizationPluginProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationPlugin"
-	// AuthzServiceUserCanCreateOrganizationTemplateProcedure is the fully-qualified name of the
-	// AuthzService's UserCanCreateOrganizationTemplate RPC.
-	AuthzServiceUserCanCreateOrganizationTemplateProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationTemplate"
 	// AuthzServiceUserCanAddOrganizationMemberProcedure is the fully-qualified name of the
 	// AuthzService's UserCanAddOrganizationMember RPC.
 	AuthzServiceUserCanAddOrganizationMemberProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanAddOrganizationMember"
@@ -102,20 +93,6 @@ type AuthzServiceClient interface {
 	// UserCanSeeOrganizationSettings returns whether the user is authorized
 	// to see organization settings.
 	UserCanSeeOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.UserCanSeeOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.UserCanSeeOrganizationSettingsResponse], error)
-	// UserCanReadPlugin returns whether the user has read access to the specified plugin.
-	//
-	// Deprecated: do not use.
-	UserCanReadPlugin(context.Context, *connect_go.Request[v1alpha1.UserCanReadPluginRequest]) (*connect_go.Response[v1alpha1.UserCanReadPluginResponse], error)
-	// UserCanCreateOrganizationPlugin returns whether the user is authorized to create
-	// a plugin in an organization.
-	//
-	// Deprecated: do not use.
-	UserCanCreateOrganizationPlugin(context.Context, *connect_go.Request[v1alpha1.UserCanCreateOrganizationPluginRequest]) (*connect_go.Response[v1alpha1.UserCanCreateOrganizationPluginResponse], error)
-	// UserCanCreateOrganizationPlugin returns whether the user is authorized to create
-	// a template in an organization.
-	//
-	// Deprecated: do not use.
-	UserCanCreateOrganizationTemplate(context.Context, *connect_go.Request[v1alpha1.UserCanCreateOrganizationTemplateRequest]) (*connect_go.Response[v1alpha1.UserCanCreateOrganizationTemplateResponse], error)
 	// UserCanAddOrganizationMember returns whether the user is authorized to add
 	// any members to the organization and the list of roles they can add.
 	UserCanAddOrganizationMember(context.Context, *connect_go.Request[v1alpha1.UserCanAddOrganizationMemberRequest]) (*connect_go.Response[v1alpha1.UserCanAddOrganizationMemberResponse], error)
@@ -167,24 +144,6 @@ func NewAuthzServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 		userCanSeeOrganizationSettings: connect_go.NewClient[v1alpha1.UserCanSeeOrganizationSettingsRequest, v1alpha1.UserCanSeeOrganizationSettingsResponse](
 			httpClient,
 			baseURL+AuthzServiceUserCanSeeOrganizationSettingsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		userCanReadPlugin: connect_go.NewClient[v1alpha1.UserCanReadPluginRequest, v1alpha1.UserCanReadPluginResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanReadPluginProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		userCanCreateOrganizationPlugin: connect_go.NewClient[v1alpha1.UserCanCreateOrganizationPluginRequest, v1alpha1.UserCanCreateOrganizationPluginResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanCreateOrganizationPluginProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		userCanCreateOrganizationTemplate: connect_go.NewClient[v1alpha1.UserCanCreateOrganizationTemplateRequest, v1alpha1.UserCanCreateOrganizationTemplateResponse](
-			httpClient,
-			baseURL+AuthzServiceUserCanCreateOrganizationTemplateProcedure,
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
@@ -244,9 +203,6 @@ type authzServiceClient struct {
 	userCanCreateOrganizationRepository *connect_go.Client[v1alpha1.UserCanCreateOrganizationRepositoryRequest, v1alpha1.UserCanCreateOrganizationRepositoryResponse]
 	userCanSeeRepositorySettings        *connect_go.Client[v1alpha1.UserCanSeeRepositorySettingsRequest, v1alpha1.UserCanSeeRepositorySettingsResponse]
 	userCanSeeOrganizationSettings      *connect_go.Client[v1alpha1.UserCanSeeOrganizationSettingsRequest, v1alpha1.UserCanSeeOrganizationSettingsResponse]
-	userCanReadPlugin                   *connect_go.Client[v1alpha1.UserCanReadPluginRequest, v1alpha1.UserCanReadPluginResponse]
-	userCanCreateOrganizationPlugin     *connect_go.Client[v1alpha1.UserCanCreateOrganizationPluginRequest, v1alpha1.UserCanCreateOrganizationPluginResponse]
-	userCanCreateOrganizationTemplate   *connect_go.Client[v1alpha1.UserCanCreateOrganizationTemplateRequest, v1alpha1.UserCanCreateOrganizationTemplateResponse]
 	userCanAddOrganizationMember        *connect_go.Client[v1alpha1.UserCanAddOrganizationMemberRequest, v1alpha1.UserCanAddOrganizationMemberResponse]
 	userCanUpdateOrganizationMember     *connect_go.Client[v1alpha1.UserCanUpdateOrganizationMemberRequest, v1alpha1.UserCanUpdateOrganizationMemberResponse]
 	userCanRemoveOrganizationMember     *connect_go.Client[v1alpha1.UserCanRemoveOrganizationMemberRequest, v1alpha1.UserCanRemoveOrganizationMemberResponse]
@@ -273,29 +229,6 @@ func (c *authzServiceClient) UserCanSeeRepositorySettings(ctx context.Context, r
 // buf.alpha.registry.v1alpha1.AuthzService.UserCanSeeOrganizationSettings.
 func (c *authzServiceClient) UserCanSeeOrganizationSettings(ctx context.Context, req *connect_go.Request[v1alpha1.UserCanSeeOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.UserCanSeeOrganizationSettingsResponse], error) {
 	return c.userCanSeeOrganizationSettings.CallUnary(ctx, req)
-}
-
-// UserCanReadPlugin calls buf.alpha.registry.v1alpha1.AuthzService.UserCanReadPlugin.
-//
-// Deprecated: do not use.
-func (c *authzServiceClient) UserCanReadPlugin(ctx context.Context, req *connect_go.Request[v1alpha1.UserCanReadPluginRequest]) (*connect_go.Response[v1alpha1.UserCanReadPluginResponse], error) {
-	return c.userCanReadPlugin.CallUnary(ctx, req)
-}
-
-// UserCanCreateOrganizationPlugin calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanCreateOrganizationPlugin.
-//
-// Deprecated: do not use.
-func (c *authzServiceClient) UserCanCreateOrganizationPlugin(ctx context.Context, req *connect_go.Request[v1alpha1.UserCanCreateOrganizationPluginRequest]) (*connect_go.Response[v1alpha1.UserCanCreateOrganizationPluginResponse], error) {
-	return c.userCanCreateOrganizationPlugin.CallUnary(ctx, req)
-}
-
-// UserCanCreateOrganizationTemplate calls
-// buf.alpha.registry.v1alpha1.AuthzService.UserCanCreateOrganizationTemplate.
-//
-// Deprecated: do not use.
-func (c *authzServiceClient) UserCanCreateOrganizationTemplate(ctx context.Context, req *connect_go.Request[v1alpha1.UserCanCreateOrganizationTemplateRequest]) (*connect_go.Response[v1alpha1.UserCanCreateOrganizationTemplateResponse], error) {
-	return c.userCanCreateOrganizationTemplate.CallUnary(ctx, req)
 }
 
 // UserCanAddOrganizationMember calls
@@ -355,20 +288,6 @@ type AuthzServiceHandler interface {
 	// UserCanSeeOrganizationSettings returns whether the user is authorized
 	// to see organization settings.
 	UserCanSeeOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.UserCanSeeOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.UserCanSeeOrganizationSettingsResponse], error)
-	// UserCanReadPlugin returns whether the user has read access to the specified plugin.
-	//
-	// Deprecated: do not use.
-	UserCanReadPlugin(context.Context, *connect_go.Request[v1alpha1.UserCanReadPluginRequest]) (*connect_go.Response[v1alpha1.UserCanReadPluginResponse], error)
-	// UserCanCreateOrganizationPlugin returns whether the user is authorized to create
-	// a plugin in an organization.
-	//
-	// Deprecated: do not use.
-	UserCanCreateOrganizationPlugin(context.Context, *connect_go.Request[v1alpha1.UserCanCreateOrganizationPluginRequest]) (*connect_go.Response[v1alpha1.UserCanCreateOrganizationPluginResponse], error)
-	// UserCanCreateOrganizationPlugin returns whether the user is authorized to create
-	// a template in an organization.
-	//
-	// Deprecated: do not use.
-	UserCanCreateOrganizationTemplate(context.Context, *connect_go.Request[v1alpha1.UserCanCreateOrganizationTemplateRequest]) (*connect_go.Response[v1alpha1.UserCanCreateOrganizationTemplateResponse], error)
 	// UserCanAddOrganizationMember returns whether the user is authorized to add
 	// any members to the organization and the list of roles they can add.
 	UserCanAddOrganizationMember(context.Context, *connect_go.Request[v1alpha1.UserCanAddOrganizationMemberRequest]) (*connect_go.Response[v1alpha1.UserCanAddOrganizationMemberResponse], error)
@@ -416,24 +335,6 @@ func NewAuthzServiceHandler(svc AuthzServiceHandler, opts ...connect_go.HandlerO
 	authzServiceUserCanSeeOrganizationSettingsHandler := connect_go.NewUnaryHandler(
 		AuthzServiceUserCanSeeOrganizationSettingsProcedure,
 		svc.UserCanSeeOrganizationSettings,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanReadPluginHandler := connect_go.NewUnaryHandler(
-		AuthzServiceUserCanReadPluginProcedure,
-		svc.UserCanReadPlugin,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanCreateOrganizationPluginHandler := connect_go.NewUnaryHandler(
-		AuthzServiceUserCanCreateOrganizationPluginProcedure,
-		svc.UserCanCreateOrganizationPlugin,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	)
-	authzServiceUserCanCreateOrganizationTemplateHandler := connect_go.NewUnaryHandler(
-		AuthzServiceUserCanCreateOrganizationTemplateProcedure,
-		svc.UserCanCreateOrganizationTemplate,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	)
@@ -493,12 +394,6 @@ func NewAuthzServiceHandler(svc AuthzServiceHandler, opts ...connect_go.HandlerO
 			authzServiceUserCanSeeRepositorySettingsHandler.ServeHTTP(w, r)
 		case AuthzServiceUserCanSeeOrganizationSettingsProcedure:
 			authzServiceUserCanSeeOrganizationSettingsHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanReadPluginProcedure:
-			authzServiceUserCanReadPluginHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanCreateOrganizationPluginProcedure:
-			authzServiceUserCanCreateOrganizationPluginHandler.ServeHTTP(w, r)
-		case AuthzServiceUserCanCreateOrganizationTemplateProcedure:
-			authzServiceUserCanCreateOrganizationTemplateHandler.ServeHTTP(w, r)
 		case AuthzServiceUserCanAddOrganizationMemberProcedure:
 			authzServiceUserCanAddOrganizationMemberHandler.ServeHTTP(w, r)
 		case AuthzServiceUserCanUpdateOrganizationMemberProcedure:
@@ -534,18 +429,6 @@ func (UnimplementedAuthzServiceHandler) UserCanSeeRepositorySettings(context.Con
 
 func (UnimplementedAuthzServiceHandler) UserCanSeeOrganizationSettings(context.Context, *connect_go.Request[v1alpha1.UserCanSeeOrganizationSettingsRequest]) (*connect_go.Response[v1alpha1.UserCanSeeOrganizationSettingsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanSeeOrganizationSettings is not implemented"))
-}
-
-func (UnimplementedAuthzServiceHandler) UserCanReadPlugin(context.Context, *connect_go.Request[v1alpha1.UserCanReadPluginRequest]) (*connect_go.Response[v1alpha1.UserCanReadPluginResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanReadPlugin is not implemented"))
-}
-
-func (UnimplementedAuthzServiceHandler) UserCanCreateOrganizationPlugin(context.Context, *connect_go.Request[v1alpha1.UserCanCreateOrganizationPluginRequest]) (*connect_go.Response[v1alpha1.UserCanCreateOrganizationPluginResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanCreateOrganizationPlugin is not implemented"))
-}
-
-func (UnimplementedAuthzServiceHandler) UserCanCreateOrganizationTemplate(context.Context, *connect_go.Request[v1alpha1.UserCanCreateOrganizationTemplateRequest]) (*connect_go.Response[v1alpha1.UserCanCreateOrganizationTemplateResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanCreateOrganizationTemplate is not implemented"))
 }
 
 func (UnimplementedAuthzServiceHandler) UserCanAddOrganizationMember(context.Context, *connect_go.Request[v1alpha1.UserCanAddOrganizationMemberRequest]) (*connect_go.Response[v1alpha1.UserCanAddOrganizationMemberResponse], error) {
