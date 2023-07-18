@@ -40,18 +40,6 @@ service AuthzService {
     option deprecated = true;
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // UserCanCreatePluginVersion returns whether the user is authorized
-  // to create a plugin version under the specified plugin.
-  rpc UserCanCreatePluginVersion(UserCanCreatePluginVersionRequest) returns (UserCanCreatePluginVersionResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // UserCanCreateTemplateVersion returns whether the user is authorized
-  // to create a template version under the specified template.
-  rpc UserCanCreateTemplateVersion(UserCanCreateTemplateVersionRequest) returns (UserCanCreateTemplateVersionResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
   // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
   // a plugin in an organization.
   rpc UserCanCreateOrganizationPlugin(UserCanCreateOrganizationPluginRequest) returns (UserCanCreateOrganizationPluginResponse) {
@@ -61,18 +49,6 @@ service AuthzService {
   // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
   // a template in an organization.
   rpc UserCanCreateOrganizationTemplate(UserCanCreateOrganizationTemplateRequest) returns (UserCanCreateOrganizationTemplateResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // UserCanSeePluginSettings returns whether the user is authorized
-  // to see plugin settings.
-  rpc UserCanSeePluginSettings(UserCanSeePluginSettingsRequest) returns (UserCanSeePluginSettingsResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // UserCanSeeTemplateSettings returns whether the user is authorized
-  // to see template settings.
-  rpc UserCanSeeTemplateSettings(UserCanSeeTemplateSettingsRequest) returns (UserCanSeeTemplateSettingsResponse) {
     option deprecated = true;
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -99,18 +75,6 @@ service AuthzService {
   // UserCanDeleteRepository returns whether the user is authorized
   // to delete a repository.
   rpc UserCanDeleteRepository(UserCanDeleteRepositoryRequest) returns (UserCanDeleteRepositoryResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // UserCanDeleteTemplate returns whether the user is authorized
-  // to delete a template.
-  rpc UserCanDeleteTemplate(UserCanDeleteTemplateRequest) returns (UserCanDeleteTemplateResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // UserCanDeletePlugin returns whether the user is authorized
-  // to delete a plugin.
-  rpc UserCanDeletePlugin(UserCanDeletePluginRequest) returns (UserCanDeletePluginResponse) {
-    option deprecated = true;
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // UserCanDeleteUser returns whether the user is authorized
@@ -173,32 +137,6 @@ message UserCanReadPluginResponse {
   bool authorized = 1;
 }
 
-message UserCanCreatePluginVersionRequest {
-  option deprecated = true;
-  // The owner of the plugin.
-  string owner = 1;
-  // The name of the plugin.
-  string name = 2;
-}
-
-message UserCanCreatePluginVersionResponse {
-  option deprecated = true;
-  bool authorized = 1;
-}
-
-message UserCanCreateTemplateVersionRequest {
-  option deprecated = true;
-  // The owner of the template.
-  string owner = 1;
-  // The name of the template.
-  string name = 2;
-}
-
-message UserCanCreateTemplateVersionResponse {
-  option deprecated = true;
-  bool authorized = 1;
-}
-
 message UserCanCreateOrganizationPluginRequest {
   option deprecated = true;
   // The ID of the organization for which to check
@@ -219,32 +157,6 @@ message UserCanCreateOrganizationTemplateRequest {
 }
 
 message UserCanCreateOrganizationTemplateResponse {
-  option deprecated = true;
-  bool authorized = 1;
-}
-
-message UserCanSeePluginSettingsRequest {
-  option deprecated = true;
-  // The owner of the plugin.
-  string owner = 1;
-  // The name of the plugin.
-  string name = 2;
-}
-
-message UserCanSeePluginSettingsResponse {
-  option deprecated = true;
-  bool authorized = 1;
-}
-
-message UserCanSeeTemplateSettingsRequest {
-  option deprecated = true;
-  // The owner of the template.
-  string owner = 1;
-  // The name of the template.
-  string name = 2;
-}
-
-message UserCanSeeTemplateSettingsResponse {
   option deprecated = true;
   bool authorized = 1;
 }
@@ -302,30 +214,6 @@ message UserCanDeleteRepositoryRequest {
 }
 
 message UserCanDeleteRepositoryResponse {
-  bool authorized = 1;
-}
-
-message UserCanDeleteTemplateRequest {
-  option deprecated = true;
-  // The ID of the template for which to check
-  // whether the user is authorized.
-  string template_id = 1;
-}
-
-message UserCanDeleteTemplateResponse {
-  option deprecated = true;
-  bool authorized = 1;
-}
-
-message UserCanDeletePluginRequest {
-  option deprecated = true;
-  // The ID of the plugin for which to check
-  // whether the user is authorized.
-  string plugin_id = 1;
-}
-
-message UserCanDeletePluginResponse {
-  option deprecated = true;
   bool authorized = 1;
 }
 

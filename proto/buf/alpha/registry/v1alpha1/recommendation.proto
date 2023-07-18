@@ -51,11 +51,6 @@ service RecommendationService {
   rpc RecommendedRepositories(RecommendedRepositoriesRequest) returns (RecommendedRepositoriesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // RecommendedTemplates returns a list of recommended templates.
-  rpc RecommendedTemplates(RecommendedTemplatesRequest) returns (RecommendedTemplatesResponse) {
-    option deprecated = true;
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
   // ListRecommendedResources returns a list of recommended resources.
   rpc ListRecommendedResources(ListRecommendedResourcesRequest) returns (ListRecommendedResourcesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -70,15 +65,6 @@ message RecommendedRepositoriesRequest {}
 
 message RecommendedRepositoriesResponse {
   repeated RecommendedRepository repositories = 1;
-}
-
-message RecommendedTemplatesRequest {
-  option deprecated = true;
-}
-
-message RecommendedTemplatesResponse {
-  option deprecated = true;
-  repeated RecommendedTemplate templates = 1;
 }
 
 message ListRecommendedResourcesRequest {}
