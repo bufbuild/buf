@@ -104,10 +104,6 @@ service OrganizationService {
   rpc RemoveOrganizationGroup(RemoveOrganizationGroupRequest) returns (RemoveOrganizationGroupResponse) {
     option idempotency_level = IDEMPOTENT;
   }
-  // GetOrganizationAdminEmails removes an IdP Group from the organization.
-  rpc GetOrganizationAdminEmails(GetOrganizationAdminEmailsRequest) returns (GetOrganizationAdminEmailsResponse) {
-    option idempotency_level = IDEMPOTENT;
-  }
 }
 
 message GetOrganizationRequest {
@@ -278,13 +274,3 @@ message RemoveOrganizationGroupRequest {
 }
 
 message RemoveOrganizationGroupResponse {}
-
-message GetOrganizationAdminEmailsRequest {
-  // The ID of the organization
-  string organization_id = 1;
-}
-
-message GetOrganizationAdminEmailsResponse {
-  // The emails for all admins in the organization
-  repeated string email = 1;
-}

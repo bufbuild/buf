@@ -95,9 +95,6 @@ const (
 	// OrganizationServiceRemoveOrganizationGroupProcedure is the fully-qualified name of the
 	// OrganizationService's RemoveOrganizationGroup RPC.
 	OrganizationServiceRemoveOrganizationGroupProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationGroup"
-	// OrganizationServiceGetOrganizationAdminEmailsProcedure is the fully-qualified name of the
-	// OrganizationService's GetOrganizationAdminEmails RPC.
-	OrganizationServiceGetOrganizationAdminEmailsProcedure = "/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationAdminEmails"
 )
 
 // OrganizationServiceClient is a client for the buf.alpha.registry.v1alpha1.OrganizationService
@@ -134,8 +131,6 @@ type OrganizationServiceClient interface {
 	AddOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.AddOrganizationGroupResponse], error)
 	// RemoveOrganizationGroup removes an IdP Group from the organization.
 	RemoveOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.RemoveOrganizationGroupResponse], error)
-	// GetOrganizationAdminEmails removes an IdP Group from the organization.
-	GetOrganizationAdminEmails(context.Context, *connect_go.Request[v1alpha1.GetOrganizationAdminEmailsRequest]) (*connect_go.Response[v1alpha1.GetOrganizationAdminEmailsResponse], error)
 }
 
 // NewOrganizationServiceClient constructs a client for the
@@ -242,12 +237,6 @@ func NewOrganizationServiceClient(httpClient connect_go.HTTPClient, baseURL stri
 			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 			connect_go.WithClientOptions(opts...),
 		),
-		getOrganizationAdminEmails: connect_go.NewClient[v1alpha1.GetOrganizationAdminEmailsRequest, v1alpha1.GetOrganizationAdminEmailsResponse](
-			httpClient,
-			baseURL+OrganizationServiceGetOrganizationAdminEmailsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
-			connect_go.WithClientOptions(opts...),
-		),
 	}
 }
 
@@ -269,7 +258,6 @@ type organizationServiceClient struct {
 	updateOrganizationSettings *connect_go.Client[v1alpha1.UpdateOrganizationSettingsRequest, v1alpha1.UpdateOrganizationSettingsResponse]
 	addOrganizationGroup       *connect_go.Client[v1alpha1.AddOrganizationGroupRequest, v1alpha1.AddOrganizationGroupResponse]
 	removeOrganizationGroup    *connect_go.Client[v1alpha1.RemoveOrganizationGroupRequest, v1alpha1.RemoveOrganizationGroupResponse]
-	getOrganizationAdminEmails *connect_go.Client[v1alpha1.GetOrganizationAdminEmailsRequest, v1alpha1.GetOrganizationAdminEmailsResponse]
 }
 
 // GetOrganization calls buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization.
@@ -362,12 +350,6 @@ func (c *organizationServiceClient) RemoveOrganizationGroup(ctx context.Context,
 	return c.removeOrganizationGroup.CallUnary(ctx, req)
 }
 
-// GetOrganizationAdminEmails calls
-// buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationAdminEmails.
-func (c *organizationServiceClient) GetOrganizationAdminEmails(ctx context.Context, req *connect_go.Request[v1alpha1.GetOrganizationAdminEmailsRequest]) (*connect_go.Response[v1alpha1.GetOrganizationAdminEmailsResponse], error) {
-	return c.getOrganizationAdminEmails.CallUnary(ctx, req)
-}
-
 // OrganizationServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.OrganizationService service.
 type OrganizationServiceHandler interface {
@@ -402,8 +384,6 @@ type OrganizationServiceHandler interface {
 	AddOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.AddOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.AddOrganizationGroupResponse], error)
 	// RemoveOrganizationGroup removes an IdP Group from the organization.
 	RemoveOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.RemoveOrganizationGroupResponse], error)
-	// GetOrganizationAdminEmails removes an IdP Group from the organization.
-	GetOrganizationAdminEmails(context.Context, *connect_go.Request[v1alpha1.GetOrganizationAdminEmailsRequest]) (*connect_go.Response[v1alpha1.GetOrganizationAdminEmailsResponse], error)
 }
 
 // NewOrganizationServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -505,12 +485,6 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
 	)
-	organizationServiceGetOrganizationAdminEmailsHandler := connect_go.NewUnaryHandler(
-		OrganizationServiceGetOrganizationAdminEmailsProcedure,
-		svc.GetOrganizationAdminEmails,
-		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
-		connect_go.WithHandlerOptions(opts...),
-	)
 	return "/buf.alpha.registry.v1alpha1.OrganizationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case OrganizationServiceGetOrganizationProcedure:
@@ -545,8 +519,6 @@ func NewOrganizationServiceHandler(svc OrganizationServiceHandler, opts ...conne
 			organizationServiceAddOrganizationGroupHandler.ServeHTTP(w, r)
 		case OrganizationServiceRemoveOrganizationGroupProcedure:
 			organizationServiceRemoveOrganizationGroupHandler.ServeHTTP(w, r)
-		case OrganizationServiceGetOrganizationAdminEmailsProcedure:
-			organizationServiceGetOrganizationAdminEmailsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -618,8 +590,4 @@ func (UnimplementedOrganizationServiceHandler) AddOrganizationGroup(context.Cont
 
 func (UnimplementedOrganizationServiceHandler) RemoveOrganizationGroup(context.Context, *connect_go.Request[v1alpha1.RemoveOrganizationGroupRequest]) (*connect_go.Response[v1alpha1.RemoveOrganizationGroupResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationGroup is not implemented"))
-}
-
-func (UnimplementedOrganizationServiceHandler) GetOrganizationAdminEmails(context.Context, *connect_go.Request[v1alpha1.GetOrganizationAdminEmailsRequest]) (*connect_go.Response[v1alpha1.GetOrganizationAdminEmailsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationAdminEmails is not implemented"))
 }

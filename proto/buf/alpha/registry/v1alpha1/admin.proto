@@ -105,6 +105,10 @@ service AdminService {
   rpc ListServerUniquenessCollisions(ListServerUniquenessCollisionsRequest) returns (ListServerUniquenessCollisionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // GetOrganizationAdminEmails removes an IdP Group from the organization.
+  rpc GetAdminEmailsForOrganization(GetAdminEmailsForOrganizationRequest) returns (GetAdminEmailsForOrganizationResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message ForceDeleteUserRequest {
@@ -194,4 +198,14 @@ message ListServerUniquenessCollisionsResponse {
   // the next request. `next_page_token` is not returned for the last
   // page.
   string next_page_token = 2;
+}
+
+message GetAdminEmailsForOrganizationRequest {
+  // The ID of the organization
+  string organization_id = 1;
+}
+
+message GetAdminEmailsForOrganizationResponse {
+  // The emails for all admins in the organization
+  repeated string email = 1;
 }

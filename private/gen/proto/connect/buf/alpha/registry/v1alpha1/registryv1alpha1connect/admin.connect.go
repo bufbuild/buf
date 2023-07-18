@@ -74,6 +74,9 @@ const (
 	// AdminServiceListServerUniquenessCollisionsProcedure is the fully-qualified name of the
 	// AdminService's ListServerUniquenessCollisions RPC.
 	AdminServiceListServerUniquenessCollisionsProcedure = "/buf.alpha.registry.v1alpha1.AdminService/ListServerUniquenessCollisions"
+	// AdminServiceGetAdminEmailsForOrganizationProcedure is the fully-qualified name of the
+	// AdminService's GetAdminEmailsForOrganization RPC.
+	AdminServiceGetAdminEmailsForOrganizationProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetAdminEmailsForOrganization"
 )
 
 // AdminServiceClient is a client for the buf.alpha.registry.v1alpha1.AdminService service.
@@ -97,6 +100,8 @@ type AdminServiceClient interface {
 	UpdateUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
 	// Get state of uniqueness collisions for the server
 	ListServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error)
+	// GetOrganizationAdminEmails removes an IdP Group from the organization.
+	GetAdminEmailsForOrganization(context.Context, *connect_go.Request[v1alpha1.GetAdminEmailsForOrganizationRequest]) (*connect_go.Response[v1alpha1.GetAdminEmailsForOrganizationResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AdminService
@@ -159,6 +164,12 @@ func NewAdminServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
+		getAdminEmailsForOrganization: connect_go.NewClient[v1alpha1.GetAdminEmailsForOrganizationRequest, v1alpha1.GetAdminEmailsForOrganizationResponse](
+			httpClient,
+			baseURL+AdminServiceGetAdminEmailsForOrganizationProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -173,6 +184,7 @@ type adminServiceClient struct {
 	getUniquenessPolicy                  *connect_go.Client[v1alpha1.GetUniquenessPolicyRequest, v1alpha1.GetUniquenessPolicyResponse]
 	updateUniquenessPolicy               *connect_go.Client[v1alpha1.UpdateUniquenessPolicyRequest, v1alpha1.UpdateUniquenessPolicyResponse]
 	listServerUniquenessCollisions       *connect_go.Client[v1alpha1.ListServerUniquenessCollisionsRequest, v1alpha1.ListServerUniquenessCollisionsResponse]
+	getAdminEmailsForOrganization        *connect_go.Client[v1alpha1.GetAdminEmailsForOrganizationRequest, v1alpha1.GetAdminEmailsForOrganizationResponse]
 }
 
 // ForceDeleteUser calls buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser.
@@ -224,6 +236,12 @@ func (c *adminServiceClient) ListServerUniquenessCollisions(ctx context.Context,
 	return c.listServerUniquenessCollisions.CallUnary(ctx, req)
 }
 
+// GetAdminEmailsForOrganization calls
+// buf.alpha.registry.v1alpha1.AdminService.GetAdminEmailsForOrganization.
+func (c *adminServiceClient) GetAdminEmailsForOrganization(ctx context.Context, req *connect_go.Request[v1alpha1.GetAdminEmailsForOrganizationRequest]) (*connect_go.Response[v1alpha1.GetAdminEmailsForOrganizationResponse], error) {
+	return c.getAdminEmailsForOrganization.CallUnary(ctx, req)
+}
+
 // AdminServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AdminService service.
 type AdminServiceHandler interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
@@ -245,6 +263,8 @@ type AdminServiceHandler interface {
 	UpdateUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
 	// Get state of uniqueness collisions for the server
 	ListServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error)
+	// GetOrganizationAdminEmails removes an IdP Group from the organization.
+	GetAdminEmailsForOrganization(context.Context, *connect_go.Request[v1alpha1.GetAdminEmailsForOrganizationRequest]) (*connect_go.Response[v1alpha1.GetAdminEmailsForOrganizationResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -303,6 +323,12 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	)
+	adminServiceGetAdminEmailsForOrganizationHandler := connect_go.NewUnaryHandler(
+		AdminServiceGetAdminEmailsForOrganizationProcedure,
+		svc.GetAdminEmailsForOrganization,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
+	)
 	return "/buf.alpha.registry.v1alpha1.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AdminServiceForceDeleteUserProcedure:
@@ -323,6 +349,8 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 			adminServiceUpdateUniquenessPolicyHandler.ServeHTTP(w, r)
 		case AdminServiceListServerUniquenessCollisionsProcedure:
 			adminServiceListServerUniquenessCollisionsHandler.ServeHTTP(w, r)
+		case AdminServiceGetAdminEmailsForOrganizationProcedure:
+			adminServiceGetAdminEmailsForOrganizationHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -366,4 +394,8 @@ func (UnimplementedAdminServiceHandler) UpdateUniquenessPolicy(context.Context, 
 
 func (UnimplementedAdminServiceHandler) ListServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.ListServerUniquenessCollisions is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) GetAdminEmailsForOrganization(context.Context, *connect_go.Request[v1alpha1.GetAdminEmailsForOrganizationRequest]) (*connect_go.Response[v1alpha1.GetAdminEmailsForOrganizationResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetAdminEmailsForOrganization is not implemented"))
 }
