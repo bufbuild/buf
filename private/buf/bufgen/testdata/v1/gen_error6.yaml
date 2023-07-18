@@ -1,6 +1,6 @@
 version: v1
 plugins:
-  - remote: someremote.com/owner/plugins/myplugin:v1.1.0-1
+  - plugin: someremote.com/owner/myplugin:v1.1.0-1
     # Remote and Name specified at the same time, error
     name: go
     out: gen/go
