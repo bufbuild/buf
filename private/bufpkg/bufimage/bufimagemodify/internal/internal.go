@@ -71,7 +71,7 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 	// We can't just match on an exact path match because the target
 	// file option's parent path elements would remain (i.e [8]).
 	// Instead, we perform an initial pass to validate that the paths
-	// are structured as expect, and collect all of the indices that
+	// are structured as expected, and collect all of the indices that
 	// we need to delete.
 	indices := make(map[int]struct{}, len(paths)*2)
 	for i, location := range sourceCodeInfo.Location {

@@ -20,7 +20,9 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
+	"github.com/bufbuild/protocompile/walk"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -163,6 +165,48 @@ func ModifyJavaPackage(
 	descriptor.Options.JavaPackage = proto.String(javaPackageValue)
 	marker.Mark(imageFile, internal.JavaPackagePath)
 	return nil
+}
+
+// ModifyJsType modifies JS_TYPE field option. If only want to modify certain
+// fields but not all of them, pass nil as defaultValue.
+func ModifyJsType(
+	imageFile bufimage.ImageFile,
+	marker Marker,
+	defaultValue *descriptorpb.FieldOptions_JSType,
+	perFieldValue map[string]descriptorpb.FieldOptions_JSType,
+	ignoredFields map[string]struct{},
+) error {
+	err := walk.DescriptorProtos(imageFile.Proto(), func(fullName protoreflect.FullName, message proto.Message) error {
+		fmt.Printf("entering %s", fullName.Name()) // TODO: remove this line
+		fieldDescriptor, ok := message.(*descriptorpb.FieldDescriptorProto)
+		if !ok {
+			fmt.Printf(", NOT a field\n") // TODO: remove this line
+			return nil
+		}
+		fmt.Printf(", a field with type %s\n", fieldDescriptor.Type) // TODO: remove this line
+		if fieldDescriptor.Type == nil ||
+			*fieldDescriptor.Type != descriptorpb.FieldDescriptorProto_TYPE_INT64 { // TODO: instead of comparing with one type, check it's not in one of 4 types
+			return nil
+		}
+		jsType := defaultValue
+		if perTypeOverride, ok := perFieldValue[string(fullName.Name())]; ok {
+			jsType = &perTypeOverride
+		}
+		// If there is no value specified for this file or this field, skip.
+		if jsType == nil {
+			return nil
+		}
+		if _, ok := ignoredFields[string(fullName.Name())]; ok {
+			return nil
+		}
+		if fieldDescriptor.Options == nil {
+			fieldDescriptor.Options = &descriptorpb.FieldOptions{}
+		}
+		fieldDescriptor.Options.Jstype = jsType
+		return nil
+	})
+	return err
+	// this is probably more of a problem for sweeper than for marker.
 }
 
 func getJavaPackageValue(imageFile bufimage.ImageFile, prefix string, suffix string) string {
