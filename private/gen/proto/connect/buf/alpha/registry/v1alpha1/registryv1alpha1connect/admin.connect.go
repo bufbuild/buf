@@ -100,7 +100,7 @@ type AdminServiceClient interface {
 	UpdateUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
 	// Get state of uniqueness collisions for the server
 	ListServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error)
-	// GetOrganizationAdminEmails removes an IdP Group from the organization.
+	// GetOrganizationAdminEmails gets a list of emails for admins in the organization.
 	GetAdminEmailsForOrganization(context.Context, *connect_go.Request[v1alpha1.GetAdminEmailsForOrganizationRequest]) (*connect_go.Response[v1alpha1.GetAdminEmailsForOrganizationResponse], error)
 }
 
@@ -263,7 +263,7 @@ type AdminServiceHandler interface {
 	UpdateUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
 	// Get state of uniqueness collisions for the server
 	ListServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error)
-	// GetOrganizationAdminEmails removes an IdP Group from the organization.
+	// GetOrganizationAdminEmails gets a list of emails for admins in the organization.
 	GetAdminEmailsForOrganization(context.Context, *connect_go.Request[v1alpha1.GetAdminEmailsForOrganizationRequest]) (*connect_go.Response[v1alpha1.GetAdminEmailsForOrganizationResponse], error)
 }
 

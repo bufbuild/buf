@@ -105,7 +105,7 @@ service AdminService {
   rpc ListServerUniquenessCollisions(ListServerUniquenessCollisionsRequest) returns (ListServerUniquenessCollisionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // GetOrganizationAdminEmails removes an IdP Group from the organization.
+  // GetOrganizationAdminEmails gets a list of emails for admins in the organization.
   rpc GetAdminEmailsForOrganization(GetAdminEmailsForOrganizationRequest) returns (GetAdminEmailsForOrganizationResponse) {
     option idempotency_level = IDEMPOTENT;
   }
