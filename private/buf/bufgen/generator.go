@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
-	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -209,34 +208,12 @@ func (g *generator) execPlugins(
 	for remote, indexedPluginConfigs := range remotePluginConfigTable {
 		remote := remote
 		indexedPluginConfigs := indexedPluginConfigs
-		v1Args := make([]*remotePluginExecArgs, 0, len(indexedPluginConfigs))
 		v2Args := make([]*remotePluginExecArgs, 0, len(indexedPluginConfigs))
 		for _, param := range indexedPluginConfigs {
-			if param.PluginConfig.Plugin == "" {
-				v1Args = append(v1Args, param)
-			} else {
-				v2Args = append(v2Args, param)
+			if param.PluginConfig.Remote != "" {
+				return nil, fmt.Errorf("invalid plugin reference: %s", param.PluginConfig.Remote)
 			}
-		}
-		if len(v1Args) > 0 {
-			jobs = append(jobs, func(ctx context.Context) error {
-				results, err := g.executeRemotePlugins(
-					ctx,
-					container,
-					image,
-					remote,
-					v1Args,
-					includeImports,
-					includeWellKnownTypes,
-				)
-				if err != nil {
-					return err
-				}
-				for _, result := range results {
-					responses[result.Index] = result.CodeGeneratorResponse
-				}
-				return nil
-			})
+			v2Args = append(v2Args, param)
 		}
 		if len(v2Args) > 0 {
 			jobs = append(jobs, func(ctx context.Context) error {
@@ -342,73 +319,6 @@ type remotePluginExecutionResult struct {
 	Index                 int
 }
 
-func (g *generator) executeRemotePlugins(
-	ctx context.Context,
-	container app.EnvStdioContainer,
-	image bufimage.Image,
-	remote string,
-	pluginConfigs []*remotePluginExecArgs,
-	includeImports bool,
-	includeWellKnownTypes bool,
-) ([]*remotePluginExecutionResult, error) {
-	pluginReferences := make([]*registryv1alpha1.PluginReference, len(pluginConfigs))
-	for i, pluginConfig := range pluginConfigs {
-		pluginReference, err := getPluginReference(pluginConfig.PluginConfig)
-		if err != nil {
-			return nil, err
-		}
-		pluginReferences[i] = pluginReference
-	}
-	generateService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewGenerateServiceClient)
-	response, err := generateService.GeneratePlugins(
-		ctx,
-		connect.NewRequest(
-			&registryv1alpha1.GeneratePluginsRequest{
-				Image:                 bufimage.ImageToProtoImage(image),
-				Plugins:               pluginReferences,
-				IncludeImports:        includeImports,
-				IncludeWellKnownTypes: includeWellKnownTypes,
-			},
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-	responses := response.Msg.Responses
-	if len(responses) != len(pluginReferences) {
-		return nil, fmt.Errorf("unexpected number of responses, got %d, wanted: %d", len(responses), len(pluginReferences))
-	}
-	pluginService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewPluginServiceClient)
-	result := make([]*remotePluginExecutionResult, 0, len(pluginReferences))
-	for i, pluginReference := range pluginReferences {
-		result = append(result, &remotePluginExecutionResult{
-			Index:                 pluginConfigs[i].Index,
-			CodeGeneratorResponse: responses[i],
-		})
-		resp, err := pluginService.GetPlugin(
-			ctx,
-			connect.NewRequest(
-				&registryv1alpha1.GetPluginRequest{
-					Owner: pluginReference.Owner,
-					Name:  pluginReference.Name,
-				},
-			),
-		)
-		if err != nil {
-			return nil, err
-		}
-		plugin := resp.Msg.Plugin
-		if plugin.Deprecated {
-			warnMsg := fmt.Sprintf(`Plugin "%s/%s/%s" is deprecated`, remote, pluginReference.Owner, pluginReference.Name)
-			if plugin.DeprecationMessage != "" {
-				warnMsg = fmt.Sprintf("%s: %s", warnMsg, plugin.DeprecationMessage)
-			}
-			g.logger.Sugar().Warn(warnMsg)
-		}
-	}
-	return result, nil
-}
-
 func (g *generator) execRemotePluginsV2(
 	ctx context.Context,
 	container app.EnvStdioContainer,
@@ -481,25 +391,6 @@ func getPluginGenerationRequest(
 	return &registryv1alpha1.PluginGenerationRequest{
 		PluginReference: curatedPluginReference,
 		Options:         options,
-	}, nil
-}
-
-// getPluginReference returns the plugin reference and remote for the given plugin configuration.
-func getPluginReference(pluginConfig *PluginConfig) (*registryv1alpha1.PluginReference, error) {
-	_, owner, name, version, err := bufremoteplugin.ParsePluginVersionPath(pluginConfig.Remote)
-	if err != nil {
-		return nil, fmt.Errorf("invalid plugin path: %w", err)
-	}
-	var parameters []string
-	if len(pluginConfig.Opt) > 0 {
-		// Only include parameters if they're not empty.
-		parameters = []string{pluginConfig.Opt}
-	}
-	return &registryv1alpha1.PluginReference{
-		Owner:      owner,
-		Name:       name,
-		Version:    version,
-		Parameters: parameters,
 	}, nil
 }
 

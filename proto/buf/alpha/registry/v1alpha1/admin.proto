@@ -17,7 +17,6 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/organization.proto";
-import "buf/alpha/registry/v1alpha1/plugin.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
 import "buf/alpha/registry/v1alpha1/verification_status.proto";
@@ -118,10 +117,6 @@ message ForceDeleteUserResponse {
   repeated Organization organizations = 2;
   // The deleted repositories.
   repeated Repository repositories = 3;
-  // The deleted plugins.
-  repeated Plugin plugins = 4 [deprecated = true];
-  // The deleted templates.
-  repeated Template templates = 5 [deprecated = true];
 }
 
 message UpdateUserVerificationStatusRequest {

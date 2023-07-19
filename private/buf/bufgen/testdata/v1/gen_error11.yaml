@@ -10,5 +10,5 @@ managed:
       someremote.com/owner/bar: SPEED
       someremote.com/owner/baz: LITE_RUNTIME
 plugins:
-  - remote: someremote.com/owner/plugins/myplugin
+  - plugin: someremote.com/owner/myplugin
     out: gen/go

@@ -97,11 +97,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		),
 	)
 	// TODO: before we take this to beta, and as part of mult-module support, re-evaluate the UX of this flag
-	flagSet.StringArrayVar(
+	flagSet.StringSliceVar(
 		&f.Modules,
 		moduleFlagName,
 		nil,
-		"The module(s) to sync to the BSR; this must be in the format <module>:<module-identity>",
+		"The module(s) to sync to the BSR; this must be in the format <module-path>:<module-name>. "+
+			"The <module-path> is the directory relative to the git repository, and the <module-name> "+
+			"is the module's fully qualified name (FQN) as defined in "+
+			"https://buf.build/docs/bsr/module/manage/#how-modules-are-defined",
 	)
 	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
 	flagSet.BoolVar(
