@@ -22,34 +22,27 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenplugin"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
 )
 
-// TODO: remove this
-func SilenceLinter() {
-	empty := ExternalConfigV2{}
-	_, _ = newManagedConfig(empty.Managed)
-	_ = validateExternalManagedConfigV2(empty.Managed)
-	_, _ = newDisabledFunc(ExternalManagedDisableConfigV2{})
-	_, _ = newOverrideFunc(ExternalManagedOverrideConfigV2{})
-	matchesModule(nil, "")
-	matchesPath(nil, "")
-	mergeDisabledFuncs(nil)
-	mergeOverrideFuncs(nil)
-	mergeFileOptionToOverrideFuncs(nil)
-	_ = applyManagement(nil, nil)
-}
+// disableFunc decides whether a file option should be disabled for a file.
+type disabledFunc func(fileOption, imageFileIdentity) bool
 
-// DisableFunc decides whether a file option should be disabled for a file.
-type disabledFunc func(FileOption, bufimage.ImageFile) bool
-
-// TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
 // overrideFunc is specific to a file option, and returns what thie file option
 // should be overridden to for this file.
-type overrideFunc func(bufimage.ImageFile) (string, error)
+type overrideFunc func(imageFileIdentity) bufimagemodifyv2.Override
+
+// imageFileIdentity is an image file that can be identified by a path and module identity.
+// There two (path and module) are the only information needed to decide whether to disable
+// or override a file option for a specific file. Using an interface to for easier testing.
+type imageFileIdentity interface {
+	Path() string
+	ModuleIdentity() bufmoduleref.ModuleIdentity
+}
 
 // TODO: unexport these names
 
@@ -60,11 +53,11 @@ type Config struct {
 	Inputs  []*InputConfig
 }
 
-// TODO: We use nil or not to denote enabled or not, but that deems dangerous
 // ManagedConfig is a managed mode configuration.
 type ManagedConfig struct {
-	DisabledFunc             disabledFunc
-	FileOptionToOverrideFunc map[FileOption]overrideFunc
+	Enabled                       bool
+	DisabledFunc                  disabledFunc
+	FileOptionGroupToOverrideFunc map[fileOptionGroup]overrideFunc
 }
 
 // InputConfig is an input configuration.
@@ -104,9 +97,6 @@ func readConfigV2(
 	if err := unmarshalStrict(data, &externalConfigV2); err != nil {
 		return nil, err
 	}
-	if err := validateExternalConfigV2(externalConfigV2, id); err != nil {
-		return nil, err
-	}
 	config := Config{}
 	for _, externalInputConfig := range externalConfigV2.Inputs {
 		inputConfig, err := newInputConfig(ctx, externalInputConfig)
@@ -120,19 +110,28 @@ func readConfigV2(
 		return nil, err
 	}
 	config.Plugins = pluginConfigs
+	managedConfig, err := newManagedConfig(logger, externalConfigV2.Managed)
+	if err != nil {
+		return nil, err
+	}
+	config.Managed = managedConfig
 	return &config, nil
 }
 
-func newManagedConfig(externalConfig ExternalManagedConfigV2) (*ManagedConfig, error) {
+func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2) (*ManagedConfig, error) {
 	if externalConfig.isEmpty() {
 		return nil, nil
 	}
-	if err := validateExternalManagedConfigV2(externalConfig); err != nil {
-		return nil, err
+	if !externalConfig.Enabled && !externalConfig.isEmpty() {
+		logger.Sugar().Warn("managed mode options are set but are not enabled")
+		// continue to validate this config
 	}
 	var disabledFuncs []disabledFunc
-	fileOptionToOverrideFuncs := make(map[FileOption][]overrideFunc)
+	fileOptionGroupToOverrideFuncs := make(map[fileOptionGroup][]overrideFunc)
 	for _, externalDisableConfig := range externalConfig.Disable {
+		if len(externalDisableConfig.FileOption) == 0 && len(externalDisableConfig.Module) == 0 && len(externalDisableConfig.Path) == 0 {
+			return nil, errors.New("must set one of file_option, module and path for a disable rule")
+		}
 		disabledFunc, err := newDisabledFunc(externalDisableConfig)
 		if err != nil {
 			return nil, err
@@ -140,134 +139,133 @@ func newManagedConfig(externalConfig ExternalManagedConfigV2) (*ManagedConfig, e
 		disabledFuncs = append(disabledFuncs, disabledFunc)
 	}
 	for _, externalOverrideConfig := range externalConfig.Override {
-		fileOption, err := ParseFileOption(externalOverrideConfig.FileOption)
+		if len(externalOverrideConfig.FileOption) == 0 {
+			return nil, errors.New("must set a file option to override")
+		}
+		if externalOverrideConfig.Value == nil {
+			return nil, errors.New("must set an value to override")
+		}
+		fileOption, err := parseFileOption(externalOverrideConfig.FileOption)
 		if err != nil {
 			// This should never happen because we already validated
+			return nil, err
+		}
+		fileOptionGroup, ok := fileOptionToGroup[fileOption]
+		if !ok {
+			// this should not happen, the map should cover all valid file options.
 			return nil, err
 		}
 		overrideFunc, err := newOverrideFunc(externalOverrideConfig)
 		if err != nil {
 			return nil, err
 		}
-		fileOptionToOverrideFuncs[fileOption] = append(
-			fileOptionToOverrideFuncs[fileOption],
+		// Putting rules from the same group in the same list preserves the order among them.
+		// An example where this is useful:
+		// override: ## values omitted
+		//   - file_option: java_package
+		//   - file_option: java_package_prefix
+		// and
+		// override:
+		//   - file_option: java_package_prefix
+		//   - file_option: java_package
+		// have different effects.
+		fileOptionGroupToOverrideFuncs[fileOptionGroup] = append(
+			fileOptionGroupToOverrideFuncs[fileOptionGroup],
 			overrideFunc,
 		)
 	}
 	return &ManagedConfig{
-		DisabledFunc:             mergeDisabledFuncs(disabledFuncs),
-		FileOptionToOverrideFunc: mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs),
+		Enabled:                       externalConfig.Enabled,
+		DisabledFunc:                  mergeDisabledFuncs(disabledFuncs),
+		FileOptionGroupToOverrideFunc: mergeFileOptionToOverrideFuncs(fileOptionGroupToOverrideFuncs),
 	}, nil
 }
 
-func validateExternalConfigV2(externalConfig ExternalConfigV2, id string) error {
-	// TODO: implement this
-	return nil
-}
-
-func validateExternalManagedConfigV2(externalConfig ExternalManagedConfigV2) error {
-	if externalConfig.isEmpty() {
-		return nil
-	}
-	for _, externalDisableConfig := range externalConfig.Disable {
-		if len(externalDisableConfig.FileOption) == 0 && len(externalDisableConfig.Module) == 0 && len(externalDisableConfig.Path) == 0 {
-			return errors.New("must set one of file_option, module, path for a disable rule")
-		}
-		// TODO
-	}
-	for _, externalOverrideConfig := range externalConfig.Override {
-		// TODO
-		_ = externalOverrideConfig
-	}
-	return nil
-}
-
 func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFunc, error) {
-	var selectorFileOption FileOption
+	if len(externalConfig.FileOption) == 0 && len(externalConfig.Module) == 0 && len(externalConfig.Path) == 0 {
+		return nil, errors.New("must set one of file_option, module and path for a disable rule")
+	}
+	var selectorFileOption fileOption
 	var err error
 	if len(externalConfig.FileOption) > 0 {
-		selectorFileOption, err = ParseFileOption(externalConfig.FileOption)
+		selectorFileOption, err = parseFileOption(externalConfig.FileOption)
 		if err != nil {
-			// This should never happen because we already validated
 			return nil, err
 		}
 	}
-	// You could simplify this, but this helped me reason about it
-	return func(fileOption FileOption, imageFile bufimage.ImageFile) bool {
+	return func(fileOption fileOption, imageFile imageFileIdentity) bool {
 		// If we did not specify a file option, we match all file options
 		return (selectorFileOption == 0 || fileOption == selectorFileOption) &&
-			matchesModule(imageFile, externalConfig.Module) &&
-			matchesPath(imageFile, externalConfig.Path)
+			matchesPathAndModule(externalConfig.Path, externalConfig.Module, imageFile)
 	}, nil
 }
 
 func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (overrideFunc, error) {
-	fileOption, err := ParseFileOption(externalConfig.FileOption)
+	fileOption, err := parseFileOption(externalConfig.FileOption)
 	if err != nil {
-		// This should never happen because we already validated that this is set and non-empty
+		// This should never happen because we already validated
 		return nil, err
 	}
-	return func(imageFile bufimage.ImageFile) (string, error) {
+	parseFunc, ok := fileOptionToOverrideParseFunc[fileOption]
+	if !ok {
+		// this should not happen
+		return nil, fmt.Errorf("invalid file option: %v", fileOption)
+	}
+	override, err := parseFunc(externalConfig.Value, fileOption)
+	if err != nil {
+		return nil, err
+	}
+	return func(imageFile imageFileIdentity) bufimagemodifyv2.Override {
 		// We don't need to match on FileOption - we only call this OverrideFunc when we
 		// know we are applying for a given FileOption.
 		// The FileOption we parsed above is assumed to be the FileOption.
-
-		if !matchesModule(imageFile, externalConfig.Module) {
-			return "", nil
+		if matchesPathAndModule(externalConfig.Path, externalConfig.Module, imageFile) {
+			return override
 		}
-		if !matchesPath(imageFile, externalConfig.Path) {
-			return "", nil
-		}
-
-		switch t := fileOption.Type(); t {
-		case FileOptionTypeValue:
-			return externalConfig.Value, nil
-		case FileOptionTypePrefix:
-			return externalConfig.Prefix, nil
-		default:
-			return "", fmt.Errorf("unknown FileOptionType: %q", t)
-		}
+		return nil
 	}, nil
 }
 
-// matchesModule returns true if the given external module config value matches the ImageFile.
-//
-// An empty value matches - this means we did not filter on modules.
-func matchesModule(imageFile bufimage.ImageFile, module string) bool {
-	// If we did not specify a module, we match all modules
-	if len(module) == 0 {
+func matchesPathAndModule(
+	pathRequired string,
+	moduleRequired string,
+	imageFile imageFileIdentity,
+) bool {
+	// If neither is required, it matches.
+	if pathRequired == "" && moduleRequired == "" {
 		return true
 	}
-	// If we do not have a module, the module filter does nothing
-	moduleIdentity := imageFile.ModuleIdentity()
-	if moduleIdentity == nil {
+	// If path is required, it must match on path.
+	path := normalpath.Normalize(imageFile.Path())
+	pathRequired = normalpath.Normalize(pathRequired)
+	if pathRequired != "" && !normalpath.EqualsOrContainsPath(pathRequired, path, normalpath.Relative) {
+		return false
+	}
+	// At this point, path requirement is met. If module is not required, it matches.
+	if moduleRequired == "" {
 		return true
 	}
-	return module == moduleIdentity.IdentityString()
+	// Module is required, now check if it matches.
+	if imageFile.ModuleIdentity() == nil {
+		return false
+	}
+	if imageFile.ModuleIdentity().IdentityString() != moduleRequired {
+		return false
+	}
+	return true
 }
 
-// matchesPath returns true if the given external path config value matches the ImageFile.
-//
-// An empty value matches - this means we did not filter on modules.
-func matchesPath(imageFile bufimage.ImageFile, path string) bool {
-	// If we did not specify a path, we match all paths
-	if len(path) == 0 {
-		return true
-	}
-	return normalpath.EqualsOrContainsPath(path, imageFile.Path(), normalpath.Relative)
-}
-
-func mergeFileOptionToOverrideFuncs(fileOptionToOverrideFuncs map[FileOption][]overrideFunc) map[FileOption]overrideFunc {
-	fileOptionToOverrideFunc := make(map[FileOption]overrideFunc, len(fileOptionToOverrideFuncs))
-	for fileOption, overrideFuncs := range fileOptionToOverrideFuncs {
-		fileOptionToOverrideFunc[fileOption] = mergeOverrideFuncs(overrideFuncs)
+func mergeFileOptionToOverrideFuncs(fileOptionGroupToOverrideFuncs map[fileOptionGroup][]overrideFunc) map[fileOptionGroup]overrideFunc {
+	fileOptionToOverrideFunc := make(map[fileOptionGroup]overrideFunc, len(fileOptionGroupToOverrideFuncs))
+	for fileOptionGroup, overrideFuncs := range fileOptionGroupToOverrideFuncs {
+		fileOptionToOverrideFunc[fileOptionGroup] = mergeOverrideFuncs(overrideFuncs)
 	}
 	return fileOptionToOverrideFunc
 }
 
 func mergeDisabledFuncs(disabledFuncs []disabledFunc) disabledFunc {
-	// If any disables, then we disable for this FileOption and ImageFile
-	return func(fileOption FileOption, imageFile bufimage.ImageFile) bool {
+	// If any disables, then we disable for this fileOption and ImageFile
+	return func(fileOption fileOption, imageFile imageFileIdentity) bool {
 		for _, disabledFunc := range disabledFuncs {
 			if disabledFunc(fileOption, imageFile) {
 				return true
@@ -278,19 +276,35 @@ func mergeDisabledFuncs(disabledFuncs []disabledFunc) disabledFunc {
 }
 
 func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
-	// Last override listed wins
-	return func(imageFile bufimage.ImageFile) (string, error) {
-		var override string
+	// Last override listed wins, but if the last two are prefix and suffix, both win.
+	return func(imageFile imageFileIdentity) bufimagemodifyv2.Override {
+		var (
+			secondLastOverride bufimagemodifyv2.Override
+			lastOverride       bufimagemodifyv2.Override
+		)
 		for _, overrideFunc := range overrideFuncs {
-			iOverride, err := overrideFunc(imageFile)
-			if err != nil {
-				return "", err
-			}
-			// TODO: likely want something like *string or otherwise, see https://github.com/bufbuild/buf/issues/1949
-			if iOverride != "" {
-				override = iOverride
+			currentOverride := overrideFunc(imageFile)
+			if currentOverride != nil {
+				secondLastOverride = lastOverride
+				lastOverride = currentOverride
 			}
 		}
-		return override, nil
+		if prefixOverride, ok := secondLastOverride.(bufimagemodifyv2.PrefixOverride); ok {
+			if suffixOverride, ok := lastOverride.(bufimagemodifyv2.SuffixOverride); ok {
+				return bufimagemodifyv2.NewPrefixSuffixOverride(
+					prefixOverride.Get(),
+					suffixOverride.Get(),
+				)
+			}
+		}
+		if suffixOverride, ok := secondLastOverride.(bufimagemodifyv2.SuffixOverride); ok {
+			if prefixOverride, ok := lastOverride.(bufimagemodifyv2.PrefixOverride); ok {
+				return bufimagemodifyv2.NewPrefixSuffixOverride(
+					prefixOverride.Get(),
+					suffixOverride.Get(),
+				)
+			}
+		}
+		return lastOverride
 	}
 }

@@ -21,8 +21,10 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
 )
 
-// TODO this would be part of a runner or likewise
-// this is just for demonstration of bringing the management stuff into one function
+const (
+	defaultJavaPackagePrefix = "com"
+)
+
 // applyManagement modifies an image based on managed mode configuration.
 func applyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
 	markSweeper := bufimagemodifyv2.NewMarkSweeper(image)
@@ -39,32 +41,85 @@ func applyManagementForFile(
 	imageFile bufimage.ImageFile,
 	managedConfig *ManagedConfig,
 ) error {
-	for _, fileOption := range AllFileOptions {
-		if managedConfig.DisabledFunc(fileOption, imageFile) {
-			continue
-		}
-		var valueOrPrefix string
-		var err error
-		overrideFunc, ok := managedConfig.FileOptionToOverrideFunc[fileOption]
+	for _, fileOptionGroup := range allFileOptionGroups {
+		var override bufimagemodifyv2.Override
+		overrideFunc, ok := managedConfig.FileOptionGroupToOverrideFunc[fileOptionGroup]
 		if ok {
-			valueOrPrefix, err = overrideFunc(imageFile)
+			override = overrideFunc(imageFile)
+		}
+		// TODO do the rest
+		switch fileOptionGroup {
+		case groupJavaPackage:
+			if managedConfig.DisabledFunc(fileOptionJavaPackage, imageFile) {
+				continue
+			}
+			override = addPrefixIfNotExist(override, defaultJavaPackagePrefix)
+			if managedConfig.DisabledFunc(fileOptionJavaPackagePrefix, imageFile) {
+				override = disablePrefix(override)
+			}
+			if managedConfig.DisabledFunc(fileOptionJavaPackageSuffix, imageFile) {
+				override = disableSuffix(override)
+			}
+			modifyOptions, err := getModifyOptions(override)
 			if err != nil {
 				return err
 			}
-		}
-		// TODO do the rest
-		switch fileOption {
-		case FileOptionJavaPackage:
-			// Will need to do *string or similar for unset
-			if valueOrPrefix == "" {
-				valueOrPrefix = defaultJavaPackagePrefix
-			}
-			if err := bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, valueOrPrefix); err != nil {
+			err = bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, modifyOptions...)
+			if err != nil {
 				return err
 			}
 		default:
-			return fmt.Errorf("unknown FileOption: %q", fileOption)
+			// this should not happen
+			return fmt.Errorf("unknown file option")
 		}
 	}
 	return nil
+}
+
+// disablePrefix returns an override that does the same thing as the override provided,
+// except that the one returned does not modify prefix.
+func disablePrefix(override bufimagemodifyv2.Override) bufimagemodifyv2.Override {
+	switch t := override.(type) {
+	case bufimagemodifyv2.PrefixOverride:
+		return nil
+	case bufimagemodifyv2.PrefixSuffixOverride:
+		return bufimagemodifyv2.NewSuffixOverride(t.GetSuffix())
+	}
+	return override
+}
+
+// disableSuffix returns an override that does the same thing as the override provided,
+// except that the one returned does not modify suffix.
+func disableSuffix(override bufimagemodifyv2.Override) bufimagemodifyv2.Override {
+	switch t := override.(type) {
+	case bufimagemodifyv2.SuffixOverride:
+		return nil
+	case bufimagemodifyv2.PrefixSuffixOverride:
+		return bufimagemodifyv2.NewPrefixOverride(t.GetPrefix())
+	}
+	return override
+}
+
+// addPrefixIfNotExist returns an override that does the same thing  as the override provided,
+// except that the one returned also modifies prefix. If the override provided already modifies
+// prefix, or if it modifies the value directly, the function returns the same override.
+func addPrefixIfNotExist(override bufimagemodifyv2.Override, prefix string) bufimagemodifyv2.Override {
+	switch t := override.(type) {
+	case bufimagemodifyv2.SuffixOverride:
+		return bufimagemodifyv2.NewPrefixSuffixOverride(prefix, t.Get())
+	case nil:
+		return bufimagemodifyv2.NewPrefixOverride(prefix)
+	}
+	return override
+}
+
+func getModifyOptions(override bufimagemodifyv2.Override) ([]bufimagemodifyv2.ModifyOption, error) {
+	if override == nil {
+		return nil, nil
+	}
+	option, err := bufimagemodifyv2.ModifyWithOverride(override)
+	if err != nil {
+		return nil, err
+	}
+	return []bufimagemodifyv2.ModifyOption{option}, nil
 }

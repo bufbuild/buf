@@ -1,0 +1,46 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  disable:
+    - path: excluded/
+    - file_option: java_package
+      path: java-excluded/
+    - file_option: java_package
+      module: buf.build/acme/weather
+    - file_option: java_package
+      path:  a/b/c.proto
+    - file_option: java_package
+      module: buf.build/acme/petapis
+      path: x/y/z.proto
+    - file_option: java_package
+      path: exact.proto
+  override:
+    - file_option: java_package
+      value: global.default
+    - file_option: java_package
+      module: buf.build/acme/weather
+      value: module1.default
+    - file_option: java_package
+      path: b/c/d
+      value: bcd.override
+    - file_option: java_package
+      path: b/c/d/x.proto
+      value: x.override
+    - file_option: java_package
+      path: b/c/d/e
+      value: net.bcde
+    - file_option: java_package
+      module: buf.build/acme/weather
+      path: b/c/d/e/f.proto
+      value: override.value.bcdef
+    - file_option: java_package
+      module: buf.build/acme/weather
+      path: m/n/xyz.proto
+      value: ignored.value
+    - file_option: java_package
+      module: buf.build/acme/weather
+      path: m/
+      value: m.override

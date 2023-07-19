@@ -1,0 +1,57 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - file_option: java_package_prefix
+      value: org
+    - file_option: java_package_suffix
+      value: proto
+    - file_option: java_package_prefix
+      value: special.prefix
+      path: special
+    - file_option: java_package_suffix
+      path: special
+      value: special.suffix
+    - file_option: java_package
+      value: com.example.pb
+      path: a/b/
+    - file_option: java_package
+      value: com.special.x
+      path: special/x
+    # overrides until this point are normal workflow
+    - file_option: java_package_prefix
+      value: net
+      path: special/p
+    - file_option: java_package_suffix
+      value: s.suffix
+      path: special/s
+    - file_option: java_package_prefix
+      value: xyz.prefix
+      path: special/s/xyz
+    - file_option: java_package_suffix
+      value: final.suffix
+      path: special/s/xyz/final
+    - file_option: java_package
+      value: net.example
+      path: special/p/
+    - file_option: java_package
+      value: com.something
+      path: special/p/something.proto
+    - file_option: java_package
+      value: base.double
+      path: double
+    - file_option: java_package_prefix
+      value: dp1
+      path: double/pre
+    - file_option: java_package_prefix
+      value: dp2
+      path: double/pre/pre
+    - file_option: java_package_suffix
+      value: ds1
+      path: double/suf
+    - file_option: java_package_suffix
+      value: ds2
+      path: double/suf/suf

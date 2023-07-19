@@ -36,6 +36,7 @@ const (
 	testRepositoryName  = "testrepository"
 )
 
+// TODO: move this back to bufiamgemodifytestingv1
 func AssertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32, includeSourceInfo bool) {
 	for _, imageFile := range image.Files() {
 		descriptor := imageFile.Proto()
@@ -56,6 +57,7 @@ func AssertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fil
 	}
 }
 
+// TODO: move this back to bufiamgemodifytestingv1
 func AssertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32) {
 	for _, imageFile := range image.Files() {
 		descriptor := imageFile.Proto()
@@ -71,6 +73,9 @@ func AssertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, 
 	}
 }
 
+// TODO: move this to bufimagetesting
+// GetTestImage returns an image from a directory, with a convenience module created with
+// a test remote, repository owner, and repository name.
 func GetTestImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage.Image {
 	module := GetTestModule(t, dirPath)
 	var options []bufimagebuild.BuildOption
@@ -90,6 +95,7 @@ func GetTestImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage
 	return image
 }
 
+// GetTestModule returns a module with sample module identity for testing.
 func GetTestModule(t *testing.T, dirPath string) bufmodule.Module {
 	storageosProvider := storageos.NewProvider()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(

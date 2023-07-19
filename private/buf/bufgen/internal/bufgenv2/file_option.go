@@ -19,113 +19,117 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
-	// FileOptionJavaPackage is the file option java_package.
-	FileOptionJavaPackage FileOption = iota + 1
-	// FileOptionJavaOuterClassname is the file option java_outer_classname.
-	FileOptionJavaOuterClassname
-	// FileOptionJavaMultipleFiles is the file option java_multiple_files.
-	FileOptionJavaMultipleFiles
-	// FileOptionJavaStringCheckUtf8 is the file option java_string_check_utf8.
-	FileOptionJavaStringCheckUtf8
-	// FileOptionOptimizeFor is the file option optimize_for.
-	FileOptionOptimizeFor
-	// FileOptionGoPackage is the file option go_package.
-	FileOptionGoPackage
-	// FileOptionCcEnableArenas is the file option cc_enable_arenas.
-	FileOptionCcEnableArenas
-	// FileOptionObjcClassPrefix is the file option objc_class_prefix.
-	FileOptionObjcClassPrefix
-	// FileOptionCsharpNamespace is the file option csharp_namespace.
-	FileOptionCsharpNamespace
-	// FileOptionPhpNamespace is the file option php_namespace.
-	FileOptionPhpNamespace
-	// FileOptionPhpMetadataNamespace is the file option php_metadata_namespace.
-	FileOptionPhpMetadataNamespace
-	// FileOptionRubyPackage is the file option ruby_package.
-	FileOptionRubyPackage
+	// fileOptionJavaPackage is the file option java_package.
+	fileOptionJavaPackage fileOption = iota + 1
+	// fileOptionJavaPackagePrefix is the file option java_package_prefix.
+	fileOptionJavaPackagePrefix
+	// fileOptionJavaPackageSuffix is the file option java_package_suffix.
+	fileOptionJavaPackageSuffix
+	// fileOptionJavaOuterClassname is the file option java_outer_classname.
+	fileOptionJavaOuterClassname
+	// fileOptionJavaMultipleFiles is the file option java_multiple_files.
+	fileOptionJavaMultipleFiles
+	// fileOptionJavaStringCheckUtf8 is the file option java_string_check_utf8.
+	fileOptionJavaStringCheckUtf8
+	// fileOptionOptimizeFor is the file option optimize_for.
+	fileOptionOptimizeFor
+	// fileOptionGoPackage is the file option go_package.
+	fileOptionGoPackage
+	// fileOptionGoPackagePrefix is the file option go_package_prefix.
+	fileOptionGoPackagePrefix
+	// fileOptionCcEnableArenas is the file option cc_enable_arenas.
+	fileOptionCcEnableArenas
+	// fileOptionObjcClassPrefix is the file option objc_class_prefix.
+	fileOptionObjcClassPrefix
+	// fileOptionCsharpNamespace is the file option csharp_namespace.
+	fileOptionCsharpNamespace
+	// fileOptionCsharpNamespacePrefix is the file option csharp_namespace_prefix.
+	fileOptionCsharpNamespacePrefix
+	// fileOptionPhpNamespace is the file option php_namespace.
+	fileOptionPhpNamespace
+	// fileOptionPhpMetadataNamespace is the file option php_metadata_namespace.
+	fileOptionPhpMetadataNamespace
+	// fileOptionPhpMetadataNamespaceSuffix is the file option php_metadata_namespace_suffix.
+	fileOptionPhpMetadataNamespaceSuffix
+	// fileOptionRubyPackage is the file option ruby_package.
+	fileOptionRubyPackage
+	// groupJavaPackage is the file option group that modifies java_package.
+	groupJavaPackage fileOptionGroup = iota + 1
 )
 
 var (
-	// AllFileOptions are all FileOptions.
-	AllFileOptions = []FileOption{
-		FileOptionJavaPackage,
-		FileOptionJavaOuterClassname,
-		FileOptionJavaMultipleFiles,
-		FileOptionJavaStringCheckUtf8,
-		FileOptionOptimizeFor,
-		FileOptionGoPackage,
-		FileOptionCcEnableArenas,
-		FileOptionObjcClassPrefix,
-		FileOptionCsharpNamespace,
-		FileOptionPhpNamespace,
-		FileOptionPhpMetadataNamespace,
-		FileOptionRubyPackage,
+	fileOptionToString = map[fileOption]string{
+		fileOptionJavaPackage:                "java_package",
+		fileOptionJavaPackagePrefix:          "java_package_prefix",
+		fileOptionJavaPackageSuffix:          "java_package_suffix",
+		fileOptionJavaOuterClassname:         "java_outer_classname",
+		fileOptionJavaMultipleFiles:          "java_multiple_files",
+		fileOptionJavaStringCheckUtf8:        "java_string_check_utf8",
+		fileOptionOptimizeFor:                "optimize_for",
+		fileOptionGoPackage:                  "go_package",
+		fileOptionGoPackagePrefix:            "go_package_prefix",
+		fileOptionCcEnableArenas:             "cc_enable_arenas",
+		fileOptionObjcClassPrefix:            "objc_class_prefix",
+		fileOptionCsharpNamespace:            "csharp_namespace",
+		fileOptionCsharpNamespacePrefix:      "csharp_namespace_prefix",
+		fileOptionPhpNamespace:               "php_namespace",
+		fileOptionPhpMetadataNamespace:       "php_metadata_namespace",
+		fileOptionPhpMetadataNamespaceSuffix: "php_metadata_namespace_suffix",
+		fileOptionRubyPackage:                "ruby_package",
 	}
-
-	// TODO: this type vs prefix thing isn't great
-	// fill it out if we want to use it, this isn't filled out
-	// except for JavaPackage
-	fileOptionToFileOptionType = map[FileOption]FileOptionType{
-		FileOptionJavaPackage:          FileOptionTypePrefix,
-		FileOptionJavaOuterClassname:   FileOptionTypeValue,
-		FileOptionJavaMultipleFiles:    FileOptionTypeValue,
-		FileOptionJavaStringCheckUtf8:  FileOptionTypeValue,
-		FileOptionOptimizeFor:          FileOptionTypeValue,
-		FileOptionGoPackage:            FileOptionTypeValue,
-		FileOptionCcEnableArenas:       FileOptionTypeValue,
-		FileOptionObjcClassPrefix:      FileOptionTypeValue,
-		FileOptionCsharpNamespace:      FileOptionTypeValue,
-		FileOptionPhpNamespace:         FileOptionTypeValue,
-		FileOptionPhpMetadataNamespace: FileOptionTypeValue,
-		FileOptionRubyPackage:          FileOptionTypeValue,
+	stringToFileOption = map[string]fileOption{
+		"java_package":                  fileOptionJavaPackage,
+		"java_package_prefix":           fileOptionJavaPackagePrefix,
+		"java_package_suffix":           fileOptionJavaPackageSuffix,
+		"java_outer_classname":          fileOptionJavaOuterClassname,
+		"java_multiple_files":           fileOptionJavaMultipleFiles,
+		"java_string_check_utf8":        fileOptionJavaStringCheckUtf8,
+		"optimize_for":                  fileOptionOptimizeFor,
+		"go_package":                    fileOptionGoPackage,
+		"go_package_prefix":             fileOptionGoPackagePrefix,
+		"cc_enable_arenas":              fileOptionCcEnableArenas,
+		"objc_class_prefix":             fileOptionObjcClassPrefix,
+		"csharp_namespace":              fileOptionCsharpNamespace,
+		"csharp_namespace_prefix":       fileOptionCsharpNamespacePrefix,
+		"php_namespace":                 fileOptionPhpNamespace,
+		"php_metadata_namespace":        fileOptionPhpMetadataNamespace,
+		"php_metadata_namespace_suffix": fileOptionPhpMetadataNamespaceSuffix,
+		"ruby_package":                  fileOptionRubyPackage,
 	}
-	fileOptionToString = map[FileOption]string{
-		FileOptionJavaPackage:          "java_package",
-		FileOptionJavaOuterClassname:   "java_outer_classname",
-		FileOptionJavaMultipleFiles:    "java_multiple_files",
-		FileOptionJavaStringCheckUtf8:  "java_string_check_utf8",
-		FileOptionOptimizeFor:          "optimize_for",
-		FileOptionGoPackage:            "go_package",
-		FileOptionCcEnableArenas:       "cc_enable_arenas",
-		FileOptionObjcClassPrefix:      "objc_class_prefix",
-		FileOptionCsharpNamespace:      "csharp_namespace",
-		FileOptionPhpNamespace:         "php_namespace",
-		FileOptionPhpMetadataNamespace: "php_metadata_namespace",
-		FileOptionRubyPackage:          "ruby_package",
+	fileOptionToOverrideParseFunc = map[fileOption]func(interface{}, fileOption) (bufimagemodifyv2.Override, error){
+		fileOptionJavaPackage:       parseValueOverride[string],
+		fileOptionJavaPackagePrefix: parsePrefixOverride,
+		fileOptionJavaPackageSuffix: parseSuffixOverride,
+		fileOptionOptimizeFor:       parseValueOverrideOptmizeMode,
+		// TODO: fill the rest
 	}
-	stringToFileOption = map[string]FileOption{
-		"java_package":           FileOptionJavaPackage,
-		"java_outer_classname":   FileOptionJavaOuterClassname,
-		"java_multiple_files":    FileOptionJavaMultipleFiles,
-		"java_string_check_utf8": FileOptionJavaStringCheckUtf8,
-		"optimize_for":           FileOptionOptimizeFor,
-		"go_package":             FileOptionGoPackage,
-		"cc_enable_arenas":       FileOptionCcEnableArenas,
-		"objc_class_prefix":      FileOptionObjcClassPrefix,
-		"csharp_namespace":       FileOptionCsharpNamespace,
-		"php_namespace":          FileOptionPhpNamespace,
-		"php_metadata_namespace": FileOptionPhpMetadataNamespace,
-		"ruby_package":           FileOptionRubyPackage,
+	fileOptionToGroup = map[fileOption]fileOptionGroup{
+		fileOptionJavaPackage:       groupJavaPackage,
+		fileOptionJavaPackagePrefix: groupJavaPackage,
+		fileOptionJavaPackageSuffix: groupJavaPackage,
+		// TODO: fill the rest
+	}
+	allFileOptionGroups = []fileOptionGroup{
+		groupJavaPackage,
+		// TODO: fill the rest
 	}
 )
 
-// FileOption is a descriptor.proto file option that can be managed.
-type FileOption int
+// fileOption is a file option in managed mode
+type fileOption int
 
-// Type returns the FileOptionType or 0 if unknown..
-func (f FileOption) Type() FileOptionType {
-	t, ok := fileOptionToFileOptionType[f]
-	if !ok {
-		return 0
-	}
-	return t
-}
+// fileOptionGroup is a group of file options, and file options modify the same
+// proto file option if they belong to the same group
+type fileOptionGroup int
 
 // String implements fmt.Stringer.
-func (f FileOption) String() string {
+func (f fileOption) String() string {
 	s, ok := fileOptionToString[f]
 	if !ok {
 		return strconv.Itoa(int(f))
@@ -133,17 +137,55 @@ func (f FileOption) String() string {
 	return s
 }
 
-// ParseFileOption parses the FileOption.
+// parseFileOption parses the fileOption.
 //
 // The empty string is an error.
-func ParseFileOption(s string) (FileOption, error) {
+func parseFileOption(s string) (fileOption, error) {
 	s = strings.ToLower(strings.TrimSpace(s))
 	if s == "" {
-		return 0, errors.New("empty FileOption")
+		return 0, errors.New("empty fileOption")
 	}
 	f, ok := stringToFileOption[s]
 	if ok {
 		return f, nil
 	}
-	return 0, fmt.Errorf("unknown FileOption: %q", s)
+	return 0, fmt.Errorf("unknown fileOption: %q", s)
+}
+
+// Pass type T to construct a function that only accepts type T and creates an override from it.
+func parseValueOverride[T string | bool](value interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+	overrideValue, ok := value.(T)
+	if !ok {
+		return nil, fmt.Errorf("invalid value for %v", fileOption)
+	}
+	return bufimagemodifyv2.NewValueOverride(overrideValue), nil
+}
+
+func parsePrefixOverride(value interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+	prefix, ok := value.(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid value for %v", fileOption)
+	}
+	return bufimagemodifyv2.NewPrefixOverride(prefix), nil
+}
+
+func parseSuffixOverride(value interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+	suffix, ok := value.(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid value for %v", fileOption)
+	}
+	return bufimagemodifyv2.NewSuffixOverride(suffix), nil
+}
+
+func parseValueOverrideOptmizeMode(override interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+	optimizeModeName, ok := override.(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid value for %v", fileOption)
+	}
+	optimizeModeEnum, ok := descriptorpb.FileOptions_OptimizeMode_value[optimizeModeName]
+	if !ok {
+		return nil, fmt.Errorf("%v: %s is not a valid optmize_for value, must be one of SPEED, CODE_SIZE and LITE_RUNTIME", fileOption, optimizeModeName)
+	}
+	optimizeMode := descriptorpb.FileOptions_OptimizeMode(optimizeModeEnum)
+	return bufimagemodifyv2.NewValueOverride(optimizeMode), nil
 }

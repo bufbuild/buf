@@ -32,8 +32,7 @@ import (
 )
 
 const (
-	defaultJavaPackagePrefix = "com"
-	defaultInput             = "."
+	defaultInput = "."
 )
 
 type Generator struct {
@@ -166,7 +165,11 @@ func (g *Generator) Generate(
 		)
 	}
 	for _, inputImage := range inputImages {
-		// TODO: modify this image
+		if genConfig.Managed != nil && genConfig.Managed.Enabled {
+			if err := applyManagement(inputImage, genConfig.Managed); err != nil {
+				return err
+			}
+		}
 		if err := g.generator.Generate(
 			ctx,
 			container,
@@ -191,14 +194,14 @@ type ExternalConfigV2 struct {
 
 // ExternalManagedConfigV2 is an external managed mode configuration.
 type ExternalManagedConfigV2 struct {
-	Enable   bool                              `json:"enable,omitempty" yaml:"enable,omitempty"`
+	Enabled  bool                              `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 	Disable  []ExternalManagedDisableConfigV2  `json:"disable,omitempty" yaml:"disable,omitempty"`
 	Override []ExternalManagedOverrideConfigV2 `json:"override,omitempty" yaml:"override,omitempty"`
 }
 
 // isEmpty returns true if the config is empty.
 func (m ExternalManagedConfigV2) isEmpty() bool {
-	return !m.Enable && len(m.Disable) == 0 && len(m.Override) == 0
+	return !m.Enabled && len(m.Disable) == 0 && len(m.Override) == 0
 }
 
 // ExternalManagedDisableConfigV2 is an external configuration that disables file options in
@@ -222,10 +225,8 @@ type ExternalManagedOverrideConfigV2 struct {
 	Module string `json:"module,omitempty" yaml:"module,omitempty"`
 	// Must be normalized and validated
 	Path string `json:"path,omitempty" yaml:"path,omitempty"`
-	// Only one of Value and Prefix can be set
-	// TODO: may be interface{}, what to do about boo, optimize_mode, etc
-	Value  string `json:"value,omitempty" yaml:"value,omitempty"`
-	Prefix string `json:"prefix,omitempty" yaml:"prefix,omitempty"`
+	// Required
+	Value interface{} `json:"value,omitempty" yaml:"value,omitempty"`
 }
 
 // ExternalPluginConfigV2 is an external plugin configuration.
