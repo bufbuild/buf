@@ -21,12 +21,13 @@ import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
 enum SearchFilter {
+  reserved 4, 5;
+  reserved "SEARCH_FILTER_PLUGIN", "SEARCH_FILTER_TEMPLATE";
+
   SEARCH_FILTER_UNSPECIFIED = 0;
   SEARCH_FILTER_USER = 1;
   SEARCH_FILTER_ORGANIZATION = 2;
   SEARCH_FILTER_REPOSITORY = 3;
-  SEARCH_FILTER_PLUGIN = 4 [deprecated = true];
-  SEARCH_FILTER_TEMPLATE = 5 [deprecated = true];
   SEARCH_FILTER_TEAM = 6;
   SEARCH_FILTER_CURATED_PLUGIN = 7;
 }
@@ -76,6 +77,9 @@ message CuratedPluginSearchResult {
 }
 
 message SearchResult {
+  reserved 5, 6;
+  reserved "plugin", "template";
+
   oneof item {
     RepositorySearchResult repository = 1;
     OrganizationSearchResult organization = 2;

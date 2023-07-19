@@ -111,6 +111,9 @@ message ForceDeleteUserRequest {
 }
 
 message ForceDeleteUserResponse {
+  reserved 4, 5;
+  reserved "plugins", "templates";
+
   // The deleted user.
   User user = 1;
   // The deleted organizations.
