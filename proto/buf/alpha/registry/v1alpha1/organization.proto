@@ -231,6 +231,9 @@ message GetOrganizationSettingsRequest {
 }
 
 message GetOrganizationSettingsResponse {
+  reserved 2, 3;
+  reserved "plugin_base_role", "template_base_role";
+
   RepositoryRole repository_base_role = 1;
   // The number of members in the organization.
   uint32 members_count = 4;
@@ -239,6 +242,9 @@ message GetOrganizationSettingsResponse {
 }
 
 message UpdateOrganizationSettingsRequest {
+  reserved 3, 4;
+  reserved "plugin_base_role", "template_base_role";
+
   // The ID of the organization for which to update the base roles.
   string organization_id = 1;
   // optional, no update to this base role will be made if this is unspecified.

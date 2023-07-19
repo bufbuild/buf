@@ -66,6 +66,9 @@ message DisplayOrganizationElementsRequest {
 }
 
 message DisplayOrganizationElementsResponse {
+  reserved 2, 3;
+  reserved "create_plugin", "create_template";
+
   // Display create organization repository element if true.
   bool create_repository = 1;
   // Display organization settings element if true.

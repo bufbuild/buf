@@ -21,6 +21,9 @@ import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
 enum SearchFilter {
+  reserved 4, 5;
+  reserved "SEARCH_FILTER_PLUGIN", "SEARCH_FILTER_TEMPLATE";
+
   SEARCH_FILTER_UNSPECIFIED = 0;
   SEARCH_FILTER_USER = 1;
   SEARCH_FILTER_ORGANIZATION = 2;
