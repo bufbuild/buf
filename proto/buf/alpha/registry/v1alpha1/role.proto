@@ -49,23 +49,3 @@ enum RepositoryRole {
   REPOSITORY_ROLE_READ = 4;
   REPOSITORY_ROLE_LIMITED_WRITE = 5;
 }
-
-// The roles that users can have for a Template.
-enum TemplateRole {
-  option deprecated = true;
-  TEMPLATE_ROLE_UNSPECIFIED = 0;
-  TEMPLATE_ROLE_OWNER = 1;
-  TEMPLATE_ROLE_ADMIN = 2;
-  TEMPLATE_ROLE_WRITE = 3;
-  TEMPLATE_ROLE_READ = 4;
-}
-
-// The roles that users can have for a Plugin.
-enum PluginRole {
-  option deprecated = true;
-  PLUGIN_ROLE_UNSPECIFIED = 0;
-  PLUGIN_ROLE_OWNER = 1;
-  PLUGIN_ROLE_ADMIN = 2;
-  PLUGIN_ROLE_WRITE = 3;
-  PLUGIN_ROLE_READ = 4;
-}

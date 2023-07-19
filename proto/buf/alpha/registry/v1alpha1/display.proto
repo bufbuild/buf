@@ -68,10 +68,6 @@ message DisplayOrganizationElementsRequest {
 message DisplayOrganizationElementsResponse {
   // Display create organization repository element if true.
   bool create_repository = 1;
-  // Display create organization plugin element if true.
-  bool create_plugin = 2 [deprecated = true];
-  // Display create organization template element if true.
-  bool create_template = 3 [deprecated = true];
   // Display organization settings element if true.
   bool settings = 4;
   // Display update organization settings element if true.
