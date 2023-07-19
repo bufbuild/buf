@@ -231,9 +231,10 @@ message GetOrganizationSettingsRequest {
 }
 
 message GetOrganizationSettingsResponse {
+  reserved 2, 3;
+  reserved "plugin_base_role", "template_base_role";
+
   RepositoryRole repository_base_role = 1;
-  PluginRole plugin_base_role = 2 [deprecated = true];
-  TemplateRole template_base_role = 3 [deprecated = true];
   // The number of members in the organization.
   uint32 members_count = 4;
   // The IdP groups associated with the organization.
@@ -241,14 +242,13 @@ message GetOrganizationSettingsResponse {
 }
 
 message UpdateOrganizationSettingsRequest {
+  reserved 3, 4;
+  reserved "plugin_base_role", "template_base_role";
+
   // The ID of the organization for which to update the base roles.
   string organization_id = 1;
   // optional, no update to this base role will be made if this is unspecified.
   RepositoryRole repository_base_role = 2;
-  // optional, no update to this base role will be made if this is unspecified.
-  PluginRole plugin_base_role = 3 [deprecated = true];
-  // optional, no update to this base role will be made if this is unspecified.
-  TemplateRole template_base_role = 4 [deprecated = true];
   // optional, update to description will only be made when this is present
   optional string description = 5;
   // optional, update to url will only be made when this is present
