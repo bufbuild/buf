@@ -770,13 +770,13 @@ func TestManagedConfig(t *testing.T) {
 				groupJavaPackage: {
 					&fakeImageFileIdentity{
 						path: "file.proto",
-					}: bufimagemodifyv2.NewPrefxiSuffixOverride(
+					}: bufimagemodifyv2.NewPrefixSuffixOverride(
 						"org",
 						"proto",
 					),
 					&fakeImageFileIdentity{
 						path: "special/file.proto",
-					}: bufimagemodifyv2.NewPrefxiSuffixOverride(
+					}: bufimagemodifyv2.NewPrefixSuffixOverride(
 						"special.prefix",
 						"special.suffix",
 					),
@@ -800,14 +800,14 @@ func TestManagedConfig(t *testing.T) {
 					// test the last two overrides are suffix and prefix
 					&fakeImageFileIdentity{
 						path: "special/s/xyz/file.proto",
-					}: bufimagemodifyv2.NewPrefxiSuffixOverride(
+					}: bufimagemodifyv2.NewPrefixSuffixOverride(
 						"xyz.prefix",
 						"s.suffix",
 					),
 					// test the last two overrides are prefix and suffix
 					&fakeImageFileIdentity{
 						path: "special/s/xyz/final/file.proto",
-					}: bufimagemodifyv2.NewPrefxiSuffixOverride(
+					}: bufimagemodifyv2.NewPrefixSuffixOverride(
 						"xyz.prefix",
 						"final.suffix",
 					),

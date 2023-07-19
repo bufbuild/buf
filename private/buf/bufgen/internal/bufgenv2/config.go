@@ -291,7 +291,7 @@ func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
 		}
 		if prefixOverride, ok := secondLastOverride.(bufimagemodifyv2.PrefixOverride); ok {
 			if suffixOverride, ok := lastOverride.(bufimagemodifyv2.SuffixOverride); ok {
-				return bufimagemodifyv2.NewPrefxiSuffixOverride(
+				return bufimagemodifyv2.NewPrefixSuffixOverride(
 					prefixOverride.Get(),
 					suffixOverride.Get(),
 				)
@@ -299,7 +299,7 @@ func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
 		}
 		if suffixOverride, ok := secondLastOverride.(bufimagemodifyv2.SuffixOverride); ok {
 			if prefixOverride, ok := lastOverride.(bufimagemodifyv2.PrefixOverride); ok {
-				return bufimagemodifyv2.NewPrefxiSuffixOverride(
+				return bufimagemodifyv2.NewPrefixSuffixOverride(
 					prefixOverride.Get(),
 					suffixOverride.Get(),
 				)

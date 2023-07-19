@@ -226,7 +226,7 @@ func modifyWithSuffix(t *testing.T, prefix string) []ModifyOption {
 
 func modifyWithPrefixAndSuffix(t *testing.T, prefix string, suffix string) []ModifyOption {
 	option, err := ModifyWithOverride(
-		NewPrefxiSuffixOverride(
+		NewPrefixSuffixOverride(
 			prefix,
 			suffix,
 		),
