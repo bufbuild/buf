@@ -106,7 +106,7 @@ func disableSuffix(override bufimagemodifyv2.Override) bufimagemodifyv2.Override
 func addPrefixIfNotExist(override bufimagemodifyv2.Override, prefix string) bufimagemodifyv2.Override {
 	switch t := override.(type) {
 	case bufimagemodifyv2.SuffixOverride:
-		return bufimagemodifyv2.NewPrefxiSuffixOverride(prefix, t.Get())
+		return bufimagemodifyv2.NewPrefixSuffixOverride(prefix, t.Get())
 	case nil:
 		return bufimagemodifyv2.NewPrefixOverride(prefix)
 	}
