@@ -15,15 +15,12 @@
 package bufimagemodifyv2
 
 import (
-	"fmt"
 	"path/filepath"
 	"sort"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal/bufimagemodifytesting"
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -86,26 +83,4 @@ func TestGetFields(t *testing.T) {
 		},
 		markSweeper.sourceCodeInfoPaths,
 	)
-}
-
-// TODO: remove
-func printImage(
-	image bufimage.Image,
-) error {
-	message := bufimage.ImageToProtoImage(image)
-	resolver, err := protoencoding.NewResolver(
-		bufimage.ImageToFileDescriptors(
-			image,
-		)...,
-	)
-	if err != nil {
-		return err
-	}
-	data, err := protoencoding.NewJSONMarshaler(resolver, protoencoding.JSONMarshalerWithIndent()).Marshal(message)
-	if err != nil {
-		return err
-	}
-	s := string(data)
-	fmt.Printf("HERE IS THE Image:\n%s\n", s)
-	return nil
 }
