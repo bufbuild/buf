@@ -22,23 +22,51 @@ import (
 	"os"
 )
 
-// NewClientTLSConfigFromRootCertFiles creates a new tls.Config from a root certificate files.
-func NewClientTLSConfigFromRootCertFiles(alsoUseSystem bool, rootCertFilePaths ...string) (*tls.Config, error) {
-	rootCertDatas := make([][]byte, len(rootCertFilePaths))
-	for i, rootCertFilePath := range rootCertFilePaths {
+type tlsOptions struct {
+	useSystemCerts    bool
+	rootCertFilePaths []string
+}
+
+// TLSOption is an option for a new TLS Config.
+type TLSOption func(*tlsOptions)
+
+// WithSystemCertPool returns a new TLSOption to use the system
+// certificates. By default, no system certificates are used.
+func WithSystemCertPool() TLSOption {
+	return func(opts *tlsOptions) {
+		opts.useSystemCerts = true
+	}
+}
+
+// WithRootCertFilePaths returns a new TLSOption to trust the
+// specified root CAs at the given paths.
+func WithRootCertFilePaths(rootCertFilePaths ...string) TLSOption {
+	return func(opts *tlsOptions) {
+		opts.rootCertFilePaths = append(opts.rootCertFilePaths, rootCertFilePaths...)
+	}
+}
+
+// NewClientTLScreates a new tls.Config from a root certificate files.
+func NewClientTLS(options ...TLSOption) (*tls.Config, error) {
+	opts := &tlsOptions{}
+	for _, opt := range options {
+		opt(opts)
+	}
+	rootCertDatas := make([][]byte, len(opts.rootCertFilePaths))
+	for i, rootCertFilePath := range opts.rootCertFilePaths {
 		rootCertData, err := os.ReadFile(rootCertFilePath)
 		if err != nil {
 			return nil, err
 		}
 		rootCertDatas[i] = rootCertData
 	}
-	return newClientTLSConfigFromRootCertDatas(alsoUseSystem, rootCertDatas...)
+	return newClientTLSConfigFromRootCertDatas(opts.useSystemCerts, rootCertDatas...)
 }
 
 // newClientTLSConfigFromRootCertDatas creates a new tls.Config from root certificate datas.
-func newClientTLSConfigFromRootCertDatas(alsoUseSystem bool, rootCertDatas ...[]byte) (*tls.Config, error) {
+func newClientTLSConfigFromRootCertDatas(useSystemCerts bool, rootCertDatas ...[]byte) (*tls.Config, error) {
 	var certPool *x509.CertPool
-	if alsoUseSystem {
+	if useSystemCerts {
 		var err error
 		certPool, err = x509.SystemCertPool()
 		if err != nil {
@@ -60,19 +88,5 @@ func newClientTLSConfigFromRootCertPool(certPool *x509.CertPool) *tls.Config {
 	return &tls.Config{
 		MinVersion: tls.VersionTLS12,
 		RootCAs:    certPool,
-	}
-}
-
-// newClientSystemTLSConfig creates a new tls.Config that uses the system cert pool for verifying
-// server certificates.
-func newClientSystemTLSConfig() *tls.Config {
-	return &tls.Config{
-		MinVersion: tls.VersionTLS12,
-		// An empty TLS config will use the system certificate pool
-		// when verifying the servers certificate. This is because
-		// not setting any RootCAs will set `x509.VerifyOptions.Roots`
-		// to nil, which triggers the loading of system certs (including
-		// on Windows somehow) within (*x509.Certificate).Verify.
-		RootCAs: nil,
 	}
 }
