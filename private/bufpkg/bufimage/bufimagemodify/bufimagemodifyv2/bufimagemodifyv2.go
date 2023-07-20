@@ -167,8 +167,11 @@ func ModifyJavaPackage(
 	return nil
 }
 
-// ModifyJsType modifies JS_TYPE field option.
-func ModifyJsType(
+// TODO: Decide whether or not to use this one (this isn't the function we are calling right now,
+// but it's an alternative way of modifying). The interface is not as nice as that of FieldOptionModifier,
+// but this mean less code.
+// ModifyJSType modifies JS_TYPE field option.
+func ModifyJSType(
 	imageFile bufimage.ImageFile,
 	marker Marker,
 	valueSelector func(fieldName string) (value descriptorpb.FieldOptions_JSType, shouldModify bool),
@@ -208,8 +211,8 @@ func ModifyJsType(
 type FieldOptionModifier interface {
 	// FieldNames returns all fields' names from the image file.
 	FieldNames() []string
-	// ModifyJsType modifies field option js_type.
-	ModifyJsType(string, descriptorpb.FieldOptions_JSType) error
+	// ModifyJSType modifies field option js_type.
+	ModifyJSType(string, descriptorpb.FieldOptions_JSType) error
 }
 
 // NewFieldOptionModifier returns a new FieldOptionModifier

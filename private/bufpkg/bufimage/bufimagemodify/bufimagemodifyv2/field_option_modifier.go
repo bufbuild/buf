@@ -25,7 +25,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-type fieldOptionModifierForFile struct {
+type fieldOptionModifier struct {
 	marker                Marker
 	imageFile             bufimage.ImageFile
 	fieldNameToDescriptor map[string]*descriptorpb.FieldDescriptorProto
@@ -35,7 +35,7 @@ type fieldOptionModifierForFile struct {
 func newFieldOptionModifier(
 	imageFile bufimage.ImageFile,
 	marker Marker,
-) (FieldOptionModifier, error) {
+) (*fieldOptionModifier, error) {
 	fieldNameToDescriptor := make(map[string]*descriptorpb.FieldDescriptorProto)
 	fieldNameToSourcePath := make(map[string][]int32)
 	err := walk.DescriptorProtosWithPath(
@@ -57,7 +57,7 @@ func newFieldOptionModifier(
 	if err != nil {
 		return nil, err
 	}
-	return &fieldOptionModifierForFile{
+	return &fieldOptionModifier{
 		marker:                marker,
 		imageFile:             imageFile,
 		fieldNameToDescriptor: fieldNameToDescriptor,
@@ -65,7 +65,7 @@ func newFieldOptionModifier(
 	}, nil
 }
 
-func (m *fieldOptionModifierForFile) FieldNames() []string {
+func (m *fieldOptionModifier) FieldNames() []string {
 	fieldNames := make([]string, 0, len(m.fieldNameToDescriptor))
 	for fieldName := range m.fieldNameToDescriptor {
 		fieldNames = append(fieldNames, fieldName)
@@ -73,7 +73,7 @@ func (m *fieldOptionModifierForFile) FieldNames() []string {
 	return fieldNames
 }
 
-func (m *fieldOptionModifierForFile) ModifyJsType(
+func (m *fieldOptionModifier) ModifyJSType(
 	fieldName string,
 	value descriptorpb.FieldOptions_JSType,
 ) error {
