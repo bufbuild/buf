@@ -167,46 +167,57 @@ func ModifyJavaPackage(
 	return nil
 }
 
-// ModifyJsType modifies JS_TYPE field option. If only want to modify certain
-// fields but not all of them, pass nil as defaultValue.
+// ModifyJsType modifies JS_TYPE field option.
 func ModifyJsType(
 	imageFile bufimage.ImageFile,
 	marker Marker,
-	defaultValue *descriptorpb.FieldOptions_JSType,
-	perFieldValue map[string]descriptorpb.FieldOptions_JSType,
-	ignoredFields map[string]struct{},
+	valueSelector func(fieldName string) (value descriptorpb.FieldOptions_JSType, shouldModify bool),
 ) error {
-	err := walk.DescriptorProtos(imageFile.Proto(), func(fullName protoreflect.FullName, message proto.Message) error {
-		fmt.Printf("entering %s", fullName.Name()) // TODO: remove this line
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	err := walk.DescriptorProtosWithPath(imageFile.Proto(), func(
+		fullName protoreflect.FullName,
+		messageSourcePath protoreflect.SourcePath,
+		message proto.Message,
+	) error {
 		fieldDescriptor, ok := message.(*descriptorpb.FieldDescriptorProto)
 		if !ok {
-			fmt.Printf(", NOT a field\n") // TODO: remove this line
 			return nil
 		}
-		fmt.Printf(", a field with type %s\n", fieldDescriptor.Type) // TODO: remove this line
-		if fieldDescriptor.Type == nil ||
-			*fieldDescriptor.Type != descriptorpb.FieldDescriptorProto_TYPE_INT64 { // TODO: instead of comparing with one type, check it's not in one of 4 types
+		if fieldDescriptor.Type == nil || !isJsTypePermittedForType(*fieldDescriptor.Type) {
 			return nil
 		}
-		jsType := defaultValue
-		if perTypeOverride, ok := perFieldValue[string(fullName.Name())]; ok {
-			jsType = &perTypeOverride
+		if jsType, shouldModify := valueSelector(string(fullName)); shouldModify {
+			if fieldDescriptor.Options == nil {
+				fieldDescriptor.Options = &descriptorpb.FieldOptions{}
+			}
+			fieldDescriptor.Options.Jstype = &jsType
+			if len(messageSourcePath) > 0 {
+				jsTypeOptionPath := append(messageSourcePath, internal.JSTypePackageSuffix...)
+				marker.Mark(imageFile, jsTypeOptionPath)
+			}
 		}
-		// If there is no value specified for this file or this field, skip.
-		if jsType == nil {
-			return nil
-		}
-		if _, ok := ignoredFields[string(fullName.Name())]; ok {
-			return nil
-		}
-		if fieldDescriptor.Options == nil {
-			fieldDescriptor.Options = &descriptorpb.FieldOptions{}
-		}
-		fieldDescriptor.Options.Jstype = jsType
 		return nil
 	})
 	return err
-	// this is probably more of a problem for sweeper than for marker.
+}
+
+// FieldOptionModifier modifies field option. A new FieldOptionModifier
+// should be created for each file to be modified.
+type FieldOptionModifier interface {
+	// FieldNames returns all fields' names from the image file.
+	FieldNames() []string
+	// ModifyJsType modifies field option js_type.
+	ModifyJsType(string, descriptorpb.FieldOptions_JSType) error
+}
+
+// NewFieldOptionModifier returns a new FieldOptionModifier
+func NewFieldOptionModifier(
+	imageFile bufimage.ImageFile,
+	marker Marker,
+) (FieldOptionModifier, error) {
+	return newFieldOptionModifier(imageFile, marker)
 }
 
 func getJavaPackageValue(imageFile bufimage.ImageFile, prefix string, suffix string) string {

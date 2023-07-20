@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package foo.bar.baz;
+
+option go_package = "github.com/hello/world";
+option java_package = "com.example";
+
+message Outer {
+  message Inner {
+    string i1 = 1;
+    int32 i2 = 2;
+    repeated string i3 = 3 [ctype = CORD];
+    int64 i4 = 4 [jstype = JS_NUMBER];
+    uint64 i5 = 5 [
+      jstype = JS_STRING,
+      ctype = CORD
+    ];
+    sint64 i6 = 6;
+  }
+  repeated Inner o1 = 1;
+  string o2 = 2;
+  fixed64 o3 = 3 [jstype = JS_STRING];
+  sfixed64 o4 = 4 [jstype = JS_NORMAL];
+}
