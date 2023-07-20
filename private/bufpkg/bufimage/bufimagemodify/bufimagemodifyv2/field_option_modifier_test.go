@@ -69,7 +69,7 @@ func TestGetFields(t *testing.T) {
 	require.NotNil(t, fifthField.GetOptions().Jstype)
 	require.Equal(t, descriptorpb.FieldOptions_JS_STRING, *fifthField.GetOptions().Jstype)
 
-	err = m.ModifyJSType("foo.bar.baz.Outer.Inner.i5", descriptorpb.FieldOptions_JS_NUMBER)
+	err = m.ModifyJSType("foo.bar.baz.Outer.Inner.i5", newValueOverride(descriptorpb.FieldOptions_JS_NUMBER))
 	require.NoError(t, err)
 
 	require.Equal(t, descriptorpb.FieldOptions_JS_NUMBER, *fifthField.GetOptions().Jstype)

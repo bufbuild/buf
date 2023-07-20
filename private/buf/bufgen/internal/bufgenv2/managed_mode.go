@@ -73,6 +73,30 @@ func applyManagementForFile(
 			return fmt.Errorf("unknown file option")
 		}
 	}
+	modifier, err := bufimagemodifyv2.NewFieldOptionModifier(imageFile, marker)
+	if err != nil {
+		return err
+	}
+	for _, field := range modifier.FieldNames() {
+		for _, fieldOption := range allFieldOptions {
+			if managedConfig.FieldDisableFunc(fieldOption, imageFile, field) {
+				continue
+			}
+			var override bufimagemodifyv2.Override
+			if fieldOverrideFunc, ok := managedConfig.FieldOptionToOverrideFunc[fieldOption]; ok {
+				override = fieldOverrideFunc(imageFile, field)
+			}
+			switch fieldOption {
+			case fieldOptionJsType:
+				err := modifier.ModifyJSType(field, override)
+				if err != nil {
+					return err
+				}
+			default:
+				// this should not happen
+			}
+		}
+	}
 	return nil
 }
 

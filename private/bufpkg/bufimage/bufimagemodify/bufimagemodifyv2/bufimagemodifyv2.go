@@ -50,7 +50,7 @@ func NewMarkSweeper(image bufimage.Image) MarkSweeper {
 	return newMarkSweeper(image)
 }
 
-// Override describes how to modify a file option, and
+// Override describes how to modify a file or field option, and
 // may be passed to ModifyXYZ.
 type Override interface {
 	override()
@@ -96,14 +96,19 @@ func NewPrefixSuffixOverride(
 	return newPrefixSuffixOverride(prefix, suffix)
 }
 
-// ValueOverride is an override that directly modifies a file option.
+// ValueOverride is an override that directly modifies a file or field option.
 type ValueOverride interface {
 	Override
 	valueOverride()
 }
 
 // NewValueOverride returns a new override on value.
-func NewValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](val T) ValueOverride {
+func NewValueOverride[
+	T string |
+		bool |
+		descriptorpb.FileOptions_OptimizeMode |
+		descriptorpb.FieldOptions_JSType,
+](val T) ValueOverride {
 	return newValueOverride(val)
 }
 
@@ -212,7 +217,7 @@ type FieldOptionModifier interface {
 	// FieldNames returns all fields' names from the image file.
 	FieldNames() []string
 	// ModifyJSType modifies field option js_type.
-	ModifyJSType(string, descriptorpb.FieldOptions_JSType) error
+	ModifyJSType(string, Override) error
 }
 
 // NewFieldOptionModifier returns a new FieldOptionModifier

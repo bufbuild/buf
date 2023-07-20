@@ -75,11 +75,16 @@ func (m *fieldOptionModifier) FieldNames() []string {
 
 func (m *fieldOptionModifier) ModifyJSType(
 	fieldName string,
-	value descriptorpb.FieldOptions_JSType,
+	override Override,
 ) error {
 	if internal.IsWellKnownType(m.imageFile) {
 		return nil
 	}
+	jsTypeOverride, ok := override.(valueOverride[descriptorpb.FieldOptions_JSType])
+	if !ok {
+		return fmt.Errorf("invalid ")
+	}
+	jsType := jsTypeOverride.get()
 	fieldDescriptor, ok := m.fieldNameToDescriptor[fieldName]
 	if !ok {
 		return fmt.Errorf("could not find field %s in %s", fieldName, m.imageFile.Path())
@@ -90,7 +95,7 @@ func (m *fieldOptionModifier) ModifyJSType(
 	if fieldDescriptor.Options == nil {
 		fieldDescriptor.Options = &descriptorpb.FieldOptions{}
 	}
-	fieldDescriptor.Options.Jstype = &value
+	fieldDescriptor.Options.Jstype = &jsType
 	if fieldSourcePath, ok := m.fieldNameToSourcepath[fieldName]; ok {
 		if len(fieldSourcePath) > 0 {
 			jsTypeOptionPath := append(fieldSourcePath, internal.JSTypePackageSuffix...)

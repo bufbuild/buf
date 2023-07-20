@@ -1028,12 +1028,12 @@ func TestConfigError(t *testing.T) {
 		{
 			testName:      "Test disable has none of path module and file option",
 			file:          filepath.Join("managed", "invalid_disable"),
-			expectedError: "must set one of file_option, module and path for a disable rule",
+			expectedError: "must set one of file_option, field option, module, path and field for a disable rule",
 		},
 		{
-			testName:      "Test disable has none of path module and file option",
+			testName:      "Test override has none of path module and file option",
 			file:          filepath.Join("managed", "invalid_override"),
-			expectedError: "must set a file option to override",
+			expectedError: "must set one of file option and field option to override",
 		},
 	}
 
