@@ -42,6 +42,9 @@ func newConfigV1(externalConfig ExternalConfigV1, workspaceID string) (*Config, 
 				workspaceID,
 			)
 		}
+		if normalizedDirectory == "." {
+			return nil, fmt.Errorf(`directory "." listed in %s, it is not valid to have "." as a workspace directory, as this is no different than not having a workspace at all, see https://buf.build/docs/reference/workspaces/#directories for more details`, workspaceID)
+		}
 		directorySet[normalizedDirectory] = struct{}{}
 	}
 	// It's very important that we sort the directories here so that the
