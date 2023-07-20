@@ -41,7 +41,11 @@ func NewClientTLSConfig(
 	container appname.Container,
 	externalClientTLSConfig ExternalClientTLSConfig,
 ) (*tls.Config, error) {
+	alsoUseSystem := false
 	switch t := strings.ToLower(strings.TrimSpace(externalClientTLSConfig.Use)); t {
+	case "systemandlocal":
+		alsoUseSystem = true
+		fallthrough
 	case "local":
 		rootCertFilePaths := externalClientTLSConfig.RootCertFilePaths
 		if len(rootCertFilePaths) == 0 {
@@ -53,7 +57,7 @@ func NewClientTLSConfig(
 				),
 			}
 		}
-		return NewClientTLSConfigFromRootCertFiles(rootCertFilePaths...)
+		return NewClientTLSConfigFromRootCertFiles(alsoUseSystem, rootCertFilePaths...)
 	case "", "system":
 		return newClientSystemTLSConfig(), nil
 	case "false":

@@ -18,11 +18,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"os"
 )
 
 // NewClientTLSConfigFromRootCertFiles creates a new tls.Config from a root certificate files.
-func NewClientTLSConfigFromRootCertFiles(rootCertFilePaths ...string) (*tls.Config, error) {
+func NewClientTLSConfigFromRootCertFiles(alsoUseSystem bool, rootCertFilePaths ...string) (*tls.Config, error) {
 	rootCertDatas := make([][]byte, len(rootCertFilePaths))
 	for i, rootCertFilePath := range rootCertFilePaths {
 		rootCertData, err := os.ReadFile(rootCertFilePath)
@@ -31,12 +32,21 @@ func NewClientTLSConfigFromRootCertFiles(rootCertFilePaths ...string) (*tls.Conf
 		}
 		rootCertDatas[i] = rootCertData
 	}
-	return newClientTLSConfigFromRootCertDatas(rootCertDatas...)
+	return newClientTLSConfigFromRootCertDatas(alsoUseSystem, rootCertDatas...)
 }
 
 // newClientTLSConfigFromRootCertDatas creates a new tls.Config from root certificate datas.
-func newClientTLSConfigFromRootCertDatas(rootCertDatas ...[]byte) (*tls.Config, error) {
-	certPool := x509.NewCertPool()
+func newClientTLSConfigFromRootCertDatas(alsoUseSystem bool, rootCertDatas ...[]byte) (*tls.Config, error) {
+	var certPool *x509.CertPool
+	if alsoUseSystem {
+		var err error
+		certPool, err = x509.SystemCertPool()
+		if err != nil {
+			return nil, fmt.Errorf("failed to acquire system cert pool: %w", err)
+		}
+	} else {
+		certPool = x509.NewCertPool()
+	}
 	for _, rootCertData := range rootCertDatas {
 		if !certPool.AppendCertsFromPEM(rootCertData) {
 			return nil, errors.New("failed to append root certificate")
