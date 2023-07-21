@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix issue where the directory `.` was incorrectly accepted as a value for the
+  `directories` key in `buf.work.yaml`.
 
 ## [v1.25.0] - 2023-07-18
 
