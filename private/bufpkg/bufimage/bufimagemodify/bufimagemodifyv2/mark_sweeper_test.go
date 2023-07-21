@@ -185,7 +185,7 @@ func TestSweepWithSourceCodeInfo(t *testing.T) {
 				}
 				for _, path := range testcase.fileToExpectedAdditionalRemovedPaths[fileName] {
 					if len(path) == 1 && path[0] == 8 {
-						// there can be mutliple {8}'s
+						// there can be multiple {8}'s
 						continue
 					}
 					_, ok := sourcePaths[internal.GetPathKey(path)]
