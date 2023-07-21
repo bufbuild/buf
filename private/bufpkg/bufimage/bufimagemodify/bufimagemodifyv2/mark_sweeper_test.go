@@ -37,7 +37,20 @@ func TestSweepWithSourceCodeInfo(t *testing.T) {
 			description: "mark and sweep a single field option path",
 			fileToPathsToMark: map[string][][]int32{
 				"a.proto": {
-					{4, 0, 2, 3, 8, 6},
+					{4, 0, 2, 3, 8, 6}, // Outer.o4.jstype, the only field option on this field
+				},
+			},
+			fileToExpectedAdditionalRemovedPaths: map[string][][]int32{
+				"a.proto": {
+					{4, 0, 2, 3, 8},
+				},
+			},
+		},
+		{
+			description: "mark and sweep a path of a field option of multiple field options on the same file",
+			fileToPathsToMark: map[string][][]int32{
+				"a.proto": {
+					{4, 0, 2, 4, 8, 1}, // Outer.Inner.o5.ctype, but this field also has jstype option
 				},
 			},
 		},
@@ -58,11 +71,13 @@ func TestSweepWithSourceCodeInfo(t *testing.T) {
 			description: "mark and sweep multiple file options and field options for multiple files",
 			fileToPathsToMark: map[string][][]int32{
 				"a.proto": {
-					{4, 0, 2, 3, 8, 6},
-					{4, 0, 3, 0, 2, 4, 8, 1},
+					{4, 0, 2, 3, 8, 6},       // Outer.o4.jstype, the only field option
+					{4, 0, 3, 0, 2, 4, 8, 1}, // Outer.Inner.o5.ctype
 					{8, 1},
-					{4, 0, 3, 0, 2, 4, 8, 6},
+					{4, 0, 3, 0, 2, 4, 8, 6}, // Outer.Inner.o5.jstype
 					{8, 11},
+					{4, 0, 2, 4, 8, 6}, // Outer.o5.jstype, there is still ctype option, so do not remove parent
+					{7, 0, 8, 6},       // i7.jstype, the only field option
 				},
 				"b.proto": {
 					{8, 16},
@@ -73,6 +88,9 @@ func TestSweepWithSourceCodeInfo(t *testing.T) {
 			},
 			fileToExpectedAdditionalRemovedPaths: map[string][][]int32{
 				"a.proto": {
+					{4, 0, 2, 3, 8},
+					{4, 0, 3, 0, 2, 4, 8},
+					{7, 0, 8},
 					{8},
 					{8},
 				},
@@ -80,6 +98,7 @@ func TestSweepWithSourceCodeInfo(t *testing.T) {
 					{8},
 					{8},
 					{8},
+					{4, 0, 2, 0, 8},
 				},
 			},
 		},
@@ -130,13 +149,22 @@ func TestSweepWithSourceCodeInfo(t *testing.T) {
 					expectedLocationCount = expectedLocationCount - len(additionalExpectedPathsRemoved)
 				}
 				require.Equal(t, expectedLocationCount, locationCount)
-				requirePathsNotExist(
-					t,
-					imageFile.Proto().GetSourceCodeInfo().GetLocation(),
-					testcase.fileToPathsToMark[fileName],
-				)
-				// We are not checking all testcase.fileToExpectedAdditionalRemovedPaths are removed, because of
-				// {8}, which can appear multiple times in source code locations. The previous length check suffices.
+				sourcePaths := make(map[string]struct{}, len(imageFile.Proto().GetSourceCodeInfo().GetLocation()))
+				for _, location := range imageFile.Proto().GetSourceCodeInfo().GetLocation() {
+					sourcePaths[internal.GetPathKey(location.Path)] = struct{}{}
+				}
+				for _, path := range testcase.fileToPathsToMark[fileName] {
+					_, ok := sourcePaths[internal.GetPathKey(path)]
+					require.False(t, ok, "%v should not exist among source code locations", path)
+				}
+				for _, path := range testcase.fileToExpectedAdditionalRemovedPaths[fileName] {
+					if len(path) == 1 && path[0] == 8 {
+						// there can be mutliple {8}'s
+						continue
+					}
+					_, ok := sourcePaths[internal.GetPathKey(path)]
+					require.False(t, ok, "%v should not exist among source code locations", path)
+				}
 			}
 		})
 	}
@@ -176,20 +204,5 @@ func requirePathsExist(
 	for _, path := range paths {
 		_, ok := sourcePaths[internal.GetPathKey(path)]
 		require.True(t, ok)
-	}
-}
-
-func requirePathsNotExist(
-	t *testing.T,
-	sourceLocations []*descriptorpb.SourceCodeInfo_Location,
-	paths [][]int32,
-) {
-	sourcePaths := make(map[string]struct{}, len(sourceLocations))
-	for _, location := range sourceLocations {
-		sourcePaths[internal.GetPathKey(location.Path)] = struct{}{}
-	}
-	for _, path := range paths {
-		_, ok := sourcePaths[internal.GetPathKey(path)]
-		require.False(t, ok, "%v should not exist among source code locations", path)
 	}
 }

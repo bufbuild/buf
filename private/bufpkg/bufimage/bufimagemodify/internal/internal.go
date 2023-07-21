@@ -83,7 +83,25 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 	// are structured as expected, and collect all of the indices that
 	// we need to delete.
 	indices := make(map[int]struct{}, len(paths)*2)
+	potentialFieldOptionToChildrenIndices := make(map[string][]int, len(paths))
+	// If multiple paths are the same, use the last one. This is fine because
+	// this is only useful for field options, where each FieldOptions' path does
+	// not appear twice.
+	keyToIndex := make(map[string]int, len(paths))
 	for i, location := range sourceCodeInfo.Location {
+		path := location.Path
+		keyToIndex[GetPathKey(path)] = i
+		if isPathMaybeForFieldOption(path) {
+			parentKey := GetPathKey(path[:len(path)-1])
+			// The parent should have been visited first. If not ok,
+			// it could mean that isPathMaybeForFieldOption has mispredicted.
+			if _, ok := keyToIndex[parentKey]; ok {
+				potentialFieldOptionToChildrenIndices[parentKey] = append(
+					potentialFieldOptionToChildrenIndices[parentKey],
+					i,
+				)
+			}
+		}
 		if _, ok := paths[GetPathKey(location.Path)]; !ok {
 			continue
 		}
@@ -119,10 +137,29 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 			// where two field options share the same parent.
 			// Therefore, do not remove the parent path.
 			indices[i] = struct{}{}
-			// TODO: remove the parent path when this field option is the only child.
 			continue
 		}
 		return fmt.Errorf("path %v is neither a file option path nor a field option path", location.Path)
+	}
+	var parentIndicesToRemove []int
+	for potentialParent, childrenIndices := range potentialFieldOptionToChildrenIndices {
+		if len(childrenIndices) == 0 {
+			continue
+		}
+		if !areAllIntsInSet(childrenIndices, indices) {
+			continue
+		}
+		parentIndex, ok := keyToIndex[potentialParent]
+		if !ok {
+			// this shouldn't happen, because we only inserted to potentialFieldOptionToChildrenIndices
+			// after making sure the key exists.
+			continue
+		}
+		// All its children are going to removed, it will be removed as well.
+		parentIndicesToRemove = append(parentIndicesToRemove, parentIndex)
+	}
+	for _, index := range parentIndicesToRemove {
+		indices[index] = struct{}{}
 	}
 	// Now that we know exactly which indices to exclude, we can
 	// filter the SourceCodeInfo_Locations as needed.
@@ -139,6 +176,15 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 	}
 	sourceCodeInfo.Location = locations
 	return nil
+}
+
+func areAllIntsInSet(ints []int, set map[int]struct{}) bool {
+	for _, n := range ints {
+		if _, ok := set[n]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func isPathForFileOption(path []int32) bool {
