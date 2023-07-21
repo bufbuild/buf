@@ -73,9 +73,12 @@ const tagForFieldOptionsInField = 8
 // https://github.com/protocolbuffers/protobuf/blob/053966b4959bdd21e4a24e657bcb97cb9de9e8a4/src/google/protobuf/descriptor.proto#L80
 var fileOptionPath = []int32{8}
 
+// RemoveLocationsFromSourceCodeInfo removes paths from the given sourceCodeInfo.
+// Each path must be for either a file option or a field option.
 func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeInfo, paths map[string]struct{}) error {
 	// We can't just match on an exact path match because the target
-	// file option's parent path elements would remain (i.e [8]).
+	// file option's parent path elements would remain (i.e [8]),
+	// or the target field option's parent path has no other child left.
 	// Instead, we perform an initial pass to validate that the paths
 	// are structured as expected, and collect all of the indices that
 	// we need to delete.
@@ -147,9 +150,9 @@ func isPathForFileOption(path []int32) bool {
 // isPathMaybeForFieldOption is a best-effort guess on
 // whether the path looks like a field option.
 func isPathMaybeForFieldOption(path []int32) bool {
-	// a field option's path is {4, messageNum, ..., 2, fieldNum, 8, optionTag}
-	// it could be longer because messages can be nested.
-	minFieldOptionpathLen := 6
+	// a field option's path is {4, messageIndex, ..., 2, fieldIndex, 8, optionTag}
+	// or {7, extensionIndex, 8, optionTag}
+	minFieldOptionpathLen := 4
 	return len(path) >= minFieldOptionpathLen && path[len(path)-2] == tagForFieldOptionsInField
 }
 

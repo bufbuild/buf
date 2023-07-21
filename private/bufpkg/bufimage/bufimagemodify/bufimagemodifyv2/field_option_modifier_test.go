@@ -51,6 +51,10 @@ func TestFieldModifier(t *testing.T) {
 			"foo.bar.baz.Outer.o2",
 			"foo.bar.baz.Outer.o3",
 			"foo.bar.baz.Outer.o4",
+			"foo.bar.baz.Outer.o5",
+			"foo.bar.baz.Outer.o6",
+			"foo.bar.baz.i7", // this looks different because it's a field extension
+			"foo.bar.baz.i8",
 		}
 		actualNames := modifier.FieldNames()
 		sort.Strings(expectedNames)
@@ -63,15 +67,42 @@ func TestFieldModifier(t *testing.T) {
 		require.Len(t, outerMessage.GetNestedType(), 1)
 		innerMessage := outerMessage.GetNestedType()[0]
 		require.Len(t, innerMessage.GetField(), 6)
-		fifthField := innerMessage.GetField()[4]
-		require.NotNil(t, fifthField.GetOptions())
-		require.NotNil(t, fifthField.GetOptions().Jstype)
-		require.Equal(t, descriptorpb.FieldOptions_JS_STRING, *fifthField.GetOptions().Jstype)
 
+		// modify on nested field
+		fieldI5 := innerMessage.GetField()[4]
+		require.NotNil(t, fieldI5.GetOptions())
+		require.NotNil(t, fieldI5.GetOptions().Jstype)
+		require.Equal(t, descriptorpb.FieldOptions_JS_STRING, *fieldI5.GetOptions().Jstype)
 		err = modifier.ModifyJSType("foo.bar.baz.Outer.Inner.i5", NewValueOverride(descriptorpb.FieldOptions_JS_NUMBER))
 		require.NoError(t, err)
+		require.Equal(t, descriptorpb.FieldOptions_JS_NUMBER, *fieldI5.GetOptions().Jstype)
 
-		require.Equal(t, descriptorpb.FieldOptions_JS_NUMBER, *fifthField.GetOptions().Jstype)
+		// modify on a field with no option defined
+		fieldI6 := innerMessage.GetField()[5]
+		require.Nil(t, fieldI6.GetOptions())
+		err = modifier.ModifyJSType("foo.bar.baz.Outer.Inner.i6", NewValueOverride(descriptorpb.FieldOptions_JS_STRING))
+		require.NoError(t, err)
+		require.Equal(t, descriptorpb.FieldOptions_JS_STRING, *fieldI6.GetOptions().Jstype)
+
+		// modify on a oneof field
+		require.Len(t, outerMessage.GetField(), 6)
+		fieldO5 := outerMessage.GetField()[4]
+		require.NotNil(t, fieldO5)
+		require.NotNil(t, fieldO5.GetOptions())
+		require.Equal(t, descriptorpb.FieldOptions_JS_STRING, *fieldO5.GetOptions().Jstype)
+		err = modifier.ModifyJSType("foo.bar.baz.Outer.o5", NewValueOverride(descriptorpb.FieldOptions_JS_NORMAL))
+		require.NoError(t, err)
+		require.Equal(t, descriptorpb.FieldOptions_JS_NORMAL, *fieldO5.GetOptions().Jstype)
+
+		// modify on an extension field
+		extensions := imageFile.Proto().GetExtension()
+		require.Len(t, extensions, 2)
+		fieldExtensionI7 := extensions[0]
+		require.NotNil(t, fieldExtensionI7.GetOptions())
+		require.Equal(t, descriptorpb.FieldOptions_JS_NUMBER, *fieldExtensionI7.GetOptions().Jstype)
+		err = modifier.ModifyJSType("foo.bar.baz.i7", NewValueOverride(descriptorpb.FieldOptions_JS_NORMAL))
+		require.NoError(t, err)
+		require.Equal(t, descriptorpb.FieldOptions_JS_NORMAL, *fieldO5.GetOptions().Jstype)
 
 		// still marked even if the image is built without source code info, but
 		// sweep will not take effect.
@@ -80,6 +111,9 @@ func TestFieldModifier(t *testing.T) {
 			map[string]map[string]struct{}{
 				"a.proto": {
 					internal.GetPathKey([]int32{4, 0, 3, 0, 2, 4, 8, 6}): struct{}{},
+					internal.GetPathKey([]int32{4, 0, 3, 0, 2, 5, 8, 6}): struct{}{},
+					internal.GetPathKey([]int32{4, 0, 2, 4, 8, 6}):       struct{}{},
+					internal.GetPathKey([]int32{7, 0, 8, 6}):             struct{}{},
 				},
 			},
 			markSweeper.sourceCodeInfoPaths,
