@@ -46,7 +46,10 @@ service LabelService {
     option idempotency_level = IDEMPOTENT;
   }
   rpc MoveLabel(MoveLabelRequest) returns (MoveLabelResponse);
-  rpc GetLabels(GetLabelsRequest) returns (GetLabelsResponse) {
+  // GetRepoCommitsWithLabelsInNamespace retrieves commits in a repository that have labels in a
+  // given namespace, optionally matching label names. It is useful if you want to get commits
+  // labeled with (any or a set of) branches, tags, Git SHAs, or any namespace.
+  rpc GetRepoCommitsWithLabelsInNamespace(GetRepoCommitsWithLabelsInNamespaceRequest) returns (GetRepoCommitsWithLabelsInNamespaceResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -70,16 +73,13 @@ message MoveLabelRequest {
 
 message MoveLabelResponse {}
 
-// GetLabelsRequest holds a request to ask for labels in a given repository, namespace, with
-// multiple label names. It is useful if you want to check if a BSR repository has commits labeled
-// with a set of Git SHAs, or a set of branch names.
-message GetLabelsRequest {
+message GetRepoCommitsWithLabelsInNamespaceRequest {
   string repository_owner = 1;
   string repository_name = 2;
   LabelNamespace label_namespace = 3;
   repeated string label_names = 4;
 }
 
-message GetLabelsResponse {
+message GetRepoCommitsWithLabelsInNamespaceResponse {
   repeated Label labels = 1;
 }
