@@ -82,7 +82,7 @@ func (m *fieldOptionModifier) ModifyJSType(
 	}
 	jsTypeOverride, ok := override.(valueOverride[descriptorpb.FieldOptions_JSType])
 	if !ok {
-		return fmt.Errorf("invalid ")
+		return fmt.Errorf("unknown Override type: %T", override)
 	}
 	jsType := jsTypeOverride.get()
 	fieldDescriptor, ok := m.fieldNameToDescriptor[fieldName]

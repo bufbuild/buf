@@ -179,7 +179,7 @@ func ModifyJavaPackage(
 func ModifyJSType(
 	imageFile bufimage.ImageFile,
 	marker Marker,
-	valueSelector func(fieldName string) (value descriptorpb.FieldOptions_JSType, shouldModify bool),
+	valueSelector func(fieldName string) (value Override, shouldModify bool),
 ) error {
 	if internal.IsWellKnownType(imageFile) {
 		return nil
@@ -196,7 +196,12 @@ func ModifyJSType(
 		if fieldDescriptor.Type == nil || !isJsTypePermittedForType(*fieldDescriptor.Type) {
 			return nil
 		}
-		if jsType, shouldModify := valueSelector(string(fullName)); shouldModify {
+		if override, shouldModify := valueSelector(string(fullName)); shouldModify {
+			jstypeOverride, ok := override.(valueOverride[descriptorpb.FieldOptions_JSType])
+			if !ok {
+				return fmt.Errorf("unknown Override type: %T", override)
+			}
+			jsType := jstypeOverride.get()
 			if fieldDescriptor.Options == nil {
 				fieldDescriptor.Options = &descriptorpb.FieldOptions{}
 			}
