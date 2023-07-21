@@ -69,7 +69,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
+			// bufcli.NewErrorInterceptor(), // TODO re-enable
 		),
 		BindFlags: flags.Bind,
 	}
@@ -150,11 +150,15 @@ func sync(
 	modules []string,
 	createWithVisibility string,
 ) error {
+	if len(modules) == 0 {
+		container.Logger().Info("no modules to sync")
+		return nil
+	}
 	// Assume that this command is run from the repository root. If not, `OpenRepository` will return
 	// a dir not found error.
 	repo, err := git.OpenRepository(git.DotGitDir, command.NewRunner())
 	if err != nil {
-		return err
+		return fmt.Errorf("open repository: %w", err)
 	}
 	defer repo.Close()
 	storageProvider := storagegit.NewProvider(
@@ -172,16 +176,16 @@ func sync(
 		var moduleIdentityOverride bufmoduleref.ModuleIdentity
 		colon := strings.IndexRune(module, ':')
 		if colon == -1 {
-			return appcmd.NewInvalidArgumentErrorf("module %s is missing an identity", module)
+			return appcmd.NewInvalidArgumentErrorf("module %q is missing an identity", module)
 		}
 		moduleIdentityOverride, err = bufmoduleref.ModuleIdentityForString(module[colon+1:])
 		if err != nil {
-			return err
+			return fmt.Errorf("module identity: %w", err)
 		}
 		module = normalpath.Normalize(module[:colon])
 		syncModule, err := bufsync.NewModule(module, moduleIdentityOverride)
 		if err != nil {
-			return err
+			return fmt.Errorf("prepare module for sync: %w", err)
 		}
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(syncModule))
 	}
@@ -193,7 +197,7 @@ func sync(
 		syncerOptions...,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("new syncer: %w", err)
 	}
 	return syncer.Sync(ctx, func(ctx context.Context, commit bufsync.ModuleCommit) error {
 		syncPoint, err := pushOrCreate(
@@ -237,7 +241,7 @@ func syncPointResolver(clientConfig *connectclient.Config) bufsync.SyncPointReso
 				// No syncpoint
 				return nil, nil
 			}
-			return nil, err
+			return nil, fmt.Errorf("get git sync point: %w", err)
 		}
 		hash, err := git.NewHashFromHex(syncPoint.Msg.GetSyncPoint().GitCommitHash)
 		if err != nil {
@@ -264,7 +268,7 @@ func (s *syncErrorHandler) BuildFailure(module bufsync.Module, commit git.Commit
 	// Note that because of resumption, Syncer will typically only come
 	// across this commit once, we will not log this warning again.
 	s.logger.Warn(
-		"invalid module",
+		"module build failure",
 		zap.Stringer("commit", commit.Hash()),
 		zap.Stringer("module", module),
 		zap.Error(err),
@@ -277,7 +281,7 @@ func (s *syncErrorHandler) InvalidModuleConfig(module bufsync.Module, commit git
 	// and carry on. Note that because of resumption, Syncer will typically only come
 	// across this commit once, we will not log this warning again.
 	s.logger.Warn(
-		"invalid module",
+		"invalid module config",
 		zap.Stringer("commit", commit.Hash()),
 		zap.Stringer("module", module),
 		zap.Error(err),
@@ -357,7 +361,7 @@ func pushOrCreate(
 		// a GetRepository RPC call for every call to push --create.
 		if createWithVisibility != "" && connect.CodeOf(err) == connect.CodeNotFound {
 			if err := create(ctx, clientConfig, moduleIdentity, createWithVisibility); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("create repo: %w", err)
 			}
 			return push(
 				ctx,
@@ -370,7 +374,7 @@ func pushOrCreate(
 				moduleBucket,
 			)
 		}
-		return nil, err
+		return nil, fmt.Errorf("push: %w", err)
 	}
 	return modulePin, nil
 }
@@ -393,12 +397,6 @@ func push(
 	bucketManifest, blobs, err := bufmanifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
 	if err != nil {
 		return nil, err
-	}
-	if repo.BaseBranch() == branch {
-		// We are pushing a commit on the base branch of this repository.
-		// The BSR represents the base track as "main", and this is not configurable
-		// per module.
-		branch = bufmoduleref.Main
 	}
 	resp, err := service.SyncGitCommit(ctx, connect.NewRequest(&registryv1alpha1.SyncGitCommitRequest{
 		Owner:      moduleIdentity.Owner(),
