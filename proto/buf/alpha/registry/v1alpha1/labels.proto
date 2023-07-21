@@ -70,11 +70,14 @@ message MoveLabelRequest {
 
 message MoveLabelResponse {}
 
+// GetLabelsRequest holds a request to ask for labels in a given repository, namespace, with
+// multiple label names. It is useful if you want to check if a BSR repository has commits labeled
+// with a set of Git SHAs, or a set of branch names.
 message GetLabelsRequest {
   string repository_owner = 1;
   string repository_name = 2;
-  optional LabelName label_name = 3;
-  optional LabelValue label_value = 4;
+  LabelNamespace label_namespace = 3;
+  repeated string label_names = 4;
 }
 
 message GetLabelsResponse {
