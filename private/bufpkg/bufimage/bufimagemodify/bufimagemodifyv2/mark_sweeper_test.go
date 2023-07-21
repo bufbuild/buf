@@ -47,10 +47,36 @@ func TestSweepWithSourceCodeInfo(t *testing.T) {
 			},
 		},
 		{
-			description: "mark and sweep a path of a field option of multiple field options on the same file",
+			description: "mark and sweep some field option paths for a field",
 			fileToPathsToMark: map[string][][]int32{
 				"a.proto": {
 					{4, 0, 2, 4, 8, 1}, // Outer.Inner.o5.ctype, but this field also has jstype option
+				},
+			},
+		},
+		{
+			description: "mark and sweep some field option paths for a field",
+			fileToPathsToMark: map[string][][]int32{
+				"a.proto": {
+					{7, 1, 8, 17}, // Outer.Inner.o6.retention, but this field has 4 options.
+					{7, 1, 8, 16}, // Outer.Inner.o6.debug_redact, but this field has 4 options.
+					{7, 1, 8, 5},  // Outer.Inner.o6.lazy, but this field has 4 options.
+				},
+			},
+		},
+		{
+			description: "mark and sweep  all field options paths for a field",
+			fileToPathsToMark: map[string][][]int32{
+				"a.proto": {
+					{7, 1, 8, 6},  // Outer.Inner.o6.jstype
+					{7, 1, 8, 17}, // Outer.Inner.o6.retention
+					{7, 1, 8, 16}, // Outer.Inner.o6.debug_redact
+					{7, 1, 8, 5},  // Outer.Inner.o6.lazy
+				},
+			},
+			fileToExpectedAdditionalRemovedPaths: map[string][][]int32{
+				"a.proto": {
+					{7, 1, 8},
 				},
 			},
 		},
