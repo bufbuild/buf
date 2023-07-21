@@ -61,13 +61,13 @@ func (f fieldOption) String() string {
 func parseFieldOption(s string) (fieldOption, error) {
 	s = strings.ToLower(strings.TrimSpace(s))
 	if s == "" {
-		return 0, errors.New("empty fieldOption")
+		return 0, errors.New("empty field option")
 	}
 	f, ok := stringToFieldOption[s]
 	if ok {
 		return f, nil
 	}
-	return 0, fmt.Errorf("unknown fieldOption: %q", s)
+	return 0, fmt.Errorf("unknown field option: %q", s)
 }
 
 func parseJSType(override interface{}, fieldOption fieldOption) (bufimagemodifyv2.Override, error) {
@@ -77,7 +77,7 @@ func parseJSType(override interface{}, fieldOption fieldOption) (bufimagemodifyv
 	}
 	jsTypeEnum, ok := descriptorpb.FieldOptions_JSType_value[jsTypeName]
 	if !ok {
-		return nil, fmt.Errorf("%v: %s is not a valid js_type value, must be one of JS_NORMAL, JS_STRING and JS_NUMBER", fieldOption, jsTypeName)
+		return nil, fmt.Errorf("%q is not a valid %v value, must be one of JS_NORMAL, JS_STRING and JS_NUMBER", jsTypeName, fieldOption)
 	}
 	jsType := descriptorpb.FieldOptions_JSType(jsTypeEnum)
 	return bufimagemodifyv2.NewValueOverride(jsType), nil

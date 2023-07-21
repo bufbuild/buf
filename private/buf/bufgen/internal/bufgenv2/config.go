@@ -265,7 +265,7 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFun
 func newFieldDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (fieldDisableFunc, error) {
 	var selectorFieldOption fieldOption
 	var err error
-	if len(externalConfig.FileOption) > 0 {
+	if len(externalConfig.FieldOption) > 0 {
 		selectorFieldOption, err = parseFieldOption(externalConfig.FieldOption)
 		if err != nil {
 			return nil, err
@@ -460,9 +460,6 @@ func mergeFieldOverrideFuncs(fieldOverrideFuncs []fieldOverrideFunc) fieldOverri
 }
 
 func validateFieldName(fieldName string) error {
-	if len(fieldName) == 0 {
-		return nil
-	}
 	for _, c := range fieldName {
 		if 'a' <= c && c <= 'z' {
 			continue
@@ -473,7 +470,7 @@ func validateFieldName(fieldName string) error {
 		if '0' <= c && c <= '9' {
 			continue
 		}
-		if c == '_' {
+		if c == '_' || c == '.' {
 			continue
 		}
 		return fmt.Errorf("invalid character in field name: %q", c)
