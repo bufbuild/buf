@@ -2,14 +2,15 @@ name: Buf shadow sync
 
 on:
   # Same config as buf.yaml workflow
-  push:
-    paths:
-      - 'proto/**'
+  # push:
+  #   paths:
+  #     - 'proto/**'
   workflow_dispatch: # also allow manual trigger
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v3
         with:
