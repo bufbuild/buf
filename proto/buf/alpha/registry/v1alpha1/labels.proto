@@ -46,8 +46,11 @@ service LabelService {
     option idempotency_level = IDEMPOTENT;
   }
   rpc MoveLabel(MoveLabelRequest) returns (MoveLabelResponse);
-  // GetLabelsInNamespace retrieves label values in a given namespace, optionally matching label
-  // names.
+  // GetLabels returns labels in a repository with optional label name and value filters.
+  rpc GetLabels(GetLabelsRequest) returns (GetLabelsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetLabelsInNamespace returns labels in a given namespace, optionally matching label names.
   rpc GetLabelsInNamespace(GetLabelsInNamespaceRequest) returns (GetLabelsInNamespaceResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -72,10 +75,26 @@ message MoveLabelRequest {
 
 message MoveLabelResponse {}
 
+message GetLabelsRequest {
+  string repository_owner = 1;
+  string repository_name = 2;
+  // Optional label_name filter, in case you want to get labels in a namespace+name.
+  optional LabelName label_name = 3;
+  // Optional label_value filter, in case you want to get labels in a commit id.
+  optional LabelValue label_value = 4;
+}
+
+message GetLabelsResponse {
+  repeated Label labels = 1;
+}
+
 message GetLabelsInNamespaceRequest {
   string repository_owner = 1;
   string repository_name = 2;
+  // Label namespace filter, so only labels in this namespace will be retrieved.
   LabelNamespace label_namespace = 3;
+  // Optional label names filter. Label names that matches a value here will be retrieved. If empty,
+  // all labels in the namespace will be retrieved.
   repeated string label_names = 4;
 }
 
