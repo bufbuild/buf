@@ -46,10 +46,9 @@ service LabelService {
     option idempotency_level = IDEMPOTENT;
   }
   rpc MoveLabel(MoveLabelRequest) returns (MoveLabelResponse);
-  // GetRepoCommitsWithLabelsInNamespace retrieves commits in a repository that have labels in a
-  // given namespace, optionally matching label names. It is useful if you want to get commits
-  // labeled with (any or a set of) branches, tags, Git SHAs, or any namespace.
-  rpc GetRepoCommitsWithLabelsInNamespace(GetRepoCommitsWithLabelsInNamespaceRequest) returns (GetRepoCommitsWithLabelsInNamespaceResponse) {
+  // GetLabelsInNamespace retrieves label values in a given namespace, optionally matching label
+  // names.
+  rpc GetLabelsInNamespace(GetLabelsInNamespaceRequest) returns (GetLabelsInNamespaceResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -73,13 +72,13 @@ message MoveLabelRequest {
 
 message MoveLabelResponse {}
 
-message GetRepoCommitsWithLabelsInNamespaceRequest {
+message GetLabelsInNamespaceRequest {
   string repository_owner = 1;
   string repository_name = 2;
   LabelNamespace label_namespace = 3;
   repeated string label_names = 4;
 }
 
-message GetRepoCommitsWithLabelsInNamespaceResponse {
+message GetLabelsInNamespaceResponse {
   repeated Label labels = 1;
 }
