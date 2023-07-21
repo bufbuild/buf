@@ -299,9 +299,9 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (overrideFu
 		return nil, err
 	}
 	return func(imageFile imageFileIdentity) bufimagemodifyv2.Override {
-		// We don't need to match on FileOption - we only call this OverrideFunc when we
-		// know we are applying for a given FieldOption.
-		// The FieldOption we parsed above is assumed to be the FieldOption.
+		// We don't need to match on fileOption - we only call this OverrideFunc when we
+		// know we are applying for a given fileOption.
+		// The fileOption we parsed above is assumed to be the fileOption.
 		if matchesPathAndModule(externalConfig.Path, externalConfig.Module, imageFile) {
 			return override
 		}
@@ -391,7 +391,7 @@ func mergeDisabledFuncs(disabledFuncs []disabledFunc) disabledFunc {
 }
 
 func mergeFieldDisabledFuncs(fieldDisableFuncs []fieldDisableFunc) fieldDisableFunc {
-	// If any disables, then we disable for this fileOption and ImageFile
+	// If any disables, then we disable for this fieldOption and ImageFile
 	return func(fieldOption fieldOption, imageFile imageFileIdentity, field string) bool {
 		for _, fieldDisabledFunc := range fieldDisableFuncs {
 			if fieldDisabledFunc(fieldOption, imageFile, field) {
@@ -459,6 +459,10 @@ func mergeFieldOverrideFuncs(fieldOverrideFuncs []fieldOverrideFunc) fieldOverri
 	}
 }
 
+// A field name should be: identifier { dot identifier }.
+// An identifier: https://protobuf.com/docs/language-spec#identifiers-and-keywords.
+// A letter is a upper or lower case English letter or underscore.
+// https://protobuf.com/docs/language-spec#character-classes
 func validateFieldName(fieldName string) error {
 	for _, c := range fieldName {
 		if 'a' <= c && c <= 'z' {
