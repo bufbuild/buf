@@ -26,9 +26,9 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// Marker markssource SourceCodeInfo_Location indices.
+// Marker marks SourceCodeInfo_Location paths.
 type Marker interface {
-	// Mark marks the given SourceCodeInfo_Location indices.
+	// Mark marks the given SourceCodeInfo_Location path.
 	Mark(bufimage.ImageFile, []int32)
 }
 
