@@ -105,6 +105,7 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 	for _, testcase := range testcases {
 		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
 			trie := &fieldOptionsTrie{}
 			for _, path := range testcase.pathsToInsert {
 				trie.insert(path)
@@ -116,6 +117,134 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 			require.Equal(
 				t,
 				testcase.pathsToInsert,
+				trie.pathsWithoutChildren(),
+			)
+		})
+	}
+}
+
+func TestRegisterChild(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		description                  string
+		pathsToInsert                [][]int32
+		pathsToRegister              [][]int32
+		expectedPathsWithoutChildren [][]int32
+	}{
+		{
+			description: "register none",
+			pathsToInsert: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 2, 1, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+			},
+			expectedPathsWithoutChildren: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 2, 1, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+			},
+		},
+		{
+			description: "register non-child",
+			pathsToInsert: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 2, 1, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+			},
+			pathsToRegister: [][]int32{
+				{30},
+			},
+			expectedPathsWithoutChildren: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 2, 1, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+			},
+		},
+		{
+			description: "register child",
+			pathsToInsert: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 2, 1, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+			},
+			pathsToRegister: [][]int32{
+				{4, 0, 2, 1, 8, 6},
+			},
+			expectedPathsWithoutChildren: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+			},
+		},
+		{
+			description: "register descendent",
+			pathsToInsert: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 2, 1, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+			},
+			pathsToRegister: [][]int32{
+				{4, 0, 2, 1, 8, 0, 1139},
+			},
+			expectedPathsWithoutChildren: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+			},
+		},
+		{
+			description: "register multiple for the same parent",
+			pathsToInsert: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 2, 1, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+			},
+			pathsToRegister: [][]int32{
+				{4, 0, 2, 1, 8, 0, 1139},
+				{4, 0, 2, 1, 8, 6},
+			},
+			expectedPathsWithoutChildren: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+			},
+		},
+		{
+			description: "register for multiple parents",
+			pathsToInsert: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 2, 1, 8},
+				{4, 0, 2, 2, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+				{4, 0, 3, 0, 3, 1, 2, 3, 8},
+				{7, 0, 8},
+				{7, 1, 8},
+			},
+			pathsToRegister: [][]int32{
+				{4, 0, 3, 0, 3, 1, 2, 3, 8, 1},
+				{4, 0, 2, 1, 8, 0, 1139},
+				{4, 0, 2, 1, 8, 6},
+				{7, 0, 8, 50003, 0},
+				{4, 0, 2, 2, 8, 5},
+			},
+			expectedPathsWithoutChildren: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+				{7, 1, 8},
+			},
+		},
+	}
+	for _, testcase := range testcases {
+		testcase := testcase
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+			trie := &fieldOptionsTrie{}
+			for _, path := range testcase.pathsToInsert {
+				trie.insert(path)
+			}
+			for _, path := range testcase.pathsToRegister {
+				trie.registerChild(path)
+			}
+			require.Equal(
+				t,
+				testcase.expectedPathsWithoutChildren,
 				trie.pathsWithoutChildren(),
 			)
 		})

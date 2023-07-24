@@ -60,6 +60,22 @@ func (p *fieldOptionsTrie) insert(path []int32) {
 }
 
 func (p *fieldOptionsTrie) registerChild(childPath []int32) {
+	trie := p
+	for _, element := range childPath {
+		nodes := *trie
+		pos, found := sort.Find(len(nodes), func(i int) int {
+			return int(element - nodes[i].value)
+		})
+		if !found {
+			return
+		}
+		ancestor := nodes[pos]
+		if len(ancestor.path) > 0 {
+			ancestor.count += 1
+			return
+		}
+		trie = &ancestor.children
+	}
 }
 
 func (p *fieldOptionsTrie) pathsWithoutChildren() [][]int32 {
