@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"fmt"
 	"sort"
 
 	"golang.org/x/exp/slices"
@@ -54,11 +53,7 @@ func (p *fieldOptionsTrie) insert(path []int32) {
 		if isLastElement {
 			newNode.path = path
 		}
-		if pos == len(nodes) {
-			nodes = append(nodes, newNode) // TODO: insert probably works on both branches
-		} else {
-			nodes = slices.Insert(nodes, pos, newNode)
-		}
+		nodes = slices.Insert(nodes, pos, newNode)
 		*trie = nodes
 		trie = &nodes[pos].children
 	}
@@ -75,14 +70,6 @@ func (p *fieldOptionsTrie) pathsWithoutChildren() [][]int32 {
 		}
 	})
 	return paths
-}
-
-func (p *fieldOptionsTrie) p() {
-	fmt.Println("=============")
-	walkTrie(*p, func(node *fieldOptionsTrieNode) {
-		fmt.Printf("%v\n", node.path)
-	})
-	fmt.Println("=============")
 }
 
 func walkTrie(trie fieldOptionsTrie, f func(node *fieldOptionsTrieNode)) {
