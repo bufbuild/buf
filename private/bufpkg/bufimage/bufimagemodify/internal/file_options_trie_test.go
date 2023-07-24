@@ -230,6 +230,34 @@ func TestRegisterChild(t *testing.T) {
 				{7, 1, 8},
 			},
 		},
+		{
+			description: "register more none-field option",
+			pathsToInsert: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 2, 1, 8},
+				{4, 0, 2, 2, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+				{4, 0, 3, 0, 3, 1, 2, 3, 8},
+				{7, 0, 8},
+				{7, 1, 8},
+			},
+			pathsToRegister: [][]int32{
+				{4, 0, 3, 0, 3, 1, 2, 3, 8, 1},
+				{4, 0, 2, 1, 8, 0, 1139},
+				{4, 0, 2, 1, 8, 6},
+				{7, 0, 8, 50003, 0},
+				{4, 0, 2, 2, 8, 5},
+				{7, 1, 8},
+				{7, 1},
+				{4, 0, 2, 0, 8},
+				{4, 0, 2},
+			},
+			expectedPathsWithoutChildren: [][]int32{
+				{4, 0, 2, 0, 8},
+				{4, 0, 3, 0, 2, 1, 8},
+				{7, 1, 8},
+			},
+		},
 	}
 	for _, testcase := range testcases {
 		testcase := testcase
