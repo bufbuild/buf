@@ -17,14 +17,12 @@ package bufsync
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 )
 
@@ -37,10 +35,8 @@ type syncer struct {
 	syncPointResolver  SyncPointResolver
 
 	// scanned information from the repo on sync start
-	tagsByCommitHash   map[string][]string
-	remoteBranches     map[string]struct{}
-	commitHashToBranch map[string]string
-	sortedCommits      []git.Commit
+	tagsByCommitHash map[string][]string
+	remoteBranches   map[string]struct{}
 }
 
 func newSyncer(
@@ -126,41 +122,15 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 		}
 		allBranchesSyncPoints[branch] = syncPoints
 	}
-	for _, commit := range s.sortedCommits {
-		branch, ok := s.commitHashToBranch[commit.Hash().Hex()]
-		if !ok {
-			return fmt.Errorf("commit %q has no associated branch", commit.Hash().Hex())
-		}
-		logger := s.logger.With(
-			zap.String("branch", branch),
-			zap.String("commit", commit.Hash().Hex()),
-		)
-		for _, module := range s.modulesToSync {
-			logger := logger.With(zap.String("module", module.String()))
-			var syncPoint git.Hash
-			if allBranchesSyncPoints != nil &&
-				allBranchesSyncPoints[branch] != nil &&
-				allBranchesSyncPoints[branch][module] != nil {
-				syncPoint = allBranchesSyncPoints[branch][module]
-			}
-			if syncPoint != nil {
-				logger := logger.With(zap.Stringer("syncPoint", syncPoint))
-				// This module has a sync point for this branch. We need to check if we've encountered the
-				// sync point.
-				if syncPoint.Hex() == commit.Hash().Hex() {
-					delete(allBranchesSyncPoints[branch], module)
-					logger.Debug("syncPoint encountered, will resume syncing next commit")
-				} else {
-					logger.Debug("syncPoint not encountered yet, skipping commit")
-				}
-				continue
-			}
-			logger.Debug("sync")
-			if err := s.visitCommit(ctx, module, branch, commit, syncFunc); err != nil {
-				return fmt.Errorf("process commit %s (%s): %w", commit.Hash().Hex(), branch, err)
-			}
-		}
+	// first, default branch
+	baseBranch := s.repo.BaseBranch()
+	if err := s.repo.ForEachCommit(baseBranch, func(commit git.Commit) error {
+		// sync default branch
+		return nil
+	}); err != nil {
+		return fmt.Errorf("sync base branch %q: %w", baseBranch, err)
 	}
+	// TODO: then the rest of the branches...
 	// If we have any sync points left, they were not encountered during sync, which is unexpected
 	// behavior.
 	for branch, modulesSyncPoints := range allBranchesSyncPoints {
@@ -195,45 +165,6 @@ func (s *syncer) scanRepo() error {
 	if _, baseBranchPushedInRemote := s.remoteBranches[baseBranch]; !baseBranchPushedInRemote {
 		return fmt.Errorf(`repo base branch %q is not present in "origin" remote`, baseBranch)
 	}
-	s.commitHashToBranch = make(map[string]string)
-	s.sortedCommits = make([]git.Commit, 0)
-	loopOverBranchCommits := func(branch string) error {
-		if err := s.repo.ForEachCommit(branch, func(commit git.Commit) error {
-			if _, alreadyVisited := s.commitHashToBranch[commit.Hash().Hex()]; !alreadyVisited {
-				s.commitHashToBranch[commit.Hash().Hex()] = branch
-				s.sortedCommits = append(s.sortedCommits, commit)
-			}
-			return nil
-		}); err != nil {
-			return fmt.Errorf("looping over commits in branch %q: %w", baseBranch, err)
-		}
-		return nil
-	}
-	// first, assign all commits in base branch, then the remaining ones in a deterministic order.
-	if err := loopOverBranchCommits(baseBranch); err != nil {
-		return err
-	}
-	sortedBranches := stringutil.MapToSortedSlice(s.remoteBranches)
-	for _, branch := range sortedBranches {
-		if branch == baseBranch {
-			continue // this one was already visited
-		}
-		if err := loopOverBranchCommits(branch); err != nil {
-			return err
-		}
-	}
-	// sort all commits by author timestamp
-	sort.Slice(s.sortedCommits, func(i, j int) bool {
-		return s.sortedCommits[i].Author().Timestamp().Before(s.sortedCommits[j].Author().Timestamp())
-	})
-	// TODO remove, this will be extra verbose
-	s.logger.Debug(
-		"repo scan",
-		zap.Any("tags", s.tagsByCommitHash),
-		zap.Any("branches", s.remoteBranches),
-		zap.Any("commit to branch", s.commitHashToBranch),
-		zap.Stringers("sorted commits", s.sortedCommits),
-	)
 	return nil
 }
 
