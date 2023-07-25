@@ -14,8 +14,6 @@
 
 package internal
 
-type pathType int
-
 const (
 	pathTypeInvalid pathType = iota + 1
 	pathTypeEmpty
@@ -39,6 +37,14 @@ const (
 	optionsTagInField int32 = 8
 )
 
+// pathType is the type of a message pointed to by a location path.
+type pathType int
+
+// locationPathDFAState takes an input and returns the next state and the path type
+// that ends with the input, which is consistent with the returned next state. It
+// returns nil and pathTypeInvalid if the input is rejected.
+type locationPathDFAState func(int32) (locationPathDFAState, pathType)
+
 // getPathType returns the type of the path. It only accepts one of:
 // empty, messages, message, fields, field, field options and field option.
 func getPathType(path []int32) pathType {
@@ -53,13 +59,8 @@ func getPathType(path []int32) pathType {
 	return pathType
 }
 
-// locationPathDFAState takes an input and returns the next state and the path type
-// that ends with the input, which is consistent with the returned next state. It
-// returns nil and pathTypeInvalid if the input is rejected.
-type locationPathDFAState func(int32) (locationPathDFAState, pathType)
-
-func start(index int32) (locationPathDFAState, pathType) {
-	switch index {
+func start(input int32) (locationPathDFAState, pathType) {
+	switch input {
 	case messageTypeTagInFile:
 		return messages, pathTypeMessages
 	case extensionTagInFile:
@@ -69,13 +70,13 @@ func start(index int32) (locationPathDFAState, pathType) {
 	}
 }
 
-func messages(index int32) (locationPathDFAState, pathType) {
+func messages(input int32) (locationPathDFAState, pathType) {
 	// we are not checking index >= 0, the caller must ensure this
 	return message, pathTypeMessages
 }
 
-func message(index int32) (locationPathDFAState, pathType) {
-	switch index {
+func message(input int32) (locationPathDFAState, pathType) {
+	switch input {
 	case nestedTypeTagInMessage:
 		return messages, pathTypeMessage
 	case fieldTagInMessage, extensionTagInMessage:
@@ -84,13 +85,13 @@ func message(index int32) (locationPathDFAState, pathType) {
 	return nil, pathTypeInvalid
 }
 
-func fields(index int32) (locationPathDFAState, pathType) {
+func fields(input int32) (locationPathDFAState, pathType) {
 	// we are not checking index >= 0, the caller must ensure this
 	return field, pathTypeField
 }
 
-func field(index int32) (locationPathDFAState, pathType) {
-	switch index {
+func field(input int32) (locationPathDFAState, pathType) {
+	switch input {
 	case optionsTagInField:
 		return fieldOptions, pathTypeFieldOptions
 	default:
@@ -98,10 +99,13 @@ func field(index int32) (locationPathDFAState, pathType) {
 	}
 }
 
-func fieldOptions(index int32) (locationPathDFAState, pathType) {
+func fieldOptions(input int32) (locationPathDFAState, pathType) {
 	return fieldOption, pathTypeFieldOption
 }
 
-func fieldOption(index int32) (locationPathDFAState, pathType) {
+func fieldOption(input int32) (locationPathDFAState, pathType) {
+	// technically it should not just accpet any input, but this is good
+	// enough for our purposes as the paths marked by a MarkSweeper will
+	// be valid.
 	return fieldOption, pathTypeFieldOption
 }
