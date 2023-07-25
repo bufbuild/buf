@@ -105,6 +105,7 @@ func (m *fieldOptionModifier) ModifyJSType(
 }
 
 func isJsTypePermittedForType(typ descriptorpb.FieldDescriptorProto_Type) bool {
+	// https://github.com/protocolbuffers/protobuf/blob/d4db41d395dcbb2c79b7fb1f109086fa04afd8aa/src/google/protobuf/descriptor.proto#L622
 	return typ == descriptorpb.FieldDescriptorProto_TYPE_INT64 ||
 		typ == descriptorpb.FieldDescriptorProto_TYPE_UINT64 ||
 		typ == descriptorpb.FieldDescriptorProto_TYPE_SINT64 ||
