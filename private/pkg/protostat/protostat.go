@@ -153,7 +153,7 @@ func examineMessage(statsBuilder *statsBuilder, messageBody *ast.MessageBody) {
 		case *ast.GroupNode:
 			statsBuilder.NumFields++
 			examineMessage(statsBuilder, &decl.MessageBody)
-		case *ast.OneOfNode:
+		case *ast.OneofNode:
 			for _, ooDecl := range decl.Decls {
 				switch ooDecl := ooDecl.(type) {
 				case *ast.FieldNode:
