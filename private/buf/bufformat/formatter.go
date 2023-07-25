@@ -966,7 +966,7 @@ func (f *formatter) writeRPCType(rpcTypeNode *ast.RPCTypeNode) {
 //	  string name = 1;
 //	  int number = 2;
 //	}
-func (f *formatter) writeOneOf(oneOfNode *ast.OneOfNode) {
+func (f *formatter) writeOneOf(oneOfNode *ast.OneofNode) {
 	var elementWriterFunc func()
 	if len(oneOfNode.Decls) > 0 {
 		elementWriterFunc = func() {
@@ -1658,7 +1658,7 @@ func (f *formatter) writeNode(node ast.Node) {
 		f.writeMessageLiteral(element)
 	case *ast.NegativeIntLiteralNode:
 		f.writeNegativeIntLiteral(element)
-	case *ast.OneOfNode:
+	case *ast.OneofNode:
 		f.writeOneOf(element)
 	case *ast.OptionNode:
 		f.writeOption(element)
