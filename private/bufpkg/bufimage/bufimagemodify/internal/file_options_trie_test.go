@@ -35,14 +35,14 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 			},
 		},
 		{
-			description: "insert ancestor after descendent",
+			description: "insert ancestor after descendant",
 			pathsToInsert: [][]int32{
 				{8, 4, 9, 5},
 				{8, 4},
 			},
 		},
 		{
-			description: "insert multiple ancestors after descendent",
+			description: "insert multiple ancestors after descendant",
 			pathsToInsert: [][]int32{
 				{20, 15, 10, 5},
 				{20},
@@ -51,7 +51,7 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 			},
 		},
 		{
-			description: "insert descendents",
+			description: "insert descendants",
 			pathsToInsert: [][]int32{
 				{20},
 				{20, 50, 100},
@@ -117,13 +117,13 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 			require.Equal(
 				t,
 				testcase.pathsToInsert,
-				trie.pathsWithoutChildren(),
+				trie.pathsWithoutDescendant(),
 			)
 		})
 	}
 }
 
-func TestRegisterChild(t *testing.T) {
+func TestRegisterDescendant(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		description                  string
@@ -176,7 +176,7 @@ func TestRegisterChild(t *testing.T) {
 			},
 		},
 		{
-			description: "register descendent",
+			description: "register descendant",
 			pathsToInsert: [][]int32{
 				{4, 0, 2, 0, 8},
 				{4, 0, 2, 1, 8},
@@ -268,12 +268,12 @@ func TestRegisterChild(t *testing.T) {
 				trie.insert(path)
 			}
 			for _, path := range testcase.pathsToRegister {
-				trie.registerChild(path)
+				trie.registerDescendant(path)
 			}
 			require.Equal(
 				t,
 				testcase.expectedPathsWithoutChildren,
-				trie.pathsWithoutChildren(),
+				trie.pathsWithoutDescendant(),
 			)
 		})
 	}

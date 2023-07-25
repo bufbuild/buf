@@ -41,9 +41,11 @@ func isPathForFieldOptions(path []int32) bool {
 	return isStateAccept
 }
 
-type dfaState func(int32) (next dfaState, isNextAccept bool)
+// fieldOptionDFAState takes an input and returns the next state, or nil
+// if the input is rejected, and whether the next state is the accept state.
+type fieldOptionDFAState func(int32) (next fieldOptionDFAState, isNextAccept bool)
 
-func start(index int32) (dfaState, bool) {
+func start(index int32) (fieldOptionDFAState, bool) {
 	switch index {
 	case messageTypeTagInFile:
 		return messages, false
@@ -54,12 +56,12 @@ func start(index int32) (dfaState, bool) {
 	}
 }
 
-func messages(index int32) (dfaState, bool) {
+func messages(index int32) (fieldOptionDFAState, bool) {
 	// we are not checking index >= 0, the caller must ensure this
 	return message, false
 }
 
-func message(index int32) (dfaState, bool) {
+func message(index int32) (fieldOptionDFAState, bool) {
 	switch index {
 	case nestedTypeTagInMessage:
 		return messages, false
@@ -69,12 +71,12 @@ func message(index int32) (dfaState, bool) {
 	return nil, false
 }
 
-func fields(index int32) (dfaState, bool) {
+func fields(index int32) (fieldOptionDFAState, bool) {
 	// we are not checking index >= 0, the caller must ensure this
 	return field, false
 }
 
-func field(index int32) (dfaState, bool) {
+func field(index int32) (fieldOptionDFAState, bool) {
 	switch index {
 	case optionsTagInField:
 		return nil, true

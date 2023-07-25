@@ -20,15 +20,18 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// fieldOptionsTrie stores paths to FieldOptions (tag 8 of a FieldDescriptorProto).
 type fieldOptionsTrie []*fieldOptionsTrieNode
 
 type fieldOptionsTrieNode struct {
-	value    int32
-	path     []int32
-	count    int
-	children fieldOptionsTrie
+	value                     int32
+	path                      []int32 // if this is empty, the node itself is not a path
+	registeredDescendantCount int
+	children                  fieldOptionsTrie
 }
 
+// insert inserts a path into the trie. The caller should
+// ensure that the path is for a FieldOptions.
 func (p *fieldOptionsTrie) insert(path []int32) {
 	trie := p
 	for index, element := range path {
@@ -59,9 +62,11 @@ func (p *fieldOptionsTrie) insert(path []int32) {
 	}
 }
 
-func (p *fieldOptionsTrie) registerChild(childPath []int32) {
+// registerDescendant finds if there is an ancestor of the provided
+// path and increments this ancestor's counter if it exists.
+func (p *fieldOptionsTrie) registerDescendant(descendant []int32) {
 	trie := p
-	for i, element := range childPath {
+	for i, element := range descendant {
 		nodes := *trie
 		pos, found := sort.Find(len(nodes), func(i int) int {
 			return int(element - nodes[i].value)
@@ -70,18 +75,19 @@ func (p *fieldOptionsTrie) registerChild(childPath []int32) {
 			return
 		}
 		ancestor := nodes[pos]
-		if len(ancestor.path) > 0 && i != len(childPath)-1 {
-			ancestor.count += 1
+		if len(ancestor.path) > 0 && i != len(descendant)-1 {
+			ancestor.registeredDescendantCount += 1
 			return
 		}
 		trie = &ancestor.children
 	}
 }
 
-func (p *fieldOptionsTrie) pathsWithoutChildren() [][]int32 {
+// pathsWithoutDescendant returns all stored paths with counter equal to 0.
+func (p *fieldOptionsTrie) pathsWithoutDescendant() [][]int32 {
 	paths := [][]int32{}
 	walkTrie(*p, func(node *fieldOptionsTrieNode) {
-		if len(node.path) > 0 && node.count == 0 {
+		if len(node.path) > 0 && node.registeredDescendantCount == 0 {
 			paths = append(paths, node.path)
 		}
 	})
