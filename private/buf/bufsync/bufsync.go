@@ -145,6 +145,18 @@ func SyncerWithResumption(resolver SyncPointResolver) SyncerOption {
 	}
 }
 
+func SyncerWithGitCommitChecker(module Module) SyncerOption {
+	return func(s *syncer) error {
+		for _, existingModule := range s.modulesToSync {
+			if existingModule.String() == module.String() {
+				return fmt.Errorf("duplicate module %s", module)
+			}
+		}
+		s.modulesToSync = append(s.modulesToSync, module)
+		return nil
+	}
+}
+
 // SyncFunc is invoked by Syncer to process a sync point. If an error is returned,
 // sync will abort.
 type SyncFunc func(ctx context.Context, commit ModuleCommit) error
@@ -157,6 +169,14 @@ type SyncPointResolver func(
 	identity bufmoduleref.ModuleIdentity,
 	branch string,
 ) (git.Hash, error)
+
+// SyncedGitCommitChecker is invoked when syncing branches to know which commits hashes from a set
+// are already synced inthe BSR. It expects to receive the commit hashes that are synced already. If
+// an error is returned, sync will abort.
+type SyncedGitCommitChecker func(
+	ctx context.Context,
+	commitHashes map[string]struct{},
+) (map[string]struct{}, error)
 
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {

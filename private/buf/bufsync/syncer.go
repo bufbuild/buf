@@ -16,6 +16,7 @@ package bufsync
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -27,16 +28,21 @@ import (
 )
 
 type syncer struct {
-	logger             *zap.Logger
-	repo               git.Repository
-	storageGitProvider storagegit.Provider
-	errorHandler       ErrorHandler
-	modulesToSync      []Module
-	syncPointResolver  SyncPointResolver
+	logger                 *zap.Logger
+	repo                   git.Repository
+	storageGitProvider     storagegit.Provider
+	errorHandler           ErrorHandler
+	modulesToSync          []Module
+	syncPointResolver      SyncPointResolver
+	syncedGitCommitChecker SyncedGitCommitChecker
 
 	// scanned information from the repo on sync start
 	tagsByCommitHash map[string][]string
 	remoteBranches   map[string]struct{}
+	// local cache to know which git hashes are synced and which ones aren't, to avoid requesting the
+	// BSR more than once per git hash.
+	cacheSyncedGitHashes   map[string]struct{}
+	cacheUnsyncedGitHashes map[string]struct{}
 }
 
 func newSyncer(
@@ -122,6 +128,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 		}
 		allBranchesSyncPoints[branch] = syncPoints
 	}
+	s.syncBranch(ctx, s.repo.BaseBranch(), allBranchesSyncPoints[s.repo.BaseBranch()])
 	// first, default branch
 	baseBranch := s.repo.BaseBranch()
 	if err := s.repo.ForEachCommit(baseBranch, func(commit git.Commit) error {
@@ -141,6 +148,137 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 		}
 	}
 	return nil
+}
+
+// commitsToSync finds the commits that are pending to sync for a branch+module tuple.
+func (s *syncer) commitsToSync(
+	ctx context.Context,
+	branch string,
+	module Module,
+	expectedSyncPoint string,
+) ([]git.Commit, error) {
+	const maxCommitsPageLen = 10
+	var (
+		commitsPageToCheck []git.Commit
+		commitsToSync      []git.Commit
+	)
+	// travel branch commits from HEAD, and check in a paginated fashion if they're already synced,
+	// until finding a synced git commit, or adding them all to be synced
+	stopLoopErr := errors.New("stop loop")
+	checkCommitsPage := func() error {
+		syncedCommits, err := s.checkSyncedGitHashes(ctx, commitsPageToCheck)
+		if err != nil {
+			return fmt.Errorf("check synced git commits: %w", err)
+		}
+		if len(syncedCommits) == 0 {
+			// this page didn't include any git commit already synced, add it to the commits to sync, and
+			// start a new page
+			commitsToSync = append(commitsToSync, commitsPageToCheck...)
+			commitsPageToCheck = []git.Commit{}
+			return nil
+		}
+		// there was at least one git commit that is already synced in this page
+		for _, commit := range commitsPageToCheck {
+			commitHash := commit.Hash().Hex()
+			if _, synced := syncedCommits[commitHash]; !synced {
+				commitsToSync = append(commitsToSync, commit)
+				continue
+			}
+			// sync point found
+			if expectedSyncPoint != commitHash {
+				if s.repo.BaseBranch() == branch {
+					// TODO: add details to error message saying: "run again with --force-branch-sync <branch
+					// name>" when we support a flag like that.
+					return fmt.Errorf(
+						"found synced git commit %q for default branch %q, but expected sync point was %q, did you rebase or reset your default branch?",
+						commitHash,
+						branch,
+						expectedSyncPoint,
+					)
+				}
+				s.logger.Warn(
+					"unexpected_sync_point",
+					zap.String("expected_sync_point", expectedSyncPoint),
+					zap.String("found_sync_point", commitHash),
+					zap.String("branch", branch),
+					zap.String("module", module.String()),
+				)
+			}
+			return stopLoopErr
+		}
+		return fmt.Errorf("synced commits %v are not present in requested page %v", syncedCommits, commitsPageToCheck)
+	}
+	var pendingPage bool
+	if err := s.repo.ForEachCommit(branch, func(commit git.Commit) error {
+		commitsPageToCheck = append(commitsPageToCheck, commit)
+		pendingPage = true
+		if len(commitsPageToCheck) < maxCommitsPageLen {
+			// haven't reached page size, keep appending
+			return nil
+		}
+		pendingPage = false
+		return checkCommitsPage()
+	}); err != nil && !errors.Is(err, stopLoopErr) {
+		return nil, err
+	}
+	if pendingPage {
+		// we reached the end of commits for the branch, with a pending commits page to check
+		if err := checkCommitsPage(); err != nil {
+			return nil, err
+		}
+	}
+	if len(commitsToSync) == 0 {
+		return nil, nil
+	}
+	// https://github.com/golang/go/wiki/SliceTricks#reversing
+	for i := len(commitsToSync)/2 - 1; i >= 0; i-- {
+		opp := len(commitsToSync) - 1 - i
+		commitsToSync[i], commitsToSync[opp] = commitsToSync[opp], commitsToSync[i]
+	}
+	return commitsToSync, nil
+}
+
+// checkSyncedGitHashes checks which of the passed git hashes are synced already, and returns them.
+// It first checks the local cache before using the remote checker.
+func (s *syncer) checkSyncedGitHashes(
+	ctx context.Context,
+	commits []git.Commit,
+) (map[string]struct{} /* synced */, error) {
+	syncedGitHashes := make(map[string]struct{})
+	gitHashesToCheck := make(map[string]struct{})
+	// check local cache
+	for _, commit := range commits {
+		commitHash := commit.Hash().Hex()
+		if _, cachedSynced := s.cacheSyncedGitHashes[commitHash]; cachedSynced {
+			syncedGitHashes[commitHash] = struct{}{} // add it to the return
+			continue                                 // already know it's synced, no need to check again
+		} else if _, cachedUnsynced := s.cacheUnsyncedGitHashes[commitHash]; cachedUnsynced {
+			continue // already know it's not synced, no need to check again
+		}
+		gitHashesToCheck[commitHash] = struct{}{}
+	}
+	if len(gitHashesToCheck) == 0 {
+		// all of the requested git hashes were cached (synced or unsynced), no need to check remotely
+		return syncedGitHashes, nil
+	}
+	// check remotely
+	checkedSyncedGitHashes, err := s.syncedGitCommitChecker(ctx, gitHashesToCheck)
+	if err != nil {
+		return nil, fmt.Errorf("check synced git commits: %w", err)
+	}
+	// cache new response
+	for gitHash := range gitHashesToCheck {
+		if _, synced := checkedSyncedGitHashes[gitHash]; synced {
+			s.cacheSyncedGitHashes[gitHash] = struct{}{} // cache as synced
+		} else {
+			s.cacheUnsyncedGitHashes[gitHash] = struct{}{} // cache as unsynced
+		}
+	}
+	// include checked response in the return
+	for syncedGitHash := range checkedSyncedGitHashes {
+		syncedGitHashes[syncedGitHash] = struct{}{}
+	}
+	return syncedGitHashes, nil
 }
 
 // scanRepo gathers repo information and stores it in the syncer: gathers all tags, all
