@@ -54,13 +54,19 @@ const (
 	LabelServiceMoveLabelProcedure = "/buf.alpha.registry.v1alpha1.LabelService/MoveLabel"
 	// LabelServiceGetLabelsProcedure is the fully-qualified name of the LabelService's GetLabels RPC.
 	LabelServiceGetLabelsProcedure = "/buf.alpha.registry.v1alpha1.LabelService/GetLabels"
+	// LabelServiceGetLabelsInNamespaceProcedure is the fully-qualified name of the LabelService's
+	// GetLabelsInNamespace RPC.
+	LabelServiceGetLabelsInNamespaceProcedure = "/buf.alpha.registry.v1alpha1.LabelService/GetLabelsInNamespace"
 )
 
 // LabelServiceClient is a client for the buf.alpha.registry.v1alpha1.LabelService service.
 type LabelServiceClient interface {
 	CreateLabel(context.Context, *connect_go.Request[v1alpha1.CreateLabelRequest]) (*connect_go.Response[v1alpha1.CreateLabelResponse], error)
 	MoveLabel(context.Context, *connect_go.Request[v1alpha1.MoveLabelRequest]) (*connect_go.Response[v1alpha1.MoveLabelResponse], error)
+	// GetLabels returns labels in a repository with optional label name and value filters.
 	GetLabels(context.Context, *connect_go.Request[v1alpha1.GetLabelsRequest]) (*connect_go.Response[v1alpha1.GetLabelsResponse], error)
+	// GetLabelsInNamespace returns labels in a given namespace, optionally matching label names.
+	GetLabelsInNamespace(context.Context, *connect_go.Request[v1alpha1.GetLabelsInNamespaceRequest]) (*connect_go.Response[v1alpha1.GetLabelsInNamespaceResponse], error)
 }
 
 // NewLabelServiceClient constructs a client for the buf.alpha.registry.v1alpha1.LabelService
@@ -90,14 +96,21 @@ func NewLabelServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
+		getLabelsInNamespace: connect_go.NewClient[v1alpha1.GetLabelsInNamespaceRequest, v1alpha1.GetLabelsInNamespaceResponse](
+			httpClient,
+			baseURL+LabelServiceGetLabelsInNamespaceProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
+		),
 	}
 }
 
 // labelServiceClient implements LabelServiceClient.
 type labelServiceClient struct {
-	createLabel *connect_go.Client[v1alpha1.CreateLabelRequest, v1alpha1.CreateLabelResponse]
-	moveLabel   *connect_go.Client[v1alpha1.MoveLabelRequest, v1alpha1.MoveLabelResponse]
-	getLabels   *connect_go.Client[v1alpha1.GetLabelsRequest, v1alpha1.GetLabelsResponse]
+	createLabel          *connect_go.Client[v1alpha1.CreateLabelRequest, v1alpha1.CreateLabelResponse]
+	moveLabel            *connect_go.Client[v1alpha1.MoveLabelRequest, v1alpha1.MoveLabelResponse]
+	getLabels            *connect_go.Client[v1alpha1.GetLabelsRequest, v1alpha1.GetLabelsResponse]
+	getLabelsInNamespace *connect_go.Client[v1alpha1.GetLabelsInNamespaceRequest, v1alpha1.GetLabelsInNamespaceResponse]
 }
 
 // CreateLabel calls buf.alpha.registry.v1alpha1.LabelService.CreateLabel.
@@ -115,11 +128,19 @@ func (c *labelServiceClient) GetLabels(ctx context.Context, req *connect_go.Requ
 	return c.getLabels.CallUnary(ctx, req)
 }
 
+// GetLabelsInNamespace calls buf.alpha.registry.v1alpha1.LabelService.GetLabelsInNamespace.
+func (c *labelServiceClient) GetLabelsInNamespace(ctx context.Context, req *connect_go.Request[v1alpha1.GetLabelsInNamespaceRequest]) (*connect_go.Response[v1alpha1.GetLabelsInNamespaceResponse], error) {
+	return c.getLabelsInNamespace.CallUnary(ctx, req)
+}
+
 // LabelServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.LabelService service.
 type LabelServiceHandler interface {
 	CreateLabel(context.Context, *connect_go.Request[v1alpha1.CreateLabelRequest]) (*connect_go.Response[v1alpha1.CreateLabelResponse], error)
 	MoveLabel(context.Context, *connect_go.Request[v1alpha1.MoveLabelRequest]) (*connect_go.Response[v1alpha1.MoveLabelResponse], error)
+	// GetLabels returns labels in a repository with optional label name and value filters.
 	GetLabels(context.Context, *connect_go.Request[v1alpha1.GetLabelsRequest]) (*connect_go.Response[v1alpha1.GetLabelsResponse], error)
+	// GetLabelsInNamespace returns labels in a given namespace, optionally matching label names.
+	GetLabelsInNamespace(context.Context, *connect_go.Request[v1alpha1.GetLabelsInNamespaceRequest]) (*connect_go.Response[v1alpha1.GetLabelsInNamespaceResponse], error)
 }
 
 // NewLabelServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -145,6 +166,12 @@ func NewLabelServiceHandler(svc LabelServiceHandler, opts ...connect_go.HandlerO
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	)
+	labelServiceGetLabelsInNamespaceHandler := connect_go.NewUnaryHandler(
+		LabelServiceGetLabelsInNamespaceProcedure,
+		svc.GetLabelsInNamespace,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
+	)
 	return "/buf.alpha.registry.v1alpha1.LabelService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case LabelServiceCreateLabelProcedure:
@@ -153,6 +180,8 @@ func NewLabelServiceHandler(svc LabelServiceHandler, opts ...connect_go.HandlerO
 			labelServiceMoveLabelHandler.ServeHTTP(w, r)
 		case LabelServiceGetLabelsProcedure:
 			labelServiceGetLabelsHandler.ServeHTTP(w, r)
+		case LabelServiceGetLabelsInNamespaceProcedure:
+			labelServiceGetLabelsInNamespaceHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -172,4 +201,8 @@ func (UnimplementedLabelServiceHandler) MoveLabel(context.Context, *connect_go.R
 
 func (UnimplementedLabelServiceHandler) GetLabels(context.Context, *connect_go.Request[v1alpha1.GetLabelsRequest]) (*connect_go.Response[v1alpha1.GetLabelsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.LabelService.GetLabels is not implemented"))
+}
+
+func (UnimplementedLabelServiceHandler) GetLabelsInNamespace(context.Context, *connect_go.Request[v1alpha1.GetLabelsInNamespaceRequest]) (*connect_go.Response[v1alpha1.GetLabelsInNamespaceResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.LabelService.GetLabelsInNamespace is not implemented"))
 }
