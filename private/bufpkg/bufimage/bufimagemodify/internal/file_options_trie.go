@@ -101,13 +101,13 @@ func (p *fieldOptionsTrie) indicesWithoutDescendant() []int {
 	return locationIndices
 }
 
-func walkTrie(trie fieldOptionsTrie, f func(node *fieldOptionsTrieNode)) {
+func walkTrie(trie fieldOptionsTrie, enter func(node *fieldOptionsTrieNode)) {
 	for _, node := range trie {
-		walkTrieNode(node, f)
+		walkTrieNode(node, enter)
 	}
 }
 
-func walkTrieNode(node *fieldOptionsTrieNode, f func(node *fieldOptionsTrieNode)) {
-	f(node)
-	walkTrie(node.children, f)
+func walkTrieNode(node *fieldOptionsTrieNode, enter func(node *fieldOptionsTrieNode)) {
+	enter(node)
+	walkTrie(node.children, enter)
 }

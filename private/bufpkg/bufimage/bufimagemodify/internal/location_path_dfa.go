@@ -14,53 +14,48 @@
 
 package internal
 
+type pathType int
+
 const (
-	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L75
-	messageTypeTagInFile int32 = 4
-	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L78
-	extensionTagInFile = 7
-	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L97
-	fieldTagInMessage = 2
-	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L100
-	nestedTypeTagInMessage = 3
-	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L98
-	extensionTagInMessage = 6
-	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L215
-	optionsTagInField          = 8
-	pathTypeInvalid   pathType = iota + 1
+	pathTypeInvalid pathType = iota + 1
 	pathTypeEmpty
 	pathTypeMessages
 	pathTypeMessage
 	pathTypeFields
 	pathTypeField
 	pathTypeFieldOptions
-	pathTypeSomeFieldOption
+	pathTypeFieldOption
+	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L75
+	messageTypeTagInFile int32 = 4
+	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L78
+	extensionTagInFile int32 = 7
+	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L97
+	fieldTagInMessage int32 = 2
+	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L100
+	nestedTypeTagInMessage int32 = 3
+	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L98
+	extensionTagInMessage int32 = 6
+	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L215
+	optionsTagInField int32 = 8
 )
 
-type pathType int
-
-func isPathForFieldOptions(path []int32) bool {
-	return getPathType(path) == pathTypeFieldOptions
-}
-
-func isPathForSomeFieldOption(path []int32) bool {
-	return getPathType(path) == pathTypeSomeFieldOption
-}
-
+// getPathType returns the type of the path. It only accepts one of:
+// empty, messages, message, fields, field, field options and field option.
 func getPathType(path []int32) pathType {
 	pathType := pathTypeEmpty
 	currentState := start
-	for _, index := range path {
+	for _, element := range path {
 		if currentState == nil {
 			return pathTypeInvalid
 		}
-		currentState, pathType = currentState(index)
+		currentState, pathType = currentState(element)
 	}
 	return pathType
 }
 
 // locationPathDFAState takes an input and returns the next state and the path type
-// that ends with the input. It returns nil and pathTypeInvalid if the input is rejected.
+// that ends with the input, which is consistent with the returned next state. It
+// returns nil and pathTypeInvalid if the input is rejected.
 type locationPathDFAState func(int32) (locationPathDFAState, pathType)
 
 func start(index int32) (locationPathDFAState, pathType) {
@@ -104,9 +99,9 @@ func field(index int32) (locationPathDFAState, pathType) {
 }
 
 func fieldOptions(index int32) (locationPathDFAState, pathType) {
-	return fieldOption, pathTypeSomeFieldOption
+	return fieldOption, pathTypeFieldOption
 }
 
 func fieldOption(index int32) (locationPathDFAState, pathType) {
-	return fieldOption, pathTypeSomeFieldOption
+	return fieldOption, pathTypeFieldOption
 }

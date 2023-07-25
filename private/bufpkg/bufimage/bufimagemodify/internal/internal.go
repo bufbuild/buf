@@ -85,11 +85,12 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 	fieldOptionsPaths := fieldOptionsTrie{}
 	for i, location := range sourceCodeInfo.Location {
 		path := location.Path
-		if isPathForFieldOptions(path) {
+		pathType := getPathType(path)
+		if pathType == pathTypeFieldOptions {
 			fieldOptionsPaths.insert(path, i)
 		}
 		if _, ok := paths[GetPathKey(path)]; !ok {
-			if isPathForSomeFieldOption(path) {
+			if pathType == pathTypeFieldOption {
 				// This field option path is not marked, register it to its parent FieldOptions.
 				fieldOptionsPaths.registerDescendant(path)
 			}
@@ -107,7 +108,7 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 			indices[i] = struct{}{}
 			continue
 		}
-		if isPathForSomeFieldOption(location.Path) {
+		if pathType == pathTypeFieldOption {
 			// Note that there is a difference between the generated file option paths and field options paths.
 			// For example, for:
 			// ...
