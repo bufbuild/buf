@@ -15,24 +15,24 @@
 package internal
 
 import (
-	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 )
 
 func TestFileOptionsTrieInsert(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		description   string
-		pathsToInsert [][]int32
+		description     string
+		pathsToInsert   [][]int32
+		expectedIndices []int
 	}{
 		{
 			description: "single path",
 			pathsToInsert: [][]int32{
 				{8, 4, 9, 5},
 			},
+			expectedIndices: []int{0},
 		},
 		{
 			description: "insert ancestor after descendant",
@@ -40,65 +40,112 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 				{8, 4, 9, 5},
 				{8, 4},
 			},
+			expectedIndices: []int{
+				1,
+				0,
+			},
 		},
 		{
 			description: "insert multiple ancestors after descendant",
 			pathsToInsert: [][]int32{
-				{20, 15, 10, 5},
-				{20},
-				{20, 10},
-				{20, 15},
+				{20, 15, 10, 5}, // 0
+				{20},            // 1
+				{20, 10},        // 2
+				{20, 15},        // 3
+			},
+			expectedIndices: []int{
+				1,
+				2,
+				3,
+				0,
 			},
 		},
 		{
 			description: "insert descendants",
 			pathsToInsert: [][]int32{
-				{20},
-				{20, 50, 100},
-				{20, 50, 100, 150},
-				{20, 50, 100, 150, 300, 500},
-				{20, 50, 100, 150, 300},
+				{20},                         // 0
+				{20, 50, 100},                // 1
+				{20, 50, 100, 150},           // 2
+				{20, 50, 100, 150, 300, 500}, // 3
+				{20, 50, 100, 150, 300},      // 4
+			},
+			expectedIndices: []int{
+				0,
+				1,
+				2,
+				4,
+				3,
 			},
 		},
 		{
 			description: "insert last sibling",
 			pathsToInsert: [][]int32{
-				{20, 30, 50},
-				{20, 50, 70},
-				{20, 50, 80},
-				{30, 10},
+				{20, 30, 50}, // 0
+				{20, 50, 70}, // 1
+				{20, 50, 80}, // 2
+				{30, 10},     // 3
+			},
+			expectedIndices: []int{
+				0,
+				1,
+				2,
+				3,
 			},
 		},
 		{
 			description: "insert first sibling",
 			pathsToInsert: [][]int32{
-				{20, 30, 50},
-				{20, 0, 70},
-				{20, 0, 20},
-				{10, 10},
-				{5, 10, 15, 20},
-				{0},
+				{20, 30, 50},    // 0
+				{20, 0, 70},     // 1
+				{20, 0, 20},     // 2
+				{10, 10},        // 3
+				{5, 10, 15, 20}, // 4
+				{0},             // 5
+			},
+			expectedIndices: []int{
+				5,
+				4,
+				3,
+				2,
+				1,
+				0,
 			},
 		},
 		{
 			description: "insert middle sibling",
 			pathsToInsert: [][]int32{
-				{20, 30, 50},
-				{20, 30, 70},
-				{20, 0, 0},
-				{20, 15, 0},
-				{20, 6, 20},
-				{20, 22, 20},
-				{20, 30, 60},
-				{20, 30, 65},
-				{0, 50, 50},
-				{10, 50, 50},
-				{15, 50, 50},
-				{5, 50, 50},
-				{2, 50, 50},
-				{1, 50, 50},
-				{20, 30, 55},
-				{20, 30, 52},
+				{20, 30, 50}, // 0
+				{20, 30, 70}, // 1
+				{20, 30, 60}, // 2
+				{20, 30, 65}, // 3
+				{20, 30, 55}, // 4
+				{20, 0, 0},   // 5
+				{20, 15, 0},  // 6
+				{20, 6, 20},  // 7
+				{20, 22, 20}, // 8
+				{0, 50, 50},  // 9
+				{10, 50, 50}, // 10
+				{15, 50, 50}, // 11
+				{5, 50, 50},  // 12
+				{2, 50, 50},  // 13
+				{1, 50, 50},  // 14
+			},
+			expectedIndices: []int{
+				9,
+				14,
+				13,
+				12,
+				10,
+				11,
+				5,
+				7,
+				6,
+				8,
+				0,
+				4,
+				2,
+				3,
+				1,
 			},
 		},
 	}
@@ -106,18 +153,16 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
-			trie := &fieldOptionsTrie{}
-			for _, path := range testcase.pathsToInsert {
-				trie.insert(path)
+			trie := fieldOptionsTrie{}
+			for i, path := range testcase.pathsToInsert {
+				// i is good enough for testing purposes since it's unique.
+				trie.insert(path, i)
 			}
-			sort.Slice(testcase.pathsToInsert, func(i, j int) bool {
-				return slices.Compare(testcase.pathsToInsert[i], testcase.pathsToInsert[j]) < 0
-			})
 			// pathsWithoutChildren returns all paths in sorted order because it does a preorder traversal
 			require.Equal(
 				t,
-				testcase.pathsToInsert,
-				trie.pathsWithoutDescendant(),
+				testcase.expectedIndices,
+				trie.indicesWithoutDescendant(),
 			)
 		})
 	}
@@ -126,96 +171,112 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 func TestRegisterDescendant(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		description                  string
-		pathsToInsert                [][]int32
-		pathsToRegister              [][]int32
-		expectedPathsWithoutChildren [][]int32
+		description                      string
+		pathsToInsert                    [][]int32
+		pathsToRegister                  [][]int32
+		expectedIndicesWithoutDescendant []int
 	}{
 		{
 			description: "register none",
 			pathsToInsert: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 2, 1, 8},
-				{4, 0, 3, 0, 2, 1, 8},
+				{4, 0, 2, 0, 8},       // 0
+				{4, 0, 2, 1, 8},       // 1
+				{4, 0, 3, 0, 2, 1, 8}, // 2
 			},
-			expectedPathsWithoutChildren: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 2, 1, 8},
-				{4, 0, 3, 0, 2, 1, 8},
+			expectedIndicesWithoutDescendant: []int{
+				0,
+				1,
+				2,
 			},
 		},
 		{
 			description: "register non-child",
 			pathsToInsert: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 2, 1, 8},
-				{4, 0, 3, 0, 2, 1, 8},
+				{4, 0, 2, 0, 8},       // 0
+				{4, 0, 2, 1, 8},       // 1
+				{4, 0, 3, 0, 2, 1, 8}, // 2
 			},
 			pathsToRegister: [][]int32{
 				{30},
 			},
-			expectedPathsWithoutChildren: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 2, 1, 8},
-				{4, 0, 3, 0, 2, 1, 8},
+			expectedIndicesWithoutDescendant: []int{
+				0,
+				1,
+				2,
+			},
+		},
+		{
+			description: "register sibling",
+			pathsToInsert: [][]int32{
+				{4, 0, 2, 0, 8},       // 0
+				{4, 0, 2, 1, 8},       // 1
+				{4, 0, 3, 0, 2, 1, 8}, // 2
+			},
+			pathsToRegister: [][]int32{
+				{40, 0, 2, 0, 1},
+			},
+			expectedIndicesWithoutDescendant: []int{
+				0,
+				1,
+				2,
 			},
 		},
 		{
 			description: "register child",
 			pathsToInsert: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 2, 1, 8},
-				{4, 0, 3, 0, 2, 1, 8},
+				{4, 0, 2, 3, 8},       // 0
+				{4, 0, 2, 2, 8},       // 1
+				{4, 0, 3, 0, 2, 1, 8}, // 2
 			},
 			pathsToRegister: [][]int32{
-				{4, 0, 2, 1, 8, 6},
+				{4, 0, 2, 2, 8, 6}, // descendant of 1
 			},
-			expectedPathsWithoutChildren: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 3, 0, 2, 1, 8},
+			expectedIndicesWithoutDescendant: []int{
+				0,
+				2,
 			},
 		},
 		{
 			description: "register descendant",
 			pathsToInsert: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 2, 1, 8},
-				{4, 0, 3, 0, 2, 1, 8},
+				{4, 0, 2, 0, 8},       // 0
+				{4, 0, 2, 2, 8},       // 1
+				{4, 0, 3, 0, 2, 1, 8}, // 2
 			},
 			pathsToRegister: [][]int32{
-				{4, 0, 2, 1, 8, 0, 1139},
+				{4, 0, 2, 2, 8, 0, 1139}, // descendant of 1
 			},
-			expectedPathsWithoutChildren: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 3, 0, 2, 1, 8},
+			expectedIndicesWithoutDescendant: []int{
+				0,
+				2,
 			},
 		},
 		{
 			description: "register multiple for the same parent",
 			pathsToInsert: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 2, 1, 8},
-				{4, 0, 3, 0, 2, 1, 8},
+				{4, 0, 2, 0, 8},       // 0
+				{4, 0, 2, 1, 8},       // 1
+				{4, 0, 3, 0, 2, 1, 8}, // 2
 			},
 			pathsToRegister: [][]int32{
-				{4, 0, 2, 1, 8, 0, 1139},
-				{4, 0, 2, 1, 8, 6},
+				{4, 0, 2, 1, 8, 0, 1139}, // descendant of 1
+				{4, 0, 2, 1, 8, 6},       // descendant of 1
 			},
-			expectedPathsWithoutChildren: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 3, 0, 2, 1, 8},
+			expectedIndicesWithoutDescendant: []int{
+				0,
+				2,
 			},
 		},
 		{
 			description: "register for multiple parents",
 			pathsToInsert: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 2, 1, 8},
-				{4, 0, 2, 2, 8},
-				{4, 0, 3, 0, 2, 1, 8},
-				{4, 0, 3, 0, 3, 1, 2, 3, 8},
-				{7, 0, 8},
-				{7, 1, 8},
+				{4, 0, 2, 0, 8},             // 0, no register
+				{4, 0, 2, 1, 8},             // 1
+				{4, 0, 2, 2, 8},             // 2
+				{4, 0, 3, 0, 2, 1, 8},       // 3, no register
+				{4, 0, 3, 0, 3, 1, 2, 3, 8}, // 4
+				{7, 0, 8},                   // 5
+				{7, 1, 8},                   // 6, no register
 			},
 			pathsToRegister: [][]int32{
 				{4, 0, 3, 0, 3, 1, 2, 3, 8, 1},
@@ -224,38 +285,38 @@ func TestRegisterDescendant(t *testing.T) {
 				{7, 0, 8, 50003, 0},
 				{4, 0, 2, 2, 8, 5},
 			},
-			expectedPathsWithoutChildren: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 3, 0, 2, 1, 8},
-				{7, 1, 8},
+			expectedIndicesWithoutDescendant: []int{
+				0,
+				3,
+				6,
 			},
 		},
 		{
 			description: "register more none-field option",
 			pathsToInsert: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 2, 1, 8},
-				{4, 0, 2, 2, 8},
-				{4, 0, 3, 0, 2, 1, 8},
-				{4, 0, 3, 0, 3, 1, 2, 3, 8},
-				{7, 0, 8},
-				{7, 1, 8},
+				{4, 0, 2, 0, 8},             // 0
+				{4, 0, 2, 1, 8},             // 1
+				{4, 0, 2, 2, 8},             // 2
+				{4, 0, 3, 0, 2, 1, 8},       // 3
+				{4, 0, 3, 0, 3, 1, 2, 3, 8}, // 4
+				{7, 0, 8},                   // 5
+				{7, 1, 8},                   // 6
 			},
 			pathsToRegister: [][]int32{
-				{4, 0, 3, 0, 3, 1, 2, 3, 8, 1},
-				{4, 0, 2, 1, 8, 0, 1139},
-				{4, 0, 2, 1, 8, 6},
-				{7, 0, 8, 50003, 0},
-				{4, 0, 2, 2, 8, 5},
-				{7, 1, 8},
-				{7, 1},
-				{4, 0, 2, 0, 8},
-				{4, 0, 2},
+				{4, 0, 3, 0, 3, 1, 2, 3, 8, 1}, // descendant of 4
+				{4, 0, 2, 1, 8, 0, 1139},       // descendant of 1
+				{4, 0, 2, 1, 8, 6},             // descendant of 1
+				{7, 0, 8, 50003, 0},            // descendant of 5
+				{4, 0, 2, 2, 8, 5},             // descendant of 2
+				{7, 1, 8},                      // descendant of none
+				{7, 1},                         // descendant of none
+				{4, 0, 2, 0, 8},                // descendant of none
+				{4, 0, 2},                      // descendant of none
 			},
-			expectedPathsWithoutChildren: [][]int32{
-				{4, 0, 2, 0, 8},
-				{4, 0, 3, 0, 2, 1, 8},
-				{7, 1, 8},
+			expectedIndicesWithoutDescendant: []int{
+				0,
+				3,
+				6,
 			},
 		},
 	}
@@ -264,16 +325,17 @@ func TestRegisterDescendant(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 			trie := &fieldOptionsTrie{}
-			for _, path := range testcase.pathsToInsert {
-				trie.insert(path)
+			for i, path := range testcase.pathsToInsert {
+				// i is good enough for testing purposes since it's unique
+				trie.insert(path, i)
 			}
 			for _, path := range testcase.pathsToRegister {
 				trie.registerDescendant(path)
 			}
 			require.Equal(
 				t,
-				testcase.expectedPathsWithoutChildren,
-				trie.pathsWithoutDescendant(),
+				testcase.expectedIndicesWithoutDescendant,
+				trie.indicesWithoutDescendant(),
 			)
 		})
 	}

@@ -25,14 +25,18 @@ type fieldOptionsTrie []*fieldOptionsTrieNode
 
 type fieldOptionsTrieNode struct {
 	value                     int32
-	path                      []int32 // if this is empty, the node itself is not a path
-	registeredDescendantCount int
+	isPathEnd                 bool
 	children                  fieldOptionsTrie
+	registeredDescendantCount int
+	// locationIndex is the data attached that we are
+	// interested in retrieving. This is irrelevant to
+	// traversal or the trie structure.
+	locationIndex int
 }
 
 // insert inserts a path into the trie. The caller should
 // ensure that the path is for a FieldOptions.
-func (p *fieldOptionsTrie) insert(path []int32) {
+func (p *fieldOptionsTrie) insert(path []int32, locationIndex int) {
 	trie := p
 	for index, element := range path {
 		isLastElement := index == len(path)-1
@@ -42,7 +46,8 @@ func (p *fieldOptionsTrie) insert(path []int32) {
 		})
 		if found {
 			if isLastElement {
-				nodes[pos].path = path
+				nodes[pos].isPathEnd = true
+				nodes[pos].locationIndex = locationIndex
 				return
 			}
 			trie = &nodes[pos].children
@@ -50,11 +55,11 @@ func (p *fieldOptionsTrie) insert(path []int32) {
 		}
 		newNode := &fieldOptionsTrieNode{
 			value:    element,
-			path:     nil, // not a path end
 			children: fieldOptionsTrie{},
 		}
 		if isLastElement {
-			newNode.path = path
+			newNode.isPathEnd = true
+			newNode.locationIndex = locationIndex
 		}
 		nodes = slices.Insert(nodes, pos, newNode)
 		*trie = nodes
@@ -75,7 +80,8 @@ func (p *fieldOptionsTrie) registerDescendant(descendant []int32) {
 			return
 		}
 		ancestor := nodes[pos]
-		if len(ancestor.path) > 0 && i != len(descendant)-1 {
+		descendantContinues := i != len(descendant)-1
+		if ancestor.isPathEnd && descendantContinues {
 			ancestor.registeredDescendantCount += 1
 			return
 		}
@@ -83,15 +89,15 @@ func (p *fieldOptionsTrie) registerDescendant(descendant []int32) {
 	}
 }
 
-// pathsWithoutDescendant returns all stored paths with counter equal to 0.
-func (p *fieldOptionsTrie) pathsWithoutDescendant() [][]int32 {
-	paths := [][]int32{}
+// indicesWithoutDescendant returns the location indices of
+func (p *fieldOptionsTrie) indicesWithoutDescendant() []int {
+	locationIndices := []int{}
 	walkTrie(*p, func(node *fieldOptionsTrieNode) {
-		if len(node.path) > 0 && node.registeredDescendantCount == 0 {
-			paths = append(paths, node.path)
+		if node.isPathEnd && node.registeredDescendantCount == 0 {
+			locationIndices = append(locationIndices, node.locationIndex)
 		}
 	})
-	return paths
+	return locationIndices
 }
 
 func walkTrie(trie fieldOptionsTrie, f func(node *fieldOptionsTrieNode)) {
