@@ -59,9 +59,9 @@ var (
 	// RubyPackagePath is the SourceCodeInfo path for the ruby_package option.
 	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L453
 	RubyPackagePath = []int32{8, 45}
-	// JSTypePackageSuffix is the SourceCodeInfo sub path for the jstype field option.
+	// JSTypeSubPath is the SourceCodeInfo sub path for the jstype field option.
 	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L567
-	JSTypePackageSuffix = []int32{8, 6}
+	JSTypeSubPath = []int32{8, 6}
 )
 
 // https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L215

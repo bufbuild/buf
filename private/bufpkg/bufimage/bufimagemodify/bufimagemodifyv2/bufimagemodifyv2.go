@@ -207,7 +207,7 @@ func ModifyJSType(
 			}
 			fieldDescriptor.Options.Jstype = &jsType
 			if len(messageSourcePath) > 0 {
-				jsTypeOptionPath := append(messageSourcePath, internal.JSTypePackageSuffix...)
+				jsTypeOptionPath := append(messageSourcePath, internal.JSTypeSubPath...)
 				marker.Mark(imageFile, jsTypeOptionPath)
 			}
 		}
