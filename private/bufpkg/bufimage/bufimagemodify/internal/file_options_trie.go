@@ -24,14 +24,15 @@ import (
 type fieldOptionsTrie []*fieldOptionsTrieNode
 
 type fieldOptionsTrieNode struct {
-	value                     int32
-	isPathEnd                 bool
-	children                  fieldOptionsTrie
-	registeredDescendantCount int
-	// locationIndex is the data attached that we are
-	// interested in retrieving. This is irrelevant to
-	// traversal or the trie structure.
+	value     int32
+	isPathEnd bool
+	children  fieldOptionsTrie
+	// locationIndex is the data attached that we are interested in retrieving.
+	// This field is irrelevant to traversal or the trie structure.
 	locationIndex int
+	// registeredDescendantCount records how many times a descendant of this node
+	// is registered. This field is irrelevant to traversal or the trie structure.
+	registeredDescendantCount int
 }
 
 // insert inserts a path into the trie. The caller should

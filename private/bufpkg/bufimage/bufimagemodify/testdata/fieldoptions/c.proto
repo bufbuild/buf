@@ -1,23 +1,10 @@
 syntax = "proto2";
 
+import "b.proto";
 import "google/protobuf/descriptor.proto";
 
-message A {
-  required string foo = 1;
-}
-
-message B {
-  required A a = 1;
-}
-
-extend google.protobuf.FieldOptions {
-  optional A aaa = 50000;
-  optional B bbb = 50002;
-  repeated int32 ccc = 50003;
-}
-
 message Main {
-  required int32 first = 1 [(aaa).foo = "hello"];
-  required string second = 2 [(bbb).a.foo = "hey"];
-  required int64 third = 3 [(ccc) = 123];
+  required fixed64 first = 1 [(foo.bar.baz.aaa).foo = "hello"];
+  required sfixed64 second = 2 [(foo.bar.baz.bbb).a.foo = "hey"];
+  required int64 third = 3 [(foo.bar.baz.ccc) = 123]; // ccc is a repeated option
 }
