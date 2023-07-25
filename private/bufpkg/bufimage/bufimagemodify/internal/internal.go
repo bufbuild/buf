@@ -64,9 +64,6 @@ var (
 	JSTypePackageSuffix = []int32{8, 6}
 )
 
-// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L215
-const tagForFieldOptionsInField = 8
-
 // fileOptionPath is the path prefix used for FileOptions.
 // All file option locations are preceded by a location
 // with a path set to the fileOptionPath.
@@ -195,13 +192,4 @@ func GetPathKey(path []int32) string {
 // IsWellKnownType returns true if the given path is one of the well-known types.
 func IsWellKnownType(imageFile bufimage.ImageFile) bool {
 	return datawkt.Exists(imageFile.Path())
-}
-
-func areAllIntsInSet(ints []int, set map[int]struct{}) bool {
-	for _, n := range ints {
-		if _, ok := set[n]; !ok {
-			return false
-		}
-	}
-	return true
 }
