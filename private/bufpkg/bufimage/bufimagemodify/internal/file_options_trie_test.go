@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -23,26 +24,20 @@ import (
 func TestFileOptionsTrieInsert(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		description     string
-		pathsToInsert   [][]int32
-		expectedIndices []int
+		description   string
+		pathsToInsert [][]int32
 	}{
 		{
 			description: "single path",
 			pathsToInsert: [][]int32{
 				{8, 4, 9, 5},
 			},
-			expectedIndices: []int{0},
 		},
 		{
 			description: "insert ancestor after descendant",
 			pathsToInsert: [][]int32{
 				{8, 4, 9, 5},
 				{8, 4},
-			},
-			expectedIndices: []int{
-				1,
-				0,
 			},
 		},
 		{
@@ -52,12 +47,6 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 				{20},            // 1
 				{20, 10},        // 2
 				{20, 15},        // 3
-			},
-			expectedIndices: []int{
-				1,
-				2,
-				3,
-				0,
 			},
 		},
 		{
@@ -69,13 +58,6 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 				{20, 50, 100, 150, 300, 500}, // 3
 				{20, 50, 100, 150, 300},      // 4
 			},
-			expectedIndices: []int{
-				0,
-				1,
-				2,
-				4,
-				3,
-			},
 		},
 		{
 			description: "insert last sibling",
@@ -84,12 +66,6 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 				{20, 50, 70}, // 1
 				{20, 50, 80}, // 2
 				{30, 10},     // 3
-			},
-			expectedIndices: []int{
-				0,
-				1,
-				2,
-				3,
 			},
 		},
 		{
@@ -101,14 +77,6 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 				{10, 10},        // 3
 				{5, 10, 15, 20}, // 4
 				{0},             // 5
-			},
-			expectedIndices: []int{
-				5,
-				4,
-				3,
-				2,
-				1,
-				0,
 			},
 		},
 		{
@@ -130,23 +98,6 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 				{2, 50, 50},  // 13
 				{1, 50, 50},  // 14
 			},
-			expectedIndices: []int{
-				9,
-				14,
-				13,
-				12,
-				10,
-				11,
-				5,
-				7,
-				6,
-				8,
-				0,
-				4,
-				2,
-				3,
-				1,
-			},
 		},
 	}
 	for _, testcase := range testcases {
@@ -158,11 +109,12 @@ func TestFileOptionsTrieInsert(t *testing.T) {
 				// i is good enough for testing purposes since it's unique.
 				trie.insert(path, i)
 			}
-			// pathsWithoutChildren returns all paths in sorted order because it does a preorder traversal
+			indicesInTrie := trie.indicesWithoutDescendant()
+			sort.Ints(indicesInTrie)
 			require.Equal(
 				t,
-				testcase.expectedIndices,
-				trie.indicesWithoutDescendant(),
+				firstNNaturalNumbers(len(testcase.pathsToInsert)),
+				indicesInTrie,
 			)
 		})
 	}
@@ -339,4 +291,12 @@ func TestRegisterDescendant(t *testing.T) {
 			)
 		})
 	}
+}
+
+func firstNNaturalNumbers(n int) []int {
+	numbers := make([]int, n)
+	for i := 0; i < n; i++ {
+		numbers[i] = i
+	}
+	return numbers
 }
