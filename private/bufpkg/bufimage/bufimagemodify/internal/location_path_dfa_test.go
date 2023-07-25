@@ -25,97 +25,107 @@ func TestIsPathForFieldOptions(t *testing.T) {
 	testcases := []struct {
 		description string
 		path        []int32
-		expected    bool
+		expected    pathType
 	}{
 		{
-			description: "field in single message",
+			description: "field options in single message",
 			path:        []int32{4, 100, 2, 101, 8},
-			expected:    true,
+			expected:    pathTypeFieldOptions,
 		},
 		{
-			description: "field in a nested message",
+			description: "field options in a nested message",
 			path:        []int32{4, 100, 3, 101, 2, 102, 8},
-			expected:    true,
+			expected:    pathTypeFieldOptions,
 		},
 		{
-			description: "field in a deeply nested message",
+			description: "field options in a deeply nested message",
 			path:        []int32{4, 100, 3, 101, 3, 102, 3, 103, 3, 0, 2, 104, 8},
-			expected:    true,
+			expected:    pathTypeFieldOptions,
 		},
 		{
-			description: "extension field on top level",
+			description: "field options in extension field on top level",
 			path:        []int32{7, 100, 8},
-			expected:    true,
+			expected:    pathTypeFieldOptions,
 		},
 		{
-			description: "extension field in a deeply nested message",
+			description: "field options in extension field in a deeply nested message",
 			path:        []int32{4, 100, 3, 101, 3, 102, 3, 103, 3, 0, 6, 104, 8},
-			expected:    true,
+			expected:    pathTypeFieldOptions,
 		},
 		{
 			description: "empty path",
 			path:        []int32{},
-			expected:    false,
+			expected:    pathTypeEmpty,
 		},
 		{
 			description: "invalid first index in path of length one",
 			path:        []int32{1},
-			expected:    false,
+			expected:    pathTypeInvalid,
 		},
 		{
 			description: "invalid first index",
 			path:        []int32{1, 0, 2, 0, 8},
-			expected:    false,
+			expected:    pathTypeInvalid,
 		},
 		{
 			description: "messages",
 			path:        []int32{4},
-			expected:    false,
+			expected:    pathTypeMessages,
 		},
 		{
 			description: "top level extensions",
 			path:        []int32{7},
-			expected:    false,
+			expected:    pathTypeFields,
 		},
 		{
-			description: "field in single message, without options tag",
+			description: "field in single message",
 			path:        []int32{4, 100, 2, 101},
-			expected:    false,
+			expected:    pathTypeField,
 		},
 		{
-			description: "one field option",
+			description: "field option jstype in non-nested message",
 			path:        []int32{4, 100, 2, 101, 8, 6},
-			expected:    false,
+			expected:    pathTypeSomeFieldOption,
 		},
 		{
 			description: "field label",
 			path:        []int32{4, 100, 2, 101, 4},
-			expected:    false,
+			expected:    pathTypeInvalid,
 		},
 		{
 			description: "enum in message",
 			path:        []int32{4, 100, 4, 100},
-			expected:    false,
+			expected:    pathTypeInvalid,
+		},
+		{
+			description: "one field in a deeply nested message",
+			path:        []int32{4, 100, 3, 101, 3, 102, 3, 103, 3, 0, 2, 104},
+			expected:    pathTypeField,
 		},
 		{
 			description: "one field option in a deeply nested message",
 			path:        []int32{4, 100, 3, 101, 3, 102, 3, 103, 3, 0, 2, 104, 8, 1},
-			expected:    false,
+			expected:    pathTypeSomeFieldOption,
 		},
 		{
 			description: "one field option of extension field on top level",
 			path:        []int32{7, 100, 8, 1},
-			expected:    false,
+			expected:    pathTypeSomeFieldOption,
 		},
 		{
-			description: "extension field itself",
+			description: "complex field option",
+			path:        []int32{4, 0, 2, 1, 8, 50000, 1},
+			expected:    pathTypeSomeFieldOption,
+		},
+		{
+			description: "extension field",
 			path:        []int32{7, 100},
-			expected:    false,
+			expected:    pathTypeField,
 		},
 		{
-			description: "extension field itself in a deeply nested message",
+			description: "extension field in a deeply nested message",
 			path:        []int32{4, 100, 3, 101, 3, 102, 3, 103, 3, 0, 6, 104},
-			expected:    false,
+			expected:    pathTypeField,
 		},
 	}
 	for _, testcase := range testcases {
@@ -125,7 +135,7 @@ func TestIsPathForFieldOptions(t *testing.T) {
 			require.Equal(
 				t,
 				testcase.expected,
-				isPathForFieldOptions(testcase.path),
+				getPathType(testcase.path),
 			)
 		})
 	}

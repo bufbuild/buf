@@ -26,61 +26,87 @@ const (
 	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L98
 	extensionTagInMessage = 6
 	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L215
-	optionsTagInField = 8
+	optionsTagInField          = 8
+	pathTypeInvalid   pathType = iota + 1
+	pathTypeEmpty
+	pathTypeMessages
+	pathTypeMessage
+	pathTypeFields
+	pathTypeField
+	pathTypeFieldOptions
+	pathTypeSomeFieldOption
 )
 
+type pathType int
+
 func isPathForFieldOptions(path []int32) bool {
-	isStateAccept := false
+	return getPathType(path) == pathTypeFieldOptions
+}
+
+func isPathForSomeFieldOption(path []int32) bool {
+	return getPathType(path) == pathTypeSomeFieldOption
+}
+
+func getPathType(path []int32) pathType {
+	pathType := pathTypeEmpty
 	currentState := start
 	for _, index := range path {
 		if currentState == nil {
-			return false
+			return pathTypeInvalid
 		}
-		currentState, isStateAccept = currentState(index)
+		currentState, pathType = currentState(index)
 	}
-	return isStateAccept
+	return pathType
 }
 
-// fieldOptionDFAState takes an input and returns the next state, or nil
-// if the input is rejected, and whether the next state is the accept state.
-type fieldOptionDFAState func(int32) (next fieldOptionDFAState, isNextAccept bool)
+// locationPathDFAState takes an input and returns the next state and the path type
+// that ends with the input. It returns nil and pathTypeInvalid if the input is rejected.
+type locationPathDFAState func(int32) (locationPathDFAState, pathType)
 
-func start(index int32) (fieldOptionDFAState, bool) {
+func start(index int32) (locationPathDFAState, pathType) {
 	switch index {
 	case messageTypeTagInFile:
-		return messages, false
+		return messages, pathTypeMessages
 	case extensionTagInFile:
-		return fields, false
+		return fields, pathTypeFields
 	default:
-		return nil, false
+		return nil, pathTypeInvalid
 	}
 }
 
-func messages(index int32) (fieldOptionDFAState, bool) {
+func messages(index int32) (locationPathDFAState, pathType) {
 	// we are not checking index >= 0, the caller must ensure this
-	return message, false
+	return message, pathTypeMessages
 }
 
-func message(index int32) (fieldOptionDFAState, bool) {
+func message(index int32) (locationPathDFAState, pathType) {
 	switch index {
 	case nestedTypeTagInMessage:
-		return messages, false
+		return messages, pathTypeMessage
 	case fieldTagInMessage, extensionTagInMessage:
-		return fields, false
+		return fields, pathTypeMessage
 	}
-	return nil, false
+	return nil, pathTypeInvalid
 }
 
-func fields(index int32) (fieldOptionDFAState, bool) {
+func fields(index int32) (locationPathDFAState, pathType) {
 	// we are not checking index >= 0, the caller must ensure this
-	return field, false
+	return field, pathTypeField
 }
 
-func field(index int32) (fieldOptionDFAState, bool) {
+func field(index int32) (locationPathDFAState, pathType) {
 	switch index {
 	case optionsTagInField:
-		return nil, true
+		return fieldOptions, pathTypeFieldOptions
 	default:
-		return nil, false
+		return nil, pathTypeInvalid
 	}
+}
+
+func fieldOptions(index int32) (locationPathDFAState, pathType) {
+	return fieldOption, pathTypeSomeFieldOption
+}
+
+func fieldOption(index int32) (locationPathDFAState, pathType) {
+	return fieldOption, pathTypeSomeFieldOption
 }

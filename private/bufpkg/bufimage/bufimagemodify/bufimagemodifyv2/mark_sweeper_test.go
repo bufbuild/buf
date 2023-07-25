@@ -94,6 +94,55 @@ func TestSweepWithSourceCodeInfo(t *testing.T) {
 			},
 		},
 		{
+			description: "mark and sweep a custom repeated file option",
+			fileToPathsToMark: map[string][][]int32{
+				"c.proto": {
+					{4, 0, 2, 1, 8, 50000, 1}, // Main.second.(foo.bar.baz.aaa).foo
+				},
+			},
+			fileToExpectedAdditionalRemovedPaths: map[string][][]int32{
+				"c.proto": {
+					{4, 0, 2, 1, 8},
+				},
+			},
+		},
+		{
+			description: "mark and sweep jstype in a field with complex options",
+			fileToPathsToMark: map[string][][]int32{
+				"c.proto": {
+					{4, 0, 2, 0, 8, 6}, // Main.first.jstype
+				},
+			},
+			fileToExpectedAdditionalRemovedPaths: nil,
+		},
+		{
+			description: "mark and sweep jstype and some complex options",
+			fileToPathsToMark: map[string][][]int32{
+				"c.proto": {
+					{4, 0, 2, 0, 8, 6},           // Main.first.jstype
+					{4, 0, 2, 0, 8, 50002, 1, 1}, // Main.first.(foo.bar.baz.bbb).a.foo
+					{4, 0, 2, 0, 8, 50003, 0},    // Main.first.(foo.bar.baz.ccc)
+				},
+			},
+			fileToExpectedAdditionalRemovedPaths: nil,
+		},
+		{
+			description: "mark and sweep all options including the complex ones for a field",
+			fileToPathsToMark: map[string][][]int32{
+				"c.proto": {
+					{4, 0, 2, 0, 8, 6},           // Main.first.jstype
+					{4, 0, 2, 0, 8, 50002, 1, 1}, // Main.first.(foo.bar.baz.bbb).a.foo
+					{4, 0, 2, 0, 8, 50003, 0},    // Main.first.(foo.bar.baz.ccc)
+					{4, 0, 2, 0, 8, 50000, 1},    // Main.first.(foo.bar.aaa).foo
+				},
+			},
+			fileToExpectedAdditionalRemovedPaths: map[string][][]int32{
+				"c.proto": {
+					{4, 0, 2, 0, 8},
+				},
+			},
+		},
+		{
 			description: "mark and sweep multiple file options and field options for multiple files",
 			fileToPathsToMark: map[string][][]int32{
 				"a.proto": {

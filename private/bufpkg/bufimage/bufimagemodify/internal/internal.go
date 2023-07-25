@@ -75,6 +75,7 @@ var fileOptionPath = []int32{8}
 
 // RemoveLocationsFromSourceCodeInfo removes paths from the given sourceCodeInfo.
 // Each path must be for either a file option or a field option.
+// TODO: in v1 there is no need to check for field options, maybe v1 and v2 don't need to share this function.
 func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeInfo, paths map[string]struct{}) error {
 	// We can't just match on an exact path match because the target
 	// file option's parent path elements would remain (i.e [8]),
@@ -83,26 +84,18 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 	// are structured as expected, and collect all of the indices that
 	// we need to delete.
 	indices := make(map[int]struct{}, len(paths)*2)
-	potentialFieldOptionToChildrenIndices := make(map[string][]int, len(paths))
-	// If multiple paths are the same, use the last one. This is fine because
-	// this is only useful for field options, where each FieldOptions' path does
-	// not appear twice.
-	keyToIndex := make(map[string]int, len(paths))
+	// each path in this trie is for a FieldOptions message (not for a singular option)
+	fieldOptionsPaths := fieldOptionsTrie{}
 	for i, location := range sourceCodeInfo.Location {
 		path := location.Path
-		keyToIndex[GetPathKey(path)] = i
-		if isPathMaybeForFieldOption(path) {
-			parentKey := GetPathKey(path[:len(path)-1])
-			// The parent should have been visited first. If not ok,
-			// it could mean that isPathMaybeForFieldOption has mispredicted.
-			if _, ok := keyToIndex[parentKey]; ok {
-				potentialFieldOptionToChildrenIndices[parentKey] = append(
-					potentialFieldOptionToChildrenIndices[parentKey],
-					i,
-				)
-			}
+		if isPathForFieldOptions(path) {
+			fieldOptionsPaths.insert(path, i)
 		}
-		if _, ok := paths[GetPathKey(location.Path)]; !ok {
+		if _, ok := paths[GetPathKey(path)]; !ok {
+			if isPathForSomeFieldOption(path) {
+				// This field option path is not marked, register it to its parent FieldOptions.
+				fieldOptionsPaths.registerDescendant(path)
+			}
 			continue
 		}
 		if i == 0 {
@@ -117,8 +110,7 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 			indices[i] = struct{}{}
 			continue
 		}
-		if isPathMaybeForFieldOption(location.Path) {
-			// Now the path must be for a field option
+		if isPathForSomeFieldOption(location.Path) {
 			// Note that there is a difference between the generated file option paths and field options paths.
 			// For example, for:
 			// ...
@@ -131,35 +123,24 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 			// However, for different field options of the same field, they share the same parent. For
 			// ...
 			// optional string id2 = 2 [jstype = JS_STRING, ctype = CORD];
+			// required fixed64 first = 1 [
+			//   (foo.bar.baz.aaa).foo = "hello",
+			//   (foo.bar.baz.bbb).a.foo = "hey",
+			//   (foo.bar.baz.ccc) = 123, // ccc is a repeated option
+			//   jstype = JS_STRING
+			// ];
 			// ...
 			// the generated paths are
-			// [4,0,2,1,8], [4,0,2,1,8,6], [4,0,2,1,8,1]
+			// [4,0,2,0,8],[4,0,2,0,8,50000,1],[4,0,2,0,8,50002,1,1],[4,0,2,0,8,50003,0],[4,0,2,0,8,6]
 			// where two field options share the same parent.
-			// Therefore, do not remove the parent path.
+			// Therefore, do not remove the parent path yet.
 			indices[i] = struct{}{}
 			continue
 		}
 		return fmt.Errorf("path %v is neither a file option path nor a field option path", location.Path)
 	}
-	var parentIndicesToRemove []int
-	for potentialParent, childrenIndices := range potentialFieldOptionToChildrenIndices {
-		if len(childrenIndices) == 0 {
-			continue
-		}
-		if !areAllIntsInSet(childrenIndices, indices) {
-			continue
-		}
-		parentIndex, ok := keyToIndex[potentialParent]
-		if !ok {
-			// this shouldn't happen, because we only inserted to potentialFieldOptionToChildrenIndices
-			// after making sure the key exists.
-			continue
-		}
-		// All its children are going to removed, it will be removed as well.
-		parentIndicesToRemove = append(parentIndicesToRemove, parentIndex)
-	}
-	for _, index := range parentIndicesToRemove {
-		indices[index] = struct{}{}
+	for _, emptyFieldOptions := range fieldOptionsPaths.indicesWithoutDescendant() {
+		indices[emptyFieldOptions] = struct{}{}
 	}
 	// Now that we know exactly which indices to exclude, we can
 	// filter the SourceCodeInfo_Locations as needed.
@@ -178,28 +159,10 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 	return nil
 }
 
-func areAllIntsInSet(ints []int, set map[int]struct{}) bool {
-	for _, n := range ints {
-		if _, ok := set[n]; !ok {
-			return false
-		}
-	}
-	return true
-}
-
 func isPathForFileOption(path []int32) bool {
 	// a file option's path is {8, x}
 	fileOptionPathLen := 2
 	return len(path) == fileOptionPathLen && path[0] == fileOptionPath[0]
-}
-
-// isPathMaybeForFieldOption is a best-effort guess on
-// whether the path looks like a field option.
-func isPathMaybeForFieldOption(path []int32) bool {
-	// a field option's path is {4, messageIndex, ..., 2, fieldIndex, 8, optionTag}
-	// or {7, extensionIndex, 8, optionTag}
-	minFieldOptionpathLen := 4
-	return len(path) >= minFieldOptionpathLen && path[len(path)-2] == tagForFieldOptionsInField
 }
 
 // Int32SliceIsEqual returns true if x and y contain the same elements.
@@ -232,4 +195,13 @@ func GetPathKey(path []int32) string {
 // IsWellKnownType returns true if the given path is one of the well-known types.
 func IsWellKnownType(imageFile bufimage.ImageFile) bool {
 	return datawkt.Exists(imageFile.Path())
+}
+
+func areAllIntsInSet(ints []int, set map[int]struct{}) bool {
+	for _, n := range ints {
+		if _, ok := set[n]; !ok {
+			return false
+		}
+	}
+	return true
 }
