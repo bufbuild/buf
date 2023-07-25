@@ -128,7 +128,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 		}
 		allBranchesSyncPoints[branch] = syncPoints
 	}
-	s.syncBranch(ctx, s.repo.BaseBranch(), allBranchesSyncPoints[s.repo.BaseBranch()])
+	s.commitsToSync(ctx, s.repo.BaseBranch(), allBranchesSyncPoints[s.repo.BaseBranch()])
 	// first, default branch
 	baseBranch := s.repo.BaseBranch()
 	if err := s.repo.ForEachCommit(baseBranch, func(commit git.Commit) error {
@@ -150,6 +150,22 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	return nil
 }
 
+// syncBranch syncs all modules in a branch.
+func (s *syncer) syncBranch(
+	ctx context.Context,
+	branch string,
+	modulesSyncPoints map[Module]git.Hash,
+) error {
+	for module, expectedSyncPoint := range modulesSyncPoints {
+		commitsToSync, err := s.commitsToSync(ctx, branch, module, expectedSyncPoint.Hex())
+		if err != nil {
+			return fmt.Errorf("finding commits to sync for branch %q and module %q: %w", branch, module.String())
+		}
+		// TODO: sync commits
+	}
+	return nil
+}
+
 // commitsToSync finds the commits that are pending to sync for a branch+module tuple.
 func (s *syncer) commitsToSync(
 	ctx context.Context,
@@ -157,75 +173,44 @@ func (s *syncer) commitsToSync(
 	module Module,
 	expectedSyncPoint string,
 ) ([]git.Commit, error) {
-	const maxCommitsPageLen = 10
-	var (
-		commitsPageToCheck []git.Commit
-		commitsToSync      []git.Commit
-	)
-	// travel branch commits from HEAD, and check in a paginated fashion if they're already synced,
-	// until finding a synced git commit, or adding them all to be synced
+	var commitsToSync []git.Commit
+	// travel branch commits from HEAD and check if they're already synced, until finding a synced git
+	// commit, or adding them all to be synced
 	stopLoopErr := errors.New("stop loop")
-	checkCommitsPage := func() error {
-		syncedCommits, err := s.checkSyncedGitHashes(ctx, commitsPageToCheck)
+	if err := s.repo.ForEachCommit(branch, func(commit git.Commit) error {
+		commitHash := commit.Hash().Hex()
+		isSynced, err := s.isGitCommitSynced(ctx, commitHash)
 		if err != nil {
-			return fmt.Errorf("check synced git commits: %w", err)
+			return fmt.Errorf("check if git commit is synced: %w", err)
 		}
-		if len(syncedCommits) == 0 {
-			// this page didn't include any git commit already synced, add it to the commits to sync, and
-			// start a new page
-			commitsToSync = append(commitsToSync, commitsPageToCheck...)
-			commitsPageToCheck = []git.Commit{}
+		if !isSynced {
+			commitsToSync = append(commitsToSync, commit)
 			return nil
 		}
-		// there was at least one git commit that is already synced in this page
-		for _, commit := range commitsPageToCheck {
-			commitHash := commit.Hash().Hex()
-			if _, synced := syncedCommits[commitHash]; !synced {
-				commitsToSync = append(commitsToSync, commit)
-				continue
-			}
-			// sync point found
-			if expectedSyncPoint != commitHash {
-				if s.repo.BaseBranch() == branch {
-					// TODO: add details to error message saying: "run again with --force-branch-sync <branch
-					// name>" when we support a flag like that.
-					return fmt.Errorf(
-						"found synced git commit %q for default branch %q, but expected sync point was %q, did you rebase or reset your default branch?",
-						commitHash,
-						branch,
-						expectedSyncPoint,
-					)
-				}
-				s.logger.Warn(
-					"unexpected_sync_point",
-					zap.String("expected_sync_point", expectedSyncPoint),
-					zap.String("found_sync_point", commitHash),
-					zap.String("branch", branch),
-					zap.String("module", module.String()),
+		if commitHash != expectedSyncPoint {
+			if s.repo.BaseBranch() == branch {
+				// TODO: add details to error message saying: "run again with --force-branch-sync <branch
+				// name>" when we support a flag like that.
+				return fmt.Errorf(
+					"found synced git commit %q for default branch %q, but expected sync point was %q, did you rebase or reset your default branch?",
+					commitHash,
+					branch,
+					expectedSyncPoint,
 				)
 			}
-			return stopLoopErr
+			// syncing non-default branches from an unexpected sync point can be a common scenario in PRs,
+			// we can just WARN and continue
+			s.logger.Warn(
+				"unexpected_sync_point",
+				zap.String("expected_sync_point", expectedSyncPoint),
+				zap.String("found_sync_point", commitHash),
+				zap.String("branch", branch),
+				zap.String("module", module.String()),
+			)
 		}
-		return fmt.Errorf("synced commits %v are not present in requested page %v", syncedCommits, commitsPageToCheck)
-	}
-	var pendingPage bool
-	if err := s.repo.ForEachCommit(branch, func(commit git.Commit) error {
-		commitsPageToCheck = append(commitsPageToCheck, commit)
-		pendingPage = true
-		if len(commitsPageToCheck) < maxCommitsPageLen {
-			// haven't reached page size, keep appending
-			return nil
-		}
-		pendingPage = false
-		return checkCommitsPage()
+		return stopLoopErr
 	}); err != nil && !errors.Is(err, stopLoopErr) {
 		return nil, err
-	}
-	if pendingPage {
-		// we reached the end of commits for the branch, with a pending commits page to check
-		if err := checkCommitsPage(); err != nil {
-			return nil, err
-		}
 	}
 	if len(commitsToSync) == 0 {
 		return nil, nil
@@ -238,17 +223,28 @@ func (s *syncer) commitsToSync(
 	return commitsToSync, nil
 }
 
+func (s *syncer) isGitCommitSynced(
+	ctx context.Context,
+	commitHash string,
+) (bool, error) {
+	syncedCommits, err := s.checkSyncedGitHashes(ctx, []string{commitHash})
+	if err != nil {
+		return false, err
+	}
+	_, synced := syncedCommits[commitHash]
+	return synced, nil
+}
+
 // checkSyncedGitHashes checks which of the passed git hashes are synced already, and returns them.
 // It first checks the local cache before using the remote checker.
 func (s *syncer) checkSyncedGitHashes(
 	ctx context.Context,
-	commits []git.Commit,
+	commitHashes []string,
 ) (map[string]struct{} /* synced */, error) {
 	syncedGitHashes := make(map[string]struct{})
 	gitHashesToCheck := make(map[string]struct{})
 	// check local cache
-	for _, commit := range commits {
-		commitHash := commit.Hash().Hex()
+	for _, commitHash := range commitHashes {
 		if _, cachedSynced := s.cacheSyncedGitHashes[commitHash]; cachedSynced {
 			syncedGitHashes[commitHash] = struct{}{} // add it to the return
 			continue                                 // already know it's synced, no need to check again
