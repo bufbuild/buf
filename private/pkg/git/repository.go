@@ -140,42 +140,35 @@ func (r *repository) BaseBranch() string {
 	return r.baseBranch
 }
 
-// ForEachCommit loops over all commits in the passed branch, if present in the "origin" remote, in
-// chronological order.
 func (r *repository) ForEachCommit(branch string, f func(Commit) error) error {
 	branch = normalpath.Unnormalize(branch)
-	commit, err := r.resolveBranch(branch)
+	currentCommit, err := r.HEADCommit(branch)
 	if err != nil {
-		return err
+		return fmt.Errorf("get head commit for branch %q: %w", branch, err)
 	}
-	var commits []Commit
-	// TODO: this only works for the base branch; for non-base branches,
-	// we have to be much more careful about not ranging over commits belonging
-	// to other branches (i.e., running past the origin of our branch).
-	// In order to do this, we will want to preload the HEADs of all known branches,
-	// and halt iteration for a given branch when we encounter the head of another branch.
 	for {
-		commits = append(commits, commit)
-		if len(commit.Parents()) == 0 {
+		if err := f(currentCommit); err != nil {
+			return err
+		}
+		if len(currentCommit.Parents()) == 0 {
 			// We've reach the root of the graph.
-			break
+			return nil
 		}
 		// When traversing a commit graph, follow only the first parent commit upon seeing a
 		// merge commit. This allows us to ignore the individual commits brought in to a branch's
 		// history by such a merge, as those commits are usually updating the state of the target
 		// branch.
-		commit, err = r.objectReader.Commit(commit.Parents()[0])
+		nextCommitHash := currentCommit.Parents()[0]
+		currentCommit, err = r.objectReader.Commit(nextCommitHash)
 		if err != nil {
-			return err
+			return fmt.Errorf("read commit %s: %w", nextCommitHash, err)
 		}
 	}
-	// Visit in reverse order, starting with the root of the graph first.
-	for i := len(commits) - 1; i >= 0; i-- {
-		if err := f(commits[i]); err != nil {
-			return err
-		}
-	}
-	return nil
+}
+
+func (r *repository) HEADCommit(branch string) (Commit, error) {
+	branch = normalpath.Unnormalize(branch)
+	return r.resolveBranch(branch)
 }
 
 func (r *repository) ForEachTag(f func(string, Hash) error) error {
