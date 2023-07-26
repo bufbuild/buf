@@ -171,6 +171,7 @@ func sync(
 	}
 	syncerOptions := []bufsync.SyncerOption{
 		bufsync.SyncerWithResumption(syncPointResolver(clientConfig)),
+		bufsync.SyncerWithGitCommitChecker(syncGitCommitChecker(clientConfig)),
 	}
 	for _, module := range modules {
 		var moduleIdentityOverride bufmoduleref.ModuleIdentity
@@ -265,6 +266,10 @@ func syncGitCommitChecker(clientConfig *connectclient.Config) bufsync.SyncedGitC
 			LabelNames:      stringutil.MapToSlice(commitHashes),
 		}))
 		if err != nil {
+			if connect.CodeOf(err) == connect.CodeNotFound {
+				// Repo is not created
+				return nil, nil
+			}
 			return nil, fmt.Errorf("get labels in namespace: %w", err)
 		}
 		syncedHashes := make(map[string]struct{})

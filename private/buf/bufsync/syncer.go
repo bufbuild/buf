@@ -218,16 +218,10 @@ func (s *syncer) commitsToSync(
 			// TODO do this in a paginated fashion
 			isSynced, err := s.isGitCommitSynced(ctx, module, commitHash)
 			if err != nil {
-				return fmt.Errorf("check if git commit is synced: %w", err)
+				return fmt.Errorf("check if module %q already synced git commit %q: %w", module.String(), commitHash, err)
 			}
 			if !isSynced {
 				modulesToSyncInThisCommit[module] = struct{}{}
-				s.logger.Debug(
-					"sync queue",
-					zap.String("branch", branch),
-					zap.String("commit", commitHash),
-					zap.Any("module", module.String()),
-				)
 				continue
 			}
 			// reached a commit that is already synced for this module
@@ -264,11 +258,11 @@ func (s *syncer) commitsToSync(
 		for module := range modulesFoundSyncPointInThisCommit {
 			delete(pendingModules, module)
 		}
-		if len(modulesToSyncInThisCommit) == 0 {
+		if len(modulesToSyncInThisCommit) == 0 && len(pendingModules) > 0 {
+			// no modules to sync in this commit, but still have some pending modules?
 			return fmt.Errorf(
-				"commit %q cannot be queued, had no modules to sync (modules that found sync point in this commit: %v, pending modules: %v)",
+				"commit %q cannot be queued, had no modules to sync but pending modules %v",
 				commitHash,
-				modulesFoundSyncPointInThisCommit,
 				pendingModules,
 			)
 		}
