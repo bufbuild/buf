@@ -73,7 +73,8 @@ var fileOptionPath = []int32{8}
 // RemoveLocationsFromSourceCodeInfo removes paths from the given sourceCodeInfo.
 // Each path must be for either a file option or a field option.
 func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeInfo, pathsToRemove map[string]struct{}) error {
-	// TODO: in v1 there is no need to check for field options, maybe v1 and v2 don't need to share this function.
+	// TODO: in v1 there is no need to check for field options, maybe v1 and v2
+	//  don't need to share this function.
 	// We can't just match on an exact path match because the target
 	// file option's parent path elements would remain (i.e [8]),
 	// or the target field option's parent path has no other child left.
@@ -91,7 +92,8 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 		}
 		if _, ok := pathsToRemove[GetPathKey(path)]; !ok {
 			if pathType == pathTypeFieldOption {
-				// This field option path is not marked, register it to its parent FieldOptions.
+				// This field option path will not be removed, register it to its
+				// parent FieldOptions.
 				fieldOptionsPaths.registerDescendant(path)
 			}
 			continue
