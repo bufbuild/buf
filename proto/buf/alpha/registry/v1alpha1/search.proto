@@ -90,10 +90,12 @@ message SearchResult {
   }
 }
 
-enum SearchContentFilter {
-  SEARCH_CONTENT_FILTER_UNSPECIFIED = 0;
-  SEARCH_CONTENT_FILTER_NAME = 1;
-  SEARCH_CONTENT_FILTER_PATH = 2;
+enum SearchModuleContentFilter {
+  SEARCH_MODULE_CONTENT_FILTER_UNSPECIFIED = 0;
+  // SEARCH_MODULE_CONTENT_FILTER_ELEMENT is the filter for elements, e.g. messages, services, and methods.
+  SEARCH_MODULE_CONTENT_FILTER_ELEMENT = 1;
+  // SEARCH_MODULE_CONTENT_FILTER_FILE is the filter for files.
+  SEARCH_MODULE_CONTENT_FILTER_FILE = 2;
 }
 
 message ElementSearchResult {
@@ -118,7 +120,7 @@ message FileSearchResult {
   bytes content = 5;
 }
 
-message SearchContentResult {
+message SearchModuleContentResult {
   oneof item {
     ElementSearchResult element = 1;
     FileSearchResult file = 2;
@@ -139,7 +141,8 @@ service SearchService {
   rpc SearchDraft(SearchDraftRequest) returns (SearchDraftResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  rpc SearchContent(SearchContentRequest) returns (SearchContentResponse) {
+  // SearchModuleContent searches for module contents on the BSR.
+  rpc SearchModuleContent(SearchModuleContentRequest) returns (SearchModuleContentResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -206,7 +209,7 @@ message SearchDraftResponse {
   string next_page_token = 2;
 }
 
-message SearchContentRequest {
+message SearchModuleContentRequest {
   // The search string.
   string query = 1;
   uint32 page_size = 2;
@@ -215,11 +218,11 @@ message SearchContentRequest {
   // Empty list means show all. Supplying one or more enums will
   // limit the search to only the requested resources.
   // Supplying all possible enums is equivalent to empty list of filters.
-  repeated SearchContentFilter filters = 4;
+  repeated SearchModuleContentFilter filters = 4;
 }
 
-message SearchContentResponse {
-  repeated SearchContentResult search_results = 1;
+message SearchModuleContentResponse {
+  repeated SearchModuleContentResult search_results = 1;
   // There are no more pages if this is 0.
   uint32 next_page_token = 2;
 }
