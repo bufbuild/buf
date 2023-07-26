@@ -205,8 +205,13 @@ func (s *syncer) commitsToSync(
 	// commit, or adding them all to be synced
 	stopLoopErr := errors.New("stop loop")
 	if err := s.repo.ForEachCommit(branch, func(commit git.Commit) error {
+		if len(pendingModules) == 0 {
+			// no more pending modules to sync, no need to keep navigating the branch
+			return stopLoopErr
+		}
 		commitHash := commit.Hash().Hex()
-		var modulesInThisCommit map[Module]struct{}
+		modulesToSyncInThisCommit := make(map[Module]struct{})
+		modulesFoundSyncPointInThisCommit := make(map[Module]struct{})
 		for module := range pendingModules {
 			// TODO do this in a paginated fashion
 			isSynced, err := s.isGitCommitSynced(ctx, module, commitHash)
@@ -214,10 +219,11 @@ func (s *syncer) commitsToSync(
 				return fmt.Errorf("check if git commit is synced: %w", err)
 			}
 			if !isSynced {
-				modulesInThisCommit[module] = struct{}{}
+				modulesToSyncInThisCommit[module] = struct{}{}
 				continue
 			}
 			// reached a commit that is already synced for this module
+			modulesFoundSyncPointInThisCommit[module] = struct{}{}
 			expectedSyncPoint, ok := modulesSyncPoints[module]
 			if !ok {
 				// this module did not have an expected sync point, we probably reached the beginning of the
@@ -246,13 +252,21 @@ func (s *syncer) commitsToSync(
 				)
 			}
 		}
-		if len(modulesInThisCommit) == 0 {
-			// no modules to sync in this commit, we can stop navigating the branch
-			return stopLoopErr
+		// clear modules that already found its sync point
+		for module := range modulesFoundSyncPointInThisCommit {
+			delete(pendingModules, module)
+		}
+		if len(modulesToSyncInThisCommit) == 0 {
+			return fmt.Errorf(
+				"commit %q cannot be queued, had no modules to sync (modules that found sync point in this commit: %v, pending modules: %v)",
+				commitHash,
+				modulesFoundSyncPointInThisCommit,
+				pendingModules,
+			)
 		}
 		commitsToSync = append(commitsToSync, syncableCommit{
 			commit:  commit,
-			modules: modulesInThisCommit,
+			modules: modulesToSyncInThisCommit,
 		})
 		return nil
 	}); err != nil && !errors.Is(err, stopLoopErr) {
