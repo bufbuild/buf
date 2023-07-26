@@ -15,12 +15,7 @@
 package internal
 
 const (
-	pathTypeInvalid pathType = iota + 1
-	pathTypeEmpty
-	pathTypeMessages
-	pathTypeMessage
-	pathTypeFields
-	pathTypeField
+	pathTypeNotFieldOption pathType = iota + 1
 	pathTypeFieldOptions
 	pathTypeFieldOption
 	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L75
@@ -48,11 +43,11 @@ type locationPathDFAState func(int32) (locationPathDFAState, pathType)
 // getPathType returns the type of the path. It only accepts one of:
 // empty, messages, message, fields, field, field options and field option.
 func getPathType(path []int32) pathType {
-	pathType := pathTypeEmpty
+	pathType := pathTypeNotFieldOption
 	currentState := start
 	for _, element := range path {
 		if currentState == nil {
-			return pathTypeInvalid
+			return pathTypeNotFieldOption
 		}
 		currentState, pathType = currentState(element)
 	}
@@ -62,32 +57,32 @@ func getPathType(path []int32) pathType {
 func start(input int32) (locationPathDFAState, pathType) {
 	switch input {
 	case messageTypeTagInFile:
-		return messages, pathTypeMessages
+		return messages, pathTypeNotFieldOption
 	case extensionTagInFile:
-		return fields, pathTypeFields
+		return fields, pathTypeNotFieldOption
 	default:
-		return nil, pathTypeInvalid
+		return nil, pathTypeNotFieldOption
 	}
 }
 
 func messages(input int32) (locationPathDFAState, pathType) {
 	// we are not checking index >= 0, the caller must ensure this
-	return message, pathTypeMessages
+	return message, pathTypeNotFieldOption
 }
 
 func message(input int32) (locationPathDFAState, pathType) {
 	switch input {
 	case nestedTypeTagInMessage:
-		return messages, pathTypeMessage
+		return messages, pathTypeNotFieldOption
 	case fieldTagInMessage, extensionTagInMessage:
-		return fields, pathTypeMessage
+		return fields, pathTypeNotFieldOption
 	}
-	return nil, pathTypeInvalid
+	return nil, pathTypeNotFieldOption
 }
 
 func fields(input int32) (locationPathDFAState, pathType) {
 	// we are not checking index >= 0, the caller must ensure this
-	return field, pathTypeField
+	return field, pathTypeNotFieldOption
 }
 
 func field(input int32) (locationPathDFAState, pathType) {
@@ -95,7 +90,7 @@ func field(input int32) (locationPathDFAState, pathType) {
 	case optionsTagInField:
 		return fieldOptions, pathTypeFieldOptions
 	default:
-		return nil, pathTypeInvalid
+		return nil, pathTypeNotFieldOption
 	}
 }
 

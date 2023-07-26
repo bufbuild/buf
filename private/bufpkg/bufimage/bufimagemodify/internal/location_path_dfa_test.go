@@ -55,32 +55,32 @@ func TestIsPathForFieldOptions(t *testing.T) {
 		{
 			description: "empty path",
 			path:        []int32{},
-			expected:    pathTypeEmpty,
+			expected:    pathTypeNotFieldOption,
 		},
 		{
 			description: "invalid first index in path of length one",
 			path:        []int32{1},
-			expected:    pathTypeInvalid,
+			expected:    pathTypeNotFieldOption,
 		},
 		{
 			description: "invalid first index",
 			path:        []int32{1, 0, 2, 0, 8},
-			expected:    pathTypeInvalid,
+			expected:    pathTypeNotFieldOption,
 		},
 		{
 			description: "messages",
 			path:        []int32{4},
-			expected:    pathTypeMessages,
+			expected:    pathTypeNotFieldOption,
 		},
 		{
 			description: "top level extensions",
 			path:        []int32{7},
-			expected:    pathTypeFields,
+			expected:    pathTypeNotFieldOption,
 		},
 		{
 			description: "field in single message",
 			path:        []int32{4, 100, 2, 101},
-			expected:    pathTypeField,
+			expected:    pathTypeNotFieldOption,
 		},
 		{
 			description: "field option jstype in non-nested message",
@@ -90,17 +90,17 @@ func TestIsPathForFieldOptions(t *testing.T) {
 		{
 			description: "field label",
 			path:        []int32{4, 100, 2, 101, 4},
-			expected:    pathTypeInvalid,
+			expected:    pathTypeNotFieldOption,
 		},
 		{
 			description: "enum in message",
 			path:        []int32{4, 100, 4, 100},
-			expected:    pathTypeInvalid,
+			expected:    pathTypeNotFieldOption,
 		},
 		{
 			description: "one field in a deeply nested message",
 			path:        []int32{4, 100, 3, 101, 3, 102, 3, 103, 3, 0, 2, 104},
-			expected:    pathTypeField,
+			expected:    pathTypeNotFieldOption,
 		},
 		{
 			description: "one field option in a deeply nested message",
@@ -120,12 +120,12 @@ func TestIsPathForFieldOptions(t *testing.T) {
 		{
 			description: "extension field",
 			path:        []int32{7, 100},
-			expected:    pathTypeField,
+			expected:    pathTypeNotFieldOption,
 		},
 		{
 			description: "extension field in a deeply nested message",
 			path:        []int32{4, 100, 3, 101, 3, 102, 3, 103, 3, 0, 6, 104},
-			expected:    pathTypeField,
+			expected:    pathTypeNotFieldOption,
 		},
 	}
 	for _, testcase := range testcases {
