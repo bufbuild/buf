@@ -82,7 +82,7 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 	// we need to delete.
 	indices := make(map[int]struct{}, len(paths)*2)
 	// each path in this trie is for a FieldOptions message (not for a singular option)
-	fieldOptionsPaths := fieldOptionsTrie{}
+	var fieldOptionsPaths fieldOptionsTrie
 	for i, location := range sourceCodeInfo.Location {
 		path := location.Path
 		pathType := getPathType(path)
