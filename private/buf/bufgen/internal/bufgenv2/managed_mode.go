@@ -88,6 +88,9 @@ func applyManagementForFile(
 			}
 			switch fieldOption {
 			case fieldOptionJsType:
+				if override == nil {
+					continue
+				}
 				err := modifier.ModifyJSType(field, override)
 				if err != nil {
 					return err
