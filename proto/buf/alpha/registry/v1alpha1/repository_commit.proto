@@ -78,11 +78,6 @@ service RepositoryCommitService {
   rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // GetRepositoryCommitBySequenceId returns the repository commit matching
-  // the provided sequence ID and branch, if it exists.
-  rpc GetRepositoryCommitBySequenceId(GetRepositoryCommitBySequenceIdRequest) returns (GetRepositoryCommitBySequenceIdResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
   // ListRepositoryDraftCommits lists draft commits in a repository.
   rpc ListRepositoryDraftCommits(ListRepositoryDraftCommitsRequest) returns (ListRepositoryDraftCommitsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
@@ -141,21 +136,6 @@ message GetRepositoryCommitByReferenceRequest {
 }
 
 message GetRepositoryCommitByReferenceResponse {
-  RepositoryCommit repository_commit = 1;
-}
-
-message GetRepositoryCommitBySequenceIdRequest {
-  // The owner of the repository which the repository branch belongs to.
-  string repository_owner = 1;
-  // The name of the repository which the repository branch belongs to.
-  string repository_name = 2;
-  // The name of the repository branch which the sequence ID is relative to.
-  string repository_branch_name = 3;
-  // The sequence ID to look up.
-  int64 commit_sequence_id = 4;
-}
-
-message GetRepositoryCommitBySequenceIdResponse {
   RepositoryCommit repository_commit = 1;
 }
 
