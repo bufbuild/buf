@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
@@ -40,7 +39,7 @@ type syncer struct {
 
 	// scanned information from the repo on sync start
 	tagsByCommitHash map[string][]string
-	remoteBranches   []string
+	remoteBranches   map[string]struct{}
 }
 
 func newSyncer(
@@ -119,7 +118,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 		return fmt.Errorf("scan repo: %w", err)
 	}
 	allBranchesSyncPoints := make(map[string]map[Module]git.Hash)
-	for _, branch := range s.remoteBranches {
+	for branch := range s.remoteBranches {
 		syncPoints, err := s.resolveSyncPoints(ctx, branch)
 		if err != nil {
 			return fmt.Errorf("resolve sync points for branch %q: %w", branch, err)
@@ -131,8 +130,9 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	if err := s.syncBranch(ctx, baseBranch, allBranchesSyncPoints[baseBranch], syncFunc); err != nil {
 		return fmt.Errorf("sync base branch %q: %w", baseBranch, err)
 	}
-	// then the rest of the branches
-	for _, branch := range s.remoteBranches {
+	// then the rest of the branches, in a deterministic order
+	remoteBranches := stringutil.MapToSortedSlice(s.remoteBranches)
+	for _, branch := range remoteBranches {
 		if branch == baseBranch {
 			continue // default branch already synced
 		}
@@ -298,19 +298,17 @@ func (s *syncer) scanRepo() error {
 	}); err != nil {
 		return fmt.Errorf("load tags: %w", err)
 	}
-	remoteBranches := make(map[string]struct{})
+	s.remoteBranches = make(map[string]struct{})
 	if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
-		remoteBranches[branch] = struct{}{}
+		s.remoteBranches[branch] = struct{}{}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("looping over repo branches: %w", err)
 	}
 	baseBranch := s.repo.BaseBranch()
-	if _, baseBranchPushedInRemote := remoteBranches[baseBranch]; !baseBranchPushedInRemote {
+	if _, baseBranchPushedInRemote := s.remoteBranches[baseBranch]; !baseBranchPushedInRemote {
 		return fmt.Errorf(`repo base branch %q is not present in "origin" remote`, baseBranch)
 	}
-	s.remoteBranches = stringutil.MapToSlice(remoteBranches)
-	sort.Strings(s.remoteBranches)
 	return nil
 }
 
