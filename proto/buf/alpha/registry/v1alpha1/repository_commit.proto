@@ -32,10 +32,8 @@ message RepositoryCommit {
   string name = 4;
   // The branch on which this commit was created.
   string branch = 5;
-  // The commit sequence ID for this commit. This
-  // is essentially what number commit this is on
-  // the branch.
-  int64 commit_sequence_id = 6;
+  reserved 6;
+  reserved "commit_sequence_id";
   // The username of the user who authored this commit.
   string author = 7;
   // The tags associated with this commit
