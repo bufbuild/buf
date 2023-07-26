@@ -284,10 +284,12 @@ func TestRegisterDescendant(t *testing.T) {
 			for _, path := range testcase.pathsToRegister {
 				trie.registerDescendant(path)
 			}
+			remainingIndices := trie.indicesWithoutDescendant()
+			sort.Ints(remainingIndices)
 			require.Equal(
 				t,
 				testcase.expectedIndicesWithoutDescendant,
-				trie.indicesWithoutDescendant(),
+				remainingIndices,
 			)
 		})
 	}
