@@ -72,7 +72,7 @@ var fileOptionPath = []int32{8}
 
 // RemoveLocationsFromSourceCodeInfo removes paths from the given sourceCodeInfo.
 // Each path must be for either a file option or a field option.
-func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeInfo, paths map[string]struct{}) error {
+func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeInfo, pathsToRemove map[string]struct{}) error {
 	// TODO: in v1 there is no need to check for field options, maybe v1 and v2 don't need to share this function.
 	// We can't just match on an exact path match because the target
 	// file option's parent path elements would remain (i.e [8]),
@@ -80,7 +80,7 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 	// Instead, we perform an initial pass to validate that the paths
 	// are structured as expected, and collect all of the indices that
 	// we need to delete.
-	indices := make(map[int]struct{}, len(paths)*2)
+	indices := make(map[int]struct{}, len(pathsToRemove)*2)
 	// each path in this trie is for a FieldOptions message (not for a singular option)
 	var fieldOptionsPaths fieldOptionsTrie
 	for i, location := range sourceCodeInfo.Location {
@@ -89,7 +89,7 @@ func RemoveLocationsFromSourceCodeInfo(sourceCodeInfo *descriptorpb.SourceCodeIn
 		if pathType == pathTypeFieldOptions {
 			fieldOptionsPaths.insert(path, i)
 		}
-		if _, ok := paths[GetPathKey(path)]; !ok {
+		if _, ok := pathsToRemove[GetPathKey(path)]; !ok {
 			if pathType == pathTypeFieldOption {
 				// This field option path is not marked, register it to its parent FieldOptions.
 				fieldOptionsPaths.registerDescendant(path)
