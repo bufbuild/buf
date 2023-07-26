@@ -25,7 +25,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-func TestFieldModifier(t *testing.T) {
+func TestModifyJSType(t *testing.T) {
 	t.Parallel()
 	for _, includeSourceCodeInfo := range []bool{true, false} {
 		image := bufimagemodifytesting.GetTestImage(
@@ -94,6 +94,15 @@ func TestFieldModifier(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, descriptorpb.FieldOptions_JS_NORMAL, *fieldO5.GetOptions().Jstype)
 
+		// modify the option to the exisint value from the file
+		fieldO6 := outerMessage.GetField()[5]
+		require.NotNil(t, fieldO6)
+		require.NotNil(t, fieldO6.GetOptions())
+		require.Equal(t, descriptorpb.FieldOptions_JS_NUMBER, *fieldO6.GetOptions().Jstype)
+		err = modifier.ModifyJSType("foo.bar.baz.Outer.o6", NewValueOverride(descriptorpb.FieldOptions_JS_NUMBER))
+		require.NoError(t, err)
+		require.Equal(t, descriptorpb.FieldOptions_JS_NUMBER, *fieldO6.GetOptions().Jstype)
+
 		// modify on an extension field
 		extensions := imageFile.Proto().GetExtension()
 		require.Len(t, extensions, 2)
@@ -116,6 +125,53 @@ func TestFieldModifier(t *testing.T) {
 					internal.GetPathKey([]int32{7, 0, 8, 6}):             struct{}{},
 				},
 			},
+			markSweeper.sourceCodeInfoPaths,
+		)
+	}
+}
+
+func TestModifyJSTypeForWKT(t *testing.T) {
+	t.Parallel()
+	for _, includeSourceCodeInfo := range []bool{true, false} {
+		image := bufimagemodifytesting.GetTestImage(
+			t,
+			filepath.Join("..", "testdata", "wktimport"),
+			includeSourceCodeInfo,
+		)
+		require.NotNil(t, image)
+		markSweeper := newMarkSweeper(image)
+		require.NotNil(t, markSweeper)
+		imageFile := image.GetFile("google/protobuf/timestamp.proto")
+		require.NotNil(t, imageFile)
+		modifier, err := NewFieldOptionModifier(imageFile, markSweeper)
+		require.NoError(t, err)
+		expectedNames := []string{
+			"google.protobuf.Timestamp.seconds",
+			"google.protobuf.Timestamp.nanos",
+		}
+		actualNames := modifier.FieldNames()
+		sort.Strings(expectedNames)
+		sort.Strings(actualNames)
+		require.Equal(t, expectedNames, actualNames)
+
+		messages := imageFile.Proto().GetMessageType()
+		require.Len(t, messages, 1)
+		timestamp := messages[0]
+		fields := timestamp.GetField()
+		require.Len(t, fields, 2)
+		secondsField := fields[0]
+		require.Nil(t, secondsField.GetOptions())
+
+		err = modifier.ModifyJSType("google.protobuf.Timestamp.seconds", NewValueOverride(descriptorpb.FieldOptions_JS_NUMBER))
+		require.NoError(t, err)
+		// wkt should be skipped
+		require.Nil(t, secondsField.GetOptions())
+
+		// still marked even if the image is built without source code info, but
+		// sweep will not take effect.
+		require.Equal(
+			t,
+			map[string]map[string]struct{}{},
 			markSweeper.sourceCodeInfoPaths,
 		)
 	}
