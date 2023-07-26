@@ -32,10 +32,8 @@ message RepositoryCommit {
   string name = 4;
   // The branch on which this commit was created.
   string branch = 5;
-  // The commit sequence ID for this commit. This
-  // is essentially what number commit this is on
-  // the branch.
-  int64 commit_sequence_id = 6;
+  reserved 6;
+  reserved "commit_sequence_id";
   // The username of the user who authored this commit.
   string author = 7;
   // The tags associated with this commit
@@ -76,11 +74,6 @@ service RepositoryCommitService {
   // GetRepositoryCommitByReference returns the repository commit matching
   // the provided reference, if it exists.
   rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // GetRepositoryCommitBySequenceId returns the repository commit matching
-  // the provided sequence ID and branch, if it exists.
-  rpc GetRepositoryCommitBySequenceId(GetRepositoryCommitBySequenceIdRequest) returns (GetRepositoryCommitBySequenceIdResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // ListRepositoryDraftCommits lists draft commits in a repository.
@@ -141,21 +134,6 @@ message GetRepositoryCommitByReferenceRequest {
 }
 
 message GetRepositoryCommitByReferenceResponse {
-  RepositoryCommit repository_commit = 1;
-}
-
-message GetRepositoryCommitBySequenceIdRequest {
-  // The owner of the repository which the repository branch belongs to.
-  string repository_owner = 1;
-  // The name of the repository which the repository branch belongs to.
-  string repository_name = 2;
-  // The name of the repository branch which the sequence ID is relative to.
-  string repository_branch_name = 3;
-  // The sequence ID to look up.
-  int64 commit_sequence_id = 4;
-}
-
-message GetRepositoryCommitBySequenceIdResponse {
   RepositoryCommit repository_commit = 1;
 }
 
