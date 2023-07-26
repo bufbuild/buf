@@ -343,23 +343,6 @@ func (s *syncErrorHandler) InvalidSyncPoint(
 	return err
 }
 
-func (s *syncErrorHandler) SyncPointNotEncountered(
-	module bufsync.Module,
-	branch string,
-	syncPoint git.Hash,
-) error {
-	// This can happen if the user rebased, but Git has not garbage collected the old commits,
-	// so the sync point was considered valid. Maybe there are other cases in which this can happen...
-	// This is a hard failure for now, but similar to InvalidSyncPoint, we can maybe accumulate
-	// these and error at the end, so that other branches continue to sync.
-	return fmt.Errorf(
-		"sync point %s for %s on branch %s was not encountered; did you rebase? Try running `git gc` and running sync again",
-		syncPoint,
-		module,
-		branch,
-	)
-}
-
 func pushOrCreate(
 	ctx context.Context,
 	clientConfig *connectclient.Config,

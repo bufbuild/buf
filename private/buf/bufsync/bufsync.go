@@ -59,16 +59,6 @@ type ErrorHandler interface {
 		syncPoint git.Hash,
 		err error,
 	) error
-	// SyncPointNotEncountered is invoked by Syncer upon syncing a module on a
-	// branch where a sync point was resolved and validated, but was not
-	// encountered during sync.
-	//
-	// Returning an error will abort sync.
-	SyncPointNotEncountered(
-		module Module,
-		branch string,
-		syncPoint git.Hash,
-	) error
 }
 
 // Module is a module that will be synced by Syncer.

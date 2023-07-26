@@ -131,23 +131,13 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	if err := s.syncBranch(ctx, baseBranch, allBranchesSyncPoints[baseBranch], syncFunc); err != nil {
 		return fmt.Errorf("sync base branch %q: %w", baseBranch, err)
 	}
+	// then the rest of the branches
 	for _, branch := range s.remoteBranches {
 		if branch == baseBranch {
-			// already synced
-			continue
+			continue // default branch already synced
 		}
 		if err := s.syncBranch(ctx, branch, allBranchesSyncPoints[branch], syncFunc); err != nil {
 			return fmt.Errorf("sync branch %q: %w", branch, err)
-		}
-	}
-	// If we have any sync points left, they were not encountered during sync, which is unexpected
-	// behavior.
-	for branch, modulesSyncPoints := range allBranchesSyncPoints {
-		for module, syncPoint := range modulesSyncPoints {
-			// TODO: check that this is just WARNing
-			if err := s.errorHandler.SyncPointNotEncountered(module, branch, syncPoint); err != nil {
-				return err
-			}
 		}
 	}
 	return nil
