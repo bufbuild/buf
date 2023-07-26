@@ -145,14 +145,11 @@ func SyncerWithResumption(resolver SyncPointResolver) SyncerOption {
 	}
 }
 
-func SyncerWithGitCommitChecker(module Module) SyncerOption {
+// SyncerWithGitCommitChecker configures a git commit checker, to know if a module has a given git
+// hash alrady synced in a BSR instance.
+func SyncerWithGitCommitChecker(checker SyncedGitCommitChecker) SyncerOption {
 	return func(s *syncer) error {
-		for _, existingModule := range s.modulesToSync {
-			if existingModule.String() == module.String() {
-				return fmt.Errorf("duplicate module %s", module)
-			}
-		}
-		s.modulesToSync = append(s.modulesToSync, module)
+		s.syncedGitCommitChecker = checker
 		return nil
 	}
 }

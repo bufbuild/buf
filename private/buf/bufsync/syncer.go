@@ -18,12 +18,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 )
 
@@ -38,7 +40,7 @@ type syncer struct {
 
 	// scanned information from the repo on sync start
 	tagsByCommitHash map[string][]string
-	remoteBranches   map[string]struct{}
+	remoteBranches   []string
 }
 
 func newSyncer(
@@ -117,7 +119,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 		return fmt.Errorf("scan repo: %w", err)
 	}
 	allBranchesSyncPoints := make(map[string]map[Module]git.Hash)
-	for branch := range s.remoteBranches {
+	for _, branch := range s.remoteBranches {
 		syncPoints, err := s.resolveSyncPoints(ctx, branch)
 		if err != nil {
 			return fmt.Errorf("resolve sync points for branch %q: %w", branch, err)
@@ -129,7 +131,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	if err := s.syncBranch(ctx, baseBranch, allBranchesSyncPoints[baseBranch], syncFunc); err != nil {
 		return fmt.Errorf("sync base branch %q: %w", baseBranch, err)
 	}
-	for branch := range s.remoteBranches {
+	for _, branch := range s.remoteBranches {
 		if branch == baseBranch {
 			// already synced
 			continue
@@ -220,6 +222,12 @@ func (s *syncer) commitsToSync(
 			}
 			if !isSynced {
 				modulesToSyncInThisCommit[module] = struct{}{}
+				s.logger.Debug(
+					"sync queue",
+					zap.String("branch", branch),
+					zap.String("commit", commitHash),
+					zap.Any("module", module.String()),
+				)
 				continue
 			}
 			// reached a commit that is already synced for this module
@@ -284,6 +292,9 @@ func (s *syncer) commitsToSync(
 }
 
 func (s *syncer) isGitCommitSynced(ctx context.Context, module Module, commitHash string) (bool, error) {
+	if s.syncedGitCommitChecker == nil {
+		return false, nil
+	}
 	syncedCommits, err := s.syncedGitCommitChecker(ctx, module.RemoteIdentity(), map[string]struct{}{commitHash: {}})
 	if err != nil {
 		return false, err
@@ -303,17 +314,19 @@ func (s *syncer) scanRepo() error {
 	}); err != nil {
 		return fmt.Errorf("load tags: %w", err)
 	}
-	s.remoteBranches = make(map[string]struct{})
+	remoteBranches := make(map[string]struct{})
 	if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
-		s.remoteBranches[branch] = struct{}{}
+		remoteBranches[branch] = struct{}{}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("looping over repo branches: %w", err)
 	}
 	baseBranch := s.repo.BaseBranch()
-	if _, baseBranchPushedInRemote := s.remoteBranches[baseBranch]; !baseBranchPushedInRemote {
+	if _, baseBranchPushedInRemote := remoteBranches[baseBranch]; !baseBranchPushedInRemote {
 		return fmt.Errorf(`repo base branch %q is not present in "origin" remote`, baseBranch)
 	}
+	s.remoteBranches = stringutil.MapToSlice(remoteBranches)
+	sort.Strings(s.remoteBranches)
 	return nil
 }
 
