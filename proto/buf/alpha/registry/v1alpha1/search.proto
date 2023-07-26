@@ -219,6 +219,11 @@ message SearchModuleContentRequest {
   // limit the search to only the requested resources.
   // Supplying all possible enums is equivalent to empty list of filters.
   repeated SearchModuleContentFilter filters = 4;
+  // Optional, if provided the search results will be limited to the provided repository.
+  string repository_full_name = 5;
+  // Optional, if provided the search results will be limited to the provided owner,
+  // ignored if repository_full_name is provided.
+  string repository_owner = 6;
 }
 
 message SearchModuleContentResponse {
