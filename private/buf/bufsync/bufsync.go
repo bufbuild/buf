@@ -166,7 +166,7 @@ type SyncFunc func(ctx context.Context, commit ModuleCommit) error
 // is returned, sync will abort.
 type SyncPointResolver func(
 	ctx context.Context,
-	identity bufmoduleref.ModuleIdentity,
+	module bufmoduleref.ModuleIdentity,
 	branch string,
 ) (git.Hash, error)
 
@@ -175,6 +175,7 @@ type SyncPointResolver func(
 // an error is returned, sync will abort.
 type SyncedGitCommitChecker func(
 	ctx context.Context,
+	module bufmoduleref.ModuleIdentity,
 	commitHashes map[string]struct{},
 ) (map[string]struct{}, error)
 
