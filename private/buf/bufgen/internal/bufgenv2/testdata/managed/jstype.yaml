@@ -1,0 +1,38 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  disable:
+    - field: Ignore.me
+    - path: excluded/
+    - module: buf.build/googleapis/googleapis
+    - file_option: java_package
+      path: ok # this should not disable jstype
+    - field_option: jstype
+      path: no_jstype
+    - field_option: jstype
+      module: buf.build/acme/notjstype
+    - field_option: jstype
+      module: buf.build/acme/weather
+      path: exact.proto
+      field: Foo.bar
+  override:
+    - field_option: jstype
+      value: JS_NORMAL
+    - field_option: jstype
+      value: JS_STRING # this overrides the last one
+    - field_option: jstype
+      value: JS_NUMBER
+      module: buf.build/acme/weather
+    - field_option: jstype
+      value: JS_NORMAL
+      path: b/c/d
+    - field_option: jstype
+      value: JS_NUMBER
+      path: b/c/d/x.proto
+      field: Should_1.Be_2.num
+    - field_option: jstype
+      value: JS_NORMAL
+      field: package1.subpackage2.Message1.NestedMessage2.field_5

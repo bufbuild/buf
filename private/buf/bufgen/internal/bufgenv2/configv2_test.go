@@ -838,8 +838,8 @@ func TestManagedConfigSuccess(t *testing.T) {
 			},
 		},
 		{
-			testName: "test js_type field option",
-			file:     filepath.Join("managed", "js_type"),
+			testName: "test jstype field option",
+			file:     filepath.Join("managed", "jstype"),
 			expectedFieldDisableResults: map[fieldOption]map[fileAndField]bool{
 				fieldOptionJsType: {
 					{
@@ -1182,9 +1182,9 @@ func TestConfigError(t *testing.T) {
 			expectedError: `unknown field option: "not_a_real_field_option"`,
 		},
 		{
-			testName:      "Test invalid js_type value",
-			file:          filepath.Join("managed", "invalid_js_type_value"),
-			expectedError: `"not_a_valid_js_type_value" is not a valid js_type value, must be one of JS_NORMAL, JS_STRING and JS_NUMBER`,
+			testName:      "Test invalid jstype value",
+			file:          filepath.Join("managed", "invalid_jstype_value"),
+			expectedError: `"not_a_valid_jstype_value" is not a valid jstype value, must be one of JS_NORMAL, JS_STRING and JS_NUMBER`,
 		},
 	}
 

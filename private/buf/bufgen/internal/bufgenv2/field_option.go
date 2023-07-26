@@ -36,10 +36,10 @@ var (
 		fieldOptionJsType,
 	}
 	fieldOptionToString = map[fieldOption]string{
-		fieldOptionJsType: "js_type",
+		fieldOptionJsType: "jstype",
 	}
 	stringToFieldOption = map[string]fieldOption{
-		"js_type": fieldOptionJsType,
+		"jstype": fieldOptionJsType,
 	}
 	fieldOptionToOverrideParseFunc = map[fieldOption]func(interface{}, fieldOption) (bufimagemodifyv2.Override, error){
 		fieldOptionJsType: parseJSType,
