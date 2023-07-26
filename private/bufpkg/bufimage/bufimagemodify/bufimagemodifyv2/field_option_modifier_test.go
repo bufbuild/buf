@@ -84,8 +84,16 @@ func TestModifyJSType(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, descriptorpb.FieldOptions_JS_STRING, *fieldI6.GetOptions().Jstype)
 
-		// modify on a oneof field
+		// modify on a field not supported by jstype
 		require.Len(t, outerMessage.GetField(), 6)
+		fieldO2 := outerMessage.GetField()[1]
+		require.NotNil(t, fieldO2)
+		require.Nil(t, fieldO2.GetOptions())
+		err = modifier.ModifyJSType("foo.bar.baz.Outer.o2", NewValueOverride(descriptorpb.FieldOptions_JS_NORMAL))
+		require.NoError(t, err)
+		require.Nil(t, fieldO2.GetOptions())
+
+		// modify on a oneof field
 		fieldO5 := outerMessage.GetField()[4]
 		require.NotNil(t, fieldO5)
 		require.NotNil(t, fieldO5.GetOptions())
