@@ -244,7 +244,7 @@ func TestRegisterDescendant(t *testing.T) {
 			},
 		},
 		{
-			description: "register more none-field option",
+			description: "register all non-field option",
 			pathsToInsert: [][]int32{
 				{4, 0, 2, 0, 8},             // 0
 				{4, 0, 2, 1, 8},             // 1
@@ -270,6 +270,33 @@ func TestRegisterDescendant(t *testing.T) {
 				3,
 				6,
 			},
+		},
+		{
+			description: "register for all ancestors",
+			pathsToInsert: [][]int32{
+				{4, 0, 2, 0, 8},             // 0
+				{4, 0, 2, 1, 8},             // 1
+				{4, 0, 2, 2, 8},             // 2
+				{4, 0, 3, 0, 2, 1, 8},       // 3
+				{4, 0, 3, 0, 3, 1, 2, 3, 8}, // 4
+				{7, 0, 8},                   // 5
+				{7, 1, 8},                   // 6
+			},
+			pathsToRegister: [][]int32{
+				{4, 0, 3, 0, 3, 1, 2, 3, 8, 1}, // descendant of 4
+				{4, 0, 2, 1, 8, 0, 1139},       // descendant of 1
+				{4, 0, 2, 1, 8, 6},             // descendant of 1
+				{7, 0, 8, 50003, 0},            // descendant of 5
+				{4, 0, 2, 2, 8, 5},             // descendant of 2
+				{7, 1, 8},                      // descendant of none
+				{7, 1},                         // descendant of none
+				{4, 0, 2, 0, 8},                // descendant of none
+				{4, 0, 2},                      // descendant of none
+				{7, 1, 8, 1},                   // descendant of 6
+				{4, 0, 2, 0, 8, 2000, 1},       // descendant of 0
+				{4, 0, 3, 0, 2, 1, 8, 6},       // descendant of 3
+			},
+			expectedIndicesWithoutDescendant: []int{}, // require.Equal does not consider nil the same as []int{}
 		},
 	}
 	for _, testcase := range testcases {
