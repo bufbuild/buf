@@ -30,7 +30,7 @@ message GitIdentity {
 
 // GitCommitMetadata is Git metadata associated with a BSR commit.
 message GitCommitMetadata {
-  // Hash is the SHA1 has of the Git commit.
+  // Hash is the SHA1 hash of the Git commit.
   string hash = 1;
   // Author is the author of the Git commit. This is typically an end-user.
   GitIdentity author = 2;
