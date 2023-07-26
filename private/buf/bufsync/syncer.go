@@ -128,20 +128,25 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 		}
 		allBranchesSyncPoints[branch] = syncPoints
 	}
-	s.commitsToSync(ctx, s.repo.BaseBranch(), allBranchesSyncPoints[s.repo.BaseBranch()])
 	// first, default branch
 	baseBranch := s.repo.BaseBranch()
-	if err := s.repo.ForEachCommit(baseBranch, func(commit git.Commit) error {
-		// sync default branch
-		return nil
-	}); err != nil {
+	if err := s.syncBranch(ctx, baseBranch, allBranchesSyncPoints[baseBranch]); err != nil {
 		return fmt.Errorf("sync base branch %q: %w", baseBranch, err)
 	}
-	// TODO: then the rest of the branches...
+	for branch := range s.remoteBranches {
+		if branch == baseBranch {
+			// already synced
+			continue
+		}
+		if err := s.syncBranch(ctx, branch, allBranchesSyncPoints[branch]); err != nil {
+			return fmt.Errorf("sync branch %q: %w", branch, err)
+		}
+	}
 	// If we have any sync points left, they were not encountered during sync, which is unexpected
 	// behavior.
 	for branch, modulesSyncPoints := range allBranchesSyncPoints {
 		for module, syncPoint := range modulesSyncPoints {
+			// TODO: check that this is just WARNing
 			if err := s.errorHandler.SyncPointNotEncountered(module, branch, syncPoint); err != nil {
 				return err
 			}
@@ -157,9 +162,9 @@ func (s *syncer) syncBranch(
 	modulesSyncPoints map[Module]git.Hash,
 ) error {
 	for module, expectedSyncPoint := range modulesSyncPoints {
-		commitsToSync, err := s.commitsToSync(ctx, branch, module, expectedSyncPoint.Hex())
+		_, err := s.commitsToSync(ctx, branch, module, expectedSyncPoint.Hex())
 		if err != nil {
-			return fmt.Errorf("finding commits to sync for branch %q and module %q: %w", branch, module.String())
+			return fmt.Errorf("finding commits to sync for branch %q and module %q: %w", branch, module.String(), err)
 		}
 		// TODO: sync commits
 	}
@@ -223,6 +228,7 @@ func (s *syncer) commitsToSync(
 	return commitsToSync, nil
 }
 
+// TODO: remove, checking that git hashes are synced should happen in a paginated fashion
 func (s *syncer) isGitCommitSynced(
 	ctx context.Context,
 	commitHash string,
