@@ -112,6 +112,4 @@ message GitCommitInformation {
   // Commiter is the metadata sscoiated with the commiter of the git commit.
   // This may not always be available, so it is not always populated.
   optional GitIdentity commiter = 3;
-  // Tag names of the associated tags with the git commit.
-  repeated string tags = 4;
 }
