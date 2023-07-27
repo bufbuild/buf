@@ -36,8 +36,8 @@ const (
 type pathType int
 
 // locationPathDFAState takes an input and returns the next state and the path type
-// that ends with the input, which is consistent with the returned next state. It
-// returns nil and pathTypeInvalid if the input is rejected.
+// that ends with the input, which is consistent with the returned next state. The next
+// state is nil if the DFA has finished running.
 type locationPathDFAState func(int32) (locationPathDFAState, pathType)
 
 // getPathType returns the type of the path. It only accepts one of:
@@ -47,7 +47,7 @@ func getPathType(path []int32) pathType {
 	currentState := start
 	for _, element := range path {
 		if currentState == nil {
-			return pathTypeNotFieldOption
+			break
 		}
 		currentState, pathType = currentState(element)
 	}
@@ -95,12 +95,7 @@ func field(input int32) (locationPathDFAState, pathType) {
 }
 
 func fieldOptions(input int32) (locationPathDFAState, pathType) {
-	return fieldOption, pathTypeFieldOption
-}
-
-func fieldOption(input int32) (locationPathDFAState, pathType) {
-	// technically it should not just accpet any input, but this is good
-	// enough for our purposes as the paths marked by a MarkSweeper will
-	// be valid.
-	return fieldOption, pathTypeFieldOption
+	// We are done here: after this point the path will be for a FieldOption.
+	// No need for the DFA to keep running.
+	return nil, pathTypeFieldOption
 }
