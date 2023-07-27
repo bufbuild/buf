@@ -30,27 +30,27 @@ func TestIsPathForFieldOptions(t *testing.T) {
 		{
 			description: "field options in single message",
 			path:        []int32{4, 100, 2, 101, 8},
-			expected:    pathTypeFieldOptions,
+			expected:    pathTypeFieldOptionsRoot,
 		},
 		{
 			description: "field options in a nested message",
 			path:        []int32{4, 100, 3, 101, 2, 102, 8},
-			expected:    pathTypeFieldOptions,
+			expected:    pathTypeFieldOptionsRoot,
 		},
 		{
 			description: "field options in a deeply nested message",
 			path:        []int32{4, 100, 3, 101, 3, 102, 3, 103, 3, 0, 2, 104, 8},
-			expected:    pathTypeFieldOptions,
+			expected:    pathTypeFieldOptionsRoot,
 		},
 		{
 			description: "field options in extension field on top level",
 			path:        []int32{7, 100, 8},
-			expected:    pathTypeFieldOptions,
+			expected:    pathTypeFieldOptionsRoot,
 		},
 		{
 			description: "field options in extension field in a deeply nested message",
 			path:        []int32{4, 100, 3, 101, 3, 102, 3, 103, 3, 0, 6, 104, 8},
-			expected:    pathTypeFieldOptions,
+			expected:    pathTypeFieldOptionsRoot,
 		},
 		{
 			description: "empty path",

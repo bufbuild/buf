@@ -91,7 +91,7 @@ func RemoveLocationsFromSourceCodeInfo(
 	for i, location := range sourceCodeInfo.Location {
 		path := location.Path
 		pathType := getPathType(path)
-		if pathType == pathTypeFieldOptions {
+		if pathType == pathTypeFieldOptionsRoot {
 			fieldOptionsPaths.insert(path, i)
 		}
 		if _, ok := pathsToRemove[GetPathKey(path)]; !ok {

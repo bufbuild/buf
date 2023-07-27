@@ -16,7 +16,7 @@ package internal
 
 const (
 	pathTypeNotFieldOption pathType = iota + 1
-	pathTypeFieldOptions
+	pathTypeFieldOptionsRoot
 	pathTypeFieldOption
 	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L75
 	messageTypeTagInFile int32 = 4
@@ -88,7 +88,7 @@ func fields(input int32) (locationPathDFAState, pathType) {
 func field(input int32) (locationPathDFAState, pathType) {
 	switch input {
 	case optionsTagInField:
-		return fieldOptions, pathTypeFieldOptions
+		return fieldOptions, pathTypeFieldOptionsRoot
 	default:
 		return nil, pathTypeNotFieldOption
 	}
