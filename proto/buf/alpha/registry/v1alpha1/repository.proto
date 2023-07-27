@@ -162,6 +162,16 @@ service RepositoryService {
   rpc GetRepositoriesMetadata(GetRepositoriesMetadataRequest) returns (GetRepositoriesMetadataResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // GetRepositoryDefaultBranch retrieves the default_branch value for a given repository. By
+  // default a BSR repository's default branch is "main", which is the value used when a module is
+  // pushed to the BSR.
+  rpc GetRepositoryDefaultBranch(GetRepositoryDefaultBranchRequest) returns (GetRepositoryDefaultBranchResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // SetRepositoryDefaultBranch allows repositories owners or admins to change the repository's
+  // default branch. This is useful for syncing git repositories with default branch names that are
+  // not "main".
+  rpc SetRepositoryDefaultBranch(SetRepositoryDefaultBranchRequest) returns (SetRepositoryDefaultBranchResponse);
 }
 
 message GetRepositoriesByFullNameRequest {
@@ -361,3 +371,20 @@ message GetRepositoriesMetadataRequest {
 message GetRepositoriesMetadataResponse {
   repeated RepositoryMetadata metadata = 1;
 }
+
+message GetRepositoryDefaultBranchRequest {
+  string owner_name = 1;
+  string repository_name = 2;
+}
+
+message GetRepositoryDefaultBranchResponse {
+  string default_branch = 1;
+}
+
+message SetRepositoryDefaultBranchRequest {
+  string owner_name = 1;
+  string repository_name = 2;
+  string new_default_branch = 3;
+}
+
+message SetRepositoryDefaultBranchResponse {}
