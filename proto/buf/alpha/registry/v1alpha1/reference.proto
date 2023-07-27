@@ -17,7 +17,6 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/git_metadata.proto";
-import "buf/alpha/registry/v1alpha1/labels.proto";
 import "buf/alpha/registry/v1alpha1/repository_branch.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
@@ -63,14 +62,9 @@ service ReferenceService {
   rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // ListGitCommitMetadataForReference takes a string reference and returns all the git commit
-  // metadata associated with the resolved reference commit.
-  rpc ListGitCommitMetadataForReference(ListGitCommitMetadataForReferenceRequest) returns (ListGitCommitMetadataForReferenceResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-  // ListGitCommitsNoMetadataForReference takes a string reference and returns all the git commit
-  // labels without metadata associated with the resolved reference commit.
-  rpc ListGitCommitsNoMetadataForReference(ListGitCommitsNoMetadataForReferenceRequest) returns (ListGitCommitsNoMetadataForReferenceResponse) {
+  // ListGitCommitsForReference takes a string reference and returns a paginated list of
+  // git commit information associated with the resolved reference commit.
+  rpc ListGitCommitsForReference(ListGitCommitsForReferenceRequest) returns (ListGitCommitsForReferenceResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -88,7 +82,7 @@ message GetReferenceByNameResponse {
   Reference reference = 1;
 }
 
-message ListGitCommitMetadataForReferenceRequest {
+message ListGitCommitsForReferenceRequest {
   // String that represents the name of the reference.
   string reference = 1;
   // Owner of the repository the reference belongs to.
@@ -100,32 +94,22 @@ message ListGitCommitMetadataForReferenceRequest {
   string page_token = 5;
 }
 
-message ListGitCommitMetadataForReferenceResponse {
+message ListGitCommitsForReferenceResponse {
   // ID of the BSR commit the reference resolved to.
   string commit_id = 1;
   // List of git commits and metadata associated with the resolved reference.
-  repeated GitCommitMetadata git_commit_metadatas = 2;
+  repeated GitCommitInformation git_commits = 2;
   // There are no more pages if this is empty.
   string next_page_token = 3;
 }
 
-message ListGitCommitsNoMetadataForReferenceRequest {
-  // String that represents the name of the reference.
-  string reference = 1;
-  // Owner of the repository the reference belongs to.
-  string owner = 2;
-  // Name of the repository the reference belongs to.
-  string repository_name = 3;
-  uint32 page_size = 4;
-  // The first page is returned if this is empty.
-  string page_token = 5;
-}
-
-message ListGitCommitsNoMetadataForReferenceResponse {
-  // ID of the BSR commit the reference resolved to.
-  string commit_id = 1;
-  // List of git commits labels without metadata associated with the resolved reference.
-  repeated Label git_commit_labels = 2;
-  // There are no more pages if this is empty.
-  string next_page_token = 3;
+message GitCommitInformation {
+  // Hash is the SHA1 hash of the git commit.
+  string hash = 1;
+  // Author is metadata associatd with the author of the git commit.
+  // This may not always be available, so it is not always populated.
+  optional GitIdentity author = 2;
+  // Commiter is the metadata sscoiated with the commiter of the git commit.
+  // This may not always be available, so it is not always populated.
+  optional GitIdentity commiter = 3;
 }

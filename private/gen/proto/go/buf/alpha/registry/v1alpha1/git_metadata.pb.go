@@ -108,7 +108,7 @@ type GitCommitMetadata struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Hash is the SHA1 has of the Git commit.
+	// Hash is the SHA1 hash of the Git commit.
 	Hash string `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 	// Author is the author of the Git commit. This is typically an end-user.
 	Author *GitIdentity `protobuf:"bytes,2,opt,name=author,proto3" json:"author,omitempty"`

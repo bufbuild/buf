@@ -50,12 +50,9 @@ const (
 	// ReferenceServiceGetReferenceByNameProcedure is the fully-qualified name of the ReferenceService's
 	// GetReferenceByName RPC.
 	ReferenceServiceGetReferenceByNameProcedure = "/buf.alpha.registry.v1alpha1.ReferenceService/GetReferenceByName"
-	// ReferenceServiceListGitCommitMetadataForReferenceProcedure is the fully-qualified name of the
-	// ReferenceService's ListGitCommitMetadataForReference RPC.
-	ReferenceServiceListGitCommitMetadataForReferenceProcedure = "/buf.alpha.registry.v1alpha1.ReferenceService/ListGitCommitMetadataForReference"
-	// ReferenceServiceListGitCommitsNoMetadataForReferenceProcedure is the fully-qualified name of the
-	// ReferenceService's ListGitCommitsNoMetadataForReference RPC.
-	ReferenceServiceListGitCommitsNoMetadataForReferenceProcedure = "/buf.alpha.registry.v1alpha1.ReferenceService/ListGitCommitsNoMetadataForReference"
+	// ReferenceServiceListGitCommitsForReferenceProcedure is the fully-qualified name of the
+	// ReferenceService's ListGitCommitsForReference RPC.
+	ReferenceServiceListGitCommitsForReferenceProcedure = "/buf.alpha.registry.v1alpha1.ReferenceService/ListGitCommitsForReference"
 )
 
 // ReferenceServiceClient is a client for the buf.alpha.registry.v1alpha1.ReferenceService service.
@@ -63,12 +60,9 @@ type ReferenceServiceClient interface {
 	// GetReferenceByName takes a reference name and returns the
 	// reference either as 'main', a tag, or commit.
 	GetReferenceByName(context.Context, *connect_go.Request[v1alpha1.GetReferenceByNameRequest]) (*connect_go.Response[v1alpha1.GetReferenceByNameResponse], error)
-	// ListGitCommitMetadataForReference takes a string reference and returns all the git commit
-	// metadata associated with the resolved reference commit.
-	ListGitCommitMetadataForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitMetadataForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitMetadataForReferenceResponse], error)
-	// ListGitCommitsNoMetadataForReference takes a string reference and returns all the git commit
-	// labels without metadata associated with the resolved reference commit.
-	ListGitCommitsNoMetadataForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitsNoMetadataForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsNoMetadataForReferenceResponse], error)
+	// ListGitCommitsForReference takes a string reference and returns a paginated list of
+	// git commit information associated with the resolved reference commit.
+	ListGitCommitsForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsForReferenceResponse], error)
 }
 
 // NewReferenceServiceClient constructs a client for the
@@ -88,15 +82,9 @@ func NewReferenceServiceClient(httpClient connect_go.HTTPClient, baseURL string,
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
-		listGitCommitMetadataForReference: connect_go.NewClient[v1alpha1.ListGitCommitMetadataForReferenceRequest, v1alpha1.ListGitCommitMetadataForReferenceResponse](
+		listGitCommitsForReference: connect_go.NewClient[v1alpha1.ListGitCommitsForReferenceRequest, v1alpha1.ListGitCommitsForReferenceResponse](
 			httpClient,
-			baseURL+ReferenceServiceListGitCommitMetadataForReferenceProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		listGitCommitsNoMetadataForReference: connect_go.NewClient[v1alpha1.ListGitCommitsNoMetadataForReferenceRequest, v1alpha1.ListGitCommitsNoMetadataForReferenceResponse](
-			httpClient,
-			baseURL+ReferenceServiceListGitCommitsNoMetadataForReferenceProcedure,
+			baseURL+ReferenceServiceListGitCommitsForReferenceProcedure,
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
@@ -105,9 +93,8 @@ func NewReferenceServiceClient(httpClient connect_go.HTTPClient, baseURL string,
 
 // referenceServiceClient implements ReferenceServiceClient.
 type referenceServiceClient struct {
-	getReferenceByName                   *connect_go.Client[v1alpha1.GetReferenceByNameRequest, v1alpha1.GetReferenceByNameResponse]
-	listGitCommitMetadataForReference    *connect_go.Client[v1alpha1.ListGitCommitMetadataForReferenceRequest, v1alpha1.ListGitCommitMetadataForReferenceResponse]
-	listGitCommitsNoMetadataForReference *connect_go.Client[v1alpha1.ListGitCommitsNoMetadataForReferenceRequest, v1alpha1.ListGitCommitsNoMetadataForReferenceResponse]
+	getReferenceByName         *connect_go.Client[v1alpha1.GetReferenceByNameRequest, v1alpha1.GetReferenceByNameResponse]
+	listGitCommitsForReference *connect_go.Client[v1alpha1.ListGitCommitsForReferenceRequest, v1alpha1.ListGitCommitsForReferenceResponse]
 }
 
 // GetReferenceByName calls buf.alpha.registry.v1alpha1.ReferenceService.GetReferenceByName.
@@ -115,16 +102,10 @@ func (c *referenceServiceClient) GetReferenceByName(ctx context.Context, req *co
 	return c.getReferenceByName.CallUnary(ctx, req)
 }
 
-// ListGitCommitMetadataForReference calls
-// buf.alpha.registry.v1alpha1.ReferenceService.ListGitCommitMetadataForReference.
-func (c *referenceServiceClient) ListGitCommitMetadataForReference(ctx context.Context, req *connect_go.Request[v1alpha1.ListGitCommitMetadataForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitMetadataForReferenceResponse], error) {
-	return c.listGitCommitMetadataForReference.CallUnary(ctx, req)
-}
-
-// ListGitCommitsNoMetadataForReference calls
-// buf.alpha.registry.v1alpha1.ReferenceService.ListGitCommitsNoMetadataForReference.
-func (c *referenceServiceClient) ListGitCommitsNoMetadataForReference(ctx context.Context, req *connect_go.Request[v1alpha1.ListGitCommitsNoMetadataForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsNoMetadataForReferenceResponse], error) {
-	return c.listGitCommitsNoMetadataForReference.CallUnary(ctx, req)
+// ListGitCommitsForReference calls
+// buf.alpha.registry.v1alpha1.ReferenceService.ListGitCommitsForReference.
+func (c *referenceServiceClient) ListGitCommitsForReference(ctx context.Context, req *connect_go.Request[v1alpha1.ListGitCommitsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsForReferenceResponse], error) {
+	return c.listGitCommitsForReference.CallUnary(ctx, req)
 }
 
 // ReferenceServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.ReferenceService
@@ -133,12 +114,9 @@ type ReferenceServiceHandler interface {
 	// GetReferenceByName takes a reference name and returns the
 	// reference either as 'main', a tag, or commit.
 	GetReferenceByName(context.Context, *connect_go.Request[v1alpha1.GetReferenceByNameRequest]) (*connect_go.Response[v1alpha1.GetReferenceByNameResponse], error)
-	// ListGitCommitMetadataForReference takes a string reference and returns all the git commit
-	// metadata associated with the resolved reference commit.
-	ListGitCommitMetadataForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitMetadataForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitMetadataForReferenceResponse], error)
-	// ListGitCommitsNoMetadataForReference takes a string reference and returns all the git commit
-	// labels without metadata associated with the resolved reference commit.
-	ListGitCommitsNoMetadataForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitsNoMetadataForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsNoMetadataForReferenceResponse], error)
+	// ListGitCommitsForReference takes a string reference and returns a paginated list of
+	// git commit information associated with the resolved reference commit.
+	ListGitCommitsForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsForReferenceResponse], error)
 }
 
 // NewReferenceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -153,15 +131,9 @@ func NewReferenceServiceHandler(svc ReferenceServiceHandler, opts ...connect_go.
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	)
-	referenceServiceListGitCommitMetadataForReferenceHandler := connect_go.NewUnaryHandler(
-		ReferenceServiceListGitCommitMetadataForReferenceProcedure,
-		svc.ListGitCommitMetadataForReference,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	)
-	referenceServiceListGitCommitsNoMetadataForReferenceHandler := connect_go.NewUnaryHandler(
-		ReferenceServiceListGitCommitsNoMetadataForReferenceProcedure,
-		svc.ListGitCommitsNoMetadataForReference,
+	referenceServiceListGitCommitsForReferenceHandler := connect_go.NewUnaryHandler(
+		ReferenceServiceListGitCommitsForReferenceProcedure,
+		svc.ListGitCommitsForReference,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	)
@@ -169,10 +141,8 @@ func NewReferenceServiceHandler(svc ReferenceServiceHandler, opts ...connect_go.
 		switch r.URL.Path {
 		case ReferenceServiceGetReferenceByNameProcedure:
 			referenceServiceGetReferenceByNameHandler.ServeHTTP(w, r)
-		case ReferenceServiceListGitCommitMetadataForReferenceProcedure:
-			referenceServiceListGitCommitMetadataForReferenceHandler.ServeHTTP(w, r)
-		case ReferenceServiceListGitCommitsNoMetadataForReferenceProcedure:
-			referenceServiceListGitCommitsNoMetadataForReferenceHandler.ServeHTTP(w, r)
+		case ReferenceServiceListGitCommitsForReferenceProcedure:
+			referenceServiceListGitCommitsForReferenceHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -186,10 +156,6 @@ func (UnimplementedReferenceServiceHandler) GetReferenceByName(context.Context, 
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ReferenceService.GetReferenceByName is not implemented"))
 }
 
-func (UnimplementedReferenceServiceHandler) ListGitCommitMetadataForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitMetadataForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitMetadataForReferenceResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ReferenceService.ListGitCommitMetadataForReference is not implemented"))
-}
-
-func (UnimplementedReferenceServiceHandler) ListGitCommitsNoMetadataForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitsNoMetadataForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsNoMetadataForReferenceResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ReferenceService.ListGitCommitsNoMetadataForReference is not implemented"))
+func (UnimplementedReferenceServiceHandler) ListGitCommitsForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsForReferenceResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ReferenceService.ListGitCommitsForReference is not implemented"))
 }
