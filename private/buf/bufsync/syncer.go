@@ -248,18 +248,21 @@ func (s *syncer) commitsToSync(
 		for module := range modulesFoundSyncPointInThisCommit {
 			delete(pendingModules, module)
 		}
-		if len(modulesToSyncInThisCommit) == 0 && len(pendingModules) > 0 {
-			// no modules to sync in this commit, but still have some pending modules?
-			return fmt.Errorf(
-				"commit %q cannot be queued, had no modules to sync but pending modules %v",
-				commitHash,
-				pendingModules,
-			)
+		if len(modulesToSyncInThisCommit) > 0 {
+			commitsToSync = append(commitsToSync, syncableCommit{
+				commit:  commit,
+				modules: modulesToSyncInThisCommit,
+			})
+		} else {
+			// no modules to sync in this commit, we should not have any pending modules
+			if len(pendingModules) > 0 {
+				return fmt.Errorf(
+					"commit %q has no modules to sync, but still has pending modules %v",
+					commitHash,
+					pendingModules,
+				)
+			}
 		}
-		commitsToSync = append(commitsToSync, syncableCommit{
-			commit:  commit,
-			modules: modulesToSyncInThisCommit,
-		})
 		return nil
 	}); err != nil && !errors.Is(err, stopLoopErr) {
 		return nil, err
