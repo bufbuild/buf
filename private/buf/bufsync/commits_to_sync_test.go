@@ -46,7 +46,6 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	type testCase struct {
 		name            string
 		branch          string
-		modulesToSync   int
 		expectedCommits int
 	}
 	testCases := []testCase{
