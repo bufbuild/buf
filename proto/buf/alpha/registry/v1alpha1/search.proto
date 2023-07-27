@@ -109,6 +109,7 @@ message ElementSearchResult {
     Method method = 7;
     Enum enum = 8;
     Message message = 9;
+    FileExtension file_extension = 10;
   }
 }
 
