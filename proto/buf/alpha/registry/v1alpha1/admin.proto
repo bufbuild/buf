@@ -104,6 +104,13 @@ service AdminService {
   rpc ListServerUniquenessCollisions(ListServerUniquenessCollisionsRequest) returns (ListServerUniquenessCollisionsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // Run a back-fill task to fill unique identifiers on the server.
+  // This is a potentially long-running operation, and should only be triggered by the administrator of the server,
+  // if they intend to enable uniqueness policy enforcement.
+  // Successful completion of this operation is a pre-requisite for enabling uniqueness policy enforcement.
+  rpc RunServerUniquenessBackfillTask(RunServerUniquenessBackfillTaskRequest) returns (RunServerUniquenessBackfillTaskResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
 }
 
 message ForceDeleteUserRequest {
@@ -193,3 +200,7 @@ message ListServerUniquenessCollisionsResponse {
   // page.
   string next_page_token = 2;
 }
+
+message RunServerUniquenessBackfillTaskRequest {}
+
+message RunServerUniquenessBackfillTaskResponse {}
