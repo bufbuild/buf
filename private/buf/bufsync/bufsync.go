@@ -144,6 +144,16 @@ func SyncerWithGitCommitChecker(checker SyncedGitCommitChecker) SyncerOption {
 	}
 }
 
+// SyncerWithModuleDefaultBranchGetter configures a getter for modules' default branch, to contrast
+// a BSR repository default branch vs the local git repository branch. If left empty, the syncer
+// skips this validation step.
+func SyncerWithModuleDefaultBranchGetter(getter ModuleDefaultBranchGetter) SyncerOption {
+	return func(s *syncer) error {
+		s.moduleDefaultBranchGetter = getter
+		return nil
+	}
+}
+
 // SyncFunc is invoked by Syncer to process a sync point. If an error is returned,
 // sync will abort.
 type SyncFunc func(ctx context.Context, commit ModuleCommit) error
@@ -165,6 +175,13 @@ type SyncedGitCommitChecker func(
 	module bufmoduleref.ModuleIdentity,
 	commitHashes map[string]struct{},
 ) (map[string]struct{}, error)
+
+// ModuleDefaultBranchGetter is invoked before syncing, to make sure all modules that are about to
+// be synced have a BSR default branch that matches the local git repo.
+type ModuleDefaultBranchGetter func(
+	ctx context.Context,
+	module bufmoduleref.ModuleIdentity,
+) (string, error)
 
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {
