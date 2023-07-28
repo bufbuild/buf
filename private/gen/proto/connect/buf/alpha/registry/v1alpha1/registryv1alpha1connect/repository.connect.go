@@ -101,12 +101,6 @@ const (
 	// RepositoryServiceGetRepositoriesMetadataProcedure is the fully-qualified name of the
 	// RepositoryService's GetRepositoriesMetadata RPC.
 	RepositoryServiceGetRepositoriesMetadataProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesMetadata"
-	// RepositoryServiceGetRepositoryDefaultBranchProcedure is the fully-qualified name of the
-	// RepositoryService's GetRepositoryDefaultBranch RPC.
-	RepositoryServiceGetRepositoryDefaultBranchProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryDefaultBranch"
-	// RepositoryServiceSetRepositoryDefaultBranchProcedure is the fully-qualified name of the
-	// RepositoryService's SetRepositoryDefaultBranch RPC.
-	RepositoryServiceSetRepositoryDefaultBranchProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/SetRepositoryDefaultBranch"
 )
 
 // RepositoryServiceClient is a client for the buf.alpha.registry.v1alpha1.RepositoryService
@@ -153,14 +147,6 @@ type RepositoryServiceClient interface {
 	// request should match the length of the metadata in the response, and the order of repositories in the response
 	// should match the order of the metadata in the request.
 	GetRepositoriesMetadata(context.Context, *connect_go.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect_go.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
-	// GetRepositoryDefaultBranch retrieves the default_branch value for a given repository. By
-	// default a BSR repository's default branch is "main", which is the value used when a module is
-	// pushed to the BSR.
-	GetRepositoryDefaultBranch(context.Context, *connect_go.Request[v1alpha1.GetRepositoryDefaultBranchRequest]) (*connect_go.Response[v1alpha1.GetRepositoryDefaultBranchResponse], error)
-	// SetRepositoryDefaultBranch allows repositories owners or admins to change the repository's
-	// default branch. This is useful for syncing git repositories with default branch names that are
-	// not "main".
-	SetRepositoryDefaultBranch(context.Context, *connect_go.Request[v1alpha1.SetRepositoryDefaultBranchRequest]) (*connect_go.Response[v1alpha1.SetRepositoryDefaultBranchResponse], error)
 }
 
 // NewRepositoryServiceClient constructs a client for the
@@ -278,17 +264,6 @@ func NewRepositoryServiceClient(httpClient connect_go.HTTPClient, baseURL string
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
-		getRepositoryDefaultBranch: connect_go.NewClient[v1alpha1.GetRepositoryDefaultBranchRequest, v1alpha1.GetRepositoryDefaultBranchResponse](
-			httpClient,
-			baseURL+RepositoryServiceGetRepositoryDefaultBranchProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
-		setRepositoryDefaultBranch: connect_go.NewClient[v1alpha1.SetRepositoryDefaultBranchRequest, v1alpha1.SetRepositoryDefaultBranchResponse](
-			httpClient,
-			baseURL+RepositoryServiceSetRepositoryDefaultBranchProcedure,
-			opts...,
-		),
 	}
 }
 
@@ -312,8 +287,6 @@ type repositoryServiceClient struct {
 	getRepositorySettings          *connect_go.Client[v1alpha1.GetRepositorySettingsRequest, v1alpha1.GetRepositorySettingsResponse]
 	updateRepositorySettingsByName *connect_go.Client[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse]
 	getRepositoriesMetadata        *connect_go.Client[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse]
-	getRepositoryDefaultBranch     *connect_go.Client[v1alpha1.GetRepositoryDefaultBranchRequest, v1alpha1.GetRepositoryDefaultBranchResponse]
-	setRepositoryDefaultBranch     *connect_go.Client[v1alpha1.SetRepositoryDefaultBranchRequest, v1alpha1.SetRepositoryDefaultBranchResponse]
 }
 
 // GetRepository calls buf.alpha.registry.v1alpha1.RepositoryService.GetRepository.
@@ -419,18 +392,6 @@ func (c *repositoryServiceClient) GetRepositoriesMetadata(ctx context.Context, r
 	return c.getRepositoriesMetadata.CallUnary(ctx, req)
 }
 
-// GetRepositoryDefaultBranch calls
-// buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDefaultBranch.
-func (c *repositoryServiceClient) GetRepositoryDefaultBranch(ctx context.Context, req *connect_go.Request[v1alpha1.GetRepositoryDefaultBranchRequest]) (*connect_go.Response[v1alpha1.GetRepositoryDefaultBranchResponse], error) {
-	return c.getRepositoryDefaultBranch.CallUnary(ctx, req)
-}
-
-// SetRepositoryDefaultBranch calls
-// buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryDefaultBranch.
-func (c *repositoryServiceClient) SetRepositoryDefaultBranch(ctx context.Context, req *connect_go.Request[v1alpha1.SetRepositoryDefaultBranchRequest]) (*connect_go.Response[v1alpha1.SetRepositoryDefaultBranchResponse], error) {
-	return c.setRepositoryDefaultBranch.CallUnary(ctx, req)
-}
-
 // RepositoryServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryService service.
 type RepositoryServiceHandler interface {
@@ -475,14 +436,6 @@ type RepositoryServiceHandler interface {
 	// request should match the length of the metadata in the response, and the order of repositories in the response
 	// should match the order of the metadata in the request.
 	GetRepositoriesMetadata(context.Context, *connect_go.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect_go.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
-	// GetRepositoryDefaultBranch retrieves the default_branch value for a given repository. By
-	// default a BSR repository's default branch is "main", which is the value used when a module is
-	// pushed to the BSR.
-	GetRepositoryDefaultBranch(context.Context, *connect_go.Request[v1alpha1.GetRepositoryDefaultBranchRequest]) (*connect_go.Response[v1alpha1.GetRepositoryDefaultBranchResponse], error)
-	// SetRepositoryDefaultBranch allows repositories owners or admins to change the repository's
-	// default branch. This is useful for syncing git repositories with default branch names that are
-	// not "main".
-	SetRepositoryDefaultBranch(context.Context, *connect_go.Request[v1alpha1.SetRepositoryDefaultBranchRequest]) (*connect_go.Response[v1alpha1.SetRepositoryDefaultBranchResponse], error)
 }
 
 // NewRepositoryServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -595,17 +548,6 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect_g
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	)
-	repositoryServiceGetRepositoryDefaultBranchHandler := connect_go.NewUnaryHandler(
-		RepositoryServiceGetRepositoryDefaultBranchProcedure,
-		svc.GetRepositoryDefaultBranch,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	)
-	repositoryServiceSetRepositoryDefaultBranchHandler := connect_go.NewUnaryHandler(
-		RepositoryServiceSetRepositoryDefaultBranchProcedure,
-		svc.SetRepositoryDefaultBranch,
-		opts...,
-	)
 	return "/buf.alpha.registry.v1alpha1.RepositoryService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case RepositoryServiceGetRepositoryProcedure:
@@ -644,10 +586,6 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect_g
 			repositoryServiceUpdateRepositorySettingsByNameHandler.ServeHTTP(w, r)
 		case RepositoryServiceGetRepositoriesMetadataProcedure:
 			repositoryServiceGetRepositoriesMetadataHandler.ServeHTTP(w, r)
-		case RepositoryServiceGetRepositoryDefaultBranchProcedure:
-			repositoryServiceGetRepositoryDefaultBranchHandler.ServeHTTP(w, r)
-		case RepositoryServiceSetRepositoryDefaultBranchProcedure:
-			repositoryServiceSetRepositoryDefaultBranchHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -727,12 +665,4 @@ func (UnimplementedRepositoryServiceHandler) UpdateRepositorySettingsByName(cont
 
 func (UnimplementedRepositoryServiceHandler) GetRepositoriesMetadata(context.Context, *connect_go.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect_go.Response[v1alpha1.GetRepositoriesMetadataResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata is not implemented"))
-}
-
-func (UnimplementedRepositoryServiceHandler) GetRepositoryDefaultBranch(context.Context, *connect_go.Request[v1alpha1.GetRepositoryDefaultBranchRequest]) (*connect_go.Response[v1alpha1.GetRepositoryDefaultBranchResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDefaultBranch is not implemented"))
-}
-
-func (UnimplementedRepositoryServiceHandler) SetRepositoryDefaultBranch(context.Context, *connect_go.Request[v1alpha1.SetRepositoryDefaultBranchRequest]) (*connect_go.Response[v1alpha1.SetRepositoryDefaultBranchResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.SetRepositoryDefaultBranch is not implemented"))
 }
