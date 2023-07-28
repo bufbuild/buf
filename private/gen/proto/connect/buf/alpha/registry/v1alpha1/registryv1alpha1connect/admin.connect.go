@@ -74,6 +74,9 @@ const (
 	// AdminServiceListServerUniquenessCollisionsProcedure is the fully-qualified name of the
 	// AdminService's ListServerUniquenessCollisions RPC.
 	AdminServiceListServerUniquenessCollisionsProcedure = "/buf.alpha.registry.v1alpha1.AdminService/ListServerUniquenessCollisions"
+	// AdminServiceRunServerUniquenessBackfillTaskProcedure is the fully-qualified name of the
+	// AdminService's RunServerUniquenessBackfillTask RPC.
+	AdminServiceRunServerUniquenessBackfillTaskProcedure = "/buf.alpha.registry.v1alpha1.AdminService/RunServerUniquenessBackfillTask"
 )
 
 // AdminServiceClient is a client for the buf.alpha.registry.v1alpha1.AdminService service.
@@ -97,6 +100,11 @@ type AdminServiceClient interface {
 	UpdateUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
 	// Get state of uniqueness collisions for the server
 	ListServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error)
+	// Run a back-fill task to fill unique identifiers on the server.
+	// This is a potentially long-running operation, and should only be triggered by the administrator of the server,
+	// if they intend to enable uniqueness policy enforcement.
+	// Successful completion of this operation is a pre-requisite for enabling uniqueness policy enforcement.
+	RunServerUniquenessBackfillTask(context.Context, *connect_go.Request[v1alpha1.RunServerUniquenessBackfillTaskRequest]) (*connect_go.Response[v1alpha1.RunServerUniquenessBackfillTaskResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AdminService
@@ -159,6 +167,12 @@ func NewAdminServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
+		runServerUniquenessBackfillTask: connect_go.NewClient[v1alpha1.RunServerUniquenessBackfillTaskRequest, v1alpha1.RunServerUniquenessBackfillTaskResponse](
+			httpClient,
+			baseURL+AdminServiceRunServerUniquenessBackfillTaskProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+			connect_go.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -173,6 +187,7 @@ type adminServiceClient struct {
 	getUniquenessPolicy                  *connect_go.Client[v1alpha1.GetUniquenessPolicyRequest, v1alpha1.GetUniquenessPolicyResponse]
 	updateUniquenessPolicy               *connect_go.Client[v1alpha1.UpdateUniquenessPolicyRequest, v1alpha1.UpdateUniquenessPolicyResponse]
 	listServerUniquenessCollisions       *connect_go.Client[v1alpha1.ListServerUniquenessCollisionsRequest, v1alpha1.ListServerUniquenessCollisionsResponse]
+	runServerUniquenessBackfillTask      *connect_go.Client[v1alpha1.RunServerUniquenessBackfillTaskRequest, v1alpha1.RunServerUniquenessBackfillTaskResponse]
 }
 
 // ForceDeleteUser calls buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser.
@@ -224,6 +239,12 @@ func (c *adminServiceClient) ListServerUniquenessCollisions(ctx context.Context,
 	return c.listServerUniquenessCollisions.CallUnary(ctx, req)
 }
 
+// RunServerUniquenessBackfillTask calls
+// buf.alpha.registry.v1alpha1.AdminService.RunServerUniquenessBackfillTask.
+func (c *adminServiceClient) RunServerUniquenessBackfillTask(ctx context.Context, req *connect_go.Request[v1alpha1.RunServerUniquenessBackfillTaskRequest]) (*connect_go.Response[v1alpha1.RunServerUniquenessBackfillTaskResponse], error) {
+	return c.runServerUniquenessBackfillTask.CallUnary(ctx, req)
+}
+
 // AdminServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AdminService service.
 type AdminServiceHandler interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
@@ -245,6 +266,11 @@ type AdminServiceHandler interface {
 	UpdateUniquenessPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateUniquenessPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateUniquenessPolicyResponse], error)
 	// Get state of uniqueness collisions for the server
 	ListServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error)
+	// Run a back-fill task to fill unique identifiers on the server.
+	// This is a potentially long-running operation, and should only be triggered by the administrator of the server,
+	// if they intend to enable uniqueness policy enforcement.
+	// Successful completion of this operation is a pre-requisite for enabling uniqueness policy enforcement.
+	RunServerUniquenessBackfillTask(context.Context, *connect_go.Request[v1alpha1.RunServerUniquenessBackfillTaskRequest]) (*connect_go.Response[v1alpha1.RunServerUniquenessBackfillTaskResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -303,6 +329,12 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
 	)
+	adminServiceRunServerUniquenessBackfillTaskHandler := connect_go.NewUnaryHandler(
+		AdminServiceRunServerUniquenessBackfillTaskProcedure,
+		svc.RunServerUniquenessBackfillTask,
+		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
+		connect_go.WithHandlerOptions(opts...),
+	)
 	return "/buf.alpha.registry.v1alpha1.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AdminServiceForceDeleteUserProcedure:
@@ -323,6 +355,8 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 			adminServiceUpdateUniquenessPolicyHandler.ServeHTTP(w, r)
 		case AdminServiceListServerUniquenessCollisionsProcedure:
 			adminServiceListServerUniquenessCollisionsHandler.ServeHTTP(w, r)
+		case AdminServiceRunServerUniquenessBackfillTaskProcedure:
+			adminServiceRunServerUniquenessBackfillTaskHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -366,4 +400,8 @@ func (UnimplementedAdminServiceHandler) UpdateUniquenessPolicy(context.Context, 
 
 func (UnimplementedAdminServiceHandler) ListServerUniquenessCollisions(context.Context, *connect_go.Request[v1alpha1.ListServerUniquenessCollisionsRequest]) (*connect_go.Response[v1alpha1.ListServerUniquenessCollisionsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.ListServerUniquenessCollisions is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) RunServerUniquenessBackfillTask(context.Context, *connect_go.Request[v1alpha1.RunServerUniquenessBackfillTaskRequest]) (*connect_go.Response[v1alpha1.RunServerUniquenessBackfillTaskResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.RunServerUniquenessBackfillTask is not implemented"))
 }
