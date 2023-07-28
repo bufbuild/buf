@@ -171,6 +171,7 @@ func sync(
 	}
 	syncerOptions := []bufsync.SyncerOption{
 		bufsync.SyncerWithResumption(syncPointResolver(clientConfig)),
+		bufsync.SyncerWithGitCommitChecker(syncGitCommitChecker(clientConfig)),
 	}
 	for _, module := range modules {
 		var moduleIdentityOverride bufmoduleref.ModuleIdentity
@@ -229,11 +230,11 @@ func sync(
 }
 
 func syncPointResolver(clientConfig *connectclient.Config) bufsync.SyncPointResolver {
-	return func(ctx context.Context, identity bufmoduleref.ModuleIdentity, branch string) (git.Hash, error) {
-		service := connectclient.Make(clientConfig, identity.Remote(), registryv1alpha1connect.NewSyncServiceClient)
+	return func(ctx context.Context, module bufmoduleref.ModuleIdentity, branch string) (git.Hash, error) {
+		service := connectclient.Make(clientConfig, module.Remote(), registryv1alpha1connect.NewSyncServiceClient)
 		syncPoint, err := service.GetGitSyncPoint(ctx, connect.NewRequest(&registryv1alpha1.GetGitSyncPointRequest{
-			Owner:      identity.Owner(),
-			Repository: identity.Repository(),
+			Owner:      module.Owner(),
+			Repository: module.Repository(),
 			Branch:     branch,
 		}))
 		if err != nil {
@@ -252,6 +253,34 @@ func syncPointResolver(clientConfig *connectclient.Config) bufsync.SyncPointReso
 			)
 		}
 		return hash, nil
+	}
+}
+
+func syncGitCommitChecker(clientConfig *connectclient.Config) bufsync.SyncedGitCommitChecker {
+	return func(ctx context.Context, module bufmoduleref.ModuleIdentity, commitHashes map[string]struct{}) (map[string]struct{}, error) {
+		service := connectclient.Make(clientConfig, module.Remote(), registryv1alpha1connect.NewLabelServiceClient)
+		res, err := service.GetLabelsInNamespace(ctx, connect.NewRequest(&registryv1alpha1.GetLabelsInNamespaceRequest{
+			RepositoryOwner: module.Owner(),
+			RepositoryName:  module.Repository(),
+			LabelNamespace:  registryv1alpha1.LabelNamespace_LABEL_NAMESPACE_GIT_COMMIT,
+			LabelNames:      stringutil.MapToSlice(commitHashes),
+		}))
+		if err != nil {
+			if connect.CodeOf(err) == connect.CodeNotFound {
+				// Repo is not created
+				return nil, nil
+			}
+			return nil, fmt.Errorf("get labels in namespace: %w", err)
+		}
+		syncedHashes := make(map[string]struct{})
+		for _, label := range res.Msg.Labels {
+			syncedHash := label.LabelName.Name
+			if _, expected := commitHashes[syncedHash]; !expected {
+				return nil, fmt.Errorf("received unexpected synced hash %q, expected %v", syncedHash, commitHashes)
+			}
+			syncedHashes[syncedHash] = struct{}{}
+		}
+		return syncedHashes, nil
 	}
 }
 
@@ -312,23 +341,6 @@ func (s *syncErrorHandler) InvalidSyncPoint(
 	}
 	// Otherwise, we still want this to fail sync, let's bubble this up.
 	return err
-}
-
-func (s *syncErrorHandler) SyncPointNotEncountered(
-	module bufsync.Module,
-	branch string,
-	syncPoint git.Hash,
-) error {
-	// This can happen if the user rebased, but Git has not garbage collected the old commits,
-	// so the sync point was considered valid. Maybe there are other cases in which this can happen...
-	// This is a hard failure for now, but similar to InvalidSyncPoint, we can maybe accumulate
-	// these and error at the end, so that other branches continue to sync.
-	return fmt.Errorf(
-		"sync point %s for %s on branch %s was not encountered; did you rebase? Try running `git gc` and running sync again",
-		syncPoint,
-		module,
-		branch,
-	)
 }
 
 func pushOrCreate(

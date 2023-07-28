@@ -275,13 +275,16 @@ type Repository interface {
 	//
 	// Only branches pushed to a remote named "origin" are visited.
 	ForEachBranch(func(branch string, headHash Hash) error) error
-	// ForEachCommit ranges over commits for the target branch in reverse topological order.
+	// ForEachCommit ranges over commits for the target branch in topological order.
 	//
-	// Only commits pushed to the 'origin' remote are visited.
+	// The range starts at the HEAD commit for the branch in the `origin` remote, and goes backwards
+	// in time always choosing the first parent, until no more parents are found (presumably the first
+	// commit of the git repository).
 	//
-	// Parents are visited before children, and only left parents are visited (i.e.,
-	// commits from branches merged into the target branch are not visited).
+	// If an error is seen, the loop is stopped and the error is returned.
 	ForEachCommit(branch string, f func(commit Commit) error) error
+	// HEADCommit returns the HEAD commit at the passed branch if it's present in the `origin` remote.
+	HEADCommit(branch string) (Commit, error)
 	// ForEachTag ranges over tags in the repository in an undefined order.
 	//
 	// All tags are ranged, including local (unpushed) tags.
