@@ -172,6 +172,7 @@ func sync(
 	syncerOptions := []bufsync.SyncerOption{
 		bufsync.SyncerWithResumption(syncPointResolver(clientConfig)),
 		bufsync.SyncerWithGitCommitChecker(syncGitCommitChecker(clientConfig)),
+		bufsync.SyncerWithModuleDefaultBranchGetter(defaultBranchGetter(clientConfig)),
 	}
 	for _, module := range modules {
 		var moduleIdentityOverride bufmoduleref.ModuleIdentity
@@ -281,6 +282,23 @@ func syncGitCommitChecker(clientConfig *connectclient.Config) bufsync.SyncedGitC
 			syncedHashes[syncedHash] = struct{}{}
 		}
 		return syncedHashes, nil
+	}
+}
+
+func defaultBranchGetter(clientConfig *connectclient.Config) bufsync.ModuleDefaultBranchGetter {
+	return func(ctx context.Context, module bufmoduleref.ModuleIdentity) (string, error) {
+		service := connectclient.Make(clientConfig, module.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
+		res, err := service.GetRepositoryByFullName(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
+			FullName: module.Owner() + "/" + module.Repository(),
+		}))
+		if err != nil {
+			if connect.CodeOf(err) == connect.CodeNotFound {
+				// Repo is not created
+				return "", bufsync.ModuleDoesNotExistErr
+			}
+			return "", fmt.Errorf("get repository by full name %q: %w", module.IdentityString(), err)
+		}
+		return res.Msg.Repository.DefaultBranch, nil
 	}
 }
 

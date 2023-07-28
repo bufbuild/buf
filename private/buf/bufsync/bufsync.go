@@ -16,6 +16,7 @@ package bufsync
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -24,6 +25,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"go.uber.org/zap"
 )
+
+// ModuleDoesNotExistErr is an error returned when looking for a remote module.
+var ModuleDoesNotExistErr = errors.New("BSR module does not exist")
 
 // ErrorHandler handles errors reported by the Syncer. If a non-nil
 // error is returned by the handler, sync will abort in a partially-synced
@@ -177,7 +181,8 @@ type SyncedGitCommitChecker func(
 ) (map[string]struct{}, error)
 
 // ModuleDefaultBranchGetter is invoked before syncing, to make sure all modules that are about to
-// be synced have a BSR default branch that matches the local git repo.
+// be synced have a BSR default branch that matches the local git repo. If the BSR remote module
+// does not exist, the implementation should return `ModuleDoesNotExistErr` error.
 type ModuleDefaultBranchGetter func(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,

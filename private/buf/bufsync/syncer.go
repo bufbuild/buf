@@ -154,7 +154,7 @@ func (s *syncer) validateDefaultBranches(ctx context.Context) error {
 	expectedDefaultGitBranch := s.repo.BaseBranch()
 	if s.moduleDefaultBranchGetter == nil {
 		s.logger.Warn(
-			"default branch validation skipped",
+			"default branch validation skipped for all modules",
 			zap.String("expected_default_branch", expectedDefaultGitBranch),
 		)
 		return nil
@@ -163,14 +163,23 @@ func (s *syncer) validateDefaultBranches(ctx context.Context) error {
 	for _, module := range s.modulesToSync {
 		bsrDefaultBranch, err := s.moduleDefaultBranchGetter(ctx, module.RemoteIdentity())
 		if err != nil {
-			multierr.Append(validationErr, fmt.Errorf("getting bsr module %q default branch: %w", module.RemoteIdentity().IdentityString(), err))
+			if errors.Is(err, ModuleDoesNotExistErr) {
+				s.logger.Warn(
+					"default branch validation skipped",
+					zap.String("expected_default_branch", expectedDefaultGitBranch),
+					zap.String("module", module.RemoteIdentity().IdentityString()),
+					zap.Error(err),
+				)
+				continue
+			}
+			validationErr = multierr.Append(validationErr, fmt.Errorf("getting bsr module %q default branch: %w", module.RemoteIdentity().IdentityString(), err))
 			continue
 		}
 		if bsrDefaultBranch != expectedDefaultGitBranch {
-			multierr.Append(
+			validationErr = multierr.Append(
 				validationErr,
 				fmt.Errorf(
-					"remote module %q default branch (%q) does not match with the git repository's default branch (%q), aborting sync",
+					"remote module %q with default branch %q does not match the git repository's default branch %q, aborting sync",
 					module.RemoteIdentity().IdentityString(), bsrDefaultBranch, expectedDefaultGitBranch,
 				),
 			)
