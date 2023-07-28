@@ -294,7 +294,7 @@ func defaultBranchGetter(clientConfig *connectclient.Config) bufsync.ModuleDefau
 		if err != nil {
 			if connect.CodeOf(err) == connect.CodeNotFound {
 				// Repo is not created
-				return "", bufsync.ModuleDoesNotExistErr
+				return "", bufsync.ErrModuleDoesNotExist
 			}
 			return "", fmt.Errorf("get repository by full name %q: %w", module.IdentityString(), err)
 		}

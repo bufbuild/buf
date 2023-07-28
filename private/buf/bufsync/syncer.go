@@ -163,7 +163,7 @@ func (s *syncer) validateDefaultBranches(ctx context.Context) error {
 	for _, module := range s.modulesToSync {
 		bsrDefaultBranch, err := s.moduleDefaultBranchGetter(ctx, module.RemoteIdentity())
 		if err != nil {
-			if errors.Is(err, ModuleDoesNotExistErr) {
+			if errors.Is(err, ErrModuleDoesNotExist) {
 				s.logger.Warn(
 					"default branch validation skipped",
 					zap.String("expected_default_branch", expectedDefaultGitBranch),

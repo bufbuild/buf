@@ -26,8 +26,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// ModuleDoesNotExistErr is an error returned when looking for a remote module.
-var ModuleDoesNotExistErr = errors.New("BSR module does not exist")
+// ErrModuleDoesNotExist is an error returned when looking for a remote module.
+var ErrModuleDoesNotExist = errors.New("BSR module does not exist")
 
 // ErrorHandler handles errors reported by the Syncer. If a non-nil
 // error is returned by the handler, sync will abort in a partially-synced
