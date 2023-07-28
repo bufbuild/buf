@@ -59,16 +59,6 @@ type ErrorHandler interface {
 		syncPoint git.Hash,
 		err error,
 	) error
-	// SyncPointNotEncountered is invoked by Syncer upon syncing a module on a
-	// branch where a sync point was resolved and validated, but was not
-	// encountered during sync.
-	//
-	// Returning an error will abort sync.
-	SyncPointNotEncountered(
-		module Module,
-		branch string,
-		syncPoint git.Hash,
-	) error
 }
 
 // Module is a module that will be synced by Syncer.
@@ -145,6 +135,15 @@ func SyncerWithResumption(resolver SyncPointResolver) SyncerOption {
 	}
 }
 
+// SyncerWithGitCommitChecker configures a git commit checker, to know if a module has a given git
+// hash alrady synced in a BSR instance.
+func SyncerWithGitCommitChecker(checker SyncedGitCommitChecker) SyncerOption {
+	return func(s *syncer) error {
+		s.syncedGitCommitChecker = checker
+		return nil
+	}
+}
+
 // SyncFunc is invoked by Syncer to process a sync point. If an error is returned,
 // sync will abort.
 type SyncFunc func(ctx context.Context, commit ModuleCommit) error
@@ -154,9 +153,18 @@ type SyncFunc func(ctx context.Context, commit ModuleCommit) error
 // is returned, sync will abort.
 type SyncPointResolver func(
 	ctx context.Context,
-	identity bufmoduleref.ModuleIdentity,
+	module bufmoduleref.ModuleIdentity,
 	branch string,
 ) (git.Hash, error)
+
+// SyncedGitCommitChecker is invoked when syncing branches to know which commits hashes from a set
+// are already synced inthe BSR. It expects to receive the commit hashes that are synced already. If
+// an error is returned, sync will abort.
+type SyncedGitCommitChecker func(
+	ctx context.Context,
+	module bufmoduleref.ModuleIdentity,
+	commitHashes map[string]struct{},
+) (map[string]struct{}, error)
 
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {

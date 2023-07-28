@@ -73,12 +73,12 @@ func TestCommits(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Len(t, commits, 3)
-	assert.Empty(t, commits[0].Parents())
-	assert.Equal(t, commits[0].Message(), "initial commit")
-	assert.Contains(t, commits[1].Parents(), commits[0].Hash())
+	assert.Equal(t, commits[0].Message(), "third commit")
+	assert.Contains(t, commits[0].Parents(), commits[1].Hash())
 	assert.Equal(t, commits[1].Message(), "second commit")
-	assert.Contains(t, commits[2].Parents(), commits[1].Hash())
-	assert.Equal(t, commits[2].Message(), "third commit")
+	assert.Contains(t, commits[1].Parents(), commits[2].Hash())
+	assert.Equal(t, commits[2].Message(), "initial commit")
+	assert.Empty(t, commits[2].Parents())
 }
 
 func TestBranches(t *testing.T) {
