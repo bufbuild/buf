@@ -38,6 +38,7 @@ func scaffoldGitRepository(t *testing.T) git.Repository {
 	dir := scaffoldGitRepositoryDir(t, runner)
 	dotGitPath := path.Join(dir, git.DotGitDir)
 	repo, err := git.OpenRepository(
+		context.Background(),
 		dotGitPath,
 		runner,
 	)

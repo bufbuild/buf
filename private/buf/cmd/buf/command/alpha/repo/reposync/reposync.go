@@ -171,7 +171,7 @@ func sync(
 	}
 	// Assume that this command is run from the repository root. If not, `OpenRepository` will return
 	// a dir not found error.
-	repo, err := git.OpenRepository(git.DotGitDir, command.NewRunner())
+	repo, err := git.OpenRepository(ctx, git.DotGitDir, command.NewRunner())
 	if err != nil {
 		return fmt.Errorf("open repository: %w", err)
 	}
