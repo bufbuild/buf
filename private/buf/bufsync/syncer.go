@@ -347,27 +347,28 @@ func (s *syncer) scanRepo() error {
 	}); err != nil {
 		return fmt.Errorf("load tags: %w", err)
 	}
-	allRemoteBranches := make(map[string]struct{})
+	remoteBranches := make(map[string]struct{})
 	if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
-		allRemoteBranches[branch] = struct{}{}
+		remoteBranches[branch] = struct{}{}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("looping over repo remote branches: %w", err)
 	}
 	if s.allBranches {
-		s.branchesToSync = allRemoteBranches
+		s.branchesToSync = remoteBranches
 		// make sure the default branch is present in the branches to sync
 		defaultBranch := s.repo.DefaultBranch()
-		if _, isDefaultBranchPushedInRemote := s.branchesToSync[defaultBranch]; !isDefaultBranchPushedInRemote {
-			return fmt.Errorf(`repo default branch %q is not present in "origin" remote`, defaultBranch)
+		if _, isDefaultBranchPushedInRemote := remoteBranches[defaultBranch]; !isDefaultBranchPushedInRemote {
+			return fmt.Errorf(`default branch %q is not present in "origin" remote`, defaultBranch)
 		}
 	} else {
-		// only sync current branch
+		// only sync current branch, make sure it's present in remote
 		currentBranch := s.repo.CurrentBranch()
-		if _, isCurrentBranchPushedInRemote := s.branchesToSync[currentBranch]; !isCurrentBranchPushedInRemote {
+		if _, isCurrentBranchPushedInRemote := remoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
 			return fmt.Errorf(`current branch %q is not present in "origin" remote`, currentBranch)
 		}
 		s.branchesToSync = map[string]struct{}{currentBranch: {}}
+		s.logger.Debug("current branch", zap.String("name", currentBranch))
 	}
 	return nil
 }
