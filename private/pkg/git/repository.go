@@ -180,11 +180,6 @@ func (r *repository) ForEachCommit(branch string, f func(Commit) error) error {
 	}
 }
 
-func (r *repository) HEADCommit(branch string) (Commit, error) {
-	branch = normalpath.Unnormalize(branch)
-	return r.resolveBranch(branch)
-}
-
 func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	seen := map[string]struct{}{}
 	// Read unpacked tag refs.
@@ -251,8 +246,8 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	return nil
 }
 
-// resolveBranch resolves a commit from branch name if its present in the "origin" remote.
-func (r *repository) resolveBranch(branch string) (Commit, error) {
+// HEADCommit resolves the HEAD commit from branch name if its present in the "origin" remote.
+func (r *repository) HEADCommit(branch string) (Commit, error) {
 	commitBytes, err := os.ReadFile(path.Join(r.gitDirPath, "refs", "remotes", defaultRemoteName, branch))
 	if errors.Is(err, fs.ErrNotExist) {
 		// it may be that the branch ref is packed; let's read the packed refs
