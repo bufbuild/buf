@@ -271,6 +271,8 @@ type Repository interface {
 	// `.git/refs/remotes/origin/HEAD`. Therefore, discovery requires that the repository is pushed to
 	// a remote named `origin`.
 	DefaultBranch() string
+	// CurrentBranch is the current checked out branch, if any.
+	CurrentBranch() string
 	// ForEachBranch ranges over branches in the repository in an undefined order.
 	//
 	// Only branches pushed to a remote named "origin" are visited.
