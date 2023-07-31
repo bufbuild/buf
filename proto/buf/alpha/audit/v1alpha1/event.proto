@@ -105,6 +105,7 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_LABEL_MOVED = 30;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED = 32;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED = 33;
+  EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -169,6 +170,7 @@ message Event {
     PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
     PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
     PayloadServerBreakingChangePolicyDisabled payload_server_breaking_change_policy_disabled = 39;
+    PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40;
   }
 }
 
@@ -312,6 +314,17 @@ message PayloadRepositoryVisibilityChanged {
   buf.alpha.registry.v1alpha1.Visibility old_visibility = 3;
   // new_visibility is the new visibility of the repository.
   buf.alpha.registry.v1alpha1.Visibility new_visibility = 4;
+}
+
+message PayloadRepositoryDefaultBranchChanged {
+  // owner_id is the id of the owner of the repository.
+  string owner_id = 1;
+  // owner_name is the name of the owner of the repository.
+  string owner_name = 2;
+  // old_default_branch is the old default branch of the repository.
+  string old_default_branch = 3;
+  // new_default_branch is the new default branch of the repository.
+  string new_default_branch = 4;
 }
 
 message PayloadUserCreated {}
