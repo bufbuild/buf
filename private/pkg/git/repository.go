@@ -342,12 +342,18 @@ func detectCheckedOutBranch(ctx context.Context, gitDirPath string, runner comma
 		}
 		return "", fmt.Errorf("git rev-parse: %w (%s)", err, string(stdErrMsg))
 	}
-	currentBranch, err := io.ReadAll(stdOutBuffer)
+	stdOut, err := io.ReadAll(stdOutBuffer)
 	if err != nil {
 		return "", fmt.Errorf("read current branch: %w", err)
 	}
-	currentBranch = bytes.TrimSuffix(currentBranch, []byte("\n"))
-	return string(currentBranch), nil
+	currentBranch := string(bytes.TrimSuffix(stdOut, []byte("\n")))
+	if currentBranch == "" {
+		return "", errors.New("empty current branch")
+	}
+	if currentBranch == "HEAD" {
+		return "", errors.New("no current branch, git HEAD is detached")
+	}
+	return currentBranch, nil
 }
 
 // validateDirPathExists returns a non-nil error if the given dirPath
