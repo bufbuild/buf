@@ -38,7 +38,7 @@ func ScaffoldGitRepository(t *testing.T) git.Repository {
 	repo, err := git.OpenRepository(
 		dotGitPath,
 		runner,
-		git.OpenRepositoryWithBaseBranch(DefaultBranch),
+		git.OpenRepositoryWithDefaultBranch(DefaultBranch),
 	)
 	require.NoError(t, err)
 	t.Cleanup(func() {

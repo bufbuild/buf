@@ -132,16 +132,16 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 		branchesSyncPoints[branch] = syncPoints
 	}
 	// first, default branch, if present
-	baseBranch := s.repo.BaseBranch()
-	if _, shouldSyncDefaultBranch := s.branchesToSync[baseBranch]; shouldSyncDefaultBranch {
-		if err := s.syncBranch(ctx, baseBranch, branchesSyncPoints[baseBranch], syncFunc); err != nil {
-			return fmt.Errorf("sync base branch %q: %w", baseBranch, err)
+	defaultBranch := s.repo.DefaultBranch()
+	if _, shouldSyncDefaultBranch := s.branchesToSync[defaultBranch]; shouldSyncDefaultBranch {
+		if err := s.syncBranch(ctx, defaultBranch, branchesSyncPoints[defaultBranch], syncFunc); err != nil {
+			return fmt.Errorf("sync default branch %q: %w", defaultBranch, err)
 		}
 	}
 	// then the rest of the branches, in a deterministic order
 	sortedBranchesToSync := stringutil.MapToSortedSlice(s.branchesToSync)
 	for _, branch := range sortedBranchesToSync {
-		if branch == baseBranch {
+		if branch == defaultBranch {
 			continue // default branch already synced
 		}
 		if err := s.syncBranch(ctx, branch, branchesSyncPoints[branch], syncFunc); err != nil {
@@ -154,7 +154,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 // validateDefaultBranches checks that all modules to sync, are being synced to BSR repositories
 // that have the same default git branch as this repo.
 func (s *syncer) validateDefaultBranches(ctx context.Context) error {
-	expectedDefaultGitBranch := s.repo.BaseBranch()
+	expectedDefaultGitBranch := s.repo.DefaultBranch()
 	if s.moduleDefaultBranchGetter == nil {
 		s.logger.Warn(
 			"default branch validation skipped for all modules",
@@ -271,7 +271,7 @@ func (s *syncer) commitsToSync(
 				continue
 			}
 			if commitHash != expectedSyncPoint.Hex() {
-				if s.repo.BaseBranch() == branch {
+				if s.repo.DefaultBranch() == branch {
 					// TODO: add details to error message saying: "run again with --force-branch-sync <branch
 					// name>" when we support a flag like that.
 					return fmt.Errorf(
@@ -338,9 +338,7 @@ func (s *syncer) isGitCommitSynced(ctx context.Context, module Module, commitHas
 	return synced, nil
 }
 
-// scanRepo gathers repo information and stores it in the syncer: gathers all tags, all
-// remote/origin branches, and visits each commit on them, starting from the base branch, to assign
-// it to a unique branch and sort them by aithor timestamp.
+// scanRepo gathers repo information and stores it in the syncer, like tags and branches to sync.
 func (s *syncer) scanRepo() error {
 	s.tagsByCommitHash = make(map[string][]string)
 	if err := s.repo.ForEachTag(func(tag string, commitHash git.Hash) error {
@@ -358,14 +356,14 @@ func (s *syncer) scanRepo() error {
 			return fmt.Errorf("looping over repo branches: %w", err)
 		}
 		// make sure the default branch is present in the branches to sync
-		baseBranch := s.repo.BaseBranch()
-		if _, baseBranchPushedInRemote := s.branchesToSync[baseBranch]; !baseBranchPushedInRemote {
-			return fmt.Errorf(`repo base branch %q is not present in "origin" remote`, baseBranch)
+		defaultBranch := s.repo.DefaultBranch()
+		if _, isDefaultBranchPushedInRemote := s.branchesToSync[defaultBranch]; !isDefaultBranchPushedInRemote {
+			return fmt.Errorf(`repo default branch %q is not present in "origin" remote`, defaultBranch)
 		}
 	} else {
 		// only sync current branch
 		s.branchesToSync = map[string]struct{}{
-			s.repo.BaseBranch(): {}, // FIXME: get real current branch
+			s.repo.DefaultBranch(): {}, // FIXME: get real current branch
 		}
 	}
 	return nil

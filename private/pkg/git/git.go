@@ -266,11 +266,11 @@ type TreeNode interface {
 
 // Repository is a git repository that is backed by a `.git` directory.
 type Repository interface {
-	// BaseBranch is the base branch of the repository. This is either configured
-	// via the `OpenRepositoryWithBaseBranch` option, or discovered via the remote
-	// named `origin`. Therefore, discovery requires that the repository is pushed
-	// to the remote.
-	BaseBranch() string
+	// DefaultBranch is the default branch of the repository. This is either configured via the
+	// `OpenRepositoryWithDefaultBranch` option, or discovered from the value in
+	// `.git/refs/remotes/origin/HEAD`. Therefore, discovery requires that the repository is pushed to
+	// a remote named `origin`.
+	DefaultBranch() string
 	// ForEachBranch ranges over branches in the repository in an undefined order.
 	//
 	// Only branches pushed to a remote named "origin" are visited.
@@ -298,15 +298,15 @@ type Repository interface {
 	Close() error
 }
 
-// OpenRepository opens a new Repository from a `.git` directory. The provided path to the
-// `.git` dir need not be normalized or cleaned.
+// OpenRepository opens a new Repository from a `.git` directory. The provided path to the `.git`
+// dir need not be normalized or cleaned.
 //
-// Internally, OpenRepository will spawns a new process to communicate with `git-cat-file`,
-// so the caller must close the repository to clean up resources.
+// Internally, OpenRepository will spawns a new process to communicate with `git-cat-file`, so the
+// caller must close the repository to clean up resources.
 //
-// By default, OpenRepository will attempt to detect the base branch if the repository
-// has been pushed. This may fail if the repository is not pushed. In this case, use the
-// `OpenRepositoryWithBaseBranch` option.
+// By default, OpenRepository will attempt to detect the default branch if the repository has been
+// pushed. This may fail if the repository is not pushed. In this case, use the
+// `OpenRepositoryWithDefaultBranch` option.
 func OpenRepository(gitDirPath string, runner command.Runner, options ...OpenRepositoryOption) (Repository, error) {
 	return openGitRepository(gitDirPath, runner, options...)
 }
@@ -314,13 +314,13 @@ func OpenRepository(gitDirPath string, runner command.Runner, options ...OpenRep
 // OpenRepositoryOption configures the opening of a repository.
 type OpenRepositoryOption func(*openRepositoryOpts) error
 
-// CommitIteratorWithBaseBranch configures the base branch for this iterator.
-func OpenRepositoryWithBaseBranch(name string) OpenRepositoryOption {
+// OpenRepositoryWithDefaultBranch configures the default branch for this repository.
+func OpenRepositoryWithDefaultBranch(name string) OpenRepositoryOption {
 	return func(r *openRepositoryOpts) error {
 		if name == "" {
-			return errors.New("base branch cannot be empty")
+			return errors.New("default branch cannot be empty")
 		}
-		r.baseBranch = name
+		r.defaultBranch = name
 		return nil
 	}
 }

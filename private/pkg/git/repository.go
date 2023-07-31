@@ -31,16 +31,16 @@ import (
 
 const defaultRemoteName = "origin"
 
-var baseBranchRefPrefix = []byte("ref: refs/remotes/" + defaultRemoteName + "/")
+var defaultBranchRefPrefix = []byte("ref: refs/remotes/" + defaultRemoteName + "/")
 
 type openRepositoryOpts struct {
-	baseBranch string
+	defaultBranch string
 }
 
 type repository struct {
-	gitDirPath   string
-	baseBranch   string
-	objectReader *objectReader
+	gitDirPath    string
+	defaultBranch string
+	objectReader  *objectReader
 
 	// packedOnce controls the fields below related to reading the `packed-refs` file
 	packedOnce      sync.Once
@@ -72,16 +72,16 @@ func openGitRepository(
 	if err != nil {
 		return nil, err
 	}
-	if opts.baseBranch == "" {
-		opts.baseBranch, err = detectBaseBranch(gitDirPath)
+	if opts.defaultBranch == "" {
+		opts.defaultBranch, err = detectDefaultBranch(gitDirPath)
 		if err != nil {
-			return nil, fmt.Errorf("automatically determine base branch: %w", err)
+			return nil, fmt.Errorf("automatically determine default branch: %w", err)
 		}
 	}
 	return &repository{
-		gitDirPath:   gitDirPath,
-		baseBranch:   opts.baseBranch,
-		objectReader: reader,
+		gitDirPath:    gitDirPath,
+		defaultBranch: opts.defaultBranch,
+		objectReader:  reader,
 	}, nil
 }
 
@@ -136,8 +136,8 @@ func (r *repository) ForEachBranch(f func(string, Hash) error) error {
 	}
 	return nil
 }
-func (r *repository) BaseBranch() string {
-	return r.baseBranch
+func (r *repository) DefaultBranch() string {
+	return r.defaultBranch
 }
 
 func (r *repository) ForEachCommit(branch string, f func(Commit) error) error {
@@ -291,16 +291,16 @@ func (r *repository) readPackedRefs() error {
 	return r.packedReadError
 }
 
-func detectBaseBranch(gitDirPath string) (string, error) {
+func detectDefaultBranch(gitDirPath string) (string, error) {
 	path := path.Join(gitDirPath, "refs", "remotes", defaultRemoteName, "HEAD")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
-	if !bytes.HasPrefix(data, baseBranchRefPrefix) {
+	if !bytes.HasPrefix(data, defaultBranchRefPrefix) {
 		return "", errors.New("invalid contents in " + path)
 	}
-	data = bytes.TrimPrefix(data, baseBranchRefPrefix)
+	data = bytes.TrimPrefix(data, defaultBranchRefPrefix)
 	data = bytes.TrimSuffix(data, []byte("\n"))
 	return string(data), nil
 }
