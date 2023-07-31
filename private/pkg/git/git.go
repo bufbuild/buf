@@ -288,6 +288,8 @@ type Repository interface {
 	// ForEachTag ranges over tags in the repository in an undefined order.
 	//
 	// All tags are ranged, including local (unpushed) tags.
+	//
+	// TODO: only loop over remote tags, or inform the callback if the tag is local/remote.
 	ForEachTag(func(tag string, commitHash Hash) error) error
 	// Objects exposes the underlying object reader to read objects directly from the
 	// `.git` directory.

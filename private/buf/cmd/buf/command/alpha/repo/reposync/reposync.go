@@ -49,6 +49,7 @@ const (
 	moduleFlagName           = "module"
 	createFlagName           = "create"
 	createVisibilityFlagName = "create-visibility"
+	allBranchesFlagName      = "all-branches"
 )
 
 // NewCommand returns a new Command.
@@ -61,8 +62,9 @@ func NewCommand(
 		Use:   name,
 		Short: "Sync a Git repository to a registry",
 		Long: "Sync a Git repository's commits to a registry in topological order. " +
-			"Only commits belonging to the 'origin' remote are processed, which means that " +
-			"commits must be pushed to a remote. " +
+			"Only commits in the current branch that are pushed to the 'origin' remote are processed. " +
+			"Syncing all branches is possible using '--all-modules' flag." +
+			// TODO rephrase in favor of a default module behavior.
 			"Only modules specified via '--module' are synced.",
 		Args: cobra.NoArgs,
 		Run: builder.NewRunFunc(
@@ -80,6 +82,7 @@ type flags struct {
 	Modules          []string
 	Create           bool
 	CreateVisibility string
+	AllBranches      bool
 }
 
 func newFlags() *flags {
@@ -96,7 +99,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
-	// TODO: before we take this to beta, and as part of mult-module support, re-evaluate the UX of this flag
+	// TODO: rework in favor of a default module behavior.
 	flagSet.StringSliceVar(
 		&f.Modules,
 		moduleFlagName,
@@ -112,6 +115,16 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		createFlagName,
 		false,
 		fmt.Sprintf("Create the repository if it does not exist. Must set a visibility using --%s", createVisibilityFlagName),
+	)
+	flagSet.BoolVar(
+		&f.AllBranches,
+		allBranchesFlagName,
+		false,
+		"Sync all git repository branches and not only the checked out one. "+
+			"Only commits pushed to the 'origin' remote are processed. "+
+			"Order of sync for git branches is as follows: First, it syncs the default branch read "+
+			"from 'refs/remotes/origin/HEAD', and then all the rest of the branches present in "+
+			"'refs/remotes/origin/*' in a lexicographical order.",
 	)
 }
 
@@ -141,6 +154,7 @@ func run(
 		flags.Modules,
 		// No need to pass `flags.Create`, this is not empty iff `flags.Create`
 		flags.CreateVisibility,
+		flags.AllBranches,
 	)
 }
 
@@ -149,6 +163,7 @@ func sync(
 	container appflag.Container,
 	modules []string,
 	createWithVisibility string,
+	allBranches bool,
 ) error {
 	if len(modules) == 0 {
 		container.Logger().Info("no modules to sync")
@@ -173,6 +188,9 @@ func sync(
 		bufsync.SyncerWithResumption(syncPointResolver(clientConfig)),
 		bufsync.SyncerWithGitCommitChecker(syncGitCommitChecker(clientConfig)),
 		bufsync.SyncerWithModuleDefaultBranchGetter(defaultBranchGetter(clientConfig)),
+	}
+	if allBranches {
+		syncerOptions = append(syncerOptions, bufsync.SyncerWithAllBranches())
 	}
 	for _, module := range modules {
 		var moduleIdentityOverride bufmoduleref.ModuleIdentity

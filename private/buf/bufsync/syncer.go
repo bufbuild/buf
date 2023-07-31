@@ -38,10 +38,11 @@ type syncer struct {
 	syncPointResolver         SyncPointResolver
 	syncedGitCommitChecker    SyncedGitCommitChecker
 	moduleDefaultBranchGetter ModuleDefaultBranchGetter
+	allBranches               bool
 
 	// scanned information from the repo on sync start
 	tagsByCommitHash map[string][]string
-	remoteBranches   map[string]struct{}
+	branchesToSync   map[string]struct{}
 }
 
 func newSyncer(
@@ -122,26 +123,28 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	if err := s.validateDefaultBranches(ctx); err != nil {
 		return err
 	}
-	allBranchesSyncPoints := make(map[string]map[Module]git.Hash)
-	for branch := range s.remoteBranches {
+	branchesSyncPoints := make(map[string]map[Module]git.Hash)
+	for branch := range s.branchesToSync {
 		syncPoints, err := s.resolveSyncPoints(ctx, branch)
 		if err != nil {
 			return fmt.Errorf("resolve sync points for branch %q: %w", branch, err)
 		}
-		allBranchesSyncPoints[branch] = syncPoints
+		branchesSyncPoints[branch] = syncPoints
 	}
-	// first, default branch
+	// first, default branch, if present
 	baseBranch := s.repo.BaseBranch()
-	if err := s.syncBranch(ctx, baseBranch, allBranchesSyncPoints[baseBranch], syncFunc); err != nil {
-		return fmt.Errorf("sync base branch %q: %w", baseBranch, err)
+	if _, shouldSyncDefaultBranch := s.branchesToSync[baseBranch]; shouldSyncDefaultBranch {
+		if err := s.syncBranch(ctx, baseBranch, branchesSyncPoints[baseBranch], syncFunc); err != nil {
+			return fmt.Errorf("sync base branch %q: %w", baseBranch, err)
+		}
 	}
 	// then the rest of the branches, in a deterministic order
-	remoteBranches := stringutil.MapToSortedSlice(s.remoteBranches)
-	for _, branch := range remoteBranches {
+	sortedBranchesToSync := stringutil.MapToSortedSlice(s.branchesToSync)
+	for _, branch := range sortedBranchesToSync {
 		if branch == baseBranch {
 			continue // default branch already synced
 		}
-		if err := s.syncBranch(ctx, branch, allBranchesSyncPoints[branch], syncFunc); err != nil {
+		if err := s.syncBranch(ctx, branch, branchesSyncPoints[branch], syncFunc); err != nil {
 			return fmt.Errorf("sync branch %q: %w", branch, err)
 		}
 	}
@@ -346,16 +349,24 @@ func (s *syncer) scanRepo() error {
 	}); err != nil {
 		return fmt.Errorf("load tags: %w", err)
 	}
-	s.remoteBranches = make(map[string]struct{})
-	if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
-		s.remoteBranches[branch] = struct{}{}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("looping over repo branches: %w", err)
-	}
-	baseBranch := s.repo.BaseBranch()
-	if _, baseBranchPushedInRemote := s.remoteBranches[baseBranch]; !baseBranchPushedInRemote {
-		return fmt.Errorf(`repo base branch %q is not present in "origin" remote`, baseBranch)
+	if s.allBranches {
+		s.branchesToSync = make(map[string]struct{})
+		if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
+			s.branchesToSync[branch] = struct{}{}
+			return nil
+		}); err != nil {
+			return fmt.Errorf("looping over repo branches: %w", err)
+		}
+		// make sure the default branch is present in the branches to sync
+		baseBranch := s.repo.BaseBranch()
+		if _, baseBranchPushedInRemote := s.branchesToSync[baseBranch]; !baseBranchPushedInRemote {
+			return fmt.Errorf(`repo base branch %q is not present in "origin" remote`, baseBranch)
+		}
+	} else {
+		// only sync current branch
+		s.branchesToSync = map[string]struct{}{
+			s.repo.BaseBranch(): {}, // FIXME: get real current branch
+		}
 	}
 	return nil
 }
