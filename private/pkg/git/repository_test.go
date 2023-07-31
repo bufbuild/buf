@@ -112,3 +112,11 @@ func TestBranches(t *testing.T) {
 		"smian/branch2",
 	})
 }
+
+func TestCurrentBranch(t *testing.T) {
+	t.Parallel()
+
+	repo := gittest.ScaffoldGitRepository(t)
+
+	assert.Equal(t, gittest.DefaultBranch, repo.CurrentBranch())
+}

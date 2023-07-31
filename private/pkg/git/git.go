@@ -271,7 +271,7 @@ type Repository interface {
 	// `.git/refs/remotes/origin/HEAD`. Therefore, discovery requires that the repository is pushed to
 	// a remote named `origin`.
 	DefaultBranch() string
-	// CurrentBranch is the current checked out branch, if any.
+	// CurrentBranch is the current checked out branch.
 	CurrentBranch() string
 	// ForEachBranch ranges over branches in the repository in an undefined order.
 	//
@@ -309,8 +309,8 @@ type Repository interface {
 // By default, OpenRepository will attempt to detect the default branch if the repository has been
 // pushed. This may fail if the repository is not pushed. In this case, use the
 // `OpenRepositoryWithDefaultBranch` option.
-func OpenRepository(gitDirPath string, runner command.Runner, options ...OpenRepositoryOption) (Repository, error) {
-	return openGitRepository(gitDirPath, runner, options...)
+func OpenRepository(ctx context.Context, gitDirPath string, runner command.Runner, options ...OpenRepositoryOption) (Repository, error) {
+	return openGitRepository(ctx, gitDirPath, runner, options...)
 }
 
 // OpenRepositoryOption configures the opening of a repository.
