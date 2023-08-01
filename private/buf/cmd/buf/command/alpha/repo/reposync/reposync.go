@@ -61,7 +61,7 @@ func NewCommand(
 		Short: "Sync a Git repository to a registry",
 		Long: "Sync commits in a Git repository to a registry in topological order. " +
 			"Only commits in the current branch that are pushed to the 'origin' remote are processed. " +
-			"Syncing all branches is possible using '--all-modules' flag. " +
+			"Syncing all branches is possible using '--all-branches' flag. " +
 			"By default a single module at the root of the repository is assumed, " +
 			"for specific module paths use the '--module' flag. " +
 			"This commit needs to be run at the root of the Git repository.",
