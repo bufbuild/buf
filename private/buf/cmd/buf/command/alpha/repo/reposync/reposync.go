@@ -201,30 +201,37 @@ func sync(
 	if err != nil {
 		return fmt.Errorf("new syncer: %w", err)
 	}
-	return syncer.Sync(ctx, func(ctx context.Context, commit bufsync.ModuleCommit) error {
+	return syncer.Sync(ctx, func(ctx context.Context, moduleCommit bufsync.ModuleCommit) error {
 		syncPoint, err := pushOrCreate(
 			ctx,
 			clientConfig,
 			repo,
-			commit.Commit(),
-			commit.Branch(),
-			commit.Tags(),
-			commit.Identity(),
-			commit.Bucket(),
+			moduleCommit.Commit(),
+			moduleCommit.Branch(),
+			moduleCommit.Tags(),
+			moduleCommit.Identity(),
+			moduleCommit.Bucket(),
 			createWithVisibility,
 		)
 		if err != nil {
 			// We failed to push. We fail hard on this because the error may be recoverable
 			// (i.e., the BSR may be down) and we should re-attempt this commit.
 			return fmt.Errorf(
-				"failed to push %s at %s: %w",
-				commit.Identity().IdentityString(),
-				commit.Commit().Hash(),
+				"failed to push or create %s at %s: %w",
+				moduleCommit.Identity().IdentityString(),
+				moduleCommit.Commit().Hash(),
 				err,
 			)
 		}
 		_, err = container.Stderr().Write([]byte(
-			fmt.Sprintf("%s:%s\n", commit.Identity().IdentityString(), syncPoint.BsrCommitName)),
+			// <git-branch>@<git-commit-hash><double-space><module-identity>:<bsr-commit-name>
+			fmt.Sprintf(
+				"%s@%s  %s:%s\n",
+				moduleCommit.Branch(),
+				moduleCommit.Commit().Hash().Hex(),
+				moduleCommit.Identity().IdentityString(),
+				syncPoint.BsrCommitName,
+			)),
 		)
 		return err
 	})

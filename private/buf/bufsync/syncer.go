@@ -32,6 +32,7 @@ type syncer struct {
 	repo                      git.Repository
 	storageGitProvider        storagegit.Provider
 	errorHandler              ErrorHandler
+	sortedModulesDirsToSync   []string
 	modulesDirsToSync         map[string]struct{}
 	syncPointResolver         SyncPointResolver
 	syncedGitCommitChecker    SyncedGitCommitChecker
@@ -40,7 +41,7 @@ type syncer struct {
 
 	// scanned information from the repo on sync start
 	tagsByCommitHash      map[string][]string
-	branchesModulesToSync map[string]map[string]bufmoduleref.ModuleIdentity // branch:moduleDir:moduleIdentity
+	branchesModulesToSync map[string]map[string]Module // branch:moduleDir:Module
 	allModulesToSync      map[bufmoduleref.ModuleIdentity]struct{}
 }
 

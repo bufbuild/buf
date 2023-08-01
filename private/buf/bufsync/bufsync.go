@@ -17,6 +17,7 @@ package bufsync
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -69,18 +70,19 @@ type ErrorHandler interface {
 type Module interface {
 	// Dir is the path to the module relative to the repository root.
 	Dir() string
-	// RemoteIdentity is the identity of the remote module that the
-	// local module is synced to.
+	// RemoteIdentity is the identity of the remote module that the local module is synced to. It is
+	// read from the buf.yaml file in the HEAD commit of the git branch that this module is being
+	// synced from.
 	RemoteIdentity() bufmoduleref.ModuleIdentity
 	// String is the string representation of this module.
 	String() string
 }
 
 // NewModule constructs a new module that can be synced with a Syncer.
-func NewModule(dir string, identityOverride bufmoduleref.ModuleIdentity) (Module, error) {
+func NewModule(dir string, identity bufmoduleref.ModuleIdentity) (Module, error) {
 	return newSyncableModule(
 		dir,
-		identityOverride,
+		identity,
 	)
 }
 
@@ -118,11 +120,18 @@ type SyncerOption func(*syncer) error
 
 // SyncerWithModule configures a Syncer to sync a module in the specified module directory.
 //
-// This option can be provided multiple times to sync multiple distinct modules.
+// This option can be provided multiple times to sync multiple distinct modules. The order in which
+// the module directories are passed is preserved, and those modules are synced in the same order.
+// If the same module directory is passed multiple times this option errors, since the order cannot
+// be preserved anymore.
 func SyncerWithModule(moduleDir string) SyncerOption {
 	return func(s *syncer) error {
 		moduleDir = normalpath.Normalize(moduleDir)
+		if _, alreadyAdded := s.modulesDirsToSync[moduleDir]; alreadyAdded {
+			return fmt.Errorf("module directory %q already added", moduleDir)
+		}
 		s.modulesDirsToSync[moduleDir] = struct{}{}
+		s.sortedModulesDirsToSync = append(s.sortedModulesDirsToSync, moduleDir)
 		return nil
 	}
 }
@@ -195,7 +204,7 @@ type ModuleDefaultBranchGetter func(
 
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {
-	// Identity is the identity of the module, accounting for any configured override.
+	// Identity is the identity of the module.
 	Identity() bufmoduleref.ModuleIdentity
 	// Bucket is the bucket for the module.
 	Bucket() storage.ReadBucket

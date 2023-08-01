@@ -39,7 +39,7 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	repo := scaffoldGitRepository(t)
 	s := syncer{
 		repo:                   repo,
-		modulesDirsToSync:      []Module{moduleToSync},
+		modulesToSync:          []Module{moduleToSync},
 		syncedGitCommitChecker: mockBSRChecker.checkFunc(),
 	}
 
