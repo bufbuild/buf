@@ -41,12 +41,12 @@ type syncer struct {
 
 	// scanned information from the repo on sync start
 	tagsByCommitHash      map[string][]string
-	branchesModulesToSync map[string]map[string]Module // branch:moduleDir:Module
+	branchesModulesToSync map[string]map[string]branchModuleTarget // branch:moduleDir:target
 	allModulesToSync      map[bufmoduleref.ModuleIdentity]struct{}
 }
 
 func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
-	if err := s.scanRepo(ctx); err != nil {
+	if err := s.prepareSync(ctx); err != nil {
 		return fmt.Errorf("scan repo: %w", err)
 	}
 	if err := s.validateDefaultBranches(ctx); err != nil {
@@ -338,71 +338,6 @@ func (s *syncer) isGitCommitSynced(ctx context.Context, module Module, commitHas
 	return synced, nil
 }
 
-// scanRepo gathers repo information and stores it in the syncer, like tags and branches to sync.
-func (s *syncer) scanRepo(ctx context.Context) error {
-	s.tagsByCommitHash = make(map[string][]string)
-	if err := s.repo.ForEachTag(func(tag string, commitHash git.Hash) error {
-		s.tagsByCommitHash[commitHash.Hex()] = append(s.tagsByCommitHash[commitHash.Hex()], tag)
-		return nil
-	}); err != nil {
-		return fmt.Errorf("load tags: %w", err)
-	}
-	allRemoteBranches := make(map[string]struct{})
-	if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
-		allRemoteBranches[branch] = struct{}{}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("looping over repo remote branches: %w", err)
-	}
-	if s.syncAllBranches {
-		// make sure the default branch is present in the branches to sync
-		defaultBranch := s.repo.DefaultBranch()
-		if _, isDefaultBranchPushedInRemote := allRemoteBranches[defaultBranch]; !isDefaultBranchPushedInRemote {
-			return fmt.Errorf(`default branch %q is not present in "origin" remote`, defaultBranch)
-		}
-		for remoteBranch := range allRemoteBranches {
-			s.branchesModulesToSync[remoteBranch] = make(map[string]bufmoduleref.ModuleIdentity)
-		}
-	} else {
-		// only sync current branch, make sure it's present in remote
-		currentBranch := s.repo.CurrentBranch()
-		if _, isCurrentBranchPushedInRemote := allRemoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
-			return fmt.Errorf(`current branch %q is not present in "origin" remote`, currentBranch)
-		}
-		s.branchesModulesToSync = map[string]map[string]bufmoduleref.ModuleIdentity{
-			currentBranch: make(map[string]bufmoduleref.ModuleIdentity),
-		}
-		s.logger.Debug("current branch", zap.String("name", currentBranch))
-	}
-	// populate each branch with its module dirs and expected module identities from HEAD
-	s.allModulesToSync = make(map[bufmoduleref.ModuleIdentity]struct{})
-	for branch := range s.branchesModulesToSync {
-		headCommit, err := s.repo.HEADCommit(branch)
-		if err != nil {
-			return fmt.Errorf("get HEAD commit at branch %q: %w", branch, err)
-		}
-		for moduleDir := range s.modulesDirsToSync {
-			module, err := s.builtNamedModuleAt(ctx, headCommit, moduleDir)
-			if err != nil {
-				s.logger.Warn(
-					"cannot determine remote module identity in head commit for branch, won't sync this module for this branch",
-					zap.String("branch", branch),
-					zap.String("head commit", headCommit.Hash().Hex()),
-					zap.String("module dir", moduleDir),
-					zap.Error(err),
-				)
-				continue
-			}
-			s.branchesModulesToSync[branch][moduleDir] = module.ModuleIdentity()
-			s.allModulesToSync[module.ModuleIdentity()] = struct{}{}
-		}
-	}
-	if len(s.allModulesToSync) == 0 {
-		return errors.New("no modules to sync in any branch, aborting sync")
-	}
-	return nil
-}
-
 // syncModule looks for the module in the commit, and if found tries to validate it. If it is valid,
 // it invokes `syncFunc`.
 //
@@ -439,7 +374,7 @@ func (s *syncer) syncModule(
 	}
 	return syncFunc(
 		ctx,
-		newModuleCommit(
+		newModuleCommitToSync(
 			builtNamedModule.ModuleIdentity(), // TODO make sure it's the same name
 			builtNamedModule.Bucket,
 			commit,

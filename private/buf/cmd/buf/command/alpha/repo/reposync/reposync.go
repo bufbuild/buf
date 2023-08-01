@@ -224,13 +224,12 @@ func sync(
 			)
 		}
 		_, err = container.Stderr().Write([]byte(
-			// <git-branch>@<git-commit-hash><double-space><module-identity>:<bsr-commit-name>
+			// from local                     -> to remote
+			// <git-branch>:<git-commit-hash> -> <module-identity>:<bsr-commit-name>
 			fmt.Sprintf(
-				"%s@%s  %s:%s\n",
-				moduleCommit.Branch(),
-				moduleCommit.Commit().Hash().Hex(),
-				moduleCommit.Identity().IdentityString(),
-				syncPoint.BsrCommitName,
+				"%s:%s -> %s:%s\n",
+				moduleCommit.Branch(), moduleCommit.Commit().Hash().Hex(),
+				moduleCommit.Identity().IdentityString(), syncPoint.BsrCommitName,
 			)),
 		)
 		return err
