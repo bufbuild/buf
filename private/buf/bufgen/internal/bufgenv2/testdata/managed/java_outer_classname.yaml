@@ -1,0 +1,19 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - file_option: java_outer_classname
+      value: DefaultProto
+    - file_option: java_outer_classname
+      value: PathProto
+      path: dir
+    - file_option: java_outer_classname
+      value: ModProto
+      module: buf.build/acme/weather
+    - file_option: java_outer_classname
+      value: Both
+      module: buf.build/acme/payment
+      path: a/b

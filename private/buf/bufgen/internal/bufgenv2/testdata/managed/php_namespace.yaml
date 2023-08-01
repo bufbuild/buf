@@ -1,0 +1,19 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - file_option: php_namespace
+      value: Foo\Bar
+    - file_option: php_namespace
+      value: Bar\Baz
+      path: dir
+    - file_option: php_namespace
+      value: Baz\Qux
+      module: buf.build/acme/weather
+    - file_option: php_namespace
+      value: Qux\Quux
+      module: buf.build/acme/payment
+      path: a/b

@@ -59,8 +59,20 @@ const (
 	fileOptionPhpMetadataNamespaceSuffix
 	// fileOptionRubyPackage is the file option ruby_package.
 	fileOptionRubyPackage
+	// fileOptionRubyPackageSuffix is the file option ruby_package_suffix.
+	fileOptionRubyPackageSuffix
 	// groupJavaPackage is the file option group that modifies java_package.
 	groupJavaPackage fileOptionGroup = iota + 1
+	groupJavaOuterClassname
+	groupJavaMultipleFiles
+	groupJavaStringCheckUtf8
+	groupOptimizeFor
+	groupGoPackage
+	groupObjcClassPrefix
+	groupCsharpNamespace
+	groupPhpNamespace
+	groupPhpMetadataNamespace
+	groupRubyPackage
 )
 
 var (
@@ -82,6 +94,7 @@ var (
 		fileOptionPhpMetadataNamespace:       "php_metadata_namespace",
 		fileOptionPhpMetadataNamespaceSuffix: "php_metadata_namespace_suffix",
 		fileOptionRubyPackage:                "ruby_package",
+		fileOptionRubyPackageSuffix:          "ruby_package_suffix",
 	}
 	stringToFileOption = map[string]fileOption{
 		"java_package":                  fileOptionJavaPackage,
@@ -101,23 +114,58 @@ var (
 		"php_metadata_namespace":        fileOptionPhpMetadataNamespace,
 		"php_metadata_namespace_suffix": fileOptionPhpMetadataNamespaceSuffix,
 		"ruby_package":                  fileOptionRubyPackage,
+		"ruby_package_suffix":           fileOptionRubyPackageSuffix,
 	}
 	fileOptionToOverrideParseFunc = map[fileOption]func(interface{}, fileOption) (bufimagemodifyv2.Override, error){
-		fileOptionJavaPackage:       parseValueOverride[string],
-		fileOptionJavaPackagePrefix: parsePrefixOverride,
-		fileOptionJavaPackageSuffix: parseSuffixOverride,
-		fileOptionOptimizeFor:       parseValueOverrideOptmizeMode,
-		// TODO: fill the rest
+		fileOptionJavaPackage:                parseValueOverride[string],
+		fileOptionJavaPackagePrefix:          parsePrefixOverride,
+		fileOptionJavaPackageSuffix:          parseSuffixOverride,
+		fileOptionOptimizeFor:                parseValueOverrideOptmizeMode,
+		fileOptionJavaOuterClassname:         parseValueOverride[string],
+		fileOptionJavaMultipleFiles:          parseValueOverride[bool],
+		fileOptionJavaStringCheckUtf8:        parseValueOverride[bool],
+		fileOptionGoPackage:                  parseValueOverride[string],
+		fileOptionGoPackagePrefix:            parsePrefixOverride,
+		fileOptionObjcClassPrefix:            parseValueOverride[string], // objc_class_prefix is in descriptor.proto
+		fileOptionCsharpNamespace:            parseValueOverride[string],
+		fileOptionCsharpNamespacePrefix:      parsePrefixOverride,
+		fileOptionPhpNamespace:               parseValueOverride[string],
+		fileOptionPhpMetadataNamespace:       parseValueOverride[string],
+		fileOptionPhpMetadataNamespaceSuffix: parseSuffixOverride,
+		fileOptionRubyPackage:                parseValueOverride[string],
+		fileOptionRubyPackageSuffix:          parseSuffixOverride,
 	}
 	fileOptionToGroup = map[fileOption]fileOptionGroup{
-		fileOptionJavaPackage:       groupJavaPackage,
-		fileOptionJavaPackagePrefix: groupJavaPackage,
-		fileOptionJavaPackageSuffix: groupJavaPackage,
-		// TODO: fill the rest
+		fileOptionJavaPackage:                groupJavaPackage,
+		fileOptionJavaPackagePrefix:          groupJavaPackage,
+		fileOptionJavaPackageSuffix:          groupJavaPackage,
+		fileOptionJavaOuterClassname:         groupJavaOuterClassname,
+		fileOptionJavaMultipleFiles:          groupJavaMultipleFiles,
+		fileOptionJavaStringCheckUtf8:        groupJavaStringCheckUtf8,
+		fileOptionOptimizeFor:                groupOptimizeFor,
+		fileOptionGoPackage:                  groupGoPackage,
+		fileOptionGoPackagePrefix:            groupGoPackage,
+		fileOptionObjcClassPrefix:            groupObjcClassPrefix,
+		fileOptionCsharpNamespace:            groupCsharpNamespace,
+		fileOptionCsharpNamespacePrefix:      groupCsharpNamespace,
+		fileOptionPhpNamespace:               groupPhpNamespace,
+		fileOptionPhpMetadataNamespace:       groupPhpMetadataNamespace,
+		fileOptionPhpMetadataNamespaceSuffix: groupPhpMetadataNamespace,
+		fileOptionRubyPackage:                groupRubyPackage,
+		fileOptionRubyPackageSuffix:          groupRubyPackage,
 	}
 	allFileOptionGroups = []fileOptionGroup{
 		groupJavaPackage,
-		// TODO: fill the rest
+		groupJavaOuterClassname,
+		groupJavaMultipleFiles,
+		groupJavaStringCheckUtf8,
+		groupOptimizeFor,
+		groupGoPackage,
+		groupObjcClassPrefix,
+		groupCsharpNamespace,
+		groupPhpNamespace,
+		groupPhpMetadataNamespace,
+		groupRubyPackage,
 	}
 )
 

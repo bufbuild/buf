@@ -1,0 +1,19 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - file_option: ruby_package_suffix
+      value: protos
+    - file_option: ruby_package
+      value: Foo::Bar
+      path: dir
+    - file_option: ruby_package
+      value: Bar::Baz
+      module: buf.build/acme/weather
+    - file_option: ruby_package_suffix
+      value: pbs
+      module: buf.build/acme/payment
+      path: a/b

@@ -1,0 +1,19 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - file_option: optimize_for
+      value: SPEED
+    - file_option: optimize_for
+      value: CODE_SIZE
+      path: dir
+    - file_option: optimize_for
+      value: CODE_SIZE
+      module: buf.build/acme/weather
+    - file_option: optimize_for
+      value: LITE_RUNTIME
+      module: buf.build/acme/payment
+      path: a/b
