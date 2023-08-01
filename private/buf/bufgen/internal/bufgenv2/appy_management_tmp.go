@@ -100,6 +100,10 @@ func applyManagementForFile(
 				// Do not modify optimize_for if no override is matched.
 				continue
 			}
+			err := bufimagemodifyv2.ModifyOptimizeFor(marker, imageFile, override)
+			if err != nil {
+				return err
+			}
 		case groupGoPackage:
 			if managedConfig.DisabledFunc(fileOptionGoPackage, imageFile) {
 				continue
