@@ -39,17 +39,17 @@ type syncer struct {
 	syncAllBranches           bool
 
 	// scanned information from the repo on sync start
-	tagsByCommitHash        map[string][]string
-	branchesModulesToSync   map[string]map[string]bufmoduleref.ModuleIdentity // branch:moduleDir:moduleIdentity
-	modulesIdentitiesToSync map[string]struct{}
+	tagsByCommitHash      map[string][]string
+	branchesModulesToSync map[string]map[string]bufmoduleref.ModuleIdentity // branch:moduleDir:moduleIdentity
+	allModulesToSync      map[bufmoduleref.ModuleIdentity]struct{}
 }
 
 func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
-	if err := s.scanRepo(); err != nil {
+	if err := s.scanRepo(ctx); err != nil {
 		return fmt.Errorf("scan repo: %w", err)
 	}
 	if err := s.validateDefaultBranches(ctx); err != nil {
-		return err
+		return fmt.Errorf("validate default branch: %w", err)
 	}
 	branchesSyncPoints := make(map[string]map[Module]git.Hash)
 	for branch := range s.branchesModulesToSync {
@@ -162,19 +162,19 @@ func (s *syncer) validateDefaultBranches(ctx context.Context) error {
 		return nil
 	}
 	var validationErr error
-	for _, module := range s.modulesDirsToSync {
-		bsrDefaultBranch, err := s.moduleDefaultBranchGetter(ctx, module.RemoteIdentity())
+	for moduleIdentity := range s.allModulesToSync {
+		bsrDefaultBranch, err := s.moduleDefaultBranchGetter(ctx, moduleIdentity)
 		if err != nil {
 			if errors.Is(err, ErrModuleDoesNotExist) {
 				s.logger.Warn(
 					"default branch validation skipped",
 					zap.String("expected_default_branch", expectedDefaultGitBranch),
-					zap.String("module", module.RemoteIdentity().IdentityString()),
+					zap.String("module", moduleIdentity.IdentityString()),
 					zap.Error(err),
 				)
 				continue
 			}
-			validationErr = multierr.Append(validationErr, fmt.Errorf("getting bsr module %q default branch: %w", module.RemoteIdentity().IdentityString(), err))
+			validationErr = multierr.Append(validationErr, fmt.Errorf("getting bsr module %q default branch: %w", moduleIdentity.IdentityString(), err))
 			continue
 		}
 		if bsrDefaultBranch != expectedDefaultGitBranch {
@@ -182,7 +182,7 @@ func (s *syncer) validateDefaultBranches(ctx context.Context) error {
 				validationErr,
 				fmt.Errorf(
 					"remote module %q with default branch %q does not match the git repository's default branch %q, aborting sync",
-					module.RemoteIdentity().IdentityString(), bsrDefaultBranch, expectedDefaultGitBranch,
+					moduleIdentity.IdentityString(), bsrDefaultBranch, expectedDefaultGitBranch,
 				),
 			)
 		}
@@ -374,7 +374,7 @@ func (s *syncer) scanRepo(ctx context.Context) error {
 		s.logger.Debug("current branch", zap.String("name", currentBranch))
 	}
 	// populate each branch with its module dirs and expected module identities from HEAD
-	s.modulesIdentitiesToSync = make(map[string]struct{})
+	s.allModulesToSync = make(map[bufmoduleref.ModuleIdentity]struct{})
 	for branch := range s.branchesModulesToSync {
 		headCommit, err := s.repo.HEADCommit(branch)
 		if err != nil {
@@ -393,10 +393,10 @@ func (s *syncer) scanRepo(ctx context.Context) error {
 				continue
 			}
 			s.branchesModulesToSync[branch][moduleDir] = module.ModuleIdentity()
-			s.modulesIdentitiesToSync[module.ModuleIdentity().IdentityString()] = struct{}{}
+			s.allModulesToSync[module.ModuleIdentity()] = struct{}{}
 		}
 	}
-	if len(s.modulesIdentitiesToSync) == 0 {
+	if len(s.allModulesToSync) == 0 {
 		return errors.New("no modules to sync in any branch, aborting sync")
 	}
 	return nil
