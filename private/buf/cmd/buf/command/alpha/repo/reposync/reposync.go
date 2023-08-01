@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufsync"
@@ -33,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/manifest"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -61,11 +59,12 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name,
 		Short: "Sync a Git repository to a registry",
-		Long: "Sync a Git repository's commits to a registry in topological order. " +
+		Long: "Sync commits in a Git repository to a registry in topological order. " +
 			"Only commits in the current branch that are pushed to the 'origin' remote are processed. " +
-			"Syncing all branches is possible using '--all-modules' flag." +
-			// TODO rephrase in favor of a default module behavior.
-			"Only modules specified via '--module' are synced.",
+			"Syncing all branches is possible using '--all-modules' flag. " +
+			"By default a single module at the root of the repository is assumed, " +
+			"for specific module paths use the '--module' flag. " +
+			"This commit needs to be run at the root of the Git repository.",
 		Args: cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -79,7 +78,7 @@ func NewCommand(
 
 type flags struct {
 	ErrorFormat      string
-	Modules          []string
+	ModulesDirs      []string
 	Create           bool
 	CreateVisibility string
 	AllBranches      bool
@@ -99,15 +98,15 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
-	// TODO: rework in favor of a default module behavior.
 	flagSet.StringSliceVar(
-		&f.Modules,
+		&f.ModulesDirs,
 		moduleFlagName,
 		nil,
-		"The module(s) to sync to the BSR; this must be in the format <module-path>:<module-name>. "+
-			"The <module-path> is the directory relative to the git repository, and the <module-name> "+
-			"is the module's fully qualified name (FQN) as defined in "+
-			"https://buf.build/docs/bsr/module/manage/#how-modules-are-defined",
+		"The module(s) directory(ies) to sync to the BSR. By default this command tries to read "+
+			"a single module located at the root of the repository. To change this behavior, pass "+
+			"specific module directories where your 'buf.yaml' is located. The sync destination of "+
+			"the remote module is read from the 'name' field in your 'buf.yaml' at the HEAD commit "+
+			"of each branch.",
 	)
 	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
 	flagSet.BoolVar(
@@ -151,7 +150,7 @@ func run(
 	return sync(
 		ctx,
 		container,
-		flags.Modules,
+		flags.ModulesDirs,
 		// No need to pass `flags.Create`, this is not empty iff `flags.Create`
 		flags.CreateVisibility,
 		flags.AllBranches,
@@ -161,16 +160,10 @@ func run(
 func sync(
 	ctx context.Context,
 	container appflag.Container,
-	modules []string,
+	modulesDirs []string,
 	createWithVisibility string,
 	allBranches bool,
 ) error {
-	if len(modules) == 0 {
-		container.Logger().Info("no modules to sync")
-		return nil
-	}
-	// Assume that this command is run from the repository root. If not, `OpenRepository` will return
-	// a dir not found error.
 	repo, err := git.OpenRepository(ctx, git.DotGitDir, command.NewRunner())
 	if err != nil {
 		return fmt.Errorf("open repository: %w", err)
@@ -192,22 +185,11 @@ func sync(
 	if allBranches {
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithAllBranches())
 	}
-	for _, module := range modules {
-		var moduleIdentityOverride bufmoduleref.ModuleIdentity
-		colon := strings.IndexRune(module, ':')
-		if colon == -1 {
-			return appcmd.NewInvalidArgumentErrorf("module %q is missing an identity", module)
+	for _, moduleDir := range modulesDirs {
+		if len(moduleDir) == 0 {
+			return errors.New("empty module path")
 		}
-		moduleIdentityOverride, err = bufmoduleref.ModuleIdentityForString(module[colon+1:])
-		if err != nil {
-			return fmt.Errorf("module identity: %w", err)
-		}
-		module = normalpath.Normalize(module[:colon])
-		syncModule, err := bufsync.NewModule(module, moduleIdentityOverride)
-		if err != nil {
-			return fmt.Errorf("prepare module for sync: %w", err)
-		}
-		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(syncModule))
+		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(moduleDir))
 	}
 	syncer, err := bufsync.NewSyncer(
 		container.Logger(),

@@ -17,10 +17,10 @@ package bufsync
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"go.uber.org/zap"
@@ -116,17 +116,13 @@ func NewSyncer(
 // SyncerOption configures the creation of a new Syncer.
 type SyncerOption func(*syncer) error
 
-// SyncerWithModule configures a Syncer to sync the specified module.
+// SyncerWithModule configures a Syncer to sync a module in the specified module directory.
 //
 // This option can be provided multiple times to sync multiple distinct modules.
-func SyncerWithModule(module Module) SyncerOption {
+func SyncerWithModule(moduleDir string) SyncerOption {
 	return func(s *syncer) error {
-		for _, existingModule := range s.modulesToSync {
-			if existingModule.String() == module.String() {
-				return fmt.Errorf("duplicate module %s", module)
-			}
-		}
-		s.modulesToSync = append(s.modulesToSync, module)
+		moduleDir = normalpath.Normalize(moduleDir)
+		s.modulesDirsToSync[moduleDir] = struct{}{}
 		return nil
 	}
 }
@@ -162,7 +158,7 @@ func SyncerWithModuleDefaultBranchGetter(getter ModuleDefaultBranchGetter) Synce
 // commits in the current checked out branch.
 func SyncerWithAllBranches() SyncerOption {
 	return func(s *syncer) error {
-		s.allBranches = true
+		s.syncAllBranches = true
 		return nil
 	}
 }
