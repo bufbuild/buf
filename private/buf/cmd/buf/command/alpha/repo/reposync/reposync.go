@@ -63,7 +63,7 @@ func NewCommand(
 		Short: "Sync a Git repository to a registry",
 		Long: "Sync a Git repository's commits to a registry in topological order. " +
 			"Only commits in the current branch that are pushed to the 'origin' remote are processed. " +
-			"Syncing all branches is possible using '--all-modules' flag." +
+			"Syncing all branches is possible using '--all-branches' flag." +
 			// TODO rephrase in favor of a default module behavior.
 			"Only modules specified via '--module' are synced.",
 		Args: cobra.NoArgs,
