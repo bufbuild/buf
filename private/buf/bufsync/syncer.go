@@ -38,10 +38,11 @@ type syncer struct {
 	syncPointResolver         SyncPointResolver
 	syncedGitCommitChecker    SyncedGitCommitChecker
 	moduleDefaultBranchGetter ModuleDefaultBranchGetter
+	allBranches               bool
 
 	// scanned information from the repo on sync start
 	tagsByCommitHash map[string][]string
-	remoteBranches   map[string]struct{}
+	branchesToSync   map[string]struct{}
 }
 
 func newSyncer(
@@ -122,26 +123,28 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	if err := s.validateDefaultBranches(ctx); err != nil {
 		return err
 	}
-	allBranchesSyncPoints := make(map[string]map[Module]git.Hash)
-	for branch := range s.remoteBranches {
+	branchesSyncPoints := make(map[string]map[Module]git.Hash)
+	for branch := range s.branchesToSync {
 		syncPoints, err := s.resolveSyncPoints(ctx, branch)
 		if err != nil {
 			return fmt.Errorf("resolve sync points for branch %q: %w", branch, err)
 		}
-		allBranchesSyncPoints[branch] = syncPoints
+		branchesSyncPoints[branch] = syncPoints
 	}
-	// first, default branch
-	baseBranch := s.repo.BaseBranch()
-	if err := s.syncBranch(ctx, baseBranch, allBranchesSyncPoints[baseBranch], syncFunc); err != nil {
-		return fmt.Errorf("sync base branch %q: %w", baseBranch, err)
+	// first, default branch, if present
+	defaultBranch := s.repo.DefaultBranch()
+	if _, shouldSyncDefaultBranch := s.branchesToSync[defaultBranch]; shouldSyncDefaultBranch {
+		if err := s.syncBranch(ctx, defaultBranch, branchesSyncPoints[defaultBranch], syncFunc); err != nil {
+			return fmt.Errorf("sync default branch %q: %w", defaultBranch, err)
+		}
 	}
 	// then the rest of the branches, in a deterministic order
-	remoteBranches := stringutil.MapToSortedSlice(s.remoteBranches)
-	for _, branch := range remoteBranches {
-		if branch == baseBranch {
+	sortedBranchesToSync := stringutil.MapToSortedSlice(s.branchesToSync)
+	for _, branch := range sortedBranchesToSync {
+		if branch == defaultBranch {
 			continue // default branch already synced
 		}
-		if err := s.syncBranch(ctx, branch, allBranchesSyncPoints[branch], syncFunc); err != nil {
+		if err := s.syncBranch(ctx, branch, branchesSyncPoints[branch], syncFunc); err != nil {
 			return fmt.Errorf("sync branch %q: %w", branch, err)
 		}
 	}
@@ -151,7 +154,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 // validateDefaultBranches checks that all modules to sync, are being synced to BSR repositories
 // that have the same default git branch as this repo.
 func (s *syncer) validateDefaultBranches(ctx context.Context) error {
-	expectedDefaultGitBranch := s.repo.BaseBranch()
+	expectedDefaultGitBranch := s.repo.DefaultBranch()
 	if s.moduleDefaultBranchGetter == nil {
 		s.logger.Warn(
 			"default branch validation skipped for all modules",
@@ -268,7 +271,7 @@ func (s *syncer) commitsToSync(
 				continue
 			}
 			if commitHash != expectedSyncPoint.Hex() {
-				if s.repo.BaseBranch() == branch {
+				if s.repo.DefaultBranch() == branch {
 					// TODO: add details to error message saying: "run again with --force-branch-sync <branch
 					// name>" when we support a flag like that.
 					return fmt.Errorf(
@@ -335,9 +338,7 @@ func (s *syncer) isGitCommitSynced(ctx context.Context, module Module, commitHas
 	return synced, nil
 }
 
-// scanRepo gathers repo information and stores it in the syncer: gathers all tags, all
-// remote/origin branches, and visits each commit on them, starting from the base branch, to assign
-// it to a unique branch and sort them by aithor timestamp.
+// scanRepo gathers repo information and stores it in the syncer, like tags and branches to sync.
 func (s *syncer) scanRepo() error {
 	s.tagsByCommitHash = make(map[string][]string)
 	if err := s.repo.ForEachTag(func(tag string, commitHash git.Hash) error {
@@ -346,16 +347,28 @@ func (s *syncer) scanRepo() error {
 	}); err != nil {
 		return fmt.Errorf("load tags: %w", err)
 	}
-	s.remoteBranches = make(map[string]struct{})
+	remoteBranches := make(map[string]struct{})
 	if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
-		s.remoteBranches[branch] = struct{}{}
+		remoteBranches[branch] = struct{}{}
 		return nil
 	}); err != nil {
-		return fmt.Errorf("looping over repo branches: %w", err)
+		return fmt.Errorf("looping over repo remote branches: %w", err)
 	}
-	baseBranch := s.repo.BaseBranch()
-	if _, baseBranchPushedInRemote := s.remoteBranches[baseBranch]; !baseBranchPushedInRemote {
-		return fmt.Errorf(`repo base branch %q is not present in "origin" remote`, baseBranch)
+	if s.allBranches {
+		s.branchesToSync = remoteBranches
+		// make sure the default branch is present in the branches to sync
+		defaultBranch := s.repo.DefaultBranch()
+		if _, isDefaultBranchPushedInRemote := remoteBranches[defaultBranch]; !isDefaultBranchPushedInRemote {
+			return fmt.Errorf(`default branch %q is not present in "origin" remote`, defaultBranch)
+		}
+	} else {
+		// only sync current branch, make sure it's present in remote
+		currentBranch := s.repo.CurrentBranch()
+		if _, isCurrentBranchPushedInRemote := remoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
+			return fmt.Errorf(`current branch %q is not present in "origin" remote`, currentBranch)
+		}
+		s.branchesToSync = map[string]struct{}{currentBranch: {}}
+		s.logger.Debug("current branch", zap.String("name", currentBranch))
 	}
 	return nil
 }

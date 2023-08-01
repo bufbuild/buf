@@ -85,9 +85,15 @@ func TestBranches(t *testing.T) {
 	t.Parallel()
 
 	repo := gittest.ScaffoldGitRepository(t)
+	assert.Equal(t, gittest.DefaultBranch, repo.CurrentBranch())
+
 	var branches []string
 	err := repo.ForEachBranch(func(branch string, headHash git.Hash) error {
 		branches = append(branches, branch)
+
+		headCommit, err := repo.HEADCommit(branch)
+		require.NoError(t, err)
+		assert.Equal(t, headHash, headCommit.Hash())
 
 		commit, err := repo.Objects().Commit(headHash)
 		require.NoError(t, err)

@@ -158,6 +158,15 @@ func SyncerWithModuleDefaultBranchGetter(getter ModuleDefaultBranchGetter) Synce
 	}
 }
 
+// SyncerWithAllBranches sets the syncer to sync all branches. Be default the syncer only processes
+// commits in the current checked out branch.
+func SyncerWithAllBranches() SyncerOption {
+	return func(s *syncer) error {
+		s.allBranches = true
+		return nil
+	}
+}
+
 // SyncFunc is invoked by Syncer to process a sync point. If an error is returned,
 // sync will abort.
 type SyncFunc func(ctx context.Context, commit ModuleCommit) error

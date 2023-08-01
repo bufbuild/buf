@@ -27,7 +27,7 @@ func TestNewBucketAtTreeHash(t *testing.T) {
 
 	repo := gittest.ScaffoldGitRepository(t)
 	provider := NewProvider(repo.Objects())
-	headCommit, err := repo.HEADCommit(repo.BaseBranch())
+	headCommit, err := repo.HEADCommit(repo.DefaultBranch())
 	require.NoError(t, err)
 	require.NotNil(t, headCommit)
 	bucket, err := provider.NewReadBucket(headCommit.Tree())
