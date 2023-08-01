@@ -25,17 +25,19 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
 type syncer struct {
-	logger                 *zap.Logger
-	repo                   git.Repository
-	storageGitProvider     storagegit.Provider
-	errorHandler           ErrorHandler
-	modulesToSync          []Module
-	syncPointResolver      SyncPointResolver
-	syncedGitCommitChecker SyncedGitCommitChecker
+	logger                    *zap.Logger
+	repo                      git.Repository
+	storageGitProvider        storagegit.Provider
+	errorHandler              ErrorHandler
+	modulesToSync             []Module
+	syncPointResolver         SyncPointResolver
+	syncedGitCommitChecker    SyncedGitCommitChecker
+	moduleDefaultBranchGetter ModuleDefaultBranchGetter
 
 	// scanned information from the repo on sync start
 	tagsByCommitHash map[string][]string
@@ -117,6 +119,9 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	if err := s.scanRepo(); err != nil {
 		return fmt.Errorf("scan repo: %w", err)
 	}
+	if err := s.validateDefaultBranches(ctx); err != nil {
+		return err
+	}
 	allBranchesSyncPoints := make(map[string]map[Module]git.Hash)
 	for branch := range s.remoteBranches {
 		syncPoints, err := s.resolveSyncPoints(ctx, branch)
@@ -141,6 +146,46 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 		}
 	}
 	return nil
+}
+
+// validateDefaultBranches checks that all modules to sync, are being synced to BSR repositories
+// that have the same default git branch as this repo.
+func (s *syncer) validateDefaultBranches(ctx context.Context) error {
+	expectedDefaultGitBranch := s.repo.BaseBranch()
+	if s.moduleDefaultBranchGetter == nil {
+		s.logger.Warn(
+			"default branch validation skipped for all modules",
+			zap.String("expected_default_branch", expectedDefaultGitBranch),
+		)
+		return nil
+	}
+	var validationErr error
+	for _, module := range s.modulesToSync {
+		bsrDefaultBranch, err := s.moduleDefaultBranchGetter(ctx, module.RemoteIdentity())
+		if err != nil {
+			if errors.Is(err, ErrModuleDoesNotExist) {
+				s.logger.Warn(
+					"default branch validation skipped",
+					zap.String("expected_default_branch", expectedDefaultGitBranch),
+					zap.String("module", module.RemoteIdentity().IdentityString()),
+					zap.Error(err),
+				)
+				continue
+			}
+			validationErr = multierr.Append(validationErr, fmt.Errorf("getting bsr module %q default branch: %w", module.RemoteIdentity().IdentityString(), err))
+			continue
+		}
+		if bsrDefaultBranch != expectedDefaultGitBranch {
+			validationErr = multierr.Append(
+				validationErr,
+				fmt.Errorf(
+					"remote module %q with default branch %q does not match the git repository's default branch %q, aborting sync",
+					module.RemoteIdentity().IdentityString(), bsrDefaultBranch, expectedDefaultGitBranch,
+				),
+			)
+		}
+	}
+	return validationErr
 }
 
 // syncBranch syncs all modules in a branch.
