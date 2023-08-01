@@ -170,7 +170,7 @@ message GetUniquenessPolicyResponse {
   UniquenessPolicy policy = 1;
   // Reports the status of the backfill task, which can be executed by the server admin with the
   // RunServerUniquenessBackfillTask RPC.
-  bool backfill_task_status = 2;
+  bool backfill_task_complete = 2;
 }
 
 message UpdateUniquenessPolicyRequest {
