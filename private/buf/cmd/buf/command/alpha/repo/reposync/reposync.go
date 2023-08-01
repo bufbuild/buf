@@ -64,7 +64,7 @@ func NewCommand(
 			"Syncing all branches is possible using '--all-branches' flag. " +
 			"By default a single module at the root of the repository is assumed, " +
 			"for specific module paths use the '--module' flag. " +
-			"This commit needs to be run at the root of the Git repository.",
+			"This command needs to be run at the root of the Git repository.",
 		Args: cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
