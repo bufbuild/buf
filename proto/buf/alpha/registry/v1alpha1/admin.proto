@@ -166,7 +166,11 @@ message UpdateBreakingChangePolicyResponse {}
 message GetUniquenessPolicyRequest {}
 
 message GetUniquenessPolicyResponse {
+  // The current uniqueness policy settings.
   UniquenessPolicy policy = 1;
+  // Reports the status of the backfill task, which can be executed by the server admin with the
+  // RunServerUniquenessBackfillTask RPC.
+  bool backfill_task_complete = 2;
 }
 
 message UpdateUniquenessPolicyRequest {

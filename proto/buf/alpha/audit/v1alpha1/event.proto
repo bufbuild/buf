@@ -106,6 +106,8 @@ enum EventType {
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED = 32;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED = 33;
   EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34;
+  EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED = 35;
+  EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED = 36;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -171,6 +173,8 @@ message Event {
     PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
     PayloadServerBreakingChangePolicyDisabled payload_server_breaking_change_policy_disabled = 39;
     PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40;
+    PayloadServerUniquenessPolicyEnabled payload_server_uniqueness_policy_enabled = 41;
+    PayloadServerUniquenessPolicyDisabled payload_server_uniqueness_policy_disabled = 42;
   }
 }
 
@@ -425,3 +429,7 @@ message PayloadServerBreakingChangePolicyEnabled {
 }
 
 message PayloadServerBreakingChangePolicyDisabled {}
+
+message PayloadServerUniquenessPolicyEnabled {}
+
+message PayloadServerUniquenessPolicyDisabled {}
