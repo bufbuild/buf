@@ -1,6 +1,8 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package foo.bar.baz;
+
+import "google/protobuf/descriptor.proto";
 
 option cc_enable_arenas = false;
 option cc_generic_services = false;
@@ -22,5 +24,19 @@ option ruby_package = "foo";
 option swift_prefix = "foo";
 
 message Hello {
-  fixed64 world = 1 [jstype = JS_STRING];
+  required fixed64 world = 1 [jstype = JS_STRING];
+}
+
+message A {
+  required string foo = 1;
+}
+
+message B {
+  required A a = 1;
+}
+
+extend google.protobuf.FieldOptions {
+  optional A aaa = 50000;
+  optional B bbb = 50002;
+  repeated int32 ccc = 50003;
 }

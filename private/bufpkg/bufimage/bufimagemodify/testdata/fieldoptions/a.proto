@@ -33,5 +33,10 @@ message Outer {
 
 extend Outer.Inner {
   repeated int64 i7 = 126 [jstype = JS_NUMBER];
-  repeated int64 i8 = 127;
+  repeated int64 i8 = 127 [
+    jstype = JS_STRING,
+    retention = RETENTION_RUNTIME,
+    debug_redact = true,
+    lazy = true
+  ];
 }
