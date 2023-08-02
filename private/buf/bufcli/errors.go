@@ -16,6 +16,7 @@ package bufcli
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -174,7 +175,9 @@ func wrapError(err error) error {
 			if dnsError := (&net.DNSError{}); errors.As(err, &dnsError) && dnsError.IsNotFound {
 				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, dnsError.Name)
 			}
-
+			if tlsErr := (&tls.CertificateVerificationError{}); errors.As(err, &tlsErr) {
+				return tlsErr
+			}
 			return errors.New(msg)
 		}
 		return fmt.Errorf("Failure: %s", connectErr.Message())

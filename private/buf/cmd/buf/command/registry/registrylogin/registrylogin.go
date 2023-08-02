@@ -188,6 +188,9 @@ func inner(
 	authnService := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewAuthnServiceClient)
 	resp, err := authnService.GetCurrentUser(ctx, connect.NewRequest(&registryv1alpha1.GetCurrentUserRequest{}))
 	if err != nil {
+		if connectErr := new(connect.Error); errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnavailable {
+			return connectErr
+		}
 		// We don't want to use the default error from wrapError here if the error
 		// an unauthenticated error.
 		return errors.New("invalid token provided")
