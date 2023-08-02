@@ -248,8 +248,6 @@ func looksLikeWASM(pluginName string) bool {
 // pre-Go 1.19 behavior of resolving queries that would use relative PATH
 // entries. We consider it acceptable for the use case of locating plugins.
 //
-// On Go 1.18 and below, this function is just a direct call to exec.LookPath.
-//
 // https://pkg.go.dev/os/exec#hdr-Executables_in_the_current_directory
 func unsafeLookPath(file string) (string, error) {
 	path, err := exec.LookPath(file)
