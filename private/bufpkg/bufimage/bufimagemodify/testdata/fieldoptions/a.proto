@@ -1,0 +1,42 @@
+syntax = "proto2";
+
+package foo.bar.baz;
+
+option go_package = "github.com/hello/world";
+option java_package = "com.example";
+
+message Outer {
+  message Inner {
+    optional string i1 = 1;
+    optional int32 i2 = 2;
+    repeated string i3 = 3 [ctype = CORD];
+    optional int64 i4 = 4 [jstype = JS_NUMBER];
+    optional uint64 i5 = 5 [
+      jstype = JS_STRING,
+      ctype = CORD
+    ];
+    optional sint64 i6 = 6;
+    extensions 100 to 199;
+  }
+  repeated Inner o1 = 1;
+  optional string o2 = 2;
+  optional fixed64 o3 = 3 [jstype = JS_STRING];
+  optional sfixed64 o4 = 4 [jstype = JS_NORMAL];
+  oneof oFiveOrSix {
+    int64 o5 = 5 [
+      jstype = JS_STRING,
+      ctype = CORD
+    ];
+    int64 o6 = 6 [jstype = JS_NUMBER];
+  }
+}
+
+extend Outer.Inner {
+  repeated int64 i7 = 126 [jstype = JS_NUMBER];
+  repeated int64 i8 = 127 [
+    jstype = JS_STRING,
+    retention = RETENTION_RUNTIME,
+    debug_redact = true,
+    lazy = true
+  ];
+}

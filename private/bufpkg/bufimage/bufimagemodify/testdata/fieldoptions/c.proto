@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+import "b.proto";
+import "google/protobuf/descriptor.proto";
+
+message Main {
+  required fixed64 first = 1 [
+    (foo.bar.baz.aaa).foo = "hello",
+    (foo.bar.baz.bbb).a.foo = "hey",
+    (foo.bar.baz.ccc) = 123, // ccc is a repeated option
+    jstype = JS_STRING
+  ];
+  required sfixed64 second = 2 [(foo.bar.baz.aaa).foo = "hi"];
+}

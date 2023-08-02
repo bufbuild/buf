@@ -202,10 +202,6 @@ func TestModifySingleOption(t *testing.T) {
 	}
 }
 
-func TestSweep(t *testing.T) {
-	// TODO
-}
-
 func modifyWithStringValue(t *testing.T, value string) []ModifyOption {
 	option, err := ModifyWithOverride(NewValueOverride(value))
 	require.NoError(t, err)

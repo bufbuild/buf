@@ -20,13 +20,15 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
+	"github.com/bufbuild/protocompile/walk"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// Marker markssource SourceCodeInfo_Location indices.
+// Marker marks SourceCodeInfo_Location paths.
 type Marker interface {
-	// Mark marks the given SourceCodeInfo_Location indices.
+	// Mark marks the given SourceCodeInfo_Location path.
 	Mark(bufimage.ImageFile, []int32)
 }
 
@@ -48,7 +50,7 @@ func NewMarkSweeper(image bufimage.Image) MarkSweeper {
 	return newMarkSweeper(image)
 }
 
-// Override describes how to modify a file option, and
+// Override describes how to modify a file or field option, and
 // may be passed to ModifyXYZ.
 type Override interface {
 	override()
@@ -94,14 +96,19 @@ func NewPrefixSuffixOverride(
 	return newPrefixSuffixOverride(prefix, suffix)
 }
 
-// ValueOverride is an override that directly modifies a file option.
+// ValueOverride is an override that directly modifies a file or field option.
 type ValueOverride interface {
 	Override
 	valueOverride()
 }
 
 // NewValueOverride returns a new override on value.
-func NewValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](val T) ValueOverride {
+func NewValueOverride[
+	T string |
+		bool |
+		descriptorpb.FileOptions_OptimizeMode |
+		descriptorpb.FieldOptions_JSType,
+](val T) ValueOverride {
 	return newValueOverride(val)
 }
 
@@ -163,6 +170,67 @@ func ModifyJavaPackage(
 	descriptor.Options.JavaPackage = proto.String(javaPackageValue)
 	marker.Mark(imageFile, internal.JavaPackagePath)
 	return nil
+}
+
+// TODO: Decide whether or not to use this one (this isn't the function we are calling right now,
+// but it's an alternative way of modifying). The interface is not as nice as that of FieldOptionModifier,
+// but this mean less code.
+// ModifyJSType modifies jstype field option.
+func ModifyJSType(
+	imageFile bufimage.ImageFile,
+	marker Marker,
+	valueSelector func(fieldName string) (value Override, shouldModify bool),
+) error {
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	err := walk.DescriptorProtosWithPath(imageFile.Proto(), func(
+		fullName protoreflect.FullName,
+		messageSourcePath protoreflect.SourcePath,
+		message proto.Message,
+	) error {
+		fieldDescriptor, ok := message.(*descriptorpb.FieldDescriptorProto)
+		if !ok {
+			return nil
+		}
+		if fieldDescriptor.Type == nil || !isJsTypePermittedForType(*fieldDescriptor.Type) {
+			return nil
+		}
+		if override, shouldModify := valueSelector(string(fullName)); shouldModify {
+			jstypeOverride, ok := override.(valueOverride[descriptorpb.FieldOptions_JSType])
+			if !ok {
+				return fmt.Errorf("unknown Override type: %T", override)
+			}
+			jsType := jstypeOverride.get()
+			if fieldDescriptor.Options == nil {
+				fieldDescriptor.Options = &descriptorpb.FieldOptions{}
+			}
+			fieldDescriptor.Options.Jstype = &jsType
+			if len(messageSourcePath) > 0 {
+				jsTypeOptionPath := append(messageSourcePath, internal.JSTypeSubPath...)
+				marker.Mark(imageFile, jsTypeOptionPath)
+			}
+		}
+		return nil
+	})
+	return err
+}
+
+// FieldOptionModifier modifies field option. A new FieldOptionModifier
+// should be created for each file to be modified.
+type FieldOptionModifier interface {
+	// FieldNames returns all fields' names from the image file.
+	FieldNames() []string
+	// ModifyJSType modifies field option jstype.
+	ModifyJSType(string, Override) error
+}
+
+// NewFieldOptionModifier returns a new FieldOptionModifier
+func NewFieldOptionModifier(
+	imageFile bufimage.ImageFile,
+	marker Marker,
+) (FieldOptionModifier, error) {
+	return newFieldOptionModifier(imageFile, marker)
 }
 
 func getJavaPackageValue(imageFile bufimage.ImageFile, prefix string, suffix string) string {

@@ -65,11 +65,21 @@ func (p prefixSuffixOverride) GetSuffix() string {
 func (p prefixSuffixOverride) override()             {}
 func (p prefixSuffixOverride) prefixSuffixOverride() {}
 
-type valueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode] struct {
+type valueOverride[
+	T string |
+		bool |
+		descriptorpb.FileOptions_OptimizeMode |
+		descriptorpb.FieldOptions_JSType,
+] struct {
 	value T
 }
 
-func newValueOverride[T string | bool | descriptorpb.FileOptions_OptimizeMode](val T) valueOverride[T] {
+func newValueOverride[
+	T string |
+		bool |
+		descriptorpb.FileOptions_OptimizeMode |
+		descriptorpb.FieldOptions_JSType,
+](val T) valueOverride[T] {
 	return valueOverride[T]{
 		value: val,
 	}

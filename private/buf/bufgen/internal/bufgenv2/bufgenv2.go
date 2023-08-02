@@ -207,24 +207,33 @@ func (m ExternalManagedConfigV2) isEmpty() bool {
 // ExternalManagedDisableConfigV2 is an external configuration that disables file options in
 // managed mode.
 type ExternalManagedDisableConfigV2 struct {
+	// At most one of FileOption and FieldOption can be set
 	// Must be validated to be a valid FileOption
 	FileOption string `json:"file_option,omitempty" yaml:"file_option,omitempty"`
+	// Must be validated to be a valid FieldOption
+	FieldOption string `json:"field_option,omitempty" yaml:"field_option,omitempty"`
 	// Must be validated to be a valid module path
 	Module string `json:"module,omitempty" yaml:"module,omitempty"`
 	// Must be normalized and validated
 	Path string `json:"path,omitempty" yaml:"path,omitempty"`
+	// Must be validated to be a valid to be a valid field name.
+	Field string `json:"field,omitempty" yaml:"field,omitempty"`
 }
 
 // ExternalManagedOverrideConfigV2 is an external configuration that overrides file options in
 // managed mode.
 type ExternalManagedOverrideConfigV2 struct {
+	// Must set exactly one of FileOption and FieldOption
 	// Must be validated to be a valid FileOption
-	// Required
 	FileOption string `json:"file_option,omitempty" yaml:"file_option,omitempty"`
+	// Must be validated to be a valid FieldOption
+	FieldOption string `json:"field_option,omitempty" yaml:"field_option,omitempty"`
 	// Must be validated to be a valid module path
 	Module string `json:"module,omitempty" yaml:"module,omitempty"`
 	// Must be normalized and validated
 	Path string `json:"path,omitempty" yaml:"path,omitempty"`
+	// Must be validated to be a valid field name
+	Field string `json:"field,omitempty" yaml:"field,omitempty"`
 	// Required
 	Value interface{} `json:"value,omitempty" yaml:"value,omitempty"`
 }

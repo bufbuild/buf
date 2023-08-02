@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func TestConfigSuccess(t *testing.T) {
@@ -680,18 +681,24 @@ func TestConfigSuccess(t *testing.T) {
 	}
 }
 
-func TestManagedConfig(t *testing.T) {
+func TestManagedConfigSuccess(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	nopLogger := zap.NewNop()
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
+	type fileAndField struct {
+		imageFileIdentity fakeImageFileIdentity
+		field             string
+	}
 	tests := []struct {
 		testName string
 		file     string
 		// true means disabled
-		expectedDisableResults  map[fileOption]map[imageFileIdentity]bool
-		expectedOverrideResults map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override
+		expectedDisableResults       map[fileOption]map[imageFileIdentity]bool
+		expectedOverrideResults      map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override
+		expectedFieldDisableResults  map[fieldOption]map[fileAndField]bool
+		expectedFieldOverrideResults map[fieldOption]map[fileAndField]bufimagemodifyv2.Override
 	}{
 		{
 			testName: "test override and disable matching",
@@ -830,6 +837,112 @@ func TestManagedConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			testName: "test jstype field option",
+			file:     filepath.Join("managed", "jstype"),
+			expectedFieldDisableResults: map[fieldOption]map[fileAndField]bool{
+				fieldOptionJsType: {
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							path: "random/random.proto",
+						},
+						field: "Ignore.me",
+					}: true,
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							path: "random/random.proto",
+						},
+						field: "Some.otherField",
+					}: false,
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							path: "excluded/a.proto",
+						},
+						field: "regular.Message1.field_3",
+					}: true,
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							module: mustCreateModuleIdentity(t, "buf.build", "googleapis", "googleapis"),
+							path:   "ok.proto",
+						},
+						field: "regular.Message2.field_4",
+					}: true,
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+							path:   "ok.proto",
+						},
+						field: "Foo.bar",
+					}: false,
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							module: mustCreateModuleIdentity(t, "buf.build", "acme", "notjstype"),
+							path:   "ok.proto",
+						},
+						field: "Foo.bar",
+					}: true,
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+							path:   "exact.proto",
+						},
+						field: "not.the.Specified.fieldToDisable",
+					}: false,
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+							path:   "exact.proto",
+						},
+						field: "Foo.bar",
+					}: true,
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+							path:   "match/field/but/not/path",
+						},
+						field: "Foo.bar",
+					}: false,
+				},
+			},
+			expectedFieldOverrideResults: map[fieldOption]map[fileAndField]bufimagemodifyv2.Override{
+				fieldOptionJsType: {
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							path: "any/path.proto",
+						},
+						field: "Regular.field_name",
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FieldOptions_JS_STRING),
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+							path:   "any/path.proto",
+						},
+						field: "Regular.field_name",
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FieldOptions_JS_NUMBER),
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+							path:   "b/c/d/x.proto",
+						},
+						field: "Regular.field_name",
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FieldOptions_JS_NORMAL),
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+							path:   "b/c/d/x.proto",
+						},
+						field: "Should_1.Be_2.num",
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FieldOptions_JS_NUMBER),
+					{
+						imageFileIdentity: fakeImageFileIdentity{
+							module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+							path:   "b/c/d/x.proto",
+						},
+						field: "package1.subpackage2.Message1.NestedMessage2.field_5",
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FieldOptions_JS_NORMAL),
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -870,6 +983,34 @@ func TestManagedConfig(t *testing.T) {
 							expectedOverride,
 							actual,
 							"%v override for %v should be %v, not %v", fileOption, imageFile, expectedOverride, actual,
+						)
+					}
+				}
+				for fieldOption, fileAndFieldToResults := range test.expectedFieldDisableResults {
+					for fileAndField, expectedResult := range fileAndFieldToResults {
+						actual := config.Managed.FieldDisableFunc(
+							fieldOption,
+							&fileAndField.imageFileIdentity,
+							fileAndField.field,
+						)
+						require.Equal(
+							t,
+							expectedResult,
+							actual,
+							"whether to disable %v for %v should be %v", fieldOption, fileAndField, expectedResult,
+						)
+					}
+				}
+				for fieldOption, fileAndFieldToOverrides := range test.expectedFieldOverrideResults {
+					for fileAndField, expectedOverride := range fileAndFieldToOverrides {
+						overrideFunc, ok := config.Managed.FieldOptionToOverrideFunc[fieldOption]
+						require.True(t, ok)
+						actual := overrideFunc(&fileAndField.imageFileIdentity, fileAndField.field)
+						require.Equal(
+							t,
+							expectedOverride,
+							actual,
+							"override for %v for %v should be %v", fieldOption, fileAndField, expectedOverride,
 						)
 					}
 				}
@@ -1028,12 +1169,22 @@ func TestConfigError(t *testing.T) {
 		{
 			testName:      "Test disable has none of path module and file option",
 			file:          filepath.Join("managed", "invalid_disable"),
-			expectedError: "must set one of file_option, module and path for a disable rule",
+			expectedError: "must set one of file_option, field option, module, path and field for a disable rule",
 		},
 		{
-			testName:      "Test disable has none of path module and file option",
+			testName:      "Test override has none of path module and file option",
 			file:          filepath.Join("managed", "invalid_override"),
-			expectedError: "must set a file option to override",
+			expectedError: "must set one of file option and field option to override",
+		},
+		{
+			testName:      "Test invalid field option",
+			file:          filepath.Join("managed", "invalid_field_option"),
+			expectedError: `unknown field option: "not_a_real_field_option"`,
+		},
+		{
+			testName:      "Test invalid jstype value",
+			file:          filepath.Join("managed", "invalid_jstype_value"),
+			expectedError: `"not_a_valid_jstype_value" is not a valid jstype value, must be one of JS_NORMAL, JS_STRING and JS_NUMBER`,
 		},
 	}
 

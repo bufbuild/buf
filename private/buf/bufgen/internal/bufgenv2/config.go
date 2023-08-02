@@ -36,6 +36,13 @@ type disabledFunc func(fileOption, imageFileIdentity) bool
 // should be overridden to for this file.
 type overrideFunc func(imageFileIdentity) bufimagemodifyv2.Override
 
+// fieldDisableFunc decides whether a field option should be disabled for a file or field
+type fieldDisableFunc func(fieldOption, imageFileIdentity, string) bool
+
+// fieldOverrideFunc is specific to a field option, and returns what thie field option
+// should be overridden to for this file or field.
+type fieldOverrideFunc func(imageFileIdentity, string) bufimagemodifyv2.Override
+
 // imageFileIdentity is an image file that can be identified by a path and module identity.
 // There two (path and module) are the only information needed to decide whether to disable
 // or override a file option for a specific file. Using an interface to for easier testing.
@@ -58,6 +65,8 @@ type ManagedConfig struct {
 	Enabled                       bool
 	DisabledFunc                  disabledFunc
 	FileOptionGroupToOverrideFunc map[fileOptionGroup]overrideFunc
+	FieldDisableFunc              fieldDisableFunc
+	FieldOptionToOverrideFunc     map[fieldOption]fieldOverrideFunc
 }
 
 // InputConfig is an input configuration.
@@ -127,23 +136,74 @@ func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2
 		// continue to validate this config
 	}
 	var disabledFuncs []disabledFunc
+	var fieldDisableFuncs []fieldDisableFunc
 	fileOptionGroupToOverrideFuncs := make(map[fileOptionGroup][]overrideFunc)
+	fieldOptionToOverrideFuncs := make(map[fieldOption][]fieldOverrideFunc)
 	for _, externalDisableConfig := range externalConfig.Disable {
-		if len(externalDisableConfig.FileOption) == 0 && len(externalDisableConfig.Module) == 0 && len(externalDisableConfig.Path) == 0 {
-			return nil, errors.New("must set one of file_option, module and path for a disable rule")
+		if len(externalDisableConfig.FileOption) == 0 &&
+			len(externalDisableConfig.FieldOption) == 0 &&
+			len(externalDisableConfig.Module) == 0 &&
+			len(externalDisableConfig.Path) == 0 &&
+			len(externalDisableConfig.Field) == 0 {
+			return nil, errors.New("must set one of file_option, field option, module, path and field for a disable rule")
 		}
+		if len(externalDisableConfig.FieldOption) > 0 && len(externalDisableConfig.FileOption) > 0 {
+			return nil, errors.New("only one of file_option and field_option can be specified in a disable rule")
+		}
+		if len(externalDisableConfig.FileOption) > 0 {
+			// this is a file option rule only
+			if len(externalDisableConfig.Field) > 0 {
+				return nil, errors.New("cannot specify both file option and field option")
+			}
+			disabledFunc, err := newDisabledFunc(externalDisableConfig)
+			if err != nil {
+				return nil, err
+			}
+			disabledFuncs = append(disabledFuncs, disabledFunc)
+			continue
+		}
+		if len(externalDisableConfig.FieldOption) > 0 || len(externalDisableConfig.Field) > 0 {
+			// this is a field option rule only
+			fieldDisableFunc, err := newFieldDisabledFunc(externalDisableConfig)
+			if err != nil {
+				return nil, err
+			}
+			fieldDisableFuncs = append(fieldDisableFuncs, fieldDisableFunc)
+			continue
+		}
+		// none of field_option, field and file_option is set. We disable both file options and field options.
 		disabledFunc, err := newDisabledFunc(externalDisableConfig)
 		if err != nil {
 			return nil, err
 		}
 		disabledFuncs = append(disabledFuncs, disabledFunc)
+		fieldDisableFunc, err := newFieldDisabledFunc(externalDisableConfig)
+		if err != nil {
+			return nil, err
+		}
+		fieldDisableFuncs = append(fieldDisableFuncs, fieldDisableFunc)
 	}
 	for _, externalOverrideConfig := range externalConfig.Override {
-		if len(externalOverrideConfig.FileOption) == 0 {
-			return nil, errors.New("must set a file option to override")
+		if len(externalOverrideConfig.FileOption) == 0 && len(externalOverrideConfig.FieldOption) == 0 {
+			return nil, errors.New("must set one of file option and field option to override")
+		}
+		if len(externalOverrideConfig.FileOption) > 0 && len(externalOverrideConfig.FieldOption) > 0 {
+			return nil, errors.New("only one of file option and field option can be set for override")
 		}
 		if externalOverrideConfig.Value == nil {
 			return nil, errors.New("must set an value to override")
+		}
+		if len(externalOverrideConfig.FieldOption) > 0 {
+			fieldOption, err := parseFieldOption(externalOverrideConfig.FieldOption)
+			if err != nil {
+				return nil, err
+			}
+			fieldOverrideFunc, err := newFieldOptionOverrideFunc(externalOverrideConfig)
+			if err != nil {
+				return nil, err
+			}
+			fieldOptionToOverrideFuncs[fieldOption] = append(fieldOptionToOverrideFuncs[fieldOption], fieldOverrideFunc)
+			continue
 		}
 		fileOption, err := parseFileOption(externalOverrideConfig.FileOption)
 		if err != nil {
@@ -177,7 +237,9 @@ func newManagedConfig(logger *zap.Logger, externalConfig ExternalManagedConfigV2
 	return &ManagedConfig{
 		Enabled:                       externalConfig.Enabled,
 		DisabledFunc:                  mergeDisabledFuncs(disabledFuncs),
+		FieldDisableFunc:              mergeFieldDisabledFuncs(fieldDisableFuncs),
 		FileOptionGroupToOverrideFunc: mergeFileOptionToOverrideFuncs(fileOptionGroupToOverrideFuncs),
+		FieldOptionToOverrideFunc:     mergeFieldOptionToFieldOverrideFuncs(fieldOptionToOverrideFuncs),
 	}, nil
 }
 
@@ -200,6 +262,27 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFun
 	}, nil
 }
 
+func newFieldDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (fieldDisableFunc, error) {
+	var selectorFieldOption fieldOption
+	var err error
+	if len(externalConfig.FieldOption) > 0 {
+		selectorFieldOption, err = parseFieldOption(externalConfig.FieldOption)
+		if err != nil {
+			return nil, err
+		}
+	}
+	selectorField := externalConfig.Field
+	if err = validateFieldName(selectorField); err != nil {
+		return nil, err
+	}
+	return func(fieldOption fieldOption, imageFile imageFileIdentity, field string) bool {
+		// If we did not specify a file option, we match all file options
+		return (selectorFieldOption == 0 || fieldOption == selectorFieldOption) &&
+			matchesPathAndModule(externalConfig.Path, externalConfig.Module, imageFile) &&
+			(selectorField == "" || selectorField == field)
+	}, nil
+}
+
 func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (overrideFunc, error) {
 	fileOption, err := parseFileOption(externalConfig.FileOption)
 	if err != nil {
@@ -216,13 +299,45 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (overrideFu
 		return nil, err
 	}
 	return func(imageFile imageFileIdentity) bufimagemodifyv2.Override {
-		// We don't need to match on FileOption - we only call this OverrideFunc when we
-		// know we are applying for a given FileOption.
-		// The FileOption we parsed above is assumed to be the FileOption.
+		// We don't need to match on fileOption - we only call this OverrideFunc when we
+		// know we are applying for a given fileOption.
+		// The fileOption we parsed above is assumed to be the fileOption.
 		if matchesPathAndModule(externalConfig.Path, externalConfig.Module, imageFile) {
 			return override
 		}
 		return nil
+	}, nil
+}
+
+func newFieldOptionOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (fieldOverrideFunc, error) {
+	err := validateFieldName(externalConfig.Field)
+	if err != nil {
+		return nil, err
+	}
+	fieldOption, err := parseFieldOption(externalConfig.FieldOption)
+	if err != nil {
+		return nil, err
+	}
+	parseFunc, ok := fieldOptionToOverrideParseFunc[fieldOption]
+	if !ok {
+		// this should not happen
+		return nil, fmt.Errorf("invalid field option: %v", fieldOption)
+	}
+	override, err := parseFunc(externalConfig.Value, fieldOption)
+	if err != nil {
+		return nil, err
+	}
+	return func(imageFile imageFileIdentity, field string) bufimagemodifyv2.Override {
+		// We don't need to match on FieldOption - we only call this filedOptionOverrideFunc when we
+		// know we are applying for a given fieldOption.
+		// The fieldOption we parsed above is assumed to be the fieldOption.
+		if !matchesPathAndModule(externalConfig.Path, externalConfig.Module, imageFile) {
+			return nil
+		}
+		if externalConfig.Field != "" && externalConfig.Field != field {
+			return nil
+		}
+		return override
 	}, nil
 }
 
@@ -275,6 +390,18 @@ func mergeDisabledFuncs(disabledFuncs []disabledFunc) disabledFunc {
 	}
 }
 
+func mergeFieldDisabledFuncs(fieldDisableFuncs []fieldDisableFunc) fieldDisableFunc {
+	// If any disables, then we disable for this fieldOption and ImageFile
+	return func(fieldOption fieldOption, imageFile imageFileIdentity, field string) bool {
+		for _, fieldDisabledFunc := range fieldDisableFuncs {
+			if fieldDisabledFunc(fieldOption, imageFile, field) {
+				return true
+			}
+		}
+		return false
+	}
+}
+
 func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
 	// Last override listed wins, but if the last two are prefix and suffix, both win.
 	return func(imageFile imageFileIdentity) bufimagemodifyv2.Override {
@@ -307,4 +434,50 @@ func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
 		}
 		return lastOverride
 	}
+}
+
+func mergeFieldOptionToFieldOverrideFuncs(
+	fieldOptionToOverrideFuncs map[fieldOption][]fieldOverrideFunc,
+) map[fieldOption]fieldOverrideFunc {
+	fieldOptionToFieldOverrideFunc := make(map[fieldOption]fieldOverrideFunc, len(fieldOptionToOverrideFuncs))
+	for fieldOption, fieldOverrideFuncs := range fieldOptionToOverrideFuncs {
+		fieldOptionToFieldOverrideFunc[fieldOption] = mergeFieldOverrideFuncs(fieldOverrideFuncs)
+	}
+	return fieldOptionToFieldOverrideFunc
+}
+
+func mergeFieldOverrideFuncs(fieldOverrideFuncs []fieldOverrideFunc) fieldOverrideFunc {
+	return func(imageFile imageFileIdentity, field string) bufimagemodifyv2.Override {
+		var fieldOverride bufimagemodifyv2.Override
+		for _, fieldOverrideFunc := range fieldOverrideFuncs {
+			currentOverride := fieldOverrideFunc(imageFile, field)
+			if currentOverride != nil {
+				fieldOverride = currentOverride
+			}
+		}
+		return fieldOverride
+	}
+}
+
+// A field name should be: identifier { dot identifier }.
+// An identifier: https://protobuf.com/docs/language-spec#identifiers-and-keywords.
+// A letter is a upper or lower case English letter or underscore.
+// https://protobuf.com/docs/language-spec#character-classes
+func validateFieldName(fieldName string) error {
+	for _, c := range fieldName {
+		if 'a' <= c && c <= 'z' {
+			continue
+		}
+		if 'A' <= c && c <= 'Z' {
+			continue
+		}
+		if '0' <= c && c <= '9' {
+			continue
+		}
+		if c == '_' || c == '.' {
+			continue
+		}
+		return fmt.Errorf("invalid character in field name: %q", c)
+	}
+	return nil
 }
