@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Fix issue where all files were being iterated over when using the `--path` flag.
 - Fix issue where the directory `.` was incorrectly accepted as a value for the
   `directories` key in `buf.work.yaml`.
 

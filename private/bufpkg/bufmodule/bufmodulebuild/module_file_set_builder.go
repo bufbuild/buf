@@ -156,7 +156,12 @@ func (m *moduleFileSetBuilder) build(
 
 // protoPathsHash returns a hash representing the paths of the .proto files within the Module.
 func protoPathsHash(ctx context.Context, module bufmodule.Module) (string, error) {
-	fileInfos, err := module.SourceFileInfos(ctx)
+	// Use TargetFileInfos instead of SourceFileInfos as otherwise this will iterate over
+	// all files in a bucket in the case of using i.e. --path, which causes massive performance problems.
+	//
+	// If you are targeting a specific set of files, it's fair to have our duplication detection only
+	// use target files.
+	fileInfos, err := module.TargetFileInfos(ctx)
 	if err != nil {
 		return "", err
 	}
