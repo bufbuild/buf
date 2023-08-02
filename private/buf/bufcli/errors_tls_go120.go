@@ -22,7 +22,7 @@ import (
 )
 
 // wrappedTLSError returns an unwrapped TLS error or nil if the error is another type of error.
-func wrappedTLSCertificateVerificationError(err error) error {
+func wrappedTLSError(err error) error {
 	if tlsErr := (&tls.CertificateVerificationError{}); errors.As(err, &tlsErr) {
 		return tlsErr
 	}
