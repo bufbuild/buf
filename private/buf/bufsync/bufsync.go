@@ -16,7 +16,6 @@ package bufsync
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -26,45 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"go.uber.org/zap"
 )
-
-// ErrModuleDoesNotExist is an error returned when looking for a remote module.
-var ErrModuleDoesNotExist = errors.New("BSR module does not exist")
-
-// ErrorHandler handles errors reported by the Syncer. If a non-nil
-// error is returned by the handler, sync will abort in a partially-synced
-// state.
-type ErrorHandler interface {
-	// InvalidModuleConfig is invoked by Syncer upon encountering a module
-	// with an invalid module config.
-	//
-	// Returning an error will abort sync.
-	InvalidModuleConfig(
-		module Module,
-		commit git.Commit,
-		err error,
-	) error
-	// BuildFailure is invoked by Syncer upon encountering a module that fails
-	// build.
-	//
-	// Returning an error will abort sync.
-	BuildFailure(
-		module Module,
-		commit git.Commit,
-		err error,
-	) error
-	// InvalidSyncPoint is invoked by Syncer upon encountering a module's branch
-	// sync point that is invalid. A typical example is either a sync point that
-	// point to a commit that cannot be found anymore, or the commit itself has
-	// been corrupted.
-	//
-	// Returning an error will abort sync.
-	InvalidSyncPoint(
-		module Module,
-		branch string,
-		syncPoint git.Hash,
-		err error,
-	) error
-}
 
 // Module is a module that will be synced by Syncer.
 type Module interface {
