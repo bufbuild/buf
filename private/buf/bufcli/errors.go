@@ -176,7 +176,7 @@ func wrapError(err error) error {
 				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, dnsError.Name)
 			}
 			if tlsErr := (&tls.CertificateVerificationError{}); errors.As(err, &tlsErr) {
-				return tlsErr
+				return fmt.Errorf("tls certificate verification: %w", tlsErr)
 			}
 			return errors.New(msg)
 		}
