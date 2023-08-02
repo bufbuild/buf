@@ -31,6 +31,8 @@ enum SearchFilter {
   SEARCH_FILTER_REPOSITORY = 3;
   SEARCH_FILTER_TEAM = 6;
   SEARCH_FILTER_CURATED_PLUGIN = 7;
+  SEARCH_FILTER_MODULE_ELEMENT = 8;
+  SEARCH_FILTER_MODULE_FILE = 9;
 }
 
 enum OrderBy {
@@ -77,6 +79,21 @@ message CuratedPluginSearchResult {
   bool deprecated = 4;
 }
 
+message ModuleElementSearchResult {
+  string repository_id = 1;
+  string repository_owner = 2;
+  string repository_name = 3;
+  string proto_file_path = 4;
+  string fully_qualified_name = 5;
+}
+
+message ModuleFileSearchResult {
+  string repository_id = 1;
+  string repository_owner = 2;
+  string repository_name = 3;
+  string proto_file_path = 4;
+}
+
 message SearchResult {
   reserved 5, 6;
   reserved "plugin", "template";
@@ -87,6 +104,8 @@ message SearchResult {
     UserSearchResult user = 3;
     TeamSearchResult team = 4;
     CuratedPluginSearchResult curated_plugin = 7;
+    ModuleElementSearchResult module_element = 8;
+    ModuleFileSearchResult module_file = 9;
   }
 }
 
