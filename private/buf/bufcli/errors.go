@@ -174,7 +174,11 @@ func wrapError(err error) error {
 			if dnsError := (&net.DNSError{}); errors.As(err, &dnsError) && dnsError.IsNotFound {
 				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, dnsError.Name)
 			}
-
+			// If the unavailable error wraps a tls.CertificateVerificationError, show a more specific error message
+			// to the user to aid in troubleshooting.
+			if tlsErr := wrappedTLSError(err); tlsErr != nil {
+				return fmt.Errorf("tls certificate verification: %w", tlsErr)
+			}
 			return errors.New(msg)
 		}
 		return fmt.Errorf("Failure: %s", connectErr.Message())
