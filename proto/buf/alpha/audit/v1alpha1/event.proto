@@ -171,6 +171,8 @@ message Event {
     PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
     PayloadServerBreakingChangePolicyDisabled payload_server_breaking_change_policy_disabled = 39;
     PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40;
+    PayloadServerUniquenessPolicyEnabled payload_server_uniqueness_policy_enabled = 41;
+    PayloadServerUniquenessPolicyDisabled payload_server_uniqueness_policy_disabled = 42;
   }
 }
 
@@ -425,3 +427,7 @@ message PayloadServerBreakingChangePolicyEnabled {
 }
 
 message PayloadServerBreakingChangePolicyDisabled {}
+
+message PayloadServerUniquenessPolicyEnabled {}
+
+message PayloadServerUniquenessPolicyDisabled {}
