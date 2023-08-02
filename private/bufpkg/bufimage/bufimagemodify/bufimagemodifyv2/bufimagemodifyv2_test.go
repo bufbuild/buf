@@ -212,12 +212,6 @@ func modifyWithStringValue(t *testing.T, value string) []ModifyOption {
 	return []ModifyOption{option}
 }
 
-func modifyWithBoolValue(t *testing.T, value bool) []ModifyOption {
-	option, err := ModifyWithOverride(NewValueOverride(value))
-	require.NoError(t, err)
-	return []ModifyOption{option}
-}
-
 func modifyWithPrefix(t *testing.T, prefix string) []ModifyOption {
 	option, err := ModifyWithOverride(NewPrefixOverride(prefix))
 	require.NoError(t, err)

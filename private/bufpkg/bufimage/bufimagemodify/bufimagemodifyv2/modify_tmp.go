@@ -25,10 +25,6 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-const (
-	defaultJavaMultipleFiles = true
-)
-
 // ModifyJavaOuterClassname modifies java_outer_classname. By default, it modifies this option to
 // `<ProtoFileName>Proto`. Specify an override option to set it to a specific value.
 func ModifyJavaOuterClassname(

@@ -793,9 +793,9 @@ func TestModifySingleOptionWithRequiredOverride(t *testing.T) {
 	}
 }
 
-func assertCcEnableArenas(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
-	assert.Equal(t, expectedValue, descriptor.GetOptions().GetCcEnableArenas())
-}
+// func assertCcEnableArenas(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
+// 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetCcEnableArenas())
+// }
 
 func assertCsharpNamespace(t *testing.T, expectedValue interface{}, descriptor *descriptorpb.FileDescriptorProto) {
 	assert.Equal(t, expectedValue, descriptor.GetOptions().GetCsharpNamespace())
