@@ -1,0 +1,42 @@
+syntax = "proto2";
+
+package foo.bar.baz;
+
+import "google/protobuf/descriptor.proto";
+
+option cc_enable_arenas = false;
+option cc_generic_services = false;
+option csharp_namespace = "foo";
+option go_package = "foo";
+option java_generic_services = false;
+option java_multiple_files = false;
+option java_outer_classname = "foo";
+option java_package = "foo";
+option java_string_check_utf8 = false;
+option objc_class_prefix = "foo";
+option optimize_for = SPEED;
+option php_class_prefix = "foo";
+option php_generic_services = false;
+option php_metadata_namespace = "foo";
+option php_namespace = "foo";
+option py_generic_services = false;
+option ruby_package = "foo";
+option swift_prefix = "foo";
+
+message Hello {
+  required fixed64 world = 1 [jstype = JS_STRING];
+}
+
+message A {
+  required string foo = 1;
+}
+
+message B {
+  required A a = 1;
+}
+
+extend google.protobuf.FieldOptions {
+  optional A aaa = 50000;
+  optional B bbb = 50002;
+  repeated int32 ccc = 50003;
+}

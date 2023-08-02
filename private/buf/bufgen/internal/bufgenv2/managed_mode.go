@@ -15,6 +15,8 @@
 package bufgenv2
 
 import (
+	"fmt"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
 )
@@ -32,6 +34,73 @@ func applyManagement(image bufimage.Image, managedConfig *ManagedConfig) error {
 		}
 	}
 	return markSweeper.Sweep()
+}
+
+func applyManagementForFile(
+	marker bufimagemodifyv2.Marker,
+	imageFile bufimage.ImageFile,
+	managedConfig *ManagedConfig,
+) error {
+	for _, fileOptionGroup := range allFileOptionGroups {
+		var override bufimagemodifyv2.Override
+		overrideFunc, ok := managedConfig.FileOptionGroupToOverrideFunc[fileOptionGroup]
+		if ok {
+			override = overrideFunc(imageFile)
+		}
+		// TODO do the rest
+		switch fileOptionGroup {
+		case groupJavaPackage:
+			if managedConfig.DisabledFunc(fileOptionJavaPackage, imageFile) {
+				continue
+			}
+			override = addPrefixIfNotExist(override, defaultJavaPackagePrefix)
+			if managedConfig.DisabledFunc(fileOptionJavaPackagePrefix, imageFile) {
+				override = disablePrefix(override)
+			}
+			if managedConfig.DisabledFunc(fileOptionJavaPackageSuffix, imageFile) {
+				override = disableSuffix(override)
+			}
+			modifyOptions, err := getModifyOptions(override)
+			if err != nil {
+				return err
+			}
+			err = bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, modifyOptions...)
+			if err != nil {
+				return err
+			}
+		default:
+			// this should not happen
+			return fmt.Errorf("unknown file option")
+		}
+	}
+	modifier, err := bufimagemodifyv2.NewFieldOptionModifier(imageFile, marker)
+	if err != nil {
+		return err
+	}
+	for _, field := range modifier.FieldNames() {
+		for _, fieldOption := range allFieldOptions {
+			if managedConfig.FieldDisableFunc(fieldOption, imageFile, field) {
+				continue
+			}
+			var override bufimagemodifyv2.Override
+			if fieldOverrideFunc, ok := managedConfig.FieldOptionToOverrideFunc[fieldOption]; ok {
+				override = fieldOverrideFunc(imageFile, field)
+			}
+			switch fieldOption {
+			case fieldOptionJsType:
+				if override == nil {
+					continue
+				}
+				err := modifier.ModifyJSType(field, override)
+				if err != nil {
+					return err
+				}
+			default:
+				// this should not happen
+			}
+		}
+	}
+	return nil
 }
 
 // disablePrefix returns an override that does the same thing as the override provided,

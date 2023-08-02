@@ -1,0 +1,9 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - field_option: jstype
+      value: not_a_valid_jstype_value

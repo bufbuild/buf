@@ -1,0 +1,8 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  disable:
+    - field_option: not_a_real_field_option
