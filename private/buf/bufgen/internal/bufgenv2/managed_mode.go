@@ -73,16 +73,16 @@ func applyManagementForFile(
 				}
 			case prefixOverride:
 				modfiyOptions = []bufimagemodifyv2.ModifyJavaPackageOption{
-					bufimagemodifyv2.ModifyJavaPackageWithPrefix(t.Get()),
+					bufimagemodifyv2.ModifyJavaPackageWithPrefix(t.get()),
 				}
 			case suffixOverride:
 				modfiyOptions = []bufimagemodifyv2.ModifyJavaPackageOption{
-					bufimagemodifyv2.ModifyJavaPackageWithSuffix(t.Get()),
+					bufimagemodifyv2.ModifyJavaPackageWithSuffix(t.get()),
 				}
 			case prefixSuffixOverride:
 				modfiyOptions = []bufimagemodifyv2.ModifyJavaPackageOption{
-					bufimagemodifyv2.ModifyJavaPackageWithPrefix(t.GetPrefix()),
-					bufimagemodifyv2.ModifyJavaPackageWithSuffix(t.GetSuffix()),
+					bufimagemodifyv2.ModifyJavaPackageWithPrefix(t.getPrefix()),
+					bufimagemodifyv2.ModifyJavaPackageWithSuffix(t.getSuffix()),
 				}
 			default:
 				return fmt.Errorf("invalid override type %T", override)
@@ -170,7 +170,7 @@ func applyManagementForFile(
 			case valueOverride[string]:
 				modifyOption = bufimagemodifyv2.ModifyGoPackageWithValue(t.get())
 			case prefixOverride:
-				modifyOption = bufimagemodifyv2.ModifyGoPackageWithPrefix(t.Get())
+				modifyOption = bufimagemodifyv2.ModifyGoPackageWithPrefix(t.get())
 			case nil:
 				// Do not modify go_package is override is nil.
 				continue
@@ -215,7 +215,7 @@ func applyManagementForFile(
 				}
 			case prefixOverride:
 				modifyOptions = []bufimagemodifyv2.ModifyCsharpNamespaceOption{
-					bufimagemodifyv2.ModifyCsharpNamespaceWithPrefix(t.Get()),
+					bufimagemodifyv2.ModifyCsharpNamespaceWithPrefix(t.get()),
 				}
 			case nil:
 				// modify options will be empty
@@ -263,7 +263,7 @@ func applyManagementForFile(
 				}
 			case suffixOverride:
 				modifyOptions = []bufimagemodifyv2.ModifyPhpMetadataNamespaceOption{
-					bufimagemodifyv2.ModifyPhpMetadataNamespaceWithSuffix(t.Get()),
+					bufimagemodifyv2.ModifyPhpMetadataNamespaceWithSuffix(t.get()),
 				}
 			case nil:
 				// modify options will be empty
@@ -289,7 +289,7 @@ func applyManagementForFile(
 				}
 			case suffixOverride:
 				modifyOptions = []bufimagemodifyv2.ModifyRubyPackageOption{
-					bufimagemodifyv2.ModifyRubyPackageWithSuffix(t.Get()),
+					bufimagemodifyv2.ModifyRubyPackageWithSuffix(t.get()),
 				}
 			case nil:
 				// modify options will be empty
@@ -343,7 +343,7 @@ func disablePrefix(override override) override {
 	case prefixOverride:
 		return nil
 	case prefixSuffixOverride:
-		return newSuffixOverride(t.GetSuffix())
+		return newSuffixOverride(t.getSuffix())
 	}
 	return override
 }
@@ -355,7 +355,7 @@ func disableSuffix(override override) override {
 	case suffixOverride:
 		return nil
 	case prefixSuffixOverride:
-		return newPrefixOverride(t.GetPrefix())
+		return newPrefixOverride(t.getPrefix())
 	}
 	return override
 }
@@ -366,7 +366,7 @@ func disableSuffix(override override) override {
 func addPrefixIfNotExist(override override, prefix string) override {
 	switch t := override.(type) {
 	case suffixOverride:
-		return newPrefixSuffixOverride(prefix, t.Get())
+		return newPrefixSuffixOverride(prefix, t.get())
 	case nil:
 		return newPrefixOverride(prefix)
 	}

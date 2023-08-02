@@ -26,7 +26,7 @@ func newPrefixOverride(prefix string) prefixOverride {
 	return prefixOverride(prefix)
 }
 
-func (p prefixOverride) Get() string {
+func (p prefixOverride) get() string {
 	return string(p)
 }
 
@@ -39,7 +39,7 @@ func newSuffixOverride(suffix string) suffixOverride {
 	return suffixOverride(suffix)
 }
 
-func (s suffixOverride) Get() string {
+func (s suffixOverride) get() string {
 	return string(s)
 }
 
@@ -58,11 +58,11 @@ func newPrefixSuffixOverride(prefix string, suffix string) prefixSuffixOverride 
 	}
 }
 
-func (p prefixSuffixOverride) GetPrefix() string {
+func (p prefixSuffixOverride) getPrefix() string {
 	return p.prefix
 }
 
-func (p prefixSuffixOverride) GetSuffix() string {
+func (p prefixSuffixOverride) getSuffix() string {
 	return p.suffix
 }
 
