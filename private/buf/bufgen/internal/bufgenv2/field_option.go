@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -41,7 +40,7 @@ var (
 	stringToFieldOption = map[string]fieldOption{
 		"jstype": fieldOptionJsType,
 	}
-	fieldOptionToOverrideParseFunc = map[fieldOption]func(interface{}, fieldOption) (bufimagemodifyv2.Override, error){
+	fieldOptionToOverrideParseFunc = map[fieldOption]func(interface{}, fieldOption) (override, error){
 		fieldOptionJsType: parseJSType,
 	}
 )
@@ -70,7 +69,7 @@ func parseFieldOption(s string) (fieldOption, error) {
 	return 0, fmt.Errorf("unknown field option: %q", s)
 }
 
-func parseJSType(override interface{}, fieldOption fieldOption) (bufimagemodifyv2.Override, error) {
+func parseJSType(override interface{}, fieldOption fieldOption) (override, error) {
 	jsTypeName, ok := override.(string)
 	if !ok {
 		return nil, fmt.Errorf("invalid override for %v", fieldOption)
@@ -80,5 +79,5 @@ func parseJSType(override interface{}, fieldOption fieldOption) (bufimagemodifyv
 		return nil, fmt.Errorf("%q is not a valid %v value, must be one of JS_NORMAL, JS_STRING and JS_NUMBER", jsTypeName, fieldOption)
 	}
 	jsType := descriptorpb.FieldOptions_JSType(jsTypeEnum)
-	return bufimagemodifyv2.NewValueOverride(jsType), nil
+	return newValueOverride(jsType), nil
 }

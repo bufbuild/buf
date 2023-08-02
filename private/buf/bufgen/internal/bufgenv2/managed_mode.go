@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -44,7 +45,7 @@ func applyManagementForFile(
 	managedConfig *ManagedConfig,
 ) error {
 	for _, fileOptionGroup := range allFileOptionGroups {
-		var override bufimagemodifyv2.Override
+		var override override
 		overrideFunc, ok := managedConfig.FileOptionGroupToOverrideFunc[fileOptionGroup]
 		if ok {
 			override = overrideFunc(imageFile)
@@ -61,11 +62,32 @@ func applyManagementForFile(
 			if managedConfig.DisabledFunc(fileOptionJavaPackageSuffix, imageFile) {
 				override = disableSuffix(override)
 			}
-			modifyOptions, err := getModifyOptions(override)
-			if err != nil {
-				return err
+			var modfiyOptions []bufimagemodifyv2.ModifyJavaPackageOption
+			switch t := override.(type) {
+			case nil:
+				// If nil it means java_package_prefix is disabled but java_package is not disabled,
+				// continue to modify without prefix.
+			case valueOverride[string]:
+				modfiyOptions = []bufimagemodifyv2.ModifyJavaPackageOption{
+					bufimagemodifyv2.ModifyJavaPackageWithValue(t.get()),
+				}
+			case prefixOverride:
+				modfiyOptions = []bufimagemodifyv2.ModifyJavaPackageOption{
+					bufimagemodifyv2.ModifyJavaPackageWithPrefix(t.Get()),
+				}
+			case suffixOverride:
+				modfiyOptions = []bufimagemodifyv2.ModifyJavaPackageOption{
+					bufimagemodifyv2.ModifyJavaPackageWithSuffix(t.Get()),
+				}
+			case prefixSuffixOverride:
+				modfiyOptions = []bufimagemodifyv2.ModifyJavaPackageOption{
+					bufimagemodifyv2.ModifyJavaPackageWithPrefix(t.GetPrefix()),
+					bufimagemodifyv2.ModifyJavaPackageWithSuffix(t.GetSuffix()),
+				}
+			default:
+				return fmt.Errorf("invalid override type %T", override)
 			}
-			err = bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, modifyOptions...)
+			err := bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, modfiyOptions...)
 			if err != nil {
 				return err
 			}
@@ -73,11 +95,18 @@ func applyManagementForFile(
 			if managedConfig.DisabledFunc(fileOptionJavaOuterClassname, imageFile) {
 				continue
 			}
-			modifyOptions, err := getModifyOptions(override)
-			if err != nil {
-				return err
+			var modifyOptions []bufimagemodifyv2.ModifyJavaOuterClassnameOption
+			switch t := override.(type) {
+			case valueOverride[string]:
+				modifyOptions = []bufimagemodifyv2.ModifyJavaOuterClassnameOption{
+					bufimagemodifyv2.ModifyJavaOuterClassnameWithValue(t.get()),
+				}
+			case nil:
+				// modify options will be empty
+			default:
+				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err = bufimagemodifyv2.ModifyJavaOuterClassname(marker, imageFile, modifyOptions...)
+			err := bufimagemodifyv2.ModifyJavaOuterClassname(marker, imageFile, modifyOptions...)
 			if err != nil {
 				return err
 			}
@@ -85,10 +114,15 @@ func applyManagementForFile(
 			if managedConfig.DisabledFunc(fileOptionJavaMultipleFiles, imageFile) {
 				continue
 			}
-			if override == nil {
-				override = bufimagemodifyv2.NewValueOverride(defaultJavaMultipleFiles)
+			javaMultipleFiles := defaultJavaMultipleFiles
+			if override != nil {
+				javaMultipleFilesOverride, ok := override.(valueOverride[bool])
+				if !ok {
+					return fmt.Errorf("invalid override type %T", override)
+				}
+				javaMultipleFiles = javaMultipleFilesOverride.get()
 			}
-			err := bufimagemodifyv2.ModifyJavaMultipleFiles(marker, imageFile, override)
+			err := bufimagemodifyv2.ModifyJavaMultipleFiles(marker, imageFile, javaMultipleFiles)
 			if err != nil {
 				return err
 			}
@@ -100,7 +134,11 @@ func applyManagementForFile(
 				// Do not modify java_string_check_utf8 if no override is specified.
 				continue
 			}
-			err := bufimagemodifyv2.ModifyJavaStringCheckUtf8(marker, imageFile, override)
+			javaStringCheckUtf8Override, ok := override.(valueOverride[bool])
+			if !ok {
+				return fmt.Errorf("invalid override type %T", override)
+			}
+			err := bufimagemodifyv2.ModifyJavaStringCheckUtf8(marker, imageFile, javaStringCheckUtf8Override.get())
 			if err != nil {
 				return err
 			}
@@ -112,7 +150,11 @@ func applyManagementForFile(
 				// Do not modify optimize_for if no override is matched.
 				continue
 			}
-			err := bufimagemodifyv2.ModifyOptimizeFor(marker, imageFile, override)
+			optimizeForOverride, ok := override.(valueOverride[descriptorpb.FileOptions_OptimizeMode])
+			if !ok {
+				return fmt.Errorf("invalid override type %T", override)
+			}
+			err := bufimagemodifyv2.ModifyOptimizeFor(marker, imageFile, optimizeForOverride.get())
 			if err != nil {
 				return err
 			}
@@ -123,11 +165,19 @@ func applyManagementForFile(
 			if managedConfig.DisabledFunc(fileOptionGoPackagePrefix, imageFile) {
 				override = disablePrefix(override)
 			}
-			if override == nil {
+			var modifyOption bufimagemodifyv2.ModifyGoPackageOption
+			switch t := override.(type) {
+			case valueOverride[string]:
+				modifyOption = bufimagemodifyv2.ModifyGoPackageWithValue(t.get())
+			case prefixOverride:
+				modifyOption = bufimagemodifyv2.ModifyGoPackageWithPrefix(t.Get())
+			case nil:
 				// Do not modify go_package is override is nil.
 				continue
+			default:
+				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err := bufimagemodifyv2.ModifyGoPackage(marker, imageFile, override)
+			err := bufimagemodifyv2.ModifyGoPackage(marker, imageFile, modifyOption)
 			if err != nil {
 				return err
 			}
@@ -135,11 +185,18 @@ func applyManagementForFile(
 			if managedConfig.DisabledFunc(fileOptionObjcClassPrefix, imageFile) {
 				continue
 			}
-			modifyOptions, err := getModifyOptions(override)
-			if err != nil {
-				return err
+			var modifyOptions []bufimagemodifyv2.ModifyObjcClassPrefixOption
+			switch t := override.(type) {
+			case valueOverride[string]:
+				modifyOptions = []bufimagemodifyv2.ModifyObjcClassPrefixOption{
+					bufimagemodifyv2.ModifyObjcClassPrefixWithValue(t.get()),
+				}
+			case nil:
+				// modify options will be empty
+			default:
+				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err = bufimagemodifyv2.ModifyObjcClassPrefix(marker, imageFile, modifyOptions...)
+			err := bufimagemodifyv2.ModifyObjcClassPrefix(marker, imageFile, modifyOptions...)
 			if err != nil {
 				return err
 			}
@@ -150,11 +207,22 @@ func applyManagementForFile(
 			if managedConfig.DisabledFunc(fileOptionCsharpNamespacePrefix, imageFile) {
 				override = disablePrefix(override)
 			}
-			modifyOptions, err := getModifyOptions(override)
-			if err != nil {
-				return err
+			var modifyOptions []bufimagemodifyv2.ModifyCsharpNamespaceOption
+			switch t := override.(type) {
+			case valueOverride[string]:
+				modifyOptions = []bufimagemodifyv2.ModifyCsharpNamespaceOption{
+					bufimagemodifyv2.ModifyCsharpNamespaceWithValue(t.get()),
+				}
+			case prefixOverride:
+				modifyOptions = []bufimagemodifyv2.ModifyCsharpNamespaceOption{
+					bufimagemodifyv2.ModifyCsharpNamespaceWithPrefix(t.Get()),
+				}
+			case nil:
+				// modify options will be empty
+			default:
+				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err = bufimagemodifyv2.ModifyCsharpNamespace(marker, imageFile, modifyOptions...)
+			err := bufimagemodifyv2.ModifyCsharpNamespace(marker, imageFile, modifyOptions...)
 			if err != nil {
 				return err
 			}
@@ -162,11 +230,18 @@ func applyManagementForFile(
 			if managedConfig.DisabledFunc(fileOptionPhpNamespace, imageFile) {
 				continue
 			}
-			modifyOptions, err := getModifyOptions(override)
-			if err != nil {
-				return err
+			var modifyOptions []bufimagemodifyv2.ModifyPhpNamespaceOption
+			switch t := override.(type) {
+			case valueOverride[string]:
+				modifyOptions = []bufimagemodifyv2.ModifyPhpNamespaceOption{
+					bufimagemodifyv2.ModifyPhpNamespaceWithValue(t.get()),
+				}
+			case nil:
+				// modify options will be empty
+			default:
+				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err = bufimagemodifyv2.ModifyPhpNamespace(marker, imageFile, modifyOptions...)
+			err := bufimagemodifyv2.ModifyPhpNamespace(marker, imageFile, modifyOptions...)
 			if err != nil {
 				return err
 			}
@@ -175,16 +250,27 @@ func applyManagementForFile(
 				continue
 			}
 			if override == nil {
-				override = bufimagemodifyv2.NewSuffixOverride(defaultPhpMetaNamespaceSuffix)
+				override = newSuffixOverride(defaultPhpMetaNamespaceSuffix)
 			}
 			if managedConfig.DisabledFunc(fileOptionPhpMetadataNamespaceSuffix, imageFile) {
 				override = disableSuffix(override)
 			}
-			modifyOptions, err := getModifyOptions(override)
-			if err != nil {
-				return err
+			var modifyOptions []bufimagemodifyv2.ModifyPhpMetadataNamespaceOption
+			switch t := override.(type) {
+			case valueOverride[string]:
+				modifyOptions = []bufimagemodifyv2.ModifyPhpMetadataNamespaceOption{
+					bufimagemodifyv2.ModifyPhpMetadataNamespaceWithValue(t.get()),
+				}
+			case suffixOverride:
+				modifyOptions = []bufimagemodifyv2.ModifyPhpMetadataNamespaceOption{
+					bufimagemodifyv2.ModifyPhpMetadataNamespaceWithSuffix(t.Get()),
+				}
+			case nil:
+				// modify options will be empty
+			default:
+				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err = bufimagemodifyv2.ModifyPhpMetadataNamespace(marker, imageFile, modifyOptions...)
+			err := bufimagemodifyv2.ModifyPhpMetadataNamespace(marker, imageFile, modifyOptions...)
 			if err != nil {
 				return err
 			}
@@ -195,14 +281,22 @@ func applyManagementForFile(
 			if managedConfig.DisabledFunc(fileOptionRubyPackageSuffix, imageFile) {
 				override = disableSuffix(override)
 			}
-			modifyOptions, err := getModifyOptions(override)
-			if err != nil {
-				return err
+			var modifyOptions []bufimagemodifyv2.ModifyRubyPackageOption
+			switch t := override.(type) {
+			case valueOverride[string]:
+				modifyOptions = []bufimagemodifyv2.ModifyRubyPackageOption{
+					bufimagemodifyv2.ModifyRubyPackageWithValue(t.get()),
+				}
+			case suffixOverride:
+				modifyOptions = []bufimagemodifyv2.ModifyRubyPackageOption{
+					bufimagemodifyv2.ModifyRubyPackageWithSuffix(t.Get()),
+				}
+			case nil:
+				// modify options will be empty
+			default:
+				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err = bufimagemodifyv2.ModifyRubyPackage(marker, imageFile, modifyOptions...)
-			if err != nil {
-				return err
-			}
+			bufimagemodifyv2.ModifyRubyPackage(marker, imageFile, modifyOptions...)
 		default:
 			// this should not happen
 			return fmt.Errorf("unknown file option")
@@ -217,7 +311,7 @@ func applyManagementForFile(
 			if managedConfig.FieldDisableFunc(fieldOption, imageFile, field) {
 				continue
 			}
-			var override bufimagemodifyv2.Override
+			var override override
 			if fieldOverrideFunc, ok := managedConfig.FieldOptionToOverrideFunc[fieldOption]; ok {
 				override = fieldOverrideFunc(imageFile, field)
 			}
@@ -226,7 +320,11 @@ func applyManagementForFile(
 				if override == nil {
 					continue
 				}
-				err := modifier.ModifyJSType(field, override)
+				jsTypeOverride, ok := override.(valueOverride[descriptorpb.FieldOptions_JSType])
+				if !ok {
+					return fmt.Errorf("invalid override type :%T", override)
+				}
+				err := modifier.ModifyJSType(field, jsTypeOverride.get())
 				if err != nil {
 					return err
 				}
@@ -240,24 +338,24 @@ func applyManagementForFile(
 
 // disablePrefix returns an override that does the same thing as the override provided,
 // except that the one returned does not modify prefix.
-func disablePrefix(override bufimagemodifyv2.Override) bufimagemodifyv2.Override {
+func disablePrefix(override override) override {
 	switch t := override.(type) {
-	case bufimagemodifyv2.PrefixOverride:
+	case prefixOverride:
 		return nil
-	case bufimagemodifyv2.PrefixSuffixOverride:
-		return bufimagemodifyv2.NewSuffixOverride(t.GetSuffix())
+	case prefixSuffixOverride:
+		return newSuffixOverride(t.GetSuffix())
 	}
 	return override
 }
 
 // disableSuffix returns an override that does the same thing as the override provided,
 // except that the one returned does not modify suffix.
-func disableSuffix(override bufimagemodifyv2.Override) bufimagemodifyv2.Override {
+func disableSuffix(override override) override {
 	switch t := override.(type) {
-	case bufimagemodifyv2.SuffixOverride:
+	case suffixOverride:
 		return nil
-	case bufimagemodifyv2.PrefixSuffixOverride:
-		return bufimagemodifyv2.NewPrefixOverride(t.GetPrefix())
+	case prefixSuffixOverride:
+		return newPrefixOverride(t.GetPrefix())
 	}
 	return override
 }
@@ -265,23 +363,12 @@ func disableSuffix(override bufimagemodifyv2.Override) bufimagemodifyv2.Override
 // addPrefixIfNotExist returns an override that does the same thing  as the override provided,
 // except that the one returned also modifies prefix. If the override provided already modifies
 // prefix, or if it modifies the value directly, the function returns the same override.
-func addPrefixIfNotExist(override bufimagemodifyv2.Override, prefix string) bufimagemodifyv2.Override {
+func addPrefixIfNotExist(override override, prefix string) override {
 	switch t := override.(type) {
-	case bufimagemodifyv2.SuffixOverride:
-		return bufimagemodifyv2.NewPrefixSuffixOverride(prefix, t.Get())
+	case suffixOverride:
+		return newPrefixSuffixOverride(prefix, t.Get())
 	case nil:
-		return bufimagemodifyv2.NewPrefixOverride(prefix)
+		return newPrefixOverride(prefix)
 	}
 	return override
-}
-
-func getModifyOptions(override bufimagemodifyv2.Override) ([]bufimagemodifyv2.ModifyOption, error) {
-	if override == nil {
-		return nil, nil
-	}
-	option, err := bufimagemodifyv2.ModifyWithOverride(override)
-	if err != nil {
-		return nil, err
-	}
-	return []bufimagemodifyv2.ModifyOption{option}, nil
 }

@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -116,7 +115,7 @@ var (
 		"ruby_package":                  fileOptionRubyPackage,
 		"ruby_package_suffix":           fileOptionRubyPackageSuffix,
 	}
-	fileOptionToOverrideParseFunc = map[fileOption]func(interface{}, fileOption) (bufimagemodifyv2.Override, error){
+	fileOptionToOverrideParseFunc = map[fileOption]func(interface{}, fileOption) (override, error){
 		fileOptionJavaPackage:                parseValueOverride[string],
 		fileOptionJavaPackagePrefix:          parsePrefixOverride,
 		fileOptionJavaPackageSuffix:          parseSuffixOverride,
@@ -201,31 +200,31 @@ func parseFileOption(s string) (fileOption, error) {
 }
 
 // Pass type T to construct a function that only accepts type T and creates an override from it.
-func parseValueOverride[T string | bool](value interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+func parseValueOverride[T string | bool](value interface{}, fileOption fileOption) (override, error) {
 	overrideValue, ok := value.(T)
 	if !ok {
 		return nil, fmt.Errorf("invalid value for %v", fileOption)
 	}
-	return bufimagemodifyv2.NewValueOverride(overrideValue), nil
+	return newValueOverride(overrideValue), nil
 }
 
-func parsePrefixOverride(value interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+func parsePrefixOverride(value interface{}, fileOption fileOption) (override, error) {
 	prefix, ok := value.(string)
 	if !ok {
 		return nil, fmt.Errorf("invalid value for %v", fileOption)
 	}
-	return bufimagemodifyv2.NewPrefixOverride(prefix), nil
+	return newPrefixOverride(prefix), nil
 }
 
-func parseSuffixOverride(value interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+func parseSuffixOverride(value interface{}, fileOption fileOption) (override, error) {
 	suffix, ok := value.(string)
 	if !ok {
 		return nil, fmt.Errorf("invalid value for %v", fileOption)
 	}
-	return bufimagemodifyv2.NewSuffixOverride(suffix), nil
+	return newSuffixOverride(suffix), nil
 }
 
-func parseValueOverrideOptmizeMode(override interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+func parseValueOverrideOptmizeMode(override interface{}, fileOption fileOption) (override, error) {
 	optimizeModeName, ok := override.(string)
 	if !ok {
 		return nil, fmt.Errorf("invalid value for %v", fileOption)
@@ -235,5 +234,5 @@ func parseValueOverrideOptmizeMode(override interface{}, fileOption fileOption) 
 		return nil, fmt.Errorf("%v: %s is not a valid optmize_for value, must be one of SPEED, CODE_SIZE and LITE_RUNTIME", fileOption, optimizeModeName)
 	}
 	optimizeMode := descriptorpb.FileOptions_OptimizeMode(optimizeModeEnum)
-	return bufimagemodifyv2.NewValueOverride(optimizeMode), nil
+	return newValueOverride(optimizeMode), nil
 }

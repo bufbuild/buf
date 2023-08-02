@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodifyv2
+package bufgenv2
 
 import "google.golang.org/protobuf/types/descriptorpb"
+
+type override interface {
+	override()
+}
 
 type prefixOverride string
 
