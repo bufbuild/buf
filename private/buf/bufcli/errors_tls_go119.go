@@ -22,6 +22,8 @@ import (
 )
 
 // wrappedTLSError returns an unwrapped TLS error or nil if the error is another type of error.
+// This method is a workaround until we can switch to use errors.As(err, *tls.CertificateVerificationError),
+// which is a new error type introduced in Go 1.20. This can be removed when we upgrade to support Go 1.20/1.21+.
 func wrappedTLSError(err error) error {
 	wrapped := errors.Unwrap(err)
 	if wrapped == nil {
