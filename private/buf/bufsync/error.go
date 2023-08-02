@@ -76,10 +76,11 @@ type ReadModuleError struct {
 // s      | buf.build/acme/foo     | Y                | same as HEAD
 // r      | buf.build/acme/foo     | N                | already synced to the BSR
 //
-// If no error is ever returned for any `ReadModuleErrorCode`, then the start sync point will be
-// commit `t`, and the synced commits into the BSR will be [s, t, x, y, z].
+// If no error is ever returned for any `ReadModuleErrorCode`, then the syncer will stop looking
+// when reaching the commit `r` because it already exists in the BSR, select `s` as the start sync
+// point, and the synced commits into the BSR will be [s, t, x, y, z].
 //
 // On the other hand, if a not-nil error is returned for `ReadModuleErrorCodeModuleNotFound`, the
-// syncer will stop at module `u`, will select `v` as the start sync point, and the synced commits
-// into the BSR will be [x, y, z].
+// syncer will stop looking when reaching the commit `u`, will select `v` as the start sync point,
+// and the synced commits into the BSR will be [x, y, z].
 type ErrorHandler func(err ReadModuleError) error
