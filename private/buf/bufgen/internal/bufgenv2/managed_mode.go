@@ -22,7 +22,9 @@ import (
 )
 
 const (
-	defaultJavaPackagePrefix = "com"
+	defaultJavaPackagePrefix      = "com"
+	defaultJavaMultipleFiles      = true
+	defaultPhpMetaNamespaceSuffix = "GPBMetadata"
 )
 
 // applyManagement modifies an image based on managed mode configuration.
@@ -47,7 +49,6 @@ func applyManagementForFile(
 		if ok {
 			override = overrideFunc(imageFile)
 		}
-		// TODO do the rest
 		switch fileOptionGroup {
 		case groupJavaPackage:
 			if managedConfig.DisabledFunc(fileOptionJavaPackage, imageFile) {
@@ -65,6 +66,140 @@ func applyManagementForFile(
 				return err
 			}
 			err = bufimagemodifyv2.ModifyJavaPackage(marker, imageFile, modifyOptions...)
+			if err != nil {
+				return err
+			}
+		case groupJavaOuterClassname:
+			if managedConfig.DisabledFunc(fileOptionJavaOuterClassname, imageFile) {
+				continue
+			}
+			modifyOptions, err := getModifyOptions(override)
+			if err != nil {
+				return err
+			}
+			err = bufimagemodifyv2.ModifyJavaOuterClassname(marker, imageFile, modifyOptions...)
+			if err != nil {
+				return err
+			}
+		case groupJavaMultipleFiles:
+			if managedConfig.DisabledFunc(fileOptionJavaMultipleFiles, imageFile) {
+				continue
+			}
+			if override == nil {
+				override = bufimagemodifyv2.NewValueOverride(defaultJavaMultipleFiles)
+			}
+			err := bufimagemodifyv2.ModifyJavaMultipleFiles(marker, imageFile, override)
+			if err != nil {
+				return err
+			}
+		case groupJavaStringCheckUtf8:
+			if managedConfig.DisabledFunc(fileOptionJavaStringCheckUtf8, imageFile) {
+				continue
+			}
+			if override == nil {
+				// Do not modify java_string_check_utf8 if no override is specified.
+				continue
+			}
+			err := bufimagemodifyv2.ModifyJavaStringCheckUtf8(marker, imageFile, override)
+			if err != nil {
+				return err
+			}
+		case groupOptimizeFor:
+			if managedConfig.DisabledFunc(fileOptionOptimizeFor, imageFile) {
+				continue
+			}
+			if override == nil {
+				// Do not modify optimize_for if no override is matched.
+				continue
+			}
+			err := bufimagemodifyv2.ModifyOptimizeFor(marker, imageFile, override)
+			if err != nil {
+				return err
+			}
+		case groupGoPackage:
+			if managedConfig.DisabledFunc(fileOptionGoPackage, imageFile) {
+				continue
+			}
+			if managedConfig.DisabledFunc(fileOptionGoPackagePrefix, imageFile) {
+				override = disablePrefix(override)
+			}
+			if override == nil {
+				// Do not modify go_package is override is nil.
+				continue
+			}
+			err := bufimagemodifyv2.ModifyGoPackage(marker, imageFile, override)
+			if err != nil {
+				return err
+			}
+		case groupObjcClassPrefix:
+			if managedConfig.DisabledFunc(fileOptionObjcClassPrefix, imageFile) {
+				continue
+			}
+			modifyOptions, err := getModifyOptions(override)
+			if err != nil {
+				return err
+			}
+			err = bufimagemodifyv2.ModifyObjcClassPrefix(marker, imageFile, modifyOptions...)
+			if err != nil {
+				return err
+			}
+		case groupCsharpNamespace:
+			if managedConfig.DisabledFunc(fileOptionCsharpNamespace, imageFile) {
+				continue
+			}
+			if managedConfig.DisabledFunc(fileOptionCsharpNamespacePrefix, imageFile) {
+				override = disablePrefix(override)
+			}
+			modifyOptions, err := getModifyOptions(override)
+			if err != nil {
+				return err
+			}
+			err = bufimagemodifyv2.ModifyCsharpNamespace(marker, imageFile, modifyOptions...)
+			if err != nil {
+				return err
+			}
+		case groupPhpNamespace:
+			if managedConfig.DisabledFunc(fileOptionPhpNamespace, imageFile) {
+				continue
+			}
+			modifyOptions, err := getModifyOptions(override)
+			if err != nil {
+				return err
+			}
+			err = bufimagemodifyv2.ModifyPhpNamespace(marker, imageFile, modifyOptions...)
+			if err != nil {
+				return err
+			}
+		case groupPhpMetadataNamespace:
+			if managedConfig.DisabledFunc(fileOptionPhpMetadataNamespace, imageFile) {
+				continue
+			}
+			if override == nil {
+				override = bufimagemodifyv2.NewSuffixOverride(defaultPhpMetaNamespaceSuffix)
+			}
+			if managedConfig.DisabledFunc(fileOptionPhpMetadataNamespaceSuffix, imageFile) {
+				override = disableSuffix(override)
+			}
+			modifyOptions, err := getModifyOptions(override)
+			if err != nil {
+				return err
+			}
+			err = bufimagemodifyv2.ModifyPhpMetadataNamespace(marker, imageFile, modifyOptions...)
+			if err != nil {
+				return err
+			}
+		case groupRubyPackage:
+			if managedConfig.DisabledFunc(fileOptionRubyPackage, imageFile) {
+				continue
+			}
+			if managedConfig.DisabledFunc(fileOptionRubyPackageSuffix, imageFile) {
+				override = disableSuffix(override)
+			}
+			modifyOptions, err := getModifyOptions(override)
+			if err != nil {
+				return err
+			}
+			err = bufimagemodifyv2.ModifyRubyPackage(marker, imageFile, modifyOptions...)
 			if err != nil {
 				return err
 			}

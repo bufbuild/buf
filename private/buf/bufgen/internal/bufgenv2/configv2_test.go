@@ -943,6 +943,276 @@ func TestManagedConfigSuccess(t *testing.T) {
 				},
 			},
 		},
+		{
+			testName: "java outer class name",
+			file:     filepath.Join("managed", "java_outer_classname"),
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupJavaOuterClassname: {
+					&fakeImageFileIdentity{
+						path: "random.proto",
+					}: bufimagemodifyv2.NewValueOverride("DefaultProto"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: bufimagemodifyv2.NewValueOverride("PathProto"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride("ModProto"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride("PathProto"),
+					&fakeImageFileIdentity{
+						path:   "a/b/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride("Both"),
+				},
+			},
+		},
+		{
+			testName: "java multiple files",
+			file:     filepath.Join("managed", "java_multiple_files"),
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupJavaMultipleFiles: {
+					&fakeImageFileIdentity{
+						path: "random.proto",
+					}: bufimagemodifyv2.NewValueOverride(true),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: bufimagemodifyv2.NewValueOverride(false),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride(false),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride(false),
+					&fakeImageFileIdentity{
+						path:   "a/b/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride(true),
+				},
+			},
+		},
+		{
+			testName: "java string check utf 8",
+			file:     filepath.Join("managed", "java_string_check_utf8"),
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupJavaStringCheckUtf8: {
+					&fakeImageFileIdentity{
+						path: "random.proto",
+					}: bufimagemodifyv2.NewValueOverride(true),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: bufimagemodifyv2.NewValueOverride(false),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride(false),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride(false),
+					&fakeImageFileIdentity{
+						path:   "a/b/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride(true),
+				},
+			},
+		},
+		{
+			testName: "optimize for",
+			file:     filepath.Join("managed", "optimize_for"),
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupOptimizeFor: {
+					&fakeImageFileIdentity{
+						path: "random.proto",
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FileOptions_SPEED),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FileOptions_CODE_SIZE),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FileOptions_CODE_SIZE),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FileOptions_CODE_SIZE),
+					&fakeImageFileIdentity{
+						path:   "a/b/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride(descriptorpb.FileOptions_LITE_RUNTIME),
+				},
+			},
+		},
+		{
+			testName: "go package",
+			file:     filepath.Join("managed", "go_package"),
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupGoPackage: {
+					&fakeImageFileIdentity{
+						path: "random.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("github.com/example/protos"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: bufimagemodifyv2.NewValueOverride("package1"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride("weather"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride("package1"),
+					&fakeImageFileIdentity{
+						path:   "a/b/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewPrefixOverride("special/prefix"),
+				},
+			},
+		},
+		{
+			testName: "objc class prefix",
+			file:     filepath.Join("managed", "objc_class_prefix"),
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupObjcClassPrefix: {
+					&fakeImageFileIdentity{
+						path: "random.proto",
+					}: bufimagemodifyv2.NewValueOverride("foo"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: bufimagemodifyv2.NewValueOverride("bar"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride("baz"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride("bar"),
+					&fakeImageFileIdentity{
+						path:   "a/b/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride("qux"),
+				},
+			},
+		},
+		{
+			testName: "csharp namespace",
+			file:     filepath.Join("managed", "csharp_namespace"),
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupCsharpNamespace: {
+					&fakeImageFileIdentity{
+						path: "random.proto",
+					}: bufimagemodifyv2.NewPrefixOverride("foo"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: bufimagemodifyv2.NewValueOverride("bar"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride("baz"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride("bar"),
+					&fakeImageFileIdentity{
+						path:   "a/b/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewPrefixOverride("qux"),
+				},
+			},
+		},
+		{
+			testName: "php namespace",
+			file:     filepath.Join("managed", "php_namespace"),
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupPhpNamespace: {
+					&fakeImageFileIdentity{
+						path: "random.proto",
+					}: bufimagemodifyv2.NewValueOverride(`Foo\Bar`),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: bufimagemodifyv2.NewValueOverride(`Bar\Baz`),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride(`Baz\Qux`),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride(`Bar\Baz`),
+					&fakeImageFileIdentity{
+						path:   "a/b/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride(`Qux\Quux`),
+				},
+			},
+		},
+		{
+			testName: "php metadata namespace",
+			file:     filepath.Join("managed", "php_metadata_namespace"),
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupPhpMetadataNamespace: {
+					&fakeImageFileIdentity{
+						path: "random.proto",
+					}: bufimagemodifyv2.NewSuffixOverride("DefaultMetadata"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: bufimagemodifyv2.NewValueOverride(`Foo\Bar`),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride(`Bar\Baz`),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride(`Foo\Bar`),
+					&fakeImageFileIdentity{
+						path:   "a/b/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewSuffixOverride("SpecialMetadata"),
+				},
+			},
+		},
+		{
+			testName: "ruby package",
+			file:     filepath.Join("managed", "ruby_package"),
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]bufimagemodifyv2.Override{
+				groupRubyPackage: {
+					&fakeImageFileIdentity{
+						path: "random.proto",
+					}: bufimagemodifyv2.NewSuffixOverride("protos"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: bufimagemodifyv2.NewValueOverride("Foo::Bar"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: bufimagemodifyv2.NewValueOverride("Bar::Baz"),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewValueOverride("Foo::Bar"),
+					&fakeImageFileIdentity{
+						path:   "a/b/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: bufimagemodifyv2.NewSuffixOverride("pbs"),
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
