@@ -66,7 +66,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			return fmt.Errorf("reading head commit for branch %s: %w", branch, err)
 		}
 		for moduleDir := range s.modulesDirsToSync {
-			builtModule, readErr := s.readModuleAt(ctx, branch, headCommit, moduleDir)
+			builtModule, readErr := s.readModuleAt(ctx, branch, headCommit, moduleDir, nil /* no specific module identity expected */)
 			if readErr != nil {
 				// any error reading module in HEAD, skip syncing that module in that branch
 				s.logger.Warn(

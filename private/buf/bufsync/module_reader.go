@@ -28,7 +28,13 @@ import (
 
 // readModuleAt returns a module that has a name and builds correctly given a commit and a module
 // directory, or a read error.
-func (s *syncer) readModuleAt(ctx context.Context, branch string, commit git.Commit, moduleDir string) (*bufmodulebuild.BuiltModule, *ReadModuleError) {
+func (s *syncer) readModuleAt(
+	ctx context.Context,
+	branch string,
+	commit git.Commit,
+	moduleDir string,
+	expectedModuleIdentity *string, // optional
+) (*bufmodulebuild.BuiltModule, *ReadModuleError) {
 	// in case there is an error reading this module, it will have the same branch, commit, and module
 	// dir that we can fill upfront. The actual `err` and `code` (if any) is populated in case-by-case
 	// basis before returning.
@@ -63,6 +69,16 @@ func (s *syncer) readModuleAt(ctx context.Context, branch string, commit git.Com
 		readErr.code = ReadModuleErrorCodeUnnamedModule
 		readErr.err = errors.New("found module does not have a name")
 		return nil, readErr
+	}
+	if expectedModuleIdentity != nil {
+		if sourceConfig.ModuleIdentity.IdentityString() != *expectedModuleIdentity {
+			readErr.code = ReadModuleErrorCodeUnexpectedName
+			readErr.err = fmt.Errorf(
+				"read module has an unexpected module identity %s, expected %s",
+				sourceConfig.ModuleIdentity.IdentityString(), *expectedModuleIdentity,
+			)
+			return nil, readErr
+		}
 	}
 	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,

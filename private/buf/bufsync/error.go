@@ -42,9 +42,9 @@ const (
 	ReadModuleErrorCodeInvalidModuleConfig
 	// ReadModuleErrorCodeBuildModule happens when the read module errors building.
 	ReadModuleErrorCodeBuildModule
-	// ReadModuleErrorCodeNameDifferentThanHEAD happens when the read module has a different name than
-	// the module name in the branch HEAD commit.
-	ReadModuleErrorCodeNameDifferentThanHEAD
+	// ReadModuleErrorCodeUnexpectedName happens when the read module has a different name than
+	// expected, usually the one in the branch HEAD commit.
+	ReadModuleErrorCodeUnexpectedName
 )
 
 // ReadModuleError is an error that happens when trying to read a module from a module directory in
