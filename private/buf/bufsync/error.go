@@ -16,6 +16,7 @@ package bufsync
 
 import (
 	"errors"
+	"fmt"
 )
 
 // ErrModuleDoesNotExist is an error returned when looking for a remote module.
@@ -51,6 +52,13 @@ type ReadModuleError struct {
 	moduleDir string
 }
 
+func (e *ReadModuleError) Error() string {
+	return fmt.Sprintf(
+		"read module in branch %q, commit %q, directory %q: %s",
+		e.branch, e.commit, e.moduleDir, e.err.Error(),
+	)
+}
+
 // ErrorHandler handles errors reported by the Syncer when deciding on a git start sync point.
 //
 // For each branch to be synced, the Syncer travels back from HEAD looking for modules in the given
@@ -83,4 +91,4 @@ type ReadModuleError struct {
 // On the other hand, if a not-nil error is returned for `ReadModuleErrorCodeModuleNotFound`, the
 // syncer will stop looking when reaching the commit `u`, will select `v` as the start sync point,
 // and the synced commits into the BSR will be [x, y, z].
-type ErrorHandler func(err ReadModuleError) error
+type ErrorHandler func(err *ReadModuleError) error

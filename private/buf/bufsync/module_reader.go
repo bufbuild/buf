@@ -26,47 +26,48 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 )
 
-// moduleAt retrieves a built named module at a passed commit and directory, if any. If it fails
-// during the process it invokes the syncer error handler, and returns its error if any.
-func (s *syncer) builtNamedModuleAt(
+// readModuleAt returns a module that has a name and builds correctly given a commit and a module
+// directory.
+func (s *syncer) readModuleAt(
 	ctx context.Context,
 	branch string,
 	commit git.Commit,
 	moduleDir string,
-) (*bufmodulebuild.BuiltModule, error) {
-	// in case there is an error to handle, it will have the same branch, commit, and module dir. The
-	// actual `err` and `code` is populated in case-by-case basis before sending it to the handler.
-	errToHandle := ReadModuleError{
+) (*bufmodulebuild.BuiltModule, *ReadModuleError) {
+	// in case there is an error reading this module, it will have the same branch, commit, and module
+	// dir that we can fill upfront. The actual `err` and `code` (if any) is populated in case-by-case
+	// basis before returning.
+	readErr := &ReadModuleError{
 		branch:    branch,
 		commit:    commit.Hash().Hex(),
 		moduleDir: moduleDir,
 	}
 	commitBucket, err := s.storageGitProvider.NewReadBucket(commit.Tree(), storagegit.ReadBucketWithSymlinksIfSupported())
 	if err != nil {
-		errToHandle.err = fmt.Errorf("new read bucket: %w", err)
-		return nil, s.errorHandler(errToHandle)
+		readErr.err = fmt.Errorf("new read bucket: %w", err)
+		return nil, readErr
 	}
 	moduleBucket := storage.MapReadBucket(commitBucket, storage.MapOnPrefix(moduleDir))
 	foundModule, err := bufconfig.ExistingConfigFilePath(ctx, moduleBucket)
 	if err != nil {
-		errToHandle.err = fmt.Errorf("looking for an existing config file path: %w", err)
-		return nil, s.errorHandler(errToHandle)
+		readErr.err = fmt.Errorf("looking for an existing config file path: %w", err)
+		return nil, readErr
 	}
 	if foundModule == "" {
-		errToHandle.err = errors.New("module not found in commit and module dir")
-		errToHandle.code = ReadModuleErrorCodeModuleNotFound
-		return nil, s.errorHandler(errToHandle)
+		readErr.code = ReadModuleErrorCodeModuleNotFound
+		readErr.err = errors.New("module not found")
+		return nil, readErr
 	}
 	sourceConfig, err := bufconfig.GetConfigForBucket(ctx, moduleBucket)
 	if err != nil {
-		errToHandle.err = fmt.Errorf("invalid module config: %w", err)
-		errToHandle.code = ReadModuleErrorCodeInvalidModuleConfig
-		return nil, s.errorHandler(errToHandle)
+		readErr.code = ReadModuleErrorCodeInvalidModuleConfig
+		readErr.err = fmt.Errorf("invalid module config: %w", err)
+		return nil, readErr
 	}
 	if sourceConfig.ModuleIdentity == nil {
-		errToHandle.err = errors.New("found module does not have a name")
-		errToHandle.code = ReadModuleErrorCodeUnnamedModule
-		return nil, s.errorHandler(errToHandle)
+		readErr.code = ReadModuleErrorCodeUnnamedModule
+		readErr.err = errors.New("found module does not have a name")
+		return nil, readErr
 	}
 	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
@@ -74,15 +75,9 @@ func (s *syncer) builtNamedModuleAt(
 		sourceConfig.Build,
 	)
 	if err != nil {
-		return nil, &buildModuleError{err: err}
+		readErr.code = ReadModuleErrorCodeBuildModule
+		readErr.err = fmt.Errorf("build module: %w", err)
+		return nil, readErr
 	}
 	return builtModule, nil
-}
-
-func (e *invalidModuleConfigError) Error() string {
-	return
-}
-
-func (e *buildModuleError) Error() string {
-	return "build module: " + e.err.Error()
 }
