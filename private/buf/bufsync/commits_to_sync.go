@@ -42,23 +42,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 	}
 	// Copy all branch modules to sync and mark them as pending, until its starting sync point is
 	// reached. They'll be removed from this list as its initial sync point is found.
-	type moduleTarget struct {
-		moduleIdentityInHEAD bufmoduleref.ModuleIdentity
-		expectedSyncPoint    *string
-	}
-	pendingModules := make(map[string]moduleTarget, len(modulesToSync))
-	for moduleDir, moduleIdentityInHEAD := range modulesToSync {
-		var expectedSyncPoint *string
-		if moduleSyncPoints, ok := s.modulesBranchesLastSyncPoints[moduleIdentityInHEAD.IdentityString()]; ok {
-			if moduleBranchSyncPoint, ok := moduleSyncPoints[branch]; ok {
-				expectedSyncPoint = &moduleBranchSyncPoint
-			}
-		}
-		pendingModules[moduleDir] = moduleTarget{
-			moduleIdentityInHEAD: moduleIdentityInHEAD,
-			expectedSyncPoint:    expectedSyncPoint,
-		}
-	}
+	pendingModules := s.copyBranchModulesSync(branch, modulesToSync)
 	var commitsToSync []syncableCommit
 	// travel branch commits from HEAD and check if they're already synced, until finding a synced git
 	// commit, or adding them all to be synced
@@ -187,6 +171,30 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 		commitsToSync[i], commitsToSync[opp] = commitsToSync[opp], commitsToSync[i]
 	}
 	return commitsToSync, nil
+}
+
+type moduleTarget struct {
+	moduleIdentityInHEAD bufmoduleref.ModuleIdentity
+	expectedSyncPoint    *string
+}
+
+// copyBranchModulesSync makes a copy of the modules to sync and returns it in the format of module
+// targets, which have the module identity in HEAD, and the expected sync point, if any.
+func (s *syncer) copyBranchModulesSync(branch string, modulesToSync map[string]bufmoduleref.ModuleIdentity) map[string]moduleTarget {
+	pendingModules := make(map[string]moduleTarget, len(modulesToSync))
+	for moduleDir, moduleIdentityInHEAD := range modulesToSync {
+		var expectedSyncPoint *string
+		if moduleSyncPoints, ok := s.modulesBranchesLastSyncPoints[moduleIdentityInHEAD.IdentityString()]; ok {
+			if moduleBranchSyncPoint, ok := moduleSyncPoints[branch]; ok {
+				expectedSyncPoint = &moduleBranchSyncPoint
+			}
+		}
+		pendingModules[moduleDir] = moduleTarget{
+			moduleIdentityInHEAD: moduleIdentityInHEAD,
+			expectedSyncPoint:    expectedSyncPoint,
+		}
+	}
+	return pendingModules
 }
 
 // isGitCommitSynced checks if a commit hash is already synced to a remote BSR module.
