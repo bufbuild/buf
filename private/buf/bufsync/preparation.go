@@ -155,14 +155,3 @@ func (s *syncer) validateDefaultBranch(ctx context.Context, moduleIdentity bufmo
 	}
 	return nil
 }
-
-// FIXME: remove
-func (s *syncer) printValidation() {
-	s.logger.Debug(
-		"sync prepared",
-		zap.Any("modulesDirsToSync", s.modulesDirsToSync),
-		zap.Any("commitsTags", s.commitsTags),
-		zap.Any("branchesModulesToSync", s.branchesModulesToSync),
-		zap.Any("modulesBranchesSyncPoints", s.modulesBranchesLastSyncPoints),
-	)
-}

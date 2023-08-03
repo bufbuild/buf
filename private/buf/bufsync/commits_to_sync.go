@@ -70,7 +70,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 		}
 		commitHash := commit.Hash().Hex()
 		modulesDirsToSyncInThisCommit := make(map[string]bufmodulebuild.BuiltModule)
-		modulesDirsFoundSyncPointInThisCommit := make(map[string]struct{})
+		modulesDirsToStopInThisCommit := make(map[string]struct{})
 		for moduleDir, pendingModule := range pendingModules {
 			logger := s.logger.With(
 				zap.String("branch", branch),
@@ -83,7 +83,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 			if readErr != nil {
 				if s.errorHandler.StopLookback(readErr) {
 					logger.Warn("read module at commit failed, stop looking back", zap.Error(readErr))
-					modulesDirsFoundSyncPointInThisCommit[moduleDir] = struct{}{}
+					modulesDirsToStopInThisCommit[moduleDir] = struct{}{}
 					continue
 				}
 				logger.Warn("read module at commit failed, skipping commit", zap.Error(readErr))
@@ -100,8 +100,9 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 				modulesDirsToSyncInThisCommit[moduleDir] = *builtModule
 				continue
 			}
-			// reached a commit that is already synced for this module
-			modulesDirsFoundSyncPointInThisCommit[moduleDir] = struct{}{}
+			// reached a commit that is already synced for this module, we can stop looking for this
+			// module dir
+			modulesDirsToStopInThisCommit[moduleDir] = struct{}{}
 			if pendingModule.expectedSyncPoint == nil {
 				// this module did not have an expected sync point for this branch, we probably reached the
 				// beginning of the branch off another branch that is already synced.
@@ -112,7 +113,8 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 					// TODO: add details to error message saying: "run again with --force-branch-sync <branch
 					// name>" when we support a flag like that.
 					return fmt.Errorf(
-						"found synced git commit %s for default branch %s, but expected sync point was %s, did you rebase or reset your default branch?",
+						"found synced git commit %s for default branch %s, but expected sync point was %s, "+
+							"did you rebase or reset your default branch?",
 						commitHash,
 						branch,
 						*pendingModule.expectedSyncPoint,
@@ -124,7 +126,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 			}
 		}
 		// clear modules that already found its sync point
-		for moduleDir := range modulesDirsFoundSyncPointInThisCommit {
+		for moduleDir := range modulesDirsToStopInThisCommit {
 			delete(pendingModules, moduleDir)
 		}
 		commitsToSync = append(commitsToSync, syncableCommit{
@@ -179,22 +181,24 @@ func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmodule
 		return false, nil
 	}
 	modIdentity := moduleIdentity.IdentityString()
-	// check local caches first
-	if moduleCommitsSyncStatusCache, ok := s.modulesCommitsSyncedStatusCache[modIdentity]; ok {
-		if synced, cached := moduleCommitsSyncStatusCache[commitHash]; cached {
-			return synced, nil
+	// check local cache first
+	if syncedModuleCommits, ok := s.syncedModulesCommitsCache[modIdentity]; ok {
+		if _, synced := syncedModuleCommits[commitHash]; synced {
+			return true, nil
 		}
 	}
-	// request remote check
+	// not in the cache, request remote check
 	syncedModuleCommits, err := s.syncedGitCommitChecker(ctx, moduleIdentity, map[string]struct{}{commitHash: {}})
 	if err != nil {
 		return false, err
 	}
 	_, synced := syncedModuleCommits[commitHash]
-	// populate local cache
-	if s.modulesCommitsSyncedStatusCache[modIdentity] == nil {
-		s.modulesCommitsSyncedStatusCache[modIdentity] = make(map[string]bool)
+	if synced {
+		// populate local cache
+		if s.syncedModulesCommitsCache[modIdentity] == nil {
+			s.syncedModulesCommitsCache[modIdentity] = make(map[string]struct{})
+		}
+		s.syncedModulesCommitsCache[modIdentity][commitHash] = struct{}{}
 	}
-	s.modulesCommitsSyncedStatusCache[modIdentity][commitHash] = synced
 	return synced, nil
 }

@@ -43,9 +43,11 @@ type syncer struct {
 	branchesModulesToSync         map[string]map[string]string // branch:moduleDir:moduleIdentityInHEAD
 	modulesBranchesLastSyncPoints map[string]map[string]string // moduleIdentity:branch:lastSyncPointGitHash
 
-	// modulesCommitsSyncedStatusCache caches isGitCommitSynced requests from the BSR, so we don't ask
-	// twice the same module:commit.
-	modulesCommitsSyncedStatusCache map[string]map[string]bool // moduleIdentity:commit:isSynced
+	// syncedModulesCommitsCache caches commits already synced to a given BSR module, so we don't ask
+	// twice the same module:commit when we already know it's already synced. We don't cache
+	// "unsynced" git commits, since during the sync process we will be syncing new git commits, which
+	// will be added to this cache when they are.
+	syncedModulesCommitsCache map[string]map[string]struct{} // moduleIdentity:commit:isSynced
 	// commitModulesCache caches builtNamedModules from specific commit and module directories in the
 	// git repo, so we don't read the same commit:moduleDir twice.
 	commitModulesCache map[string]map[string]bufmodulebuild.BuiltModule // commit:moduleDir:builtModule
@@ -59,16 +61,16 @@ func newSyncer(
 	options ...SyncerOption,
 ) (Syncer, error) {
 	s := &syncer{
-		logger:                          logger,
-		repo:                            repo,
-		storageGitProvider:              storageGitProvider,
-		errorHandler:                    errorHandler,
-		modulesDirsToSync:               make(map[string]struct{}),
-		commitsTags:                     make(map[string][]string),
-		branchesModulesToSync:           make(map[string]map[string]string),
-		modulesBranchesLastSyncPoints:   make(map[string]map[string]string),
-		modulesCommitsSyncedStatusCache: make(map[string]map[string]bool),
-		commitModulesCache:              make(map[string]map[string]bufmodulebuild.BuiltModule),
+		logger:                        logger,
+		repo:                          repo,
+		storageGitProvider:            storageGitProvider,
+		errorHandler:                  errorHandler,
+		modulesDirsToSync:             make(map[string]struct{}),
+		commitsTags:                   make(map[string][]string),
+		branchesModulesToSync:         make(map[string]map[string]string),
+		modulesBranchesLastSyncPoints: make(map[string]map[string]string),
+		syncedModulesCommitsCache:     make(map[string]map[string]struct{}),
+		commitModulesCache:            make(map[string]map[string]bufmodulebuild.BuiltModule),
 	}
 	for _, opt := range options {
 		if err := opt(s); err != nil {
@@ -129,11 +131,7 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 		)
 		return nil
 	}
-	s.logger.Debug( // FIXME: remove
-		"commits to sync",
-		zap.String("branch", branch),
-		zap.Any("commits", commitsToSync),
-	)
+	s.printCommitsToSync(branch, commitsToSync)
 	// for _, commitToSync := range commitsToSync {
 	// 	for _, module := range s.modulesDirsToSync { // looping over the original sort order of modules
 	// 		if _, shouldSyncModule := commitToSync.modules[module]; !shouldSyncModule {
@@ -181,6 +179,7 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 // 		}
 // 		return err
 // 	}
+// // TODO if it was synced successfully, add it to the cache
 // 	return syncFunc(
 // 		ctx,
 // 		newModuleCommitToSync(
