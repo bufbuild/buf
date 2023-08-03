@@ -1085,6 +1085,14 @@ func TestModifyPhpMetadataNamespace(t *testing.T) {
 			shouldNotModify: true,
 		},
 		{
+			description:     "php metadata namespace with suffix override on a file without this option",
+			subDir:          "emptyoptions",
+			file:            "a.proto",
+			modifyOptions:   []ModifyPhpMetadataNamespaceOption{ModifyPhpMetadataNamespaceWithSuffix("Suffix")},
+			expectedValue:   "",
+			shouldNotModify: true,
+		},
+		{
 			description:   "php metadata namespace without override on a file with this option and a package",
 			subDir:        filepath.Join("phpoptions", "underscore"),
 			file:          "php.proto",
@@ -1104,6 +1112,15 @@ func TestModifyPhpMetadataNamespace(t *testing.T) {
 			file:          "php.proto",
 			modifyOptions: []ModifyPhpMetadataNamespaceOption{ModifyPhpMetadataNamespaceWithSuffix("Metadata")},
 			expectedValue: `Acme\Weather\FooBar\V1\Metadata`,
+		},
+		{
+			description:   "php metadata namespace with suffix override on a file with this option but without package",
+			subDir:        "alloptions",
+			file:          "a.proto",
+			modifyOptions: []ModifyPhpMetadataNamespaceOption{ModifyPhpMetadataNamespaceWithSuffix("Metadata")},
+			// The namespace resolves to empty because the proto package is empty, and the image should not be modified.
+			expectedValue:   "foo",
+			shouldNotModify: true,
 		},
 		{
 			description:   "php metadata namespace with suffix override on a file without this option but with a package",
@@ -1225,6 +1242,13 @@ func TestModifyRubyPackage(t *testing.T) {
 			description:   "ruby package with value override on a file with this option and a package",
 			subDir:        filepath.Join("rubyoptions", "underscore"),
 			file:          "ruby.proto",
+			modifyOptions: []ModifyRubyPackageOption{ModifyRubyPackageWithValue("Override")},
+			expectedValue: "Override",
+		},
+		{
+			description:   "ruby package with value override on a file without this option or a package",
+			subDir:        "emptyoptions",
+			file:          "a.proto",
 			modifyOptions: []ModifyRubyPackageOption{ModifyRubyPackageWithValue("Override")},
 			expectedValue: "Override",
 		},
