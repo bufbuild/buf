@@ -81,13 +81,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	if err := s.prepareSync(ctx); err != nil {
 		return fmt.Errorf("scan repo: %w", err)
 	}
-	s.logger.Debug(
-		"sync prepared",
-		zap.Any("modulesDirsToSync", s.modulesDirsToSync),
-		zap.Any("commitsTags", s.commitsTags),
-		zap.Any("branchesModulesToSync", s.branchesModulesToSync),
-		zap.Any("modulesBranchesSyncPoints", s.modulesBranchesSyncPoints),
-	)
+	s.printValidation()
 	// first, default branch, if present
 	defaultBranch := s.repo.DefaultBranch()
 	if _, shouldSyncDefaultBranch := s.branchesModulesToSync[defaultBranch]; shouldSyncDefaultBranch {

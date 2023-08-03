@@ -77,6 +77,9 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 				)
 				continue
 			}
+			// there is a valid module in the module dir at the HEAD of this branch, enqueue it for sync
+			s.branchesModulesToSync[branch][moduleDir] = builtModule.ModuleIdentity()
+			// do we have a remote git sync point for this module+branch?
 			moduleBranchSyncpoint, err := s.resolveSyncPoint(ctx, builtModule.ModuleIdentity(), branch)
 			if err != nil {
 				return fmt.Errorf(
@@ -93,8 +96,8 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			}
 		}
 	}
-	// make sure all module identities we are about to sync have the same git default branch as BSR
-	// default branch.
+	// make sure all module identities we are about to sync in all branches have the same BSR default
+	// branch as the local git default branch.
 	for moduleIdentity := range allModulesIdentitiesToSync {
 		if err := s.validateDefaultBranch(ctx, moduleIdentity); err != nil {
 			return fmt.Errorf("validate default branch for module %q: %w", moduleIdentity.IdentityString(), err)
@@ -152,4 +155,37 @@ func (s *syncer) validateDefaultBranch(ctx context.Context, moduleIdentity bufmo
 		)
 	}
 	return nil
+}
+
+// TODO: remove
+func (s *syncer) printValidation() {
+	var (
+		branchesModulesToSync     = make(map[string]map[string]string)
+		modulesBranchesSyncPoints = make(map[string]map[string]string)
+	)
+	for branch, modules := range s.branchesModulesToSync {
+		m := make(map[string]string)
+		for moduleDir, moduleIdentity := range modules {
+			m[moduleDir] = moduleIdentity.IdentityString()
+		}
+		branchesModulesToSync[branch] = m
+	}
+	for moduleIdentity, branches := range s.modulesBranchesSyncPoints {
+		b := make(map[string]string)
+		for branch, syncPoint := range branches {
+			var syncPointHash string
+			if syncPoint != nil {
+				syncPointHash = syncPoint.Hex()
+			}
+			b[branch] = syncPointHash
+		}
+		branchesModulesToSync[moduleIdentity.IdentityString()] = b
+	}
+	s.logger.Debug(
+		"sync prepared",
+		zap.Any("modulesDirsToSync", s.modulesDirsToSync),
+		zap.Any("commitsTags", s.commitsTags),
+		zap.Any("branchesModulesToSync", branchesModulesToSync),
+		zap.Any("modulesBranchesSyncPoints", modulesBranchesSyncPoints),
+	)
 }
