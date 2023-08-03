@@ -304,6 +304,9 @@ func IsWellKnownType(imageFile bufimage.ImageFile) bool {
 	return datawkt.Exists(imageFile.Path())
 }
 
+// TODO: update bufimagemodifyv1 to use the helpers below. These helpers are copy-pasted from
+// the v1 package. For a smaller diff on PR, v1 hasn't been updated yet to use these.
+
 // DefaultCsharpNamespace returns the csharp_namespace for the given ImageFile based on its
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
