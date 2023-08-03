@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"go.uber.org/zap"
@@ -38,9 +39,9 @@ type syncer struct {
 	modulesDirsToSync       map[string]struct{}
 	syncAllBranches         bool
 
-	commitsTags                   map[string][]string          // commits:[]tags
-	branchesModulesToSync         map[string]map[string]string // branch:moduleDir:moduleIdentityInHEAD
-	modulesBranchesLastSyncPoints map[string]map[string]string // moduleIdentity:branch:lastSyncPointGitHash
+	commitsTags                   map[string][]string                               // commits:[]tags
+	branchesModulesToSync         map[string]map[string]bufmoduleref.ModuleIdentity // branch:moduleDir:moduleIdentityInHEAD
+	modulesBranchesLastSyncPoints map[string]map[string]string                      // moduleIdentity:branch:lastSyncPointGitHash
 
 	// syncedModulesCommitsCache (moduleIdentity:commit) caches commits already synced to a given BSR
 	// module, so we don't ask twice the same module:commit when we already know it's already synced.
@@ -65,7 +66,7 @@ func newSyncer(
 		errorHandler:                  errorHandler,
 		modulesDirsToSync:             make(map[string]struct{}),
 		commitsTags:                   make(map[string][]string),
-		branchesModulesToSync:         make(map[string]map[string]string),
+		branchesModulesToSync:         make(map[string]map[string]bufmoduleref.ModuleIdentity),
 		modulesBranchesLastSyncPoints: make(map[string]map[string]string),
 		syncedModulesCommitsCache:     make(map[string]map[string]struct{}),
 		syncedCommits:                 make(map[string]struct{}),
@@ -91,7 +92,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	if err := s.prepareSync(ctx); err != nil {
 		return fmt.Errorf("scan repo: %w", err)
 	}
-	s.printValidation()
+	s.printSyncPreparation()
 	// first, default branch, if present
 	defaultBranch := s.repo.DefaultBranch()
 	if _, shouldSyncDefaultBranch := s.branchesModulesToSync[defaultBranch]; shouldSyncDefaultBranch {
@@ -162,11 +163,12 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 			if err := syncFunc(
 				ctx,
 				newModuleCommitToSync(
+					branch,
+					commitToSync.commit,
+					s.commitsTags[commitHash],
+					moduleDir,
 					builtModule.ModuleIdentity(),
 					builtModule.Bucket,
-					commitToSync.commit,
-					branch,
-					s.commitsTags[commitHash],
 				),
 			); err != nil {
 				return fmt.Errorf("sync module %s:%s in commit %s: %w", moduleDir, modIdentity, commitHash, err)

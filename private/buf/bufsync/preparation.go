@@ -47,7 +47,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			return fmt.Errorf("default branch %s is not present in 'origin' remote", defaultBranch)
 		}
 		for remoteBranch := range allRemoteBranches {
-			s.branchesModulesToSync[remoteBranch] = make(map[string]string)
+			s.branchesModulesToSync[remoteBranch] = make(map[string]bufmoduleref.ModuleIdentity)
 		}
 	} else {
 		// only sync current branch, make sure it's present in the remote
@@ -55,7 +55,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		if _, isCurrentBranchPushedInRemote := allRemoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
 			return fmt.Errorf("current branch %s is not present in 'origin' remote", currentBranch)
 		}
-		s.branchesModulesToSync[currentBranch] = make(map[string]string)
+		s.branchesModulesToSync[currentBranch] = make(map[string]bufmoduleref.ModuleIdentity)
 		s.logger.Debug("current branch", zap.String("name", currentBranch))
 	}
 	// Populate module identities from HEAD, and its sync points if any
@@ -75,10 +75,10 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 				)
 				continue
 			}
-			moduleIdentityInHEAD := builtModule.ModuleIdentity().IdentityString()
 			// there is a valid module in the module dir at the HEAD of this branch, enqueue it for sync
-			s.branchesModulesToSync[branch][moduleDir] = moduleIdentityInHEAD
+			s.branchesModulesToSync[branch][moduleDir] = builtModule.ModuleIdentity()
 			// do we have a remote git sync point for this module+branch?
+			moduleIdentityInHEAD := builtModule.ModuleIdentity().IdentityString()
 			moduleBranchSyncPoint, err := s.resolveSyncPoint(ctx, builtModule.ModuleIdentity(), branch)
 			if err != nil {
 				return fmt.Errorf(

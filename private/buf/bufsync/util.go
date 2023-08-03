@@ -21,9 +21,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s *syncer) printValidation() {
+// printSyncPreparation prints information gathered at the sync preparation step.
+func (s *syncer) printSyncPreparation() {
 	s.logger.Debug(
-		"sync prepared",
+		"sync preparation",
 		zap.Any("modulesDirsToSync", s.modulesDirsToSync),
 		zap.Any("commitsTags", s.commitsTags),
 		zap.Any("branchesModulesToSync", s.branchesModulesToSync),
@@ -31,6 +32,7 @@ func (s *syncer) printValidation() {
 	)
 }
 
+// printCommitsToSync prints syncable commits for a given branch.
 func (s *syncer) printCommitsToSync(branch string, syncableCommits []syncableCommit) {
 	c := make([]map[string]string, 0)
 	for _, sCommit := range syncableCommits {

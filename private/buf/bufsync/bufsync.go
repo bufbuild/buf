@@ -164,14 +164,17 @@ type ModuleDefaultBranchGetter func(
 
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {
+	// Branch is the git branch that this module is sourced from.
+	Branch() string
+	// Commit is the commit that the module is sourced from.
+	Commit() git.Commit
+	// Tags are the git tags associated with Commit.
+	Tags() []string
+	// Directory is the directory relative to the root of the git repository that this module is
+	// sourced from.
+	Directory() string
 	// Identity is the identity of the module.
 	Identity() bufmoduleref.ModuleIdentity
 	// Bucket is the bucket for the module.
 	Bucket() storage.ReadBucket
-	// Commit is the commit that the module is sourced from.
-	Commit() git.Commit
-	// Branch is the git branch that this module is sourced from.
-	Branch() string
-	// Tags are the git tags associated with Commit.
-	Tags() []string
 }

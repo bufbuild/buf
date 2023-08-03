@@ -43,13 +43,13 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 	// Copy all branch modules to sync and mark them as pending, until its starting sync point is
 	// reached. They'll be removed from this list as its initial sync point is found.
 	type moduleTarget struct {
-		moduleIdentityInHEAD string
+		moduleIdentityInHEAD bufmoduleref.ModuleIdentity
 		expectedSyncPoint    *string
 	}
 	pendingModules := make(map[string]moduleTarget, len(modulesToSync))
 	for moduleDir, moduleIdentityInHEAD := range modulesToSync {
 		var expectedSyncPoint *string
-		if moduleSyncPoints, ok := s.modulesBranchesLastSyncPoints[moduleIdentityInHEAD]; ok {
+		if moduleSyncPoints, ok := s.modulesBranchesLastSyncPoints[moduleIdentityInHEAD.IdentityString()]; ok {
 			if moduleBranchSyncPoint, ok := moduleSyncPoints[branch]; ok {
 				expectedSyncPoint = &moduleBranchSyncPoint
 			}
@@ -72,61 +72,67 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 		modulesDirsToSyncInThisCommit := make(map[string]bufmodulebuild.BuiltModule)
 		modulesDirsToStopInThisCommit := make(map[string]struct{})
 		for moduleDir, pendingModule := range pendingModules {
+			moduleIdentityInHEAD := pendingModule.moduleIdentityInHEAD.IdentityString()
 			logger := s.logger.With(
 				zap.String("branch", branch),
 				zap.String("commit", commit.Hash().Hex()),
 				zap.String("module directory", moduleDir),
-				zap.String("module identity in branch HEAD", pendingModule.moduleIdentityInHEAD),
+				zap.String("module identity in branch HEAD", moduleIdentityInHEAD),
 				zap.Stringp("expected sync point", pendingModule.expectedSyncPoint),
 			)
-			moduleIdentity := pendingModule.moduleIdentityInHEAD
-			// attempt to read module in the commit:moduleDir
-			builtModule, readErr := s.readModuleAt(ctx, branch, commit, moduleDir, &moduleIdentity)
+			// check if the module identity already synced this commit
+			isSynced, err := s.isGitCommitSynced(ctx, pendingModule.moduleIdentityInHEAD, commitHash)
+			if err != nil {
+				return fmt.Errorf(
+					"checking if module %s already synced git commit %s: %w",
+					moduleIdentityInHEAD, commitHash, err,
+				)
+			}
+			if isSynced {
+				// reached a commit that is already synced for this module, we can stop looking for this
+				// module dir
+				modulesDirsToStopInThisCommit[moduleDir] = struct{}{}
+				if pendingModule.expectedSyncPoint == nil {
+					// this module did not have an expected sync point for this branch, we probably reached
+					// the beginning of the branch off another branch that is already synced.
+					logger.Debug("git commit already synced, stop looking back in branch")
+					continue
+				}
+				if commitHash != *pendingModule.expectedSyncPoint {
+					if s.repo.DefaultBranch() == branch {
+						// TODO: add details to error message saying: "run again with --force-branch-sync <branch
+						// name>" when we support a flag like that.
+						return fmt.Errorf(
+							"found synced git commit %s for default branch %s, but expected sync point was %s, "+
+								"did you rebase or reset your default branch?",
+							commitHash,
+							branch,
+							*pendingModule.expectedSyncPoint,
+						)
+					}
+					// syncing non-default branches from an unexpected sync point can be a common scenario in
+					// PRs, we can just WARN and continue
+					logger.Warn(
+						"unexpected sync point reached, stop looking back in branch",
+						zap.String("found_sync_point", commitHash),
+					)
+				} else {
+					logger.Debug("expected sync point reached, stop looking back in branch")
+				}
+				continue
+			}
+			// git commit is not synced, attempt to read module in the commit:moduleDir
+			builtModule, readErr := s.readModuleAt(ctx, branch, commit, moduleDir, &moduleIdentityInHEAD)
 			if readErr != nil {
 				if s.errorHandler.StopLookback(readErr) {
-					logger.Warn("read module at commit failed, stop looking back", zap.Error(readErr))
+					logger.Warn("read module at commit failed, stop looking back in branch", zap.Error(readErr))
 					modulesDirsToStopInThisCommit[moduleDir] = struct{}{}
 					continue
 				}
 				logger.Warn("read module at commit failed, skipping commit", zap.Error(readErr))
 				continue
 			}
-			// check if the module identity already synced this commit
-			isSynced, err := s.isGitCommitSynced(ctx, builtModule.ModuleIdentity(), commitHash)
-			if err != nil {
-				return fmt.Errorf(
-					"check if module %s already synced git commit %s: %w",
-					moduleIdentity, commitHash, err,
-				)
-			}
-			if !isSynced {
-				modulesDirsToSyncInThisCommit[moduleDir] = *builtModule
-				continue
-			}
-			// reached a commit that is already synced for this module, we can stop looking for this
-			// module dir
-			modulesDirsToStopInThisCommit[moduleDir] = struct{}{}
-			if pendingModule.expectedSyncPoint == nil {
-				// this module did not have an expected sync point for this branch, we probably reached the
-				// beginning of the branch off another branch that is already synced.
-				continue
-			}
-			if commitHash != *pendingModule.expectedSyncPoint {
-				if s.repo.DefaultBranch() == branch {
-					// TODO: add details to error message saying: "run again with --force-branch-sync <branch
-					// name>" when we support a flag like that.
-					return fmt.Errorf(
-						"found synced git commit %s for default branch %s, but expected sync point was %s, "+
-							"did you rebase or reset your default branch?",
-						commitHash,
-						branch,
-						*pendingModule.expectedSyncPoint,
-					)
-				}
-				// syncing non-default branches from an unexpected sync point can be a common scenario in PRs,
-				// we can just WARN and continue
-				logger.Warn("unexpected_sync_point", zap.String("found_sync_point", commitHash))
-			}
+			modulesDirsToSyncInThisCommit[moduleDir] = *builtModule
 		}
 		// clear modules that already found its sync point
 		for moduleDir := range modulesDirsToStopInThisCommit {
@@ -159,16 +165,17 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 	}
 	// we reached the branch starting point, do we still have pending modules?
 	for moduleDir, pendingModule := range pendingModules {
+		moduleIdentityInHEAD := pendingModule.moduleIdentityInHEAD.IdentityString()
 		logger := s.logger.With(
 			zap.String("branch", branch),
 			zap.String("module directory", moduleDir),
-			zap.String("module identity in branch HEAD", pendingModule.moduleIdentityInHEAD),
+			zap.String("module identity in branch HEAD", moduleIdentityInHEAD),
 		)
 		if pendingModule.expectedSyncPoint != nil {
 			if branch == s.repo.DefaultBranch() {
 				return nil, fmt.Errorf(
 					"module %s in directory %s in the default branch %s did not find its expected sync point %s, aborting sync",
-					pendingModule.moduleIdentityInHEAD,
+					moduleIdentityInHEAD,
 					moduleDir,
 					branch,
 					*pendingModule.expectedSyncPoint,
@@ -188,6 +195,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 	return commitsToSync, nil
 }
 
+// isGitCommitSynced checks if a commit hash is already synced to a remote BSR module.
 func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmoduleref.ModuleIdentity, commitHash string) (bool, error) {
 	if s.syncedGitCommitChecker == nil {
 		return false, nil
