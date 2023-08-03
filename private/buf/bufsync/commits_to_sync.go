@@ -76,7 +76,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 				zap.String("branch", branch),
 				zap.String("commit", commit.Hash().Hex()),
 				zap.String("module directory", moduleDir),
-				zap.String("module identity in HEAD", pendingModule.moduleIdentityInHEAD),
+				zap.String("module identity in branch HEAD", pendingModule.moduleIdentityInHEAD),
 				zap.Stringp("expected sync point", pendingModule.expectedSyncPoint),
 			)
 			builtModule, readErr := s.readModuleAt(ctx, branch, commit, moduleDir)
@@ -144,8 +144,8 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 	for moduleDir, pendingModule := range pendingModules {
 		logger := s.logger.With(
 			zap.String("branch", branch),
-			zap.String("module dir", moduleDir),
-			zap.String("module identity in HEAD", pendingModule.moduleIdentityInHEAD),
+			zap.String("module directory", moduleDir),
+			zap.String("module identity in branch HEAD", pendingModule.moduleIdentityInHEAD),
 		)
 		if pendingModule.expectedSyncPoint != nil {
 			if branch == s.repo.DefaultBranch() {
@@ -183,7 +183,7 @@ func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmodule
 	modIdentity := moduleIdentity.IdentityString()
 	// check local cache first
 	if syncedModuleCommits, ok := s.syncedModulesCommitsCache[modIdentity]; ok {
-		if _, synced := syncedModuleCommits[commitHash]; synced {
+		if _, commitSynced := syncedModuleCommits[commitHash]; commitSynced {
 			return true, nil
 		}
 	}
@@ -192,13 +192,13 @@ func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmodule
 	if err != nil {
 		return false, err
 	}
-	_, synced := syncedModuleCommits[commitHash]
-	if synced {
+	_, commitSynced := syncedModuleCommits[commitHash]
+	if commitSynced {
 		// populate local cache
 		if s.syncedModulesCommitsCache[modIdentity] == nil {
 			s.syncedModulesCommitsCache[modIdentity] = make(map[string]struct{})
 		}
 		s.syncedModulesCommitsCache[modIdentity][commitHash] = struct{}{}
 	}
-	return synced, nil
+	return commitSynced, nil
 }

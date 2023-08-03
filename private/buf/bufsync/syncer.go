@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"go.uber.org/zap"
@@ -43,14 +42,11 @@ type syncer struct {
 	branchesModulesToSync         map[string]map[string]string // branch:moduleDir:moduleIdentityInHEAD
 	modulesBranchesLastSyncPoints map[string]map[string]string // moduleIdentity:branch:lastSyncPointGitHash
 
-	// syncedModulesCommitsCache caches commits already synced to a given BSR module, so we don't ask
-	// twice the same module:commit when we already know it's already synced. We don't cache
-	// "unsynced" git commits, since during the sync process we will be syncing new git commits, which
-	// will be added to this cache when they are.
-	syncedModulesCommitsCache map[string]map[string]struct{} // moduleIdentity:commit:isSynced
-	// commitModulesCache caches builtNamedModules from specific commit and module directories in the
-	// git repo, so we don't read the same commit:moduleDir twice.
-	commitModulesCache map[string]map[string]bufmodulebuild.BuiltModule // commit:moduleDir:builtModule
+	// syncedModulesCommitsCache (moduleIdentity:commit) caches commits already synced to a given BSR
+	// module, so we don't ask twice the same module:commit when we already know it's already synced.
+	// We don't cache "unsynced" git commits, since during the sync process we will be syncing new git
+	// commits, which will be added to this cache when they are.
+	syncedModulesCommitsCache map[string]map[string]struct{}
 }
 
 func newSyncer(
@@ -70,7 +66,6 @@ func newSyncer(
 		branchesModulesToSync:         make(map[string]map[string]string),
 		modulesBranchesLastSyncPoints: make(map[string]map[string]string),
 		syncedModulesCommitsCache:     make(map[string]map[string]struct{}),
-		commitModulesCache:            make(map[string]map[string]bufmodulebuild.BuiltModule),
 	}
 	for _, opt := range options {
 		if err := opt(s); err != nil {
@@ -118,7 +113,14 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	return nil
 }
 
-// syncBranch syncs all modules in a branch.
+// syncBranch modules from a branch.
+//
+// It first navigates the branch calculating the commits+modules that are to be synced. Once all
+// modules have their initial git sync point, then we loop over those commits and invoke the sync
+// function.
+//
+// Any error from the sync func aborts the sync process and leaves it partially complete, presumably
+// safe to resume.
 func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFunc) error {
 	commitsToSync, err := s.branchCommitsToSync(ctx, branch)
 	if err != nil {
@@ -132,62 +134,45 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 		return nil
 	}
 	s.printCommitsToSync(branch, commitsToSync)
-	// for _, commitToSync := range commitsToSync {
-	// 	for _, module := range s.modulesDirsToSync { // looping over the original sort order of modules
-	// 		if _, shouldSyncModule := commitToSync.modules[module]; !shouldSyncModule {
-	// 			continue
-	// 		}
-	// 		if err := s.syncModule(ctx, branch, commitToSync.commit, module, syncFunc); err != nil {
-	// 			return fmt.Errorf("sync module %s in commit %s: %w", module.String(), commitToSync.commit.Hash().Hex(), err)
-	// 		}
-	// 	}
-	// }
+	for _, commitToSync := range commitsToSync {
+		if len(commitToSync.modules) == 0 {
+			s.logger.Debug(
+				"branch commit with no modules to sync, skipping commit",
+				zap.String("branch", branch),
+				zap.String("commit", commitToSync.commit.Hash().Hex()),
+			)
+			continue
+		}
+		for _, moduleDir := range s.sortedModulesDirsToSync { // looping over the original sort order of modules
+			builtModule, shouldSyncModule := commitToSync.modules[moduleDir]
+			if !shouldSyncModule {
+				s.logger.Debug(
+					"module directory not present in modules to sync for branch commit, skipping module",
+					zap.String("branch", branch),
+					zap.String("commit", commitToSync.commit.Hash().Hex()),
+					zap.String("module directory", moduleDir),
+				)
+				continue
+			}
+			modIdentity := builtModule.ModuleIdentity().IdentityString()
+			if err := syncFunc(
+				ctx,
+				newModuleCommitToSync(
+					builtModule.ModuleIdentity(),
+					builtModule.Bucket,
+					commitToSync.commit,
+					branch,
+					s.commitsTags[commitToSync.commit.Hash().Hex()],
+				),
+			); err != nil {
+				return fmt.Errorf("sync module %s:%s in commit %s: %w", moduleDir, modIdentity, commitToSync.commit.Hash().Hex(), err)
+			}
+			// module was synced successfully, add it to the cache
+			if s.syncedModulesCommitsCache[modIdentity] == nil {
+				s.syncedModulesCommitsCache[modIdentity] = make(map[string]struct{})
+			}
+			s.syncedModulesCommitsCache[modIdentity][commitToSync.commit.Hash().Hex()] = struct{}{}
+		}
+	}
 	return nil
 }
-
-// // syncModule looks for the module in the commit, and if found tries to validate it. If it is valid,
-// // it invokes `syncFunc`.
-// //
-// // It does not return errors on invalid modules, but it will return any errors from `syncFunc` as
-// // those may be transient.
-// func (s *syncer) syncModule(
-// 	ctx context.Context,
-// 	branch string,
-// 	commit git.Commit,
-// 	module Module,
-// 	syncFunc SyncFunc,
-// ) error {
-// 	logger := s.logger.With(
-// 		zap.Stringer("commit", commit.Hash()),
-// 		zap.Stringer("module", module),
-// 	)
-// 	builtNamedModule, err := s.builtNamedModuleAt(ctx, commit, module.Dir())
-// 	if err != nil {
-// 		if errors.Is(err, errModuleNotFound) {
-// 			logger.Debug("module not found, skipping commit")
-// 			return nil
-// 		}
-// 		if invalidConfigErr := (&invalidModuleConfigError{}); errors.As(err, &invalidConfigErr) {
-// 			return s.errorHandler.InvalidModuleConfig(module, commit, err)
-// 		}
-// 		if errors.Is(err, errUnnamedModule) {
-// 			logger.Debug("unnamed module, skipping commit")
-// 			return nil
-// 		}
-// 		if buildModuleErr := (&buildModuleError{}); errors.As(err, &buildModuleErr) {
-// 			return s.errorHandler.BuildFailure(module, commit, err)
-// 		}
-// 		return err
-// 	}
-// // TODO if it was synced successfully, add it to the cache
-// 	return syncFunc(
-// 		ctx,
-// 		newModuleCommitToSync(
-// 			builtNamedModule.ModuleIdentity(), // TODO make sure it's the same name
-// 			builtNamedModule.Bucket,
-// 			commit,
-// 			branch,
-// 			s.commitsTags[commit.Hash().Hex()],
-// 		),
-// 	)
-// }
