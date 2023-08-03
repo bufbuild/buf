@@ -20,14 +20,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
-// moduleTarget holds the sync target for module directories to sync. It's prepared before starting
-// any sync operation.
-type moduleTarget struct {
-	// expectedIdentity is assigned at the HEAD of each branch
-	expectedIdentity bufmoduleref.ModuleIdentity
-	syncPoint        git.Hash
-}
-
 type moduleCommit struct {
 	identity bufmoduleref.ModuleIdentity
 	bucket   storage.ReadBucket

@@ -316,55 +316,49 @@ func newErrorHandler(logger *zap.Logger) bufsync.ErrorHandler {
 	return &syncErrorHandler{logger: logger}
 }
 
-func (s *syncErrorHandler) BuildFailure(module bufsync.Module, commit git.Commit, err error) error {
-	// We failed to build the module. We can warn on this and carry on.
-	// Note that because of resumption, Syncer will typically only come
-	// across this commit once, we will not log this warning again.
+func (s *syncErrorHandler) ReadModule(err *bufsync.ReadModuleError) error {
 	s.logger.Warn(
-		"module build failure",
-		zap.Stringer("commit", commit.Hash()),
-		zap.Stringer("module", module),
-		zap.Error(err),
-	)
-	return nil
-}
-
-func (s *syncErrorHandler) InvalidModuleConfig(module bufsync.Module, commit git.Commit, err error) error {
-	// We found a module but the module config is invalid. We can warn on this
-	// and carry on. Note that because of resumption, Syncer will typically only come
-	// across this commit once, we will not log this warning again.
-	s.logger.Warn(
-		"invalid module config",
-		zap.Stringer("commit", commit.Hash()),
-		zap.Stringer("module", module),
+		"error reading module",
 		zap.Error(err),
 	)
 	return nil
 }
 
 func (s *syncErrorHandler) InvalidSyncPoint(
-	module bufsync.Module,
+	module bufmoduleref.ModuleIdentity,
 	branch string,
 	syncPoint git.Hash,
+	isGitDefaultBranch bool,
 	err error,
 ) error {
-	// The most likely culprit for an invalid sync point is a rebase, where the last known
-	// commit has been garbage collected. In this case, let's present a better error message.
+	// The most likely culprit for an invalid sync point is a rebase, where the last known commit has
+	// been garbage collected. In this case, let's present a better error message.
 	//
-	// We may want to provide a flag for sync to continue despite this, accumulating the error,
-	// and error at the end, so that other branches can continue to sync, but this branch is
-	// out of date. This is not trivial if the branch that's been rebased is a long-lived
-	// branch (like main) whose artifacts are consumed by other branches, as we may fail to
-	// sync those commits if we continue. So we now we simply error.
+	// We may want to provide a flag for sync to continue despite this, accumulating the error, and
+	// error at the end, so that other branches can continue to sync, but this branch is out of date.
+	// This is not trivial if the branch that's been rebased is a long-lived branch (like main) whose
+	// artifacts are consumed by other branches, as we may fail to sync those commits if we continue.
+	// So we now we simply error.
 	if errors.Is(err, git.ErrObjectNotFound) {
-		return fmt.Errorf(
-			"last synced commit %s was not found for module %s; did you rebase?",
-			syncPoint,
-			module,
+		if isGitDefaultBranch {
+			return fmt.Errorf(
+				"last synced git commit %q for default branch %q in module %q is not found in the git repo, did you rebase or reset your default branch?",
+				syncPoint.Hex(), branch, module.IdentityString(),
+			)
+		}
+		s.logger.Warn(
+			"last synced git commit not found in the git repo for a non-default branch",
+			zap.String("module", module.IdentityString()),
+			zap.String("branch", branch),
+			zap.String("last synced git commit", syncPoint.Hex()),
 		)
+		return nil
 	}
 	// Otherwise, we still want this to fail sync, let's bubble this up.
-	return err
+	return fmt.Errorf(
+		"invalid sync point %q for branch %q in module %q: %w",
+		syncPoint.Hex(), branch, module.IdentityString(), err,
+	)
 }
 
 func pushOrCreate(
