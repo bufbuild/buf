@@ -122,7 +122,7 @@ func (s *syncer) resolveSyncPoint(ctx context.Context, module bufmoduleref.Modul
 	// Validate that the commit pointed to by the sync point exists in the git repo.
 	if _, err := s.repo.Objects().Commit(syncPoint); err != nil {
 		isDefaultBranch := branch == s.repo.DefaultBranch()
-		return nil, s.errorHandler.InvalidSyncPoint(module, branch, syncPoint, isDefaultBranch, err)
+		return nil, s.errorHandler.InvalidRemoteSyncPoint(module, branch, syncPoint, isDefaultBranch, err)
 	}
 	return syncPoint, nil
 }

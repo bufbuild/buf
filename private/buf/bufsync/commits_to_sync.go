@@ -25,15 +25,15 @@ import (
 	"go.uber.org/zap"
 )
 
-// syncableCommit holds the git commit and modules in that commit that need to be synced.
+// syncableCommit holds the modules that need to be synced in a git commit.
 type syncableCommit struct {
 	commit  git.Commit
 	modules map[string]bufmodulebuild.BuiltModule // moduleDir:builtModule
 }
 
 // branchCommitsToSync returns a sorted commit+modules tuples array that are pending to sync for a
-// branch. A commit in the array might have no modules to sync, in case those are skipped by the
-// Syncer error handler.
+// branch. A commit in the array might have no modules to sync if those are skipped by the
+// Syncer error handler, or are a found sync point.
 func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]syncableCommit, error) {
 	modulesToSync, ok := s.branchesModulesToSync[branch]
 	if !ok || len(modulesToSync) == 0 {

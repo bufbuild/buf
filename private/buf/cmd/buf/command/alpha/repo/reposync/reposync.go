@@ -323,14 +323,14 @@ func newErrorHandler(logger *zap.Logger) bufsync.ErrorHandler {
 	return &syncErrorHandler{logger: logger}
 }
 
-func (s *syncErrorHandler) StopLookback(err *bufsync.ReadModuleError) bool {
-	// For this first alpha iteration, we're not stopping at any read error when looking back commits
-	// for a sync start point, and just skipping them to sync possible valid modules in older commits.
-	// We might change this behavior after new findings.
+func (*syncErrorHandler) StopLookback(*bufsync.ReadModuleError) bool {
+	// For this first iteration, we're not stopping at any read error when looking back commits for a
+	// sync start point, and just skipping them to sync possible valid modules in older commits. We
+	// might allow customizing this behavior in the future.
 	return false
 }
 
-func (s *syncErrorHandler) InvalidSyncPoint(
+func (s *syncErrorHandler) InvalidRemoteSyncPoint(
 	module bufmoduleref.ModuleIdentity,
 	branch string,
 	syncPoint git.Hash,
@@ -340,11 +340,13 @@ func (s *syncErrorHandler) InvalidSyncPoint(
 	// The most likely culprit for an invalid sync point is a rebase, where the last known commit has
 	// been garbage collected. In this case, let's present a better error message.
 	//
-	// We may want to provide a flag for sync to continue despite this, accumulating the error, and
-	// error at the end, so that other branches can continue to sync, but this branch is out of date.
-	// This is not trivial if the branch that's been rebased is a long-lived branch (like main) whose
-	// artifacts are consumed by other branches, as we may fail to sync those commits if we continue.
-	// So we now we simply error.
+	// This is not trivial scenario if the branch that's been rebased is a long-lived branch (like
+	// main) whose artifacts are consumed by other branches, as we may fail to sync those commits if
+	// we continue.
+	//
+	// For now we simply error if this happens in the default branch, and WARN+skip for the other
+	// branches. We may want to provide a flag in the future for forcing sync to continue despite
+	// this.
 	if errors.Is(err, git.ErrObjectNotFound) {
 		if isGitDefaultBranch {
 			return fmt.Errorf(
@@ -360,7 +362,7 @@ func (s *syncErrorHandler) InvalidSyncPoint(
 		)
 		return nil
 	}
-	// Otherwise, we still want this to fail sync, let's bubble this up.
+	// Other error, let's abort sync.
 	return fmt.Errorf(
 		"invalid sync point %q for branch %q in module %q: %w",
 		syncPoint.Hex(), branch, module.IdentityString(), err,

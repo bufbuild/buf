@@ -45,8 +45,8 @@ type syncer struct {
 
 	// syncedModulesCommitsCache (moduleIdentity:commit) caches commits already synced to a given BSR
 	// module, so we don't ask twice the same module:commit when we already know it's already synced.
-	// We don't cache "unsynced" git commits, since during the sync process we will be syncing new git
-	// commits, which will be added to this cache when they are.
+	// We don't cache "unsynced" git commits, because during the sync process we will be syncing new
+	// git commits, which then will be added also to this cache.
 	syncedModulesCommitsCache map[string]map[string]struct{}
 }
 
@@ -121,11 +121,11 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 // syncBranch modules from a branch.
 //
 // It first navigates the branch calculating the commits+modules that are to be synced. Once all
-// modules have their initial git sync point, then we loop over those commits and invoke the sync
+// modules have their initial git sync point we loop over those commits and invoke the sync
 // function.
 //
-// Any error from the sync func aborts the sync process and leaves it partially complete, presumably
-// safe to resume.
+// Any error from the sync func aborts the sync process and leaves it partially complete, safe to
+// resume.
 func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFunc) error {
 	commitsToSync, err := s.branchCommitsToSync(ctx, branch)
 	if err != nil {

@@ -99,12 +99,12 @@ type ErrorHandler interface {
 	// syncer will stop looking when reaching the commit `u`, will select `v` as the start sync point,
 	// and the synced commits into the BSR will be [x, y, z].
 	StopLookback(err *ReadModuleError) bool
-	// InvalidSyncPoint is invoked by Syncer upon encountering a module's branch sync point that is
-	// invalid. A typical example is either a sync point that points to a commit that cannot be found
-	// anymore, or the commit itself has been corrupted.
+	// InvalidRemoteSyncPoint is invoked by Syncer upon encountering a module's branch sync point that
+	// is invalid locally. A typical example is either a sync point that points to a commit that
+	// cannot be found anymore, or the commit itself has been corrupted.
 	//
 	// Returning an error will abort sync.
-	InvalidSyncPoint(
+	InvalidRemoteSyncPoint(
 		module bufmoduleref.ModuleIdentity,
 		branch string,
 		syncPoint git.Hash,
