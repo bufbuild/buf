@@ -418,16 +418,16 @@ func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
 		if prefixOverride, ok := secondLastOverride.(prefixOverride); ok {
 			if suffixOverride, ok := lastOverride.(suffixOverride); ok {
 				return newPrefixSuffixOverride(
-					prefixOverride.get(),
-					suffixOverride.get(),
+					prefixOverride.Get(),
+					suffixOverride.Get(),
 				)
 			}
 		}
 		if suffixOverride, ok := secondLastOverride.(suffixOverride); ok {
 			if prefixOverride, ok := lastOverride.(prefixOverride); ok {
 				return newPrefixSuffixOverride(
-					prefixOverride.get(),
-					suffixOverride.get(),
+					prefixOverride.Get(),
+					suffixOverride.Get(),
 				)
 			}
 		}
