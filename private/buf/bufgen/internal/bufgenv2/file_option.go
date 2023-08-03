@@ -67,6 +67,7 @@ const (
 	groupJavaStringCheckUtf8
 	groupOptimizeFor
 	groupGoPackage
+	groupCcEnableArenas
 	groupObjcClassPrefix
 	groupCsharpNamespace
 	groupPhpNamespace
@@ -125,6 +126,7 @@ var (
 		fileOptionJavaStringCheckUtf8:        parseValueOverride[bool],
 		fileOptionGoPackage:                  parseValueOverride[string],
 		fileOptionGoPackagePrefix:            parsePrefixOverride,
+		fileOptionCcEnableArenas:             parseValueOverride[bool],
 		fileOptionObjcClassPrefix:            parseValueOverride[string], // objc_class_prefix is in descriptor.proto
 		fileOptionCsharpNamespace:            parseValueOverride[string],
 		fileOptionCsharpNamespacePrefix:      parsePrefixOverride,
@@ -144,6 +146,7 @@ var (
 		fileOptionOptimizeFor:                groupOptimizeFor,
 		fileOptionGoPackage:                  groupGoPackage,
 		fileOptionGoPackagePrefix:            groupGoPackage,
+		fileOptionCcEnableArenas:             groupCcEnableArenas,
 		fileOptionObjcClassPrefix:            groupObjcClassPrefix,
 		fileOptionCsharpNamespace:            groupCsharpNamespace,
 		fileOptionCsharpNamespacePrefix:      groupCsharpNamespace,
@@ -160,6 +163,7 @@ var (
 		groupJavaStringCheckUtf8,
 		groupOptimizeFor,
 		groupGoPackage,
+		groupCcEnableArenas,
 		groupObjcClassPrefix,
 		groupCsharpNamespace,
 		groupPhpNamespace,

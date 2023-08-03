@@ -1078,6 +1078,33 @@ func TestManagedConfigSuccess(t *testing.T) {
 			},
 		},
 		{
+			testName: "cc enable arenas",
+			file:     filepath.Join("managed", "cc_enable_arenas"),
+			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]override{
+				groupCcEnableArenas: {
+					&fakeImageFileIdentity{
+						path: "random.proto",
+					}: newValueOverride(false),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "petapis"),
+					}: newValueOverride(true),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "weather"),
+					}: newValueOverride(true),
+					&fakeImageFileIdentity{
+						path:   "dir/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: newValueOverride(true),
+					&fakeImageFileIdentity{
+						path:   "a/b/a.proto",
+						module: mustCreateModuleIdentity(t, "buf.build", "acme", "payment"),
+					}: newValueOverride(false),
+				},
+			},
+		},
+		{
 			testName: "objc class prefix",
 			file:     filepath.Join("managed", "objc_class_prefix"),
 			expectedOverrideResults: map[fileOptionGroup]map[imageFileIdentity]override{

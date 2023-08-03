@@ -181,6 +181,22 @@ func applyManagementForFile(
 			if err != nil {
 				return err
 			}
+		case groupCcEnableArenas:
+			if managedConfig.DisabledFunc(fileOptionCcEnableArenas, imageFile) {
+				continue
+			}
+			if override == nil {
+				// Do not modify cc_enable_arenas if no override is matched.
+				continue
+			}
+			ccEnableArenasOverride, ok := override.(valueOverride[bool])
+			if !ok {
+				return fmt.Errorf("invalid override type %T", override)
+			}
+			err := bufimagemodifyv2.ModifyCcEnableArenas(marker, imageFile, ccEnableArenasOverride.get())
+			if err != nil {
+				return err
+			}
 		case groupObjcClassPrefix:
 			if managedConfig.DisabledFunc(fileOptionObjcClassPrefix, imageFile) {
 				continue

@@ -260,6 +260,27 @@ func ModifyGoPackage(
 	return nil
 }
 
+// ModifyCcEnableArenas modifies cc_enable_arenas.
+func ModifyCcEnableArenas(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	cc_enable_arenas bool,
+) error {
+	if internal.IsWellKnownType(imageFile) {
+		return nil
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetCcEnableArenas() == cc_enable_arenas {
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.CcEnableArenas = proto.Bool(cc_enable_arenas)
+	marker.Mark(imageFile, internal.CCEnableArenasPath)
+	return nil
+}
+
 // ModifyOptimizeFor modifies optimize_for.
 func ModifyOptimizeFor(
 	marker Marker,

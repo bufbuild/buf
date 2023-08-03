@@ -631,7 +631,7 @@ func TestModifyOptimizeFor(t *testing.T) {
 			shouldNotModify: true,
 		},
 		{
-			description:   "optimize for on a file without this option",
+			description:   "optimize for on a file with this option",
 			subDir:        "alloptions",
 			file:          "a.proto",
 			override:      descriptorpb.FileOptions_CODE_SIZE,
@@ -698,6 +698,106 @@ func TestModifyOptimizeFor(t *testing.T) {
 				}
 				require.True(t, ok)
 				_, ok = fileKeys[internal.GetPathKey(internal.OptimizeForPath)]
+				require.True(t, ok)
+			})
+		}
+	}
+}
+
+func TestModifyCcEnableArenas(t *testing.T) {
+	t.Parallel()
+	baseDir := filepath.Join("..", "testdata")
+	tests := []struct {
+		description     string
+		subDir          string
+		file            string
+		override        bool
+		expectedValue   bool
+		shouldNotModify bool
+	}{
+		{
+			description:   "cc enable arenas on a file without this option",
+			subDir:        "emptyoptions",
+			file:          "a.proto",
+			override:      false,
+			expectedValue: false,
+		},
+		{
+			description:     "cc enable arenas with default value on a file without this option",
+			subDir:          "emptyoptions",
+			file:            "a.proto",
+			override:        true,
+			expectedValue:   true,
+			shouldNotModify: true,
+		},
+		{
+			description:   "optimize for on a file with this option",
+			subDir:        "alloptions",
+			file:          "a.proto",
+			override:      true,
+			expectedValue: true,
+		},
+		{
+			description:     "optimize for on a file with this option with equal value",
+			subDir:          "alloptions",
+			file:            "a.proto",
+			override:        false,
+			expectedValue:   false,
+			shouldNotModify: true,
+		},
+		{
+			description:     "optmize for on a wkt",
+			subDir:          "wktimport",
+			file:            "google/protobuf/timestamp.proto",
+			override:        false,
+			expectedValue:   true,
+			shouldNotModify: true,
+		},
+	}
+	for _, test := range tests {
+		test := test
+		for _, includeSourceCodeInfo := range []bool{true, false} {
+			includeSourceCodeInfo := includeSourceCodeInfo
+			t.Run(test.description, func(t *testing.T) {
+				t.Parallel()
+				dirPath := filepath.Join(baseDir, test.subDir)
+				image := bufimagemodifytesting.GetTestImage(
+					t,
+					dirPath,
+					includeSourceCodeInfo,
+				)
+				markSweeper := newMarkSweeper(image)
+				require.NotNil(t, markSweeper)
+				imageFile := image.GetFile(test.file)
+				require.NotNil(t, imageFile)
+				_, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
+				require.False(t, ok)
+				err := ModifyCcEnableArenas(
+					markSweeper,
+					imageFile,
+					test.override,
+				)
+				require.NoError(t, err)
+				err = markSweeper.Sweep()
+				require.NoError(t, err)
+				require.NotNil(t, imageFile.Proto())
+				require.Equal(t, test.expectedValue, imageFile.Proto().GetOptions().GetCcEnableArenas())
+				fileKeys, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
+				if test.shouldNotModify {
+					require.False(t, ok)
+					require.Equal(
+						t,
+						bufimagemodifytesting.GetTestImage(
+							t,
+							dirPath,
+							includeSourceCodeInfo,
+						),
+						image,
+					)
+					return
+				}
+				require.True(t, ok)
+				_, ok = fileKeys[internal.GetPathKey(internal.CCEnableArenasPath)]
 				require.True(t, ok)
 			})
 		}

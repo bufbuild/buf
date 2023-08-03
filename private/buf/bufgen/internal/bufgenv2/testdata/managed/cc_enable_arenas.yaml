@@ -1,0 +1,19 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - file_option: cc_enable_arenas
+      value: false
+    - file_option: cc_enable_arenas
+      value: true
+      path: dir
+    - file_option: cc_enable_arenas
+      value: true
+      module: buf.build/acme/weather
+    - file_option: cc_enable_arenas
+      value: false
+      module: buf.build/acme/payment
+      path: a/b
