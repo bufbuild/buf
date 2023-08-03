@@ -1,0 +1,19 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - file_option: java_multiple_files
+      value: true
+    - file_option: java_multiple_files
+      value: false
+      path: dir
+    - file_option: java_multiple_files
+      value: false
+      module: buf.build/acme/weather
+    - file_option: java_multiple_files
+      value: true
+      module: buf.build/acme/payment
+      path: a/b

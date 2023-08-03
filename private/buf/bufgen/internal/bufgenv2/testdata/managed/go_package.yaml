@@ -1,0 +1,19 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/example/protos
+    - file_option: go_package
+      value: package1
+      path: dir
+    - file_option: go_package
+      value: weather
+      module: buf.build/acme/weather
+    - file_option: go_package_prefix
+      value: special/prefix
+      module: buf.build/acme/payment
+      path: a/b

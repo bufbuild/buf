@@ -1,0 +1,19 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - file_option: objc_class_prefix
+      value: foo
+    - file_option: objc_class_prefix
+      value: bar
+      path: dir
+    - file_option: objc_class_prefix
+      value: baz
+      module: buf.build/acme/weather
+    - file_option: objc_class_prefix
+      value: qux
+      module: buf.build/acme/payment
+      path: a/b

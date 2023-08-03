@@ -16,13 +16,10 @@ package bufimagemodifyv2
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
-	"github.com/bufbuild/protocompile/walk"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -50,83 +47,47 @@ func NewMarkSweeper(image bufimage.Image) MarkSweeper {
 	return newMarkSweeper(image)
 }
 
-// Override describes how to modify a file or field option, and
-// may be passed to ModifyXYZ.
-type Override interface {
-	override()
+// FieldOptionModifier modifies field option. A new FieldOptionModifier
+// should be created for each file to be modified.
+type FieldOptionModifier interface {
+	// FieldNames returns all fields' names from the image file.
+	FieldNames() []string
+	// ModifyJSType modifies field option jstype.
+	ModifyJSType(string, descriptorpb.FieldOptions_JSType) error
 }
 
-// PrefixOverride is an override that applies a prefix.
-type PrefixOverride interface {
-	Override
-	Get() string
-	prefixOverride()
+// NewFieldOptionModifier returns a new FieldOptionModifier
+func NewFieldOptionModifier(
+	imageFile bufimage.ImageFile,
+	marker Marker,
+) (FieldOptionModifier, error) {
+	return newFieldOptionModifier(imageFile, marker)
 }
 
-// NewPrefixOverride returns an override on prefix.
-func NewPrefixOverride(prefix string) PrefixOverride {
-	return newPrefixOverride(prefix)
-}
+// ModifyJavaPackageOption is an option for ModifyJavaPackage.
+type ModifyJavaPackageOption func(*modifyJavaPackageOptions)
 
-// SuffixOverride is an override that applies a suffix.
-type SuffixOverride interface {
-	Override
-	Get() string
-	suffixOverride()
-}
-
-// NewSuffixOverride returns an override on suffix.
-func NewSuffixOverride(suffix string) SuffixOverride {
-	return newSuffixOverride(suffix)
-}
-
-// PrefixSuffixOverride is an override that applies a suffix and a prefix.
-type PrefixSuffixOverride interface {
-	Override
-	GetPrefix() string
-	GetSuffix() string
-	prefixSuffixOverride()
-}
-
-// NewPrefixSuffixOverride returns an override on both prefix and suffix.
-func NewPrefixSuffixOverride(
-	prefix string,
-	suffix string,
-) PrefixSuffixOverride {
-	return newPrefixSuffixOverride(prefix, suffix)
-}
-
-// ValueOverride is an override that directly modifies a file or field option.
-type ValueOverride interface {
-	Override
-	valueOverride()
-}
-
-// NewValueOverride returns a new override on value.
-func NewValueOverride[
-	T string |
-		bool |
-		descriptorpb.FileOptions_OptimizeMode |
-		descriptorpb.FieldOptions_JSType,
-](val T) ValueOverride {
-	return newValueOverride(val)
-}
-
-// ModifyOption is an option for ModifyXYZ.
-type ModifyOption func(*modifyOptions)
-
-// ModifyWithOverride modifies an option with override.
-func ModifyWithOverride(override Override) (ModifyOption, error) {
-	if override == nil {
-		return nil, errors.New("override must not be nil")
+// ModifyJavaPackageWithValue is an option for setting java_package to this value.
+func ModifyJavaPackageWithValue(value string) ModifyJavaPackageOption {
+	return func(options *modifyJavaPackageOptions) {
+		options.value = value
 	}
-	return func(options *modifyOptions) {
-		options.override = override
-	}, nil
 }
 
-type modifyOptions struct {
-	override Override
+// ModifyJavaPackageWithPrefix is an option for setting java_package to the prefix
+// followed by the proto package.
+func ModifyJavaPackageWithPrefix(prefix string) ModifyJavaPackageOption {
+	return func(options *modifyJavaPackageOptions) {
+		options.prefix = prefix
+	}
+}
+
+// ModifyJavaPackageWithSuffix is an option for setting java_package to the proto
+// package followed by the suffix.
+func ModifyJavaPackageWithSuffix(suffix string) ModifyJavaPackageOption {
+	return func(options *modifyJavaPackageOptions) {
+		options.suffix = suffix
+	}
 }
 
 // ModifyJavaPackage modifies java_package. By default, it modifies java_package to
@@ -135,32 +96,31 @@ type modifyOptions struct {
 func ModifyJavaPackage(
 	marker Marker,
 	imageFile bufimage.ImageFile,
-	modifyJavaPackageOptions ...ModifyOption,
+	modifyOptions ...ModifyJavaPackageOption,
 ) error {
-	options := &modifyOptions{}
-	for _, option := range modifyJavaPackageOptions {
+	options := &modifyJavaPackageOptions{}
+	for _, option := range modifyOptions {
 		option(options)
 	}
 	var javaPackageValue string
-	switch t := options.override.(type) {
-	case prefixSuffixOverride:
-		javaPackageValue = getJavaPackageValue(imageFile, t.prefix, t.suffix)
-	case suffixOverride:
-		javaPackageValue = getJavaPackageValue(imageFile, "", t.Get())
-	case prefixOverride:
-		javaPackageValue = getJavaPackageValue(imageFile, t.Get(), "")
-	case valueOverride[string]:
-		javaPackageValue = t.get()
-	case nil:
-		javaPackageValue = getJavaPackageValue(imageFile, "", "")
-	default:
-		return fmt.Errorf("unknown Override type: %T", options.override)
+	if len(options.value) > 0 {
+		if len(options.prefix) > 0 || len(options.suffix) > 0 {
+			// the caller must make sure this does not happen
+			return errors.New("must not specify prefix or suffix if modifying java package by value")
+		}
+		javaPackageValue = options.value
+	} else {
+		javaPackageValue = getJavaPackageValue(imageFile, options.prefix, options.suffix)
 	}
 	if internal.IsWellKnownType(imageFile) {
 		return nil
 	}
 	descriptor := imageFile.Proto()
-	if descriptor.Options != nil && descriptor.Options.GetJavaPackage() == javaPackageValue {
+	if javaPackageValue == "" {
+		// We could not resolve a non-empty java_package, and so this is a no-op.
+		return nil
+	}
+	if descriptor.Options.GetJavaPackage() == javaPackageValue {
 		// The option is already set to the same value, don't modify or mark it.
 		return nil
 	}
@@ -172,65 +132,418 @@ func ModifyJavaPackage(
 	return nil
 }
 
-// TODO: Decide whether or not to use this one (this isn't the function we are calling right now,
-// but it's an alternative way of modifying). The interface is not as nice as that of FieldOptionModifier,
-// but this mean less code.
-// ModifyJSType modifies jstype field option.
-func ModifyJSType(
-	imageFile bufimage.ImageFile,
-	marker Marker,
-	valueSelector func(fieldName string) (value Override, shouldModify bool),
-) error {
-	if internal.IsWellKnownType(imageFile) {
-		return nil
+// ModifyJavaOuterClassnameOption is an option for ModifyJavaOuterClassname.
+type ModifyJavaOuterClassnameOption func(*modifyStringValueOptions)
+
+// ModifyJavaOuterClassnameWithValue is an option for setting java_outer_classname to this value.
+func ModifyJavaOuterClassnameWithValue(value string) ModifyJavaOuterClassnameOption {
+	return func(options *modifyStringValueOptions) {
+		options.value = value
 	}
-	err := walk.DescriptorProtosWithPath(imageFile.Proto(), func(
-		fullName protoreflect.FullName,
-		messageSourcePath protoreflect.SourcePath,
-		message proto.Message,
-	) error {
-		fieldDescriptor, ok := message.(*descriptorpb.FieldDescriptorProto)
-		if !ok {
-			return nil
-		}
-		if fieldDescriptor.Type == nil || !isJsTypePermittedForType(*fieldDescriptor.Type) {
-			return nil
-		}
-		if override, shouldModify := valueSelector(string(fullName)); shouldModify {
-			jstypeOverride, ok := override.(valueOverride[descriptorpb.FieldOptions_JSType])
-			if !ok {
-				return fmt.Errorf("unknown Override type: %T", override)
-			}
-			jsType := jstypeOverride.get()
-			if fieldDescriptor.Options == nil {
-				fieldDescriptor.Options = &descriptorpb.FieldOptions{}
-			}
-			fieldDescriptor.Options.Jstype = &jsType
-			if len(messageSourcePath) > 0 {
-				jsTypeOptionPath := append(messageSourcePath, internal.JSTypeSubPath...)
-				marker.Mark(imageFile, jsTypeOptionPath)
-			}
-		}
-		return nil
-	})
-	return err
 }
 
-// FieldOptionModifier modifies field option. A new FieldOptionModifier
-// should be created for each file to be modified.
-type FieldOptionModifier interface {
-	// FieldNames returns all fields' names from the image file.
-	FieldNames() []string
-	// ModifyJSType modifies field option jstype.
-	ModifyJSType(string, Override) error
-}
-
-// NewFieldOptionModifier returns a new FieldOptionModifier
-func NewFieldOptionModifier(
-	imageFile bufimage.ImageFile,
+// ModifyJavaOuterClassname modifies java_outer_classname. By default, it modifies this option to
+// `<ProtoFileName>Proto`. Specify an override option to set it to a specific value.
+func ModifyJavaOuterClassname(
 	marker Marker,
-) (FieldOptionModifier, error) {
-	return newFieldOptionModifier(imageFile, marker)
+	imageFile bufimage.ImageFile,
+	modifyOptions ...ModifyJavaOuterClassnameOption,
+) {
+	if internal.IsWellKnownType(imageFile) {
+		return
+	}
+	options := &modifyStringValueOptions{
+		value: internal.DefaultJavaOuterClassname(imageFile),
+	}
+	for _, option := range modifyOptions {
+		option(options)
+	}
+	javaOuterClassname := options.value
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetJavaOuterClassname() == javaOuterClassname {
+		return
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.JavaOuterClassname = proto.String(javaOuterClassname)
+	marker.Mark(imageFile, internal.JavaOuterClassnamePath)
+}
+
+// ModifyJavaMultipleFiles modifies java_multiple_files.
+func ModifyJavaMultipleFiles(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	javaMultipleFiles bool,
+) {
+	if internal.IsWellKnownType(imageFile) {
+		return
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetJavaMultipleFiles() == javaMultipleFiles {
+		return
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.JavaMultipleFiles = proto.Bool(javaMultipleFiles)
+	marker.Mark(imageFile, internal.JavaMultipleFilesPath)
+}
+
+// ModifyJavaStringCheckUtf8 modifies java_string_check_utf8.
+func ModifyJavaStringCheckUtf8(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	javaStringCheckUtf8 bool,
+) {
+	if internal.IsWellKnownType(imageFile) {
+		return
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetJavaStringCheckUtf8() == javaStringCheckUtf8 {
+		return
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.JavaStringCheckUtf8 = proto.Bool(javaStringCheckUtf8)
+	marker.Mark(imageFile, internal.JavaStringCheckUtf8Path)
+}
+
+// ModifyGoPackageOption is an option for ModifyGoPackage.
+type ModifyGoPackageOption func(*modifyValueOrPrefixOptions)
+
+// ModifyGoPackageWithValue is an option for setting go_package to this value.
+func ModifyGoPackageWithValue(value string) ModifyGoPackageOption {
+	return func(options *modifyValueOrPrefixOptions) {
+		options.value = value
+	}
+}
+
+// ModifyGoPackageWithPrefix is an option for modifying go_package with a prefix.
+func ModifyGoPackageWithPrefix(prefix string) ModifyGoPackageOption {
+	return func(options *modifyValueOrPrefixOptions) {
+		options.prefix = prefix
+	}
+}
+
+// ModifyGoPackage modifies go_package.
+func ModifyGoPackage(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	modifyOption ModifyGoPackageOption,
+) {
+	if internal.IsWellKnownType(imageFile) {
+		return
+	}
+	options := &modifyValueOrPrefixOptions{}
+	modifyOption(options)
+	goPackageValue := options.value
+	if len(options.prefix) > 0 {
+		goPackageValue = internal.GoPackageImportPathForFile(imageFile, options.prefix)
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetGoPackage() == goPackageValue {
+		return
+	}
+	if goPackageValue == "" {
+		return
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.GoPackage = proto.String(goPackageValue)
+	marker.Mark(imageFile, internal.GoPackagePath)
+}
+
+// ModifyCcEnableArenas modifies cc_enable_arenas.
+func ModifyCcEnableArenas(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	ccEnableArenas bool,
+) {
+	if internal.IsWellKnownType(imageFile) {
+		return
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetCcEnableArenas() == ccEnableArenas {
+		return
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.CcEnableArenas = proto.Bool(ccEnableArenas)
+	marker.Mark(imageFile, internal.CCEnableArenasPath)
+}
+
+// ModifyOptimizeFor modifies optimize_for.
+func ModifyOptimizeFor(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	optimizeFor descriptorpb.FileOptions_OptimizeMode,
+) {
+	if internal.IsWellKnownType(imageFile) {
+		return
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetOptimizeFor() == optimizeFor {
+		return
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.OptimizeFor = &optimizeFor
+	marker.Mark(imageFile, internal.OptimizeForPath)
+}
+
+// ModifyObjcClassPrefixOption is an option for ModifyObjcClassPrefix.
+type ModifyObjcClassPrefixOption func(*modifyStringValueOptions)
+
+// ModifyObjcClassPrefixWithValue is an option for setting objc_class_prefix to this value.
+func ModifyObjcClassPrefixWithValue(value string) ModifyObjcClassPrefixOption {
+	return func(options *modifyStringValueOptions) {
+		options.value = value
+	}
+}
+
+// ModifyObjcClassPrefix modifies objc_class_prefix.
+func ModifyObjcClassPrefix(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	modifyObjcClassPrefixOptions ...ModifyObjcClassPrefixOption,
+) {
+	if internal.IsWellKnownType(imageFile) {
+		return
+	}
+	options := &modifyStringValueOptions{
+		value: internal.DefaultObjcClassPrefixValue(imageFile),
+	}
+	for _, option := range modifyObjcClassPrefixOptions {
+		option(options)
+	}
+	objcClassPrefixValue := options.value
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetObjcClassPrefix() == objcClassPrefixValue {
+		return
+	}
+	if objcClassPrefixValue == "" {
+		return
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.ObjcClassPrefix = proto.String(objcClassPrefixValue)
+	marker.Mark(imageFile, internal.ObjcClassPrefixPath)
+}
+
+// ModifyCsharpNamespaceOption is an option for ModifyCsharpNamespace.
+type ModifyCsharpNamespaceOption func(*modifyValueOrPrefixOptions)
+
+// ModifyCsharpNamespaceWithValue is an option that sets csharp_namespace to this value.
+func ModifyCsharpNamespaceWithValue(value string) ModifyCsharpNamespaceOption {
+	return func(options *modifyValueOrPrefixOptions) {
+		options.value = value
+	}
+}
+
+// ModifyCsharpNamespaceWithPrefix is an option that modifies csharp_namespace with a prefix.
+func ModifyCsharpNamespaceWithPrefix(prefix string) ModifyCsharpNamespaceOption {
+	return func(options *modifyValueOrPrefixOptions) {
+		options.prefix = prefix
+	}
+}
+
+// ModifyCsharpNamespace modifies csharp_namespace.
+func ModifyCsharpNamespace(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	modifyCsharpNamespaceOptions ...ModifyCsharpNamespaceOption,
+) {
+	if internal.IsWellKnownType(imageFile) {
+		return
+	}
+	options := &modifyValueOrPrefixOptions{
+		value: internal.DefaultCsharpNamespace(imageFile),
+	}
+	for _, option := range modifyCsharpNamespaceOptions {
+		option(options)
+	}
+	csharpNamespaceValue := options.value
+	if len(options.prefix) > 0 {
+		csharpNamespaceValue = getCsharpNamespaceValue(imageFile, options.prefix)
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetCsharpNamespace() == csharpNamespaceValue {
+		return
+	}
+	if csharpNamespaceValue == "" {
+		return
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.CsharpNamespace = proto.String(csharpNamespaceValue)
+	marker.Mark(imageFile, internal.CsharpNamespacePath)
+}
+
+// ModifyPhpNamespaceOption is an option for ModifyPhpNamespace.
+type ModifyPhpNamespaceOption func(*modifyStringValueOptions)
+
+// ModifyPhpNamespaceWithValue is an option for setting php_namespace to this value.
+func ModifyPhpNamespaceWithValue(value string) ModifyPhpNamespaceOption {
+	return func(options *modifyStringValueOptions) {
+		options.value = value
+	}
+}
+
+// ModifyPhpNamespace modifies php_namespace.
+func ModifyPhpNamespace(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	modifyPhpNamespaceOptions ...ModifyPhpNamespaceOption,
+) {
+	if internal.IsWellKnownType(imageFile) {
+		return
+	}
+	options := &modifyStringValueOptions{
+		value: internal.DefaultPhpNamespaceValue(imageFile),
+	}
+	for _, option := range modifyPhpNamespaceOptions {
+		option(options)
+	}
+	phpNamespaceValue := options.value
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetPhpNamespace() == phpNamespaceValue {
+		return
+	}
+	if phpNamespaceValue == "" {
+		return
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.PhpNamespace = proto.String(phpNamespaceValue)
+	marker.Mark(imageFile, internal.PhpNamespacePath)
+}
+
+// ModifyPhpMetadataNamespaceOption is an option for ModifyPhpMetadataNamespace.
+type ModifyPhpMetadataNamespaceOption func(*modifyValueOrSuffixOptions)
+
+// ModifyPhpMetadataNamespaceWithValue is an option that sets php_metadata_namespace to this value.
+func ModifyPhpMetadataNamespaceWithValue(value string) ModifyPhpMetadataNamespaceOption {
+	return func(options *modifyValueOrSuffixOptions) {
+		options.value = value
+	}
+}
+
+// ModifyPhpMetadataNamespaceWithSuffix is an option that modifies php_metadata_namespace with this suffix.
+func ModifyPhpMetadataNamespaceWithSuffix(suffix string) ModifyPhpMetadataNamespaceOption {
+	return func(options *modifyValueOrSuffixOptions) {
+		options.suffix = suffix
+	}
+}
+
+// ModifyPhpMetadataNamespace modifies php_metadata_namespace.
+func ModifyPhpMetadataNamespace(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	modifyPhpMetadataNamespaceOptions ...ModifyPhpMetadataNamespaceOption,
+) {
+	if internal.IsWellKnownType(imageFile) {
+		return
+	}
+	options := &modifyValueOrSuffixOptions{
+		value: getPhpMetadataNamespaceValue(imageFile, ""),
+	}
+	for _, option := range modifyPhpMetadataNamespaceOptions {
+		option(options)
+	}
+	phpMetadataNamespaceValue := options.value
+	if len(options.suffix) > 0 {
+		phpMetadataNamespaceValue = getPhpMetadataNamespaceValue(imageFile, options.suffix)
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetPhpMetadataNamespace() == phpMetadataNamespaceValue {
+		return
+	}
+	if phpMetadataNamespaceValue == "" {
+		return
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.PhpMetadataNamespace = proto.String(phpMetadataNamespaceValue)
+	marker.Mark(imageFile, internal.PhpMetadataNamespacePath)
+}
+
+// ModifyRubyPackageOption is an option for ModifyRubyPackage.
+type ModifyRubyPackageOption func(*modifyValueOrSuffixOptions)
+
+// ModifyRubyPackageWithValue is an option that sets ruby_package to this value.
+func ModifyRubyPackageWithValue(value string) ModifyRubyPackageOption {
+	return func(options *modifyValueOrSuffixOptions) {
+		options.value = value
+	}
+}
+
+// ModifyRubyPackageWithSuffix is an option that modifies ruby_package with this suffix.
+func ModifyRubyPackageWithSuffix(suffix string) ModifyRubyPackageOption {
+	return func(options *modifyValueOrSuffixOptions) {
+		options.suffix = suffix
+	}
+}
+
+// ModifyRubyPackage modifies ruby_package.
+func ModifyRubyPackage(
+	marker Marker,
+	imageFile bufimage.ImageFile,
+	modifyRubyPackageOptions ...ModifyRubyPackageOption,
+) {
+	if internal.IsWellKnownType(imageFile) {
+		return
+	}
+	options := &modifyValueOrSuffixOptions{
+		value: internal.DefaultRubyPackageValue(imageFile),
+	}
+	for _, option := range modifyRubyPackageOptions {
+		option(options)
+	}
+	rubyPackageValue := options.value
+	if len(options.suffix) > 0 {
+		rubyPackageValue = getRubyPackageValue(imageFile, options.suffix)
+	}
+	descriptor := imageFile.Proto()
+	if descriptor.Options.GetRubyPackage() == rubyPackageValue {
+		return
+	}
+	if rubyPackageValue == "" {
+		return
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	descriptor.Options.RubyPackage = proto.String(rubyPackageValue)
+	marker.Mark(imageFile, internal.RubyPackagePath)
+}
+
+type modifyStringValueOptions struct {
+	value string
+}
+
+type modifyValueOrPrefixOptions struct {
+	value  string
+	prefix string
+}
+
+type modifyValueOrSuffixOptions struct {
+	value  string
+	suffix string
+}
+
+type modifyJavaPackageOptions struct {
+	value  string
+	prefix string
+	suffix string
 }
 
 func getJavaPackageValue(imageFile bufimage.ImageFile, prefix string, suffix string) string {
@@ -244,4 +557,37 @@ func getJavaPackageValue(imageFile bufimage.ImageFile, prefix string, suffix str
 		return pkg
 	}
 	return ""
+}
+
+func getCsharpNamespaceValue(imageFile bufimage.ImageFile, prefix string) string {
+	namespace := internal.DefaultCsharpNamespace(imageFile)
+	if namespace == "" {
+		return ""
+	}
+	if prefix == "" {
+		return namespace
+	}
+	return prefix + "." + namespace
+}
+
+func getPhpMetadataNamespaceValue(imageFile bufimage.ImageFile, suffix string) string {
+	namespace := internal.DefaultPhpNamespaceValue(imageFile)
+	if namespace == "" {
+		return ""
+	}
+	if suffix == "" {
+		return namespace
+	}
+	return namespace + `\` + suffix
+}
+
+func getRubyPackageValue(imageFile bufimage.ImageFile, suffix string) string {
+	rubyPackage := internal.DefaultRubyPackageValue(imageFile)
+	if rubyPackage == "" {
+		return ""
+	}
+	if suffix == "" {
+		return rubyPackage
+	}
+	return rubyPackage + "::" + suffix
 }

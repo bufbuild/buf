@@ -73,14 +73,14 @@ func TestModifyJSType(t *testing.T) {
 		require.NotNil(t, fieldI5.GetOptions())
 		require.NotNil(t, fieldI5.GetOptions().Jstype)
 		require.Equal(t, descriptorpb.FieldOptions_JS_STRING, *fieldI5.GetOptions().Jstype)
-		err = modifier.ModifyJSType("foo.bar.baz.Outer.Inner.i5", NewValueOverride(descriptorpb.FieldOptions_JS_NUMBER))
+		err = modifier.ModifyJSType("foo.bar.baz.Outer.Inner.i5", descriptorpb.FieldOptions_JS_NUMBER)
 		require.NoError(t, err)
 		require.Equal(t, descriptorpb.FieldOptions_JS_NUMBER, *fieldI5.GetOptions().Jstype)
 
 		// modify on a field with no option defined
 		fieldI6 := innerMessage.GetField()[5]
 		require.Nil(t, fieldI6.GetOptions())
-		err = modifier.ModifyJSType("foo.bar.baz.Outer.Inner.i6", NewValueOverride(descriptorpb.FieldOptions_JS_STRING))
+		err = modifier.ModifyJSType("foo.bar.baz.Outer.Inner.i6", descriptorpb.FieldOptions_JS_STRING)
 		require.NoError(t, err)
 		require.Equal(t, descriptorpb.FieldOptions_JS_STRING, *fieldI6.GetOptions().Jstype)
 
@@ -89,7 +89,7 @@ func TestModifyJSType(t *testing.T) {
 		fieldO2 := outerMessage.GetField()[1]
 		require.NotNil(t, fieldO2)
 		require.Nil(t, fieldO2.GetOptions())
-		err = modifier.ModifyJSType("foo.bar.baz.Outer.o2", NewValueOverride(descriptorpb.FieldOptions_JS_NORMAL))
+		err = modifier.ModifyJSType("foo.bar.baz.Outer.o2", descriptorpb.FieldOptions_JS_NORMAL)
 		require.NoError(t, err)
 		require.Nil(t, fieldO2.GetOptions())
 
@@ -98,7 +98,7 @@ func TestModifyJSType(t *testing.T) {
 		require.NotNil(t, fieldO5)
 		require.NotNil(t, fieldO5.GetOptions())
 		require.Equal(t, descriptorpb.FieldOptions_JS_STRING, *fieldO5.GetOptions().Jstype)
-		err = modifier.ModifyJSType("foo.bar.baz.Outer.o5", NewValueOverride(descriptorpb.FieldOptions_JS_NORMAL))
+		err = modifier.ModifyJSType("foo.bar.baz.Outer.o5", descriptorpb.FieldOptions_JS_NORMAL)
 		require.NoError(t, err)
 		require.Equal(t, descriptorpb.FieldOptions_JS_NORMAL, *fieldO5.GetOptions().Jstype)
 
@@ -107,7 +107,7 @@ func TestModifyJSType(t *testing.T) {
 		require.NotNil(t, fieldO6)
 		require.NotNil(t, fieldO6.GetOptions())
 		require.Equal(t, descriptorpb.FieldOptions_JS_NUMBER, *fieldO6.GetOptions().Jstype)
-		err = modifier.ModifyJSType("foo.bar.baz.Outer.o6", NewValueOverride(descriptorpb.FieldOptions_JS_NUMBER))
+		err = modifier.ModifyJSType("foo.bar.baz.Outer.o6", descriptorpb.FieldOptions_JS_NUMBER)
 		require.NoError(t, err)
 		require.Equal(t, descriptorpb.FieldOptions_JS_NUMBER, *fieldO6.GetOptions().Jstype)
 
@@ -117,7 +117,7 @@ func TestModifyJSType(t *testing.T) {
 		fieldExtensionI7 := extensions[0]
 		require.NotNil(t, fieldExtensionI7.GetOptions())
 		require.Equal(t, descriptorpb.FieldOptions_JS_NUMBER, *fieldExtensionI7.GetOptions().Jstype)
-		err = modifier.ModifyJSType("foo.bar.baz.i7", NewValueOverride(descriptorpb.FieldOptions_JS_NORMAL))
+		err = modifier.ModifyJSType("foo.bar.baz.i7", descriptorpb.FieldOptions_JS_NORMAL)
 		require.NoError(t, err)
 		require.Equal(t, descriptorpb.FieldOptions_JS_NORMAL, *fieldO5.GetOptions().Jstype)
 
@@ -170,7 +170,7 @@ func TestModifyJSTypeForWKT(t *testing.T) {
 		secondsField := fields[0]
 		require.Nil(t, secondsField.GetOptions())
 
-		err = modifier.ModifyJSType("google.protobuf.Timestamp.seconds", NewValueOverride(descriptorpb.FieldOptions_JS_NUMBER))
+		err = modifier.ModifyJSType("google.protobuf.Timestamp.seconds", descriptorpb.FieldOptions_JS_NUMBER)
 		require.NoError(t, err)
 		// wkt should be skipped
 		require.Nil(t, secondsField.GetOptions())

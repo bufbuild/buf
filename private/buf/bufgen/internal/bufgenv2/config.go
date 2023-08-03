@@ -22,7 +22,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenplugin"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -34,14 +33,14 @@ type disabledFunc func(fileOption, imageFileIdentity) bool
 
 // overrideFunc is specific to a file option, and returns what thie file option
 // should be overridden to for this file.
-type overrideFunc func(imageFileIdentity) bufimagemodifyv2.Override
+type overrideFunc func(imageFileIdentity) override
 
 // fieldDisableFunc decides whether a field option should be disabled for a file or field
 type fieldDisableFunc func(fieldOption, imageFileIdentity, string) bool
 
 // fieldOverrideFunc is specific to a field option, and returns what thie field option
 // should be overridden to for this file or field.
-type fieldOverrideFunc func(imageFileIdentity, string) bufimagemodifyv2.Override
+type fieldOverrideFunc func(imageFileIdentity, string) override
 
 // imageFileIdentity is an image file that can be identified by a path and module identity.
 // There two (path and module) are the only information needed to decide whether to disable
@@ -294,16 +293,16 @@ func newOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) (overrideFu
 		// this should not happen
 		return nil, fmt.Errorf("invalid file option: %v", fileOption)
 	}
-	override, err := parseFunc(externalConfig.Value, fileOption)
+	parsedOverride, err := parseFunc(externalConfig.Value, fileOption)
 	if err != nil {
 		return nil, err
 	}
-	return func(imageFile imageFileIdentity) bufimagemodifyv2.Override {
+	return func(imageFile imageFileIdentity) override {
 		// We don't need to match on fileOption - we only call this OverrideFunc when we
 		// know we are applying for a given fileOption.
 		// The fileOption we parsed above is assumed to be the fileOption.
 		if matchesPathAndModule(externalConfig.Path, externalConfig.Module, imageFile) {
-			return override
+			return parsedOverride
 		}
 		return nil
 	}, nil
@@ -323,11 +322,11 @@ func newFieldOptionOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) 
 		// this should not happen
 		return nil, fmt.Errorf("invalid field option: %v", fieldOption)
 	}
-	override, err := parseFunc(externalConfig.Value, fieldOption)
+	parsedOverride, err := parseFunc(externalConfig.Value, fieldOption)
 	if err != nil {
 		return nil, err
 	}
-	return func(imageFile imageFileIdentity, field string) bufimagemodifyv2.Override {
+	return func(imageFile imageFileIdentity, field string) override {
 		// We don't need to match on FieldOption - we only call this filedOptionOverrideFunc when we
 		// know we are applying for a given fieldOption.
 		// The fieldOption we parsed above is assumed to be the fieldOption.
@@ -337,7 +336,7 @@ func newFieldOptionOverrideFunc(externalConfig ExternalManagedOverrideConfigV2) 
 		if externalConfig.Field != "" && externalConfig.Field != field {
 			return nil
 		}
-		return override
+		return parsedOverride
 	}, nil
 }
 
@@ -404,10 +403,10 @@ func mergeFieldDisabledFuncs(fieldDisableFuncs []fieldDisableFunc) fieldDisableF
 
 func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
 	// Last override listed wins, but if the last two are prefix and suffix, both win.
-	return func(imageFile imageFileIdentity) bufimagemodifyv2.Override {
+	return func(imageFile imageFileIdentity) override {
 		var (
-			secondLastOverride bufimagemodifyv2.Override
-			lastOverride       bufimagemodifyv2.Override
+			secondLastOverride override
+			lastOverride       override
 		)
 		for _, overrideFunc := range overrideFuncs {
 			currentOverride := overrideFunc(imageFile)
@@ -416,17 +415,17 @@ func mergeOverrideFuncs(overrideFuncs []overrideFunc) overrideFunc {
 				lastOverride = currentOverride
 			}
 		}
-		if prefixOverride, ok := secondLastOverride.(bufimagemodifyv2.PrefixOverride); ok {
-			if suffixOverride, ok := lastOverride.(bufimagemodifyv2.SuffixOverride); ok {
-				return bufimagemodifyv2.NewPrefixSuffixOverride(
+		if prefixOverride, ok := secondLastOverride.(prefixOverride); ok {
+			if suffixOverride, ok := lastOverride.(suffixOverride); ok {
+				return newPrefixSuffixOverride(
 					prefixOverride.Get(),
 					suffixOverride.Get(),
 				)
 			}
 		}
-		if suffixOverride, ok := secondLastOverride.(bufimagemodifyv2.SuffixOverride); ok {
-			if prefixOverride, ok := lastOverride.(bufimagemodifyv2.PrefixOverride); ok {
-				return bufimagemodifyv2.NewPrefixSuffixOverride(
+		if suffixOverride, ok := secondLastOverride.(suffixOverride); ok {
+			if prefixOverride, ok := lastOverride.(prefixOverride); ok {
+				return newPrefixSuffixOverride(
 					prefixOverride.Get(),
 					suffixOverride.Get(),
 				)
@@ -447,8 +446,8 @@ func mergeFieldOptionToFieldOverrideFuncs(
 }
 
 func mergeFieldOverrideFuncs(fieldOverrideFuncs []fieldOverrideFunc) fieldOverrideFunc {
-	return func(imageFile imageFileIdentity, field string) bufimagemodifyv2.Override {
-		var fieldOverride bufimagemodifyv2.Override
+	return func(imageFile imageFileIdentity, field string) override {
+		var fieldOverride override
 		for _, fieldOverrideFunc := range fieldOverrideFuncs {
 			currentOverride := fieldOverrideFunc(imageFile, field)
 			if currentOverride != nil {

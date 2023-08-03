@@ -1,0 +1,19 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+managed:
+  enabled: true
+  override:
+    - file_option: java_string_check_utf8
+      value: true
+    - file_option: java_string_check_utf8
+      value: false
+      path: dir
+    - file_option: java_string_check_utf8
+      value: false
+      module: buf.build/acme/weather
+    - file_option: java_string_check_utf8
+      value: true
+      module: buf.build/acme/payment
+      path: a/b

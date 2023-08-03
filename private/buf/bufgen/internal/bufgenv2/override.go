@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodifyv2
+package bufgenv2
 
 import "google.golang.org/protobuf/types/descriptorpb"
+
+type override interface {
+	override()
+}
 
 type prefixOverride string
 
@@ -26,8 +30,7 @@ func (p prefixOverride) Get() string {
 	return string(p)
 }
 
-func (p prefixOverride) override()       {}
-func (p prefixOverride) prefixOverride() {}
+func (p prefixOverride) override() {}
 
 type suffixOverride string
 
@@ -39,8 +42,7 @@ func (s suffixOverride) Get() string {
 	return string(s)
 }
 
-func (s suffixOverride) override()       {}
-func (s suffixOverride) suffixOverride() {}
+func (s suffixOverride) override() {}
 
 type prefixSuffixOverride struct {
 	prefix string
@@ -62,8 +64,7 @@ func (p prefixSuffixOverride) GetSuffix() string {
 	return p.suffix
 }
 
-func (p prefixSuffixOverride) override()             {}
-func (p prefixSuffixOverride) prefixSuffixOverride() {}
+func (p prefixSuffixOverride) override() {}
 
 type valueOverride[
 	T string |
@@ -85,9 +86,8 @@ func newValueOverride[
 	}
 }
 
-func (v valueOverride[T]) get() T {
+func (v valueOverride[T]) Get() T {
 	return v.value
 }
 
-func (v valueOverride[T]) override()      {}
-func (v valueOverride[T]) valueOverride() {}
+func (v valueOverride[T]) override() {}

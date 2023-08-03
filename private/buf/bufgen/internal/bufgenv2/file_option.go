@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/bufimagemodifyv2"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -59,8 +58,21 @@ const (
 	fileOptionPhpMetadataNamespaceSuffix
 	// fileOptionRubyPackage is the file option ruby_package.
 	fileOptionRubyPackage
+	// fileOptionRubyPackageSuffix is the file option ruby_package_suffix.
+	fileOptionRubyPackageSuffix
 	// groupJavaPackage is the file option group that modifies java_package.
 	groupJavaPackage fileOptionGroup = iota + 1
+	groupJavaOuterClassname
+	groupJavaMultipleFiles
+	groupJavaStringCheckUtf8
+	groupOptimizeFor
+	groupGoPackage
+	groupCcEnableArenas
+	groupObjcClassPrefix
+	groupCsharpNamespace
+	groupPhpNamespace
+	groupPhpMetadataNamespace
+	groupRubyPackage
 )
 
 var (
@@ -82,6 +94,7 @@ var (
 		fileOptionPhpMetadataNamespace:       "php_metadata_namespace",
 		fileOptionPhpMetadataNamespaceSuffix: "php_metadata_namespace_suffix",
 		fileOptionRubyPackage:                "ruby_package",
+		fileOptionRubyPackageSuffix:          "ruby_package_suffix",
 	}
 	stringToFileOption = map[string]fileOption{
 		"java_package":                  fileOptionJavaPackage,
@@ -101,23 +114,61 @@ var (
 		"php_metadata_namespace":        fileOptionPhpMetadataNamespace,
 		"php_metadata_namespace_suffix": fileOptionPhpMetadataNamespaceSuffix,
 		"ruby_package":                  fileOptionRubyPackage,
+		"ruby_package_suffix":           fileOptionRubyPackageSuffix,
 	}
-	fileOptionToOverrideParseFunc = map[fileOption]func(interface{}, fileOption) (bufimagemodifyv2.Override, error){
-		fileOptionJavaPackage:       parseValueOverride[string],
-		fileOptionJavaPackagePrefix: parsePrefixOverride,
-		fileOptionJavaPackageSuffix: parseSuffixOverride,
-		fileOptionOptimizeFor:       parseValueOverrideOptmizeMode,
-		// TODO: fill the rest
+	fileOptionToOverrideParseFunc = map[fileOption]func(interface{}, fileOption) (override, error){
+		fileOptionJavaPackage:                parseValueOverride[string],
+		fileOptionJavaPackagePrefix:          parsePrefixOverride,
+		fileOptionJavaPackageSuffix:          parseSuffixOverride,
+		fileOptionOptimizeFor:                parseValueOverrideOptmizeMode,
+		fileOptionJavaOuterClassname:         parseValueOverride[string],
+		fileOptionJavaMultipleFiles:          parseValueOverride[bool],
+		fileOptionJavaStringCheckUtf8:        parseValueOverride[bool],
+		fileOptionGoPackage:                  parseValueOverride[string],
+		fileOptionGoPackagePrefix:            parsePrefixOverride,
+		fileOptionCcEnableArenas:             parseValueOverride[bool],
+		fileOptionObjcClassPrefix:            parseValueOverride[string], // objc_class_prefix is in descriptor.proto
+		fileOptionCsharpNamespace:            parseValueOverride[string],
+		fileOptionCsharpNamespacePrefix:      parsePrefixOverride,
+		fileOptionPhpNamespace:               parseValueOverride[string],
+		fileOptionPhpMetadataNamespace:       parseValueOverride[string],
+		fileOptionPhpMetadataNamespaceSuffix: parseSuffixOverride,
+		fileOptionRubyPackage:                parseValueOverride[string],
+		fileOptionRubyPackageSuffix:          parseSuffixOverride,
 	}
 	fileOptionToGroup = map[fileOption]fileOptionGroup{
-		fileOptionJavaPackage:       groupJavaPackage,
-		fileOptionJavaPackagePrefix: groupJavaPackage,
-		fileOptionJavaPackageSuffix: groupJavaPackage,
-		// TODO: fill the rest
+		fileOptionJavaPackage:                groupJavaPackage,
+		fileOptionJavaPackagePrefix:          groupJavaPackage,
+		fileOptionJavaPackageSuffix:          groupJavaPackage,
+		fileOptionJavaOuterClassname:         groupJavaOuterClassname,
+		fileOptionJavaMultipleFiles:          groupJavaMultipleFiles,
+		fileOptionJavaStringCheckUtf8:        groupJavaStringCheckUtf8,
+		fileOptionOptimizeFor:                groupOptimizeFor,
+		fileOptionGoPackage:                  groupGoPackage,
+		fileOptionGoPackagePrefix:            groupGoPackage,
+		fileOptionCcEnableArenas:             groupCcEnableArenas,
+		fileOptionObjcClassPrefix:            groupObjcClassPrefix,
+		fileOptionCsharpNamespace:            groupCsharpNamespace,
+		fileOptionCsharpNamespacePrefix:      groupCsharpNamespace,
+		fileOptionPhpNamespace:               groupPhpNamespace,
+		fileOptionPhpMetadataNamespace:       groupPhpMetadataNamespace,
+		fileOptionPhpMetadataNamespaceSuffix: groupPhpMetadataNamespace,
+		fileOptionRubyPackage:                groupRubyPackage,
+		fileOptionRubyPackageSuffix:          groupRubyPackage,
 	}
 	allFileOptionGroups = []fileOptionGroup{
 		groupJavaPackage,
-		// TODO: fill the rest
+		groupJavaOuterClassname,
+		groupJavaMultipleFiles,
+		groupJavaStringCheckUtf8,
+		groupOptimizeFor,
+		groupGoPackage,
+		groupCcEnableArenas,
+		groupObjcClassPrefix,
+		groupCsharpNamespace,
+		groupPhpNamespace,
+		groupPhpMetadataNamespace,
+		groupRubyPackage,
 	}
 )
 
@@ -153,31 +204,31 @@ func parseFileOption(s string) (fileOption, error) {
 }
 
 // Pass type T to construct a function that only accepts type T and creates an override from it.
-func parseValueOverride[T string | bool](value interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+func parseValueOverride[T string | bool](value interface{}, fileOption fileOption) (override, error) {
 	overrideValue, ok := value.(T)
 	if !ok {
 		return nil, fmt.Errorf("invalid value for %v", fileOption)
 	}
-	return bufimagemodifyv2.NewValueOverride(overrideValue), nil
+	return newValueOverride(overrideValue), nil
 }
 
-func parsePrefixOverride(value interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+func parsePrefixOverride(value interface{}, fileOption fileOption) (override, error) {
 	prefix, ok := value.(string)
 	if !ok {
 		return nil, fmt.Errorf("invalid value for %v", fileOption)
 	}
-	return bufimagemodifyv2.NewPrefixOverride(prefix), nil
+	return newPrefixOverride(prefix), nil
 }
 
-func parseSuffixOverride(value interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+func parseSuffixOverride(value interface{}, fileOption fileOption) (override, error) {
 	suffix, ok := value.(string)
 	if !ok {
 		return nil, fmt.Errorf("invalid value for %v", fileOption)
 	}
-	return bufimagemodifyv2.NewSuffixOverride(suffix), nil
+	return newSuffixOverride(suffix), nil
 }
 
-func parseValueOverrideOptmizeMode(override interface{}, fileOption fileOption) (bufimagemodifyv2.Override, error) {
+func parseValueOverrideOptmizeMode(override interface{}, fileOption fileOption) (override, error) {
 	optimizeModeName, ok := override.(string)
 	if !ok {
 		return nil, fmt.Errorf("invalid value for %v", fileOption)
@@ -187,5 +238,5 @@ func parseValueOverrideOptmizeMode(override interface{}, fileOption fileOption) 
 		return nil, fmt.Errorf("%v: %s is not a valid optmize_for value, must be one of SPEED, CODE_SIZE and LITE_RUNTIME", fileOption, optimizeModeName)
 	}
 	optimizeMode := descriptorpb.FileOptions_OptimizeMode(optimizeModeEnum)
-	return bufimagemodifyv2.NewValueOverride(optimizeMode), nil
+	return newValueOverride(optimizeMode), nil
 }
