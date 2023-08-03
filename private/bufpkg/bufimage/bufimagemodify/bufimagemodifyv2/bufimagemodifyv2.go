@@ -260,19 +260,19 @@ func ModifyGoPackage(
 func ModifyCcEnableArenas(
 	marker Marker,
 	imageFile bufimage.ImageFile,
-	cc_enable_arenas bool,
+	ccEnableArenas bool,
 ) {
 	if internal.IsWellKnownType(imageFile) {
 		return
 	}
 	descriptor := imageFile.Proto()
-	if descriptor.Options.GetCcEnableArenas() == cc_enable_arenas {
+	if descriptor.Options.GetCcEnableArenas() == ccEnableArenas {
 		return
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
-	descriptor.Options.CcEnableArenas = proto.Bool(cc_enable_arenas)
+	descriptor.Options.CcEnableArenas = proto.Bool(ccEnableArenas)
 	marker.Mark(imageFile, internal.CCEnableArenasPath)
 }
 
