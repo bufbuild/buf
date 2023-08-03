@@ -196,7 +196,7 @@ func sync(
 		if len(moduleDir) == 0 {
 			return errors.New("empty module path")
 		}
-		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(moduleDir))
+		syncerOptions = append(syncerOptions, bufsync.SyncerWithModuleDirectory(moduleDir))
 	}
 	syncer, err := bufsync.NewSyncer(
 		container.Logger(),

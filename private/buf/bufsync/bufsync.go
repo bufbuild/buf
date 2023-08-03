@@ -58,13 +58,13 @@ func NewSyncer(
 // SyncerOption configures the creation of a new Syncer.
 type SyncerOption func(*syncer) error
 
-// SyncerWithModule configures a Syncer to sync a module in the specified module directory.
+// SyncerWithModuleDirectory configures a Syncer to sync a module in the specified module directory.
 //
 // This option can be provided multiple times to sync multiple distinct modules. The order in which
 // the module directories are passed is preserved, and those modules are synced in the same order.
 // If the same module directory is passed multiple times this option errors, since the order cannot
 // be preserved anymore.
-func SyncerWithModule(moduleDir string) SyncerOption {
+func SyncerWithModuleDirectory(moduleDir string) SyncerOption {
 	return func(s *syncer) error {
 		moduleDir = normalpath.Normalize(moduleDir)
 		if _, alreadyAdded := s.modulesDirsToSync[moduleDir]; alreadyAdded {
