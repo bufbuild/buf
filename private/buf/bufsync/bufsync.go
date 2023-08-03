@@ -26,26 +26,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Module is a module that will be synced by Syncer.
-type Module interface {
-	// Dir is the path to the module relative to the repository root.
-	Dir() string
-	// RemoteIdentity is the identity of the remote module that the local module is synced to. It is
-	// read from the buf.yaml file in the HEAD commit of the git branch that this module is being
-	// synced from.
-	RemoteIdentity() bufmoduleref.ModuleIdentity
-	// String is the string representation of this module.
-	String() string
-}
-
-// NewModule constructs a new module that can be synced with a Syncer.
-func NewModule(dir string, identity bufmoduleref.ModuleIdentity) (Module, error) {
-	return newSyncableModule(
-		dir,
-		identity,
-	)
-}
-
 // Syncer syncs a modules in a git.Repository.
 type Syncer interface {
 	// Sync syncs the repository using the provided SyncFunc. It processes
