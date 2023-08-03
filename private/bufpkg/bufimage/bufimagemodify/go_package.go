@@ -38,6 +38,7 @@ func goPackage(
 	defaultImportPathPrefix string,
 	except []bufmoduleref.ModuleIdentity,
 	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
+	packageDepthOverrides map[string]uint,
 	overrides map[string]string,
 ) (Modifier, error) {
 	if defaultImportPathPrefix == "" {
@@ -55,6 +56,7 @@ func goPackage(
 	}
 	seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 	seenOverrideFiles := make(map[string]struct{}, len(overrides))
+	seenPackagesOverrides := make(map[string]struct{}, len(packageDepthOverrides))
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
@@ -66,7 +68,22 @@ func goPackage(
 						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
 					}
 				}
-				goPackageValue := GoPackageImportPathForFile(imageFile, importPathPrefix)
+				pkgName := imageFile.FileDescriptor().GetPackage()
+
+				logger.Sugar().Debugf("pkgName: %q", pkgName)
+				depth := uint(2)
+				if pkgName != "" && len(packageDepthOverrides) > 0 {
+					var ok bool
+					pkgDepth, ok := packageDepthOverrides[pkgName]
+					if ok {
+						depth = pkgDepth
+						logger.Sugar().Debugf("overriding package depth for %q to %d", pkgName, depth)
+						seenPackagesOverrides[pkgName] = struct{}{}
+					}
+
+				}
+
+				goPackageValue := GoPackageImportPathForFileParted(imageFile, importPathPrefix, depth)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					goPackageValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
@@ -89,6 +106,11 @@ func goPackage(
 			for overrideFile := range overrides {
 				if _, ok := seenOverrideFiles[overrideFile]; !ok {
 					logger.Sugar().Warnf("%s override for %q was unused", GoPackageID, overrideFile)
+				}
+			}
+			for pkgName := range packageDepthOverrides {
+				if _, ok := seenPackagesOverrides[pkgName]; !ok {
+					logger.Sugar().Warnf("go_package_prefix package_depth override for %q was unused", pkgName)
 				}
 			}
 			return nil

@@ -275,7 +275,8 @@ type GoPackagePrefixConfig struct {
 	Default string
 	Except  []bufmoduleref.ModuleIdentity
 	// bufmoduleref.ModuleIdentity -> go_package prefix.
-	Override map[bufmoduleref.ModuleIdentity]string
+	Override     map[bufmoduleref.ModuleIdentity]string
+	PackageDepth map[string]uint
 }
 
 // ObjcClassPrefixConfig is the objc_class_prefix configuration.
@@ -492,9 +493,10 @@ func (e *ExternalOptimizeForConfigV1) unmarshalWith(unmarshal func(interface{}) 
 
 // ExternalGoPackagePrefixConfigV1 is the external go_package prefix configuration.
 type ExternalGoPackagePrefixConfigV1 struct {
-	Default  string            `json:"default,omitempty" yaml:"default,omitempty"`
-	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
-	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+	Default      string            `json:"default,omitempty" yaml:"default,omitempty"`
+	Except       []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override     map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+	PackageDepth map[string]uint   `json:"package_depth,omitempty" yaml:"package_depth,omitempty"`
 }
 
 // IsEmpty returns true if the config is empty.

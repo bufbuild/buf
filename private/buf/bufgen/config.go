@@ -446,10 +446,16 @@ func newGoPackagePrefixConfigV1(externalGoPackagePrefixConfig ExternalGoPackageP
 		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
 		override[moduleIdentity] = normalizedGoPackagePrefix
 	}
+
+	packageDepth := make(map[string]uint, len(externalGoPackagePrefixConfig.PackageDepth))
+	for pkgName, depth := range externalGoPackagePrefixConfig.PackageDepth {
+		packageDepth[pkgName] = depth
+	}
 	return &GoPackagePrefixConfig{
-		Default:  defaultGoPackagePrefix,
-		Except:   except,
-		Override: override,
+		Default:      defaultGoPackagePrefix,
+		Except:       except,
+		Override:     override,
+		PackageDepth: packageDepth,
 	}, nil
 }
 

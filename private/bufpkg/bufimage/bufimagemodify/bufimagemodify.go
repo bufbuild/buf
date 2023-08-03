@@ -109,20 +109,14 @@ func CcEnableArenas(
 // GoPackage returns a Modifier that sets the go_package file option
 // according to the given defaultImportPathPrefix, exceptions, and
 // overrides.
-func GoPackage(
-	logger *zap.Logger,
-	sweeper Sweeper,
-	defaultImportPathPrefix string,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
-	overrides map[string]string,
-) (Modifier, error) {
+func GoPackage(logger *zap.Logger, sweeper Sweeper, defaultImportPathPrefix string, except []bufmoduleref.ModuleIdentity, moduleOverrides map[bufmoduleref.ModuleIdentity]string, packageDepthOverride map[string]uint, overrides map[string]string) (Modifier, error) {
 	return goPackage(
 		logger,
 		sweeper,
 		defaultImportPathPrefix,
 		except,
 		moduleOverrides,
+		packageDepthOverride,
 		overrides,
 	)
 }
@@ -225,6 +219,30 @@ func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix s
 		parts := strings.Split(packageName, ".")
 		if len(parts) >= 2 {
 			goPackageImportPath += ";" + parts[len(parts)-2] + parts[len(parts)-1]
+		}
+	}
+	return goPackageImportPath
+}
+
+// GoPackageImportPathForFileParted returns the go_package import path for the given
+// ImageFile. If the package contains a version suffix, and if there are more
+// than input parts number components, concatenate the final parts components. Otherwise, we
+// exclude the ';' separator and adopt the default behavior from the import path.
+//
+// For example, an ImageFile with `package acme.weather.v1;` partsNumber 2 will include `;weatherv1`
+// If the package is more deeply nested, i.e. 'package acme.weather.admin.v1;'
+// with partsNumber 3 will include `;weatheradminv1`
+// in the `go_package` declaration so that the generated package is named as such.
+func GoPackageImportPathForFileParted(imageFile bufimage.ImageFile, importPathPrefix string, partsNumber uint) string {
+	goPackageImportPath := path.Join(importPathPrefix, path.Dir(imageFile.Path()))
+	packageName := imageFile.FileDescriptor().GetPackage()
+	if _, ok := protoversion.NewPackageVersionForPackage(packageName); ok {
+		parts := strings.Split(packageName, ".")
+		if len(parts) >= int(partsNumber) {
+			goPackageImportPath += ";"
+			for i := len(parts) - int(partsNumber); i < len(parts); i++ {
+				goPackageImportPath += parts[i]
+			}
 		}
 	}
 	return goPackageImportPath

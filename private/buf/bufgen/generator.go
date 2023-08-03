@@ -522,14 +522,7 @@ func newModifier(
 		)
 	}
 	if managedConfig.GoPackagePrefixConfig != nil {
-		goPackageModifier, err := bufimagemodify.GoPackage(
-			logger,
-			sweeper,
-			managedConfig.GoPackagePrefixConfig.Default,
-			managedConfig.GoPackagePrefixConfig.Except,
-			managedConfig.GoPackagePrefixConfig.Override,
-			managedConfig.Override[bufimagemodify.GoPackageID],
-		)
+		goPackageModifier, err := bufimagemodify.GoPackage(logger, sweeper, managedConfig.GoPackagePrefixConfig.Default, managedConfig.GoPackagePrefixConfig.Except, managedConfig.GoPackagePrefixConfig.Override, managedConfig.GoPackagePrefixConfig.PackageDepth, managedConfig.Override[bufimagemodify.GoPackageID])
 		if err != nil {
 			return nil, fmt.Errorf("failed to construct go_package modifier: %w", err)
 		}
