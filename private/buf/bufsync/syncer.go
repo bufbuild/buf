@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"go.uber.org/zap"
@@ -39,9 +38,9 @@ type syncer struct {
 	modulesDirsToSync       map[string]struct{}
 	syncAllBranches         bool
 
-	commitsTags               map[string][]string                                 // commits:[]tags
-	branchesModulesToSync     map[string]map[string]bufmoduleref.ModuleIdentity   // branch:moduleDir:moduleIdentity
-	modulesBranchesSyncPoints map[bufmoduleref.ModuleIdentity]map[string]git.Hash // moduleIdentity:branch:gitSyncPoint
+	commitsTags               map[string][]string          // commits:[]tags
+	branchesModulesToSync     map[string]map[string]string // branch:moduleDir:moduleIdentity
+	modulesBranchesSyncPoints map[string]map[string]string // moduleIdentity:branch:syncPointGitHash
 }
 
 func newSyncer(
@@ -57,8 +56,8 @@ func newSyncer(
 		storageGitProvider:        storageGitProvider,
 		modulesDirsToSync:         make(map[string]struct{}),
 		commitsTags:               make(map[string][]string),
-		branchesModulesToSync:     make(map[string]map[string]bufmoduleref.ModuleIdentity),
-		modulesBranchesSyncPoints: make(map[bufmoduleref.ModuleIdentity]map[string]git.Hash),
+		branchesModulesToSync:     make(map[string]map[string]string),
+		modulesBranchesSyncPoints: make(map[string]map[string]string),
 	}
 	for _, opt := range options {
 		if err := opt(s); err != nil {
@@ -67,12 +66,12 @@ func newSyncer(
 	}
 	if s.moduleDefaultBranchGetter == nil {
 		s.logger.Warn(
-			"default branch validation skipped",
-			zap.String("expected_default_branch", s.repo.DefaultBranch()),
+			"no module default branch getter, the default branch validation will be skipped for all modules and branches",
+			zap.String("default_git_branch", s.repo.DefaultBranch()),
 		)
 	}
 	if s.syncedGitCommitChecker == nil {
-		s.logger.Warn("no sync git commit checker, branches will attempt to sync from the start")
+		s.logger.Warn("no sync git commit checker, all branches will attempt to sync from the start")
 	}
 	return s, nil
 }

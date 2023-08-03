@@ -47,7 +47,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			return fmt.Errorf("default branch %s is not present in 'origin' remote", defaultBranch)
 		}
 		for remoteBranch := range allRemoteBranches {
-			s.branchesModulesToSync[remoteBranch] = make(map[string]bufmoduleref.ModuleIdentity)
+			s.branchesModulesToSync[remoteBranch] = make(map[string]string)
 		}
 	} else {
 		// only sync current branch, make sure it's present in the remote
@@ -55,11 +55,11 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		if _, isCurrentBranchPushedInRemote := allRemoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
 			return fmt.Errorf("current branch %s is not present in 'origin' remote", currentBranch)
 		}
-		s.branchesModulesToSync[currentBranch] = make(map[string]bufmoduleref.ModuleIdentity)
+		s.branchesModulesToSync[currentBranch] = make(map[string]string)
 		s.logger.Debug("current branch", zap.String("name", currentBranch))
 	}
 	// Populate module identities from HEAD, and its sync points if any
-	allModulesIdentitiesToSync := make(map[bufmoduleref.ModuleIdentity]struct{})
+	allModulesIdentitiesToSync := make(map[string]bufmoduleref.ModuleIdentity) // moduleIdentityString:moduleIdentity
 	for branch := range s.branchesModulesToSync {
 		headCommit, err := s.repo.HEADCommit(branch)
 		if err != nil {
@@ -75,31 +75,29 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 				)
 				continue
 			}
-			if builtModule == nil || builtModule.ModuleIdentity() == nil {
-				return fmt.Errorf("nil built module or built module identity for dir %s in branch %s HEAD", moduleDir, branch)
-			}
+			moduleIdentity := builtModule.ModuleIdentity().IdentityString()
 			// there is a valid module in the module dir at the HEAD of this branch, enqueue it for sync
-			s.branchesModulesToSync[branch][moduleDir] = builtModule.ModuleIdentity()
+			s.branchesModulesToSync[branch][moduleDir] = moduleIdentity
 			// do we have a remote git sync point for this module+branch?
-			moduleBranchSyncpoint, err := s.resolveSyncPoint(ctx, builtModule.ModuleIdentity(), branch)
+			moduleBranchSyncPoint, err := s.resolveSyncPoint(ctx, builtModule.ModuleIdentity(), branch)
 			if err != nil {
 				return fmt.Errorf(
 					"resolve sync point for module %s in branch %s: %w",
-					branch, builtModule.ModuleIdentity().IdentityString(), err,
+					branch, moduleIdentity, err,
 				)
 			}
-			allModulesIdentitiesToSync[builtModule.ModuleIdentity()] = struct{}{}
-			if s.modulesBranchesSyncPoints[builtModule.ModuleIdentity()] == nil {
-				s.modulesBranchesSyncPoints[builtModule.ModuleIdentity()] = make(map[string]git.Hash)
+			allModulesIdentitiesToSync[moduleIdentity] = builtModule.ModuleIdentity()
+			if s.modulesBranchesSyncPoints[moduleIdentity] == nil {
+				s.modulesBranchesSyncPoints[moduleIdentity] = make(map[string]string)
 			}
-			if moduleBranchSyncpoint != nil {
-				s.modulesBranchesSyncPoints[builtModule.ModuleIdentity()][branch] = moduleBranchSyncpoint
+			if moduleBranchSyncPoint != nil {
+				s.modulesBranchesSyncPoints[moduleIdentity][branch] = moduleBranchSyncPoint.Hex()
 			}
 		}
 	}
 	// make sure all module identities we are about to sync in all branches have the same BSR default
 	// branch as the local git default branch.
-	for moduleIdentity := range allModulesIdentitiesToSync {
+	for _, moduleIdentity := range allModulesIdentitiesToSync {
 		if err := s.validateDefaultBranch(ctx, moduleIdentity); err != nil {
 			return fmt.Errorf("validate default branch for module %s: %w", moduleIdentity.IdentityString(), err)
 		}
@@ -141,7 +139,7 @@ func (s *syncer) validateDefaultBranch(ctx context.Context, moduleIdentity bufmo
 		if errors.Is(err, ErrModuleDoesNotExist) {
 			s.logger.Warn(
 				"default branch validation skipped",
-				zap.String("expected_default_branch", expectedDefaultGitBranch),
+				zap.String("default_git_branch", expectedDefaultGitBranch),
 				zap.String("module", moduleIdentity.IdentityString()),
 				zap.Error(err),
 			)
@@ -160,31 +158,11 @@ func (s *syncer) validateDefaultBranch(ctx context.Context, moduleIdentity bufmo
 
 // TODO: remove
 func (s *syncer) printValidation() {
-	branchesModulesToSync := make(map[string]map[string]string)
-	for branch, modules := range s.branchesModulesToSync {
-		m := make(map[string]string)
-		for moduleDir, moduleIdentity := range modules {
-			m[moduleDir] = moduleIdentity.IdentityString()
-		}
-		branchesModulesToSync[branch] = m
-	}
-	modulesBranchesSyncPoints := make(map[string]map[string]string)
-	for moduleIdentity, branches := range s.modulesBranchesSyncPoints {
-		b := make(map[string]string)
-		for branch, syncPoint := range branches {
-			var syncPointHash string
-			if syncPoint != nil {
-				syncPointHash = syncPoint.Hex()
-			}
-			b[branch] = syncPointHash
-		}
-		modulesBranchesSyncPoints[moduleIdentity.IdentityString()] = b
-	}
 	s.logger.Debug(
 		"sync prepared",
 		zap.Any("modulesDirsToSync", s.modulesDirsToSync),
 		zap.Any("commitsTags", s.commitsTags),
-		zap.Any("branchesModulesToSync", branchesModulesToSync),
-		zap.Any("modulesBranchesSyncPoints", modulesBranchesSyncPoints),
+		zap.Any("branchesModulesToSync", s.branchesModulesToSync),
+		zap.Any("modulesBranchesSyncPoints", s.modulesBranchesSyncPoints),
 	)
 }
