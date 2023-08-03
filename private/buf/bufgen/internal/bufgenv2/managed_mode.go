@@ -125,7 +125,7 @@ func applyManagementForFile(
 				continue
 			}
 			if override == nil {
-				// Do not modify java_string_check_utf8 if no override is specified.
+				// Do not modify java_string_check_utf8 if no override is matched.
 				continue
 			}
 			javaStringCheckUtf8Override, ok := override.(valueOverride[bool])
@@ -160,7 +160,7 @@ func applyManagementForFile(
 			case prefixOverride:
 				modifyOption = bufimagemodifyv2.ModifyGoPackageWithPrefix(t.get())
 			case nil:
-				// Do not modify go_package is override is nil.
+				// Do not modify go_package if no override is matched.
 				continue
 			default:
 				return fmt.Errorf("invalid override type: %T", override)
