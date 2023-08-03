@@ -132,9 +132,10 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 				logger.Warn("read module at commit failed, skipping commit", zap.Error(readErr))
 				continue
 			}
+			// add the read module to sync
 			modulesDirsToSyncInThisCommit[moduleDir] = *builtModule
 		}
-		// clear modules that already found its sync point
+		// clear modules that are set to stop in this commit
 		for moduleDir := range modulesDirsToStopInThisCommit {
 			delete(pendingModules, moduleDir)
 		}
@@ -145,19 +146,6 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 		return nil
 	}); err != nil && !errors.Is(err, stopLoopErr) {
 		return nil, err
-	}
-	// reverse commits to sync, to leave them in time order parent -> children
-	// https://github.com/golang/go/wiki/SliceTricks#reversing
-	for i := len(commitsToSync)/2 - 1; i >= 0; i-- {
-		opp := len(commitsToSync) - 1 - i
-		commitsToSync[i], commitsToSync[opp] = commitsToSync[opp], commitsToSync[i]
-	}
-	// clear oldest commit if it was already synced in this run by another branch (branch off another
-	// branch)
-	if len(commitsToSync) > 0 {
-		if _, commitSynced := s.syncedCommits[commitsToSync[0].commit.Hash().Hex()]; commitSynced {
-			commitsToSync = commitsToSync[1:]
-		}
 	}
 	// if we have no commits to sync, no need to make more checks, bail early
 	if len(commitsToSync) == 0 {
@@ -191,6 +179,12 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 			"module without expected sync point did not find any synced git commit, " +
 				"will sync all the way from the beginning of the branch",
 		)
+	}
+	// reverse commits to sync, to leave them in time order parent -> children
+	// https://github.com/golang/go/wiki/SliceTricks#reversing
+	for i := len(commitsToSync)/2 - 1; i >= 0; i-- {
+		opp := len(commitsToSync) - 1 - i
+		commitsToSync[i], commitsToSync[opp] = commitsToSync[opp], commitsToSync[i]
 	}
 	return commitsToSync, nil
 }

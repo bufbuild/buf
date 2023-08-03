@@ -48,8 +48,6 @@ type syncer struct {
 	// We don't cache "unsynced" git commits, since during the sync process we will be syncing new git
 	// commits, which will be added to this cache when they are.
 	syncedModulesCommitsCache map[string]map[string]struct{}
-	// syncedCommits holds all the synced commits hashes in this run of sync, by any branch.
-	syncedCommits map[string]struct{}
 }
 
 func newSyncer(
@@ -69,7 +67,6 @@ func newSyncer(
 		branchesModulesToSync:         make(map[string]map[string]bufmoduleref.ModuleIdentity),
 		modulesBranchesLastSyncPoints: make(map[string]map[string]string),
 		syncedModulesCommitsCache:     make(map[string]map[string]struct{}),
-		syncedCommits:                 make(map[string]struct{}),
 	}
 	for _, opt := range options {
 		if err := opt(s); err != nil {
@@ -174,7 +171,6 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 				return fmt.Errorf("sync module %s:%s in commit %s: %w", moduleDir, modIdentity, commitHash, err)
 			}
 			// module was synced successfully, add it to the cache
-			s.syncedCommits[commitHash] = struct{}{}
 			if s.syncedModulesCommitsCache[modIdentity] == nil {
 				s.syncedModulesCommitsCache[modIdentity] = make(map[string]struct{})
 			}
