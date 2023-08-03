@@ -106,10 +106,7 @@ func applyManagementForFile(
 			default:
 				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err := bufimagemodifyv2.ModifyJavaOuterClassname(marker, imageFile, modifyOptions...)
-			if err != nil {
-				return err
-			}
+			bufimagemodifyv2.ModifyJavaOuterClassname(marker, imageFile, modifyOptions...)
 		case groupJavaMultipleFiles:
 			if managedConfig.DisabledFunc(fileOptionJavaMultipleFiles, imageFile) {
 				continue
@@ -122,10 +119,7 @@ func applyManagementForFile(
 				}
 				javaMultipleFiles = javaMultipleFilesOverride.get()
 			}
-			err := bufimagemodifyv2.ModifyJavaMultipleFiles(marker, imageFile, javaMultipleFiles)
-			if err != nil {
-				return err
-			}
+			bufimagemodifyv2.ModifyJavaMultipleFiles(marker, imageFile, javaMultipleFiles)
 		case groupJavaStringCheckUtf8:
 			if managedConfig.DisabledFunc(fileOptionJavaStringCheckUtf8, imageFile) {
 				continue
@@ -138,10 +132,7 @@ func applyManagementForFile(
 			if !ok {
 				return fmt.Errorf("invalid override type %T", override)
 			}
-			err := bufimagemodifyv2.ModifyJavaStringCheckUtf8(marker, imageFile, javaStringCheckUtf8Override.get())
-			if err != nil {
-				return err
-			}
+			bufimagemodifyv2.ModifyJavaStringCheckUtf8(marker, imageFile, javaStringCheckUtf8Override.get())
 		case groupOptimizeFor:
 			if managedConfig.DisabledFunc(fileOptionOptimizeFor, imageFile) {
 				continue
@@ -154,10 +145,7 @@ func applyManagementForFile(
 			if !ok {
 				return fmt.Errorf("invalid override type %T", override)
 			}
-			err := bufimagemodifyv2.ModifyOptimizeFor(marker, imageFile, optimizeForOverride.get())
-			if err != nil {
-				return err
-			}
+			bufimagemodifyv2.ModifyOptimizeFor(marker, imageFile, optimizeForOverride.get())
 		case groupGoPackage:
 			if managedConfig.DisabledFunc(fileOptionGoPackage, imageFile) {
 				continue
@@ -177,10 +165,7 @@ func applyManagementForFile(
 			default:
 				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err := bufimagemodifyv2.ModifyGoPackage(marker, imageFile, modifyOption)
-			if err != nil {
-				return err
-			}
+			bufimagemodifyv2.ModifyGoPackage(marker, imageFile, modifyOption)
 		case groupCcEnableArenas:
 			if managedConfig.DisabledFunc(fileOptionCcEnableArenas, imageFile) {
 				continue
@@ -193,10 +178,7 @@ func applyManagementForFile(
 			if !ok {
 				return fmt.Errorf("invalid override type %T", override)
 			}
-			err := bufimagemodifyv2.ModifyCcEnableArenas(marker, imageFile, ccEnableArenasOverride.get())
-			if err != nil {
-				return err
-			}
+			bufimagemodifyv2.ModifyCcEnableArenas(marker, imageFile, ccEnableArenasOverride.get())
 		case groupObjcClassPrefix:
 			if managedConfig.DisabledFunc(fileOptionObjcClassPrefix, imageFile) {
 				continue
@@ -212,10 +194,7 @@ func applyManagementForFile(
 			default:
 				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err := bufimagemodifyv2.ModifyObjcClassPrefix(marker, imageFile, modifyOptions...)
-			if err != nil {
-				return err
-			}
+			bufimagemodifyv2.ModifyObjcClassPrefix(marker, imageFile, modifyOptions...)
 		case groupCsharpNamespace:
 			if managedConfig.DisabledFunc(fileOptionCsharpNamespace, imageFile) {
 				continue
@@ -238,10 +217,7 @@ func applyManagementForFile(
 			default:
 				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err := bufimagemodifyv2.ModifyCsharpNamespace(marker, imageFile, modifyOptions...)
-			if err != nil {
-				return err
-			}
+			bufimagemodifyv2.ModifyCsharpNamespace(marker, imageFile, modifyOptions...)
 		case groupPhpNamespace:
 			if managedConfig.DisabledFunc(fileOptionPhpNamespace, imageFile) {
 				continue
@@ -257,10 +233,7 @@ func applyManagementForFile(
 			default:
 				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err := bufimagemodifyv2.ModifyPhpNamespace(marker, imageFile, modifyOptions...)
-			if err != nil {
-				return err
-			}
+			bufimagemodifyv2.ModifyPhpNamespace(marker, imageFile, modifyOptions...)
 		case groupPhpMetadataNamespace:
 			if managedConfig.DisabledFunc(fileOptionPhpMetadataNamespace, imageFile) {
 				continue
@@ -286,10 +259,7 @@ func applyManagementForFile(
 			default:
 				return fmt.Errorf("invalid override type: %T", override)
 			}
-			err := bufimagemodifyv2.ModifyPhpMetadataNamespace(marker, imageFile, modifyOptions...)
-			if err != nil {
-				return err
-			}
+			bufimagemodifyv2.ModifyPhpMetadataNamespace(marker, imageFile, modifyOptions...)
 		case groupRubyPackage:
 			if managedConfig.DisabledFunc(fileOptionRubyPackage, imageFile) {
 				continue

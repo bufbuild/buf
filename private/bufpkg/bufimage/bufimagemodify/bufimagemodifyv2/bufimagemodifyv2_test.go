@@ -259,13 +259,12 @@ func TestModifyJavaMultipleFiles(t *testing.T) {
 				require.NotNil(t, imageFile)
 				_, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
 				require.False(t, ok)
-				err := ModifyJavaMultipleFiles(
+				ModifyJavaMultipleFiles(
 					markSweeper,
 					imageFile,
 					test.override,
 				)
-				require.NoError(t, err)
-				err = markSweeper.Sweep()
+				err := markSweeper.Sweep()
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				require.Equal(t, test.expectedValue, imageFile.Proto().GetOptions().GetJavaMultipleFiles())
@@ -351,13 +350,12 @@ func TestModifyJavaOuterClassnmae(t *testing.T) {
 				require.NotNil(t, imageFile)
 				_, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
 				require.False(t, ok)
-				err := ModifyJavaOuterClassname(
+				ModifyJavaOuterClassname(
 					markSweeper,
 					imageFile,
 					test.modifyOptions...,
 				)
-				require.NoError(t, err)
-				err = markSweeper.Sweep()
+				err := markSweeper.Sweep()
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				require.Equal(t, test.expectedValue, imageFile.Proto().GetOptions().GetJavaOuterClassname())
@@ -451,13 +449,12 @@ func TestModifyJavaStringCheckUtf8(t *testing.T) {
 				require.NotNil(t, imageFile)
 				_, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
 				require.False(t, ok)
-				err := ModifyJavaStringCheckUtf8(
+				ModifyJavaStringCheckUtf8(
 					markSweeper,
 					imageFile,
 					test.override,
 				)
-				require.NoError(t, err)
-				err = markSweeper.Sweep()
+				err := markSweeper.Sweep()
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				require.Equal(t, test.expectedValue, imageFile.Proto().GetOptions().GetJavaStringCheckUtf8())
@@ -572,9 +569,8 @@ func TestModifyGoPackage(t *testing.T) {
 				require.NotNil(t, imageFile)
 				_, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
 				require.False(t, ok)
-				err := ModifyGoPackage(markSweeper, imageFile, test.modifyOption)
-				require.NoError(t, err)
-				err = markSweeper.Sweep()
+				ModifyGoPackage(markSweeper, imageFile, test.modifyOption)
+				err := markSweeper.Sweep()
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				require.Equal(
@@ -672,13 +668,12 @@ func TestModifyOptimizeFor(t *testing.T) {
 				require.NotNil(t, imageFile)
 				_, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
 				require.False(t, ok)
-				err := ModifyOptimizeFor(
+				ModifyOptimizeFor(
 					markSweeper,
 					imageFile,
 					test.override,
 				)
-				require.NoError(t, err)
-				err = markSweeper.Sweep()
+				err := markSweeper.Sweep()
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				require.Equal(t, test.expectedValue, imageFile.Proto().GetOptions().GetOptimizeFor())
@@ -772,13 +767,12 @@ func TestModifyCcEnableArenas(t *testing.T) {
 				require.NotNil(t, imageFile)
 				_, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
 				require.False(t, ok)
-				err := ModifyCcEnableArenas(
+				ModifyCcEnableArenas(
 					markSweeper,
 					imageFile,
 					test.override,
 				)
-				require.NoError(t, err)
-				err = markSweeper.Sweep()
+				err := markSweeper.Sweep()
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				require.Equal(t, test.expectedValue, imageFile.Proto().GetOptions().GetCcEnableArenas())
@@ -888,13 +882,12 @@ func TestModifyObjcClassPrefix(t *testing.T) {
 				require.NotNil(t, imageFile)
 				_, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
 				require.False(t, ok)
-				err := ModifyObjcClassPrefix(
+				ModifyObjcClassPrefix(
 					markSweeper,
 					imageFile,
 					test.modifyOptions...,
 				)
-				require.NoError(t, err)
-				err = markSweeper.Sweep()
+				err := markSweeper.Sweep()
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				require.Equal(t, test.expectedValue, imageFile.Proto().GetOptions().GetObjcClassPrefix())
@@ -1026,9 +1019,8 @@ func TestModifyCsharpNamespace(t *testing.T) {
 				require.NotNil(t, imageFile)
 				_, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
 				require.False(t, ok)
-				err := ModifyCsharpNamespace(markSweeper, imageFile, test.modifyOptions...)
-				require.NoError(t, err)
-				err = markSweeper.Sweep()
+				ModifyCsharpNamespace(markSweeper, imageFile, test.modifyOptions...)
+				err := markSweeper.Sweep()
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				require.Equal(
@@ -1133,13 +1125,12 @@ func TestModifyPhpNamespace(t *testing.T) {
 				require.NotNil(t, imageFile)
 				_, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
 				require.False(t, ok)
-				err := ModifyPhpNamespace(
+				ModifyPhpNamespace(
 					markSweeper,
 					imageFile,
 					test.modifyOptions...,
 				)
-				require.NoError(t, err)
-				err = markSweeper.Sweep()
+				err := markSweeper.Sweep()
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				require.Equal(t, test.expectedValue, imageFile.Proto().GetOptions().GetPhpNamespace())
@@ -1272,9 +1263,8 @@ func TestModifyPhpMetadataNamespace(t *testing.T) {
 				require.NotNil(t, imageFile)
 				_, ok := markSweeper.sourceCodeInfoPaths[imageFile.Path()]
 				require.False(t, ok)
-				err := ModifyPhpMetadataNamespace(markSweeper, imageFile, test.modifyOptions...)
-				require.NoError(t, err)
-				err = markSweeper.Sweep()
+				ModifyPhpMetadataNamespace(markSweeper, imageFile, test.modifyOptions...)
+				err := markSweeper.Sweep()
 				require.NoError(t, err)
 				require.NotNil(t, imageFile.Proto())
 				require.Equal(

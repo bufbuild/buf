@@ -148,9 +148,9 @@ func ModifyJavaOuterClassname(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	modifyOptions ...ModifyJavaOuterClassnameOption,
-) error {
+) {
 	if internal.IsWellKnownType(imageFile) {
-		return nil
+		return
 	}
 	options := &modifyStringValueOptions{
 		value: internal.DefaultJavaOuterClassname(imageFile),
@@ -161,14 +161,13 @@ func ModifyJavaOuterClassname(
 	javaOuterClassname := options.value
 	descriptor := imageFile.Proto()
 	if descriptor.Options.GetJavaOuterClassname() == javaOuterClassname {
-		return nil
+		return
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.JavaOuterClassname = proto.String(javaOuterClassname)
 	marker.Mark(imageFile, internal.JavaOuterClassnamePath)
-	return nil
 }
 
 // ModifyJavaMultipleFiles modifies java_multiple_files.
@@ -176,20 +175,19 @@ func ModifyJavaMultipleFiles(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	javaMultipleFiles bool,
-) error {
+) {
 	if internal.IsWellKnownType(imageFile) {
-		return nil
+		return
 	}
 	descriptor := imageFile.Proto()
 	if descriptor.Options.GetJavaMultipleFiles() == javaMultipleFiles {
-		return nil
+		return
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.JavaMultipleFiles = proto.Bool(javaMultipleFiles)
 	marker.Mark(imageFile, internal.JavaMultipleFilesPath)
-	return nil
 }
 
 // ModifyJavaStringCheckUtf8 modifies java_string_check_utf8.
@@ -197,20 +195,19 @@ func ModifyJavaStringCheckUtf8(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	javaStringCheckUtf8 bool,
-) error {
+) {
 	if internal.IsWellKnownType(imageFile) {
-		return nil
+		return
 	}
 	descriptor := imageFile.Proto()
 	if descriptor.Options.GetJavaStringCheckUtf8() == javaStringCheckUtf8 {
-		return nil
+		return
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.JavaStringCheckUtf8 = proto.Bool(javaStringCheckUtf8)
 	marker.Mark(imageFile, internal.JavaStringCheckUtf8Path)
-	return nil
 }
 
 // ModifyGoPackageOption is an option for ModifyGoPackage.
@@ -235,9 +232,9 @@ func ModifyGoPackage(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	modifyOption ModifyGoPackageOption,
-) error {
+) {
 	if internal.IsWellKnownType(imageFile) {
-		return nil
+		return
 	}
 	options := &modifyValueOrPrefixOptions{}
 	modifyOption(options)
@@ -247,17 +244,16 @@ func ModifyGoPackage(
 	}
 	descriptor := imageFile.Proto()
 	if descriptor.Options.GetGoPackage() == goPackageValue {
-		return nil
+		return
 	}
 	if goPackageValue == "" {
-		return nil
+		return
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.GoPackage = proto.String(goPackageValue)
 	marker.Mark(imageFile, internal.GoPackagePath)
-	return nil
 }
 
 // ModifyCcEnableArenas modifies cc_enable_arenas.
@@ -265,20 +261,19 @@ func ModifyCcEnableArenas(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	cc_enable_arenas bool,
-) error {
+) {
 	if internal.IsWellKnownType(imageFile) {
-		return nil
+		return
 	}
 	descriptor := imageFile.Proto()
 	if descriptor.Options.GetCcEnableArenas() == cc_enable_arenas {
-		return nil
+		return
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.CcEnableArenas = proto.Bool(cc_enable_arenas)
 	marker.Mark(imageFile, internal.CCEnableArenasPath)
-	return nil
 }
 
 // ModifyOptimizeFor modifies optimize_for.
@@ -286,20 +281,19 @@ func ModifyOptimizeFor(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	optimizeFor descriptorpb.FileOptions_OptimizeMode,
-) error {
+) {
 	if internal.IsWellKnownType(imageFile) {
-		return nil
+		return
 	}
 	descriptor := imageFile.Proto()
 	if descriptor.Options.GetOptimizeFor() == optimizeFor {
-		return nil
+		return
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.OptimizeFor = &optimizeFor
 	marker.Mark(imageFile, internal.OptimizeForPath)
-	return nil
 }
 
 // ModifyObjcClassPrefixOption is an option for ModifyObjcClassPrefix.
@@ -317,9 +311,9 @@ func ModifyObjcClassPrefix(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	modifyObjcClassPrefixOptions ...ModifyObjcClassPrefixOption,
-) error {
+) {
 	if internal.IsWellKnownType(imageFile) {
-		return nil
+		return
 	}
 	options := &modifyStringValueOptions{
 		value: internal.DefaultObjcClassPrefixValue(imageFile),
@@ -330,17 +324,16 @@ func ModifyObjcClassPrefix(
 	objcClassPrefixValue := options.value
 	descriptor := imageFile.Proto()
 	if descriptor.Options.GetObjcClassPrefix() == objcClassPrefixValue {
-		return nil
+		return
 	}
 	if objcClassPrefixValue == "" {
-		return nil
+		return
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.ObjcClassPrefix = proto.String(objcClassPrefixValue)
 	marker.Mark(imageFile, internal.ObjcClassPrefixPath)
-	return nil
 }
 
 // ModifyCsharpNamespaceOption is an option for ModifyCsharpNamespace.
@@ -365,9 +358,9 @@ func ModifyCsharpNamespace(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	modifyCsharpNamespaceOptions ...ModifyCsharpNamespaceOption,
-) error {
+) {
 	if internal.IsWellKnownType(imageFile) {
-		return nil
+		return
 	}
 	options := &modifyValueOrPrefixOptions{
 		value: internal.DefaultCsharpNamespace(imageFile),
@@ -381,17 +374,16 @@ func ModifyCsharpNamespace(
 	}
 	descriptor := imageFile.Proto()
 	if descriptor.Options.GetCsharpNamespace() == csharpNamespaceValue {
-		return nil
+		return
 	}
 	if csharpNamespaceValue == "" {
-		return nil
+		return
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.CsharpNamespace = proto.String(csharpNamespaceValue)
 	marker.Mark(imageFile, internal.CsharpNamespacePath)
-	return nil
 }
 
 // ModifyPhpNamespaceOption is an option for ModifyPhpNamespace.
@@ -409,9 +401,9 @@ func ModifyPhpNamespace(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	modifyPhpNamespaceOptions ...ModifyPhpNamespaceOption,
-) error {
+) {
 	if internal.IsWellKnownType(imageFile) {
-		return nil
+		return
 	}
 	options := &modifyStringValueOptions{
 		value: internal.DefaultPhpNamespaceValue(imageFile),
@@ -422,17 +414,16 @@ func ModifyPhpNamespace(
 	phpNamespaceValue := options.value
 	descriptor := imageFile.Proto()
 	if descriptor.Options.GetPhpNamespace() == phpNamespaceValue {
-		return nil
+		return
 	}
 	if phpNamespaceValue == "" {
-		return nil
+		return
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.PhpNamespace = proto.String(phpNamespaceValue)
 	marker.Mark(imageFile, internal.PhpNamespacePath)
-	return nil
 }
 
 // ModifyPhpMetadataNamespaceOption is an option for ModifyPhpMetadataNamespace.
@@ -457,9 +448,9 @@ func ModifyPhpMetadataNamespace(
 	marker Marker,
 	imageFile bufimage.ImageFile,
 	modifyPhpMetadataNamespaceOptions ...ModifyPhpMetadataNamespaceOption,
-) error {
+) {
 	if internal.IsWellKnownType(imageFile) {
-		return nil
+		return
 	}
 	options := &modifyValueOrSuffixOptions{
 		value: getPhpMetadataNamespaceValue(imageFile, ""),
@@ -473,17 +464,16 @@ func ModifyPhpMetadataNamespace(
 	}
 	descriptor := imageFile.Proto()
 	if descriptor.Options.GetPhpMetadataNamespace() == phpMetadataNamespaceValue {
-		return nil
+		return
 	}
 	if phpMetadataNamespaceValue == "" {
-		return nil
+		return
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.PhpMetadataNamespace = proto.String(phpMetadataNamespaceValue)
 	marker.Mark(imageFile, internal.PhpMetadataNamespacePath)
-	return nil
 }
 
 // ModifyRubyPackageOption is an option for ModifyRubyPackage.
