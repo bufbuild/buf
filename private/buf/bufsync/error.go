@@ -32,17 +32,19 @@ type ReadModuleErrorCode int
 const (
 	// ReadModuleErrorCodeUnknown is any unknown or unexpected error while reading a module.
 	ReadModuleErrorCodeUnknown = iota
-	// ReadModuleErrorCodeModuleNotFound happens when the passed module directory does not have a
+	// ReadModuleErrorCodeModuleNotFound happens when the passed module directory does not have any
 	// module.
 	ReadModuleErrorCodeModuleNotFound
-	// ReadModuleErrorCodeUnnamedModule happens when the module directory has a module without a name.
+	// ReadModuleErrorCodeUnnamedModule happens when the read module does not have a name.
 	ReadModuleErrorCodeUnnamedModule
 	// ReadModuleErrorCodeInvalidModuleConfig happens when the module directory has an invalid module
 	// configuration.
 	ReadModuleErrorCodeInvalidModuleConfig
-	// ReadModuleErrorCodeBuildModule happens when the module in the module directory errors trying to
-	// build.
+	// ReadModuleErrorCodeBuildModule happens when the read module errors building.
 	ReadModuleErrorCodeBuildModule
+	// ReadModuleErrorCodeNameDifferentThanHEAD happens when the read module has a different name than
+	// the module name in the branch HEAD commit.
+	ReadModuleErrorCodeNameDifferentThanHEAD
 )
 
 // ReadModuleError is an error that happens when trying to read a module from a module directory in

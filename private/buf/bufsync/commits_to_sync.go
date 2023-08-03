@@ -79,6 +79,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 				zap.String("module identity in branch HEAD", pendingModule.moduleIdentityInHEAD),
 				zap.Stringp("expected sync point", pendingModule.expectedSyncPoint),
 			)
+			// attempt to read module in the commit:moduleDir
 			builtModule, readErr := s.readModuleAt(ctx, branch, commit, moduleDir)
 			if readErr != nil {
 				if s.errorHandler.StopLookback(readErr) {
@@ -89,11 +90,33 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 				logger.Warn("read module at commit failed, skipping commit", zap.Error(readErr))
 				continue
 			}
+			// check read module has the same identity than in HEAD
+			modIdentity := builtModule.ModuleIdentity().IdentityString()
+			if modIdentity != pendingModule.moduleIdentityInHEAD {
+				readErr := &ReadModuleError{
+					err: fmt.Errorf(
+						"read module has an unexpected module identity %s, expected %s from branch HEAD",
+						modIdentity, pendingModule.moduleIdentityInHEAD,
+					),
+					code:      ReadModuleErrorCodeNameDifferentThanHEAD,
+					branch:    branch,
+					commit:    commitHash,
+					moduleDir: moduleDir,
+				}
+				if s.errorHandler.StopLookback(readErr) {
+					logger.Warn("read module with different module name, stop looking back", zap.Error(readErr))
+					modulesDirsToStopInThisCommit[moduleDir] = struct{}{}
+					continue
+				}
+				logger.Warn("read module with different module name, skipping commit", zap.Error(readErr))
+				continue
+			}
+			// check if the module identity already synced this commit
 			isSynced, err := s.isGitCommitSynced(ctx, builtModule.ModuleIdentity(), commitHash)
 			if err != nil {
 				return fmt.Errorf(
 					"check if module %s already synced git commit %s: %w",
-					builtModule.ModuleIdentity().IdentityString(), commitHash, err,
+					modIdentity, commitHash, err,
 				)
 			}
 			if !isSynced {

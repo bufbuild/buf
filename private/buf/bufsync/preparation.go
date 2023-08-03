@@ -75,23 +75,23 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 				)
 				continue
 			}
-			moduleIdentity := builtModule.ModuleIdentity().IdentityString()
+			moduleIdentityInHEAD := builtModule.ModuleIdentity().IdentityString()
 			// there is a valid module in the module dir at the HEAD of this branch, enqueue it for sync
-			s.branchesModulesToSync[branch][moduleDir] = moduleIdentity
+			s.branchesModulesToSync[branch][moduleDir] = moduleIdentityInHEAD
 			// do we have a remote git sync point for this module+branch?
 			moduleBranchSyncPoint, err := s.resolveSyncPoint(ctx, builtModule.ModuleIdentity(), branch)
 			if err != nil {
 				return fmt.Errorf(
-					"resolve sync point for module %s in branch %s: %w",
-					branch, moduleIdentity, err,
+					"resolve sync point for module %s in branch %s HEAD commit %s: %w",
+					moduleIdentityInHEAD, branch, headCommit.Hash().Hex(), err,
 				)
 			}
-			allModulesIdentitiesToSync[moduleIdentity] = builtModule.ModuleIdentity()
-			if s.modulesBranchesLastSyncPoints[moduleIdentity] == nil {
-				s.modulesBranchesLastSyncPoints[moduleIdentity] = make(map[string]string)
+			allModulesIdentitiesToSync[moduleIdentityInHEAD] = builtModule.ModuleIdentity()
+			if s.modulesBranchesLastSyncPoints[moduleIdentityInHEAD] == nil {
+				s.modulesBranchesLastSyncPoints[moduleIdentityInHEAD] = make(map[string]string)
 			}
 			if moduleBranchSyncPoint != nil {
-				s.modulesBranchesLastSyncPoints[moduleIdentity][branch] = moduleBranchSyncPoint.Hex()
+				s.modulesBranchesLastSyncPoints[moduleIdentityInHEAD][branch] = moduleBranchSyncPoint.Hex()
 			}
 		}
 	}
