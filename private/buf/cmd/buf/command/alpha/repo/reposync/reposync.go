@@ -164,11 +164,6 @@ func sync(
 	createWithVisibility string,
 	allBranches bool,
 ) error {
-	if len(modulesDirs) == 0 {
-		// default behavior, if no modules are passed, a single module at the root of the repo is
-		// assumed.
-		modulesDirs = []string{"."}
-	}
 	// Assume that this command is run from the repository root. If not, `OpenRepository` will return
 	// a dir not found error.
 	repo, err := git.OpenRepository(ctx, git.DotGitDir, command.NewRunner())
@@ -191,6 +186,11 @@ func sync(
 	}
 	if allBranches {
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithAllBranches())
+	}
+	if len(modulesDirs) == 0 {
+		// default behavior, if no modules are passed, a single module at the root of the repo is
+		// assumed.
+		modulesDirs = []string{"."}
 	}
 	for _, moduleDir := range modulesDirs {
 		if len(moduleDir) == 0 {

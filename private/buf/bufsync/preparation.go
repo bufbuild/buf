@@ -155,3 +155,13 @@ func (s *syncer) validateDefaultBranch(ctx context.Context, moduleIdentity bufmo
 	}
 	return nil
 }
+
+// somethingToSync returns true if there is at least one module in a branch to sync.
+func (s *syncer) somethingToSync() bool {
+	for _, modules := range s.branchesModulesToSync {
+		for range modules {
+			return true
+		}
+	}
+	return false
+}

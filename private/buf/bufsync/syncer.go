@@ -87,9 +87,13 @@ func newSyncer(
 
 func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	if err := s.prepareSync(ctx); err != nil {
-		return fmt.Errorf("scan repo: %w", err)
+		return fmt.Errorf("sync preparation: %w", err)
 	}
 	s.printSyncPreparation()
+	if !s.somethingToSync() {
+		s.logger.Warn("branches and modules directories scanned, nothing to sync")
+		return nil
+	}
 	// first, default branch, if present
 	defaultBranch := s.repo.DefaultBranch()
 	if _, shouldSyncDefaultBranch := s.branchesModulesToSync[defaultBranch]; shouldSyncDefaultBranch {
