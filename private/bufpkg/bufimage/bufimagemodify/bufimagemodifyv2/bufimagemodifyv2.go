@@ -116,7 +116,11 @@ func ModifyJavaPackage(
 		return nil
 	}
 	descriptor := imageFile.Proto()
-	if descriptor.Options != nil && descriptor.Options.GetJavaPackage() == javaPackageValue {
+	if javaPackageValue == "" {
+		// We could not resolve a non-empty java_package, and so this is a no-op.
+		return nil
+	}
+	if descriptor.Options.GetJavaPackage() == javaPackageValue {
 		// The option is already set to the same value, don't modify or mark it.
 		return nil
 	}
@@ -156,7 +160,7 @@ func ModifyJavaOuterClassname(
 	}
 	javaOuterClassname := options.value
 	descriptor := imageFile.Proto()
-	if descriptor.Options != nil && descriptor.Options.GetJavaOuterClassname() == javaOuterClassname {
+	if descriptor.Options.GetJavaOuterClassname() == javaOuterClassname {
 		return nil
 	}
 	if descriptor.Options == nil {
@@ -177,7 +181,7 @@ func ModifyJavaMultipleFiles(
 		return nil
 	}
 	descriptor := imageFile.Proto()
-	if descriptor.Options != nil && descriptor.Options.GetJavaMultipleFiles() == javaMultipleFiles {
+	if descriptor.Options.GetJavaMultipleFiles() == javaMultipleFiles {
 		return nil
 	}
 	if descriptor.Options == nil {
@@ -198,11 +202,11 @@ func ModifyJavaStringCheckUtf8(
 		return nil
 	}
 	descriptor := imageFile.Proto()
-	if descriptor.Options == nil {
-		descriptor.Options = &descriptorpb.FileOptions{}
-	}
 	if descriptor.Options.GetJavaStringCheckUtf8() == javaStringCheckUtf8 {
 		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.JavaStringCheckUtf8 = proto.Bool(javaStringCheckUtf8)
 	marker.Mark(imageFile, internal.JavaStringCheckUtf8Path)
@@ -242,7 +246,7 @@ func ModifyGoPackage(
 		goPackageValue = internal.GoPackageImportPathForFile(imageFile, options.prefix)
 	}
 	descriptor := imageFile.Proto()
-	if descriptor.Options != nil && descriptor.Options.GetGoPackage() == goPackageValue {
+	if descriptor.Options.GetGoPackage() == goPackageValue {
 		return nil
 	}
 	if descriptor.Options == nil {
@@ -263,7 +267,7 @@ func ModifyOptimizeFor(
 		return nil
 	}
 	descriptor := imageFile.Proto()
-	if descriptor.Options != nil && descriptor.Options.GetOptimizeFor() == optimizeFor {
+	if descriptor.Options.GetOptimizeFor() == optimizeFor {
 		return nil
 	}
 	if descriptor.Options == nil {
@@ -301,7 +305,10 @@ func ModifyObjcClassPrefix(
 	}
 	objcClassPrefixValue := options.value
 	descriptor := imageFile.Proto()
-	if descriptor.Options != nil && descriptor.Options.GetObjcClassPrefix() == objcClassPrefixValue {
+	if descriptor.Options.GetObjcClassPrefix() == objcClassPrefixValue {
+		return nil
+	}
+	if objcClassPrefixValue == "" {
 		return nil
 	}
 	if descriptor.Options == nil {
@@ -349,7 +356,10 @@ func ModifyCsharpNamespace(
 		csharpNamespaceValue = getCsharpNamespaceValue(imageFile, options.prefix)
 	}
 	descriptor := imageFile.Proto()
-	if descriptor.Options != nil && descriptor.Options.GetCsharpNamespace() == csharpNamespaceValue {
+	if descriptor.Options.GetCsharpNamespace() == csharpNamespaceValue {
+		return nil
+	}
+	if csharpNamespaceValue == "" {
 		return nil
 	}
 	if descriptor.Options == nil {
@@ -387,7 +397,10 @@ func ModifyPhpNamespace(
 	}
 	phpNamespaceValue := options.value
 	descriptor := imageFile.Proto()
-	if descriptor.Options != nil && descriptor.Options.GetPhpNamespace() == phpNamespaceValue {
+	if descriptor.Options.GetPhpNamespace() == phpNamespaceValue {
+		return nil
+	}
+	if phpNamespaceValue == "" {
 		return nil
 	}
 	if descriptor.Options == nil {
@@ -435,7 +448,10 @@ func ModifyPhpMetadataNamespace(
 		phpMetadataNamespaceValue = getPhpMetadataNamespaceValue(imageFile, options.suffix)
 	}
 	descriptor := imageFile.Proto()
-	if descriptor.Options != nil && descriptor.Options.GetPhpMetadataNamespace() == phpMetadataNamespaceValue {
+	if descriptor.Options.GetPhpMetadataNamespace() == phpMetadataNamespaceValue {
+		return nil
+	}
+	if phpMetadataNamespaceValue == "" {
 		return nil
 	}
 	if descriptor.Options == nil {
@@ -483,7 +499,10 @@ func ModifyRubyPackage(
 		rubyPackageValue = getRubyPackageValue(imageFile, options.suffix)
 	}
 	descriptor := imageFile.Proto()
-	if descriptor.Options != nil && descriptor.Options.GetRubyPackage() == rubyPackageValue {
+	if descriptor.Options.GetRubyPackage() == rubyPackageValue {
+		return
+	}
+	if rubyPackageValue == "" {
 		return
 	}
 	if descriptor.Options == nil {
