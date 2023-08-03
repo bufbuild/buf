@@ -27,13 +27,8 @@ import (
 )
 
 // readModuleAt returns a module that has a name and builds correctly given a commit and a module
-// directory.
-func (s *syncer) readModuleAt(
-	ctx context.Context,
-	branch string,
-	commit git.Commit,
-	moduleDir string,
-) (*bufmodulebuild.BuiltModule, *ReadModuleError) {
+// directory, or a read error.
+func (s *syncer) readModuleAt(ctx context.Context, branch string, commit git.Commit, moduleDir string) (*bufmodulebuild.BuiltModule, *ReadModuleError) {
 	// in case there is an error reading this module, it will have the same branch, commit, and module
 	// dir that we can fill upfront. The actual `err` and `code` (if any) is populated in case-by-case
 	// basis before returning.

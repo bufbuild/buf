@@ -39,7 +39,7 @@ type syncer struct {
 	syncAllBranches         bool
 
 	commitsTags               map[string][]string          // commits:[]tags
-	branchesModulesToSync     map[string]map[string]string // branch:moduleDir:moduleIdentity
+	branchesModulesToSync     map[string]map[string]string // branch:moduleDir:moduleIdentityInHEAD
 	modulesBranchesSyncPoints map[string]map[string]string // moduleIdentity:branch:syncPointGitHash
 }
 
@@ -54,6 +54,7 @@ func newSyncer(
 		logger:                    logger,
 		repo:                      repo,
 		storageGitProvider:        storageGitProvider,
+		errorHandler:              errorHandler,
 		modulesDirsToSync:         make(map[string]struct{}),
 		commitsTags:               make(map[string][]string),
 		branchesModulesToSync:     make(map[string]map[string]string),
@@ -106,22 +107,23 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 }
 
 // syncBranch syncs all modules in a branch.
-func (s *syncer) syncBranch(
-	ctx context.Context,
-	branch string,
-	syncFunc SyncFunc,
-) error {
-	// commitsToSync, err := s.commitsToSync(ctx, branch)
-	// if err != nil {
-	// 	return fmt.Errorf("finding commits to sync: %w", err)
-	// }
-	// if len(commitsToSync) == 0 {
-	// 	s.logger.Debug(
-	// 		"modules already up to date in branch",
-	// 		zap.String("branch", branch),
-	// 	)
-	// 	return nil
-	// }
+func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFunc) error {
+	commitsToSync, err := s.branchCommitsToSync(ctx, branch)
+	if err != nil {
+		return fmt.Errorf("finding commits to sync: %w", err)
+	}
+	if len(commitsToSync) == 0 {
+		s.logger.Debug(
+			"modules already up to date in branch",
+			zap.String("branch", branch),
+		)
+		return nil
+	}
+	s.logger.Debug( // FIXME: remove
+		"commits to sync",
+		zap.String("branch", branch),
+		zap.Any("commits", commitsToSync),
+	)
 	// for _, commitToSync := range commitsToSync {
 	// 	for _, module := range s.modulesDirsToSync { // looping over the original sort order of modules
 	// 		if _, shouldSyncModule := commitToSync.modules[module]; !shouldSyncModule {

@@ -156,7 +156,7 @@ func (s *syncer) validateDefaultBranch(ctx context.Context, moduleIdentity bufmo
 	return nil
 }
 
-// TODO: remove
+// FIXME: remove
 func (s *syncer) printValidation() {
 	s.logger.Debug(
 		"sync prepared",
