@@ -35,14 +35,14 @@ type syncableCommit struct {
 // branch. A commit in the array might have no modules to sync if those are skipped by the
 // Syncer error handler, or are a found sync point.
 func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]syncableCommit, error) {
-	modulesToSync, ok := s.branchesModulesToSync[branch]
-	if !ok || len(modulesToSync) == 0 {
+	branchModulesToSync, ok := s.branchesModulesToSync[branch]
+	if !ok || len(branchModulesToSync) == 0 {
 		// branch should not be synced, or no modules to sync in that branch
 		return nil, nil
 	}
 	// Copy all branch modules to sync and mark them as pending, until its starting sync point is
 	// reached. They'll be removed from this list as its initial sync point is found.
-	pendingModules := s.copyBranchModulesSync(branch, modulesToSync)
+	pendingModules := s.copyBranchModulesSync(branch, branchModulesToSync)
 	var commitsToSync []syncableCommit
 	// travel branch commits from HEAD and check if they're already synced, until finding a synced git
 	// commit, or adding them all to be synced
@@ -64,7 +64,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 				zap.String("module identity in branch HEAD", moduleIdentityInHEAD),
 				zap.Stringp("expected sync point", pendingModule.expectedSyncPoint),
 			)
-			// check if the module identity already synced this commit
+			// check if the remote module already synced this commit
 			isSynced, err := s.isGitCommitSynced(ctx, pendingModule.moduleIdentityInHEAD, commitHash)
 			if err != nil {
 				return fmt.Errorf(
@@ -84,8 +84,8 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 				}
 				if commitHash != *pendingModule.expectedSyncPoint {
 					if s.repo.DefaultBranch() == branch {
-						// TODO: add details to error message saying: "run again with --force-branch-sync <branch
-						// name>" when we support a flag like that.
+						// if we reached a commit that is already synced, but it's not the expected one in the
+						// default branch, abort sync.
 						return fmt.Errorf(
 							"found synced git commit %s for default branch %s, but expected sync point was %s, "+
 								"did you rebase or reset your default branch?",
@@ -95,7 +95,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 						)
 					}
 					// syncing non-default branches from an unexpected sync point can be a common scenario in
-					// PRs, we can just WARN and continue
+					// PRs, we can just WARN and stop looking back for this branch.
 					logger.Warn(
 						"unexpected sync point reached, stop looking back in branch",
 						zap.String("found_sync_point", commitHash),
@@ -105,7 +105,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 				}
 				continue
 			}
-			// git commit is not synced, attempt to read module in the commit:moduleDir
+			// git commit is not synced, attempt to read the module in the commit:moduleDir
 			builtModule, readErr := s.readModuleAt(ctx, branch, commit, moduleDir, &moduleIdentityInHEAD)
 			if readErr != nil {
 				if s.errorHandler.StopLookback(readErr) {
@@ -113,7 +113,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 					modulesDirsToStopInThisCommit[moduleDir] = struct{}{}
 					continue
 				}
-				logger.Warn("read module at commit failed, skipping commit", zap.Error(readErr))
+				logger.Debug("read module at commit failed, skipping commit", zap.Error(readErr))
 				continue
 			}
 			// add the read module to sync
@@ -135,7 +135,8 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 	if len(commitsToSync) == 0 {
 		return nil, nil
 	}
-	// we reached the branch starting point, do we still have pending modules?
+	// we reached a stopping point for all modules or the branch starting point (no  more commit
+	// parents), do we still have pending modules?
 	for moduleDir, pendingModule := range pendingModules {
 		moduleIdentityInHEAD := pendingModule.moduleIdentityInHEAD.IdentityString()
 		logger := s.logger.With(
@@ -178,11 +179,12 @@ type moduleTarget struct {
 	expectedSyncPoint    *string
 }
 
-// copyBranchModulesSync makes a copy of the modules to sync and returns it in the format of module
-// targets, which have the module identity in HEAD, and the expected sync point, if any.
-func (s *syncer) copyBranchModulesSync(branch string, modulesToSync map[string]bufmoduleref.ModuleIdentity) map[string]moduleTarget {
-	pendingModules := make(map[string]moduleTarget, len(modulesToSync))
-	for moduleDir, moduleIdentityInHEAD := range modulesToSync {
+// copyBranchModulesSync makes a copy of the modules to sync in the branch and returns it in the format of
+// moduleDir:moduleTarget, which have the module identity in HEAD, and the expected sync point, if
+// any.
+func (s *syncer) copyBranchModulesSync(branch string, branchModulesToSync map[string]bufmoduleref.ModuleIdentity) map[string]moduleTarget {
+	pendingModules := make(map[string]moduleTarget, len(branchModulesToSync))
+	for moduleDir, moduleIdentityInHEAD := range branchModulesToSync {
 		var expectedSyncPoint *string
 		if moduleSyncPoints, ok := s.modulesBranchesLastSyncPoints[moduleIdentityInHEAD.IdentityString()]; ok {
 			if moduleBranchSyncPoint, ok := moduleSyncPoints[branch]; ok {
