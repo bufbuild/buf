@@ -491,7 +491,6 @@ func ModifyRubyPackage(
 	}
 	descriptor.Options.RubyPackage = proto.String(rubyPackageValue)
 	marker.Mark(imageFile, internal.RubyPackagePath)
-	return
 }
 
 type modifyStringValueOptions struct {

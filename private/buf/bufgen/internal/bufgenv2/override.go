@@ -30,8 +30,7 @@ func (p prefixOverride) get() string {
 	return string(p)
 }
 
-func (p prefixOverride) override()       {}
-func (p prefixOverride) prefixOverride() {}
+func (p prefixOverride) override() {}
 
 type suffixOverride string
 
@@ -43,8 +42,7 @@ func (s suffixOverride) get() string {
 	return string(s)
 }
 
-func (s suffixOverride) override()       {}
-func (s suffixOverride) suffixOverride() {}
+func (s suffixOverride) override() {}
 
 type prefixSuffixOverride struct {
 	prefix string
@@ -66,8 +64,7 @@ func (p prefixSuffixOverride) getSuffix() string {
 	return p.suffix
 }
 
-func (p prefixSuffixOverride) override()             {}
-func (p prefixSuffixOverride) prefixSuffixOverride() {}
+func (p prefixSuffixOverride) override() {}
 
 type valueOverride[
 	T string |
@@ -93,5 +90,4 @@ func (v valueOverride[T]) get() T {
 	return v.value
 }
 
-func (v valueOverride[T]) override()      {}
-func (v valueOverride[T]) valueOverride() {}
+func (v valueOverride[T]) override() {}
