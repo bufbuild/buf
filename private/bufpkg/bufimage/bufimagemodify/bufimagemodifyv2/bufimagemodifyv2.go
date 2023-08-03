@@ -249,6 +249,9 @@ func ModifyGoPackage(
 	if descriptor.Options.GetGoPackage() == goPackageValue {
 		return nil
 	}
+	if goPackageValue == "" {
+		return nil
+	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
