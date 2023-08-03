@@ -47,6 +47,8 @@ type syncer struct {
 	// We don't cache "unsynced" git commits, since during the sync process we will be syncing new git
 	// commits, which will be added to this cache when they are.
 	syncedModulesCommitsCache map[string]map[string]struct{}
+	// syncedCommits holds all the synced commits hashes in this run of sync, by any branch.
+	syncedCommits map[string]struct{}
 }
 
 func newSyncer(
@@ -66,6 +68,7 @@ func newSyncer(
 		branchesModulesToSync:         make(map[string]map[string]string),
 		modulesBranchesLastSyncPoints: make(map[string]map[string]string),
 		syncedModulesCommitsCache:     make(map[string]map[string]struct{}),
+		syncedCommits:                 make(map[string]struct{}),
 	}
 	for _, opt := range options {
 		if err := opt(s); err != nil {
@@ -135,11 +138,12 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 	}
 	s.printCommitsToSync(branch, commitsToSync)
 	for _, commitToSync := range commitsToSync {
+		commitHash := commitToSync.commit.Hash().Hex()
 		if len(commitToSync.modules) == 0 {
 			s.logger.Debug(
 				"branch commit with no modules to sync, skipping commit",
 				zap.String("branch", branch),
-				zap.String("commit", commitToSync.commit.Hash().Hex()),
+				zap.String("commit", commitHash),
 			)
 			continue
 		}
@@ -149,7 +153,7 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 				s.logger.Debug(
 					"module directory not present in modules to sync for branch commit, skipping module",
 					zap.String("branch", branch),
-					zap.String("commit", commitToSync.commit.Hash().Hex()),
+					zap.String("commit", commitHash),
 					zap.String("module directory", moduleDir),
 				)
 				continue
@@ -162,16 +166,17 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 					builtModule.Bucket,
 					commitToSync.commit,
 					branch,
-					s.commitsTags[commitToSync.commit.Hash().Hex()],
+					s.commitsTags[commitHash],
 				),
 			); err != nil {
-				return fmt.Errorf("sync module %s:%s in commit %s: %w", moduleDir, modIdentity, commitToSync.commit.Hash().Hex(), err)
+				return fmt.Errorf("sync module %s:%s in commit %s: %w", moduleDir, modIdentity, commitHash, err)
 			}
 			// module was synced successfully, add it to the cache
+			s.syncedCommits[commitHash] = struct{}{}
 			if s.syncedModulesCommitsCache[modIdentity] == nil {
 				s.syncedModulesCommitsCache[modIdentity] = make(map[string]struct{})
 			}
-			s.syncedModulesCommitsCache[modIdentity][commitToSync.commit.Hash().Hex()] = struct{}{}
+			s.syncedModulesCommitsCache[modIdentity][commitHash] = struct{}{}
 		}
 	}
 	return nil
