@@ -73,10 +73,15 @@ func (s *syncer) readModuleAt(
 		ctx,
 		moduleBucket,
 		sourceConfig.Build,
+		bufmodulebuild.WithModuleIdentity(sourceConfig.ModuleIdentity),
 	)
 	if err != nil {
 		readErr.code = ReadModuleErrorCodeBuildModule
 		readErr.err = fmt.Errorf("build module: %w", err)
+		return nil, readErr
+	}
+	if builtModule.ModuleIdentity() == nil {
+		readErr.err = errors.New("built module has nil identity")
 		return nil, readErr
 	}
 	return builtModule, nil

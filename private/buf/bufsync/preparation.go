@@ -55,9 +55,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		if _, isCurrentBranchPushedInRemote := allRemoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
 			return fmt.Errorf("current branch %s is not present in 'origin' remote", currentBranch)
 		}
-		s.branchesModulesToSync = map[string]map[string]bufmoduleref.ModuleIdentity{
-			currentBranch: make(map[string]bufmoduleref.ModuleIdentity),
-		}
+		s.branchesModulesToSync[currentBranch] = make(map[string]bufmoduleref.ModuleIdentity)
 		s.logger.Debug("current branch", zap.String("name", currentBranch))
 	}
 	// Populate module identities from HEAD, and its sync points if any
@@ -72,10 +70,13 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			if readErr != nil {
 				// any error reading module in HEAD, skip syncing that module in that branch
 				s.logger.Warn(
-					"read module directory in branch HEAD commit failed, module won't be synced for this branch",
+					"read module from HEAD failed, module won't be synced for this branch",
 					zap.Error(readErr),
 				)
 				continue
+			}
+			if builtModule == nil || builtModule.ModuleIdentity() == nil {
+				return fmt.Errorf("nil built module or built module identity for dir %s in branch %s HEAD", moduleDir, branch)
 			}
 			// there is a valid module in the module dir at the HEAD of this branch, enqueue it for sync
 			s.branchesModulesToSync[branch][moduleDir] = builtModule.ModuleIdentity()
@@ -159,10 +160,7 @@ func (s *syncer) validateDefaultBranch(ctx context.Context, moduleIdentity bufmo
 
 // TODO: remove
 func (s *syncer) printValidation() {
-	var (
-		branchesModulesToSync     = make(map[string]map[string]string)
-		modulesBranchesSyncPoints = make(map[string]map[string]string)
-	)
+	branchesModulesToSync := make(map[string]map[string]string)
 	for branch, modules := range s.branchesModulesToSync {
 		m := make(map[string]string)
 		for moduleDir, moduleIdentity := range modules {
@@ -170,6 +168,7 @@ func (s *syncer) printValidation() {
 		}
 		branchesModulesToSync[branch] = m
 	}
+	modulesBranchesSyncPoints := make(map[string]map[string]string)
 	for moduleIdentity, branches := range s.modulesBranchesSyncPoints {
 		b := make(map[string]string)
 		for branch, syncPoint := range branches {
@@ -179,7 +178,7 @@ func (s *syncer) printValidation() {
 			}
 			b[branch] = syncPointHash
 		}
-		branchesModulesToSync[moduleIdentity.IdentityString()] = b
+		modulesBranchesSyncPoints[moduleIdentity.IdentityString()] = b
 	}
 	s.logger.Debug(
 		"sync prepared",
