@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add support for the `--http2-prior-knowledge` flag when running `buf curl`
+  against secure "https" URLs. This can be used with gRPC servers, that only
+  support HTTP/2, when used with a network (layer 4) load balancer, that does
+  not support protocol negotiation in TLS handshake.
 
 ## [v1.25.1] - 2023-08-02
 
