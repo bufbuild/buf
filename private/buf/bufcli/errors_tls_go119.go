@@ -12,26 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build go1.19
+//go:build !go1.20
 
-package bufpluginexec
+package bufcli
 
 import (
 	"errors"
-	"os/exec"
+	"strings"
 )
 
-// unsafeLookPath is a wrapper around exec.LookPath that restores the original
-// pre-Go 1.19 behavior of resolving queries that would use relative PATH
-// entries. We consider it acceptable for the use case of locating plugins.
-//
-// On Go 1.18 and below, this function is just a direct call to exec.LookPath.
-//
-// https://pkg.go.dev/os/exec#hdr-Executables_in_the_current_directory
-func unsafeLookPath(file string) (string, error) {
-	path, err := exec.LookPath(file)
-	if errors.Is(err, exec.ErrDot) {
-		err = nil
+// wrappedTLSError returns an unwrapped TLS error or nil if the error is another type of error.
+// This method is a workaround until we can switch to use errors.As(err, *tls.CertificateVerificationError),
+// which is a new error type introduced in Go 1.20. This can be removed when we upgrade to support Go 1.20/1.21+.
+func wrappedTLSError(err error) error {
+	wrapped := errors.Unwrap(err)
+	if wrapped == nil {
+		return nil
 	}
-	return path, err
+	if strings.HasPrefix(wrapped.Error(), "x509:") && strings.HasSuffix(wrapped.Error(), "certificate is not trusted") {
+		return wrapped
+	}
+	return nil
 }
