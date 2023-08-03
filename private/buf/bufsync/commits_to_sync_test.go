@@ -19,8 +19,10 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
@@ -28,20 +30,27 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	// share git repo, bsr checker and modules to sync for all the test scenarios, as a regular `buf
 	// sync` run would do.
 	mockBSRChecker := newMockSyncGitChecker()
-	someModule, err := bufmoduleref.NewModuleIdentity("buf.test", "owner", "repo")
-	require.NoError(t, err)
-	moduleToSync, err := newSyncableModule(".", someModule)
+	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
 	require.NoError(t, err)
 	// scaffoldGitRepository returns a repo with the following commits:
 	// | o-o----------o-----------------o (main)
 	// |   └o-o (foo) └o--------o (bar)
 	// |               └o (baz)
-	repo := scaffoldGitRepository(t)
+	repo := scaffoldGitRepository(t, moduleIdentityInHEAD)
 	s := syncer{
-		repo:                   repo,
-		modulesToSync:          []Module{moduleToSync},
-		syncedGitCommitChecker: mockBSRChecker.checkFunc(),
+		repo:                          repo,
+		storageGitProvider:            storagegit.NewProvider(repo.Objects()),
+		logger:                        zaptest.NewLogger(t),
+		modulesDirsToSync:             map[string]struct{}{".": {}},
+		sortedModulesDirsToSync:       []string{"."},
+		syncAllBranches:               true,
+		syncedGitCommitChecker:        mockBSRChecker.checkFunc(),
+		commitsTags:                   make(map[string][]string),
+		branchesModulesToSync:         make(map[string]map[string]bufmoduleref.ModuleIdentity),
+		modulesBranchesLastSyncPoints: make(map[string]map[string]string),
+		syncedModulesCommitsCache:     make(map[string]map[string]struct{}),
 	}
+	require.NoError(t, s.prepareSync(context.Background()))
 
 	type testCase struct {
 		name            string
@@ -57,35 +66,43 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 		{
 			name:            "when_foo",
 			branch:          "foo",
-			expectedCommits: 2,
+			expectedCommits: 3, // counting the commit that branches off main
 		},
 		{
 			name:            "when_bar",
 			branch:          "bar",
-			expectedCommits: 2,
+			expectedCommits: 3, // counting the commit that branches off main
 		},
 		{
 			name:            "when_baz",
 			branch:          "baz",
-			expectedCommits: 1,
+			expectedCommits: 2, // counting the commit that branches off bar
 		},
 	}
 	for _, tc := range testCases {
 		func(tc testCase) {
 			t.Run(tc.name, func(t *testing.T) {
-				syncableCommits, err := s.commitsToSync(
+				syncableCommits, err := s.branchCommitsToSync(
 					context.Background(),
 					tc.branch,
-					nil,
 				)
+				// uncomment for debug purposes
+				// s.printCommitsToSync(tc.branch, syncableCommits)
 				require.NoError(t, err)
 				require.Len(t, syncableCommits, tc.expectedCommits)
-				for _, syncableCommit := range syncableCommits {
+				for i, syncableCommit := range syncableCommits {
 					assert.NotEmpty(t, syncableCommit.commit.Hash().Hex())
 					mockBSRChecker.markSynced(syncableCommit.commit.Hash().Hex())
-					assert.Equal(t, len(syncableCommit.modules), 1)
-					for module := range syncableCommit.modules {
-						assert.Equal(t, someModule.IdentityString(), module.RemoteIdentity().IdentityString())
+					if tc.branch != "main" && i == 0 {
+						// first commit in non-default branches will come with no modules to sync, because it's
+						// the commit in which it branches off the parent branch.
+						assert.Empty(t, syncableCommit.modules)
+					} else {
+						assert.Len(t, syncableCommit.modules, 1)
+						for moduleDir, builtModule := range syncableCommit.modules {
+							assert.Equal(t, ".", moduleDir)
+							assert.Equal(t, moduleIdentityInHEAD.IdentityString(), builtModule.ModuleIdentity().IdentityString())
+						}
 					}
 				}
 			})

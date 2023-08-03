@@ -21,9 +21,11 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/stretchr/testify/require"
@@ -33,9 +35,9 @@ import (
 // | o-o----------o-----------------o (master)
 // |   └o-o (foo) └o--------o (bar)
 // |               └o (baz)
-func scaffoldGitRepository(t *testing.T) git.Repository {
+func scaffoldGitRepository(t *testing.T, moduleIdentity bufmoduleref.ModuleIdentity) git.Repository {
 	runner := command.NewRunner()
-	dir := scaffoldGitRepositoryDir(t, runner)
+	dir := scaffoldGitRepositoryDir(t, runner, moduleIdentity)
 	dotGitPath := path.Join(dir, git.DotGitDir)
 	repo, err := git.OpenRepository(
 		context.Background(),
@@ -49,7 +51,7 @@ func scaffoldGitRepository(t *testing.T) git.Repository {
 	return repo
 }
 
-func scaffoldGitRepositoryDir(t *testing.T, runner command.Runner) string {
+func scaffoldGitRepositoryDir(t *testing.T, runner command.Runner, moduleIdentity bufmoduleref.ModuleIdentity) string {
 	dir := t.TempDir()
 
 	// setup local and remote
@@ -67,7 +69,7 @@ func scaffoldGitRepositoryDir(t *testing.T, runner command.Runner) string {
 	var allBranches = []string{defaultBranch, "foo", "bar", "baz"}
 
 	var commitsCounter int
-	doCommit := func(numOfCommits int) {
+	doEmptyCommit := func(numOfCommits int) {
 		for i := 0; i < numOfCommits; i++ {
 			commitsCounter++
 			runInDir(
@@ -78,19 +80,26 @@ func scaffoldGitRepositoryDir(t *testing.T, runner command.Runner) string {
 		}
 	}
 
-	doCommit(2)
+	// write the base module in the root
+	writeFiles(t, localDir, map[string]string{
+		"buf.yaml": fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString()),
+	})
+	runInDir(t, runner, localDir, "git", "add", ".")
+	runInDir(t, runner, localDir, "git", "commit", "-m", "commit 0")
+
+	doEmptyCommit(1)
 	runInDir(t, runner, localDir, "git", "checkout", "-b", allBranches[1])
-	doCommit(2)
+	doEmptyCommit(2)
 	runInDir(t, runner, localDir, "git", "checkout", defaultBranch)
-	doCommit(1)
+	doEmptyCommit(1)
 	runInDir(t, runner, localDir, "git", "checkout", "-b", allBranches[2])
-	doCommit(1)
+	doEmptyCommit(1)
 	runInDir(t, runner, localDir, "git", "checkout", "-b", allBranches[3])
-	doCommit(1)
+	doEmptyCommit(1)
 	runInDir(t, runner, localDir, "git", "checkout", allBranches[2])
-	doCommit(1)
+	doEmptyCommit(1)
 	runInDir(t, runner, localDir, "git", "checkout", defaultBranch)
-	doCommit(1)
+	doEmptyCommit(1)
 
 	// push them all
 	const remoteName = "origin"
@@ -121,4 +130,11 @@ func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args 
 		require.NoError(t, err)
 	}
 	require.NoError(t, err)
+}
+
+func writeFiles(t *testing.T, dir string, files map[string]string) {
+	for path, contents := range files {
+		require.NoError(t, os.MkdirAll(filepath.Join(dir, filepath.Dir(path)), 0700))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, path), []byte(contents), 0600))
+	}
 }
