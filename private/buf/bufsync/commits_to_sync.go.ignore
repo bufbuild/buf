@@ -77,7 +77,7 @@ func (s *syncer) commitsToSync(
 			}
 			isSynced, err := s.isGitCommitSynced(ctx, moduleDir, commitHash)
 			if err != nil {
-				return fmt.Errorf("check if module %q already synced git commit %q: %w", moduleDir.String(), commitHash, err)
+				return fmt.Errorf("check if module %s already synced git commit %s: %w", moduleDir.String(), commitHash, err)
 			}
 			if !isSynced {
 				modulesToSyncInThisCommit[moduleDir] = struct{}{}
@@ -96,7 +96,7 @@ func (s *syncer) commitsToSync(
 					// TODO: add details to error message saying: "run again with --force-branch-sync <branch
 					// name>" when we support a flag like that.
 					return fmt.Errorf(
-						"found synced git commit %q for default branch %q, but expected sync point was %q, did you rebase or reset your default branch?",
+						"found synced git commit %s for default branch %s, but expected sync point was %s, did you rebase or reset your default branch?",
 						commitHash,
 						branch,
 						expectedSyncPoint,
@@ -126,7 +126,7 @@ func (s *syncer) commitsToSync(
 			// no modules to sync in this commit, we should not have any pending modules
 			if len(pendingModulesDirs) > 0 {
 				return fmt.Errorf(
-					"commit %q has no modules to sync, but still has pending modules %v",
+					"commit %s has no modules to sync, but still has pending modules %v",
 					commitHash,
 					pendingModulesDirs,
 				)

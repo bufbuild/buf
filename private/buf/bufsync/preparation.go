@@ -44,7 +44,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		// make sure the default branch is present in the branches to sync
 		defaultBranch := s.repo.DefaultBranch()
 		if _, isDefaultBranchPushedInRemote := allRemoteBranches[defaultBranch]; !isDefaultBranchPushedInRemote {
-			return fmt.Errorf(`default branch %q is not present in "origin" remote`, defaultBranch)
+			return fmt.Errorf("default branch %s is not present in 'origin' remote", defaultBranch)
 		}
 		for remoteBranch := range allRemoteBranches {
 			s.branchesModulesToSync[remoteBranch] = make(map[string]bufmoduleref.ModuleIdentity)
@@ -53,7 +53,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		// only sync current branch, make sure it's present in the remote
 		currentBranch := s.repo.CurrentBranch()
 		if _, isCurrentBranchPushedInRemote := allRemoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
-			return fmt.Errorf(`current branch %q is not present in "origin" remote`, currentBranch)
+			return fmt.Errorf("current branch %s is not present in 'origin' remote", currentBranch)
 		}
 		s.branchesModulesToSync = map[string]map[string]bufmoduleref.ModuleIdentity{
 			currentBranch: make(map[string]bufmoduleref.ModuleIdentity),
@@ -65,7 +65,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	for branch := range s.branchesModulesToSync {
 		headCommit, err := s.repo.HEADCommit(branch)
 		if err != nil {
-			return fmt.Errorf("reading head commit for branch %q: %w", branch, err)
+			return fmt.Errorf("reading head commit for branch %s: %w", branch, err)
 		}
 		for moduleDir := range s.modulesDirsToSync {
 			builtModule, readErr := s.readModuleAt(ctx, branch, headCommit, moduleDir)
@@ -83,7 +83,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			moduleBranchSyncpoint, err := s.resolveSyncPoint(ctx, builtModule.ModuleIdentity(), branch)
 			if err != nil {
 				return fmt.Errorf(
-					"resolve sync point for module %q in branch %q: %w",
+					"resolve sync point for module %s in branch %s: %w",
 					branch, builtModule.ModuleIdentity().IdentityString(), err,
 				)
 			}
@@ -100,7 +100,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	// branch as the local git default branch.
 	for moduleIdentity := range allModulesIdentitiesToSync {
 		if err := s.validateDefaultBranch(ctx, moduleIdentity); err != nil {
-			return fmt.Errorf("validate default branch for module %q: %w", moduleIdentity.IdentityString(), err)
+			return fmt.Errorf("validate default branch for module %s: %w", moduleIdentity.IdentityString(), err)
 		}
 	}
 	return nil
@@ -150,7 +150,7 @@ func (s *syncer) validateDefaultBranch(ctx context.Context, moduleIdentity bufmo
 	}
 	if bsrDefaultBranch != expectedDefaultGitBranch {
 		return fmt.Errorf(
-			"remote module default branch %q does not match the git repository's default branch %q, aborting sync",
+			"remote module default branch %s does not match the git repository's default branch %s, aborting sync",
 			bsrDefaultBranch, expectedDefaultGitBranch,
 		)
 	}

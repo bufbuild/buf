@@ -88,7 +88,7 @@ func SyncerWithModule(moduleDir string) SyncerOption {
 	return func(s *syncer) error {
 		moduleDir = normalpath.Normalize(moduleDir)
 		if _, alreadyAdded := s.modulesDirsToSync[moduleDir]; alreadyAdded {
-			return fmt.Errorf("module directory %q already added", moduleDir)
+			return fmt.Errorf("module directory %s already added", moduleDir)
 		}
 		s.modulesDirsToSync[moduleDir] = struct{}{}
 		s.sortedModulesDirsToSync = append(s.sortedModulesDirsToSync, moduleDir)

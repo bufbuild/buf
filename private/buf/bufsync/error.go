@@ -57,7 +57,7 @@ type ReadModuleError struct {
 
 func (e *ReadModuleError) Error() string {
 	return fmt.Sprintf(
-		"read module in branch %q, commit %q, directory %q: %s",
+		"read module in branch %s, commit %s, directory %s: %s",
 		e.branch, e.commit, e.moduleDir, e.err.Error(),
 	)
 }

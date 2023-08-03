@@ -86,7 +86,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	defaultBranch := s.repo.DefaultBranch()
 	if _, shouldSyncDefaultBranch := s.branchesModulesToSync[defaultBranch]; shouldSyncDefaultBranch {
 		if err := s.syncBranch(ctx, defaultBranch, syncFunc); err != nil {
-			return fmt.Errorf("sync default branch %q: %w", defaultBranch, err)
+			return fmt.Errorf("sync default branch %s: %w", defaultBranch, err)
 		}
 	}
 	// then the rest of the branches, in a deterministic order
@@ -100,7 +100,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	sort.Strings(sortedBranchesToSync)
 	for _, branch := range sortedBranchesToSync {
 		if err := s.syncBranch(ctx, branch, syncFunc); err != nil {
-			return fmt.Errorf("sync branch %q: %w", branch, err)
+			return fmt.Errorf("sync branch %s: %w", branch, err)
 		}
 	}
 	return nil
@@ -129,7 +129,7 @@ func (s *syncer) syncBranch(
 	// 			continue
 	// 		}
 	// 		if err := s.syncModule(ctx, branch, commitToSync.commit, module, syncFunc); err != nil {
-	// 			return fmt.Errorf("sync module %q in commit %q: %w", module.String(), commitToSync.commit.Hash().Hex(), err)
+	// 			return fmt.Errorf("sync module %s in commit %s: %w", module.String(), commitToSync.commit.Hash().Hex(), err)
 	// 		}
 	// 	}
 	// }
