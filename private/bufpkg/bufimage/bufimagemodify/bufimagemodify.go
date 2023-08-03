@@ -207,41 +207,22 @@ func OptimizeFor(
 
 // GoPackageImportPathForFile returns the go_package import path for the given
 // ImageFile. If the package contains a version suffix, and if there are more
-// than two components, concatenate the final two components. Otherwise, we
-// exclude the ';' separator and adopt the default behavior from the import path.
-//
-// For example, an ImageFile with `package acme.weather.v1;` will include `;weatherv1`
-// in the `go_package` declaration so that the generated package is named as such.
-func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix string) string {
-	goPackageImportPath := path.Join(importPathPrefix, path.Dir(imageFile.Path()))
-	packageName := imageFile.FileDescriptor().GetPackage()
-	if _, ok := protoversion.NewPackageVersionForPackage(packageName); ok {
-		parts := strings.Split(packageName, ".")
-		if len(parts) >= 2 {
-			goPackageImportPath += ";" + parts[len(parts)-2] + parts[len(parts)-1]
-		}
-	}
-	return goPackageImportPath
-}
-
-// GoPackageImportPathForFileParted returns the go_package import path for the given
-// ImageFile. If the package contains a version suffix, and if there are more
 // than input parts number components, concatenate the final parts components. Otherwise, we
 // exclude the ';' separator and adopt the default behavior from the import path.
 //
-// For example, an ImageFile with `package acme.weather.v1;` partsNumber 2 will include `;weatherv1`
+// For example, an ImageFile with `package acme.weather.v1;` parts 2 will include `;weatherv1`
 // If the package is more deeply nested, i.e. 'package acme.weather.admin.v1;'
-// with partsNumber 3 will include `;weatheradminv1`
+// with parts 3 will include `;weatheradminv1`
 // in the `go_package` declaration so that the generated package is named as such.
-func GoPackageImportPathForFileParted(imageFile bufimage.ImageFile, importPathPrefix string, partsNumber uint) string {
+func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix string, parts uint) string {
 	goPackageImportPath := path.Join(importPathPrefix, path.Dir(imageFile.Path()))
 	packageName := imageFile.FileDescriptor().GetPackage()
 	if _, ok := protoversion.NewPackageVersionForPackage(packageName); ok {
-		parts := strings.Split(packageName, ".")
-		if len(parts) >= int(partsNumber) {
+		pkgParts := strings.Split(packageName, ".")
+		if len(pkgParts) >= int(parts) {
 			goPackageImportPath += ";"
-			for i := len(parts) - int(partsNumber); i < len(parts); i++ {
-				goPackageImportPath += parts[i]
+			for i := len(pkgParts) - int(parts); i < len(pkgParts); i++ {
+				goPackageImportPath += pkgParts[i]
 			}
 		}
 	}
