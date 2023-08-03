@@ -316,12 +316,11 @@ func newErrorHandler(logger *zap.Logger) bufsync.ErrorHandler {
 	return &syncErrorHandler{logger: logger}
 }
 
-func (s *syncErrorHandler) ReadModule(err *bufsync.ReadModuleError) error {
-	s.logger.Warn(
-		"error reading module",
-		zap.Error(err),
-	)
-	return nil
+func (s *syncErrorHandler) StopLookback(err *bufsync.ReadModuleError) bool {
+	// For this first alpha iteration, we're not stopping at any read error when looking back commits
+	// for a sync start point, and just skipping them to sync possible valid modules in older commits.
+	// We might change this behavior after new findings.
+	return false
 }
 
 func (s *syncErrorHandler) InvalidSyncPoint(

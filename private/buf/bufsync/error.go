@@ -64,15 +64,15 @@ func (e *ReadModuleError) Error() string {
 
 // ErrorHandler handles errors reported by the Syncer before or during the sync process.
 type ErrorHandler interface {
-	// ReadModule is invoked when deciding on a git start sync point.
+	// StopLookback is invoked when deciding on a git start sync point.
 	//
-	// For each branch to be synced, the Syncer travels back from HEAD looking for modules in the given
-	// module directories, until finding a commit that is already synced to the BSR, or the beginning of
-	// the Git repository.
+	// For each branch to be synced, the Syncer travels back from HEAD looking for modules in the
+	// given module directories, until finding a commit that is already synced to the BSR, or the
+	// beginning of the Git repository.
 	//
-	// The syncer might find errors trying to read a module in that directory. Those errors are sent to
-	// this error handler, and if a non-nil error is returned, the Syncer will stop looking back, and
-	// choose the previous one (if any) as the start sync point.
+	// The syncer might find errors trying to read a module in that directory. Those errors are sent
+	// to this function to decide if the Syncer should stop looking back or not, and choose the
+	// previous one (if any) as the start sync point.
 	//
 	// e.g.: The git commits in topological order are: `a -> ... -> z (HEAD)`, and the modules on a
 	// given module directory are:
@@ -89,16 +89,14 @@ type ErrorHandler interface {
 	// s      | buf.build/acme/foo     | Y                | same as HEAD
 	// r      | buf.build/acme/foo     | N                | already synced to the BSR
 	//
-	// If no error is ever returned for any `ReadModuleErrorCode`, then the syncer will stop looking
+	// If this func returns 'true' for any `ReadModuleErrorCode`, then the syncer will stop looking
 	// when reaching the commit `r` because it already exists in the BSR, select `s` as the start sync
 	// point, and the synced commits into the BSR will be [s, t, x, y, z].
 	//
-	// On the other hand, if a not-nil error is returned for `ReadModuleErrorCodeModuleNotFound`, the
+	// On the other hand, if this func returns true for `ReadModuleErrorCodeModuleNotFound`, the
 	// syncer will stop looking when reaching the commit `u`, will select `v` as the start sync point,
 	// and the synced commits into the BSR will be [x, y, z].
-	//
-	// FIXME: make it just a bool decision maker.
-	ReadModule(err *ReadModuleError) error
+	StopLookback(err *ReadModuleError) bool
 	// InvalidSyncPoint is invoked by Syncer upon encountering a module's branch sync point that is
 	// invalid. A typical example is either a sync point that points to a commit that cannot be found
 	// anymore, or the commit itself has been corrupted.

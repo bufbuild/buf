@@ -87,11 +87,11 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 				)
 			}
 			allModulesIdentitiesToSync[moduleIdentity] = builtModule.ModuleIdentity()
-			if s.modulesBranchesSyncPoints[moduleIdentity] == nil {
-				s.modulesBranchesSyncPoints[moduleIdentity] = make(map[string]string)
+			if s.modulesBranchesLastSyncPoints[moduleIdentity] == nil {
+				s.modulesBranchesLastSyncPoints[moduleIdentity] = make(map[string]string)
 			}
 			if moduleBranchSyncPoint != nil {
-				s.modulesBranchesSyncPoints[moduleIdentity][branch] = moduleBranchSyncPoint.Hex()
+				s.modulesBranchesLastSyncPoints[moduleIdentity][branch] = moduleBranchSyncPoint.Hex()
 			}
 		}
 	}
@@ -163,6 +163,6 @@ func (s *syncer) printValidation() {
 		zap.Any("modulesDirsToSync", s.modulesDirsToSync),
 		zap.Any("commitsTags", s.commitsTags),
 		zap.Any("branchesModulesToSync", s.branchesModulesToSync),
-		zap.Any("modulesBranchesSyncPoints", s.modulesBranchesSyncPoints),
+		zap.Any("modulesBranchesSyncPoints", s.modulesBranchesLastSyncPoints),
 	)
 }

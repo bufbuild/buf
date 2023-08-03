@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"go.uber.org/zap"
@@ -38,9 +39,16 @@ type syncer struct {
 	modulesDirsToSync       map[string]struct{}
 	syncAllBranches         bool
 
-	commitsTags               map[string][]string          // commits:[]tags
-	branchesModulesToSync     map[string]map[string]string // branch:moduleDir:moduleIdentityInHEAD
-	modulesBranchesSyncPoints map[string]map[string]string // moduleIdentity:branch:syncPointGitHash
+	commitsTags                   map[string][]string          // commits:[]tags
+	branchesModulesToSync         map[string]map[string]string // branch:moduleDir:moduleIdentityInHEAD
+	modulesBranchesLastSyncPoints map[string]map[string]string // moduleIdentity:branch:lastSyncPointGitHash
+
+	// modulesCommitsSyncedStatusCache caches isGitCommitSynced requests from the BSR, so we don't ask
+	// twice the same module:commit.
+	modulesCommitsSyncedStatusCache map[string]map[string]bool // moduleIdentity:commit:isSynced
+	// commitModulesCache caches builtNamedModules from specific commit and module directories in the
+	// git repo, so we don't read the same commit:moduleDir twice.
+	commitModulesCache map[string]map[string]bufmodulebuild.BuiltModule // commit:moduleDir:builtModule
 }
 
 func newSyncer(
@@ -51,14 +59,16 @@ func newSyncer(
 	options ...SyncerOption,
 ) (Syncer, error) {
 	s := &syncer{
-		logger:                    logger,
-		repo:                      repo,
-		storageGitProvider:        storageGitProvider,
-		errorHandler:              errorHandler,
-		modulesDirsToSync:         make(map[string]struct{}),
-		commitsTags:               make(map[string][]string),
-		branchesModulesToSync:     make(map[string]map[string]string),
-		modulesBranchesSyncPoints: make(map[string]map[string]string),
+		logger:                          logger,
+		repo:                            repo,
+		storageGitProvider:              storageGitProvider,
+		errorHandler:                    errorHandler,
+		modulesDirsToSync:               make(map[string]struct{}),
+		commitsTags:                     make(map[string][]string),
+		branchesModulesToSync:           make(map[string]map[string]string),
+		modulesBranchesLastSyncPoints:   make(map[string]map[string]string),
+		modulesCommitsSyncedStatusCache: make(map[string]map[string]bool),
+		commitModulesCache:              make(map[string]map[string]bufmodulebuild.BuiltModule),
 	}
 	for _, opt := range options {
 		if err := opt(s); err != nil {

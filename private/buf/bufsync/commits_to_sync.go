@@ -49,7 +49,7 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 	pendingModules := make(map[string]moduleTarget, len(modulesToSync))
 	for moduleDir, moduleIdentityInHEAD := range modulesToSync {
 		var expectedSyncPoint *string
-		if moduleSyncPoints, ok := s.modulesBranchesSyncPoints[moduleIdentityInHEAD]; ok {
+		if moduleSyncPoints, ok := s.modulesBranchesLastSyncPoints[moduleIdentityInHEAD]; ok {
 			if moduleBranchSyncPoint, ok := moduleSyncPoints[branch]; ok {
 				expectedSyncPoint = &moduleBranchSyncPoint
 			}
@@ -81,14 +81,12 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 			)
 			builtModule, readErr := s.readModuleAt(ctx, branch, commit, moduleDir)
 			if readErr != nil {
-				if err := s.errorHandler.ReadModule(readErr); err != nil {
-					logger.Warn("error reading module, stop looking back", zap.Error(readErr))
-					// receiving a not-nil error from the error handler means stop looking further back for
-					// this module in this branch.
+				if s.errorHandler.StopLookback(readErr) {
+					logger.Warn("read module at commit failed, stop looking back", zap.Error(readErr))
 					modulesDirsFoundSyncPointInThisCommit[moduleDir] = struct{}{}
 					continue
 				}
-				logger.Warn("error reading module, skipping commit", zap.Error(readErr))
+				logger.Warn("read module at commit failed, skipping commit", zap.Error(readErr))
 				continue
 			}
 			isSynced, err := s.isGitCommitSynced(ctx, builtModule.ModuleIdentity(), commitHash)
@@ -140,13 +138,32 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 	if len(commitsToSync) == 0 {
 		return nil, nil
 	}
+	// we reached the branch starting point, do we still have pending modules?
 	for moduleDir, pendingModule := range pendingModules {
-		s.logger.Debug(
-			"module did not find any synced git commit in the branch, will sync all the way from the beginning of the branch",
+		logger := s.logger.With(
 			zap.String("branch", branch),
 			zap.String("module dir", moduleDir),
 			zap.String("module identity in HEAD", pendingModule.moduleIdentityInHEAD),
-			zap.Stringp("expected sync point", pendingModule.expectedSyncPoint),
+		)
+		if pendingModule.expectedSyncPoint != nil {
+			if branch == s.repo.DefaultBranch() {
+				return nil, fmt.Errorf(
+					"module %s in directory %s in the default branch %s did not find its expected sync point %s, aborting sync",
+					pendingModule.moduleIdentityInHEAD,
+					moduleDir,
+					branch,
+					*pendingModule.expectedSyncPoint,
+				)
+			}
+			logger.Warn(
+				"module did not find its expected sync point, or any other synced git commit, "+
+					"will sync all the way from the beginning of the branch",
+				zap.String("expected sync point", *pendingModule.expectedSyncPoint),
+			)
+		}
+		logger.Debug(
+			"module without expected sync point did not find any synced git commit, " +
+				"will sync all the way from the beginning of the branch",
 		)
 	}
 	// https://github.com/golang/go/wiki/SliceTricks#reversing
@@ -158,14 +175,26 @@ func (s *syncer) branchCommitsToSync(ctx context.Context, branch string) ([]sync
 }
 
 func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmoduleref.ModuleIdentity, commitHash string) (bool, error) {
-	// TODO: cache moduleIdentities and commits
 	if s.syncedGitCommitChecker == nil {
 		return false, nil
 	}
-	syncedCommits, err := s.syncedGitCommitChecker(ctx, moduleIdentity, map[string]struct{}{commitHash: {}})
+	modIdentity := moduleIdentity.IdentityString()
+	// check local caches first
+	if moduleCommitsSyncStatusCache, ok := s.modulesCommitsSyncedStatusCache[modIdentity]; ok {
+		if synced, cached := moduleCommitsSyncStatusCache[commitHash]; cached {
+			return synced, nil
+		}
+	}
+	// request remote check
+	syncedModuleCommits, err := s.syncedGitCommitChecker(ctx, moduleIdentity, map[string]struct{}{commitHash: {}})
 	if err != nil {
 		return false, err
 	}
-	_, synced := syncedCommits[commitHash]
+	_, synced := syncedModuleCommits[commitHash]
+	// populate local cache
+	if s.modulesCommitsSyncedStatusCache[modIdentity] == nil {
+		s.modulesCommitsSyncedStatusCache[modIdentity] = make(map[string]bool)
+	}
+	s.modulesCommitsSyncedStatusCache[modIdentity][commitHash] = synced
 	return synced, nil
 }
