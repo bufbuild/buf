@@ -129,7 +129,7 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 	}
 	if len(commitsToSync) == 0 {
 		s.logger.Debug(
-			"modules already up to date in branch",
+			"no modules to sync in branch",
 			zap.String("branch", branch),
 		)
 		return nil
@@ -149,7 +149,7 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 			builtModule, shouldSyncModule := commitToSync.modules[moduleDir]
 			if !shouldSyncModule {
 				s.logger.Debug(
-					"module directory not present in modules to sync for branch commit, skipping module",
+					"module directory not present as a module to sync, skipping module in commit",
 					zap.String("branch", branch),
 					zap.String("commit", commitHash),
 					zap.String("module directory", moduleDir),
