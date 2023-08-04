@@ -604,9 +604,7 @@ type readModuleOpts struct {
 type readModuleAtOption func(*readModuleOpts)
 
 func readModuleAtWithExpectedModuleIdentity(moduleIdentity string) readModuleAtOption {
-	return func(opts *readModuleOpts) {
-		opts.expectedModuleIdentity = moduleIdentity
-	}
+	return func(opts *readModuleOpts) { opts.expectedModuleIdentity = moduleIdentity }
 }
 
 // printSyncPreparation prints information gathered at the sync preparation step.
