@@ -165,7 +165,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			return fmt.Errorf("reading head commit for branch %s: %w", branch, err)
 		}
 		for moduleDir := range s.modulesDirsForSync {
-			builtModule, readErr := s.readModuleAt(ctx, branch, headCommit, moduleDir, nil /* no specific module identity expected */)
+			builtModule, readErr := s.readModuleAt(ctx, branch, headCommit, moduleDir)
 			if readErr != nil {
 				// any error reading module in HEAD, skip syncing that module in that branch
 				s.logger.Warn(
@@ -406,7 +406,10 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 				continue
 			}
 			// git commit is not synced, attempt to read the module in the commit:moduleDir
-			builtModule, readErr := s.readModuleAt(ctx, branch, commit, moduleDir, &moduleIdentityInHEAD)
+			builtModule, readErr := s.readModuleAt(
+				ctx, branch, commit, moduleDir,
+				readModuleAtWithExpectedModuleIdentity(moduleIdentityInHEAD),
+			)
 			if readErr != nil {
 				if s.errorHandler.StopLookback(readErr) {
 					logger.Warn("read module at commit failed, stop looking back in branch", zap.Error(readErr))
@@ -529,8 +532,12 @@ func (s *syncer) readModuleAt(
 	branch string,
 	commit git.Commit,
 	moduleDir string,
-	expectedModuleIdentity *string, // optional
+	opts ...readModuleAtOption,
 ) (*bufmodulebuild.BuiltModule, *ReadModuleError) {
+	var readOpts readModuleOpts
+	for _, opt := range opts {
+		opt(&readOpts)
+	}
 	// in case there is an error reading this module, it will have the same branch, commit, and module
 	// dir that we can fill upfront. The actual `err` and `code` (if any) is populated in case-by-case
 	// basis before returning.
@@ -566,12 +573,12 @@ func (s *syncer) readModuleAt(
 		readModuleErr.err = errors.New("found module does not have a name")
 		return nil, readModuleErr
 	}
-	if expectedModuleIdentity != nil {
-		if sourceConfig.ModuleIdentity.IdentityString() != *expectedModuleIdentity {
+	if readOpts.expectedModuleIdentity != "" {
+		if sourceConfig.ModuleIdentity.IdentityString() != readOpts.expectedModuleIdentity {
 			readModuleErr.code = ReadModuleErrorCodeUnexpectedName
 			readModuleErr.err = fmt.Errorf(
 				"read module has an unexpected module identity %s, expected %s",
-				sourceConfig.ModuleIdentity.IdentityString(), *expectedModuleIdentity,
+				sourceConfig.ModuleIdentity.IdentityString(), readOpts.expectedModuleIdentity,
 			)
 			return nil, readModuleErr
 		}
@@ -588,6 +595,22 @@ func (s *syncer) readModuleAt(
 		return nil, readModuleErr
 	}
 	return builtModule, nil
+}
+
+type readModuleOpts struct {
+	expectedModuleIdentity string
+}
+
+type readModuleAtOption func(*readModuleOpts) error
+
+func readModuleAtWithExpectedModuleIdentity(moduleIdentity string) readModuleAtOption {
+	return func(opts *readModuleOpts) error {
+		if moduleIdentity == "" {
+			return errors.New("expected module identity cannot be empty")
+		}
+		opts.expectedModuleIdentity = moduleIdentity
+		return nil
+	}
 }
 
 // printSyncPreparation prints information gathered at the sync preparation step.
