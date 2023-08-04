@@ -601,15 +601,11 @@ type readModuleOpts struct {
 	expectedModuleIdentity string
 }
 
-type readModuleAtOption func(*readModuleOpts) error
+type readModuleAtOption func(*readModuleOpts)
 
 func readModuleAtWithExpectedModuleIdentity(moduleIdentity string) readModuleAtOption {
-	return func(opts *readModuleOpts) error {
-		if moduleIdentity == "" {
-			return errors.New("expected module identity cannot be empty")
-		}
+	return func(opts *readModuleOpts) {
 		opts.expectedModuleIdentity = moduleIdentity
-		return nil
 	}
 }
 
