@@ -33,20 +33,20 @@ func (s *syncer) printSyncPreparation() {
 }
 
 // printCommitsToSync prints syncable commits for a given branch.
-func (s *syncer) printCommitsToSync(branch string, syncableCommits []syncableCommit) {
-	c := make([]map[string]string, 0)
+func (s *syncer) printCommitsToSync(branch string, syncableCommits []*syncableCommit) {
+	printableCommits := make([]map[string]string, 0)
 	for _, sCommit := range syncableCommits {
 		var commitModules []string
 		for moduleDir, builtModule := range sCommit.modules {
 			commitModules = append(commitModules, moduleDir+":"+builtModule.ModuleIdentity().IdentityString())
 		}
-		c = append(c, map[string]string{
+		printableCommits = append(printableCommits, map[string]string{
 			sCommit.commit.Hash().Hex(): fmt.Sprintf("(%d)[%s]", len(commitModules), strings.Join(commitModules, ", ")),
 		})
 	}
 	s.logger.Debug(
 		"branch commits to sync",
 		zap.String("branch", branch),
-		zap.Any("commits", c),
+		zap.Any("commits", printableCommits),
 	)
 }
