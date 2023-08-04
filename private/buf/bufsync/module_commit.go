@@ -29,7 +29,7 @@ type moduleCommit struct {
 	bucket    storage.ReadBucket
 }
 
-func newModuleCommitToSync(
+func newModuleCommit(
 	branch string,
 	commit git.Commit,
 	tags []string,

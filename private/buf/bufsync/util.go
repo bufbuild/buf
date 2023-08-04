@@ -25,15 +25,15 @@ import (
 func (s *syncer) printSyncPreparation() {
 	s.logger.Debug(
 		"sync preparation",
-		zap.Any("modulesDirsToSync", s.modulesDirsToSync),
-		zap.Any("commitsTags", s.commitsTags),
-		zap.Any("branchesModulesToSync", s.branchesModulesToSync),
-		zap.Any("modulesBranchesSyncPoints", s.modulesBranchesLastSyncPoints),
+		zap.Any("modulesDirsToSync", s.modulesDirsForSync),
+		zap.Any("commitsTags", s.commitsToTags),
+		zap.Any("branchesModulesToSync", s.branchesToModulesForSync),
+		zap.Any("modulesBranchesSyncPoints", s.modulesToBranchesLastSyncPoints),
 	)
 }
 
-// printCommitsToSync prints syncable commits for a given branch.
-func (s *syncer) printCommitsToSync(branch string, syncableCommits []*syncableCommit) {
+// printCommitsForSync prints syncable commits for a given branch.
+func (s *syncer) printCommitsForSync(branch string, syncableCommits []*syncableCommit) {
 	printableCommits := make([]map[string]string, 0)
 	for _, sCommit := range syncableCommits {
 		var commitModules []string

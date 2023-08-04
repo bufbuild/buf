@@ -47,17 +47,17 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	// |               └o (baz)
 	repo := scaffoldGitRepository(t, moduleIdentityInHEAD)
 	testSyncer := syncer{
-		repo:                          repo,
-		storageGitProvider:            storagegit.NewProvider(repo.Objects()),
-		logger:                        zaptest.NewLogger(t),
-		modulesDirsToSync:             map[string]struct{}{".": {}},
-		sortedModulesDirsToSync:       []string{"."},
-		syncAllBranches:               true,
-		syncedGitCommitChecker:        mockBSRChecker.checkFunc(),
-		commitsTags:                   make(map[string][]string),
-		branchesModulesToSync:         make(map[string]map[string]bufmoduleref.ModuleIdentity),
-		modulesBranchesLastSyncPoints: make(map[string]map[string]string),
-		syncedModulesCommitsCache:     make(map[string]map[string]struct{}),
+		repo:                                  repo,
+		storageGitProvider:                    storagegit.NewProvider(repo.Objects()),
+		logger:                                zaptest.NewLogger(t),
+		modulesDirsForSync:                    map[string]struct{}{".": {}},
+		sortedModulesDirsForSync:              []string{"."},
+		syncAllBranches:                       true,
+		syncedGitCommitChecker:                mockBSRChecker.checkFunc(),
+		commitsToTags:                         make(map[string][]string),
+		branchesToModulesForSync:              make(map[string]map[string]bufmoduleref.ModuleIdentity),
+		modulesToBranchesLastSyncPoints:       make(map[string]map[string]string),
+		modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
 	}
 	require.NoError(t, testSyncer.prepareSync(context.Background()))
 
@@ -91,7 +91,7 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	for _, tc := range testCases {
 		func(tc testCase) {
 			t.Run(tc.name, func(t *testing.T) {
-				syncableCommits, err := testSyncer.branchCommitsToSync(
+				syncableCommits, err := testSyncer.branchSyncableCommits(
 					context.Background(),
 					tc.branch,
 				)

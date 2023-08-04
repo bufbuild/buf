@@ -68,11 +68,11 @@ type SyncerOption func(*syncer) error
 func SyncerWithModuleDirectory(moduleDir string) SyncerOption {
 	return func(s *syncer) error {
 		moduleDir = normalpath.Normalize(moduleDir)
-		if _, alreadyAdded := s.modulesDirsToSync[moduleDir]; alreadyAdded {
+		if _, alreadyAdded := s.modulesDirsForSync[moduleDir]; alreadyAdded {
 			return fmt.Errorf("module directory %s already added", moduleDir)
 		}
-		s.modulesDirsToSync[moduleDir] = struct{}{}
-		s.sortedModulesDirsToSync = append(s.sortedModulesDirsToSync, moduleDir)
+		s.modulesDirsForSync[moduleDir] = struct{}{}
+		s.sortedModulesDirsForSync = append(s.sortedModulesDirsForSync, moduleDir)
 		return nil
 	}
 }
@@ -164,11 +164,9 @@ type ModuleCommit interface {
 var ErrModuleDoesNotExist = errors.New("BSR module does not exist")
 
 const (
-	// ReadModuleErrorCodeUnknown is any unknown or unexpected error while reading a module.
-	ReadModuleErrorCodeUnknown = iota
 	// ReadModuleErrorCodeModuleNotFound happens when the passed module directory does not have any
 	// module.
-	ReadModuleErrorCodeModuleNotFound
+	ReadModuleErrorCodeModuleNotFound = iota + 1
 	// ReadModuleErrorCodeUnnamedModule happens when the read module does not have a name.
 	ReadModuleErrorCodeUnnamedModule
 	// ReadModuleErrorCodeInvalidModuleConfig happens when the module directory has an invalid module
