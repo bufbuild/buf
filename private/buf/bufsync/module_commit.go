@@ -21,27 +21,46 @@ import (
 )
 
 type moduleCommit struct {
-	identity bufmoduleref.ModuleIdentity
-	bucket   storage.ReadBucket
-	commit   git.Commit
-	branch   string
-	tags     []string
+	branch    string
+	commit    git.Commit
+	tags      []string
+	directory string
+	identity  bufmoduleref.ModuleIdentity
+	bucket    storage.ReadBucket
 }
 
 func newModuleCommit(
+	branch string,
+	commit git.Commit,
+	tags []string,
+	directory string,
 	identity bufmoduleref.ModuleIdentity,
 	bucket storage.ReadBucket,
-	commit git.Commit,
-	branch string,
-	tags []string,
 ) ModuleCommit {
 	return &moduleCommit{
-		identity: identity,
-		bucket:   bucket,
-		commit:   commit,
-		branch:   branch,
-		tags:     tags,
+		branch:    branch,
+		commit:    commit,
+		tags:      tags,
+		directory: directory,
+		identity:  identity,
+		bucket:    bucket,
 	}
+}
+
+func (m *moduleCommit) Branch() string {
+	return m.branch
+}
+
+func (m *moduleCommit) Commit() git.Commit {
+	return m.commit
+}
+
+func (m *moduleCommit) Tags() []string {
+	return m.tags
+}
+
+func (m *moduleCommit) Directory() string {
+	return m.directory
 }
 
 func (m *moduleCommit) Identity() bufmoduleref.ModuleIdentity {
@@ -50,16 +69,4 @@ func (m *moduleCommit) Identity() bufmoduleref.ModuleIdentity {
 
 func (m *moduleCommit) Bucket() storage.ReadBucket {
 	return m.bucket
-}
-
-func (m *moduleCommit) Commit() git.Commit {
-	return m.commit
-}
-
-func (m *moduleCommit) Branch() string {
-	return m.branch
-}
-
-func (m *moduleCommit) Tags() []string {
-	return m.tags
 }
