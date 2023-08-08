@@ -50,7 +50,7 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 		repo:                                  repo,
 		storageGitProvider:                    storagegit.NewProvider(repo.Objects()),
 		logger:                                zaptest.NewLogger(t),
-		modulesForSync:                        map[string]struct{}{".": {}},
+		modulesDirsToIdentityOverrideForSync:  map[string]struct{}{".": {}},
 		sortedModulesDirsForSync:              []string{"."},
 		syncAllBranches:                       true,
 		syncedGitCommitChecker:                mockBSRChecker.checkFunc(),

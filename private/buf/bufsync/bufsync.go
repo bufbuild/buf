@@ -162,10 +162,10 @@ type SyncerOption func(*syncer) error
 func SyncerWithModule(moduleDir string, identityOverride bufmoduleref.ModuleIdentity) SyncerOption {
 	return func(s *syncer) error {
 		moduleDir = normalpath.Normalize(moduleDir)
-		if _, alreadyAdded := s.modulesForSync[moduleDir]; alreadyAdded {
+		if _, alreadyAdded := s.modulesDirsToIdentityOverrideForSync[moduleDir]; alreadyAdded {
 			return fmt.Errorf("module directory %s already added", moduleDir)
 		}
-		s.modulesForSync[moduleDir] = identityOverride
+		s.modulesDirsToIdentityOverrideForSync[moduleDir] = identityOverride
 		s.sortedModulesDirsForSync = append(s.sortedModulesDirsForSync, moduleDir)
 		return nil
 	}

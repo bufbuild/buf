@@ -40,9 +40,9 @@ type syncer struct {
 	syncPointResolver         SyncPointResolver
 
 	// flags received on creation
-	sortedModulesDirsForSync []string
-	modulesForSync           map[string]bufmoduleref.ModuleIdentity // moduleDir:moduleIdentityOverride
-	syncAllBranches          bool
+	sortedModulesDirsForSync             []string
+	modulesDirsToIdentityOverrideForSync map[string]bufmoduleref.ModuleIdentity // moduleDir:moduleIdentityOverride
+	syncAllBranches                      bool
 
 	commitsToTags                   map[string][]string                               // commits:[]tags
 	branchesToModulesForSync        map[string]map[string]bufmoduleref.ModuleIdentity // branch:moduleDir:moduleIdentityInHEAD
@@ -67,7 +67,7 @@ func newSyncer(
 		repo:                                  repo,
 		storageGitProvider:                    storageGitProvider,
 		errorHandler:                          errorHandler,
-		modulesForSync:                        make(map[string]bufmoduleref.ModuleIdentity),
+		modulesDirsToIdentityOverrideForSync:  make(map[string]bufmoduleref.ModuleIdentity),
 		commitsToTags:                         make(map[string][]string),
 		branchesToModulesForSync:              make(map[string]map[string]bufmoduleref.ModuleIdentity),
 		modulesToBranchesLastSyncPoints:       make(map[string]map[string]string),
@@ -157,40 +157,45 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		s.branchesToModulesForSync[currentBranch] = make(map[string]bufmoduleref.ModuleIdentity)
 		s.logger.Debug("current branch", zap.String("name", currentBranch))
 	}
-	// Populate module identities from HEAD, and its sync points if any
+	// Populate module identities, from identity overrides or from HEAD, and its sync points if any
 	allModulesIdentitiesForSync := make(map[string]bufmoduleref.ModuleIdentity) // moduleIdentityString:moduleIdentity
 	for branch := range s.branchesToModulesForSync {
 		headCommit, err := s.repo.HEADCommit(branch)
 		if err != nil {
 			return fmt.Errorf("reading head commit for branch %s: %w", branch, err)
 		}
-		for moduleDir := range s.modulesForSync {
-			builtModule, readErr := s.readModuleAt(ctx, branch, headCommit, moduleDir)
-			if readErr != nil {
-				// any error reading module in HEAD, skip syncing that module in that branch
-				s.logger.Warn(
-					"read module from HEAD failed, module won't be synced for this branch",
-					zap.Error(readErr),
-				)
-				continue
+		for moduleDir, identityOverride := range s.modulesDirsToIdentityOverrideForSync {
+			var targetModuleIdentity bufmoduleref.ModuleIdentity
+			if identityOverride == nil {
+				// no identity override, read from HEAD
+				builtModule, readErr := s.readModuleAt(ctx, branch, headCommit, moduleDir)
+				if readErr != nil {
+					// any error reading module in HEAD, skip syncing that module in that branch
+					s.logger.Warn(
+						"read module from HEAD failed, module won't be synced for this branch",
+						zap.Error(readErr),
+					)
+					continue
+				}
+				targetModuleIdentity = builtModule.ModuleIdentity()
+			} else {
+				// disregard module name in HEAD, use the identity override
+				targetModuleIdentity = identityOverride
 			}
-			// there is a valid module in the module dir at the HEAD of this branch, enqueue it for sync
-			s.branchesToModulesForSync[branch][moduleDir] = builtModule.ModuleIdentity()
+			// enqueue this branch+module for sync to the right target
+			s.branchesToModulesForSync[branch][moduleDir] = targetModuleIdentity
+			targetModuleIdentityString := targetModuleIdentity.IdentityString()
 			// do we have a remote git sync point for this module+branch?
-			moduleIdentityInHEAD := builtModule.ModuleIdentity().IdentityString()
-			moduleBranchSyncPoint, err := s.resolveSyncPoint(ctx, builtModule.ModuleIdentity(), branch)
+			moduleBranchSyncPoint, err := s.resolveSyncPoint(ctx, targetModuleIdentity, branch)
 			if err != nil {
-				return fmt.Errorf(
-					"resolve sync point for module %s in branch %s HEAD commit %s: %w",
-					moduleIdentityInHEAD, branch, headCommit.Hash().Hex(), err,
-				)
+				return fmt.Errorf("resolve sync point for module %s in branch %s: %w", targetModuleIdentityString, branch, err)
 			}
-			allModulesIdentitiesForSync[moduleIdentityInHEAD] = builtModule.ModuleIdentity()
-			if s.modulesToBranchesLastSyncPoints[moduleIdentityInHEAD] == nil {
-				s.modulesToBranchesLastSyncPoints[moduleIdentityInHEAD] = make(map[string]string)
+			allModulesIdentitiesForSync[targetModuleIdentityString] = targetModuleIdentity
+			if s.modulesToBranchesLastSyncPoints[targetModuleIdentityString] == nil {
+				s.modulesToBranchesLastSyncPoints[targetModuleIdentityString] = make(map[string]string)
 			}
 			if moduleBranchSyncPoint != nil {
-				s.modulesToBranchesLastSyncPoints[moduleIdentityInHEAD][branch] = moduleBranchSyncPoint.Hex()
+				s.modulesToBranchesLastSyncPoints[targetModuleIdentityString][branch] = moduleBranchSyncPoint.Hex()
 			}
 		}
 	}
@@ -611,7 +616,7 @@ func readModuleAtWithExpectedModuleIdentity(moduleIdentity string) readModuleAtO
 func (s *syncer) printSyncPreparation() {
 	s.logger.Debug(
 		"sync preparation",
-		zap.Any("modulesDirsToSync", s.modulesForSync),
+		zap.Any("modulesDirsToSync", s.modulesDirsToIdentityOverrideForSync),
 		zap.Any("commitsTags", s.commitsToTags),
 		zap.Any("branchesModulesToSync", s.branchesToModulesForSync),
 		zap.Any("modulesBranchesSyncPoints", s.modulesToBranchesLastSyncPoints),
