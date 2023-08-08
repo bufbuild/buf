@@ -148,19 +148,24 @@ func NewSyncer(
 // SyncerOption configures the creation of a new Syncer.
 type SyncerOption func(*syncer) error
 
-// SyncerWithModuleDirectory configures a Syncer to sync a module in the specified module directory.
+// SyncerWithModule configures a Syncer to sync a module in the specified module directory, with an
+// optional module override.
+//
+// If a not-nil module identity is passed, it will be used as the expected module target for the
+// module directory. On the other hand, if a nil module identity is passed, then the module identity
+// target for that module directory is read from the HEAD commit on each git branch.
 //
 // This option can be provided multiple times to sync multiple distinct modules. The order in which
-// the module directories are passed is preserved, and those modules are synced in the same order.
-// If the same module directory is passed multiple times this option errors, since the order cannot
-// be preserved anymore.
-func SyncerWithModuleDirectory(moduleDir string) SyncerOption {
+// the module are passed is preserved, and those modules are synced in the same order. If the same
+// module directory is passed multiple times this option errors, since the order cannot be preserved
+// anymore.
+func SyncerWithModule(moduleDir string, identityOverride bufmoduleref.ModuleIdentity) SyncerOption {
 	return func(s *syncer) error {
 		moduleDir = normalpath.Normalize(moduleDir)
-		if _, alreadyAdded := s.modulesDirsForSync[moduleDir]; alreadyAdded {
+		if _, alreadyAdded := s.modulesForSync[moduleDir]; alreadyAdded {
 			return fmt.Errorf("module directory %s already added", moduleDir)
 		}
-		s.modulesDirsForSync[moduleDir] = struct{}{}
+		s.modulesForSync[moduleDir] = identityOverride
 		s.sortedModulesDirsForSync = append(s.sortedModulesDirsForSync, moduleDir)
 		return nil
 	}

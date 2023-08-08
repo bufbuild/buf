@@ -41,7 +41,7 @@ type syncer struct {
 
 	// flags received on creation
 	sortedModulesDirsForSync []string
-	modulesDirsForSync       map[string]struct{}
+	modulesForSync           map[string]bufmoduleref.ModuleIdentity // moduleDir:moduleIdentityOverride
 	syncAllBranches          bool
 
 	commitsToTags                   map[string][]string                               // commits:[]tags
@@ -67,7 +67,7 @@ func newSyncer(
 		repo:                                  repo,
 		storageGitProvider:                    storageGitProvider,
 		errorHandler:                          errorHandler,
-		modulesDirsForSync:                    make(map[string]struct{}),
+		modulesForSync:                        make(map[string]bufmoduleref.ModuleIdentity),
 		commitsToTags:                         make(map[string][]string),
 		branchesToModulesForSync:              make(map[string]map[string]bufmoduleref.ModuleIdentity),
 		modulesToBranchesLastSyncPoints:       make(map[string]map[string]string),
@@ -164,7 +164,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("reading head commit for branch %s: %w", branch, err)
 		}
-		for moduleDir := range s.modulesDirsForSync {
+		for moduleDir := range s.modulesForSync {
 			builtModule, readErr := s.readModuleAt(ctx, branch, headCommit, moduleDir)
 			if readErr != nil {
 				// any error reading module in HEAD, skip syncing that module in that branch
@@ -611,7 +611,7 @@ func readModuleAtWithExpectedModuleIdentity(moduleIdentity string) readModuleAtO
 func (s *syncer) printSyncPreparation() {
 	s.logger.Debug(
 		"sync preparation",
-		zap.Any("modulesDirsToSync", s.modulesDirsForSync),
+		zap.Any("modulesDirsToSync", s.modulesForSync),
 		zap.Any("commitsTags", s.commitsToTags),
 		zap.Any("branchesModulesToSync", s.branchesToModulesForSync),
 		zap.Any("modulesBranchesSyncPoints", s.modulesToBranchesLastSyncPoints),

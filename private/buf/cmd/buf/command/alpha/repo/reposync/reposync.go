@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufsync"
@@ -32,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -78,7 +80,7 @@ func NewCommand(
 
 type flags struct {
 	ErrorFormat      string
-	ModulesDirs      []string
+	Modules          []string
 	Create           bool
 	CreateVisibility string
 	AllBranches      bool
@@ -99,14 +101,16 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		),
 	)
 	flagSet.StringSliceVar(
-		&f.ModulesDirs,
+		&f.Modules,
 		moduleFlagName,
 		nil,
-		"The module(s) directory(ies) to sync to the BSR. By default this command tries to read "+
-			"a single module located at the root of the repository. To change this behavior, pass "+
-			"specific module directories where your 'buf.yaml' is located. The sync destination of "+
-			"the remote module is read from the 'name' field in your 'buf.yaml' at the HEAD commit "+
-			"of each branch.",
+		"The module(s) to sync to the BSR. This value can be just the module directory, or you can "+
+			"also have define a module identity override in the format <module-directory>:<module-name>, "+
+			"where the <module-name> is the module's fully qualified name (FQN) destination as defined in "+
+			"https://buf.build/docs/bsr/module/manage/#how-modules-are-defined. If a module identity "+
+			"override is not passed, the sync destination of the remote module is read from the 'name' "+
+			"field in your 'buf.yaml' at the HEAD commit of each branch. By default this command attempts "+
+			"to sync a single module located at the root directory of the Git repository.",
 	)
 	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
 	flagSet.BoolVar(
@@ -150,7 +154,7 @@ func run(
 	return sync(
 		ctx,
 		container,
-		flags.ModulesDirs,
+		flags.Modules,
 		// No need to pass `flags.Create`, this is not empty iff `flags.Create`
 		flags.CreateVisibility,
 		flags.AllBranches,
@@ -160,7 +164,7 @@ func run(
 func sync(
 	ctx context.Context,
 	container appflag.Container,
-	modulesDirs []string,
+	modules []string, // moduleDir(:moduleIdentityOverride)
 	createWithVisibility string,
 	allBranches bool,
 ) error {
@@ -187,16 +191,27 @@ func sync(
 	if allBranches {
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithAllBranches())
 	}
-	if len(modulesDirs) == 0 {
+	if len(modules) == 0 {
 		// default behavior, if no modules are passed, a single module at the root of the repo is
 		// assumed.
-		modulesDirs = []string{"."}
+		modules = []string{"."}
 	}
-	for _, moduleDir := range modulesDirs {
-		if len(moduleDir) == 0 {
-			return errors.New("empty module path")
+	for _, module := range modules {
+		if len(module) == 0 {
+			return errors.New("empty module")
 		}
-		syncerOptions = append(syncerOptions, bufsync.SyncerWithModuleDirectory(moduleDir))
+		colon := strings.IndexRune(module, ':')
+		if colon == -1 {
+			// no module override was passed, we can pass the module directory alone and continue
+			syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(module, nil))
+			continue
+		}
+		moduleIdentityOverride, err := bufmoduleref.ModuleIdentityForString(module[colon+1:])
+		if err != nil {
+			return fmt.Errorf("module %s invalid module identity: %w", module, err)
+		}
+		moduleDir := normalpath.Normalize(module[:colon])
+		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(moduleDir, moduleIdentityOverride))
 	}
 	syncer, err := bufsync.NewSyncer(
 		container.Logger(),
