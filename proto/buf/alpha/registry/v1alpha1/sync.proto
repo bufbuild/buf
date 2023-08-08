@@ -96,7 +96,7 @@ message AttachGitTagsRequest {
   // git hash to a BSR commit.
   string hash = 3;
   // Tags are the Git tags which point to this commit, and that will be synced to the BSR commit.
-  repeated string tags = 9;
+  repeated string tags = 4;
 }
 
 message AttachGitTagsResponse {
