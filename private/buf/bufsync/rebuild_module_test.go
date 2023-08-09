@@ -36,6 +36,7 @@ func TestRebuildModule(t *testing.T) {
 		"buf.yaml":         []byte("version: v1\n"),
 		"foo/v1/foo.proto": []byte(`syntax = "proto3";\nmessage Test {}\n`),
 	})
+	require.NoError(t, err)
 	emptyConfig, err := bufmoduleconfig.NewConfigV1(bufmoduleconfig.ExternalConfigV1{})
 	require.NoError(t, err)
 	type testCase struct {
