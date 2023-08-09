@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix issue where `buf build -o` did not properly output files with the `.txtpb`
+  extension in Protobuf text format.
 
 ## [v1.26.0] - 2023-08-09
 
