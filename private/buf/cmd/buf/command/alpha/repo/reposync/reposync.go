@@ -357,8 +357,8 @@ func (h *syncErrorHandler) HandleReadModuleError(err *bufsync.ReadModuleError) b
 		return bufsync.LookbackDecisionCodeSkip
 	case bufsync.ReadModuleErrorCodeUnnamedModule,
 		bufsync.ReadModuleErrorCodeUnexpectedName:
-		// if the module has an unexpected or no name, we should override the module identity if it was
-		// passed explicitly as an override, otherwise skip them.
+		// if the module has an unexpected or no name, we should override the module identity only if it
+		// was passed explicitly as an identity override, otherwise skip the commit.
 		if _, hasExplicitOverride := h.modulesDirsWithIdentityOverride[err.ModuleDir()]; hasExplicitOverride {
 			return bufsync.LookbackDecisionCodeOverride
 		}
