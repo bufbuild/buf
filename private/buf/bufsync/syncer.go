@@ -437,12 +437,12 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 					if builtModule == nil {
 						return fmt.Errorf("cannot override commit, no built module: %w", readErr)
 					}
-					// rebuild the module with the target identity, and add it to the queue
-					rebuiltModule, err := rebuildModule(ctx, builtModule, pendingModule.targetModuleIdentity)
+					// rename the module to the target identity, and add it to the queue
+					renamedModule, err := renameModule(ctx, builtModule, pendingModule.targetModuleIdentity)
 					if err != nil {
-						return fmt.Errorf("override module in commit: %s, rebuild module: %w", readErr.Error(), err)
+						return fmt.Errorf("override module in commit: %s, rename module: %w", readErr.Error(), err)
 					}
-					syncModules[moduleDir] = rebuiltModule
+					syncModules[moduleDir] = renamedModule
 				default:
 					return fmt.Errorf("unexpected decision code %d for read module error %w", decision, readErr)
 				}
@@ -684,34 +684,35 @@ type moduleTarget struct {
 	expectedSyncPoint    string
 }
 
-// rebuildModule takes a built module, and rebuilds it with a new module identity.
-func rebuildModule(
+// renameModule takes a module, and rebuilds it with a new module identity.
+func renameModule(
 	ctx context.Context,
-	builtModule *bufmodulebuild.BuiltModule,
-	identityOverride bufmoduleref.ModuleIdentity,
+	baseModule *bufmodulebuild.BuiltModule,
+	newIdentity bufmoduleref.ModuleIdentity,
 ) (*bufmodulebuild.BuiltModule, error) {
-	if builtModule == nil {
-		return nil, errors.New("no built module to rebuild")
+	if baseModule == nil {
+		return nil, errors.New("no base module to rebuild")
 	}
-	if identityOverride == nil {
+	if newIdentity == nil {
 		return nil, errors.New("no new identity to apply")
 	}
-	if builtModule.ModuleIdentity().IdentityString() == identityOverride.IdentityString() {
-		// same identity, no need to rebuild anything
-		return builtModule, nil
+	if baseModule.ModuleIdentity() != nil &&
+		baseModule.ModuleIdentity().IdentityString() == newIdentity.IdentityString() {
+		// same identity, no need to rename anything
+		return baseModule, nil
 	}
-	sourceConfig, err := bufconfig.GetConfigForBucket(ctx, builtModule.Bucket)
+	sourceConfig, err := bufconfig.GetConfigForBucket(ctx, baseModule.Bucket)
 	if err != nil {
 		return nil, fmt.Errorf("invalid module config: %w", err)
 	}
-	rebuiltModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+	renamedModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
-		builtModule.Bucket,
+		baseModule.Bucket,
 		sourceConfig.Build,
-		bufmodulebuild.WithModuleIdentity(identityOverride),
+		bufmodulebuild.WithModuleIdentity(newIdentity),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("rebuild module: %w", err)
+		return nil, fmt.Errorf("rebuild module with new identity: %w", err)
 	}
-	return rebuiltModule, nil
+	return renamedModule, nil
 }
