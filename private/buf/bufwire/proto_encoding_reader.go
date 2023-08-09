@@ -77,7 +77,7 @@ func (p *protoEncodingReader) GetMessage(
 		unmarshaler = protoencoding.NewWireUnmarshaler(resolver)
 	case bufconvert.MessageEncodingJSON:
 		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
-	case bufconvert.MessageEncodingTextpb:
+	case bufconvert.MessageEncodingTxtpb:
 		unmarshaler = protoencoding.NewTxtpbUnmarshaler(resolver)
 	default:
 		return nil, errors.New("unknown message encoding type")
