@@ -438,7 +438,7 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 						return fmt.Errorf("cannot override commit, no built module: %w", readErr)
 					}
 					// rebuild the module with the target identity, and add it to the queue
-					rebuiltModule, err := rebuildModule(ctx, *builtModule, pendingModule.targetModuleIdentity)
+					rebuiltModule, err := rebuildModule(ctx, builtModule, pendingModule.targetModuleIdentity)
 					if err != nil {
 						return fmt.Errorf("override module in commit: %s, rebuild module: %w", readErr.Error(), err)
 					}
@@ -687,15 +687,18 @@ type moduleTarget struct {
 // rebuildModule takes a built module, and rebuilds it with a new module identity.
 func rebuildModule(
 	ctx context.Context,
-	builtModule bufmodulebuild.BuiltModule,
+	builtModule *bufmodulebuild.BuiltModule,
 	identityOverride bufmoduleref.ModuleIdentity,
 ) (*bufmodulebuild.BuiltModule, error) {
+	if builtModule == nil {
+		return nil, errors.New("no built module to rebuild")
+	}
 	if identityOverride == nil {
 		return nil, errors.New("no new identity to apply")
 	}
 	if builtModule.ModuleIdentity().IdentityString() == identityOverride.IdentityString() {
 		// same identity, no need to rebuild anything
-		return &builtModule, nil
+		return builtModule, nil
 	}
 	sourceConfig, err := bufconfig.GetConfigForBucket(ctx, builtModule.Bucket)
 	if err != nil {
