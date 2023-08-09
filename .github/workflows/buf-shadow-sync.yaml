@@ -13,8 +13,8 @@ jobs:
         with:
           fetch-depth: 0 # fetch all branches and commits, so we can loop them
       - run: git remote set-head origin --auto # set a HEAD for remote/origin, so buf sync can pickup the current default branch
+      - run: git branch --show-current
       - name: Install Buf
         run: make installbuf # use CLI version from the checked out code
       - run: buf --version
-      - run: git branch --show-current
       # - run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility private
