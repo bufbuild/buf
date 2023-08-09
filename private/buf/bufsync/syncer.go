@@ -312,6 +312,15 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 				)
 				continue
 			}
+			if builtModule == nil {
+				s.logger.Debug(
+					"module directory has no module to sync, skipping module in commit",
+					zap.String("branch", branch),
+					zap.String("commit", commitHash),
+					zap.String("module directory", moduleDir),
+				)
+				continue
+			}
 			modIdentity := builtModule.ModuleIdentity().IdentityString()
 			if err := syncFunc(
 				ctx,
