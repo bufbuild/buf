@@ -7,15 +7,14 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' # TODO enable all refs once `main` is synced at least once
+    # if: github.ref == 'refs/heads/main' # TODO enable all refs once `main` is synced at least once
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all branches and commits, so we can loop them
       - run: git remote set-head origin --auto # set a HEAD for remote/origin, so buf sync can pickup the current default branch
-      - uses: bufbuild/buf-setup-action@v1.25.0
-        with:
-          github_token: ${{ github.token }}
-          buf_user: bufbot
-          buf_api_token: ${{ secrets.BUF_TESTINSTANCE_TOKEN }}
-      - run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility private
+      - name: Install Buf
+        run: make installbuf # use CLI version from the checked out code
+      - run: buf --version
+      - run: git branch --show-current
+      # - run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility private
