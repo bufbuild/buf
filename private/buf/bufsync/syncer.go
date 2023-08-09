@@ -45,7 +45,7 @@ type syncer struct {
 	syncAllBranches                      bool
 
 	commitsToTags                   map[string][]string                               // commits:[]tags
-	branchesToModulesForSync        map[string]map[string]bufmoduleref.ModuleIdentity // branch:moduleDir:moduleIdentityInHEAD
+	branchesToModulesForSync        map[string]map[string]bufmoduleref.ModuleIdentity // branch:moduleDir:targetModuleIdentity
 	modulesToBranchesLastSyncPoints map[string]map[string]string                      // moduleIdentity:branch:lastSyncPointGitHash
 
 	// modulesIdentitiesToCommitsSyncedCache (moduleIdentity:commit) caches commits already synced to
@@ -349,8 +349,6 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 	// reached. They'll be removed from this list as its initial sync point is found.
 	pendingModules := s.copyBranchModulesSync(branch, branchModulesForSync)
 	var commitsForSync []*syncableCommit
-	// travel branch commits from HEAD and check if they're already synced, until finding a synced git
-	// commit, or adding them all to be synced
 	stopLoopErr := errors.New("stop loop")
 	if err := s.repo.ForEachCommit(branch, func(commit git.Commit) error {
 		if len(pendingModules) == 0 {
@@ -358,23 +356,23 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 			return stopLoopErr
 		}
 		commitHash := commit.Hash().Hex()
-		syncModules := make(map[string]bufmodulebuild.BuiltModule) // modules to be queued for sync in this commit
-		stopModules := make(map[string]struct{})                   // modules to stop looking in this commit
+		syncModules := make(map[string]*bufmodulebuild.BuiltModule) // modules to be queued for sync in this commit
+		stopModules := make(map[string]struct{})                    // modules to stop looking in this commit
 		for moduleDir, pendingModule := range pendingModules {
-			moduleIdentityInHEAD := pendingModule.moduleIdentityInHEAD.IdentityString()
+			targetModuleIdentity := pendingModule.targetModuleIdentity.IdentityString()
 			logger := s.logger.With(
 				zap.String("branch", branch),
 				zap.String("commit", commit.Hash().Hex()),
 				zap.String("module directory", moduleDir),
-				zap.String("module identity in branch HEAD", moduleIdentityInHEAD),
+				zap.String("target module identity", targetModuleIdentity),
 				zap.String("expected sync point", pendingModule.expectedSyncPoint),
 			)
 			// check if the remote module already synced this commit
-			isSynced, err := s.isGitCommitSynced(ctx, pendingModule.moduleIdentityInHEAD, commitHash)
+			isSynced, err := s.isGitCommitSynced(ctx, pendingModule.targetModuleIdentity, commitHash)
 			if err != nil {
 				return fmt.Errorf(
 					"checking if module %s already synced git commit %s: %w",
-					moduleIdentityInHEAD, commitHash, err,
+					targetModuleIdentity, commitHash, err,
 				)
 			}
 			if isSynced {
@@ -413,19 +411,36 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 			// git commit is not synced, attempt to read the module in the commit:moduleDir
 			builtModule, readErr := s.readModuleAt(
 				ctx, branch, commit, moduleDir,
-				readModuleAtWithExpectedModuleIdentity(moduleIdentityInHEAD),
+				readModuleAtWithExpectedModuleIdentity(targetModuleIdentity),
 			)
 			if readErr != nil {
-				if s.errorHandler.StopLookback(readErr) {
-					logger.Warn("read module at commit failed, stop looking back in branch", zap.Error(readErr))
+				decision := s.errorHandler.HandleReadModuleError(readErr)
+				switch decision {
+				case LookbackDecisionCodeFail:
+					return fmt.Errorf("read module error: %w", err)
+				case LookbackDecisionCodeSkip:
+					logger.Debug("read module at commit failed, skipping commit", zap.Error(readErr))
+				case LookbackDecisionCodeStop:
+					logger.Debug("read module at commit failed, stop looking back in branch", zap.Error(readErr))
 					stopModules[moduleDir] = struct{}{}
-					continue
+				case LookbackDecisionCodeOverride:
+					logger.Debug("read module at commit failed, overriding module identity in commit", zap.Error(readErr))
+					if builtModule == nil {
+						return fmt.Errorf("cannot override commit, no built module: %w", readErr)
+					}
+					// rebuild the module with the target identity
+					rebuiltModule, err := rebuildModule(ctx, *builtModule, pendingModule.targetModuleIdentity)
+					if err != nil {
+						return fmt.Errorf("override module in commit: %w, rebuild module: %w", readErr, err)
+					}
+					syncModules[moduleDir] = rebuiltModule
+				default:
+					return fmt.Errorf("unexpected decision code %d for read module error %w", decision, err)
 				}
-				logger.Debug("read module at commit failed, skipping commit", zap.Error(readErr))
 				continue
 			}
 			// add the read module to sync
-			syncModules[moduleDir] = *builtModule
+			syncModules[moduleDir] = builtModule
 		}
 		// clear modules that are set to stop in this commit
 		for moduleDir := range stopModules {
@@ -446,17 +461,17 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 	// we reached a stopping point for all modules or the branch starting point (no  more commit
 	// parents), do we still have pending modules?
 	for moduleDir, pendingModule := range pendingModules {
-		moduleIdentityInHEAD := pendingModule.moduleIdentityInHEAD.IdentityString()
+		targetModuleIdentity := pendingModule.targetModuleIdentity.IdentityString()
 		logger := s.logger.With(
 			zap.String("branch", branch),
 			zap.String("module directory", moduleDir),
-			zap.String("module identity in branch HEAD", moduleIdentityInHEAD),
+			zap.String("target module identity", targetModuleIdentity),
 		)
 		if pendingModule.expectedSyncPoint != "" {
 			if branch == s.repo.DefaultBranch() {
 				return nil, fmt.Errorf(
 					"module %s in directory %s in the default branch %s did not find its expected sync point %s, aborting sync",
-					moduleIdentityInHEAD,
+					targetModuleIdentity,
 					moduleDir,
 					branch,
 					pendingModule.expectedSyncPoint,
@@ -495,7 +510,7 @@ func (s *syncer) copyBranchModulesSync(branch string, modulesDirsToIdentity map[
 			}
 		}
 		pendingModules[moduleDir] = moduleTarget{
-			moduleIdentityInHEAD: moduleIdentity,
+			targetModuleIdentity: moduleIdentity,
 			expectedSyncPoint:    expectedSyncPoint,
 		}
 	}
@@ -531,7 +546,8 @@ func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmodule
 }
 
 // readModuleAt returns a module that has a name and builds correctly given a commit and a module
-// directory, or a read module error.
+// directory, or a read module error. If the module builds, it might be returned alongside a not-nil
+// error.
 func (s *syncer) readModuleAt(
 	ctx context.Context,
 	branch string,
@@ -573,21 +589,6 @@ func (s *syncer) readModuleAt(
 		readModuleErr.err = fmt.Errorf("invalid module config: %w", err)
 		return nil, readModuleErr
 	}
-	if sourceConfig.ModuleIdentity == nil {
-		readModuleErr.code = ReadModuleErrorCodeUnnamedModule
-		readModuleErr.err = errors.New("found module does not have a name")
-		return nil, readModuleErr
-	}
-	if readOpts.expectedModuleIdentity != "" {
-		if sourceConfig.ModuleIdentity.IdentityString() != readOpts.expectedModuleIdentity {
-			readModuleErr.code = ReadModuleErrorCodeUnexpectedName
-			readModuleErr.err = fmt.Errorf(
-				"read module has an unexpected module identity %s, expected %s",
-				sourceConfig.ModuleIdentity.IdentityString(), readOpts.expectedModuleIdentity,
-			)
-			return nil, readModuleErr
-		}
-	}
 	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		moduleBucket,
@@ -598,6 +599,22 @@ func (s *syncer) readModuleAt(
 		readModuleErr.code = ReadModuleErrorCodeBuildModule
 		readModuleErr.err = fmt.Errorf("build module: %w", err)
 		return nil, readModuleErr
+	}
+	// module builds, unnamed and unexpectedName errors can be returned alongside the built module.
+	if sourceConfig.ModuleIdentity == nil {
+		readModuleErr.code = ReadModuleErrorCodeUnnamedModule
+		readModuleErr.err = errors.New("found module does not have a name")
+		return builtModule, readModuleErr
+	}
+	if readOpts.expectedModuleIdentity != "" {
+		if sourceConfig.ModuleIdentity.IdentityString() != readOpts.expectedModuleIdentity {
+			readModuleErr.code = ReadModuleErrorCodeUnexpectedName
+			readModuleErr.err = fmt.Errorf(
+				"read module has an unexpected module identity %s, expected %s",
+				sourceConfig.ModuleIdentity.IdentityString(), readOpts.expectedModuleIdentity,
+			)
+			return builtModule, readModuleErr
+		}
 	}
 	return builtModule, nil
 }
@@ -645,14 +662,44 @@ func (s *syncer) printCommitsForSync(branch string, syncableCommits []*syncableC
 // syncableCommit holds the modules that need to be synced in a git commit.
 type syncableCommit struct {
 	commit  git.Commit
-	modules map[string]bufmodulebuild.BuiltModule // moduleDir:builtModule
+	modules map[string]*bufmodulebuild.BuiltModule // moduleDir:builtModule
 }
 
 // moduleTarget is the format to use for pending modules while looking back in a branch for a
-// stopping point. When looking back the syncer needs to know what's the module identity for that
-// branch in HEAD (to compare with each commit's module identity), and if there is any BSR expected
-// sync point for that module in that branch.
+// stopping point. When looking back the syncer needs to know what's the target module identity for
+// that branch (either read from in HEAD, or the passed module identity override) to compare with
+// each commit's module identity, and if there is any BSR expected sync point for that module in
+// that branch.
 type moduleTarget struct {
-	moduleIdentityInHEAD bufmoduleref.ModuleIdentity
+	targetModuleIdentity bufmoduleref.ModuleIdentity
 	expectedSyncPoint    string
+}
+
+// rebuildModule takes a built module, and rebuilds it with a new module identity.
+func rebuildModule(
+	ctx context.Context,
+	builtModule bufmodulebuild.BuiltModule,
+	identityOverride bufmoduleref.ModuleIdentity,
+) (*bufmodulebuild.BuiltModule, error) {
+	if identityOverride == nil {
+		return nil, errors.New("no new identity to apply")
+	}
+	if builtModule.ModuleIdentity().IdentityString() == identityOverride.IdentityString() {
+		// same identity, no need to rebuild anything
+		return &builtModule, nil
+	}
+	sourceConfig, err := bufconfig.GetConfigForBucket(ctx, builtModule.Bucket)
+	if err != nil {
+		return nil, fmt.Errorf("invalid module config: %w", err)
+	}
+	rebuiltModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+		ctx,
+		builtModule.Bucket,
+		sourceConfig.Build,
+		bufmodulebuild.WithModuleIdentity(identityOverride),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("rebuild module: %w", err)
+	}
+	return rebuiltModule, nil
 }

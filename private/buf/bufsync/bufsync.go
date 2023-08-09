@@ -60,6 +60,36 @@ type ReadModuleError struct {
 	moduleDir string
 }
 
+// Code returns the error code for this read module error.
+func (err *ReadModuleError) Code() ReadModuleErrorCode {
+	return err.code
+}
+
+// Code returns the module directory in which this error code was thrown.
+func (err *ReadModuleError) ModuleDir() string {
+	return err.moduleDir
+}
+
+const (
+	// LookbackDecisionCodeSkip instructs the syncer to skip the commit that threw the read module
+	// error, and keep looking back.
+	LookbackDecisionCodeSkip = iota + 1
+	// LookbackDecisionCodeOverride instructs the syncer to use the read module and override its
+	// identity with the target module identity for that directory, read either from the branch's HEAD
+	// commit, or the passed module identity override in the command.
+	LookbackDecisionCodeOverride
+	// LookbackDecisionCodeStop instructs the syncer to stop looking back when finding the read module
+	// error, and use the previous commit (if any) as the start sync point.
+	LookbackDecisionCodeStop
+	// LookbackDecisionCodeFail instructs the syncer to fail the lookback process for the branch,
+	// effectively failing the sync process.
+	LookbackDecisionCodeFail
+)
+
+// LookbackDecisionCode is the decision made by the ErrorHandler when finding a commit that throws
+// an error reading a module.
+type LookbackDecisionCode int
+
 func (e *ReadModuleError) Error() string {
 	return fmt.Sprintf(
 		"read module in branch %s, commit %s, directory %s: %s",
@@ -69,15 +99,18 @@ func (e *ReadModuleError) Error() string {
 
 // ErrorHandler handles errors reported by the Syncer before or during the sync process.
 type ErrorHandler interface {
-	// StopLookback is invoked when deciding on a git start sync point.
+	// HandleReadModuleError is invoked when navigating a branch from HEAD and seeing an error reading
+	// a module.
 	//
 	// For each branch to be synced, the Syncer travels back from HEAD looking for modules in the
 	// given module directories, until finding a commit that is already synced to the BSR, or the
 	// beginning of the Git repository.
 	//
 	// The syncer might find errors trying to read a module in that directory. Those errors are sent
-	// to this function to decide if the Syncer should stop looking back or not, and choose the
-	// previous one (if any) as the start sync point.
+	// to this function to know what to do on those commits.
+	//
+	// decide if the Syncer should stop looking back or not, and choose the previous one (if any) as
+	// the start sync point.
 	//
 	// e.g.: The git commits in topological order are: `a -> ... -> z (HEAD)`, and the modules on a
 	// given module directory are:
@@ -94,14 +127,14 @@ type ErrorHandler interface {
 	// s      | buf.build/acme/foo     | Y                | same as HEAD
 	// r      | buf.build/acme/foo     | N                | already synced to the BSR
 	//
-	// If this func returns 'true' for any `ReadModuleErrorCode`, then the syncer will stop looking
-	// when reaching the commit `r` because it already exists in the BSR, select `s` as the start sync
-	// point, and the synced commits into the BSR will be [s, t, x, y, z].
+	// If this func returns `LookbackDecisionCodeSkip` for any `ReadModuleErrorCode`, then the syncer
+	// will stop looking when reaching the commit `r` because it already exists in the BSR, select `s`
+	// as the start sync point, and the synced commits into the BSR will be [s, t, x, y, z].
 	//
-	// On the other hand, if this func returns true for `ReadModuleErrorCodeModuleNotFound`, the
+	// If this func returns `LookbackDecisionCodeStop` for `ReadModuleErrorCodeModuleNotFound`, the
 	// syncer will stop looking when reaching the commit `u`, will select `v` as the start sync point,
 	// and the synced commits into the BSR will be [x, y, z].
-	StopLookback(err *ReadModuleError) bool
+	HandleReadModuleError(err *ReadModuleError) LookbackDecisionCode
 	// InvalidRemoteSyncPoint is invoked by Syncer upon encountering a module's branch sync point that
 	// is invalid locally. A typical example is either a sync point that points to a commit that
 	// cannot be found anymore, or the commit itself has been corrupted.
