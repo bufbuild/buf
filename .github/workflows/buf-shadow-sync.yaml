@@ -20,5 +20,7 @@ jobs:
       - name: Install Local Buf
         run: GOBIN="$HOME/go/bin" go install ./cmd/buf # use CLI version from the checked out code
       - run: buf --version
+      - name: Login to testcustomer cluster
+        run: echo ${{ secrets.BUF_TESTINSTANCE_TOKEN }} | buf registry login testinstance.staging-tenants.buf.team --username bufbot --token-stdin
       - name: Sync current branch
         run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility private
