@@ -13,8 +13,12 @@ jobs:
         with:
           fetch-depth: 0 # fetch all branches and commits, so we can loop them
       - run: git remote set-head origin --auto # set a HEAD for remote/origin, so buf sync can pickup the current default branch
-      - run: echo "GOBIN:$GOBIN"; echo "GOPATH:$GOPATH"; echo "HOME:$HOME"; echo "PATH:$PATH"
-      - name: Install Buf
+      - name: setup-go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20.x'
+      - name: Install Local Buf
         run: GOBIN="$HOME/go/bin" go install ./cmd/buf # use CLI version from the checked out code
       - run: buf --version
-      # - run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility private
+      # - name: Sync current branch
+      #   run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility private
