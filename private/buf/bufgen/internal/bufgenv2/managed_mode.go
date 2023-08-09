@@ -52,14 +52,14 @@ func applyManagementForFile(
 		}
 		switch fileOptionGroup {
 		case groupJavaPackage:
-			if managedConfig.DisabledFunc(fileOptionJavaPackage, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionJavaPackage, imageFile) {
 				continue
 			}
 			override = addPrefixIfNotExist(override, defaultJavaPackagePrefix)
-			if managedConfig.DisabledFunc(fileOptionJavaPackagePrefix, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionJavaPackagePrefix, imageFile) {
 				override = disablePrefix(override)
 			}
-			if managedConfig.DisabledFunc(fileOptionJavaPackageSuffix, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionJavaPackageSuffix, imageFile) {
 				override = disableSuffix(override)
 			}
 			var modfiyOptions []bufimagemodifyv2.ModifyJavaPackageOption
@@ -92,7 +92,7 @@ func applyManagementForFile(
 				return err
 			}
 		case groupJavaOuterClassname:
-			if managedConfig.DisabledFunc(fileOptionJavaOuterClassname, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionJavaOuterClassname, imageFile) {
 				continue
 			}
 			var modifyOptions []bufimagemodifyv2.ModifyJavaOuterClassnameOption
@@ -108,7 +108,7 @@ func applyManagementForFile(
 			}
 			bufimagemodifyv2.ModifyJavaOuterClassname(marker, imageFile, modifyOptions...)
 		case groupJavaMultipleFiles:
-			if managedConfig.DisabledFunc(fileOptionJavaMultipleFiles, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionJavaMultipleFiles, imageFile) {
 				continue
 			}
 			javaMultipleFiles := defaultJavaMultipleFiles
@@ -121,7 +121,7 @@ func applyManagementForFile(
 			}
 			bufimagemodifyv2.ModifyJavaMultipleFiles(marker, imageFile, javaMultipleFiles)
 		case groupJavaStringCheckUtf8:
-			if managedConfig.DisabledFunc(fileOptionJavaStringCheckUtf8, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionJavaStringCheckUtf8, imageFile) {
 				continue
 			}
 			if override == nil {
@@ -134,7 +134,7 @@ func applyManagementForFile(
 			}
 			bufimagemodifyv2.ModifyJavaStringCheckUtf8(marker, imageFile, javaStringCheckUtf8Override.Get())
 		case groupOptimizeFor:
-			if managedConfig.DisabledFunc(fileOptionOptimizeFor, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionOptimizeFor, imageFile) {
 				continue
 			}
 			if override == nil {
@@ -147,10 +147,10 @@ func applyManagementForFile(
 			}
 			bufimagemodifyv2.ModifyOptimizeFor(marker, imageFile, optimizeForOverride.Get())
 		case groupGoPackage:
-			if managedConfig.DisabledFunc(fileOptionGoPackage, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionGoPackage, imageFile) {
 				continue
 			}
-			if managedConfig.DisabledFunc(fileOptionGoPackagePrefix, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionGoPackagePrefix, imageFile) {
 				override = disablePrefix(override)
 			}
 			var modifyOption bufimagemodifyv2.ModifyGoPackageOption
@@ -167,7 +167,7 @@ func applyManagementForFile(
 			}
 			bufimagemodifyv2.ModifyGoPackage(marker, imageFile, modifyOption)
 		case groupCcEnableArenas:
-			if managedConfig.DisabledFunc(fileOptionCcEnableArenas, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionCcEnableArenas, imageFile) {
 				continue
 			}
 			if override == nil {
@@ -180,7 +180,7 @@ func applyManagementForFile(
 			}
 			bufimagemodifyv2.ModifyCcEnableArenas(marker, imageFile, ccEnableArenasOverride.Get())
 		case groupObjcClassPrefix:
-			if managedConfig.DisabledFunc(fileOptionObjcClassPrefix, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionObjcClassPrefix, imageFile) {
 				continue
 			}
 			var modifyOptions []bufimagemodifyv2.ModifyObjcClassPrefixOption
@@ -196,10 +196,10 @@ func applyManagementForFile(
 			}
 			bufimagemodifyv2.ModifyObjcClassPrefix(marker, imageFile, modifyOptions...)
 		case groupCsharpNamespace:
-			if managedConfig.DisabledFunc(fileOptionCsharpNamespace, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionCsharpNamespace, imageFile) {
 				continue
 			}
-			if managedConfig.DisabledFunc(fileOptionCsharpNamespacePrefix, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionCsharpNamespacePrefix, imageFile) {
 				override = disablePrefix(override)
 			}
 			var modifyOptions []bufimagemodifyv2.ModifyCsharpNamespaceOption
@@ -219,7 +219,7 @@ func applyManagementForFile(
 			}
 			bufimagemodifyv2.ModifyCsharpNamespace(marker, imageFile, modifyOptions...)
 		case groupPhpNamespace:
-			if managedConfig.DisabledFunc(fileOptionPhpNamespace, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionPhpNamespace, imageFile) {
 				continue
 			}
 			var modifyOptions []bufimagemodifyv2.ModifyPhpNamespaceOption
@@ -235,13 +235,13 @@ func applyManagementForFile(
 			}
 			bufimagemodifyv2.ModifyPhpNamespace(marker, imageFile, modifyOptions...)
 		case groupPhpMetadataNamespace:
-			if managedConfig.DisabledFunc(fileOptionPhpMetadataNamespace, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionPhpMetadataNamespace, imageFile) {
 				continue
 			}
 			if override == nil {
 				override = newSuffixOverride(defaultPhpMetaNamespaceSuffix)
 			}
-			if managedConfig.DisabledFunc(fileOptionPhpMetadataNamespaceSuffix, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionPhpMetadataNamespaceSuffix, imageFile) {
 				override = disableSuffix(override)
 			}
 			var modifyOptions []bufimagemodifyv2.ModifyPhpMetadataNamespaceOption
@@ -261,10 +261,10 @@ func applyManagementForFile(
 			}
 			bufimagemodifyv2.ModifyPhpMetadataNamespace(marker, imageFile, modifyOptions...)
 		case groupRubyPackage:
-			if managedConfig.DisabledFunc(fileOptionRubyPackage, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionRubyPackage, imageFile) {
 				continue
 			}
-			if managedConfig.DisabledFunc(fileOptionRubyPackageSuffix, imageFile) {
+			if managedConfig.DisabledFunc(FileOptionRubyPackageSuffix, imageFile) {
 				override = disableSuffix(override)
 			}
 			var modifyOptions []bufimagemodifyv2.ModifyRubyPackageOption

@@ -164,6 +164,8 @@ type RefParser interface {
 
 	// GetRef gets the reference for the image file, source bucket, or module.
 	GetRef(ctx context.Context, value string) (Ref, error)
+	// GetRefFormat parses the value as a ref and returns its format.
+	GetRefFormat(ctx context.Context, value string) (string, error)
 }
 
 // NewRefParser returns a new RefParser.

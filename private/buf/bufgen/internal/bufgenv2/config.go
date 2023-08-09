@@ -29,7 +29,7 @@ import (
 )
 
 // disableFunc decides whether a file option should be disabled for a file.
-type disabledFunc func(fileOption, imageFileIdentity) bool
+type disabledFunc func(FileOption, imageFileIdentity) bool
 
 // overrideFunc is specific to a file option, and returns what thie file option
 // should be overridden to for this file.
@@ -246,7 +246,7 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFun
 	if len(externalConfig.FileOption) == 0 && len(externalConfig.Module) == 0 && len(externalConfig.Path) == 0 {
 		return nil, errors.New("must set one of file_option, module and path for a disable rule")
 	}
-	var selectorFileOption fileOption
+	var selectorFileOption FileOption
 	var err error
 	if len(externalConfig.FileOption) > 0 {
 		selectorFileOption, err = parseFileOption(externalConfig.FileOption)
@@ -254,7 +254,7 @@ func newDisabledFunc(externalConfig ExternalManagedDisableConfigV2) (disabledFun
 			return nil, err
 		}
 	}
-	return func(fileOption fileOption, imageFile imageFileIdentity) bool {
+	return func(fileOption FileOption, imageFile imageFileIdentity) bool {
 		// If we did not specify a file option, we match all file options
 		return (selectorFileOption == 0 || fileOption == selectorFileOption) &&
 			matchesPathAndModule(externalConfig.Path, externalConfig.Module, imageFile)
@@ -379,7 +379,7 @@ func mergeFileOptionToOverrideFuncs(fileOptionGroupToOverrideFuncs map[fileOptio
 
 func mergeDisabledFuncs(disabledFuncs []disabledFunc) disabledFunc {
 	// If any disables, then we disable for this fileOption and ImageFile
-	return func(fileOption fileOption, imageFile imageFileIdentity) bool {
+	return func(fileOption FileOption, imageFile imageFileIdentity) bool {
 		for _, disabledFunc := range disabledFuncs {
 			if disabledFunc(fileOption, imageFile) {
 				return true

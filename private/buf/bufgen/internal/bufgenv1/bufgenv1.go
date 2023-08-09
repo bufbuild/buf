@@ -167,6 +167,21 @@ func (g *Generator) Generate(
 	return nil
 }
 
+// ReadConfigV1 reads a generation configuration in v1.
+func ReadConfigV1(
+	ctx context.Context,
+	logger *zap.Logger,
+	readBucket storage.ReadBucket,
+	options ...internal.ReadConfigOption,
+) (*Config, error) {
+	return readConfigV1(
+		ctx,
+		logger,
+		readBucket,
+		options...,
+	)
+}
+
 // ExternalConfigV1 is an external configuration.
 type ExternalConfigV1 struct {
 	Version string                   `json:"version,omitempty" yaml:"version,omitempty"`

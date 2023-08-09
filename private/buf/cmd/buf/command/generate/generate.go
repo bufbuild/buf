@@ -45,6 +45,7 @@ const (
 	disableSymlinksFlagName     = "disable-symlinks"
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
+	migrateV1FlagName           = "migrate-v1"
 )
 
 // NewCommand returns a new Command.
@@ -195,7 +196,7 @@ type flags struct {
 	Template        string
 	BaseOutDirPath  string
 	ErrorFormat     string
-	Files           []string
+	Files           []string // TODO: this is not used in code, it should be removed
 	Config          string
 	Paths           []string
 	IncludeImports  bool
@@ -206,6 +207,7 @@ type flags struct {
 	// want to find out what will break if we do.
 	Types           []string
 	TypesDeprecated []string
+	MigrateV1       bool
 	// special
 	InputHashtag string
 }
@@ -274,6 +276,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
 	)
+	flagSet.BoolVar(
+		&f.MigrateV1,
+		migrateV1FlagName,
+		false,
+		"Migrate generation template from v1 or v1beta1 to v2",
+	)
 	_ = flagSet.MarkDeprecated(typeDeprecatedFlagName, fmt.Sprintf("Use --%s instead", typeFlagName))
 	_ = flagSet.MarkHidden(typeDeprecatedFlagName)
 }
@@ -298,9 +306,7 @@ func run(
 	if err != nil {
 		return err
 	}
-
 	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		".",
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
@@ -308,6 +314,36 @@ func run(
 	if err != nil {
 		return err
 	}
+	var includedTypesFromCLI []string
+	if len(flags.Types) > 0 || len(flags.TypesDeprecated) > 0 {
+		includedTypesFromCLI = append(flags.Types, flags.TypesDeprecated...)
+	}
+	if flags.MigrateV1 {
+		migrateV1Options := []bufgen.MigrateV1ToV2Option{}
+		if inputSpecified != "" {
+			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithInput(inputSpecified))
+		}
+		if flags.Template != "" {
+			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithGenTemplate(flags.Template))
+		}
+		if flags.IncludeImports {
+			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithIncludeImports())
+		}
+		if flags.IncludeWKT {
+			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithIncludeWKT())
+		}
+		if len(flags.Types) > 0 {
+			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithTypes(includedTypesFromCLI))
+		}
+		if len(flags.Paths) > 0 {
+			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithIncludePaths(flags.Paths))
+		}
+		if len(flags.ExcludePaths) > 0 {
+			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithExcludePaths(flags.ExcludePaths))
+		}
+		return bufgen.MigrateV1ToV2(ctx, logger, readWriteBucket, migrateV1Options...)
+	}
+	runner := command.NewRunner()
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
@@ -320,10 +356,6 @@ func run(
 	)
 	if err != nil {
 		return err
-	}
-	var includedTypesFromCLI []string
-	if len(flags.Types) > 0 || len(flags.TypesDeprecated) > 0 {
-		includedTypesFromCLI = append(flags.Types, flags.TypesDeprecated...)
 	}
 	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
 		filepath.Join(
@@ -343,6 +375,7 @@ func run(
 		imageConfigReader,
 		wasmPluginExecutor,
 	)
+	// TODO: only put them in the list conditionally (if they are not empty values)
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithInputSpecified(inputSpecified),
 		bufgen.GenerateWithBaseOutDir(flags.BaseOutDirPath),

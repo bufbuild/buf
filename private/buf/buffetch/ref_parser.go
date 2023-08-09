@@ -180,6 +180,25 @@ func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
+func (a *refParser) GetRefFormat(
+	ctx context.Context,
+	value string,
+) (_ string, retErr error) {
+	ctx, span := a.tracer.Start(ctx, "get_ref_format")
+	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
+	parsedRef, err := a.getParsedRef(ctx, value, allFormats)
+	if err != nil {
+		return "", err
+	}
+	return parsedRef.Format(), nil
+}
+
 func (a *refParser) GetRef(
 	ctx context.Context,
 	value string,

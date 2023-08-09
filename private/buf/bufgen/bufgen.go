@@ -172,3 +172,62 @@ func GenerateWithWasmEnabled() GenerateOption {
 		options.wasmEnbaled = true
 	}
 }
+
+// MigrateV1ToV2 returns an ExternalConfigV2 equivalent to the v1 config provided.
+func MigrateV1ToV2(
+	ctx context.Context,
+	logger *zap.Logger,
+	readBucket storage.ReadBucket,
+	migrateOptions ...MigrateV1ToV2Option,
+) error {
+	return migrateV1ToV2(
+		ctx,
+		logger,
+		readBucket,
+		migrateOptions...,
+	)
+}
+
+type MigrateV1ToV2Option func(*migrateV1ToV2Options)
+
+func MigrateV1ToV2WithInput(input string) MigrateV1ToV2Option {
+	return func(options *migrateV1ToV2Options) {
+		options.input = input
+	}
+}
+
+func MigrateV1ToV2WithGenTemplate(genTemplate string) MigrateV1ToV2Option {
+	return func(options *migrateV1ToV2Options) {
+		options.genTemplate = genTemplate
+	}
+}
+
+func MigrateV1ToV2WithTypes(types []string) MigrateV1ToV2Option {
+	return func(options *migrateV1ToV2Options) {
+		options.types = types
+	}
+}
+
+func MigrateV1ToV2WithIncludePaths(includePaths []string) MigrateV1ToV2Option {
+	return func(options *migrateV1ToV2Options) {
+		options.includePaths = includePaths
+	}
+}
+
+func MigrateV1ToV2WithExcludePaths(excludePaths []string) MigrateV1ToV2Option {
+	return func(options *migrateV1ToV2Options) {
+		options.excludePaths = excludePaths
+	}
+}
+
+func MigrateV1ToV2WithIncludeImports() MigrateV1ToV2Option {
+	return func(options *migrateV1ToV2Options) {
+		options.includeImports = true
+	}
+}
+
+func MigrateV1ToV2WithIncludeWKT() MigrateV1ToV2Option {
+	return func(options *migrateV1ToV2Options) {
+		options.includeWKT = true
+	}
+}

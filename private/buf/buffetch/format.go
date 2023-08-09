@@ -14,6 +14,33 @@
 
 package buffetch
 
+// TODO: remove the unexported formats below and only use these ones.
+// A good time to do so is when we merge txtpb and binpb into this branch.
+const (
+	// formatBin is the binary format.
+	FormatBin = "bin"
+	// formatBingz is the binary gzipped format.
+	FormatBingz = "bingz"
+	// formatDir is the directory format.
+	FormatDir = "dir"
+	// formatGit is the git format.
+	FormatGit = "git"
+	// formatJSON is the JSON format.
+	FormatJSON = "json"
+	// formatJSONGZ is the JSON gzipped format.
+	FormatJSONGZ = "jsongz"
+	// formatMod is the module format.
+	FormatMod = "mod"
+	// formatTar is the tar format.
+	FormatTar = "tar"
+	// formatTargz is the tar gzipped format.
+	FormatTargz = "targz"
+	// formatZip is the zip format.
+	FormatZip = "zip"
+	// formatProtoFile is the proto file format
+	FormatProtoFile = "protofile"
+)
+
 const (
 	// formatBin is the binary format.
 	formatBin = "bin"
