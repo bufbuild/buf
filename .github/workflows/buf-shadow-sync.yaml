@@ -7,7 +7,7 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    # if: github.ref == 'refs/heads/main' # TODO enable all refs once `main` is synced at least once
+    if: github.ref == 'refs/heads/main' # TODO enable all refs once `main` is synced at least once
     steps:
       - uses: actions/checkout@v3
         with:
@@ -20,5 +20,5 @@ jobs:
       - name: Install Local Buf
         run: GOBIN="$HOME/go/bin" go install ./cmd/buf # use CLI version from the checked out code
       - run: buf --version
-      # - name: Sync current branch
-      #   run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility private
+      - name: Sync current branch
+        run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility private
