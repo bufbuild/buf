@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Fix a nil check in `buf alpha repo sync` when building modules with no names.
+- No changes yet.
 
 ## [v1.26.0] - 2023-08-09
 
