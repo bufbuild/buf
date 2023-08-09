@@ -368,7 +368,7 @@ func (h *syncErrorHandler) HandleReadModuleError(err *bufsync.ReadModuleError) b
 	return bufsync.LookbackDecisionCodeFail
 }
 
-func (s *syncErrorHandler) InvalidRemoteSyncPoint(
+func (h *syncErrorHandler) InvalidRemoteSyncPoint(
 	module bufmoduleref.ModuleIdentity,
 	branch string,
 	syncPoint git.Hash,
@@ -392,7 +392,7 @@ func (s *syncErrorHandler) InvalidRemoteSyncPoint(
 				syncPoint.Hex(), branch, module.IdentityString(),
 			)
 		}
-		s.logger.Warn(
+		h.logger.Warn(
 			"last synced git commit not found in the git repo for a non-default branch",
 			zap.String("module", module.IdentityString()),
 			zap.String("branch", branch),

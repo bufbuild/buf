@@ -61,13 +61,20 @@ type ReadModuleError struct {
 }
 
 // Code returns the error code for this read module error.
-func (err *ReadModuleError) Code() ReadModuleErrorCode {
-	return err.code
+func (e *ReadModuleError) Code() ReadModuleErrorCode {
+	return e.code
 }
 
 // Code returns the module directory in which this error code was thrown.
-func (err *ReadModuleError) ModuleDir() string {
-	return err.moduleDir
+func (e *ReadModuleError) ModuleDir() string {
+	return e.moduleDir
+}
+
+func (e *ReadModuleError) Error() string {
+	return fmt.Sprintf(
+		"read module in branch %s, commit %s, directory %s: %s",
+		e.branch, e.commit, e.moduleDir, e.err.Error(),
+	)
 }
 
 const (
@@ -89,13 +96,6 @@ const (
 // LookbackDecisionCode is the decision made by the ErrorHandler when finding a commit that throws
 // an error reading a module.
 type LookbackDecisionCode int
-
-func (e *ReadModuleError) Error() string {
-	return fmt.Sprintf(
-		"read module in branch %s, commit %s, directory %s: %s",
-		e.branch, e.commit, e.moduleDir, e.err.Error(),
-	)
-}
 
 // ErrorHandler handles errors reported by the Syncer before or during the sync process.
 type ErrorHandler interface {
