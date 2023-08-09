@@ -426,7 +426,7 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 				decision := s.errorHandler.HandleReadModuleError(readErr)
 				switch decision {
 				case LookbackDecisionCodeFail:
-					return fmt.Errorf("read module error: %w", err)
+					return fmt.Errorf("read module error: %w", readErr)
 				case LookbackDecisionCodeSkip:
 					logger.Debug("read module at commit failed, skipping commit", zap.Error(readErr))
 				case LookbackDecisionCodeStop:
@@ -437,14 +437,14 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 					if builtModule == nil {
 						return fmt.Errorf("cannot override commit, no built module: %w", readErr)
 					}
-					// rebuild the module with the target identity
+					// rebuild the module with the target identity, and add it to the queue
 					rebuiltModule, err := rebuildModule(ctx, *builtModule, pendingModule.targetModuleIdentity)
 					if err != nil {
 						return fmt.Errorf("override module in commit: %w, rebuild module: %w", readErr, err)
 					}
 					syncModules[moduleDir] = rebuiltModule
 				default:
-					return fmt.Errorf("unexpected decision code %d for read module error %w", decision, err)
+					return fmt.Errorf("unexpected decision code %d for read module error %w", decision, readErr)
 				}
 				continue
 			}
