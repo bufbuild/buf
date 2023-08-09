@@ -13,10 +13,6 @@ jobs:
         with:
           fetch-depth: 0 # fetch all branches and commits, so we can loop them
       - run: git remote set-head origin --auto # set a HEAD for remote/origin, so buf sync can pickup the current default branch
-      - name: setup-go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.20.x'
       - run: echo "GOBIN:$GOBIN"; echo "GOPATH:$GOPATH"; echo "HOME:$HOME"; echo "PATH:$PATH"
       - name: Install Buf
         run: GOBIN="$HOME/go/bin" go install ./cmd/buf # use CLI version from the checked out code
