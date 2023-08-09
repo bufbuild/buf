@@ -196,6 +196,7 @@ func sync(
 		// assumed.
 		modules = []string{"."}
 	}
+	modulesDirsWithOverrides := make(map[string]struct{})
 	for _, module := range modules {
 		if len(module) == 0 {
 			return errors.New("empty module")
@@ -212,12 +213,13 @@ func sync(
 		}
 		moduleDir := normalpath.Normalize(module[:colon])
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(moduleDir, moduleIdentityOverride))
+		modulesDirsWithOverrides[moduleDir] = struct{}{}
 	}
 	syncer, err := bufsync.NewSyncer(
 		container.Logger(),
 		repo,
 		storageProvider,
-		newErrorHandler(container.Logger()),
+		newErrorHandler(container.Logger(), modulesDirsWithOverrides),
 		syncerOptions...,
 	)
 	if err != nil {
@@ -331,18 +333,39 @@ func defaultBranchGetter(clientConfig *connectclient.Config) bufsync.ModuleDefau
 }
 
 type syncErrorHandler struct {
-	logger *zap.Logger
+	logger                          *zap.Logger
+	modulesDirsWithIdentityOverride map[string]struct{}
 }
 
-func newErrorHandler(logger *zap.Logger) bufsync.ErrorHandler {
-	return &syncErrorHandler{logger: logger}
+func newErrorHandler(
+	logger *zap.Logger,
+	modulesDirsWithIdentityOverride map[string]struct{},
+) bufsync.ErrorHandler {
+	return &syncErrorHandler{
+		logger:                          logger,
+		modulesDirsWithIdentityOverride: modulesDirsWithIdentityOverride,
+	}
 }
 
-func (*syncErrorHandler) StopLookback(*bufsync.ReadModuleError) bool {
-	// For this first iteration, we're not stopping at any read error when looking back commits for a
-	// sync start point, and just skipping them to sync possible valid modules in older commits. We
-	// might allow customizing this behavior in the future.
-	return false
+func (h *syncErrorHandler) HandleReadModuleError(err *bufsync.ReadModuleError) bufsync.LookbackDecisionCode {
+	switch err.Code() {
+	case bufsync.ReadModuleErrorCodeModuleNotFound,
+		bufsync.ReadModuleErrorCodeInvalidModuleConfig,
+		bufsync.ReadModuleErrorCodeBuildModule:
+		// if the module cannot be found, has an invalid config, or cannot build, we can just skip the
+		// commit.
+		return bufsync.LookbackDecisionCodeSkip
+	case bufsync.ReadModuleErrorCodeUnnamedModule,
+		bufsync.ReadModuleErrorCodeUnexpectedName:
+		// if the module has an unexpected or no name, we should override the module identity if it was
+		// passed explicitly as an override, otherwise skip them.
+		if _, hasExplicitOverride := h.modulesDirsWithIdentityOverride[err.ModuleDir()]; hasExplicitOverride {
+			return bufsync.LookbackDecisionCodeOverride
+		}
+		return bufsync.LookbackDecisionCodeSkip
+	}
+	// any unhandled scenarios? just fail the sync
+	return bufsync.LookbackDecisionCodeFail
 }
 
 func (s *syncErrorHandler) InvalidRemoteSyncPoint(
