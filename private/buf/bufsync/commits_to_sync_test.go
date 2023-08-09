@@ -17,6 +17,7 @@ package bufsync
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -36,31 +37,15 @@ import (
 
 func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	t.Parallel()
-	// share git repo, bsr checker and modules to sync for all the test scenarios, as a regular `buf
-	// sync` run would do.
-	mockBSRChecker := newMockSyncGitChecker()
 	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
+	require.NoError(t, err)
+	moduleIdentityOverride, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "bar")
 	require.NoError(t, err)
 	// scaffoldGitRepository returns a repo with the following commits:
 	// | o-o----------o-----------------o (main)
 	// |   └o-o (foo) └o--------o (bar)
 	// |               └o (baz)
 	repo := scaffoldGitRepository(t, moduleIdentityInHEAD)
-	testSyncer := syncer{
-		repo:                                  repo,
-		storageGitProvider:                    storagegit.NewProvider(repo.Objects()),
-		logger:                                zaptest.NewLogger(t),
-		modulesDirsToIdentityOverrideForSync:  map[string]bufmoduleref.ModuleIdentity{".": nil},
-		sortedModulesDirsForSync:              []string{"."},
-		syncAllBranches:                       true,
-		syncedGitCommitChecker:                mockBSRChecker.checkFunc(),
-		commitsToTags:                         make(map[string][]string),
-		branchesToModulesForSync:              make(map[string]map[string]bufmoduleref.ModuleIdentity),
-		modulesToBranchesLastSyncPoints:       make(map[string]map[string]string),
-		modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
-	}
-	require.NoError(t, testSyncer.prepareSync(context.Background()))
-
 	type testCase struct {
 		name            string
 		branch          string
@@ -88,35 +73,78 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 			expectedCommits: 2, // counting the commit that branches off bar
 		},
 	}
-	for _, tc := range testCases {
-		func(tc testCase) {
-			t.Run(tc.name, func(t *testing.T) {
-				syncableCommits, err := testSyncer.branchSyncableCommits(
-					context.Background(),
-					tc.branch,
-				)
-				// uncomment for debug purposes
-				// s.printCommitsToSync(tc.branch, syncableCommits)
-				require.NoError(t, err)
-				require.Len(t, syncableCommits, tc.expectedCommits)
-				for i, syncableCommit := range syncableCommits {
-					assert.NotEmpty(t, syncableCommit.commit.Hash().Hex())
-					mockBSRChecker.markSynced(syncableCommit.commit.Hash().Hex())
-					if tc.branch != "main" && i == 0 {
-						// first commit in non-default branches will come with no modules to sync, because it's
-						// the commit in which it branches off the parent branch.
-						assert.Empty(t, syncableCommit.modules)
-					} else {
-						assert.Len(t, syncableCommit.modules, 1)
-						for moduleDir, builtModule := range syncableCommit.modules {
-							assert.Equal(t, ".", moduleDir)
-							assert.Equal(t, moduleIdentityInHEAD.IdentityString(), builtModule.ModuleIdentity().IdentityString())
+	for _, withOverride := range []bool{false, true} {
+		mockBSRChecker := newMockSyncGitChecker()
+		for _, tc := range testCases {
+			func(tc testCase) {
+				t.Run(fmt.Sprintf("%s/override_%t", tc.name, withOverride), func(t *testing.T) {
+					moduleDirsForSync := []string{"."}
+					moduleDirsToIdentity := make(map[string]bufmoduleref.ModuleIdentity)
+					for _, moduleDir := range moduleDirsForSync {
+						if withOverride {
+							moduleDirsToIdentity[moduleDir] = moduleIdentityOverride
+						} else {
+							moduleDirsToIdentity[moduleDir] = nil
 						}
 					}
-				}
-			})
-		}(tc)
+					testSyncer := syncer{
+						repo:                                  repo,
+						storageGitProvider:                    storagegit.NewProvider(repo.Objects()),
+						logger:                                zaptest.NewLogger(t),
+						errorHandler:                          &mockErrorHandler{},
+						modulesDirsToIdentityOverrideForSync:  moduleDirsToIdentity,
+						sortedModulesDirsForSync:              moduleDirsForSync,
+						syncAllBranches:                       true,
+						syncedGitCommitChecker:                mockBSRChecker.checkFunc(),
+						commitsToTags:                         make(map[string][]string),
+						branchesToModulesForSync:              make(map[string]map[string]bufmoduleref.ModuleIdentity),
+						modulesToBranchesLastSyncPoints:       make(map[string]map[string]string),
+						modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
+					}
+					require.NoError(t, testSyncer.prepareSync(context.Background()))
+					syncableCommits, err := testSyncer.branchSyncableCommits(
+						context.Background(),
+						tc.branch,
+					)
+					// uncomment for debug purposes
+					// s.printCommitsToSync(tc.branch, syncableCommits)
+					require.NoError(t, err)
+					require.Len(t, syncableCommits, tc.expectedCommits)
+					for i, syncableCommit := range syncableCommits {
+						assert.NotEmpty(t, syncableCommit.commit.Hash().Hex())
+						mockBSRChecker.markSynced(syncableCommit.commit.Hash().Hex())
+						if tc.branch != "main" && i == 0 {
+							// first commit in non-default branches will come with no modules to sync, because it's
+							// the commit in which it branches off the parent branch.
+							assert.Empty(t, syncableCommit.modules)
+						} else {
+							assert.Len(t, syncableCommit.modules, 1)
+							for moduleDir, builtModule := range syncableCommit.modules {
+								assert.Equal(t, ".", moduleDir)
+								if withOverride {
+									assert.Equal(t, moduleIdentityOverride.IdentityString(), builtModule.ModuleIdentity().IdentityString())
+								} else {
+									assert.Equal(t, moduleIdentityInHEAD.IdentityString(), builtModule.ModuleIdentity().IdentityString())
+								}
+							}
+						}
+					}
+				})
+			}(tc)
+		}
 	}
+}
+
+type mockErrorHandler struct{}
+
+func (*mockErrorHandler) HandleReadModuleError(*ReadModuleError) LookbackDecisionCode {
+	// we know this test don't contain any hard read module error, for the sake of the test let's
+	// always override
+	return LookbackDecisionCodeOverride
+}
+
+func (*mockErrorHandler) InvalidRemoteSyncPoint(bufmoduleref.ModuleIdentity, string, git.Hash, bool, error) error {
+	return errors.New("unimplemented")
 }
 
 type mockSyncedGitChecker struct {
