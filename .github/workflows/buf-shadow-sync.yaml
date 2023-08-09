@@ -18,9 +18,7 @@ jobs:
         with:
           go-version: '1.20.x'
       - run: echo "GOBIN:$GOBIN"; echo "GOPATH:$GOPATH"; echo "HOME:$HOME"; echo "PATH:$PATH"
-      - run: echo "$HOME/go/bin" >> $GITHUB_PATH
-      - run: echo "PATH:$PATH"
       - name: Install Buf
-        run: make installbuf # use CLI version from the checked out code
+        run: GOBIN="$HOME/go/bin" go install ./cmd/buf # use CLI version from the checked out code
       - run: buf --version
       # - run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility private
