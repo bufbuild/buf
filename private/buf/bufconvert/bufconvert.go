@@ -32,8 +32,8 @@ const (
 	MessageEncodingBinpb MessageEncoding = iota + 1
 	// MessageEncodingJSON is the JSON image encoding.
 	MessageEncodingJSON
-	// MessageEncodingTextpb is the protobuf text image encoding.
-	MessageEncodingTextpb
+	// MessageEncodingTxtpb is the protobuf text image encoding.
+	MessageEncodingTxtpb
 	// formatBinpb is the binary format.
 	formatBinpb = "binpb"
 	// formatJSON is the JSON format.
@@ -118,7 +118,7 @@ func parseMessageEncodingExt(ext string, defaultEncoding MessageEncoding) Messag
 	case formatJSON:
 		return MessageEncodingJSON
 	case formatTxtpb:
-		return MessageEncodingTextpb
+		return MessageEncodingTxtpb
 	default:
 		return defaultEncoding
 	}
@@ -131,7 +131,7 @@ func parseMessageEncodingFormat(format string) (MessageEncoding, error) {
 	case formatJSON:
 		return MessageEncodingJSON, nil
 	case formatTxtpb:
-		return MessageEncodingTextpb, nil
+		return MessageEncodingTxtpb, nil
 	default:
 		return 0, fmt.Errorf("invalid format for message: %q", format)
 	}

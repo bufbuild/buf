@@ -528,7 +528,7 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 			format = formatBinpb
 		case ".json":
 			format = formatJSON
-		case ".textpb":
+		case ".txtpb":
 			format = formatTxtpb
 		case ".gz":
 			compressionType = internal.CompressionTypeGzip
@@ -537,7 +537,7 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 				format = formatBinpb
 			case ".json":
 				format = formatJSON
-			case ".textpb":
+			case ".txtpb":
 				format = formatTxtpb
 			default:
 				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
@@ -549,7 +549,7 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 				format = formatBinpb
 			case ".json":
 				format = formatJSON
-			case ".textpb":
+			case ".txtpb":
 				format = formatTxtpb
 			default:
 				return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
