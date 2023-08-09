@@ -440,7 +440,7 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 					// rebuild the module with the target identity, and add it to the queue
 					rebuiltModule, err := rebuildModule(ctx, *builtModule, pendingModule.targetModuleIdentity)
 					if err != nil {
-						return fmt.Errorf("override module in commit: %w, rebuild module: %w", readErr, err)
+						return fmt.Errorf("override module in commit: %s, rebuild module: %w", readErr.Error(), err)
 					}
 					syncModules[moduleDir] = rebuiltModule
 				default:
