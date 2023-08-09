@@ -1,16 +1,13 @@
 name: Buf shadow sync
 
 on:
-  # Same config as buf.yaml workflow
-  # push:
-  #   paths:
-  #     - 'proto/**'
+  push: # Any push, regardless if it contains proto changes or not
   workflow_dispatch: # also allow manual trigger
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' # TODO enable all refs once `main` is synced at least once
     steps:
       - uses: actions/checkout@v3
         with:
@@ -21,4 +18,4 @@ jobs:
           github_token: ${{ github.token }}
           buf_user: bufbot
           buf_api_token: ${{ secrets.BUF_TOKEN }}
-      - run: buf alpha repo sync -v --debug --timeout 0 --module proto:buf.build/buftest/buf-shadow-sync --create --create-visibility private
+      - run: buf alpha repo sync --debug --timeout 0 --module proto:buf.build/buftest/buf-shadow-sync --create --create-visibility private
