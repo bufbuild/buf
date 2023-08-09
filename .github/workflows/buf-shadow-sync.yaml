@@ -17,5 +17,5 @@ jobs:
         with:
           github_token: ${{ github.token }}
           buf_user: bufbot
-          buf_api_token: ${{ secrets.BUF_TOKEN }}
-      - run: buf alpha repo sync --debug --timeout 0 --module proto:buf.build/buftest/buf-shadow-sync --create --create-visibility private
+          buf_api_token: ${{ secrets.BUF_TESTINSTANCE_TOKEN }}
+      - run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility private
