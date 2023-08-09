@@ -46,6 +46,8 @@ const (
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
 	migrateV1FlagName           = "migrate-v1"
+	baseOutDirFlagDefault       = "."
+	errorFormatFlagDefault      = "text"
 )
 
 // NewCommand returns a new Command.
@@ -246,13 +248,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.BaseOutDirPath,
 		baseOutDirPathFlagName,
 		baseOutDirPathFlagShortName,
-		".",
+		baseOutDirFlagDefault,
 		`The base directory to generate to. This is prepended to the out directories in the generation template`,
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
-		"text",
+		errorFormatFlagDefault,
 		fmt.Sprintf(
 			"The format for build errors, printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
@@ -341,7 +343,29 @@ func run(
 		if len(flags.ExcludePaths) > 0 {
 			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithExcludePaths(flags.ExcludePaths))
 		}
-		return bufgen.MigrateV1ToV2(ctx, logger, readWriteBucket, migrateV1Options...)
+		err = bufgen.MigrateV1ToV2(ctx, logger, readWriteBucket, migrateV1Options...)
+		if err != nil {
+			return err
+		}
+		updatedGenerateCommand := "buf generate"
+		if flags.Template != "" {
+			updatedGenerateCommand += getStringFlagText(templateFlagName, flags.Template)
+		}
+		if flags.BaseOutDirPath != baseOutDirFlagDefault {
+			updatedGenerateCommand += getStringFlagText(baseOutDirPathFlagName, flags.BaseOutDirPath)
+		}
+		if flags.ErrorFormat != errorFormatFlagDefault {
+			updatedGenerateCommand += getStringFlagText(errorFormatFlagName, flags.ErrorFormat)
+		}
+		if flags.Config != "" {
+			updatedGenerateCommand += getStringFlagText(configFlagName, flags.Config)
+		}
+		if flags.DisableSymlinks {
+			updatedGenerateCommand += getBoolFlagText(disableSymlinksFlagName)
+		}
+		message := fmt.Sprintf("Migration finshed, to generate with buf, run:\n%s\n", updatedGenerateCommand)
+		_, err := container.Stderr().Write([]byte(message))
+		return err
 	}
 	runner := command.NewRunner()
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
@@ -414,4 +438,12 @@ func run(
 		container,
 		generateOptions...,
 	)
+}
+
+func getStringFlagText(flagName string, value string) string {
+	return fmt.Sprintf(" --%s %s", flagName, value)
+}
+
+func getBoolFlagText(flagName string) string {
+	return fmt.Sprintf(" --%s", flagName)
 }
