@@ -213,3 +213,8 @@ issues:
         - paralleltest
       text: "missing the call to method parallel"
       path: private/buf/bufsync/commits_to_sync_test.go
+    # A git repo is not safe to read concurrently, since it has a single object reader.
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/pkg/git/repository_test.go

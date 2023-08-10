@@ -157,7 +157,9 @@ func (r *repository) CurrentBranch() string {
 func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommitOption) error {
 	var config forEachCommitOpts
 	for _, option := range options {
-		option(&config)
+		if err := option(&config); err != nil {
+			return err
+		}
 	}
 	var startCommit Commit
 	if config.start == nil {
