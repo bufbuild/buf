@@ -1,24 +1,25 @@
 name: Buf shadow sync
 
 on:
-  # Same config as buf.yaml workflow
-  # push:
-  #   paths:
-  #     - 'proto/**'
+  push: # Any push, regardless if it contains proto changes or not
   workflow_dispatch: # also allow manual trigger
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # fetch all branches and commits, so we can loop them
       - run: git remote set-head origin --auto # set a HEAD for remote/origin, so buf sync can pickup the current default branch
-      - uses: bufbuild/buf-setup-action@v1.25.0
+      - name: setup-go
+        uses: actions/setup-go@v4
         with:
-          github_token: ${{ github.token }}
-          buf_user: bufbot
-          buf_api_token: ${{ secrets.BUF_TOKEN }}
-      - run: buf alpha repo sync -v --debug --timeout 0 --module proto:buf.build/buftest/buf-shadow-sync --create --create-visibility private
+          go-version: '1.20.x'
+      - name: Install Local Buf
+        run: GOBIN="$HOME/go/bin" go install ./cmd/buf # use CLI version from the checked out code
+      - run: buf --version
+      - name: Login to testcustomer cluster
+        run: echo ${{ secrets.BUF_TESTINSTANCE_TOKEN }} | buf registry login testinstance.staging-tenants.buf.team --username bufbot --token-stdin
+      - name: Sync current branch
+        run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility public
