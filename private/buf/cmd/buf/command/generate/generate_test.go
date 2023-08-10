@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -124,6 +125,85 @@ func TestCompareGeneratedStubsGoogleapisPyi(t *testing.T) {
 		googleapisDirPath,
 		[]*testPluginInfo{{name: "pyi"}},
 	)
+}
+
+func TestCompareMigrateAndGenerate(t *testing.T) {
+	testingextended.SkipIfShort(t)
+	t.Parallel()
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+
+	tmpDir := t.TempDir()
+	v1Content := `version: v1
+plugins:
+  - name: java
+    out: java
+types:
+  include:
+    - a.v1.Foo
+`
+	outDir := filepath.Join(tmpDir, "out")
+	templatePath := filepath.Join(tmpDir, "buf.gen.yaml")
+	err := os.WriteFile(templatePath, []byte(v1Content), 0600)
+	require.NoError(t, err)
+	protoDir := filepath.Join("testdata", "types")
+
+	// generate with v1 template
+	testRunSuccess(
+		t,
+		protoDir,
+		"--template",
+		templatePath,
+		"-o",
+		outDir,
+	)
+	bucketV1, err := storageosProvider.NewReadWriteBucket(
+		outDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+
+	// migrate from v1 to v2
+	testRunSuccess(
+		t,
+		protoDir,
+		"--template",
+		templatePath,
+		"-o",
+		outDir,
+		"--migrate-v1",
+	)
+
+	data, err := os.ReadFile(templatePath)
+	require.NoError(t, err)
+	versionConfig := bufgen.ExternalConfigVersion{}
+	err = encoding.UnmarshalYAMLNonStrict(data, &versionConfig)
+	require.NoError(t, err)
+	require.Equal(t, "v2", versionConfig.Version)
+
+	// generate with v2 template
+	testRunSuccess(
+		t,
+		protoDir,
+		"--template",
+		templatePath,
+		"-o",
+		outDir,
+	)
+	bucketV2, err := storageosProvider.NewReadWriteBucket(
+		outDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+
+	diff, err := storage.DiffBytes(
+		context.Background(),
+		command.NewRunner(),
+		bucketV1,
+		bucketV2,
+		transformGolangProtocVersionToUnknown(t),
+	)
+	require.NoError(t, err)
+	assert.Empty(t, string(diff))
 }
 
 func TestCompareInsertionPointOutput(t *testing.T) {
