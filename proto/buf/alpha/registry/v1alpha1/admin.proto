@@ -42,9 +42,9 @@ message UniquenessPolicy {
 
 // GracePeriodPolicy is the policy for the review flow grace period on the server.
 message GracePeriodPolicy {
-  // The duration of the grace period.
+  // The number of seconds of the grace period.
   // Set to zero to disable the grace period.
-  google.protobuf.Duration duration = 1;
+  uint64 grace_period_seconds = 1;
 }
 
 // Collision is a collision that has occurred.
