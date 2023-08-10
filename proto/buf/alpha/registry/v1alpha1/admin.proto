@@ -44,7 +44,7 @@ message UniquenessPolicy {
 message GracePeriodPolicy {
   // The number of seconds of the grace period.
   // Set to zero to disable the grace period.
-  uint64 grace_period_seconds = 1;
+  uint32 grace_period_seconds = 1;
 }
 
 // Collision is a collision that has occurred.
