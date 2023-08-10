@@ -74,9 +74,9 @@ message SyncGitCommitRequest {
   repeated buf.alpha.module.v1alpha1.Blob blobs = 5;
   // Hash is the SHA1 hash of the Git commit.
   string hash = 6;
-  // Author is the author of the Git commit. This is typically an end-user.
+  // Author is the author of the Git commit.
   GitIdentity author = 7;
-  // Commiter is the commiter of the Git commit. This typically a CI system.
+  // Commiter is the commiter of the Git commit.
   GitIdentity commiter = 8;
   // Tags are the Git tags which point to this commit.
   repeated string tags = 9;
@@ -95,8 +95,12 @@ message AttachGitTagsRequest {
   // Hash is the SHA1 hash of the Git commit that is tagged. The BSR has the ability to resolve this
   // git hash to a BSR commit.
   string hash = 3;
+  // Author is the author of the Git commit.
+  GitIdentity author = 4;
+  // Commiter is the commiter of the Git commit.
+  GitIdentity commiter = 5;
   // Tags are the Git tags which point to this commit, and that will be synced to the BSR commit.
-  repeated string tags = 4;
+  repeated string tags = 6;
 }
 
 message AttachGitTagsResponse {
