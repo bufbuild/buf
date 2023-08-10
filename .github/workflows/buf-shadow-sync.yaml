@@ -7,7 +7,6 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' # TODO enable all refs once `main` is synced at least once
     steps:
       - uses: actions/checkout@v3
         with:
