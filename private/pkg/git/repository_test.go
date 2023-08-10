@@ -66,10 +66,13 @@ func TestCommits(t *testing.T) {
 
 	repo := gittest.ScaffoldGitRepository(t)
 	var commits []git.Commit
-	err := repo.ForEachCommit(gittest.DefaultBranch, func(c git.Commit) error {
-		commits = append(commits, c)
-		return nil
-	})
+	err := repo.ForEachCommit(
+		func(c git.Commit) error {
+			commits = append(commits, c)
+			return nil
+		},
+		git.ForEachCommitWithBranchStartPoint(gittest.DefaultBranch),
+	)
 
 	require.NoError(t, err)
 	require.Len(t, commits, 3)
