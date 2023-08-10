@@ -44,7 +44,7 @@ message UniquenessPolicy {
 message ReviewFlowGracePeriodPolicy {
   // The number of seconds of the grace period.
   // Set to zero to disable the grace period.
-  uint32 grace_period_seconds = 1;
+  uint32 duration_seconds = 1;
 }
 
 // Collision is a collision that has occurred.
