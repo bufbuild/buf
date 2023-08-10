@@ -40,8 +40,8 @@ message UniquenessPolicy {
   bool enabled = 1;
 }
 
-// GracePeriodPolicy is the policy for the review flow grace period on the server.
-message GracePeriodPolicy {
+// ReviewFlowGracePeriodPolicy is the policy for the review flow grace period on the server.
+message ReviewFlowGracePeriodPolicy {
   // The number of seconds of the grace period.
   // Set to zero to disable the grace period.
   uint32 grace_period_seconds = 1;
@@ -119,9 +119,9 @@ service AdminService {
     option idempotency_level = IDEMPOTENT;
   }
   // Get review flow grace period policy for the server.
-  rpc GetGracePeriodPolicy(GetGracePeriodPolicyRequest) returns (GetGracePeriodPolicyResponse);
+  rpc GetReviewFlowGracePeriodPolicy(GetReviewFlowGracePeriodPolicyRequest) returns (GetReviewFlowGracePeriodPolicyResponse);
   // Update review flow grace period policy for the server.
-  rpc UpdateGracePeriodPolicy(UpdateGracePeriodPolicyRequest) returns (UpdateGracePeriodPolicyResponse);
+  rpc UpdateReviewFlowGracePeriodPolicy(UpdateReviewFlowGracePeriodPolicyRequest) returns (UpdateReviewFlowGracePeriodPolicyResponse);
 }
 
 message ForceDeleteUserRequest {
@@ -220,16 +220,16 @@ message RunServerUniquenessBackfillTaskRequest {}
 
 message RunServerUniquenessBackfillTaskResponse {}
 
-message GetGracePeriodPolicyRequest {}
+message GetReviewFlowGracePeriodPolicyRequest {}
 
-message GetGracePeriodPolicyResponse {
+message GetReviewFlowGracePeriodPolicyResponse {
   // The current grace period policy settings.
-  GracePeriodPolicy policy = 1;
+  ReviewFlowGracePeriodPolicy policy = 1;
 }
 
-message UpdateGracePeriodPolicyRequest {
+message UpdateReviewFlowGracePeriodPolicyRequest {
   // The new grace period policy settings.
-  GracePeriodPolicy policy = 1;
+  ReviewFlowGracePeriodPolicy policy = 1;
 }
 
-message UpdateGracePeriodPolicyResponse {}
+message UpdateReviewFlowGracePeriodPolicyResponse {}
