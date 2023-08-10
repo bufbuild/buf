@@ -134,18 +134,34 @@ func TestCompareMigrateAndGenerate(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	v1Content := `version: v1
+managed:
+  enabled: true
+  cc_enable_arenas: false
+  java_multiple_files: false
+  java_package_prefix: com
+  java_string_check_utf8: false
+  optimize_for: CODE_SIZE
+  go_package_prefix:
+    default: github.com/acme/weather/private/gen/proto/go
+    except:
+      - buf.build/googleapis/googleapis
+    override:
+      buf.build/acme/weather: github.com/acme/weather/gen/proto/go
+  override:
+    JAVA_PACKAGE:
+      acme/weather/v1/weather.proto: "org"
 plugins:
-  - name: java
-    out: java
-types:
-  include:
-    - a.v1.Foo
+  - plugin: go
+    out: gen/proto/go
+    opt: paths=source_relative
+  - plugin: java
+    out: gen/java
 `
 	outDir := filepath.Join(tmpDir, "out")
 	templatePath := filepath.Join(tmpDir, "buf.gen.yaml")
 	err := os.WriteFile(templatePath, []byte(v1Content), 0600)
 	require.NoError(t, err)
-	protoDir := filepath.Join("testdata", "types")
+	protoDir := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 
 	// generate with v1 template
 	testRunSuccess(
