@@ -23,4 +23,4 @@ jobs:
       - name: Login to testcustomer cluster
         run: echo ${{ secrets.BUF_TESTINSTANCE_TOKEN }} | buf registry login testinstance.staging-tenants.buf.team --username bufbot --token-stdin
       - name: Sync current branch
-        run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility private
+        run: buf alpha repo sync --debug --timeout 0 --module proto:testinstance.staging-tenants.buf.team/bufbuild/buf-shadow-sync --create --create-visibility public
