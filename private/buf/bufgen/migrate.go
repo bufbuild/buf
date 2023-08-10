@@ -94,6 +94,7 @@ func migrateV1ToV2(
 		ctx,
 		logger,
 		configV1,
+		bufpluginexec.FindPluginPath,
 		options.input,
 		options.types,
 		options.includePaths,
@@ -150,15 +151,26 @@ func convertConfigV1ToExternalConfigV2(
 	ctx context.Context,
 	logger *zap.Logger,
 	configV1 *bufgenv1.Config,
+	findPluginFunc func(string) (string, error),
 	input string,
-	types []string,
+	typesOverride []string,
 	includePaths []string,
 	excludePaths []string,
 	includeImports bool,
 	includeWKT bool,
 ) (*ExternalConfigV2, error) {
+	if input == "" {
+		input = "."
+	}
 	externalConfigV2 := bufgenv2.ExternalConfigV2{
 		Version: "v2",
+	}
+	var types []string
+	if typesConifg := configV1.TypesConfig; typesConifg != nil {
+		types = typesConifg.Include
+	}
+	if len(typesOverride) > 0 {
+		types = typesOverride
 	}
 	inputConfig, err := getExternalInputConfigV2(
 		ctx,
@@ -177,11 +189,12 @@ func convertConfigV1ToExternalConfigV2(
 	for _, pluginConfigV1 := range configV1.PluginConfigs {
 		pluginConfigV2, err := pluginConfigToExternalPluginConfigV2(
 			pluginConfigV1,
+			findPluginFunc,
 			includeImports,
 			includeWKT,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("unable to migrate plugins: %w", err)
+			return nil, fmt.Errorf("unable to migrate plugin %q: %w", pluginConfigV1.PluginName(), err)
 		}
 		externalConfigV2.Plugins = append(externalConfigV2.Plugins, *pluginConfigV2)
 	}
@@ -191,23 +204,44 @@ func convertConfigV1ToExternalConfigV2(
 
 func pluginConfigToExternalPluginConfigV2(
 	pluginConfig bufgenplugin.PluginConfig,
+	findPluginFunc func(string) (string, error),
 	includeImports bool,
 	includeWKT bool,
 ) (*bufgenv2.ExternalPluginConfigV2, error) {
 	externalPluginConfig := bufgenv2.ExternalPluginConfigV2{}
+	// opt and out are common to all plugins
 	externalPluginConfig.Out = pluginConfig.Out()
-	externalPluginConfig.Opt = pluginConfig.Opt()
+	optString := pluginConfig.Opt()
+	switch opts := strings.Split(optString, ","); len(opts) {
+	case 1:
+		if optString == "" {
+			externalPluginConfig.Opt = nil
+			break
+		}
+		externalPluginConfig.Opt = opts[0]
+	default:
+		externalPluginConfig.Opt = opts
+	}
 	pluginName := pluginConfig.PluginName()
 	switch t := pluginConfig.(type) {
 	case bufgenplugin.BinaryPluginConfig:
+		strategy := t.Strategy().String()
+		externalPluginConfig.Strategy = &strategy
 		externalPluginConfig.Binary = t.Path()
+		if len(t.Path()) == 1 {
+			externalPluginConfig.Binary = t.Path()[0]
+		}
 	case bufgenplugin.ProtocBuiltinPluginConfig:
+		strategy := t.Strategy().String()
+		externalPluginConfig.Strategy = &strategy
 		externalPluginConfig.ProtocBuiltin = &pluginName
 		if protocPath := t.ProtocPath(); protocPath != "" {
 			externalPluginConfig.ProtocPath = &protocPath
 		}
 	case bufgenplugin.LocalPluginConfig:
-		if binaryPath, err := bufpluginexec.FindPluginPath("protoc-gen-" + pluginName); err != nil {
+		strategy := t.Strategy().String()
+		externalPluginConfig.Strategy = &strategy
+		if binaryPath, err := findPluginFunc("protoc-gen-" + pluginName); err == nil {
 			// this is a binary plugin
 			externalPluginConfig.Binary = binaryPath
 			break
@@ -223,7 +257,7 @@ func pluginConfigToExternalPluginConfigV2(
 		// # we couldn't find protoc-gen-xyz locally and you should verify that it is
 		// # a binary installed locally
 		// binary_plugin: protoc-gen-xyz
-		return nil, fmt.Errorf("unable to migrate plugin %q: plugin protoc-gen-%s is not found locally and %s is not built-in to protoc", pluginName, pluginName, pluginName)
+		return nil, fmt.Errorf("plugin protoc-gen-%s is not found locally and %s is not built-in to protoc", pluginName, pluginName)
 	case bufgenplugin.CuratedPluginConfig:
 		externalPluginConfig.Remote = &pluginName
 		revision := t.Revision()
@@ -433,6 +467,8 @@ func getExternalInputConfigV2(
 		inputConfig.BinaryImage = &path
 	case buffetch.FormatBingz:
 		inputConfig.BinaryImage = &path
+		compression := "gzip"
+		inputConfig.Compression = &compression
 	case buffetch.FormatDir:
 		inputConfig.Directory = &path
 	case buffetch.FormatGit:
@@ -441,12 +477,16 @@ func getExternalInputConfigV2(
 		inputConfig.JSONImage = &path
 	case buffetch.FormatJSONGZ:
 		inputConfig.JSONImage = &path
+		compression := "gzip"
+		inputConfig.Compression = &compression
 	case buffetch.FormatMod:
 		inputConfig.Module = &path
 	case buffetch.FormatTar:
 		inputConfig.Tarball = &path
 	case buffetch.FormatTargz:
 		inputConfig.Tarball = &path
+		compression := "gzip"
+		inputConfig.Compression = &compression
 	case buffetch.FormatZip:
 		inputConfig.ZipArchive = &path
 	case buffetch.FormatProtoFile:
@@ -456,6 +496,8 @@ func getExternalInputConfigV2(
 		return nil, fmt.Errorf("unrecognized format: %s", format)
 	}
 	for key, value := range options {
+		key := key
+		value := value
 		switch key {
 		case "format":
 			// No-op, because ref parser has already returned the correct format.
