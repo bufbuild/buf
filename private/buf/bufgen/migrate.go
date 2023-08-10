@@ -64,6 +64,12 @@ func migrateV1ToV2(
 	for _, option := range migrateOptions {
 		option(options)
 	}
+	switch filepath.Ext(options.genTemplate) {
+	case ".json", ".yaml", ".yml":
+		// OK
+	default:
+		return errors.New("migration can only apply to a file on disk with extension .yaml, .yml or .json")
+	}
 	configVersion, err := internal.ReadConfigVersion(
 		ctx,
 		logger,
@@ -107,10 +113,9 @@ func migrateV1ToV2(
 	}
 	// Write the external config v2.
 	var configV2Data []byte
-	outPath := options.genTemplate
 	switch filepath.Ext(options.genTemplate) {
 	case ".json":
-		configV2Data, err = json.Marshal(&externalConifgV2)
+		configV2Data, err = json.MarshalIndent(&externalConifgV2, "", "  ")
 		if err != nil {
 			return err
 		}
@@ -121,30 +126,10 @@ func migrateV1ToV2(
 		}
 		configV2Data = append([]byte(migratedV2FileYAMLHeader), configV2Data...)
 	default:
-		// check whether the format should be JSON or YAML
-		placeHolderConfig := ExternalConfigVersion{}
-		// Note: must try JSON first instead of YAML, because YAML is a superset of JSON
-		err = json.Unmarshal([]byte(options.genTemplate), &placeHolderConfig)
-		if err == nil {
-			// json data
-			configV2Data, err = json.Marshal(&externalConifgV2)
-			if err != nil {
-				return err
-			}
-			// TODO: maybe this file already exists
-			outPath = "buf.gen.migratev1.json"
-			break
-		}
-		// yaml data
-		configV2Data, err = encoding.MarshalYAML(&externalConifgV2)
-		if err != nil {
-			return err
-		}
-		configV2Data = append([]byte(migratedV2FileYAMLHeader), configV2Data...)
-		// TODO: maybe this file already exists
-		outPath = "buf.gen.migratev1.yaml"
+		// This should not happen because we already checked this at the beginning of this function.
+		return errors.New("migration can only apply to a file on disk with extension .yaml, .yml or .json")
 	}
-	return os.WriteFile(outPath, configV2Data, 0600)
+	return os.WriteFile(options.genTemplate, configV2Data, 0600)
 }
 
 func convertConfigV1ToExternalConfigV2(
