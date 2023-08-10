@@ -77,6 +77,9 @@ const (
 	// AdminServiceRunServerUniquenessBackfillTaskProcedure is the fully-qualified name of the
 	// AdminService's RunServerUniquenessBackfillTask RPC.
 	AdminServiceRunServerUniquenessBackfillTaskProcedure = "/buf.alpha.registry.v1alpha1.AdminService/RunServerUniquenessBackfillTask"
+	// AdminServiceGetGracePeriodPolicyProcedure is the fully-qualified name of the AdminService's
+	// GetGracePeriodPolicy RPC.
+	AdminServiceGetGracePeriodPolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetGracePeriodPolicy"
 	// AdminServiceUpdateGracePeriodPolicyProcedure is the fully-qualified name of the AdminService's
 	// UpdateGracePeriodPolicy RPC.
 	AdminServiceUpdateGracePeriodPolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateGracePeriodPolicy"
@@ -108,6 +111,8 @@ type AdminServiceClient interface {
 	// if they intend to enable uniqueness policy enforcement.
 	// Successful completion of this operation is a pre-requisite for enabling uniqueness policy enforcement.
 	RunServerUniquenessBackfillTask(context.Context, *connect_go.Request[v1alpha1.RunServerUniquenessBackfillTaskRequest]) (*connect_go.Response[v1alpha1.RunServerUniquenessBackfillTaskResponse], error)
+	// Get review flow grace period policy for the server.
+	GetGracePeriodPolicy(context.Context, *connect_go.Request[v1alpha1.GetGracePeriodPolicyRequest]) (*connect_go.Response[v1alpha1.GetGracePeriodPolicyResponse], error)
 	// Update review flow grace period policy for the server.
 	UpdateGracePeriodPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateGracePeriodPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateGracePeriodPolicyResponse], error)
 }
@@ -178,6 +183,11 @@ func NewAdminServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 			connect_go.WithClientOptions(opts...),
 		),
+		getGracePeriodPolicy: connect_go.NewClient[v1alpha1.GetGracePeriodPolicyRequest, v1alpha1.GetGracePeriodPolicyResponse](
+			httpClient,
+			baseURL+AdminServiceGetGracePeriodPolicyProcedure,
+			opts...,
+		),
 		updateGracePeriodPolicy: connect_go.NewClient[v1alpha1.UpdateGracePeriodPolicyRequest, v1alpha1.UpdateGracePeriodPolicyResponse](
 			httpClient,
 			baseURL+AdminServiceUpdateGracePeriodPolicyProcedure,
@@ -198,6 +208,7 @@ type adminServiceClient struct {
 	updateUniquenessPolicy               *connect_go.Client[v1alpha1.UpdateUniquenessPolicyRequest, v1alpha1.UpdateUniquenessPolicyResponse]
 	listServerUniquenessCollisions       *connect_go.Client[v1alpha1.ListServerUniquenessCollisionsRequest, v1alpha1.ListServerUniquenessCollisionsResponse]
 	runServerUniquenessBackfillTask      *connect_go.Client[v1alpha1.RunServerUniquenessBackfillTaskRequest, v1alpha1.RunServerUniquenessBackfillTaskResponse]
+	getGracePeriodPolicy                 *connect_go.Client[v1alpha1.GetGracePeriodPolicyRequest, v1alpha1.GetGracePeriodPolicyResponse]
 	updateGracePeriodPolicy              *connect_go.Client[v1alpha1.UpdateGracePeriodPolicyRequest, v1alpha1.UpdateGracePeriodPolicyResponse]
 }
 
@@ -256,6 +267,11 @@ func (c *adminServiceClient) RunServerUniquenessBackfillTask(ctx context.Context
 	return c.runServerUniquenessBackfillTask.CallUnary(ctx, req)
 }
 
+// GetGracePeriodPolicy calls buf.alpha.registry.v1alpha1.AdminService.GetGracePeriodPolicy.
+func (c *adminServiceClient) GetGracePeriodPolicy(ctx context.Context, req *connect_go.Request[v1alpha1.GetGracePeriodPolicyRequest]) (*connect_go.Response[v1alpha1.GetGracePeriodPolicyResponse], error) {
+	return c.getGracePeriodPolicy.CallUnary(ctx, req)
+}
+
 // UpdateGracePeriodPolicy calls buf.alpha.registry.v1alpha1.AdminService.UpdateGracePeriodPolicy.
 func (c *adminServiceClient) UpdateGracePeriodPolicy(ctx context.Context, req *connect_go.Request[v1alpha1.UpdateGracePeriodPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateGracePeriodPolicyResponse], error) {
 	return c.updateGracePeriodPolicy.CallUnary(ctx, req)
@@ -287,6 +303,8 @@ type AdminServiceHandler interface {
 	// if they intend to enable uniqueness policy enforcement.
 	// Successful completion of this operation is a pre-requisite for enabling uniqueness policy enforcement.
 	RunServerUniquenessBackfillTask(context.Context, *connect_go.Request[v1alpha1.RunServerUniquenessBackfillTaskRequest]) (*connect_go.Response[v1alpha1.RunServerUniquenessBackfillTaskResponse], error)
+	// Get review flow grace period policy for the server.
+	GetGracePeriodPolicy(context.Context, *connect_go.Request[v1alpha1.GetGracePeriodPolicyRequest]) (*connect_go.Response[v1alpha1.GetGracePeriodPolicyResponse], error)
 	// Update review flow grace period policy for the server.
 	UpdateGracePeriodPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateGracePeriodPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateGracePeriodPolicyResponse], error)
 }
@@ -353,6 +371,11 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
 	)
+	adminServiceGetGracePeriodPolicyHandler := connect_go.NewUnaryHandler(
+		AdminServiceGetGracePeriodPolicyProcedure,
+		svc.GetGracePeriodPolicy,
+		opts...,
+	)
 	adminServiceUpdateGracePeriodPolicyHandler := connect_go.NewUnaryHandler(
 		AdminServiceUpdateGracePeriodPolicyProcedure,
 		svc.UpdateGracePeriodPolicy,
@@ -380,6 +403,8 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerO
 			adminServiceListServerUniquenessCollisionsHandler.ServeHTTP(w, r)
 		case AdminServiceRunServerUniquenessBackfillTaskProcedure:
 			adminServiceRunServerUniquenessBackfillTaskHandler.ServeHTTP(w, r)
+		case AdminServiceGetGracePeriodPolicyProcedure:
+			adminServiceGetGracePeriodPolicyHandler.ServeHTTP(w, r)
 		case AdminServiceUpdateGracePeriodPolicyProcedure:
 			adminServiceUpdateGracePeriodPolicyHandler.ServeHTTP(w, r)
 		default:
@@ -429,6 +454,10 @@ func (UnimplementedAdminServiceHandler) ListServerUniquenessCollisions(context.C
 
 func (UnimplementedAdminServiceHandler) RunServerUniquenessBackfillTask(context.Context, *connect_go.Request[v1alpha1.RunServerUniquenessBackfillTaskRequest]) (*connect_go.Response[v1alpha1.RunServerUniquenessBackfillTaskResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.RunServerUniquenessBackfillTask is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) GetGracePeriodPolicy(context.Context, *connect_go.Request[v1alpha1.GetGracePeriodPolicyRequest]) (*connect_go.Response[v1alpha1.GetGracePeriodPolicyResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetGracePeriodPolicy is not implemented"))
 }
 
 func (UnimplementedAdminServiceHandler) UpdateGracePeriodPolicy(context.Context, *connect_go.Request[v1alpha1.UpdateGracePeriodPolicyRequest]) (*connect_go.Response[v1alpha1.UpdateGracePeriodPolicyResponse], error) {

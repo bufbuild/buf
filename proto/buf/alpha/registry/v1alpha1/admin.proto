@@ -118,6 +118,8 @@ service AdminService {
   rpc RunServerUniquenessBackfillTask(RunServerUniquenessBackfillTaskRequest) returns (RunServerUniquenessBackfillTaskResponse) {
     option idempotency_level = IDEMPOTENT;
   }
+  // Get review flow grace period policy for the server.
+  rpc GetGracePeriodPolicy(GetGracePeriodPolicyRequest) returns (GetGracePeriodPolicyResponse);
   // Update review flow grace period policy for the server.
   rpc UpdateGracePeriodPolicy(UpdateGracePeriodPolicyRequest) returns (UpdateGracePeriodPolicyResponse);
 }
@@ -218,7 +220,15 @@ message RunServerUniquenessBackfillTaskRequest {}
 
 message RunServerUniquenessBackfillTaskResponse {}
 
+message GetGracePeriodPolicyRequest {}
+
+message GetGracePeriodPolicyResponse {
+  // The current grace period policy settings.
+  GracePeriodPolicy policy = 1;
+}
+
 message UpdateGracePeriodPolicyRequest {
+  // The new grace period policy settings.
   GracePeriodPolicy policy = 1;
 }
 
