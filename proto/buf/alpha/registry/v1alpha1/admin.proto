@@ -40,6 +40,13 @@ message UniquenessPolicy {
   bool enabled = 1;
 }
 
+// ReviewFlowGracePeriodPolicy is the policy for the review flow grace period on the server.
+message ReviewFlowGracePeriodPolicy {
+  // The number of seconds of the grace period.
+  // Set to zero to disable the grace period.
+  uint32 duration_seconds = 1;
+}
+
 // Collision is a collision that has occurred.
 message Collision {
   // The reference that has collisions.
@@ -111,6 +118,10 @@ service AdminService {
   rpc RunServerUniquenessBackfillTask(RunServerUniquenessBackfillTaskRequest) returns (RunServerUniquenessBackfillTaskResponse) {
     option idempotency_level = IDEMPOTENT;
   }
+  // Get review flow grace period policy for the server.
+  rpc GetReviewFlowGracePeriodPolicy(GetReviewFlowGracePeriodPolicyRequest) returns (GetReviewFlowGracePeriodPolicyResponse);
+  // Update review flow grace period policy for the server.
+  rpc UpdateReviewFlowGracePeriodPolicy(UpdateReviewFlowGracePeriodPolicyRequest) returns (UpdateReviewFlowGracePeriodPolicyResponse);
 }
 
 message ForceDeleteUserRequest {
@@ -208,3 +219,17 @@ message ListServerUniquenessCollisionsResponse {
 message RunServerUniquenessBackfillTaskRequest {}
 
 message RunServerUniquenessBackfillTaskResponse {}
+
+message GetReviewFlowGracePeriodPolicyRequest {}
+
+message GetReviewFlowGracePeriodPolicyResponse {
+  // The current grace period policy settings.
+  ReviewFlowGracePeriodPolicy policy = 1;
+}
+
+message UpdateReviewFlowGracePeriodPolicyRequest {
+  // The new grace period policy settings.
+  ReviewFlowGracePeriodPolicy policy = 1;
+}
+
+message UpdateReviewFlowGracePeriodPolicyResponse {}
