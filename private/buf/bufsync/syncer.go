@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
@@ -290,7 +291,7 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 		return fmt.Errorf("finding commits to sync: %w", err)
 	}
 	// first lookback from the starting point, syncing old tags
-	if err := s.syncLookback(ctx, branch, commitsForSync); err != nil {
+	if err := s.attachOlderTags(ctx, branch, commitsForSync); err != nil {
 		return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
 	}
 	// then sync the new commits
@@ -640,17 +641,81 @@ func (s *syncer) readModuleAt(
 	return builtModule, nil
 }
 
-// syncLookback takes syncable commits for a branch already calculated, and looks back for each
+// attachOlderTags takes syncable commits for a branch already calculated, and looks back for each
 // module a given amount of commits or timestamps, syncing tags in case they were created or moved
 // after those commits were synced.
-func (s *syncer) syncLookback(ctx context.Context, branch string, syncableCommits []*syncableCommit) error {
-	_, err := s.lookbackStartingPoints(ctx, branch, syncableCommits)
+func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCommits []*syncableCommit) error {
+	branchModulesForSync, ok := s.branchesToModulesForSync[branch]
+	if !ok || len(branchModulesForSync) == 0 {
+		// branch should not be synced, or no modules to sync in that branch
+		return nil
+	}
+	moduleToStartPoint, err := s.lookbackStartingPoints(ctx, branch, syncableCommits)
 	if err != nil {
 		return fmt.Errorf("find lookback starting points for branch %s: %w", branch, err)
 	}
-	// for moduleDir, startPoint := range moduleToStartPoint {
-
-	// }
+	const (
+		// TODO make it customizable
+		lookbackCommitsLimit = 5
+		lookbackTimeLimit    = 24 * time.Hour
+	)
+	timeLimit := time.Now().Add(-lookbackTimeLimit)
+	stopLoopErr := errors.New("stop loop")
+	for moduleDir, startPoint := range moduleToStartPoint {
+		// each module needs a valid identity to attach old tags to
+		targetModuleIdentity, ok := branchModulesForSync[moduleDir]
+		if !ok {
+			return fmt.Errorf("unexpected module directory %s", moduleDir)
+		}
+		if targetModuleIdentity == nil {
+			s.logger.Warn(
+				"module directory has no module identity target for branch, skipping syncing older tags",
+				zap.String("branch", branch),
+				zap.String("module directory", moduleDir),
+			)
+			continue
+		}
+		var lookbackCommitCount int
+		forEachOldCommitFunc := func(oldCommit git.Commit) error {
+			lookbackCommitCount++
+			// For the lookback into older commits to stop, both lookback limits (amount of commits and
+			// timespan) need to be met.
+			if lookbackCommitCount > lookbackCommitCount && oldCommit.Committer().Timestamp().Before(timeLimit) {
+				return stopLoopErr
+			}
+			// Is there any tag in this commit to attach?
+			tagsToAttach := s.commitsToTags[oldCommit.Hash().Hex()]
+			if len(tagsToAttach) == 0 {
+				return nil
+			}
+			// For each older commit we travel, we need to make sure it's a valid module with the expected
+			// module identity.
+			var shouldAttachTagsForThisCommit bool
+			_, readErr := s.readModuleAt(
+				ctx, branch, oldCommit, moduleDir,
+				readModuleAtWithExpectedModuleIdentity(targetModuleIdentity.IdentityString()),
+			)
+			if readErr == nil {
+				shouldAttachTagsForThisCommit = true
+			} else if s.errorHandler.HandleReadModuleError(readErr) == LookbackDecisionCodeOverride {
+				shouldAttachTagsForThisCommit = true
+			}
+			if !shouldAttachTagsForThisCommit {
+				return nil
+			}
+			// We assume those commits were already synced, and try to attach tags to them, but if
+			// attaching the older tags fails, we'll WARN+continue to not block actual pending commits to
+			// sync in this run.
+			// TODO: actually sync tags to this commit
+			return nil
+		}
+		if err := s.repo.ForEachCommit(
+			forEachOldCommitFunc,
+			git.ForEachCommitWithHashStartPoint(startPoint.Hex()),
+		); err != nil && !errors.Is(err, stopLoopErr) {
+			return fmt.Errorf("looking back the start sync point: %w", err)
+		}
+	}
 	return nil
 }
 
