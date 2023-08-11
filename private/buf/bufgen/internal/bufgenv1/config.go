@@ -219,7 +219,7 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgenplugi
 			} else {
 				// plugin.Plugin is a local plugin - verify it isn't using an legacy remote plugin path
 				if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
-					return nil, fmt.Errorf("%s: invalid local plugin", id)
+					return nil, fmt.Errorf("%s: invalid plugin reference: %s", id, pluginIdentifier)
 				}
 				if len(path) > 0 {
 					pluginConfig, err = bufgenplugin.NewBinaryPluginConfig(
@@ -254,18 +254,11 @@ func getPluginConfigs(externalConfig ExternalConfigV1, id string) ([]bufgenplugi
 				}
 			}
 		case plugin.Remote != "":
-			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err != nil {
-				return nil, fmt.Errorf("%s: invalid remote plugin name: %w", id, err)
-			}
-			if err := checkPathAndStrategyUnset(id, plugin, pluginIdentifier); err != nil {
-				return nil, err
-			}
-			pluginConfig, err = bufgenplugin.NewLegacyRemotePluginConfig(
-				plugin.Remote,
-				plugin.Out,
-				opt,
-				false,
-				false,
+			// Remote generation alpha features have been deprecated, but we continue to detect
+			// the remote field to surface a better error message.
+			return nil, fmt.Errorf("%s: the remote field no longer works as the remote generation alpha has been deprecated, see the migration guide to now-stable remote plugins: %s",
+				id,
+				"https://buf.build/docs/migration-guides/migrate-remote-generation-alpha/#migrate-to-remote-plugins",
 			)
 		case plugin.Name != "":
 			// Check that the plugin name doesn't look like a plugin reference

@@ -25,10 +25,11 @@ import (
 )
 
 func TestGetParsedRefSuccess_UnixOnly(t *testing.T) {
+	t.Parallel()
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			formatBinpb,
 			"",
 			internal.FileSchemeStdin,
 			internal.CompressionTypeNone,
@@ -38,7 +39,7 @@ func TestGetParsedRefSuccess_UnixOnly(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			formatBinpb,
 			"",
 			internal.FileSchemeStdout,
 			internal.CompressionTypeNone,

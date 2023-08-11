@@ -256,7 +256,7 @@ func (e *fileLister) sourceFileInfosForDirectory(
 	if err != nil {
 		return nil, err
 	}
-	module, err := bufmodulebuild.BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		mappedReadBucket,
 		config.Build,

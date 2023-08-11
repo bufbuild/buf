@@ -28,31 +28,67 @@ import (
 )
 
 func TestRoundTripBin(t *testing.T) {
+	t.Parallel()
 	testRoundTripLocalFile(
 		t,
 		"file.bin",
 		[]byte("one"),
-		formatBin,
+		formatBinpb,
 		internal.CompressionTypeNone,
 	)
 }
 
 func TestRoundTripBinGz(t *testing.T) {
+	t.Parallel()
 	testRoundTripLocalFile(
 		t,
 		"file.bin.gz",
 		[]byte("one"),
-		formatBin,
+		formatBinpb,
 		internal.CompressionTypeGzip,
 	)
 }
 
 func TestRoundTripBinZst(t *testing.T) {
+	t.Parallel()
 	testRoundTripLocalFile(
 		t,
 		"file.bin.zst",
 		[]byte("one"),
-		formatBin,
+		formatBinpb,
+		internal.CompressionTypeZstd,
+	)
+}
+
+func TestRoundTripBinpb(t *testing.T) {
+	t.Parallel()
+	testRoundTripLocalFile(
+		t,
+		"file.binpb",
+		[]byte("one"),
+		formatBinpb,
+		internal.CompressionTypeNone,
+	)
+}
+
+func TestRoundTripBinpbGz(t *testing.T) {
+	t.Parallel()
+	testRoundTripLocalFile(
+		t,
+		"file.binpb.gz",
+		[]byte("one"),
+		formatBinpb,
+		internal.CompressionTypeGzip,
+	)
+}
+
+func TestRoundTripBinpbZst(t *testing.T) {
+	t.Parallel()
+	testRoundTripLocalFile(
+		t,
+		"file.binpb.zst",
+		[]byte("one"),
+		formatBinpb,
 		internal.CompressionTypeZstd,
 	)
 }
@@ -64,8 +100,6 @@ func testRoundTripLocalFile(
 	expectedFormat string,
 	expectedCompressionType internal.CompressionType,
 ) {
-	t.Parallel()
-
 	logger := zap.NewNop()
 	refParser := newRefParser(logger)
 	reader := testNewFetchReader(logger)

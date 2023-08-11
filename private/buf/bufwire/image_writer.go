@@ -117,6 +117,17 @@ func (i *imageWriter) imageMarshal(
 			return nil, err
 		}
 		return protoencoding.NewJSONMarshaler(resolver).Marshal(message)
+	case buffetch.ImageEncodingTxtpb:
+		// TODO: verify that image is complete
+		resolver, err := protoencoding.NewResolver(
+			bufimage.ImageToFileDescriptors(
+				image,
+			)...,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return protoencoding.NewTxtpbMarshaler(resolver).Marshal(message)
 	default:
 		return nil, fmt.Errorf("unknown image encoding: %v", imageEncoding)
 	}

@@ -98,7 +98,15 @@ var (
 // WorkspaceBuilder builds workspaces. A single WorkspaceBuilder should NOT be persisted
 // acorss calls because the WorkspaceBuilder caches the modules used in each workspace.
 type WorkspaceBuilder interface {
-	// BuildWorkspace builds a bufmodule.Workspace for the given targetSubDirPath.
+	// BuildWorkspace builds a bufmodule.Workspace.
+	//
+	// The given targetSubDirPath is the only path that will have the configOverride applied to it.
+	// TODO: delete targetSubDirPath entirely. We are building a Workspace, we don't necessarily
+	// have a specific target directory within it. This would mean doing the config override at
+	// a higher level for any specific modules within the Workspace. The only thing in the config
+	// we care about is the build.excludes, so in theory we should be able to figure out a way
+	// to say "exclude these files from these modules when you are building". Even better, the
+	// WorkspaceBuilder has nothing to do with building modules.
 	BuildWorkspace(
 		ctx context.Context,
 		workspaceConfig *Config,
@@ -117,10 +125,8 @@ type WorkspaceBuilder interface {
 }
 
 // NewWorkspaceBuilder returns a new WorkspaceBuilder.
-func NewWorkspaceBuilder(
-	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-) WorkspaceBuilder {
-	return newWorkspaceBuilder(moduleBucketBuilder)
+func NewWorkspaceBuilder() WorkspaceBuilder {
+	return newWorkspaceBuilder()
 }
 
 // BuildOptionsForWorkspaceDirectory returns the bufmodulebuild.BuildOptions required for

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package c.v1;
+
+import "d/v1/d.proto";
+
+message C {
+  d.v1.D d = 1;
+}

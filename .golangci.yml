@@ -35,7 +35,7 @@ linters:
     - containedctx
     # - contextcheck
     - decorder
-    - depguard
+    # - depguard
     - dogsled
     - errcheck
     - execinquery
@@ -57,11 +57,13 @@ linters:
     - ineffassign
     - logrlint
     - makezero
+    - mirror
     - misspell
     - nakedret
     - nilerr
     - nolintlint
     - nosprintfhostport
+    - paralleltest
     - predeclared
     - promlinter
     - reassign
@@ -193,3 +195,26 @@ issues:
         - gosec
       text: "G404:"
       path: private/bufpkg/bufimage/bufimageutil/.*_test\.go
+    # This test shouldn't run in parallel as it allocates a lot of memory.
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/bufpkg/bufimage/bufimagebuild/builder_unix_test.go
+    # TestWorkspaceArchiveDir, TestWorkspaceWithInvalidArchivePathFail
+    # and TestWorkspaceWithInvalidArchiveAbsolutePathFail cannot run in parallel
+    # because they all call createZipFromDir on the same path, writing to the same file.
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/buf/cmd/buf/workspace_test.go
+    # Parallelizing TestPlainPostHandlerTLS and TestPlainPostHandlerH2C
+    # makes this test flaky.
+    - linters:
+        - paralleltest
+      path: private/bufpkg/bufstudioagent/bufstudioagent_test.go
+      text: "missing the call to method parallel"
+    # Buf sync branches are not synced (nor tested) in parallel
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/buf/bufsync/commits_to_sync_test.go

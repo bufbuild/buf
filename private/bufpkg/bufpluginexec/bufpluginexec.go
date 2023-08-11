@@ -20,7 +20,9 @@ package bufpluginexec
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os/exec"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
@@ -272,4 +274,17 @@ func newHandlerOptions() *handlerOptions {
 // of the file is done in the handlers Handle method.
 func looksLikeWASM(pluginName string) bool {
 	return strings.HasSuffix(pluginName, ".wasm")
+}
+
+// unsafeLookPath is a wrapper around exec.LookPath that restores the original
+// pre-Go 1.19 behavior of resolving queries that would use relative PATH
+// entries. We consider it acceptable for the use case of locating plugins.
+//
+// https://pkg.go.dev/os/exec#hdr-Executables_in_the_current_directory
+func unsafeLookPath(file string) (string, error) {
+	path, err := exec.LookPath(file)
+	if errors.Is(err, exec.ErrDot) {
+		err = nil
+	}
+	return path, err
 }

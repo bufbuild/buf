@@ -22,6 +22,7 @@ import (
 )
 
 func TestValidateRemoteNotEmpty(t *testing.T) {
+	t.Parallel()
 	err := ValidateRemoteNotEmpty("")
 	require.Equal(t, "you must specify a remote module", err.Error())
 	require.NoError(t, ValidateRemoteNotEmpty("buf.build"))

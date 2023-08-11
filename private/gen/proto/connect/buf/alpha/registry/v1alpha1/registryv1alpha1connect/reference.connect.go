@@ -50,6 +50,9 @@ const (
 	// ReferenceServiceGetReferenceByNameProcedure is the fully-qualified name of the ReferenceService's
 	// GetReferenceByName RPC.
 	ReferenceServiceGetReferenceByNameProcedure = "/buf.alpha.registry.v1alpha1.ReferenceService/GetReferenceByName"
+	// ReferenceServiceListGitCommitsForReferenceProcedure is the fully-qualified name of the
+	// ReferenceService's ListGitCommitsForReference RPC.
+	ReferenceServiceListGitCommitsForReferenceProcedure = "/buf.alpha.registry.v1alpha1.ReferenceService/ListGitCommitsForReference"
 )
 
 // ReferenceServiceClient is a client for the buf.alpha.registry.v1alpha1.ReferenceService service.
@@ -57,6 +60,9 @@ type ReferenceServiceClient interface {
 	// GetReferenceByName takes a reference name and returns the
 	// reference either as 'main', a tag, or commit.
 	GetReferenceByName(context.Context, *connect_go.Request[v1alpha1.GetReferenceByNameRequest]) (*connect_go.Response[v1alpha1.GetReferenceByNameResponse], error)
+	// ListGitCommitsForReference takes a string reference and returns a paginated list of
+	// git commit information associated with the resolved reference commit.
+	ListGitCommitsForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsForReferenceResponse], error)
 }
 
 // NewReferenceServiceClient constructs a client for the
@@ -76,17 +82,30 @@ func NewReferenceServiceClient(httpClient connect_go.HTTPClient, baseURL string,
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
+		listGitCommitsForReference: connect_go.NewClient[v1alpha1.ListGitCommitsForReferenceRequest, v1alpha1.ListGitCommitsForReferenceResponse](
+			httpClient,
+			baseURL+ReferenceServiceListGitCommitsForReferenceProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
+		),
 	}
 }
 
 // referenceServiceClient implements ReferenceServiceClient.
 type referenceServiceClient struct {
-	getReferenceByName *connect_go.Client[v1alpha1.GetReferenceByNameRequest, v1alpha1.GetReferenceByNameResponse]
+	getReferenceByName         *connect_go.Client[v1alpha1.GetReferenceByNameRequest, v1alpha1.GetReferenceByNameResponse]
+	listGitCommitsForReference *connect_go.Client[v1alpha1.ListGitCommitsForReferenceRequest, v1alpha1.ListGitCommitsForReferenceResponse]
 }
 
 // GetReferenceByName calls buf.alpha.registry.v1alpha1.ReferenceService.GetReferenceByName.
 func (c *referenceServiceClient) GetReferenceByName(ctx context.Context, req *connect_go.Request[v1alpha1.GetReferenceByNameRequest]) (*connect_go.Response[v1alpha1.GetReferenceByNameResponse], error) {
 	return c.getReferenceByName.CallUnary(ctx, req)
+}
+
+// ListGitCommitsForReference calls
+// buf.alpha.registry.v1alpha1.ReferenceService.ListGitCommitsForReference.
+func (c *referenceServiceClient) ListGitCommitsForReference(ctx context.Context, req *connect_go.Request[v1alpha1.ListGitCommitsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsForReferenceResponse], error) {
+	return c.listGitCommitsForReference.CallUnary(ctx, req)
 }
 
 // ReferenceServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.ReferenceService
@@ -95,6 +114,9 @@ type ReferenceServiceHandler interface {
 	// GetReferenceByName takes a reference name and returns the
 	// reference either as 'main', a tag, or commit.
 	GetReferenceByName(context.Context, *connect_go.Request[v1alpha1.GetReferenceByNameRequest]) (*connect_go.Response[v1alpha1.GetReferenceByNameResponse], error)
+	// ListGitCommitsForReference takes a string reference and returns a paginated list of
+	// git commit information associated with the resolved reference commit.
+	ListGitCommitsForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsForReferenceResponse], error)
 }
 
 // NewReferenceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -103,14 +125,28 @@ type ReferenceServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewReferenceServiceHandler(svc ReferenceServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(ReferenceServiceGetReferenceByNameProcedure, connect_go.NewUnaryHandler(
+	referenceServiceGetReferenceByNameHandler := connect_go.NewUnaryHandler(
 		ReferenceServiceGetReferenceByNameProcedure,
 		svc.GetReferenceByName,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.ReferenceService/", mux
+	)
+	referenceServiceListGitCommitsForReferenceHandler := connect_go.NewUnaryHandler(
+		ReferenceServiceListGitCommitsForReferenceProcedure,
+		svc.ListGitCommitsForReference,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
+	)
+	return "/buf.alpha.registry.v1alpha1.ReferenceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ReferenceServiceGetReferenceByNameProcedure:
+			referenceServiceGetReferenceByNameHandler.ServeHTTP(w, r)
+		case ReferenceServiceListGitCommitsForReferenceProcedure:
+			referenceServiceListGitCommitsForReferenceHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedReferenceServiceHandler returns CodeUnimplemented from all methods.
@@ -118,4 +154,8 @@ type UnimplementedReferenceServiceHandler struct{}
 
 func (UnimplementedReferenceServiceHandler) GetReferenceByName(context.Context, *connect_go.Request[v1alpha1.GetReferenceByNameRequest]) (*connect_go.Response[v1alpha1.GetReferenceByNameResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ReferenceService.GetReferenceByName is not implemented"))
+}
+
+func (UnimplementedReferenceServiceHandler) ListGitCommitsForReference(context.Context, *connect_go.Request[v1alpha1.ListGitCommitsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListGitCommitsForReferenceResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ReferenceService.ListGitCommitsForReference is not implemented"))
 }

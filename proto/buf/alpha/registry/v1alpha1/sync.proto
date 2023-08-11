@@ -39,6 +39,10 @@ service SyncService {
   rpc SyncGitCommit(SyncGitCommitRequest) returns (SyncGitCommitResponse) {
     option idempotency_level = IDEMPOTENT;
   }
+  // AttachGitTags attaches git tags (or moves them in case they already existed) to an existing Git
+  // SHA reference in a BSR repository. It is used when syncing the git repository, to sync git tags
+  // that could have been moved to git commits that were already synced.
+  rpc AttachGitTags(AttachGitTagsRequest) returns (AttachGitTagsResponse);
 }
 
 message GetGitSyncPointRequest {
@@ -70,9 +74,9 @@ message SyncGitCommitRequest {
   repeated buf.alpha.module.v1alpha1.Blob blobs = 5;
   // Hash is the SHA1 hash of the Git commit.
   string hash = 6;
-  // Author is the author of the Git commit. This is typically an end-user.
+  // Author is the author of the Git commit.
   GitIdentity author = 7;
-  // Commiter is the commiter of the Git commit. This typically a CI system.
+  // Commiter is the commiter of the Git commit.
   GitIdentity commiter = 8;
   // Tags are the Git tags which point to this commit.
   repeated string tags = 9;
@@ -81,4 +85,25 @@ message SyncGitCommitRequest {
 message SyncGitCommitResponse {
   // SyncPoint is the latest syncpoint for the SyncGitCommit request.
   GitSyncPoint sync_point = 1;
+}
+
+message AttachGitTagsRequest {
+  // Owner is the owner of the BSR repository.
+  string owner = 1;
+  // Repository is the name of the BSR repository.
+  string repository = 2;
+  // Hash is the SHA1 hash of the Git commit that is tagged. The BSR has the ability to resolve this
+  // git hash to a BSR commit.
+  string hash = 3;
+  // Author is the author of the Git commit.
+  GitIdentity author = 4;
+  // Commiter is the commiter of the Git commit.
+  GitIdentity commiter = 5;
+  // Tags are the Git tags which point to this commit, and that will be synced to the BSR commit.
+  repeated string tags = 6;
+}
+
+message AttachGitTagsResponse {
+  // The BSR commit that was resolved from the given hash, to which the tags were attached.
+  string bsr_commit_name = 1;
 }

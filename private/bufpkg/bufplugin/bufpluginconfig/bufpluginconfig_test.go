@@ -334,6 +334,7 @@ func TestParsePluginConfigGoNoDepsOrMinVersion(t *testing.T) {
 }
 
 func TestPluginOptionsRoundTrip(t *testing.T) {
+	t.Parallel()
 	assertPluginOptionsRoundTrip(t, nil)
 	assertPluginOptionsRoundTrip(t, map[string]string{})
 	assertPluginOptionsRoundTrip(t, map[string]string{

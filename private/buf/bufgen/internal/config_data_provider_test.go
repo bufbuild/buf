@@ -35,14 +35,17 @@ plugins:
 `
 
 func TestProviderV1Beta1(t *testing.T) {
+	t.Parallel()
 	testProvider(t, "v1beta1")
 }
 
 func TestProviderV1(t *testing.T) {
+	t.Parallel()
 	testProvider(t, "v1")
 }
 
 func TestProviderError(t *testing.T) {
+	t.Parallel()
 	storageosProvider := storageos.NewProvider()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(".")
 	require.NoError(t, err)

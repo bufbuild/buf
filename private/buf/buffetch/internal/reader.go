@@ -232,7 +232,7 @@ func (r *reader) getArchiveBucket(
 		if size < 0 {
 			data, err := io.ReadAll(readCloser)
 			if err != nil {
-				return
+				return nil, err
 			}
 			readerAt = bytes.NewReader(data)
 			size = int64(len(data))

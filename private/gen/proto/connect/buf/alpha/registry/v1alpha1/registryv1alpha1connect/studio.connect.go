@@ -118,19 +118,27 @@ type StudioServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewStudioServiceHandler(svc StudioServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(StudioServiceListStudioAgentPresetsProcedure, connect_go.NewUnaryHandler(
+	studioServiceListStudioAgentPresetsHandler := connect_go.NewUnaryHandler(
 		StudioServiceListStudioAgentPresetsProcedure,
 		svc.ListStudioAgentPresets,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(StudioServiceSetStudioAgentPresetsProcedure, connect_go.NewUnaryHandler(
+	)
+	studioServiceSetStudioAgentPresetsHandler := connect_go.NewUnaryHandler(
 		StudioServiceSetStudioAgentPresetsProcedure,
 		svc.SetStudioAgentPresets,
 		opts...,
-	))
-	return "/buf.alpha.registry.v1alpha1.StudioService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.StudioService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case StudioServiceListStudioAgentPresetsProcedure:
+			studioServiceListStudioAgentPresetsHandler.ServeHTTP(w, r)
+		case StudioServiceSetStudioAgentPresetsProcedure:
+			studioServiceSetStudioAgentPresetsHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedStudioServiceHandler returns CodeUnimplemented from all methods.

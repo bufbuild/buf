@@ -16,20 +16,23 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/plugin.proto";
+import "buf/alpha/registry/v1alpha1/doc.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
 enum SearchFilter {
+  reserved 4, 5;
+  reserved "SEARCH_FILTER_PLUGIN", "SEARCH_FILTER_TEMPLATE";
+
   SEARCH_FILTER_UNSPECIFIED = 0;
   SEARCH_FILTER_USER = 1;
   SEARCH_FILTER_ORGANIZATION = 2;
   SEARCH_FILTER_REPOSITORY = 3;
-  SEARCH_FILTER_PLUGIN = 4 [deprecated = true];
-  SEARCH_FILTER_TEMPLATE = 5 [deprecated = true];
   SEARCH_FILTER_TEAM = 6;
   SEARCH_FILTER_CURATED_PLUGIN = 7;
+  SEARCH_FILTER_MODULE_ELEMENT = 8;
+  SEARCH_FILTER_MODULE_FILE = 9;
 }
 
 enum OrderBy {
@@ -67,18 +70,6 @@ message TeamSearchResult {
   string organization_name = 3;
 }
 
-message PluginSearchResult {
-  option deprecated = true;
-  string id = 1;
-  string name = 2;
-  // The name of the user or organization
-  // who is the owner of this plugin.
-  string owner = 3;
-  // The visibility of the plugin.
-  PluginVisibility visibility = 4;
-  bool deprecated = 5;
-}
-
 message CuratedPluginSearchResult {
   string id = 1;
   string name = 2;
@@ -88,27 +79,72 @@ message CuratedPluginSearchResult {
   bool deprecated = 4;
 }
 
-message TemplateSearchResult {
-  option deprecated = true;
-  string id = 1;
-  string name = 2;
-  // The name of the user or organization
-  // who is the owner of this template.
-  string owner = 3;
-  // The visibility of the template.
-  PluginVisibility visibility = 4;
-  bool deprecated = 5;
+message ModuleElementSearchResult {
+  string repository_id = 1;
+  string repository_owner = 2;
+  string repository_name = 3;
+  string proto_file_path = 4;
+  string fully_qualified_name = 5;
+  string package_name = 6;
+}
+
+message ModuleFileSearchResult {
+  string repository_id = 1;
+  string repository_owner = 2;
+  string repository_name = 3;
+  string proto_file_path = 4;
 }
 
 message SearchResult {
+  reserved 5, 6;
+  reserved "plugin", "template";
+
   oneof item {
     RepositorySearchResult repository = 1;
     OrganizationSearchResult organization = 2;
     UserSearchResult user = 3;
     TeamSearchResult team = 4;
-    PluginSearchResult plugin = 5 [deprecated = true];
-    TemplateSearchResult template = 6 [deprecated = true];
     CuratedPluginSearchResult curated_plugin = 7;
+    ModuleElementSearchResult module_element = 8;
+    ModuleFileSearchResult module_file = 9;
+  }
+}
+
+enum SearchModuleContentFilter {
+  SEARCH_MODULE_CONTENT_FILTER_UNSPECIFIED = 0;
+  // SEARCH_MODULE_CONTENT_FILTER_ELEMENT is the filter for elements, e.g. messages, services, and methods.
+  SEARCH_MODULE_CONTENT_FILTER_ELEMENT = 1;
+  // SEARCH_MODULE_CONTENT_FILTER_FILE is the filter for files.
+  SEARCH_MODULE_CONTENT_FILTER_FILE = 2;
+}
+
+message ElementSearchResult {
+  string repository_id = 1;
+  string repository_owner = 2;
+  string repository_name = 3;
+  string proto_file_path = 4;
+  string fully_qualified_name = 5;
+  oneof document {
+    Service service = 6;
+    Method method = 7;
+    Enum enum = 8;
+    Message message = 9;
+    FileExtension file_extension = 10;
+  }
+}
+
+message FileSearchResult {
+  string repository_id = 1;
+  string repository_owner = 2;
+  string repository_name = 3;
+  string proto_file_path = 4;
+  bytes content = 5;
+}
+
+message SearchModuleContentResult {
+  oneof item {
+    ElementSearchResult element = 1;
+    FileSearchResult file = 2;
   }
 }
 
@@ -124,6 +160,10 @@ service SearchService {
   }
   // SearchDraft searches for drafts in a repository
   rpc SearchDraft(SearchDraftRequest) returns (SearchDraftResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // SearchModuleContent searches for module contents on the BSR.
+  rpc SearchModuleContent(SearchModuleContentRequest) returns (SearchModuleContentResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -188,4 +228,27 @@ message SearchDraftResponse {
   repeated RepositoryCommit repository_commits = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+}
+
+message SearchModuleContentRequest {
+  // The search string.
+  string query = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is 0.
+  uint32 page_token = 3;
+  // Empty list means show all. Supplying one or more enums will
+  // limit the search to only the requested resources.
+  // Supplying all possible enums is equivalent to empty list of filters.
+  repeated SearchModuleContentFilter filters = 4;
+  // Optional, if provided the search results will be limited to the provided repository.
+  string repository_full_name = 5;
+  // Optional, if provided the search results will be limited to the provided owner,
+  // ignored if repository_full_name is provided.
+  string repository_owner = 6;
+}
+
+message SearchModuleContentResponse {
+  repeated SearchModuleContentResult search_results = 1;
+  // There are no more pages if this is 0.
+  uint32 next_page_token = 2;
 }

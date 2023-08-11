@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemanifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
@@ -203,11 +204,11 @@ func newModuleForManifestAndBlobSet(
 	blobSet *manifest.BlobSet,
 	options ...ModuleOption,
 ) (*module, error) {
-	bucket, err := manifest.NewBucket(
-		*moduleManifest,
-		*blobSet,
-		manifest.BucketWithAllManifestBlobsValidation(),
-		manifest.BucketWithNoExtraBlobsValidation(),
+	bucket, err := storagemanifest.NewReadBucket(
+		moduleManifest,
+		blobSet,
+		storagemanifest.ReadBucketWithAllManifestBlobs(),
+		storagemanifest.ReadBucketWithNoExtraBlobs(),
 	)
 	if err != nil {
 		return nil, err
@@ -258,6 +259,9 @@ func newModule(
 	}
 	for _, option := range options {
 		option(module)
+	}
+	if module.moduleIdentity == nil && module.commit != "" {
+		return nil, fmt.Errorf("module was constructed with commit %q but no associated ModuleIdentity", module.commit)
 	}
 	return module, nil
 }
@@ -352,16 +356,16 @@ func (m *module) BlobSet() *manifest.BlobSet {
 	return m.blobSet
 }
 
-func (m *module) getModuleIdentity() bufmoduleref.ModuleIdentity {
+func (m *module) ModuleIdentity() bufmoduleref.ModuleIdentity {
 	return m.moduleIdentity
+}
+
+func (m *module) Commit() string {
+	return m.commit
 }
 
 func (m *module) getSourceReadBucket() storage.ReadBucket {
 	return m.sourceReadBucket
-}
-
-func (m *module) getCommit() string {
-	return m.commit
 }
 
 func (m *module) isModule() {}

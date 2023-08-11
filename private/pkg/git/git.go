@@ -210,6 +210,8 @@ type Commit interface {
 	Committer() Ident
 	// Message is the commit message.
 	Message() string
+	// String outputs the Author timestamp and Hex.
+	String() string
 }
 
 // AnnotatedTag represents an annotated tag object.
@@ -264,25 +266,32 @@ type TreeNode interface {
 
 // Repository is a git repository that is backed by a `.git` directory.
 type Repository interface {
-	// BaseBranch is the base branch of the repository. This is either configured
-	// via the `OpenRepositoryWithBaseBranch` option, or discovered via the remote
-	// named `origin`. Therefore, discovery requires that the repository is pushed
-	// to the remote.
-	BaseBranch() string
+	// DefaultBranch is the default branch of the repository. This is either configured via the
+	// `OpenRepositoryWithDefaultBranch` option, or discovered from the value in
+	// `.git/refs/remotes/origin/HEAD`. Therefore, discovery requires that the repository is pushed to
+	// a remote named `origin`.
+	DefaultBranch() string
+	// CurrentBranch is the current checked out branch.
+	CurrentBranch() string
 	// ForEachBranch ranges over branches in the repository in an undefined order.
 	//
-	// Only pushed (i.e., remote) branches are visited.
+	// Only branches pushed to a remote named "origin" are visited.
 	ForEachBranch(func(branch string, headHash Hash) error) error
-	// ForEachCommit ranges over commits for the target branch in reverse topological order.
+	// ForEachCommit ranges over commits for the target branch in topological order.
 	//
-	// Only commits pushed to the 'origin' remote are visited.
+	// The range starts at the HEAD commit for the branch in the `origin` remote, and goes backwards
+	// in time always choosing the first parent, until no more parents are found (presumably the first
+	// commit of the git repository).
 	//
-	// Parents are visited before children, and only left parents are visited (i.e.,
-	// commits from branches merged into the target branch are not visited).
+	// If an error is seen, the loop is stopped and the error is returned.
 	ForEachCommit(branch string, f func(commit Commit) error) error
+	// HEADCommit returns the HEAD commit at the passed branch if it's present in the `origin` remote.
+	HEADCommit(branch string) (Commit, error)
 	// ForEachTag ranges over tags in the repository in an undefined order.
 	//
 	// All tags are ranged, including local (unpushed) tags.
+	//
+	// TODO: only loop over remote tags, or inform the callback if the tag is local/remote.
 	ForEachTag(func(tag string, commitHash Hash) error) error
 	// Objects exposes the underlying object reader to read objects directly from the
 	// `.git` directory.
@@ -291,29 +300,29 @@ type Repository interface {
 	Close() error
 }
 
-// OpenRepository opens a new Repository from a `.git` directory. The provided path to the
-// `.git` dir need not be normalized or cleaned.
+// OpenRepository opens a new Repository from a `.git` directory. The provided path to the `.git`
+// dir need not be normalized or cleaned.
 //
-// Internally, OpenRepository will spawns a new process to communicate with `git-cat-file`,
-// so the caller must close the repository to clean up resources.
+// Internally, OpenRepository will spawns a new process to communicate with `git-cat-file`, so the
+// caller must close the repository to clean up resources.
 //
-// By default, OpenRepository will attempt to detect the base branch if the repository
-// has been pushed. This may fail if the repository is not pushed. In this case, use the
-// `OpenRepositoryWithBaseBranch` option.
-func OpenRepository(gitDirPath string, runner command.Runner, options ...OpenRepositoryOption) (Repository, error) {
-	return openGitRepository(gitDirPath, runner, options...)
+// By default, OpenRepository will attempt to detect the default branch if the repository has been
+// pushed. This may fail if the repository is not pushed. In this case, use the
+// `OpenRepositoryWithDefaultBranch` option.
+func OpenRepository(ctx context.Context, gitDirPath string, runner command.Runner, options ...OpenRepositoryOption) (Repository, error) {
+	return openGitRepository(ctx, gitDirPath, runner, options...)
 }
 
 // OpenRepositoryOption configures the opening of a repository.
 type OpenRepositoryOption func(*openRepositoryOpts) error
 
-// CommitIteratorWithBaseBranch configures the base branch for this iterator.
-func OpenRepositoryWithBaseBranch(name string) OpenRepositoryOption {
+// OpenRepositoryWithDefaultBranch configures the default branch for this repository.
+func OpenRepositoryWithDefaultBranch(name string) OpenRepositoryOption {
 	return func(r *openRepositoryOpts) error {
 		if name == "" {
-			return errors.New("base branch cannot be empty")
+			return errors.New("default branch cannot be empty")
 		}
-		r.baseBranch = name
+		r.defaultBranch = name
 		return nil
 	}
 }

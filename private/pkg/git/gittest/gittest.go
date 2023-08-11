@@ -35,7 +35,12 @@ func ScaffoldGitRepository(t *testing.T) git.Repository {
 	runner := command.NewRunner()
 	dir := scaffoldGitRepository(t, runner)
 	dotGitPath := path.Join(dir, git.DotGitDir)
-	repo, err := git.OpenRepository(dotGitPath, runner, git.OpenRepositoryWithBaseBranch(DefaultBranch))
+	repo, err := git.OpenRepository(
+		context.Background(),
+		dotGitPath,
+		runner,
+		git.OpenRepositoryWithDefaultBranch(DefaultBranch),
+	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		require.NoError(t, repo.Close())

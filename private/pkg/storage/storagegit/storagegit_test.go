@@ -17,9 +17,7 @@ package storagegit
 import (
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/require"
 )
@@ -29,14 +27,10 @@ func TestNewBucketAtTreeHash(t *testing.T) {
 
 	repo := gittest.ScaffoldGitRepository(t)
 	provider := NewProvider(repo.Objects())
-	// get last commit
-	var commit git.Commit
-	require.NoError(t, repo.ForEachCommit(repo.BaseBranch(), func(c git.Commit) error {
-		commit = c
-		return nil
-	}))
-	require.NotNil(t, commit)
-	bucket, err := provider.NewReadBucket(commit.Tree())
+	headCommit, err := repo.HEADCommit(repo.DefaultBranch())
+	require.NoError(t, err)
+	require.NotNil(t, headCommit)
+	bucket, err := provider.NewReadBucket(headCommit.Tree())
 	require.NoError(t, err)
 
 	storagetesting.AssertPaths(
@@ -58,7 +52,7 @@ func TestNewBucketAtTreeHash(t *testing.T) {
 		t,
 		bucket,
 		"proto/acme/grocerystore/v1/c.proto",
-		normalpath.Unnormalize("proto/acme/grocerystore/v1/c.proto"),
+		"proto/acme/grocerystore/v1/c.proto",
 	)
 	storagetesting.AssertNotExist(t, bucket, "random-path")
 	storagetesting.AssertPathToContent(

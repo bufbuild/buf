@@ -27,6 +27,7 @@ import (
 )
 
 func TestTargetingModuleBasic(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	module, err := bufmodule.NewModuleForProto(
 		ctx,

@@ -33,6 +33,7 @@ import (
 )
 
 func TestReadConfigV1Beta1(t *testing.T) {
+	t.Parallel()
 	truth := true
 	successConfig := &Config{
 		PluginConfigs: []bufgenplugin.PluginConfig{
@@ -144,6 +145,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 }
 
 func TestReadConfigV1(t *testing.T) {
+	t.Parallel()
 	truth := true
 	successConfig := &Config{
 		PluginConfigs: []bufgenplugin.PluginConfig{
@@ -220,9 +222,10 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	successConfig4 := &Config{
 		PluginConfigs: []bufgenplugin.PluginConfig{
-			mustCreateLegacyRemotePlugin(
+			mustCreateCuratedRemotePlugin(
 				t,
-				"someremote.com/owner/plugins/myplugin:v1.1.0-1",
+				"someremote.com/owner/myplugin:v1.1.0-1",
+				0,
 				"gen/go",
 				"",
 			),
@@ -230,9 +233,10 @@ func TestReadConfigV1(t *testing.T) {
 	}
 	successConfig5 := &Config{
 		PluginConfigs: []bufgenplugin.PluginConfig{
-			mustCreateLegacyRemotePlugin(
+			mustCreateCuratedRemotePlugin(
 				t,
-				"someremote.com/owner/plugins/myplugin",
+				"someremote.com/owner/myplugin",
+				0,
 				"gen/go",
 				"",
 			),
@@ -253,9 +257,10 @@ func TestReadConfigV1(t *testing.T) {
 			},
 		},
 		PluginConfigs: []bufgenplugin.PluginConfig{
-			mustCreateLegacyRemotePlugin(
+			mustCreateCuratedRemotePlugin(
 				t,
-				"someremote.com/owner/plugins/myplugin",
+				"someremote.com/owner/myplugin",
+				0,
 				"gen/go",
 				"",
 			),
@@ -333,9 +338,10 @@ func TestReadConfigV1(t *testing.T) {
 			},
 		},
 		PluginConfigs: []bufgenplugin.PluginConfig{
-			mustCreateLegacyRemotePlugin(
+			mustCreateCuratedRemotePlugin(
 				t,
-				"someremote.com/owner/plugins/myplugin",
+				"someremote.com/owner/myplugin",
+				0,
 				"gen/go",
 				"",
 			),
@@ -376,9 +382,10 @@ func TestReadConfigV1(t *testing.T) {
 			},
 		},
 		PluginConfigs: []bufgenplugin.PluginConfig{
-			mustCreateLegacyRemotePlugin(
+			mustCreateCuratedRemotePlugin(
 				t,
-				"someremote.com/owner/plugins/myplugin",
+				"someremote.com/owner/myplugin",
+				0,
 				"gen/go",
 				"",
 			),
@@ -617,6 +624,8 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, nopLogger, readBucket, filepath.Join("testdata", "v1", "gen_error12.yaml"))
 	testReadConfigError(t, nopLogger, readBucket, filepath.Join("testdata", "v1", "gen_error13.yaml"))
 	testReadConfigError(t, nopLogger, readBucket, filepath.Join("testdata", "v1", "gen_error14.yaml"))
+	testReadConfigError(t, nopLogger, readBucket, filepath.Join("testdata", "v1", "gen_error15.yaml"))
+	assertContainsReadConfigError(t, nopLogger, readBucket, filepath.Join("testdata", "v1", "gen_error15.yaml"), "the remote field no longer works")
 
 	successConfig = &Config{
 		PluginConfigs: []bufgenplugin.PluginConfig{
@@ -671,6 +680,22 @@ func testReadConfigError(t *testing.T, logger *zap.Logger, readBucket storage.Re
 	require.NoError(t, err)
 	_, err = readConfigV1(ctx, logger, readBucket, internal.ReadConfigWithOverride(string(data)))
 	require.Error(t, err)
+}
+
+func assertContainsReadConfigError(
+	t *testing.T,
+	logger *zap.Logger,
+	readBucket storage.ReadBucket,
+	testFilePath string, message string,
+) {
+	ctx := context.Background()
+	_, err := readConfigV1(ctx, logger, readBucket, internal.ReadConfigWithOverride(testFilePath))
+	require.Error(t, err)
+	data, err := os.ReadFile(testFilePath)
+	require.NoError(t, err)
+	_, err = readConfigV1(ctx, logger, readBucket, internal.ReadConfigWithOverride(string(data)))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), message)
 }
 
 func mustCreateModuleIdentity(
@@ -787,14 +812,16 @@ func mustCreateLocalPlugin(
 	return plugin
 }
 
-func mustCreateLegacyRemotePlugin(
+func mustCreateCuratedRemotePlugin(
 	t *testing.T,
 	remote string,
+	revision int,
 	out string,
 	opt string,
-) bufgenplugin.LegacyRemotePluginConfig {
-	plugin, err := bufgenplugin.NewLegacyRemotePluginConfig(
+) bufgenplugin.CuratedPluginConfig {
+	plugin, err := bufgenplugin.NewCuratedPluginConfig(
 		remote,
+		revision,
 		out,
 		opt,
 		false,

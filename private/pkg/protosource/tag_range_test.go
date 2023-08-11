@@ -24,6 +24,7 @@ import (
 )
 
 func TestCheckTagRangeIsSubset(t *testing.T) {
+	t.Parallel()
 	testExpectedSubset(t, "1", "1", "")
 	testExpectedSubset(t, "1-2", "1", "")
 	testExpectedSubset(t, "1", "1-2", "1-2")

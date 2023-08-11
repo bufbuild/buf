@@ -191,38 +191,52 @@ type DocServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewDocServiceHandler(svc DocServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(DocServiceGetSourceDirectoryInfoProcedure, connect_go.NewUnaryHandler(
+	docServiceGetSourceDirectoryInfoHandler := connect_go.NewUnaryHandler(
 		DocServiceGetSourceDirectoryInfoProcedure,
 		svc.GetSourceDirectoryInfo,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DocServiceGetSourceFileProcedure, connect_go.NewUnaryHandler(
+	)
+	docServiceGetSourceFileHandler := connect_go.NewUnaryHandler(
 		DocServiceGetSourceFileProcedure,
 		svc.GetSourceFile,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DocServiceGetModulePackagesProcedure, connect_go.NewUnaryHandler(
+	)
+	docServiceGetModulePackagesHandler := connect_go.NewUnaryHandler(
 		DocServiceGetModulePackagesProcedure,
 		svc.GetModulePackages,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DocServiceGetModuleDocumentationProcedure, connect_go.NewUnaryHandler(
+	)
+	docServiceGetModuleDocumentationHandler := connect_go.NewUnaryHandler(
 		DocServiceGetModuleDocumentationProcedure,
 		svc.GetModuleDocumentation,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(DocServiceGetPackageDocumentationProcedure, connect_go.NewUnaryHandler(
+	)
+	docServiceGetPackageDocumentationHandler := connect_go.NewUnaryHandler(
 		DocServiceGetPackageDocumentationProcedure,
 		svc.GetPackageDocumentation,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.DocService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.DocService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case DocServiceGetSourceDirectoryInfoProcedure:
+			docServiceGetSourceDirectoryInfoHandler.ServeHTTP(w, r)
+		case DocServiceGetSourceFileProcedure:
+			docServiceGetSourceFileHandler.ServeHTTP(w, r)
+		case DocServiceGetModulePackagesProcedure:
+			docServiceGetModulePackagesHandler.ServeHTTP(w, r)
+		case DocServiceGetModuleDocumentationProcedure:
+			docServiceGetModuleDocumentationHandler.ServeHTTP(w, r)
+		case DocServiceGetPackageDocumentationProcedure:
+			docServiceGetPackageDocumentationHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedDocServiceHandler returns CodeUnimplemented from all methods.

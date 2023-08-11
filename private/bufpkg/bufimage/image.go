@@ -31,12 +31,24 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 		return nil, errors.New("image contains no files")
 	}
 	pathToImageFile := make(map[string]ImageFile, len(files))
+	identityStringToCommit := make(map[string]string)
 	for _, file := range files {
 		path := file.Path()
 		if _, ok := pathToImageFile[path]; ok {
 			return nil, fmt.Errorf("duplicate file: %s", path)
 		}
 		pathToImageFile[path] = file
+		if moduleIdentity := file.ModuleIdentity(); moduleIdentity != nil {
+			identityString := moduleIdentity.IdentityString()
+			existingCommit, ok := identityStringToCommit[identityString]
+			if ok {
+				if existingCommit != file.Commit() {
+					return nil, fmt.Errorf("image had two different commits for the same module: %q and %q", existingCommit, file.Commit())
+				}
+			} else {
+				identityStringToCommit[identityString] = file.Commit()
+			}
+		}
 	}
 	if reorder {
 		files = orderImageFiles(files, pathToImageFile)

@@ -1424,27 +1424,6 @@ func RunTestSuite(
 		require.True(t, isEmpty)
 		require.NoError(t, tmpDir.Close())
 	})
-	t.Run("no-external-path", func(t *testing.T) {
-		t.Parallel()
-		readBucket, getExternalPathFunc := newReadBucket(t, oneDirPath, defaultProvider)
-		readBucket = storage.MapReadBucket(
-			readBucket,
-			storage.MapOnPrefix("root/a"),
-		)
-		AssertObjectInfo(
-			t,
-			readBucket,
-			"1.proto",
-			getExternalPathFunc(t, oneDirPath, filepath.Join("root", "a", "1.proto")),
-		)
-		readBucket = storage.NoExternalPathReadBucket(readBucket)
-		AssertObjectInfo(
-			t,
-			readBucket,
-			"1.proto",
-			"1.proto",
-		)
-	})
 	t.Run("limit-write-bucket", func(t *testing.T) {
 		t.Parallel()
 		writeBucket := newWriteBucket(t, defaultProvider)
