@@ -44,9 +44,15 @@ type syncer struct {
 	modulesDirsToIdentityOverrideForSync map[string]bufmoduleref.ModuleIdentity // moduleDir:moduleIdentityOverride
 	syncAllBranches                      bool
 
-	commitsToTags                   map[string][]string                               // commits:[]tags
-	branchesToModulesForSync        map[string]map[string]bufmoduleref.ModuleIdentity // branch:moduleDir:targetModuleIdentity
-	modulesToBranchesLastSyncPoints map[string]map[string]string                      // moduleIdentity:branch:lastSyncPointGitHash
+	// commitsToTags holds all tags in the repo associated to its commit hash. (commits:[]tags)
+	commitsToTags map[string][]string
+	// branchesToModulesForSync holds all the branches, module directories, and module identity
+	// targets for those directories, prepared before syncing either from its identity override or
+	// HEAD commit. (branch:moduleDir:targetModuleIdentity)
+	branchesToModulesForSync map[string]map[string]bufmoduleref.ModuleIdentity
+	// modulesToBranchesLastSyncPoints holds remote expected sync points for module identity and its
+	// branches. (moduleIdentity:branch:lastSyncPointGitHash)
+	modulesToBranchesLastSyncPoints map[string]map[string]string
 
 	// modulesIdentitiesToCommitsSyncedCache (moduleIdentity:commit) caches commits already synced to
 	// a given BSR module, so we don't ask twice the same module:commit when we already know it's
@@ -284,18 +290,8 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 		return fmt.Errorf("finding commits to sync: %w", err)
 	}
 	// first lookback from the starting point, syncing old tags
-	var startSyncPoint git.Hash
-	if len(commitsForSync) == 0 {
-		headCommit, err := s.repo.HEADCommit(branch)
-		if err != nil {
-			return fmt.Errorf("read HEAD commit for branch %s: %w", branch, err)
-		}
-		startSyncPoint = headCommit.Hash()
-	} else {
-		startSyncPoint = commitsForSync[0].commit.Hash()
-	}
 	if err := s.syncLookback(ctx, branch, commitsForSync); err != nil {
-		return fmt.Errorf("sync looking back for branch %s at commit %s: %w", branch, startSyncPoint.Hex(), err)
+		return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
 	}
 	// then sync the new commits
 	if len(commitsForSync) == 0 {
@@ -647,8 +643,70 @@ func (s *syncer) readModuleAt(
 	return builtModule, nil
 }
 
-// syncLookback takes calculated syncable commits for a branch, and looks back
+// syncLookback takes syncable commits for a branch already calculated, and looks back for each
+// module a given amount of commits or timestamps, syncing tags in case they were created or moved
+// after those commits were synced.
 func (s *syncer) syncLookback(ctx context.Context, branch string, syncableCommits []*syncableCommit) error {
+	moduleStartingPoints, err := s.lookbackStartingPoints(ctx, branch, syncableCommits)
+	if err != nil {
+		return fmt.Errorf("find lookback starting points for branch %s: %w", branch, err)
+	}
+	// TODO lookback and actually sync tags
+	return nil
+}
+
+// lookbackStartingPoints returns git starting points for all modules directories to be synced in a
+// branch. It calculates it from the list of syncable commits, returning its earliest appeareance in
+// the array. If no appeareance is found, it returns the HEAD commit of the branch.
+//
+// e.g.: For branch "foo" we need to sync mods [mod1, mod2, mod3, mod4], and these are the syncable
+// commits:
+//
+// - commit: a,        modules: mod1
+// - commit: b,        modules: mod1, mod2
+// - commit: c,        modules: mod1, mod3
+// - commit: d (HEAD), modules: mod1, mod2
+//
+// The returned starting points are:
+// - mod1: commit a (first appeareance)
+// - mod2: commit b (first appeareance)
+// - mod3: commit c (first appeareance)
+// - mod4: commit d (HEAD, did not appear)
+func (s *syncer) lookbackStartingPoints(ctx context.Context, branch string, syncableCommits []*syncableCommit) (map[string]git.Hash, error) {
+	branchModulesForSync, ok := s.branchesToModulesForSync[branch]
+	if !ok || len(branchModulesForSync) == 0 {
+		// branch should not be synced, or no modules to sync in that branch
+		return nil, nil
+	}
+	modulesDirsToStartingPoints := make(map[string]git.Hash, len(branchModulesForSync))
+	// navigate the syncable commits and populate the first finding for all present modules
+	for _, syncableCommit := range syncableCommits {
+		if len(modulesDirsToStartingPoints) == len(branchModulesForSync) {
+			// already found all modules
+			break
+		}
+		for moduleDir := range syncableCommit.modules {
+			if _, expectedModuleDir := branchModulesForSync[moduleDir]; !expectedModuleDir {
+				// This should never happen, it's controlled by `branchSyncableCommits` func, just a safety
+				// check.
+				return nil, fmt.Errorf("unexpected syncable module directory %s in commit %s", moduleDir, branch, syncableCommit.commit.Hash())
+			}
+			if _, alreadyFound := modulesDirsToStartingPoints[moduleDir]; !alreadyFound {
+				modulesDirsToStartingPoints[moduleDir] = syncableCommit.commit.Hash()
+			}
+		}
+	}
+	// populate all missing module directories with HEAD
+	headCommit, err := s.repo.HEADCommit(branch)
+	if err != nil {
+		return nil, fmt.Errorf("read HEAD commit: %w", err)
+	}
+	for moduleDir := range branchModulesForSync {
+		if _, alreadyFound := modulesDirsToStartingPoints[moduleDir]; !alreadyFound {
+			modulesDirsToStartingPoints[moduleDir] = headCommit.Hash()
+		}
+	}
+	return modulesDirsToStartingPoints, nil
 }
 
 type readModuleOpts struct {
