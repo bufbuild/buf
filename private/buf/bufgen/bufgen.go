@@ -173,61 +173,62 @@ func GenerateWithWasmEnabled() GenerateOption {
 	}
 }
 
-// MigrateV1ToV2 returns an ExternalConfigV2 equivalent to the v1 config provided.
-func MigrateV1ToV2(
+// Migrate updates the content of a generation template to the latest version.
+// It assumes the default location of the generation template if no option is provided.
+func Migrate(
 	ctx context.Context,
 	logger *zap.Logger,
 	readBucket storage.ReadBucket,
-	migrateOptions ...MigrateV1ToV2Option,
+	options ...MigrateOption,
 ) error {
-	return migrateV1ToV2(
+	return migrate(
 		ctx,
 		logger,
 		readBucket,
-		migrateOptions...,
+		options...,
 	)
 }
 
-type MigrateV1ToV2Option func(*migrateV1ToV2Options)
+type MigrateOption func(*migrateOptions)
 
-func MigrateV1ToV2WithInput(input string) MigrateV1ToV2Option {
-	return func(options *migrateV1ToV2Options) {
+func MigrateWithInput(input string) MigrateOption {
+	return func(options *migrateOptions) {
 		options.input = input
 	}
 }
 
-func MigrateV1ToV2WithGenTemplate(genTemplate string) MigrateV1ToV2Option {
-	return func(options *migrateV1ToV2Options) {
+func MigrateWithGenTemplate(genTemplate string) MigrateOption {
+	return func(options *migrateOptions) {
 		options.genTemplate = genTemplate
 	}
 }
 
-func MigrateV1ToV2WithTypes(types []string) MigrateV1ToV2Option {
-	return func(options *migrateV1ToV2Options) {
+func MigrateWithTypes(types []string) MigrateOption {
+	return func(options *migrateOptions) {
 		options.types = types
 	}
 }
 
-func MigrateV1ToV2WithIncludePaths(includePaths []string) MigrateV1ToV2Option {
-	return func(options *migrateV1ToV2Options) {
+func MigrateWithIncludePaths(includePaths []string) MigrateOption {
+	return func(options *migrateOptions) {
 		options.includePaths = includePaths
 	}
 }
 
-func MigrateV1ToV2WithExcludePaths(excludePaths []string) MigrateV1ToV2Option {
-	return func(options *migrateV1ToV2Options) {
+func MigrateWithExcludePaths(excludePaths []string) MigrateOption {
+	return func(options *migrateOptions) {
 		options.excludePaths = excludePaths
 	}
 }
 
-func MigrateV1ToV2WithIncludeImports() MigrateV1ToV2Option {
-	return func(options *migrateV1ToV2Options) {
+func MigrateWithIncludeImports() MigrateOption {
+	return func(options *migrateOptions) {
 		options.includeImports = true
 	}
 }
 
-func MigrateV1ToV2WithIncludeWKT() MigrateV1ToV2Option {
-	return func(options *migrateV1ToV2Options) {
+func MigrateWithIncludeWKT() MigrateOption {
+	return func(options *migrateOptions) {
 		options.includeWKT = true
 	}
 }

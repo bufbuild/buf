@@ -45,7 +45,7 @@ const (
 	disableSymlinksFlagName     = "disable-symlinks"
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
-	migrateV1FlagName           = "migrate-v1"
+	migrateFlagName             = "migrate"
 	baseOutDirFlagDefault       = "."
 	errorFormatFlagDefault      = "text"
 )
@@ -209,7 +209,7 @@ type flags struct {
 	// want to find out what will break if we do.
 	Types           []string
 	TypesDeprecated []string
-	MigrateV1       bool
+	Migrate         bool
 	// special
 	InputHashtag string
 }
@@ -279,10 +279,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
 	)
 	flagSet.BoolVar(
-		&f.MigrateV1,
-		migrateV1FlagName,
+		&f.Migrate,
+		migrateFlagName,
 		false,
-		"Migrate generation template from v1 or v1beta1 to v2",
+		"Migrate the generation template to the latest version",
 	)
 	_ = flagSet.MarkDeprecated(typeDeprecatedFlagName, fmt.Sprintf("Use --%s instead", typeFlagName))
 	_ = flagSet.MarkHidden(typeDeprecatedFlagName)
@@ -320,30 +320,30 @@ func run(
 	if len(flags.Types) > 0 || len(flags.TypesDeprecated) > 0 {
 		includedTypesFromCLI = append(flags.Types, flags.TypesDeprecated...)
 	}
-	if flags.MigrateV1 {
-		migrateV1Options := []bufgen.MigrateV1ToV2Option{}
+	if flags.Migrate {
+		migrateOptions := []bufgen.MigrateOption{}
 		if inputSpecified != "" {
-			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithInput(inputSpecified))
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithInput(inputSpecified))
 		}
 		if flags.Template != "" {
-			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithGenTemplate(flags.Template))
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithGenTemplate(flags.Template))
 		}
 		if flags.IncludeImports {
-			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithIncludeImports())
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludeImports())
 		}
 		if flags.IncludeWKT {
-			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithIncludeWKT())
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludeWKT())
 		}
 		if len(flags.Types) > 0 {
-			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithTypes(includedTypesFromCLI))
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithTypes(includedTypesFromCLI))
 		}
 		if len(flags.Paths) > 0 {
-			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithIncludePaths(flags.Paths))
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludePaths(flags.Paths))
 		}
 		if len(flags.ExcludePaths) > 0 {
-			migrateV1Options = append(migrateV1Options, bufgen.MigrateV1ToV2WithExcludePaths(flags.ExcludePaths))
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithExcludePaths(flags.ExcludePaths))
 		}
-		err = bufgen.MigrateV1ToV2(ctx, logger, readWriteBucket, migrateV1Options...)
+		err = bufgen.Migrate(ctx, logger, readWriteBucket, migrateOptions...)
 		if err != nil {
 			return err
 		}

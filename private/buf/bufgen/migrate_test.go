@@ -185,37 +185,37 @@ inputs:
 }`
 )
 
-func TestMigrateV1ToV2(t *testing.T) {
+func TestMigrate(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		description       string
 		v1Content         string
 		expectedV2Content string
 		fileName          string
-		options           []MigrateV1ToV2Option
+		options           []MigrateOption
 	}{
 		{
 			description:       "yaml",
 			fileName:          "buf.gen.hello.yaml",
 			v1Content:         v1ContentYAML,
 			expectedV2Content: v2ContentYAML,
-			options: []MigrateV1ToV2Option{
-				MigrateV1ToV2WithInput("buf.build/acme/weather"),
-				MigrateV1ToV2WithIncludeImports(),
-				MigrateV1ToV2WithIncludeWKT(),
-				MigrateV1ToV2WithTypes(
+			options: []MigrateOption{
+				MigrateWithInput("buf.build/acme/weather"),
+				MigrateWithIncludeImports(),
+				MigrateWithIncludeWKT(),
+				MigrateWithTypes(
 					[]string{
 						"x.y.z.Message1",
 						"x.y.Message2",
 					},
 				),
-				MigrateV1ToV2WithExcludePaths(
+				MigrateWithExcludePaths(
 					[]string{
 						"x/y/a.proto",
 						"x/b.proto",
 					},
 				),
-				MigrateV1ToV2WithIncludePaths(
+				MigrateWithIncludePaths(
 					[]string{
 						"x/y/",
 						"x/z",
@@ -228,23 +228,23 @@ func TestMigrateV1ToV2(t *testing.T) {
 			fileName:          "buf.gen.hello.json",
 			v1Content:         v1ContentJSON,
 			expectedV2Content: v2ContentJSON,
-			options: []MigrateV1ToV2Option{
-				MigrateV1ToV2WithInput("buf.build/acme/weather"),
-				MigrateV1ToV2WithIncludeImports(),
-				MigrateV1ToV2WithIncludeWKT(),
-				MigrateV1ToV2WithTypes(
+			options: []MigrateOption{
+				MigrateWithInput("buf.build/acme/weather"),
+				MigrateWithIncludeImports(),
+				MigrateWithIncludeWKT(),
+				MigrateWithTypes(
 					[]string{
 						"x.y.z.Message1",
 						"x.y.Message2",
 					},
 				),
-				MigrateV1ToV2WithExcludePaths(
+				MigrateWithExcludePaths(
 					[]string{
 						"x/y/a.proto",
 						"x/b.proto",
 					},
 				),
-				MigrateV1ToV2WithIncludePaths(
+				MigrateWithIncludePaths(
 					[]string{
 						"x/y/",
 						"x/z",
@@ -262,10 +262,10 @@ func TestMigrateV1ToV2(t *testing.T) {
 			tempDir := t.TempDir()
 			require.NotEmpty(t, testcase.fileName)
 			path := filepath.Join(tempDir, testcase.fileName)
-			options := append(testcase.options, MigrateV1ToV2WithGenTemplate(path))
+			options := append(testcase.options, MigrateWithGenTemplate(path))
 			err := os.WriteFile(path, []byte(testcase.v1Content), 0600)
 			require.NoError(t, err)
-			err = MigrateV1ToV2(
+			err = Migrate(
 				ctx,
 				logger,
 				readBucket,
