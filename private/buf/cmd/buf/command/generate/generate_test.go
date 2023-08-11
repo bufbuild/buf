@@ -186,7 +186,7 @@ plugins:
 		templatePath,
 		"-o",
 		outDir,
-		"--migrate-v1",
+		"--migrate",
 	)
 
 	data, err := os.ReadFile(templatePath)
