@@ -68,36 +68,39 @@ func migrate(
 			migrateOptions.genTemplate,
 		)
 	}
-	configVersion, err := internal.ReadConfigVersion(
+	data, _, unmarshalNonStrict, unmarshalStrict, err := internal.ReadDataFromConfig(
 		ctx,
 		logger,
+		internal.NewConfigDataProvider(logger),
 		readBucket,
 		internal.ReadConfigWithOverride(migrateOptions.genTemplate),
 	)
+	var externalConfigVersion ExternalConfigVersion
+	err = unmarshalNonStrict(data, &externalConfigVersion)
 	if err != nil {
 		return err
 	}
-	switch configVersion {
+	switch externalConfigVersion.Version {
 	case internal.V1Beta1Version, internal.V1Version:
 		// OK. Also note that a file in v1beta1 is accepted by bufgenv1.ReadConfigV1.
 	case internal.V2Version:
 		return errors.New("configuration is already in V2")
 	default:
-		return fmt.Errorf("unknown version: %s", configVersion)
+		return fmt.Errorf("unknown version: %s", externalConfigVersion.Version)
 	}
-	configV1, err := bufgenv1.ReadConfigV1(
-		ctx,
-		logger,
-		readBucket,
-		internal.ReadConfigWithOverride(migrateOptions.genTemplate),
-	)
+	var externalConfigV1 ExternalConfigV1
+	err = unmarshalStrict(data, &externalConfigV1)
+	if err != nil {
+		return err
+	}
 	if err != nil {
 		return err
 	}
 	externalConifgV2, err := convertConfigV1ToExternalConfigV2(
 		ctx,
 		logger,
-		configV1,
+		migrateOptions.genTemplate,
+		&externalConfigV1,
 		bufpluginexec.FindPluginPath,
 		migrateOptions.input,
 		migrateOptions.types,
@@ -135,7 +138,8 @@ func migrate(
 func convertConfigV1ToExternalConfigV2(
 	ctx context.Context,
 	logger *zap.Logger,
-	configV1 *bufgenv1.Config,
+	filePath string,
+	externalConfigV1 *ExternalConfigV1,
 	findPluginFunc func(string) (string, error),
 	input string,
 	typesOverride []string,
@@ -144,6 +148,14 @@ func convertConfigV1ToExternalConfigV2(
 	includeImports bool,
 	includeWKT bool,
 ) (*ExternalConfigV2, error) {
+	configV1, err := bufgenv1.NewConfigV1(
+		logger,
+		*externalConfigV1,
+		filePath,
+	)
+	if err != nil {
+		return nil, err
+	}
 	if input == "" {
 		input = "."
 	}
@@ -171,7 +183,11 @@ func convertConfigV1ToExternalConfigV2(
 	externalConfigV2.Inputs = []bufgenv2.ExternalInputConfigV2{
 		*inputConfig,
 	}
-	for _, pluginConfigV1 := range configV1.PluginConfigs {
+	if len(configV1.PluginConfigs) != len(externalConfigV1.Plugins) {
+		// this should never happen
+		return nil, fmt.Errorf("unable to parse plugins in %s", filePath)
+	}
+	for index, pluginConfigV1 := range configV1.PluginConfigs {
 		pluginConfigV2, err := pluginConfigToExternalPluginConfigV2(
 			pluginConfigV1,
 			findPluginFunc,
@@ -181,12 +197,18 @@ func convertConfigV1ToExternalConfigV2(
 		if err != nil {
 			return nil, fmt.Errorf("unable to migrate plugin %q: %w", pluginConfigV1.PluginName(), err)
 		}
+		externalPluginConfigV1 := externalConfigV1.Plugins[index]
+		pluginConfigV2.Opt = externalPluginConfigV1.Opt
+		if externalPluginConfigV1.Strategy != "" {
+			pluginConfigV2.Strategy = &externalPluginConfigV1.Strategy
+		}
 		externalConfigV2.Plugins = append(externalConfigV2.Plugins, *pluginConfigV2)
 	}
 	externalConfigV2.Managed = *managedConfigV1ToExternalManagedConfigV2(configV1.ManagedConfig)
 	return &externalConfigV2, nil
 }
 
+// returns a plugin with strategy and opt unset
 func pluginConfigToExternalPluginConfigV2(
 	pluginConfig bufgenplugin.PluginConfig,
 	findPluginFunc func(string) (string, error),
@@ -194,7 +216,6 @@ func pluginConfigToExternalPluginConfigV2(
 	includeWKT bool,
 ) (*bufgenv2.ExternalPluginConfigV2, error) {
 	externalPluginConfig := bufgenv2.ExternalPluginConfigV2{}
-	// opt and out are common to all plugins
 	externalPluginConfig.Out = pluginConfig.Out()
 	optString := pluginConfig.Opt()
 	switch opts := strings.Split(optString, ","); len(opts) {
@@ -210,22 +231,16 @@ func pluginConfigToExternalPluginConfigV2(
 	pluginName := pluginConfig.PluginName()
 	switch t := pluginConfig.(type) {
 	case bufgenplugin.BinaryPluginConfig:
-		strategy := t.Strategy().String()
-		externalPluginConfig.Strategy = &strategy
 		externalPluginConfig.Binary = t.Path()
 		if len(t.Path()) == 1 {
 			externalPluginConfig.Binary = t.Path()[0]
 		}
 	case bufgenplugin.ProtocBuiltinPluginConfig:
-		strategy := t.Strategy().String()
-		externalPluginConfig.Strategy = &strategy
 		externalPluginConfig.ProtocBuiltin = &pluginName
 		if protocPath := t.ProtocPath(); protocPath != "" {
 			externalPluginConfig.ProtocPath = &protocPath
 		}
 	case bufgenplugin.LocalPluginConfig:
-		strategy := t.Strategy().String()
-		externalPluginConfig.Strategy = &strategy
 		binaryToSearch := "protoc-gen-" + pluginName
 		if _, err := findPluginFunc(binaryToSearch); err == nil {
 			// this is a binary plugin

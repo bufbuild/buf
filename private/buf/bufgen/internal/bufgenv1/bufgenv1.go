@@ -167,19 +167,13 @@ func (g *Generator) Generate(
 	return nil
 }
 
-// ReadConfigV1 reads a generation configuration in v1.
-func ReadConfigV1(
-	ctx context.Context,
+// NewConfigV1 returns a Config in v1.
+func NewConfigV1(
 	logger *zap.Logger,
-	readBucket storage.ReadBucket,
-	options ...internal.ReadConfigOption,
+	externalConfig ExternalConfigV1,
+	fileName string, // for error reporting
 ) (*Config, error) {
-	return readConfigV1(
-		ctx,
-		logger,
-		readBucket,
-		options...,
-	)
+	return newConfigV1(logger, externalConfig, fileName)
 }
 
 // ExternalConfigV1 is an external configuration.
