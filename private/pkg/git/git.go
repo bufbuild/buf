@@ -47,6 +47,13 @@ const (
 	ModeSubmodule ObjectMode = 016_0000
 )
 
+const (
+	// refTypeHash is the reference type for a git SHA hash.
+	refTypeHash referenceType = "hash"
+	// refTypeBranch is the reference type for a git branch.
+	refTypeBranch referenceType = "branch"
+)
+
 var (
 	// ErrTreeNodeNotFound is an error found in the error chain when
 	// Tree#Descendant is unable to find the target tree node.
@@ -376,11 +383,8 @@ func OpenRepositoryWithDefaultBranch(name string) OpenRepositoryOption {
 	}
 }
 
-const (
-	refTypeHash   referenceType = "hash"
-	refTypeBranch referenceType = "branch"
-)
-
+// referenceType is the type of references that can be passed as starting points when traversing a
+// git tree.
 type referenceType string
 
 // reference is a single git reference used in ForEachCommit to declare an starting commit.
