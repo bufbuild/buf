@@ -283,6 +283,21 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 	if err != nil {
 		return fmt.Errorf("finding commits to sync: %w", err)
 	}
+	// first lookback from the starting point, syncing old tags
+	var startSyncPoint git.Hash
+	if len(commitsForSync) == 0 {
+		headCommit, err := s.repo.HEADCommit(branch)
+		if err != nil {
+			return fmt.Errorf("read HEAD commit for branch %s: %w", branch, err)
+		}
+		startSyncPoint = headCommit.Hash()
+	} else {
+		startSyncPoint = commitsForSync[0].commit.Hash()
+	}
+	if err := s.syncLookback(ctx, branch, commitsForSync); err != nil {
+		return fmt.Errorf("sync looking back for branch %s at commit %s: %w", branch, startSyncPoint.Hex(), err)
+	}
+	// then sync the new commits
 	if len(commitsForSync) == 0 {
 		s.logger.Debug(
 			"no modules to sync in branch",
@@ -627,6 +642,10 @@ func (s *syncer) readModuleAt(
 		}
 	}
 	return builtModule, nil
+}
+
+// syncLookback takes calculated syncable commits for a branch, and looks back
+func (s *syncer) syncLookback(ctx context.Context, branch string, syncableCommits []*syncableCommit) error {
 }
 
 type readModuleOpts struct {
