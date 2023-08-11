@@ -93,6 +93,16 @@ func TestCommits(t *testing.T) {
 		assert.Equal(t, commits, commitsFromDefaultBranch)
 	})
 
+	t.Run("set_same_starting_point_multiple_times", func(t *testing.T) {
+		assert.NoError(t, repo.ForEachCommit(
+			func(git.Commit) error { return nil },
+			// multiple times, same starting point should be a nop
+			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
+			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
+			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
+		))
+	})
+
 	t.Run("custom_starting_point", func(t *testing.T) {
 		var commitsFromSecond []git.Commit
 		err = repo.ForEachCommit(
