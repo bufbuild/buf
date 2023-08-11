@@ -678,16 +678,16 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 			)
 			continue
 		}
-		var lookbackCommitCount int
+		var lookbackCommitsCount int
 		forEachOldCommitFunc := func(oldCommit git.Commit) error {
-			lookbackCommitCount++
-			if lookbackCommitCount == 1 {
+			lookbackCommitsCount++
+			if lookbackCommitsCount == 1 {
 				// skip the start point, that one will be processed by sync.
 				return nil
 			}
 			// For the lookback into older commits to stop, both lookback limits (amount of commits and
 			// timespan) need to be met.
-			if lookbackCommitCount > lookbackCommitCount && oldCommit.Committer().Timestamp().Before(timeLimit) {
+			if lookbackCommitsCount > lookbackCommitsLimit && oldCommit.Committer().Timestamp().Before(timeLimit) {
 				return stopLoopErr
 			}
 			// Is there any tag in this commit to attach?
@@ -737,8 +737,8 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 }
 
 // lookbackStartingPoints returns git starting points for all modules directories to be synced in a
-// branch. It calculates it from the list of syncable commits, returning its earliest appeareance in
-// the array. If no appeareance is found, it returns the HEAD commit of the branch.
+// branch. It calculates it from the list of syncable commits, returning its earliest appearance in
+// the array. If no appearance is found, it returns the HEAD commit of the branch.
 //
 // e.g.: For branch "foo" we need to sync mods [mod1, mod2, mod3, mod4], and these are the syncable
 // commits:
@@ -748,9 +748,9 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 // - commit: d (HEAD), modules: mod1, mod2
 //
 // The returned starting points are:
-// - mod1: commit a (first appeareance)
-// - mod2: commit b (first appeareance)
-// - mod3: commit c (first appeareance)
+// - mod1: commit a (first appearance)
+// - mod2: commit b (first appearance)
+// - mod3: commit c (first appearance)
 // - mod4: commit d (HEAD, did not appear)
 func (s *syncer) lookbackStartingPoints(ctx context.Context, branch string, syncableCommits []*syncableCommit) (map[string]git.Hash, error) {
 	branchModulesForSync, ok := s.branchesToModulesForSync[branch]
