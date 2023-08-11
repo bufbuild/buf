@@ -232,9 +232,10 @@ func pluginConfigToExternalPluginConfigV2(
 	case bufgenplugin.LocalPluginConfig:
 		strategy := t.Strategy().String()
 		externalPluginConfig.Strategy = &strategy
-		if binaryPath, err := findPluginFunc("protoc-gen-" + pluginName); err == nil {
+		binaryToSearch := "protoc-gen-" + pluginName
+		if _, err := findPluginFunc(binaryToSearch); err == nil {
 			// this is a binary plugin
-			externalPluginConfig.Binary = binaryPath
+			externalPluginConfig.Binary = binaryToSearch
 			break
 		}
 		if _, isProtocBuiltin := bufpluginexec.ProtocProxyPluginNames[pluginName]; isProtocBuiltin {

@@ -365,7 +365,9 @@ func run(
 		}
 		message := fmt.Sprintf("Migration finshed, to generate with buf, run:\n%s\n", updatedGenerateCommand)
 		_, err := container.Stderr().Write([]byte(message))
-		return err
+		if err != nil {
+			return err
+		}
 	}
 	runner := command.NewRunner()
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
