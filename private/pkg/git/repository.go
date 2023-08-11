@@ -170,8 +170,12 @@ func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommi
 			return fmt.Errorf("get head commit for default branch %q: %w", r.DefaultBranch(), err)
 		}
 	} else {
+		refTypeName, isSupported := supportedRefTypesToNames[config.start.refType]
+		if !isSupported {
+			return fmt.Errorf("unsupported reference type %d with name %s", config.start.refType, config.start.refName)
+		}
 		switch config.start.refType {
-		case refTypeHash:
+		case RefTypeHash:
 			commitID, err := NewHashFromHex(config.start.refName)
 			if err != nil {
 				return fmt.Errorf("new hash from %s: %w", config.start.refName, err)
@@ -180,7 +184,7 @@ func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommi
 			if err != nil {
 				return fmt.Errorf("read commit %s: %w", commitID.Hex(), err)
 			}
-		case refTypeBranch:
+		case RefTypeBranch:
 			branch := normalpath.Unnormalize(config.start.refName)
 			var err error
 			startCommit, err = r.HEADCommit(branch)
@@ -188,7 +192,7 @@ func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommi
 				return fmt.Errorf("read HEAD commit for branch %q: %w", branch, err)
 			}
 		default:
-			return fmt.Errorf("unsupported start point reference type %s:%s", config.start.refType, config.start.refName)
+			return fmt.Errorf("unimplemented reference type %d: %s:%s", config.start.refType, refTypeName, config.start.refName)
 		}
 	}
 	currentCommit := startCommit
