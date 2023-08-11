@@ -68,7 +68,10 @@ func migrate(
 	case ".json", ".yaml", ".yml":
 		// OK
 	default:
-		return errors.New("migration can only apply to a file on disk with extension .yaml, .yml or .json")
+		return fmt.Errorf(
+			"invalid template: %q, migration can only apply to a file on disk with extension .yaml, .yml or .json",
+			migrateOptions.genTemplate,
+		)
 	}
 	configVersion, err := internal.ReadConfigVersion(
 		ctx,
@@ -127,7 +130,10 @@ func migrate(
 		configV2Data = append([]byte(migratedV2FileYAMLHeader), configV2Data...)
 	default:
 		// This should not happen because we already checked this at the beginning of this function.
-		return errors.New("migration can only apply to a file on disk with extension .yaml, .yml or .json")
+		return fmt.Errorf(
+			"invalid template: %q, migration can only apply to a file on disk with extension .yaml, .yml or .json",
+			migrateOptions.genTemplate,
+		)
 	}
 	return os.WriteFile(migrateOptions.genTemplate, configV2Data, 0600)
 }
