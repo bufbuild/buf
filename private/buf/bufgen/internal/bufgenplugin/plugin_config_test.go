@@ -27,6 +27,7 @@ import (
 )
 
 func TestPluginConfig_ParseRemoteHostName(t *testing.T) {
+	t.Parallel()
 	host, err := parseCuratedRemoteHostName("buf.build/protocolbuffers/go:v1.28.1")
 	require.NoError(t, err)
 	require.Equal(

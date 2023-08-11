@@ -43,6 +43,7 @@ func TestProtoFileRef(t *testing.T) {
 }
 
 func TestProtoFileConfig(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	genConfig := filepath.Join("testdata", "protofileref", "proto_file_unix.yaml")
 	testRunSuccess(
@@ -93,6 +94,7 @@ func TestOutputWithExclude(t *testing.T) {
 }
 
 func TestExcludeFlagOverridesConfig(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
@@ -126,6 +128,7 @@ func TestExcludeFlagOverridesConfig(t *testing.T) {
 }
 
 func TestIncludePathConfig(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
@@ -156,6 +159,7 @@ func TestIncludePathConfig(t *testing.T) {
 }
 
 func TestExcludePathConfig(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
@@ -203,6 +207,7 @@ func TestOutputWithPathWithinExclude(t *testing.T) {
 }
 
 func TestOutputWithConfigIncludeWithinExclude(t *testing.T) {
+	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
