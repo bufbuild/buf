@@ -696,18 +696,16 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 				return nil
 			}
 			// For each older commit we travel, we need to make sure it's a valid module with the expected
-			// module identity.
+			// module identity, or that the error handler would have choose to override it.
 			var shouldAttachTagsForThisCommit bool
-			_, readErr := s.readModuleAt(
+			if _, readErr := s.readModuleAt(
 				ctx, branch, oldCommit, moduleDir,
 				readModuleAtWithExpectedModuleIdentity(targetModuleIdentity.IdentityString()),
-			)
-			if readErr == nil {
-				shouldAttachTagsForThisCommit = true
-			} else if s.errorHandler.HandleReadModuleError(readErr) == LookbackDecisionCodeOverride {
+			); readErr == nil || s.errorHandler.HandleReadModuleError(readErr) == LookbackDecisionCodeOverride {
 				shouldAttachTagsForThisCommit = true
 			}
 			if !shouldAttachTagsForThisCommit {
+				// not a valid module, tags in this commit should not be attached to this module.
 				return nil
 			}
 			logger := s.logger.With(
@@ -718,9 +716,8 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 				zap.String("module directory git start point", startPoint.Hex()),
 				zap.Strings("tags", tagsToAttach),
 			)
-			// We assume those commits were already synced, and try to attach tags to them, but if
-			// attaching the older tags fails, we'll WARN+continue to not block actual pending commits to
-			// sync in this run.
+			// Valid module in this commit to attach tags to. If attaching the older tags fails, we'll
+			// WARN+continue to not block actual pending commits to sync in this run.
 			bsrCommitName, err := s.oldTagsAttacher(ctx, targetModuleIdentity, oldCommit.Hash(), tagsToAttach)
 			if err != nil {
 				logger.Warn("attach older tags failed", zap.Error(err))
@@ -745,7 +742,6 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 //
 // e.g.: For branch "foo" we need to sync mods [mod1, mod2, mod3, mod4], and these are the syncable
 // commits:
-//
 // - commit: a,        modules: mod1
 // - commit: b,        modules: mod1, mod2
 // - commit: c,        modules: mod1, mod3
