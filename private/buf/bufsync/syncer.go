@@ -291,7 +291,7 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 	if err != nil {
 		return fmt.Errorf("finding commits to sync: %w", err)
 	}
-	// first lookback from the starting point, syncing old tags
+	// first sync old tags
 	if s.oldTagsAttacher != nil {
 		if err := s.attachOlderTags(ctx, branch, commitsForSync); err != nil {
 			return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
