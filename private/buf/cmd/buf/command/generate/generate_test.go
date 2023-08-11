@@ -157,7 +157,7 @@ plugins:
   - plugin: java
     out: gen/java
 `
-	outDir := filepath.Join(tmpDir, "out")
+	outDir := filepath.Join(tmpDir, "v1")
 	templatePath := filepath.Join(tmpDir, "buf.gen.yaml")
 	err := os.WriteFile(templatePath, []byte(v1Content), 0600)
 	require.NoError(t, err)
@@ -197,6 +197,7 @@ plugins:
 	require.Equal(t, "v2", versionConfig.Version)
 
 	// generate with v2 template
+	outDir = filepath.Join(tmpDir, "v2")
 	testRunSuccess(
 		t,
 		protoDir,
