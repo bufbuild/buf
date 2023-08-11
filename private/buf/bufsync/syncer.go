@@ -39,6 +39,7 @@ type syncer struct {
 	syncedGitCommitChecker    SyncedGitCommitChecker
 	moduleDefaultBranchGetter ModuleDefaultBranchGetter
 	syncPointResolver         SyncPointResolver
+	oldTagsAttacher           OldTagsAttacher
 
 	// flags received on creation
 	sortedModulesDirsForSync             []string
@@ -291,8 +292,10 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 		return fmt.Errorf("finding commits to sync: %w", err)
 	}
 	// first lookback from the starting point, syncing old tags
-	if err := s.attachOlderTags(ctx, branch, commitsForSync); err != nil {
-		return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
+	if s.oldTagsAttacher != nil {
+		if err := s.attachOlderTags(ctx, branch, commitsForSync); err != nil {
+			return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
+		}
 	}
 	// then sync the new commits
 	if len(commitsForSync) == 0 {
@@ -678,6 +681,10 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 		var lookbackCommitCount int
 		forEachOldCommitFunc := func(oldCommit git.Commit) error {
 			lookbackCommitCount++
+			if lookbackCommitCount == 1 {
+				// skip the start point, that one will be processed by sync.
+				return nil
+			}
 			// For the lookback into older commits to stop, both lookback limits (amount of commits and
 			// timespan) need to be met.
 			if lookbackCommitCount > lookbackCommitCount && oldCommit.Committer().Timestamp().Before(timeLimit) {
@@ -706,7 +713,17 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 			// We assume those commits were already synced, and try to attach tags to them, but if
 			// attaching the older tags fails, we'll WARN+continue to not block actual pending commits to
 			// sync in this run.
-			// TODO: actually sync tags to this commit
+			if err := s.oldTagsAttacher(ctx, targetModuleIdentity, oldCommit.Hash(), tagsToAttach); err != nil {
+				s.logger.Warn(
+					"attach older tags failed",
+					zap.String("branch", branch),
+					zap.String("commit", oldCommit.Hash().Hex()),
+					zap.String("module directory", moduleDir),
+					zap.String("module directory git start point", startPoint.Hex()),
+					zap.String("module identity", targetModuleIdentity.IdentityString()),
+					zap.Error(err),
+				)
+			}
 			return nil
 		}
 		if err := s.repo.ForEachCommit(

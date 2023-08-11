@@ -270,6 +270,17 @@ type ModuleDefaultBranchGetter func(
 	module bufmoduleref.ModuleIdentity,
 ) (string, error)
 
+// OldTagsAttacher is invoked when a commit with valid modules is found close past the start sync
+// point for such module. The Syncer assumes that the "old" commit is already synced, so it will
+// attempt to attach existing tags using that git hash, in case they were recenly created or moved
+// there.
+//
+// A common scenario is SemVer releases: a commit is pushed to the default Git branch, the sync
+// process triggers and completes, and some minutes later that commit is tagged "v1.2.3". The next
+// time the sync command runs, this attacher would pick such tag and attach it to the correct BSR
+// commit.
+type OldTagsAttacher func(ctx context.Context, module bufmoduleref.ModuleIdentity, hash git.Hash, tags []string) error
+
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {
 	// Branch is the git branch that this module is sourced from.
