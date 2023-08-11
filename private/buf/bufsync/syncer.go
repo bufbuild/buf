@@ -461,10 +461,7 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 		})
 		return nil
 	}
-	if err := s.repo.ForEachCommit(
-		eachCommitFunc,
-		git.ForEachCommitWithStartPoint(git.RefTypeBranch, branch),
-	); err != nil && !errors.Is(err, stopLoopErr) {
+	if err := s.repo.ForEachCommit(eachCommitFunc, git.ForEachCommitWithBranchStartPoint(branch)); err != nil && !errors.Is(err, stopLoopErr) {
 		return nil, err
 	}
 	// if we have no commits to sync, no need to make more checks, bail early
