@@ -47,17 +47,6 @@ const (
 	ModeSubmodule ObjectMode = 016_0000
 )
 
-const (
-	// RefTypeHash is the reference type for a git SHA hash.
-	RefTypeHash ReferenceType = iota + 1
-	// RefTypeBranch is the reference type for a git branch.
-	RefTypeBranch
-)
-
-// ReferenceType is the type of references that can be passed as starting points when traversing a
-// git tree.
-type ReferenceType int
-
 var (
 	// ErrTreeNodeNotFound is an error found in the error chain when
 	// Tree#Descendant is unable to find the target tree node.
@@ -316,27 +305,45 @@ type Repository interface {
 // ForEachCommitOption are options that can be passed to ForEachCommit.
 type ForEachCommitOption func(*forEachCommitOpts) error
 
-// ForEachCommitWithStartPoint sets a starting point to traverse the git tree.
-func ForEachCommitWithStartPoint(refType ReferenceType, refName string) ForEachCommitOption {
+// ForEachCommitWithBranchStartPoint sets a branch name as a starting point to start the loop.
+func ForEachCommitWithBranchStartPoint(branchName string) ForEachCommitOption {
 	return func(opts *forEachCommitOpts) error {
-		refTypeName, supported := supportedRefTypesToNames[refType]
-		if !supported {
-			return fmt.Errorf("unsupported reference type %d with name %s", refType, refName)
-		}
 		if opts.start != nil {
-			if opts.start.refType == refType && opts.start.refName == refName {
+			if opts.start.refType == refTypeBranch && opts.start.refName == branchName {
 				// already set, nop
 				return nil
 			}
 			return fmt.Errorf(
 				"cannot set a starting point %s:%s, another starting point %s:%s already exists",
-				refTypeName, refName,
-				supportedRefTypesToNames[opts.start.refType], opts.start.refName,
+				refTypeBranch, branchName,
+				opts.start.refType, opts.start.refName,
 			)
 		}
 		opts.start = &reference{
-			refType: refType,
-			refName: refName,
+			refType: refTypeBranch,
+			refName: branchName,
+		}
+		return nil
+	}
+}
+
+// ForEachCommitWithHashStartPoint sets a git hash as a starting point to start the loop.
+func ForEachCommitWithHashStartPoint(hash string) ForEachCommitOption {
+	return func(opts *forEachCommitOpts) error {
+		if opts.start != nil {
+			if opts.start.refType == refTypeHash && opts.start.refName == hash {
+				// already set, nop
+				return nil
+			}
+			return fmt.Errorf(
+				"cannot set a starting point %s:%s, another starting point %s:%s already exists",
+				refTypeHash, hash,
+				opts.start.refType, opts.start.refName,
+			)
+		}
+		opts.start = &reference{
+			refType: refTypeHash,
+			refName: hash,
 		}
 		return nil
 	}
@@ -369,16 +376,17 @@ func OpenRepositoryWithDefaultBranch(name string) OpenRepositoryOption {
 	}
 }
 
-// supportedRefTypesToNames are the reference types that are supported for starting points.
-var supportedRefTypesToNames = map[ReferenceType]string{
-	RefTypeHash:   "hash",
-	RefTypeBranch: "branch",
-}
+const (
+	refTypeHash   referenceType = "hash"
+	refTypeBranch referenceType = "branch"
+)
+
+type referenceType string
 
 // reference is a single git reference used in ForEachCommit to declare an starting commit.
 type reference struct {
 	refName string
-	refType ReferenceType
+	refType referenceType
 }
 
 type forEachCommitOpts struct {

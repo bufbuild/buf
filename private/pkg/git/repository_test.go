@@ -87,7 +87,7 @@ func TestCommits(t *testing.T) {
 				commitsFromDefaultBranch = append(commitsFromDefaultBranch, c)
 				return nil
 			},
-			git.ForEachCommitWithStartPoint(git.RefTypeBranch, repo.DefaultBranch()),
+			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
 		)
 		require.NoError(t, err)
 		assert.Equal(t, commits, commitsFromDefaultBranch)
@@ -97,9 +97,9 @@ func TestCommits(t *testing.T) {
 		assert.NoError(t, repo.ForEachCommit(
 			func(git.Commit) error { return nil },
 			// multiple times, same starting point should be a nop
-			git.ForEachCommitWithStartPoint(git.RefTypeBranch, repo.DefaultBranch()),
-			git.ForEachCommitWithStartPoint(git.RefTypeBranch, repo.DefaultBranch()),
-			git.ForEachCommitWithStartPoint(git.RefTypeBranch, repo.DefaultBranch()),
+			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
+			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
+			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
 		))
 	})
 
@@ -110,7 +110,7 @@ func TestCommits(t *testing.T) {
 				commitsFromSecond = append(commitsFromSecond, c)
 				return nil
 			},
-			git.ForEachCommitWithStartPoint(git.RefTypeHash, commits[1].Hash().Hex()),
+			git.ForEachCommitWithHashStartPoint(commits[1].Hash().Hex()),
 		)
 		require.NoError(t, err)
 		require.Len(t, commitsFromSecond, 2)
@@ -131,26 +131,20 @@ func TestCommits(t *testing.T) {
 			{
 				name: "when_multiple_starting_points",
 				opts: []git.ForEachCommitOption{
-					git.ForEachCommitWithStartPoint(git.RefTypeBranch, "some-branch"),
-					git.ForEachCommitWithStartPoint(git.RefTypeHash, "some-hash"),
+					git.ForEachCommitWithBranchStartPoint("some-branch"),
+					git.ForEachCommitWithHashStartPoint("some-hash"),
 				},
 			},
 			{
 				name: "when_invalid_hash",
 				opts: []git.ForEachCommitOption{
-					git.ForEachCommitWithStartPoint(git.RefTypeHash, "invalid-hash"),
+					git.ForEachCommitWithHashStartPoint("invalid-hash"),
 				},
 			},
 			{
 				name: "when_non_existent_branch",
 				opts: []git.ForEachCommitOption{
-					git.ForEachCommitWithStartPoint(git.RefTypeBranch, "non-existent-branch"),
-				},
-			},
-			{
-				name: "when_unknown_ref_type",
-				opts: []git.ForEachCommitOption{
-					git.ForEachCommitWithStartPoint(0 /* unknown ref type */, "foo"),
+					git.ForEachCommitWithBranchStartPoint("non-existent-branch"),
 				},
 			},
 		}
