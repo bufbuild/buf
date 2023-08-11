@@ -14,161 +14,134 @@
 
 package buffetch
 
-// TODO: remove the unexported formats below and only use these ones.
-// A good time to do so is when we merge txtpb and binpb into this branch.
 const (
-	// formatBin is the binary format.
-	FormatBin = "bin"
-	// formatBingz is the binary gzipped format.
-	FormatBingz = "bingz"
-	// formatDir is the directory format.
+	// FormatBinpb is the protobuf binary format.
+	FormatBinpb = "binpb"
+	// FormatTxtpb is the protobuf text format.
+	FormatTxtpb = "txtpb"
+	// FormatDir is the directory format.
 	FormatDir = "dir"
-	// formatGit is the git format.
+	// FormatGit is the git format.
 	FormatGit = "git"
-	// formatJSON is the JSON format.
+	// FormatJSON is the JSON format.
 	FormatJSON = "json"
-	// formatJSONGZ is the JSON gzipped format.
-	FormatJSONGZ = "jsongz"
-	// formatMod is the module format.
+	// FormatMod is the module format.
 	FormatMod = "mod"
-	// formatTar is the tar format.
+	// FormatTar is the tar format.
 	FormatTar = "tar"
-	// formatTargz is the tar gzipped format.
-	FormatTargz = "targz"
-	// formatZip is the zip format.
+	// FormatZip is the zip format.
 	FormatZip = "zip"
-	// formatProtoFile is the proto file format
+	// FormatProtoFile is the proto file format.
 	FormatProtoFile = "protofile"
-)
 
-const (
-	// formatBinpb is the protobuf binary format.
-	formatBinpb = "binpb"
-	// formatTxtpb is the protobuf text format.
-	formatTxtpb = "txtpb"
-	// formatDir is the directory format.
-	formatDir = "dir"
-	// formatGit is the git format.
-	formatGit = "git"
-	// formatJSON is the JSON format.
-	formatJSON = "json"
-	// formatMod is the module format.
-	formatMod = "mod"
-	// formatTar is the tar format.
-	formatTar = "tar"
-	// formatZip is the zip format.
-	formatZip = "zip"
-	// formatProtoFile is the proto file format.
-	formatProtoFile = "protofile"
-
-	// formatBin is the binary format's old form, now deprecated.
-	formatBin = "bin"
-	// formatBingz is the binary gzipped format, now deprecated.
-	formatBingz = "bingz"
-	// formatJSONGZ is the JSON gzipped format, now deprecated.
-	formatJSONGZ = "jsongz"
-	// formatTargz is the tar gzipped format, now deprecated.
-	formatTargz = "targz"
+	// FormatBin is the binary format's old form, now deprecated.
+	FormatBin = "bin"
+	// FormatBingz is the binary gzipped format, now deprecated.
+	FormatBingz = "bingz"
+	// FormatJSONGZ is the JSON gzipped format, now deprecated.
+	FormatJSONGZ = "jsongz"
+	// FormatTargz is the tar gzipped format, now deprecated.
+	FormatTargz = "targz"
 )
 
 var (
 	// sorted
 	imageFormats = []string{
-		formatBin,
-		formatBinpb,
-		formatBingz,
-		formatJSON,
-		formatJSONGZ,
-		formatTxtpb,
+		FormatBin,
+		FormatBinpb,
+		FormatBingz,
+		FormatJSON,
+		FormatJSONGZ,
+		FormatTxtpb,
 	}
 	// sorted
 	imageFormatsNotDeprecated = []string{
-		formatBinpb,
-		formatJSON,
-		formatTxtpb,
+		FormatBinpb,
+		FormatJSON,
+		FormatTxtpb,
 	}
 	// sorted
 	sourceFormats = []string{
-		formatDir,
-		formatGit,
-		formatProtoFile,
-		formatTar,
-		formatTargz,
-		formatZip,
+		FormatDir,
+		FormatGit,
+		FormatProtoFile,
+		FormatTar,
+		FormatTargz,
+		FormatZip,
 	}
 	// sorted
 	sourceFormatsNotDeprecated = []string{
-		formatDir,
-		formatGit,
-		formatProtoFile,
-		formatTar,
-		formatZip,
+		FormatDir,
+		FormatGit,
+		FormatProtoFile,
+		FormatTar,
+		FormatZip,
 	}
 	sourceDirFormatsNotDeprecated = []string{
-		formatDir,
-		formatGit,
-		formatTar,
-		formatZip,
+		FormatDir,
+		FormatGit,
+		FormatTar,
+		FormatZip,
 	}
 	// sorted
 	moduleFormats = []string{
-		formatMod,
+		FormatMod,
 	}
 	// sorted
 	moduleFormatsNotDeprecated = []string{
-		formatMod,
+		FormatMod,
 	}
 	// sorted
 	sourceOrModuleFormats = []string{
-		formatDir,
-		formatGit,
-		formatMod,
-		formatProtoFile,
-		formatTar,
-		formatTargz,
-		formatZip,
+		FormatDir,
+		FormatGit,
+		FormatMod,
+		FormatProtoFile,
+		FormatTar,
+		FormatTargz,
+		FormatZip,
 	}
 	// sorted
 	sourceOrModuleFormatsNotDeprecated = []string{
-		formatDir,
-		formatGit,
-		formatMod,
-		formatProtoFile,
-		formatTar,
-		formatZip,
+		FormatDir,
+		FormatGit,
+		FormatMod,
+		FormatProtoFile,
+		FormatTar,
+		FormatZip,
 	}
 	// sorted
 	allFormats = []string{
-		formatBin,
-		formatBinpb,
-		formatBingz,
-		formatDir,
-		formatGit,
-		formatJSON,
-		formatJSONGZ,
-		formatMod,
-		formatProtoFile,
-		formatTar,
-		formatTargz,
-		formatTxtpb,
-		formatZip,
+		FormatBin,
+		FormatBinpb,
+		FormatBingz,
+		FormatDir,
+		FormatGit,
+		FormatJSON,
+		FormatJSONGZ,
+		FormatMod,
+		FormatProtoFile,
+		FormatTar,
+		FormatTargz,
+		FormatTxtpb,
+		FormatZip,
 	}
 	// sorted
 	allFormatsNotDeprecated = []string{
-		formatBinpb,
-		formatDir,
-		formatGit,
-		formatJSON,
-		formatMod,
-		formatProtoFile,
-		formatTar,
-		formatTxtpb,
-		formatZip,
+		FormatBinpb,
+		FormatDir,
+		FormatGit,
+		FormatJSON,
+		FormatMod,
+		FormatProtoFile,
+		FormatTar,
+		FormatTxtpb,
+		FormatZip,
 	}
 
 	deprecatedCompressionFormatToReplacementFormat = map[string]string{
-		formatBingz:  formatBinpb,
-		formatJSONGZ: formatJSON,
-		formatTargz:  formatTar,
+		FormatBingz:  FormatBinpb,
+		FormatJSONGZ: FormatJSON,
+		FormatTargz:  FormatTar,
 	}
 )

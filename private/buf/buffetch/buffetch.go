@@ -427,6 +427,14 @@ type RefBuilder interface {
 		path string,
 		options ...GetImageRefOption,
 	) (Ref, error)
+
+	// GetTextImageRef returns a Ref for a text image.
+	GetTextImageRef(
+		ctx context.Context,
+		format string,
+		path string,
+		options ...GetImageRefOption,
+	) (Ref, error)
 }
 
 // GetGitRefOption is an option for GetGitRefOption.
@@ -530,8 +538,8 @@ type GetImageRefOption func(*getImageRefOptions)
 
 // WithGetImageRefOption sets compression.
 func WithGetImageRefOption(compression string) GetImageRefOption {
-	return func(getJSONImageRefOptions *getImageRefOptions) {
-		getJSONImageRefOptions.compression = compression
+	return func(getImageRefOptions *getImageRefOptions) {
+		getImageRefOptions.compression = compression
 	}
 }
 

@@ -256,6 +256,7 @@ func TestMigrate(t *testing.T) {
 	for _, testcase := range testcases {
 		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			logger := zap.NewNop()
 			readBucket := storagemem.NewReadWriteBucket()
@@ -1075,6 +1076,20 @@ func TestInputStringToInputConfigV2(t *testing.T) {
 			input:       "path/to/file.json",
 			expectedConfigV2: bufgenv2.ExternalInputConfigV2{
 				JSONImage: toPointer("path/to/file.json"),
+			},
+		},
+		{
+			description: "txtpb with explicit format",
+			input:       "path/to/file#format=txtpb",
+			expectedConfigV2: bufgenv2.ExternalInputConfigV2{
+				TextImage: toPointer("path/to/file"),
+			},
+		},
+		{
+			description: "txtpb with extension",
+			input:       "path/to/file.txtpb.zst",
+			expectedConfigV2: bufgenv2.ExternalInputConfigV2{
+				TextImage: toPointer("path/to/file.txtpb.zst"),
 			},
 		},
 		{

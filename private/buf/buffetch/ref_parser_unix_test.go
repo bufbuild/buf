@@ -29,7 +29,7 @@ func TestGetParsedRefSuccess_UnixOnly(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"",
 			internal.FileSchemeStdin,
 			internal.CompressionTypeNone,
@@ -39,7 +39,7 @@ func TestGetParsedRefSuccess_UnixOnly(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"",
 			internal.FileSchemeStdout,
 			internal.CompressionTypeNone,

@@ -448,12 +448,16 @@ func getExternalInputConfigV2(
 		return nil, err
 	}
 	switch format {
+	case buffetch.FormatBinpb:
+		inputConfig.BinaryImage = &path
 	case buffetch.FormatBin:
 		inputConfig.BinaryImage = &path
 	case buffetch.FormatBingz:
 		inputConfig.BinaryImage = &path
 		compression := "gzip"
 		inputConfig.Compression = &compression
+	case buffetch.FormatTxtpb:
+		inputConfig.TextImage = &path
 	case buffetch.FormatDir:
 		inputConfig.Directory = &path
 	case buffetch.FormatGit:

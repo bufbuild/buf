@@ -49,41 +49,41 @@ func newRefParser(logger *zap.Logger) *refParser {
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(newRawRefProcessor()),
-			internal.WithSingleFormat(formatBin),
-			internal.WithSingleFormat(formatBinpb),
-			internal.WithSingleFormat(formatJSON),
-			internal.WithSingleFormat(formatTxtpb),
+			internal.WithSingleFormat(FormatBin),
+			internal.WithSingleFormat(FormatBinpb),
+			internal.WithSingleFormat(FormatJSON),
+			internal.WithSingleFormat(FormatTxtpb),
 			internal.WithSingleFormat(
-				formatBingz,
+				FormatBingz,
 				internal.WithSingleDefaultCompressionType(
 					internal.CompressionTypeGzip,
 				),
 			),
 			internal.WithSingleFormat(
-				formatJSONGZ,
+				FormatJSONGZ,
 				internal.WithSingleDefaultCompressionType(
 					internal.CompressionTypeGzip,
 				),
 			),
 			internal.WithArchiveFormat(
-				formatTar,
+				FormatTar,
 				internal.ArchiveTypeTar,
 			),
 			internal.WithArchiveFormat(
-				formatTargz,
+				FormatTargz,
 				internal.ArchiveTypeTar,
 				internal.WithArchiveDefaultCompressionType(
 					internal.CompressionTypeGzip,
 				),
 			),
 			internal.WithArchiveFormat(
-				formatZip,
+				FormatZip,
 				internal.ArchiveTypeZip,
 			),
-			internal.WithGitFormat(formatGit),
-			internal.WithDirFormat(formatDir),
-			internal.WithModuleFormat(formatMod),
-			internal.WithProtoFileFormat(formatProtoFile),
+			internal.WithGitFormat(FormatGit),
+			internal.WithDirFormat(FormatDir),
+			internal.WithModuleFormat(FormatMod),
+			internal.WithProtoFileFormat(FormatProtoFile),
 		),
 	}
 }
@@ -94,18 +94,18 @@ func newImageRefParser(logger *zap.Logger) *refParser {
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(processRawRefImage),
-			internal.WithSingleFormat(formatBin),
-			internal.WithSingleFormat(formatBinpb),
-			internal.WithSingleFormat(formatJSON),
-			internal.WithSingleFormat(formatTxtpb),
+			internal.WithSingleFormat(FormatBin),
+			internal.WithSingleFormat(FormatBinpb),
+			internal.WithSingleFormat(FormatJSON),
+			internal.WithSingleFormat(FormatTxtpb),
 			internal.WithSingleFormat(
-				formatBingz,
+				FormatBingz,
 				internal.WithSingleDefaultCompressionType(
 					internal.CompressionTypeGzip,
 				),
 			),
 			internal.WithSingleFormat(
-				formatJSONGZ,
+				FormatJSONGZ,
 				internal.WithSingleDefaultCompressionType(
 					internal.CompressionTypeGzip,
 				),
@@ -122,22 +122,22 @@ func newSourceRefParser(logger *zap.Logger) *refParser {
 			logger,
 			internal.WithRawRefProcessor(processRawRefSource),
 			internal.WithArchiveFormat(
-				formatTar,
+				FormatTar,
 				internal.ArchiveTypeTar,
 			),
 			internal.WithArchiveFormat(
-				formatTargz,
+				FormatTargz,
 				internal.ArchiveTypeTar,
 				internal.WithArchiveDefaultCompressionType(
 					internal.CompressionTypeGzip,
 				),
 			),
 			internal.WithArchiveFormat(
-				formatZip,
+				FormatZip,
 				internal.ArchiveTypeZip,
 			),
-			internal.WithGitFormat(formatGit),
-			internal.WithDirFormat(formatDir),
+			internal.WithGitFormat(FormatGit),
+			internal.WithDirFormat(FormatDir),
 		),
 		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
@@ -149,7 +149,7 @@ func newModuleRefParser(logger *zap.Logger) *refParser {
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(processRawRefModule),
-			internal.WithModuleFormat(formatMod),
+			internal.WithModuleFormat(FormatMod),
 		),
 		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
@@ -162,23 +162,23 @@ func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
 			logger,
 			internal.WithRawRefProcessor(processRawRefSourceOrModule),
 			internal.WithArchiveFormat(
-				formatTar,
+				FormatTar,
 				internal.ArchiveTypeTar,
 			),
 			internal.WithArchiveFormat(
-				formatTargz,
+				FormatTargz,
 				internal.ArchiveTypeTar,
 				internal.WithArchiveDefaultCompressionType(
 					internal.CompressionTypeGzip,
 				),
 			),
 			internal.WithArchiveFormat(
-				formatZip,
+				FormatZip,
 				internal.ArchiveTypeZip,
 			),
-			internal.WithGitFormat(formatGit),
-			internal.WithDirFormat(formatDir),
-			internal.WithModuleFormat(formatMod),
+			internal.WithGitFormat(FormatGit),
+			internal.WithDirFormat(FormatDir),
+			internal.WithModuleFormat(FormatMod),
 		),
 		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
@@ -384,30 +384,30 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 		var format string
 		var compressionType internal.CompressionType
 		if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
-			format = formatBinpb
+			format = FormatBinpb
 		} else {
 			switch filepath.Ext(rawRef.Path) {
 			case ".bin", ".binpb":
-				format = formatBinpb
+				format = FormatBinpb
 			case ".json":
-				format = formatJSON
+				format = FormatJSON
 			case ".tar":
-				format = formatTar
+				format = FormatTar
 			case ".txtpb":
-				format = formatTxtpb
+				format = FormatTxtpb
 			case ".zip":
-				format = formatZip
+				format = FormatZip
 			case ".gz":
 				compressionType = internal.CompressionTypeGzip
 				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 				case ".bin", ".binpb":
-					format = formatBinpb
+					format = FormatBinpb
 				case ".json":
-					format = formatJSON
+					format = FormatJSON
 				case ".tar":
-					format = formatTar
+					format = FormatTar
 				case ".txtpb":
-					format = formatTxtpb
+					format = FormatTxtpb
 				default:
 					return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
 				}
@@ -415,21 +415,21 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 				compressionType = internal.CompressionTypeZstd
 				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 				case ".bin", ".binpb":
-					format = formatBinpb
+					format = FormatBinpb
 				case ".json":
-					format = formatJSON
+					format = FormatJSON
 				case ".tar":
-					format = formatTar
+					format = FormatTar
 				case ".txtpb":
-					format = formatTxtpb
+					format = FormatTxtpb
 				default:
 					return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
 				}
 			case ".tgz":
-				format = formatTar
+				format = FormatTar
 				compressionType = internal.CompressionTypeGzip
 			case ".git":
-				format = formatGit
+				format = FormatGit
 				// This only applies if the option accept `ProtoFileRef` is passed in, otherwise
 				// it falls through to the `default` case.
 			case ".proto":
@@ -440,7 +440,7 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 				if fileInfo != nil && fileInfo.IsDir() {
 					return fmt.Errorf("path provided is not a valid proto file: a directory named %s already exists", rawRef.Path)
 				}
-				format = formatProtoFile
+				format = FormatProtoFile
 			default:
 				var err error
 				format, err = assumeModuleOrDir(rawRef.Path)
@@ -461,14 +461,14 @@ func processRawRefSource(rawRef *internal.RawRef) error {
 	var compressionType internal.CompressionType
 	switch filepath.Ext(rawRef.Path) {
 	case ".tar":
-		format = formatTar
+		format = FormatTar
 	case ".zip":
-		format = formatZip
+		format = FormatZip
 	case ".gz":
 		compressionType = internal.CompressionTypeGzip
 		switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 		case ".tar":
-			format = formatTar
+			format = FormatTar
 		default:
 			return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
 		}
@@ -476,17 +476,17 @@ func processRawRefSource(rawRef *internal.RawRef) error {
 		compressionType = internal.CompressionTypeZstd
 		switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 		case ".tar":
-			format = formatTar
+			format = FormatTar
 		default:
 			return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
 		}
 	case ".tgz":
-		format = formatTar
+		format = FormatTar
 		compressionType = internal.CompressionTypeGzip
 	case ".git":
-		format = formatGit
+		format = FormatGit
 	default:
-		format = formatDir
+		format = FormatDir
 	}
 	rawRef.Format = format
 	rawRef.CompressionType = compressionType
@@ -499,14 +499,14 @@ func processRawRefSourceOrModule(rawRef *internal.RawRef) error {
 	var compressionType internal.CompressionType
 	switch filepath.Ext(rawRef.Path) {
 	case ".tar":
-		format = formatTar
+		format = FormatTar
 	case ".zip":
-		format = formatZip
+		format = FormatZip
 	case ".gz":
 		compressionType = internal.CompressionTypeGzip
 		switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 		case ".tar":
-			format = formatTar
+			format = FormatTar
 		default:
 			return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
 		}
@@ -514,15 +514,15 @@ func processRawRefSourceOrModule(rawRef *internal.RawRef) error {
 		compressionType = internal.CompressionTypeZstd
 		switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 		case ".tar":
-			format = formatTar
+			format = FormatTar
 		default:
 			return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
 		}
 	case ".tgz":
-		format = formatTar
+		format = FormatTar
 		compressionType = internal.CompressionTypeGzip
 	case ".git":
-		format = formatGit
+		format = FormatGit
 	default:
 		var err error
 		format, err = assumeModuleOrDir(rawRef.Path)
@@ -540,24 +540,24 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 	var format string
 	var compressionType internal.CompressionType
 	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
-		format = formatBinpb
+		format = FormatBinpb
 	} else {
 		switch filepath.Ext(rawRef.Path) {
 		case ".bin", ".binpb":
-			format = formatBinpb
+			format = FormatBinpb
 		case ".json":
-			format = formatJSON
+			format = FormatJSON
 		case ".txtpb":
-			format = formatTxtpb
+			format = FormatTxtpb
 		case ".gz":
 			compressionType = internal.CompressionTypeGzip
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 			case ".bin", ".binpb":
-				format = formatBinpb
+				format = FormatBinpb
 			case ".json":
-				format = formatJSON
+				format = FormatJSON
 			case ".txtpb":
-				format = formatTxtpb
+				format = FormatTxtpb
 			default:
 				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
 			}
@@ -565,16 +565,16 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 			compressionType = internal.CompressionTypeZstd
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 			case ".bin", ".binpb":
-				format = formatBinpb
+				format = FormatBinpb
 			case ".json":
-				format = formatJSON
+				format = FormatJSON
 			case ".txtpb":
-				format = formatTxtpb
+				format = FormatTxtpb
 			default:
 				return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
 			}
 		default:
-			format = formatBinpb
+			format = FormatBinpb
 		}
 	}
 	rawRef.Format = format
@@ -583,17 +583,17 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 }
 
 func processRawRefModule(rawRef *internal.RawRef) error {
-	rawRef.Format = formatMod
+	rawRef.Format = FormatMod
 	return nil
 }
 
 func parseImageEncoding(format string) (ImageEncoding, error) {
 	switch format {
-	case formatBin, formatBinpb, formatBingz:
+	case FormatBin, FormatBinpb, FormatBingz:
 		return ImageEncodingBin, nil
-	case formatJSON, formatJSONGZ:
+	case FormatJSON, FormatJSONGZ:
 		return ImageEncodingJSON, nil
-	case formatTxtpb:
+	case FormatTxtpb:
 		return ImageEncodingTxtpb, nil
 	default:
 		return 0, fmt.Errorf("invalid format for image: %q", format)
@@ -612,11 +612,11 @@ func assumeModuleOrDir(path string) (string, error) {
 		fileInfo, err := os.Stat(path)
 		if err == nil && fileInfo.IsDir() {
 			// if we have a directory, assume this is a directory
-			return formatDir, nil
+			return FormatDir, nil
 		}
 		// not a directory, assume module
-		return formatMod, nil
+		return FormatMod, nil
 	}
 	// cannot be parsed into a module, assume dir for here
-	return formatDir, nil
+	return FormatDir, nil
 }

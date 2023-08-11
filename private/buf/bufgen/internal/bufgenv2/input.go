@@ -31,6 +31,7 @@ const (
 	formatTarball     = "tarball"
 	formatZipArchive  = "zip_archive"
 	formatJSONImage   = "json_image"
+	formatTextImage   = "text_image"
 )
 
 const (
@@ -72,6 +73,9 @@ var allowedOptionsForFormat = map[string](map[string]bool){
 		optionCompression: true,
 	},
 	formatJSONImage: {
+		optionCompression: true,
+	},
+	formatTextImage: {
 		optionCompression: true,
 	},
 }
@@ -205,6 +209,17 @@ func newInputConfig(ctx context.Context, externalConfig ExternalInputConfigV2) (
 			*externalConfig.JSONImage,
 			options...,
 		)
+	case formatTextImage:
+		var options []buffetch.GetImageRefOption
+		if compression := externalConfig.Compression; compression != nil {
+			options = append(options, buffetch.WithGetImageRefOption(*compression))
+		}
+		inputConfig.InputRef, err = refBuilder.GetTextImageRef(
+			ctx,
+			formatTextImage,
+			*externalConfig.TextImage,
+			options...,
+		)
 	default:
 		// this should not happen
 		return nil, fmt.Errorf("unsupported format: %s", format)
@@ -238,6 +253,9 @@ func getFormatsAndOptionsSpecified(externalConfig ExternalInputConfigV2) ([]stri
 	}
 	if externalConfig.JSONImage != nil {
 		formats = append(formats, formatJSONImage)
+	}
+	if externalConfig.TextImage != nil {
+		formats = append(formats, formatTextImage)
 	}
 	if externalConfig.GitRepo != nil {
 		formats = append(formats, formatGitRepo)

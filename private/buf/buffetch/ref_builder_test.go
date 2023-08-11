@@ -716,7 +716,7 @@ func TestGetBinaryImageRef(t *testing.T) {
 			),
 		},
 		{
-			name:   "Test dev null is allowed for zip_archive",
+			name:   "Test dev null is allowed for binary image",
 			path:   app.DevNullFilePath,
 			format: "binary_image",
 			expectedRef: newImageRef(
@@ -814,7 +814,7 @@ func TestGetJSONImageRef(t *testing.T) {
 			),
 		},
 		{
-			name:          "Test dev null is not allowed for zip_archive",
+			name:          "Test dev null is not allowed for json_image",
 			path:          app.DevNullFilePath,
 			format:        "json_image",
 			expectedError: fmt.Errorf("%s is not allowed for json_image", app.DevNullFilePath),
@@ -826,6 +826,96 @@ func TestGetJSONImageRef(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			ref, err := refBuilder.GetJSONImageRef(
+				ctx,
+				test.format,
+				test.path,
+				test.options...,
+			)
+			if test.expectedError != nil {
+				require.Nil(t, ref)
+				require.Equal(t, test.expectedError, err)
+			} else {
+				require.Nil(t, err)
+				require.Equal(t, test.expectedRef, ref)
+			}
+		})
+	}
+}
+
+func TestGetTextImageRef(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	refBuilder := newRefBuilder()
+
+	tests := []struct {
+		name          string
+		path          string
+		format        string
+		options       []GetImageRefOption
+		expectedError error
+		expectedRef   Ref
+	}{
+		{
+			name:   "Test local text_image",
+			path:   "a/b/c",
+			format: "text_image",
+			options: []GetImageRefOption{
+				WithGetImageRefOption("gzip"),
+			},
+			expectedRef: newImageRef(
+				internal.NewDirectParsedSingleRef(
+					"text_image",
+					"a/b/c",
+					internal.FileSchemeLocal,
+					internal.CompressionTypeGzip,
+				),
+				ImageEncodingTxtpb,
+			),
+		},
+		{
+			name:   "Test remote text image",
+			path:   "https://github.com/googleapis/googleapis/archive/master.txtpb.gz",
+			format: "text_image",
+			expectedRef: newImageRef(
+				internal.NewDirectParsedSingleRef(
+					"text_image",
+					"github.com/googleapis/googleapis/archive/master.txtpb.gz",
+					internal.FileSchemeHTTPS,
+					internal.CompressionTypeGzip,
+				),
+				ImageEncodingTxtpb,
+			),
+		},
+		{
+			name:   "Test text image from stdin",
+			path:   "-",
+			format: "text_image",
+			options: []GetImageRefOption{
+				WithGetImageRefOption("zstd"),
+			},
+			expectedRef: newImageRef(
+				internal.NewDirectParsedSingleRef(
+					"text_image",
+					"",
+					internal.FileSchemeStdio,
+					internal.CompressionTypeZstd,
+				),
+				ImageEncodingTxtpb,
+			),
+		},
+		{
+			name:          "Test dev null is not allowed for text_image",
+			path:          app.DevNullFilePath,
+			format:        "text_image",
+			expectedError: fmt.Errorf("%s is not allowed for text_image", app.DevNullFilePath),
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			ref, err := refBuilder.GetTextImageRef(
 				ctx,
 				test.format,
 				test.path,

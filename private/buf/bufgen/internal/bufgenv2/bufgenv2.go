@@ -271,6 +271,7 @@ type ExternalInputConfigV2 struct {
 	ZipArchive  *string `json:"zip_archive,omitempty" yaml:"zip_archive,omitempty"`
 	BinaryImage *string `json:"binary_image,omitempty" yaml:"binary_image,omitempty"`
 	JSONImage   *string `json:"json_image,omitempty" yaml:"json_image,omitempty"`
+	TextImage   *string `json:"text_image,omitempty" yaml:"text_image,omitempty"`
 	GitRepo     *string `json:"git_repo,omitempty" yaml:"git_repo,omitempty"`
 	// Compression, StripComponents, Subdir, Branch, Tag, Ref, Depth, RecurseSubmodules
 	// and IncludePackageFils are available for only some formats.
