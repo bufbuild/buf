@@ -22,8 +22,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufgen/internal"
-	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenplugin"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenv1"
 	"github.com/bufbuild/buf/private/buf/bufgen/internal/bufgenv2"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -1222,86 +1220,6 @@ func TestConvertV1ToV2Error(t *testing.T) {
 			require.Nil(t, externalConfigV2)
 		})
 	}
-}
-
-func mustCreateLocalPluginConfig(
-	t *testing.T,
-	name string,
-	strategy internal.Strategy,
-	out string,
-	opt string,
-) bufgenplugin.LocalPluginConfig {
-	plugin, err := bufgenplugin.NewLocalPluginConfig(
-		name,
-		strategy,
-		out,
-		opt,
-		false,
-		false,
-	)
-	require.NoError(t, err)
-	return plugin
-}
-
-func mustCreateNewBinaryPlugin(
-	t *testing.T,
-	name string,
-	path []string,
-	strategy internal.Strategy,
-	out string,
-	opt string,
-) bufgenplugin.BinaryPluginConfig {
-	plugin, err := bufgenplugin.NewBinaryPluginConfig(
-		name,
-		path,
-		strategy,
-		out,
-		opt,
-		false,
-		false,
-	)
-	require.NoError(t, err)
-	return plugin
-}
-
-func mustCreateNewProtocPlugin(
-	t *testing.T,
-	name string,
-	protocPath string,
-	out string,
-	opt string,
-	strategy internal.Strategy,
-) bufgenplugin.ProtocBuiltinPluginConfig {
-	plugin, err := bufgenplugin.NewProtocBuiltinPluginConfig(
-		name,
-		protocPath,
-		out,
-		opt,
-		false,
-		false,
-		strategy,
-	)
-	require.NoError(t, err)
-	return plugin
-}
-
-func mustCreateNewCuratedPlugin(
-	t *testing.T,
-	fullName string,
-	revision int,
-	out string,
-	opt string,
-) bufgenplugin.CuratedPluginConfig {
-	plugin, err := bufgenplugin.NewCuratedPluginConfig(
-		fullName,
-		revision,
-		out,
-		opt,
-		false,
-		false,
-	)
-	require.NoError(t, err)
-	return plugin
 }
 
 func toPointer[T any](value T) *T {
