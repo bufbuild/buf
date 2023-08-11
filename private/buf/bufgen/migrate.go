@@ -217,17 +217,6 @@ func pluginConfigToExternalPluginConfigV2(
 ) (*bufgenv2.ExternalPluginConfigV2, error) {
 	externalPluginConfig := bufgenv2.ExternalPluginConfigV2{}
 	externalPluginConfig.Out = pluginConfig.Out()
-	optString := pluginConfig.Opt()
-	switch opts := strings.Split(optString, ","); len(opts) {
-	case 1:
-		if optString == "" {
-			externalPluginConfig.Opt = nil
-			break
-		}
-		externalPluginConfig.Opt = opts[0]
-	default:
-		externalPluginConfig.Opt = opts
-	}
 	pluginName := pluginConfig.PluginName()
 	switch t := pluginConfig.(type) {
 	case bufgenplugin.BinaryPluginConfig:

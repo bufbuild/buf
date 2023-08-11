@@ -54,6 +54,12 @@ plugins:
       - paths=source_relative
   - plugin: buf.build/protocolbuffers/java:v23.4
     out: gen/java
+  - name: cpp
+    out: gen/cpp
+    opt: xyz
+  - name: ruby
+    out: gen/ruby
+    strategy: directory
 `
 	v2ContentYAML = `version: v2
 managed:
@@ -82,6 +88,16 @@ plugins:
     out: gen/java
     include_imports: true
     include_wkt: true
+  - protoc_builtin: cpp
+    out: gen/cpp
+    opt: xyz
+    include_imports: true
+    include_wkt: true
+  - protoc_builtin: ruby
+    out: gen/ruby
+    include_imports: true
+    include_wkt: true
+    strategy: directory
 inputs:
   - module: buf.build/acme/weather
     types:
@@ -125,6 +141,10 @@ inputs:
     {
       "plugin": "buf.build/protocolbuffers/java:v23.4",
       "out": "gen/java"
+    },
+    {
+      "plugin": "cpp",
+      "out": "gen/cpp"
     }
   ]
 }
@@ -172,6 +192,12 @@ inputs:
     {
       "remote": "buf.build/protocolbuffers/java:v23.4",
       "out": "gen/java",
+      "include_imports": true,
+      "include_wkt": true
+    },
+    {
+      "protoc_builtin": "cpp",
+      "out": "gen/cpp",
       "include_imports": true,
       "include_wkt": true
     }
