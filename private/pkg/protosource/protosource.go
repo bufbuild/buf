@@ -400,7 +400,7 @@ type Field interface {
 	JSType() descriptorpb.FieldOptions_JSType
 	CType() descriptorpb.FieldOptions_CType
 	Retention() descriptorpb.FieldOptions_OptionRetention
-	Target() descriptorpb.FieldOptions_OptionTargetType
+	Targets() []descriptorpb.FieldOptions_OptionTargetType
 	DebugRedact() bool
 	// Set vs unset matters for packed
 	// See the comments on descriptor.proto

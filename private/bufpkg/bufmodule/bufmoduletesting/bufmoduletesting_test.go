@@ -25,6 +25,7 @@ import (
 )
 
 func TestModuleDigestB3(t *testing.T) {
+	t.Parallel()
 	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithConfiguration)
 	require.NoError(t, err)
 	module, err := bufmodule.NewModuleForBucket(context.Background(), readBucket)
@@ -35,6 +36,7 @@ func TestModuleDigestB3(t *testing.T) {
 }
 
 func TestModuleDigestB3withFallbackDocumentationPath(t *testing.T) {
+	t.Parallel()
 	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithConfigurationAndFallbackDocumentationPath)
 	require.NoError(t, err)
 	module, err := bufmodule.NewModuleForBucket(context.Background(), readBucket)
@@ -45,6 +47,7 @@ func TestModuleDigestB3withFallbackDocumentationPath(t *testing.T) {
 }
 
 func TestModuleDigestB3WithLicense(t *testing.T) {
+	t.Parallel()
 	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithLicense)
 	require.NoError(t, err)
 	module, err := bufmodule.NewModuleForBucket(context.Background(), readBucket)

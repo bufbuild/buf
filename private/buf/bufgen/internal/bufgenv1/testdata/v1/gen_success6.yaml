@@ -6,5 +6,5 @@ managed:
     except: 
       - someremote.com/owner/repo
 plugins:
-  - remote: someremote.com/owner/plugins/myplugin
+  - plugin: someremote.com/owner/myplugin
     out: gen/go

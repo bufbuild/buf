@@ -312,10 +312,10 @@ and port indicated in the URL`,
 		&f.HTTP2PriorKnowledge,
 		http2PriorKnowledgeFlagName,
 		false,
-		`This flag can be used with URLs that use the http scheme (as opposed to https) to indicate
-that HTTP/2 should be used. Without this, HTTP 1.1 will be used with URLs with an http
-scheme. For https scheme, HTTP/2 will be negotiate during the TLS handshake if the server
-supports it (otherwise HTTP 1.1 is used)`,
+		`This flag can be used to indicate that HTTP/2 should be used. Without this, HTTP 1.1
+will be used with URLs with an http scheme, and protocol negotiation will be used to
+choose either HTTP 1.1 or HTTP/2 for URLs with an https scheme. With this flag set,
+HTTP/2 is always used, even over plain-text.`,
 	)
 
 	flagSet.BoolVar(
@@ -496,9 +496,6 @@ func (f *flags) validate(isSecure bool) error {
 		return fmt.Errorf("if --%s is set, --%s should not be set as it is unused", insecureFlagName, caCertFlagName)
 	}
 
-	if f.HTTP2PriorKnowledge && isSecure {
-		return fmt.Errorf("--%s flag is not for use with secure URLs (https) since http/2 can be negotiated during TLS handshake", http2PriorKnowledgeFlagName)
-	}
 	if !isSecure && !f.HTTP2PriorKnowledge && f.Protocol == connect.ProtocolGRPC {
 		return fmt.Errorf("grpc protocol cannot be used with plain-text URLs (http) unless --%s flag is set", http2PriorKnowledgeFlagName)
 	}
@@ -987,35 +984,55 @@ func makeHTTPClient(f *flags, isSecure bool, authority string, printer verbose.P
 		}
 	}
 
+	var dialTLSFunc func(ctx context.Context, network, address string) (net.Conn, error)
+	if isSecure {
+		tlsConfig, err := bufcurl.MakeVerboseTLSConfig(&bufcurl.TLSSettings{
+			KeyFile:             f.Key,
+			CertFile:            f.Cert,
+			CACertFile:          f.CACert,
+			ServerName:          f.ServerName,
+			Insecure:            f.Insecure,
+			HTTP2PriorKnowledge: f.HTTP2PriorKnowledge,
+		}, authority, printer)
+		if err != nil {
+			return nil, err
+		}
+		dialTLSFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			conn, err := dialFunc(ctx, network, addr)
+			if err != nil {
+				return nil, err
+			}
+			printer.Printf("* ALPN: offering %s", strings.Join(tlsConfig.NextProtos, ","))
+			tlsConn := tls.Client(conn, tlsConfig)
+			if err := tlsConn.HandshakeContext(ctx); err != nil {
+				return nil, err
+			}
+			return tlsConn, nil
+		}
+	}
+
 	var transport http.RoundTripper
-	if !isSecure && f.HTTP2PriorKnowledge {
+	switch {
+	case f.HTTP2PriorKnowledge && isSecure:
+		transport = &http2.Transport{
+			DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
+				return dialTLSFunc(ctx, network, addr)
+			},
+		}
+	case f.HTTP2PriorKnowledge:
 		transport = &http2.Transport{
 			AllowHTTP: true,
 			DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
 				return dialFunc(ctx, network, addr)
 			},
 		}
-	} else {
-		var tlsConfig *tls.Config
-		if isSecure {
-			var err error
-			tlsConfig, err = bufcurl.MakeVerboseTLSConfig(&bufcurl.TLSSettings{
-				KeyFile:    f.Key,
-				CertFile:   f.Cert,
-				CACertFile: f.CACert,
-				ServerName: f.ServerName,
-				Insecure:   f.Insecure,
-			}, authority, printer)
-			if err != nil {
-				return nil, err
-			}
-		}
+	default:
 		transport = &http.Transport{
 			Proxy:             http.ProxyFromEnvironment,
 			DialContext:       dialFunc,
+			DialTLSContext:    dialTLSFunc,
 			ForceAttemptHTTP2: true,
 			MaxIdleConns:      1,
-			TLSClientConfig:   tlsConfig,
 		}
 	}
 	return bufcurl.NewVerboseHTTPClient(transport, printer), nil

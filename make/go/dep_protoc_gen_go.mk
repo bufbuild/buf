@@ -7,9 +7,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf-go/releases 20230316 checked 20230320
-PROTOC_GEN_GO_VERSION ?= v1.30.0
-
+# https://github.com/protocolbuffers/protobuf-go/releases 20230626 checked 20230626
+PROTOC_GEN_GO_VERSION ?= v1.31.0
 
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	google.golang.org/protobuf/proto@$(PROTOC_GEN_GO_VERSION)

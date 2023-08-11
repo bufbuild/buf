@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/repo/reposync"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/workspace/workspacepush"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
@@ -91,13 +92,12 @@ func NewRootCommand(name string) *appcmd.Command {
 		appflag.BuilderWithTimeout(120*time.Second),
 		appflag.BuilderWithTracing(),
 	)
-	globalFlags := bufcli.NewGlobalFlags()
 	return &appcmd.Command{
 		Use:                 name,
 		Short:               "The Buf CLI",
 		Long:                "A tool for working with Protocol Buffers and managing resources on the Buf Schema Registry (BSR)",
 		Version:             bufcli.Version,
-		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
+		BindPersistentFlags: builder.BindRoot,
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder),
 			export.NewCommand("export", builder),
@@ -134,6 +134,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
+					graph.NewCommand("graph", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
 					migratev1beta1.NewCommand("migrate-v1beta1", builder),

@@ -56,9 +56,6 @@ const (
 	// RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure is the fully-qualified name of the
 	// RepositoryCommitService's GetRepositoryCommitByReference RPC.
 	RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitByReference"
-	// RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure is the fully-qualified name of
-	// the RepositoryCommitService's GetRepositoryCommitBySequenceId RPC.
-	RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitBySequenceId"
 	// RepositoryCommitServiceListRepositoryDraftCommitsProcedure is the fully-qualified name of the
 	// RepositoryCommitService's ListRepositoryDraftCommits RPC.
 	RepositoryCommitServiceListRepositoryDraftCommitsProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryDraftCommits"
@@ -81,9 +78,6 @@ type RepositoryCommitServiceClient interface {
 	// GetRepositoryCommitByReference returns the repository commit matching
 	// the provided reference, if it exists.
 	GetRepositoryCommitByReference(context.Context, *connect_go.Request[v1alpha1.GetRepositoryCommitByReferenceRequest]) (*connect_go.Response[v1alpha1.GetRepositoryCommitByReferenceResponse], error)
-	// GetRepositoryCommitBySequenceId returns the repository commit matching
-	// the provided sequence ID and branch, if it exists.
-	GetRepositoryCommitBySequenceId(context.Context, *connect_go.Request[v1alpha1.GetRepositoryCommitBySequenceIdRequest]) (*connect_go.Response[v1alpha1.GetRepositoryCommitBySequenceIdResponse], error)
 	// ListRepositoryDraftCommits lists draft commits in a repository.
 	ListRepositoryDraftCommits(context.Context, *connect_go.Request[v1alpha1.ListRepositoryDraftCommitsRequest]) (*connect_go.Response[v1alpha1.ListRepositoryDraftCommitsResponse], error)
 	// DeleteRepositoryDraftCommit deletes a draft.
@@ -119,12 +113,6 @@ func NewRepositoryCommitServiceClient(httpClient connect_go.HTTPClient, baseURL 
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
-		getRepositoryCommitBySequenceId: connect_go.NewClient[v1alpha1.GetRepositoryCommitBySequenceIdRequest, v1alpha1.GetRepositoryCommitBySequenceIdResponse](
-			httpClient,
-			baseURL+RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
-		),
 		listRepositoryDraftCommits: connect_go.NewClient[v1alpha1.ListRepositoryDraftCommitsRequest, v1alpha1.ListRepositoryDraftCommitsResponse](
 			httpClient,
 			baseURL+RepositoryCommitServiceListRepositoryDraftCommitsProcedure,
@@ -145,7 +133,6 @@ type repositoryCommitServiceClient struct {
 	listRepositoryCommitsByBranch    *connect_go.Client[v1alpha1.ListRepositoryCommitsByBranchRequest, v1alpha1.ListRepositoryCommitsByBranchResponse]
 	listRepositoryCommitsByReference *connect_go.Client[v1alpha1.ListRepositoryCommitsByReferenceRequest, v1alpha1.ListRepositoryCommitsByReferenceResponse]
 	getRepositoryCommitByReference   *connect_go.Client[v1alpha1.GetRepositoryCommitByReferenceRequest, v1alpha1.GetRepositoryCommitByReferenceResponse]
-	getRepositoryCommitBySequenceId  *connect_go.Client[v1alpha1.GetRepositoryCommitBySequenceIdRequest, v1alpha1.GetRepositoryCommitBySequenceIdResponse]
 	listRepositoryDraftCommits       *connect_go.Client[v1alpha1.ListRepositoryDraftCommitsRequest, v1alpha1.ListRepositoryDraftCommitsResponse]
 	deleteRepositoryDraftCommit      *connect_go.Client[v1alpha1.DeleteRepositoryDraftCommitRequest, v1alpha1.DeleteRepositoryDraftCommitResponse]
 }
@@ -168,12 +155,6 @@ func (c *repositoryCommitServiceClient) ListRepositoryCommitsByReference(ctx con
 // buf.alpha.registry.v1alpha1.RepositoryCommitService.GetRepositoryCommitByReference.
 func (c *repositoryCommitServiceClient) GetRepositoryCommitByReference(ctx context.Context, req *connect_go.Request[v1alpha1.GetRepositoryCommitByReferenceRequest]) (*connect_go.Response[v1alpha1.GetRepositoryCommitByReferenceResponse], error) {
 	return c.getRepositoryCommitByReference.CallUnary(ctx, req)
-}
-
-// GetRepositoryCommitBySequenceId calls
-// buf.alpha.registry.v1alpha1.RepositoryCommitService.GetRepositoryCommitBySequenceId.
-func (c *repositoryCommitServiceClient) GetRepositoryCommitBySequenceId(ctx context.Context, req *connect_go.Request[v1alpha1.GetRepositoryCommitBySequenceIdRequest]) (*connect_go.Response[v1alpha1.GetRepositoryCommitBySequenceIdResponse], error) {
-	return c.getRepositoryCommitBySequenceId.CallUnary(ctx, req)
 }
 
 // ListRepositoryDraftCommits calls
@@ -202,9 +183,6 @@ type RepositoryCommitServiceHandler interface {
 	// GetRepositoryCommitByReference returns the repository commit matching
 	// the provided reference, if it exists.
 	GetRepositoryCommitByReference(context.Context, *connect_go.Request[v1alpha1.GetRepositoryCommitByReferenceRequest]) (*connect_go.Response[v1alpha1.GetRepositoryCommitByReferenceResponse], error)
-	// GetRepositoryCommitBySequenceId returns the repository commit matching
-	// the provided sequence ID and branch, if it exists.
-	GetRepositoryCommitBySequenceId(context.Context, *connect_go.Request[v1alpha1.GetRepositoryCommitBySequenceIdRequest]) (*connect_go.Response[v1alpha1.GetRepositoryCommitBySequenceIdResponse], error)
 	// ListRepositoryDraftCommits lists draft commits in a repository.
 	ListRepositoryDraftCommits(context.Context, *connect_go.Request[v1alpha1.ListRepositoryDraftCommitsRequest]) (*connect_go.Response[v1alpha1.ListRepositoryDraftCommitsResponse], error)
 	// DeleteRepositoryDraftCommit deletes a draft.
@@ -217,44 +195,52 @@ type RepositoryCommitServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewRepositoryCommitServiceHandler(svc RepositoryCommitServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(RepositoryCommitServiceListRepositoryCommitsByBranchProcedure, connect_go.NewUnaryHandler(
+	repositoryCommitServiceListRepositoryCommitsByBranchHandler := connect_go.NewUnaryHandler(
 		RepositoryCommitServiceListRepositoryCommitsByBranchProcedure,
 		svc.ListRepositoryCommitsByBranch,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryCommitServiceListRepositoryCommitsByReferenceHandler := connect_go.NewUnaryHandler(
 		RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure,
 		svc.ListRepositoryCommitsByReference,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryCommitServiceGetRepositoryCommitByReferenceHandler := connect_go.NewUnaryHandler(
 		RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure,
 		svc.GetRepositoryCommitByReference,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure, connect_go.NewUnaryHandler(
-		RepositoryCommitServiceGetRepositoryCommitBySequenceIdProcedure,
-		svc.GetRepositoryCommitBySequenceId,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryCommitServiceListRepositoryDraftCommitsProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryCommitServiceListRepositoryDraftCommitsHandler := connect_go.NewUnaryHandler(
 		RepositoryCommitServiceListRepositoryDraftCommitsProcedure,
 		svc.ListRepositoryDraftCommits,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryCommitServiceDeleteRepositoryDraftCommitHandler := connect_go.NewUnaryHandler(
 		RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure,
 		svc.DeleteRepositoryDraftCommit,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.RepositoryCommitService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.RepositoryCommitService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case RepositoryCommitServiceListRepositoryCommitsByBranchProcedure:
+			repositoryCommitServiceListRepositoryCommitsByBranchHandler.ServeHTTP(w, r)
+		case RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure:
+			repositoryCommitServiceListRepositoryCommitsByReferenceHandler.ServeHTTP(w, r)
+		case RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure:
+			repositoryCommitServiceGetRepositoryCommitByReferenceHandler.ServeHTTP(w, r)
+		case RepositoryCommitServiceListRepositoryDraftCommitsProcedure:
+			repositoryCommitServiceListRepositoryDraftCommitsHandler.ServeHTTP(w, r)
+		case RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure:
+			repositoryCommitServiceDeleteRepositoryDraftCommitHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedRepositoryCommitServiceHandler returns CodeUnimplemented from all methods.
@@ -270,10 +256,6 @@ func (UnimplementedRepositoryCommitServiceHandler) ListRepositoryCommitsByRefere
 
 func (UnimplementedRepositoryCommitServiceHandler) GetRepositoryCommitByReference(context.Context, *connect_go.Request[v1alpha1.GetRepositoryCommitByReferenceRequest]) (*connect_go.Response[v1alpha1.GetRepositoryCommitByReferenceResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryCommitService.GetRepositoryCommitByReference is not implemented"))
-}
-
-func (UnimplementedRepositoryCommitServiceHandler) GetRepositoryCommitBySequenceId(context.Context, *connect_go.Request[v1alpha1.GetRepositoryCommitBySequenceIdRequest]) (*connect_go.Response[v1alpha1.GetRepositoryCommitBySequenceIdResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryCommitService.GetRepositoryCommitBySequenceId is not implemented"))
 }
 
 func (UnimplementedRepositoryCommitServiceHandler) ListRepositoryDraftCommits(context.Context, *connect_go.Request[v1alpha1.ListRepositoryDraftCommitsRequest]) (*connect_go.Response[v1alpha1.ListRepositoryDraftCommitsResponse], error) {

@@ -53,6 +53,9 @@ const (
 	// RepositoryTagServiceListRepositoryTagsProcedure is the fully-qualified name of the
 	// RepositoryTagService's ListRepositoryTags RPC.
 	RepositoryTagServiceListRepositoryTagsProcedure = "/buf.alpha.registry.v1alpha1.RepositoryTagService/ListRepositoryTags"
+	// RepositoryTagServiceListRepositoryTagsForReferenceProcedure is the fully-qualified name of the
+	// RepositoryTagService's ListRepositoryTagsForReference RPC.
+	RepositoryTagServiceListRepositoryTagsForReferenceProcedure = "/buf.alpha.registry.v1alpha1.RepositoryTagService/ListRepositoryTagsForReference"
 )
 
 // RepositoryTagServiceClient is a client for the buf.alpha.registry.v1alpha1.RepositoryTagService
@@ -62,6 +65,9 @@ type RepositoryTagServiceClient interface {
 	CreateRepositoryTag(context.Context, *connect_go.Request[v1alpha1.CreateRepositoryTagRequest]) (*connect_go.Response[v1alpha1.CreateRepositoryTagResponse], error)
 	// ListRepositoryTags lists the repository tags associated with a Repository.
 	ListRepositoryTags(context.Context, *connect_go.Request[v1alpha1.ListRepositoryTagsRequest]) (*connect_go.Response[v1alpha1.ListRepositoryTagsResponse], error)
+	// ListRepositoryTagsForReference lists the repository tags associated with a repository
+	// reference name.
+	ListRepositoryTagsForReference(context.Context, *connect_go.Request[v1alpha1.ListRepositoryTagsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListRepositoryTagsForReferenceResponse], error)
 }
 
 // NewRepositoryTagServiceClient constructs a client for the
@@ -87,13 +93,20 @@ func NewRepositoryTagServiceClient(httpClient connect_go.HTTPClient, baseURL str
 			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 			connect_go.WithClientOptions(opts...),
 		),
+		listRepositoryTagsForReference: connect_go.NewClient[v1alpha1.ListRepositoryTagsForReferenceRequest, v1alpha1.ListRepositoryTagsForReferenceResponse](
+			httpClient,
+			baseURL+RepositoryTagServiceListRepositoryTagsForReferenceProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
+		),
 	}
 }
 
 // repositoryTagServiceClient implements RepositoryTagServiceClient.
 type repositoryTagServiceClient struct {
-	createRepositoryTag *connect_go.Client[v1alpha1.CreateRepositoryTagRequest, v1alpha1.CreateRepositoryTagResponse]
-	listRepositoryTags  *connect_go.Client[v1alpha1.ListRepositoryTagsRequest, v1alpha1.ListRepositoryTagsResponse]
+	createRepositoryTag            *connect_go.Client[v1alpha1.CreateRepositoryTagRequest, v1alpha1.CreateRepositoryTagResponse]
+	listRepositoryTags             *connect_go.Client[v1alpha1.ListRepositoryTagsRequest, v1alpha1.ListRepositoryTagsResponse]
+	listRepositoryTagsForReference *connect_go.Client[v1alpha1.ListRepositoryTagsForReferenceRequest, v1alpha1.ListRepositoryTagsForReferenceResponse]
 }
 
 // CreateRepositoryTag calls buf.alpha.registry.v1alpha1.RepositoryTagService.CreateRepositoryTag.
@@ -106,6 +119,12 @@ func (c *repositoryTagServiceClient) ListRepositoryTags(ctx context.Context, req
 	return c.listRepositoryTags.CallUnary(ctx, req)
 }
 
+// ListRepositoryTagsForReference calls
+// buf.alpha.registry.v1alpha1.RepositoryTagService.ListRepositoryTagsForReference.
+func (c *repositoryTagServiceClient) ListRepositoryTagsForReference(ctx context.Context, req *connect_go.Request[v1alpha1.ListRepositoryTagsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListRepositoryTagsForReferenceResponse], error) {
+	return c.listRepositoryTagsForReference.CallUnary(ctx, req)
+}
+
 // RepositoryTagServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryTagService service.
 type RepositoryTagServiceHandler interface {
@@ -113,6 +132,9 @@ type RepositoryTagServiceHandler interface {
 	CreateRepositoryTag(context.Context, *connect_go.Request[v1alpha1.CreateRepositoryTagRequest]) (*connect_go.Response[v1alpha1.CreateRepositoryTagResponse], error)
 	// ListRepositoryTags lists the repository tags associated with a Repository.
 	ListRepositoryTags(context.Context, *connect_go.Request[v1alpha1.ListRepositoryTagsRequest]) (*connect_go.Response[v1alpha1.ListRepositoryTagsResponse], error)
+	// ListRepositoryTagsForReference lists the repository tags associated with a repository
+	// reference name.
+	ListRepositoryTagsForReference(context.Context, *connect_go.Request[v1alpha1.ListRepositoryTagsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListRepositoryTagsForReferenceResponse], error)
 }
 
 // NewRepositoryTagServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -121,20 +143,36 @@ type RepositoryTagServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewRepositoryTagServiceHandler(svc RepositoryTagServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(RepositoryTagServiceCreateRepositoryTagProcedure, connect_go.NewUnaryHandler(
+	repositoryTagServiceCreateRepositoryTagHandler := connect_go.NewUnaryHandler(
 		RepositoryTagServiceCreateRepositoryTagProcedure,
 		svc.CreateRepositoryTag,
 		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(RepositoryTagServiceListRepositoryTagsProcedure, connect_go.NewUnaryHandler(
+	)
+	repositoryTagServiceListRepositoryTagsHandler := connect_go.NewUnaryHandler(
 		RepositoryTagServiceListRepositoryTagsProcedure,
 		svc.ListRepositoryTags,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.RepositoryTagService/", mux
+	)
+	repositoryTagServiceListRepositoryTagsForReferenceHandler := connect_go.NewUnaryHandler(
+		RepositoryTagServiceListRepositoryTagsForReferenceProcedure,
+		svc.ListRepositoryTagsForReference,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
+	)
+	return "/buf.alpha.registry.v1alpha1.RepositoryTagService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case RepositoryTagServiceCreateRepositoryTagProcedure:
+			repositoryTagServiceCreateRepositoryTagHandler.ServeHTTP(w, r)
+		case RepositoryTagServiceListRepositoryTagsProcedure:
+			repositoryTagServiceListRepositoryTagsHandler.ServeHTTP(w, r)
+		case RepositoryTagServiceListRepositoryTagsForReferenceProcedure:
+			repositoryTagServiceListRepositoryTagsForReferenceHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedRepositoryTagServiceHandler returns CodeUnimplemented from all methods.
@@ -146,4 +184,8 @@ func (UnimplementedRepositoryTagServiceHandler) CreateRepositoryTag(context.Cont
 
 func (UnimplementedRepositoryTagServiceHandler) ListRepositoryTags(context.Context, *connect_go.Request[v1alpha1.ListRepositoryTagsRequest]) (*connect_go.Response[v1alpha1.ListRepositoryTagsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryTagService.ListRepositoryTags is not implemented"))
+}
+
+func (UnimplementedRepositoryTagServiceHandler) ListRepositoryTagsForReference(context.Context, *connect_go.Request[v1alpha1.ListRepositoryTagsForReferenceRequest]) (*connect_go.Response[v1alpha1.ListRepositoryTagsForReferenceResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryTagService.ListRepositoryTagsForReference is not implemented"))
 }

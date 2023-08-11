@@ -33,6 +33,7 @@ import (
 )
 
 func TestDownload(t *testing.T) {
+	t.Parallel()
 	testDownload(
 		t,
 		"does-not-exist error",

@@ -16,8 +16,10 @@ package git
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -31,16 +33,17 @@ import (
 
 const defaultRemoteName = "origin"
 
-var baseBranchRefPrefix = []byte("ref: refs/remotes/" + defaultRemoteName + "/")
+var defaultBranchRefPrefix = []byte("ref: refs/remotes/" + defaultRemoteName + "/")
 
 type openRepositoryOpts struct {
-	baseBranch string
+	defaultBranch string
 }
 
 type repository struct {
-	gitDirPath   string
-	baseBranch   string
-	objectReader *objectReader
+	gitDirPath       string
+	defaultBranch    string
+	checkedOutBranch string
+	objectReader     *objectReader
 
 	// packedOnce controls the fields below related to reading the `packed-refs` file
 	packedOnce      sync.Once
@@ -50,6 +53,7 @@ type repository struct {
 }
 
 func openGitRepository(
+	ctx context.Context,
 	gitDirPath string,
 	runner command.Runner,
 	options ...OpenRepositoryOption,
@@ -72,16 +76,21 @@ func openGitRepository(
 	if err != nil {
 		return nil, err
 	}
-	if opts.baseBranch == "" {
-		opts.baseBranch, err = detectBaseBranch(gitDirPath)
+	if opts.defaultBranch == "" {
+		opts.defaultBranch, err = detectDefaultBranch(gitDirPath)
 		if err != nil {
-			return nil, fmt.Errorf("automatically determine base branch: %w", err)
+			return nil, fmt.Errorf("automatically determine default branch: %w", err)
 		}
 	}
+	checkedOutBranch, err := detectCheckedOutBranch(ctx, gitDirPath, runner)
+	if err != nil {
+		return nil, fmt.Errorf("automatically determine checked out branch: %w", err)
+	}
 	return &repository{
-		gitDirPath:   gitDirPath,
-		baseBranch:   opts.baseBranch,
-		objectReader: reader,
+		gitDirPath:       gitDirPath,
+		defaultBranch:    opts.defaultBranch,
+		checkedOutBranch: checkedOutBranch,
+		objectReader:     reader,
 	}, nil
 }
 
@@ -136,44 +145,39 @@ func (r *repository) ForEachBranch(f func(string, Hash) error) error {
 	}
 	return nil
 }
-func (r *repository) BaseBranch() string {
-	return r.baseBranch
+
+func (r *repository) DefaultBranch() string {
+	return r.defaultBranch
+}
+
+func (r *repository) CurrentBranch() string {
+	return r.checkedOutBranch
 }
 
 func (r *repository) ForEachCommit(branch string, f func(Commit) error) error {
 	branch = normalpath.Unnormalize(branch)
-	commit, err := r.resolveBranch(branch)
+	currentCommit, err := r.HEADCommit(branch)
 	if err != nil {
-		return err
+		return fmt.Errorf("get head commit for branch %q: %w", branch, err)
 	}
-	var commits []Commit
-	// TODO: this only works for the base branch; for non-base branches,
-	// we have to be much more careful about not ranging over commits belonging
-	// to other branches (i.e., running past the origin of our branch).
-	// In order to do this, we will want to preload the HEADs of all known branches,
-	// and halt iteration for a given branch when we encounter the head of another branch.
 	for {
-		commits = append(commits, commit)
-		if len(commit.Parents()) == 0 {
+		if err := f(currentCommit); err != nil {
+			return err
+		}
+		if len(currentCommit.Parents()) == 0 {
 			// We've reach the root of the graph.
-			break
+			return nil
 		}
 		// When traversing a commit graph, follow only the first parent commit upon seeing a
 		// merge commit. This allows us to ignore the individual commits brought in to a branch's
 		// history by such a merge, as those commits are usually updating the state of the target
 		// branch.
-		commit, err = r.objectReader.Commit(commit.Parents()[0])
+		nextCommitHash := currentCommit.Parents()[0]
+		currentCommit, err = r.objectReader.Commit(nextCommitHash)
 		if err != nil {
-			return err
+			return fmt.Errorf("read commit %s: %w", nextCommitHash, err)
 		}
 	}
-	// Visit in reverse order, starting with the root of the graph first.
-	for i := len(commits) - 1; i >= 0; i-- {
-		if err := f(commits[i]); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (r *repository) ForEachTag(f func(string, Hash) error) error {
@@ -242,7 +246,8 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	return nil
 }
 
-func (r *repository) resolveBranch(branch string) (Commit, error) {
+// HEADCommit resolves the HEAD commit from branch name if its present in the "origin" remote.
+func (r *repository) HEADCommit(branch string) (Commit, error) {
 	commitBytes, err := os.ReadFile(path.Join(r.gitDirPath, "refs", "remotes", defaultRemoteName, branch))
 	if errors.Is(err, fs.ErrNotExist) {
 		// it may be that the branch ref is packed; let's read the packed refs
@@ -295,18 +300,55 @@ func (r *repository) readPackedRefs() error {
 	return r.packedReadError
 }
 
-func detectBaseBranch(gitDirPath string) (string, error) {
+func detectDefaultBranch(gitDirPath string) (string, error) {
 	path := path.Join(gitDirPath, "refs", "remotes", defaultRemoteName, "HEAD")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
-	if !bytes.HasPrefix(data, baseBranchRefPrefix) {
+	if !bytes.HasPrefix(data, defaultBranchRefPrefix) {
 		return "", errors.New("invalid contents in " + path)
 	}
-	data = bytes.TrimPrefix(data, baseBranchRefPrefix)
+	data = bytes.TrimPrefix(data, defaultBranchRefPrefix)
 	data = bytes.TrimSuffix(data, []byte("\n"))
 	return string(data), nil
+}
+
+func detectCheckedOutBranch(ctx context.Context, gitDirPath string, runner command.Runner) (string, error) {
+	var (
+		stdOutBuffer = bytes.NewBuffer(nil)
+		stdErrBuffer = bytes.NewBuffer(nil)
+	)
+	if err := runner.Run(
+		ctx,
+		"git",
+		command.RunWithArgs(
+			"rev-parse",
+			"--abbrev-ref",
+			"HEAD",
+		),
+		command.RunWithStdout(stdOutBuffer),
+		command.RunWithStderr(stdErrBuffer),
+		command.RunWithDir(gitDirPath), // exec command at the root of the git repo
+	); err != nil {
+		stdErrMsg, err := io.ReadAll(stdErrBuffer)
+		if err != nil {
+			stdErrMsg = []byte(fmt.Sprintf("read stderr: %s", err.Error()))
+		}
+		return "", fmt.Errorf("git rev-parse: %w (%s)", err, string(stdErrMsg))
+	}
+	stdOut, err := io.ReadAll(stdOutBuffer)
+	if err != nil {
+		return "", fmt.Errorf("read current branch: %w", err)
+	}
+	currentBranch := string(bytes.TrimSuffix(stdOut, []byte("\n")))
+	if currentBranch == "" {
+		return "", errors.New("empty current branch")
+	}
+	if currentBranch == "HEAD" {
+		return "", errors.New("no current branch, git HEAD is detached")
+	}
+	return currentBranch, nil
 }
 
 // validateDirPathExists returns a non-nil error if the given dirPath

@@ -19,7 +19,9 @@ package buf.alpha.registry.v1alpha1;
 import "google/protobuf/timestamp.proto";
 
 message RepositoryTag {
-  // primary key, unique, immutable
+  // primary key, unique.
+  // tags are based on labels, so if a label has been moved, the ID will point to the
+  // updated entry in the labels table.
   string id = 1;
   // immutable
   google.protobuf.Timestamp create_time = 2;
@@ -41,6 +43,11 @@ service RepositoryTagService {
   }
   // ListRepositoryTags lists the repository tags associated with a Repository.
   rpc ListRepositoryTags(ListRepositoryTagsRequest) returns (ListRepositoryTagsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ListRepositoryTagsForReference lists the repository tags associated with a repository
+  // reference name.
+  rpc ListRepositoryTagsForReference(ListRepositoryTagsForReferenceRequest) returns (ListRepositoryTagsForReferenceResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -68,6 +75,23 @@ message ListRepositoryTagsRequest {
 }
 
 message ListRepositoryTagsResponse {
+  repeated RepositoryTag repository_tags = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message ListRepositoryTagsForReferenceRequest {
+  // The ID of the repository whose tags should be listed.
+  string repository_id = 1;
+  // The name of the reference.
+  string reference = 2;
+  uint32 page_size = 3;
+  // The first page is returned if this is empty.
+  string page_token = 4;
+  bool reverse = 5;
+}
+
+message ListRepositoryTagsForReferenceResponse {
   repeated RepositoryTag repository_tags = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;

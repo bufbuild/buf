@@ -32,10 +32,12 @@ import (
 )
 
 func TestReadConfigV1Beta1(t *testing.T) {
+	t.Parallel()
 	testReadConfig(t, "v1beta1")
 }
 
 func TestReadConfigV1(t *testing.T) {
+	t.Parallel()
 	testReadConfig(t, "v1")
 }
 
@@ -195,6 +197,7 @@ func TestParseIncompleteConfig(t *testing.T) {
 }
 
 func TestDependencyForExternalConfigDependencyV1(t *testing.T) {
+	t.Parallel()
 	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
 	require.NoError(t, err)
 	nullDigest, err := digester.Digest(&bytes.Buffer{})

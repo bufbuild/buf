@@ -104,14 +104,20 @@ type JSONSchemaServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewJSONSchemaServiceHandler(svc JSONSchemaServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(JSONSchemaServiceGetJSONSchemaProcedure, connect_go.NewUnaryHandler(
+	jSONSchemaServiceGetJSONSchemaHandler := connect_go.NewUnaryHandler(
 		JSONSchemaServiceGetJSONSchemaProcedure,
 		svc.GetJSONSchema,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	return "/buf.alpha.registry.v1alpha1.JSONSchemaService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.JSONSchemaService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case JSONSchemaServiceGetJSONSchemaProcedure:
+			jSONSchemaServiceGetJSONSchemaHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedJSONSchemaServiceHandler returns CodeUnimplemented from all methods.

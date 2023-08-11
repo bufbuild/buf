@@ -36,6 +36,7 @@ import (
 )
 
 func TestBucketGetFileInfos1(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1(
 		bufmoduleconfig.ExternalConfigV1{
 			Excludes: []string{"proto/b"},
@@ -59,6 +60,7 @@ func TestBucketGetFileInfos1(t *testing.T) {
 }
 
 func TestBucketGetFileInfos2(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1(
 		bufmoduleconfig.ExternalConfigV1{
 			Excludes: []string{"proto/a"},
@@ -79,6 +81,7 @@ func TestBucketGetFileInfos2(t *testing.T) {
 }
 
 func TestBucketGetFileInfo3(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1(
 		bufmoduleconfig.ExternalConfigV1{
 			Excludes: []string{"proto/a/c"},
@@ -102,6 +105,7 @@ func TestBucketGetFileInfo3(t *testing.T) {
 }
 
 func TestBucketGetFileInfos4(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1(
 		bufmoduleconfig.ExternalConfigV1{
 			Excludes: []string{
@@ -125,6 +129,7 @@ func TestBucketGetFileInfos4(t *testing.T) {
 }
 
 func TestBucketGetAllFileInfos5(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1(
 		bufmoduleconfig.ExternalConfigV1{},
 	)
@@ -137,6 +142,7 @@ func TestBucketGetAllFileInfos5(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetFileInfos1(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1Beta1(
 		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
@@ -165,6 +171,7 @@ func TestConfigV1Beta1BucketGetFileInfos1(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetFileInfos2(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1Beta1(
 		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
@@ -190,6 +197,7 @@ func TestConfigV1Beta1BucketGetFileInfos2(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetFileInfo3(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1Beta1(
 		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
@@ -218,6 +226,7 @@ func TestConfigV1Beta1BucketGetFileInfo3(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetFileInfos4(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1Beta1(
 		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
@@ -244,6 +253,7 @@ func TestConfigV1Beta1BucketGetFileInfos4(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetAllFileInfos5(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1Beta1(
 		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
@@ -260,6 +270,7 @@ func TestConfigV1Beta1BucketGetAllFileInfos5(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetAllFileInfosError1(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1Beta1(
 		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
@@ -278,6 +289,7 @@ func TestConfigV1Beta1BucketGetAllFileInfosError1(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetFileInfosForExternalPathsError1(t *testing.T) {
+	t.Parallel()
 	config, err := bufmoduleconfig.NewConfigV1Beta1(
 		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
@@ -302,6 +314,7 @@ func TestConfigV1Beta1BucketGetFileInfosForExternalPathsError1(t *testing.T) {
 }
 
 func TestDocumentation(t *testing.T) {
+	t.Parallel()
 	testDocumentationBucket(
 		t,
 		"testdata/4",
@@ -312,6 +325,7 @@ func TestDocumentation(t *testing.T) {
 }
 
 func TestLicense(t *testing.T) {
+	t.Parallel()
 	testLicenseBucket(
 		t,
 		"testdata/5",
@@ -322,6 +336,7 @@ func TestLicense(t *testing.T) {
 }
 
 func TestConfigInclusion(t *testing.T) {
+	t.Parallel()
 	t.Run("buf.yaml", func(t *testing.T) {
 		t.Parallel()
 		testConfigInclusion(t, "buf.yaml")
@@ -353,7 +368,7 @@ lint:
 		bufmoduleconfig.ExternalConfigV1{},
 	)
 	require.NoError(t, err)
-	module, err := BuildForBucket(
+	module, err := NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		bucket,
 		config,
@@ -399,14 +414,13 @@ func testBucketGetFileInfos(
 	config *bufmoduleconfig.Config,
 	expectedFileInfos ...bufmoduleref.FileInfo,
 ) {
-	t.Parallel()
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		relDir,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	module, err := BuildForBucket(
+	module, err := NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -429,7 +443,7 @@ func testBucketGetFileInfos(
 			require.NoError(t, err)
 			bucketRelPaths[i] = bucketRelPath
 		}
-		module, err := BuildForBucket(
+		module, err := NewModuleBucketBuilder().BuildForBucket(
 			context.Background(),
 			readWriteBucket,
 			config,
@@ -458,7 +472,7 @@ func testBucketGetAllFileInfosError(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	module, err := BuildForBucket(
+	module, err := NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -492,7 +506,7 @@ func testBucketGetFileInfosForExternalPathsError(
 		require.NoError(t, err)
 		bucketRelPaths[i] = bucketRelPath
 	}
-	_, err = BuildForBucket(
+	_, err = NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -517,7 +531,7 @@ func testDocumentationBucket(
 		bufmoduleconfig.ExternalConfigV1{},
 	)
 	require.NoError(t, err)
-	module, err := BuildForBucket(
+	module, err := NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -551,7 +565,7 @@ func testLicenseBucket(
 		bufmoduleconfig.ExternalConfigV1{},
 	)
 	require.NoError(t, err)
-	module, err := BuildForBucket(
+	module, err := NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,

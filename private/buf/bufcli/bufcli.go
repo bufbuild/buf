@@ -65,7 +65,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.21.1-dev"
+	Version = "1.26.2-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -171,17 +171,6 @@ var (
 		privateVisibility,
 	}
 )
-
-// GlobalFlags contains global flags for buf commands.
-type GlobalFlags struct{}
-
-// NewGlobalFlags creates a new GlobalFlags with default values..
-func NewGlobalFlags() *GlobalFlags {
-	return &GlobalFlags{}
-}
-
-// BindRoot binds the global flags to the root command flag set.
-func (*GlobalFlags) BindRoot(*pflag.FlagSet) {}
 
 // BindAsFileDescriptorSet binds the exclude-imports flag.
 func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string) {
@@ -422,7 +411,7 @@ func NewWireImageConfigReader(
 	return bufwire.NewImageConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
@@ -447,7 +436,7 @@ func NewWireModuleConfigReader(
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
@@ -469,7 +458,7 @@ func NewWireModuleConfigReaderForModuleReader(
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
@@ -493,7 +482,7 @@ func NewWireFileLister(
 	return bufwire.NewFileLister(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
@@ -599,9 +588,6 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 	client := httpclient.NewClient(config.TLS)
 	options := []connectclient.ConfigOption{
 		connectclient.WithAddressMapper(func(address string) string {
-			if buftransport.IsAPISubdomainEnabled(container) {
-				address = buftransport.PrependAPISubdomain(address)
-			}
 			if config.TLS == nil {
 				return buftransport.PrependHTTP(address)
 			}
@@ -647,6 +633,26 @@ func NewConnectClientConfigWithToken(container appflag.Container, token string) 
 		connectclient.WithAuthInterceptorProvider(
 			bufconnect.NewAuthorizationInterceptorProvider(tokenProvider),
 		),
+	)
+}
+
+// NewFetchReader creates a new buffetch.Reader with the default HTTP client
+// and git cloner.
+func NewFetchReader(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	runner command.Runner,
+	moduleResolver bufmodule.ModuleResolver,
+	moduleReader bufmodule.ModuleReader,
+) buffetch.Reader {
+	return buffetch.NewReader(
+		logger,
+		storageosProvider,
+		defaultHTTPClient,
+		defaultHTTPAuthenticator,
+		git.NewCloner(logger, storageosProvider, runner, defaultGitClonerOptions),
+		moduleResolver,
+		moduleReader,
 	)
 }
 
@@ -824,7 +830,8 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType s
 	if err != nil {
 		return nil, err
 	}
-	module, err := bufmodulebuild.BuildForBucket(
+
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		datawkt.ReadBucket,
 		sourceConfig.Build,
@@ -992,26 +999,6 @@ func promptUser(container app.Container, prompt string, isPassword bool) (string
 		}
 	}
 	return "", NewTooManyEmptyAnswersError(userPromptAttempts)
-}
-
-// newFetchReader creates a new buffetch.Reader with the default HTTP client
-// and git cloner.
-func newFetchReader(
-	logger *zap.Logger,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
-) buffetch.Reader {
-	return buffetch.NewReader(
-		logger,
-		storageosProvider,
-		defaultHTTPClient,
-		defaultHTTPAuthenticator,
-		git.NewCloner(logger, storageosProvider, runner, defaultGitClonerOptions),
-		moduleResolver,
-		moduleReader,
-	)
 }
 
 // newFetchSourceReader creates a new buffetch.SourceReader with the default HTTP client

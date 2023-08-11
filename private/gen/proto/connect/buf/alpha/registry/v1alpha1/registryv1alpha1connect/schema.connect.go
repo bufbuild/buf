@@ -121,19 +121,27 @@ type SchemaServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewSchemaServiceHandler(svc SchemaServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(SchemaServiceGetSchemaProcedure, connect_go.NewUnaryHandler(
+	schemaServiceGetSchemaHandler := connect_go.NewUnaryHandler(
 		SchemaServiceGetSchemaProcedure,
 		svc.GetSchema,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(SchemaServiceConvertMessageProcedure, connect_go.NewUnaryHandler(
+	)
+	schemaServiceConvertMessageHandler := connect_go.NewUnaryHandler(
 		SchemaServiceConvertMessageProcedure,
 		svc.ConvertMessage,
 		opts...,
-	))
-	return "/buf.alpha.registry.v1alpha1.SchemaService/", mux
+	)
+	return "/buf.alpha.registry.v1alpha1.SchemaService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case SchemaServiceGetSchemaProcedure:
+			schemaServiceGetSchemaHandler.ServeHTTP(w, r)
+		case SchemaServiceConvertMessageProcedure:
+			schemaServiceConvertMessageHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedSchemaServiceHandler returns CodeUnimplemented from all methods.

@@ -32,7 +32,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
-	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -47,6 +46,7 @@ import (
 )
 
 func TestPushManifest(t *testing.T) {
+	t.Parallel()
 	testPushManifest(
 		t,
 		"success",
@@ -368,7 +368,6 @@ func appRun(
 				internaltesting.NewEnvFunc(t),
 				func(env map[string]string) map[string]string {
 					env["BUF_TOKEN"] = "invalid"
-					buftransport.SetDisableAPISubdomain(env)
 					injectConfig(t, appName, env)
 					return env
 				},

@@ -15,21 +15,30 @@
 package observabilityzap
 
 import (
+	"io"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/trace"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
+// TracerProviderCloser is used to wrap a trace.TracerProvider with an io.Closer to use on shutdown.
+type TracerProviderCloser interface {
+	trace.TracerProvider
+	io.Closer
+}
+
 // Start creates a Zap logging exporter for Opentelemetry traces and returns
 // the exporter. The exporter implements io.Closer for clean-up.
-func Start(logger *zap.Logger) *tracerProviderCloser {
+func Start(logger *zap.Logger) TracerProviderCloser {
 	exporter := newZapExporter(logger)
-	tracerProviderOptions := []trace.TracerProviderOption{
-		trace.WithSampler(trace.AlwaysSample()),
-		trace.WithSpanProcessor(trace.NewBatchSpanProcessor(exporter)),
+	tracerProviderOptions := []sdktrace.TracerProviderOption{
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(exporter)),
 	}
-	tracerProvider := newTracerProviderCloser(trace.NewTracerProvider(tracerProviderOptions...))
+	tracerProvider := newTracerProviderCloser(sdktrace.NewTracerProvider(tracerProviderOptions...))
 	otel.SetTracerProvider(tracerProvider)
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 	return tracerProvider

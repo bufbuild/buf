@@ -115,7 +115,7 @@ func fuzzGetModule(ctx context.Context, dirPath string) (bufmodule.Module, error
 	if err != nil {
 		return nil, err
 	}
-	return bufmodulebuild.BuildForBucket(
+	return bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		readWriteBucket,
 		config,

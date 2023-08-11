@@ -290,6 +290,7 @@ func TestByDir(t *testing.T) {
 }
 
 func TestContainsPath(t *testing.T) {
+	t.Parallel()
 	testContainsPath(t, false, "a.proto", "a.proto")
 	testContainsPath(t, true, ".", "a.proto")
 	testContainsPath(t, false, "a.proto", ".")
@@ -308,6 +309,7 @@ func testContainsPath(t *testing.T, expected bool, value string, path string) {
 }
 
 func TestEqualsOrContainsPath(t *testing.T) {
+	t.Parallel()
 	testEqualsOrContainsPath(t, true, "a.proto", "a.proto")
 	testEqualsOrContainsPath(t, true, ".", "a.proto")
 	testEqualsOrContainsPath(t, false, "a.proto", ".")
@@ -325,6 +327,7 @@ func testEqualsOrContainsPath(t *testing.T, expected bool, value string, path st
 }
 
 func TestMapHasEqualOrContainingPath(t *testing.T) {
+	t.Parallel()
 	testMapHasEqualOrContainingPath(t, true, "a.proto", "a.proto")
 	testMapHasEqualOrContainingPath(t, false, ".", "a.proto")
 	testMapHasEqualOrContainingPath(t, true, "a.proto", ".")
@@ -344,6 +347,7 @@ func testMapHasEqualOrContainingPath(t *testing.T, expected bool, path string, k
 }
 
 func TestMapAllEqualOrContainingPaths(t *testing.T) {
+	t.Parallel()
 	testMapAllEqualOrContainingPaths(t, []string{"a.proto"}, "a.proto", "a.proto")
 	testMapAllEqualOrContainingPaths(t, nil, ".", "a.proto")
 	testMapAllEqualOrContainingPaths(t, []string{"."}, "a.proto", ".")
@@ -368,6 +372,7 @@ func testMapAllEqualOrContainingPaths(t *testing.T, expected []string, path stri
 }
 
 func TestContainsPathAbs(t *testing.T) {
+	t.Parallel()
 	testContainsPathAbs(t, false, "/a.proto", "/a.proto")
 	testContainsPathAbs(t, true, "/", "/a.proto")
 	testContainsPathAbs(t, false, "/a.proto", "/")
@@ -386,6 +391,7 @@ func testContainsPathAbs(t *testing.T, expected bool, value string, path string)
 }
 
 func TestEqualsOrContainsPathAbs(t *testing.T) {
+	t.Parallel()
 	testEqualsOrContainsPathAbs(t, true, "/a.proto", "/a.proto")
 	testEqualsOrContainsPathAbs(t, true, "/", "/a.proto")
 	testEqualsOrContainsPathAbs(t, false, "a.proto", "/")
@@ -403,6 +409,7 @@ func testEqualsOrContainsPathAbs(t *testing.T, expected bool, value string, path
 }
 
 func TestMapHasEqualOrContainingPathAbs(t *testing.T) {
+	t.Parallel()
 	testMapHasEqualOrContainingPathAbs(t, true, "/a.proto", "/a.proto")
 	testMapHasEqualOrContainingPathAbs(t, false, "/", "/a.proto")
 	testMapHasEqualOrContainingPathAbs(t, true, "/a.proto", "/")
@@ -422,6 +429,7 @@ func testMapHasEqualOrContainingPathAbs(t *testing.T, expected bool, path string
 }
 
 func TestMapAllEqualOrContainingPathsAbs(t *testing.T) {
+	t.Parallel()
 	testMapAllEqualOrContainingPathsAbs(t, []string{"/a.proto"}, "/a.proto", "/a.proto")
 	testMapAllEqualOrContainingPathsAbs(t, nil, "/", "/a.proto")
 	testMapAllEqualOrContainingPathsAbs(t, []string{"/"}, "/a.proto", "/")

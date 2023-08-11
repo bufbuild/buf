@@ -50,7 +50,9 @@ func newRefParser(logger *zap.Logger) *refParser {
 			logger,
 			internal.WithRawRefProcessor(newRawRefProcessor()),
 			internal.WithSingleFormat(formatBin),
+			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(formatJSON),
+			internal.WithSingleFormat(formatTxtpb),
 			internal.WithSingleFormat(
 				formatBingz,
 				internal.WithSingleDefaultCompressionType(
@@ -93,7 +95,9 @@ func newImageRefParser(logger *zap.Logger) *refParser {
 			logger,
 			internal.WithRawRefProcessor(processRawRefImage),
 			internal.WithSingleFormat(formatBin),
+			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(formatJSON),
+			internal.WithSingleFormat(formatTxtpb),
 			internal.WithSingleFormat(
 				formatBingz,
 				internal.WithSingleDefaultCompressionType(
@@ -361,38 +365,44 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 		var format string
 		var compressionType internal.CompressionType
 		if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
-			format = formatBin
+			format = formatBinpb
 		} else {
 			switch filepath.Ext(rawRef.Path) {
-			case ".bin":
-				format = formatBin
+			case ".bin", ".binpb":
+				format = formatBinpb
 			case ".json":
 				format = formatJSON
 			case ".tar":
 				format = formatTar
+			case ".txtpb":
+				format = formatTxtpb
 			case ".zip":
 				format = formatZip
 			case ".gz":
 				compressionType = internal.CompressionTypeGzip
 				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-				case ".bin":
-					format = formatBin
+				case ".bin", ".binpb":
+					format = formatBinpb
 				case ".json":
 					format = formatJSON
 				case ".tar":
 					format = formatTar
+				case ".txtpb":
+					format = formatTxtpb
 				default:
 					return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
 				}
 			case ".zst":
 				compressionType = internal.CompressionTypeZstd
 				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-				case ".bin":
-					format = formatBin
+				case ".bin", ".binpb":
+					format = formatBinpb
 				case ".json":
 					format = formatJSON
 				case ".tar":
 					format = formatTar
+				case ".txtpb":
+					format = formatTxtpb
 				default:
 					return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
 				}
@@ -511,35 +521,41 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 	var format string
 	var compressionType internal.CompressionType
 	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
-		format = formatBin
+		format = formatBinpb
 	} else {
 		switch filepath.Ext(rawRef.Path) {
-		case ".bin":
-			format = formatBin
+		case ".bin", ".binpb":
+			format = formatBinpb
 		case ".json":
 			format = formatJSON
+		case ".txtpb":
+			format = formatTxtpb
 		case ".gz":
 			compressionType = internal.CompressionTypeGzip
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-			case ".bin":
-				format = formatBin
+			case ".bin", ".binpb":
+				format = formatBinpb
 			case ".json":
 				format = formatJSON
+			case ".txtpb":
+				format = formatTxtpb
 			default:
 				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
 			}
 		case ".zst":
 			compressionType = internal.CompressionTypeZstd
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-			case ".bin":
-				format = formatBin
+			case ".bin", ".binpb":
+				format = formatBinpb
 			case ".json":
 				format = formatJSON
+			case ".txtpb":
+				format = formatTxtpb
 			default:
 				return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
 			}
 		default:
-			format = formatBin
+			format = formatBinpb
 		}
 	}
 	rawRef.Format = format
@@ -554,10 +570,12 @@ func processRawRefModule(rawRef *internal.RawRef) error {
 
 func parseImageEncoding(format string) (ImageEncoding, error) {
 	switch format {
-	case formatBin, formatBingz:
+	case formatBin, formatBinpb, formatBingz:
 		return ImageEncodingBin, nil
 	case formatJSON, formatJSONGZ:
 		return ImageEncodingJSON, nil
+	case formatTxtpb:
+		return ImageEncodingTxtpb, nil
 	default:
 		return 0, fmt.Errorf("invalid format for image: %q", format)
 	}

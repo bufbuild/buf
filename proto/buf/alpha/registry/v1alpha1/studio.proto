@@ -25,12 +25,14 @@ enum StudioAgentProtocol {
 
 // StudioAgentPreset is the information about an agent preset in the Studio.
 message StudioAgentPreset {
-  // The target agent URL in the Studio.
+  // The agent URL in the Studio.
   string url = 1;
   // The optional alias of the agent URL.
   string alias = 2;
   // The protocol the agent should use to forward requests.
   StudioAgentProtocol protocol = 3;
+  // The URL of the target host.
+  string target_url = 4;
 }
 
 // StudioService is the Studio service.

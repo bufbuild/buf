@@ -116,7 +116,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleConfigs, err := moduleConfigReader.GetModuleConfigs(
+	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
 		ctx,
 		container,
 		sourceOrModuleRef,
@@ -128,6 +128,7 @@ func run(
 	if err != nil {
 		return err
 	}
+	moduleConfigs := moduleConfigSet.ModuleConfigs()
 	statsSlice := make([]*protostat.Stats, len(moduleConfigs))
 	for i, moduleConfig := range moduleConfigs {
 		stats, err := protostat.GetStats(ctx, bufmodulestat.NewFileWalker(moduleConfig.Module()))

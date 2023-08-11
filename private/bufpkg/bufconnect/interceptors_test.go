@@ -45,6 +45,7 @@ func (testMachine) Password() string {
 }
 
 func TestNewAuthorizationInterceptorProvider(t *testing.T) {
+	t.Parallel()
 	tokenSet, err := NewTokenProviderFromString("token1@host1,token2@host2")
 	assert.NoError(t, err)
 	_, err = NewAuthorizationInterceptorProvider(tokenSet)("host1")(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -107,6 +108,7 @@ func TestNewAuthorizationInterceptorProvider(t *testing.T) {
 }
 
 func TestCLIWarningInterceptor(t *testing.T) {
+	t.Parallel()
 	warningMessage := "This is a warning message from the BSR"
 	var buf bytes.Buffer
 	logger, err := applog.NewLogger(&buf, "warn", "text")
@@ -127,4 +129,20 @@ func TestCLIWarningInterceptor(t *testing.T) {
 	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
 	assert.Equal(t, "", buf.String())
+}
+
+func TestCLIWarningInterceptorFromError(t *testing.T) {
+	t.Parallel()
+	warningMessage := "This is a warning message from the BSR"
+	var buf bytes.Buffer
+	logger, err := applog.NewLogger(&buf, "warn", "text")
+	require.NoError(t, err)
+	// testing valid warning message from error
+	_, err = NewCLIWarningInterceptor(applog.NewContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		err := connect.NewError(connect.CodeInternal, errors.New("error"))
+		err.Meta().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
+		return nil, err
+	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
+	assert.Error(t, err)
+	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
 }

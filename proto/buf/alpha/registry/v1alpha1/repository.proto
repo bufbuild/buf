@@ -55,6 +55,10 @@ message Repository {
   // url is the user configurable URL in the description of the repository,
   // always included the scheme and will not have a #fragment suffix.
   string url = 12;
+  // default_branch in a BSR repository. It is used when syncing a git repository, to make sure both
+  // default branches (BSR and Git) are in sync. By default, every BSR repository is created with a
+  // "main" default branch.
+  string default_branch = 13;
 }
 
 message RepositoryCounts {
@@ -349,6 +353,8 @@ message UpdateRepositorySettingsByNameRequest {
   optional string description = 4;
   // optional, update to url will only be made when this is present
   optional string url = 5;
+  // optional, update to default_branch will only be made when this is present
+  optional string default_branch = 6;
 }
 
 message UpdateRepositorySettingsByNameResponse {}

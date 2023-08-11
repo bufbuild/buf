@@ -161,7 +161,7 @@ func run(
 	var rootCAConfig *tls.Config
 	var err error
 	if flags.CACert != "" {
-		rootCAConfig, err = certclient.NewClientTLSConfigFromRootCertFiles(flags.CACert)
+		rootCAConfig, err = certclient.NewClientTLS(certclient.WithRootCertFilePaths(flags.CACert))
 		if err != nil {
 			return err
 		}

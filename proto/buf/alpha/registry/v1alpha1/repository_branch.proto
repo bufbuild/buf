@@ -19,7 +19,9 @@ package buf.alpha.registry.v1alpha1;
 import "google/protobuf/timestamp.proto";
 
 message RepositoryBranch {
-  // primary key, unique, immutable
+  // primary key, unique.
+  // branches are based on labels, so when a branch is pushed to, the ID will point to the
+  // updated entry in the labels table.
   string id = 1;
   // The name of the repository branch.
   string name = 2;
@@ -37,6 +39,16 @@ service RepositoryBranchService {
   rpc ListRepositoryBranches(ListRepositoryBranchesRequest) returns (ListRepositoryBranchesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // GetCurrentDefaultBranch returns the branch name that is mapped to the main/BSR_HEAD. This might
+  // not be the same value in the repository's `default_branch` field, since that value can be
+  // changed at will by repository's owners/admins for syncing git repositories. This RPC retrieves
+  // the branch from the latest commit labeled as BSR_HEAD, even if that value differs from the one
+  // stored in the `default_branch` field.
+  //
+  // TODO: Rename this RPC to something more appropriate like "GetLatestHEADCommit".
+  rpc GetCurrentDefaultBranch(GetCurrentDefaultBranchRequest) returns (GetCurrentDefaultBranchResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message ListRepositoryBranchesRequest {
@@ -51,4 +63,13 @@ message ListRepositoryBranchesResponse {
   repeated RepositoryBranch repository_branches = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+}
+
+message GetCurrentDefaultBranchRequest {
+  // The ID of the repository whose current default branch is returned.
+  string repository_id = 1;
+}
+
+message GetCurrentDefaultBranchResponse {
+  RepositoryBranch current_default_branch = 1;
 }

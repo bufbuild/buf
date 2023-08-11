@@ -36,6 +36,7 @@ import (
 )
 
 func TestRunBreakingEnumNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_enum_no_delete",
@@ -46,6 +47,7 @@ func TestRunBreakingEnumNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingEnumValueNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_enum_value_no_delete",
@@ -58,6 +60,7 @@ func TestRunBreakingEnumValueNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingEnumValueNoDeleteUnlessNameReserved(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_enum_value_no_delete_unless_name_reserved",
@@ -70,6 +73,7 @@ func TestRunBreakingEnumValueNoDeleteUnlessNameReserved(t *testing.T) {
 }
 
 func TestRunBreakingEnumValueNoDeleteUnlessNumberReserved(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_enum_value_no_delete_unless_number_reserved",
@@ -82,6 +86,7 @@ func TestRunBreakingEnumValueNoDeleteUnlessNumberReserved(t *testing.T) {
 }
 
 func TestRunBreakingEnumValueSameName(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_enum_value_same_name",
@@ -95,6 +100,7 @@ func TestRunBreakingEnumValueSameName(t *testing.T) {
 }
 
 func TestRunBreakingExtensionMessageNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_extension_message_no_delete",
@@ -114,6 +120,7 @@ func TestRunBreakingExtensionMessageNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingFieldNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_no_delete",
@@ -126,6 +133,7 @@ func TestRunBreakingFieldNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingFieldNoDeleteUnlessNameReserved(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_no_delete_unless_name_reserved",
@@ -139,6 +147,7 @@ func TestRunBreakingFieldNoDeleteUnlessNameReserved(t *testing.T) {
 }
 
 func TestRunBreakingFieldNoDeleteUnlessNumberReserved(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_no_delete_unless_number_reserved",
@@ -152,6 +161,7 @@ func TestRunBreakingFieldNoDeleteUnlessNumberReserved(t *testing.T) {
 }
 
 func TestRunBreakingFieldSameCType(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_same_ctype",
@@ -166,6 +176,7 @@ func TestRunBreakingFieldSameCType(t *testing.T) {
 }
 
 func TestRunBreakingFieldSameJSONName(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_same_json_name",
@@ -203,6 +214,7 @@ func TestRunBreakingFieldSameJSONName(t *testing.T) {
 }
 
 func TestRunBreakingFieldSameJSType(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_same_jstype",
@@ -217,6 +229,7 @@ func TestRunBreakingFieldSameJSType(t *testing.T) {
 }
 
 func TestRunBreakingFieldSameLabel(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_same_label",
@@ -246,6 +259,7 @@ func TestRunBreakingFieldSameLabel(t *testing.T) {
 }
 
 func TestRunBreakingFieldSameName(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_same_name",
@@ -257,6 +271,7 @@ func TestRunBreakingFieldSameName(t *testing.T) {
 }
 
 func TestRunBreakingFieldSameOneof(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_same_oneof",
@@ -276,6 +291,7 @@ func TestRunBreakingFieldSameOneof(t *testing.T) {
 }
 
 func TestRunBreakingFieldSameType(t *testing.T) {
+	t.Parallel()
 	// TODO: double check all this
 	testBreaking(
 		t,
@@ -301,6 +317,7 @@ func TestRunBreakingFieldSameType(t *testing.T) {
 }
 
 func TestRunBreakingFieldWireCompatibleType(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_wire_compatible_type",
@@ -326,6 +343,7 @@ func TestRunBreakingFieldWireCompatibleType(t *testing.T) {
 	)
 }
 func TestRunBreakingFieldWireJSONCompatibleType(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_field_wire_json_compatible_type",
@@ -353,6 +371,7 @@ func TestRunBreakingFieldWireJSONCompatibleType(t *testing.T) {
 }
 
 func TestRunBreakingFileNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_file_no_delete",
@@ -362,6 +381,7 @@ func TestRunBreakingFileNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingFileNoDeleteUnstable(t *testing.T) {
+	t.Parallel()
 	// https://github.com/bufbuild/buf/issues/211
 	testBreaking(
 		t,
@@ -370,6 +390,7 @@ func TestRunBreakingFileNoDeleteUnstable(t *testing.T) {
 }
 
 func TestRunBreakingFileNoDeleteIgnores(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_file_no_delete_ignores",
@@ -379,6 +400,7 @@ func TestRunBreakingFileNoDeleteIgnores(t *testing.T) {
 }
 
 func TestRunBreakingFileSamePackage(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_file_same_package",
@@ -388,6 +410,7 @@ func TestRunBreakingFileSamePackage(t *testing.T) {
 }
 
 func TestRunBreakingFileSameSyntax(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_file_same_syntax",
@@ -397,6 +420,7 @@ func TestRunBreakingFileSameSyntax(t *testing.T) {
 }
 
 func TestRunBreakingFileSameValues(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_file_same_values",
@@ -441,6 +465,7 @@ func TestRunBreakingFileSameValues(t *testing.T) {
 }
 
 func TestRunBreakingMessageNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_message_no_delete",
@@ -451,6 +476,7 @@ func TestRunBreakingMessageNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingMessageSameValues(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_message_same_values",
@@ -471,6 +497,7 @@ func TestRunBreakingMessageSameValues(t *testing.T) {
 }
 
 func TestRunBreakingMessageSameRequiredFields(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_message_same_required_fields",
@@ -492,6 +519,7 @@ func TestRunBreakingMessageSameRequiredFields(t *testing.T) {
 }
 
 func TestRunBreakingOneofNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_oneof_no_delete",
@@ -503,6 +531,7 @@ func TestRunBreakingOneofNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingPackageNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_package_no_delete",
@@ -522,6 +551,7 @@ func TestRunBreakingPackageNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingReservedEnumNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_reserved_enum_no_delete",
@@ -549,6 +579,7 @@ func TestRunBreakingReservedEnumNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingReservedMessageNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_reserved_message_no_delete",
@@ -576,6 +607,7 @@ func TestRunBreakingReservedMessageNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingRPCNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_rpc_no_delete",
@@ -585,6 +617,7 @@ func TestRunBreakingRPCNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingRPCSameValues(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_rpc_same_values",
@@ -612,6 +645,7 @@ func TestRunBreakingRPCSameValues(t *testing.T) {
 }
 
 func TestRunBreakingServiceNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_service_no_delete",
@@ -621,6 +655,7 @@ func TestRunBreakingServiceNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingPackageServiceNoDelete(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_package_service_no_delete",
@@ -629,6 +664,7 @@ func TestRunBreakingPackageServiceNoDelete(t *testing.T) {
 }
 
 func TestRunBreakingIgnoreUnstablePackagesTrue(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_ignore_unstable_packages_true",
@@ -645,6 +681,7 @@ func TestRunBreakingIgnoreUnstablePackagesTrue(t *testing.T) {
 }
 
 func TestRunBreakingIgnoreUnstablePackagesFalse(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_ignore_unstable_packages_false",
@@ -664,6 +701,7 @@ func TestRunBreakingIgnoreUnstablePackagesFalse(t *testing.T) {
 }
 
 func TestRunBreakingIgnoreUnstablePackagesDeleteFile(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_ignore_unstable_packages_delete_file",
@@ -671,6 +709,7 @@ func TestRunBreakingIgnoreUnstablePackagesDeleteFile(t *testing.T) {
 }
 
 func TestRunBreakingIntEnum(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_int_enum",
@@ -681,6 +720,7 @@ func TestRunBreakingIntEnum(t *testing.T) {
 }
 
 func TestRunBreakingMessageEnum(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_message_enum",
@@ -691,6 +731,7 @@ func TestRunBreakingMessageEnum(t *testing.T) {
 }
 
 func TestRunBreakingMessageInt(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_message_int",
@@ -700,6 +741,7 @@ func TestRunBreakingMessageInt(t *testing.T) {
 }
 
 func TestRunBreakingMessageMessage(t *testing.T) {
+	t.Parallel()
 	testBreaking(
 		t,
 		"breaking_message_message",
@@ -714,7 +756,6 @@ func testBreaking(
 	relDirPath string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	logger := zap.NewNop()
@@ -737,7 +778,7 @@ func testBreaking(
 	previousConfig := testGetConfig(t, previousReadWriteBucket)
 	config := testGetConfig(t, readWriteBucket)
 
-	previousModule, err := bufmodulebuild.BuildForBucket(
+	previousModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		previousReadWriteBucket,
 		previousConfig.Build,
@@ -755,7 +796,7 @@ func testBreaking(
 	require.Empty(t, previousFileAnnotations)
 	previousImage = bufimage.ImageWithoutImports(previousImage)
 
-	module, err := bufmodulebuild.BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config.Build,

@@ -16,14 +16,18 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/git_metadata.proto";
+import "buf/alpha/registry/v1alpha1/repository_branch.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
 message Reference {
-  reserved 1, 4;
-  reserved "branch", "track";
+  reserved 4;
+  reserved "track";
 
   oneof reference {
+    // The requested reference is a branch.
+    RepositoryBranch branch = 1;
     // The requested reference is a tag.
     RepositoryTag tag = 2;
     // The requested reference is a commit.
@@ -58,6 +62,11 @@ service ReferenceService {
   rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // ListGitCommitsForReference takes a string reference and returns a paginated list of
+  // git commit information associated with the resolved reference commit.
+  rpc ListGitCommitsForReference(ListGitCommitsForReferenceRequest) returns (ListGitCommitsForReferenceResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetReferenceByNameRequest {
@@ -71,4 +80,36 @@ message GetReferenceByNameRequest {
 
 message GetReferenceByNameResponse {
   Reference reference = 1;
+}
+
+message ListGitCommitsForReferenceRequest {
+  // String that represents the name of the reference.
+  string reference = 1;
+  // Owner of the repository the reference belongs to.
+  string owner = 2;
+  // Name of the repository the reference belongs to.
+  string repository_name = 3;
+  uint32 page_size = 4;
+  // The first page is returned if this is empty.
+  string page_token = 5;
+}
+
+message ListGitCommitsForReferenceResponse {
+  // ID of the BSR commit the reference resolved to.
+  string commit_id = 1;
+  // List of git commits and metadata associated with the resolved reference.
+  repeated GitCommitInformation git_commits = 2;
+  // There are no more pages if this is empty.
+  string next_page_token = 3;
+}
+
+message GitCommitInformation {
+  // Hash is the SHA1 hash of the git commit.
+  string hash = 1;
+  // Author is metadata associatd with the author of the git commit.
+  // This may not always be available, so it is not always populated.
+  optional GitIdentity author = 2;
+  // Commiter is the metadata sscoiated with the commiter of the git commit.
+  // This may not always be available, so it is not always populated.
+  optional GitIdentity commiter = 3;
 }

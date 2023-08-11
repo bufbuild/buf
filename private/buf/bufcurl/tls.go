@@ -33,12 +33,22 @@ type TLSSettings struct {
 	ServerName string
 	// If true, the server's certificate is not verified.
 	Insecure bool
+	// If true, the server is known to support HTTP/2. When set, the
+	// ALPN protocols sent during the TLS handshake will include only
+	// "h2", and exclude "http/1.1". If the server does not pick a
+	// protocol, "h2" is assumed as the default.
+	HTTP2PriorKnowledge bool
 }
 
 // MakeVerboseTLSConfig constructs a *tls.Config that logs information to the
 // given printer as a TLS connection is negotiated.
 func MakeVerboseTLSConfig(settings *TLSSettings, authority string, printer verbose.Printer) (*tls.Config, error) {
 	var conf tls.Config
+	if settings.HTTP2PriorKnowledge {
+		conf.NextProtos = []string{"h2"}
+	} else {
+		conf.NextProtos = []string{"h2", "http/1.1"}
+	}
 	// we verify manually so that we can emit verbose output while doing so
 	conf.InsecureSkipVerify = true
 	conf.VerifyConnection = func(state tls.ConnectionState) error {
@@ -46,8 +56,14 @@ func MakeVerboseTLSConfig(settings *TLSSettings, authority string, printer verbo
 		if state.DidResume {
 			printer.Printf("* (TLS session resumed)")
 		}
-		if state.NegotiatedProtocol != "" {
-			printer.Printf("* ALPN, server accepted protocol %s", state.NegotiatedProtocol)
+		if state.NegotiatedProtocol == "" {
+			if settings.HTTP2PriorKnowledge {
+				printer.Printf("* ALPN: server did not agree on a protocol. Using default h2")
+			} else {
+				printer.Printf("* ALPN: server did not agree on a protocol. Using default http/1.1.")
+			}
+		} else {
+			printer.Printf("* ALPN: server accepted %s", state.NegotiatedProtocol)
 		}
 		printer.Printf("* Server certificate:")
 		printer.Printf("*   subject: %s", state.PeerCertificates[0].Subject.String())

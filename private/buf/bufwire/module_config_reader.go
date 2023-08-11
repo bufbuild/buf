@@ -61,7 +61,7 @@ func newModuleConfigReader(
 	}
 }
 
-func (m *moduleConfigReader) GetModuleConfigs(
+func (m *moduleConfigReader) GetModuleConfigSet(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceOrModuleRef buffetch.SourceOrModuleRef,
@@ -69,7 +69,7 @@ func (m *moduleConfigReader) GetModuleConfigs(
 	externalDirOrFilePaths []string,
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
-) (_ []ModuleConfig, retErr error) {
+) (_ ModuleConfigSet, retErr error) {
 	ctx, span := m.tracer.Start(ctx, "get_module_config")
 	defer span.End()
 	defer func() {
@@ -79,10 +79,10 @@ func (m *moduleConfigReader) GetModuleConfigs(
 		}
 	}()
 	// We construct a new WorkspaceBuilder here so that the cache is only used for a single call.
-	workspaceBuilder := bufwork.NewWorkspaceBuilder(m.moduleBucketBuilder)
+	workspaceBuilder := bufwork.NewWorkspaceBuilder()
 	switch t := sourceOrModuleRef.(type) {
 	case buffetch.ProtoFileRef:
-		return m.getProtoFileModuleSourceConfigs(
+		return m.getProtoFileModuleSourceConfigSet(
 			ctx,
 			container,
 			t,
@@ -93,7 +93,7 @@ func (m *moduleConfigReader) GetModuleConfigs(
 			externalDirOrFilePathsAllowNotExist,
 		)
 	case buffetch.SourceRef:
-		return m.getSourceModuleConfigs(
+		return m.getSourceModuleConfigSet(
 			ctx,
 			container,
 			t,
@@ -116,15 +116,18 @@ func (m *moduleConfigReader) GetModuleConfigs(
 		if err != nil {
 			return nil, err
 		}
-		return []ModuleConfig{
-			moduleConfig,
-		}, nil
+		return newModuleConfigSet(
+			[]ModuleConfig{
+				moduleConfig,
+			},
+			nil,
+		), nil
 	default:
 		return nil, fmt.Errorf("invalid ref: %T", sourceOrModuleRef)
 	}
 }
 
-func (m *moduleConfigReader) getSourceModuleConfigs(
+func (m *moduleConfigReader) getSourceModuleConfigSet(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceRef buffetch.SourceRef,
@@ -133,7 +136,7 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 	externalDirOrFilePaths []string,
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
-) (_ []ModuleConfig, retErr error) {
+) (_ ModuleConfigSet, retErr error) {
 	readBucketCloser, err := m.fetchReader.GetSourceBucket(ctx, container, sourceRef)
 	if err != nil {
 		return nil, err
@@ -146,7 +149,7 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 		return nil, err
 	}
 	if existingConfigFilePath != "" {
-		return m.getWorkspaceModuleConfigs(
+		return m.getWorkspaceModuleConfigSet(
 			ctx,
 			sourceRef,
 			workspaceBuilder,
@@ -176,9 +179,12 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 	if err != nil {
 		return nil, err
 	}
-	return []ModuleConfig{
-		moduleConfig,
-	}, nil
+	return newModuleConfigSet(
+		[]ModuleConfig{
+			moduleConfig,
+		},
+		nil,
+	), nil
 }
 
 func (m *moduleConfigReader) getModuleModuleConfig(
@@ -240,10 +246,10 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 	if err != nil {
 		return nil, err
 	}
-	return newModuleConfig(module, config, nil /* Workspaces aren't supported for ModuleRefs */), nil
+	return newModuleConfig(module, config), nil
 }
 
-func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
+func (m *moduleConfigReader) getProtoFileModuleSourceConfigSet(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	protoFileRef buffetch.ProtoFileRef,
@@ -252,7 +258,7 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	externalDirOrFilePaths []string,
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
-) (_ []ModuleConfig, retErr error) {
+) (_ ModuleConfigSet, retErr error) {
 	readBucketCloser, err := m.fetchReader.GetSourceBucket(ctx, container, protoFileRef)
 	if err != nil {
 		return nil, err
@@ -296,7 +302,7 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 				}
 			}
 		}
-		return m.getWorkspaceModuleConfigs(
+		return m.getWorkspaceModuleConfigSet(
 			ctx,
 			protoFileRef,
 			workspaceBuilder,
@@ -326,12 +332,15 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	if err != nil {
 		return nil, err
 	}
-	return []ModuleConfig{
-		moduleConfig,
-	}, nil
+	return newModuleConfigSet(
+		[]ModuleConfig{
+			moduleConfig,
+		},
+		nil,
+	), nil
 }
 
-func (m *moduleConfigReader) getWorkspaceModuleConfigs(
+func (m *moduleConfigReader) getWorkspaceModuleConfigSet(
 	ctx context.Context,
 	sourceRef buffetch.SourceRef,
 	workspaceBuilder bufwork.WorkspaceBuilder,
@@ -342,28 +351,26 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	externalDirOrFilePaths []string,
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
-) ([]ModuleConfig, error) {
+) (ModuleConfigSet, error) {
 	workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucket, relativeRootPath)
 	if err != nil {
 		return nil, err
 	}
+	workspace, err := workspaceBuilder.BuildWorkspace(
+		ctx,
+		workspaceConfig,
+		readBucket,
+		relativeRootPath,
+		subDirPath, // this is used to only apply the config override to this directory
+		configOverride,
+		externalDirOrFilePaths,
+		externalExcludeDirOrFilePaths,
+		externalDirOrFilePathsAllowNotExist,
+	)
+	if err != nil {
+		return nil, err
+	}
 	if subDirPath != "." {
-		// There's only a single ModuleConfig based on the subDirPath,
-		// so we only need to create a single workspace.
-		workspace, err := workspaceBuilder.BuildWorkspace(
-			ctx,
-			workspaceConfig,
-			readBucket,
-			relativeRootPath,
-			subDirPath,
-			configOverride,
-			externalDirOrFilePaths,
-			externalExcludeDirOrFilePaths,
-			externalDirOrFilePathsAllowNotExist,
-		)
-		if err != nil {
-			return nil, err
-		}
 		moduleConfig, err := m.getSourceModuleConfig(
 			ctx,
 			sourceRef,
@@ -381,9 +388,12 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 		if err != nil {
 			return nil, err
 		}
-		return []ModuleConfig{
-			moduleConfig,
-		}, nil
+		return newModuleConfigSet(
+			[]ModuleConfig{
+				moduleConfig,
+			},
+			workspace,
+		), nil
 	}
 	if configOverride != "" {
 		return nil, errors.New("the --config flag is not compatible with workspaces")
@@ -427,20 +437,6 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 		for excludeFileOrDirPath, subDirRelExcludePath := range externalExcludeToSubDirRelExcludePaths {
 			externalExcludePathToRelPaths[excludeFileOrDirPath] = subDirRelExcludePath
 		}
-		workspace, err := workspaceBuilder.BuildWorkspace(
-			ctx,
-			workspaceConfig,
-			readBucket,
-			relativeRootPath,
-			directory,
-			configOverride,
-			externalDirOrFilePaths,
-			externalExcludeDirOrFilePaths,
-			externalDirOrFilePathsAllowNotExist,
-		)
-		if err != nil {
-			return nil, err
-		}
 		moduleConfig, err := m.getSourceModuleConfig(
 			ctx,
 			sourceRef,
@@ -473,55 +469,10 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 			}
 		}
 	}
-	return moduleConfigs, nil
+	return newModuleConfigSet(moduleConfigs, workspace), nil
 }
 
 func (m *moduleConfigReader) getSourceModuleConfig(
-	ctx context.Context,
-	sourceRef buffetch.SourceRef,
-	readBucket storage.ReadBucket,
-	relativeRootPath string,
-	subDirPath string,
-	configOverride string,
-	workspaceBuilder bufwork.WorkspaceBuilder,
-	workspaceConfig *bufwork.Config,
-	workspace bufmodule.Workspace,
-	externalDirOrFilePaths []string,
-	externalExcludeDirOrFilePaths []string,
-	externalDirOrFilePathsAllowNotExist bool,
-) (ModuleConfig, error) {
-	moduleConfig, err := m.getModuleConfig(
-		ctx,
-		sourceRef,
-		readBucket,
-		relativeRootPath,
-		subDirPath,
-		configOverride,
-		workspaceBuilder,
-		workspaceConfig,
-		workspace,
-		externalDirOrFilePaths,
-		externalExcludeDirOrFilePaths,
-		externalDirOrFilePathsAllowNotExist,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if missingReferences := detectMissingDependencies(
-		moduleConfig.Config().Build.DependencyModuleReferences,
-		moduleConfig.Module().DependencyModulePins(),
-	); len(missingReferences) > 0 {
-		var builder strings.Builder
-		_, _ = builder.WriteString(`Specified deps are not covered in your buf.lock, run "buf mod update":`)
-		for _, moduleReference := range missingReferences {
-			_, _ = builder.WriteString("\n\t- " + moduleReference.IdentityString())
-		}
-		m.logger.Warn(builder.String())
-	}
-	return moduleConfig, nil
-}
-
-func (m *moduleConfigReader) getModuleConfig(
 	ctx context.Context,
 	sourceRef buffetch.SourceRef,
 	readBucket storage.ReadBucket,
@@ -550,7 +501,7 @@ func (m *moduleConfigReader) getModuleConfig(
 				}
 			}
 		}
-		return newModuleConfig(module, moduleConfig, workspace), nil
+		return newModuleConfig(module, moduleConfig), nil
 	}
 	mappedReadBucket := readBucket
 	if subDirPath != "." {
@@ -667,7 +618,7 @@ func (m *moduleConfigReader) getModuleConfig(
 		}
 		buildOptions = append(buildOptions, bufmodulebuild.WithExcludePaths(bucketRelPaths))
 	}
-	module, err := bufmodulebuild.BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		mappedReadBucket,
 		moduleConfig.Build,
@@ -676,7 +627,19 @@ func (m *moduleConfigReader) getModuleConfig(
 	if err != nil {
 		return nil, err
 	}
-	return newModuleConfig(module, moduleConfig, workspace), nil
+	if missingReferences := detectMissingDependencies(
+		moduleConfig.Build.DependencyModuleReferences,
+		module.DependencyModulePins(),
+		workspace,
+	); len(missingReferences) > 0 {
+		var builder strings.Builder
+		_, _ = builder.WriteString(`Specified deps are not covered in your buf.lock, run "buf mod update":`)
+		for _, moduleReference := range missingReferences {
+			_, _ = builder.WriteString("\n\t- " + moduleReference.IdentityString())
+		}
+		m.logger.Warn(builder.String())
+	}
+	return newModuleConfig(module, moduleConfig), nil
 }
 
 func workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig *bufwork.Config, subDirPath string) bool {
@@ -691,7 +654,11 @@ func workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig *bufwork.Confi
 	return false
 }
 
-func detectMissingDependencies(references []bufmoduleref.ModuleReference, pins []bufmoduleref.ModulePin) []bufmoduleref.ModuleReference {
+func detectMissingDependencies(
+	references []bufmoduleref.ModuleReference,
+	pins []bufmoduleref.ModulePin,
+	workspace bufmodule.Workspace,
+) []bufmoduleref.ModuleReference {
 	pinSet := make(map[string]struct{})
 	for _, pin := range pins {
 		pinSet[pin.IdentityString()] = struct{}{}
@@ -700,7 +667,13 @@ func detectMissingDependencies(references []bufmoduleref.ModuleReference, pins [
 	var missingReferences []bufmoduleref.ModuleReference
 	for _, reference := range references {
 		if _, ok := pinSet[reference.IdentityString()]; !ok {
-			missingReferences = append(missingReferences, reference)
+			if workspace != nil {
+				if _, ok := workspace.GetModule(reference); !ok {
+					missingReferences = append(missingReferences, reference)
+				}
+			} else {
+				missingReferences = append(missingReferences, reference)
+			}
 		}
 	}
 	return missingReferences

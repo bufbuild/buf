@@ -25,6 +25,7 @@ import (
 )
 
 func TestWriteInsertionPoint(t *testing.T) {
+	t.Parallel()
 	// \u205F is "Medium Mathematical Space"
 	whitespacePrefix := "\u205F\t\t\t"
 	targetFileContent := `This is a test file
@@ -39,6 +40,7 @@ at varied indentation levels
 	insertionPointContent := "!!! this content was inserted; こんにちは"
 
 	t.Run("basic", func(t *testing.T) {
+		t.Parallel()
 		insertionPointName := "ip1"
 		insertionPointConsumer := &pluginpb.CodeGeneratorResponse_File{
 			Name:           &targetFileName,
@@ -65,6 +67,7 @@ at varied indentation levels
 		assert.Equal(t, expectContent, postInsertionContent)
 	})
 	t.Run("basic_indent", func(t *testing.T) {
+		t.Parallel()
 		insertionPointName := "ip2"
 		insertionPointConsumer := &pluginpb.CodeGeneratorResponse_File{
 			Name:           &targetFileName,
@@ -91,6 +94,7 @@ at varied indentation levels
 		assert.Equal(t, expectContent, postInsertionContent)
 	})
 	t.Run("basic_unicode_indent", func(t *testing.T) {
+		t.Parallel()
 		insertionPointName := "ip3"
 		insertionPointConsumer := &pluginpb.CodeGeneratorResponse_File{
 			Name:           &targetFileName,

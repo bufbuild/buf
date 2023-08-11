@@ -42,6 +42,7 @@ import (
 //    buf lint --error-format=json | jq -r '"bufanalysistesting.NewFileAnnotation(t, \"\(.path)\", \(.start_line|tostring), \(.start_column|tostring), \(.end_line|tostring), \(.end_column|tostring), \"\(.type)\"),"'
 
 func TestRunComments(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"comments",
@@ -148,6 +149,7 @@ func TestRunComments(t *testing.T) {
 }
 
 func TestRunDirectorySamePackage(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"directory_same_package",
@@ -159,6 +161,7 @@ func TestRunDirectorySamePackage(t *testing.T) {
 }
 
 func TestRunImportNoPublic(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"import_no_public",
@@ -169,6 +172,7 @@ func TestRunImportNoPublic(t *testing.T) {
 }
 
 func TestRunImportNoWeak(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"import_no_weak",
@@ -179,6 +183,7 @@ func TestRunImportNoWeak(t *testing.T) {
 }
 
 func TestRunImportUsed(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"import_used",
@@ -189,6 +194,7 @@ func TestRunImportUsed(t *testing.T) {
 }
 
 func TestRunEnumFirstValueZero(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"enum_first_value_zero",
@@ -202,6 +208,7 @@ func TestRunEnumFirstValueZero(t *testing.T) {
 }
 
 func TestRunEnumNoAllowAlias(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"enum_no_allow_alias",
@@ -215,6 +222,7 @@ func TestRunEnumNoAllowAlias(t *testing.T) {
 }
 
 func TestRunEnumPascalCase(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"enum_pascal_case",
@@ -234,6 +242,7 @@ func TestRunEnumPascalCase(t *testing.T) {
 }
 
 func TestRunEnumValuePrefix(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"enum_value_prefix",
@@ -252,6 +261,7 @@ func TestRunEnumValuePrefix(t *testing.T) {
 }
 
 func TestRunEnumValueUpperSnakeCase(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"enum_value_upper_snake_case",
@@ -268,6 +278,7 @@ func TestRunEnumValueUpperSnakeCase(t *testing.T) {
 }
 
 func TestRunEnumZeroValueSuffix(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"enum_zero_value_suffix",
@@ -284,6 +295,7 @@ func TestRunEnumZeroValueSuffix(t *testing.T) {
 }
 
 func TestRunEnumZeroValueSuffixCustom(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"enum_zero_value_suffix_custom",
@@ -297,6 +309,7 @@ func TestRunEnumZeroValueSuffixCustom(t *testing.T) {
 }
 
 func TestRunFieldLowerSnakeCase(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"field_lower_snake_case",
@@ -319,6 +332,7 @@ func TestRunFieldLowerSnakeCase(t *testing.T) {
 }
 
 func TestRunFieldNoDescriptor(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"field_no_descriptor",
@@ -358,6 +372,7 @@ func TestRunFieldNoDescriptor(t *testing.T) {
 }
 
 func TestRunFileLowerSnakeCase(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"file_lower_snake_case",
@@ -370,6 +385,7 @@ func TestRunFileLowerSnakeCase(t *testing.T) {
 }
 
 func TestRunMessagePascalCase(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"message_pascal_case",
@@ -387,6 +403,7 @@ func TestRunMessagePascalCase(t *testing.T) {
 }
 
 func TestRunOneofLowerSnakeCase(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"oneof_lower_snake_case",
@@ -409,6 +426,7 @@ func TestRunOneofLowerSnakeCase(t *testing.T) {
 }
 
 func TestRunPackageDefined(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"package_defined",
@@ -418,6 +436,7 @@ func TestRunPackageDefined(t *testing.T) {
 }
 
 func TestRunPackageDirectoryMatch(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"package_directory_match",
@@ -427,6 +446,7 @@ func TestRunPackageDirectoryMatch(t *testing.T) {
 }
 
 func TestRunPackageLowerSnakeCase(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"package_lower_snake_case",
@@ -438,6 +458,7 @@ func TestRunPackageLowerSnakeCase(t *testing.T) {
 }
 
 func TestRunPackageNoImportCycle(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"package_no_import_cycle",
@@ -448,6 +469,7 @@ func TestRunPackageNoImportCycle(t *testing.T) {
 }
 
 func TestRunPackageSameDirectory(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"package_same_directory",
@@ -457,6 +479,7 @@ func TestRunPackageSameDirectory(t *testing.T) {
 }
 
 func TestRunPackageSameDirectoryNoPackage(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"package_same_directory_no_package",
@@ -466,6 +489,7 @@ func TestRunPackageSameDirectoryNoPackage(t *testing.T) {
 }
 
 func TestRunPackageSameOptionValue(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"package_same_option_value",
@@ -501,6 +525,7 @@ func TestRunPackageSameOptionValue(t *testing.T) {
 }
 
 func TestRunPackageVersionSuffix(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"package_version_suffix",
@@ -515,6 +540,7 @@ func TestRunPackageVersionSuffix(t *testing.T) {
 }
 
 func TestRunRPCNoStreaming(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"rpc_no_streaming",
@@ -526,6 +552,7 @@ func TestRunRPCNoStreaming(t *testing.T) {
 }
 
 func TestRunRPCPascalCase(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"rpc_pascal_case",
@@ -537,6 +564,7 @@ func TestRunRPCPascalCase(t *testing.T) {
 }
 
 func TestRunRPCRequestResponseUnique(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"rpc_request_response_unique",
@@ -558,6 +586,7 @@ func TestRunRPCRequestResponseUnique(t *testing.T) {
 }
 
 func TestRunRPCRequestResponseUniqueAllowEmptyRequests(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"rpc_request_response_unique_allow_empty_requests",
@@ -578,6 +607,7 @@ func TestRunRPCRequestResponseUniqueAllowEmptyRequests(t *testing.T) {
 }
 
 func TestRunRPCRequestResponseUniqueAllowEmptyResponses(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"rpc_request_response_unique_allow_empty_responses",
@@ -598,6 +628,7 @@ func TestRunRPCRequestResponseUniqueAllowEmptyResponses(t *testing.T) {
 }
 
 func TestRunRPCRequestResponseUniqueAllowEmptyRequestsAndResponses(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"rpc_request_response_unique_allow_empty_requests_and_responses",
@@ -615,6 +646,7 @@ func TestRunRPCRequestResponseUniqueAllowEmptyRequestsAndResponses(t *testing.T)
 }
 
 func TestRunRPCRequestResponseUniqueAllowSame(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"rpc_request_response_unique_allow_same",
@@ -633,6 +665,7 @@ func TestRunRPCRequestResponseUniqueAllowSame(t *testing.T) {
 }
 
 func TestRunRPCRequestResponseUniqueAllowSameAndEmptyRequestResponses(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"rpc_request_response_unique_allow_same_and_empty_request_responses",
@@ -648,6 +681,7 @@ func TestRunRPCRequestResponseUniqueAllowSameAndEmptyRequestResponses(t *testing
 }
 
 func TestRunRPCStandardName(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"rpc_standard_name",
@@ -659,6 +693,7 @@ func TestRunRPCStandardName(t *testing.T) {
 }
 
 func TestRunRPCStandardNameAllowEmpty(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"rpc_standard_name_allow_empty",
@@ -668,6 +703,7 @@ func TestRunRPCStandardNameAllowEmpty(t *testing.T) {
 }
 
 func TestRunServicePascalCase(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"service_pascal_case",
@@ -679,6 +715,7 @@ func TestRunServicePascalCase(t *testing.T) {
 }
 
 func TestRunServiceSuffix(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"service_suffix",
@@ -689,6 +726,7 @@ func TestRunServiceSuffix(t *testing.T) {
 }
 
 func TestRunServiceSuffixCustom(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"service_suffix_custom",
@@ -700,6 +738,7 @@ func TestRunServiceSuffixCustom(t *testing.T) {
 }
 
 func TestRunSyntaxSpecified(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"syntax_specified",
@@ -708,6 +747,7 @@ func TestRunSyntaxSpecified(t *testing.T) {
 }
 
 func TestRunIgnores1(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"ignores1",
@@ -733,6 +773,7 @@ func TestRunIgnores1(t *testing.T) {
 }
 
 func TestRunIgnores2(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"ignores2",
@@ -746,6 +787,7 @@ func TestRunIgnores2(t *testing.T) {
 }
 
 func TestRunIgnores3(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"ignores3",
@@ -766,6 +808,7 @@ func TestRunIgnores3(t *testing.T) {
 }
 
 func TestRunIgnores4(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"ignores4",
@@ -786,6 +829,7 @@ func TestRunIgnores4(t *testing.T) {
 }
 
 func TestCommentIgnoresOff(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"comment_ignores",
@@ -828,6 +872,7 @@ func TestCommentIgnoresOff(t *testing.T) {
 }
 
 func TestCommentIgnoresOn(t *testing.T) {
+	t.Parallel()
 	testLintConfigModifier(
 		t,
 		"comment_ignores",
@@ -838,6 +883,7 @@ func TestCommentIgnoresOn(t *testing.T) {
 }
 
 func TestCommentIgnoresCascadeOff(t *testing.T) {
+	t.Parallel()
 	testLint(
 		t,
 		"comment_ignores_cascade",
@@ -878,6 +924,7 @@ func TestCommentIgnoresCascadeOff(t *testing.T) {
 }
 
 func TestCommentIgnoresCascadeOn(t *testing.T) {
+	t.Parallel()
 	testLintConfigModifier(
 		t,
 		"comment_ignores_cascade",
@@ -906,7 +953,6 @@ func testLintConfigModifier(
 	configModifier func(*bufconfig.Config),
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	logger := zap.NewNop()
@@ -925,7 +971,7 @@ func testLintConfigModifier(
 		configModifier(config)
 	}
 
-	module, err := bufmodulebuild.BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config.Build,

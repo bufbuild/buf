@@ -46,7 +46,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Convert a message from binary to JSON or vice versa",
+		Short: "Convert a message between binary, text, or JSON",
 		Long: `
 Use an input proto to interpret a proto/json message and convert it to a different format.
 
@@ -56,15 +56,15 @@ Examples:
 
 The <input> can be a local .proto file, binary output of "buf build", bsr module or local buf module:
 
-    $ buf convert example.proto --type=Foo.proto --from=payload.json --to=output.bin
+    $ buf convert example.proto --type=Foo.proto --from=payload.json --to=output.binpb
 
 All of <input>, "--from" and "to" accept formatting options:
 
-    $ buf convert example.proto#format=bin --type=buf.Foo --from=payload#format=json --to=out#format=json
+    $ buf convert example.proto#format=binpb --type=buf.Foo --from=payload#format=json --to=out#format=json
 
 Both <input> and "--from" accept stdin redirecting:
 
-    $ buf convert <(buf build -o -)#format=bin --type=foo.Bar --from=<(echo "{\"one\":\"55\"}")#format=json
+    $ buf convert <(buf build -o -)#format=binpb --type=foo.Bar --from=<(echo "{\"one\":\"55\"}")#format=json
 
 Redirect from stdin to --from:
 
@@ -72,7 +72,7 @@ Redirect from stdin to --from:
 
 Redirect from stdin to <input>:
 
-    $ buf build -o - | buf convert -#format=bin --type buf.Foo --from=payload.json
+    $ buf build -o - | buf convert -#format=binpb --type buf.Foo --from=payload.json
 
 Use a module on the bsr:
 
@@ -189,7 +189,7 @@ func run(
 	if inputErr != nil && image == nil {
 		return inputErr
 	}
-	fromMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.From, bufconvert.MessageEncodingBin)
+	fromMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.From, bufconvert.MessageEncodingBinpb)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
@@ -228,10 +228,12 @@ func run(
 // which will be the default output encoding for a given payload encoding.
 func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
 	switch encoding {
-	case bufconvert.MessageEncodingBin:
+	case bufconvert.MessageEncodingBinpb:
 		return bufconvert.MessageEncodingJSON, nil
 	case bufconvert.MessageEncodingJSON:
-		return bufconvert.MessageEncodingBin, nil
+		return bufconvert.MessageEncodingBinpb, nil
+	case bufconvert.MessageEncodingTxtpb:
+		return bufconvert.MessageEncodingBinpb, nil
 	default:
 		return 0, fmt.Errorf("unknown message encoding %v", encoding)
 	}

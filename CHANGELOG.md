@@ -2,6 +2,60 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.26.1] - 2023-08-09
+
+- Fix issue where `buf build -o` did not properly output files with the `.txtpb`
+  extension in Protobuf text format.
+
+## [v1.26.0] - 2023-08-09
+
+- Add support for the `--http2-prior-knowledge` flag when running `buf curl`
+  against secure "https" URLs. This can be used with gRPC servers, that only
+  support HTTP/2, when used with a network (layer 4) load balancer, that does
+  not support protocol negotiation in TLS handshake.
+
+## [v1.25.1] - 2023-08-02
+
+- Fix issue where all files were being iterated over when using the `--path` flag.
+- Fix issue where the directory `.` was incorrectly accepted as a value for the
+  `directories` key in `buf.work.yaml`.
+
+## [v1.25.0] - 2023-07-18
+
+- Add `txtpb` format to handle the Protobuf text format. and automatically recognize
+  `.txtpb` files as Protobuf text files. The `txtpb` format can now be used with
+  all `buf` commands that take images as input or output, such as `build`, `convert`,
+  and `curl`.
+
+## [v1.24.0] - 2023-07-13
+
+- Update `buf mod update` to block updates that will result in conflicting `.proto`
+  files across dependencies.
+- Replace `bin` format with `binpb` format, and support the `.binpb` file extension.
+  `.binpb` is now the canonical file extension for binary-encoded Protobuf data.
+  The `bin` format and the `.bin` file extension continue to be accepted.
+- Remove support for `go` subdomain in `.netrc`. This was used as part of the
+  remote generation alpha, which has been fully deprecated in favor of remote
+  plugins and remote packages. See https://buf.build/blog/remote-packages-remote-plugins-approaching-v1
+  for more details.
+- Update `buf beta price` with the latest pricing information.
+
+## [v1.23.1] - 2023-06-30
+
+- Fix issue where `buf beta graph` would not print modules within a workspace that
+  had no dependencies or dependents.
+- Fix issue where `buf beta graph` would print warnings for missing dependencies
+  that were actually present.
+
+## [v1.23.0] - 2023-06-29
+
+- Add `buf beta graph` to print the dependency graph for a module in DOT format.
+- Various small bug fixes.
+
+## [v1.22.0] - 2023-06-23
+
 - Change default for `--origin` flag of `buf beta studio-agent` to `https://buf.build`
 
 ## [v1.21.0] - 2023-06-05
@@ -898,7 +952,15 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.21.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.26.1...HEAD
+[v1.26.1]: https://github.com/bufbuild/buf/compare/v1.26.0...v1.26.1
+[v1.26.0]: https://github.com/bufbuild/buf/compare/v1.25.1...v1.26.0
+[v1.25.1]: https://github.com/bufbuild/buf/compare/v1.25.0...v1.25.1
+[v1.25.0]: https://github.com/bufbuild/buf/compare/v1.24.0...v1.25.0
+[v1.24.0]: https://github.com/bufbuild/buf/compare/v1.23.1...v1.24.0
+[v1.23.1]: https://github.com/bufbuild/buf/compare/v1.23.0...v1.23.1
+[v1.23.0]: https://github.com/bufbuild/buf/compare/v1.22.0...v1.23.0
+[v1.22.0]: https://github.com/bufbuild/buf/compare/v1.21.0...v1.22.0
 [v1.21.0]: https://github.com/bufbuild/buf/compare/v1.20.0...v1.21.0
 [v1.20.0]: https://github.com/bufbuild/buf/compare/v1.19.0...v1.20.0
 [v1.19.0]: https://github.com/bufbuild/buf/compare/v1.18.0...v1.19.0

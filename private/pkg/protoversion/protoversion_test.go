@@ -22,6 +22,7 @@ import (
 )
 
 func TestPackageHasPackageVersion(t *testing.T) {
+	t.Parallel()
 	// note we allow this in the linter as we check this in PACKAGE_DEFINED
 	// however, for the purposes of packageHasPackageVersion, this does not
 	testNewPackageVersionForPackage(t, nil, false, "")

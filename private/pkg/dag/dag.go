@@ -93,11 +93,57 @@ func (g *Graph[Key]) ContainsNode(key Key) bool {
 	return ok
 }
 
-// Walk visits each edge in the Graph starting at the source keys.
+// NumNodes returns the number of nodes in the graph.
+func (g *Graph[Key]) NumNodes() int {
+	g.init()
+	return len(g.keys)
+}
+
+// NumNodes returns the number of edges in the graph.
+func (g *Graph[Key]) NumEdges() int {
+	g.init()
+	var numEdges int
+	for _, node := range g.keyToNode {
+		numEdges += len(node.outboundEdges)
+	}
+	return numEdges
+}
+
+// WalkNodes visited each node in the Graph based on insertion order.
+//
+// f is called for each node. The first argument is the key for the node,
+// the second argument is all inbound edges, the third argument
+// is all outbound edges.
+func (g *Graph[Key]) WalkNodes(f func(Key, []Key, []Key) error) error {
+	g.init()
+	for _, key := range g.keys {
+		node, ok := g.keyToNode[key]
+		if !ok {
+			return fmt.Errorf("key not present: %v", key)
+		}
+		inboundEdges := make([]Key, len(node.inboundEdges))
+		copy(inboundEdges, node.inboundEdges)
+		outboundEdges := make([]Key, len(node.outboundEdges))
+		copy(outboundEdges, node.outboundEdges)
+		if err := f(key, inboundEdges, outboundEdges); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// WalkEdges visits each edge in the Graph starting at the source keys.
+//
+// f is called for each directed edge. The first argument is the source
+// node, the second is the destination node.
 //
 // Returns a *CycleError if there is a cycle in the graph.
-func (g *Graph[Key]) Walk(f func(Key, Key) error) error {
+func (g *Graph[Key]) WalkEdges(f func(Key, Key) error) error {
 	g.init()
+	if g.NumEdges() == 0 {
+		// No edges, do not walk.
+		return nil
+	}
 	sourceKeys, err := g.getSourceKeys()
 	if err != nil {
 		return err
@@ -164,7 +210,7 @@ func (g *Graph[Key]) DOTString(keyToString func(Key) string) (string, error) {
 	nextIndex := 1
 	var nodeStrings []string
 	var edgeStrings []string
-	if err := g.Walk(
+	if err := g.WalkEdges(
 		func(from Key, to Key) error {
 			fromIndex, ok := keyToIndex[from]
 			if !ok {
@@ -194,6 +240,33 @@ func (g *Graph[Key]) DOTString(keyToString func(Key) string) (string, error) {
 		},
 	); err != nil {
 		return "", err
+	}
+	// We also want to pick up any nodes that do not have edges, and display them.
+	if err := g.WalkNodes(
+		func(key Key, inboundEdges []Key, outboundEdges []Key) error {
+			if _, ok := keyToIndex[key]; ok {
+				return nil
+			}
+			if len(inboundEdges) == 0 && len(outboundEdges) == 0 {
+				nodeStrings = append(
+					nodeStrings,
+					fmt.Sprintf("%d [label=%q]", nextIndex, keyToString(key)),
+				)
+				edgeStrings = append(
+					edgeStrings,
+					fmt.Sprintf("%d", nextIndex),
+				)
+				nextIndex++
+				return nil
+			}
+			// This is a system error.
+			return fmt.Errorf("got node %v with %d inbound edges and %d outbound edges, but this was not processed during WalkEdges", key, len(inboundEdges), len(outboundEdges))
+		},
+	); err != nil {
+		return "", err
+	}
+	if len(nodeStrings) == 0 {
+		return "digraph {}", nil
 	}
 	buffer := bytes.NewBuffer(nil)
 	_, _ = buffer.WriteString("digraph {\n\n")
@@ -312,6 +385,8 @@ type node[Key comparable] struct {
 	// need to store order for deterministic visits
 	outboundEdges  []Key
 	inboundEdgeMap map[Key]struct{}
+	// need to store order for deterministic visits
+	inboundEdges []Key
 }
 
 func newNode[Key comparable]() *node[Key] {
@@ -331,6 +406,7 @@ func (n *node[Key]) addOutboundEdge(key Key) {
 func (n *node[Key]) addInboundEdge(key Key) {
 	if _, ok := n.inboundEdgeMap[key]; !ok {
 		n.inboundEdgeMap[key] = struct{}{}
+		n.inboundEdges = append(n.inboundEdges, key)
 	}
 }
 

@@ -44,33 +44,41 @@ import (
 )
 
 // IF YOU HAVE ANY FAILING TESTS IN HERE, ESPECIALLY AFTER A PROTOC UPGRADE,
-// SWITCH THIS TO TRUE, RE-RUN THE TESTS AND THEN SWITCH BACK TO FALSE.
+// SWITCH THIS TO TRUE, TURN OFF PARALLEL TESTING, RE-RUN THE TESTS AND THEN SWITCH BACK TO FALSE.
 const shouldUpdateExpectations = false
 
 func TestOptions(t *testing.T) {
 	t.Parallel()
 	t.Run("message", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/options", []string{"pkg.Foo"}, "pkg.Foo.txtar")
 	})
 	t.Run("enum", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/options", []string{"pkg.FooEnum"}, "pkg.FooEnum.txtar")
 	})
 	t.Run("service", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/options", []string{"pkg.FooService"}, "pkg.FooService.txtar")
 	})
 	t.Run("method", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/options", []string{"pkg.FooService.Do"}, "pkg.FooService.Do.txtar")
 	})
 	t.Run("all", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all.txtar")
 	})
 	t.Run("exclude-options", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all-exclude-options.txtar", WithExcludeCustomOptions())
 	})
 	t.Run("files", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/options", []string{"Files"}, "Files.txtar")
 	})
 	t.Run("all-with-files", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService", "Files"}, "all-with-Files.txtar")
 	})
 }
@@ -78,15 +86,19 @@ func TestOptions(t *testing.T) {
 func TestNesting(t *testing.T) {
 	t.Parallel()
 	t.Run("message", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/nesting", []string{"pkg.Foo"}, "message.txtar")
 	})
 	t.Run("recursenested", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/nesting", []string{"pkg.Foo.NestedFoo.NestedNestedFoo"}, "recursenested.txtar")
 	})
 	t.Run("enum", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/nesting", []string{"pkg.FooEnum"}, "enum.txtar")
 	})
 	t.Run("usingother", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/nesting", []string{"pkg.Baz"}, "usingother.txtar")
 	})
 }
@@ -94,15 +106,19 @@ func TestNesting(t *testing.T) {
 func TestImportModifiers(t *testing.T) {
 	t.Parallel()
 	t.Run("regular_weak", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/importmods", []string{"ImportRegular", "ImportWeak"}, "regular_weak.txtar")
 	})
 	t.Run("weak_public", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/importmods", []string{"ImportWeak", "ImportPublic"}, "weak_public.txtar")
 	})
 	t.Run("regular_public", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/importmods", []string{"ImportRegular", "ImportPublic"}, "regular_public.txtar")
 	})
 	t.Run("noimports", func(t *testing.T) {
+		t.Parallel()
 		runDiffTest(t, "testdata/importmods", []string{"NoImports"}, "noimports.txtar")
 	})
 }
@@ -146,6 +162,7 @@ func TestSourceCodeInfo(t *testing.T) {
 }
 
 func TestTransitivePublic(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	bucket, err := storagemem.NewReadBucket(map[string][]byte{
 		"a.proto": []byte(`syntax = "proto3";package a;message Foo{}`),

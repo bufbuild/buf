@@ -34,6 +34,8 @@ const (
 	ImageEncodingBin ImageEncoding = iota + 1
 	// ImageEncodingJSON is the JSON image encoding.
 	ImageEncodingJSON
+	// ImageEncodingTxtpb is the text protobuf image encoding.
+	ImageEncodingTxtpb
 )
 
 var (

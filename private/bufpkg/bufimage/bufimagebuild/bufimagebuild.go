@@ -67,6 +67,12 @@ func WithExpectedDirectDependencies(expectedDirectDependencies []bufmoduleref.Mo
 }
 
 // WithWorkspace sets the workspace to be read from instead of ModuleReader, and to not warn imports for.
+//
+// TODO: this can probably be dealt with by finding out if an ImageFile has a commit
+// or not, although that is hacky, that's an implementation detail in practice, but perhaps
+// we could justify it - transitive dependencies without commits don't make sense?
+//
+// TODO: shouldn't buf.yamls in workspaces have deps properly declared in them anyways? Why not warn?
 func WithWorkspace(workspace bufmodule.Workspace) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.workspace = workspace
