@@ -231,6 +231,16 @@ func SyncerWithModuleDefaultBranchGetter(getter ModuleDefaultBranchGetter) Synce
 	}
 }
 
+// SyncerWithOldTagsAttacher configures a tags attacher for older, already synced commits. If left
+// empty, the syncer won't try to sync older tags past each module's start sync points on all
+// branches.
+func SyncerWithOldTagsAttacher(attacher OldTagsAttacher) SyncerOption {
+	return func(s *syncer) error {
+		s.oldTagsAttacher = attacher
+		return nil
+	}
+}
+
 // SyncerWithAllBranches sets the syncer to sync all branches. Be default the syncer only processes
 // commits in the current checked out branch.
 func SyncerWithAllBranches() SyncerOption {
@@ -279,7 +289,9 @@ type ModuleDefaultBranchGetter func(
 // process triggers and completes, and some minutes later that commit is tagged "v1.2.3". The next
 // time the sync command runs, this attacher would pick such tag and attach it to the correct BSR
 // commit.
-type OldTagsAttacher func(ctx context.Context, module bufmoduleref.ModuleIdentity, hash git.Hash, tags []string) error
+//
+// It's expected to return the BSR commit name to which the tags were attached.
+type OldTagsAttacher func(ctx context.Context, module bufmoduleref.ModuleIdentity, hash git.Hash, tags []string) (string, error)
 
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {

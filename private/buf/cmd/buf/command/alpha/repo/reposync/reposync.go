@@ -187,6 +187,7 @@ func sync(
 		bufsync.SyncerWithResumption(syncPointResolver(clientConfig)),
 		bufsync.SyncerWithGitCommitChecker(syncGitCommitChecker(clientConfig)),
 		bufsync.SyncerWithModuleDefaultBranchGetter(defaultBranchGetter(clientConfig)),
+		bufsync.SyncerWithOldTagsAttacher(oldTagsAttacher(clientConfig)),
 	}
 	if allBranches {
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithAllBranches())
@@ -329,6 +330,28 @@ func defaultBranchGetter(clientConfig *connectclient.Config) bufsync.ModuleDefau
 			return "", fmt.Errorf("get repository by full name %q: %w", module.IdentityString(), err)
 		}
 		return res.Msg.Repository.DefaultBranch, nil
+	}
+}
+
+func oldTagsAttacher(clientConfig *connectclient.Config) bufsync.OldTagsAttacher {
+	return func(ctx context.Context, module bufmoduleref.ModuleIdentity, hash git.Hash, tags []string) (string, error) {
+		service := connectclient.Make(clientConfig, module.Remote(), registryv1alpha1connect.NewSyncServiceClient)
+		res, err := service.AttachGitTags(ctx, connect.NewRequest(&registryv1alpha1.AttachGitTagsRequest{
+			Owner:      module.Owner(),
+			Repository: module.Repository(),
+			Hash:       hash.Hex(),
+			Author:     nil,
+			Commiter:   nil,
+			Tags:       tags,
+		}))
+		if err != nil {
+			if connect.CodeOf(err) == connect.CodeNotFound {
+				// Repo is not created
+				return "", bufsync.ErrModuleDoesNotExist
+			}
+			return "", fmt.Errorf("attach git tags to module %q: %w", module.IdentityString(), err)
+		}
+		return res.Msg.GetBsrCommitName(), nil
 	}
 }
 

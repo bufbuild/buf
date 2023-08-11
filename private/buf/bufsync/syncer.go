@@ -710,20 +710,23 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 			if !shouldAttachTagsForThisCommit {
 				return nil
 			}
+			logger := s.logger.With(
+				zap.String("branch", branch),
+				zap.String("commit", oldCommit.Hash().Hex()),
+				zap.String("module directory", moduleDir),
+				zap.String("module identity", targetModuleIdentity.IdentityString()),
+				zap.String("module directory git start point", startPoint.Hex()),
+				zap.Strings("tags", tagsToAttach),
+			)
 			// We assume those commits were already synced, and try to attach tags to them, but if
 			// attaching the older tags fails, we'll WARN+continue to not block actual pending commits to
 			// sync in this run.
-			if err := s.oldTagsAttacher(ctx, targetModuleIdentity, oldCommit.Hash(), tagsToAttach); err != nil {
-				s.logger.Warn(
-					"attach older tags failed",
-					zap.String("branch", branch),
-					zap.String("commit", oldCommit.Hash().Hex()),
-					zap.String("module directory", moduleDir),
-					zap.String("module directory git start point", startPoint.Hex()),
-					zap.String("module identity", targetModuleIdentity.IdentityString()),
-					zap.Error(err),
-				)
+			bsrCommitName, err := s.oldTagsAttacher(ctx, targetModuleIdentity, oldCommit.Hash(), tagsToAttach)
+			if err != nil {
+				logger.Warn("attach older tags failed", zap.Error(err))
+				return nil
 			}
+			logger.Debug("older tags attached", zap.String("BSR commit", bsrCommitName))
 			return nil
 		}
 		if err := s.repo.ForEachCommit(
