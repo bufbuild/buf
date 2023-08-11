@@ -769,7 +769,7 @@ func TestManagedConfigSuccess(t *testing.T) {
 		testName string
 		file     string
 		// true means disabled
-		expectedDisableResults       map[FileOption]map[imageFileIdentity]bool
+		expectedDisableResults       map[fileOption]map[imageFileIdentity]bool
 		expectedOverrideResults      map[fileOptionGroup]map[imageFileIdentity]override
 		expectedFieldDisableResults  map[fieldOption]map[fileAndField]bool
 		expectedFieldOverrideResults map[fieldOption]map[fileAndField]override
@@ -777,8 +777,8 @@ func TestManagedConfigSuccess(t *testing.T) {
 		{
 			testName: "test override and disable matching",
 			file:     filepath.Join("managed", "match"),
-			expectedDisableResults: map[FileOption]map[imageFileIdentity]bool{
-				FileOptionJavaPackage: {
+			expectedDisableResults: map[fileOption]map[imageFileIdentity]bool{
+				fileOptionJavaPackage: {
 					&fakeImageFileIdentity{
 						path: "excluded/a.proto",
 					}: true,

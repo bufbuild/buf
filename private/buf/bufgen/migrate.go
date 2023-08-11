@@ -36,6 +36,20 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	fileOptionCcEnableArenas      = "cc_enable_arenas"
+	fileOptionJavaPackagePrefix   = "java_package_prefix"
+	fileOptionJavaPackage         = "java_package"
+	fileOptionJavaMultipleFiles   = "java_multiple_files"
+	fileOptionJavaStringCheckUtf8 = "java_string_check_utf8"
+	fileOptionOptimizeFor         = "optimize_for"
+	fileOptionGoPackagePrefix     = "go_package_prefix"
+	fileOptionGoPackage           = "go_package"
+	fileOptionCsharpNamespace     = "csharp_namespace"
+	fileOptionObjcClassPrefix     = "objc_class_prefix"
+	fileOptionRubyPackage         = "ruby_package"
+)
+
 type migrateOptions struct {
 	input          string
 	genTemplate    string
@@ -283,42 +297,42 @@ func managedConfigV1ToExternalManagedConfigV2(managedConfigV1 *bufgenv1.ManagedC
 	managedConfigV2.Enabled = true
 	if ccEnableArenas := managedConfigV1.CcEnableArenas; ccEnableArenas != nil {
 		defaulOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-			FileOption: bufgenv2.FileOptionCcEnableArenas.String(),
+			FileOption: fileOptionCcEnableArenas,
 			Value:      *ccEnableArenas,
 		}
 		managedConfigV2.Override = append(managedConfigV2.Override, defaulOverrideRule)
 	}
 	if javaMultipleFiles := managedConfigV1.JavaMultipleFiles; javaMultipleFiles != nil {
 		defaultOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-			FileOption: bufgenv2.FileOptionJavaMultipleFiles.String(),
+			FileOption: fileOptionJavaMultipleFiles,
 			Value:      *javaMultipleFiles,
 		}
 		managedConfigV2.Override = append(managedConfigV2.Override, defaultOverrideRule)
 	}
 	if javaStringCheckUtf8 := managedConfigV1.JavaStringCheckUtf8; javaStringCheckUtf8 != nil {
 		defaultOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-			FileOption: bufgenv2.FileOptionJavaStringCheckUtf8.String(),
+			FileOption: fileOptionJavaStringCheckUtf8,
 			Value:      *javaStringCheckUtf8,
 		}
 		managedConfigV2.Override = append(managedConfigV2.Override, defaultOverrideRule)
 	}
 	if javaPackagePrefixConfig := managedConfigV1.JavaPackagePrefixConfig; javaPackagePrefixConfig != nil {
 		defaultOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-			FileOption: bufgenv2.FileOptionJavaPackagePrefix.String(),
+			FileOption: fileOptionJavaPackagePrefix,
 			Value:      javaPackagePrefixConfig.Default,
 		}
 		managedConfigV2.Override = append(managedConfigV2.Override, defaultOverrideRule)
 		for _, excludedModule := range javaPackagePrefixConfig.Except {
 			moduleDisableRule := bufgenv2.ExternalManagedDisableConfigV2{
 				// java_package disables modifying this option completely, which is the intended behavior
-				FileOption: bufgenv2.FileOptionJavaPackage.String(),
+				FileOption: fileOptionJavaPackage,
 				Module:     excludedModule.IdentityString(),
 			}
 			managedConfigV2.Disable = append(managedConfigV2.Disable, moduleDisableRule)
 		}
 		for module, overridePrefix := range javaPackagePrefixConfig.Override {
 			moduleOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-				FileOption: bufgenv2.FileOptionJavaPackagePrefix.String(),
+				FileOption: fileOptionJavaPackagePrefix,
 				Module:     module.IdentityString(),
 				Value:      overridePrefix,
 			}
@@ -328,14 +342,14 @@ func managedConfigV1ToExternalManagedConfigV2(managedConfigV1 *bufgenv1.ManagedC
 	if csharpNamespaceConfig := managedConfigV1.CsharpNameSpaceConfig; csharpNamespaceConfig != nil {
 		for _, excludedModule := range csharpNamespaceConfig.Except {
 			moduleDisableRule := bufgenv2.ExternalManagedDisableConfigV2{
-				FileOption: bufgenv2.FileOptionCsharpNamespace.String(),
+				FileOption: fileOptionCsharpNamespace,
 				Module:     excludedModule.IdentityString(),
 			}
 			managedConfigV2.Disable = append(managedConfigV2.Disable, moduleDisableRule)
 		}
 		for module, namespaceOverride := range csharpNamespaceConfig.Override {
 			ModuleOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-				FileOption: bufgenv2.FileOptionCsharpNamespace.String(),
+				FileOption: fileOptionCsharpNamespace,
 				Module:     module.IdentityString(),
 				Value:      namespaceOverride,
 			}
@@ -344,20 +358,20 @@ func managedConfigV1ToExternalManagedConfigV2(managedConfigV1 *bufgenv1.ManagedC
 	}
 	if optimizeForConfig := managedConfigV1.OptimizeForConfig; optimizeForConfig != nil {
 		defaultOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-			FileOption: bufgenv2.FileOptionOptimizeFor.String(),
+			FileOption: fileOptionOptimizeFor,
 			Value:      optimizeForConfig.Default.String(),
 		}
 		managedConfigV2.Override = append(managedConfigV2.Override, defaultOverrideRule)
 		for _, excludedModule := range optimizeForConfig.Except {
 			moduleDisableRule := bufgenv2.ExternalManagedDisableConfigV2{
-				FileOption: bufgenv2.FileOptionOptimizeFor.String(),
+				FileOption: fileOptionOptimizeFor,
 				Module:     excludedModule.IdentityString(),
 			}
 			managedConfigV2.Disable = append(managedConfigV2.Disable, moduleDisableRule)
 		}
 		for module, optimizeForOverride := range optimizeForConfig.Override {
 			ModuleOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-				FileOption: bufgenv2.FileOptionOptimizeFor.String(),
+				FileOption: fileOptionOptimizeFor,
 				Module:     module.IdentityString(),
 				Value:      optimizeForOverride.String(),
 			}
@@ -366,20 +380,20 @@ func managedConfigV1ToExternalManagedConfigV2(managedConfigV1 *bufgenv1.ManagedC
 	}
 	if goPackagePrefixConfig := managedConfigV1.GoPackagePrefixConfig; goPackagePrefixConfig != nil {
 		defaultOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-			FileOption: bufgenv2.FileOptionGoPackagePrefix.String(),
+			FileOption: fileOptionGoPackagePrefix,
 			Value:      goPackagePrefixConfig.Default,
 		}
 		managedConfigV2.Override = append(managedConfigV2.Override, defaultOverrideRule)
 		for _, excludedModule := range goPackagePrefixConfig.Except {
 			moduleDisableRule := bufgenv2.ExternalManagedDisableConfigV2{
-				FileOption: bufgenv2.FileOptionGoPackage.String(),
+				FileOption: fileOptionGoPackage,
 				Module:     excludedModule.IdentityString(),
 			}
 			managedConfigV2.Disable = append(managedConfigV2.Disable, moduleDisableRule)
 		}
 		for module, override := range goPackagePrefixConfig.Override {
 			moduleOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-				FileOption: bufgenv2.FileOptionGoPackagePrefix.String(),
+				FileOption: fileOptionGoPackagePrefix,
 				Module:     module.IdentityString(),
 				Value:      override,
 			}
@@ -388,20 +402,20 @@ func managedConfigV1ToExternalManagedConfigV2(managedConfigV1 *bufgenv1.ManagedC
 	}
 	if objcClassPrefixConfig := managedConfigV1.ObjcClassPrefixConfig; objcClassPrefixConfig != nil {
 		defaultOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-			FileOption: bufgenv2.FileOptionObjcClassPrefix.String(),
+			FileOption: fileOptionObjcClassPrefix,
 			Value:      objcClassPrefixConfig.Default,
 		}
 		managedConfigV2.Override = append(managedConfigV2.Override, defaultOverrideRule)
 		for _, excludedModule := range objcClassPrefixConfig.Except {
 			moduleDisableRule := bufgenv2.ExternalManagedDisableConfigV2{
-				FileOption: bufgenv2.FileOptionObjcClassPrefix.String(),
+				FileOption: fileOptionObjcClassPrefix,
 				Module:     excludedModule.IdentityString(),
 			}
 			managedConfigV2.Disable = append(managedConfigV2.Disable, moduleDisableRule)
 		}
 		for module, override := range objcClassPrefixConfig.Override {
 			moduleOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-				FileOption: bufgenv2.FileOptionObjcClassPrefix.String(),
+				FileOption: fileOptionObjcClassPrefix,
 				Module:     module.IdentityString(),
 				Value:      override,
 			}
@@ -411,14 +425,14 @@ func managedConfigV1ToExternalManagedConfigV2(managedConfigV1 *bufgenv1.ManagedC
 	if rubyPackageConfig := managedConfigV1.RubyPackageConfig; rubyPackageConfig != nil {
 		for _, excludedModule := range rubyPackageConfig.Except {
 			moduleDisableRule := bufgenv2.ExternalManagedDisableConfigV2{
-				FileOption: bufgenv2.FileOptionRubyPackage.String(),
+				FileOption: fileOptionRubyPackage,
 				Module:     excludedModule.IdentityString(),
 			}
 			managedConfigV2.Disable = append(managedConfigV2.Disable, moduleDisableRule)
 		}
 		for module, override := range rubyPackageConfig.Override {
 			moduleOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-				FileOption: bufgenv2.FileOptionRubyPackage.String(),
+				FileOption: fileOptionRubyPackage,
 				Module:     module.IdentityString(),
 				Value:      override,
 			}
