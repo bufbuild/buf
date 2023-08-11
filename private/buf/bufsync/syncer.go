@@ -359,7 +359,7 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 	pendingModules := s.copyBranchModulesSync(branch, branchModulesForSync)
 	var commitsForSync []*syncableCommit
 	stopLoopErr := errors.New("stop loop")
-	if err := s.repo.ForEachCommit(branch, func(commit git.Commit) error {
+	eachCommitFunc := func(commit git.Commit) error {
 		if len(pendingModules) == 0 {
 			// no more pending modules to sync, no need to keep navigating the branch
 			return stopLoopErr
@@ -460,7 +460,8 @@ func (s *syncer) branchSyncableCommits(ctx context.Context, branch string) ([]*s
 			modules: syncModules,
 		})
 		return nil
-	}); err != nil && !errors.Is(err, stopLoopErr) {
+	}
+	if err := s.repo.ForEachCommit(eachCommitFunc, git.ForEachCommitWithBranchStartPoint(branch)); err != nil && !errors.Is(err, stopLoopErr) {
 		return nil, err
 	}
 	// if we have no commits to sync, no need to make more checks, bail early

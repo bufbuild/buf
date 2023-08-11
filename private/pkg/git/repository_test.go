@@ -66,19 +66,100 @@ func TestCommits(t *testing.T) {
 
 	repo := gittest.ScaffoldGitRepository(t)
 	var commits []git.Commit
-	err := repo.ForEachCommit(gittest.DefaultBranch, func(c git.Commit) error {
+	err := repo.ForEachCommit(func(c git.Commit) error {
 		commits = append(commits, c)
 		return nil
 	})
-
 	require.NoError(t, err)
 	require.Len(t, commits, 3)
+
 	assert.Equal(t, commits[0].Message(), "third commit")
 	assert.Contains(t, commits[0].Parents(), commits[1].Hash())
 	assert.Equal(t, commits[1].Message(), "second commit")
 	assert.Contains(t, commits[1].Parents(), commits[2].Hash())
 	assert.Equal(t, commits[2].Message(), "initial commit")
 	assert.Empty(t, commits[2].Parents())
+
+	t.Run("default_behavior", func(t *testing.T) {
+		var commitsFromDefaultBranch []git.Commit
+		err := repo.ForEachCommit(
+			func(c git.Commit) error {
+				commitsFromDefaultBranch = append(commitsFromDefaultBranch, c)
+				return nil
+			},
+			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
+		)
+		require.NoError(t, err)
+		assert.Equal(t, commits, commitsFromDefaultBranch)
+	})
+
+	t.Run("set_same_starting_point_multiple_times", func(t *testing.T) {
+		assert.NoError(t, repo.ForEachCommit(
+			func(git.Commit) error { return nil },
+			// multiple times, same starting point should be a nop
+			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
+			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
+			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
+		))
+	})
+
+	t.Run("custom_starting_point", func(t *testing.T) {
+		var commitsFromSecond []git.Commit
+		err = repo.ForEachCommit(
+			func(c git.Commit) error {
+				commitsFromSecond = append(commitsFromSecond, c)
+				return nil
+			},
+			git.ForEachCommitWithHashStartPoint(commits[1].Hash().Hex()),
+		)
+		require.NoError(t, err)
+		require.Len(t, commitsFromSecond, 2)
+
+		assert.Equal(t, commitsFromSecond[0].Message(), "second commit")
+		assert.Contains(t, commitsFromSecond[0].Parents(), commitsFromSecond[1].Hash())
+		assert.Equal(t, commitsFromSecond[1].Message(), "initial commit")
+		assert.Empty(t, commitsFromSecond[1].Parents())
+	})
+
+	t.Run("failures", func(t *testing.T) {
+		t.Parallel()
+		type testCase struct {
+			name string
+			opts []git.ForEachCommitOption
+		}
+		testCases := []testCase{
+			{
+				name: "when_multiple_starting_points",
+				opts: []git.ForEachCommitOption{
+					git.ForEachCommitWithBranchStartPoint("some-branch"),
+					git.ForEachCommitWithHashStartPoint("some-hash"),
+				},
+			},
+			{
+				name: "when_invalid_hash",
+				opts: []git.ForEachCommitOption{
+					git.ForEachCommitWithHashStartPoint("invalid-hash"),
+				},
+			},
+			{
+				name: "when_non_existent_branch",
+				opts: []git.ForEachCommitOption{
+					git.ForEachCommitWithBranchStartPoint("non-existent-branch"),
+				},
+			},
+		}
+		for _, tc := range testCases {
+			func(tc testCase) {
+				t.Run(tc.name, func(t *testing.T) {
+					t.Parallel()
+					assert.Error(t, repo.ForEachCommit(
+						func(git.Commit) error { return nil },
+						tc.opts...,
+					))
+				})
+			}(tc)
+		}
+	})
 }
 
 func TestBranches(t *testing.T) {
