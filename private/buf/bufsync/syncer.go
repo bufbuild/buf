@@ -291,7 +291,7 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 	if err != nil {
 		return fmt.Errorf("finding commits to sync: %w", err)
 	}
-	// first sync old tags
+	// first sync tags in old commits
 	if s.oldTagsAttacher != nil {
 		if err := s.attachOlderTags(ctx, branch, commitsForSync); err != nil {
 			return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
@@ -668,11 +668,11 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 		// each module needs a valid identity to attach old tags to
 		targetModuleIdentity, ok := branchModulesForSync[moduleDir]
 		if !ok {
-			return fmt.Errorf("unexpected module directory %s", moduleDir)
+			return fmt.Errorf("module directory %s with starting point is not present in branch modules for sync", moduleDir)
 		}
 		if targetModuleIdentity == nil {
 			s.logger.Warn(
-				"module directory has no module identity target for branch, skipping syncing older tags",
+				"module directory has no module identity target for branch, skipping syncing its older tags",
 				zap.String("branch", branch),
 				zap.String("module directory", moduleDir),
 			)
@@ -696,7 +696,7 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 				return nil
 			}
 			// For each older commit we travel, we need to make sure it's a valid module with the expected
-			// module identity, or that the error handler would have choose to override it.
+			// module identity, or that the error handler would have chosen to override it.
 			var shouldAttachTagsForThisCommit bool
 			if _, readErr := s.readModuleAt(
 				ctx, branch, oldCommit, moduleDir,
