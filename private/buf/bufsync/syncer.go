@@ -644,11 +644,13 @@ func (s *syncer) readModuleAt(
 // module a given amount of commits or timestamps, syncing tags in case they were created or moved
 // after those commits were synced.
 func (s *syncer) syncLookback(ctx context.Context, branch string, syncableCommits []*syncableCommit) error {
-	moduleStartingPoints, err := s.lookbackStartingPoints(ctx, branch, syncableCommits)
+	_, err := s.lookbackStartingPoints(ctx, branch, syncableCommits)
 	if err != nil {
 		return fmt.Errorf("find lookback starting points for branch %s: %w", branch, err)
 	}
-	// TODO lookback and actually sync tags
+	// for moduleDir, startPoint := range moduleToStartPoint {
+
+	// }
 	return nil
 }
 
@@ -686,7 +688,7 @@ func (s *syncer) lookbackStartingPoints(ctx context.Context, branch string, sync
 			if _, expectedModuleDir := branchModulesForSync[moduleDir]; !expectedModuleDir {
 				// This should never happen, it's controlled by `branchSyncableCommits` func, just a safety
 				// check.
-				return nil, fmt.Errorf("unexpected syncable module directory %s in commit %s", moduleDir, branch, syncableCommit.commit.Hash())
+				return nil, fmt.Errorf("unexpected syncable module directory %s in commit %s", moduleDir, syncableCommit.commit.Hash())
 			}
 			if _, alreadyFound := modulesDirsToStartingPoints[moduleDir]; !alreadyFound {
 				modulesDirsToStartingPoints[moduleDir] = syncableCommit.commit.Hash()
