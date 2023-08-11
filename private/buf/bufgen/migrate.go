@@ -343,7 +343,7 @@ func managedConfigV1ToExternalManagedConfigV2(managedConfigV1 *bufgenv1.ManagedC
 	if optimizeForConfig := managedConfigV1.OptimizeForConfig; optimizeForConfig != nil {
 		defaultOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
 			FileOption: bufgenv2.FileOptionOptimizeFor.String(),
-			Value:      optimizeForConfig.Default.String(), // TODO: verify String() works here (probably won't)
+			Value:      optimizeForConfig.Default.String(),
 		}
 		managedConfigV2.Override = append(managedConfigV2.Override, defaultOverrideRule)
 		for _, excludedModule := range optimizeForConfig.Except {
@@ -486,7 +486,6 @@ func getExternalInputConfigV2(
 		inputConfig.ZipArchive = &path
 	case buffetch.FormatProtoFile:
 		inputConfig.ProtoFile = &path
-	// TODO: txtpb and jsonpb
 	default:
 		return nil, fmt.Errorf("unrecognized format: %s", format)
 	}

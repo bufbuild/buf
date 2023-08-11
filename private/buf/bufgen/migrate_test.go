@@ -38,6 +38,7 @@ const (
 version: v1
 managed:
   enabled: true
+  optimize_for: CODE_SIZE
   java_package_prefix:
     default: net
     except:
@@ -68,6 +69,8 @@ managed:
     - file_option: java_package_prefix
       module: buf.build/osun/h1
       value: dev
+    - file_option: optimize_for
+      value: CODE_SIZE
     - file_option: go_package_prefix
       value: mod1/hello
 plugins:
@@ -104,6 +107,9 @@ inputs:
       "override": {
         "buf.build/osun/h1": "dev"
       }
+    },
+	"optimize_for": {
+      "default": "CODE_SIZE"
     },
     "go_package_prefix": {
       "default": "mod1/hello"
@@ -143,6 +149,10 @@ inputs:
         "file_option": "java_package_prefix",
         "module": "buf.build/osun/h1",
         "value": "dev"
+      },
+      {
+        "file_option": "optimize_for",
+        "value": "CODE_SIZE"
       },
       {
         "file_option": "go_package_prefix",
