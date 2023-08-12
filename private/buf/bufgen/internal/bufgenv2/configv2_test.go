@@ -1483,11 +1483,6 @@ func TestConfigError(t *testing.T) {
 			expectedError: newOptionNotAllowedForInputMessage("include_package_files", "json_image"),
 		},
 		{
-			testName:      "Test dev null is not allowed for json image",
-			file:          filepath.Join("input", "json_error3"),
-			expectedError: "/dev/null is not allowed for json_image",
-		},
-		{
 			testName:      "Test compression is validated for text image",
 			file:          filepath.Join("input", "txt_error1"),
 			expectedError: `unknown compression: "xyz" (valid values are "none,gzip,zstd")`,
@@ -1496,11 +1491,6 @@ func TestConfigError(t *testing.T) {
 			testName:      "Test depth is not allowed for text image",
 			file:          filepath.Join("input", "txt_error2"),
 			expectedError: newOptionNotAllowedForInputMessage("depth", "text_image"),
-		},
-		{
-			testName:      "Test dev null is not allowed for text image",
-			file:          filepath.Join("input", "txt_error3"),
-			expectedError: "/dev/null is not allowed for text_image",
 		},
 		{
 			testName:      "Test parsing invalid strategy",
