@@ -387,8 +387,11 @@ func run(
 		if flags.DisableSymlinks {
 			updatedGenerateCommand += getBoolFlagText(disableSymlinksFlagName)
 		}
-		message := fmt.Sprintf("Migration finshed, to generate with buf, run:\n%s\n", updatedGenerateCommand)
-		_, err := container.Stderr().Write([]byte(message))
+		_, err = fmt.Fprintf(
+			container.Stderr(),
+			"Migration finshed, to generate with buf, run:\n%s\n",
+			updatedGenerateCommand,
+		)
 		if err != nil {
 			return err
 		}
