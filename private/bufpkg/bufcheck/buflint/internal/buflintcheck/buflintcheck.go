@@ -973,9 +973,9 @@ var (
 	// fieldConstraintsDesc provides a Descriptor for validate.FieldConstraints.
 	fieldConstraintsDesc = (*validate.FieldConstraints)(nil).ProtoReflect().Descriptor()
 
-	// fieldConstraintsOneOfDesc provides the OneOfDescriptor for the type union
+	// fieldConstraintsTypeOneofDesc provides the OneofDescriptor for the type oneof
 	// in FieldConstraints.
-	fieldConstraintsOneOfDesc = fieldConstraintsDesc.Oneofs().ByName("type")
+	fieldConstraintsTypeOneofDesc = fieldConstraintsDesc.Oneofs().ByName("type")
 )
 
 // CheckValidateRulesTypesMatch is a check function.
@@ -992,13 +992,13 @@ func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) erro
 			return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
 		}
 		constraintsRefl := constraints.ProtoReflect()
-		setOneOf := constraintsRefl.WhichOneof(fieldConstraintsOneOfDesc)
-		if setOneOf == nil {
+		setOneof := constraintsRefl.WhichOneof(fieldConstraintsTypeOneofDesc)
+		if setOneof == nil {
 			continue
 		}
 
 		got := field.Type()
-		expected := getTypeName(setOneOf.Name())
+		expected := getTypeName(setOneof.Name())
 		if got != expected {
 			add(field, field.Location(), nil, "constraint type mismatch on %q, expected %q but got %s", field.FullName(), expected, got)
 		}
