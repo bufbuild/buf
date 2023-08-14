@@ -680,11 +680,12 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 		}
 		var lookbackCommitsCount int
 		forEachOldCommitFunc := func(oldCommit git.Commit) error {
+			// The first commit (git start sync point) might be or might be not already synced, depending
+			// if it's the first time this branch is synced. We'll try to attach "old" tags in this commit
+			// anyway, in case of the former. If it's not already synced, then we'll WARN a Git hash Not
+			// Found, but the tag will be synced anyway when that commit is processed in the sync commits
+			// func.
 			lookbackCommitsCount++
-			if lookbackCommitsCount == 1 {
-				// skip the start point, that one will be processed by sync.
-				return nil
-			}
 			// For the lookback into older commits to stop, both lookback limits (amount of commits and
 			// timespan) need to be met.
 			if lookbackCommitsCount > lookbackCommitsLimit && oldCommit.Committer().Timestamp().Before(timeLimit) {
