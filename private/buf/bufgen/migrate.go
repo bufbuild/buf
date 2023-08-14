@@ -17,7 +17,6 @@ package bufgen
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -101,7 +100,8 @@ func migrate(
 	case internal.V1Beta1Version, internal.V1Version:
 		// OK. Also note that a file in v1beta1 is accepted by bufgenv1.ReadConfigV1.
 	case internal.V2Version:
-		return errors.New("configuration is already in V2")
+		logger.Sugar().Warnf("%s is already in V2", migrateOptions.genTemplate)
+		return nil
 	default:
 		return fmt.Errorf("unknown version: %s", externalConfigVersion.Version)
 	}

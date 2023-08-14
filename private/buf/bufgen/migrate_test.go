@@ -259,6 +259,35 @@ func TestMigrate(t *testing.T) {
 			},
 		},
 		{
+			description:       "yaml already in v2 does not return err",
+			fileName:          "buf.gen.hello.yaml",
+			v1Content:         v2ContentYAML,
+			expectedV2Content: v2ContentYAML,
+			options: []MigrateOption{
+				MigrateWithInput("buf.build/acme/weather"),
+				MigrateWithIncludeImports(),
+				MigrateWithIncludeWKT(),
+				MigrateWithTypes(
+					[]string{
+						"x.y.z.Message1",
+						"x.y.Message2",
+					},
+				),
+				MigrateWithExcludePaths(
+					[]string{
+						"x/y/a.proto",
+						"x/b.proto",
+					},
+				),
+				MigrateWithIncludePaths(
+					[]string{
+						"x/y/",
+						"x/z",
+					},
+				),
+			},
+		},
+		{
 			description:       "json",
 			fileName:          "buf.gen.hello.json",
 			v1Content:         v1ContentJSON,
