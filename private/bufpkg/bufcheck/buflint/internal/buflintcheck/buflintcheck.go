@@ -969,9 +969,6 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 	return nil
 }
 
-// CheckValidateRulesTypesMatch is a check function.
-var CheckValidateRulesTypesMatch = newMessageCheckFunc(checkValidateRulesTypesMatch)
-
 var (
 	// fieldConstraintsDesc provides a Descriptor for validate.FieldConstraints.
 	fieldConstraintsDesc = (*validate.FieldConstraints)(nil).ProtoReflect().Descriptor()
@@ -981,6 +978,9 @@ var (
 	fieldConstraintsOneOfDesc = fieldConstraintsDesc.Oneofs().ByName("type")
 )
 
+// CheckValidateRulesTypesMatch is a check function.
+var CheckValidateRulesTypesMatch = newMessageCheckFunc(checkValidateRulesTypesMatch)
+
 func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) error {
 	for _, field := range message.Fields() {
 		data, err := getDataByExtension(field, validate.E_Field)
@@ -989,7 +989,7 @@ func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) erro
 		}
 		var constraints validate.FieldConstraints
 		if err := proto.Unmarshal(data, &constraints); err != nil {
-			return fmt.Errorf("could not unmarshal expected validate.disabled into validate.MessageConstraints: %v", err)
+			return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
 		}
 		constraintsRefl := constraints.ProtoReflect()
 		setOneOf := constraintsRefl.WhichOneof(fieldConstraintsOneOfDesc)
@@ -998,12 +998,11 @@ func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) erro
 		}
 
 		got := field.Type()
-		expected := getType(setOneOf.Name())
+		expected := getTypeName(setOneOf.Name())
 		if got != expected {
 			add(field, field.Location(), nil, "constraint type mismatch on %q, expected %q but got %s", field.FullName(), expected, got)
 		}
 	}
-
 	return nil
 }
 
@@ -1014,16 +1013,16 @@ func getDataByExtension(field protosource.OptionExtensionDescriptor, extensionTy
 	}
 	fieldConstraints, ok := extension.(*dynamicpb.Message)
 	if !ok {
-		return nil, fmt.Errorf("could not convert expected validate.disabled into bool, was %T", extension)
+		return nil, fmt.Errorf("unexpected extension type for field got %T", extension)
 	}
 	data, err := proto.Marshal(fieldConstraints)
 	if err != nil {
-		return nil, fmt.Errorf("could not marshal expected validate.disabled into bytes: %v", err)
+		return nil, fmt.Errorf("marshal error for field: %v", err)
 	}
 	return data, nil
 }
 
-func getType(in protoreflect.Name) descriptorpb.FieldDescriptorProto_Type {
+func getTypeName(in protoreflect.Name) descriptorpb.FieldDescriptorProto_Type {
 	switch in {
 	case "float":
 		return descriptorpb.FieldDescriptorProto_TYPE_FLOAT
