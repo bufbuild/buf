@@ -482,13 +482,11 @@ func getExternalInputConfigV2(
 		inputConfig.TextImage = &path
 	case buffetch.FormatDir:
 		inputConfig.Directory = &path
-		logger.Sugar().Warn(
-			fmt.Sprintf(
-				`directory: %s is set based on input, and it should be interpreted as relative to the call site of buf.
+		logger.Sugar().Warnf(
+			`directory: %s is set based on input, and it should be interpreted as relative to the call site of buf.
 For example, when running buf generate --template configs/buf.gen.yaml --migrate with directory: protos,
 buf will look in protos, not config/protos.`,
-				path,
-			),
+			path,
 		)
 	case buffetch.FormatGit:
 		inputConfig.GitRepo = &path
