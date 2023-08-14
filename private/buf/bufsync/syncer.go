@@ -31,6 +31,15 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// lookbackCommitsLimit is the amount of commits that we will look back before the start sync
+	// point to attach old git tags. We might allow customizing this value in the future.
+	lookbackCommitsLimit = 5
+	// lookbackTimeLimit is how old we will look back (git commit timestamps) before the start sync
+	// point to attach old git tags. We might allow customizing this value in the future.
+	lookbackTimeLimit = 24 * time.Hour
+)
+
 type syncer struct {
 	logger                    *zap.Logger
 	repo                      git.Repository
@@ -657,11 +666,6 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 	if err != nil {
 		return fmt.Errorf("find lookback starting points for branch %s: %w", branch, err)
 	}
-	const (
-		// TODO make it customizable
-		lookbackCommitsLimit = 5
-		lookbackTimeLimit    = 24 * time.Hour
-	)
 	timeLimit := time.Now().Add(-lookbackTimeLimit)
 	stopLoopErr := errors.New("stop loop")
 	for moduleDir, startPoint := range moduleToStartPoint {
@@ -680,11 +684,6 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 		}
 		var lookbackCommitsCount int
 		forEachOldCommitFunc := func(oldCommit git.Commit) error {
-			// The first commit (git start sync point) might be or might be not already synced, depending
-			// if it's the first time this branch is synced. We'll try to attach "old" tags in this commit
-			// anyway, in case of the former. If it's not already synced, then we'll WARN a Git hash Not
-			// Found, but the tag will be synced anyway when that commit is processed in the sync commits
-			// func.
 			lookbackCommitsCount++
 			// For the lookback into older commits to stop, both lookback limits (amount of commits and
 			// timespan) need to be met.
