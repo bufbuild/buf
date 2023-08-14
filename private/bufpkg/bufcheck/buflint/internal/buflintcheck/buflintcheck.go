@@ -991,14 +991,9 @@ func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) erro
 		if err := proto.Unmarshal(data, &constraints); err != nil {
 			return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
 		}
-		constraintsRefl := constraints.ProtoReflect()
-		setOneof := constraintsRefl.WhichOneof(fieldConstraintsTypeOneofDesc)
-		if setOneof == nil {
-			continue
-		}
 
 		got := field.Type()
-		expected := getTypeName(setOneof.Name())
+		expected := getTypeName(constraints)
 		if got != expected {
 			add(field, field.Location(), nil, "constraint type mismatch on %q, expected %q but got %s", field.FullName(), expected, got)
 		}
@@ -1022,40 +1017,45 @@ func getDataByExtension(field protosource.OptionExtensionDescriptor, extensionTy
 	return data, nil
 }
 
-func getTypeName(in protoreflect.Name) descriptorpb.FieldDescriptorProto_Type {
-	switch in {
-	case "float":
+func getTypeName(in validate.FieldConstraints) descriptorpb.FieldDescriptorProto_Type {
+	switch in.Type.(type) {
+	case *validate.FieldConstraints_Float:
 		return descriptorpb.FieldDescriptorProto_TYPE_FLOAT
-	case "double":
+	case *validate.FieldConstraints_Double:
 		return descriptorpb.FieldDescriptorProto_TYPE_DOUBLE
-	case "int32":
+	case *validate.FieldConstraints_Int32:
 		return descriptorpb.FieldDescriptorProto_TYPE_INT32
-	case "int64":
+	case *validate.FieldConstraints_Int64:
 		return descriptorpb.FieldDescriptorProto_TYPE_INT64
-	case "uint32":
+	case *validate.FieldConstraints_Uint32:
 		return descriptorpb.FieldDescriptorProto_TYPE_UINT32
-	case "uint64":
+	case *validate.FieldConstraints_Uint64:
 		return descriptorpb.FieldDescriptorProto_TYPE_UINT64
-	case "sint32":
+	case *validate.FieldConstraints_Sint32:
 		return descriptorpb.FieldDescriptorProto_TYPE_SINT32
-	case "sint64":
+	case *validate.FieldConstraints_Sint64:
 		return descriptorpb.FieldDescriptorProto_TYPE_SINT64
-	case "fixed32":
+	case *validate.FieldConstraints_Fixed32:
 		return descriptorpb.FieldDescriptorProto_TYPE_FIXED32
-	case "fixed64":
+	case *validate.FieldConstraints_Fixed64:
 		return descriptorpb.FieldDescriptorProto_TYPE_FIXED64
-	case "sfixed32":
+	case *validate.FieldConstraints_Sfixed32:
 		return descriptorpb.FieldDescriptorProto_TYPE_SFIXED32
-	case "sfixed64":
+	case *validate.FieldConstraints_Sfixed64:
 		return descriptorpb.FieldDescriptorProto_TYPE_SFIXED64
-	case "bool":
+	case *validate.FieldConstraints_Bool:
 		return descriptorpb.FieldDescriptorProto_TYPE_BOOL
-	case "string":
+	case *validate.FieldConstraints_String_:
 		return descriptorpb.FieldDescriptorProto_TYPE_STRING
-	case "bytes":
+	case *validate.FieldConstraints_Bytes:
 		return descriptorpb.FieldDescriptorProto_TYPE_BYTES
-	case "enum":
+	case *validate.FieldConstraints_Enum:
 		return descriptorpb.FieldDescriptorProto_TYPE_ENUM
+	//case *validate.FieldConstraints_Repeated:
+	//case *validate.FieldConstraints_Map:
+	//case *validate.FieldConstraints_Any:
+	//case *validate.FieldConstraints_Duration:
+	//case *validate.FieldConstraints_Timestamp:
 	default:
 		return descriptorpb.FieldDescriptorProto_TYPE_MESSAGE
 	}
