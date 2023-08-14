@@ -935,6 +935,7 @@ func TestCommentIgnoresCascadeOn(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
+	t.Parallel()
 	t.Run("validate_rules_types_match", func(t *testing.T) {
 		testLint(t, "validate_rules_types_match",
 			bufanalysistesting.NewFileAnnotation(t, "a.proto", 10, 5, 10, 65, "VALIDATE_RULES_TYPES_MATCH"),
