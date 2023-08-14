@@ -39,9 +39,23 @@ func (o *optionExtensionDescriptor) OptionExtension(extensionType protoreflect.E
 	if extensionType.TypeDescriptor().ContainingMessage().FullName() != o.message.ProtoReflect().Descriptor().FullName() {
 		return nil, false
 	}
+
 	if !proto.HasExtension(o.message, extensionType) {
 		return nil, false
 	}
+
+	if extensionType.TypeDescriptor().Kind() == protoreflect.MessageKind {
+		var val any
+		proto.RangeExtensions(o.message, func(extTyp protoreflect.ExtensionType, extVal interface{}) bool {
+			if extTyp.TypeDescriptor().FullName() == extensionType.TypeDescriptor().FullName() {
+				val = extVal
+				return false
+			}
+			return true
+		})
+		return val, val != nil
+	}
+
 	return proto.GetExtension(o.message, extensionType), true
 }
 

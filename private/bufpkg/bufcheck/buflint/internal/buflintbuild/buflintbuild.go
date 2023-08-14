@@ -348,6 +348,12 @@ var (
 		"all files have a syntax specified",
 		newAdapter(buflintcheck.CheckSyntaxSpecified),
 	)
+	// ValidateRulesTypesMatchRuleBuilder is a rule builder.
+	ValidateRulesTypesMatchRuleBuilder = internal.NewNopRuleBuilder(
+		"VALIDATE_RULES_TYPES_MATCH",
+		"fields contain constraints which match the same type",
+		newAdapter(buflintcheck.CheckValidateRulesTypesMatch),
+	)
 )
 
 func newAdapter(

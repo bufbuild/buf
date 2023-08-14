@@ -20,9 +20,14 @@ package buflintcheck
 import (
 	"errors"
 	"fmt"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/dynamicpb"
 	"strconv"
 	"strings"
 
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -962,4 +967,97 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 		add(file, file.SyntaxLocation(), nil, `Files must have a syntax explicitly specified. If no syntax is specified, the file defaults to "proto2".`)
 	}
 	return nil
+}
+
+// CheckValidateRulesTypesMatch is a check function.
+var CheckValidateRulesTypesMatch = newMessageCheckFunc(checkValidateRulesTypesMatch)
+
+var (
+	// fieldConstraintsDesc provides a Descriptor for validate.FieldConstraints.
+	fieldConstraintsDesc = (*validate.FieldConstraints)(nil).ProtoReflect().Descriptor()
+
+	// fieldConstraintsOneOfDesc provides the OneOfDescriptor for the type union
+	// in FieldConstraints.
+	fieldConstraintsOneOfDesc = fieldConstraintsDesc.Oneofs().ByName("type")
+)
+
+func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) error {
+	for _, field := range message.Fields() {
+		data, err := getDataByExtension(field, validate.E_Field)
+		if err != nil {
+			return err
+		}
+		var constraints validate.FieldConstraints
+		if err := proto.Unmarshal(data, &constraints); err != nil {
+			return fmt.Errorf("could not unmarshal expected validate.disabled into validate.MessageConstraints: %v", err)
+		}
+		constraintsRefl := constraints.ProtoReflect()
+		setOneOf := constraintsRefl.WhichOneof(fieldConstraintsOneOfDesc)
+		if setOneOf == nil {
+			continue
+		}
+
+		got := field.Type()
+		expected := getType(setOneOf.Name())
+		if got != expected {
+			add(field, field.Location(), nil, "constraint type mismatch on %q, expected %q but got %s", field.FullName(), expected, got)
+		}
+	}
+
+	return nil
+}
+
+func getDataByExtension(field protosource.OptionExtensionDescriptor, extensionType protoreflect.ExtensionType) ([]byte, error) {
+	extension, ok := field.OptionExtension(extensionType)
+	if !ok {
+		return nil, nil
+	}
+	fieldConstraints, ok := extension.(*dynamicpb.Message)
+	if !ok {
+		return nil, fmt.Errorf("could not convert expected validate.disabled into bool, was %T", extension)
+	}
+	data, err := proto.Marshal(fieldConstraints)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal expected validate.disabled into bytes: %v", err)
+	}
+	return data, nil
+}
+
+func getType(in protoreflect.Name) descriptorpb.FieldDescriptorProto_Type {
+	switch in {
+	case "float":
+		return descriptorpb.FieldDescriptorProto_TYPE_FLOAT
+	case "double":
+		return descriptorpb.FieldDescriptorProto_TYPE_DOUBLE
+	case "int32":
+		return descriptorpb.FieldDescriptorProto_TYPE_INT32
+	case "int64":
+		return descriptorpb.FieldDescriptorProto_TYPE_INT64
+	case "uint32":
+		return descriptorpb.FieldDescriptorProto_TYPE_UINT32
+	case "uint64":
+		return descriptorpb.FieldDescriptorProto_TYPE_UINT64
+	case "sint32":
+		return descriptorpb.FieldDescriptorProto_TYPE_SINT32
+	case "sint64":
+		return descriptorpb.FieldDescriptorProto_TYPE_SINT64
+	case "fixed32":
+		return descriptorpb.FieldDescriptorProto_TYPE_FIXED32
+	case "fixed64":
+		return descriptorpb.FieldDescriptorProto_TYPE_FIXED64
+	case "sfixed32":
+		return descriptorpb.FieldDescriptorProto_TYPE_SFIXED32
+	case "sfixed64":
+		return descriptorpb.FieldDescriptorProto_TYPE_SFIXED64
+	case "bool":
+		return descriptorpb.FieldDescriptorProto_TYPE_BOOL
+	case "string":
+		return descriptorpb.FieldDescriptorProto_TYPE_STRING
+	case "bytes":
+		return descriptorpb.FieldDescriptorProto_TYPE_BYTES
+	case "enum":
+		return descriptorpb.FieldDescriptorProto_TYPE_ENUM
+	default:
+		return descriptorpb.FieldDescriptorProto_TYPE_MESSAGE
+	}
 }
