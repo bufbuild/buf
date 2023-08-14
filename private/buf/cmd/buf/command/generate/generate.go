@@ -325,24 +325,48 @@ func run(
 		if inputSpecified != "" {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithInput(inputSpecified))
 		}
+		// After migration, continue to generate as if input is not specified.
+		// This avoids an unexpected behavior in the following case, consider running:
+		// buf generate buf.build/acme/somerepo --migrate
+		// where in buf.gen.yaml there is:
+		// ...
+		// types:
+		//   include:
+		//     - type1
+		// The expected generation result should include only `type1` (and its trasitive closure).
+		// Updating the file to v2 would make it look like:
+		// ...
+		// inputs:
+		//   - module: buf.buld/acme/somerepo
+		//     types:
+		//       - type1
+		// Continuing to generate with CLI input (buf.build/acme/somerepo) + buf.gen.yaml in v2
+		// will result in ignoring `inputs` section in buf.gen.yaml completely, which means the
+		// filter on `type1` will be ignored.
+		inputSpecified = ""
 		if flags.Template != "" {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithGenTemplate(flags.Template))
 		}
 		if flags.IncludeImports {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludeImports())
 		}
+		flags.IncludeImports = false
 		if flags.IncludeWKT {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludeWKT())
 		}
-		if len(flags.Types) > 0 {
+		flags.IncludeWKT = false
+		if len(includedTypesFromCLI) > 0 {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithTypes(includedTypesFromCLI))
 		}
+		includedTypesFromCLI = nil
 		if len(flags.Paths) > 0 {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludePaths(flags.Paths))
 		}
+		flags.Paths = nil
 		if len(flags.ExcludePaths) > 0 {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithExcludePaths(flags.ExcludePaths))
 		}
+		flags.ExcludePaths = nil
 		err = bufgen.Migrate(ctx, logger, readWriteBucket, migrateOptions...)
 		if err != nil {
 			return err
