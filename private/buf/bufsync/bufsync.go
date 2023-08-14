@@ -291,7 +291,14 @@ type ModuleDefaultBranchGetter func(
 // commit.
 //
 // It's expected to return the BSR commit name to which the tags were attached.
-type OldTagsAttacher func(ctx context.Context, module bufmoduleref.ModuleIdentity, hash git.Hash, tags []string) (string, error)
+type OldTagsAttacher func(
+	ctx context.Context,
+	module bufmoduleref.ModuleIdentity,
+	hash git.Hash,
+	author git.Ident,
+	committer git.Ident,
+	tags []string,
+) (string, error)
 
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {

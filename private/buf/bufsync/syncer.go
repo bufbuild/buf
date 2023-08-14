@@ -718,7 +718,7 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 			)
 			// Valid module in this commit to attach tags to. If attaching the older tags fails, we'll
 			// WARN+continue to not block actual pending commits to sync in this run.
-			bsrCommitName, err := s.oldTagsAttacher(ctx, targetModuleIdentity, oldCommit.Hash(), tagsToAttach)
+			bsrCommitName, err := s.oldTagsAttacher(ctx, targetModuleIdentity, oldCommit.Hash(), oldCommit.Author(), oldCommit.Committer(), tagsToAttach)
 			if err != nil {
 				logger.Warn("attach older tags failed", zap.Error(err))
 				return nil

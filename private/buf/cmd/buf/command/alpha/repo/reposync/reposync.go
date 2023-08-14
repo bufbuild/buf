@@ -334,15 +334,30 @@ func defaultBranchGetter(clientConfig *connectclient.Config) bufsync.ModuleDefau
 }
 
 func oldTagsAttacher(clientConfig *connectclient.Config) bufsync.OldTagsAttacher {
-	return func(ctx context.Context, module bufmoduleref.ModuleIdentity, hash git.Hash, tags []string) (string, error) {
+	return func(
+		ctx context.Context,
+		module bufmoduleref.ModuleIdentity,
+		hash git.Hash,
+		author git.Ident,
+		committer git.Ident,
+		tags []string,
+	) (string, error) {
 		service := connectclient.Make(clientConfig, module.Remote(), registryv1alpha1connect.NewSyncServiceClient)
 		res, err := service.AttachGitTags(ctx, connect.NewRequest(&registryv1alpha1.AttachGitTagsRequest{
 			Owner:      module.Owner(),
 			Repository: module.Repository(),
 			Hash:       hash.Hex(),
-			Author:     nil,
-			Commiter:   nil,
-			Tags:       tags,
+			Author: &registryv1alpha1.GitIdentity{
+				Name:  author.Name(),
+				Email: author.Email(),
+				Time:  timestamppb.New(author.Timestamp()),
+			},
+			Commiter: &registryv1alpha1.GitIdentity{
+				Name:  committer.Name(),
+				Email: committer.Email(),
+				Time:  timestamppb.New(committer.Timestamp()),
+			},
+			Tags: tags,
 		}))
 		if err != nil {
 			if connect.CodeOf(err) == connect.CodeNotFound {
