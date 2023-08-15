@@ -31,6 +31,7 @@ import (
 )
 
 func TestBackfilltags(t *testing.T) {
+	t.Parallel()
 	repo, repoDir := scaffoldGitRepository(t)
 	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
 	require.NoError(t, err)
@@ -43,7 +44,7 @@ func TestBackfilltags(t *testing.T) {
 		syncableCommits        []*syncableCommit
 		fakeNowCommitLimitTime time.Time // to be sent as a fake clock and discard "old" commits
 	)
-	repo.ForEachCommit(func(commit git.Commit) error {
+	require.NoError(t, repo.ForEachCommit(func(commit git.Commit) error {
 		allCommitsHashes = append(allCommitsHashes, commit.Hash().Hex())
 		commitCount++
 		if commitCount <= 5 {
@@ -61,7 +62,7 @@ func TestBackfilltags(t *testing.T) {
 			mockBSRChecker.markSynced(commit.Hash().Hex())
 		}
 		return nil
-	})
+	}))
 	// reverse syncable commits, to leave them in time order parent -> children
 	// https://github.com/golang/go/wiki/SliceTricks#reversing
 	for i := len(syncableCommits)/2 - 1; i >= 0; i-- {
