@@ -296,6 +296,11 @@ func (s *syncer) hasSomethingForSync() bool {
 // Any error from the sync func aborts the sync process and leaves it partially complete, safe to
 // resume.
 func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFunc) error {
+	branchModulesForSync, ok := s.branchesToModulesForSync[branch]
+	if !ok || len(branchModulesForSync) == 0 {
+		// branch should not be synced, or no modules to sync in that branch
+		return nil
+	}
 	commitsForSync, err := s.branchSyncableCommits(ctx, branch)
 	if err != nil {
 		return fmt.Errorf("finding commits to sync: %w", err)
