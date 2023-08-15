@@ -969,23 +969,18 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 	return nil
 }
 
-var (
-	// fieldConstraintsDesc provides a Descriptor for validate.FieldConstraints.
-	fieldConstraintsDesc = (*validate.FieldConstraints)(nil).ProtoReflect().Descriptor()
-
-	// fieldConstraintsTypeOneofDesc provides the OneofDescriptor for the type oneof
-	// in FieldConstraints.
-	fieldConstraintsTypeOneofDesc = fieldConstraintsDesc.Oneofs().ByName("type")
-)
-
 // CheckValidateRulesTypesMatch is a check function.
 var CheckValidateRulesTypesMatch = newMessageCheckFunc(checkValidateRulesTypesMatch)
 
 func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) error {
 	for _, field := range message.Fields() {
-		data, err := getDataByExtension(field, validate.E_Field)
+		data, ok, err := getDataByExtension(field, validate.E_Field)
 		if err != nil {
 			return err
+		}
+		// no extension data
+		if !ok {
+			continue
 		}
 		var constraints validate.FieldConstraints
 		if err := proto.Unmarshal(data, &constraints); err != nil {
@@ -993,31 +988,39 @@ func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) erro
 		}
 
 		got := field.Type()
-		expected := getFieldDescriptorProtoTypeForFieldConstraintsType(constraints)
+		expected := getFieldDescriptorProtoTypeForFieldConstraintsType(&constraints)
 		if got != expected {
-			add(field, field.Location(), nil, "constraint type mismatch on %q, expected %q but got %s", field.FullName(), expected, got)
+			add(
+				field,
+				field.OptionExtensionLocation(validate.E_Field),
+				nil,
+				"constraint type mismatch on %q, expected %q but got %s",
+				field.FullName(),
+				expected,
+				got,
+			)
 		}
 	}
 	return nil
 }
 
-func getDataByExtension(field protosource.OptionExtensionDescriptor, extensionType protoreflect.ExtensionType) ([]byte, error) {
+func getDataByExtension(field protosource.OptionExtensionDescriptor, extensionType protoreflect.ExtensionType) ([]byte, bool, error) {
 	extension, ok := field.OptionExtension(extensionType)
 	if !ok {
-		return nil, nil
+		return nil, ok, nil
 	}
 	fieldConstraints, ok := extension.(*dynamicpb.Message)
 	if !ok {
-		return nil, fmt.Errorf("unexpected extension type for field got %T", extension)
+		return nil, ok, fmt.Errorf("unexpected extension type for field got %T", extension)
 	}
 	data, err := proto.Marshal(fieldConstraints)
 	if err != nil {
-		return nil, fmt.Errorf("marshal error for field: %v", err)
+		return nil, false, fmt.Errorf("marshal error for field: %v", err)
 	}
-	return data, nil
+	return data, true, nil
 }
 
-func getFieldDescriptorProtoTypeForFieldConstraintsType(in validate.FieldConstraints) descriptorpb.FieldDescriptorProto_Type {
+func getFieldDescriptorProtoTypeForFieldConstraintsType(in *validate.FieldConstraints) descriptorpb.FieldDescriptorProto_Type {
 	switch in.Type.(type) {
 	case *validate.FieldConstraints_Float:
 		return descriptorpb.FieldDescriptorProto_TYPE_FLOAT
