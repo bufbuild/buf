@@ -161,7 +161,8 @@ plugins:
 	templatePath := filepath.Join(tmpDir, "buf.gen.yaml")
 	err := os.WriteFile(templatePath, []byte(v1Content), 0600)
 	require.NoError(t, err)
-	protoDir := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	// protoDir := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	protoDir := filepath.Join("testdata", "paths")
 
 	// generate with v1 template
 	testRunSuccess(
@@ -179,6 +180,7 @@ plugins:
 	require.NoError(t, err)
 
 	// migrate from v1 to v2
+	outDir = filepath.Join(tmpDir, "migrate")
 	testRunSuccess(
 		t,
 		protoDir,
@@ -188,6 +190,21 @@ plugins:
 		outDir,
 		"--migrate",
 	)
+	bucketMigrate, err := storageosProvider.NewReadWriteBucket(
+		outDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+
+	diff, err := storage.DiffBytes(
+		context.Background(),
+		command.NewRunner(),
+		bucketV1,
+		bucketMigrate,
+		transformGolangProtocVersionToUnknown(t),
+	)
+	require.NoError(t, err)
+	assert.Empty(t, string(diff))
 
 	data, err := os.ReadFile(templatePath)
 	require.NoError(t, err)
@@ -212,7 +229,7 @@ plugins:
 	)
 	require.NoError(t, err)
 
-	diff, err := storage.DiffBytes(
+	diff, err = storage.DiffBytes(
 		context.Background(),
 		command.NewRunner(),
 		bucketV1,
