@@ -350,23 +350,18 @@ func run(
 		if flags.IncludeImports {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludeImports())
 		}
-		flags.IncludeImports = false
 		if flags.IncludeWKT {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludeWKT())
 		}
-		flags.IncludeWKT = false
 		if len(includedTypesFromCLI) > 0 {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithTypes(includedTypesFromCLI))
 		}
-		includedTypesFromCLI = nil
 		if len(flags.Paths) > 0 {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludePaths(flags.Paths))
 		}
-		flags.Paths = nil
 		if len(flags.ExcludePaths) > 0 {
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithExcludePaths(flags.ExcludePaths))
 		}
-		flags.ExcludePaths = nil
 		isMigrated, err := bufgen.Migrate(ctx, logger, readWriteBucket, migrateOptions...)
 		if err != nil {
 			return err
