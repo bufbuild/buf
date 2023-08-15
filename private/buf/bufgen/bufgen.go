@@ -173,14 +173,16 @@ func GenerateWithWasmEnabled() GenerateOption {
 	}
 }
 
-// Migrate updates the content of a generation template to the latest version.
+// Migrate updates the content of a generation template to the latest version,
+// and returns wether the template is updated. The only case where it returns
+// (false, nil) is when the template file is already in the latetest version.
 // It assumes the default location of the generation template if no option is provided.
 func Migrate(
 	ctx context.Context,
 	logger *zap.Logger,
 	readBucket storage.ReadBucket,
 	options ...MigrateOption,
-) error {
+) (bool, error) {
 	return migrate(
 		ctx,
 		logger,

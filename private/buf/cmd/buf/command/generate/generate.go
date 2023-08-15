@@ -367,33 +367,37 @@ func run(
 			migrateOptions = append(migrateOptions, bufgen.MigrateWithExcludePaths(flags.ExcludePaths))
 		}
 		flags.ExcludePaths = nil
-		err = bufgen.Migrate(ctx, logger, readWriteBucket, migrateOptions...)
+		isMigrated, err := bufgen.Migrate(ctx, logger, readWriteBucket, migrateOptions...)
 		if err != nil {
 			return err
 		}
-		updatedGenerateCommand := "buf generate"
-		if flags.Template != "" {
-			updatedGenerateCommand += getStringFlagText(templateFlagName, flags.Template)
-		}
-		if flags.BaseOutDirPath != baseOutDirFlagDefault {
-			updatedGenerateCommand += getStringFlagText(baseOutDirPathFlagName, flags.BaseOutDirPath)
-		}
-		if flags.ErrorFormat != errorFormatFlagDefault {
-			updatedGenerateCommand += getStringFlagText(errorFormatFlagName, flags.ErrorFormat)
-		}
-		if flags.Config != "" {
-			updatedGenerateCommand += getStringFlagText(configFlagName, flags.Config)
-		}
-		if flags.DisableSymlinks {
-			updatedGenerateCommand += getBoolFlagText(disableSymlinksFlagName)
-		}
-		_, err = fmt.Fprintf(
-			container.Stderr(),
-			"Migration finshed, to generate with buf, run:\n%s\n",
-			updatedGenerateCommand,
-		)
-		if err != nil {
-			return err
+		if isMigrated {
+			updatedGenerateCommand := "buf generate"
+			if flags.Template != "" {
+				updatedGenerateCommand += getStringFlagText(templateFlagName, flags.Template)
+			}
+			if flags.BaseOutDirPath != baseOutDirFlagDefault {
+				updatedGenerateCommand += getStringFlagText(baseOutDirPathFlagName, flags.BaseOutDirPath)
+			}
+			if flags.ErrorFormat != errorFormatFlagDefault {
+				updatedGenerateCommand += getStringFlagText(errorFormatFlagName, flags.ErrorFormat)
+			}
+			if flags.Config != "" {
+				updatedGenerateCommand += getStringFlagText(configFlagName, flags.Config)
+			}
+			if flags.DisableSymlinks {
+				updatedGenerateCommand += getBoolFlagText(disableSymlinksFlagName)
+			}
+			_, err = fmt.Fprintf(
+				container.Stderr(),
+				"Migration finshed, to generate with buf, run:\n%s\n",
+				updatedGenerateCommand,
+			)
+			if err != nil {
+				return err
+			}
+		} else {
+			logger.Sugar().Warnf("%s is already in v2", flags.Template)
 		}
 	}
 	runner := command.NewRunner()

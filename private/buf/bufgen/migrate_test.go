@@ -228,6 +228,7 @@ func TestMigrate(t *testing.T) {
 		expectedV2Content string
 		fileName          string
 		options           []MigrateOption
+		shouldBeMigrated  bool
 	}{
 		{
 			description:       "yaml",
@@ -257,6 +258,7 @@ func TestMigrate(t *testing.T) {
 					},
 				),
 			},
+			shouldBeMigrated: true,
 		},
 		{
 			description:       "yaml already in v2 does not return err",
@@ -286,6 +288,7 @@ func TestMigrate(t *testing.T) {
 					},
 				),
 			},
+			shouldBeMigrated: false,
 		},
 		{
 			description:       "json",
@@ -315,6 +318,7 @@ func TestMigrate(t *testing.T) {
 					},
 				),
 			},
+			shouldBeMigrated: true,
 		},
 	}
 	for _, testcase := range testcases {
@@ -330,13 +334,14 @@ func TestMigrate(t *testing.T) {
 			options := append(testcase.options, MigrateWithGenTemplate(path))
 			err := os.WriteFile(path, []byte(testcase.v1Content), 0600)
 			require.NoError(t, err)
-			err = Migrate(
+			isMigrated, err := Migrate(
 				ctx,
 				logger,
 				readBucket,
 				options...,
 			)
 			require.NoError(t, err)
+			require.Equal(t, testcase.shouldBeMigrated, isMigrated)
 			v2bytes, err := os.ReadFile(path)
 			require.NoError(t, err)
 			require.Equal(t, testcase.expectedV2Content, string(v2bytes))

@@ -64,7 +64,7 @@ func migrate(
 	logger *zap.Logger,
 	readBucket storage.ReadBucket,
 	options ...MigrateOption,
-) error {
+) (bool, error) {
 	migrateOptions := &migrateOptions{
 		input:       ".",
 		genTemplate: ExternalConfigFilePath,
@@ -76,7 +76,7 @@ func migrate(
 	case ".json", ".yaml", ".yml":
 		// OK
 	default:
-		return fmt.Errorf(
+		return false, fmt.Errorf(
 			"invalid template: %q, migration can only apply to a file on disk with extension .yaml, .yml or .json",
 			migrateOptions.genTemplate,
 		)
@@ -89,29 +89,28 @@ func migrate(
 		internal.ReadConfigWithOverride(migrateOptions.genTemplate),
 	)
 	if err != nil {
-		return err
+		return false, err
 	}
 	var externalConfigVersion ExternalConfigVersion
 	err = unmarshalNonStrict(data, &externalConfigVersion)
 	if err != nil {
-		return err
+		return false, err
 	}
 	switch externalConfigVersion.Version {
 	case internal.V1Beta1Version, internal.V1Version:
 		// OK. Also note that a file in v1beta1 is accepted by bufgenv1.ReadConfigV1.
 	case internal.V2Version:
-		logger.Sugar().Warnf("%s is already in V2", migrateOptions.genTemplate)
-		return nil
+		return false, nil
 	default:
-		return fmt.Errorf("unknown version: %s", externalConfigVersion.Version)
+		return false, fmt.Errorf("unknown version: %s", externalConfigVersion.Version)
 	}
 	var externalConfigV1 ExternalConfigV1
 	err = unmarshalStrict(data, &externalConfigV1)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if err != nil {
-		return err
+		return false, err
 	}
 	externalConifgV2, err := convertConfigV1ToExternalConfigV2(
 		ctx,
@@ -127,7 +126,7 @@ func migrate(
 		migrateOptions.includeWKT,
 	)
 	if err != nil {
-		return err
+		return false, err
 	}
 	// Write the external config v2.
 	var configV2Data []byte
@@ -135,21 +134,25 @@ func migrate(
 	case ".json":
 		configV2Data, err = json.MarshalIndent(&externalConifgV2, "", "  ")
 		if err != nil {
-			return err
+			return false, err
 		}
 	case ".yaml", ".yml":
 		configV2Data, err = encoding.MarshalYAML(&externalConifgV2)
 		if err != nil {
-			return err
+			return false, err
 		}
 	default:
 		// This should not happen because we already checked this at the beginning of this function.
-		return fmt.Errorf(
+		return false, fmt.Errorf(
 			"invalid template: %q, migration can only apply to a file on disk with extension .yaml, .yml or .json",
 			migrateOptions.genTemplate,
 		)
 	}
-	return os.WriteFile(migrateOptions.genTemplate, configV2Data, 0600)
+	err = os.WriteFile(migrateOptions.genTemplate, configV2Data, 0600)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func convertConfigV1ToExternalConfigV2(
