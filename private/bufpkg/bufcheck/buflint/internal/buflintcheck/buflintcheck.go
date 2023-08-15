@@ -993,7 +993,7 @@ func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) erro
 		}
 
 		got := field.Type()
-		expected := getTypeName(constraints)
+		expected := getFieldDescriptorProtoTypeForFieldConstraintsType(constraints)
 		if got != expected {
 			add(field, field.Location(), nil, "constraint type mismatch on %q, expected %q but got %s", field.FullName(), expected, got)
 		}
@@ -1017,7 +1017,7 @@ func getDataByExtension(field protosource.OptionExtensionDescriptor, extensionTy
 	return data, nil
 }
 
-func getTypeName(in validate.FieldConstraints) descriptorpb.FieldDescriptorProto_Type {
+func getFieldDescriptorProtoTypeForFieldConstraintsType(in validate.FieldConstraints) descriptorpb.FieldDescriptorProto_Type {
 	switch in.Type.(type) {
 	case *validate.FieldConstraints_Float:
 		return descriptorpb.FieldDescriptorProto_TYPE_FLOAT
