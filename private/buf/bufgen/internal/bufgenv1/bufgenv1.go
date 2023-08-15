@@ -167,6 +167,15 @@ func (g *Generator) Generate(
 	return nil
 }
 
+// NewConfigV1 returns a Config in v1.
+func NewConfigV1(
+	logger *zap.Logger,
+	externalConfig ExternalConfigV1,
+	fileName string, // for error reporting
+) (*Config, error) {
+	return newConfigV1(logger, externalConfig, fileName)
+}
+
 // ExternalConfigV1 is an external configuration.
 type ExternalConfigV1 struct {
 	Version string                   `json:"version,omitempty" yaml:"version,omitempty"`

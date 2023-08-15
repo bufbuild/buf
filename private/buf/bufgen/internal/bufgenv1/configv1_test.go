@@ -35,7 +35,7 @@ import (
 func TestReadConfigV1Beta1(t *testing.T) {
 	t.Parallel()
 	truth := true
-	successConfig := &config{
+	successConfig := &Config{
 		PluginConfigs: []bufgenplugin.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
@@ -57,7 +57,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 			},
 		},
 	}
-	successConfig2 := &config{
+	successConfig2 := &Config{
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_SPEED,
@@ -76,7 +76,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 			),
 		},
 	}
-	successConfig3 := &config{
+	successConfig3 := &Config{
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
@@ -95,7 +95,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 			),
 		},
 	}
-	successConfig4 := &config{
+	successConfig4 := &Config{
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
@@ -118,7 +118,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 	readBucket, err := storagemem.NewReadBucket(nil)
 	require.NoError(t, err)
 
-	testReadConfigSuccess := func(t *testing.T, configPath string, expected *config) {
+	testReadConfigSuccess := func(t *testing.T, configPath string, expected *Config) {
 		t.Helper()
 		config, err := readConfigV1(ctx, nopLogger, readBucket, internal.ReadConfigWithOverride(configPath))
 		require.NoError(t, err)
@@ -147,7 +147,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 func TestReadConfigV1(t *testing.T) {
 	t.Parallel()
 	truth := true
-	successConfig := &config{
+	successConfig := &Config{
 		PluginConfigs: []bufgenplugin.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
@@ -182,7 +182,7 @@ func TestReadConfigV1(t *testing.T) {
 			},
 		},
 	}
-	successConfig2 := &config{
+	successConfig2 := &Config{
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_SPEED,
@@ -201,7 +201,7 @@ func TestReadConfigV1(t *testing.T) {
 			),
 		},
 	}
-	successConfig3 := &config{
+	successConfig3 := &Config{
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
@@ -220,7 +220,7 @@ func TestReadConfigV1(t *testing.T) {
 			),
 		},
 	}
-	successConfig4 := &config{
+	successConfig4 := &Config{
 		PluginConfigs: []bufgenplugin.PluginConfig{
 			mustCreateCuratedRemotePlugin(
 				t,
@@ -231,7 +231,7 @@ func TestReadConfigV1(t *testing.T) {
 			),
 		},
 	}
-	successConfig5 := &config{
+	successConfig5 := &Config{
 		PluginConfigs: []bufgenplugin.PluginConfig{
 			mustCreateCuratedRemotePlugin(
 				t,
@@ -248,7 +248,7 @@ func TestReadConfigV1(t *testing.T) {
 		"repo",
 	)
 	require.NoError(t, err)
-	successConfig6 := &config{
+	successConfig6 := &Config{
 		ManagedConfig: &ManagedConfig{
 			JavaPackagePrefixConfig: &JavaPackagePrefixConfig{
 				Default:  "org",
@@ -266,7 +266,7 @@ func TestReadConfigV1(t *testing.T) {
 			),
 		},
 	}
-	successConfig7 := &config{
+	successConfig7 := &Config{
 		PluginConfigs: []bufgenplugin.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
@@ -303,7 +303,7 @@ func TestReadConfigV1(t *testing.T) {
 		"owner",
 		"baz",
 	)
-	successConfig8 := &config{
+	successConfig8 := &Config{
 		ManagedConfig: &ManagedConfig{
 			CsharpNameSpaceConfig: &CsharpNameSpaceConfig{
 				Except: []bufmoduleref.ModuleIdentity{
@@ -347,7 +347,7 @@ func TestReadConfigV1(t *testing.T) {
 			),
 		},
 	}
-	successConfig9 := &config{
+	successConfig9 := &Config{
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default: descriptorpb.FileOptions_CODE_SIZE,
@@ -627,7 +627,7 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, nopLogger, readBucket, filepath.Join("testdata", "v1", "gen_error15.yaml"))
 	assertContainsReadConfigError(t, nopLogger, readBucket, filepath.Join("testdata", "v1", "gen_error15.yaml"), "the remote field no longer works")
 
-	successConfig = &config{
+	successConfig = &Config{
 		PluginConfigs: []bufgenplugin.PluginConfig{
 			mustCreateBinaryPlugin(
 				t,
@@ -709,7 +709,7 @@ func mustCreateModuleIdentity(
 	return moduleIdentity
 }
 
-func assertConfigsWithEqualObjcPrefix(t *testing.T, successConfig *config, config *config) {
+func assertConfigsWithEqualObjcPrefix(t *testing.T, successConfig *Config, config *Config) {
 	require.Equal(t, successConfig.PluginConfigs, config.PluginConfigs)
 	require.NotNil(t, successConfig.ManagedConfig)
 	require.NotNil(t, config.ManagedConfig)
@@ -722,7 +722,7 @@ func assertConfigsWithEqualObjcPrefix(t *testing.T, successConfig *config, confi
 	assertEqualModuleIdentityKeyedMaps(t, successObjcPrefixConfig.Override, objcPrefixConfig.Override)
 }
 
-func assertConfigsWithEqualCsharpnamespace(t *testing.T, successConfig *config, config *config) {
+func assertConfigsWithEqualCsharpnamespace(t *testing.T, successConfig *Config, config *Config) {
 	require.Equal(t, successConfig.PluginConfigs, config.PluginConfigs)
 	require.NotNil(t, successConfig.ManagedConfig)
 	require.NotNil(t, config.ManagedConfig)
@@ -734,7 +734,7 @@ func assertConfigsWithEqualCsharpnamespace(t *testing.T, successConfig *config, 
 	assertEqualModuleIdentityKeyedMaps(t, successCsharpConfig.Override, csharpConfig.Override)
 }
 
-func assertConfigsWithEqualRubyPackage(t *testing.T, successConfig *config, config *config) {
+func assertConfigsWithEqualRubyPackage(t *testing.T, successConfig *Config, config *Config) {
 	require.Equal(t, successConfig.PluginConfigs, config.PluginConfigs)
 	require.NotNil(t, successConfig.ManagedConfig)
 	require.NotNil(t, config.ManagedConfig)
@@ -746,7 +746,7 @@ func assertConfigsWithEqualRubyPackage(t *testing.T, successConfig *config, conf
 	assertEqualModuleIdentityKeyedMaps(t, successRubyConfig.Override, rubyConfig.Override)
 }
 
-func assertConfigsWithEqualOptimizeFor(t *testing.T, successConfig *config, config *config) {
+func assertConfigsWithEqualOptimizeFor(t *testing.T, successConfig *Config, config *Config) {
 	require.Equal(t, successConfig.PluginConfigs, config.PluginConfigs)
 	require.NotNil(t, successConfig.ManagedConfig)
 	require.NotNil(t, config.ManagedConfig)

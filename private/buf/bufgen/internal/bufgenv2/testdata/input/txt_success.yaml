@@ -1,0 +1,26 @@
+version: v2
+plugins:
+  - binary: "protoc-gen-go"
+    out: "gen/out"
+inputs:
+  - text_image: a/b/c
+    compression: gzip
+    types:
+      - a.b.c1
+      - a.b.c2
+    exclude_paths:
+      - x/y/z1
+      - x/y/z2
+    include_paths:
+      - x/y/w1
+      - x/y/w2
+  # should infer compression type gzip
+  - text_image: a/b/c.txtpb.gz
+  # should infer compression type zstd
+  - text_image: a/b/c.txtpb.zst
+  # should infer compression type none
+  - text_image: a/b/c.txtpb
+  # should infer compression type none
+  - text_image: a/b/c
+  # read from stdin
+  - text_image: "-"

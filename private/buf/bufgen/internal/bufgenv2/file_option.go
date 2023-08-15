@@ -172,7 +172,7 @@ var (
 	}
 )
 
-// fileOption is a file option in managed mode
+// FileOption is a file option in managed mode
 type fileOption int
 
 // fileOptionGroup is a group of file options, and file options modify the same

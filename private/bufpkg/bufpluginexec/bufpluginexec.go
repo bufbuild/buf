@@ -255,6 +255,11 @@ func NewBinaryHandler(runner command.Runner, pluginPath string, pluginArgs []str
 	return newBinaryHandler(runner, pluginPath, pluginArgs), nil
 }
 
+// FindPluginPath returns the path to a binary plugin, if found locally.
+func FindPluginPath(path string) (string, error) {
+	return unsafeLookPath(path)
+}
+
 type handlerOptions struct {
 	protocPath  string
 	pluginPath  []string

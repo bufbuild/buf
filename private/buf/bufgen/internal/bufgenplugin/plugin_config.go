@@ -20,6 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufgen/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 type localPluginConfig struct {
@@ -117,7 +118,10 @@ func (c *binaryPluginConfig) PluginName() string {
 	if c.name != "" {
 		return c.name
 	}
-	return c.path[0]
+	if len(c.path) == 1 {
+		return c.path[0]
+	}
+	return stringutil.SliceToString(c.path)
 }
 
 func (c *binaryPluginConfig) Out() string {

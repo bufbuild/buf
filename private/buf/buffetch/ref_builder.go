@@ -316,6 +316,26 @@ func (r *refBuilder) GetBinaryImageRef(
 	return r.getImageRef(format, ImageEncodingBin, path, options...)
 }
 
+func (r *refBuilder) GetTextImageRef(
+	ctx context.Context,
+	format string,
+	path string,
+	options ...GetImageRefOption,
+) (_ Ref, retErr error) {
+	_, span := r.tracer.Start(ctx, "get_text_image_ref")
+	defer span.End()
+	defer func() {
+		if retErr != nil {
+			span.RecordError(retErr)
+			span.SetStatus(codes.Error, retErr.Error())
+		}
+	}()
+	if app.IsDevNull(path) {
+		return nil, newDevNullNotAllowedError(path, format)
+	}
+	return r.getImageRef(format, ImageEncodingTxtpb, path, options...)
+}
+
 func (r *refBuilder) getImageRef(format string, encoding ImageEncoding, path string, options ...GetImageRefOption) (Ref, error) {
 	getImageRefOptions := newGetImageRefOptions()
 	for _, option := range options {

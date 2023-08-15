@@ -533,6 +533,81 @@ func TestConfigSuccess(t *testing.T) {
 			},
 		},
 		{
+			testName: "Test text image",
+			file:     filepath.Join("input", "txt_success"),
+			expectedConfig: &Config{
+				Plugins: placeHolderPlugins,
+				Inputs: []*InputConfig{
+					{
+						InputRef: mustGetTextImageRef(
+							t,
+							ctx,
+							refBuilder,
+							"a/b/c",
+							buffetch.WithGetImageRefOption("gzip"),
+						),
+						Types: []string{
+							"a.b.c1",
+							"a.b.c2",
+						},
+						ExcludePaths: []string{
+							"x/y/z1",
+							"x/y/z2",
+						},
+						IncludePaths: []string{
+							"x/y/w1",
+							"x/y/w2",
+						},
+					},
+					{
+						InputRef: mustGetTextImageRef(
+							t,
+							ctx,
+							refBuilder,
+							"a/b/c.txtpb.gz",
+							buffetch.WithGetImageRefOption("gzip"),
+						),
+					},
+					{
+						InputRef: mustGetTextImageRef(
+							t,
+							ctx,
+							refBuilder,
+							"a/b/c.txtpb.zst",
+							buffetch.WithGetImageRefOption("zstd"),
+						),
+					},
+					{
+						InputRef: mustGetTextImageRef(
+							t,
+							ctx,
+							refBuilder,
+							"a/b/c.txtpb",
+							buffetch.WithGetImageRefOption("none"),
+						),
+					},
+					{
+						InputRef: mustGetTextImageRef(
+							t,
+							ctx,
+							refBuilder,
+							"a/b/c",
+							buffetch.WithGetImageRefOption("none"),
+						),
+					},
+					{
+						InputRef: mustGetTextImageRef(
+							t,
+							ctx,
+							refBuilder,
+							"-",
+							buffetch.WithGetImageRefOption("none"),
+						),
+					},
+				},
+			},
+		},
+		{
 			testName: "Test binary plugin",
 			file:     filepath.Join("plugin", "binary_success"),
 			expectedConfig: &Config{
@@ -1408,6 +1483,16 @@ func TestConfigError(t *testing.T) {
 			expectedError: newOptionNotAllowedForInputMessage("include_package_files", "json_image"),
 		},
 		{
+			testName:      "Test compression is validated for text image",
+			file:          filepath.Join("input", "txt_error1"),
+			expectedError: `unknown compression: "xyz" (valid values are "none,gzip,zstd")`,
+		},
+		{
+			testName:      "Test depth is not allowed for text image",
+			file:          filepath.Join("input", "txt_error2"),
+			expectedError: newOptionNotAllowedForInputMessage("depth", "text_image"),
+		},
+		{
 			testName:      "Test parsing invalid strategy",
 			file:          filepath.Join("plugin", "binary_error1"),
 			expectedError: newUnknowStategyMessage("invalid"),
@@ -1548,6 +1633,12 @@ func mustGetBinaryImageRef(t *testing.T, ctx context.Context, refBuilder buffetc
 
 func mustGetJSONImageRef(t *testing.T, ctx context.Context, refBuilder buffetch.RefBuilder, path string, options ...buffetch.GetImageRefOption) buffetch.Ref {
 	ref, err := refBuilder.GetJSONImageRef(ctx, "json_image", path, options...)
+	require.NoError(t, err)
+	return ref
+}
+
+func mustGetTextImageRef(t *testing.T, ctx context.Context, refBuilder buffetch.RefBuilder, path string, options ...buffetch.GetImageRefOption) buffetch.Ref {
+	ref, err := refBuilder.GetTextImageRef(ctx, "text_image", path, options...)
 	require.NoError(t, err)
 	return ref
 }

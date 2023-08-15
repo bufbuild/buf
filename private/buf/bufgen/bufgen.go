@@ -172,3 +172,65 @@ func GenerateWithWasmEnabled() GenerateOption {
 		options.wasmEnbaled = true
 	}
 }
+
+// Migrate updates the content of a generation template to the latest version,
+// and returns wether the template is updated. The only case where it returns
+// (false, nil) is when the template file is already in the latetest version.
+// It assumes the default location of the generation template if no option is provided.
+func Migrate(
+	ctx context.Context,
+	logger *zap.Logger,
+	readBucket storage.ReadBucket,
+	options ...MigrateOption,
+) (bool, error) {
+	return migrate(
+		ctx,
+		logger,
+		readBucket,
+		options...,
+	)
+}
+
+type MigrateOption func(*migrateOptions)
+
+func MigrateWithInput(input string) MigrateOption {
+	return func(options *migrateOptions) {
+		options.input = input
+	}
+}
+
+func MigrateWithGenTemplate(genTemplate string) MigrateOption {
+	return func(options *migrateOptions) {
+		options.genTemplate = genTemplate
+	}
+}
+
+func MigrateWithTypes(types []string) MigrateOption {
+	return func(options *migrateOptions) {
+		options.types = types
+	}
+}
+
+func MigrateWithIncludePaths(includePaths []string) MigrateOption {
+	return func(options *migrateOptions) {
+		options.includePaths = includePaths
+	}
+}
+
+func MigrateWithExcludePaths(excludePaths []string) MigrateOption {
+	return func(options *migrateOptions) {
+		options.excludePaths = excludePaths
+	}
+}
+
+func MigrateWithIncludeImports() MigrateOption {
+	return func(options *migrateOptions) {
+		options.includeImports = true
+	}
+}
+
+func MigrateWithIncludeWKT() MigrateOption {
+	return func(options *migrateOptions) {
+		options.includeWKT = true
+	}
+}

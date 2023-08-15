@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -124,6 +125,119 @@ func TestCompareGeneratedStubsGoogleapisPyi(t *testing.T) {
 		googleapisDirPath,
 		[]*testPluginInfo{{name: "pyi"}},
 	)
+}
+
+func TestCompareMigrateAndGenerate(t *testing.T) {
+	testingextended.SkipIfShort(t)
+	t.Parallel()
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+
+	tmpDir := t.TempDir()
+	v1Content := `version: v1
+managed:
+  enabled: true
+  cc_enable_arenas: false
+  java_multiple_files: false
+  java_package_prefix: com
+  java_string_check_utf8: false
+  optimize_for: CODE_SIZE
+  go_package_prefix:
+    default: github.com/acme/weather/private/gen/proto/go
+    except:
+      - buf.build/googleapis/googleapis
+    override:
+      buf.build/acme/weather: github.com/acme/weather/gen/proto/go
+  override:
+    JAVA_PACKAGE:
+      acme/weather/v1/weather.proto: "org"
+plugins:
+  - plugin: go
+    out: gen/proto/go
+    opt: paths=source_relative
+  - plugin: java
+    out: gen/java
+`
+	outDir := filepath.Join(tmpDir, "v1")
+	templatePath := filepath.Join(tmpDir, "buf.gen.yaml")
+	err := os.WriteFile(templatePath, []byte(v1Content), 0600)
+	require.NoError(t, err)
+	// protoDir := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	protoDir := filepath.Join("testdata", "paths")
+
+	// generate with v1 template
+	testRunSuccess(
+		t,
+		protoDir,
+		"--template",
+		templatePath,
+		"-o",
+		outDir,
+	)
+	bucketV1, err := storageosProvider.NewReadWriteBucket(
+		outDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+
+	// migrate from v1 to v2
+	outDir = filepath.Join(tmpDir, "migrate")
+	testRunSuccess(
+		t,
+		protoDir,
+		"--template",
+		templatePath,
+		"-o",
+		outDir,
+		"--migrate",
+	)
+	bucketMigrate, err := storageosProvider.NewReadWriteBucket(
+		outDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+
+	diff, err := storage.DiffBytes(
+		context.Background(),
+		command.NewRunner(),
+		bucketV1,
+		bucketMigrate,
+		transformGolangProtocVersionToUnknown(t),
+	)
+	require.NoError(t, err)
+	assert.Empty(t, string(diff))
+
+	data, err := os.ReadFile(templatePath)
+	require.NoError(t, err)
+	versionConfig := bufgen.ExternalConfigVersion{}
+	err = encoding.UnmarshalYAMLNonStrict(data, &versionConfig)
+	require.NoError(t, err)
+	require.Equal(t, "v2", versionConfig.Version)
+
+	// generate with v2 template
+	outDir = filepath.Join(tmpDir, "v2")
+	testRunSuccess(
+		t,
+		protoDir,
+		"--template",
+		templatePath,
+		"-o",
+		outDir,
+	)
+	bucketV2, err := storageosProvider.NewReadWriteBucket(
+		outDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+
+	diff, err = storage.DiffBytes(
+		context.Background(),
+		command.NewRunner(),
+		bucketV1,
+		bucketV2,
+		transformGolangProtocVersionToUnknown(t),
+	)
+	require.NoError(t, err)
+	assert.Empty(t, string(diff))
 }
 
 func TestCompareInsertionPointOutput(t *testing.T) {

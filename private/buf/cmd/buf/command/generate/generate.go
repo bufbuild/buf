@@ -45,6 +45,9 @@ const (
 	disableSymlinksFlagName     = "disable-symlinks"
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
+	migrateFlagName             = "migrate"
+	baseOutDirFlagDefault       = "."
+	errorFormatFlagDefault      = "text"
 )
 
 // NewCommand returns a new Command.
@@ -195,7 +198,7 @@ type flags struct {
 	Template        string
 	BaseOutDirPath  string
 	ErrorFormat     string
-	Files           []string
+	Files           []string // TODO: this is not used in code, it should be removed
 	Config          string
 	Paths           []string
 	IncludeImports  bool
@@ -206,6 +209,7 @@ type flags struct {
 	// want to find out what will break if we do.
 	Types           []string
 	TypesDeprecated []string
+	Migrate         bool
 	// special
 	InputHashtag string
 }
@@ -244,13 +248,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.BaseOutDirPath,
 		baseOutDirPathFlagName,
 		baseOutDirPathFlagShortName,
-		".",
+		baseOutDirFlagDefault,
 		`The base directory to generate to. This is prepended to the out directories in the generation template`,
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
-		"text",
+		errorFormatFlagDefault,
 		fmt.Sprintf(
 			"The format for build errors, printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
@@ -273,6 +277,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		typeDeprecatedFlagName,
 		nil,
 		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
+	)
+	flagSet.BoolVar(
+		&f.Migrate,
+		migrateFlagName,
+		false,
+		"Migrate the generation template to the latest version",
 	)
 	_ = flagSet.MarkDeprecated(typeDeprecatedFlagName, fmt.Sprintf("Use --%s instead", typeFlagName))
 	_ = flagSet.MarkHidden(typeDeprecatedFlagName)
@@ -298,9 +308,7 @@ func run(
 	if err != nil {
 		return err
 	}
-
 	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		".",
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
@@ -308,6 +316,67 @@ func run(
 	if err != nil {
 		return err
 	}
+	var includedTypesFromCLI []string
+	if len(flags.Types) > 0 || len(flags.TypesDeprecated) > 0 {
+		includedTypesFromCLI = append(flags.Types, flags.TypesDeprecated...)
+	}
+	if flags.Migrate {
+		migrateOptions := []bufgen.MigrateOption{}
+		if inputSpecified != "" {
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithInput(inputSpecified))
+		}
+		if flags.Template != "" {
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithGenTemplate(flags.Template))
+		}
+		if flags.IncludeImports {
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludeImports())
+		}
+		if flags.IncludeWKT {
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludeWKT())
+		}
+		if len(includedTypesFromCLI) > 0 {
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithTypes(includedTypesFromCLI))
+		}
+		if len(flags.Paths) > 0 {
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithIncludePaths(flags.Paths))
+		}
+		if len(flags.ExcludePaths) > 0 {
+			migrateOptions = append(migrateOptions, bufgen.MigrateWithExcludePaths(flags.ExcludePaths))
+		}
+		isMigrated, err := bufgen.Migrate(ctx, logger, readWriteBucket, migrateOptions...)
+		if err != nil {
+			return err
+		}
+		if isMigrated {
+			updatedGenerateCommand := "buf generate"
+			if flags.Template != "" {
+				updatedGenerateCommand += getStringFlagText(templateFlagName, flags.Template)
+			}
+			if flags.BaseOutDirPath != baseOutDirFlagDefault {
+				updatedGenerateCommand += getStringFlagText(baseOutDirPathFlagName, flags.BaseOutDirPath)
+			}
+			if flags.ErrorFormat != errorFormatFlagDefault {
+				updatedGenerateCommand += getStringFlagText(errorFormatFlagName, flags.ErrorFormat)
+			}
+			if flags.Config != "" {
+				updatedGenerateCommand += getStringFlagText(configFlagName, flags.Config)
+			}
+			if flags.DisableSymlinks {
+				updatedGenerateCommand += getBoolFlagText(disableSymlinksFlagName)
+			}
+			_, err = fmt.Fprintf(
+				container.Stderr(),
+				"Migration finshed, to generate with buf, run:\n%s\n",
+				updatedGenerateCommand,
+			)
+			if err != nil {
+				return err
+			}
+		} else {
+			logger.Sugar().Warnf("%s is already in v2", flags.Template)
+		}
+	}
+	runner := command.NewRunner()
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
@@ -320,10 +389,6 @@ func run(
 	)
 	if err != nil {
 		return err
-	}
-	var includedTypesFromCLI []string
-	if len(flags.Types) > 0 || len(flags.TypesDeprecated) > 0 {
-		includedTypesFromCLI = append(flags.Types, flags.TypesDeprecated...)
 	}
 	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
 		filepath.Join(
@@ -343,6 +408,7 @@ func run(
 		imageConfigReader,
 		wasmPluginExecutor,
 	)
+	// TODO: only put them in the list conditionally (if they are not empty values)
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithInputSpecified(inputSpecified),
 		bufgen.GenerateWithBaseOutDir(flags.BaseOutDirPath),
@@ -381,4 +447,12 @@ func run(
 		container,
 		generateOptions...,
 	)
+}
+
+func getStringFlagText(flagName string, value string) string {
+	return fmt.Sprintf(" --%s %s", flagName, value)
+}
+
+func getBoolFlagText(flagName string) string {
+	return fmt.Sprintf(" --%s", flagName)
 }

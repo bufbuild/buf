@@ -46,7 +46,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedDirRef(
-			formatDir,
+			FormatDir,
 			"path/to/some/dir",
 		),
 		"path/to/some/dir",
@@ -54,7 +54,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedDirRef(
-			formatDir,
+			FormatDir,
 			".",
 		),
 		".",
@@ -62,7 +62,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedDirRef(
-			formatDir,
+			FormatDir,
 			normalpath.Normalize(root),
 		),
 		root,
@@ -70,7 +70,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedDirRef(
-			formatDir,
+			FormatDir,
 			".",
 		),
 		"foo/..",
@@ -78,7 +78,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedDirRef(
-			formatDir,
+			FormatDir,
 			"../foo",
 		),
 		"../foo",
@@ -86,7 +86,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedDirRef(
-			formatDir,
+			FormatDir,
 			normalpath.Normalize(expectedAbsDir),
 		),
 		absPath,
@@ -94,7 +94,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file.tar",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -107,7 +107,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"/path/to/file.tar",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -120,7 +120,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file.tar",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -133,7 +133,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file.tar.gz",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -146,7 +146,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file.tar.gz",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -159,7 +159,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file.tgz",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -172,7 +172,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file.tgz",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -185,7 +185,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file.tar",
 			internal.FileSchemeHTTP,
 			internal.ArchiveTypeTar,
@@ -198,7 +198,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file.tar",
 			internal.FileSchemeHTTPS,
 			internal.ArchiveTypeTar,
@@ -211,7 +211,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatZip,
+			FormatZip,
 			"path/to/file.zip",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeZip,
@@ -224,7 +224,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatZip,
+			FormatZip,
 			"/path/to/file.zip",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeZip,
@@ -237,7 +237,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatZip,
+			FormatZip,
 			"path/to/file.zip",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeZip,
@@ -250,7 +250,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir.git",
 			internal.GitSchemeLocal,
 			nil,
@@ -263,7 +263,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir.git",
 			internal.GitSchemeLocal,
 			nil,
@@ -276,7 +276,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir.git",
 			internal.GitSchemeLocal,
 			git.NewBranchName("main"),
@@ -289,7 +289,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"/path/to/dir.git",
 			internal.GitSchemeLocal,
 			git.NewBranchName("main"),
@@ -302,7 +302,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir.git",
 			internal.GitSchemeLocal,
 			git.NewTagName("v1.0.0"),
@@ -315,7 +315,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"hello.com/path/to/dir.git",
 			internal.GitSchemeHTTP,
 			git.NewBranchName("main"),
@@ -328,7 +328,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"hello.com/path/to/dir.git",
 			internal.GitSchemeHTTPS,
 			git.NewBranchName("main"),
@@ -341,7 +341,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"user@hello.com:path/to/dir.git",
 			internal.GitSchemeSSH,
 			git.NewBranchName("main"),
@@ -354,7 +354,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"user@hello.com:path/to/dir.git",
 			internal.GitSchemeSSH,
 			git.NewRefName("refs/remotes/origin/HEAD"),
@@ -367,7 +367,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"user@hello.com:path/to/dir.git",
 			internal.GitSchemeSSH,
 			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "main"),
@@ -380,7 +380,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"user@hello.com:path/to/dir.git",
 			internal.GitSchemeSSH,
 			git.NewRefName("refs/remotes/origin/HEAD"),
@@ -393,7 +393,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"user@hello.com:path/to/dir.git",
 			internal.GitSchemeSSH,
 			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "main"),
@@ -406,7 +406,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir.git",
 			internal.GitSchemeLocal,
 			nil,
@@ -419,7 +419,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir.git",
 			internal.GitSchemeLocal,
 			nil,
@@ -432,7 +432,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir.git",
 			internal.GitSchemeLocal,
 			nil,
@@ -445,7 +445,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"user@hello.com:path/to/dir.git",
 			internal.GitSchemeGit,
 			git.NewBranchName("main"),
@@ -458,7 +458,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir.git",
 			internal.GitSchemeGit,
 			git.NewBranchName("main"),
@@ -471,7 +471,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"path/to/file.bin",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
@@ -481,7 +481,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"path/to/file.bin.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
@@ -491,7 +491,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"path/to/file.binpb",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
@@ -501,7 +501,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"path/to/file.binpb.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
@@ -511,7 +511,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatJSON,
+			FormatJSON,
 			"path/to/file.json",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
@@ -521,7 +521,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatJSON,
+			FormatJSON,
 			"path/to/file.json.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
@@ -531,7 +531,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatJSON,
+			FormatJSON,
 			"path/to/file.json.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
@@ -541,7 +541,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatJSON,
+			FormatJSON,
 			"path/to/file.json.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
@@ -551,7 +551,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatTxtpb,
+			FormatTxtpb,
 			"path/to/file.txtpb",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
@@ -561,7 +561,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatTxtpb,
+			FormatTxtpb,
 			"path/to/file.txtpb.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
@@ -571,7 +571,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatTxtpb,
+			FormatTxtpb,
 			"path/to/file.txtpb.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
@@ -581,7 +581,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatTxtpb,
+			FormatTxtpb,
 			"path/to/file.txtpb.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
@@ -591,7 +591,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"",
 			internal.FileSchemeStdio,
 			internal.CompressionTypeNone,
@@ -601,7 +601,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatJSON,
+			FormatJSON,
 			"",
 			internal.FileSchemeStdio,
 			internal.CompressionTypeNone,
@@ -611,7 +611,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatTxtpb,
+			FormatTxtpb,
 			"",
 			internal.FileSchemeStdio,
 			internal.CompressionTypeNone,
@@ -621,7 +621,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"",
 			internal.FileSchemeNull,
 			internal.CompressionTypeNone,
@@ -631,7 +631,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			FormatBin,
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
@@ -641,7 +641,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			FormatBin,
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
@@ -651,7 +651,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			FormatBin,
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
@@ -661,7 +661,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
@@ -671,7 +671,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
@@ -681,7 +681,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
@@ -691,7 +691,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"/path/to/dir",
 			internal.GitSchemeLocal,
 			git.NewBranchName("main"),
@@ -704,7 +704,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"/path/to/dir",
 			internal.GitSchemeLocal,
 			git.NewBranchName("main/foo"),
@@ -717,7 +717,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir",
 			internal.GitSchemeLocal,
 			git.NewTagName("main/foo"),
@@ -730,7 +730,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir",
 			internal.GitSchemeLocal,
 			git.NewTagName("main/foo"),
@@ -743,7 +743,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir",
 			internal.GitSchemeLocal,
 			git.NewTagName("main/foo"),
@@ -756,7 +756,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir",
 			internal.GitSchemeLocal,
 			git.NewTagName("main/foo"),
@@ -769,7 +769,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir",
 			internal.GitSchemeLocal,
 			git.NewRefName("refs/remotes/origin/HEAD"),
@@ -782,7 +782,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedGitRef(
-			formatGit,
+			FormatGit,
 			"path/to/dir",
 			internal.GitSchemeLocal,
 			git.NewRefName("refs/remotes/origin/HEAD"),
@@ -795,7 +795,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTargz,
+			FormatTargz,
 			"path/to/file",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -808,7 +808,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -821,7 +821,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -834,7 +834,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -847,7 +847,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatZip,
+			FormatZip,
 			"path/to/file",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeZip,
@@ -860,7 +860,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file.tar.zst",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -873,7 +873,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file.tar.zst",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -886,7 +886,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatZip,
+			FormatZip,
 			"path/to/file",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeZip,
@@ -899,7 +899,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file.tar.zst",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -912,7 +912,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedArchiveRef(
-			formatTar,
+			FormatTar,
 			"path/to/file",
 			internal.FileSchemeLocal,
 			internal.ArchiveTypeTar,
@@ -925,7 +925,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			FormatBin,
 			"path/to/file",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeZstd,
@@ -935,7 +935,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"path/to/file.bin.zst",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeZstd,
@@ -945,7 +945,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"path/to/file",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeZstd,
@@ -955,7 +955,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"path/to/file.binpb.zst",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeZstd,
@@ -965,7 +965,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedModuleRef(
-			formatMod,
+			FormatMod,
 			testNewModuleReference(
 				t,
 				"example.com",
@@ -979,7 +979,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedModuleRef(
-			formatMod,
+			FormatMod,
 			testNewModuleReference(
 				t,
 				"example.com",
@@ -993,7 +993,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"github.com/path/to/file.bin",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
@@ -1003,7 +1003,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			FormatBin,
 			"github.com/path/to/file.ext",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
@@ -1013,7 +1013,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBin,
+			FormatBin,
 			"gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.bin?private_token=bar",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
@@ -1023,7 +1023,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"github.com/path/to/file.binpb",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
@@ -1033,7 +1033,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"github.com/path/to/file.ext",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
@@ -1043,7 +1043,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
-			formatBinpb,
+			FormatBinpb,
 			"gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.binpb?private_token=bar",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
@@ -1056,12 +1056,12 @@ func TestGetParsedRefError(t *testing.T) {
 	t.Parallel()
 	testGetParsedRefError(
 		t,
-		internal.NewInvalidPathError(formatDir, "-"),
+		internal.NewInvalidPathError(FormatDir, "-"),
 		"-#format=dir",
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewInvalidPathError(formatGit, "-"),
+		internal.NewInvalidPathError(FormatGit, "-"),
 		"-#format=git,branch=main",
 	)
 	testGetParsedRefError(
@@ -1126,17 +1126,17 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatTar, "path/to/foo.tar.gz#branch=main"),
+		internal.NewOptionsInvalidForFormatError(FormatTar, "path/to/foo.tar.gz#branch=main"),
 		"path/to/foo.tar.gz#branch=main",
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#strip_components=1"),
+		internal.NewOptionsInvalidForFormatError(FormatDir, "path/to/some/foo#strip_components=1"),
 		"path/to/some/foo#strip_components=1",
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#compression=none"),
+		internal.NewOptionsInvalidForFormatError(FormatDir, "path/to/some/foo#compression=none"),
 		"path/to/some/foo#compression=none",
 	)
 	testGetParsedRefError(

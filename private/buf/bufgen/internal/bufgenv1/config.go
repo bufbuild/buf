@@ -32,7 +32,7 @@ import (
 )
 
 // Config is a configuration.
-type config struct {
+type Config struct {
 	// Required
 	PluginConfigs []bufgenplugin.PluginConfig
 	// Optional
@@ -110,7 +110,7 @@ func readConfigV1(
 	logger *zap.Logger,
 	readBucket storage.ReadBucket,
 	options ...internal.ReadConfigOption,
-) (*config, error) {
+) (*Config, error) {
 	provider := internal.NewConfigDataProvider(logger)
 	data, id, unmarshalNonStrict, unmarshalStrict, err := internal.ReadDataFromConfig(
 		ctx,
@@ -147,7 +147,7 @@ func readConfigV1(
 	}
 }
 
-func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string) (*config, error) {
+func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string) (*Config, error) {
 	managedConfig, err := newManagedConfigV1(logger, externalConfig.Managed)
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func newConfigV1(logger *zap.Logger, externalConfig ExternalConfigV1, id string)
 		return nil, err
 	}
 	typesConfig := newTypesConfigV1(externalConfig.Types)
-	return &config{
+	return &Config{
 		PluginConfigs: pluginConfigs,
 		ManagedConfig: managedConfig,
 		TypesConfig:   typesConfig,
@@ -645,7 +645,7 @@ func newObjcClassPrefixConfigV1(externalObjcClassPrefixConfig ExternalObjcClassP
 	}, nil
 }
 
-func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*config, error) {
+func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config, error) {
 	managedConfig, err := newManagedConfigV1Beta1(externalConfig.Options, externalConfig.Managed)
 	if err != nil {
 		return nil, err
@@ -686,7 +686,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*config,
 		}
 		pluginConfigs = append(pluginConfigs, pluginConfig)
 	}
-	return &config{
+	return &Config{
 		PluginConfigs: pluginConfigs,
 		ManagedConfig: managedConfig,
 	}, nil
