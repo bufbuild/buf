@@ -307,7 +307,7 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 	}
 	// first sync tags in old commits
 	if s.tagsBackfiller != nil {
-		if err := s.backfillTags(ctx, branch, commitsForSync); err != nil {
+		if err := s.backfillTags(ctx, branch, commitsForSync, &realClock{}); err != nil {
 			return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
 		}
 	}
@@ -661,7 +661,12 @@ func (s *syncer) readModuleAt(
 // backfillTags takes syncable commits for a branch already calculated, and looks back for each
 // module a given amount of commits or timestamps, syncing tags in case they were created or moved
 // after those commits were synced.
-func (s *syncer) backfillTags(ctx context.Context, branch string, syncableCommits []*syncableCommit) error {
+func (s *syncer) backfillTags(
+	ctx context.Context,
+	branch string,
+	syncableCommits []*syncableCommit,
+	clock clock,
+) error {
 	branchModulesForSync, ok := s.branchesToModulesForSync[branch]
 	if !ok || len(branchModulesForSync) == 0 {
 		// branch should not be synced, or no modules to sync in that branch
@@ -671,7 +676,7 @@ func (s *syncer) backfillTags(ctx context.Context, branch string, syncableCommit
 	if err != nil {
 		return fmt.Errorf("find lookback starting points for branch %s: %w", branch, err)
 	}
-	timeLimit := time.Now().Add(-lookbackTimeLimit)
+	timeLimit := clock.Now().Add(-lookbackTimeLimit)
 	stopLoopErr := errors.New("stop loop")
 	for moduleDir, startPoint := range moduleToStartPoint {
 		// each module needs a valid identity to backfill old tags into
@@ -849,6 +854,16 @@ type moduleTarget struct {
 	targetModuleIdentity bufmoduleref.ModuleIdentity
 	expectedSyncPoint    string
 }
+
+// clock allows embedding a custom time.Now implementation, so it's easier to test.
+type clock interface {
+	Now() time.Time
+}
+
+// realClock returns the real time.Now.
+type realClock struct{}
+
+func (*realClock) Now() time.Time { return time.Now() }
 
 // renameModule takes a module, and rebuilds it with a new module identity.
 func renameModule(

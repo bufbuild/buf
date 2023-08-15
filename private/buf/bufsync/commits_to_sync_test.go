@@ -35,10 +35,6 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	require.NoError(t, err)
 	moduleIdentityOverride, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "bar")
 	require.NoError(t, err)
-	// scaffoldGitRepository returns a repo with the following commits:
-	// | o-o----------o-----------------o (main)
-	// |   └o-o (foo) └o--------o (bar)
-	// |               └o (baz)
 	repo, repoDir := scaffoldGitRepository(t)
 	prepareGitRepoSyncWithNoPreviousSyncPoints(t, repoDir, moduleIdentityInHEAD)
 	type testCase struct {
