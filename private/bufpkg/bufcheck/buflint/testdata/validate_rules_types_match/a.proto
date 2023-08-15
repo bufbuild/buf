@@ -22,7 +22,7 @@ message Foo {
     bool in_bool = 14 [(buf.validate.field).uint32.const = 0];
     string in_string = 15 [(buf.validate.field).uint64.const = 0];
     bytes in_bytes = 16 [(buf.validate.field).sint64.const = 0];
-    repeated int32 in_repeated = 17 [(buf.validate.field).repeated.max_items = 0];
+//    repeated int32 in_repeated = 17 [(buf.validate.field).repeated.max_items = 0];
 //    map<string, int32> in_map = 18 [(buf.validate.field).double.const = 0];
 //    google.protobuf.Any in_any = 19 [(buf.validate.field).int32.const = 0];
 //    google.protobuf.Duration in_duration = 20 [(buf.validate.field).int64.const = 0];

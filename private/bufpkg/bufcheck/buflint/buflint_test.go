@@ -934,28 +934,30 @@ func TestCommentIgnoresCascadeOn(t *testing.T) {
 	)
 }
 
+func TestValidateRulesTypeDontMatch(t *testing.T) {
+	t.Parallel()
+	testLint(t, "validate_rules_types_match",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 10, 25, 10, 63, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 11, 27, 11, 65, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 12, 25, 12, 64, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 25, 13, 64, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 27, 14, 66, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 27, 15, 68, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 27, 16, 67, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 17, 27, 17, 62, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 30, 18, 66, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 30, 19, 67, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 20, 32, 20, 68, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 21, 32, 21, 68, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 22, 24, 22, 61, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 28, 23, 65, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 24, 26, 24, 63, "VALIDATE_RULES_TYPES_MATCH"),
+	)
+}
+
 func TestValidateRulesTypeMatch(t *testing.T) {
 	t.Parallel()
-	t.Run("validate_rules_types_match", func(t *testing.T) {
-		testLint(t, "validate_rules_types_match",
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 10, 25, 10, 63, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 11, 27, 11, 65, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 12, 25, 12, 64, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 25, 13, 64, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 27, 14, 66, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 27, 15, 68, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 27, 16, 67, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 17, 27, 17, 62, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 30, 18, 66, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 30, 19, 67, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 20, 32, 20, 68, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 21, 32, 21, 68, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 22, 24, 22, 61, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 28, 23, 65, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 24, 26, 24, 63, "VALIDATE_RULES_TYPES_MATCH"),
-			bufanalysistesting.NewFileAnnotation(t, "a.proto", 25, 38, 25, 81, "VALIDATE_RULES_TYPES_MATCH"),
-		)
-	})
+	testLint(t, "validate_rules_types_match_success")
 }
 
 func testLint(

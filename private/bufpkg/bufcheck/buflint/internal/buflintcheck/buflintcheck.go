@@ -989,6 +989,10 @@ func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) erro
 
 		got := field.Type()
 		expected := getFieldDescriptorProtoTypeForFieldConstraintsType(&constraints)
+		if expected == 0 {
+			return fmt.Errorf("unable to get field type for %s field constraint", field.FullName())
+		}
+
 		if got != expected {
 			add(
 				field,
@@ -1054,12 +1058,17 @@ func getFieldDescriptorProtoTypeForFieldConstraintsType(in *validate.FieldConstr
 		return descriptorpb.FieldDescriptorProto_TYPE_BYTES
 	case *validate.FieldConstraints_Enum:
 		return descriptorpb.FieldDescriptorProto_TYPE_ENUM
-	//case *validate.FieldConstraints_Repeated:
-	//case *validate.FieldConstraints_Map:
-	//case *validate.FieldConstraints_Any:
-	//case *validate.FieldConstraints_Duration:
-	//case *validate.FieldConstraints_Timestamp:
+	case *validate.FieldConstraints_Repeated,
+		*validate.FieldConstraints_Map,
+		*validate.FieldConstraints_Any,
+		*validate.FieldConstraints_Duration,
+		*validate.FieldConstraints_Timestamp:
+		return getFieldDescriptorProtoTypeForFieldConstraintsMessageType(in)
 	default:
-		return descriptorpb.FieldDescriptorProto_TYPE_MESSAGE
+		return 0
 	}
+}
+
+func getFieldDescriptorProtoTypeForFieldConstraintsMessageType(in *validate.FieldConstraints) descriptorpb.FieldDescriptorProto_Type {
+	return 0
 }
