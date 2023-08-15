@@ -33,10 +33,10 @@ import (
 
 const (
 	// lookbackCommitsLimit is the amount of commits that we will look back before the start sync
-	// point to attach old git tags. We might allow customizing this value in the future.
+	// point to backfill old git tags. We might allow customizing this value in the future.
 	lookbackCommitsLimit = 5
 	// lookbackTimeLimit is how old we will look back (git commit timestamps) before the start sync
-	// point to attach old git tags. We might allow customizing this value in the future.
+	// point to backfill old git tags. We might allow customizing this value in the future.
 	lookbackTimeLimit = 24 * time.Hour
 )
 
@@ -48,7 +48,7 @@ type syncer struct {
 	syncedGitCommitChecker    SyncedGitCommitChecker
 	moduleDefaultBranchGetter ModuleDefaultBranchGetter
 	syncPointResolver         SyncPointResolver
-	oldTagsAttacher           OldTagsAttacher
+	tagsBackfiller            TagsBackfiller
 
 	// flags received on creation
 	sortedModulesDirsForSync             []string
@@ -301,8 +301,8 @@ func (s *syncer) syncBranch(ctx context.Context, branch string, syncFunc SyncFun
 		return fmt.Errorf("finding commits to sync: %w", err)
 	}
 	// first sync tags in old commits
-	if s.oldTagsAttacher != nil {
-		if err := s.attachOlderTags(ctx, branch, commitsForSync); err != nil {
+	if s.tagsBackfiller != nil {
+		if err := s.backfillTags(ctx, branch, commitsForSync); err != nil {
 			return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
 		}
 	}
@@ -653,10 +653,10 @@ func (s *syncer) readModuleAt(
 	return builtModule, nil
 }
 
-// attachOlderTags takes syncable commits for a branch already calculated, and looks back for each
+// backfillTags takes syncable commits for a branch already calculated, and looks back for each
 // module a given amount of commits or timestamps, syncing tags in case they were created or moved
 // after those commits were synced.
-func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCommits []*syncableCommit) error {
+func (s *syncer) backfillTags(ctx context.Context, branch string, syncableCommits []*syncableCommit) error {
 	branchModulesForSync, ok := s.branchesToModulesForSync[branch]
 	if !ok || len(branchModulesForSync) == 0 {
 		// branch should not be synced, or no modules to sync in that branch
@@ -669,7 +669,7 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 	timeLimit := time.Now().Add(-lookbackTimeLimit)
 	stopLoopErr := errors.New("stop loop")
 	for moduleDir, startPoint := range moduleToStartPoint {
-		// each module needs a valid identity to attach old tags to
+		// each module needs a valid identity to backfill old tags into
 		targetModuleIdentity, ok := branchModulesForSync[moduleDir]
 		if !ok {
 			return fmt.Errorf("module directory %s with starting point is not present in branch modules for sync", moduleDir)
@@ -690,22 +690,22 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 			if lookbackCommitsCount > lookbackCommitsLimit && oldCommit.Committer().Timestamp().Before(timeLimit) {
 				return stopLoopErr
 			}
-			// Is there any tag in this commit to attach?
-			tagsToAttach := s.commitsToTags[oldCommit.Hash().Hex()]
-			if len(tagsToAttach) == 0 {
+			// Is there any tag in this commit to backfill?
+			tagsToBackfill := s.commitsToTags[oldCommit.Hash().Hex()]
+			if len(tagsToBackfill) == 0 {
 				return nil
 			}
 			// For each older commit we travel, we need to make sure it's a valid module with the expected
 			// module identity, or that the error handler would have chosen to override it.
-			var shouldAttachTagsForThisCommit bool
+			var shouldBackfillTagsForThisCommit bool
 			if _, readErr := s.readModuleAt(
 				ctx, branch, oldCommit, moduleDir,
 				readModuleAtWithExpectedModuleIdentity(targetModuleIdentity.IdentityString()),
 			); readErr == nil || s.errorHandler.HandleReadModuleError(readErr) == LookbackDecisionCodeOverride {
-				shouldAttachTagsForThisCommit = true
+				shouldBackfillTagsForThisCommit = true
 			}
-			if !shouldAttachTagsForThisCommit {
-				// not a valid module, tags in this commit should not be attached to this module.
+			if !shouldBackfillTagsForThisCommit {
+				// not a valid module, tags in this commit should not be backfilled to this module.
 				return nil
 			}
 			logger := s.logger.With(
@@ -714,16 +714,16 @@ func (s *syncer) attachOlderTags(ctx context.Context, branch string, syncableCom
 				zap.String("module directory", moduleDir),
 				zap.String("module identity", targetModuleIdentity.IdentityString()),
 				zap.String("module directory git start point", startPoint.Hex()),
-				zap.Strings("tags", tagsToAttach),
+				zap.Strings("tags", tagsToBackfill),
 			)
-			// Valid module in this commit to attach tags to. If attaching the older tags fails, we'll
+			// Valid module in this commit to backfill tags. If backfilling the tags fails, we'll
 			// WARN+continue to not block actual pending commits to sync in this run.
-			bsrCommitName, err := s.oldTagsAttacher(ctx, targetModuleIdentity, oldCommit.Hash(), oldCommit.Author(), oldCommit.Committer(), tagsToAttach)
+			bsrCommitName, err := s.tagsBackfiller(ctx, targetModuleIdentity, oldCommit.Hash(), oldCommit.Author(), oldCommit.Committer(), tagsToBackfill)
 			if err != nil {
-				logger.Warn("attach older tags failed", zap.Error(err))
+				logger.Warn("backfill older tags failed", zap.Error(err))
 				return nil
 			}
-			logger.Debug("older tags attached", zap.String("BSR commit", bsrCommitName))
+			logger.Debug("older tags backfilled", zap.String("BSR commit", bsrCommitName))
 			return nil
 		}
 		if err := s.repo.ForEachCommit(

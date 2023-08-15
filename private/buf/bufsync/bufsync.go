@@ -231,12 +231,12 @@ func SyncerWithModuleDefaultBranchGetter(getter ModuleDefaultBranchGetter) Synce
 	}
 }
 
-// SyncerWithOldTagsAttacher configures a tags attacher for older, already synced commits. If left
+// SyncerWithTagsBackfiller configures a tags backfiller for older, already synced commits. If left
 // empty, the syncer won't try to sync older tags past each module's start sync points on all
 // branches.
-func SyncerWithOldTagsAttacher(attacher OldTagsAttacher) SyncerOption {
+func SyncerWithTagsBackfiller(backfiller TagsBackfiller) SyncerOption {
 	return func(s *syncer) error {
-		s.oldTagsAttacher = attacher
+		s.tagsBackfiller = backfiller
 		return nil
 	}
 }
@@ -280,21 +280,21 @@ type ModuleDefaultBranchGetter func(
 	module bufmoduleref.ModuleIdentity,
 ) (string, error)
 
-// OldTagsAttacher is invoked when a commit with valid modules is found close past the start sync
-// point for such module. The Syncer assumes that the "old" commit is already synced, so it will
-// attempt to attach existing tags using that git hash, in case they were recenly created or moved
-// there.
+// TagsBackfiller is invoked when a commit with valid modules is found within a lookback threshold
+// past the start sync point for such module. The Syncer assumes that the "old" commit is already
+// synced, so it will attempt to backfill existing tags using that git hash, in case they were
+// recently created or moved there.
 //
 // A common scenario is SemVer releases: a commit is pushed to the default Git branch, the sync
 // process triggers and completes, and some minutes later that commit is tagged "v1.2.3". The next
-// time the sync command runs, this attacher would pick such tag and attach it to the correct BSR
+// time the sync command runs, this backfiller would pick such tag and backfill it to the correct BSR
 // commit.
 //
-// It's expected to return the BSR commit name to which the tags were attached.
-type OldTagsAttacher func(
+// It's expected to return the BSR commit name to which the tags were backfilled.
+type TagsBackfiller func(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,
-	hash git.Hash,
+	alreadySyncedHash git.Hash,
 	author git.Ident,
 	committer git.Ident,
 	tags []string,

@@ -187,7 +187,7 @@ func sync(
 		bufsync.SyncerWithResumption(syncPointResolver(clientConfig)),
 		bufsync.SyncerWithGitCommitChecker(syncGitCommitChecker(clientConfig)),
 		bufsync.SyncerWithModuleDefaultBranchGetter(defaultBranchGetter(clientConfig)),
-		bufsync.SyncerWithOldTagsAttacher(oldTagsAttacher(clientConfig)),
+		bufsync.SyncerWithTagsBackfiller(tagsBackfiller(clientConfig)),
 	}
 	if allBranches {
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithAllBranches())
@@ -333,11 +333,11 @@ func defaultBranchGetter(clientConfig *connectclient.Config) bufsync.ModuleDefau
 	}
 }
 
-func oldTagsAttacher(clientConfig *connectclient.Config) bufsync.OldTagsAttacher {
+func tagsBackfiller(clientConfig *connectclient.Config) bufsync.TagsBackfiller {
 	return func(
 		ctx context.Context,
 		module bufmoduleref.ModuleIdentity,
-		hash git.Hash,
+		alreadySyncedHash git.Hash,
 		author git.Ident,
 		committer git.Ident,
 		tags []string,
@@ -346,7 +346,7 @@ func oldTagsAttacher(clientConfig *connectclient.Config) bufsync.OldTagsAttacher
 		res, err := service.AttachGitTags(ctx, connect.NewRequest(&registryv1alpha1.AttachGitTagsRequest{
 			Owner:      module.Owner(),
 			Repository: module.Repository(),
-			Hash:       hash.Hex(),
+			Hash:       alreadySyncedHash.Hex(),
 			Author: &registryv1alpha1.GitIdentity{
 				Name:  author.Name(),
 				Email: author.Email(),
