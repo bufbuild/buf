@@ -52,7 +52,7 @@ type RepositoryBranch struct {
 	IsMainBranch bool `protobuf:"varint,4,opt,name=is_main_branch,json=isMainBranch,proto3" json:"is_main_branch,omitempty"`
 	// The last update time of the branch.
 	LastUpdateTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_update_time,json=lastUpdateTime,proto3" json:"last_update_time,omitempty"`
-	// The BSR user ID of the user who last updated the branch.
+	// The ID of the user who updated the branch.
 	LastUpdateUserId string `protobuf:"bytes,6,opt,name=last_update_user_id,json=lastUpdateUserId,proto3" json:"last_update_user_id,omitempty"`
 }
 
