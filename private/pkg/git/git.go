@@ -17,6 +17,7 @@ package git
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"time"
 
@@ -44,6 +45,13 @@ const (
 	ModeSymlink ObjectMode = 012_0000
 	// ModeSubmodule is a commit that the submodule is checked out at.
 	ModeSubmodule ObjectMode = 016_0000
+)
+
+const (
+	// refTypeHash is the reference type for a git SHA hash.
+	refTypeHash referenceType = "hash"
+	// refTypeBranch is the reference type for a git branch.
+	refTypeBranch referenceType = "branch"
 )
 
 var (
@@ -277,14 +285,15 @@ type Repository interface {
 	//
 	// Only branches pushed to a remote named "origin" are visited.
 	ForEachBranch(func(branch string, headHash Hash) error) error
-	// ForEachCommit ranges over commits for the target branch in topological order.
+	// ForEachCommit ranges over commits in reverse topological order, going backwards in time always
+	// choosing the first parent, until no more parents are found (presumably the first commit of the
+	// git repository).
 	//
-	// The range starts at the HEAD commit for the branch in the `origin` remote, and goes backwards
-	// in time always choosing the first parent, until no more parents are found (presumably the first
-	// commit of the git repository).
+	// The range starts by default at the HEAD commit for the default branch. You can customize this
+	// starting point by passing options.
 	//
 	// If an error is seen, the loop is stopped and the error is returned.
-	ForEachCommit(branch string, f func(commit Commit) error) error
+	ForEachCommit(f func(commit Commit) error, options ...ForEachCommitOption) error
 	// HEADCommit returns the HEAD commit at the passed branch if it's present in the `origin` remote.
 	HEADCommit(branch string) (Commit, error)
 	// ForEachTag ranges over tags in the repository in an undefined order.
@@ -298,6 +307,53 @@ type Repository interface {
 	Objects() ObjectReader
 	// Close closes the repository.
 	Close() error
+}
+
+// ForEachCommitOption are options that can be passed to ForEachCommit.
+type ForEachCommitOption func(*forEachCommitOpts) error
+
+// ForEachCommitWithBranchStartPoint sets a branch name as a starting point to start the loop.
+func ForEachCommitWithBranchStartPoint(branchName string) ForEachCommitOption {
+	return func(opts *forEachCommitOpts) error {
+		if opts.start != nil {
+			if opts.start.refType == refTypeBranch && opts.start.refName == branchName {
+				// already set, nop
+				return nil
+			}
+			return fmt.Errorf(
+				"cannot set a starting point %s:%s, another starting point %s:%s already exists",
+				refTypeBranch, branchName,
+				opts.start.refType, opts.start.refName,
+			)
+		}
+		opts.start = &reference{
+			refType: refTypeBranch,
+			refName: branchName,
+		}
+		return nil
+	}
+}
+
+// ForEachCommitWithHashStartPoint sets a git hash as a starting point to start the loop.
+func ForEachCommitWithHashStartPoint(hash string) ForEachCommitOption {
+	return func(opts *forEachCommitOpts) error {
+		if opts.start != nil {
+			if opts.start.refType == refTypeHash && opts.start.refName == hash {
+				// already set, nop
+				return nil
+			}
+			return fmt.Errorf(
+				"cannot set a starting point %s:%s, another starting point %s:%s already exists",
+				refTypeHash, hash,
+				opts.start.refType, opts.start.refName,
+			)
+		}
+		opts.start = &reference{
+			refType: refTypeHash,
+			refName: hash,
+		}
+		return nil
+	}
 }
 
 // OpenRepository opens a new Repository from a `.git` directory. The provided path to the `.git`
@@ -325,4 +381,18 @@ func OpenRepositoryWithDefaultBranch(name string) OpenRepositoryOption {
 		r.defaultBranch = name
 		return nil
 	}
+}
+
+// referenceType is the type of references that can be passed as starting points when traversing a
+// git tree.
+type referenceType string
+
+// reference is a single git reference used in ForEachCommit to declare an starting commit.
+type reference struct {
+	refName string
+	refType referenceType
+}
+
+type forEachCommitOpts struct {
+	start *reference
 }
