@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// GithubServiceName is the fully-qualified name of the GithubService service.
@@ -55,7 +55,7 @@ const (
 // GithubServiceClient is a client for the buf.alpha.registry.v1alpha1.GithubService service.
 type GithubServiceClient interface {
 	// GetGithubAppConfig returns a Github Application Configuration.
-	GetGithubAppConfig(context.Context, *connect_go.Request[v1alpha1.GetGithubAppConfigRequest]) (*connect_go.Response[v1alpha1.GetGithubAppConfigResponse], error)
+	GetGithubAppConfig(context.Context, *connect.Request[v1alpha1.GetGithubAppConfigRequest]) (*connect.Response[v1alpha1.GetGithubAppConfigResponse], error)
 }
 
 // NewGithubServiceClient constructs a client for the buf.alpha.registry.v1alpha1.GithubService
@@ -65,25 +65,25 @@ type GithubServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewGithubServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) GithubServiceClient {
+func NewGithubServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) GithubServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &githubServiceClient{
-		getGithubAppConfig: connect_go.NewClient[v1alpha1.GetGithubAppConfigRequest, v1alpha1.GetGithubAppConfigResponse](
+		getGithubAppConfig: connect.NewClient[v1alpha1.GetGithubAppConfigRequest, v1alpha1.GetGithubAppConfigResponse](
 			httpClient,
 			baseURL+GithubServiceGetGithubAppConfigProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // githubServiceClient implements GithubServiceClient.
 type githubServiceClient struct {
-	getGithubAppConfig *connect_go.Client[v1alpha1.GetGithubAppConfigRequest, v1alpha1.GetGithubAppConfigResponse]
+	getGithubAppConfig *connect.Client[v1alpha1.GetGithubAppConfigRequest, v1alpha1.GetGithubAppConfigResponse]
 }
 
 // GetGithubAppConfig calls buf.alpha.registry.v1alpha1.GithubService.GetGithubAppConfig.
-func (c *githubServiceClient) GetGithubAppConfig(ctx context.Context, req *connect_go.Request[v1alpha1.GetGithubAppConfigRequest]) (*connect_go.Response[v1alpha1.GetGithubAppConfigResponse], error) {
+func (c *githubServiceClient) GetGithubAppConfig(ctx context.Context, req *connect.Request[v1alpha1.GetGithubAppConfigRequest]) (*connect.Response[v1alpha1.GetGithubAppConfigResponse], error) {
 	return c.getGithubAppConfig.CallUnary(ctx, req)
 }
 
@@ -91,7 +91,7 @@ func (c *githubServiceClient) GetGithubAppConfig(ctx context.Context, req *conne
 // service.
 type GithubServiceHandler interface {
 	// GetGithubAppConfig returns a Github Application Configuration.
-	GetGithubAppConfig(context.Context, *connect_go.Request[v1alpha1.GetGithubAppConfigRequest]) (*connect_go.Response[v1alpha1.GetGithubAppConfigResponse], error)
+	GetGithubAppConfig(context.Context, *connect.Request[v1alpha1.GetGithubAppConfigRequest]) (*connect.Response[v1alpha1.GetGithubAppConfigResponse], error)
 }
 
 // NewGithubServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -99,12 +99,12 @@ type GithubServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewGithubServiceHandler(svc GithubServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	githubServiceGetGithubAppConfigHandler := connect_go.NewUnaryHandler(
+func NewGithubServiceHandler(svc GithubServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	githubServiceGetGithubAppConfigHandler := connect.NewUnaryHandler(
 		GithubServiceGetGithubAppConfigProcedure,
 		svc.GetGithubAppConfig,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.GithubService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -119,6 +119,6 @@ func NewGithubServiceHandler(svc GithubServiceHandler, opts ...connect_go.Handle
 // UnimplementedGithubServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedGithubServiceHandler struct{}
 
-func (UnimplementedGithubServiceHandler) GetGithubAppConfig(context.Context, *connect_go.Request[v1alpha1.GetGithubAppConfigRequest]) (*connect_go.Response[v1alpha1.GetGithubAppConfigResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.GithubService.GetGithubAppConfig is not implemented"))
+func (UnimplementedGithubServiceHandler) GetGithubAppConfig(context.Context, *connect.Request[v1alpha1.GetGithubAppConfigRequest]) (*connect.Response[v1alpha1.GetGithubAppConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.GithubService.GetGithubAppConfig is not implemented"))
 }

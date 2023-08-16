@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// SchemaServiceName is the fully-qualified name of the SchemaService service.
@@ -58,10 +58,10 @@ const (
 type SchemaServiceClient interface {
 	// GetSchema allows the caller to download a schema for one or more requested
 	// types, RPC services, or RPC methods.
-	GetSchema(context.Context, *connect_go.Request[v1alpha1.GetSchemaRequest]) (*connect_go.Response[v1alpha1.GetSchemaResponse], error)
+	GetSchema(context.Context, *connect.Request[v1alpha1.GetSchemaRequest]) (*connect.Response[v1alpha1.GetSchemaResponse], error)
 	// ConvertMessage allows the caller to convert a given message data blob from
 	// one format to another by referring to a type schema for the blob.
-	ConvertMessage(context.Context, *connect_go.Request[v1alpha1.ConvertMessageRequest]) (*connect_go.Response[v1alpha1.ConvertMessageResponse], error)
+	ConvertMessage(context.Context, *connect.Request[v1alpha1.ConvertMessageRequest]) (*connect.Response[v1alpha1.ConvertMessageResponse], error)
 }
 
 // NewSchemaServiceClient constructs a client for the buf.alpha.registry.v1alpha1.SchemaService
@@ -71,16 +71,16 @@ type SchemaServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewSchemaServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) SchemaServiceClient {
+func NewSchemaServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) SchemaServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &schemaServiceClient{
-		getSchema: connect_go.NewClient[v1alpha1.GetSchemaRequest, v1alpha1.GetSchemaResponse](
+		getSchema: connect.NewClient[v1alpha1.GetSchemaRequest, v1alpha1.GetSchemaResponse](
 			httpClient,
 			baseURL+SchemaServiceGetSchemaProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		convertMessage: connect_go.NewClient[v1alpha1.ConvertMessageRequest, v1alpha1.ConvertMessageResponse](
+		convertMessage: connect.NewClient[v1alpha1.ConvertMessageRequest, v1alpha1.ConvertMessageResponse](
 			httpClient,
 			baseURL+SchemaServiceConvertMessageProcedure,
 			opts...,
@@ -90,17 +90,17 @@ func NewSchemaServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 
 // schemaServiceClient implements SchemaServiceClient.
 type schemaServiceClient struct {
-	getSchema      *connect_go.Client[v1alpha1.GetSchemaRequest, v1alpha1.GetSchemaResponse]
-	convertMessage *connect_go.Client[v1alpha1.ConvertMessageRequest, v1alpha1.ConvertMessageResponse]
+	getSchema      *connect.Client[v1alpha1.GetSchemaRequest, v1alpha1.GetSchemaResponse]
+	convertMessage *connect.Client[v1alpha1.ConvertMessageRequest, v1alpha1.ConvertMessageResponse]
 }
 
 // GetSchema calls buf.alpha.registry.v1alpha1.SchemaService.GetSchema.
-func (c *schemaServiceClient) GetSchema(ctx context.Context, req *connect_go.Request[v1alpha1.GetSchemaRequest]) (*connect_go.Response[v1alpha1.GetSchemaResponse], error) {
+func (c *schemaServiceClient) GetSchema(ctx context.Context, req *connect.Request[v1alpha1.GetSchemaRequest]) (*connect.Response[v1alpha1.GetSchemaResponse], error) {
 	return c.getSchema.CallUnary(ctx, req)
 }
 
 // ConvertMessage calls buf.alpha.registry.v1alpha1.SchemaService.ConvertMessage.
-func (c *schemaServiceClient) ConvertMessage(ctx context.Context, req *connect_go.Request[v1alpha1.ConvertMessageRequest]) (*connect_go.Response[v1alpha1.ConvertMessageResponse], error) {
+func (c *schemaServiceClient) ConvertMessage(ctx context.Context, req *connect.Request[v1alpha1.ConvertMessageRequest]) (*connect.Response[v1alpha1.ConvertMessageResponse], error) {
 	return c.convertMessage.CallUnary(ctx, req)
 }
 
@@ -109,10 +109,10 @@ func (c *schemaServiceClient) ConvertMessage(ctx context.Context, req *connect_g
 type SchemaServiceHandler interface {
 	// GetSchema allows the caller to download a schema for one or more requested
 	// types, RPC services, or RPC methods.
-	GetSchema(context.Context, *connect_go.Request[v1alpha1.GetSchemaRequest]) (*connect_go.Response[v1alpha1.GetSchemaResponse], error)
+	GetSchema(context.Context, *connect.Request[v1alpha1.GetSchemaRequest]) (*connect.Response[v1alpha1.GetSchemaResponse], error)
 	// ConvertMessage allows the caller to convert a given message data blob from
 	// one format to another by referring to a type schema for the blob.
-	ConvertMessage(context.Context, *connect_go.Request[v1alpha1.ConvertMessageRequest]) (*connect_go.Response[v1alpha1.ConvertMessageResponse], error)
+	ConvertMessage(context.Context, *connect.Request[v1alpha1.ConvertMessageRequest]) (*connect.Response[v1alpha1.ConvertMessageResponse], error)
 }
 
 // NewSchemaServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -120,14 +120,14 @@ type SchemaServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewSchemaServiceHandler(svc SchemaServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	schemaServiceGetSchemaHandler := connect_go.NewUnaryHandler(
+func NewSchemaServiceHandler(svc SchemaServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	schemaServiceGetSchemaHandler := connect.NewUnaryHandler(
 		SchemaServiceGetSchemaProcedure,
 		svc.GetSchema,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	schemaServiceConvertMessageHandler := connect_go.NewUnaryHandler(
+	schemaServiceConvertMessageHandler := connect.NewUnaryHandler(
 		SchemaServiceConvertMessageProcedure,
 		svc.ConvertMessage,
 		opts...,
@@ -147,10 +147,10 @@ func NewSchemaServiceHandler(svc SchemaServiceHandler, opts ...connect_go.Handle
 // UnimplementedSchemaServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedSchemaServiceHandler struct{}
 
-func (UnimplementedSchemaServiceHandler) GetSchema(context.Context, *connect_go.Request[v1alpha1.GetSchemaRequest]) (*connect_go.Response[v1alpha1.GetSchemaResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SchemaService.GetSchema is not implemented"))
+func (UnimplementedSchemaServiceHandler) GetSchema(context.Context, *connect.Request[v1alpha1.GetSchemaRequest]) (*connect.Response[v1alpha1.GetSchemaResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SchemaService.GetSchema is not implemented"))
 }
 
-func (UnimplementedSchemaServiceHandler) ConvertMessage(context.Context, *connect_go.Request[v1alpha1.ConvertMessageRequest]) (*connect_go.Response[v1alpha1.ConvertMessageResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SchemaService.ConvertMessage is not implemented"))
+func (UnimplementedSchemaServiceHandler) ConvertMessage(context.Context, *connect.Request[v1alpha1.ConvertMessageRequest]) (*connect.Response[v1alpha1.ConvertMessageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SchemaService.ConvertMessage is not implemented"))
 }

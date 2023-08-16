@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// StudioServiceName is the fully-qualified name of the StudioService service.
@@ -58,9 +58,9 @@ const (
 // StudioServiceClient is a client for the buf.alpha.registry.v1alpha1.StudioService service.
 type StudioServiceClient interface {
 	// ListStudioAgentPresets returns a list of agent presets in the server.
-	ListStudioAgentPresets(context.Context, *connect_go.Request[v1alpha1.ListStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.ListStudioAgentPresetsResponse], error)
+	ListStudioAgentPresets(context.Context, *connect.Request[v1alpha1.ListStudioAgentPresetsRequest]) (*connect.Response[v1alpha1.ListStudioAgentPresetsResponse], error)
 	// SetStudioAgentPresets sets the list of agent presets in the server.
-	SetStudioAgentPresets(context.Context, *connect_go.Request[v1alpha1.SetStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.SetStudioAgentPresetsResponse], error)
+	SetStudioAgentPresets(context.Context, *connect.Request[v1alpha1.SetStudioAgentPresetsRequest]) (*connect.Response[v1alpha1.SetStudioAgentPresetsResponse], error)
 }
 
 // NewStudioServiceClient constructs a client for the buf.alpha.registry.v1alpha1.StudioService
@@ -70,16 +70,16 @@ type StudioServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewStudioServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) StudioServiceClient {
+func NewStudioServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) StudioServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &studioServiceClient{
-		listStudioAgentPresets: connect_go.NewClient[v1alpha1.ListStudioAgentPresetsRequest, v1alpha1.ListStudioAgentPresetsResponse](
+		listStudioAgentPresets: connect.NewClient[v1alpha1.ListStudioAgentPresetsRequest, v1alpha1.ListStudioAgentPresetsResponse](
 			httpClient,
 			baseURL+StudioServiceListStudioAgentPresetsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		setStudioAgentPresets: connect_go.NewClient[v1alpha1.SetStudioAgentPresetsRequest, v1alpha1.SetStudioAgentPresetsResponse](
+		setStudioAgentPresets: connect.NewClient[v1alpha1.SetStudioAgentPresetsRequest, v1alpha1.SetStudioAgentPresetsResponse](
 			httpClient,
 			baseURL+StudioServiceSetStudioAgentPresetsProcedure,
 			opts...,
@@ -89,17 +89,17 @@ func NewStudioServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 
 // studioServiceClient implements StudioServiceClient.
 type studioServiceClient struct {
-	listStudioAgentPresets *connect_go.Client[v1alpha1.ListStudioAgentPresetsRequest, v1alpha1.ListStudioAgentPresetsResponse]
-	setStudioAgentPresets  *connect_go.Client[v1alpha1.SetStudioAgentPresetsRequest, v1alpha1.SetStudioAgentPresetsResponse]
+	listStudioAgentPresets *connect.Client[v1alpha1.ListStudioAgentPresetsRequest, v1alpha1.ListStudioAgentPresetsResponse]
+	setStudioAgentPresets  *connect.Client[v1alpha1.SetStudioAgentPresetsRequest, v1alpha1.SetStudioAgentPresetsResponse]
 }
 
 // ListStudioAgentPresets calls buf.alpha.registry.v1alpha1.StudioService.ListStudioAgentPresets.
-func (c *studioServiceClient) ListStudioAgentPresets(ctx context.Context, req *connect_go.Request[v1alpha1.ListStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.ListStudioAgentPresetsResponse], error) {
+func (c *studioServiceClient) ListStudioAgentPresets(ctx context.Context, req *connect.Request[v1alpha1.ListStudioAgentPresetsRequest]) (*connect.Response[v1alpha1.ListStudioAgentPresetsResponse], error) {
 	return c.listStudioAgentPresets.CallUnary(ctx, req)
 }
 
 // SetStudioAgentPresets calls buf.alpha.registry.v1alpha1.StudioService.SetStudioAgentPresets.
-func (c *studioServiceClient) SetStudioAgentPresets(ctx context.Context, req *connect_go.Request[v1alpha1.SetStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.SetStudioAgentPresetsResponse], error) {
+func (c *studioServiceClient) SetStudioAgentPresets(ctx context.Context, req *connect.Request[v1alpha1.SetStudioAgentPresetsRequest]) (*connect.Response[v1alpha1.SetStudioAgentPresetsResponse], error) {
 	return c.setStudioAgentPresets.CallUnary(ctx, req)
 }
 
@@ -107,9 +107,9 @@ func (c *studioServiceClient) SetStudioAgentPresets(ctx context.Context, req *co
 // service.
 type StudioServiceHandler interface {
 	// ListStudioAgentPresets returns a list of agent presets in the server.
-	ListStudioAgentPresets(context.Context, *connect_go.Request[v1alpha1.ListStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.ListStudioAgentPresetsResponse], error)
+	ListStudioAgentPresets(context.Context, *connect.Request[v1alpha1.ListStudioAgentPresetsRequest]) (*connect.Response[v1alpha1.ListStudioAgentPresetsResponse], error)
 	// SetStudioAgentPresets sets the list of agent presets in the server.
-	SetStudioAgentPresets(context.Context, *connect_go.Request[v1alpha1.SetStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.SetStudioAgentPresetsResponse], error)
+	SetStudioAgentPresets(context.Context, *connect.Request[v1alpha1.SetStudioAgentPresetsRequest]) (*connect.Response[v1alpha1.SetStudioAgentPresetsResponse], error)
 }
 
 // NewStudioServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -117,14 +117,14 @@ type StudioServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewStudioServiceHandler(svc StudioServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	studioServiceListStudioAgentPresetsHandler := connect_go.NewUnaryHandler(
+func NewStudioServiceHandler(svc StudioServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	studioServiceListStudioAgentPresetsHandler := connect.NewUnaryHandler(
 		StudioServiceListStudioAgentPresetsProcedure,
 		svc.ListStudioAgentPresets,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	studioServiceSetStudioAgentPresetsHandler := connect_go.NewUnaryHandler(
+	studioServiceSetStudioAgentPresetsHandler := connect.NewUnaryHandler(
 		StudioServiceSetStudioAgentPresetsProcedure,
 		svc.SetStudioAgentPresets,
 		opts...,
@@ -144,10 +144,10 @@ func NewStudioServiceHandler(svc StudioServiceHandler, opts ...connect_go.Handle
 // UnimplementedStudioServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedStudioServiceHandler struct{}
 
-func (UnimplementedStudioServiceHandler) ListStudioAgentPresets(context.Context, *connect_go.Request[v1alpha1.ListStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.ListStudioAgentPresetsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.StudioService.ListStudioAgentPresets is not implemented"))
+func (UnimplementedStudioServiceHandler) ListStudioAgentPresets(context.Context, *connect.Request[v1alpha1.ListStudioAgentPresetsRequest]) (*connect.Response[v1alpha1.ListStudioAgentPresetsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.StudioService.ListStudioAgentPresets is not implemented"))
 }
 
-func (UnimplementedStudioServiceHandler) SetStudioAgentPresets(context.Context, *connect_go.Request[v1alpha1.SetStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.SetStudioAgentPresetsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.StudioService.SetStudioAgentPresets is not implemented"))
+func (UnimplementedStudioServiceHandler) SetStudioAgentPresets(context.Context, *connect.Request[v1alpha1.SetStudioAgentPresetsRequest]) (*connect.Response[v1alpha1.SetStudioAgentPresetsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.StudioService.SetStudioAgentPresets is not implemented"))
 }

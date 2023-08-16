@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// SearchServiceName is the fully-qualified name of the SearchService service.
@@ -62,13 +62,13 @@ const (
 // SearchServiceClient is a client for the buf.alpha.registry.v1alpha1.SearchService service.
 type SearchServiceClient interface {
 	// Search searches the BSR.
-	Search(context.Context, *connect_go.Request[v1alpha1.SearchRequest]) (*connect_go.Response[v1alpha1.SearchResponse], error)
+	Search(context.Context, *connect.Request[v1alpha1.SearchRequest]) (*connect.Response[v1alpha1.SearchResponse], error)
 	// SearchTag searches for tags in a repository
-	SearchTag(context.Context, *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error)
+	SearchTag(context.Context, *connect.Request[v1alpha1.SearchTagRequest]) (*connect.Response[v1alpha1.SearchTagResponse], error)
 	// SearchDraft searches for drafts in a repository
-	SearchDraft(context.Context, *connect_go.Request[v1alpha1.SearchDraftRequest]) (*connect_go.Response[v1alpha1.SearchDraftResponse], error)
+	SearchDraft(context.Context, *connect.Request[v1alpha1.SearchDraftRequest]) (*connect.Response[v1alpha1.SearchDraftResponse], error)
 	// SearchModuleContent searches for module contents on the BSR.
-	SearchModuleContent(context.Context, *connect_go.Request[v1alpha1.SearchModuleContentRequest]) (*connect_go.Response[v1alpha1.SearchModuleContentResponse], error)
+	SearchModuleContent(context.Context, *connect.Request[v1alpha1.SearchModuleContentRequest]) (*connect.Response[v1alpha1.SearchModuleContentResponse], error)
 }
 
 // NewSearchServiceClient constructs a client for the buf.alpha.registry.v1alpha1.SearchService
@@ -78,61 +78,61 @@ type SearchServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewSearchServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) SearchServiceClient {
+func NewSearchServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) SearchServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &searchServiceClient{
-		search: connect_go.NewClient[v1alpha1.SearchRequest, v1alpha1.SearchResponse](
+		search: connect.NewClient[v1alpha1.SearchRequest, v1alpha1.SearchResponse](
 			httpClient,
 			baseURL+SearchServiceSearchProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		searchTag: connect_go.NewClient[v1alpha1.SearchTagRequest, v1alpha1.SearchTagResponse](
+		searchTag: connect.NewClient[v1alpha1.SearchTagRequest, v1alpha1.SearchTagResponse](
 			httpClient,
 			baseURL+SearchServiceSearchTagProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		searchDraft: connect_go.NewClient[v1alpha1.SearchDraftRequest, v1alpha1.SearchDraftResponse](
+		searchDraft: connect.NewClient[v1alpha1.SearchDraftRequest, v1alpha1.SearchDraftResponse](
 			httpClient,
 			baseURL+SearchServiceSearchDraftProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		searchModuleContent: connect_go.NewClient[v1alpha1.SearchModuleContentRequest, v1alpha1.SearchModuleContentResponse](
+		searchModuleContent: connect.NewClient[v1alpha1.SearchModuleContentRequest, v1alpha1.SearchModuleContentResponse](
 			httpClient,
 			baseURL+SearchServiceSearchModuleContentProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // searchServiceClient implements SearchServiceClient.
 type searchServiceClient struct {
-	search              *connect_go.Client[v1alpha1.SearchRequest, v1alpha1.SearchResponse]
-	searchTag           *connect_go.Client[v1alpha1.SearchTagRequest, v1alpha1.SearchTagResponse]
-	searchDraft         *connect_go.Client[v1alpha1.SearchDraftRequest, v1alpha1.SearchDraftResponse]
-	searchModuleContent *connect_go.Client[v1alpha1.SearchModuleContentRequest, v1alpha1.SearchModuleContentResponse]
+	search              *connect.Client[v1alpha1.SearchRequest, v1alpha1.SearchResponse]
+	searchTag           *connect.Client[v1alpha1.SearchTagRequest, v1alpha1.SearchTagResponse]
+	searchDraft         *connect.Client[v1alpha1.SearchDraftRequest, v1alpha1.SearchDraftResponse]
+	searchModuleContent *connect.Client[v1alpha1.SearchModuleContentRequest, v1alpha1.SearchModuleContentResponse]
 }
 
 // Search calls buf.alpha.registry.v1alpha1.SearchService.Search.
-func (c *searchServiceClient) Search(ctx context.Context, req *connect_go.Request[v1alpha1.SearchRequest]) (*connect_go.Response[v1alpha1.SearchResponse], error) {
+func (c *searchServiceClient) Search(ctx context.Context, req *connect.Request[v1alpha1.SearchRequest]) (*connect.Response[v1alpha1.SearchResponse], error) {
 	return c.search.CallUnary(ctx, req)
 }
 
 // SearchTag calls buf.alpha.registry.v1alpha1.SearchService.SearchTag.
-func (c *searchServiceClient) SearchTag(ctx context.Context, req *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error) {
+func (c *searchServiceClient) SearchTag(ctx context.Context, req *connect.Request[v1alpha1.SearchTagRequest]) (*connect.Response[v1alpha1.SearchTagResponse], error) {
 	return c.searchTag.CallUnary(ctx, req)
 }
 
 // SearchDraft calls buf.alpha.registry.v1alpha1.SearchService.SearchDraft.
-func (c *searchServiceClient) SearchDraft(ctx context.Context, req *connect_go.Request[v1alpha1.SearchDraftRequest]) (*connect_go.Response[v1alpha1.SearchDraftResponse], error) {
+func (c *searchServiceClient) SearchDraft(ctx context.Context, req *connect.Request[v1alpha1.SearchDraftRequest]) (*connect.Response[v1alpha1.SearchDraftResponse], error) {
 	return c.searchDraft.CallUnary(ctx, req)
 }
 
 // SearchModuleContent calls buf.alpha.registry.v1alpha1.SearchService.SearchModuleContent.
-func (c *searchServiceClient) SearchModuleContent(ctx context.Context, req *connect_go.Request[v1alpha1.SearchModuleContentRequest]) (*connect_go.Response[v1alpha1.SearchModuleContentResponse], error) {
+func (c *searchServiceClient) SearchModuleContent(ctx context.Context, req *connect.Request[v1alpha1.SearchModuleContentRequest]) (*connect.Response[v1alpha1.SearchModuleContentResponse], error) {
 	return c.searchModuleContent.CallUnary(ctx, req)
 }
 
@@ -140,13 +140,13 @@ func (c *searchServiceClient) SearchModuleContent(ctx context.Context, req *conn
 // service.
 type SearchServiceHandler interface {
 	// Search searches the BSR.
-	Search(context.Context, *connect_go.Request[v1alpha1.SearchRequest]) (*connect_go.Response[v1alpha1.SearchResponse], error)
+	Search(context.Context, *connect.Request[v1alpha1.SearchRequest]) (*connect.Response[v1alpha1.SearchResponse], error)
 	// SearchTag searches for tags in a repository
-	SearchTag(context.Context, *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error)
+	SearchTag(context.Context, *connect.Request[v1alpha1.SearchTagRequest]) (*connect.Response[v1alpha1.SearchTagResponse], error)
 	// SearchDraft searches for drafts in a repository
-	SearchDraft(context.Context, *connect_go.Request[v1alpha1.SearchDraftRequest]) (*connect_go.Response[v1alpha1.SearchDraftResponse], error)
+	SearchDraft(context.Context, *connect.Request[v1alpha1.SearchDraftRequest]) (*connect.Response[v1alpha1.SearchDraftResponse], error)
 	// SearchModuleContent searches for module contents on the BSR.
-	SearchModuleContent(context.Context, *connect_go.Request[v1alpha1.SearchModuleContentRequest]) (*connect_go.Response[v1alpha1.SearchModuleContentResponse], error)
+	SearchModuleContent(context.Context, *connect.Request[v1alpha1.SearchModuleContentRequest]) (*connect.Response[v1alpha1.SearchModuleContentResponse], error)
 }
 
 // NewSearchServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -154,30 +154,30 @@ type SearchServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	searchServiceSearchHandler := connect_go.NewUnaryHandler(
+func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	searchServiceSearchHandler := connect.NewUnaryHandler(
 		SearchServiceSearchProcedure,
 		svc.Search,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	searchServiceSearchTagHandler := connect_go.NewUnaryHandler(
+	searchServiceSearchTagHandler := connect.NewUnaryHandler(
 		SearchServiceSearchTagProcedure,
 		svc.SearchTag,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	searchServiceSearchDraftHandler := connect_go.NewUnaryHandler(
+	searchServiceSearchDraftHandler := connect.NewUnaryHandler(
 		SearchServiceSearchDraftProcedure,
 		svc.SearchDraft,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	searchServiceSearchModuleContentHandler := connect_go.NewUnaryHandler(
+	searchServiceSearchModuleContentHandler := connect.NewUnaryHandler(
 		SearchServiceSearchModuleContentProcedure,
 		svc.SearchModuleContent,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.SearchService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -198,18 +198,18 @@ func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect_go.Handle
 // UnimplementedSearchServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedSearchServiceHandler struct{}
 
-func (UnimplementedSearchServiceHandler) Search(context.Context, *connect_go.Request[v1alpha1.SearchRequest]) (*connect_go.Response[v1alpha1.SearchResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.Search is not implemented"))
+func (UnimplementedSearchServiceHandler) Search(context.Context, *connect.Request[v1alpha1.SearchRequest]) (*connect.Response[v1alpha1.SearchResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.Search is not implemented"))
 }
 
-func (UnimplementedSearchServiceHandler) SearchTag(context.Context, *connect_go.Request[v1alpha1.SearchTagRequest]) (*connect_go.Response[v1alpha1.SearchTagResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.SearchTag is not implemented"))
+func (UnimplementedSearchServiceHandler) SearchTag(context.Context, *connect.Request[v1alpha1.SearchTagRequest]) (*connect.Response[v1alpha1.SearchTagResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.SearchTag is not implemented"))
 }
 
-func (UnimplementedSearchServiceHandler) SearchDraft(context.Context, *connect_go.Request[v1alpha1.SearchDraftRequest]) (*connect_go.Response[v1alpha1.SearchDraftResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.SearchDraft is not implemented"))
+func (UnimplementedSearchServiceHandler) SearchDraft(context.Context, *connect.Request[v1alpha1.SearchDraftRequest]) (*connect.Response[v1alpha1.SearchDraftResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.SearchDraft is not implemented"))
 }
 
-func (UnimplementedSearchServiceHandler) SearchModuleContent(context.Context, *connect_go.Request[v1alpha1.SearchModuleContentRequest]) (*connect_go.Response[v1alpha1.SearchModuleContentResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.SearchModuleContent is not implemented"))
+func (UnimplementedSearchServiceHandler) SearchModuleContent(context.Context, *connect.Request[v1alpha1.SearchModuleContentRequest]) (*connect.Response[v1alpha1.SearchModuleContentResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SearchService.SearchModuleContent is not implemented"))
 }

@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// JSONSchemaServiceName is the fully-qualified name of the JSONSchemaService service.
@@ -57,7 +57,7 @@ const (
 type JSONSchemaServiceClient interface {
 	// GetJSONSchema allows users to get an (approximate) json schema for a
 	// protobuf type.
-	GetJSONSchema(context.Context, *connect_go.Request[v1alpha1.GetJSONSchemaRequest]) (*connect_go.Response[v1alpha1.GetJSONSchemaResponse], error)
+	GetJSONSchema(context.Context, *connect.Request[v1alpha1.GetJSONSchemaRequest]) (*connect.Response[v1alpha1.GetJSONSchemaResponse], error)
 }
 
 // NewJSONSchemaServiceClient constructs a client for the
@@ -68,25 +68,25 @@ type JSONSchemaServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewJSONSchemaServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) JSONSchemaServiceClient {
+func NewJSONSchemaServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) JSONSchemaServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &jSONSchemaServiceClient{
-		getJSONSchema: connect_go.NewClient[v1alpha1.GetJSONSchemaRequest, v1alpha1.GetJSONSchemaResponse](
+		getJSONSchema: connect.NewClient[v1alpha1.GetJSONSchemaRequest, v1alpha1.GetJSONSchemaResponse](
 			httpClient,
 			baseURL+JSONSchemaServiceGetJSONSchemaProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // jSONSchemaServiceClient implements JSONSchemaServiceClient.
 type jSONSchemaServiceClient struct {
-	getJSONSchema *connect_go.Client[v1alpha1.GetJSONSchemaRequest, v1alpha1.GetJSONSchemaResponse]
+	getJSONSchema *connect.Client[v1alpha1.GetJSONSchemaRequest, v1alpha1.GetJSONSchemaResponse]
 }
 
 // GetJSONSchema calls buf.alpha.registry.v1alpha1.JSONSchemaService.GetJSONSchema.
-func (c *jSONSchemaServiceClient) GetJSONSchema(ctx context.Context, req *connect_go.Request[v1alpha1.GetJSONSchemaRequest]) (*connect_go.Response[v1alpha1.GetJSONSchemaResponse], error) {
+func (c *jSONSchemaServiceClient) GetJSONSchema(ctx context.Context, req *connect.Request[v1alpha1.GetJSONSchemaRequest]) (*connect.Response[v1alpha1.GetJSONSchemaResponse], error) {
 	return c.getJSONSchema.CallUnary(ctx, req)
 }
 
@@ -95,7 +95,7 @@ func (c *jSONSchemaServiceClient) GetJSONSchema(ctx context.Context, req *connec
 type JSONSchemaServiceHandler interface {
 	// GetJSONSchema allows users to get an (approximate) json schema for a
 	// protobuf type.
-	GetJSONSchema(context.Context, *connect_go.Request[v1alpha1.GetJSONSchemaRequest]) (*connect_go.Response[v1alpha1.GetJSONSchemaResponse], error)
+	GetJSONSchema(context.Context, *connect.Request[v1alpha1.GetJSONSchemaRequest]) (*connect.Response[v1alpha1.GetJSONSchemaResponse], error)
 }
 
 // NewJSONSchemaServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -103,12 +103,12 @@ type JSONSchemaServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewJSONSchemaServiceHandler(svc JSONSchemaServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	jSONSchemaServiceGetJSONSchemaHandler := connect_go.NewUnaryHandler(
+func NewJSONSchemaServiceHandler(svc JSONSchemaServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	jSONSchemaServiceGetJSONSchemaHandler := connect.NewUnaryHandler(
 		JSONSchemaServiceGetJSONSchemaProcedure,
 		svc.GetJSONSchema,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.JSONSchemaService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -123,6 +123,6 @@ func NewJSONSchemaServiceHandler(svc JSONSchemaServiceHandler, opts ...connect_g
 // UnimplementedJSONSchemaServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedJSONSchemaServiceHandler struct{}
 
-func (UnimplementedJSONSchemaServiceHandler) GetJSONSchema(context.Context, *connect_go.Request[v1alpha1.GetJSONSchemaRequest]) (*connect_go.Response[v1alpha1.GetJSONSchemaResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.JSONSchemaService.GetJSONSchema is not implemented"))
+func (UnimplementedJSONSchemaServiceHandler) GetJSONSchema(context.Context, *connect.Request[v1alpha1.GetJSONSchemaRequest]) (*connect.Response[v1alpha1.GetJSONSchemaResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.JSONSchemaService.GetJSONSchema is not implemented"))
 }

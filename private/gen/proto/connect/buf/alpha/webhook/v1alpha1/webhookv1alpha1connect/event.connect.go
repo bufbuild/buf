@@ -19,10 +19,10 @@
 package webhookv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/webhook/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion0_1_0
 
 const (
 	// EventServiceName is the fully-qualified name of the EventService service.
@@ -54,7 +54,7 @@ const (
 // EventServiceClient is a client for the buf.alpha.webhook.v1alpha1.EventService service.
 type EventServiceClient interface {
 	// Event is the rpc which receives webhook events.
-	Event(context.Context, *connect_go.Request[v1alpha1.EventRequest]) (*connect_go.Response[v1alpha1.EventResponse], error)
+	Event(context.Context, *connect.Request[v1alpha1.EventRequest]) (*connect.Response[v1alpha1.EventResponse], error)
 }
 
 // NewEventServiceClient constructs a client for the buf.alpha.webhook.v1alpha1.EventService
@@ -64,10 +64,10 @@ type EventServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewEventServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) EventServiceClient {
+func NewEventServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) EventServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &eventServiceClient{
-		event: connect_go.NewClient[v1alpha1.EventRequest, v1alpha1.EventResponse](
+		event: connect.NewClient[v1alpha1.EventRequest, v1alpha1.EventResponse](
 			httpClient,
 			baseURL+EventServiceEventProcedure,
 			opts...,
@@ -77,18 +77,18 @@ func NewEventServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 
 // eventServiceClient implements EventServiceClient.
 type eventServiceClient struct {
-	event *connect_go.Client[v1alpha1.EventRequest, v1alpha1.EventResponse]
+	event *connect.Client[v1alpha1.EventRequest, v1alpha1.EventResponse]
 }
 
 // Event calls buf.alpha.webhook.v1alpha1.EventService.Event.
-func (c *eventServiceClient) Event(ctx context.Context, req *connect_go.Request[v1alpha1.EventRequest]) (*connect_go.Response[v1alpha1.EventResponse], error) {
+func (c *eventServiceClient) Event(ctx context.Context, req *connect.Request[v1alpha1.EventRequest]) (*connect.Response[v1alpha1.EventResponse], error) {
 	return c.event.CallUnary(ctx, req)
 }
 
 // EventServiceHandler is an implementation of the buf.alpha.webhook.v1alpha1.EventService service.
 type EventServiceHandler interface {
 	// Event is the rpc which receives webhook events.
-	Event(context.Context, *connect_go.Request[v1alpha1.EventRequest]) (*connect_go.Response[v1alpha1.EventResponse], error)
+	Event(context.Context, *connect.Request[v1alpha1.EventRequest]) (*connect.Response[v1alpha1.EventResponse], error)
 }
 
 // NewEventServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -96,8 +96,8 @@ type EventServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewEventServiceHandler(svc EventServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	eventServiceEventHandler := connect_go.NewUnaryHandler(
+func NewEventServiceHandler(svc EventServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	eventServiceEventHandler := connect.NewUnaryHandler(
 		EventServiceEventProcedure,
 		svc.Event,
 		opts...,
@@ -115,6 +115,6 @@ func NewEventServiceHandler(svc EventServiceHandler, opts ...connect_go.HandlerO
 // UnimplementedEventServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedEventServiceHandler struct{}
 
-func (UnimplementedEventServiceHandler) Event(context.Context, *connect_go.Request[v1alpha1.EventRequest]) (*connect_go.Response[v1alpha1.EventResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.webhook.v1alpha1.EventService.Event is not implemented"))
+func (UnimplementedEventServiceHandler) Event(context.Context, *connect.Request[v1alpha1.EventRequest]) (*connect.Response[v1alpha1.EventResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.webhook.v1alpha1.EventService.Event is not implemented"))
 }

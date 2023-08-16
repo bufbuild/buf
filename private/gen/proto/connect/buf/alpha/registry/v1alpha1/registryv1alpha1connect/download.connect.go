@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// DownloadServiceName is the fully-qualified name of the DownloadService service.
@@ -59,9 +59,9 @@ const (
 type DownloadServiceClient interface {
 	// Download downloads a BSR module.
 	// NOTE: Newer clients should use DownloadManifestAndBlobs instead.
-	Download(context.Context, *connect_go.Request[v1alpha1.DownloadRequest]) (*connect_go.Response[v1alpha1.DownloadResponse], error)
+	Download(context.Context, *connect.Request[v1alpha1.DownloadRequest]) (*connect.Response[v1alpha1.DownloadResponse], error)
 	// DownloadManifestAndBlobs downloads a module in the manifest+blobs encoding format.
-	DownloadManifestAndBlobs(context.Context, *connect_go.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.DownloadManifestAndBlobsResponse], error)
+	DownloadManifestAndBlobs(context.Context, *connect.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect.Response[v1alpha1.DownloadManifestAndBlobsResponse], error)
 }
 
 // NewDownloadServiceClient constructs a client for the buf.alpha.registry.v1alpha1.DownloadService
@@ -71,38 +71,38 @@ type DownloadServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewDownloadServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) DownloadServiceClient {
+func NewDownloadServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) DownloadServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &downloadServiceClient{
-		download: connect_go.NewClient[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse](
+		download: connect.NewClient[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse](
 			httpClient,
 			baseURL+DownloadServiceDownloadProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		downloadManifestAndBlobs: connect_go.NewClient[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse](
+		downloadManifestAndBlobs: connect.NewClient[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse](
 			httpClient,
 			baseURL+DownloadServiceDownloadManifestAndBlobsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // downloadServiceClient implements DownloadServiceClient.
 type downloadServiceClient struct {
-	download                 *connect_go.Client[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse]
-	downloadManifestAndBlobs *connect_go.Client[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse]
+	download                 *connect.Client[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse]
+	downloadManifestAndBlobs *connect.Client[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse]
 }
 
 // Download calls buf.alpha.registry.v1alpha1.DownloadService.Download.
-func (c *downloadServiceClient) Download(ctx context.Context, req *connect_go.Request[v1alpha1.DownloadRequest]) (*connect_go.Response[v1alpha1.DownloadResponse], error) {
+func (c *downloadServiceClient) Download(ctx context.Context, req *connect.Request[v1alpha1.DownloadRequest]) (*connect.Response[v1alpha1.DownloadResponse], error) {
 	return c.download.CallUnary(ctx, req)
 }
 
 // DownloadManifestAndBlobs calls
 // buf.alpha.registry.v1alpha1.DownloadService.DownloadManifestAndBlobs.
-func (c *downloadServiceClient) DownloadManifestAndBlobs(ctx context.Context, req *connect_go.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.DownloadManifestAndBlobsResponse], error) {
+func (c *downloadServiceClient) DownloadManifestAndBlobs(ctx context.Context, req *connect.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect.Response[v1alpha1.DownloadManifestAndBlobsResponse], error) {
 	return c.downloadManifestAndBlobs.CallUnary(ctx, req)
 }
 
@@ -111,9 +111,9 @@ func (c *downloadServiceClient) DownloadManifestAndBlobs(ctx context.Context, re
 type DownloadServiceHandler interface {
 	// Download downloads a BSR module.
 	// NOTE: Newer clients should use DownloadManifestAndBlobs instead.
-	Download(context.Context, *connect_go.Request[v1alpha1.DownloadRequest]) (*connect_go.Response[v1alpha1.DownloadResponse], error)
+	Download(context.Context, *connect.Request[v1alpha1.DownloadRequest]) (*connect.Response[v1alpha1.DownloadResponse], error)
 	// DownloadManifestAndBlobs downloads a module in the manifest+blobs encoding format.
-	DownloadManifestAndBlobs(context.Context, *connect_go.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.DownloadManifestAndBlobsResponse], error)
+	DownloadManifestAndBlobs(context.Context, *connect.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect.Response[v1alpha1.DownloadManifestAndBlobsResponse], error)
 }
 
 // NewDownloadServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -121,18 +121,18 @@ type DownloadServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewDownloadServiceHandler(svc DownloadServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	downloadServiceDownloadHandler := connect_go.NewUnaryHandler(
+func NewDownloadServiceHandler(svc DownloadServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	downloadServiceDownloadHandler := connect.NewUnaryHandler(
 		DownloadServiceDownloadProcedure,
 		svc.Download,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	downloadServiceDownloadManifestAndBlobsHandler := connect_go.NewUnaryHandler(
+	downloadServiceDownloadManifestAndBlobsHandler := connect.NewUnaryHandler(
 		DownloadServiceDownloadManifestAndBlobsProcedure,
 		svc.DownloadManifestAndBlobs,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.DownloadService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -149,10 +149,10 @@ func NewDownloadServiceHandler(svc DownloadServiceHandler, opts ...connect_go.Ha
 // UnimplementedDownloadServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedDownloadServiceHandler struct{}
 
-func (UnimplementedDownloadServiceHandler) Download(context.Context, *connect_go.Request[v1alpha1.DownloadRequest]) (*connect_go.Response[v1alpha1.DownloadResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DownloadService.Download is not implemented"))
+func (UnimplementedDownloadServiceHandler) Download(context.Context, *connect.Request[v1alpha1.DownloadRequest]) (*connect.Response[v1alpha1.DownloadResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DownloadService.Download is not implemented"))
 }
 
-func (UnimplementedDownloadServiceHandler) DownloadManifestAndBlobs(context.Context, *connect_go.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect_go.Response[v1alpha1.DownloadManifestAndBlobsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DownloadService.DownloadManifestAndBlobs is not implemented"))
+func (UnimplementedDownloadServiceHandler) DownloadManifestAndBlobs(context.Context, *connect.Request[v1alpha1.DownloadManifestAndBlobsRequest]) (*connect.Response[v1alpha1.DownloadManifestAndBlobsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.DownloadService.DownloadManifestAndBlobs is not implemented"))
 }

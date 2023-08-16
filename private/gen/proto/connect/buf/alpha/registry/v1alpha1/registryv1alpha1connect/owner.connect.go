@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// OwnerServiceName is the fully-qualified name of the OwnerService service.
@@ -56,7 +56,7 @@ const (
 type OwnerServiceClient interface {
 	// GetOwnerByName takes an owner name and returns the owner as
 	// either a user or organization.
-	GetOwnerByName(context.Context, *connect_go.Request[v1alpha1.GetOwnerByNameRequest]) (*connect_go.Response[v1alpha1.GetOwnerByNameResponse], error)
+	GetOwnerByName(context.Context, *connect.Request[v1alpha1.GetOwnerByNameRequest]) (*connect.Response[v1alpha1.GetOwnerByNameResponse], error)
 }
 
 // NewOwnerServiceClient constructs a client for the buf.alpha.registry.v1alpha1.OwnerService
@@ -66,25 +66,25 @@ type OwnerServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewOwnerServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) OwnerServiceClient {
+func NewOwnerServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) OwnerServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &ownerServiceClient{
-		getOwnerByName: connect_go.NewClient[v1alpha1.GetOwnerByNameRequest, v1alpha1.GetOwnerByNameResponse](
+		getOwnerByName: connect.NewClient[v1alpha1.GetOwnerByNameRequest, v1alpha1.GetOwnerByNameResponse](
 			httpClient,
 			baseURL+OwnerServiceGetOwnerByNameProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // ownerServiceClient implements OwnerServiceClient.
 type ownerServiceClient struct {
-	getOwnerByName *connect_go.Client[v1alpha1.GetOwnerByNameRequest, v1alpha1.GetOwnerByNameResponse]
+	getOwnerByName *connect.Client[v1alpha1.GetOwnerByNameRequest, v1alpha1.GetOwnerByNameResponse]
 }
 
 // GetOwnerByName calls buf.alpha.registry.v1alpha1.OwnerService.GetOwnerByName.
-func (c *ownerServiceClient) GetOwnerByName(ctx context.Context, req *connect_go.Request[v1alpha1.GetOwnerByNameRequest]) (*connect_go.Response[v1alpha1.GetOwnerByNameResponse], error) {
+func (c *ownerServiceClient) GetOwnerByName(ctx context.Context, req *connect.Request[v1alpha1.GetOwnerByNameRequest]) (*connect.Response[v1alpha1.GetOwnerByNameResponse], error) {
 	return c.getOwnerByName.CallUnary(ctx, req)
 }
 
@@ -92,7 +92,7 @@ func (c *ownerServiceClient) GetOwnerByName(ctx context.Context, req *connect_go
 type OwnerServiceHandler interface {
 	// GetOwnerByName takes an owner name and returns the owner as
 	// either a user or organization.
-	GetOwnerByName(context.Context, *connect_go.Request[v1alpha1.GetOwnerByNameRequest]) (*connect_go.Response[v1alpha1.GetOwnerByNameResponse], error)
+	GetOwnerByName(context.Context, *connect.Request[v1alpha1.GetOwnerByNameRequest]) (*connect.Response[v1alpha1.GetOwnerByNameResponse], error)
 }
 
 // NewOwnerServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -100,12 +100,12 @@ type OwnerServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewOwnerServiceHandler(svc OwnerServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	ownerServiceGetOwnerByNameHandler := connect_go.NewUnaryHandler(
+func NewOwnerServiceHandler(svc OwnerServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	ownerServiceGetOwnerByNameHandler := connect.NewUnaryHandler(
 		OwnerServiceGetOwnerByNameProcedure,
 		svc.GetOwnerByName,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.OwnerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -120,6 +120,6 @@ func NewOwnerServiceHandler(svc OwnerServiceHandler, opts ...connect_go.HandlerO
 // UnimplementedOwnerServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedOwnerServiceHandler struct{}
 
-func (UnimplementedOwnerServiceHandler) GetOwnerByName(context.Context, *connect_go.Request[v1alpha1.GetOwnerByNameRequest]) (*connect_go.Response[v1alpha1.GetOwnerByNameResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OwnerService.GetOwnerByName is not implemented"))
+func (UnimplementedOwnerServiceHandler) GetOwnerByName(context.Context, *connect.Request[v1alpha1.GetOwnerByNameRequest]) (*connect.Response[v1alpha1.GetOwnerByNameResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.OwnerService.GetOwnerByName is not implemented"))
 }

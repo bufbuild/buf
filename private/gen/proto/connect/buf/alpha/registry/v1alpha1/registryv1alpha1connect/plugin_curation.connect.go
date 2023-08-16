@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// PluginCurationServiceName is the fully-qualified name of the PluginCurationService service.
@@ -70,13 +70,13 @@ const (
 // service.
 type PluginCurationServiceClient interface {
 	// ListCuratedPlugins returns all the curated plugins available.
-	ListCuratedPlugins(context.Context, *connect_go.Request[v1alpha1.ListCuratedPluginsRequest]) (*connect_go.Response[v1alpha1.ListCuratedPluginsResponse], error)
+	ListCuratedPlugins(context.Context, *connect.Request[v1alpha1.ListCuratedPluginsRequest]) (*connect.Response[v1alpha1.ListCuratedPluginsResponse], error)
 	// CreateCuratedPlugin creates a new curated plugin.
-	CreateCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect_go.Response[v1alpha1.CreateCuratedPluginResponse], error)
+	CreateCuratedPlugin(context.Context, *connect.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect.Response[v1alpha1.CreateCuratedPluginResponse], error)
 	// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
-	GetLatestCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error)
+	GetLatestCuratedPlugin(context.Context, *connect.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect.Response[v1alpha1.GetLatestCuratedPluginResponse], error)
 	// DeleteCuratedPlugin deletes a curated plugin based on the given parameters.
-	DeleteCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect_go.Response[v1alpha1.DeleteCuratedPluginResponse], error)
+	DeleteCuratedPlugin(context.Context, *connect.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect.Response[v1alpha1.DeleteCuratedPluginResponse], error)
 }
 
 // NewPluginCurationServiceClient constructs a client for the
@@ -87,62 +87,62 @@ type PluginCurationServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewPluginCurationServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) PluginCurationServiceClient {
+func NewPluginCurationServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) PluginCurationServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &pluginCurationServiceClient{
-		listCuratedPlugins: connect_go.NewClient[v1alpha1.ListCuratedPluginsRequest, v1alpha1.ListCuratedPluginsResponse](
+		listCuratedPlugins: connect.NewClient[v1alpha1.ListCuratedPluginsRequest, v1alpha1.ListCuratedPluginsResponse](
 			httpClient,
 			baseURL+PluginCurationServiceListCuratedPluginsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		createCuratedPlugin: connect_go.NewClient[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse](
+		createCuratedPlugin: connect.NewClient[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceCreateCuratedPluginProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
 		),
-		getLatestCuratedPlugin: connect_go.NewClient[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse](
+		getLatestCuratedPlugin: connect.NewClient[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceGetLatestCuratedPluginProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		deleteCuratedPlugin: connect_go.NewClient[v1alpha1.DeleteCuratedPluginRequest, v1alpha1.DeleteCuratedPluginResponse](
+		deleteCuratedPlugin: connect.NewClient[v1alpha1.DeleteCuratedPluginRequest, v1alpha1.DeleteCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceDeleteCuratedPluginProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // pluginCurationServiceClient implements PluginCurationServiceClient.
 type pluginCurationServiceClient struct {
-	listCuratedPlugins     *connect_go.Client[v1alpha1.ListCuratedPluginsRequest, v1alpha1.ListCuratedPluginsResponse]
-	createCuratedPlugin    *connect_go.Client[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse]
-	getLatestCuratedPlugin *connect_go.Client[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse]
-	deleteCuratedPlugin    *connect_go.Client[v1alpha1.DeleteCuratedPluginRequest, v1alpha1.DeleteCuratedPluginResponse]
+	listCuratedPlugins     *connect.Client[v1alpha1.ListCuratedPluginsRequest, v1alpha1.ListCuratedPluginsResponse]
+	createCuratedPlugin    *connect.Client[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse]
+	getLatestCuratedPlugin *connect.Client[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse]
+	deleteCuratedPlugin    *connect.Client[v1alpha1.DeleteCuratedPluginRequest, v1alpha1.DeleteCuratedPluginResponse]
 }
 
 // ListCuratedPlugins calls buf.alpha.registry.v1alpha1.PluginCurationService.ListCuratedPlugins.
-func (c *pluginCurationServiceClient) ListCuratedPlugins(ctx context.Context, req *connect_go.Request[v1alpha1.ListCuratedPluginsRequest]) (*connect_go.Response[v1alpha1.ListCuratedPluginsResponse], error) {
+func (c *pluginCurationServiceClient) ListCuratedPlugins(ctx context.Context, req *connect.Request[v1alpha1.ListCuratedPluginsRequest]) (*connect.Response[v1alpha1.ListCuratedPluginsResponse], error) {
 	return c.listCuratedPlugins.CallUnary(ctx, req)
 }
 
 // CreateCuratedPlugin calls buf.alpha.registry.v1alpha1.PluginCurationService.CreateCuratedPlugin.
-func (c *pluginCurationServiceClient) CreateCuratedPlugin(ctx context.Context, req *connect_go.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect_go.Response[v1alpha1.CreateCuratedPluginResponse], error) {
+func (c *pluginCurationServiceClient) CreateCuratedPlugin(ctx context.Context, req *connect.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect.Response[v1alpha1.CreateCuratedPluginResponse], error) {
 	return c.createCuratedPlugin.CallUnary(ctx, req)
 }
 
 // GetLatestCuratedPlugin calls
 // buf.alpha.registry.v1alpha1.PluginCurationService.GetLatestCuratedPlugin.
-func (c *pluginCurationServiceClient) GetLatestCuratedPlugin(ctx context.Context, req *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error) {
+func (c *pluginCurationServiceClient) GetLatestCuratedPlugin(ctx context.Context, req *connect.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect.Response[v1alpha1.GetLatestCuratedPluginResponse], error) {
 	return c.getLatestCuratedPlugin.CallUnary(ctx, req)
 }
 
 // DeleteCuratedPlugin calls buf.alpha.registry.v1alpha1.PluginCurationService.DeleteCuratedPlugin.
-func (c *pluginCurationServiceClient) DeleteCuratedPlugin(ctx context.Context, req *connect_go.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect_go.Response[v1alpha1.DeleteCuratedPluginResponse], error) {
+func (c *pluginCurationServiceClient) DeleteCuratedPlugin(ctx context.Context, req *connect.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect.Response[v1alpha1.DeleteCuratedPluginResponse], error) {
 	return c.deleteCuratedPlugin.CallUnary(ctx, req)
 }
 
@@ -150,13 +150,13 @@ func (c *pluginCurationServiceClient) DeleteCuratedPlugin(ctx context.Context, r
 // buf.alpha.registry.v1alpha1.PluginCurationService service.
 type PluginCurationServiceHandler interface {
 	// ListCuratedPlugins returns all the curated plugins available.
-	ListCuratedPlugins(context.Context, *connect_go.Request[v1alpha1.ListCuratedPluginsRequest]) (*connect_go.Response[v1alpha1.ListCuratedPluginsResponse], error)
+	ListCuratedPlugins(context.Context, *connect.Request[v1alpha1.ListCuratedPluginsRequest]) (*connect.Response[v1alpha1.ListCuratedPluginsResponse], error)
 	// CreateCuratedPlugin creates a new curated plugin.
-	CreateCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect_go.Response[v1alpha1.CreateCuratedPluginResponse], error)
+	CreateCuratedPlugin(context.Context, *connect.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect.Response[v1alpha1.CreateCuratedPluginResponse], error)
 	// GetLatestCuratedPlugin returns the latest version of a plugin matching given parameters.
-	GetLatestCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error)
+	GetLatestCuratedPlugin(context.Context, *connect.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect.Response[v1alpha1.GetLatestCuratedPluginResponse], error)
 	// DeleteCuratedPlugin deletes a curated plugin based on the given parameters.
-	DeleteCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect_go.Response[v1alpha1.DeleteCuratedPluginResponse], error)
+	DeleteCuratedPlugin(context.Context, *connect.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect.Response[v1alpha1.DeleteCuratedPluginResponse], error)
 }
 
 // NewPluginCurationServiceHandler builds an HTTP handler from the service implementation. It
@@ -164,30 +164,30 @@ type PluginCurationServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	pluginCurationServiceListCuratedPluginsHandler := connect_go.NewUnaryHandler(
+func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	pluginCurationServiceListCuratedPluginsHandler := connect.NewUnaryHandler(
 		PluginCurationServiceListCuratedPluginsProcedure,
 		svc.ListCuratedPlugins,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	pluginCurationServiceCreateCuratedPluginHandler := connect_go.NewUnaryHandler(
+	pluginCurationServiceCreateCuratedPluginHandler := connect.NewUnaryHandler(
 		PluginCurationServiceCreateCuratedPluginProcedure,
 		svc.CreateCuratedPlugin,
-		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
 	)
-	pluginCurationServiceGetLatestCuratedPluginHandler := connect_go.NewUnaryHandler(
+	pluginCurationServiceGetLatestCuratedPluginHandler := connect.NewUnaryHandler(
 		PluginCurationServiceGetLatestCuratedPluginProcedure,
 		svc.GetLatestCuratedPlugin,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	pluginCurationServiceDeleteCuratedPluginHandler := connect_go.NewUnaryHandler(
+	pluginCurationServiceDeleteCuratedPluginHandler := connect.NewUnaryHandler(
 		PluginCurationServiceDeleteCuratedPluginProcedure,
 		svc.DeleteCuratedPlugin,
-		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.PluginCurationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -208,27 +208,27 @@ func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...c
 // UnimplementedPluginCurationServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedPluginCurationServiceHandler struct{}
 
-func (UnimplementedPluginCurationServiceHandler) ListCuratedPlugins(context.Context, *connect_go.Request[v1alpha1.ListCuratedPluginsRequest]) (*connect_go.Response[v1alpha1.ListCuratedPluginsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.ListCuratedPlugins is not implemented"))
+func (UnimplementedPluginCurationServiceHandler) ListCuratedPlugins(context.Context, *connect.Request[v1alpha1.ListCuratedPluginsRequest]) (*connect.Response[v1alpha1.ListCuratedPluginsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.ListCuratedPlugins is not implemented"))
 }
 
-func (UnimplementedPluginCurationServiceHandler) CreateCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect_go.Response[v1alpha1.CreateCuratedPluginResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.CreateCuratedPlugin is not implemented"))
+func (UnimplementedPluginCurationServiceHandler) CreateCuratedPlugin(context.Context, *connect.Request[v1alpha1.CreateCuratedPluginRequest]) (*connect.Response[v1alpha1.CreateCuratedPluginResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.CreateCuratedPlugin is not implemented"))
 }
 
-func (UnimplementedPluginCurationServiceHandler) GetLatestCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect_go.Response[v1alpha1.GetLatestCuratedPluginResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.GetLatestCuratedPlugin is not implemented"))
+func (UnimplementedPluginCurationServiceHandler) GetLatestCuratedPlugin(context.Context, *connect.Request[v1alpha1.GetLatestCuratedPluginRequest]) (*connect.Response[v1alpha1.GetLatestCuratedPluginResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.GetLatestCuratedPlugin is not implemented"))
 }
 
-func (UnimplementedPluginCurationServiceHandler) DeleteCuratedPlugin(context.Context, *connect_go.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect_go.Response[v1alpha1.DeleteCuratedPluginResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.DeleteCuratedPlugin is not implemented"))
+func (UnimplementedPluginCurationServiceHandler) DeleteCuratedPlugin(context.Context, *connect.Request[v1alpha1.DeleteCuratedPluginRequest]) (*connect.Response[v1alpha1.DeleteCuratedPluginResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.PluginCurationService.DeleteCuratedPlugin is not implemented"))
 }
 
 // CodeGenerationServiceClient is a client for the buf.alpha.registry.v1alpha1.CodeGenerationService
 // service.
 type CodeGenerationServiceClient interface {
 	// GenerateCode generates code using the specified remote plugins.
-	GenerateCode(context.Context, *connect_go.Request[v1alpha1.GenerateCodeRequest]) (*connect_go.Response[v1alpha1.GenerateCodeResponse], error)
+	GenerateCode(context.Context, *connect.Request[v1alpha1.GenerateCodeRequest]) (*connect.Response[v1alpha1.GenerateCodeResponse], error)
 }
 
 // NewCodeGenerationServiceClient constructs a client for the
@@ -239,10 +239,10 @@ type CodeGenerationServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewCodeGenerationServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) CodeGenerationServiceClient {
+func NewCodeGenerationServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) CodeGenerationServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &codeGenerationServiceClient{
-		generateCode: connect_go.NewClient[v1alpha1.GenerateCodeRequest, v1alpha1.GenerateCodeResponse](
+		generateCode: connect.NewClient[v1alpha1.GenerateCodeRequest, v1alpha1.GenerateCodeResponse](
 			httpClient,
 			baseURL+CodeGenerationServiceGenerateCodeProcedure,
 			opts...,
@@ -252,11 +252,11 @@ func NewCodeGenerationServiceClient(httpClient connect_go.HTTPClient, baseURL st
 
 // codeGenerationServiceClient implements CodeGenerationServiceClient.
 type codeGenerationServiceClient struct {
-	generateCode *connect_go.Client[v1alpha1.GenerateCodeRequest, v1alpha1.GenerateCodeResponse]
+	generateCode *connect.Client[v1alpha1.GenerateCodeRequest, v1alpha1.GenerateCodeResponse]
 }
 
 // GenerateCode calls buf.alpha.registry.v1alpha1.CodeGenerationService.GenerateCode.
-func (c *codeGenerationServiceClient) GenerateCode(ctx context.Context, req *connect_go.Request[v1alpha1.GenerateCodeRequest]) (*connect_go.Response[v1alpha1.GenerateCodeResponse], error) {
+func (c *codeGenerationServiceClient) GenerateCode(ctx context.Context, req *connect.Request[v1alpha1.GenerateCodeRequest]) (*connect.Response[v1alpha1.GenerateCodeResponse], error) {
 	return c.generateCode.CallUnary(ctx, req)
 }
 
@@ -264,7 +264,7 @@ func (c *codeGenerationServiceClient) GenerateCode(ctx context.Context, req *con
 // buf.alpha.registry.v1alpha1.CodeGenerationService service.
 type CodeGenerationServiceHandler interface {
 	// GenerateCode generates code using the specified remote plugins.
-	GenerateCode(context.Context, *connect_go.Request[v1alpha1.GenerateCodeRequest]) (*connect_go.Response[v1alpha1.GenerateCodeResponse], error)
+	GenerateCode(context.Context, *connect.Request[v1alpha1.GenerateCodeRequest]) (*connect.Response[v1alpha1.GenerateCodeResponse], error)
 }
 
 // NewCodeGenerationServiceHandler builds an HTTP handler from the service implementation. It
@@ -272,8 +272,8 @@ type CodeGenerationServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewCodeGenerationServiceHandler(svc CodeGenerationServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	codeGenerationServiceGenerateCodeHandler := connect_go.NewUnaryHandler(
+func NewCodeGenerationServiceHandler(svc CodeGenerationServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	codeGenerationServiceGenerateCodeHandler := connect.NewUnaryHandler(
 		CodeGenerationServiceGenerateCodeProcedure,
 		svc.GenerateCode,
 		opts...,
@@ -291,6 +291,6 @@ func NewCodeGenerationServiceHandler(svc CodeGenerationServiceHandler, opts ...c
 // UnimplementedCodeGenerationServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedCodeGenerationServiceHandler struct{}
 
-func (UnimplementedCodeGenerationServiceHandler) GenerateCode(context.Context, *connect_go.Request[v1alpha1.GenerateCodeRequest]) (*connect_go.Response[v1alpha1.GenerateCodeResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.CodeGenerationService.GenerateCode is not implemented"))
+func (UnimplementedCodeGenerationServiceHandler) GenerateCode(context.Context, *connect.Request[v1alpha1.GenerateCodeRequest]) (*connect.Response[v1alpha1.GenerateCodeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.CodeGenerationService.GenerateCode is not implemented"))
 }

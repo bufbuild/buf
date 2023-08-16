@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// RepositoryBranchServiceName is the fully-qualified name of the RepositoryBranchService service.
@@ -59,7 +59,7 @@ const (
 // buf.alpha.registry.v1alpha1.RepositoryBranchService service.
 type RepositoryBranchServiceClient interface {
 	// ListRepositoryBranchs lists the repository branches associated with a Repository.
-	ListRepositoryBranches(context.Context, *connect_go.Request[v1alpha1.ListRepositoryBranchesRequest]) (*connect_go.Response[v1alpha1.ListRepositoryBranchesResponse], error)
+	ListRepositoryBranches(context.Context, *connect.Request[v1alpha1.ListRepositoryBranchesRequest]) (*connect.Response[v1alpha1.ListRepositoryBranchesResponse], error)
 	// GetCurrentDefaultBranch returns the branch name that is mapped to the main/BSR_HEAD. This might
 	// not be the same value in the repository's `default_branch` field, since that value can be
 	// changed at will by repository's owners/admins for syncing git repositories. This RPC retrieves
@@ -67,7 +67,7 @@ type RepositoryBranchServiceClient interface {
 	// stored in the `default_branch` field.
 	//
 	// TODO: Rename this RPC to something more appropriate like "GetLatestHEADCommit".
-	GetCurrentDefaultBranch(context.Context, *connect_go.Request[v1alpha1.GetCurrentDefaultBranchRequest]) (*connect_go.Response[v1alpha1.GetCurrentDefaultBranchResponse], error)
+	GetCurrentDefaultBranch(context.Context, *connect.Request[v1alpha1.GetCurrentDefaultBranchRequest]) (*connect.Response[v1alpha1.GetCurrentDefaultBranchResponse], error)
 }
 
 // NewRepositoryBranchServiceClient constructs a client for the
@@ -78,39 +78,39 @@ type RepositoryBranchServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewRepositoryBranchServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) RepositoryBranchServiceClient {
+func NewRepositoryBranchServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) RepositoryBranchServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &repositoryBranchServiceClient{
-		listRepositoryBranches: connect_go.NewClient[v1alpha1.ListRepositoryBranchesRequest, v1alpha1.ListRepositoryBranchesResponse](
+		listRepositoryBranches: connect.NewClient[v1alpha1.ListRepositoryBranchesRequest, v1alpha1.ListRepositoryBranchesResponse](
 			httpClient,
 			baseURL+RepositoryBranchServiceListRepositoryBranchesProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		getCurrentDefaultBranch: connect_go.NewClient[v1alpha1.GetCurrentDefaultBranchRequest, v1alpha1.GetCurrentDefaultBranchResponse](
+		getCurrentDefaultBranch: connect.NewClient[v1alpha1.GetCurrentDefaultBranchRequest, v1alpha1.GetCurrentDefaultBranchResponse](
 			httpClient,
 			baseURL+RepositoryBranchServiceGetCurrentDefaultBranchProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // repositoryBranchServiceClient implements RepositoryBranchServiceClient.
 type repositoryBranchServiceClient struct {
-	listRepositoryBranches  *connect_go.Client[v1alpha1.ListRepositoryBranchesRequest, v1alpha1.ListRepositoryBranchesResponse]
-	getCurrentDefaultBranch *connect_go.Client[v1alpha1.GetCurrentDefaultBranchRequest, v1alpha1.GetCurrentDefaultBranchResponse]
+	listRepositoryBranches  *connect.Client[v1alpha1.ListRepositoryBranchesRequest, v1alpha1.ListRepositoryBranchesResponse]
+	getCurrentDefaultBranch *connect.Client[v1alpha1.GetCurrentDefaultBranchRequest, v1alpha1.GetCurrentDefaultBranchResponse]
 }
 
 // ListRepositoryBranches calls
 // buf.alpha.registry.v1alpha1.RepositoryBranchService.ListRepositoryBranches.
-func (c *repositoryBranchServiceClient) ListRepositoryBranches(ctx context.Context, req *connect_go.Request[v1alpha1.ListRepositoryBranchesRequest]) (*connect_go.Response[v1alpha1.ListRepositoryBranchesResponse], error) {
+func (c *repositoryBranchServiceClient) ListRepositoryBranches(ctx context.Context, req *connect.Request[v1alpha1.ListRepositoryBranchesRequest]) (*connect.Response[v1alpha1.ListRepositoryBranchesResponse], error) {
 	return c.listRepositoryBranches.CallUnary(ctx, req)
 }
 
 // GetCurrentDefaultBranch calls
 // buf.alpha.registry.v1alpha1.RepositoryBranchService.GetCurrentDefaultBranch.
-func (c *repositoryBranchServiceClient) GetCurrentDefaultBranch(ctx context.Context, req *connect_go.Request[v1alpha1.GetCurrentDefaultBranchRequest]) (*connect_go.Response[v1alpha1.GetCurrentDefaultBranchResponse], error) {
+func (c *repositoryBranchServiceClient) GetCurrentDefaultBranch(ctx context.Context, req *connect.Request[v1alpha1.GetCurrentDefaultBranchRequest]) (*connect.Response[v1alpha1.GetCurrentDefaultBranchResponse], error) {
 	return c.getCurrentDefaultBranch.CallUnary(ctx, req)
 }
 
@@ -118,7 +118,7 @@ func (c *repositoryBranchServiceClient) GetCurrentDefaultBranch(ctx context.Cont
 // buf.alpha.registry.v1alpha1.RepositoryBranchService service.
 type RepositoryBranchServiceHandler interface {
 	// ListRepositoryBranchs lists the repository branches associated with a Repository.
-	ListRepositoryBranches(context.Context, *connect_go.Request[v1alpha1.ListRepositoryBranchesRequest]) (*connect_go.Response[v1alpha1.ListRepositoryBranchesResponse], error)
+	ListRepositoryBranches(context.Context, *connect.Request[v1alpha1.ListRepositoryBranchesRequest]) (*connect.Response[v1alpha1.ListRepositoryBranchesResponse], error)
 	// GetCurrentDefaultBranch returns the branch name that is mapped to the main/BSR_HEAD. This might
 	// not be the same value in the repository's `default_branch` field, since that value can be
 	// changed at will by repository's owners/admins for syncing git repositories. This RPC retrieves
@@ -126,7 +126,7 @@ type RepositoryBranchServiceHandler interface {
 	// stored in the `default_branch` field.
 	//
 	// TODO: Rename this RPC to something more appropriate like "GetLatestHEADCommit".
-	GetCurrentDefaultBranch(context.Context, *connect_go.Request[v1alpha1.GetCurrentDefaultBranchRequest]) (*connect_go.Response[v1alpha1.GetCurrentDefaultBranchResponse], error)
+	GetCurrentDefaultBranch(context.Context, *connect.Request[v1alpha1.GetCurrentDefaultBranchRequest]) (*connect.Response[v1alpha1.GetCurrentDefaultBranchResponse], error)
 }
 
 // NewRepositoryBranchServiceHandler builds an HTTP handler from the service implementation. It
@@ -134,18 +134,18 @@ type RepositoryBranchServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewRepositoryBranchServiceHandler(svc RepositoryBranchServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	repositoryBranchServiceListRepositoryBranchesHandler := connect_go.NewUnaryHandler(
+func NewRepositoryBranchServiceHandler(svc RepositoryBranchServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	repositoryBranchServiceListRepositoryBranchesHandler := connect.NewUnaryHandler(
 		RepositoryBranchServiceListRepositoryBranchesProcedure,
 		svc.ListRepositoryBranches,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	repositoryBranchServiceGetCurrentDefaultBranchHandler := connect_go.NewUnaryHandler(
+	repositoryBranchServiceGetCurrentDefaultBranchHandler := connect.NewUnaryHandler(
 		RepositoryBranchServiceGetCurrentDefaultBranchProcedure,
 		svc.GetCurrentDefaultBranch,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.RepositoryBranchService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -162,10 +162,10 @@ func NewRepositoryBranchServiceHandler(svc RepositoryBranchServiceHandler, opts 
 // UnimplementedRepositoryBranchServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedRepositoryBranchServiceHandler struct{}
 
-func (UnimplementedRepositoryBranchServiceHandler) ListRepositoryBranches(context.Context, *connect_go.Request[v1alpha1.ListRepositoryBranchesRequest]) (*connect_go.Response[v1alpha1.ListRepositoryBranchesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryBranchService.ListRepositoryBranches is not implemented"))
+func (UnimplementedRepositoryBranchServiceHandler) ListRepositoryBranches(context.Context, *connect.Request[v1alpha1.ListRepositoryBranchesRequest]) (*connect.Response[v1alpha1.ListRepositoryBranchesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryBranchService.ListRepositoryBranches is not implemented"))
 }
 
-func (UnimplementedRepositoryBranchServiceHandler) GetCurrentDefaultBranch(context.Context, *connect_go.Request[v1alpha1.GetCurrentDefaultBranchRequest]) (*connect_go.Response[v1alpha1.GetCurrentDefaultBranchResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryBranchService.GetCurrentDefaultBranch is not implemented"))
+func (UnimplementedRepositoryBranchServiceHandler) GetCurrentDefaultBranch(context.Context, *connect.Request[v1alpha1.GetCurrentDefaultBranchRequest]) (*connect.Response[v1alpha1.GetCurrentDefaultBranchResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryBranchService.GetCurrentDefaultBranch is not implemented"))
 }

@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// ResourceServiceName is the fully-qualified name of the ResourceService service.
@@ -56,7 +56,7 @@ const (
 type ResourceServiceClient interface {
 	// GetResourceByName takes a resource name and returns the
 	// resource either as a repository or a plugin.
-	GetResourceByName(context.Context, *connect_go.Request[v1alpha1.GetResourceByNameRequest]) (*connect_go.Response[v1alpha1.GetResourceByNameResponse], error)
+	GetResourceByName(context.Context, *connect.Request[v1alpha1.GetResourceByNameRequest]) (*connect.Response[v1alpha1.GetResourceByNameResponse], error)
 }
 
 // NewResourceServiceClient constructs a client for the buf.alpha.registry.v1alpha1.ResourceService
@@ -66,25 +66,25 @@ type ResourceServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewResourceServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) ResourceServiceClient {
+func NewResourceServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ResourceServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &resourceServiceClient{
-		getResourceByName: connect_go.NewClient[v1alpha1.GetResourceByNameRequest, v1alpha1.GetResourceByNameResponse](
+		getResourceByName: connect.NewClient[v1alpha1.GetResourceByNameRequest, v1alpha1.GetResourceByNameResponse](
 			httpClient,
 			baseURL+ResourceServiceGetResourceByNameProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // resourceServiceClient implements ResourceServiceClient.
 type resourceServiceClient struct {
-	getResourceByName *connect_go.Client[v1alpha1.GetResourceByNameRequest, v1alpha1.GetResourceByNameResponse]
+	getResourceByName *connect.Client[v1alpha1.GetResourceByNameRequest, v1alpha1.GetResourceByNameResponse]
 }
 
 // GetResourceByName calls buf.alpha.registry.v1alpha1.ResourceService.GetResourceByName.
-func (c *resourceServiceClient) GetResourceByName(ctx context.Context, req *connect_go.Request[v1alpha1.GetResourceByNameRequest]) (*connect_go.Response[v1alpha1.GetResourceByNameResponse], error) {
+func (c *resourceServiceClient) GetResourceByName(ctx context.Context, req *connect.Request[v1alpha1.GetResourceByNameRequest]) (*connect.Response[v1alpha1.GetResourceByNameResponse], error) {
 	return c.getResourceByName.CallUnary(ctx, req)
 }
 
@@ -93,7 +93,7 @@ func (c *resourceServiceClient) GetResourceByName(ctx context.Context, req *conn
 type ResourceServiceHandler interface {
 	// GetResourceByName takes a resource name and returns the
 	// resource either as a repository or a plugin.
-	GetResourceByName(context.Context, *connect_go.Request[v1alpha1.GetResourceByNameRequest]) (*connect_go.Response[v1alpha1.GetResourceByNameResponse], error)
+	GetResourceByName(context.Context, *connect.Request[v1alpha1.GetResourceByNameRequest]) (*connect.Response[v1alpha1.GetResourceByNameResponse], error)
 }
 
 // NewResourceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -101,12 +101,12 @@ type ResourceServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewResourceServiceHandler(svc ResourceServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	resourceServiceGetResourceByNameHandler := connect_go.NewUnaryHandler(
+func NewResourceServiceHandler(svc ResourceServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	resourceServiceGetResourceByNameHandler := connect.NewUnaryHandler(
 		ResourceServiceGetResourceByNameProcedure,
 		svc.GetResourceByName,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.ResourceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -121,6 +121,6 @@ func NewResourceServiceHandler(svc ResourceServiceHandler, opts ...connect_go.Ha
 // UnimplementedResourceServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedResourceServiceHandler struct{}
 
-func (UnimplementedResourceServiceHandler) GetResourceByName(context.Context, *connect_go.Request[v1alpha1.GetResourceByNameRequest]) (*connect_go.Response[v1alpha1.GetResourceByNameResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResourceService.GetResourceByName is not implemented"))
+func (UnimplementedResourceServiceHandler) GetResourceByName(context.Context, *connect.Request[v1alpha1.GetResourceByNameRequest]) (*connect.Response[v1alpha1.GetResourceByNameResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResourceService.GetResourceByName is not implemented"))
 }

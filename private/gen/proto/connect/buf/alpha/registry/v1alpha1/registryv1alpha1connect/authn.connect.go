@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// AuthnServiceName is the fully-qualified name of the AuthnService service.
@@ -60,11 +60,11 @@ type AuthnServiceClient interface {
 	// GetCurrentUser gets information associated with the current user.
 	//
 	// The user's ID is retrieved from the request's authentication header.
-	GetCurrentUser(context.Context, *connect_go.Request[v1alpha1.GetCurrentUserRequest]) (*connect_go.Response[v1alpha1.GetCurrentUserResponse], error)
+	GetCurrentUser(context.Context, *connect.Request[v1alpha1.GetCurrentUserRequest]) (*connect.Response[v1alpha1.GetCurrentUserResponse], error)
 	// GetCurrentUserSubject gets the currently logged in users subject.
 	//
 	// The user's ID is retrieved from the request's authentication header.
-	GetCurrentUserSubject(context.Context, *connect_go.Request[v1alpha1.GetCurrentUserSubjectRequest]) (*connect_go.Response[v1alpha1.GetCurrentUserSubjectResponse], error)
+	GetCurrentUserSubject(context.Context, *connect.Request[v1alpha1.GetCurrentUserSubjectRequest]) (*connect.Response[v1alpha1.GetCurrentUserSubjectResponse], error)
 }
 
 // NewAuthnServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AuthnService
@@ -74,37 +74,37 @@ type AuthnServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewAuthnServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) AuthnServiceClient {
+func NewAuthnServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AuthnServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &authnServiceClient{
-		getCurrentUser: connect_go.NewClient[v1alpha1.GetCurrentUserRequest, v1alpha1.GetCurrentUserResponse](
+		getCurrentUser: connect.NewClient[v1alpha1.GetCurrentUserRequest, v1alpha1.GetCurrentUserResponse](
 			httpClient,
 			baseURL+AuthnServiceGetCurrentUserProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		getCurrentUserSubject: connect_go.NewClient[v1alpha1.GetCurrentUserSubjectRequest, v1alpha1.GetCurrentUserSubjectResponse](
+		getCurrentUserSubject: connect.NewClient[v1alpha1.GetCurrentUserSubjectRequest, v1alpha1.GetCurrentUserSubjectResponse](
 			httpClient,
 			baseURL+AuthnServiceGetCurrentUserSubjectProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // authnServiceClient implements AuthnServiceClient.
 type authnServiceClient struct {
-	getCurrentUser        *connect_go.Client[v1alpha1.GetCurrentUserRequest, v1alpha1.GetCurrentUserResponse]
-	getCurrentUserSubject *connect_go.Client[v1alpha1.GetCurrentUserSubjectRequest, v1alpha1.GetCurrentUserSubjectResponse]
+	getCurrentUser        *connect.Client[v1alpha1.GetCurrentUserRequest, v1alpha1.GetCurrentUserResponse]
+	getCurrentUserSubject *connect.Client[v1alpha1.GetCurrentUserSubjectRequest, v1alpha1.GetCurrentUserSubjectResponse]
 }
 
 // GetCurrentUser calls buf.alpha.registry.v1alpha1.AuthnService.GetCurrentUser.
-func (c *authnServiceClient) GetCurrentUser(ctx context.Context, req *connect_go.Request[v1alpha1.GetCurrentUserRequest]) (*connect_go.Response[v1alpha1.GetCurrentUserResponse], error) {
+func (c *authnServiceClient) GetCurrentUser(ctx context.Context, req *connect.Request[v1alpha1.GetCurrentUserRequest]) (*connect.Response[v1alpha1.GetCurrentUserResponse], error) {
 	return c.getCurrentUser.CallUnary(ctx, req)
 }
 
 // GetCurrentUserSubject calls buf.alpha.registry.v1alpha1.AuthnService.GetCurrentUserSubject.
-func (c *authnServiceClient) GetCurrentUserSubject(ctx context.Context, req *connect_go.Request[v1alpha1.GetCurrentUserSubjectRequest]) (*connect_go.Response[v1alpha1.GetCurrentUserSubjectResponse], error) {
+func (c *authnServiceClient) GetCurrentUserSubject(ctx context.Context, req *connect.Request[v1alpha1.GetCurrentUserSubjectRequest]) (*connect.Response[v1alpha1.GetCurrentUserSubjectResponse], error) {
 	return c.getCurrentUserSubject.CallUnary(ctx, req)
 }
 
@@ -113,11 +113,11 @@ type AuthnServiceHandler interface {
 	// GetCurrentUser gets information associated with the current user.
 	//
 	// The user's ID is retrieved from the request's authentication header.
-	GetCurrentUser(context.Context, *connect_go.Request[v1alpha1.GetCurrentUserRequest]) (*connect_go.Response[v1alpha1.GetCurrentUserResponse], error)
+	GetCurrentUser(context.Context, *connect.Request[v1alpha1.GetCurrentUserRequest]) (*connect.Response[v1alpha1.GetCurrentUserResponse], error)
 	// GetCurrentUserSubject gets the currently logged in users subject.
 	//
 	// The user's ID is retrieved from the request's authentication header.
-	GetCurrentUserSubject(context.Context, *connect_go.Request[v1alpha1.GetCurrentUserSubjectRequest]) (*connect_go.Response[v1alpha1.GetCurrentUserSubjectResponse], error)
+	GetCurrentUserSubject(context.Context, *connect.Request[v1alpha1.GetCurrentUserSubjectRequest]) (*connect.Response[v1alpha1.GetCurrentUserSubjectResponse], error)
 }
 
 // NewAuthnServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -125,18 +125,18 @@ type AuthnServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewAuthnServiceHandler(svc AuthnServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	authnServiceGetCurrentUserHandler := connect_go.NewUnaryHandler(
+func NewAuthnServiceHandler(svc AuthnServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	authnServiceGetCurrentUserHandler := connect.NewUnaryHandler(
 		AuthnServiceGetCurrentUserProcedure,
 		svc.GetCurrentUser,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	authnServiceGetCurrentUserSubjectHandler := connect_go.NewUnaryHandler(
+	authnServiceGetCurrentUserSubjectHandler := connect.NewUnaryHandler(
 		AuthnServiceGetCurrentUserSubjectProcedure,
 		svc.GetCurrentUserSubject,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.AuthnService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -153,10 +153,10 @@ func NewAuthnServiceHandler(svc AuthnServiceHandler, opts ...connect_go.HandlerO
 // UnimplementedAuthnServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAuthnServiceHandler struct{}
 
-func (UnimplementedAuthnServiceHandler) GetCurrentUser(context.Context, *connect_go.Request[v1alpha1.GetCurrentUserRequest]) (*connect_go.Response[v1alpha1.GetCurrentUserResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthnService.GetCurrentUser is not implemented"))
+func (UnimplementedAuthnServiceHandler) GetCurrentUser(context.Context, *connect.Request[v1alpha1.GetCurrentUserRequest]) (*connect.Response[v1alpha1.GetCurrentUserResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthnService.GetCurrentUser is not implemented"))
 }
 
-func (UnimplementedAuthnServiceHandler) GetCurrentUserSubject(context.Context, *connect_go.Request[v1alpha1.GetCurrentUserSubjectRequest]) (*connect_go.Response[v1alpha1.GetCurrentUserSubjectResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthnService.GetCurrentUserSubject is not implemented"))
+func (UnimplementedAuthnServiceHandler) GetCurrentUserSubject(context.Context, *connect.Request[v1alpha1.GetCurrentUserSubjectRequest]) (*connect.Response[v1alpha1.GetCurrentUserSubjectResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthnService.GetCurrentUserSubject is not implemented"))
 }
