@@ -17,14 +17,11 @@ package bufmodulebuild
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/sha3"
 )
-
-var errDuplicatedDependency = errors.New("module declared in DependencyModulePins but not in workspace was already added to the dependency Module set, this is a system error")
 
 type moduleFileSetBuilder struct {
 	logger       *zap.Logger
@@ -147,7 +144,7 @@ func (m *moduleFileSetBuilder) build(
 		}
 		// At this point, this is really just a safety check.
 		if _, ok := hashes[dependencyModuleHash]; ok {
-			return nil, errDuplicatedDependency
+			return nil, ErrDuplicatedDependency
 		}
 		dependencyModules = append(dependencyModules, dependencyModule)
 		hashes[dependencyModuleHash] = struct{}{}

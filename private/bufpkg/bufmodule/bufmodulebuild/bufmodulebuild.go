@@ -26,6 +26,10 @@ import (
 	"go.uber.org/zap"
 )
 
+// ErrDuplicatedDependency is the error returned if a two modules have the same set of Protobuf file
+// paths.
+var ErrDuplicatedDependency = errors.New("module declared in DependencyModulePins but not in workspace was already added to the dependency Module set")
+
 // ModuleFileSetBuilder builds ModuleFileSets from Modules.
 type ModuleFileSetBuilder interface {
 	Build(
@@ -168,10 +172,4 @@ func WithExcludePathsAllowNotExist(excludePaths []string) BuildOption {
 		buildOptions.excludePaths = excludePaths
 		buildOptions.pathsAllowNotExist = true
 	}
-}
-
-// IsErrDuplicatedDependency checks if the given error is `errDuplicatedDependency`, from the build
-// process.
-func IsErrDuplicatedDependency(err error) bool {
-	return errors.Is(err, errDuplicatedDependency)
 }
