@@ -154,12 +154,44 @@ func (r *repository) CurrentBranch() string {
 	return r.checkedOutBranch
 }
 
-func (r *repository) ForEachCommit(branch string, f func(Commit) error) error {
-	branch = normalpath.Unnormalize(branch)
-	currentCommit, err := r.HEADCommit(branch)
-	if err != nil {
-		return fmt.Errorf("get head commit for branch %q: %w", branch, err)
+func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommitOption) error {
+	var config forEachCommitOpts
+	for _, option := range options {
+		if err := option(&config); err != nil {
+			return err
+		}
 	}
+	var startCommit Commit
+	if config.start == nil {
+		// if no custom start point is set, use HEAD from the default branch
+		var err error
+		startCommit, err = r.HEADCommit(r.DefaultBranch())
+		if err != nil {
+			return fmt.Errorf("get head commit for default branch %q: %w", r.DefaultBranch(), err)
+		}
+	} else {
+		switch config.start.refType {
+		case refTypeHash:
+			commitID, err := NewHashFromHex(config.start.refName)
+			if err != nil {
+				return fmt.Errorf("new hash from %s: %w", config.start.refName, err)
+			}
+			startCommit, err = r.objectReader.Commit(commitID)
+			if err != nil {
+				return fmt.Errorf("read commit %s: %w", commitID.Hex(), err)
+			}
+		case refTypeBranch:
+			branch := normalpath.Unnormalize(config.start.refName)
+			var err error
+			startCommit, err = r.HEADCommit(branch)
+			if err != nil {
+				return fmt.Errorf("read HEAD commit for branch %q: %w", branch, err)
+			}
+		default:
+			return fmt.Errorf("unsupported start point reference type %s:%s", config.start.refType, config.start.refName)
+		}
+	}
+	currentCommit := startCommit
 	for {
 		if err := f(currentCommit); err != nil {
 			return err
@@ -173,6 +205,7 @@ func (r *repository) ForEachCommit(branch string, f func(Commit) error) error {
 		// history by such a merge, as those commits are usually updating the state of the target
 		// branch.
 		nextCommitHash := currentCommit.Parents()[0]
+		var err error
 		currentCommit, err = r.objectReader.Commit(nextCommitHash)
 		if err != nil {
 			return fmt.Errorf("read commit %s: %w", nextCommitHash, err)

@@ -231,6 +231,16 @@ func SyncerWithModuleDefaultBranchGetter(getter ModuleDefaultBranchGetter) Synce
 	}
 }
 
+// SyncerWithTagsBackfiller configures a tags backfiller for older, already synced commits. If left
+// empty, the syncer won't try to sync older tags past each module's start sync points on all
+// branches.
+func SyncerWithTagsBackfiller(backfiller TagsBackfiller) SyncerOption {
+	return func(s *syncer) error {
+		s.tagsBackfiller = backfiller
+		return nil
+	}
+}
+
 // SyncerWithAllBranches sets the syncer to sync all branches. Be default the syncer only processes
 // commits in the current checked out branch.
 func SyncerWithAllBranches() SyncerOption {
@@ -268,6 +278,26 @@ type SyncedGitCommitChecker func(
 type ModuleDefaultBranchGetter func(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,
+) (string, error)
+
+// TagsBackfiller is invoked when a commit with valid modules is found within a lookback threshold
+// past the start sync point for such module. The Syncer assumes that the "old" commit is already
+// synced, so it will attempt to backfill existing tags using that git hash, in case they were
+// recently created or moved there.
+//
+// A common scenario is SemVer releases: a commit is pushed to the default Git branch, the sync
+// process triggers and completes, and some minutes later that commit is tagged "v1.2.3". The next
+// time the sync command runs, this backfiller would pick such tag and backfill it to the correct BSR
+// commit.
+//
+// It's expected to return the BSR commit name to which the tags were backfilled.
+type TagsBackfiller func(
+	ctx context.Context,
+	module bufmoduleref.ModuleIdentity,
+	alreadySyncedHash git.Hash,
+	author git.Ident,
+	committer git.Ident,
+	tags []string,
 ) (string, error)
 
 // ModuleCommit is a module at a particular commit.
