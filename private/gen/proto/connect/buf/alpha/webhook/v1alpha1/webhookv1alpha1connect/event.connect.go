@@ -22,7 +22,7 @@ import (
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/webhook/v1alpha1"
-	connect_go "github.com/bufbuild/connect-go"
+	connect_go "connectrpc.com/connect"
 	http "net/http"
 	strings "strings"
 )

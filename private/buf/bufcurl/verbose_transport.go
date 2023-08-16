@@ -25,8 +25,8 @@ import (
 	"sort"
 	"strings"
 
+	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/pkg/verbose"
-	"github.com/bufbuild/connect-go"
 	"go.uber.org/atomic"
 )
 

@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"io"
 
+	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	connect "github.com/bufbuild/connect-go"
 	"google.golang.org/protobuf/proto"
 )
 

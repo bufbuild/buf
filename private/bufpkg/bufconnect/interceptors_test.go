@@ -22,10 +22,10 @@ import (
 	"fmt"
 	"testing"
 
+	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/netrc"
-	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

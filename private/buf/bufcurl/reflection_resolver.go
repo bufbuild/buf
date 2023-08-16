@@ -23,10 +23,10 @@ import (
 	"strings"
 	"sync"
 
+	"connectrpc.com/connect"
 	reflectionv1 "github.com/bufbuild/buf/private/gen/proto/go/grpc/reflection/v1"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/verbose"
-	"github.com/bufbuild/connect-go"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"

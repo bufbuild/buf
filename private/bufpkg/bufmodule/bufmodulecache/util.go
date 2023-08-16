@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/connect-go"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"go.uber.org/zap"
 )
 

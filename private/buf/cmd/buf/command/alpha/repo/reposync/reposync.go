@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -37,7 +38,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"

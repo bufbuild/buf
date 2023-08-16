@@ -50,7 +50,7 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			MinVersion: "1.18",
 			Deps: []*bufpluginconfig.GoRegistryDependencyConfig{
 				{
-					Module:  "github.com/bufbuild/connect-go",
+					Module:  "connectrpc.com/connect",
 					Version: "v0.1.1",
 				},
 			},
@@ -78,7 +78,7 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			MinVersion: "1.18",
 			Deps: []*bufpluginconfig.GoRegistryDependencyConfig{
 				{
-					Module:  "github.com/bufbuild/connect-go",
+					Module:  "connectrpc.com/connect",
 					Version: "v0.4.0",
 				},
 			},
