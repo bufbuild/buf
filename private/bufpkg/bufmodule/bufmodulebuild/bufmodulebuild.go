@@ -26,9 +26,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// ErrDuplicatedDependency is the error returned if a two modules have the same set of Protobuf file
+// ErrDuplicateDependency is the error returned if a two modules have the same set of Protobuf file
 // paths.
-var ErrDuplicatedDependency = errors.New("module declared in DependencyModulePins but not in workspace was already added to the dependency Module set")
+var ErrDuplicateDependency = errors.New("module declared in DependencyModulePins but not in workspace was already added to the dependency Module set")
 
 // ModuleFileSetBuilder builds ModuleFileSets from Modules.
 type ModuleFileSetBuilder interface {

@@ -144,7 +144,7 @@ func (m *moduleFileSetBuilder) build(
 		}
 		// At this point, this is really just a safety check.
 		if _, ok := hashes[dependencyModuleHash]; ok {
-			return nil, ErrDuplicatedDependency
+			return nil, ErrDuplicateDependency
 		}
 		dependencyModules = append(dependencyModules, dependencyModule)
 		hashes[dependencyModuleHash] = struct{}{}
