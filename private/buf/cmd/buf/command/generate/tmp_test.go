@@ -17,7 +17,6 @@ package generate
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,7 +35,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO: remove all print statements
 const v1Content = `version: v1
 managed:
   enabled: true
@@ -307,7 +305,6 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 
 			// generate with v2 template
 			outDir = outDirBase + "v2"
-			fmt.Printf("=== Going to run with template %s and out to %s\n", templatePath, outDir)
 			testRunSuccess(
 				t,
 				"--template",
@@ -320,7 +317,6 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 				storageos.ReadWriteBucketWithSymlinksIfSupported(),
 			)
 			require.NoError(t, err)
-			fmt.Println("=== Done")
 
 			// generate with v2 template with --migrate flag
 			outDir = outDirBase + "v2migrate"
@@ -435,7 +431,6 @@ func requireVersionV2(
 ) {
 	data, err := os.ReadFile(templatePath)
 	require.NoError(t, err)
-	fmt.Printf("Here is config: %s", string(data))
 	versionConfig := bufgen.ExternalConfigVersion{}
 	err = encoding.UnmarshalYAMLNonStrict(data, &versionConfig)
 	require.NoError(t, err)
