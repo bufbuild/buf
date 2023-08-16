@@ -31,8 +31,8 @@ message RepositoryBranch {
   bool is_main_branch = 4;
   // The last update time of the branch.
   google.protobuf.Timestamp last_update_time = 5;
-  // The last update author of the branch.
-  string last_update_author = 6;
+  // The BSR user ID of the user who last updated the branch.
+  string last_update_user_id = 6;
 }
 
 // RepositoryBranchService is the Repository branch service.
