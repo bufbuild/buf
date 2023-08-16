@@ -17,6 +17,7 @@ package generate
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,6 +36,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TODO: remove all print statements
 const v1Content = `version: v1
 managed:
   enabled: true
@@ -60,20 +62,7 @@ plugins:
 const v1ContentWithTypes = `version: v1
 managed:
   enabled: true
-  cc_enable_arenas: false
-  java_multiple_files: true
   java_package_prefix: com
-  java_string_check_utf8: false
-  optimize_for: CODE_SIZE
-  go_package_prefix:
-    default: github.com/acme/weather/private/gen/proto/go
-    except:
-      - buf.build/googleapis/googleapis
-    override:
-      buf.build/acme/weather: github.com/acme/weather/gen/proto/go
-  override:
-    JAVA_PACKAGE:
-      acme/weather/v1/weather.proto: "org"
 plugins:
   - plugin: java
     out: gen/java
@@ -85,25 +74,22 @@ types:
 func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	tmpDir := t.TempDir()
 
 	testcases := []struct {
 		description             string
 		input                   string
 		templateContent         string
-		templatePath            string // must be unique across testcases
-		outDir                  string // must be unique across testcases
 		additionalFlags         []string
 		filesThatShouldExist    []string
 		filesThatShouldNotExist []string
+		// skipMigrateComp this skips comparing running <command> vs running <command> --migrate
+		// this should only be set to true when the v1 file has `types`
+		skipMigrateComp bool
 	}{
 		{
 			description:     "include and exclude paths",
 			input:           filepath.Join("testdata", "paths"),
 			templateContent: v1Content,
-			templatePath:    filepath.Join(tmpDir, "buf.include.exclude.yaml"),
-			outDir:          filepath.Join(tmpDir, "IncludeExclude"),
 			additionalFlags: []string{
 				"--path",
 				filepath.Join("testdata", "paths", "b", "v1", "b.proto"),
@@ -126,8 +112,6 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			description:     "types only new flags",
 			input:           filepath.Join("testdata", "paths"),
 			templateContent: v1Content,
-			templatePath:    filepath.Join(tmpDir, "buf.types.new.yaml"),
-			outDir:          filepath.Join(tmpDir, "NewTypes"),
 			additionalFlags: []string{
 				"--type",
 				"b.v1.Bar",
@@ -150,8 +134,6 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			description:     "types only old flags",
 			input:           filepath.Join("testdata", "paths"),
 			templateContent: v1Content,
-			templatePath:    filepath.Join(tmpDir, "buf.types.old.yaml"),
-			outDir:          filepath.Join(tmpDir, "OldTypes"),
 			additionalFlags: []string{
 				"--include-types",
 				"a.v1.Foo",
@@ -175,8 +157,6 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			description:     "types both new and old flags",
 			input:           filepath.Join("testdata", "paths"),
 			templateContent: v1Content,
-			templatePath:    filepath.Join(tmpDir, "buf.types.mixed.yaml"),
-			outDir:          filepath.Join(tmpDir, "MixedTypes"),
 			additionalFlags: []string{
 				"--type",
 				"b.v1.Bar",
@@ -199,12 +179,10 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			description:     "types in both flags and v1 config",
 			input:           filepath.Join("testdata", "paths"),
 			templateContent: v1ContentWithTypes,
-			templatePath:    filepath.Join(tmpDir, "buf.types.flags.config.yaml"),
-			outDir:          filepath.Join(tmpDir, "FlagsAndConfig"),
 			additionalFlags: []string{
 				"--type",
 				"b.v1.Bar",
-				"--include-types",
+				"--type",
 				"a.v3.foo.Bar",
 				"--type",
 				"a.v2.Foo",
@@ -219,19 +197,57 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 				"gen/java/com/a/v3/AProto.java",
 			},
 		},
+		{
+			description:     "types in old flags and v1 config",
+			input:           filepath.Join("testdata", "paths"),
+			templateContent: v1ContentWithTypes,
+			additionalFlags: []string{
+				"--type",
+				"b.v1.Bar",
+			},
+			filesThatShouldExist: []string{
+				"gen/java/com/b/v1/BProto.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/com/a/v2/AProto.java",
+				"gen/java/com/a/v3/foo/BarProto.java",
+				"gen/java/com/a/v1/AProto.java",
+				"gen/java/com/a/v3/AProto.java",
+			},
+		},
+		{
+			description:     "types only in config",
+			input:           filepath.Join("testdata", "paths"),
+			templateContent: v1ContentWithTypes,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/com/a/v1/AProto.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/com/b/v1/BProto.java",
+				"gen/java/com/a/v2/AProto.java",
+				"gen/java/com/a/v3/AProto.java",
+				"gen/java/com/a/v3/foo/BarProto.java",
+			},
+			skipMigrateComp: true,
+		},
 	}
 	for _, testcase := range testcases {
 		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
-			err := os.WriteFile(testcase.templatePath, []byte(v1Content), 0600)
+			storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+			tempDir := t.TempDir()
+			templatePath := filepath.Join(tempDir, "buf.gen.test.yaml")
+			outDirBase := filepath.Join(tempDir, "out")
+			err := os.WriteFile(templatePath, []byte(testcase.templateContent), 0600)
 			require.NoError(t, err)
-			outDir := testcase.outDir + "v1"
+			outDir := outDirBase + "v1"
 			argAndFlags := append(
 				[]string{
 					testcase.input,
 					"--template",
-					testcase.templatePath,
+					templatePath,
 					"--output",
 					outDir,
 				},
@@ -249,12 +265,12 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			require.NoError(t, err)
 
 			// migrate from v1 to v2
-			outDir = testcase.outDir + "migrate"
+			outDir = outDirBase + "migrate"
 			argAndFlags = append(
 				[]string{
 					testcase.input,
 					"--template",
-					testcase.templatePath,
+					templatePath,
 					"--output",
 					outDir,
 					"--migrate",
@@ -272,7 +288,7 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			require.NoError(t, err)
 			expectedNewArgs := []string{
 				"--template",
-				testcase.templatePath,
+				templatePath,
 				"--output",
 				outDir,
 			}
@@ -287,14 +303,15 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 				" ",
 			)
 			require.Equal(t, expectedNewCommand, printedLastLine)
-			requireVersionV2(t, testcase.templatePath)
+			requireVersionV2(t, templatePath)
 
 			// generate with v2 template
-			outDir = testcase.outDir + "v2"
+			outDir = outDirBase + "v2"
+			fmt.Printf("=== Going to run with template %s and out to %s\n", templatePath, outDir)
 			testRunSuccess(
 				t,
 				"--template",
-				testcase.templatePath,
+				templatePath,
 				"-o",
 				outDir,
 			)
@@ -303,12 +320,42 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 				storageos.ReadWriteBucketWithSymlinksIfSupported(),
 			)
 			require.NoError(t, err)
+			fmt.Println("=== Done")
+
+			// generate with v2 template with --migrate flag
+			outDir = outDirBase + "v2migrate"
+			printedLastLine = runAndGetStderrSecondLastLine(
+				t,
+				"--template",
+				templatePath,
+				"-o",
+				outDir,
+				"--migrate",
+			)
+			require.True(t, strings.HasSuffix(printedLastLine, "is already in v2"))
+			bucketV2Migrate, err := storageosProvider.NewReadWriteBucket(
+				outDir,
+				storageos.ReadWriteBucketWithSymlinksIfSupported(),
+			)
+			require.NoError(t, err)
+
+			if !testcase.skipMigrateComp {
+				diff, err := storage.DiffBytes(
+					context.Background(),
+					command.NewRunner(),
+					bucketV1,
+					bucketMigrate,
+					transformGolangProtocVersionToUnknown(t),
+				)
+				require.NoError(t, err)
+				require.Empty(t, string(diff))
+			}
 
 			diff, err := storage.DiffBytes(
 				context.Background(),
 				command.NewRunner(),
 				bucketV1,
-				bucketMigrate,
+				bucketV2,
 				transformGolangProtocVersionToUnknown(t),
 			)
 			require.NoError(t, err)
@@ -317,8 +364,8 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			diff, err = storage.DiffBytes(
 				context.Background(),
 				command.NewRunner(),
-				bucketMigrate,
 				bucketV2,
+				bucketV2Migrate,
 				transformGolangProtocVersionToUnknown(t),
 			)
 			require.NoError(t, err)
@@ -367,7 +414,7 @@ func requireFileExists(
 		context.Background(),
 		filepath.FromSlash(fileName),
 	)
-	require.NoError(t, err)
+	require.NoErrorf(t, err, "%s should exist but is not found", fileName)
 }
 
 func requireFileDoesNotExist(
@@ -379,7 +426,7 @@ func requireFileDoesNotExist(
 		context.Background(),
 		filepath.FromSlash(fileName),
 	)
-	require.Error(t, err)
+	require.Errorf(t, err, "%s should not exist but is found", fileName)
 }
 
 func requireVersionV2(
@@ -388,6 +435,7 @@ func requireVersionV2(
 ) {
 	data, err := os.ReadFile(templatePath)
 	require.NoError(t, err)
+	fmt.Printf("Here is config: %s", string(data))
 	versionConfig := bufgen.ExternalConfigVersion{}
 	err = encoding.UnmarshalYAMLNonStrict(data, &versionConfig)
 	require.NoError(t, err)
