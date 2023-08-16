@@ -161,7 +161,6 @@ plugins:
 	templatePath := filepath.Join(tmpDir, "buf.gen.yaml")
 	err := os.WriteFile(templatePath, []byte(v1Content), 0600)
 	require.NoError(t, err)
-	// protoDir := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	protoDir := filepath.Join("testdata", "paths")
 
 	// generate with v1 template
