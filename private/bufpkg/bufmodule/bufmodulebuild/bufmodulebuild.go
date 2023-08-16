@@ -16,6 +16,7 @@ package bufmodulebuild
 
 import (
 	"context"
+	"errors"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
@@ -167,4 +168,10 @@ func WithExcludePathsAllowNotExist(excludePaths []string) BuildOption {
 		buildOptions.excludePaths = excludePaths
 		buildOptions.pathsAllowNotExist = true
 	}
+}
+
+// IsErrDuplicatedDependency checks if the given error is `errDuplicatedDependency`, from the build
+// process.
+func IsErrDuplicatedDependency(err error) bool {
+	return errors.Is(err, errDuplicatedDependency)
 }

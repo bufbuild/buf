@@ -24,6 +24,8 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+var errDuplicatedDependency = errors.New("module declared in DependencyModulePins but not in workspace was already added to the dependency Module set, this is a system error")
+
 type moduleFileSetBuilder struct {
 	logger       *zap.Logger
 	moduleReader bufmodule.ModuleReader
@@ -121,7 +123,6 @@ func (m *moduleFileSetBuilder) build(
 			}
 			if _, ok := hashes[potentialDependencyModuleHash]; !ok {
 				dependencyModules = append(dependencyModules, potentialDependencyModule)
-			} else {
 				hashes[potentialDependencyModuleHash] = struct{}{}
 			}
 		}
@@ -146,7 +147,7 @@ func (m *moduleFileSetBuilder) build(
 		}
 		// At this point, this is really just a safety check.
 		if _, ok := hashes[dependencyModuleHash]; ok {
-			return nil, errors.New("module declared in DependencyModulePins but not in workspace was already added to the dependency Module set, this is a system error")
+			return nil, errDuplicatedDependency
 		}
 		dependencyModules = append(dependencyModules, dependencyModule)
 		hashes[dependencyModuleHash] = struct{}{}

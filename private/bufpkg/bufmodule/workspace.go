@@ -43,7 +43,7 @@ func newWorkspace(
 		}
 	}
 	for path, externalPaths := range pathToExternalPaths {
-		// Will be >1 even if the externalPaths are equal, we mostly care ab0out the count
+		// Will be >1 even if the externalPaths are equal, we mostly care about the count
 		if len(externalPaths) > 1 {
 			return nil, storage.NewErrExistsMultipleLocations(path, externalPaths...)
 		}
