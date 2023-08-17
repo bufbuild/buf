@@ -1,0 +1,771 @@
+{
+    "file": [
+        {
+            "name": "x.proto",
+            "package": "bar",
+            "messageType": [
+                {
+                    "name": "Bar"
+                },
+                {
+                    "name": "Baz"
+                }
+            ],
+            "sourceCodeInfo": {
+                "location": [
+                    {
+                        "span": [
+                            0,
+                            0,
+                            4,
+                            14
+                        ]
+                    },
+                    {
+                        "path": [
+                            2
+                        ],
+                        "span": [
+                            0,
+                            0,
+                            12
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0
+                        ],
+                        "span": [
+                            2,
+                            0,
+                            14
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            1
+                        ],
+                        "span": [
+                            2,
+                            8,
+                            11
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            1
+                        ],
+                        "span": [
+                            4,
+                            0,
+                            14
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            1,
+                            1
+                        ],
+                        "span": [
+                            4,
+                            8,
+                            11
+                        ]
+                    }
+                ]
+            },
+            "bufExtension": {
+                "isImport": true,
+                "moduleInfo": {
+                    "name": {
+                        "remote": "bufbuild.test",
+                        "owner": "generate",
+                        "repository": "d2"
+                    }
+                },
+                "isSyntaxUnspecified": true
+            }
+        },
+        {
+            "name": "a.proto",
+            "package": "foo",
+            "dependency": [
+                "x.proto"
+            ],
+            "messageType": [
+                {
+                    "name": "Foo",
+                    "field": [
+                        {
+                            "name": "a",
+                            "number": 1,
+                            "label": "LABEL_REQUIRED",
+                            "type": "TYPE_MESSAGE",
+                            "typeName": ".bar.Bar",
+                            "jsonName": "a"
+                        }
+                    ]
+                }
+            ],
+            "sourceCodeInfo": {
+                "location": [
+                    {
+                        "span": [
+                            0,
+                            0,
+                            6,
+                            1
+                        ]
+                    },
+                    {
+                        "path": [
+                            2
+                        ],
+                        "span": [
+                            0,
+                            0,
+                            12
+                        ]
+                    },
+                    {
+                        "path": [
+                            3,
+                            0
+                        ],
+                        "span": [
+                            2,
+                            0,
+                            17
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0
+                        ],
+                        "span": [
+                            4,
+                            0,
+                            6,
+                            1
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            1
+                        ],
+                        "span": [
+                            4,
+                            8,
+                            11
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0
+                        ],
+                        "span": [
+                            5,
+                            2,
+                            25
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0,
+                            4
+                        ],
+                        "span": [
+                            5,
+                            2,
+                            10
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0,
+                            6
+                        ],
+                        "span": [
+                            5,
+                            11,
+                            18
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0,
+                            1
+                        ],
+                        "span": [
+                            5,
+                            19,
+                            20
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0,
+                            3
+                        ],
+                        "span": [
+                            5,
+                            23,
+                            24
+                        ]
+                    }
+                ]
+            },
+            "bufExtension": {
+                "isImport": false,
+                "moduleInfo": {
+                    "name": {
+                        "remote": "bufbuild.test",
+                        "owner": "generate",
+                        "repository": "d1"
+                    }
+                },
+                "isSyntaxUnspecified": true
+            }
+        },
+        {
+            "name": "google/protobuf/timestamp.proto",
+            "package": "google.protobuf",
+            "messageType": [
+                {
+                    "name": "Timestamp",
+                    "field": [
+                        {
+                            "name": "seconds",
+                            "number": 1,
+                            "label": "LABEL_OPTIONAL",
+                            "type": "TYPE_INT64",
+                            "jsonName": "seconds"
+                        },
+                        {
+                            "name": "nanos",
+                            "number": 2,
+                            "label": "LABEL_OPTIONAL",
+                            "type": "TYPE_INT32",
+                            "jsonName": "nanos"
+                        }
+                    ]
+                }
+            ],
+            "options": {
+                "javaPackage": "com.google.protobuf",
+                "javaOuterClassname": "TimestampProto",
+                "javaMultipleFiles": true,
+                "goPackage": "google.golang.org/protobuf/types/known/timestamppb",
+                "ccEnableArenas": true,
+                "objcClassPrefix": "GPB",
+                "csharpNamespace": "Google.Protobuf.WellKnownTypes"
+            },
+            "sourceCodeInfo": {
+                "location": [
+                    {
+                        "span": [
+                            30,
+                            0,
+                            143,
+                            1
+                        ]
+                    },
+                    {
+                        "path": [
+                            12
+                        ],
+                        "span": [
+                            30,
+                            0,
+                            18
+                        ],
+                        "leadingDetachedComments": [
+                            " Protocol Buffers - Google's data interchange format\n Copyright 2008 Google Inc.  All rights reserved.\n https://developers.google.com/protocol-buffers/\n\n Redistribution and use in source and binary forms, with or without\n modification, are permitted provided that the following conditions are\n met:\n\n     * Redistributions of source code must retain the above copyright\n notice, this list of conditions and the following disclaimer.\n     * Redistributions in binary form must reproduce the above\n copyright notice, this list of conditions and the following disclaimer\n in the documentation and/or other materials provided with the\n distribution.\n     * Neither the name of Google Inc. nor the names of its\n contributors may be used to endorse or promote products derived from\n this software without specific prior written permission.\n\n THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+                        ]
+                    },
+                    {
+                        "path": [
+                            2
+                        ],
+                        "span": [
+                            32,
+                            0,
+                            24
+                        ]
+                    },
+                    {
+                        "path": [
+                            8
+                        ],
+                        "span": [
+                            34,
+                            0,
+                            31
+                        ]
+                    },
+                    {
+                        "path": [
+                            8,
+                            31
+                        ],
+                        "span": [
+                            34,
+                            0,
+                            31
+                        ]
+                    },
+                    {
+                        "path": [
+                            8
+                        ],
+                        "span": [
+                            35,
+                            0,
+                            73
+                        ]
+                    },
+                    {
+                        "path": [
+                            8,
+                            11
+                        ],
+                        "span": [
+                            35,
+                            0,
+                            73
+                        ]
+                    },
+                    {
+                        "path": [
+                            8
+                        ],
+                        "span": [
+                            36,
+                            0,
+                            44
+                        ]
+                    },
+                    {
+                        "path": [
+                            8,
+                            1
+                        ],
+                        "span": [
+                            36,
+                            0,
+                            44
+                        ]
+                    },
+                    {
+                        "path": [
+                            8
+                        ],
+                        "span": [
+                            37,
+                            0,
+                            47
+                        ]
+                    },
+                    {
+                        "path": [
+                            8,
+                            8
+                        ],
+                        "span": [
+                            37,
+                            0,
+                            47
+                        ]
+                    },
+                    {
+                        "path": [
+                            8
+                        ],
+                        "span": [
+                            38,
+                            0,
+                            34
+                        ]
+                    },
+                    {
+                        "path": [
+                            8,
+                            10
+                        ],
+                        "span": [
+                            38,
+                            0,
+                            34
+                        ]
+                    },
+                    {
+                        "path": [
+                            8
+                        ],
+                        "span": [
+                            39,
+                            0,
+                            33
+                        ]
+                    },
+                    {
+                        "path": [
+                            8,
+                            36
+                        ],
+                        "span": [
+                            39,
+                            0,
+                            33
+                        ]
+                    },
+                    {
+                        "path": [
+                            8
+                        ],
+                        "span": [
+                            40,
+                            0,
+                            59
+                        ]
+                    },
+                    {
+                        "path": [
+                            8,
+                            37
+                        ],
+                        "span": [
+                            40,
+                            0,
+                            59
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0
+                        ],
+                        "span": [
+                            132,
+                            0,
+                            143,
+                            1
+                        ],
+                        "leadingComments": " A Timestamp represents a point in time independent of any time zone or local\n calendar, encoded as a count of seconds and fractions of seconds at\n nanosecond resolution. The count is relative to an epoch at UTC midnight on\n January 1, 1970, in the proleptic Gregorian calendar which extends the\n Gregorian calendar backwards to year one.\n\n All minutes are 60 seconds long. Leap seconds are \"smeared\" so that no leap\n second table is needed for interpretation, using a [24-hour linear\n smear](https://developers.google.com/time/smear).\n\n The range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z. By\n restricting to that range, we ensure that we can convert to and from [RFC\n 3339](https://www.ietf.org/rfc/rfc3339.txt) date strings.\n\n # Examples\n\n Example 1: Compute Timestamp from POSIX `time()`.\n\n     Timestamp timestamp;\n     timestamp.set_seconds(time(NULL));\n     timestamp.set_nanos(0);\n\n Example 2: Compute Timestamp from POSIX `gettimeofday()`.\n\n     struct timeval tv;\n     gettimeofday(&tv, NULL);\n\n     Timestamp timestamp;\n     timestamp.set_seconds(tv.tv_sec);\n     timestamp.set_nanos(tv.tv_usec * 1000);\n\n Example 3: Compute Timestamp from Win32 `GetSystemTimeAsFileTime()`.\n\n     FILETIME ft;\n     GetSystemTimeAsFileTime(&ft);\n     UINT64 ticks = (((UINT64)ft.dwHighDateTime) << 32) | ft.dwLowDateTime;\n\n     // A Windows tick is 100 nanoseconds. Windows epoch 1601-01-01T00:00:00Z\n     // is 11644473600 seconds before Unix epoch 1970-01-01T00:00:00Z.\n     Timestamp timestamp;\n     timestamp.set_seconds((INT64) ((ticks / 10000000) - 11644473600LL));\n     timestamp.set_nanos((INT32) ((ticks % 10000000) * 100));\n\n Example 4: Compute Timestamp from Java `System.currentTimeMillis()`.\n\n     long millis = System.currentTimeMillis();\n\n     Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000)\n         .setNanos((int) ((millis % 1000) * 1000000)).build();\n\n Example 5: Compute Timestamp from Java `Instant.now()`.\n\n     Instant now = Instant.now();\n\n     Timestamp timestamp =\n         Timestamp.newBuilder().setSeconds(now.getEpochSecond())\n             .setNanos(now.getNano()).build();\n\n Example 6: Compute Timestamp from current time in Python.\n\n     timestamp = Timestamp()\n     timestamp.GetCurrentTime()\n\n # JSON Mapping\n\n In JSON format, the Timestamp type is encoded as a string in the\n [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format. That is, the\n format is \"{year}-{month}-{day}T{hour}:{min}:{sec}[.{frac_sec}]Z\"\n where {year} is always expressed using four digits while {month}, {day},\n {hour}, {min}, and {sec} are zero-padded to two digits each. The fractional\n seconds, which can go up to 9 digits (i.e. up to 1 nanosecond resolution),\n are optional. The \"Z\" suffix indicates the timezone (\"UTC\"); the timezone\n is required. A proto3 JSON serializer should always use UTC (as indicated by\n \"Z\") when printing the Timestamp type and a proto3 JSON parser should be\n able to accept both UTC and other timezones (as indicated by an offset).\n\n For example, \"2017-01-15T01:30:15.01Z\" encodes 15.01 seconds past\n 01:30 UTC on January 15, 2017.\n\n In JavaScript, one can convert a Date object to this format using the\n standard\n [toISOString()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString)\n method. In Python, a standard `datetime.datetime` object can be converted\n to this format using\n [`strftime`](https://docs.python.org/2/library/time.html#time.strftime) with\n the time format spec '%Y-%m-%dT%H:%M:%S.%fZ'. Likewise, in Java, one can use\n the Joda Time's [`ISODateTimeFormat.dateTime()`](\n http://www.joda.org/joda-time/apidocs/org/joda/time/format/ISODateTimeFormat.html#dateTime%2D%2D\n ) to obtain a formatter capable of generating timestamps in this format.\n\n"
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            1
+                        ],
+                        "span": [
+                            132,
+                            8,
+                            17
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0
+                        ],
+                        "span": [
+                            136,
+                            2,
+                            20
+                        ],
+                        "leadingComments": " Represents seconds of UTC time since Unix epoch\n 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to\n 9999-12-31T23:59:59Z inclusive.\n"
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0,
+                            5
+                        ],
+                        "span": [
+                            136,
+                            2,
+                            7
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0,
+                            1
+                        ],
+                        "span": [
+                            136,
+                            8,
+                            15
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0,
+                            3
+                        ],
+                        "span": [
+                            136,
+                            18,
+                            19
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            1
+                        ],
+                        "span": [
+                            142,
+                            2,
+                            18
+                        ],
+                        "leadingComments": " Non-negative fractions of a second at nanosecond resolution. Negative\n second values with fractions must still have non-negative nanos values\n that count forward in time. Must be from 0 to 999,999,999\n inclusive.\n"
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            1,
+                            5
+                        ],
+                        "span": [
+                            142,
+                            2,
+                            7
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            1,
+                            1
+                        ],
+                        "span": [
+                            142,
+                            8,
+                            13
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            1,
+                            3
+                        ],
+                        "span": [
+                            142,
+                            16,
+                            17
+                        ]
+                    }
+                ]
+            },
+            "syntax": "proto3",
+            "bufExtension": {
+                "isImport": true,
+                "isSyntaxUnspecified": false
+            }
+        },
+        {
+            "name": "b.proto",
+            "package": "foo",
+            "dependency": [
+                "google/protobuf/timestamp.proto"
+            ],
+            "messageType": [
+                {
+                    "name": "Baz",
+                    "field": [
+                        {
+                            "name": "timestamp",
+                            "number": 1,
+                            "label": "LABEL_REQUIRED",
+                            "type": "TYPE_MESSAGE",
+                            "typeName": ".google.protobuf.Timestamp",
+                            "jsonName": "timestamp"
+                        }
+                    ]
+                }
+            ],
+            "sourceCodeInfo": {
+                "location": [
+                    {
+                        "span": [
+                            0,
+                            0,
+                            6,
+                            1
+                        ]
+                    },
+                    {
+                        "path": [
+                            2
+                        ],
+                        "span": [
+                            0,
+                            0,
+                            12
+                        ]
+                    },
+                    {
+                        "path": [
+                            3,
+                            0
+                        ],
+                        "span": [
+                            2,
+                            0,
+                            41
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0
+                        ],
+                        "span": [
+                            4,
+                            0,
+                            6,
+                            1
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            1
+                        ],
+                        "span": [
+                            4,
+                            8,
+                            11
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0
+                        ],
+                        "span": [
+                            5,
+                            2,
+                            51
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0,
+                            4
+                        ],
+                        "span": [
+                            5,
+                            2,
+                            10
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0,
+                            6
+                        ],
+                        "span": [
+                            5,
+                            11,
+                            36
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0,
+                            1
+                        ],
+                        "span": [
+                            5,
+                            37,
+                            46
+                        ]
+                    },
+                    {
+                        "path": [
+                            4,
+                            0,
+                            2,
+                            0,
+                            3
+                        ],
+                        "span": [
+                            5,
+                            49,
+                            50
+                        ]
+                    }
+                ]
+            },
+            "bufExtension": {
+                "isImport": false,
+                "moduleInfo": {
+                    "name": {
+                        "remote": "bufbuild.test",
+                        "owner": "generate",
+                        "repository": "d1"
+                    }
+                },
+                "isSyntaxUnspecified": true
+            }
+        }
+    ]
+}

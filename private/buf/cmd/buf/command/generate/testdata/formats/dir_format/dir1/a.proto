@@ -1,0 +1,7 @@
+package foo;
+
+import "x.proto";
+
+message Foo {
+  required bar.Bar a = 1;
+}

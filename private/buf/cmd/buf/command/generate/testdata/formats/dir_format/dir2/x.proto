@@ -1,0 +1,5 @@
+package bar;
+
+message Bar {}
+
+message Baz {}

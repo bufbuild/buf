@@ -69,6 +69,19 @@ types:
     - a.v1.Foo
 `
 
+const v1ContentMinimal = `version: v1
+managed:
+  enabled: true
+  cc_enable_arenas: false
+  java_multiple_files: true
+  java_package_prefix: net
+  java_string_check_utf8: false
+  optimize_for: CODE_SIZE
+plugins:
+  - plugin: java
+    out: gen/java
+`
+
 func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
@@ -228,6 +241,54 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 				"gen/java/com/a/v3/foo/BarProto.java",
 			},
 			skipMigrateComp: true,
+		},
+		{
+			description:     "dir input",
+			input:           filepath.Join("testdata", "formats", "dir_format", "dir1"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/foo/AProto.java",
+				"gen/java/net/foo/Foo.java",
+				"gen/java/net/foo/BProto.java",
+				"gen/java/net/foo/Baz.java",
+			},
+		},
+		{
+			description:     "json image",
+			input:           filepath.Join("testdata", "formats", "json_image.json"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/foo/AProto.java",
+				"gen/java/net/foo/Foo.java",
+				"gen/java/net/foo/BProto.java",
+				"gen/java/net/foo/Baz.java",
+			},
+		},
+		{
+			description:     "binary image",
+			input:           filepath.Join("testdata", "formats", "binary_image.binpb"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/foo/AProto.java",
+				"gen/java/net/foo/Foo.java",
+				"gen/java/net/foo/BProto.java",
+				"gen/java/net/foo/Baz.java",
+			},
+		},
+		{
+			description:     "text image",
+			input:           filepath.Join("testdata", "formats", "text_image.txtpb"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/foo/AProto.java",
+				"gen/java/net/foo/Foo.java",
+				"gen/java/net/foo/BProto.java",
+				"gen/java/net/foo/Baz.java",
+			},
 		},
 	}
 	for _, testcase := range testcases {
