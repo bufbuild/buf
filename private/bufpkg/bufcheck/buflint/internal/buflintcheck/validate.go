@@ -1,7 +1,6 @@
 package buflintcheck
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"time"
@@ -104,11 +103,15 @@ func (m *module) checkFieldRules(rules *validate.FieldConstraints) {
 
 func (m *module) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper WellKnownType) {
 	// TODO: (elliotmjackson) the logic here is a mess
-	m.field.TypeLocation()
-	if emb := m.field.TypeName(); emb != "" && IsWellKnown(emb) && NewWellKnownType(emb) == wrapper {
-		m.mustType(m.field.Message().Fields()[0].Type(), UnknownWKT)
-		return
-	}
+	//if emb := m.field.TypeName(); emb != "" && IsWellKnown(emb) {
+	//m.mustType(m.field.Message().Fields()[0].Type(), UnknownWKT)
+	//wkt := NewWellKnownType(emb)
+	//m.assert(
+	//	wkt == wrapper,
+	//	"expected rules for %s but got %s",
+	//	wrapper, pt.String(),
+	//)
+	//}
 
 	// TODO: this is likely caught already
 	//if typ, ok := field.(Repeatable); ok {
@@ -118,9 +121,8 @@ func (m *module) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper Wel
 	expr := m.field.Type() == pt
 	m.assert(
 		expr,
-		"expected rules for ",
+		"expected rules for %s but got %s",
 		m.field.Type(),
-		" but got ",
 		pt.String(),
 	)
 }
@@ -171,9 +173,9 @@ func (m *module) checkIns(in, notIn int) {
 		"cannot have both `in` and `not_in` rules on the same field")
 }
 
-func (m *module) assert(expr bool, v ...interface{}) {
+func (m *module) assert(expr bool, format string, v ...interface{}) {
 	if !expr {
-		m.add(m.field, m.location, nil, fmt.Sprint(v...))
+		m.add(m.field, m.location, nil, format, v...)
 	}
 }
 
