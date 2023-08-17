@@ -3,6 +3,9 @@ syntax = "proto3";
 package a;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/any.proto";
 
 message Foo {
     int32 success = 1 [(buf.validate.field).int32.const = 0];
@@ -12,9 +15,9 @@ message Foo {
     int32 in_int32 = 4 [(buf.validate.field).sfixed32.const = 0];
     int64 in_int64 = 5 [(buf.validate.field).sfixed64.const = 0];
     uint32 in_uint32 = 6 [(buf.validate.field).bool.const = false];
-    uint64 in_uint64 = 7 [(buf.validate.field).string.const = "foo"];
-    sint32 in_sint32 = 8 [(buf.validate.field).bytes.const = "bar"];
-    sint64 in_sint64 = 9 [(buf.validate.field).enum.const = 0];
+    uint64 in_uint64 = 7 [(buf.validate.field).string.const = "foo"];//
+    sint32 in_sint32 = 8 [(buf.validate.field).bytes.const = "bar"];//
+    sint64 in_sint64 = 9 [(buf.validate.field).enum.const = 0];//
     fixed32 in_fixed32 = 10 [(buf.validate.field).float.const = 0];
     fixed64 in_fixed64 = 11 [(buf.validate.field).double.const = 0];
     sfixed32 in_sfixed32 = 12 [(buf.validate.field).int32.const = 0];
@@ -22,10 +25,10 @@ message Foo {
     bool in_bool = 14 [(buf.validate.field).uint32.const = 0];
     string in_string = 15 [(buf.validate.field).uint64.const = 0];
     bytes in_bytes = 16 [(buf.validate.field).sint64.const = 0];
-//    repeated int32 in_repeated = 17 [(buf.validate.field).repeated.max_items = 0];
-//    map<string, int32> in_map = 18 [(buf.validate.field).double.const = 0];
-//    google.protobuf.Any in_any = 19 [(buf.validate.field).int32.const = 0];
-//    google.protobuf.Duration in_duration = 20 [(buf.validate.field).int64.const = 0];
-//    google.protobuf.Timestamp in_timestamp = 21 [(buf.validate.field).sfixed32.const = 0];
+    repeated int32 in_repeated = 17 [(buf.validate.field).enum.const = 0];
+    map<string, int32> in_map = 18 [(buf.validate.field).double.const = 0];
+    google.protobuf.Any in_any = 19 [(buf.validate.field).int32.const = 0];
+    google.protobuf.Duration in_duration = 20 [(buf.validate.field).int64.const = 0];
+    google.protobuf.Timestamp in_timestamp = 21 [(buf.validate.field).sfixed32.const = 0];
 }
 

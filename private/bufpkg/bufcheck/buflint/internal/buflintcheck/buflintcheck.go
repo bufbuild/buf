@@ -24,6 +24,9 @@ import (
 	"strings"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+
+	"google.golang.org/protobuf/types/descriptorpb"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -32,7 +35,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
@@ -987,23 +989,17 @@ func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) erro
 			return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
 		}
 
-		got := field.Type()
-		expected := getFieldDescriptorProtoTypeForFieldConstraintsType(&constraints)
-		if expected == 0 {
-			return fmt.Errorf("unable to get field type for %s field constraint", field.FullName())
+		// pull out a function which performs the type comparison
+		// check map or repeated, recurse accordingly (items, keys & values)
+		// continue
+		if field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
+		}
+		if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+			if field.Message().IsMapEntry() {
+			}
 		}
 
-		if got != expected {
-			add(
-				field,
-				field.OptionExtensionLocation(validate.E_Field),
-				nil,
-				"constraint type mismatch on %q, expected %q but got %s",
-				field.FullName(),
-				expected,
-				got,
-			)
-		}
+		newModule(add, field).checkFieldRules(&constraints)
 	}
 	return nil
 }
@@ -1022,53 +1018,4 @@ func getDataByExtension(field protosource.OptionExtensionDescriptor, extensionTy
 		return nil, false, fmt.Errorf("marshal error for field: %v", err)
 	}
 	return data, true, nil
-}
-
-func getFieldDescriptorProtoTypeForFieldConstraintsType(in *validate.FieldConstraints) descriptorpb.FieldDescriptorProto_Type {
-	switch in.Type.(type) {
-	case *validate.FieldConstraints_Float:
-		return descriptorpb.FieldDescriptorProto_TYPE_FLOAT
-	case *validate.FieldConstraints_Double:
-		return descriptorpb.FieldDescriptorProto_TYPE_DOUBLE
-	case *validate.FieldConstraints_Int32:
-		return descriptorpb.FieldDescriptorProto_TYPE_INT32
-	case *validate.FieldConstraints_Int64:
-		return descriptorpb.FieldDescriptorProto_TYPE_INT64
-	case *validate.FieldConstraints_Uint32:
-		return descriptorpb.FieldDescriptorProto_TYPE_UINT32
-	case *validate.FieldConstraints_Uint64:
-		return descriptorpb.FieldDescriptorProto_TYPE_UINT64
-	case *validate.FieldConstraints_Sint32:
-		return descriptorpb.FieldDescriptorProto_TYPE_SINT32
-	case *validate.FieldConstraints_Sint64:
-		return descriptorpb.FieldDescriptorProto_TYPE_SINT64
-	case *validate.FieldConstraints_Fixed32:
-		return descriptorpb.FieldDescriptorProto_TYPE_FIXED32
-	case *validate.FieldConstraints_Fixed64:
-		return descriptorpb.FieldDescriptorProto_TYPE_FIXED64
-	case *validate.FieldConstraints_Sfixed32:
-		return descriptorpb.FieldDescriptorProto_TYPE_SFIXED32
-	case *validate.FieldConstraints_Sfixed64:
-		return descriptorpb.FieldDescriptorProto_TYPE_SFIXED64
-	case *validate.FieldConstraints_Bool:
-		return descriptorpb.FieldDescriptorProto_TYPE_BOOL
-	case *validate.FieldConstraints_String_:
-		return descriptorpb.FieldDescriptorProto_TYPE_STRING
-	case *validate.FieldConstraints_Bytes:
-		return descriptorpb.FieldDescriptorProto_TYPE_BYTES
-	case *validate.FieldConstraints_Enum:
-		return descriptorpb.FieldDescriptorProto_TYPE_ENUM
-	case *validate.FieldConstraints_Repeated,
-		*validate.FieldConstraints_Map,
-		*validate.FieldConstraints_Any,
-		*validate.FieldConstraints_Duration,
-		*validate.FieldConstraints_Timestamp:
-		return getFieldDescriptorProtoTypeForFieldConstraintsMessageType(in)
-	default:
-		return 0
-	}
-}
-
-func getFieldDescriptorProtoTypeForFieldConstraintsMessageType(in *validate.FieldConstraints) descriptorpb.FieldDescriptorProto_Type {
-	return 0
 }

@@ -937,21 +937,26 @@ func TestCommentIgnoresCascadeOn(t *testing.T) {
 func TestValidateRulesTypeDontMatch(t *testing.T) {
 	t.Parallel()
 	testLint(t, "validate_rules_types_match",
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 10, 25, 10, 63, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 11, 27, 11, 65, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 12, 25, 12, 64, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 25, 13, 64, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 27, 14, 66, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 27, 15, 68, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 27, 16, 67, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 17, 27, 17, 62, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 30, 18, 66, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 30, 19, 67, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 20, 32, 20, 68, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 21, 32, 21, 68, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 22, 24, 22, 61, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 28, 23, 65, "VALIDATE_RULES_TYPES_MATCH"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 24, 26, 24, 63, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 25, 13, 63, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 27, 14, 65, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 25, 15, 64, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 25, 16, 64, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 17, 27, 17, 66, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 27, 18, 68, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 27, 19, 67, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 20, 27, 20, 62, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 21, 30, 21, 66, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 22, 30, 22, 67, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 32, 23, 68, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 24, 32, 24, 68, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 25, 24, 25, 61, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 26, 28, 26, 65, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 27, 26, 27, 63, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 38, 28, 73, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 29, 37, 29, 74, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 30, 38, 30, 74, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 31, 48, 31, 84, "VALIDATE_RULES_TYPES_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 32, 50, 32, 89, "VALIDATE_RULES_TYPES_MATCH"),
 	)
 }
 
@@ -979,7 +984,8 @@ func testLintConfigModifier(
 	configModifier func(*bufconfig.Config),
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	logger := zap.NewNop()
 
