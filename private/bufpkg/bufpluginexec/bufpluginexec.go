@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -248,6 +249,7 @@ func HandlerWithWASMEnabled() HandlerOption {
 //
 // Used by other repositories.
 func NewBinaryHandler(runner command.Runner, pluginPath string, pluginArgs []string) (appproto.Handler, error) {
+	pluginPath = normalpath.Unnormalize(pluginPath)
 	pluginPath, err := unsafeLookPath(pluginPath)
 	if err != nil {
 		return nil, err
