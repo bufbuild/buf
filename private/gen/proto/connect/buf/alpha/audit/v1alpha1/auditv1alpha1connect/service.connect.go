@@ -19,10 +19,10 @@
 package auditv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/audit/v1alpha1"
-	connect_go "github.com/bufbuild/connect-go"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// AuditServiceName is the fully-qualified name of the AuditService service.
@@ -55,7 +55,7 @@ const (
 // AuditServiceClient is a client for the buf.alpha.audit.v1alpha1.AuditService service.
 type AuditServiceClient interface {
 	// ListAuditedEvents lists audited events recorded in the BSR instance.
-	ListAuditedEvents(context.Context, *connect_go.Request[v1alpha1.ListAuditedEventsRequest]) (*connect_go.Response[v1alpha1.ListAuditedEventsResponse], error)
+	ListAuditedEvents(context.Context, *connect.Request[v1alpha1.ListAuditedEventsRequest]) (*connect.Response[v1alpha1.ListAuditedEventsResponse], error)
 }
 
 // NewAuditServiceClient constructs a client for the buf.alpha.audit.v1alpha1.AuditService service.
@@ -65,32 +65,32 @@ type AuditServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewAuditServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) AuditServiceClient {
+func NewAuditServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AuditServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &auditServiceClient{
-		listAuditedEvents: connect_go.NewClient[v1alpha1.ListAuditedEventsRequest, v1alpha1.ListAuditedEventsResponse](
+		listAuditedEvents: connect.NewClient[v1alpha1.ListAuditedEventsRequest, v1alpha1.ListAuditedEventsResponse](
 			httpClient,
 			baseURL+AuditServiceListAuditedEventsProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // auditServiceClient implements AuditServiceClient.
 type auditServiceClient struct {
-	listAuditedEvents *connect_go.Client[v1alpha1.ListAuditedEventsRequest, v1alpha1.ListAuditedEventsResponse]
+	listAuditedEvents *connect.Client[v1alpha1.ListAuditedEventsRequest, v1alpha1.ListAuditedEventsResponse]
 }
 
 // ListAuditedEvents calls buf.alpha.audit.v1alpha1.AuditService.ListAuditedEvents.
-func (c *auditServiceClient) ListAuditedEvents(ctx context.Context, req *connect_go.Request[v1alpha1.ListAuditedEventsRequest]) (*connect_go.Response[v1alpha1.ListAuditedEventsResponse], error) {
+func (c *auditServiceClient) ListAuditedEvents(ctx context.Context, req *connect.Request[v1alpha1.ListAuditedEventsRequest]) (*connect.Response[v1alpha1.ListAuditedEventsResponse], error) {
 	return c.listAuditedEvents.CallUnary(ctx, req)
 }
 
 // AuditServiceHandler is an implementation of the buf.alpha.audit.v1alpha1.AuditService service.
 type AuditServiceHandler interface {
 	// ListAuditedEvents lists audited events recorded in the BSR instance.
-	ListAuditedEvents(context.Context, *connect_go.Request[v1alpha1.ListAuditedEventsRequest]) (*connect_go.Response[v1alpha1.ListAuditedEventsResponse], error)
+	ListAuditedEvents(context.Context, *connect.Request[v1alpha1.ListAuditedEventsRequest]) (*connect.Response[v1alpha1.ListAuditedEventsResponse], error)
 }
 
 // NewAuditServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -98,12 +98,12 @@ type AuditServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewAuditServiceHandler(svc AuditServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	auditServiceListAuditedEventsHandler := connect_go.NewUnaryHandler(
+func NewAuditServiceHandler(svc AuditServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	auditServiceListAuditedEventsHandler := connect.NewUnaryHandler(
 		AuditServiceListAuditedEventsProcedure,
 		svc.ListAuditedEvents,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.audit.v1alpha1.AuditService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -118,6 +118,6 @@ func NewAuditServiceHandler(svc AuditServiceHandler, opts ...connect_go.HandlerO
 // UnimplementedAuditServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAuditServiceHandler struct{}
 
-func (UnimplementedAuditServiceHandler) ListAuditedEvents(context.Context, *connect_go.Request[v1alpha1.ListAuditedEventsRequest]) (*connect_go.Response[v1alpha1.ListAuditedEventsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.audit.v1alpha1.AuditService.ListAuditedEvents is not implemented"))
+func (UnimplementedAuditServiceHandler) ListAuditedEvents(context.Context, *connect.Request[v1alpha1.ListAuditedEventsRequest]) (*connect.Response[v1alpha1.ListAuditedEventsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.audit.v1alpha1.AuditService.ListAuditedEvents is not implemented"))
 }
