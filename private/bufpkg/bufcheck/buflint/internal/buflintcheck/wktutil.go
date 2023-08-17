@@ -1,12 +1,10 @@
 package buflintcheck
 
-import (
-	"github.com/bufbuild/buf/private/pkg/protosource"
-)
+import "strings"
 
 // WellKnownTypePackage is the proto package name where all Well Known Types
 // currently reside.
-const WellKnownTypePackage string = "google.protobuf"
+const WellKnownTypePackage string = "google.protobuf."
 
 // WellKnownType (WKT) encapsulates the Name of a Message from the
 // `google.protobuf` package. Most official protoc plugins special case code
@@ -57,14 +55,14 @@ var wktLookup = map[string]WellKnownType{
 	"BytesValue":  BytesValueWKT,
 }
 
-func NewWellKnownType(m protosource.Message) WellKnownType {
-	if m.Name() == WellKnownTypePackage {
-		return LookupWKT(m.Name())
+func NewWellKnownType(m string) WellKnownType {
+	if strings.HasPrefix(m, WellKnownTypePackage) {
+		return LookupWKT(strings.TrimPrefix(m, WellKnownTypePackage))
 	}
 	return UnknownWKT
 }
 
-func IsWellKnown(m protosource.Message) bool {
+func IsWellKnown(m string) bool {
 	return NewWellKnownType(m).Valid()
 }
 
