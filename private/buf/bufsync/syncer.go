@@ -169,10 +169,10 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	} else {
 		// only sync default and current branch, make sure the latter is also present in the remote
 		currentBranch := s.repo.CurrentBranch()
-		s.logger.Debug("current branch", zap.String("name", currentBranch))
 		if _, isCurrentBranchPushedInRemote := allRemoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
 			return fmt.Errorf("current branch %s is not present in 'origin' remote", currentBranch)
 		}
+		s.logger.Debug("current branch", zap.String("name", currentBranch))
 		s.branchesToModulesForSync[defaultBranch] = make(map[string]bufmoduleref.ModuleIdentity)
 		s.branchesToModulesForSync[currentBranch] = make(map[string]bufmoduleref.ModuleIdentity)
 	}
