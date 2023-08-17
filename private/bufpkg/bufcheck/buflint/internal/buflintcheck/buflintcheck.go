@@ -25,8 +25,6 @@ import (
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 
-	"google.golang.org/protobuf/types/descriptorpb"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -980,7 +978,6 @@ func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) erro
 		if err != nil {
 			return err
 		}
-		// no extension data
 		if !ok {
 			continue
 		}
@@ -988,17 +985,6 @@ func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) erro
 		if err := proto.Unmarshal(data, &constraints); err != nil {
 			return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
 		}
-
-		// pull out a function which performs the type comparison
-		// check map or repeated, recurse accordingly (items, keys & values)
-		// continue
-		if field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
-		}
-		if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-			if field.Message().IsMapEntry() {
-			}
-		}
-
 		newModule(add, field).checkFieldRules(&constraints)
 	}
 	return nil

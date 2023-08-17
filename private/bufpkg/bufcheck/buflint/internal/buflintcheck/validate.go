@@ -2,13 +2,14 @@ package buflintcheck
 
 import (
 	"fmt"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"reflect"
 	"regexp"
 	"time"
 	"unicode/utf8"
+
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 
@@ -103,18 +104,15 @@ func (m *module) checkFieldRules(rules *validate.FieldConstraints) {
 
 func (m *module) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper WellKnownType) {
 	// TODO: (elliotmjackson) the logic here is a mess
-	//m.field.TypeLocation()
-	//if emb := m.field.TypeName(); emb != "" && IsWellKnown(emb) && NewWellKnownType(emb) == wrapper {
-	//	m.mustType(m.field.Message().Fields()[0].Type(), UnknownWKT)
-	//	return
-	//}
+	m.field.TypeLocation()
+	if emb := m.field.TypeName(); emb != "" && IsWellKnown(emb) && NewWellKnownType(emb) == wrapper {
+		m.mustType(m.field.Message().Fields()[0].Type(), UnknownWKT)
+		return
+	}
 
 	// TODO: this is likely caught already
 	//if typ, ok := field.(Repeatable); ok {
-	//	if !typ.IsRepeated() {
-	//		add(field, field.OptionExtensionLocation(validate.E_Field), nil,
-	//			"repeated rule should be used for repeated fields")
-	//	}
+	//	m.assert(!typ.IsRepeated(), "repeated rule should be used for repeated fields")
 	//}
 
 	expr := m.field.Type() == pt
