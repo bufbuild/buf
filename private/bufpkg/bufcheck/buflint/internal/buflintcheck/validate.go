@@ -38,40 +38,40 @@ func (m *module) checkFieldRules(rules *validate.FieldConstraints) {
 	switch r := rules.Type.(type) {
 	case *validate.FieldConstraints_Float:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_FLOAT, FloatValueWKT)
-		m.checkFloat(r.Float)
+		checkNums(m, len(r.Float.In), len(r.Float.NotIn), r.Float.Const, r.Float.Lt, r.Float.Lte, r.Float.Gt, r.Float.Gte)
 	case *validate.FieldConstraints_Double:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_DOUBLE, DoubleValueWKT)
-		m.checkDouble(r.Double)
+		checkNums(m, len(r.Double.In), len(r.Double.NotIn), r.Double.Const, r.Double.Lt, r.Double.Lte, r.Double.Gt, r.Double.Gte)
 	case *validate.FieldConstraints_Int32:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_INT32, Int32ValueWKT)
-		m.checkInt32(r.Int32)
+		checkNums(m, len(r.Int32.In), len(r.Int32.NotIn), r.Int32.Const, r.Int32.Lt, r.Int32.Lte, r.Int32.Gt, r.Int32.Gte)
 	case *validate.FieldConstraints_Int64:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_INT64, Int64ValueWKT)
-		m.checkInt64(r.Int64)
+		checkNums(m, len(r.Int64.In), len(r.Int64.NotIn), r.Int64.Const, r.Int64.Lt, r.Int64.Lte, r.Int64.Gt, r.Int64.Gte)
 	case *validate.FieldConstraints_Uint32:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_UINT32, UInt32ValueWKT)
-		m.checkUInt32(r.Uint32)
+		checkNums(m, len(r.Uint32.In), len(r.Uint32.NotIn), r.Uint32.Const, r.Uint32.Lt, r.Uint32.Lte, r.Uint32.Gt, r.Uint32.Gte)
 	case *validate.FieldConstraints_Uint64:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_UINT64, UInt64ValueWKT)
-		m.checkUInt64(r.Uint64)
+		checkNums(m, len(r.Uint64.In), len(r.Uint64.NotIn), r.Uint64.Const, r.Uint64.Lt, r.Uint64.Lte, r.Uint64.Gt, r.Uint64.Gte)
 	case *validate.FieldConstraints_Sint32:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_SINT32, UnknownWKT)
-		m.checkSInt32(r.Sint32)
+		checkNums(m, len(r.Sint32.In), len(r.Sint32.NotIn), r.Sint32.Const, r.Sint32.Lt, r.Sint32.Lte, r.Sint32.Gt, r.Sint32.Gte)
 	case *validate.FieldConstraints_Sint64:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_SINT64, UnknownWKT)
-		m.checkSInt64(r.Sint64)
+		checkNums(m, len(r.Sint64.In), len(r.Sint64.NotIn), r.Sint64.Const, r.Sint64.Lt, r.Sint64.Lte, r.Sint64.Gt, r.Sint64.Gte)
 	case *validate.FieldConstraints_Fixed32:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_FIXED32, UnknownWKT)
-		m.checkFixed32(r.Fixed32)
+		checkNums(m, len(r.Fixed32.In), len(r.Fixed32.NotIn), r.Fixed32.Const, r.Fixed32.Lt, r.Fixed32.Lte, r.Fixed32.Gt, r.Fixed32.Gte)
 	case *validate.FieldConstraints_Fixed64:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_FIXED64, UnknownWKT)
-		m.checkFixed64(r.Fixed64)
+		checkNums(m, len(r.Fixed64.In), len(r.Fixed64.NotIn), r.Fixed64.Const, r.Fixed64.Lt, r.Fixed64.Lte, r.Fixed64.Gt, r.Fixed64.Gte)
 	case *validate.FieldConstraints_Sfixed32:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_SFIXED32, UnknownWKT)
-		m.checkSFixed32(r.Sfixed32)
+		checkNums(m, len(r.Sfixed32.In), len(r.Sfixed32.NotIn), r.Sfixed32.Const, r.Sfixed32.Lt, r.Sfixed32.Lte, r.Sfixed32.Gt, r.Sfixed32.Gte)
 	case *validate.FieldConstraints_Sfixed64:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_SFIXED64, UnknownWKT)
-		m.checkSFixed64(r.Sfixed64)
+		checkNums(m, len(r.Sfixed64.In), len(r.Sfixed64.NotIn), r.Sfixed64.Const, r.Sfixed64.Lt, r.Sfixed64.Lte, r.Sfixed64.Gt, r.Sfixed64.Gte)
 	case *validate.FieldConstraints_Bool:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_BOOL, BoolValueWKT)
 	case *validate.FieldConstraints_String_:
@@ -127,55 +127,7 @@ func (m *module) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper Wel
 	)
 }
 
-func (m *module) checkFloat(r *validate.FloatRules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkDouble(r *validate.DoubleRules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkInt32(r *validate.Int32Rules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkInt64(r *validate.Int64Rules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkUInt32(r *validate.UInt32Rules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkUInt64(r *validate.UInt64Rules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkSInt32(r *validate.SInt32Rules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkSInt64(r *validate.SInt64Rules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkFixed32(r *validate.Fixed32Rules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkFixed64(r *validate.Fixed64Rules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkSFixed32(r *validate.SFixed32Rules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkSFixed64(r *validate.SFixed64Rules) {
-	m.checkNums(len(r.In), len(r.NotIn), r.Const, r.Lt, r.Lte, r.Gt, r.Gte)
-}
-
-func (m *module) checkNums(in, notIn int, ci, lti, ltei, gti, gtei interface{}) {
+func checkNums[T any](m *module, in, notIn int, ci, lti, ltei, gti, gtei T) {
 	m.checkIns(in, notIn)
 
 	c := reflect.ValueOf(ci)
@@ -388,7 +340,7 @@ func (m *module) checkAny(r *validate.AnyRules) {
 }
 
 func (m *module) checkDuration(r *validate.DurationRules) {
-	m.checkNums(
+	checkNums(m,
 		len(r.GetIn()),
 		len(r.GetNotIn()),
 		m.checkDur(r.GetConst()),
@@ -419,7 +371,7 @@ func (m *module) checkDur(d *durationpb.Duration) *time.Duration {
 }
 
 func (m *module) checkTimestamp(r *validate.TimestampRules) {
-	m.checkNums(0, 0,
+	checkNums(m, 0, 0,
 		m.checkTS(r.GetConst()),
 		m.checkTS(r.GetLt()),
 		m.checkTS(r.GetLte()),
