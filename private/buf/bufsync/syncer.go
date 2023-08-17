@@ -156,25 +156,26 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	}); err != nil {
 		return fmt.Errorf("looping over repo remote branches: %w", err)
 	}
-	// Make sure the default branch is present in the remote
+	// sync default git branch, make sure it's present in the remote
 	defaultBranch := s.repo.DefaultBranch()
 	if _, isDefaultBranchPushedInRemote := allRemoteBranches[defaultBranch]; !isDefaultBranchPushedInRemote {
 		return fmt.Errorf("default branch %s is not present in 'origin' remote", defaultBranch)
 	}
+	s.branchesToModulesForSync[defaultBranch] = make(map[string]bufmoduleref.ModuleIdentity)
 	s.logger.Debug("default git branch", zap.String("name", defaultBranch))
 	if s.syncAllBranches {
+		// sync all remote branches
 		for remoteBranch := range allRemoteBranches {
 			s.branchesToModulesForSync[remoteBranch] = make(map[string]bufmoduleref.ModuleIdentity)
 		}
 	} else {
-		// only sync default and current branch, make sure the latter is also present in the remote
+		// sync current branch, make sure it's present in the remote
 		currentBranch := s.repo.CurrentBranch()
 		if _, isCurrentBranchPushedInRemote := allRemoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
 			return fmt.Errorf("current branch %s is not present in 'origin' remote", currentBranch)
 		}
-		s.logger.Debug("current branch", zap.String("name", currentBranch))
-		s.branchesToModulesForSync[defaultBranch] = make(map[string]bufmoduleref.ModuleIdentity)
 		s.branchesToModulesForSync[currentBranch] = make(map[string]bufmoduleref.ModuleIdentity)
+		s.logger.Debug("current branch", zap.String("name", currentBranch))
 	}
 	// Populate module identities, from identity overrides or from HEAD, and its sync points if any
 	allModulesIdentitiesForSync := make(map[string]bufmoduleref.ModuleIdentity) // moduleIdentityString:moduleIdentity
