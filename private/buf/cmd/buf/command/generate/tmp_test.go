@@ -425,8 +425,8 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
-				"gen/java/net/A/AProto.java",
-				"gen/java/net/B/BProto.java",
+				"gen/java/net/a/AProto.java",
+				"gen/java/net/b/BProto.java",
 			},
 		},
 		{
@@ -435,8 +435,8 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
-				"gen/java/net/A/AProto.java",
-				"gen/java/net/B/BProto.java",
+				"gen/java/net/a/AProto.java",
+				"gen/java/net/b/BProto.java",
 			},
 		},
 		{
@@ -445,8 +445,8 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
-				"gen/java/net/A/AProto.java",
-				"gen/java/net/B/BProto.java",
+				"gen/java/net/a/AProto.java",
+				"gen/java/net/b/BProto.java",
 			},
 		},
 		{
@@ -455,10 +455,10 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
-				"gen/java/net/A/AProto.java",
+				"gen/java/net/a/AProto.java",
 			},
 			filesThatShouldNotExist: []string{
-				"gen/java/net/B/BProto.java",
+				"gen/java/net/b/BProto.java",
 			},
 		},
 		{
@@ -467,10 +467,10 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
-				"gen/java/net/A/v1/AProto.java",
+				"gen/java/net/a/v1/AProto.java",
 			},
 			filesThatShouldNotExist: []string{
-				"gen/java/net/A/v1/BProto.java",
+				"gen/java/net/a/v1/BProto.java",
 			},
 		},
 		{
@@ -479,8 +479,8 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
-				"gen/java/net/A/v1/AProto.java",
-				"gen/java/net/A/v1/BProto.java",
+				"gen/java/net/a/v1/AProto.java",
+				"gen/java/net/a/v1/BProto.java",
 			},
 		},
 		{
