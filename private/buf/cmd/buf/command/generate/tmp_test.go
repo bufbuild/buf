@@ -689,7 +689,7 @@ func requireFileExists(
 	)
 	var filesInBucket []string
 	if err != nil {
-		bucket.Walk(
+		walkErr := bucket.Walk(
 			context.Background(),
 			"",
 			func(oi storage.ObjectInfo) error {
@@ -697,6 +697,7 @@ func requireFileExists(
 				return nil
 			},
 		)
+		require.NoError(t, walkErr)
 	}
 	require.NoErrorf(t, err, "%s should exist but is not found among %v", fileName, filesInBucket)
 }
