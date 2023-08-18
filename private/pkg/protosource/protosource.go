@@ -389,6 +389,7 @@ type Field interface {
 
 	// May be nil if this is attached to a file.
 	ParentMessage() Message
+	IsMap() bool
 	Number() int
 	Label() descriptorpb.FieldDescriptorProto_Label
 	Type() descriptorpb.FieldDescriptorProto_Type
@@ -1249,4 +1250,32 @@ type tagRangeGroup struct {
 	ranges []TagRange
 	start  int
 	end    int
+}
+
+// IsFieldAMapFromFiles checks if the field is a map field using file information.
+func IsFieldAMapFromFiles(field Field, files ...File) (bool, error) {
+	toMessage, err := FullNameToMessage(files...)
+	if err != nil {
+		return false, err
+	}
+	return IsFieldAMapFromMessages(field, toMessage), nil
+}
+
+// IsFieldAMapFromMessages checks if the field is a map field using message information.
+func IsFieldAMapFromMessages(field Field, fullNameToMessage map[string]Message) bool {
+	// For this to be a map field, it must be a repeated field
+	// with a synthetic message as the type, that synthetic message
+	// must be in the enclosing message for the field, and it must
+	// have map_entry set to true.
+	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
+		return false
+	}
+	if field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		return false
+	}
+	message, ok := fullNameToMessage[field.TypeName()]
+	if !ok {
+		return false
+	}
+	return message.IsMapEntry()
 }

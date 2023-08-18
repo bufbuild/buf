@@ -111,6 +111,14 @@ func (f *field) ParentMessage() Message {
 	return f.message
 }
 
+func (f *field) IsMap() bool {
+	isMap, err := IsFieldAMapFromFiles(f, f.File())
+	if err != nil {
+		return false
+	}
+	return isMap
+}
+
 func (f *field) Number() int {
 	return f.number
 }
