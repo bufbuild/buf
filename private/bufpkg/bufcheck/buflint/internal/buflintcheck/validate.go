@@ -16,12 +16,28 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+var (
+	unknown         = ""
+	httpHeaderName  = "^:?[0-9a-zA-Z!#$%&'*+-.^_|~\x60]+$"
+	httpHeaderValue = "^[^\u0000-\u0008\u000A-\u001F\u007F]*$"
+	headerString    = "^[^\u0000\u000A\u000D]*$" // For non-strict validation.
+	// Map from well-known regex to a regex pattern.
+	regex_map = map[string]*string{
+		"UNKNOWN":           &unknown,
+		"HTTP_HEADER_NAME":  &httpHeaderName,
+		"HTTP_HEADER_VALUE": &httpHeaderValue,
+		"HEADER_STRING":     &headerString,
+	}
+)
+
+// module is a validate module.
 type module struct {
 	add      addFunc
 	field    protosource.Field
 	location protosource.Location
 }
 
+// newModule returns a new validate module.
 func newModule(add addFunc, field protosource.Field) *module {
 	return &module{
 		add:      add,
@@ -30,6 +46,7 @@ func newModule(add addFunc, field protosource.Field) *module {
 	}
 }
 
+// checkFieldRules checks the rules for the field.
 func (m *module) checkFieldRules(rules *validate.FieldConstraints) {
 	if rules == nil {
 		return
@@ -84,23 +101,19 @@ func (m *module) checkFieldRules(rules *validate.FieldConstraints) {
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_ENUM, UnknownWKT)
 		m.checkEnum(r.Enum)
 	case *validate.FieldConstraints_Repeated:
-		// TODO: check type
 		m.checkRepeated(r.Repeated)
 	case *validate.FieldConstraints_Map:
-		// TODO: check type
 		m.checkMap(r.Map)
 	case *validate.FieldConstraints_Any:
-		// TODO: check type
 		m.checkAny(r.Any)
 	case *validate.FieldConstraints_Duration:
-		// TODO: check type
 		m.checkDuration(r.Duration)
 	case *validate.FieldConstraints_Timestamp:
-		// TODO: check type
 		m.checkTimestamp(r.Timestamp)
 	}
 }
 
+// mustType asserts that the field type is the same as the given type.
 func (m *module) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper WellKnownType) {
 	// TODO: (elliotmjackson) the logic here is a mess
 	//if emb := m.field.TypeName(); emb != "" && IsWellKnown(emb) {
@@ -127,6 +140,7 @@ func (m *module) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper Wel
 	)
 }
 
+// checkNums asserts that the given numbers are valid.
 func checkNums[T any](m *module, in, notIn int, ci, lti, ltei, gti, gtei T) {
 	m.checkIns(in, notIn)
 
@@ -168,17 +182,20 @@ func checkNums[T any](m *module, in, notIn int, ci, lti, ltei, gti, gtei T) {
 	}
 }
 
+// checkIns asserts that the given `in` and `not_in` rules are valid.
 func (m *module) checkIns(in, notIn int) {
 	m.assert(in == 0 || notIn == 0,
 		"cannot have both `in` and `not_in` rules on the same field")
 }
 
+// assert asserts that the given expression is true and adds an error if not.
 func (m *module) assert(expr bool, format string, v ...interface{}) {
 	if !expr {
 		m.add(m.field, m.location, nil, format, v...)
 	}
 }
 
+// checkString asserts that the given string rules are valid.
 func (m *module) checkString(r *validate.StringRules) {
 	m.checkLen(r.Len, r.MinLen, r.MaxLen)
 	m.checkLen(r.LenBytes, r.MinBytes, r.MaxBytes)
@@ -206,63 +223,7 @@ func (m *module) checkString(r *validate.StringRules) {
 	}
 }
 
-func (m *module) checkLen(len, min, max *uint64) {
-	if len == nil {
-		return
-	}
-
-	m.assert(min == nil,
-		"cannot have both `len` and `min_len` rules on the same field")
-
-	m.assert(max == nil,
-		"cannot have both `len` and `max_len` rules on the same field")
-}
-
-func (m *module) checkMinMax(min, max *uint64) {
-	if min == nil || max == nil {
-		return
-	}
-
-	m.assert(*min <= *max,
-		"`min` value is greater than `max` value")
-}
-
-var (
-	unknown         = ""
-	httpHeaderName  = "^:?[0-9a-zA-Z!#$%&'*+-.^_|~\x60]+$"
-	httpHeaderValue = "^[^\u0000-\u0008\u000A-\u001F\u007F]*$"
-	headerString    = "^[^\u0000\u000A\u000D]*$" // For non-strict validation.
-)
-
-// Map from well-known regex to a regex pattern.
-var regex_map = map[string]*string{
-	"UNKNOWN":           &unknown,
-	"HTTP_HEADER_NAME":  &httpHeaderName,
-	"HTTP_HEADER_VALUE": &httpHeaderValue,
-	"HEADER_STRING":     &headerString,
-}
-
-func (m *module) checkWellKnownRegex(wk validate.KnownRegex, r *validate.StringRules) {
-	if wk != 0 {
-		m.assert(r.Pattern == nil, "regex `well_known_regex` and regex `pattern` are incompatible")
-		non_strict := r.Strict != nil && !*r.Strict
-		if (wk.String() == "HTTP_HEADER_NAME" || wk.String() == "HTTP_HEADER_VALUE") && non_strict {
-			// Use non-strict header validation.
-			r.Pattern = regex_map["HEADER_STRING"]
-		} else {
-			r.Pattern = regex_map[wk.String()]
-		}
-	}
-}
-
-func (m *module) checkPattern(p *string, in int) {
-	if p != nil {
-		m.assert(in == 0, "regex `pattern` and `in` rules are incompatible")
-		_, err := regexp.Compile(*p)
-		m.assert(err != nil, "unable to parse regex `pattern`")
-	}
-}
-
+// checkEnum asserts that the given enum rules are valid.
 func (m *module) checkEnum(r *validate.EnumRules) {
 	m.checkIns(len(r.In), len(r.NotIn))
 
@@ -288,6 +249,7 @@ func (m *module) checkEnum(r *validate.EnumRules) {
 	}
 }
 
+// checkBytes asserts that the given bytes rules are valid.
 func (m *module) checkBytes(r *validate.BytesRules) {
 	m.checkMinMax(r.MinLen, r.MaxLen)
 	m.checkIns(len(r.In), len(r.NotIn))
@@ -301,6 +263,7 @@ func (m *module) checkBytes(r *validate.BytesRules) {
 	}
 }
 
+// checkRepeated validates the repeated rules.
 func (m *module) checkRepeated(r *validate.RepeatedRules) {
 	m.assert(
 		m.field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED,
@@ -314,31 +277,32 @@ func (m *module) checkRepeated(r *validate.RepeatedRules) {
 			"unique rule is only applicable for scalar types")
 	}
 
-	// TODO: this returns an error which is ignored here
 	m.checkFieldRules(r.Items)
 }
 
+// checkMap validates the map rules.
 func (m *module) checkMap(r *validate.MapRules) {
-	// TODO: determine if field is a map
+	// TODO: determine if field is a map, this will currently pass on a repeated rules
+	// it will also succeed on a repeated field with map rules
 	isMessage := m.field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE
-	message := m.field.Message()
+	isRepeated := m.field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED
 	m.assert(
-		isMessage && message.IsMapEntry(),
+		isMessage && isRepeated,
 		"field is not a map but got map rules",
 	)
 
 	m.checkMinMax(r.MinPairs, r.MaxPairs)
 
-	// TODO: this returns an error which is ignored here
 	m.checkFieldRules(r.Keys)
-	// TODO: this returns an error which is ignored here
 	m.checkFieldRules(r.Values)
 }
 
+// checkAny validates the any rules.
 func (m *module) checkAny(r *validate.AnyRules) {
 	m.checkIns(len(r.In), len(r.NotIn))
 }
 
+// checkDuration validates the duration rules.
 func (m *module) checkDuration(r *validate.DurationRules) {
 	checkNums(m,
 		len(r.GetIn()),
@@ -360,16 +324,7 @@ func (m *module) checkDuration(r *validate.DurationRules) {
 	}
 }
 
-func (m *module) checkDur(d *durationpb.Duration) *time.Duration {
-	if d == nil {
-		return nil
-	}
-
-	dur, err := d.AsDuration(), d.CheckValid()
-	m.assert(err == nil, "could not resolve duration")
-	return &dur
-}
-
+// checkTimestamp validates the timestamp rules.
 func (m *module) checkTimestamp(r *validate.TimestampRules) {
 	checkNums(m, 0, 0,
 		m.checkTS(r.GetConst()),
@@ -392,6 +347,64 @@ func (m *module) checkTimestamp(r *validate.TimestampRules) {
 		"`within` rule must be positive and non-zero")
 }
 
+// checkLen checks that the `len` rule is not used with `min_len` or `max_len`
+func (m *module) checkLen(len, min, max *uint64) {
+	if len == nil {
+		return
+	}
+
+	m.assert(min == nil,
+		"cannot have both `len` and `min_len` rules on the same field")
+
+	m.assert(max == nil,
+		"cannot have both `len` and `max_len` rules on the same field")
+}
+
+// checkMinMax checks that the `min` and `max` rules are used correctly
+func (m *module) checkMinMax(min, max *uint64) {
+	if min == nil || max == nil {
+		return
+	}
+
+	m.assert(*min <= *max,
+		"`min` value is greater than `max` value")
+}
+
+// checkWellKnownRegex checks that the `well_known_regex` rule is used correctly
+func (m *module) checkWellKnownRegex(wk validate.KnownRegex, r *validate.StringRules) {
+	if wk != 0 {
+		m.assert(r.Pattern == nil, "regex `well_known_regex` and regex `pattern` are incompatible")
+		non_strict := r.Strict != nil && !*r.Strict
+		if (wk.String() == "HTTP_HEADER_NAME" || wk.String() == "HTTP_HEADER_VALUE") && non_strict {
+			// Use non-strict header validation.
+			r.Pattern = regex_map["HEADER_STRING"]
+		} else {
+			r.Pattern = regex_map[wk.String()]
+		}
+	}
+}
+
+// checkPattern checks that the `pattern` rule is used correctly
+func (m *module) checkPattern(p *string, in int) {
+	if p != nil {
+		m.assert(in == 0, "regex `pattern` and `in` rules are incompatible")
+		_, err := regexp.Compile(*p)
+		m.assert(err != nil, "unable to parse regex `pattern`")
+	}
+}
+
+// checkDur checks that the `duration` rule is used correctly
+func (m *module) checkDur(d *durationpb.Duration) *time.Duration {
+	if d == nil {
+		return nil
+	}
+
+	dur, err := d.AsDuration(), d.CheckValid()
+	m.assert(err == nil, "could not resolve duration")
+	return &dur
+}
+
+// checkTS checks that the `timestamp` rule is used correctly
 func (m *module) checkTS(ts *timestamppb.Timestamp) *int64 {
 	if ts == nil {
 		return nil

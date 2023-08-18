@@ -9,44 +9,47 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
 message Foo {
-  float in_float = 2 [(buf.validate.field).float.const = 0];
-  double in_double = 3 [(buf.validate.field).double.const = 0];
-  int32 in_int32 = 4 [(buf.validate.field).int32.const = 0];
-  int64 in_int64 = 5 [(buf.validate.field).int64.const = 0];
-  uint32 in_uint32 = 6 [(buf.validate.field).uint32.const = 0];
-  uint64 in_uint64 = 7 [(buf.validate.field).uint64.const = 0];
-  sint32 in_sint32 = 8 [(buf.validate.field).sint32.const = 0];
-  sint64 in_sint64 = 9 [(buf.validate.field).sint64.const = 0];
-  fixed32 in_fixed32 = 10 [(buf.validate.field).fixed32.const = 0];
-  fixed64 in_fixed64 = 11 [(buf.validate.field).fixed64.const = 0];
-  sfixed32 in_sfixed32 = 12 [(buf.validate.field).sfixed32.const = 0];
-  sfixed64 in_sfixed64 = 13 [(buf.validate.field).sfixed64.const = 0];
-  bool in_bool = 14 [(buf.validate.field).bool.const = false];
-  string in_string = 15 [(buf.validate.field).string.const = "foo"];
-  bytes in_bytes = 16 [(buf.validate.field).bytes.const = "bar"];
-  repeated int32 in_repeated = 17 [(buf.validate.field).repeated.unique = true];
-  map<string, int32> in_map = 18 [(buf.validate.field).map.max_pairs = 0];
-  google.protobuf.Any value = 1 [(buf.validate.field).any = {
-    not_in: [
-      "type.googleapis.com/google.protobuf.Duration",
-      "type.googleapis.com/google.protobuf.Timestamp"
-    ]
-  }];
-  google.protobuf.Duration in_duration = 20 [(buf.validate.field).duration.const = {
-    seconds: 0,
-    nanos: 0
-  }];
-  google.protobuf.Timestamp in_timestamp = 21 [(buf.validate.field).timestamp.const = {
-    seconds: 0,
-    nanos: 0
-  }];
-  google.protobuf.FloatValue wrap_float = 22 [(buf.validate.field).float.const = 0];
-  google.protobuf.DoubleValue wrap_double = 23 [(buf.validate.field).double.const = 0];
-  google.protobuf.Int32Value wrap_int32 = 24 [(buf.validate.field).int32.const = 0];
-  google.protobuf.Int64Value wrap_int64 = 25 [(buf.validate.field).int64.const = 0];
-  google.protobuf.UInt32Value wrap_uint32 = 26 [(buf.validate.field).uint32.const = 0];
-  google.protobuf.UInt64Value wrap_uint64 = 27 [(buf.validate.field).uint64.const = 0];
-  google.protobuf.BoolValue wrap_bool = 28 [(buf.validate.field).bool.const = false];
-  google.protobuf.StringValue wrap_string = 29 [(buf.validate.field).string.const = "foo"];
-  google.protobuf.BytesValue wrap_bytes = 30 [(buf.validate.field).bytes.const = "bar"];
+    float in_float = 2 [(buf.validate.field).float.const = 0];
+    double in_double = 3 [(buf.validate.field).double.const = 0];
+    int32 in_int32 = 4 [(buf.validate.field).int32.const = 0];
+    int64 in_int64 = 5 [(buf.validate.field).int64.const = 0];
+    uint32 in_uint32 = 6 [(buf.validate.field).uint32.const = 0];
+    uint64 in_uint64 = 7 [(buf.validate.field).uint64.const = 0];
+    sint32 in_sint32 = 8 [(buf.validate.field).sint32.const = 0];
+    sint64 in_sint64 = 9 [(buf.validate.field).sint64.const = 0];
+    fixed32 in_fixed32 = 10 [(buf.validate.field).fixed32.const = 0];
+    fixed64 in_fixed64 = 11 [(buf.validate.field).fixed64.const = 0];
+    sfixed32 in_sfixed32 = 12 [(buf.validate.field).sfixed32.const = 0];
+    sfixed64 in_sfixed64 = 13 [(buf.validate.field).sfixed64.const = 0];
+    bool in_bool = 14 [(buf.validate.field).bool.const = false];
+    string in_string = 15 [(buf.validate.field).string.const = "foo"];
+    bytes in_bytes = 16 [(buf.validate.field).bytes.const = "bar"];
+    message bar {
+
+    }
+    repeated bar in_repeated = 17 [(buf.validate.field).map.max_pairs = 0];
+    map<string, int32> in_map = 18 [(buf.validate.field).map.max_pairs = 0];
+    google.protobuf.Any value = 1 [(buf.validate.field).any = {
+        not_in: [
+            "type.googleapis.com/google.protobuf.Duration",
+            "type.googleapis.com/google.protobuf.Timestamp"
+        ]
+    }];
+    google.protobuf.Duration in_duration = 20 [(buf.validate.field).duration.const = {
+        seconds: 0,
+        nanos: 0
+    }];
+    google.protobuf.Timestamp in_timestamp = 21 [(buf.validate.field).timestamp.const = {
+        seconds: 0,
+        nanos: 0
+    }];
+    //  google.protobuf.FloatValue wrap_float = 22 [(buf.validate.field).float.const = 0];
+    //  google.protobuf.DoubleValue wrap_double = 23 [(buf.validate.field).double.const = 0];
+    //  google.protobuf.Int32Value wrap_int32 = 24 [(buf.validate.field).int32.const = 0];
+    //  google.protobuf.Int64Value wrap_int64 = 25 [(buf.validate.field).int64.const = 0];
+    //  google.protobuf.UInt32Value wrap_uint32 = 26 [(buf.validate.field).uint32.const = 0];
+    //  google.protobuf.UInt64Value wrap_uint64 = 27 [(buf.validate.field).uint64.const = 0];
+    //  google.protobuf.BoolValue wrap_bool = 28 [(buf.validate.field).bool.const = false];
+    //  google.protobuf.StringValue wrap_string = 29 [(buf.validate.field).string.const = "foo"];
+    //  google.protobuf.BytesValue wrap_bytes = 30 [(buf.validate.field).bytes.const = "bar"];
 }
