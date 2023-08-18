@@ -112,7 +112,7 @@ func (f *field) ParentMessage() Message {
 }
 
 func (f *field) IsMap() bool {
-	isMap, err := IsFieldAMapFromFiles(f, f.File())
+	isMap, err := isFieldAMapFromFiles(f, f.File())
 	if err != nil {
 		return false
 	}

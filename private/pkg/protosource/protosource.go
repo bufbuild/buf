@@ -1252,17 +1252,17 @@ type tagRangeGroup struct {
 	end    int
 }
 
-// IsFieldAMapFromFiles checks if the field is a map field using file information.
-func IsFieldAMapFromFiles(field Field, files ...File) (bool, error) {
-	toMessage, err := FullNameToMessage(files...)
+// isFieldAMapFromFiles checks if the field is a map field using file information.
+func isFieldAMapFromFiles(field Field, files ...File) (bool, error) {
+	message, err := getMessageFromFiles(field, files...)
 	if err != nil {
 		return false, err
 	}
-	return IsFieldAMapFromMessages(field, toMessage), nil
+	return isFieldAMapFromMessages(field, message), nil
 }
 
-// IsFieldAMapFromMessages checks if the field is a map field using message information.
-func IsFieldAMapFromMessages(field Field, fullNameToMessage map[string]Message) bool {
+// isFieldAMapFromMessages checks if the field is a map field using message information.
+func isFieldAMapFromMessages(field Field, message Message) bool {
 	// For this to be a map field, it must be a repeated field
 	// with a synthetic message as the type, that synthetic message
 	// must be in the enclosing message for the field, and it must
@@ -1273,9 +1273,23 @@ func IsFieldAMapFromMessages(field Field, fullNameToMessage map[string]Message) 
 	if field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		return false
 	}
-	message, ok := fullNameToMessage[field.TypeName()]
-	if !ok {
-		return false
-	}
 	return message.IsMapEntry()
+}
+
+// getMessageFromFiles retrieves the Message associated with a field from a list of files.
+func getMessageFromFiles(field Field, files ...File) (Message, error) {
+	fullNameToMessage, err := FullNameToMessage(files...)
+	if err != nil {
+		return nil, err
+	}
+	return getMessageFromField(field, fullNameToMessage)
+}
+
+// getMessageFromField retrieves the Message associated with a field from a map of full names to Messages.
+func getMessageFromField(field Field, fullNameToMessage map[string]Message) (Message, error) {
+	out, ok := fullNameToMessage[field.TypeName()]
+	if !ok {
+		return nil, fmt.Errorf("message not found for field: %s", field.TypeName())
+	}
+	return out, nil
 }
