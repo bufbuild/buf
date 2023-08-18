@@ -266,7 +266,7 @@ func checkEnumZeroValueSuffix(add addFunc, enumValue protosource.EnumValue, suff
 var CheckFieldLowerSnakeCase = newFieldCheckFunc(checkFieldLowerSnakeCase)
 
 func checkFieldLowerSnakeCase(add addFunc, field protosource.Field) error {
-	message := field.Message()
+	message := field.ParentMessage()
 	if message == nil {
 		// just a sanity check
 		return errors.New("field.Message() was nil")
@@ -284,7 +284,7 @@ func checkFieldLowerSnakeCase(add addFunc, field protosource.Field) error {
 			// also check the message for this comment ignore
 			// this allows users to set this "globally" for a message
 			[]protosource.Location{
-				field.Message().Location(),
+				field.ParentMessage().Location(),
 			},
 			"Field name %q should be lower_snake_case, such as %q.",
 			name,
@@ -306,7 +306,7 @@ func checkFieldNoDescriptor(add addFunc, field protosource.Field) error {
 			// also check the message for this comment ignore
 			// this allows users to set this "globally" for a message
 			[]protosource.Location{
-				field.Message().Location(),
+				field.ParentMessage().Location(),
 			},
 			`Field name %q cannot be any capitalization of "descriptor" with any number of prefix or suffix underscores.`,
 			name,

@@ -107,7 +107,7 @@ func newField(
 	}
 }
 
-func (f *field) Message() Message {
+func (f *field) ParentMessage() Message {
 	return f.message
 }
 
