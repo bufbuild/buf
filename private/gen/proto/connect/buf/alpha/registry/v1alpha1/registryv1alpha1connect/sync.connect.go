@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "github.com/bufbuild/connect-go"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// SyncServiceName is the fully-qualified name of the SyncService service.
@@ -62,13 +62,13 @@ const (
 type SyncServiceClient interface {
 	// GetGitSyncPoint retrieves the Git sync point for the named repository
 	// on the specified branch.
-	GetGitSyncPoint(context.Context, *connect_go.Request[v1alpha1.GetGitSyncPointRequest]) (*connect_go.Response[v1alpha1.GetGitSyncPointResponse], error)
+	GetGitSyncPoint(context.Context, *connect.Request[v1alpha1.GetGitSyncPointRequest]) (*connect.Response[v1alpha1.GetGitSyncPointResponse], error)
 	// SyncGitCommit syncs a Git commit containing a module to a named repository.
-	SyncGitCommit(context.Context, *connect_go.Request[v1alpha1.SyncGitCommitRequest]) (*connect_go.Response[v1alpha1.SyncGitCommitResponse], error)
+	SyncGitCommit(context.Context, *connect.Request[v1alpha1.SyncGitCommitRequest]) (*connect.Response[v1alpha1.SyncGitCommitResponse], error)
 	// AttachGitTags attaches git tags (or moves them in case they already existed) to an existing Git
 	// SHA reference in a BSR repository. It is used when syncing the git repository, to sync git tags
 	// that could have been moved to git commits that were already synced.
-	AttachGitTags(context.Context, *connect_go.Request[v1alpha1.AttachGitTagsRequest]) (*connect_go.Response[v1alpha1.AttachGitTagsResponse], error)
+	AttachGitTags(context.Context, *connect.Request[v1alpha1.AttachGitTagsRequest]) (*connect.Response[v1alpha1.AttachGitTagsResponse], error)
 }
 
 // NewSyncServiceClient constructs a client for the buf.alpha.registry.v1alpha1.SyncService service.
@@ -78,22 +78,22 @@ type SyncServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewSyncServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) SyncServiceClient {
+func NewSyncServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) SyncServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &syncServiceClient{
-		getGitSyncPoint: connect_go.NewClient[v1alpha1.GetGitSyncPointRequest, v1alpha1.GetGitSyncPointResponse](
+		getGitSyncPoint: connect.NewClient[v1alpha1.GetGitSyncPointRequest, v1alpha1.GetGitSyncPointResponse](
 			httpClient,
 			baseURL+SyncServiceGetGitSyncPointProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		syncGitCommit: connect_go.NewClient[v1alpha1.SyncGitCommitRequest, v1alpha1.SyncGitCommitResponse](
+		syncGitCommit: connect.NewClient[v1alpha1.SyncGitCommitRequest, v1alpha1.SyncGitCommitResponse](
 			httpClient,
 			baseURL+SyncServiceSyncGitCommitProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyIdempotent),
+			connect.WithClientOptions(opts...),
 		),
-		attachGitTags: connect_go.NewClient[v1alpha1.AttachGitTagsRequest, v1alpha1.AttachGitTagsResponse](
+		attachGitTags: connect.NewClient[v1alpha1.AttachGitTagsRequest, v1alpha1.AttachGitTagsResponse](
 			httpClient,
 			baseURL+SyncServiceAttachGitTagsProcedure,
 			opts...,
@@ -103,23 +103,23 @@ func NewSyncServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 
 // syncServiceClient implements SyncServiceClient.
 type syncServiceClient struct {
-	getGitSyncPoint *connect_go.Client[v1alpha1.GetGitSyncPointRequest, v1alpha1.GetGitSyncPointResponse]
-	syncGitCommit   *connect_go.Client[v1alpha1.SyncGitCommitRequest, v1alpha1.SyncGitCommitResponse]
-	attachGitTags   *connect_go.Client[v1alpha1.AttachGitTagsRequest, v1alpha1.AttachGitTagsResponse]
+	getGitSyncPoint *connect.Client[v1alpha1.GetGitSyncPointRequest, v1alpha1.GetGitSyncPointResponse]
+	syncGitCommit   *connect.Client[v1alpha1.SyncGitCommitRequest, v1alpha1.SyncGitCommitResponse]
+	attachGitTags   *connect.Client[v1alpha1.AttachGitTagsRequest, v1alpha1.AttachGitTagsResponse]
 }
 
 // GetGitSyncPoint calls buf.alpha.registry.v1alpha1.SyncService.GetGitSyncPoint.
-func (c *syncServiceClient) GetGitSyncPoint(ctx context.Context, req *connect_go.Request[v1alpha1.GetGitSyncPointRequest]) (*connect_go.Response[v1alpha1.GetGitSyncPointResponse], error) {
+func (c *syncServiceClient) GetGitSyncPoint(ctx context.Context, req *connect.Request[v1alpha1.GetGitSyncPointRequest]) (*connect.Response[v1alpha1.GetGitSyncPointResponse], error) {
 	return c.getGitSyncPoint.CallUnary(ctx, req)
 }
 
 // SyncGitCommit calls buf.alpha.registry.v1alpha1.SyncService.SyncGitCommit.
-func (c *syncServiceClient) SyncGitCommit(ctx context.Context, req *connect_go.Request[v1alpha1.SyncGitCommitRequest]) (*connect_go.Response[v1alpha1.SyncGitCommitResponse], error) {
+func (c *syncServiceClient) SyncGitCommit(ctx context.Context, req *connect.Request[v1alpha1.SyncGitCommitRequest]) (*connect.Response[v1alpha1.SyncGitCommitResponse], error) {
 	return c.syncGitCommit.CallUnary(ctx, req)
 }
 
 // AttachGitTags calls buf.alpha.registry.v1alpha1.SyncService.AttachGitTags.
-func (c *syncServiceClient) AttachGitTags(ctx context.Context, req *connect_go.Request[v1alpha1.AttachGitTagsRequest]) (*connect_go.Response[v1alpha1.AttachGitTagsResponse], error) {
+func (c *syncServiceClient) AttachGitTags(ctx context.Context, req *connect.Request[v1alpha1.AttachGitTagsRequest]) (*connect.Response[v1alpha1.AttachGitTagsResponse], error) {
 	return c.attachGitTags.CallUnary(ctx, req)
 }
 
@@ -127,13 +127,13 @@ func (c *syncServiceClient) AttachGitTags(ctx context.Context, req *connect_go.R
 type SyncServiceHandler interface {
 	// GetGitSyncPoint retrieves the Git sync point for the named repository
 	// on the specified branch.
-	GetGitSyncPoint(context.Context, *connect_go.Request[v1alpha1.GetGitSyncPointRequest]) (*connect_go.Response[v1alpha1.GetGitSyncPointResponse], error)
+	GetGitSyncPoint(context.Context, *connect.Request[v1alpha1.GetGitSyncPointRequest]) (*connect.Response[v1alpha1.GetGitSyncPointResponse], error)
 	// SyncGitCommit syncs a Git commit containing a module to a named repository.
-	SyncGitCommit(context.Context, *connect_go.Request[v1alpha1.SyncGitCommitRequest]) (*connect_go.Response[v1alpha1.SyncGitCommitResponse], error)
+	SyncGitCommit(context.Context, *connect.Request[v1alpha1.SyncGitCommitRequest]) (*connect.Response[v1alpha1.SyncGitCommitResponse], error)
 	// AttachGitTags attaches git tags (or moves them in case they already existed) to an existing Git
 	// SHA reference in a BSR repository. It is used when syncing the git repository, to sync git tags
 	// that could have been moved to git commits that were already synced.
-	AttachGitTags(context.Context, *connect_go.Request[v1alpha1.AttachGitTagsRequest]) (*connect_go.Response[v1alpha1.AttachGitTagsResponse], error)
+	AttachGitTags(context.Context, *connect.Request[v1alpha1.AttachGitTagsRequest]) (*connect.Response[v1alpha1.AttachGitTagsResponse], error)
 }
 
 // NewSyncServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -141,20 +141,20 @@ type SyncServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewSyncServiceHandler(svc SyncServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	syncServiceGetGitSyncPointHandler := connect_go.NewUnaryHandler(
+func NewSyncServiceHandler(svc SyncServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	syncServiceGetGitSyncPointHandler := connect.NewUnaryHandler(
 		SyncServiceGetGitSyncPointProcedure,
 		svc.GetGitSyncPoint,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	syncServiceSyncGitCommitHandler := connect_go.NewUnaryHandler(
+	syncServiceSyncGitCommitHandler := connect.NewUnaryHandler(
 		SyncServiceSyncGitCommitProcedure,
 		svc.SyncGitCommit,
-		connect_go.WithIdempotency(connect_go.IdempotencyIdempotent),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyIdempotent),
+		connect.WithHandlerOptions(opts...),
 	)
-	syncServiceAttachGitTagsHandler := connect_go.NewUnaryHandler(
+	syncServiceAttachGitTagsHandler := connect.NewUnaryHandler(
 		SyncServiceAttachGitTagsProcedure,
 		svc.AttachGitTags,
 		opts...,
@@ -176,14 +176,14 @@ func NewSyncServiceHandler(svc SyncServiceHandler, opts ...connect_go.HandlerOpt
 // UnimplementedSyncServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedSyncServiceHandler struct{}
 
-func (UnimplementedSyncServiceHandler) GetGitSyncPoint(context.Context, *connect_go.Request[v1alpha1.GetGitSyncPointRequest]) (*connect_go.Response[v1alpha1.GetGitSyncPointResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SyncService.GetGitSyncPoint is not implemented"))
+func (UnimplementedSyncServiceHandler) GetGitSyncPoint(context.Context, *connect.Request[v1alpha1.GetGitSyncPointRequest]) (*connect.Response[v1alpha1.GetGitSyncPointResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SyncService.GetGitSyncPoint is not implemented"))
 }
 
-func (UnimplementedSyncServiceHandler) SyncGitCommit(context.Context, *connect_go.Request[v1alpha1.SyncGitCommitRequest]) (*connect_go.Response[v1alpha1.SyncGitCommitResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SyncService.SyncGitCommit is not implemented"))
+func (UnimplementedSyncServiceHandler) SyncGitCommit(context.Context, *connect.Request[v1alpha1.SyncGitCommitRequest]) (*connect.Response[v1alpha1.SyncGitCommitResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SyncService.SyncGitCommit is not implemented"))
 }
 
-func (UnimplementedSyncServiceHandler) AttachGitTags(context.Context, *connect_go.Request[v1alpha1.AttachGitTagsRequest]) (*connect_go.Response[v1alpha1.AttachGitTagsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SyncService.AttachGitTags is not implemented"))
+func (UnimplementedSyncServiceHandler) AttachGitTags(context.Context, *connect.Request[v1alpha1.AttachGitTagsRequest]) (*connect.Response[v1alpha1.AttachGitTagsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.SyncService.AttachGitTags is not implemented"))
 }

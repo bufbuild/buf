@@ -17,7 +17,6 @@ package bufmodulebuild
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"go.uber.org/zap"
@@ -121,7 +120,6 @@ func (m *moduleFileSetBuilder) build(
 			}
 			if _, ok := hashes[potentialDependencyModuleHash]; !ok {
 				dependencyModules = append(dependencyModules, potentialDependencyModule)
-			} else {
 				hashes[potentialDependencyModuleHash] = struct{}{}
 			}
 		}
@@ -146,7 +144,7 @@ func (m *moduleFileSetBuilder) build(
 		}
 		// At this point, this is really just a safety check.
 		if _, ok := hashes[dependencyModuleHash]; ok {
-			return nil, errors.New("module declared in DependencyModulePins but not in workspace was already added to the dependency Module set, this is a system error")
+			return nil, ErrDuplicateDependency
 		}
 		dependencyModules = append(dependencyModules, dependencyModule)
 		hashes[dependencyModuleHash] = struct{}{}

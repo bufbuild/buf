@@ -19,10 +19,10 @@
 package registryv1alpha1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	connect_go "github.com/bufbuild/connect-go"
 	http "net/http"
 	strings "strings"
 )
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// ImageServiceName is the fully-qualified name of the ImageService service.
@@ -55,7 +55,7 @@ const (
 type ImageServiceClient interface {
 	// GetImage serves a compiled image for the local module. It automatically
 	// downloads dependencies if necessary.
-	GetImage(context.Context, *connect_go.Request[v1alpha1.GetImageRequest]) (*connect_go.Response[v1alpha1.GetImageResponse], error)
+	GetImage(context.Context, *connect.Request[v1alpha1.GetImageRequest]) (*connect.Response[v1alpha1.GetImageResponse], error)
 }
 
 // NewImageServiceClient constructs a client for the buf.alpha.registry.v1alpha1.ImageService
@@ -65,25 +65,25 @@ type ImageServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewImageServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) ImageServiceClient {
+func NewImageServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ImageServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &imageServiceClient{
-		getImage: connect_go.NewClient[v1alpha1.GetImageRequest, v1alpha1.GetImageResponse](
+		getImage: connect.NewClient[v1alpha1.GetImageRequest, v1alpha1.GetImageResponse](
 			httpClient,
 			baseURL+ImageServiceGetImageProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
 // imageServiceClient implements ImageServiceClient.
 type imageServiceClient struct {
-	getImage *connect_go.Client[v1alpha1.GetImageRequest, v1alpha1.GetImageResponse]
+	getImage *connect.Client[v1alpha1.GetImageRequest, v1alpha1.GetImageResponse]
 }
 
 // GetImage calls buf.alpha.registry.v1alpha1.ImageService.GetImage.
-func (c *imageServiceClient) GetImage(ctx context.Context, req *connect_go.Request[v1alpha1.GetImageRequest]) (*connect_go.Response[v1alpha1.GetImageResponse], error) {
+func (c *imageServiceClient) GetImage(ctx context.Context, req *connect.Request[v1alpha1.GetImageRequest]) (*connect.Response[v1alpha1.GetImageResponse], error) {
 	return c.getImage.CallUnary(ctx, req)
 }
 
@@ -91,7 +91,7 @@ func (c *imageServiceClient) GetImage(ctx context.Context, req *connect_go.Reque
 type ImageServiceHandler interface {
 	// GetImage serves a compiled image for the local module. It automatically
 	// downloads dependencies if necessary.
-	GetImage(context.Context, *connect_go.Request[v1alpha1.GetImageRequest]) (*connect_go.Response[v1alpha1.GetImageResponse], error)
+	GetImage(context.Context, *connect.Request[v1alpha1.GetImageRequest]) (*connect.Response[v1alpha1.GetImageResponse], error)
 }
 
 // NewImageServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -99,12 +99,12 @@ type ImageServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewImageServiceHandler(svc ImageServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	imageServiceGetImageHandler := connect_go.NewUnaryHandler(
+func NewImageServiceHandler(svc ImageServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	imageServiceGetImageHandler := connect.NewUnaryHandler(
 		ImageServiceGetImageProcedure,
 		svc.GetImage,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.ImageService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -119,6 +119,6 @@ func NewImageServiceHandler(svc ImageServiceHandler, opts ...connect_go.HandlerO
 // UnimplementedImageServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedImageServiceHandler struct{}
 
-func (UnimplementedImageServiceHandler) GetImage(context.Context, *connect_go.Request[v1alpha1.GetImageRequest]) (*connect_go.Response[v1alpha1.GetImageResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ImageService.GetImage is not implemented"))
+func (UnimplementedImageServiceHandler) GetImage(context.Context, *connect.Request[v1alpha1.GetImageRequest]) (*connect.Response[v1alpha1.GetImageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ImageService.GetImage is not implemented"))
 }

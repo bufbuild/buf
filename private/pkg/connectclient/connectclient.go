@@ -15,7 +15,7 @@
 package connectclient
 
 import (
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 )
 
 // Config holds configuration for creating Connect RPC clients.

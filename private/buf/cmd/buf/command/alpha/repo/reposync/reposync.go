@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -37,7 +38,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
@@ -187,6 +187,7 @@ func sync(
 		bufsync.SyncerWithResumption(syncPointResolver(clientConfig)),
 		bufsync.SyncerWithGitCommitChecker(syncGitCommitChecker(clientConfig)),
 		bufsync.SyncerWithModuleDefaultBranchGetter(defaultBranchGetter(clientConfig)),
+		bufsync.SyncerWithTagsBackfiller(tagsBackfiller(clientConfig)),
 	}
 	if allBranches {
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithAllBranches())
@@ -329,6 +330,43 @@ func defaultBranchGetter(clientConfig *connectclient.Config) bufsync.ModuleDefau
 			return "", fmt.Errorf("get repository by full name %q: %w", module.IdentityString(), err)
 		}
 		return res.Msg.Repository.DefaultBranch, nil
+	}
+}
+
+func tagsBackfiller(clientConfig *connectclient.Config) bufsync.TagsBackfiller {
+	return func(
+		ctx context.Context,
+		module bufmoduleref.ModuleIdentity,
+		alreadySyncedHash git.Hash,
+		author git.Ident,
+		committer git.Ident,
+		tags []string,
+	) (string, error) {
+		service := connectclient.Make(clientConfig, module.Remote(), registryv1alpha1connect.NewSyncServiceClient)
+		res, err := service.AttachGitTags(ctx, connect.NewRequest(&registryv1alpha1.AttachGitTagsRequest{
+			Owner:      module.Owner(),
+			Repository: module.Repository(),
+			Hash:       alreadySyncedHash.Hex(),
+			Author: &registryv1alpha1.GitIdentity{
+				Name:  author.Name(),
+				Email: author.Email(),
+				Time:  timestamppb.New(author.Timestamp()),
+			},
+			Commiter: &registryv1alpha1.GitIdentity{
+				Name:  committer.Name(),
+				Email: committer.Email(),
+				Time:  timestamppb.New(committer.Timestamp()),
+			},
+			Tags: tags,
+		}))
+		if err != nil {
+			if connect.CodeOf(err) == connect.CodeNotFound {
+				// Repo is not created
+				return "", bufsync.ErrModuleDoesNotExist
+			}
+			return "", fmt.Errorf("attach git tags to module %q: %w", module.IdentityString(), err)
+		}
+		return res.Msg.GetBsrCommitName(), nil
 	}
 }
 

@@ -193,7 +193,7 @@ generate: ## Run all generation steps.
 
 .PHONY: checknodiffgenerated
 checknodiffgenerated:
-	@ if [ -d .git ]; then \
+	@ if [[ -d .git || -f .git ]]; then \
 			$(MAKE) __checknodiffgeneratedinternal; \
 		else \
 			echo "skipping make checknodiffgenerated due to no .git repository" >&2; \
