@@ -687,7 +687,18 @@ func requireFileExists(
 		context.Background(),
 		filepath.FromSlash(fileName),
 	)
-	require.NoErrorf(t, err, "%s should exist but is not found", fileName)
+	var filesInBucket []string
+	if err != nil {
+		bucket.Walk(
+			context.Background(),
+			"",
+			func(oi storage.ObjectInfo) error {
+				filesInBucket = append(filesInBucket, oi.Path())
+				return nil
+			},
+		)
+	}
+	require.NoErrorf(t, err, "%s should exist but is not found among %v", fileName, filesInBucket)
 }
 
 func requireFileDoesNotExist(

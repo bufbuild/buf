@@ -4,6 +4,9 @@ import "b.proto";
 import "v1/n.proto";
 import "x.proto";
 
+option java_multiple_files = false;
+option java_package = "original.javapkg.from.a";
+
 message A {
   required bar.X1 a = 1;
   required B b = 2;
