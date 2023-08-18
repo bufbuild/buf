@@ -224,7 +224,11 @@ func convertConfigV1ToExternalConfigV2(
 		}
 		externalConfigV2.Plugins = append(externalConfigV2.Plugins, *pluginConfigV2)
 	}
-	externalConfigV2.Managed = *managedConfigV1ToExternalManagedConfigV2(configV1.ManagedConfig)
+	managedConfigV2, err := managedConfigV1ToExternalManagedConfigV2(configV1.ManagedConfig)
+	if err != nil {
+		return nil, err
+	}
+	externalConfigV2.Managed = *managedConfigV2
 	return &externalConfigV2, nil
 }
 
@@ -291,11 +295,13 @@ func pluginConfigToExternalPluginConfigV2(
 	return &externalPluginConfig, nil
 }
 
-func managedConfigV1ToExternalManagedConfigV2(managedConfigV1 *bufgenv1.ManagedConfig) *bufgenv2.ExternalManagedConfigV2 {
+func managedConfigV1ToExternalManagedConfigV2(
+	managedConfigV1 *bufgenv1.ManagedConfig,
+) (*bufgenv2.ExternalManagedConfigV2, error) {
 	managedConfigV2 := bufgenv2.ExternalManagedConfigV2{}
 	if managedConfigV1 == nil {
 		managedConfigV2.Enabled = false
-		return &managedConfigV2
+		return &managedConfigV2, nil
 	}
 	managedConfigV2.Enabled = true
 	if ccEnableArenas := managedConfigV1.CcEnableArenas; ccEnableArenas != nil {
@@ -404,11 +410,13 @@ func managedConfigV1ToExternalManagedConfigV2(managedConfigV1 *bufgenv1.ManagedC
 		}
 	}
 	if objcClassPrefixConfig := managedConfigV1.ObjcClassPrefixConfig; objcClassPrefixConfig != nil {
-		defaultOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-			FileOption: fileOptionObjcClassPrefix,
-			Value:      objcClassPrefixConfig.Default,
+		if objcClassPrefixConfig.Default != "" {
+			defaultOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
+				FileOption: fileOptionObjcClassPrefix,
+				Value:      objcClassPrefixConfig.Default,
+			}
+			managedConfigV2.Override = append(managedConfigV2.Override, defaultOverrideRule)
 		}
-		managedConfigV2.Override = append(managedConfigV2.Override, defaultOverrideRule)
 		for _, excludedModule := range objcClassPrefixConfig.Except {
 			moduleDisableRule := bufgenv2.ExternalManagedDisableConfigV2{
 				FileOption: fileOptionObjcClassPrefix,
@@ -444,15 +452,26 @@ func managedConfigV1ToExternalManagedConfigV2(managedConfigV1 *bufgenv1.ManagedC
 	}
 	for fileOption, fileToOverride := range managedConfigV1.Override {
 		for file, override := range fileToOverride {
+			lowerCaseFileOption := strings.ToLower(fileOption)
+			var overrideValue interface{}
+			overrideValue = override
+			switch lowerCaseFileOption {
+			case fileOptionCcEnableArenas, fileOptionJavaMultipleFiles, fileOptionJavaStringCheckUtf8:
+				parseOverrideValue, err := strconv.ParseBool(override)
+				if err != nil {
+					return nil, fmt.Errorf("")
+				}
+				overrideValue = parseOverrideValue
+			}
 			fileOverrideRule := bufgenv2.ExternalManagedOverrideConfigV2{
-				FileOption: strings.ToLower(fileOption),
+				FileOption: lowerCaseFileOption,
 				Path:       file,
-				Value:      override,
+				Value:      overrideValue,
 			}
 			managedConfigV2.Override = append(managedConfigV2.Override, fileOverrideRule)
 		}
 	}
-	return &managedConfigV2
+	return &managedConfigV2, nil
 }
 
 func getExternalInputConfigV2(

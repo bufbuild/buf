@@ -1,7 +1,0 @@
-package foo;
-
-import "google/protobuf/timestamp.proto";
-
-message Baz {
-  required google.protobuf.Timestamp timestamp = 1;
-}

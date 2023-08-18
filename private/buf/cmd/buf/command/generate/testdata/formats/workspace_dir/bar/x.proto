@@ -1,0 +1,5 @@
+package bar;
+
+message X1 {}
+
+message X2 {}

@@ -1,0 +1,3 @@
+package baz.v1;
+
+message M {}

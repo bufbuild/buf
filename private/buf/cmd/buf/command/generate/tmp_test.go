@@ -43,12 +43,6 @@ managed:
   java_package_prefix: com
   java_string_check_utf8: false
   optimize_for: CODE_SIZE
-  go_package_prefix:
-    default: github.com/acme/weather/private/gen/proto/go
-    except:
-      - buf.build/googleapis/googleapis
-    override:
-      buf.build/acme/weather: github.com/acme/weather/gen/proto/go
   override:
     JAVA_PACKAGE:
       acme/weather/v1/weather.proto: "org"
@@ -80,6 +74,87 @@ managed:
 plugins:
   - plugin: java
     out: gen/java
+`
+
+const v1ContentWithPerFileOverride = `version: v1
+managed:
+  enabled: true
+  cc_enable_arenas: true
+  java_multiple_files: false
+  java_package_prefix:
+    default: xyz
+    except:
+      - bufbuild.test/generate/bar
+    override:
+      bufbuild.test/generate/baz: dev
+      bufbuild.test/generate/qux: net
+  java_string_check_utf8: true
+  optimize_for:
+    default: LITE_RUNTIME
+    except:
+      - bufbuild.test/generate/qux
+    override:
+      bufbuild.test/generate/bar: SPEED
+      bufbuild.test/generate/baz: CODE_SIZE
+  go_package_prefix:
+    default:  example.com/generate
+    override:
+      bufbuild.test/generate/bar: example.com/baroverride
+      bufbuild.test/generate/baz: example.com/bazoverride
+  objc_class_prefix:
+    default:  XYZ
+    except:
+      - bufbuild.test/generate/baz
+    override:
+      bufbuild.test/generate/bar: BAR
+      bufbuild.test/generate/qux: QUX
+  csharp_namespace:
+    except:
+      - bufbuild.test/generate/baz
+    override:
+      bufbuild.test/generate/bar: B::A::R
+      bufbuild.test/generate/qux: Q::A::X
+  ruby_package:
+    except:
+      - bufbuild.test/generate/baz
+    override:
+      bufbuild.test/generate/bar: B::A::R
+      bufbuild.test/generate/qux: Q::A::X
+  override:
+    JAVA_PACKAGE:
+      a.proto: ajavapkg
+      x.proto: xjavapkg # note that x.proto's module is excluded
+      v1/n.proto: njavapkg
+    GO_PACKAGE:
+      b.proto: b/gopkg
+    RUBY_PACKAGE:
+      v1/m.proto: mrubypkg
+    CC_ENABLE_ARENAS:
+      v1/n.proto: false
+    OPTIMIZE_FOR:
+      t.proto: CODE_SIZE
+    CSHARP_NAMESPACE:
+      y.proto: YPROTO::YPROTO
+      b.proto: BPROTO:BPROTO
+    JAVA_MULTIPLE_FILES:
+      v1/n.proto: true
+      t.proto: true
+    OBJC_CLASS_PREFIX:
+      a.proto: APRO
+      x.proto: XPRO
+    PHP_METADATA_NAMESPACE:
+      y.proto: YProto\Metadata
+      v1/m.proto: MProto\Metadata
+    PHP_NAMESPACE:
+      x.proto: XProtoNamespace
+      b.proto: BProtoNamespace
+plugins:
+  - plugin: java
+    out: gen/java
+  - plugin: go
+    out: gen/go
+  - plugin: objc
+    out: gen/objc
 `
 
 func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
@@ -243,20 +318,62 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			skipMigrateComp: true,
 		},
 		{
-			description:     "dir input",
-			input:           filepath.Join("testdata", "formats", "dir_format", "dir1"),
+			description:     "module dir include imports and wkt",
+			input:           filepath.Join("testdata", "formats", "workspace_dir", "foo"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: []string{
+				"--include-imports",
+				"--include-wkt",
+			},
+			filesThatShouldExist: []string{
+				"gen/java/net/foo/AProto.java",
+				"gen/java/net/foo/BProto.java",
+				"gen/java/net/bar/XProto.java",
+				"gen/java/net/bar/YProto.java",
+				"gen/java/net/baz/v1/MProto.java",
+				"gen/java/net/baz/v1/NProto.java",
+				"gen/java/net/qux/TProto.java",
+				"gen/java/com/google/protobuf/TimestampProto.java",
+			},
+		},
+		{
+			description:     "module dir include imports but not wkt",
+			input:           filepath.Join("testdata", "formats", "workspace_dir", "foo"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: []string{
+				"--include-imports",
+			},
+			filesThatShouldExist: []string{
+				"gen/java/net/foo/AProto.java",
+				"gen/java/net/foo/BProto.java",
+				"gen/java/net/bar/XProto.java",
+				"gen/java/net/bar/YProto.java",
+				"gen/java/net/baz/v1/NProto.java",
+				"gen/java/net/qux/TProto.java",
+				"gen/java/net/baz/v1/MProto.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/com/google/protobuf/TimestampProto.java",
+			},
+		},
+		{
+			description:     "module dir without including imports",
+			input:           filepath.Join("testdata", "formats", "workspace_dir", "foo"),
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
 				"gen/java/net/foo/AProto.java",
-				"gen/java/net/foo/Foo.java",
 				"gen/java/net/foo/BProto.java",
-				"gen/java/net/foo/Baz.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/net/bar/XProto.java",
+				"gen/java/net/baz/v1/MProto.java",
+				"gen/java/com/google/protobuf/TimestampProto.java",
 			},
 		},
 		{
 			description:     "json image",
-			input:           filepath.Join("testdata", "formats", "json_image.json"),
+			input:           filepath.Join("testdata", "formats", "workspace_image.json"),
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
@@ -267,8 +384,20 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 			},
 		},
 		{
-			description:     "binary image",
-			input:           filepath.Join("testdata", "formats", "binary_image.binpb"),
+			description:     "binary image with .binpb",
+			input:           filepath.Join("testdata", "formats", "workspace_image.binpb"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/foo/AProto.java",
+				"gen/java/net/foo/Foo.java",
+				"gen/java/net/foo/BProto.java",
+				"gen/java/net/foo/Baz.java",
+			},
+		},
+		{
+			description:     "binary image with .binpb.gz",
+			input:           filepath.Join("testdata", "formats", "workspace_image.binpb.gz"),
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
@@ -280,7 +409,7 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 		},
 		{
 			description:     "text image",
-			input:           filepath.Join("testdata", "formats", "text_image.txtpb"),
+			input:           filepath.Join("testdata", "formats", "workspace_image.txtpb"),
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
@@ -288,6 +417,93 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 				"gen/java/net/foo/Foo.java",
 				"gen/java/net/foo/BProto.java",
 				"gen/java/net/foo/Baz.java",
+			},
+		},
+		{
+			description:     "directory not module",
+			input:           filepath.Join("testdata", "formats", "not_module"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/A/AProto.java",
+				"gen/java/net/B/BProto.java",
+			},
+		},
+		{
+			description:     "zip archive",
+			input:           filepath.Join("testdata", "formats", "not_module.zip"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/A/AProto.java",
+				"gen/java/net/B/BProto.java",
+			},
+		},
+		{
+			description:     "zip archive",
+			input:           filepath.Join("testdata", "formats", "not_module.zip"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/A/AProto.java",
+				"gen/java/net/B/BProto.java",
+			},
+		},
+		{
+			description:     "zip archive with sub dir",
+			input:           filepath.Join("testdata", "formats", "not_module.zip#subdir=a"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/A/AProto.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/net/B/BProto.java",
+			},
+		},
+		{
+			description:     "proto file ref",
+			input:           filepath.Join("testdata", "protofileref", "a", "v1", "a.proto"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/A/v1/AProto.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/net/A/v1/BProto.java",
+			},
+		},
+		{
+			description:     "proto file ref include package file",
+			input:           filepath.Join("testdata", "protofileref", "a", "v1", "a.proto#include_package_files=true"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/A/v1/AProto.java",
+				"gen/java/net/A/v1/BProto.java",
+			},
+		},
+		{
+			description:     "module dir with managed mode and per-file overrides",
+			input:           filepath.Join("testdata", "formats", "workspace_dir", "foo"),
+			templateContent: v1ContentWithPerFileOverride,
+			additionalFlags: []string{
+				"--include-imports",
+				"--include-wkt",
+			},
+			filesThatShouldExist: []string{
+				"gen/java/ajavapkg/AProto.java",
+				"gen/java/xyz/foo/BProto.java",
+				"gen/java/bar/XProto.java",
+				"gen/java/bar/YProto.java",
+				"gen/java/dev/baz/v1/MProto.java",
+				"gen/java/njavapkg/NProto.java",
+				"gen/java/net/qux/TProto.java",
+				"gen/java/com/google/protobuf/TimestampProto.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/xyz/foo/AProto.java",
+				"gen/java/dev/baz/v1/NProto.java",
 			},
 		},
 	}

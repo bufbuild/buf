@@ -991,9 +991,10 @@ func TestConvertManagedMode(t *testing.T) {
 		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
-			actualConfigV2 := managedConfigV1ToExternalManagedConfigV2(
+			actualConfigV2, err := managedConfigV1ToExternalManagedConfigV2(
 				testcase.original,
 			)
+			require.NoError(t, err)
 			require.Equal(t, testcase.expected, actualConfigV2)
 		})
 	}

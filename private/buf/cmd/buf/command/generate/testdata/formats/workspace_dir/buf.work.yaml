@@ -1,0 +1,6 @@
+version: v1
+directories:
+  - foo
+  - bar
+  - baz
+  - qux

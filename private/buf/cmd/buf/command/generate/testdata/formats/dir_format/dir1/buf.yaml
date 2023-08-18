@@ -1,4 +1,0 @@
-version: v1
-name: bufbuild.test/generate/d1
-deps:
-  - bufbuild.test/generate/d2
