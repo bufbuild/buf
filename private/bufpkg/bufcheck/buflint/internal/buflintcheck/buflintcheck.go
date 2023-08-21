@@ -970,27 +970,28 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 }
 
 // CheckValidateRulesTypesMatch is a check function.
-var CheckValidateRulesTypesMatch = newMessageCheckFunc(checkValidateRulesTypesMatch)
+var CheckValidateRulesTypesMatch = newFieldCheckFunc(checkValidateRulesTypesMatch)
 
-func checkValidateRulesTypesMatch(add addFunc, message protosource.Message) error {
-	for _, field := range message.Fields() {
-		data, ok, err := getDataByExtension(field, validate.E_Field)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			continue
-		}
-		var constraints validate.FieldConstraints
-		if err := proto.Unmarshal(data, &constraints); err != nil {
-			return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
-		}
-		newModule(add, field).checkFieldRules(&constraints)
+func checkValidateRulesTypesMatch(add addFunc, field protosource.Field) error {
+	data, ok, err := getDataByExtension(field, validate.E_Field)
+	if err != nil {
+		return err
 	}
+	if !ok {
+		return nil
+	}
+	var constraints validate.FieldConstraints
+	if err := proto.Unmarshal(data, &constraints); err != nil {
+		return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
+	}
+	newModule(add, field).checkFieldRules(&constraints)
 	return nil
 }
 
-func getDataByExtension(field protosource.OptionExtensionDescriptor, extensionType protoreflect.ExtensionType) ([]byte, bool, error) {
+func getDataByExtension(
+	field protosource.OptionExtensionDescriptor,
+	extensionType protoreflect.ExtensionType,
+) ([]byte, bool, error) {
 	extension, ok := field.OptionExtension(extensionType)
 	if !ok {
 		return nil, ok, nil
