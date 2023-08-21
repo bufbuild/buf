@@ -10,8 +10,8 @@ cmd/protoc-gen-buf-breaking/protoc-gen-buf-breaking
 cmd/protoc-gen-buf-lint/protoc-gen-buf-lint
 private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
 private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
-private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-plugin-config/protoc-gen-plugin-config
 private/buf/cmd/buf/command/alpha/protoc/test.txt
+private/buf/cmd/buf/command/generate/internal/protoc-gen-plugin-config/protoc-gen-plugin-config
 private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/
 private/bufpkg/bufstyle/cmd/bufstyle/bufstyle
 private/bufpkg/buftesting/cache/

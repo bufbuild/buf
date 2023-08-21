@@ -32,5 +32,5 @@ go install github.com/bufbuild/connect-go/cmd/protoc-gen-connect-go@${CONNECT_VE
 go install ./cmd/buf \
   ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
   ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
-  ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-plugin-config
+  ./private/buf/cmd/buf/command/generate/internal/protoc-gen-plugin-config
 go test ./...
