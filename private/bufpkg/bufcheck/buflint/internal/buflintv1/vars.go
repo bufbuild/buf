@@ -65,7 +65,7 @@ var (
 		buflintbuild.ServicePascalCaseRuleBuilder,
 		buflintbuild.ServiceSuffixRuleBuilder,
 		buflintbuild.SyntaxSpecifiedRuleBuilder,
-		buflintbuild.ValidateRulesTypesMatchRuleBuilder,
+		buflintbuild.ValidateConstraintsCheckRuleBuilder,
 	}
 
 	// v1DefaultCategories are the default categories.
@@ -230,7 +230,13 @@ var (
 			"BASIC",
 			"DEFAULT",
 		},
-		"VALIDATE_RULES_TYPES_MATCH": {
+		"VALIDATE_CONSTRAINTS_CHECK": {
+			"DEFAULT",
+		},
+		"VALIDATE_MESSAGE_NOT_DISABLED": {
+			"DEFAULT",
+		},
+		"VALIDATE_CEL_VALID": {
 			"DEFAULT",
 		},
 	}

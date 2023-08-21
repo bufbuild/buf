@@ -348,11 +348,11 @@ var (
 		"all files have a syntax specified",
 		newAdapter(buflintcheck.CheckSyntaxSpecified),
 	)
-	// ValidateRulesTypesMatchRuleBuilder is a rule builder.
-	ValidateRulesTypesMatchRuleBuilder = internal.NewNopRuleBuilder(
-		"VALIDATE_RULES_TYPES_MATCH",
+	// ValidateConstraintsCheckRuleBuilder is a rule builder.
+	ValidateConstraintsCheckRuleBuilder = internal.NewNopRuleBuilder(
+		"VALIDATE_CONSTRAINTS_CHECK",
 		"fields contain constraints which match the same type",
-		newAdapter(buflintcheck.CheckValidateRulesTypesMatch),
+		newAdapter(buflintcheck.CheckValidateConstraintsCheck),
 	)
 )
 

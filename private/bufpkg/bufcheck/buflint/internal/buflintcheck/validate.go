@@ -51,7 +51,6 @@ func (m *module) checkFieldRules(rules *validate.FieldConstraints) {
 	if rules == nil {
 		return
 	}
-
 	switch r := rules.Type.(type) {
 	case *validate.FieldConstraints_Float:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_FLOAT, FloatValueWKT)
@@ -105,6 +104,7 @@ func (m *module) checkFieldRules(rules *validate.FieldConstraints) {
 	case *validate.FieldConstraints_Map:
 		m.checkMap(r.Map)
 	case *validate.FieldConstraints_Any:
+		m.noCustomRules(rules)
 		m.checkAny(r.Any)
 	case *validate.FieldConstraints_Duration:
 		m.checkDuration(r.Duration)
@@ -409,4 +409,8 @@ func (m *module) checkTS(ts *timestamppb.Timestamp) *int64 {
 	t, err := ts.AsTime(), ts.CheckValid()
 	m.assert(err == nil, "could not resolve timestamp")
 	return proto.Int64(t.UnixNano())
+}
+
+func (m *module) noCustomRules(r *validate.FieldConstraints) {
+	m.assert(len(r.GetCel()) == 0, "custom rules are not supported for this field type")
 }
