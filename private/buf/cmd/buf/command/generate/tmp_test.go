@@ -209,6 +209,23 @@ plugins:
     out: gen/go
 `
 
+const v1ContentWithStrategyAndOpt = `version: v1
+plugins:
+  - plugin: plugin-config
+    out: gen/sall
+    strategy: all
+    opt: "a=b"
+  - plugin: plugin-config
+    out: gen/sdir
+    strategy: directory
+    opt:
+      - c=d
+      - xyz
+      - a=b=c
+  - plugin: plugin-config
+    out: gen/default
+`
+
 func TestGenerateWithV1AndV2(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
@@ -663,6 +680,18 @@ func TestGenerateWithV1AndV2(t *testing.T) {
 				"gen/java/MProto.java",
 				"gen/java/bazfoobar/NProto.java",
 				"gen/java/dev/baz/v1/NProto.java",
+			},
+		},
+		{
+			description:     "strategy and opt per plugin",
+			input:           filepath.Join("testdata", "formats", "not_module", "src", "protos"),
+			templateContent: v1ContentWithStrategyAndOpt,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/sall/a/a.response.txt",
+				"gen/sall/b/b.response.txt",
+				"gen/sdir/a/a.response.txt",
+				"gen/sdir/b/b.response.txt",
 			},
 		},
 	}
