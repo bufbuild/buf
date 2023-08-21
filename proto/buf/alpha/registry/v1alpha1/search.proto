@@ -42,6 +42,18 @@ enum OrderBy {
   ORDER_BY_NAME = 3;
 }
 
+enum ElementType {
+  ELEMENT_TYPE_UNSPECIFIED = 0;
+  ELEMENT_TYPE_SERVICE = 1;
+  ELEMENT_TYPE_METHOD = 2;
+  ELEMENT_TYPE_MESSAGE = 3;
+  ELEMENT_TYPE_EXTENSION = 4;
+  ELEMENT_TYPE_FIELD = 5;
+  ELEMENT_TYPE_ONEOF = 6;
+  ELEMENT_TYPE_ENUM = 7;
+  ELEMENT_TYPE_ENUM_VALUE = 8;
+}
+
 message RepositorySearchResult {
   string id = 1;
   string name = 2;
@@ -86,7 +98,7 @@ message ModuleElementSearchResult {
   string proto_file_path = 4;
   string fully_qualified_name = 5;
   string package_name = 6;
-  string element_type = 7;
+  ElementType element_type = 7;
 }
 
 message ModuleFileSearchResult {
