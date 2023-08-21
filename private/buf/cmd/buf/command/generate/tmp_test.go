@@ -157,7 +157,7 @@ plugins:
     out: gen/objc
 `
 
-func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
+func TestGenerateWithV1AndV2(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
 
