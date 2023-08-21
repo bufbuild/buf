@@ -421,7 +421,7 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 		},
 		{
 			description:     "directory not module",
-			input:           filepath.Join("testdata", "formats", "not_module"),
+			input:           filepath.Join("testdata", "formats", "not_module", "src", "protos"),
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
@@ -431,17 +431,7 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 		},
 		{
 			description:     "zip archive",
-			input:           filepath.Join("testdata", "formats", "not_module.zip"),
-			templateContent: v1ContentMinimal,
-			additionalFlags: nil,
-			filesThatShouldExist: []string{
-				"gen/java/net/a/AProto.java",
-				"gen/java/net/b/BProto.java",
-			},
-		},
-		{
-			description:     "zip archive",
-			input:           filepath.Join("testdata", "formats", "not_module.zip"),
+			input:           filepath.Join("testdata", "formats", "not_module.zip#strip_components=3"),
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
@@ -451,13 +441,51 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 		},
 		{
 			description:     "zip archive with sub dir",
-			input:           filepath.Join("testdata", "formats", "not_module.zip#subdir=a"),
+			input:           filepath.Join("testdata", "formats", "not_module.zip#subdir=not_module/src/protos"),
 			templateContent: v1ContentMinimal,
 			additionalFlags: nil,
 			filesThatShouldExist: []string{
 				"gen/java/net/a/AProto.java",
+				"gen/java/net/b/BProto.java",
 			},
-			filesThatShouldNotExist: []string{
+		},
+		{
+			description:     "zip archive with sub dir and strip components",
+			input:           filepath.Join("testdata", "formats", "not_module.zip#strip_components=1,subdir=src/protos"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/a/AProto.java",
+				"gen/java/net/b/BProto.java",
+			},
+		},
+		{
+			description:     "tape archive",
+			input:           filepath.Join("testdata", "formats", "not_module.tar#strip_components=3"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/a/AProto.java",
+				"gen/java/net/b/BProto.java",
+			},
+		},
+		{
+			description:     "tape archive with compression specified",
+			input:           filepath.Join("testdata", "formats", "not_module_gzip#format=tar,strip_components=3,compression=gzip"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/a/AProto.java",
+				"gen/java/net/b/BProto.java",
+			},
+		},
+		{
+			description:     "tape archive with compression inferred",
+			input:           filepath.Join("testdata", "formats", "not_module.tar.gz#strip_components=3"),
+			templateContent: v1ContentMinimal,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/java/net/a/AProto.java",
 				"gen/java/net/b/BProto.java",
 			},
 		},

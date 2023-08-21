@@ -1,0 +1,7 @@
+package a;
+
+import "b/b.proto";
+
+message Foo {
+  optional b.Bar bar = 1;
+}
