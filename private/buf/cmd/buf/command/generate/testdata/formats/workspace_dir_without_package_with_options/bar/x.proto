@@ -1,0 +1,22 @@
+option cc_enable_arenas = true;
+option cc_generic_services = true;
+option csharp_namespace = "barfoobar";
+option go_package = "barfoobar";
+option java_generic_services = true;
+option java_multiple_files = true;
+option java_outer_classname = "barfoobar";
+option java_package = "barfoobar";
+option java_string_check_utf8 = true;
+option objc_class_prefix = "Barfoobar";
+option optimize_for = SPEED;
+option php_class_prefix = "barfoobar";
+option php_generic_services = true;
+option php_metadata_namespace = "barfoobar";
+option php_namespace = "barfoobar";
+option py_generic_services = true;
+option ruby_package = "barfoobar";
+option swift_prefix = "barfoobar";
+
+message X1 {}
+
+message X2 {}

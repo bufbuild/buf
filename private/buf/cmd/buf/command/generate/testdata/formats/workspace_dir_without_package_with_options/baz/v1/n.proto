@@ -1,0 +1,7 @@
+import "t.proto";
+
+// options left blank
+
+message N {
+  required T t = 1;
+}

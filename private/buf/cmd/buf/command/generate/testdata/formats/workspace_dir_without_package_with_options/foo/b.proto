@@ -1,0 +1,28 @@
+import "google/protobuf/timestamp.proto";
+import "v1/m.proto";
+import "y.proto";
+
+option cc_enable_arenas = false;
+option cc_generic_services = false;
+option csharp_namespace = "foobarbaz";
+option go_package = "foobarbaz";
+option java_generic_services = false;
+option java_multiple_files = false;
+option java_outer_classname = "foobarbaz";
+option java_package = "foobarbaz";
+option java_string_check_utf8 = false;
+option objc_class_prefix = "foobarbaz";
+option optimize_for = SPEED;
+option php_class_prefix = "foobarbaz";
+option php_generic_services = false;
+option php_metadata_namespace = "foobarbaz";
+option php_namespace = "foobarbaz";
+option py_generic_services = false;
+option ruby_package = "foobarbaz";
+option swift_prefix = "foobarbaz";
+
+message B {
+  required google.protobuf.Timestamp timestamp = 1;
+  optional M m = 2;
+  optional Y y = 3;
+}

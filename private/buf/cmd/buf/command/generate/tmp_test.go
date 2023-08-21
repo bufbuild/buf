@@ -506,6 +506,85 @@ func TestMigrateWithIncludeAndExcludePaths(t *testing.T) {
 				"gen/java/dev/baz/v1/NProto.java",
 			},
 		},
+		{
+			description:     "module dir with file options with managed mode and per-file overrides",
+			input:           filepath.Join("testdata", "formats", "workspace_dir_with_file_options", "foo"),
+			templateContent: v1ContentWithPerFileOverride,
+			additionalFlags: []string{
+				"--include-imports",
+				"--include-wkt",
+			},
+			filesThatShouldExist: []string{
+				"gen/java/ajavapkg/AProto.java",
+				"gen/java/xyz/foo/BProto.java",
+				"gen/java/foo/XProto.java",
+				"gen/java/bar/YProto.java",
+				"gen/java/dev/baz/v1/MProto.java",
+				"gen/java/njavapkg/NProto.java",
+				"gen/java/net/qux/TProto.java",
+				"gen/java/com/google/protobuf/TimestampProto.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/xyz/foo/AProto.java",
+				"gen/java/dev/baz/v1/NProto.java",
+			},
+		},
+		{
+			description:     "module dir without packages with managed mode and per-file overrides",
+			input:           filepath.Join("testdata", "formats", "workspace_dir_without_package", "foo"),
+			templateContent: v1ContentWithPerFileOverride,
+			additionalFlags: []string{
+				"--include-imports",
+				"--include-wkt",
+			},
+			filesThatShouldExist: []string{
+				"gen/java/ajavapkg/AProto.java",
+				"gen/java/original/javapkg/from/a/BProto.java",
+				"gen/java/XProto.java",
+				"gen/java/YProto.java",
+				"gen/java/MProto.java",
+				"gen/java/njavapkg/NProto.java",
+				"gen/java/foo/TProto.java",
+				"gen/java/com/google/protobuf/Timestamp.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/xyz/BProto.java",
+				"gen/java/xyz/AProto.java",
+				"gen/java/bar/XProto.java",
+				"gen/java/bar/YProto.java",
+				"gen/java/dev/NProto.java",
+				"gen/java/dev/MProto.java",
+				"gen/java/net/TProto.java",
+			},
+		},
+		{
+			description:     "module dir without package with file options with managed mode and per-file overrides",
+			input:           filepath.Join("testdata", "formats", "workspace_dir_without_package_with_options", "foo"),
+			templateContent: v1ContentWithPerFileOverride,
+			additionalFlags: []string{
+				"--include-imports",
+				"--include-wkt",
+			},
+			filesThatShouldExist: []string{
+				"gen/java/ajavapkg/AProto.java",
+				"gen/java/foobarbaz/BProto.java",
+				"gen/java/barfoobar/XProto.java",
+				"gen/java/barfoobar/YProto.java",
+				"gen/java/bazfoobar/MProto.java",
+				"gen/java/njavapkg/NProto.java",
+				"gen/java/foo/T.java",
+				"gen/java/com/google/protobuf/Timestamp.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/xyzAProto.java",
+				"gen/java/xyz/BProto.java",
+				"gen/java/XProto.java",
+				"gen/java/YProto.java",
+				"gen/java/MProto.java",
+				"gen/java/bazfoobar/NProto.java",
+				"gen/java/dev/baz/v1/NProto.java",
+			},
+		},
 	}
 	for _, testcase := range testcases {
 		testcase := testcase
@@ -699,7 +778,7 @@ func requireFileExists(
 		)
 		require.NoError(t, walkErr)
 	}
-	require.NoErrorf(t, err, "%s should exist but is not found among %v", fileName, filesInBucket)
+	require.NoErrorf(t, err, "%s should exist but is not found among: \n%s\n", fileName, strings.Join(filesInBucket, "\n"))
 }
 
 func requireFileDoesNotExist(

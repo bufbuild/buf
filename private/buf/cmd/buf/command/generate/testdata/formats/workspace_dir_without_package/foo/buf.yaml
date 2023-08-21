@@ -1,0 +1,5 @@
+version: v1
+name: bufbuild.test/generate/foo
+deps:
+  - bufbuild.test/generate/bar
+  - bufbuild.test/generate/baz

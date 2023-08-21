@@ -1,0 +1,22 @@
+package qux;
+
+option cc_enable_arenas = false;
+option cc_generic_services = false;
+option csharp_namespace = "foo";
+option go_package = "foo";
+option java_generic_services = false;
+option java_multiple_files = false;
+option java_outer_classname = "foo";
+option java_package = "foo";
+option java_string_check_utf8 = false;
+option objc_class_prefix = "foo";
+option optimize_for = SPEED;
+option php_class_prefix = "foo";
+option php_generic_services = false;
+option php_metadata_namespace = "foo";
+option php_namespace = "foo";
+option py_generic_services = false;
+option ruby_package = "foo";
+option swift_prefix = "foo";
+
+message T {}

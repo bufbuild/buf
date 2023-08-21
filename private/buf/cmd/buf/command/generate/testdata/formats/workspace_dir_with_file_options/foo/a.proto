@@ -1,0 +1,30 @@
+package foo;
+
+import "b.proto";
+import "v1/n.proto";
+import "x.proto";
+
+option cc_enable_arenas = true;
+option cc_generic_services = true;
+option csharp_namespace = "foobarbaz";
+option go_package = "foobarbaz";
+option java_generic_services = true;
+option java_multiple_files = true;
+option java_outer_classname = "foobarbaz";
+option java_package = "foobarbaz";
+option java_string_check_utf8 = true;
+option objc_class_prefix = "foobarbaz";
+option optimize_for = SPEED;
+option php_class_prefix = "foobarbaz";
+option php_generic_services = true;
+option php_metadata_namespace = "foobarbaz";
+option php_namespace = "foobarbaz";
+option py_generic_services = true;
+option ruby_package = "foobarbaz";
+option swift_prefix = "foobarbaz";
+
+message A {
+  required bar.X1 a = 1;
+  required B b = 2;
+  optional baz.v1.N n = 3;
+}

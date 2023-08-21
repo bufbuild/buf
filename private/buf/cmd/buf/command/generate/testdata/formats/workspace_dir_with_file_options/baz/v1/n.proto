@@ -1,0 +1,9 @@
+package baz.v1;
+
+// options left blank
+
+import "t.proto";
+
+message N {
+  required qux.T t = 1;
+}

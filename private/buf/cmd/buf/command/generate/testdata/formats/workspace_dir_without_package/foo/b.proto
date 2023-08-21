@@ -1,0 +1,12 @@
+import "google/protobuf/timestamp.proto";
+import "v1/m.proto";
+import "y.proto";
+
+option java_multiple_files = true;
+option java_package = "original.javapkg.from.a";
+
+message B {
+  required google.protobuf.Timestamp timestamp = 1;
+  optional M m = 2;
+  optional Y y = 3;
+}

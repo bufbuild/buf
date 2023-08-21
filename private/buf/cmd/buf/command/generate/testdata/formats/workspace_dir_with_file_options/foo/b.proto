@@ -1,0 +1,30 @@
+package foo;
+
+import "google/protobuf/timestamp.proto";
+import "v1/m.proto";
+import "y.proto";
+
+option cc_enable_arenas = true;
+option cc_generic_services = true;
+option csharp_namespace = "bazbarfoo";
+option go_package = "bazbarfoo";
+option java_generic_services = true;
+option java_multiple_files = true;
+option java_outer_classname = "bazbarfoo";
+option java_package = "bazbarfoo";
+option java_string_check_utf8 = true;
+option objc_class_prefix = "bazbarfoo";
+option optimize_for = SPEED;
+option php_class_prefix = "bazbarfoo";
+option php_generic_services = true;
+option php_metadata_namespace = "bazbarfoo";
+option php_namespace = "bazbarfoo";
+option py_generic_services = true;
+option ruby_package = "bazbarfoo";
+option swift_prefix = "bazbarfoo";
+
+message B {
+  required google.protobuf.Timestamp timestamp = 1;
+  optional baz.v1.M m = 2;
+  optional bar.Y y = 3;
+}

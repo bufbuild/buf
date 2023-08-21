@@ -1,0 +1,4 @@
+version: v1
+name: bufbuild.test/generate/baz
+deps:
+  - bufbuild.test/generate/qux

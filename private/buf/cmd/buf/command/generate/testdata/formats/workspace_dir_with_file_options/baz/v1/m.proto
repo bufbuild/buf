@@ -1,0 +1,22 @@
+package baz.v1;
+
+option cc_enable_arenas = true;
+option cc_generic_services = true;
+option csharp_namespace = "foobar";
+option go_package = "foobar";
+option java_generic_services = true;
+option java_multiple_files = true;
+option java_outer_classname = "foobar";
+option java_package = "foobar";
+option java_string_check_utf8 = true;
+option objc_class_prefix = "Foobar";
+option optimize_for = SPEED;
+option php_class_prefix = "foobar";
+option php_generic_services = true;
+option php_metadata_namespace = "foobar";
+option php_namespace = "foobar";
+option py_generic_services = true;
+option ruby_package = "foobar";
+option swift_prefix = "foobar";
+
+message M {}
