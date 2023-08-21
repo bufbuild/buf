@@ -115,15 +115,11 @@ func (m *module) checkFieldRules(rules *validate.FieldConstraints) {
 
 // mustType asserts that the field type is the same as the given type.
 func (m *module) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper WellKnownType) {
-	// TODO: (elliotmjackson) the logic here is a mess
-	//if emb := m.field.TypeName(); emb != "" && IsWellKnown(emb) {
-	//m.mustType(m.field.Message().Fields()[0].Type(), UnknownWKT)
-	//wkt := NewWellKnownType(emb)
-	//m.assert(
-	//	wkt == wrapper,
-	//	"expected rules for %s but got %s",
-	//	wrapper, pt.String(),
-	//)
+	//if emb := m.field.Embed(); emb != nil {
+	//	if wkt := NewWellKnownType(emb.Name()); wkt.Valid() && wkt == wrapper {
+	//		m.mustType(emb.Fields()[0].Type(), UnknownWKT)
+	//		return
+	//	}
 	//}
 
 	// TODO: this is likely caught already
