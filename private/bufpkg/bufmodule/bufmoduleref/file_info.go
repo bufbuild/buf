@@ -86,7 +86,7 @@ func (f *fileInfo) Commit() string {
 	return f.commit
 }
 
-func (f *fileInfo) WithIsImport(isImport bool) FileInfo {
+func (f *fileInfo) FileInfoWithIsImport(isImport bool) FileInfo {
 	return newFileInfoNoValidate(
 		f.path,
 		f.externalPath,

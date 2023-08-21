@@ -107,8 +107,6 @@ func handle(
 	if err != nil {
 		return err
 	}
-	// We don't want to lint transitive dependencies, only the files specified.
-	image = bufimage.ImageWithoutImports(image)
 	fileAnnotations, err := buflint.NewHandler(logger).Check(
 		ctx,
 		config.Lint,
