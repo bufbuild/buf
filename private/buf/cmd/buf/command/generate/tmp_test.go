@@ -157,6 +157,58 @@ plugins:
     out: gen/objc
 `
 
+const v2ContentBothIncludeImports = `version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package
+      value: example.com/protos
+    - file_option: java_multiple_files
+      value: false
+plugins:
+  - protoc_builtin: java
+    out: gen/java
+    include_imports: true
+    include_wkt: true
+  - binary: protoc-gen-go
+    out: gen/go
+    include_imports: true
+    include_wkt: true
+`
+
+const v2OnlyOnePluginIncludesWKT = `version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package
+      value: example.com/protos
+    - file_option: java_multiple_files
+      value: false
+plugins:
+  - protoc_builtin: java
+    out: gen/java
+    include_imports: true
+    include_wkt: true
+  - binary: protoc-gen-go
+    out: gen/go
+`
+
+const v2OnlyOnePluginIncludesImports = `version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package
+      value: example.com/protos
+    - file_option: java_multiple_files
+      value: false
+plugins:
+  - protoc_builtin: java
+    out: gen/java
+    include_imports: true
+  - binary: protoc-gen-go
+    out: gen/go
+`
+
 func TestGenerateWithV1AndV2(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
@@ -831,4 +883,217 @@ func requireVersionV2(
 	err = encoding.UnmarshalYAMLNonStrict(data, &versionConfig)
 	require.NoError(t, err)
 	require.Equal(t, "v2", versionConfig.Version)
+}
+
+func TestPerPluginIncludeImports(t *testing.T) {
+	testingextended.SkipIfShort(t)
+	t.Parallel()
+
+	testcases := []struct {
+		description             string
+		input                   string
+		templateContent         string
+		additionalFlags         []string
+		filesThatShouldExist    []string
+		filesThatShouldNotExist []string
+	}{
+		{
+			description:     "both include imports and wkt",
+			input:           filepath.Join("testdata", "formats", "workspace_dir", "foo"),
+			templateContent: v2ContentBothIncludeImports,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/go/example.com/protos/a.pb.go",
+				"gen/go/example.com/protos/b.pb.go",
+				"gen/go/example.com/protos/m.pb.go",
+				"gen/go/example.com/protos/n.pb.go",
+				"gen/go/example.com/protos/t.pb.go",
+				"gen/go/example.com/protos/x.pb.go",
+				"gen/go/example.com/protos/y.pb.go",
+				"gen/go/google.golang.org/protobuf/types/known/timestamppb/timestamp.pb.go",
+				"gen/java/com/bar/XProto.java",
+				"gen/java/com/bar/YProto.java",
+				"gen/java/com/baz/v1/MProto.java",
+				"gen/java/com/baz/v1/NProto.java",
+				"gen/java/com/foo/AProto.java",
+				"gen/java/com/foo/BProto.java",
+				"gen/java/com/google/protobuf/Timestamp.java",
+				"gen/java/com/qux/TProto.java",
+			},
+		},
+		{
+			description:     "only one plugin includes WKT",
+			input:           filepath.Join("testdata", "formats", "workspace_dir", "foo"),
+			templateContent: v2OnlyOnePluginIncludesWKT,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/go/example.com/protos/a.pb.go",
+				"gen/go/example.com/protos/b.pb.go",
+				"gen/java/com/bar/XProto.java",
+				"gen/java/com/bar/YProto.java",
+				"gen/java/com/baz/v1/MProto.java",
+				"gen/java/com/baz/v1/NProto.java",
+				"gen/java/com/foo/AProto.java",
+				"gen/java/com/foo/BProto.java",
+				"gen/java/com/google/protobuf/Timestamp.java",
+				"gen/java/com/qux/TProto.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/go/example.com/protos/m.pb.go",
+				"gen/go/example.com/protos/n.pb.go",
+				"gen/go/example.com/protos/t.pb.go",
+				"gen/go/example.com/protos/x.pb.go",
+				"gen/go/example.com/protos/y.pb.go",
+				"gen/go/google.golang.org/protobuf/types/known/timestamppb/timestamp.pb.go",
+			},
+		},
+		{
+			description:     "only one plugin includes imports",
+			input:           filepath.Join("testdata", "formats", "workspace_dir", "foo"),
+			templateContent: v2OnlyOnePluginIncludesImports,
+			additionalFlags: nil,
+			filesThatShouldExist: []string{
+				"gen/go/example.com/protos/a.pb.go",
+				"gen/go/example.com/protos/b.pb.go",
+				"gen/java/com/bar/XProto.java",
+				"gen/java/com/bar/YProto.java",
+				"gen/java/com/baz/v1/MProto.java",
+				"gen/java/com/baz/v1/NProto.java",
+				"gen/java/com/foo/AProto.java",
+				"gen/java/com/foo/BProto.java",
+				"gen/java/com/qux/TProto.java",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/com/google/protobuf/Timestamp.java",
+				"gen/go/example.com/protos/m.pb.go",
+				"gen/go/example.com/protos/n.pb.go",
+				"gen/go/example.com/protos/t.pb.go",
+				"gen/go/example.com/protos/x.pb.go",
+				"gen/go/example.com/protos/y.pb.go",
+				"gen/go/google.golang.org/protobuf/types/known/timestamppb/timestamp.pb.go",
+			},
+		},
+		{
+			description:     "only one plugin includes WKT with include imports flag",
+			input:           filepath.Join("testdata", "formats", "workspace_dir", "foo"),
+			templateContent: v2OnlyOnePluginIncludesWKT,
+			additionalFlags: []string{
+				"--include-imports",
+			},
+			filesThatShouldExist: []string{
+				"gen/go/example.com/protos/a.pb.go",
+				"gen/go/example.com/protos/b.pb.go",
+				"gen/java/com/bar/XProto.java",
+				"gen/java/com/bar/YProto.java",
+				"gen/java/com/baz/v1/MProto.java",
+				"gen/java/com/baz/v1/NProto.java",
+				"gen/java/com/foo/AProto.java",
+				"gen/java/com/foo/BProto.java",
+				"gen/java/com/google/protobuf/Timestamp.java",
+				"gen/java/com/qux/TProto.java",
+				"gen/go/example.com/protos/m.pb.go",
+				"gen/go/example.com/protos/n.pb.go",
+				"gen/go/example.com/protos/t.pb.go",
+				"gen/go/example.com/protos/x.pb.go",
+				"gen/go/example.com/protos/y.pb.go",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/go/google.golang.org/protobuf/types/known/timestamppb/timestamp.pb.go",
+			},
+		},
+		{
+			description:     "only one plugin includes imports with include imports flag",
+			input:           filepath.Join("testdata", "formats", "workspace_dir", "foo"),
+			templateContent: v2OnlyOnePluginIncludesImports,
+			additionalFlags: []string{
+				"--include-imports",
+			},
+			filesThatShouldExist: []string{
+				"gen/go/example.com/protos/a.pb.go",
+				"gen/go/example.com/protos/b.pb.go",
+				"gen/java/com/bar/XProto.java",
+				"gen/java/com/bar/YProto.java",
+				"gen/java/com/baz/v1/MProto.java",
+				"gen/java/com/baz/v1/NProto.java",
+				"gen/java/com/foo/AProto.java",
+				"gen/java/com/foo/BProto.java",
+				"gen/java/com/qux/TProto.java",
+				"gen/go/example.com/protos/m.pb.go",
+				"gen/go/example.com/protos/n.pb.go",
+				"gen/go/example.com/protos/t.pb.go",
+				"gen/go/example.com/protos/x.pb.go",
+				"gen/go/example.com/protos/y.pb.go",
+			},
+			filesThatShouldNotExist: []string{
+				"gen/java/com/google/protobuf/Timestamp.java",
+				"gen/go/google.golang.org/protobuf/types/known/timestamppb/timestamp.pb.go",
+			},
+		},
+		{
+			description:     "only one plugin includes imports with include WKT flag",
+			input:           filepath.Join("testdata", "formats", "workspace_dir", "foo"),
+			templateContent: v2OnlyOnePluginIncludesImports,
+			additionalFlags: []string{
+				"--include-imports",
+				"--include-wkt",
+			},
+			filesThatShouldExist: []string{
+				"gen/go/example.com/protos/a.pb.go",
+				"gen/go/example.com/protos/b.pb.go",
+				"gen/java/com/bar/XProto.java",
+				"gen/java/com/bar/YProto.java",
+				"gen/java/com/baz/v1/MProto.java",
+				"gen/java/com/baz/v1/NProto.java",
+				"gen/java/com/foo/AProto.java",
+				"gen/java/com/foo/BProto.java",
+				"gen/java/com/qux/TProto.java",
+				"gen/java/com/google/protobuf/Timestamp.java",
+				"gen/go/example.com/protos/m.pb.go",
+				"gen/go/example.com/protos/n.pb.go",
+				"gen/go/example.com/protos/t.pb.go",
+				"gen/go/example.com/protos/x.pb.go",
+				"gen/go/example.com/protos/y.pb.go",
+				"gen/go/google.golang.org/protobuf/types/known/timestamppb/timestamp.pb.go",
+			},
+		},
+	}
+	for _, testcase := range testcases {
+		testcase := testcase
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+			storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+			tempDir := t.TempDir()
+			templatePath := filepath.Join(tempDir, "buf.gen.test.yaml")
+			outDir := filepath.Join(tempDir, "out")
+			err := os.WriteFile(templatePath, []byte(testcase.templateContent), 0600)
+			require.NoError(t, err)
+			argAndFlags := append(
+				[]string{
+					testcase.input,
+					"--template",
+					templatePath,
+					"--output",
+					outDir,
+				},
+				testcase.additionalFlags...,
+			)
+			// generate with v1 template
+			testRunSuccess(
+				t,
+				argAndFlags...,
+			)
+			bucket, err := storageosProvider.NewReadWriteBucket(
+				outDir,
+				storageos.ReadWriteBucketWithSymlinksIfSupported(),
+			)
+			require.NoError(t, err)
+
+			for _, fileThatShouldExist := range testcase.filesThatShouldExist {
+				requireFileExists(t, bucket, fileThatShouldExist)
+			}
+			for _, fileThatShouldNotExist := range testcase.filesThatShouldNotExist {
+				requireFileDoesNotExist(t, bucket, fileThatShouldNotExist)
+			}
+		})
+	}
 }
