@@ -96,7 +96,7 @@ message ModuleElementSearchResult {
   string proto_file_path = 4;
   string fully_qualified_name = 5;
   string package_name = 6;
-  SearchModuleElementType element_type = 7;
+  SearchModuleElementType search_module_element_type = 7;
 }
 
 message ModuleFileSearchResult {
