@@ -51,8 +51,13 @@ type ImageFile interface {
 	// All indexes will be valid.
 	// Will return nil if empty.
 	UnusedDependencyIndexes() []int32
+	// ImageFileWithIsImport returns a copy of the ImageFile with the new ImageFile
+	// now marked as an import.
+	//
+	// If the original ImageFile was already an import, this returns
+	// the original ImageFile.
+	ImageFileWithIsImport(isImport bool) ImageFile
 
-	withIsImport(isImport bool) ImageFile
 	isImageFile()
 }
 

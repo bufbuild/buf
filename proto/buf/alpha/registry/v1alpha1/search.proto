@@ -42,6 +42,16 @@ enum OrderBy {
   ORDER_BY_NAME = 3;
 }
 
+// SearchModuleElementType is the protobuf element type of a fully qualified name in a module element search result.
+// This is a subset of types in https://protobuf.com/docs/language-spec#named-elements that are exposing in the search.
+enum SearchModuleElementType {
+  SEARCH_MODULE_ELEMENT_TYPE_UNSPECIFIED = 0;
+  SEARCH_MODULE_ELEMENT_TYPE_SERVICE = 1;
+  SEARCH_MODULE_ELEMENT_TYPE_METHOD = 2;
+  SEARCH_MODULE_ELEMENT_TYPE_MESSAGE = 3;
+  SEARCH_MODULE_ELEMENT_TYPE_ENUM = 4;
+}
+
 message RepositorySearchResult {
   string id = 1;
   string name = 2;
@@ -86,6 +96,7 @@ message ModuleElementSearchResult {
   string proto_file_path = 4;
   string fully_qualified_name = 5;
   string package_name = 6;
+  SearchModuleElementType search_module_element_type = 7;
 }
 
 message ModuleFileSearchResult {

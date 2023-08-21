@@ -66,8 +66,8 @@ type FileInfo interface {
 	// even if ModuleIdentity is set, that is commit is optional information
 	// even if we know what module this file came from.
 	Commit() string
-	// WithIsImport returns this FileInfo with the given IsImport value.
-	WithIsImport(isImport bool) FileInfo
+	// FileInfoWithIsImport returns this FileInfo with the given IsImport value.
+	FileInfoWithIsImport(isImport bool) FileInfo
 
 	isFileInfo()
 }

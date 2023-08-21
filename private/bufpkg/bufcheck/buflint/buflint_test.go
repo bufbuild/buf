@@ -459,10 +459,26 @@ func TestRunPackageLowerSnakeCase(t *testing.T) {
 
 func TestRunPackageNoImportCycle(t *testing.T) {
 	t.Parallel()
-	testLint(
+	testLintWithModifiers(
 		t,
 		"package_no_import_cycle",
-		bufanalysistesting.NewFileAnnotation(t, "b1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
+		nil,
+		func(image bufimage.Image) bufimage.Image {
+			// Testing that import cycles are still detected via imports, but are
+			// not reported for imports, only for non-imports.
+			var newImageFiles []bufimage.ImageFile
+			for _, imageFile := range image.Files() {
+				if imageFile.FileDescriptor().GetPackage() == "b" {
+					newImageFiles = append(newImageFiles, imageFile.ImageFileWithIsImport(true))
+				} else {
+					require.False(t, imageFile.IsImport())
+					newImageFiles = append(newImageFiles, imageFile)
+				}
+			}
+			newImage, err := bufimage.NewImage(newImageFiles)
+			require.NoError(t, err)
+			return newImage
+		},
 		bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 		bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 	)
@@ -873,12 +889,13 @@ func TestCommentIgnoresOff(t *testing.T) {
 
 func TestCommentIgnoresOn(t *testing.T) {
 	t.Parallel()
-	testLintConfigModifier(
+	testLintWithModifiers(
 		t,
 		"comment_ignores",
 		func(config *bufconfig.Config) {
 			config.Lint.AllowCommentIgnores = true
 		},
+		nil,
 	)
 }
 
@@ -925,12 +942,13 @@ func TestCommentIgnoresCascadeOff(t *testing.T) {
 
 func TestCommentIgnoresCascadeOn(t *testing.T) {
 	t.Parallel()
-	testLintConfigModifier(
+	testLintWithModifiers(
 		t,
 		"comment_ignores_cascade",
 		func(config *bufconfig.Config) {
 			config.Lint.AllowCommentIgnores = true
 		},
+		nil,
 	)
 }
 
@@ -970,18 +988,20 @@ func testLint(
 	relDirPath string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	testLintConfigModifier(
+	testLintWithModifiers(
 		t,
 		relDirPath,
+		nil,
 		nil,
 		expectedFileAnnotations...,
 	)
 }
 
-func testLintConfigModifier(
+func testLintWithModifiers(
 	t *testing.T,
 	relDirPath string,
 	configModifier func(*bufconfig.Config),
+	imageModifier func(bufimage.Image) bufimage.Image,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
 	//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -1018,7 +1038,9 @@ func testLintConfigModifier(
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)
-	image = bufimage.ImageWithoutImports(image)
+	if imageModifier != nil {
+		image = imageModifier(image)
+	}
 
 	handler := buflint.NewHandler(logger)
 	fileAnnotations, err = handler.Check(

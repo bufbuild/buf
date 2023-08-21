@@ -43,7 +43,7 @@ type Handler interface {
 	//
 	// The image should have source code info for this to work properly.
 	//
-	// Images should be filtered with regards to imports before passing to this function.
+	// Images should *not* be filtered with regards to imports before passing to this function.
 	Check(
 		ctx context.Context,
 		config *buflintconfig.Config,

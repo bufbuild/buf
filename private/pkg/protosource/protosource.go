@@ -206,6 +206,8 @@ type FileInfo interface {
 	// even if ModuleIdentity is set, that is commit is optional information
 	// even if we know what module this file came from.
 	Commit() string
+	// IsImport returns true if this file is an import.
+	IsImport() bool
 }
 
 // File is a file descriptor.

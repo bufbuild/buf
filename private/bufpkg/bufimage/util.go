@@ -270,7 +270,7 @@ func addFileWithImports(
 	_, isNotImport := nonImportPaths[path]
 	accumulator = append(
 		accumulator,
-		imageFile.withIsImport(!isNotImport),
+		imageFile.ImageFileWithIsImport(!isNotImport),
 	)
 	return accumulator
 }
