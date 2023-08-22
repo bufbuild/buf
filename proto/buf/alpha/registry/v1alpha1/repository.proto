@@ -166,6 +166,9 @@ service RepositoryService {
   rpc GetRepositoriesMetadata(GetRepositoriesMetadataRequest) returns (GetRepositoriesMetadataResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  rpc GetRepositoryDependencyGraph(GetRepositoryDependencyGraphRequest) returns (GetRepositoryDependencyGraphResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetRepositoriesByFullNameRequest {
@@ -366,4 +369,18 @@ message GetRepositoriesMetadataRequest {
 
 message GetRepositoriesMetadataResponse {
   repeated RepositoryMetadata metadata = 1;
+}
+
+// GetRepositoryDependencyGraphRequest takes an owner, repository, and reference.
+message GetRepositoryDependencyGraphRequest {
+  string owner = 1;
+  string repository = 2;
+  string reference = 3;
+}
+
+// GetRepositoryDependencyGraphResponse returns the dependency graph for the requested repository.
+message GetRepositoryDependencyGraphResponse {
+  // The string DOT representation of the dependency graph for the repository.
+  // DOT language reference: https://graphviz.org/doc/info/lang.html
+  string repository_dependency_graph_dot = 1;
 }

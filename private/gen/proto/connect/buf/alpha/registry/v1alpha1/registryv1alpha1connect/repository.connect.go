@@ -101,6 +101,9 @@ const (
 	// RepositoryServiceGetRepositoriesMetadataProcedure is the fully-qualified name of the
 	// RepositoryService's GetRepositoriesMetadata RPC.
 	RepositoryServiceGetRepositoriesMetadataProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesMetadata"
+	// RepositoryServiceGetRepositoryDependencyGraphProcedure is the fully-qualified name of the
+	// RepositoryService's GetRepositoryDependencyGraph RPC.
+	RepositoryServiceGetRepositoryDependencyGraphProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryDependencyGraph"
 )
 
 // RepositoryServiceClient is a client for the buf.alpha.registry.v1alpha1.RepositoryService
@@ -147,6 +150,7 @@ type RepositoryServiceClient interface {
 	// request should match the length of the metadata in the response, and the order of repositories in the response
 	// should match the order of the metadata in the request.
 	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
+	GetRepositoryDependencyGraph(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyGraphRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyGraphResponse], error)
 }
 
 // NewRepositoryServiceClient constructs a client for the
@@ -264,6 +268,12 @@ func NewRepositoryServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+		getRepositoryDependencyGraph: connect.NewClient[v1alpha1.GetRepositoryDependencyGraphRequest, v1alpha1.GetRepositoryDependencyGraphResponse](
+			httpClient,
+			baseURL+RepositoryServiceGetRepositoryDependencyGraphProcedure,
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -287,6 +297,7 @@ type repositoryServiceClient struct {
 	getRepositorySettings          *connect.Client[v1alpha1.GetRepositorySettingsRequest, v1alpha1.GetRepositorySettingsResponse]
 	updateRepositorySettingsByName *connect.Client[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse]
 	getRepositoriesMetadata        *connect.Client[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse]
+	getRepositoryDependencyGraph   *connect.Client[v1alpha1.GetRepositoryDependencyGraphRequest, v1alpha1.GetRepositoryDependencyGraphResponse]
 }
 
 // GetRepository calls buf.alpha.registry.v1alpha1.RepositoryService.GetRepository.
@@ -392,6 +403,12 @@ func (c *repositoryServiceClient) GetRepositoriesMetadata(ctx context.Context, r
 	return c.getRepositoriesMetadata.CallUnary(ctx, req)
 }
 
+// GetRepositoryDependencyGraph calls
+// buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyGraph.
+func (c *repositoryServiceClient) GetRepositoryDependencyGraph(ctx context.Context, req *connect.Request[v1alpha1.GetRepositoryDependencyGraphRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyGraphResponse], error) {
+	return c.getRepositoryDependencyGraph.CallUnary(ctx, req)
+}
+
 // RepositoryServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryService service.
 type RepositoryServiceHandler interface {
@@ -436,6 +453,7 @@ type RepositoryServiceHandler interface {
 	// request should match the length of the metadata in the response, and the order of repositories in the response
 	// should match the order of the metadata in the request.
 	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
+	GetRepositoryDependencyGraph(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyGraphRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyGraphResponse], error)
 }
 
 // NewRepositoryServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -548,6 +566,12 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect.H
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+	repositoryServiceGetRepositoryDependencyGraphHandler := connect.NewUnaryHandler(
+		RepositoryServiceGetRepositoryDependencyGraphProcedure,
+		svc.GetRepositoryDependencyGraph,
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/buf.alpha.registry.v1alpha1.RepositoryService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case RepositoryServiceGetRepositoryProcedure:
@@ -586,6 +610,8 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect.H
 			repositoryServiceUpdateRepositorySettingsByNameHandler.ServeHTTP(w, r)
 		case RepositoryServiceGetRepositoriesMetadataProcedure:
 			repositoryServiceGetRepositoriesMetadataHandler.ServeHTTP(w, r)
+		case RepositoryServiceGetRepositoryDependencyGraphProcedure:
+			repositoryServiceGetRepositoryDependencyGraphHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -665,4 +691,8 @@ func (UnimplementedRepositoryServiceHandler) UpdateRepositorySettingsByName(cont
 
 func (UnimplementedRepositoryServiceHandler) GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata is not implemented"))
+}
+
+func (UnimplementedRepositoryServiceHandler) GetRepositoryDependencyGraph(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyGraphRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyGraphResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyGraph is not implemented"))
 }
