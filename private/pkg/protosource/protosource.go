@@ -1285,11 +1285,6 @@ func getMessageFromFiles(field Field, files ...File) (Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	return getMessageFromField(field, fullNameToMessage)
-}
-
-// getMessageFromField retrieves the Message associated with a field from a map of full names to Messages.
-func getMessageFromField(field Field, fullNameToMessage map[string]Message) (Message, error) {
 	out, ok := fullNameToMessage[field.TypeName()]
 	if !ok {
 		return nil, fmt.Errorf("message not found for field: %s", field.TypeName())
