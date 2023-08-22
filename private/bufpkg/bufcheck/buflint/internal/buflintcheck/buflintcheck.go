@@ -979,23 +979,27 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 }
 
 // CheckValidateConstraintsCheck is a check function.
-var CheckValidateConstraintsCheck = newMessageCheckFunc(checkValidateConstraintsCheck)
+var CheckValidateConstraintsCheck = newFilesWithImportsCheckFunc(checkValidateConstraintsCheck)
 
-func checkValidateConstraintsCheck(add addFunc, message protosource.Message) error {
-
-	for _, field := range message.Fields() {
-		data, ok, err := getDataByExtension(field, validate.E_Field)
-		if err != nil {
-			return err
+func checkValidateConstraintsCheck(add addFunc, files []protosource.File) error {
+	g := newGroup(files, add)
+	for _, file := range files {
+		for _, message := range file.Messages() {
+			for _, field := range message.Fields() {
+				data, ok, err := getDataByExtension(field, validate.E_Field)
+				if err != nil {
+					return err
+				}
+				if !ok {
+					continue
+				}
+				var constraints validate.FieldConstraints
+				if err := proto.Unmarshal(data, &constraints); err != nil {
+					return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
+				}
+				g.newModule(field).checkFieldRules(&constraints)
+			}
 		}
-		if !ok {
-			return nil
-		}
-		var constraints validate.FieldConstraints
-		if err := proto.Unmarshal(data, &constraints); err != nil {
-			return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
-		}
-		newModule(add, field).checkFieldRules(&constraints)
 	}
 	return nil
 }

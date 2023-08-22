@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/any.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
 
 message Foo {
   int32 success = 1 [(buf.validate.field).int32.const = 0];
@@ -30,4 +31,13 @@ message Foo {
   google.protobuf.Any in_any = 19 [(buf.validate.field).int32.const = 0];
   google.protobuf.Duration in_duration = 20 [(buf.validate.field).int64.const = 0];
   google.protobuf.Timestamp in_timestamp = 21 [(buf.validate.field).sfixed32.const = 0];
+  google.protobuf.FloatValue wrap_float = 22 [(buf.validate.field).fixed32.const = 0];
+  google.protobuf.DoubleValue wrap_double = 23 [(buf.validate.field).fixed64.const = 0];
+  google.protobuf.Int32Value wrap_int32 = 24 [(buf.validate.field).sfixed32.const = 0];
+  google.protobuf.Int64Value wrap_int64 = 25 [(buf.validate.field).sfixed64.const = 0];
+  google.protobuf.UInt32Value wrap_uint32 = 26 [(buf.validate.field).bool.const = false];
+  google.protobuf.UInt64Value wrap_uint64 = 27 [(buf.validate.field).string.const = "foo"];
+  google.protobuf.BoolValue wrap_bool = 28 [(buf.validate.field).uint32.const = 0];
+  google.protobuf.StringValue wrap_string = 29 [(buf.validate.field).uint64.const = 0];
+  google.protobuf.BytesValue wrap_bytes = 30 [(buf.validate.field).sint64.const = 0];
 }

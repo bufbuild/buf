@@ -111,6 +111,18 @@ func (f *field) ParentMessage() Message {
 	return f.parentMessage
 }
 
+func (f *field) Embed(files ...File) Message {
+	fullNameToMessage, err := FullNameToMessage(files...)
+	if err != nil {
+		return nil
+	}
+	out, ok := fullNameToMessage[f.typeName]
+	if !ok {
+		return nil
+	}
+	return out
+}
+
 func (f *field) IsMap() bool {
 	isMap, err := isFieldAMapFromFiles(f, f.File())
 	if err != nil {

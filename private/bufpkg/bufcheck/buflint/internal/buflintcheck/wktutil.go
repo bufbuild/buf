@@ -1,7 +1,5 @@
 package buflintcheck
 
-import "strings"
-
 // WellKnownTypePackage is the proto package name where all Well Known Types
 // currently reside.
 const WellKnownTypePackage string = "google.protobuf."
@@ -53,17 +51,6 @@ var wktLookup = map[string]WellKnownType{
 	"BoolValue":   BoolValueWKT,
 	"StringValue": StringValueWKT,
 	"BytesValue":  BytesValueWKT,
-}
-
-func NewWellKnownType(m string) WellKnownType {
-	if strings.HasPrefix(m, WellKnownTypePackage) {
-		return LookupWKT(strings.TrimPrefix(m, WellKnownTypePackage))
-	}
-	return UnknownWKT
-}
-
-func IsWellKnown(m string) bool {
-	return NewWellKnownType(m).Valid()
 }
 
 // LookupWKT returns the WellKnownType related to the provided Name. If the

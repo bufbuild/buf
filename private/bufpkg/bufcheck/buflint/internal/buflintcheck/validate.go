@@ -1,6 +1,7 @@
 package buflintcheck
 
 import (
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"reflect"
 	"regexp"
 	"time"
@@ -9,8 +10,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -30,17 +29,38 @@ var (
 	}
 )
 
+type group struct {
+	add   addFunc
+	files []protosource.File
+}
+
+func newGroup(files []protosource.File, add addFunc) *group {
+	return &group{
+		add:   add,
+		files: files,
+	}
+}
+
 // module is a validate module.
 type module struct {
-	add      addFunc
+	g        *group
 	field    protosource.Field
 	location protosource.Location
 }
 
 // newModule returns a new validate module.
-func newModule(add addFunc, field protosource.Field) *module {
+func (g *group) newModule(field protosource.Field) *module {
 	return &module{
-		add:      add,
+		g:        g,
+		field:    field,
+		location: field.OptionExtensionLocation(validate.E_Field),
+	}
+}
+
+// newModule returns a new validate module.
+func newModule(g *group, field protosource.Field) *module {
+	return &module{
+		g:        g,
 		field:    field,
 		location: field.OptionExtensionLocation(validate.E_Field),
 	}
@@ -115,12 +135,15 @@ func (m *module) checkFieldRules(rules *validate.FieldConstraints) {
 
 // mustType asserts that the field type is the same as the given type.
 func (m *module) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper WellKnownType) {
-	//if emb := m.field.Embed(); emb != nil {
-	//	if wkt := NewWellKnownType(emb.Name()); wkt.Valid() && wkt == wrapper {
-	//		m.mustType(emb.Fields()[0].Type(), UnknownWKT)
-	//		return
-	//	}
-	//}
+	if wrapper != UnknownWKT {
+		if emb := m.field.Embed(m.g.files...); emb != nil {
+			if wkt := LookupWKT(emb.Name()); wkt.Valid() && wkt == wrapper {
+				field := emb.Fields()[0]
+				newModule(m.g, field).mustType(field.Type(), UnknownWKT)
+				return
+			}
+		}
+	}
 
 	// TODO: this is likely caught already
 	//if typ, ok := field.(Repeatable); ok {
@@ -187,7 +210,7 @@ func (m *module) checkIns(in, notIn int) {
 // assert asserts that the given expression is true and adds an error if not.
 func (m *module) assert(expr bool, format string, v ...interface{}) {
 	if !expr {
-		m.add(m.field, m.location, nil, format, v...)
+		m.g.add(m.field, m.location, nil, format, v...)
 	}
 }
 
