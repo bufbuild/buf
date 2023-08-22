@@ -455,7 +455,11 @@ func checkPackageLowerSnakeCase(add addFunc, file protosource.File) error {
 }
 
 // CheckPackageNoImportCycle is a check function.
-var CheckPackageNoImportCycle = newFilesCheckFunc(checkPackageNoImportCycle)
+//
+// Note that imports are not skipped via the helper, as we want to detect import cycles
+// even if they are within imports, and report on them. If a non-import is part of an
+// import cycle, we report it, even if the import cycle includes imports in it.
+var CheckPackageNoImportCycle = newFilesWithImportsCheckFunc(checkPackageNoImportCycle)
 
 func checkPackageNoImportCycle(add addFunc, files []protosource.File) error {
 	packageToDirectlyImportedPackageToFileImports, err := protosource.PackageToDirectlyImportedPackageToFileImports(files...)
@@ -498,6 +502,11 @@ func checkPackageNoImportCycle(add addFunc, files []protosource.File) error {
 				},
 			); len(importCycle) > 0 {
 				for _, fileImport := range fileImports {
+					// We used newFilesWithImportsCheckFunc, meaning that we did not skip imports.
+					// We do not want to report errors on imports.
+					if fileImport.File().IsImport() {
+						continue
+					}
 					add(fileImport, fileImport.Location(), nil, `Package import cycle: %s`, strings.Join(importCycle, ` -> `))
 				}
 			}
