@@ -337,6 +337,10 @@ func (m *mockRepositoryService) GetRepositoriesMetadata(_ context.Context, _ *co
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
 }
 
+func (m *mockRepositoryService) GetRepositoryDependencyGraph(_ context.Context, _ *connect.Request[registryv1alpha1.GetRepositoryDependencyGraphRequest]) (*connect.Response[registryv1alpha1.GetRepositoryDependencyGraphResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
+}
+
 func createServer(t *testing.T, mockPushService *mockPushService, mockRepositoryService *mockRepositoryService) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
