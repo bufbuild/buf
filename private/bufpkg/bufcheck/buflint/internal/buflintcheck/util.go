@@ -96,12 +96,34 @@ func getImportCycleIfExists(
 	return nil
 }
 
-func newFilesCheckFunc(
+// Our linters should not consider imports when linting. However, some linters require all files to
+// perform their linting - for example, when recursively using the fullNameToMessage
+// map. For those linters, use this helper, and make sure to explicitly skip
+// linting of any files that are imports via protosource.File.IsImport().
+func newFilesWithImportsCheckFunc(
 	f func(addFunc, []protosource.File) error,
 ) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return func(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 		helper := internal.NewHelper(id, ignoreFunc)
 		if err := f(helper.AddFileAnnotationWithExtraIgnoreLocationsf, files); err != nil {
+			return nil, err
+		}
+		return helper.FileAnnotations(), nil
+	}
+}
+
+func newFilesCheckFunc(
+	f func(addFunc, []protosource.File) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+		filesWithoutImports := make([]protosource.File, 0, len(files))
+		for _, file := range files {
+			if !file.IsImport() {
+				filesWithoutImports = append(filesWithoutImports, file)
+			}
+		}
+		helper := internal.NewHelper(id, ignoreFunc)
+		if err := f(helper.AddFileAnnotationWithExtraIgnoreLocationsf, filesWithoutImports); err != nil {
 			return nil, err
 		}
 		return helper.FileAnnotations(), nil
