@@ -25,7 +25,7 @@ message Foo {
   string in_string = 15 [(buf.validate.field).string.const = "foo"];
   bytes in_bytes = 16 [(buf.validate.field).bytes.const = "bar"];
   message bar {}
-  repeated bar in_repeated = 17 [(buf.validate.field).map.max_pairs = 0];
+  repeated bar in_repeated = 17 [(buf.validate.field).repeated.max_items = 0];
   map<string, int32> in_map = 18 [(buf.validate.field).map.max_pairs = 0];
   google.protobuf.Any value = 1 [(buf.validate.field).any = {
     not_in: [

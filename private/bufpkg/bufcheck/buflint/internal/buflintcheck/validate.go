@@ -285,7 +285,7 @@ func (m *module) checkBytes(r *validate.BytesRules) {
 // checkRepeated validates the repeated rules.
 func (m *module) checkRepeated(r *validate.RepeatedRules) {
 	m.assert(
-		m.field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED,
+		m.field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED && !m.field.IsMap(),
 		"field is not repeated but got repeated rules",
 	)
 
@@ -303,10 +303,8 @@ func (m *module) checkRepeated(r *validate.RepeatedRules) {
 func (m *module) checkMap(r *validate.MapRules) {
 	// TODO: determine if field is a map, this will currently pass on a repeated rules
 	// it will also succeed on a repeated field with map rules
-	isMessage := m.field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE
-	isRepeated := m.field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED
 	m.assert(
-		isMessage && isRepeated,
+		m.field.IsMap(),
 		"field is not a map but got map rules",
 	)
 
