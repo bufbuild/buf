@@ -2436,15 +2436,17 @@ func (x *GetRepositoriesMetadataResponse) GetMetadata() []*RepositoryMetadata {
 	return nil
 }
 
-// GetRepositoryDependencyGraphRequest takes an owner, repository, and reference.
 type GetRepositoryDependencyGraphRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// The owner of the BSR repository.
+	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// The name of the BSR repository.
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	// The name of the reference.
+	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 }
 
 func (x *GetRepositoryDependencyGraphRequest) Reset() {
@@ -2500,13 +2502,13 @@ func (x *GetRepositoryDependencyGraphRequest) GetReference() string {
 	return ""
 }
 
-// GetRepositoryDependencyGraphResponse returns the dependency graph for the requested repository.
 type GetRepositoryDependencyGraphResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The string DOT representation of the dependency graph for the repository.
+	//
 	// DOT language reference: https://graphviz.org/doc/info/lang.html
 	RepositoryDependencyGraphDot string `protobuf:"bytes,1,opt,name=repository_dependency_graph_dot,json=repositoryDependencyGraphDot,proto3" json:"repository_dependency_graph_dot,omitempty"`
 }

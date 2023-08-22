@@ -377,13 +377,13 @@ message GetRepositoryDependencyGraphRequest {
   string owner = 1;
   // The name of the BSR repository.
   string repository = 2;
-  // The name of the reference. 
+  // The name of the reference.
   string reference = 3;
 }
 
 message GetRepositoryDependencyGraphResponse {
   // The string DOT representation of the dependency graph for the repository.
-  // 
+  //
   // DOT language reference: https://graphviz.org/doc/info/lang.html
   string repository_dependency_graph_dot = 1;
 }
