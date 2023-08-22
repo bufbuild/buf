@@ -982,7 +982,7 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 var CheckValidateConstraintsCheck = newFilesWithImportsCheckFunc(checkValidateConstraintsCheck)
 
 func checkValidateConstraintsCheck(add addFunc, files []protosource.File) error {
-	g := newGroup(files, add)
+	m := newValidateModule(files, add)
 	for _, file := range files {
 		for _, message := range file.Messages() {
 			for _, field := range message.Fields() {
@@ -997,7 +997,7 @@ func checkValidateConstraintsCheck(add addFunc, files []protosource.File) error 
 				if err := proto.Unmarshal(data, &constraints); err != nil {
 					return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
 				}
-				g.newModule(field).checkFieldRules(&constraints)
+				m.newValidateField(field).checkFieldRules(&constraints)
 			}
 		}
 	}

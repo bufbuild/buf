@@ -29,45 +29,46 @@ var (
 	}
 )
 
-type group struct {
+// validateModule is a validate module.
+type validateModule struct {
 	add   addFunc
 	files []protosource.File
 }
 
-func newGroup(files []protosource.File, add addFunc) *group {
-	return &group{
+func newValidateModule(files []protosource.File, add addFunc) *validateModule {
+	return &validateModule{
 		add:   add,
 		files: files,
 	}
 }
 
-// module is a validate module.
-type module struct {
-	g        *group
+// validateField is a validate Field.
+type validateField struct {
+	module   *validateModule
 	field    protosource.Field
 	location protosource.Location
 }
 
-// newModule returns a new validate module.
-func (g *group) newModule(field protosource.Field) *module {
-	return &module{
-		g:        g,
+// newValidateField returns a new validate validateField.
+func (m *validateModule) newValidateField(field protosource.Field) *validateField {
+	return &validateField{
+		module:   m,
 		field:    field,
 		location: field.OptionExtensionLocation(validate.E_Field),
 	}
 }
 
-// newModule returns a new validate module.
-func newModule(g *group, field protosource.Field) *module {
-	return &module{
-		g:        g,
+// newValidateField returns a new validate validateField.
+func newValidateField(module *validateModule, field protosource.Field) *validateField {
+	return &validateField{
+		module:   module,
 		field:    field,
 		location: field.OptionExtensionLocation(validate.E_Field),
 	}
 }
 
 // checkFieldRules checks the rules for the field.
-func (m *module) checkFieldRules(rules *validate.FieldConstraints) {
+func (m *validateField) checkFieldRules(rules *validate.FieldConstraints) {
 	if rules == nil {
 		return
 	}
@@ -134,21 +135,16 @@ func (m *module) checkFieldRules(rules *validate.FieldConstraints) {
 }
 
 // mustType asserts that the field type is the same as the given type.
-func (m *module) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper WellKnownType) {
+func (m *validateField) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper WellKnownType) {
 	if wrapper != UnknownWKT {
-		if emb := m.field.Embed(m.g.files...); emb != nil {
+		if emb := m.field.Embed(m.module.files...); emb != nil {
 			if wkt := LookupWKT(emb.Name()); wkt.Valid() && wkt == wrapper {
 				field := emb.Fields()[0]
-				newModule(m.g, field).mustType(field.Type(), UnknownWKT)
+				newValidateField(m.module, field).mustType(field.Type(), UnknownWKT)
 				return
 			}
 		}
 	}
-
-	// TODO: this is likely caught already
-	//if typ, ok := field.(Repeatable); ok {
-	//	m.assert(!typ.IsRepeated(), "repeated rule should be used for repeated fields")
-	//}
 
 	expr := m.field.Type() == pt
 	m.assert(
@@ -160,7 +156,7 @@ func (m *module) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper Wel
 }
 
 // checkNums asserts that the given numbers are valid.
-func checkNums[T any](m *module, in, notIn int, ci, lti, ltei, gti, gtei T) {
+func checkNums[T any](m *validateField, in, notIn int, ci, lti, ltei, gti, gtei T) {
 	m.checkIns(in, notIn)
 
 	c := reflect.ValueOf(ci)
@@ -202,20 +198,20 @@ func checkNums[T any](m *module, in, notIn int, ci, lti, ltei, gti, gtei T) {
 }
 
 // checkIns asserts that the given `in` and `not_in` rules are valid.
-func (m *module) checkIns(in, notIn int) {
+func (m *validateField) checkIns(in, notIn int) {
 	m.assert(in == 0 || notIn == 0,
 		"cannot have both `in` and `not_in` rules on the same field")
 }
 
 // assert asserts that the given expression is true and adds an error if not.
-func (m *module) assert(expr bool, format string, v ...interface{}) {
+func (m *validateField) assert(expr bool, format string, v ...interface{}) {
 	if !expr {
-		m.g.add(m.field, m.location, nil, format, v...)
+		m.module.add(m.field, m.location, nil, format, v...)
 	}
 }
 
 // checkString asserts that the given string rules are valid.
-func (m *module) checkString(r *validate.StringRules) {
+func (m *validateField) checkString(r *validate.StringRules) {
 	m.checkLen(r.Len, r.MinLen, r.MaxLen)
 	m.checkLen(r.LenBytes, r.MinBytes, r.MaxBytes)
 	m.checkMinMax(r.MinLen, r.MaxLen)
@@ -243,7 +239,7 @@ func (m *module) checkString(r *validate.StringRules) {
 }
 
 // checkEnum asserts that the given enum rules are valid.
-func (m *module) checkEnum(r *validate.EnumRules) {
+func (m *validateField) checkEnum(r *validate.EnumRules) {
 	m.checkIns(len(r.In), len(r.NotIn))
 
 	if r.GetDefinedOnly() && len(r.In) > 0 {
@@ -269,7 +265,7 @@ func (m *module) checkEnum(r *validate.EnumRules) {
 }
 
 // checkBytes asserts that the given bytes rules are valid.
-func (m *module) checkBytes(r *validate.BytesRules) {
+func (m *validateField) checkBytes(r *validate.BytesRules) {
 	m.checkMinMax(r.MinLen, r.MaxLen)
 	m.checkIns(len(r.In), len(r.NotIn))
 	m.checkPattern(r.Pattern, len(r.In))
@@ -283,7 +279,7 @@ func (m *module) checkBytes(r *validate.BytesRules) {
 }
 
 // checkRepeated validates the repeated rules.
-func (m *module) checkRepeated(r *validate.RepeatedRules) {
+func (m *validateField) checkRepeated(r *validate.RepeatedRules) {
 	m.assert(
 		m.field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED && !m.field.IsMap(),
 		"field is not repeated but got repeated rules",
@@ -300,9 +296,7 @@ func (m *module) checkRepeated(r *validate.RepeatedRules) {
 }
 
 // checkMap validates the map rules.
-func (m *module) checkMap(r *validate.MapRules) {
-	// TODO: determine if field is a map, this will currently pass on a repeated rules
-	// it will also succeed on a repeated field with map rules
+func (m *validateField) checkMap(r *validate.MapRules) {
 	m.assert(
 		m.field.IsMap(),
 		"field is not a map but got map rules",
@@ -315,12 +309,12 @@ func (m *module) checkMap(r *validate.MapRules) {
 }
 
 // checkAny validates the any rules.
-func (m *module) checkAny(r *validate.AnyRules) {
+func (m *validateField) checkAny(r *validate.AnyRules) {
 	m.checkIns(len(r.In), len(r.NotIn))
 }
 
 // checkDuration validates the duration rules.
-func (m *module) checkDuration(r *validate.DurationRules) {
+func (m *validateField) checkDuration(r *validate.DurationRules) {
 	checkNums(m,
 		len(r.GetIn()),
 		len(r.GetNotIn()),
@@ -342,7 +336,7 @@ func (m *module) checkDuration(r *validate.DurationRules) {
 }
 
 // checkTimestamp validates the timestamp rules.
-func (m *module) checkTimestamp(r *validate.TimestampRules) {
+func (m *validateField) checkTimestamp(r *validate.TimestampRules) {
 	checkNums(m, 0, 0,
 		m.checkTS(r.GetConst()),
 		m.checkTS(r.GetLt()),
@@ -365,7 +359,7 @@ func (m *module) checkTimestamp(r *validate.TimestampRules) {
 }
 
 // checkLen checks that the `len` rule is not used with `min_len` or `max_len`
-func (m *module) checkLen(len, min, max *uint64) {
+func (m *validateField) checkLen(len, min, max *uint64) {
 	if len == nil {
 		return
 	}
@@ -378,7 +372,7 @@ func (m *module) checkLen(len, min, max *uint64) {
 }
 
 // checkMinMax checks that the `min` and `max` rules are used correctly
-func (m *module) checkMinMax(min, max *uint64) {
+func (m *validateField) checkMinMax(min, max *uint64) {
 	if min == nil || max == nil {
 		return
 	}
@@ -388,7 +382,7 @@ func (m *module) checkMinMax(min, max *uint64) {
 }
 
 // checkWellKnownRegex checks that the `well_known_regex` rule is used correctly
-func (m *module) checkWellKnownRegex(wk validate.KnownRegex, r *validate.StringRules) {
+func (m *validateField) checkWellKnownRegex(wk validate.KnownRegex, r *validate.StringRules) {
 	if wk != 0 {
 		m.assert(r.Pattern == nil, "regex `well_known_regex` and regex `pattern` are incompatible")
 		non_strict := r.Strict != nil && !*r.Strict
@@ -402,7 +396,7 @@ func (m *module) checkWellKnownRegex(wk validate.KnownRegex, r *validate.StringR
 }
 
 // checkPattern checks that the `pattern` rule is used correctly
-func (m *module) checkPattern(p *string, in int) {
+func (m *validateField) checkPattern(p *string, in int) {
 	if p != nil {
 		m.assert(in == 0, "regex `pattern` and `in` rules are incompatible")
 		_, err := regexp.Compile(*p)
@@ -411,7 +405,7 @@ func (m *module) checkPattern(p *string, in int) {
 }
 
 // checkDur checks that the `duration` rule is used correctly
-func (m *module) checkDur(d *durationpb.Duration) *time.Duration {
+func (m *validateField) checkDur(d *durationpb.Duration) *time.Duration {
 	if d == nil {
 		return nil
 	}
@@ -422,7 +416,7 @@ func (m *module) checkDur(d *durationpb.Duration) *time.Duration {
 }
 
 // checkTS checks that the `timestamp` rule is used correctly
-func (m *module) checkTS(ts *timestamppb.Timestamp) *int64 {
+func (m *validateField) checkTS(ts *timestamppb.Timestamp) *int64 {
 	if ts == nil {
 		return nil
 	}
@@ -432,6 +426,7 @@ func (m *module) checkTS(ts *timestamppb.Timestamp) *int64 {
 	return proto.Int64(t.UnixNano())
 }
 
-func (m *module) noCustomRules(r *validate.FieldConstraints) {
+// noCustomRules asserts that the given custom rules are not used.
+func (m *validateField) noCustomRules(r *validate.FieldConstraints) {
 	m.assert(len(r.GetCel()) == 0, "custom rules are not supported for this field type")
 }
