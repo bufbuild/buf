@@ -1,8 +1,7 @@
 name: Buf shadow sync
 
 on:
-  # TODO: re-enable when we deploy BSR support for concurrent branch syncs
-  # push: # Any push, regardless if it contains proto changes or not
+  push: # Any push, regardless if it contains proto changes or not
   workflow_dispatch: # also allow manual trigger
 
 jobs:
