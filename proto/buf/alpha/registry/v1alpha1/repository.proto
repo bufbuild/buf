@@ -166,7 +166,7 @@ service RepositoryService {
   rpc GetRepositoriesMetadata(GetRepositoriesMetadataRequest) returns (GetRepositoriesMetadataResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // GetRepositoryDependencyDOTString gets the dependency graph for the repository.
+  // GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
   rpc GetRepositoryDependencyDOTString(GetRepositoryDependencyDOTStringRequest) returns (GetRepositoryDependencyDOTStringResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }

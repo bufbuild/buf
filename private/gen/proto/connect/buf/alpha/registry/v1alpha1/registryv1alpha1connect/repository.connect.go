@@ -150,7 +150,7 @@ type RepositoryServiceClient interface {
 	// request should match the length of the metadata in the response, and the order of repositories in the response
 	// should match the order of the metadata in the request.
 	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
-	// GetRepositoryDependencyDOTString gets the dependency graph for the repository.
+	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
 	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
 }
 
@@ -454,7 +454,7 @@ type RepositoryServiceHandler interface {
 	// request should match the length of the metadata in the response, and the order of repositories in the response
 	// should match the order of the metadata in the request.
 	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
-	// GetRepositoryDependencyDOTString gets the dependency graph for the repository.
+	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
 	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
 }
 
