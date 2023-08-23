@@ -245,18 +245,18 @@ func (m *validateField) checkEnum(r *validate.EnumRules) {
 	if r.GetDefinedOnly() && len(r.In) > 0 {
 		// TODO: this is not working
 		typ, ok := m.field.(interface {
-			Enum() protosource.Enum
+			Enum(...protosource.File) protosource.Enum
 		})
 		if !ok {
-			m.assert(!ok, "unexpected field type (%T)", m.field)
+			m.assert(ok, "unexpected field type (%T)", m.field)
 			return
 		}
 
-		enum := typ.Enum()
+		enum := typ.Enum(m.module.files...)
 		if enum == nil {
 			return
 		}
-		defined := typ.Enum().Values()
+		defined := enum.Values()
 		vals := make(map[int]struct{}, len(defined))
 
 		for _, val := range defined {
@@ -264,9 +264,8 @@ func (m *validateField) checkEnum(r *validate.EnumRules) {
 		}
 
 		for _, in := range r.In {
-			if _, ok = vals[int(in)]; !ok {
-				m.assert(!ok, "undefined `in` value (%d) conflicts with `defined_only` rule", in)
-			}
+			_, ok = vals[int(in)]
+			m.assert(ok, "undefined `in` value (%d) conflicts with `defined_only` rule", in)
 		}
 	}
 }

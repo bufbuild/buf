@@ -392,6 +392,7 @@ type Field interface {
 	// May be nil if this is attached to a file.
 	ParentMessage() Message
 	Embed(...File) Message
+	Enum(...File) Enum
 	IsMap() bool
 	Number() int
 	Label() descriptorpb.FieldDescriptorProto_Label

@@ -50,7 +50,7 @@ message Foo {
     string unexpected_type = 17 [(buf.validate.field).int32 = {
         const: 1
     }];
-    // Detects conflict between undefined `in` value and `defined_only` rule. TODO: NOT WORKING
+    // Detects conflict between undefined `in` value and `defined_only` rule.
     enum UndefinedInConflict {
         UNDEFINED_IN_CONFLICT_UNDEFINED_IN_CONFLICT = 0;
     }
