@@ -178,14 +178,6 @@ func checkNums[T any](m *validateField, in, notIn int, ci, lti, ltei, gti, gtei 
 		"cannot have both `in` and range constraint rules on the same field",
 	)
 
-	m.assert(lt.IsNil() || lte.IsNil(),
-		"cannot have both `lt` and `lte` rules on the same field",
-	)
-
-	m.assert(gt.IsNil() || gte.IsNil(),
-		"cannot have both `gt` and `gte` rules on the same field",
-	)
-
 	if !lt.IsNil() {
 		m.assert(gt.IsNil() || !reflect.DeepEqual(lti, gti),
 			"cannot have equal `gt` and `lt` rules on the same field")
@@ -245,16 +237,7 @@ func (m *validateField) checkEnum(r *validate.EnumRules) {
 	m.checkIns(len(r.In), len(r.NotIn))
 
 	if r.GetDefinedOnly() && len(r.In) > 0 {
-		// TODO: this is not working
-		typ, ok := m.field.(interface {
-			Enum(...protosource.File) protosource.Enum
-		})
-		if !ok {
-			m.assert(ok, "unexpected field type (%T)", m.field)
-			return
-		}
-
-		enum := typ.Enum(m.module.files...)
+		enum := m.field.Enum(m.module.files...)
 		if enum == nil {
 			return
 		}
@@ -266,7 +249,7 @@ func (m *validateField) checkEnum(r *validate.EnumRules) {
 		}
 
 		for _, in := range r.In {
-			_, ok = vals[int(in)]
+			_, ok := vals[int(in)]
 			m.assert(ok, "undefined `in` value (%d) conflicts with `defined_only` rule", in)
 		}
 	}

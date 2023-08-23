@@ -97,5 +97,17 @@ message Foo {
         message: "no can do with anypb"
         expression: "this.type_url != this.value"
     }];
+    // Checks if `prefix` length exceeds `max_len` constraint.
+    bytes prefix_max_len_bytes = 30 [(buf.validate.field).bytes.prefix = "ab", (buf.validate.field).bytes.max_len = 1];
+    // Checks if `suffix` length exceeds `max_len` constraint.
+    bytes suffix_max_len_bytes = 31 [(buf.validate.field).bytes.suffix = "ab", (buf.validate.field).bytes.max_len = 1];
+    // Checks if `contains` length exceeds `max_len` constraint.
+    bytes contains_max_len_bytes = 32 [(buf.validate.field).bytes.contains = "ab", (buf.validate.field).bytes.max_len = 1];
+    // Prevents simultaneous use of `len` and `min_len` rules.
+    bytes len_min_len_conflict_bytes = 33 [(buf.validate.field).bytes.len = 1, (buf.validate.field).bytes.min_len = 2];
+    // Prevents simultaneous use of `len` and `max_len` rules.
+    bytes len_max_len_conflict_bytes = 34 [(buf.validate.field).bytes.len = 2, (buf.validate.field).bytes.max_len = 1];
+    // Ensures `min_len` value is less than `max_len` value.
+    bytes min_gt_max_len_bytes = 35 [(buf.validate.field).bytes.min_len = 2, (buf.validate.field).bytes.max_len = 1];
 }
 

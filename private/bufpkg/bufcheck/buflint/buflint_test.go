@@ -1018,8 +1018,15 @@ func TestValidateRulesTypesMatchUsageErrors(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 64, 48, 64, 89, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 66, 50, 66, 93, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 69, 38, 69, 81, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 81, 52, 84, 6, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 86, 53, 90, 6, "VALIDATE_CONSTRAINTS_CHECK"))
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 77, 52, 80, 6, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 82, 53, 86, 6, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 88, 58, 92, 6, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 95, 37, 99, 6, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 101, 38, 101, 78, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 103, 38, 103, 78, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 105, 40, 105, 82, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 111, 38, 111, 76, "VALIDATE_CONSTRAINTS_CHECK"),
+	)
 }
 
 func testLint(
