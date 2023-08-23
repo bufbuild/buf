@@ -72,6 +72,9 @@ func (m *validateField) checkFieldRules(rules *validate.FieldConstraints) {
 	if rules == nil {
 		return
 	}
+	if m.field.TypeName() == "google.protobuf.Any" {
+		m.noCustomRules(rules)
+	}
 	switch r := rules.Type.(type) {
 	case *validate.FieldConstraints_Float:
 		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_FLOAT, FloatValueWKT)
@@ -125,7 +128,6 @@ func (m *validateField) checkFieldRules(rules *validate.FieldConstraints) {
 	case *validate.FieldConstraints_Map:
 		m.checkMap(r.Map)
 	case *validate.FieldConstraints_Any:
-		m.noCustomRules(rules)
 		m.checkAny(r.Any)
 	case *validate.FieldConstraints_Duration:
 		m.checkDuration(r.Duration)

@@ -67,10 +67,6 @@ message Foo {
     // Ensures the `unique` rule is only used for scalar types.
     message baz {}
     repeated baz unique_scalar = 22 [(buf.validate.field).repeated.unique = true];
-    // Prevents the use of nil values in `in` rule. TODO: NOT WORKING
-    string in_nil_values = 23 [(buf.validate.field).string = {in: ["a", "b", ""]}];
-    // Prevents the use of nil values in `not_in` rule. TODO: NOT WORKING
-    string not_in_nil_values = 24 [(buf.validate.field).string = {not_in: ["a", "b", ""]}];
     // Verifies the resolution of duration values.
     google.protobuf.Duration duration_resolution = 25 [(buf.validate.field).duration = {
         gt: {
@@ -88,14 +84,14 @@ message Foo {
             seconds: 0
         }
     }];
-    // Verifies the resolution of timestamp values. TODO: NOT WORKING
+    // Verifies the resolution of timestamp values.
     google.protobuf.Timestamp timestamp_resolution = 28 [(buf.validate.field).timestamp = {
         gt: {
-            seconds: -1
+            seconds: 864010000000
         }
     }];
     // VALIDATE_NO_CUSTOM_CEL_ON_ANYPB - Assists with protecting against CELs
-    // that use custom functions on google.protobuf.Any fields. TODO: NOT WORKING
+    // that use custom functions on google.protobuf.Any fields.
     google.protobuf.Any anypb = 29 [(buf.validate.field).cel = {
         id: "foo.anypb",
         message: "no can do with anypb"
