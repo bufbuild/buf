@@ -243,12 +243,19 @@ func (m *validateField) checkEnum(r *validate.EnumRules) {
 	m.checkIns(len(r.In), len(r.NotIn))
 
 	if r.GetDefinedOnly() && len(r.In) > 0 {
+		// TODO: this is not working
 		typ, ok := m.field.(interface {
 			Enum() protosource.Enum
 		})
+		if !ok {
+			m.assert(!ok, "unexpected field type (%T)", m.field)
+			return
+		}
 
-		m.assert(!ok, "unexpected field type (%T)", m.field)
-
+		enum := typ.Enum()
+		if enum == nil {
+			return
+		}
 		defined := typ.Enum().Values()
 		vals := make(map[int]struct{}, len(defined))
 
