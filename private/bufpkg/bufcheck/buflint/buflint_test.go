@@ -460,29 +460,22 @@ func TestRunPackageLowerSnakeCase(t *testing.T) {
 
 func TestRunPackageNoImportCycle(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(
-		t,
-		"package_no_import_cycle",
-		nil,
-		func(image bufimage.Image) bufimage.Image {
-			// Testing that import cycles are still detected via imports, but are
-			// not reported for imports, only for non-imports.
-			var newImageFiles []bufimage.ImageFile
-			for _, imageFile := range image.Files() {
-				if imageFile.FileDescriptor().GetPackage() == "b" {
-					newImageFiles = append(newImageFiles, imageFile.ImageFileWithIsImport(true))
-				} else {
-					require.False(t, imageFile.IsImport())
-					newImageFiles = append(newImageFiles, imageFile)
-				}
+	testLintWithModifiers(t, "package_no_import_cycle", nil, func(image bufimage.Image) bufimage.Image {
+		// Testing that import cycles are still detected via imports, but are
+		// not reported for imports, only for non-imports.
+		var newImageFiles []bufimage.ImageFile
+		for _, imageFile := range image.Files() {
+			if imageFile.FileDescriptor().GetPackage() == "b" {
+				newImageFiles = append(newImageFiles, imageFile.ImageFileWithIsImport(true))
+			} else {
+				require.False(t, imageFile.IsImport())
+				newImageFiles = append(newImageFiles, imageFile)
 			}
-			newImage, err := bufimage.NewImage(newImageFiles)
-			require.NoError(t, err)
-			return newImage
-		},
-		bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
-		bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
-	)
+		}
+		newImage, err := bufimage.NewImage(newImageFiles)
+		require.NoError(t, err)
+		return newImage
+	}, "", bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"), bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"))
 }
 
 func TestRunPackageSameDirectory(t *testing.T) {
@@ -890,14 +883,9 @@ func TestCommentIgnoresOff(t *testing.T) {
 
 func TestCommentIgnoresOn(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(
-		t,
-		"comment_ignores",
-		func(config *bufconfig.Config) {
-			config.Lint.AllowCommentIgnores = true
-		},
-		nil,
-	)
+	testLintWithModifiers(t, "comment_ignores", func(config *bufconfig.Config) {
+		config.Lint.AllowCommentIgnores = true
+	}, nil, "")
 }
 
 func TestCommentIgnoresCascadeOff(t *testing.T) {
@@ -943,14 +931,9 @@ func TestCommentIgnoresCascadeOff(t *testing.T) {
 
 func TestCommentIgnoresCascadeOn(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(
-		t,
-		"comment_ignores_cascade",
-		func(config *bufconfig.Config) {
-			config.Lint.AllowCommentIgnores = true
-		},
-		nil,
-	)
+	testLintWithModifiers(t, "comment_ignores_cascade", func(config *bufconfig.Config) {
+		config.Lint.AllowCommentIgnores = true
+	}, nil, "")
 }
 
 func TestValidateRulesTypeDontMatch(t *testing.T) {
@@ -1040,6 +1023,7 @@ func testLint(
 		relDirPath,
 		nil,
 		nil,
+		"",
 		expectedFileAnnotations...,
 	)
 }
@@ -1049,109 +1033,13 @@ func testLintWithValidate(
 	relDirPath string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	testLintWithValidateWithModifiers(
+	testLintWithModifiers(
 		t,
 		relDirPath,
 		nil,
 		nil,
+		"buf",
 		expectedFileAnnotations...,
-	)
-}
-
-func testLintWithValidateWithModifiers(
-	t *testing.T,
-	relDirPath string,
-	configModifier func(*bufconfig.Config),
-	imageModifier func(bufimage.Image) bufimage.Image,
-	expectedFileAnnotations ...bufanalysis.FileAnnotation,
-) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	logger := zap.NewNop()
-
-	dirPath := filepath.Join("testdata", relDirPath)
-
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		dirPath,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	require.NoError(t, err)
-
-	validateReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		"testdata",
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	require.NoError(t, err)
-
-	// TODO: feels like a hack
-	// copy the testdata directory to a temporary directory
-	fn := func(objectInfo storage.ObjectInfo) error {
-		get, err := validateReadWriteBucket.Get(ctx, objectInfo.Path())
-		if err != nil {
-			return err
-		}
-		defer get.Close()
-		expectedData, err := io.ReadAll(get)
-		if err != nil {
-			return err
-		}
-		put, err := readWriteBucket.Put(ctx, objectInfo.Path())
-		if err != nil {
-			return err
-		}
-		defer put.Close()
-		_, err = put.Write(expectedData)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	if err := validateReadWriteBucket.Walk(ctx, "buf/", fn); err != nil {
-		require.NoError(t, err)
-	}
-	// delete the temporary directory
-	defer func() {
-		if err := readWriteBucket.DeleteAll(ctx, "buf/"); err != nil {
-			require.NoError(t, err)
-		}
-	}()
-
-	config := testGetConfig(t, readWriteBucket)
-	if configModifier != nil {
-		configModifier(config)
-	}
-
-	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		context.Background(),
-		readWriteBucket,
-		config.Build,
-	)
-	require.NoError(t, err)
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
-		ctx,
-		module,
-	)
-	require.NoError(t, err)
-	require.Empty(t, fileAnnotations)
-	if imageModifier != nil {
-		image = imageModifier(image)
-	}
-
-	handler := buflint.NewHandler(logger)
-	fileAnnotations, err = handler.Check(
-		ctx,
-		config.Lint,
-		image,
-	)
-	assert.NoError(t, err)
-	bufanalysistesting.AssertFileAnnotationsEqual(
-		t,
-		expectedFileAnnotations,
-		fileAnnotations,
 	)
 }
 
@@ -1160,6 +1048,7 @@ func testLintWithModifiers(
 	relDirPath string,
 	configModifier func(*bufconfig.Config),
 	imageModifier func(bufimage.Image) bufimage.Image,
+	dependencyPathPrefix string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -1174,6 +1063,48 @@ func testLintWithModifiers(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
+
+	var validateReadWriteBucket storage.ReadWriteBucket
+	if dependencyPathPrefix != "" {
+		validateReadWriteBucket, err = storageosProvider.NewReadWriteBucket(
+			"testdata",
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		require.NoError(t, err)
+
+		// Copy the testdata directory to a temporary directory
+		fn := func(objectInfo storage.ObjectInfo) error {
+			get, err := validateReadWriteBucket.Get(ctx, objectInfo.Path())
+			if err != nil {
+				return err
+			}
+			defer get.Close()
+			expectedData, err := io.ReadAll(get)
+			if err != nil {
+				return err
+			}
+			put, err := readWriteBucket.Put(ctx, objectInfo.Path())
+			if err != nil {
+				return err
+			}
+			defer put.Close()
+			_, err = put.Write(expectedData)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+		if err := validateReadWriteBucket.Walk(ctx, dependencyPathPrefix, fn); err != nil {
+			require.NoError(t, err)
+		}
+
+		// Delete the temporary directory
+		defer func() {
+			if err := readWriteBucket.DeleteAll(ctx, dependencyPathPrefix); err != nil {
+				require.NoError(t, err)
+			}
+		}()
+	}
 
 	config := testGetConfig(t, readWriteBucket)
 	if configModifier != nil {
