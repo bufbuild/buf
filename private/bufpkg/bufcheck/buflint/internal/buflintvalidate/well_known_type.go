@@ -1,4 +1,20 @@
-package buflintcheck
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package buflintvalidate
+
+import "strings"
 
 // WellKnownTypePackage is the proto package name where all Well Known Types
 // currently reside.
@@ -34,7 +50,7 @@ const (
 	BytesValueWKT  WellKnownType = "BytesValue"
 )
 
-var wktLookup = map[string]WellKnownType{
+var lookupTable = map[string]WellKnownType{
 	"Any":         AnyWKT,
 	"Duration":    DurationWKT,
 	"Empty":       EmptyWKT,
@@ -53,11 +69,14 @@ var wktLookup = map[string]WellKnownType{
 	"BytesValue":  BytesValueWKT,
 }
 
-// LookupWKT returns the WellKnownType related to the provided Name. If the
+// LookupWellKnownType returns the WellKnownType related to the provided Name. If the
 // name is not recognized, UnknownWKT is returned.
-func LookupWKT(n string) WellKnownType {
-	if wkt, ok := wktLookup[n]; ok {
-		return wkt
+func LookupWellKnownType(in string) WellKnownType {
+	if strings.HasPrefix(in, WellKnownTypePackage) {
+		in = strings.TrimPrefix(in, WellKnownTypePackage)
+	}
+	if wellKnownType, ok := lookupTable[in]; ok {
+		return wellKnownType
 	}
 
 	return UnknownWKT
@@ -65,6 +84,6 @@ func LookupWKT(n string) WellKnownType {
 
 // Valid returns true if the WellKnownType is recognized by this library.
 func (wkt WellKnownType) Valid() bool {
-	_, ok := wktLookup[string(wkt)]
+	_, ok := lookupTable[string(wkt)]
 	return ok
 }

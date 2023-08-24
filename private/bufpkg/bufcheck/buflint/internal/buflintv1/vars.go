@@ -233,11 +233,5 @@ var (
 		"VALIDATE_CONSTRAINTS_CHECK": {
 			"DEFAULT",
 		},
-		"VALIDATE_MESSAGE_NOT_DISABLED": {
-			"DEFAULT",
-		},
-		"VALIDATE_CEL_VALID": {
-			"DEFAULT",
-		},
 	}
 )

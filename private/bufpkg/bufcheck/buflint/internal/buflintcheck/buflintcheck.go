@@ -20,6 +20,7 @@ package buflintcheck
 import (
 	"errors"
 	"fmt"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintvalidate"
 	"strconv"
 	"strings"
 
@@ -982,7 +983,7 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 var CheckValidateConstraintsCheck = newFilesWithImportsCheckFunc(checkValidateConstraintsCheck)
 
 func checkValidateConstraintsCheck(add addFunc, files []protosource.File) error {
-	m := newValidateModule(files, add)
+	m := buflintvalidate.NewValidateModule(files, add)
 	for _, file := range files {
 		for _, message := range file.Messages() {
 			for _, field := range message.Fields() {
@@ -997,7 +998,7 @@ func checkValidateConstraintsCheck(add addFunc, files []protosource.File) error 
 				if err := proto.Unmarshal(data, &constraints); err != nil {
 					return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
 				}
-				m.newValidateField(field).checkFieldRules(&constraints)
+				m.NewValidateField(field).CheckFieldRules(&constraints)
 			}
 		}
 	}

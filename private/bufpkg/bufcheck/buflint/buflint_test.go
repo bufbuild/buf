@@ -954,7 +954,7 @@ func TestCommentIgnoresCascadeOn(t *testing.T) {
 
 func TestValidateRulesTypeDontMatch(t *testing.T) {
 	t.Parallel()
-	testLint(t, "validate_rules_types_match",
+	testLint(t, "validate_rules_types_match_fail",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 23, 14, 61, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 25, 15, 63, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 23, 16, 62, "VALIDATE_CONSTRAINTS_CHECK"),
@@ -994,7 +994,7 @@ func TestValidateRulesTypeMatch(t *testing.T) {
 
 func TestValidateRulesTypesMatchUsageErrors(t *testing.T) {
 	t.Parallel()
-	testLint(t, "validate_rules_types_match_usage_errors",
+	testLint(t, "validate_rules_types_match_errors",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 12, 28, 12, 61, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 29, 14, 63, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 29, 16, 62, "VALIDATE_CONSTRAINTS_CHECK"),

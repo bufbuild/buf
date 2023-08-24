@@ -1,19 +1,30 @@
-package buflintcheck
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package buflintvalidate
 
 import (
-	"reflect"
 	"regexp"
 	"time"
 	"unicode/utf8"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-
+	"github.com/bufbuild/buf/private/pkg/protosource"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	"github.com/bufbuild/buf/private/pkg/protosource"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 var (
@@ -30,33 +41,11 @@ var (
 	}
 )
 
-// validateModule is a validate module.
-type validateModule struct {
-	add   addFunc
-	files []protosource.File
-}
-
-func newValidateModule(files []protosource.File, add addFunc) *validateModule {
-	return &validateModule{
-		add:   add,
-		files: files,
-	}
-}
-
 // validateField is a validate Field.
 type validateField struct {
 	module   *validateModule
 	field    protosource.Field
 	location protosource.Location
-}
-
-// newValidateField returns a new validate validateField.
-func (m *validateModule) newValidateField(field protosource.Field) *validateField {
-	return &validateField{
-		module:   m,
-		field:    field,
-		location: field.OptionExtensionLocation(validate.E_Field),
-	}
 }
 
 // newValidateField returns a new validate validateField.
@@ -68,82 +57,82 @@ func newValidateField(module *validateModule, field protosource.Field) *validate
 	}
 }
 
-// checkFieldRules checks the rules for the field.
-func (m *validateField) checkFieldRules(rules *validate.FieldConstraints) {
+// CheckFieldRules checks the rules for the field.
+func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 	if rules == nil {
 		return
 	}
-	if m.field.TypeName() == "google.protobuf.Any" {
-		m.noCustomRules(rules)
+	if wkt := LookupWellKnownType(m.field.TypeName()); wkt.Valid() && wkt == AnyWKT {
+		m.validateNoCustomRulesApplied(rules)
 	}
 	switch r := rules.Type.(type) {
 	case *validate.FieldConstraints_Float:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_FLOAT, FloatValueWKT)
-		checkNums(m, len(r.Float.In), len(r.Float.NotIn), r.Float.Const, r.Float.Lt, r.Float.Lte, r.Float.Gt, r.Float.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_FLOAT, FloatValueWKT)
+		validateNumberField(m, len(r.Float.In), len(r.Float.NotIn), r.Float.Const, r.Float.Lt, r.Float.Lte, r.Float.Gt, r.Float.Gte)
 	case *validate.FieldConstraints_Double:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_DOUBLE, DoubleValueWKT)
-		checkNums(m, len(r.Double.In), len(r.Double.NotIn), r.Double.Const, r.Double.Lt, r.Double.Lte, r.Double.Gt, r.Double.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_DOUBLE, DoubleValueWKT)
+		validateNumberField(m, len(r.Double.In), len(r.Double.NotIn), r.Double.Const, r.Double.Lt, r.Double.Lte, r.Double.Gt, r.Double.Gte)
 	case *validate.FieldConstraints_Int32:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_INT32, Int32ValueWKT)
-		checkNums(m, len(r.Int32.In), len(r.Int32.NotIn), r.Int32.Const, r.Int32.Lt, r.Int32.Lte, r.Int32.Gt, r.Int32.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_INT32, Int32ValueWKT)
+		validateNumberField(m, len(r.Int32.In), len(r.Int32.NotIn), r.Int32.Const, r.Int32.Lt, r.Int32.Lte, r.Int32.Gt, r.Int32.Gte)
 	case *validate.FieldConstraints_Int64:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_INT64, Int64ValueWKT)
-		checkNums(m, len(r.Int64.In), len(r.Int64.NotIn), r.Int64.Const, r.Int64.Lt, r.Int64.Lte, r.Int64.Gt, r.Int64.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_INT64, Int64ValueWKT)
+		validateNumberField(m, len(r.Int64.In), len(r.Int64.NotIn), r.Int64.Const, r.Int64.Lt, r.Int64.Lte, r.Int64.Gt, r.Int64.Gte)
 	case *validate.FieldConstraints_Uint32:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_UINT32, UInt32ValueWKT)
-		checkNums(m, len(r.Uint32.In), len(r.Uint32.NotIn), r.Uint32.Const, r.Uint32.Lt, r.Uint32.Lte, r.Uint32.Gt, r.Uint32.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_UINT32, UInt32ValueWKT)
+		validateNumberField(m, len(r.Uint32.In), len(r.Uint32.NotIn), r.Uint32.Const, r.Uint32.Lt, r.Uint32.Lte, r.Uint32.Gt, r.Uint32.Gte)
 	case *validate.FieldConstraints_Uint64:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_UINT64, UInt64ValueWKT)
-		checkNums(m, len(r.Uint64.In), len(r.Uint64.NotIn), r.Uint64.Const, r.Uint64.Lt, r.Uint64.Lte, r.Uint64.Gt, r.Uint64.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_UINT64, UInt64ValueWKT)
+		validateNumberField(m, len(r.Uint64.In), len(r.Uint64.NotIn), r.Uint64.Const, r.Uint64.Lt, r.Uint64.Lte, r.Uint64.Gt, r.Uint64.Gte)
 	case *validate.FieldConstraints_Sint32:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_SINT32, UnknownWKT)
-		checkNums(m, len(r.Sint32.In), len(r.Sint32.NotIn), r.Sint32.Const, r.Sint32.Lt, r.Sint32.Lte, r.Sint32.Gt, r.Sint32.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SINT32, UnknownWKT)
+		validateNumberField(m, len(r.Sint32.In), len(r.Sint32.NotIn), r.Sint32.Const, r.Sint32.Lt, r.Sint32.Lte, r.Sint32.Gt, r.Sint32.Gte)
 	case *validate.FieldConstraints_Sint64:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_SINT64, UnknownWKT)
-		checkNums(m, len(r.Sint64.In), len(r.Sint64.NotIn), r.Sint64.Const, r.Sint64.Lt, r.Sint64.Lte, r.Sint64.Gt, r.Sint64.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SINT64, UnknownWKT)
+		validateNumberField(m, len(r.Sint64.In), len(r.Sint64.NotIn), r.Sint64.Const, r.Sint64.Lt, r.Sint64.Lte, r.Sint64.Gt, r.Sint64.Gte)
 	case *validate.FieldConstraints_Fixed32:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_FIXED32, UnknownWKT)
-		checkNums(m, len(r.Fixed32.In), len(r.Fixed32.NotIn), r.Fixed32.Const, r.Fixed32.Lt, r.Fixed32.Lte, r.Fixed32.Gt, r.Fixed32.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_FIXED32, UnknownWKT)
+		validateNumberField(m, len(r.Fixed32.In), len(r.Fixed32.NotIn), r.Fixed32.Const, r.Fixed32.Lt, r.Fixed32.Lte, r.Fixed32.Gt, r.Fixed32.Gte)
 	case *validate.FieldConstraints_Fixed64:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_FIXED64, UnknownWKT)
-		checkNums(m, len(r.Fixed64.In), len(r.Fixed64.NotIn), r.Fixed64.Const, r.Fixed64.Lt, r.Fixed64.Lte, r.Fixed64.Gt, r.Fixed64.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_FIXED64, UnknownWKT)
+		validateNumberField(m, len(r.Fixed64.In), len(r.Fixed64.NotIn), r.Fixed64.Const, r.Fixed64.Lt, r.Fixed64.Lte, r.Fixed64.Gt, r.Fixed64.Gte)
 	case *validate.FieldConstraints_Sfixed32:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_SFIXED32, UnknownWKT)
-		checkNums(m, len(r.Sfixed32.In), len(r.Sfixed32.NotIn), r.Sfixed32.Const, r.Sfixed32.Lt, r.Sfixed32.Lte, r.Sfixed32.Gt, r.Sfixed32.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SFIXED32, UnknownWKT)
+		validateNumberField(m, len(r.Sfixed32.In), len(r.Sfixed32.NotIn), r.Sfixed32.Const, r.Sfixed32.Lt, r.Sfixed32.Lte, r.Sfixed32.Gt, r.Sfixed32.Gte)
 	case *validate.FieldConstraints_Sfixed64:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_SFIXED64, UnknownWKT)
-		checkNums(m, len(r.Sfixed64.In), len(r.Sfixed64.NotIn), r.Sfixed64.Const, r.Sfixed64.Lt, r.Sfixed64.Lte, r.Sfixed64.Gt, r.Sfixed64.Gte)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SFIXED64, UnknownWKT)
+		validateNumberField(m, len(r.Sfixed64.In), len(r.Sfixed64.NotIn), r.Sfixed64.Const, r.Sfixed64.Lt, r.Sfixed64.Lte, r.Sfixed64.Gt, r.Sfixed64.Gte)
 	case *validate.FieldConstraints_Bool:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_BOOL, BoolValueWKT)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_BOOL, BoolValueWKT)
 	case *validate.FieldConstraints_String_:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_STRING, StringValueWKT)
-		m.checkString(r.String_)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_STRING, StringValueWKT)
+		m.validateStringField(r.String_)
 	case *validate.FieldConstraints_Bytes:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_BYTES, BytesValueWKT)
-		m.checkBytes(r.Bytes)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_BYTES, BytesValueWKT)
+		m.validateBytesField(r.Bytes)
 	case *validate.FieldConstraints_Enum:
-		m.mustType(descriptorpb.FieldDescriptorProto_TYPE_ENUM, UnknownWKT)
-		m.checkEnum(r.Enum)
+		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_ENUM, UnknownWKT)
+		m.validateEnumField(r.Enum)
 	case *validate.FieldConstraints_Repeated:
-		m.checkRepeated(r.Repeated)
+		m.validateRepeatedField(r.Repeated)
 	case *validate.FieldConstraints_Map:
-		m.checkMap(r.Map)
+		m.validateMapField(r.Map)
 	case *validate.FieldConstraints_Any:
-		m.checkAny(r.Any)
+		m.validateAnyField(r.Any)
 	case *validate.FieldConstraints_Duration:
-		m.checkDuration(r.Duration)
+		m.validateDurationField(r.Duration)
 	case *validate.FieldConstraints_Timestamp:
-		m.checkTimestamp(r.Timestamp)
+		m.validateTimestampField(r.Timestamp)
 	}
 }
 
-// mustType asserts that the field type is the same as the given type.
-func (m *validateField) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrapper WellKnownType) {
+// assertFieldTypeMatches asserts that the field type is the same as the given type.
+func (m *validateField) assertFieldTypeMatches(pt descriptorpb.FieldDescriptorProto_Type, wrapper WellKnownType) {
 	if wrapper != UnknownWKT {
 		if emb := m.field.Embed(m.module.files...); emb != nil {
-			if wkt := LookupWKT(emb.Name()); wkt.Valid() && wkt == wrapper {
+			if wkt := LookupWellKnownType(emb.Name()); wkt.Valid() && wkt == wrapper {
 				field := emb.Fields()[0]
-				newValidateField(m.module, field).mustType(field.Type(), UnknownWKT)
+				newValidateField(m.module, field).assertFieldTypeMatches(field.Type(), UnknownWKT)
 				return
 			}
 		}
@@ -156,40 +145,6 @@ func (m *validateField) mustType(pt descriptorpb.FieldDescriptorProto_Type, wrap
 		m.field.Type(),
 		pt.String(),
 	)
-}
-
-// checkNums asserts that the given numbers are valid.
-func checkNums[T any](m *validateField, in, notIn int, ci, lti, ltei, gti, gtei T) {
-	m.checkIns(in, notIn)
-
-	c := reflect.ValueOf(ci)
-	lt, lte := reflect.ValueOf(lti), reflect.ValueOf(ltei)
-	gt, gte := reflect.ValueOf(gti), reflect.ValueOf(gtei)
-
-	m.assert(c.IsNil() ||
-		in == 0 && notIn == 0 &&
-			lt.IsNil() && lte.IsNil() &&
-			gt.IsNil() && gte.IsNil(),
-		"`const` can be the only rule on a field",
-	)
-
-	m.assert(in == 0 ||
-		lt.IsNil() && lte.IsNil() &&
-			gt.IsNil() && gte.IsNil(),
-		"cannot have both `in` and range constraint rules on the same field",
-	)
-
-	if !lt.IsNil() {
-		m.assert(gt.IsNil() || !reflect.DeepEqual(lti, gti),
-			"cannot have equal `gt` and `lt` rules on the same field")
-		m.assert(gte.IsNil() || !reflect.DeepEqual(lti, gtei),
-			"cannot have equal `gte` and `lt` rules on the same field")
-	} else if !lte.IsNil() {
-		m.assert(gt.IsNil() || !reflect.DeepEqual(ltei, gti),
-			"cannot have equal `gt` and `lte` rules on the same field")
-		m.assert(gte.IsNil() || !reflect.DeepEqual(ltei, gtei),
-			"use `const` instead of equal `lte` and `gte` rules")
-	}
 }
 
 // checkIns asserts that the given `in` and `not_in` rules are valid.
@@ -205,8 +160,8 @@ func (m *validateField) assert(expr bool, format string, v ...interface{}) {
 	}
 }
 
-// checkString asserts that the given string rules are valid.
-func (m *validateField) checkString(r *validate.StringRules) {
+// validateStringField asserts that the given string rules are valid.
+func (m *validateField) validateStringField(r *validate.StringRules) {
 	m.checkLen(r.Len, r.MinLen, r.MaxLen)
 	m.checkLen(r.LenBytes, r.MinBytes, r.MaxBytes)
 	m.checkMinMax(r.MinLen, r.MaxLen)
@@ -233,8 +188,8 @@ func (m *validateField) checkString(r *validate.StringRules) {
 	}
 }
 
-// checkEnum asserts that the given enum rules are valid.
-func (m *validateField) checkEnum(r *validate.EnumRules) {
+// validateEnumField asserts that the given enum rules are valid.
+func (m *validateField) validateEnumField(r *validate.EnumRules) {
 	m.checkIns(len(r.In), len(r.NotIn))
 
 	if r.GetDefinedOnly() && len(r.In) > 0 {
@@ -256,8 +211,8 @@ func (m *validateField) checkEnum(r *validate.EnumRules) {
 	}
 }
 
-// checkBytes asserts that the given bytes rules are valid.
-func (m *validateField) checkBytes(r *validate.BytesRules) {
+// validateBytesField asserts that the given bytes rules are valid.
+func (m *validateField) validateBytesField(r *validate.BytesRules) {
 	m.checkMinMax(r.MinLen, r.MaxLen)
 	m.checkIns(len(r.In), len(r.NotIn))
 	m.checkPattern(r.Pattern, len(r.In))
@@ -270,8 +225,8 @@ func (m *validateField) checkBytes(r *validate.BytesRules) {
 	}
 }
 
-// checkRepeated validates the repeated rules.
-func (m *validateField) checkRepeated(r *validate.RepeatedRules) {
+// validateRepeatedField validates the repeated rules.
+func (m *validateField) validateRepeatedField(r *validate.RepeatedRules) {
 	m.assert(
 		m.field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED && !m.field.IsMap(),
 		"field is not repeated but got repeated rules",
@@ -284,11 +239,11 @@ func (m *validateField) checkRepeated(r *validate.RepeatedRules) {
 			"unique rule is only applicable for scalar types")
 	}
 
-	m.checkFieldRules(r.Items)
+	m.CheckFieldRules(r.Items)
 }
 
-// checkMap validates the map rules.
-func (m *validateField) checkMap(r *validate.MapRules) {
+// validateMapField validates the map rules.
+func (m *validateField) validateMapField(r *validate.MapRules) {
 	m.assert(
 		m.field.IsMap(),
 		"field is not a map but got map rules",
@@ -296,18 +251,18 @@ func (m *validateField) checkMap(r *validate.MapRules) {
 
 	m.checkMinMax(r.MinPairs, r.MaxPairs)
 
-	m.checkFieldRules(r.Keys)
-	m.checkFieldRules(r.Values)
+	m.CheckFieldRules(r.Keys)
+	m.CheckFieldRules(r.Values)
 }
 
-// checkAny validates the any rules.
-func (m *validateField) checkAny(r *validate.AnyRules) {
+// validateAnyField validates the any rules.
+func (m *validateField) validateAnyField(r *validate.AnyRules) {
 	m.checkIns(len(r.In), len(r.NotIn))
 }
 
-// checkDuration validates the duration rules.
-func (m *validateField) checkDuration(r *validate.DurationRules) {
-	checkNums(m,
+// validateDurationField validates the duration rules.
+func (m *validateField) validateDurationField(r *validate.DurationRules) {
+	validateNumberField(m,
 		len(r.GetIn()),
 		len(r.GetNotIn()),
 		m.checkDur(r.GetConst()),
@@ -327,9 +282,9 @@ func (m *validateField) checkDuration(r *validate.DurationRules) {
 	}
 }
 
-// checkTimestamp validates the timestamp rules.
-func (m *validateField) checkTimestamp(r *validate.TimestampRules) {
-	checkNums(m, 0, 0,
+// validateTimestampField validates the timestamp rules.
+func (m *validateField) validateTimestampField(r *validate.TimestampRules) {
+	validateNumberField(m, 0, 0,
 		m.checkTS(r.GetConst()),
 		m.checkTS(r.GetLt()),
 		m.checkTS(r.GetLte()),
@@ -418,7 +373,7 @@ func (m *validateField) checkTS(ts *timestamppb.Timestamp) *int64 {
 	return proto.Int64(t.UnixNano())
 }
 
-// noCustomRules asserts that the given custom rules are not used.
-func (m *validateField) noCustomRules(r *validate.FieldConstraints) {
+// validateNoCustomRulesApplied asserts that the given custom rules are not used.
+func (m *validateField) validateNoCustomRulesApplied(r *validate.FieldConstraints) {
 	m.assert(len(r.GetCel()) == 0, "custom rules are not supported for this field type")
 }
