@@ -1050,8 +1050,7 @@ func testLintWithModifiers(
 	imageModifier func(bufimage.Image) bufimage.Image,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	logger := zap.NewNop()
 

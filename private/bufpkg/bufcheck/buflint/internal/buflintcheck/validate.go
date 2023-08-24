@@ -1,11 +1,12 @@
 package buflintcheck
 
 import (
-	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"reflect"
 	"regexp"
 	"time"
 	"unicode/utf8"
+
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
