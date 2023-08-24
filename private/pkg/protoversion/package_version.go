@@ -37,19 +37,25 @@ func newPackageVersionForPackage(pkg string) (*packageVersion, bool) {
 	if len(parts) < 2 {
 		return nil, false
 	}
-	lastPart := parts[len(parts)-1]
-	// must at least contain 'v' and a number
-	if len(lastPart) < 2 {
+	return newPackageVersionForComponent(parts[len(parts)-1])
+}
+
+func newPackageVersionForComponent(component string) (*packageVersion, bool) {
+	if strings.Contains(component, ".") {
 		return nil, false
 	}
-	if lastPart[0] != 'v' {
+	// must at least contain 'v' and a number
+	if len(component) < 2 {
+		return nil, false
+	}
+	if component[0] != 'v' {
 		return nil, false
 	}
 
 	// v1beta1 -> 1beta1
 	// v1testfoo -> 1testfoo
 	// v1p1alpha1 -> p1alpha1
-	version := lastPart[1:]
+	version := component[1:]
 
 	if strings.Contains(version, "test") {
 		// 1testfoo -> [1, foo]
