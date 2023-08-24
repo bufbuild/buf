@@ -166,6 +166,10 @@ service RepositoryService {
   rpc GetRepositoriesMetadata(GetRepositoriesMetadataRequest) returns (GetRepositoriesMetadataResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
+  rpc GetRepositoryDependencyDOTString(GetRepositoryDependencyDOTStringRequest) returns (GetRepositoryDependencyDOTStringResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetRepositoriesByFullNameRequest {
@@ -366,4 +370,20 @@ message GetRepositoriesMetadataRequest {
 
 message GetRepositoriesMetadataResponse {
   repeated RepositoryMetadata metadata = 1;
+}
+
+message GetRepositoryDependencyDOTStringRequest {
+  // The owner of the BSR repository.
+  string owner = 1;
+  // The name of the BSR repository.
+  string repository = 2;
+  // The name of the reference.
+  string reference = 3;
+}
+
+message GetRepositoryDependencyDOTStringResponse {
+  // The string DOT representation of the dependency graph for the repository.
+  //
+  // DOT language reference: https://graphviz.org/doc/info/lang.html
+  string dot_string = 1;
 }

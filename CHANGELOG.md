@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Update `buf beta price` with the latest pricing information.
 
 ## [v1.26.1] - 2023-08-09
 

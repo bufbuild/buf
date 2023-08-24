@@ -101,6 +101,9 @@ const (
 	// RepositoryServiceGetRepositoriesMetadataProcedure is the fully-qualified name of the
 	// RepositoryService's GetRepositoriesMetadata RPC.
 	RepositoryServiceGetRepositoriesMetadataProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesMetadata"
+	// RepositoryServiceGetRepositoryDependencyDOTStringProcedure is the fully-qualified name of the
+	// RepositoryService's GetRepositoryDependencyDOTString RPC.
+	RepositoryServiceGetRepositoryDependencyDOTStringProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryDependencyDOTString"
 )
 
 // RepositoryServiceClient is a client for the buf.alpha.registry.v1alpha1.RepositoryService
@@ -147,6 +150,8 @@ type RepositoryServiceClient interface {
 	// request should match the length of the metadata in the response, and the order of repositories in the response
 	// should match the order of the metadata in the request.
 	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
+	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
+	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
 }
 
 // NewRepositoryServiceClient constructs a client for the
@@ -264,29 +269,36 @@ func NewRepositoryServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+		getRepositoryDependencyDOTString: connect.NewClient[v1alpha1.GetRepositoryDependencyDOTStringRequest, v1alpha1.GetRepositoryDependencyDOTStringResponse](
+			httpClient,
+			baseURL+RepositoryServiceGetRepositoryDependencyDOTStringProcedure,
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // repositoryServiceClient implements RepositoryServiceClient.
 type repositoryServiceClient struct {
-	getRepository                  *connect.Client[v1alpha1.GetRepositoryRequest, v1alpha1.GetRepositoryResponse]
-	getRepositoryByFullName        *connect.Client[v1alpha1.GetRepositoryByFullNameRequest, v1alpha1.GetRepositoryByFullNameResponse]
-	listRepositories               *connect.Client[v1alpha1.ListRepositoriesRequest, v1alpha1.ListRepositoriesResponse]
-	listUserRepositories           *connect.Client[v1alpha1.ListUserRepositoriesRequest, v1alpha1.ListUserRepositoriesResponse]
-	listRepositoriesUserCanAccess  *connect.Client[v1alpha1.ListRepositoriesUserCanAccessRequest, v1alpha1.ListRepositoriesUserCanAccessResponse]
-	listOrganizationRepositories   *connect.Client[v1alpha1.ListOrganizationRepositoriesRequest, v1alpha1.ListOrganizationRepositoriesResponse]
-	createRepositoryByFullName     *connect.Client[v1alpha1.CreateRepositoryByFullNameRequest, v1alpha1.CreateRepositoryByFullNameResponse]
-	deleteRepository               *connect.Client[v1alpha1.DeleteRepositoryRequest, v1alpha1.DeleteRepositoryResponse]
-	deleteRepositoryByFullName     *connect.Client[v1alpha1.DeleteRepositoryByFullNameRequest, v1alpha1.DeleteRepositoryByFullNameResponse]
-	deprecateRepositoryByName      *connect.Client[v1alpha1.DeprecateRepositoryByNameRequest, v1alpha1.DeprecateRepositoryByNameResponse]
-	undeprecateRepositoryByName    *connect.Client[v1alpha1.UndeprecateRepositoryByNameRequest, v1alpha1.UndeprecateRepositoryByNameResponse]
-	getRepositoriesByFullName      *connect.Client[v1alpha1.GetRepositoriesByFullNameRequest, v1alpha1.GetRepositoriesByFullNameResponse]
-	setRepositoryContributor       *connect.Client[v1alpha1.SetRepositoryContributorRequest, v1alpha1.SetRepositoryContributorResponse]
-	listRepositoryContributors     *connect.Client[v1alpha1.ListRepositoryContributorsRequest, v1alpha1.ListRepositoryContributorsResponse]
-	getRepositoryContributor       *connect.Client[v1alpha1.GetRepositoryContributorRequest, v1alpha1.GetRepositoryContributorResponse]
-	getRepositorySettings          *connect.Client[v1alpha1.GetRepositorySettingsRequest, v1alpha1.GetRepositorySettingsResponse]
-	updateRepositorySettingsByName *connect.Client[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse]
-	getRepositoriesMetadata        *connect.Client[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse]
+	getRepository                    *connect.Client[v1alpha1.GetRepositoryRequest, v1alpha1.GetRepositoryResponse]
+	getRepositoryByFullName          *connect.Client[v1alpha1.GetRepositoryByFullNameRequest, v1alpha1.GetRepositoryByFullNameResponse]
+	listRepositories                 *connect.Client[v1alpha1.ListRepositoriesRequest, v1alpha1.ListRepositoriesResponse]
+	listUserRepositories             *connect.Client[v1alpha1.ListUserRepositoriesRequest, v1alpha1.ListUserRepositoriesResponse]
+	listRepositoriesUserCanAccess    *connect.Client[v1alpha1.ListRepositoriesUserCanAccessRequest, v1alpha1.ListRepositoriesUserCanAccessResponse]
+	listOrganizationRepositories     *connect.Client[v1alpha1.ListOrganizationRepositoriesRequest, v1alpha1.ListOrganizationRepositoriesResponse]
+	createRepositoryByFullName       *connect.Client[v1alpha1.CreateRepositoryByFullNameRequest, v1alpha1.CreateRepositoryByFullNameResponse]
+	deleteRepository                 *connect.Client[v1alpha1.DeleteRepositoryRequest, v1alpha1.DeleteRepositoryResponse]
+	deleteRepositoryByFullName       *connect.Client[v1alpha1.DeleteRepositoryByFullNameRequest, v1alpha1.DeleteRepositoryByFullNameResponse]
+	deprecateRepositoryByName        *connect.Client[v1alpha1.DeprecateRepositoryByNameRequest, v1alpha1.DeprecateRepositoryByNameResponse]
+	undeprecateRepositoryByName      *connect.Client[v1alpha1.UndeprecateRepositoryByNameRequest, v1alpha1.UndeprecateRepositoryByNameResponse]
+	getRepositoriesByFullName        *connect.Client[v1alpha1.GetRepositoriesByFullNameRequest, v1alpha1.GetRepositoriesByFullNameResponse]
+	setRepositoryContributor         *connect.Client[v1alpha1.SetRepositoryContributorRequest, v1alpha1.SetRepositoryContributorResponse]
+	listRepositoryContributors       *connect.Client[v1alpha1.ListRepositoryContributorsRequest, v1alpha1.ListRepositoryContributorsResponse]
+	getRepositoryContributor         *connect.Client[v1alpha1.GetRepositoryContributorRequest, v1alpha1.GetRepositoryContributorResponse]
+	getRepositorySettings            *connect.Client[v1alpha1.GetRepositorySettingsRequest, v1alpha1.GetRepositorySettingsResponse]
+	updateRepositorySettingsByName   *connect.Client[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse]
+	getRepositoriesMetadata          *connect.Client[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse]
+	getRepositoryDependencyDOTString *connect.Client[v1alpha1.GetRepositoryDependencyDOTStringRequest, v1alpha1.GetRepositoryDependencyDOTStringResponse]
 }
 
 // GetRepository calls buf.alpha.registry.v1alpha1.RepositoryService.GetRepository.
@@ -392,6 +404,12 @@ func (c *repositoryServiceClient) GetRepositoriesMetadata(ctx context.Context, r
 	return c.getRepositoriesMetadata.CallUnary(ctx, req)
 }
 
+// GetRepositoryDependencyDOTString calls
+// buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyDOTString.
+func (c *repositoryServiceClient) GetRepositoryDependencyDOTString(ctx context.Context, req *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error) {
+	return c.getRepositoryDependencyDOTString.CallUnary(ctx, req)
+}
+
 // RepositoryServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryService service.
 type RepositoryServiceHandler interface {
@@ -436,6 +454,8 @@ type RepositoryServiceHandler interface {
 	// request should match the length of the metadata in the response, and the order of repositories in the response
 	// should match the order of the metadata in the request.
 	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
+	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
+	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
 }
 
 // NewRepositoryServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -548,6 +568,12 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect.H
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+	repositoryServiceGetRepositoryDependencyDOTStringHandler := connect.NewUnaryHandler(
+		RepositoryServiceGetRepositoryDependencyDOTStringProcedure,
+		svc.GetRepositoryDependencyDOTString,
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/buf.alpha.registry.v1alpha1.RepositoryService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case RepositoryServiceGetRepositoryProcedure:
@@ -586,6 +612,8 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect.H
 			repositoryServiceUpdateRepositorySettingsByNameHandler.ServeHTTP(w, r)
 		case RepositoryServiceGetRepositoriesMetadataProcedure:
 			repositoryServiceGetRepositoriesMetadataHandler.ServeHTTP(w, r)
+		case RepositoryServiceGetRepositoryDependencyDOTStringProcedure:
+			repositoryServiceGetRepositoryDependencyDOTStringHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -665,4 +693,8 @@ func (UnimplementedRepositoryServiceHandler) UpdateRepositorySettingsByName(cont
 
 func (UnimplementedRepositoryServiceHandler) GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoriesMetadata is not implemented"))
+}
+
+func (UnimplementedRepositoryServiceHandler) GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyDOTString is not implemented"))
 }

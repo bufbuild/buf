@@ -156,17 +156,20 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	}); err != nil {
 		return fmt.Errorf("looping over repo remote branches: %w", err)
 	}
+	// sync default git branch, make sure it's present in the remote
+	defaultBranch := s.repo.DefaultBranch()
+	if _, isDefaultBranchPushedInRemote := allRemoteBranches[defaultBranch]; !isDefaultBranchPushedInRemote {
+		return fmt.Errorf("default branch %s is not present in 'origin' remote", defaultBranch)
+	}
+	s.branchesToModulesForSync[defaultBranch] = make(map[string]bufmoduleref.ModuleIdentity)
+	s.logger.Debug("default git branch", zap.String("name", defaultBranch))
 	if s.syncAllBranches {
-		// make sure the default branch is present in the branches to sync
-		defaultBranch := s.repo.DefaultBranch()
-		if _, isDefaultBranchPushedInRemote := allRemoteBranches[defaultBranch]; !isDefaultBranchPushedInRemote {
-			return fmt.Errorf("default branch %s is not present in 'origin' remote", defaultBranch)
-		}
+		// sync all remote branches
 		for remoteBranch := range allRemoteBranches {
 			s.branchesToModulesForSync[remoteBranch] = make(map[string]bufmoduleref.ModuleIdentity)
 		}
 	} else {
-		// only sync current branch, make sure it's present in the remote
+		// sync current branch, make sure it's present in the remote
 		currentBranch := s.repo.CurrentBranch()
 		if _, isCurrentBranchPushedInRemote := allRemoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
 			return fmt.Errorf("current branch %s is not present in 'origin' remote", currentBranch)

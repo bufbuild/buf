@@ -193,7 +193,7 @@ func run(
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
 			if _, err := container.Stderr().Write(
-				[]byte("The latest commit has the same content; not creating a new commit.\n"),
+				[]byte(fmt.Sprintf("%s\n", err.Error())),
 			); err != nil {
 				return err
 			}
