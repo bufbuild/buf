@@ -16,6 +16,7 @@ package buflint_test
 
 import (
 	"context"
+	"io"
 	"path/filepath"
 	"testing"
 	"time"
@@ -954,7 +955,7 @@ func TestCommentIgnoresCascadeOn(t *testing.T) {
 
 func TestValidateRulesTypeDontMatch(t *testing.T) {
 	t.Parallel()
-	testLint(t, "validate_rules_types_match_fail",
+	testLintWithValidate(t, "validate_rules_types_match_fail",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 23, 14, 61, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 25, 15, 63, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 23, 16, 62, "VALIDATE_CONSTRAINTS_CHECK"),
@@ -989,43 +990,43 @@ func TestValidateRulesTypeDontMatch(t *testing.T) {
 
 func TestValidateRulesTypeMatch(t *testing.T) {
 	t.Parallel()
-	testLint(t, "validate_rules_types_match_success")
+	testLintWithValidate(t, "validate_rules_types_match_success")
 }
 
 func TestValidateRulesTypesMatchUsageErrors(t *testing.T) {
 	t.Parallel()
-	testLint(t, "validate_rules_types_match_errors",
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 12, 28, 12, 61, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 29, 14, 63, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 29, 16, 62, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 30, 18, 64, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 20, 35, 20, 78, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 22, 29, 25, 6, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 27, 32, 27, 73, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 29, 32, 29, 73, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 31, 34, 31, 77, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 33, 41, 33, 80, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 35, 39, 35, 74, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 37, 39, 37, 74, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 39, 33, 39, 72, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 41, 44, 41, 119, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 43, 44, 46, 6, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 43, 44, 46, 6, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 48, 38, 48, 80, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 50, 34, 52, 6, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 57, 53, 60, 6, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 62, 48, 62, 89, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 64, 48, 64, 89, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 66, 50, 66, 93, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 69, 38, 69, 81, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 77, 52, 80, 6, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 82, 53, 86, 6, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 88, 58, 92, 6, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 95, 37, 99, 6, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 101, 38, 101, 78, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 103, 38, 103, 78, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 105, 40, 105, 82, "VALIDATE_CONSTRAINTS_CHECK"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 111, 38, 111, 76, "VALIDATE_CONSTRAINTS_CHECK"),
+	testLintWithValidate(t, "validate_rules_types_match_errors",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 5, 13, 38, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 5, 18, 39, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 5, 23, 38, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 5, 28, 39, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 32, 33, 32, 76, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 34, 27, 37, 4, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 40, 5, 40, 46, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 45, 5, 45, 46, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 50, 5, 50, 48, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 55, 5, 55, 44, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 60, 5, 60, 40, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 65, 5, 65, 40, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 70, 5, 70, 44, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 5, 75, 80, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 79, 42, 82, 4, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 79, 42, 82, 4, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 84, 36, 84, 78, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 86, 32, 86, 71, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 91, 51, 94, 4, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 97, 5, 97, 46, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 102, 5, 102, 46, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 107, 5, 107, 48, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 112, 36, 112, 79, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 118, 50, 121, 4, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 123, 51, 125, 4, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 127, 56, 129, 4, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 132, 35, 136, 4, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 139, 5, 139, 45, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 144, 5, 144, 45, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 149, 5, 149, 47, "VALIDATE_CONSTRAINTS_CHECK"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 164, 5, 164, 43, "VALIDATE_CONSTRAINTS_CHECK"),
 	)
 }
 
@@ -1040,6 +1041,117 @@ func testLint(
 		nil,
 		nil,
 		expectedFileAnnotations...,
+	)
+}
+
+func testLintWithValidate(
+	t *testing.T,
+	relDirPath string,
+	expectedFileAnnotations ...bufanalysis.FileAnnotation,
+) {
+	testLintWithValidateWithModifiers(
+		t,
+		relDirPath,
+		nil,
+		nil,
+		expectedFileAnnotations...,
+	)
+}
+
+func testLintWithValidateWithModifiers(
+	t *testing.T,
+	relDirPath string,
+	configModifier func(*bufconfig.Config),
+	imageModifier func(bufimage.Image) bufimage.Image,
+	expectedFileAnnotations ...bufanalysis.FileAnnotation,
+) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	logger := zap.NewNop()
+
+	dirPath := filepath.Join("testdata", relDirPath)
+
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		dirPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+
+	validateReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		"testdata",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+
+	// TODO: feels like a hack
+	// copy the testdata directory to a temporary directory
+	fn := func(objectInfo storage.ObjectInfo) error {
+		get, err := validateReadWriteBucket.Get(ctx, objectInfo.Path())
+		if err != nil {
+			return err
+		}
+		defer get.Close()
+		expectedData, err := io.ReadAll(get)
+		if err != nil {
+			return err
+		}
+		put, err := readWriteBucket.Put(ctx, objectInfo.Path())
+		if err != nil {
+			return err
+		}
+		defer put.Close()
+		_, err = put.Write(expectedData)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	if err := validateReadWriteBucket.Walk(ctx, "buf/", fn); err != nil {
+		require.NoError(t, err)
+	}
+	// delete the temporary directory
+	defer func() {
+		if err := readWriteBucket.DeleteAll(ctx, "buf/"); err != nil {
+			require.NoError(t, err)
+		}
+	}()
+
+	config := testGetConfig(t, readWriteBucket)
+	if configModifier != nil {
+		configModifier(config)
+	}
+
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+		context.Background(),
+		readWriteBucket,
+		config.Build,
+	)
+	require.NoError(t, err)
+	image, fileAnnotations, err := bufimagebuild.NewBuilder(
+		zap.NewNop(),
+		bufmodule.NewNopModuleReader(),
+	).Build(
+		ctx,
+		module,
+	)
+	require.NoError(t, err)
+	require.Empty(t, fileAnnotations)
+	if imageModifier != nil {
+		image = imageModifier(image)
+	}
+
+	handler := buflint.NewHandler(logger)
+	fileAnnotations, err = handler.Check(
+		ctx,
+		config.Lint,
+		image,
+	)
+	assert.NoError(t, err)
+	bufanalysistesting.AssertFileAnnotationsEqual(
+		t,
+		expectedFileAnnotations,
+		fileAnnotations,
 	)
 }
 
