@@ -57,6 +57,9 @@ func (s StabilityLevel) String() string {
 // v\d+, v\d+test.*, v\d+(alpha|beta)\d*, or v\d+p\d+(alpha|beta)\d*
 // where numbers are >=1.
 //
+// Packages must have at least two components, that is "package v1beta1"
+// does not have a package version, but "package foo.v1beta1" does.
+//
 // See https://cloud.google.com/apis/design/versioning#channel-based_versioning
 // See https://cloud.google.com/apis/design/versioning#release-based_versioning
 type PackageVersion interface {
@@ -87,4 +90,15 @@ type PackageVersion interface {
 // Returns false if the package has no package version per the specifications.
 func NewPackageVersionForPackage(pkg string) (PackageVersion, bool) {
 	return newPackageVersionForPackage(pkg)
+}
+
+// NewPackageVersionForCompoonent returns the PackageVersion for the package component.
+//
+// Returns false if the component is not a package version per the specifications.
+// That is, the component "v1beta1" will return true, while the component "foo" will return false.
+//
+// Also returns false if the input is not a component.
+// That is, the input "foo.bar" is not a component, this is a package.
+func NewPackageVersionForComponent(component string) (PackageVersion, bool) {
+	return newPackageVersionForComponent(component)
 }
