@@ -33,7 +33,7 @@ var (
 	httpHeaderValue = "^[^\u0000-\u0008\u000A-\u001F\u007F]*$"
 	headerString    = "^[^\u0000\u000A\u000D]*$" // For non-strict validation.
 	// Map from well-known regex to a regex pattern.
-	regex_map = map[string]*string{
+	regexMap = map[string]*string{
 		"UNKNOWN":           &unknown,
 		"HTTP_HEADER_NAME":  &httpHeaderName,
 		"HTTP_HEADER_VALUE": &httpHeaderValue,
@@ -139,7 +139,7 @@ func (m *validateField) assertFieldTypeMatches(pt descriptorpb.FieldDescriptorPr
 	}
 
 	expr := m.field.Type() == pt
-	m.assert(
+	m.assertf(
 		expr,
 		"expected rules for %s but got %s",
 		m.field.Type(),
@@ -149,12 +149,12 @@ func (m *validateField) assertFieldTypeMatches(pt descriptorpb.FieldDescriptorPr
 
 // checkIns asserts that the given `in` and `not_in` rules are valid.
 func (m *validateField) checkIns(in, notIn int) {
-	m.assert(in == 0 || notIn == 0,
+	m.assertf(in == 0 || notIn == 0,
 		"cannot have both `in` and `not_in` rules on the same field")
 }
 
-// assert asserts that the given expression is true and adds an error if not.
-func (m *validateField) assert(expr bool, format string, v ...interface{}) {
+// assertf asserts that the given expression is true and adds an error if not.
+func (m *validateField) assertf(expr bool, format string, v ...interface{}) {
 	if !expr {
 		m.module.add(m.field, m.location, nil, format, v...)
 	}
@@ -172,19 +172,19 @@ func (m *validateField) validateStringField(r *validate.StringRules) {
 
 	if r.MaxLen != nil {
 		max := int(r.GetMaxLen())
-		m.assert(utf8.RuneCountInString(r.GetPrefix()) <= max, "`prefix` length exceeds the `max_len`")
-		m.assert(utf8.RuneCountInString(r.GetSuffix()) <= max, "`suffix` length exceeds the `max_len`")
-		m.assert(utf8.RuneCountInString(r.GetContains()) <= max, "`contains` length exceeds the `max_len`")
+		m.assertf(utf8.RuneCountInString(r.GetPrefix()) <= max, "`prefix` length exceeds the `max_len`")
+		m.assertf(utf8.RuneCountInString(r.GetSuffix()) <= max, "`suffix` length exceeds the `max_len`")
+		m.assertf(utf8.RuneCountInString(r.GetContains()) <= max, "`contains` length exceeds the `max_len`")
 
-		m.assert(r.MaxBytes == nil || r.GetMaxBytes() >= r.GetMaxLen(),
+		m.assertf(r.MaxBytes == nil || r.GetMaxBytes() >= r.GetMaxLen(),
 			"`max_len` cannot exceed `max_bytes`")
 	}
 
 	if r.MaxBytes != nil {
 		max := int(r.GetMaxBytes())
-		m.assert(len(r.GetPrefix()) <= max, "`prefix` length exceeds the `max_bytes`")
-		m.assert(len(r.GetSuffix()) <= max, "`suffix` length exceeds the `max_bytes`")
-		m.assert(len(r.GetContains()) <= max, "`contains` length exceeds the `max_bytes`")
+		m.assertf(len(r.GetPrefix()) <= max, "`prefix` length exceeds the `max_bytes`")
+		m.assertf(len(r.GetSuffix()) <= max, "`suffix` length exceeds the `max_bytes`")
+		m.assertf(len(r.GetContains()) <= max, "`contains` length exceeds the `max_bytes`")
 	}
 }
 
@@ -206,7 +206,7 @@ func (m *validateField) validateEnumField(r *validate.EnumRules) {
 
 		for _, in := range r.In {
 			_, ok := vals[int(in)]
-			m.assert(ok, "undefined `in` value (%d) conflicts with `defined_only` rule", in)
+			m.assertf(ok, "undefined `in` value (%d) conflicts with `defined_only` rule", in)
 		}
 	}
 }
@@ -219,15 +219,15 @@ func (m *validateField) validateBytesField(r *validate.BytesRules) {
 
 	if r.MaxLen != nil {
 		max := int(r.GetMaxLen())
-		m.assert(len(r.GetPrefix()) <= max, "`prefix` length exceeds the `max_len`")
-		m.assert(len(r.GetSuffix()) <= max, "`suffix` length exceeds the `max_len`")
-		m.assert(len(r.GetContains()) <= max, "`contains` length exceeds the `max_len`")
+		m.assertf(len(r.GetPrefix()) <= max, "`prefix` length exceeds the `max_len`")
+		m.assertf(len(r.GetSuffix()) <= max, "`suffix` length exceeds the `max_len`")
+		m.assertf(len(r.GetContains()) <= max, "`contains` length exceeds the `max_len`")
 	}
 }
 
 // validateRepeatedField validates the repeated rules.
 func (m *validateField) validateRepeatedField(r *validate.RepeatedRules) {
-	m.assert(
+	m.assertf(
 		m.field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED && !m.field.IsMap(),
 		"field is not repeated but got repeated rules",
 	)
@@ -235,7 +235,7 @@ func (m *validateField) validateRepeatedField(r *validate.RepeatedRules) {
 	m.checkMinMax(r.MinItems, r.MaxItems)
 
 	if r.GetUnique() {
-		m.assert(m.field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
+		m.assertf(m.field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
 			"unique rule is only applicable for scalar types")
 	}
 
@@ -244,7 +244,7 @@ func (m *validateField) validateRepeatedField(r *validate.RepeatedRules) {
 
 // validateMapField validates the map rules.
 func (m *validateField) validateMapField(r *validate.MapRules) {
-	m.assert(
+	m.assertf(
 		m.field.IsMap(),
 		"field is not a map but got map rules",
 	)
@@ -272,12 +272,12 @@ func (m *validateField) validateDurationField(r *validate.DurationRules) {
 		m.checkDur(r.GetGte()))
 
 	for _, v := range r.GetIn() {
-		m.assert(v != nil, "cannot have nil values in `in`")
+		m.assertf(v != nil, "cannot have nil values in `in`")
 		m.checkDur(v)
 	}
 
 	for _, v := range r.GetNotIn() {
-		m.assert(v != nil, "cannot have nil values in `not_in`")
+		m.assertf(v != nil, "cannot have nil values in `not_in`")
 		m.checkDur(v)
 	}
 }
@@ -291,30 +291,30 @@ func (m *validateField) validateTimestampField(r *validate.TimestampRules) {
 		m.checkTS(r.GetGt()),
 		m.checkTS(r.GetGte()))
 
-	m.assert((r.LtNow == nil && r.GtNow == nil) || (r.Lt == nil && r.Lte == nil && r.Gt == nil && r.Gte == nil),
+	m.assertf((r.LtNow == nil && r.GtNow == nil) || (r.Lt == nil && r.Lte == nil && r.Gt == nil && r.Gte == nil),
 		"`now` rules cannot be mixed with absolute `lt/gt` rules")
 
-	m.assert(r.Within == nil || (r.Lt == nil && r.Lte == nil && r.Gt == nil && r.Gte == nil),
+	m.assertf(r.Within == nil || (r.Lt == nil && r.Lte == nil && r.Gt == nil && r.Gte == nil),
 		"`within` rule cannot be used with absolute `lt/gt` rules")
 
-	m.assert(r.LtNow == nil || r.GtNow == nil,
+	m.assertf(r.LtNow == nil || r.GtNow == nil,
 		"both `now` rules cannot be used together")
 
 	dur := m.checkDur(r.Within)
-	m.assert(dur == nil || *dur > 0,
+	m.assertf(dur == nil || *dur > 0,
 		"`within` rule must be positive and non-zero")
 }
 
 // checkLen checks that the `len` rule is not used with `min_len` or `max_len`
-func (m *validateField) checkLen(len, min, max *uint64) {
-	if len == nil {
+func (m *validateField) checkLen(length, min, max *uint64) {
+	if length == nil {
 		return
 	}
 
-	m.assert(min == nil,
+	m.assertf(min == nil,
 		"cannot have both `len` and `min_len` rules on the same field")
 
-	m.assert(max == nil,
+	m.assertf(max == nil,
 		"cannot have both `len` and `max_len` rules on the same field")
 }
 
@@ -324,20 +324,20 @@ func (m *validateField) checkMinMax(min, max *uint64) {
 		return
 	}
 
-	m.assert(*min <= *max,
+	m.assertf(*min <= *max,
 		"`min` value is greater than `max` value")
 }
 
 // checkWellKnownRegex checks that the `well_known_regex` rule is used correctly
 func (m *validateField) checkWellKnownRegex(wk validate.KnownRegex, r *validate.StringRules) {
 	if wk != 0 {
-		m.assert(r.Pattern == nil, "regex `well_known_regex` and regex `pattern` are incompatible")
-		non_strict := r.Strict != nil && !*r.Strict
-		if (wk.String() == "HTTP_HEADER_NAME" || wk.String() == "HTTP_HEADER_VALUE") && non_strict {
+		m.assertf(r.Pattern == nil, "regex `well_known_regex` and regex `pattern` are incompatible")
+		nonStrict := r.Strict != nil && !*r.Strict
+		if (wk.String() == "HTTP_HEADER_NAME" || wk.String() == "HTTP_HEADER_VALUE") && nonStrict {
 			// Use non-strict header validation.
-			r.Pattern = regex_map["HEADER_STRING"]
+			r.Pattern = regexMap["HEADER_STRING"]
 		} else {
-			r.Pattern = regex_map[wk.String()]
+			r.Pattern = regexMap[wk.String()]
 		}
 	}
 }
@@ -345,9 +345,9 @@ func (m *validateField) checkWellKnownRegex(wk validate.KnownRegex, r *validate.
 // checkPattern checks that the `pattern` rule is used correctly
 func (m *validateField) checkPattern(p *string, in int) {
 	if p != nil {
-		m.assert(in == 0, "regex `pattern` and `in` rules are incompatible")
+		m.assertf(in == 0, "regex `pattern` and `in` rules are incompatible")
 		_, err := regexp.Compile(*p)
-		m.assert(err != nil, "unable to parse regex `pattern`")
+		m.assertf(err != nil, "unable to parse regex `pattern`")
 	}
 }
 
@@ -358,7 +358,7 @@ func (m *validateField) checkDur(d *durationpb.Duration) *time.Duration {
 	}
 
 	dur, err := d.AsDuration(), d.CheckValid()
-	m.assert(err == nil, "could not resolve duration")
+	m.assertf(err == nil, "could not resolve duration")
 	return &dur
 }
 
@@ -369,11 +369,11 @@ func (m *validateField) checkTS(ts *timestamppb.Timestamp) *int64 {
 	}
 
 	t, err := ts.AsTime(), ts.CheckValid()
-	m.assert(err == nil, "could not resolve timestamp")
+	m.assertf(err == nil, "could not resolve timestamp")
 	return proto.Int64(t.UnixNano())
 }
 
 // validateNoCustomRulesApplied asserts that the given custom rules are not used.
 func (m *validateField) validateNoCustomRulesApplied(r *validate.FieldConstraints) {
-	m.assert(len(r.GetCel()) == 0, "custom rules are not supported for this field type")
+	m.assertf(len(r.GetCel()) == 0, "custom rules are not supported for this field type")
 }

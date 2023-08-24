@@ -72,9 +72,7 @@ var lookupTable = map[string]WellKnownType{
 // LookupWellKnownType returns the WellKnownType related to the provided Name. If the
 // name is not recognized, UnknownWKT is returned.
 func LookupWellKnownType(in string) WellKnownType {
-	if strings.HasPrefix(in, WellKnownTypePackage) {
-		in = strings.TrimPrefix(in, WellKnownTypePackage)
-	}
+	in = strings.TrimPrefix(in, WellKnownTypePackage)
 	if wellKnownType, ok := lookupTable[in]; ok {
 		return wellKnownType
 	}
