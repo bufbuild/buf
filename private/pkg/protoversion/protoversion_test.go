@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewPackageVersionForPackage(t *testing.T) {
@@ -82,6 +83,15 @@ func TestNewPackageVersionForPackage(t *testing.T) {
 	testNewPackageVersionForPackage(t, nil, false, "foo.bar.v1aalpha1")
 	testNewPackageVersionForPackage(t, nil, false, "foo.bar.v1p1test")
 	testNewPackageVersionForPackage(t, nil, false, "foo.bar.v1p1testfoo")
+	testNewPackageVersionForPackage(t, newPackageVersion(0, StabilityLevelStable, 0, 0, ""), true, "foo.bar.v0", WithAllowV0())
+	testNewPackageVersionForPackage(t, newPackageVersion(0, StabilityLevelAlpha, 1, 0, ""), true, "foo.bar.v0alpha1", WithAllowV0())
+	testNewPackageVersionForPackage(t, newPackageVersion(0, StabilityLevelBeta, 1, 0, ""), true, "foo.bar.v0beta1", WithAllowV0())
+	testNewPackageVersionForPackage(t, newPackageVersion(0, StabilityLevelTest, 0, 0, ""), true, "foo.bar.v0test", WithAllowV0())
+	testNewPackageVersionForPackage(t, newPackageVersion(0, StabilityLevelTest, 0, 0, "foo"), true, "foo.bar.v0testfoo", WithAllowV0())
+	testNewPackageVersionForPackage(t, nil, false, "foo.bar.v1alpha0", WithAllowV0())
+	testNewPackageVersionForPackage(t, nil, false, "foo.bar.v1beta0", WithAllowV0())
+	testNewPackageVersionForPackage(t, nil, false, "foo.bar.v1p0alpha1", WithAllowV0())
+	testNewPackageVersionForPackage(t, nil, false, "foo.bar.v1p0beta1", WithAllowV0())
 }
 
 func TestNewPackageVersionForComponent(t *testing.T) {
@@ -126,8 +136,6 @@ func TestNewPackageVersionForComponent(t *testing.T) {
 	testNewPackageVersionForComponent(t, nil, false, "v1beta0")
 	testNewPackageVersionForComponent(t, nil, false, "v1p1alpha0")
 	testNewPackageVersionForComponent(t, nil, false, "v1p1beta0")
-	testNewPackageVersionForComponent(t, nil, false, "v1p0alpha1")
-	testNewPackageVersionForComponent(t, nil, false, "v1p0beta1")
 	testNewPackageVersionForComponent(t, nil, false, "vv1")
 	testNewPackageVersionForComponent(t, nil, false, "vv1alpha1")
 	testNewPackageVersionForComponent(t, nil, false, "vv1alpha2")
@@ -142,12 +150,22 @@ func TestNewPackageVersionForComponent(t *testing.T) {
 	testNewPackageVersionForComponent(t, nil, false, "v1aalpha1")
 	testNewPackageVersionForComponent(t, nil, false, "v1p1test")
 	testNewPackageVersionForComponent(t, nil, false, "v1p1testfoo")
+	testNewPackageVersionForComponent(t, newPackageVersion(0, StabilityLevelStable, 0, 0, ""), true, "v0", WithAllowV0())
+	testNewPackageVersionForComponent(t, newPackageVersion(0, StabilityLevelAlpha, 1, 0, ""), true, "v0alpha1", WithAllowV0())
+	testNewPackageVersionForComponent(t, newPackageVersion(0, StabilityLevelBeta, 1, 0, ""), true, "v0beta1", WithAllowV0())
+	testNewPackageVersionForComponent(t, newPackageVersion(0, StabilityLevelTest, 0, 0, ""), true, "v0test", WithAllowV0())
+	testNewPackageVersionForComponent(t, newPackageVersion(0, StabilityLevelTest, 0, 0, "foo"), true, "v0testfoo", WithAllowV0())
+	testNewPackageVersionForComponent(t, nil, false, "v1alpha0", WithAllowV0())
+	testNewPackageVersionForComponent(t, nil, false, "v1beta0", WithAllowV0())
+	testNewPackageVersionForComponent(t, nil, false, "v1p0alpha1", WithAllowV0())
+	testNewPackageVersionForComponent(t, nil, false, "v1p0beta1", WithAllowV0())
 }
 
-func testNewPackageVersionForPackage(t *testing.T, expectedPackageVersion PackageVersion, expectedOK bool, pkg string) {
-	packageVersion, ok := NewPackageVersionForPackage(pkg)
+func testNewPackageVersionForPackage(t *testing.T, expectedPackageVersion PackageVersion, expectedOK bool, pkg string, options ...PackageVersionOption) {
+	packageVersion, ok := NewPackageVersionForPackage(pkg, options...)
 	assert.Equal(t, expectedOK, ok, pkg)
 	if expectedOK {
+		require.NotNil(t, packageVersion)
 		assert.Equal(t, expectedPackageVersion, packageVersion, pkg)
 		split := strings.Split(pkg, ".")
 		assert.Equal(t, split[len(split)-1], packageVersion.String(), pkg)
@@ -156,8 +174,8 @@ func testNewPackageVersionForPackage(t *testing.T, expectedPackageVersion Packag
 	}
 }
 
-func testNewPackageVersionForComponent(t *testing.T, expectedPackageVersion PackageVersion, expectedOK bool, component string) {
-	packageVersion, ok := NewPackageVersionForComponent(component)
+func testNewPackageVersionForComponent(t *testing.T, expectedPackageVersion PackageVersion, expectedOK bool, component string, options ...PackageVersionOption) {
+	packageVersion, ok := NewPackageVersionForComponent(component, options...)
 	assert.Equal(t, expectedOK, ok, component)
 	if expectedOK {
 		assert.Equal(t, expectedPackageVersion, packageVersion, component)
