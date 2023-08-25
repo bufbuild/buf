@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPackageHasPackageVersion(t *testing.T) {
+func TestNewPackageVersionForPackage(t *testing.T) {
 	t.Parallel()
 	// note we allow this in the linter as we check this in PACKAGE_DEFINED
 	// however, for the purposes of packageHasPackageVersion, this does not
@@ -84,6 +84,66 @@ func TestPackageHasPackageVersion(t *testing.T) {
 	testNewPackageVersionForPackage(t, nil, false, "foo.bar.v1p1testfoo")
 }
 
+func TestNewPackageVersionForComponent(t *testing.T) {
+	t.Parallel()
+	// note we allow this in the linter as we check this in PACKAGE_DEFINED
+	// however, for the purposes of packageHasPackageVersion, this does not
+	testNewPackageVersionForComponent(t, nil, false, "")
+	testNewPackageVersionForComponent(t, nil, false, "foo")
+	testNewPackageVersionForComponent(t, nil, false, "foo.bar")
+	testNewPackageVersionForComponent(t, nil, false, "v1.bar")
+	testNewPackageVersionForComponent(t, nil, false, "foo.v1")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelStable, 0, 0, ""), true, "v1")
+	testNewPackageVersionForComponent(t, newPackageVersion(2, StabilityLevelStable, 0, 0, ""), true, "v2")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelAlpha, 1, 0, ""), true, "v1alpha1")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelAlpha, 2, 0, ""), true, "v1alpha2")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelBeta, 1, 0, ""), true, "v1beta1")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelBeta, 2, 0, ""), true, "v1beta2")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelAlpha, 1, 1, ""), true, "v1p1alpha1")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelAlpha, 2, 1, ""), true, "v1p1alpha2")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelBeta, 1, 1, ""), true, "v1p1beta1")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelBeta, 2, 1, ""), true, "v1p1beta2")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelTest, 0, 0, ""), true, "v1test")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelTest, 0, 0, "foo"), true, "v1testfoo")
+	testNewPackageVersionForComponent(t, newPackageVersion(4, StabilityLevelTest, 0, 0, ""), true, "v4test")
+	testNewPackageVersionForComponent(t, newPackageVersion(4, StabilityLevelTest, 0, 0, "foo"), true, "v4testfoo")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelAlpha, 0, 0, ""), true, "v1alpha")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelAlpha, 0, 1, ""), true, "v1p1alpha")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelBeta, 0, 0, ""), true, "v1beta")
+	testNewPackageVersionForComponent(t, newPackageVersion(1, StabilityLevelBeta, 0, 1, ""), true, "v1p1beta")
+	testNewPackageVersionForComponent(t, nil, false, "v0")
+	testNewPackageVersionForComponent(t, nil, false, "v0alpha1")
+	testNewPackageVersionForComponent(t, nil, false, "v0alpha2")
+	testNewPackageVersionForComponent(t, nil, false, "v0beta1")
+	testNewPackageVersionForComponent(t, nil, false, "v0beta2")
+	testNewPackageVersionForComponent(t, nil, false, "v0p1alpha1")
+	testNewPackageVersionForComponent(t, nil, false, "v0p1alpha2")
+	testNewPackageVersionForComponent(t, nil, false, "v0p1beta1")
+	testNewPackageVersionForComponent(t, nil, false, "v0p1beta2")
+	testNewPackageVersionForComponent(t, nil, false, "v0test")
+	testNewPackageVersionForComponent(t, nil, false, "v0testfoo")
+	testNewPackageVersionForComponent(t, nil, false, "v1alpha0")
+	testNewPackageVersionForComponent(t, nil, false, "v1beta0")
+	testNewPackageVersionForComponent(t, nil, false, "v1p1alpha0")
+	testNewPackageVersionForComponent(t, nil, false, "v1p1beta0")
+	testNewPackageVersionForComponent(t, nil, false, "v1p0alpha1")
+	testNewPackageVersionForComponent(t, nil, false, "v1p0beta1")
+	testNewPackageVersionForComponent(t, nil, false, "vv1")
+	testNewPackageVersionForComponent(t, nil, false, "vv1alpha1")
+	testNewPackageVersionForComponent(t, nil, false, "vv1alpha2")
+	testNewPackageVersionForComponent(t, nil, false, "vv1beta1")
+	testNewPackageVersionForComponent(t, nil, false, "vv1beta2")
+	testNewPackageVersionForComponent(t, nil, false, "vv1p1alpha1")
+	testNewPackageVersionForComponent(t, nil, false, "vv1p1alpha2")
+	testNewPackageVersionForComponent(t, nil, false, "vv1p1beta1")
+	testNewPackageVersionForComponent(t, nil, false, "vv1p1beta2")
+	testNewPackageVersionForComponent(t, nil, false, "vv1test")
+	testNewPackageVersionForComponent(t, nil, false, "vv1testfoo")
+	testNewPackageVersionForComponent(t, nil, false, "v1aalpha1")
+	testNewPackageVersionForComponent(t, nil, false, "v1p1test")
+	testNewPackageVersionForComponent(t, nil, false, "v1p1testfoo")
+}
+
 func testNewPackageVersionForPackage(t *testing.T, expectedPackageVersion PackageVersion, expectedOK bool, pkg string) {
 	packageVersion, ok := NewPackageVersionForPackage(pkg)
 	assert.Equal(t, expectedOK, ok, pkg)
@@ -91,6 +151,17 @@ func testNewPackageVersionForPackage(t *testing.T, expectedPackageVersion Packag
 		assert.Equal(t, expectedPackageVersion, packageVersion, pkg)
 		split := strings.Split(pkg, ".")
 		assert.Equal(t, split[len(split)-1], packageVersion.String(), pkg)
+	} else {
+		assert.Nil(t, packageVersion)
+	}
+}
+
+func testNewPackageVersionForComponent(t *testing.T, expectedPackageVersion PackageVersion, expectedOK bool, component string) {
+	packageVersion, ok := NewPackageVersionForComponent(component)
+	assert.Equal(t, expectedOK, ok, component)
+	if expectedOK {
+		assert.Equal(t, expectedPackageVersion, packageVersion, component)
+		assert.Equal(t, component, packageVersion.String(), component)
 	} else {
 		assert.Nil(t, packageVersion)
 	}
