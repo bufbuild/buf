@@ -4,4 +4,3 @@ lint:
     - VALIDATE_CONSTRAINTS_CHECK
   ignore:
     - buf
-
