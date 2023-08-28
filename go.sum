@@ -1,5 +1,5 @@
-connectrpc.com/connect v1.11.0 h1:Av2KQXxSaX4vjqhf5Cl01SX4dqYADQ38eBtr84JSUBk=
-connectrpc.com/connect v1.11.0/go.mod h1:3AGaO6RRGMx5IKFfqbe3hvK1NqLosFNP2BxDYTPmNPo=
+connectrpc.com/connect v1.11.1 h1:dqRwblixqkVh+OFBOOL1yIf1jS/yP0MSJLijRj29bFg=
+connectrpc.com/connect v1.11.1/go.mod h1:3AGaO6RRGMx5IKFfqbe3hvK1NqLosFNP2BxDYTPmNPo=
 connectrpc.com/otelconnect v0.5.0 h1:K7xQKFbgeaHx563B+IIbd1EJe856AanueIYtGEtdnH8=
 connectrpc.com/otelconnect v0.5.0/go.mod h1:cjBMmtJmTokg4/k/3iDjLOjfNVM4qSVfIWz/qWQ8FNw=
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25UVaW/CKtUDjefjrs0SPonmDGUVOYP0=

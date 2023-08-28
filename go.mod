@@ -3,7 +3,7 @@ module github.com/bufbuild/buf
 go 1.19
 
 require (
-	connectrpc.com/connect v1.11.0
+	connectrpc.com/connect v1.11.1
 	connectrpc.com/otelconnect v0.5.0
 	github.com/bufbuild/protocompile v0.6.0
 	github.com/docker/docker v24.0.5+incompatible
