@@ -3,7 +3,7 @@ module github.com/bufbuild/buf
 go 1.19
 
 require (
-	connectrpc.com/connect v1.11.0
+	connectrpc.com/connect v1.11.1
 	connectrpc.com/otelconnect v0.5.0
 	github.com/bufbuild/protocompile v0.6.0
 	github.com/docker/docker v24.0.5+incompatible
@@ -12,8 +12,8 @@ require (
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-containerregistry v0.16.1
-	github.com/jdxcode/netrc v0.0.0-20221124155335-4616370d1a84
-	github.com/jhump/protoreflect v1.15.1
+	github.com/jdx/go-netrc v1.0.0
+	github.com/jhump/protoreflect v1.15.2
 	github.com/klauspost/compress v1.16.7
 	github.com/klauspost/pgzip v1.2.6
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
@@ -22,7 +22,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
-	github.com/tetratelabs/wazero v1.4.0
+	github.com/tetratelabs/wazero v1.5.0
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/sdk v1.16.0
 	go.opentelemetry.io/otel/trace v1.16.0
@@ -30,12 +30,12 @@ require (
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.25.0
 	golang.org/x/crypto v0.12.0
-	golang.org/x/exp v0.0.0-20230811145659-89c5cff77bcb
+	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
 	golang.org/x/mod v0.12.0
 	golang.org/x/net v0.14.0
 	golang.org/x/sync v0.3.0
 	golang.org/x/term v0.11.0
-	golang.org/x/tools v0.12.0
+	golang.org/x/tools v0.12.1-0.20230815132531-74c255bcf846
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -57,7 +57,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/pprof v0.0.0-20230808223545-4887780b67fb // indirect
+	github.com/google/pprof v0.0.0-20230821062121-407c9e7a662f // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
