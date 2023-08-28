@@ -16,7 +16,6 @@ package buflint_test
 
 import (
 	"context"
-	"io"
 	"path/filepath"
 	"testing"
 	"time"
@@ -460,22 +459,30 @@ func TestRunPackageLowerSnakeCase(t *testing.T) {
 
 func TestRunPackageNoImportCycle(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(t, "package_no_import_cycle", nil, func(image bufimage.Image) bufimage.Image {
-		// Testing that import cycles are still detected via imports, but are
-		// not reported for imports, only for non-imports.
-		var newImageFiles []bufimage.ImageFile
-		for _, imageFile := range image.Files() {
-			if imageFile.FileDescriptor().GetPackage() == "b" {
-				newImageFiles = append(newImageFiles, imageFile.ImageFileWithIsImport(true))
-			} else {
-				require.False(t, imageFile.IsImport())
-				newImageFiles = append(newImageFiles, imageFile)
+	testLintWithModifiers(
+		t,
+		"package_no_import_cycle",
+		nil,
+		func(image bufimage.Image) bufimage.Image {
+			// Testing that import cycles are still detected via imports, but are
+			// not reported for imports, only for non-imports.
+			var newImageFiles []bufimage.ImageFile
+			for _, imageFile := range image.Files() {
+				if imageFile.FileDescriptor().GetPackage() == "b" {
+					newImageFiles = append(newImageFiles, imageFile.ImageFileWithIsImport(true))
+				} else {
+					require.False(t, imageFile.IsImport())
+					newImageFiles = append(newImageFiles, imageFile)
+				}
 			}
-		}
-		newImage, err := bufimage.NewImage(newImageFiles)
-		require.NoError(t, err)
-		return newImage
-	}, "", bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"), bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"))
+			newImage, err := bufimage.NewImage(newImageFiles)
+			require.NoError(t, err)
+			return newImage
+		},
+		"",
+		bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
+		bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
+	)
 }
 
 func TestRunPackageSameDirectory(t *testing.T) {
@@ -883,9 +890,15 @@ func TestCommentIgnoresOff(t *testing.T) {
 
 func TestCommentIgnoresOn(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(t, "comment_ignores", func(config *bufconfig.Config) {
-		config.Lint.AllowCommentIgnores = true
-	}, nil, "")
+	testLintWithModifiers(
+		t,
+		"comment_ignores",
+		func(config *bufconfig.Config) {
+			config.Lint.AllowCommentIgnores = true
+		},
+		nil,
+		"",
+	)
 }
 
 func TestCommentIgnoresCascadeOff(t *testing.T) {
@@ -936,9 +949,11 @@ func TestCommentIgnoresCascadeOn(t *testing.T) {
 	}, nil, "")
 }
 
-func TestValidateRulesTypeDontMatch(t *testing.T) {
+func TestValidateRulesTypesDontMatch(t *testing.T) {
 	t.Parallel()
-	testLintWithValidate(t, "validate_rules_types_match_fail",
+	testLintWithValidate(
+		t,
+		"validate_rules_types_dont_match",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 23, 14, 61, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 25, 15, 63, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 23, 16, 62, "VALIDATE_CONSTRAINTS_CHECK"),
@@ -971,14 +986,19 @@ func TestValidateRulesTypeDontMatch(t *testing.T) {
 	)
 }
 
-func TestValidateRulesTypeMatch(t *testing.T) {
+func TestValidateRulesTypesMatchSuccess(t *testing.T) {
 	t.Parallel()
-	testLintWithValidate(t, "validate_rules_types_match_success")
+	testLintWithValidate(
+		t,
+		"validate_rules_types_match_success",
+	)
 }
 
-func TestValidateRulesTypesMatchUsageErrors(t *testing.T) {
+func TestValidateRulesIncompatibleUsageErrors(t *testing.T) {
 	t.Parallel()
-	testLintWithValidate(t, "validate_rules_types_match_errors",
+	testLintWithValidate(
+		t,
+		"validate_rules_incompatible_usage_errors",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 5, 13, 38, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 5, 18, 39, "VALIDATE_CONSTRAINTS_CHECK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 5, 23, 38, "VALIDATE_CONSTRAINTS_CHECK"),
@@ -1038,7 +1058,7 @@ func testLintWithValidate(
 		relDirPath,
 		nil,
 		nil,
-		"buf",
+		"deps/protovalidate",
 		expectedFileAnnotations...,
 	)
 }
@@ -1064,59 +1084,33 @@ func testLintWithModifiers(
 	)
 	require.NoError(t, err)
 
-	var validateReadWriteBucket storage.ReadWriteBucket
-	if dependencyPathPrefix != "" {
-		validateReadWriteBucket, err = storageosProvider.NewReadWriteBucket(
-			"testdata",
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		)
-		require.NoError(t, err)
-
-		// Copy the testdata directory to a temporary directory
-		fn := func(objectInfo storage.ObjectInfo) error {
-			get, err := validateReadWriteBucket.Get(ctx, objectInfo.Path())
-			if err != nil {
-				return err
-			}
-			defer get.Close()
-			expectedData, err := io.ReadAll(get)
-			if err != nil {
-				return err
-			}
-			put, err := readWriteBucket.Put(ctx, objectInfo.Path())
-			if err != nil {
-				return err
-			}
-			defer put.Close()
-			_, err = put.Write(expectedData)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		if err := validateReadWriteBucket.Walk(ctx, dependencyPathPrefix, fn); err != nil {
-			require.NoError(t, err)
-		}
-
-		// Delete the temporary directory
-		defer func() {
-			if err := readWriteBucket.DeleteAll(ctx, dependencyPathPrefix); err != nil {
-				require.NoError(t, err)
-			}
-		}()
-	}
-
 	config := testGetConfig(t, readWriteBucket)
 	if configModifier != nil {
 		configModifier(config)
 	}
 
-	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		context.Background(),
-		readWriteBucket,
-		config.Build,
-	)
-	require.NoError(t, err)
+	var module *bufmodulebuild.BuiltModule
+	if dependencyPathPrefix != "" {
+		dependencyReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
+			filepath.Join("testdata", dependencyPathPrefix),
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		require.NoError(t, err)
+		module, err = bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+			context.Background(),
+			storage.MultiReadBucket(dependencyReadWriteBucket, readWriteBucket),
+			config.Build,
+		)
+		require.NoError(t, err)
+	} else {
+		module, err = bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+			context.Background(),
+			readWriteBucket,
+			config.Build,
+		)
+		require.NoError(t, err)
+	}
+
 	image, fileAnnotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
 		bufmodule.NewNopModuleReader(),

@@ -20,13 +20,13 @@ package buflintcheck
 import (
 	"errors"
 	"fmt"
-	"github.com/bufbuild/buf/private/gen/proto/go/buf/validate"
 	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintvalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+	"github.com/bufbuild/buf/private/gen/proto/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
