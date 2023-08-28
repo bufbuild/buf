@@ -36,7 +36,7 @@ BUF_BREAKING_INPUT := .
 BUF_BREAKING_AGAINST_INPUT ?= .git\#branch=main
 BUF_FORMAT_INPUT := .
 
-PROTOVALIDATE_VERSION?=v0.2.8
+PROTOVALIDATE_VERSION := v0.2.8
 
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk
@@ -101,30 +101,32 @@ bufgeneratedeps:: \
 bufgeneratecleango:
 	rm -rf private/gen/proto
 
-bufgenerateclean:: bufgeneratecleango
+.PHONY: bufgeneratecleanprotovalidatetestdata
+bufgeneratecleanprotovalidatetestdata:
+	rm -rf private/bufpkg/bufcheck/buflint/testdata/deps/protovalidate
+
+bufgenerateclean:: \
+	bufgeneratecleango \
+	bufgeneratecleanprotovalidatetestdata
 
 .PHONY: bufgenerateprotogo
 bufgenerateprotogo:
 	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
 	$(BUF_BIN) generate buf.build/grpc/grpc --type grpc.reflection.v1.ServerReflection --template data/template/buf.go.gen.yaml
+	$(BUF_BIN) generate buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --template data/template/buf.go.gen.yaml
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
 	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
 
-bufgenerateprotovalidatego: bufexportprotovalidate
-	$(BUF_BIN) generate buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --template data/template/buf.go.gen.yaml
-
-bufexportprotovalidate: bufexportprotovalidatecleanproto
+.PHONY: bufgenerateprotovalidatetestdata
+bufgenerateprotovalidatetestdata:
 	$(BUF_BIN) export buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --output private/bufpkg/bufcheck/buflint/testdata/deps/protovalidate
-
-bufexportprotovalidatecleanproto:
-	rm -rf private/bufpkg/bufcheck/buflint/testdata/deps/protovalidate
 
 bufgeneratesteps:: \
 	bufgenerateprotogo \
 	bufgenerateprotogoclient \
-	bufgenerateprotovalidatego
+	bufgenerateprotovalidatetestdata
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
@@ -170,4 +172,3 @@ gofuzz: $(GO_FUZZ)
 	rm go.mod go.sum; mv $(TMP)/go.mod.bak go.mod; mv $(TMP)/go.sum.bak go.sum
 	cp private/bufpkg/bufimage/bufimagebuild/bufimagebuildtesting/corpus/* $(TMP)/gofuzz/corpus
 	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz $(GO_FUZZ_EXTRA_ARGS)
-
