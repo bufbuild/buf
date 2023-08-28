@@ -944,9 +944,15 @@ func TestCommentIgnoresCascadeOff(t *testing.T) {
 
 func TestCommentIgnoresCascadeOn(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(t, "comment_ignores_cascade", func(config *bufconfig.Config) {
-		config.Lint.AllowCommentIgnores = true
-	}, nil, "")
+	testLintWithModifiers(
+		t,
+		"comment_ignores_cascade",
+		func(config *bufconfig.Config) {
+			config.Lint.AllowCommentIgnores = true
+		},
+		nil,
+		"",
+	)
 }
 
 func TestValidateRulesTypesDontMatch(t *testing.T) {
@@ -1056,7 +1062,9 @@ func testLintWithValidate(
 	testLintWithModifiers(
 		t,
 		relDirPath,
-		nil,
+		func(config *bufconfig.Config) {
+			config.Lint.IgnoreRootPaths = []string{"buf"}
+		},
 		nil,
 		"deps/protovalidate",
 		expectedFileAnnotations...,
