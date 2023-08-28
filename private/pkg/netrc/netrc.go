@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/jdxcode/netrc"
+	"github.com/jdx/go-netrc"
 )
 
 // Filename exposes the netrc filename based on the current operating system.

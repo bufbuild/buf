@@ -66,7 +66,7 @@ type PackageVersion interface {
 	fmt.Stringer
 
 	// Required.
-	// Will always be >=1.
+	// Will always be >=0.
 	Major() int
 	// Required.
 	StabilityLevel() StabilityLevel
@@ -88,8 +88,8 @@ type PackageVersion interface {
 // NewPackageVersionForPackage returns the PackageVersion for the package.
 //
 // Returns false if the package has no package version per the specifications.
-func NewPackageVersionForPackage(pkg string) (PackageVersion, bool) {
-	return newPackageVersionForPackage(pkg)
+func NewPackageVersionForPackage(pkg string, options ...PackageVersionOption) (PackageVersion, bool) {
+	return newPackageVersionForPackage(pkg, options...)
 }
 
 // NewPackageVersionForCompoonent returns the PackageVersion for the package component.
@@ -99,6 +99,18 @@ func NewPackageVersionForPackage(pkg string) (PackageVersion, bool) {
 //
 // Also returns false if the input is not a component.
 // That is, the input "foo.bar" is not a component, this is a package.
-func NewPackageVersionForComponent(component string) (PackageVersion, bool) {
-	return newPackageVersionForComponent(component)
+func NewPackageVersionForComponent(component string, options ...PackageVersionOption) (PackageVersion, bool) {
+	return newPackageVersionForComponent(component, options...)
+}
+
+// PackageVersionOption is an option when constructing a new PackageVersion.
+type PackageVersionOption func(*packageVersionOptions)
+
+// WithAllowV0 returns a new PackageVersionOption that allows major version numbers to be 0.
+//
+// The default is to only allow 1+ major version numbers.
+func WithAllowV0() PackageVersionOption {
+	return func(packageVersionOptions *packageVersionOptions) {
+		packageVersionOptions.allowV0 = true
+	}
 }
