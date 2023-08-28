@@ -982,43 +982,55 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 var CheckValidateConstraintsCheck = newFilesWithImportsCheckFunc(checkValidateConstraintsCheck)
 
 func checkValidateConstraintsCheck(add addFunc, files []protosource.File) error {
-	m := buflintvalidate.NewValidateModule(files, add)
 	for _, file := range files {
 		for _, message := range file.Messages() {
 			for _, field := range message.Fields() {
-				data, ok, err := getDataByExtension(field, validate.E_Field)
+				data, err := getDataByExtension(field, validate.E_Field)
 				if err != nil {
 					return err
 				}
-				if !ok {
+				if data == nil {
 					continue
 				}
-				var constraints validate.FieldConstraints
-				if err := proto.Unmarshal(data, &constraints); err != nil {
+				constraints := &validate.FieldConstraints{}
+				if err := proto.Unmarshal(data, constraints); err != nil {
 					return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
 				}
-				m.NewValidateField(field).CheckFieldRules(&constraints)
+				buflintvalidate.NewValidateField(
+					add,
+					files,
+					field,
+				).CheckFieldRules(constraints)
 			}
 		}
 	}
 	return nil
 }
 
+// getDataByExtension retrieves extension data from a proto field of a given extension type.
+// It marshals the extension data into bytes to make it suitable for storage or transmission.
+// The function returns the marshaled data or an error if any occurred.
 func getDataByExtension(
-	field protosource.OptionExtensionDescriptor,
-	extensionType protoreflect.ExtensionType,
-) ([]byte, bool, error) {
+	field protosource.OptionExtensionDescriptor, // The proto field containing the extension
+	extensionType protoreflect.ExtensionType, // The type of the extension to retrieve
+) ([]byte, error) {
+	// Retrieve the extension data associated with the given extension type from the field.
 	extension, ok := field.OptionExtension(extensionType)
 	if !ok {
-		return nil, ok, nil
+		// If the extension is not found, return nil data and no error.
+		return nil, nil
 	}
-	fieldConstraints, ok := extension.(*dynamicpb.Message)
+	// Type assertion to dynamicpb.Message since the extension data is expected to be in this form.
+	dynamicMessage, ok := extension.(*dynamicpb.Message)
 	if !ok {
-		return nil, ok, fmt.Errorf("unexpected extension type for field got %T", extension)
+		return nil, fmt.Errorf("unexpected extension type for field, got %T", extension)
 	}
-	data, err := proto.Marshal(fieldConstraints)
+	// Marshal the extension data into proto bytes such that it is ready
+	// to be unmarshalled into the appropriate extension type.
+	out, err := proto.Marshal(dynamicMessage)
 	if err != nil {
-		return nil, false, fmt.Errorf("marshal error for field: %v", err)
+		return nil, fmt.Errorf("marshal error for field: %v", err)
 	}
-	return data, true, nil
+	// Return the marshaled data and no error.
+	return out, nil
 }

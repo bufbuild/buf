@@ -18,36 +18,39 @@ import (
 	"reflect"
 )
 
-// validateNumberField asserts that the given numbers are valid.
-func validateNumberField[T any](m *validateField, in, notIn int, ci, lti, ltei, gti, gtei T) {
+func validateNumberField[T any](
+	m *validateField,
+	in, notIn int,
+	constIn, lessThanIn, lessThanEqualIn, greaterThanIn, greaterThanEqualIn T,
+) {
 	m.checkIns(in, notIn)
 
-	c := reflect.ValueOf(ci)
-	lt, lte := reflect.ValueOf(lti), reflect.ValueOf(ltei)
-	gt, gte := reflect.ValueOf(gti), reflect.ValueOf(gtei)
+	constant := reflect.ValueOf(constIn)
+	lessThan, lessThanEqual := reflect.ValueOf(lessThanIn), reflect.ValueOf(lessThanEqualIn)
+	greaterThan, greaterThanEqual := reflect.ValueOf(greaterThanIn), reflect.ValueOf(greaterThanEqualIn)
 
-	m.assertf(c.IsNil() ||
+	m.assertf(constant.IsNil() ||
 		in == 0 && notIn == 0 &&
-			lt.IsNil() && lte.IsNil() &&
-			gt.IsNil() && gte.IsNil(),
+			lessThan.IsNil() && lessThanEqual.IsNil() &&
+			greaterThan.IsNil() && greaterThanEqual.IsNil(),
 		"`const` can be the only rule on a field",
 	)
 
 	m.assertf(in == 0 ||
-		lt.IsNil() && lte.IsNil() &&
-			gt.IsNil() && gte.IsNil(),
+		lessThan.IsNil() && lessThanEqual.IsNil() &&
+			greaterThan.IsNil() && greaterThanEqual.IsNil(),
 		"cannot have both `in` and range constraint rules on the same field",
 	)
 
-	if !lt.IsNil() {
-		m.assertf(gt.IsNil() || !reflect.DeepEqual(lti, gti),
+	if !lessThan.IsNil() {
+		m.assertf(greaterThan.IsNil() || !reflect.DeepEqual(lessThanIn, greaterThanIn),
 			"cannot have equal `gt` and `lt` rules on the same field")
-		m.assertf(gte.IsNil() || !reflect.DeepEqual(lti, gtei),
+		m.assertf(greaterThanEqual.IsNil() || !reflect.DeepEqual(lessThanIn, greaterThanEqualIn),
 			"cannot have equal `gte` and `lt` rules on the same field")
-	} else if !lte.IsNil() {
-		m.assertf(gt.IsNil() || !reflect.DeepEqual(ltei, gti),
+	} else if !lessThanEqual.IsNil() {
+		m.assertf(greaterThan.IsNil() || !reflect.DeepEqual(lessThanEqualIn, greaterThanIn),
 			"cannot have equal `gt` and `lte` rules on the same field")
-		m.assertf(gte.IsNil() || !reflect.DeepEqual(ltei, gtei),
+		m.assertf(greaterThanEqual.IsNil() || !reflect.DeepEqual(lessThanEqualIn, greaterThanEqualIn),
 			"use `const` instead of equal `lte` and `gte` rules")
 	}
 }

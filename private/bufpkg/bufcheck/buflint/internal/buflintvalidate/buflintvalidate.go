@@ -13,15 +13,3 @@
 // limitations under the License.
 
 package buflintvalidate
-
-import "github.com/bufbuild/buf/private/pkg/protosource"
-
-func NewValidateModule(
-	files []protosource.File,
-	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
-) *validateModule {
-	return &validateModule{
-		add:   add,
-		files: files,
-	}
-}

@@ -123,18 +123,6 @@ func (f *field) Embed(files ...File) Message {
 	return out
 }
 
-func (f *field) Enum(files ...File) Enum {
-	fullNameToEnum, err := FullNameToEnum(files...)
-	if err != nil {
-		return nil
-	}
-	out, ok := fullNameToEnum[f.typeName]
-	if !ok {
-		return nil
-	}
-	return out
-}
-
 func (f *field) IsMap() bool {
 	isMap, err := isFieldAMapFromFiles(f, f.File())
 	if err != nil {
