@@ -12,7 +12,7 @@ require (
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/go-containerregistry v0.16.1
-	github.com/jdxcode/netrc v0.0.0-20221124155335-4616370d1a84
+	github.com/jdxcode/netrc v1.0.0
 	github.com/jhump/protoreflect v1.15.1
 	github.com/klauspost/compress v1.16.7
 	github.com/klauspost/pgzip v1.2.6
