@@ -19,7 +19,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	"github.com/bufbuild/buf/private/gen/proto/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
