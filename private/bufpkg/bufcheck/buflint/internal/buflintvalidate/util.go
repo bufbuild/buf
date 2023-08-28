@@ -33,24 +33,24 @@ func validateNumberField[T any](
 		in == 0 && notIn == 0 &&
 			lessThan.IsNil() && lessThanEqual.IsNil() &&
 			greaterThan.IsNil() && greaterThanEqual.IsNil(),
-		"`const` can be the only rule on a field",
+		"const can be the only rule on a field",
 	)
 
 	m.assertf(in == 0 ||
 		lessThan.IsNil() && lessThanEqual.IsNil() &&
 			greaterThan.IsNil() && greaterThanEqual.IsNil(),
-		"cannot have both `in` and range constraint rules on the same field",
+		"cannot have both in and range constraint rules on the same field",
 	)
 
 	if !lessThan.IsNil() {
 		m.assertf(greaterThan.IsNil() || !reflect.DeepEqual(lessThanIn, greaterThanIn),
-			"cannot have equal `gt` and `lt` rules on the same field")
+			"cannot have equal gt and lt rules on the same field")
 		m.assertf(greaterThanEqual.IsNil() || !reflect.DeepEqual(lessThanIn, greaterThanEqualIn),
-			"cannot have equal `gte` and `lt` rules on the same field")
+			"cannot have equal gte and lt rules on the same field")
 	} else if !lessThanEqual.IsNil() {
 		m.assertf(greaterThan.IsNil() || !reflect.DeepEqual(lessThanEqualIn, greaterThanIn),
-			"cannot have equal `gt` and `lte` rules on the same field")
+			"cannot have equal gt and lte rules on the same field")
 		m.assertf(greaterThanEqual.IsNil() || !reflect.DeepEqual(lessThanEqualIn, greaterThanEqualIn),
-			"use `const` instead of equal `lte` and `gte` rules")
+			"use const instead of equal lte and gte rules")
 	}
 }
