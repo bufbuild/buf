@@ -16,6 +16,8 @@ package buflintvalidate
 
 import (
 	"reflect"
+
+	"github.com/bufbuild/buf/private/pkg/protosource"
 )
 
 type NumericRules[N comparable] interface {
@@ -90,4 +92,31 @@ func validateNumberField[T any](
 		m.assertf(greaterThanEqual.IsNil() || !reflect.DeepEqual(lessThanEqualIn, greaterThanEqualIn),
 			"use const instead of equal lte and gte rules")
 	}
+}
+
+func embed(f protosource.Field, files ...protosource.File) protosource.Message {
+	fullNameToMessage, err := protosource.FullNameToMessage(files...)
+	if err != nil {
+		return nil
+	}
+	out, ok := fullNameToMessage[f.TypeName()]
+	if !ok {
+		return nil
+	}
+	return out
+}
+
+func getEnum(
+	f protosource.Field,
+	files ...protosource.File,
+) protosource.Enum {
+	fullNameToEnum, err := protosource.FullNameToEnum(files...)
+	if err != nil {
+		return nil
+	}
+	out, ok := fullNameToEnum[f.TypeName()]
+	if !ok {
+		return nil
+	}
+	return out
 }

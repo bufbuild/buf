@@ -473,30 +473,3 @@ func (m *validateField) checkTS(ts *timestamppb.Timestamp) *int64 {
 func (m *validateField) validateNoCustomRulesApplied(r *validate.FieldConstraints) {
 	m.assertf(len(r.GetCel()) == 0, "custom rules are not supported for this field type")
 }
-
-func embed(f protosource.Field, files ...protosource.File) protosource.Message {
-	fullNameToMessage, err := protosource.FullNameToMessage(files...)
-	if err != nil {
-		return nil
-	}
-	out, ok := fullNameToMessage[f.TypeName()]
-	if !ok {
-		return nil
-	}
-	return out
-}
-
-func getEnum(
-	f protosource.Field,
-	files ...protosource.File,
-) protosource.Enum {
-	fullNameToEnum, err := protosource.FullNameToEnum(files...)
-	if err != nil {
-		return nil
-	}
-	out, ok := fullNameToEnum[f.TypeName()]
-	if !ok {
-		return nil
-	}
-	return out
-}
