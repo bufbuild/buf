@@ -200,8 +200,9 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 	if err != nil {
 		return nil, err
 	}
+	var targetPaths []string
 	if len(externalDirOrFilePaths) > 0 {
-		targetPaths := make([]string, len(externalDirOrFilePaths))
+		targetPaths = make([]string, len(externalDirOrFilePaths))
 		for i, externalDirOrFilePath := range externalDirOrFilePaths {
 			targetPath, err := moduleRef.PathForExternalPath(externalDirOrFilePath)
 			if err != nil {
@@ -209,24 +210,24 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 			}
 			targetPaths[i] = targetPath
 		}
-		excludePaths := make([]string, len(externalExcludeDirOrFilePaths))
-		for i, excludeDirOrFilePath := range externalExcludeDirOrFilePaths {
-			excludePath, err := moduleRef.PathForExternalPath(excludeDirOrFilePath)
-			if err != nil {
-				return nil, err
-			}
-			excludePaths[i] = excludePath
+	}
+	excludePaths := make([]string, len(externalExcludeDirOrFilePaths))
+	for i, excludeDirOrFilePath := range externalExcludeDirOrFilePaths {
+		excludePath, err := moduleRef.PathForExternalPath(excludeDirOrFilePath)
+		if err != nil {
+			return nil, err
 		}
-		if externalDirOrFilePathsAllowNotExist {
-			module, err = bufmodule.ModuleWithTargetPathsAllowNotExist(module, targetPaths, excludePaths)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			module, err = bufmodule.ModuleWithTargetPaths(module, targetPaths, excludePaths)
-			if err != nil {
-				return nil, err
-			}
+		excludePaths[i] = excludePath
+	}
+	if externalDirOrFilePathsAllowNotExist {
+		module, err = bufmodule.ModuleWithTargetPathsAllowNotExist(module, targetPaths, excludePaths)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		module, err = bufmodule.ModuleWithTargetPaths(module, targetPaths, excludePaths)
+		if err != nil {
+			return nil, err
 		}
 	}
 	// TODO: we should read the config from the module when configuration
