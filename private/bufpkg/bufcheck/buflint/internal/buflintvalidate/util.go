@@ -18,6 +18,43 @@ import (
 	"reflect"
 )
 
+type NumericRules[N comparable] interface {
+	GetGt() N
+	GetGte() N
+	GetLt() N
+	GetLte() N
+}
+
+func resolveLimits[
+	N comparable,
+	GT any,
+	GTE any,
+	LT any,
+	LTE any,
+](
+	rules NumericRules[N],
+	gtOneOf any,
+	ltOneOf any,
+) (gt, gte, lt, lte *N) {
+	switch gtOneOf.(type) {
+	case GT:
+		n := rules.GetGt()
+		gt = &n
+	case GTE:
+		n := rules.GetGte()
+		gte = &n
+	}
+	switch ltOneOf.(type) {
+	case LT:
+		n := rules.GetLt()
+		lt = &n
+	case LTE:
+		n := rules.GetLte()
+		lte = &n
+	}
+	return
+}
+
 func validateNumberField[T any](
 	m *validateField,
 	in, notIn int,
