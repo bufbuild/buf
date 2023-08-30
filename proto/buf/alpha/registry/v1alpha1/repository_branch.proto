@@ -33,7 +33,8 @@ message RepositoryBranch {
   google.protobuf.Timestamp last_update_time = 5;
   // The ID of the user who updated the branch.
   string last_update_user_id = 6;
-  // The author name of the most recent associated git commit of the branch.
+  // The author name of the most recent associated git commit of the branch. May be null
+  // if the last branch update doesn't have a git commit associated. 
   string last_update_git_author_name = 7;
 }
 
