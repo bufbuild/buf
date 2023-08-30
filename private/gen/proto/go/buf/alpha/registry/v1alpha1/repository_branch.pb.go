@@ -54,7 +54,8 @@ type RepositoryBranch struct {
 	LastUpdateTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_update_time,json=lastUpdateTime,proto3" json:"last_update_time,omitempty"`
 	// The ID of the user who updated the branch.
 	LastUpdateUserId string `protobuf:"bytes,6,opt,name=last_update_user_id,json=lastUpdateUserId,proto3" json:"last_update_user_id,omitempty"`
-	// The author name of the most recent associated git commit of the branch.
+	// The author name of the most recent associated git commit of the branch. May be null
+	// if the last branch update doesn't have a git commit associated.
 	LastUpdateGitAuthorName string `protobuf:"bytes,7,opt,name=last_update_git_author_name,json=lastUpdateGitAuthorName,proto3" json:"last_update_git_author_name,omitempty"`
 }
 
