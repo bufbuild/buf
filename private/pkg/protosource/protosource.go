@@ -1254,17 +1254,7 @@ type tagRangeGroup struct {
 	end    int
 }
 
-// isFieldAMapFromFiles checks if the field is a map field using file information.
-func isFieldAMapFromFiles(field Field, files ...File) (bool, error) {
-	message, err := getMessageFromFiles(field, files...)
-	if err != nil {
-		return false, err
-	}
-	return isFieldAMapFromMessages(field, message), nil
-}
-
-// isFieldAMapFromMessages checks if the field is a map field using message information.
-func isFieldAMapFromMessages(field Field, message Message) bool {
+func isFieldAMap(field Field, fullNameToMessage map[string]Message) bool {
 	// For this to be a map field, it must be a repeated field
 	// with a synthetic message as the type, that synthetic message
 	// must be in the enclosing message for the field, and it must
@@ -1275,18 +1265,9 @@ func isFieldAMapFromMessages(field Field, message Message) bool {
 	if field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		return false
 	}
-	return message.IsMapEntry()
-}
-
-// getMessageFromFiles retrieves the Message associated with a field from a list of files.
-func getMessageFromFiles(field Field, files ...File) (Message, error) {
-	fullNameToMessage, err := FullNameToMessage(files...)
-	if err != nil {
-		return nil, err
-	}
-	out, ok := fullNameToMessage[field.TypeName()]
+	message, ok := fullNameToMessage[field.TypeName()]
 	if !ok {
-		return nil, fmt.Errorf("message not found for field: %s", field.TypeName())
+		return false
 	}
-	return out, nil
+	return message.IsMapEntry()
 }
