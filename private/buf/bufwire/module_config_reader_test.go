@@ -140,6 +140,7 @@ func TestExcludePathsForModule(t *testing.T) {
 	for _, testcase := range testcases {
 		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
 			moduleConfigReader := NewModuleConfigReader(
 				zap.NewNop(),
 				storageos.NewProvider(),
