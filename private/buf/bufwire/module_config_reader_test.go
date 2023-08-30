@@ -17,6 +17,7 @@ package bufwire
 import (
 	"context"
 	"io"
+	"sort"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -30,113 +31,164 @@ import (
 
 func TestExcludePathsForModule(t *testing.T) {
 	t.Parallel()
-	moduleConfigReader := NewModuleConfigReader(
-		zap.NewNop(),
-		storageos.NewProvider(),
-		&fakeModuleFetcher{},
-		nil,
-	)
-	someModuleRef, err := buffetch.NewModuleRefParser(zap.NewNop()).GetModuleRef(context.Background(), "buf.build/foo/bar")
-	require.NoError(t, err)
-	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
-		context.Background(),
-		nil,
-		someModuleRef, // the fake module fetcher doesn't care what ref this is
-		"",
-		nil,
-		[]string{"dir/foo.proto"},
-		true,
-	)
-	require.NoError(t, err)
-	require.Len(t, moduleConfigSet.ModuleConfigs(), 1)
-	moduleConfig := moduleConfigSet.ModuleConfigs()[0]
-	require.NotNil(t, moduleConfig)
-	module := moduleConfig.Module()
-	require.NotNil(t, module)
-	targetFileInfos, err := module.TargetFileInfos(context.Background())
-	require.NoError(t, err)
-	require.Len(t, targetFileInfos, 1)
-	require.Equal(t, "dir/bar.proto", targetFileInfos[0].Path())
+	testcases := []struct {
+		description              string
+		moduleContent            map[string][]byte
+		targetPaths              []string
+		excludePaths             []string
+		expectedFilesAfterFilter []string
+	}{
+		{
+			description: "target nil exclude nil",
+			moduleContent: map[string][]byte{
+				"dir/foo.proto": nil,
+				"dir/bar.proto": nil,
+			},
+			targetPaths:  nil,
+			excludePaths: nil,
+			expectedFilesAfterFilter: []string{
+				"dir/foo.proto",
+				"dir/bar.proto",
+			},
+		},
+		{
+			description: "target empty exclude nil",
+			moduleContent: map[string][]byte{
+				"dir/foo.proto": nil,
+				"dir/bar.proto": nil,
+			},
+			targetPaths:  make([]string, 0),
+			excludePaths: nil,
+			expectedFilesAfterFilter: []string{
+				"dir/foo.proto",
+				"dir/bar.proto",
+			},
+		},
+		{
+			description: "target empty with exclude",
+			moduleContent: map[string][]byte{
+				"dir/foo.proto": nil,
+				"dir/bar.proto": nil,
+			},
+			targetPaths: make([]string, 0),
+			excludePaths: []string{
+				"dir/bar.proto",
+			},
+			expectedFilesAfterFilter: []string{
+				"dir/foo.proto",
+			},
+		},
+		{
+			description: "target nil with exclude",
+			moduleContent: map[string][]byte{
+				"dir/foo.proto": nil,
+				"dir/bar.proto": nil,
+			},
+			targetPaths: nil,
+			excludePaths: []string{
+				"dir/bar.proto",
+			},
+			expectedFilesAfterFilter: []string{
+				"dir/foo.proto",
+			},
+		},
+		{
+			description: "target paths with exclude nil",
+			moduleContent: map[string][]byte{
+				"dir/foo.proto":  nil,
+				"dir/bar.proto":  nil,
+				"dir2/foo.proto": nil,
+				"dir2/bar.proto": nil,
+			},
+			targetPaths: []string{
+				"dir2",
+				"dir/bar.proto",
+			},
+			excludePaths: nil,
+			expectedFilesAfterFilter: []string{
+				"dir/bar.proto",
+				"dir2/foo.proto",
+				"dir2/bar.proto",
+			},
+		},
+		{
+			description: "target paths with exclude paths",
+			moduleContent: map[string][]byte{
+				"dir/foo/bar.proto":  nil,
+				"dir/foo/baz.proto":  []byte(""),
+				"dir/foo/qux.proto":  []byte(""),
+				"dir/foo2/bar.proto": []byte(""),
+				"dir/foo2/baz.proto": []byte(""),
+				"dir2/bar.proto":     nil,
+				"dir2/baz.proto":     nil,
+			},
+			targetPaths: []string{
+				"dir/",
+				"dir2/baz.proto",
+			},
+			excludePaths: []string{
+				"dir/foo2",
+				"dir/foo/qux.proto",
+			},
+			expectedFilesAfterFilter: []string{
+				"dir/foo/bar.proto",
+				"dir/foo/baz.proto",
+				"dir2/baz.proto",
+			},
+		},
+	}
+	for _, testcase := range testcases {
+		testcase := testcase
+		t.Run(testcase.description, func(t *testing.T) {
+			moduleConfigReader := NewModuleConfigReader(
+				zap.NewNop(),
+				storageos.NewProvider(),
+				&fakeModuleFetcher{
+					fileContent: testcase.moduleContent,
+				},
+				nil,
+			)
+			someModuleRef, err := buffetch.NewModuleRefParser(zap.NewNop()).GetModuleRef(context.Background(), "buf.build/foo/bar")
+			require.NoError(t, err)
+			moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
+				context.Background(),
+				nil,
+				someModuleRef, // the fake module fetcher doesn't care what ref this is
+				"",
+				testcase.targetPaths,
+				testcase.excludePaths,
+				true,
+			)
+			require.NoError(t, err)
+			require.Len(t, moduleConfigSet.ModuleConfigs(), 1)
+			moduleConfig := moduleConfigSet.ModuleConfigs()[0]
+			require.NotNil(t, moduleConfig)
+			module := moduleConfig.Module()
+			require.NotNil(t, module)
+			targetFileInfos, err := module.TargetFileInfos(context.Background())
+			require.NoError(t, err)
+			targetFilePaths := make([]string, len(targetFileInfos))
+			for i := range targetFileInfos {
+				targetFilePaths[i] = targetFileInfos[i].Path()
+			}
+			sort.Strings(targetFilePaths)
+			sort.Strings(testcase.expectedFilesAfterFilter)
+			require.Equal(t, testcase.expectedFilesAfterFilter, targetFilePaths)
+		})
+	}
 }
 
-func TestIncludePathsForModule(t *testing.T) {
-	t.Parallel()
-	moduleConfigReader := NewModuleConfigReader(
-		zap.NewNop(),
-		storageos.NewProvider(),
-		&fakeModuleFetcher{},
-		nil,
-	)
-	someModuleRef, err := buffetch.NewModuleRefParser(zap.NewNop()).GetModuleRef(context.Background(), "buf.build/foo/bar")
-	require.NoError(t, err)
-	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
-		context.Background(),
-		nil,
-		someModuleRef, // the fake module fetcher doesn't care what ref this is
-		"",
-		[]string{"dir/foo.proto"},
-		nil,
-		true,
-	)
-	require.NoError(t, err)
-	require.Len(t, moduleConfigSet.ModuleConfigs(), 1)
-	moduleConfig := moduleConfigSet.ModuleConfigs()[0]
-	require.NotNil(t, moduleConfig)
-	module := moduleConfig.Module()
-	require.NotNil(t, module)
-	targetFileInfos, err := module.TargetFileInfos(context.Background())
-	require.NoError(t, err)
-	require.Len(t, targetFileInfos, 1)
-	require.Equal(t, "dir/foo.proto", targetFileInfos[0].Path())
+type fakeModuleFetcher struct {
+	fileContent map[string][]byte
 }
-
-func TestIncludeAndExcludePathsForModule(t *testing.T) {
-	t.Parallel()
-	moduleConfigReader := NewModuleConfigReader(
-		zap.NewNop(),
-		storageos.NewProvider(),
-		&fakeModuleFetcher{},
-		nil,
-	)
-	someModuleRef, err := buffetch.NewModuleRefParser(zap.NewNop()).GetModuleRef(context.Background(), "buf.build/foo/bar")
-	require.NoError(t, err)
-	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
-		context.Background(),
-		nil,
-		someModuleRef, // the fake module fetcher doesn't care what ref this is
-		"",
-		[]string{"dir"},
-		[]string{"dir/bar.proto"},
-		true,
-	)
-	require.NoError(t, err)
-	require.Len(t, moduleConfigSet.ModuleConfigs(), 1)
-	moduleConfig := moduleConfigSet.ModuleConfigs()[0]
-	require.NotNil(t, moduleConfig)
-	module := moduleConfig.Module()
-	require.NotNil(t, module)
-	targetFileInfos, err := module.TargetFileInfos(context.Background())
-	require.NoError(t, err)
-	require.Len(t, targetFileInfos, 1)
-	require.Equal(t, "dir/foo.proto", targetFileInfos[0].Path())
-}
-
-type fakeModuleFetcher struct{}
 
 func (r *fakeModuleFetcher) GetModule(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	moduleRef buffetch.ModuleRef,
 ) (bufmodule.Module, error) {
-	fileFoo := `message Foo {}
-`
-	fileBar := `message Foo {}
-`
 	moduleBucket, err := storagemem.NewReadBucket(
-		map[string][]byte{
-			"dir/foo.proto": []byte(fileFoo),
-			"dir/bar.proto": []byte(fileBar),
-		},
+		r.fileContent,
 	)
 	if err != nil {
 		return nil, err

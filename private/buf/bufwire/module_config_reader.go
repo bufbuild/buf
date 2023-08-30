@@ -211,13 +211,16 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 			targetPaths[i] = targetPath
 		}
 	}
-	excludePaths := make([]string, len(externalExcludeDirOrFilePaths))
-	for i, excludeDirOrFilePath := range externalExcludeDirOrFilePaths {
-		excludePath, err := moduleRef.PathForExternalPath(excludeDirOrFilePath)
-		if err != nil {
-			return nil, err
+	var excludePaths []string
+	if len(externalExcludeDirOrFilePaths) > 0 {
+		excludePaths = make([]string, len(externalExcludeDirOrFilePaths))
+		for i, excludeDirOrFilePath := range externalExcludeDirOrFilePaths {
+			excludePath, err := moduleRef.PathForExternalPath(excludeDirOrFilePath)
+			if err != nil {
+				return nil, err
+			}
+			excludePaths[i] = excludePath
 		}
-		excludePaths[i] = excludePath
 	}
 	if externalDirOrFilePathsAllowNotExist {
 		module, err = bufmodule.ModuleWithTargetPathsAllowNotExist(module, targetPaths, excludePaths)
