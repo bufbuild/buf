@@ -49,19 +49,6 @@ type validateField struct {
 	location protosource.Location
 }
 
-func NewValidateField(
-	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
-	files []protosource.File,
-	field protosource.Field,
-) *validateField {
-	return &validateField{
-		add:      add,
-		files:    files,
-		field:    field,
-		location: field.OptionExtensionLocation(validate.E_Field),
-	}
-}
-
 func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 	if rules == nil {
 		return

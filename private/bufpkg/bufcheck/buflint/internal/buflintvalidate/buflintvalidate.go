@@ -13,3 +13,21 @@
 // limitations under the License.
 
 package buflintvalidate
+
+import (
+	"github.com/bufbuild/buf/private/gen/proto/go/buf/validate"
+	"github.com/bufbuild/buf/private/pkg/protosource"
+)
+
+func NewValidateField(
+	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
+	files []protosource.File,
+	field protosource.Field,
+) *validateField {
+	return &validateField{
+		add:      add,
+		files:    files,
+		field:    field,
+		location: field.OptionExtensionLocation(validate.E_Field),
+	}
+}
