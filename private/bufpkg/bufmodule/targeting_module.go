@@ -79,6 +79,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 	//
 	// In the event that we do have target paths, we need first gather up all the target paths
 	// that are proto files. If all target paths proto files, we can return them first.
+	// TODO: should we check length == 0 instead?
 	if m.targetPaths != nil {
 		for _, targetPath := range m.targetPaths {
 			if normalpath.Ext(targetPath) != ".proto" {
