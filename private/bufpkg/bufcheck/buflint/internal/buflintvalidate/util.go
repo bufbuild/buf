@@ -20,7 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 )
 
-type NumericRules[N comparable] interface {
+type numericRules[N comparable] interface {
 	GetGt() N
 	GetGte() N
 	GetLt() N
@@ -34,7 +34,7 @@ func resolveLimits[
 	LT any,
 	LTE any,
 ](
-	rules NumericRules[N],
+	rules numericRules[N],
 	gtOneOf any,
 	ltOneOf any,
 ) (gt, gte, lt, lte *N) {
