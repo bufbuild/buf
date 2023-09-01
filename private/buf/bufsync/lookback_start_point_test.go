@@ -139,7 +139,7 @@ func TestLookbackStartingPoints(t *testing.T) {
 					modulesDirsForSync[moduleDir] = nil // no need for a module identity in this test
 				}
 				s := &syncer{
-					branchesToModulesForSync: map[string]map[string]bufmoduleref.ModuleIdentity{
+					modulesDirsToBranchesToIdentities: map[string]map[string]bufmoduleref.ModuleIdentity{
 						branchName: modulesDirsForSync,
 					},
 					repo: &mockRepo{headHash: tc.branchHeadHash},

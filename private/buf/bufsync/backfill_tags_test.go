@@ -79,8 +79,8 @@ func TestBackfilltags(t *testing.T) {
 		modulesDirsToIdentityOverrideForSync:  map[string]bufmoduleref.ModuleIdentity{".": nil},
 		syncedGitCommitChecker:                mockBSRChecker.checkFunc(),
 		commitsToTags:                         make(map[string][]string),
-		branchesToModulesForSync:              make(map[string]map[string]bufmoduleref.ModuleIdentity),
-		modulesToBranchesLastSyncPoints:       make(map[string]map[string]string),
+		modulesDirsToBranchesToIdentities:     make(map[string]map[string]bufmoduleref.ModuleIdentity),
+		modulesToBranchesExpectedSyncPoints:   make(map[string]map[string]string),
 		modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
 		tagsBackfiller:                        mockTagsBackfiller.backfillFunc(),
 	}

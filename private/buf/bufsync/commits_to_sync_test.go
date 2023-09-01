@@ -88,8 +88,8 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 						syncAllBranches:                       true,
 						syncedGitCommitChecker:                mockBSRChecker.checkFunc(),
 						commitsToTags:                         make(map[string][]string),
-						branchesToModulesForSync:              make(map[string]map[string]bufmoduleref.ModuleIdentity),
-						modulesToBranchesLastSyncPoints:       make(map[string]map[string]string),
+						modulesDirsToBranchesToIdentities:     make(map[string]map[string]bufmoduleref.ModuleIdentity),
+						modulesToBranchesExpectedSyncPoints:   make(map[string]map[string]string),
 						modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
 					}
 					require.NoError(t, testSyncer.prepareSync(context.Background()))
