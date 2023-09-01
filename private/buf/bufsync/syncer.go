@@ -60,6 +60,8 @@ type syncer struct {
 	// targets for those directories+branches, prepared before syncing either from its identity
 	// override or HEAD commit. (moduleDir:branch:targetModuleIdentity)
 	modulesDirsToBranchesToIdentities map[string]map[string]bufmoduleref.ModuleIdentity
+	// sortedBranchesForSync stores all git branches to sync, in their sort order
+	sortedBranchesForSync []string
 	// modulesToBranchesExpectedSyncPoints holds remote expected sync points for module identity and its
 	// branches. (moduleIdentity:branch:lastSyncPointGitHash)
 	modulesToBranchesExpectedSyncPoints map[string]map[string]string
@@ -115,16 +117,6 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 		s.logger.Warn("branches and modules directories scanned, nothing to sync")
 		return nil
 	}
-	// sort the branches to sync
-	defaultBranch := s.repo.DefaultBranch()
-	var sortedBranchesForSync []string
-	for branch := range s.modulesDirsToBranchesToIdentities {
-		if branch == defaultBranch {
-			continue // default branch will be injected manually
-		}
-		sortedBranchesForSync = append(sortedBranchesForSync, branch)
-	}
-	sort.Strings(sortedBranchesForSync)
 	// for each module directory in its original order
 	for _, moduleDir := range s.sortedModulesDirsForSync {
 		branchesToIdentities, shouldSyncModuleDir := s.modulesDirsToBranchesToIdentities[moduleDir]
@@ -132,8 +124,8 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 			s.logger.Warn("module directory has no branches to sync", zap.String("module directory", moduleDir))
 			continue
 		}
-		// for each branch (default first, then the rest A-Z)
-		for _, branch := range append([]string{defaultBranch}, sortedBranchesForSync...) {
+		// for each branch in the right sync order
+		for _, branch := range s.sortedBranchesForSync {
 			moduleIdentity, branchHasIdentity := branchesToIdentities[branch]
 			if !branchHasIdentity || moduleIdentity == nil {
 				s.logger.Warn(
@@ -154,8 +146,8 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 					zap.String("branch", branch),
 				)
 			}
-			if err := s.syncModuleInBranch(ctx, moduleDir, moduleIdentity, defaultBranch, expectedSyncPoint, syncFunc); err != nil {
-				return fmt.Errorf("sync module %s in default branch %s: %w", moduleDir, defaultBranch, err)
+			if err := s.syncModuleInBranch(ctx, moduleDir, moduleIdentity, branch, expectedSyncPoint, syncFunc); err != nil {
+				return fmt.Errorf("sync module %s in branch %s: %w", moduleDir, branch, err)
 			}
 		}
 	}
@@ -183,8 +175,8 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	if _, isDefaultBranchPushedInRemote := allRemoteBranches[defaultBranch]; !isDefaultBranchPushedInRemote {
 		return fmt.Errorf("default branch %s is not present in 'origin' remote", defaultBranch)
 	}
-	var branchesToSync []string
 	s.logger.Debug("default git branch", zap.String("name", defaultBranch))
+	var branchesToSync []string
 	if s.syncAllBranches {
 		// sync all remote branches
 		for remoteBranch := range allRemoteBranches {
@@ -199,9 +191,18 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		branchesToSync = append(branchesToSync, defaultBranch, currentBranch)
 		s.logger.Debug("current branch", zap.String("name", currentBranch))
 	}
+	var sortedBranchesForSync []string
+	for _, branch := range branchesToSync {
+		if branch == defaultBranch {
+			continue // default branch will be injected manually
+		}
+		sortedBranchesForSync = append(sortedBranchesForSync, branch)
+	}
+	sort.Strings(sortedBranchesForSync)
+	s.sortedBranchesForSync = append([]string{defaultBranch}, sortedBranchesForSync...)
 	for _, moduleDir := range s.sortedModulesDirsForSync {
 		s.modulesDirsToBranchesToIdentities[moduleDir] = make(map[string]bufmoduleref.ModuleIdentity)
-		for _, branch := range branchesToSync {
+		for _, branch := range s.sortedBranchesForSync {
 			s.modulesDirsToBranchesToIdentities[moduleDir][branch] = nil
 		}
 	}
@@ -359,7 +360,7 @@ func (s *syncer) syncModuleInBranch(
 	)
 	// then sync the new commits
 	if len(commitsForSync) == 0 {
-		logger.Debug("no commits to sync for module")
+		logger.Debug("no commits to sync for module in branch")
 		return nil
 	}
 	s.logger.Debug("branch syncable commits for module", zap.Strings("git commits", syncableCommitsHashes(commitsForSync)))
