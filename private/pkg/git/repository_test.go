@@ -185,8 +185,10 @@ func TestBranches(t *testing.T) {
 			assert.Equal(t, commit.Message(), "branch1")
 		case "smian/branch2":
 			assert.Equal(t, commit.Message(), "branch2")
+		case "local-only":
+			assert.Equal(t, commit.Message(), "local commit")
 		default:
-			assert.Failf(t, "unknown branch", branch)
+			assert.Fail(t, "unknown branch", branch)
 		}
 
 		return nil
@@ -197,5 +199,6 @@ func TestBranches(t *testing.T) {
 		"master",
 		"smian/branch1",
 		"smian/branch2",
+		"local-only",
 	})
 }

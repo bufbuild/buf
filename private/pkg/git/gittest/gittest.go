@@ -137,6 +137,13 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	runInDir(t, runner, local, "git", "tag", "v3.0")
 	runInDir(t, runner, local, "git", "push", "--follow-tags")
 
+	// commit a local-only branch
+	runInDir(t, runner, local, "git", "checkout", "-b", "local-only")
+	runInDir(t, runner, local, "git", "commit", "--allow-empty", "-m", "local commit")
+
+	// checkout to default branch
+	runInDir(t, runner, local, "git", "checkout", DefaultBranch)
+
 	return local
 }
 

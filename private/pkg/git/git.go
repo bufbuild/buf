@@ -274,16 +274,13 @@ type TreeNode interface {
 
 // Repository is a git repository that is backed by a `.git` directory.
 type Repository interface {
-	// DefaultBranch is the default branch of the repository. This is either configured via the
-	// `OpenRepositoryWithDefaultBranch` option, or discovered from the value in
-	// `.git/refs/remotes/origin/HEAD`. Therefore, discovery requires that the repository is pushed to
-	// a remote named `origin`.
+	// DefaultBranch is the default branch of the repository. By default this is reads the value in
+	// `.git/refs/remotes/origin/HEAD` (assuming the default branch has been already pushed to a
+	// remote named `origin`). It can be customized via the `OpenRepositoryWithDefaultBranch` option.
 	DefaultBranch() string
 	// CurrentBranch is the current checked out branch.
 	CurrentBranch() string
 	// ForEachBranch ranges over branches in the repository in an undefined order.
-	//
-	// Only branches pushed to a remote named "origin" are visited.
 	ForEachBranch(func(branch string, headHash Hash) error) error
 	// ForEachCommit ranges over commits in reverse topological order, going backwards in time always
 	// choosing the first parent, until no more parents are found (presumably the first commit of the
@@ -294,16 +291,12 @@ type Repository interface {
 	//
 	// If an error is seen, the loop is stopped and the error is returned.
 	ForEachCommit(f func(commit Commit) error, options ...ForEachCommitOption) error
-	// HEADCommit returns the HEAD commit at the passed branch if it's present in the `origin` remote.
+	// HEADCommit returns the HEAD commit at the passed branch.
 	HEADCommit(branch string) (Commit, error)
 	// ForEachTag ranges over tags in the repository in an undefined order.
-	//
-	// All tags are ranged, including local (unpushed) tags.
-	//
-	// TODO: only loop over remote tags, or inform the callback if the tag is local/remote.
 	ForEachTag(func(tag string, commitHash Hash) error) error
-	// Objects exposes the underlying object reader to read objects directly from the
-	// `.git` directory.
+	// Objects exposes the underlying object reader to read objects directly from the `.git`
+	// directory.
 	Objects() ObjectReader
 	// Close closes the repository.
 	Close() error
@@ -363,8 +356,8 @@ func ForEachCommitWithHashStartPoint(hash string) ForEachCommitOption {
 // caller must close the repository to clean up resources.
 //
 // By default, OpenRepository will attempt to detect the default branch if the repository has been
-// pushed. This may fail if the repository is not pushed. In this case, use the
-// `OpenRepositoryWithDefaultBranch` option.
+// pushed to a remote named `origin`. This may fail if the repository is not pushed, in this case,
+// use the `OpenRepositoryWithDefaultBranch` option.
 func OpenRepository(ctx context.Context, gitDirPath string, runner command.Runner, options ...OpenRepositoryOption) (Repository, error) {
 	return openGitRepository(ctx, gitDirPath, runner, options...)
 }

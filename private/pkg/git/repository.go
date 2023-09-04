@@ -31,10 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
-const defaultRemoteName = "origin"
-
-var defaultBranchRefPrefix = []byte("ref: refs/remotes/" + defaultRemoteName + "/")
-
 type openRepositoryOpts struct {
 	defaultBranch string
 }
@@ -103,9 +99,9 @@ func (r *repository) Objects() ObjectReader {
 }
 
 func (r *repository) ForEachBranch(f func(string, Hash) error) error {
-	seen := map[string]struct{}{}
+	unpackedBranches := make(map[string]struct{})
 	// Read unpacked branch refs.
-	dir := path.Join(r.gitDirPath, "refs", "remotes", defaultRemoteName)
+	dir := path.Join(r.gitDirPath, "refs", "heads")
 	if err := filepathextended.Walk(dir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -127,7 +123,7 @@ func (r *repository) ForEachBranch(f func(string, Hash) error) error {
 		if err != nil {
 			return err
 		}
-		seen[branchName] = struct{}{}
+		unpackedBranches[branchName] = struct{}{}
 		return f(branchName, hash)
 	}); err != nil {
 		return err
@@ -137,7 +133,7 @@ func (r *repository) ForEachBranch(f func(string, Hash) error) error {
 		return err
 	}
 	for branchName, hash := range r.packedBranches {
-		if _, found := seen[branchName]; !found {
+		if _, seen := unpackedBranches[branchName]; !seen {
 			if err := f(branchName, hash); err != nil {
 				return err
 			}
@@ -279,9 +275,9 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	return nil
 }
 
-// HEADCommit resolves the HEAD commit from branch name if its present in the "origin" remote.
+// HEADCommit resolves the HEAD commit for a branch.
 func (r *repository) HEADCommit(branch string) (Commit, error) {
-	commitBytes, err := os.ReadFile(path.Join(r.gitDirPath, "refs", "remotes", defaultRemoteName, branch))
+	commitBytes, err := os.ReadFile(path.Join(r.gitDirPath, "refs", "heads", branch))
 	if errors.Is(err, fs.ErrNotExist) {
 		// it may be that the branch ref is packed; let's read the packed refs
 		if err := r.readPackedRefs(); err != nil {
@@ -333,12 +329,17 @@ func (r *repository) readPackedRefs() error {
 	return r.packedReadError
 }
 
+// detectDefaultBranch returns the repository's default branch name. It attempts to read it from the
+// `.git/refs/remotes/origin/HEAD` file, and expects it to be pointing to a branch also in the
+// `origin` remote.
 func detectDefaultBranch(gitDirPath string) (string, error) {
+	const defaultRemoteName = "origin"
 	path := path.Join(gitDirPath, "refs", "remotes", defaultRemoteName, "HEAD")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
+	var defaultBranchRefPrefix = []byte("ref: refs/remotes/" + defaultRemoteName + "/")
 	if !bytes.HasPrefix(data, defaultBranchRefPrefix) {
 		return "", errors.New("invalid contents in " + path)
 	}
@@ -384,8 +385,7 @@ func detectCheckedOutBranch(ctx context.Context, gitDirPath string, runner comma
 	return currentBranch, nil
 }
 
-// validateDirPathExists returns a non-nil error if the given dirPath
-// is not a valid directory path.
+// validateDirPathExists returns a non-nil error if the given dirPath is not a valid directory path.
 func validateDirPathExists(dirPath string) error {
 	var fileInfo os.FileInfo
 	// We do not follow symlinks
