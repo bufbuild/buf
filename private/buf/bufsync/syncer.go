@@ -199,7 +199,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		sortedBranchesForSync = append(sortedBranchesForSync, branch)
 	}
 	sort.Strings(sortedBranchesForSync)
-	s.sortedBranchesForSync = append([]string{defaultBranch}, sortedBranchesForSync...)
+	s.sortedBranchesForSync = append([]string{defaultBranch}, sortedBranchesForSync...) // default first, then the rest A-Z
 	for _, moduleDir := range s.sortedModulesDirsForSync {
 		s.modulesDirsToBranchesToIdentities[moduleDir] = make(map[string]bufmoduleref.ModuleIdentity)
 		for _, branch := range s.sortedBranchesForSync {
