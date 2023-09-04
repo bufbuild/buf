@@ -46,22 +46,22 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 		{
 			name:            "when_main",
 			branch:          "main",
-			expectedCommits: 5, // including the initial commit when scaffolding the test repo
+			expectedCommits: 4, // doesn't include initial scaffolding empty commit
 		},
 		{
 			name:            "when_foo",
 			branch:          "foo",
-			expectedCommits: 3, // counting the commit that branches off main
+			expectedCommits: 2,
 		},
 		{
 			name:            "when_bar",
 			branch:          "bar",
-			expectedCommits: 3, // counting the commit that branches off main
+			expectedCommits: 2,
 		},
 		{
 			name:            "when_baz",
 			branch:          "baz",
-			expectedCommits: 2, // counting the commit that branches off bar
+			expectedCommits: 1,
 		},
 	}
 	for _, withOverride := range []bool{false, true} {
@@ -69,22 +69,20 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 		for _, tc := range testCases {
 			func(tc testCase) {
 				t.Run(fmt.Sprintf("%s/override_%t", tc.name, withOverride), func(t *testing.T) {
-					moduleDirsForSync := []string{"."}
-					moduleDirsToIdentity := make(map[string]bufmoduleref.ModuleIdentity)
-					for _, moduleDir := range moduleDirsForSync {
-						if withOverride {
-							moduleDirsToIdentity[moduleDir] = moduleIdentityOverride
-						} else {
-							moduleDirsToIdentity[moduleDir] = nil
-						}
+					const moduleDir = "."
+					moduleDirsToIdentityOverride := make(map[string]bufmoduleref.ModuleIdentity)
+					if withOverride {
+						moduleDirsToIdentityOverride[moduleDir] = moduleIdentityOverride
+					} else {
+						moduleDirsToIdentityOverride[moduleDir] = nil
 					}
 					testSyncer := syncer{
 						repo:                                  repo,
 						storageGitProvider:                    storagegit.NewProvider(repo.Objects()),
 						logger:                                zaptest.NewLogger(t),
 						errorHandler:                          &mockErrorHandler{},
-						modulesDirsToIdentityOverrideForSync:  moduleDirsToIdentity,
-						sortedModulesDirsForSync:              moduleDirsForSync,
+						modulesDirsToIdentityOverrideForSync:  moduleDirsToIdentityOverride,
+						sortedModulesDirsForSync:              []string{"."},
 						syncAllBranches:                       true,
 						syncedGitCommitChecker:                mockBSRChecker.checkFunc(),
 						commitsToTags:                         make(map[string][]string),
@@ -93,43 +91,43 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 						modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
 					}
 					require.NoError(t, testSyncer.prepareSync(context.Background()))
+					var moduleIdentity bufmoduleref.ModuleIdentity
+					if withOverride {
+						moduleIdentity = moduleIdentityOverride
+					} else {
+						moduleIdentity = moduleIdentityInHEAD
+					}
 					syncableCommits, err := testSyncer.branchSyncableCommits(
 						context.Background(),
+						moduleDir,
+						moduleIdentity,
 						tc.branch,
+						"", // no expected git sync point
 					)
 					// uncomment for debug purposes
-					// testSyncer.printCommitsForSync(tc.branch, syncableCommits)
+					t.Logf("syncable commits for branch %s: %v", tc.branch, syncableCommitsHashes(syncableCommits))
 					require.NoError(t, err)
 					require.Len(t, syncableCommits, tc.expectedCommits)
-					for i, syncableCommit := range syncableCommits {
+					for _, syncableCommit := range syncableCommits {
 						assert.NotEmpty(t, syncableCommit.commit.Hash().Hex())
 						mockBSRChecker.markSynced(syncableCommit.commit.Hash().Hex())
-						if i == 0 {
-							// First commit in the default branch has no module. Also, first commit in non-default
-							// branches will come with no modules to sync, because it's the commit in which it
-							// branches off the parent branch.
-							assert.Empty(t, syncableCommit.modules)
+						if withOverride {
+							assert.Equal(t, moduleIdentityOverride.IdentityString(), syncableCommit.module.ModuleIdentity().IdentityString())
 						} else {
-							assert.Len(t, syncableCommit.modules, 1)
-							for moduleDir, builtModule := range syncableCommit.modules {
-								assert.Equal(t, ".", moduleDir)
-								if withOverride {
-									assert.Equal(t, moduleIdentityOverride.IdentityString(), builtModule.ModuleIdentity().IdentityString())
-								} else {
-									assert.Equal(t, moduleIdentityInHEAD.IdentityString(), builtModule.ModuleIdentity().IdentityString())
-								}
-							}
+							assert.Equal(t, moduleIdentityInHEAD.IdentityString(), syncableCommit.module.ModuleIdentity().IdentityString())
 						}
 					}
 				})
 			}(tc)
 		}
 	}
+	t.Log("wait")
 }
 
 type mockErrorHandler struct{}
 
 func (*mockErrorHandler) HandleReadModuleError(readErr *ReadModuleError) LookbackDecisionCode {
+	// fmt.Printf("read error: %v\n", readErr)
 	if readErr.code == ReadModuleErrorCodeUnexpectedName {
 		return LookbackDecisionCodeOverride
 	}
