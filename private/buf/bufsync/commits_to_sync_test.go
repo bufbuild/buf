@@ -120,7 +120,6 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 			}(tc)
 		}
 	}
-	t.Log("wait")
 }
 
 type mockErrorHandler struct{}
