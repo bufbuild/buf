@@ -397,8 +397,7 @@ func (s *syncer) syncModuleInBranch(
 }
 
 // branchSyncableCommits returns a sorted array of commit+module that are pending to sync for a
-// moduleDir+branch. A commit in the array might have no modules to sync if those are skipped by the
-// Syncer error handler, or are a found sync point.
+// moduleDir+branch. Every syncable commit contains a valid git commit and a built named module.
 func (s *syncer) branchSyncableCommits(
 	ctx context.Context,
 	moduleDir string,
