@@ -611,9 +611,17 @@ func (s *syncer) backfillTags(
 	syncStartHash git.Hash,
 	clock clock,
 ) error {
-	timeLimit := clock.Now().Add(-lookbackTimeLimit)
-	stopLoopErr := errors.New("stop loop")
-	var lookbackCommitsCount int
+	var (
+		lookbackCommitsCount int
+		timeLimit            = clock.Now().Add(-lookbackTimeLimit)
+		stopLoopErr          = errors.New("stop loop")
+		logger               = s.logger.With(
+			zap.String("branch", branch),
+			zap.String("module directory", moduleDir),
+			zap.String("module identity", moduleIdentity.IdentityString()),
+			zap.String("start point", syncStartHash.Hex()),
+		)
+	)
 	forEachOldCommitFunc := func(oldCommit git.Commit) error {
 		lookbackCommitsCount++
 		// For the lookback into older commits to stop, both lookback limits (amount of commits and
@@ -640,12 +648,8 @@ func (s *syncer) backfillTags(
 			// not a valid module, tags in this commit should not be backfilled to this module.
 			return nil
 		}
-		logger := s.logger.With(
-			zap.String("branch", branch),
+		logger := logger.With(
 			zap.String("commit", oldCommit.Hash().Hex()),
-			zap.String("module directory", moduleDir),
-			zap.String("module identity", moduleIdentity.IdentityString()),
-			zap.String("module directory git start point", syncStartHash.Hex()),
 			zap.Strings("tags", tagsToBackfill),
 		)
 		// Valid module in this commit to backfill tags. If backfilling the tags fails, we'll
