@@ -1,4 +1,6 @@
 # pack-refs with: peeled fully-peeled sorted 
+45c2edc61040013349e094663e492996e0c044e3 refs/heads/main
+1fddd89116e24df213d43b7d837f5dd29ee9cbf0 refs/heads/paralleltest
 45c2edc61040013349e094663e492996e0c044e3 refs/remotes/origin/main
 1fddd89116e24df213d43b7d837f5dd29ee9cbf0 refs/remotes/origin/paralleltest
 27523d9000238e0f7fb35d6052d10016852beee3 refs/remotes/otherorigin/main
