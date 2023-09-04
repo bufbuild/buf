@@ -27,7 +27,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// ErrModuleDoesNotExist is an error returned when looking for a remote module.
+// ErrModuleDoesNotExist is an error returned when looking for a BSR module.
 var ErrModuleDoesNotExist = errors.New("BSR module does not exist")
 
 const (
@@ -135,12 +135,12 @@ type ErrorHandler interface {
 	// syncer will stop looking when reaching the commit `u`, will select `v` as the start sync point,
 	// and the synced commits into the BSR will be [x, y, z].
 	HandleReadModuleError(err *ReadModuleError) LookbackDecisionCode
-	// InvalidRemoteSyncPoint is invoked by Syncer upon encountering a module's branch sync point that
-	// is invalid locally. A typical example is either a sync point that points to a commit that
-	// cannot be found anymore, or the commit itself has been corrupted.
+	// InvalidBSRSyncPoint is invoked by Syncer upon encountering a module's branch sync point that is
+	// invalid locally. A typical example is either a sync point that points to a commit that cannot
+	// be found anymore, or the commit itself has been corrupted.
 	//
 	// Returning an error will abort sync.
-	InvalidRemoteSyncPoint(
+	InvalidBSRSyncPoint(
 		module bufmoduleref.ModuleIdentity,
 		branch string,
 		syncPoint git.Hash,
@@ -269,8 +269,8 @@ type SyncedGitCommitChecker func(
 ) (map[string]struct{}, error)
 
 // ModuleDefaultBranchGetter is invoked before syncing, to make sure all modules that are about to
-// be synced have a BSR default branch that matches the local git repo. If the BSR remote module
-// does not exist, the implementation should return `ModuleDoesNotExistErr` error.
+// be synced have a BSR default branch that matches the local git repo. If the BSR module does not
+// exist, the implementation should return `ModuleDoesNotExistErr` error.
 type ModuleDefaultBranchGetter func(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,

@@ -406,7 +406,7 @@ func (h *syncErrorHandler) HandleReadModuleError(err *bufsync.ReadModuleError) b
 	return bufsync.LookbackDecisionCodeFail
 }
 
-func (h *syncErrorHandler) InvalidRemoteSyncPoint(
+func (h *syncErrorHandler) InvalidBSRSyncPoint(
 	module bufmoduleref.ModuleIdentity,
 	branch string,
 	syncPoint git.Hash,

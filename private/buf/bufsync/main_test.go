@@ -48,12 +48,12 @@ func scaffoldGitRepository(t *testing.T, defaultBranchName string) (git.Reposito
 	return repo, repoDir
 }
 
-// scaffoldGitRepositoryDir prepares a git repository with an initial README, and a single commit
-// pushed to a remote named origin. It returns the directory where the local git repo is.
+// scaffoldGitRepositoryDir prepares a git repository with an initial README, and a single commit.
+// It returns the directory where the local git repo is.
 func scaffoldGitRepositoryDir(t *testing.T, runner command.Runner, defaultBranchName string) string {
 	repoDir := t.TempDir()
 
-	// setup local and remote
+	// setup repo
 	runInDir(t, runner, repoDir, "git", "init", "--initial-branch", defaultBranchName)
 	runInDir(t, runner, repoDir, "git", "config", "user.name", "Buf TestBot")
 	runInDir(t, runner, repoDir, "git", "config", "user.email", "testbot@buf.build")
@@ -61,7 +61,7 @@ func scaffoldGitRepositoryDir(t *testing.T, runner command.Runner, defaultBranch
 	// write and commit a README file
 	writeFiles(t, repoDir, map[string]string{"README.md": "This is a scaffold repository.\n"})
 	runInDir(t, runner, repoDir, "git", "add", ".")
-	runInDir(t, runner, repoDir, "git", "commit", "--allow-empty", "-m", "Write README")
+	runInDir(t, runner, repoDir, "git", "commit", "-m", "Write README")
 
 	return repoDir
 }

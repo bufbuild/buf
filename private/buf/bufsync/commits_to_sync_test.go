@@ -133,7 +133,7 @@ func (*mockErrorHandler) HandleReadModuleError(readErr *ReadModuleError) Lookbac
 	return LookbackDecisionCodeSkip
 }
 
-func (*mockErrorHandler) InvalidRemoteSyncPoint(bufmoduleref.ModuleIdentity, string, git.Hash, bool, error) error {
+func (*mockErrorHandler) InvalidBSRSyncPoint(bufmoduleref.ModuleIdentity, string, git.Hash, bool, error) error {
 	return errors.New("unimplemented")
 }
 
