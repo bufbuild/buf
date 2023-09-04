@@ -29,21 +29,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	defaultBranch = "main"
-	remoteName    = "origin"
-)
-
 // scaffoldGitRepository returns an initialized git repository with a single commit, and returns the
 // repository and its directory.
-func scaffoldGitRepository(t *testing.T) (git.Repository, string) {
+func scaffoldGitRepository(t *testing.T, defaultBranchName string) (git.Repository, string) {
 	runner := command.NewRunner()
-	repoDir := scaffoldGitRepositoryDir(t, runner)
+	repoDir := scaffoldGitRepositoryDir(t, runner, defaultBranchName)
 	dotGitPath := path.Join(repoDir, git.DotGitDir)
 	repo, err := git.OpenRepository(
 		context.Background(),
 		dotGitPath,
 		runner,
+		git.OpenRepositoryWithDefaultBranch(defaultBranchName),
 	)
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -54,33 +50,20 @@ func scaffoldGitRepository(t *testing.T) (git.Repository, string) {
 
 // scaffoldGitRepositoryDir prepares a git repository with an initial README, and a single commit
 // pushed to a remote named origin. It returns the directory where the local git repo is.
-func scaffoldGitRepositoryDir(t *testing.T, runner command.Runner) string {
-	dir := t.TempDir()
+func scaffoldGitRepositoryDir(t *testing.T, runner command.Runner, defaultBranchName string) string {
+	repoDir := t.TempDir()
 
 	// setup local and remote
-	runInDir(t, runner, dir, "mkdir", "local", "remote")
-	remoteDir := path.Join(dir, "remote")
-	runInDir(t, runner, remoteDir, "git", "init", "--bare")
-	runInDir(t, runner, remoteDir, "git", "config", "user.name", "Buf TestBot")
-	runInDir(t, runner, remoteDir, "git", "config", "user.email", "testbot@buf.build")
-	localDir := path.Join(dir, "local")
-	runInDir(t, runner, localDir, "git", "init", "--initial-branch", defaultBranch)
-	runInDir(t, runner, localDir, "git", "config", "user.name", "Buf TestBot")
-	runInDir(t, runner, localDir, "git", "config", "user.email", "testbot@buf.build")
+	runInDir(t, runner, repoDir, "git", "init", "--initial-branch", defaultBranchName)
+	runInDir(t, runner, repoDir, "git", "config", "user.name", "Buf TestBot")
+	runInDir(t, runner, repoDir, "git", "config", "user.email", "testbot@buf.build")
 
 	// write and commit a README file
-	writeFiles(t, localDir, map[string]string{"README.md": "This is a scaffold repository.\n"})
-	runInDir(t, runner, localDir, "git", "add", ".")
-	runInDir(t, runner, localDir, "git", "commit", "--allow-empty", "-m", "Write README")
+	writeFiles(t, repoDir, map[string]string{"README.md": "This is a scaffold repository.\n"})
+	runInDir(t, runner, repoDir, "git", "add", ".")
+	runInDir(t, runner, repoDir, "git", "commit", "--allow-empty", "-m", "Write README")
 
-	// push to origin
-	runInDir(t, runner, localDir, "git", "remote", "add", remoteName, remoteDir)
-	runInDir(t, runner, localDir, "git", "push", "-u", "-f", remoteName, defaultBranch)
-
-	// set a default remote branch
-	runInDir(t, runner, localDir, "git", "remote", "set-head", remoteName, defaultBranch)
-
-	return localDir
+	return repoDir
 }
 
 func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args ...string) {

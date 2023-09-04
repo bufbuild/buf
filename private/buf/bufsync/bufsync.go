@@ -151,13 +151,9 @@ type ErrorHandler interface {
 
 // Syncer syncs a modules in a git.Repository.
 type Syncer interface {
-	// Sync syncs the repository using the provided SyncFunc. It processes
-	// commits in reverse topological order, loads any configured named
-	// modules, extracts any Git metadata for that commit, and invokes
-	// SyncFunc with a ModuleCommit.
-	//
-	// Only commits/branches belonging to the remote named 'origin' are
-	// processed. All tags are processed.
+	// Sync syncs the repository using the provided SyncFunc. It processes commits in reverse
+	// topological order, loads any configured named modules, extracts any Git metadata for that
+	// commit, and invokes SyncFunc with a ModuleCommit.
 	Sync(context.Context, SyncFunc) error
 }
 

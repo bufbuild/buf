@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 )
 
@@ -155,41 +156,39 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 }
 
 func (s *syncer) prepareSync(ctx context.Context) error {
-	// Populate all tags locations.
+	// (1) Prepare all tags locations.
 	if err := s.repo.ForEachTag(func(tag string, commitHash git.Hash) error {
 		s.commitsToTags[commitHash.Hex()] = append(s.commitsToTags[commitHash.Hex()], tag)
 		return nil
 	}); err != nil {
 		return fmt.Errorf("load tags: %w", err)
 	}
-	// Populate all branches to be synced.
-	allRemoteBranches := make(map[string]struct{})
+	// (2) Prepare branches to be synced.
+	allBranches := make(map[string]struct{})
 	if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
-		allRemoteBranches[branch] = struct{}{}
+		allBranches[branch] = struct{}{}
 		return nil
 	}); err != nil {
-		return fmt.Errorf("looping over repo remote branches: %w", err)
+		return fmt.Errorf("looping over repository branches: %w", err)
 	}
-	// sync default git branch, make sure it's present in the remote
+	// sync default git branch, make sure it's present in all the branches
 	defaultBranch := s.repo.DefaultBranch()
-	if _, isDefaultBranchPushedInRemote := allRemoteBranches[defaultBranch]; !isDefaultBranchPushedInRemote {
-		return fmt.Errorf("default branch %s is not present in 'origin' remote", defaultBranch)
+	if _, defaultBranchPresent := allBranches[defaultBranch]; !defaultBranchPresent {
+		return fmt.Errorf("default branch %s is not present in all branches", defaultBranch)
 	}
 	s.logger.Debug("default git branch", zap.String("name", defaultBranch))
 	var branchesToSync []string
 	if s.syncAllBranches {
 		// sync all remote branches
-		for remoteBranch := range allRemoteBranches {
-			branchesToSync = append(branchesToSync, remoteBranch)
-		}
+		branchesToSync = stringutil.MapToSlice(allBranches)
 	} else {
-		// sync current branch, make sure it's present in the remote
+		// sync current branch, make sure it's present in all the branches
 		currentBranch := s.repo.CurrentBranch()
-		if _, isCurrentBranchPushedInRemote := allRemoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
-			return fmt.Errorf("current branch %s is not present in 'origin' remote", currentBranch)
+		if _, currentBranchPresent := allBranches[currentBranch]; !currentBranchPresent {
+			return fmt.Errorf("current branch %s is not present in all branches", currentBranch)
 		}
 		branchesToSync = append(branchesToSync, defaultBranch, currentBranch)
-		s.logger.Debug("current branch", zap.String("name", currentBranch))
+		s.logger.Debug("current git branch", zap.String("name", currentBranch))
 	}
 	var sortedBranchesForSync []string
 	for _, branch := range branchesToSync {
@@ -206,7 +205,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			s.modulesDirsToBranchesToIdentities[moduleDir][branch] = nil
 		}
 	}
-	// Populate module identities, from identity overrides or from HEAD, and its sync points if any
+	// (3) Prepare module targets for all module directories and branches.
 	allModulesIdentitiesForSync := make(map[string]bufmoduleref.ModuleIdentity) // moduleIdentityString:moduleIdentity
 	for _, branch := range branchesToSync {
 		headCommit, err := s.repo.HEADCommit(branch)
@@ -248,8 +247,8 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			}
 		}
 	}
-	// make sure all module identities we are about to sync in all branches have the same BSR default
-	// branch as the local git default branch.
+	// (4) Validate all module identities (from all branches) have the same BSR default branch as the
+	// local git default branch.
 	for _, moduleIdentity := range allModulesIdentitiesForSync {
 		if err := s.validateDefaultBranch(ctx, moduleIdentity); err != nil {
 			return fmt.Errorf("validate default branch for module %s: %w", moduleIdentity.IdentityString(), err)
