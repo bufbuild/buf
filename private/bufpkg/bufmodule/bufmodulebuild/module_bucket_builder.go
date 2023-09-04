@@ -84,8 +84,24 @@ func (b *moduleBucketBuilder) buildForBucket(
 		}
 	}
 
-	roots := make([]string, 0, len(config.RootToExcludes))
+	// The below logic relies on all roots being represented in the Config.
+	//
+	// The config Godoc says that if no roots are specified, the default of a single root
+	// if "." with no excludes should be assumed. We need to account for this in the case
+	// where an empty configuration is passed to this function.
+	//
+	// To make sure that we do not edit the input Config, we make a proper copy of the map.
+	rootToExcludes := make(map[string][]string, len(config.RootToExcludes))
 	for root, excludes := range config.RootToExcludes {
+		// You can't modify a slice, so this is OK
+		rootToExcludes[root] = excludes
+	}
+	if len(rootToExcludes) == 0 {
+		rootToExcludes["."] = []string{}
+	}
+
+	roots := make([]string, 0, len(rootToExcludes))
+	for root, excludes := range rootToExcludes {
 		roots = append(roots, root)
 		mappers := []storage.Mapper{
 			// need to do match extension here
