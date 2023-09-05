@@ -412,22 +412,31 @@ func (s *syncer) branchSyncableCommits(
 		}
 		if isSynced {
 			if expectedSyncPoint == "" {
-				// no expected sync point
+				// we did not expect a sync point for this branch, it's ok to stop
 				logger.Debug("git commit already synced, stop looking back in branch")
 			} else if commitHash != expectedSyncPoint {
-				// unexpected sync point
-				if s.repo.DefaultBranch() == branch {
-					// default git branch
+				// we expected a different sync point for this branch, it's ok to stop as long as it's not a
+				// default branch
+				switch branch {
+				case s.modulesBSRDefaultBranch[targetModuleIdentity]:
 					return fmt.Errorf(
-						"found synced git commit %s for default branch %s, but expected sync point was %s, "+
-							"did you rebase or reset your default branch?",
+						"BSR default branch protection: "+
+							"found synced git commit %s for branch %s, but expected sync point was %s, "+
+							"did you rebase or reset this branch?",
 						commitHash, branch, expectedSyncPoint,
 					)
+				case s.repo.DefaultBranch():
+					return fmt.Errorf(
+						"Git default branch protection: "+
+							"found synced git commit %s for branch %s, but expected sync point was %s, "+
+							"did you rebase or reset this branch?",
+						commitHash, branch, expectedSyncPoint,
+					)
+				default:
+					logger.Warn("unexpected sync point reached, stop looking back in branch")
 				}
-				// any other branch
-				logger.Warn("unexpected sync point reached, stop looking back in branch")
 			} else {
-				// reached expected sync point
+				// we reached the expected sync point for this branch, it's ok to stop
 				logger.Debug("expected sync point reached, stop looking back in branch")
 			}
 			return stopLoopErr
