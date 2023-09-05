@@ -55,7 +55,7 @@ type syncer struct {
 	modulesDirsToIdentityOverrideForSync map[string]bufmoduleref.ModuleIdentity // moduleDir:moduleIdentityOverride
 	syncAllBranches                      bool
 
-	// commitsToTags holds all tags in the repo associated to its commit hash. (commits:[]tags)
+	// commitsToTags holds all tags in the repo associated to its commit hash. (commit:[]tags)
 	commitsToTags map[string][]string
 	// modulesDirsToBranchesToIdentities holds all the module directories, branches, and module identity
 	// targets for those directories+branches, prepared before syncing either from its identity
@@ -66,12 +66,15 @@ type syncer struct {
 	// modulesToBranchesExpectedSyncPoints holds expected sync points for module identity and its
 	// branches. (moduleIdentity:branch:lastSyncPointGitHash)
 	modulesToBranchesExpectedSyncPoints map[string]map[string]string
-
-	// modulesIdentitiesToCommitsSyncedCache (moduleIdentity:commit) caches commits already synced to
-	// a given BSR module, so we don't ask twice the same module:commit when we already know it's
-	// already synced. We don't cache "unsynced" git commits, because during the sync process we will
-	// be syncing new git commits, which then will be added also to this cache.
+	// modulesIdentitiesToCommitsSyncedCache caches commits already synced to a given BSR module, so
+	// we don't ask twice the same module:commit when we already know it's already synced. We don't
+	// cache "unsynced" git commits, because during the sync process we will be syncing new git
+	// commits, which then will be added also to this cache. (moduleIdentity:commits)
 	modulesIdentitiesToCommitsSyncedCache map[string]map[string]struct{}
+	// modulesBSRDefaultBranch holds the branch name that's set as default branch in the BSR. This
+	// branch tracks "the main|prod BSR commits", which requires some additional protection like not
+	// allowing Git history rewrites. (moduleIdentity:branch)
+	modulesBSRDefaultBranch map[string]string
 }
 
 func newSyncer(
@@ -91,6 +94,7 @@ func newSyncer(
 		modulesDirsToBranchesToIdentities:     make(map[string]map[string]bufmoduleref.ModuleIdentity),
 		modulesToBranchesExpectedSyncPoints:   make(map[string]map[string]string),
 		modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
+		modulesBSRDefaultBranch:               make(map[string]string),
 	}
 	for _, opt := range options {
 		if err := opt(s); err != nil {
@@ -247,11 +251,22 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			}
 		}
 	}
-	// (4) Validate all module identities (from all branches) have the same BSR default branch as the
-	// local git default branch.
-	for _, moduleIdentity := range allModulesIdentitiesForSync {
-		if err := s.validateDefaultBranch(ctx, moduleIdentity); err != nil {
-			return fmt.Errorf("validate default branch for module %s: %w", moduleIdentity.IdentityString(), err)
+	// (4) Populate default branches for all module identities (from all branches).
+	if s.moduleDefaultBranchGetter != nil {
+		for _, moduleIdentity := range allModulesIdentitiesForSync {
+			bsrDefaultBranch, err := s.moduleDefaultBranchGetter(ctx, moduleIdentity)
+			if err != nil {
+				if errors.Is(err, ErrModuleDoesNotExist) {
+					s.logger.Warn(
+						"no default branch for module",
+						zap.String("module", moduleIdentity.IdentityString()),
+						zap.Error(err),
+					)
+					continue
+				}
+				return fmt.Errorf("get default branch for BSR module %s: %w", moduleIdentity.IdentityString(), err)
+			}
+			s.modulesBSRDefaultBranch[moduleIdentity.IdentityString()] = bsrDefaultBranch
 		}
 	}
 	return nil
@@ -277,35 +292,6 @@ func (s *syncer) resolveSyncPoint(ctx context.Context, moduleIdentity bufmoduler
 		return nil, s.errorHandler.InvalidBSRSyncPoint(moduleIdentity, branch, syncPoint, isDefaultBranch, err)
 	}
 	return syncPoint, nil
-}
-
-// validateDefaultBranch checks that the passed module identity has the same default branch as the
-// syncer Git repo's default branch.
-func (s *syncer) validateDefaultBranch(ctx context.Context, moduleIdentity bufmoduleref.ModuleIdentity) error {
-	if s.moduleDefaultBranchGetter == nil {
-		return nil
-	}
-	expectedDefaultGitBranch := s.repo.DefaultBranch()
-	bsrDefaultBranch, err := s.moduleDefaultBranchGetter(ctx, moduleIdentity)
-	if err != nil {
-		if errors.Is(err, ErrModuleDoesNotExist) {
-			s.logger.Warn(
-				"default branch validation skipped",
-				zap.String("default_git_branch", expectedDefaultGitBranch),
-				zap.String("module", moduleIdentity.IdentityString()),
-				zap.Error(err),
-			)
-			return nil
-		}
-		return fmt.Errorf("get default branch for BSR module %s: %w", moduleIdentity.IdentityString(), err)
-	}
-	if bsrDefaultBranch != expectedDefaultGitBranch {
-		return fmt.Errorf(
-			"BSR module default branch %s does not match the Git default branch %s, aborting sync",
-			bsrDefaultBranch, expectedDefaultGitBranch,
-		)
-	}
-	return nil
 }
 
 // hasSomethingForSync returns true if there is at least one valid module identity for any module
