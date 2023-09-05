@@ -36,6 +36,9 @@ message RepositoryBranch {
   // The author name of the most recent associated git commit of the branch. May be null
   // if the last branch update doesn't have a git commit associated.
   string last_update_git_author_name = 7;
+  // The git commit hash of the most recent associated git commit of the branch. May be null
+  // if the last branch update doesn't have a git commit associated.
+  string last_update_git_commit_hash = 8;
 }
 
 // RepositoryBranchService is the Repository branch service.
