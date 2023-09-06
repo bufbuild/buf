@@ -17,6 +17,7 @@ package manifest
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -24,9 +25,12 @@ import (
 	"go.uber.org/multierr"
 )
 
-// Blob is an anonymous file associated with a digest.
+// Blob is an anonymous file and a digest of its contents.
 type Blob interface {
+	// Digest returns the digest of the blob's content.
 	Digest() *Digest
+	// Open returns an io.ReadCloser of the blob's content.
+	// Callers should always ensure this is closed.
 	Open(context.Context) (io.ReadCloser, error)
 }
 
@@ -97,60 +101,22 @@ type BlobSet struct {
 	digestToBlob map[string]Blob
 }
 
-type blobSetOptions struct {
-	validateContent bool
-	skipNilBlobs    bool
-}
-
-// BlobSetOption are options passed when creating a new blob set.
-type BlobSetOption func(*blobSetOptions)
-
-// BlobSetWithContentValidation turns on content validation for all the blobs
-// when creating a new BlobSet. If this option is on, blobs with the same digest
-// must have the same content (in case blobs with the same digest are sent). If
-// this option is not passed, then the latest duplicated blob digest content
-// will prevail in the set.
-func BlobSetWithContentValidation() BlobSetOption {
-	return func(opts *blobSetOptions) {
-		opts.validateContent = true
-	}
-}
-
-// BlobSetWithSkipNilBlobs allows passing nil blobs in the slice of blobs. The default behavior is
-// that if you pass a nil blob in the slice, you'll get an error from the `NewBlobSet` constructor.
-// If you pass this option, any nil blob will be skipped and the blob set will be built only from
-// the non-nil ones.
-func BlobSetWithSkipNilBlobs() BlobSetOption {
-	return func(opts *blobSetOptions) {
-		opts.skipNilBlobs = true
-	}
-}
-
 // NewBlobSet receives a slice of blobs, and de-duplicates them into a BlobSet.
-func NewBlobSet(ctx context.Context, blobs []Blob, opts ...BlobSetOption) (*BlobSet, error) {
-	var config blobSetOptions
-	for _, option := range opts {
-		option(&config)
-	}
+func NewBlobSet(ctx context.Context, blobs []Blob) (*BlobSet, error) {
 	digestToBlobs := make(map[string]Blob, len(blobs))
 	for i, b := range blobs {
 		if b == nil {
-			if config.skipNilBlobs {
-				continue
-			}
 			return nil, fmt.Errorf("blobs[%d]: nil blob", i)
 		}
 		digestStr := b.Digest().String()
-		if config.validateContent {
-			existingBlob, alreadyPresent := digestToBlobs[digestStr]
-			if alreadyPresent {
-				equalContent, err := BlobEqual(ctx, b, existingBlob)
-				if err != nil {
-					return nil, fmt.Errorf("compare duplicated blobs with digest %q: %w", digestStr, err)
-				}
-				if !equalContent {
-					return nil, fmt.Errorf("duplicated blobs with digest %q have different contents", digestStr)
-				}
+		existingBlob, alreadyPresent := digestToBlobs[digestStr]
+		if alreadyPresent {
+			equalContent, err := BlobEqual(ctx, b, existingBlob)
+			if err != nil {
+				return nil, fmt.Errorf("compare duplicated blobs with digest %q: %w", digestStr, err)
+			}
+			if !equalContent {
+				return nil, fmt.Errorf("duplicated blobs with digest %q have different contents", digestStr)
 			}
 		}
 		digestToBlobs[digestStr] = b
@@ -158,8 +124,8 @@ func NewBlobSet(ctx context.Context, blobs []Blob, opts ...BlobSetOption) (*Blob
 	return &BlobSet{digestToBlob: digestToBlobs}, nil
 }
 
-// BlobFor returns the blob for the passed digest string, or nil, ok=false if
-// the digest has no blob in the set.
+// BlobFor returns the blob for the passed digest string, or the zero value
+// (Blob, false) if the digest has no blob in the set.
 func (s *BlobSet) BlobFor(digest string) (Blob, bool) {
 	blob, ok := s.digestToBlob[digest]
 	if !ok {
@@ -168,7 +134,7 @@ func (s *BlobSet) BlobFor(digest string) (Blob, bool) {
 	return blob, true
 }
 
-// Blobs returns a slice of the blobs in the set.
+// Blobs returns a slice of the blobs in the set, in unspecified order.
 func (s *BlobSet) Blobs() []Blob {
 	blobs := make([]Blob, 0, len(s.digestToBlob))
 	for _, b := range s.digestToBlob {
@@ -179,8 +145,8 @@ func (s *BlobSet) Blobs() []Blob {
 
 // NewMemoryBlobFromReader creates a memory blob from content, which is read
 // until completion. The returned blob contains all bytes read. If you are using
-// this in a loop, you might better use NewMemoryBlobFromReaderWithDigester so
-// you can reuse your digester.
+// this in a loop, it is recommended to use NewMemoryBlobFromReaderWithDigester to
+// reuse your digester.
 func NewMemoryBlobFromReader(content io.Reader) (Blob, error) {
 	digester, err := NewDigester(DigestTypeShake256)
 	if err != nil {
@@ -235,7 +201,7 @@ func BlobEqual(ctx context.Context, a, b Blob) (_ bool, retErr error) {
 		// We're running unexpected error processing (not EOF) before comparing
 		// bytes because it doesn't matter if the returned bytes match if an
 		// error occurred before an expected EOF.
-		if bErr == io.ErrUnexpectedEOF {
+		if errors.Is(bErr, io.ErrUnexpectedEOF) {
 			// b is shorter; we can error early
 			return false, nil
 		}

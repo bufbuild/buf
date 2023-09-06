@@ -12,4 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package bufmanifest contains helper functions to convert between Protobuf
+// types defined in buf/alpha/registry/v1alpha1/module.proto and the data
+// types in [github.com/bufbuild/buf/private/pkg/manifest].
 package bufmanifest

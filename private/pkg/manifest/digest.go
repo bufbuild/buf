@@ -25,10 +25,11 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-// DigestType is the type for digests in this package.
+// DigestType specifies supported digest types.
 type DigestType string
 
 const (
+	// DigestTypeShake256 is the digest type for the SHAKE256 digest.
 	DigestTypeShake256 DigestType = "shake256"
 
 	shake256Length = 64
@@ -63,7 +64,7 @@ func NewDigestFromBytes(dtype DigestType, digest []byte) (*Digest, error) {
 }
 
 // NewDigestFromHex builds a digest from a type and the hexadecimal string of
-// the bytes. It returns an error if the received string is not a valid hex.
+// the bytes. It returns an error if the received string is not a valid hex string.
 func NewDigestFromHex(dtype DigestType, hexstr string) (*Digest, error) {
 	digest, err := hex.DecodeString(hexstr)
 	if err != nil {
@@ -73,6 +74,7 @@ func NewDigestFromHex(dtype DigestType, hexstr string) (*Digest, error) {
 }
 
 // NewDigestFromString build a digest from a string representation of it.
+// See Digest.String for details on the string representation.
 func NewDigestFromString(typedDigest string) (*Digest, error) {
 	dtype, hexstr, found := strings.Cut(typedDigest, ":")
 	if !found {
@@ -81,7 +83,9 @@ func NewDigestFromString(typedDigest string) (*Digest, error) {
 	return NewDigestFromHex(DigestType(dtype), hexstr)
 }
 
-// String returns the hash in a manifest's string format: "<type>:<hex>".
+// String returns the hash in a manifest's string format:
+//
+//	<type>:<hex>
 func (d *Digest) String() string {
 	return string(d.dtype) + ":" + d.hexstr
 }
@@ -106,8 +110,9 @@ func (d *Digest) Equal(other Digest) bool {
 	return d.dtype == other.dtype && bytes.Equal(d.digest, other.digest)
 }
 
-// Digester is something that can digest a content into a digest.
+// Digester is something that can calculate a digest for content.
 type Digester interface {
+	// Digest returns the calculated digest for the specified content.
 	Digest(content io.Reader) (*Digest, error)
 }
 

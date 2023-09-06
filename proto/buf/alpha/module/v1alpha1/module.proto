@@ -33,11 +33,11 @@ message Digest {
   bytes digest = 2;
 }
 
-// Blob represents some module content with an associated hash.
+// Blob represents some module content with an associated digest.
 message Blob {
   // Digest of the content.
   Digest digest = 1;
-  // Content of the blob. Optional when Blob is used as a content pointer.
+  // Content of the blob.
   bytes content = 2;
 }
 
@@ -102,5 +102,8 @@ message ModulePin {
   string commit = 5;
   google.protobuf.Timestamp create_time = 7;
   // Module's manifest digest. Replacement for previous b1/b3 digests.
+  // This is in the format '<digest_type>:<digest>`, where '<digest_type>' is the lowercase digest name ('shake256'),
+  // and '<digest>' is the lowercase hex-encoded digest.
+  // This value is persisted directly to the buf.lock file (https://buf.build/docs/configuration/v1/buf-lock) as the 'digest' key.
   string manifest_digest = 8;
 }
