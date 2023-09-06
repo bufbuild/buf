@@ -16,8 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "google/protobuf/timestamp.proto";
-
 // LocalModuleReference is a local module reference.
 //
 // It does not include a remote.
@@ -32,15 +30,15 @@ message LocalModuleReference {
 //
 // It does not include a remote.
 message LocalModulePin {
-  reserved 5;
-  reserved "digest";
+  reserved 3, 5, 7, 8;
+  reserved "branch",
+    "create_time"
+    "digest"
+, "draft_name";
 
   string owner = 1;
   string repository = 2;
-  string branch = 3;
   string commit = 4;
   // Module's manifest digest. Replacement for previous b1/b3 digests.
   string manifest_digest = 6;
-  google.protobuf.Timestamp create_time = 7;
-  string draft_name = 8;
 }
