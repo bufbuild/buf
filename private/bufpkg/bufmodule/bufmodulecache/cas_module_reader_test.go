@@ -20,7 +20,6 @@ import (
 	"io"
 	"strings"
 	"testing"
-	"time"
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -74,10 +73,8 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 		"buf.build",
 		"test",
 		"ping",
-		"",
 		"abcd",
 		moduleBlob.Digest().String(),
-		time.Now(),
 	)
 	require.NoError(t, err)
 	_, err = moduleReader.GetModule(context.Background(), pin) // non-cached
@@ -109,10 +106,8 @@ func TestCASModuleReaderNoDigest(t *testing.T) {
 		"buf.build",
 		"test",
 		"ping",
-		"",
 		"abcd",
 		"",
-		time.Now(),
 	)
 	require.NoError(t, err)
 	_, err = moduleReader.GetModule(context.Background(), pin)
@@ -137,10 +132,8 @@ func TestCASModuleReaderDigestMismatch(t *testing.T) {
 		"buf.build",
 		"test",
 		"ping",
-		"",
 		"abcd",
 		"shake256:"+strings.Repeat("00", 64), // Digest which doesn't match module's digest
-		time.Now(),
 	)
 	require.NoError(t, err)
 	_, err = moduleReader.GetModule(context.Background(), pin)
