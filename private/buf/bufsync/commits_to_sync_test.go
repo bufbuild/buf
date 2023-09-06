@@ -125,7 +125,6 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 type mockErrorHandler struct{}
 
 func (*mockErrorHandler) HandleReadModuleError(readErr *ReadModuleError) LookbackDecisionCode {
-	// fmt.Printf("read error: %v\n", readErr)
 	if readErr.code == ReadModuleErrorCodeUnexpectedName {
 		return LookbackDecisionCodeOverride
 	}
