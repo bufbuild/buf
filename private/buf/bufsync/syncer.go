@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 )
 
@@ -62,7 +63,7 @@ type syncer struct {
 	modulesDirsToBranchesToIdentities map[string]map[string]bufmoduleref.ModuleIdentity
 	// sortedBranchesForSync stores all git branches to sync, in their sort order
 	sortedBranchesForSync []string
-	// modulesToBranchesExpectedSyncPoints holds remote expected sync points for module identity and its
+	// modulesToBranchesExpectedSyncPoints holds expected sync points for module identity and its
 	// branches. (moduleIdentity:branch:lastSyncPointGitHash)
 	modulesToBranchesExpectedSyncPoints map[string]map[string]string
 
@@ -155,41 +156,39 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 }
 
 func (s *syncer) prepareSync(ctx context.Context) error {
-	// Populate all tags locations.
+	// (1) Prepare all tags locations.
 	if err := s.repo.ForEachTag(func(tag string, commitHash git.Hash) error {
 		s.commitsToTags[commitHash.Hex()] = append(s.commitsToTags[commitHash.Hex()], tag)
 		return nil
 	}); err != nil {
 		return fmt.Errorf("load tags: %w", err)
 	}
-	// Populate all branches to be synced.
-	allRemoteBranches := make(map[string]struct{})
+	// (2) Prepare branches to be synced.
+	allBranches := make(map[string]struct{})
 	if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
-		allRemoteBranches[branch] = struct{}{}
+		allBranches[branch] = struct{}{}
 		return nil
 	}); err != nil {
-		return fmt.Errorf("looping over repo remote branches: %w", err)
+		return fmt.Errorf("looping over repository branches: %w", err)
 	}
-	// sync default git branch, make sure it's present in the remote
+	// sync default git branch, make sure it's present in all the branches
 	defaultBranch := s.repo.DefaultBranch()
-	if _, isDefaultBranchPushedInRemote := allRemoteBranches[defaultBranch]; !isDefaultBranchPushedInRemote {
-		return fmt.Errorf("default branch %s is not present in 'origin' remote", defaultBranch)
+	if _, defaultBranchPresent := allBranches[defaultBranch]; !defaultBranchPresent {
+		return fmt.Errorf("default branch %s is not present in all branches", defaultBranch)
 	}
 	s.logger.Debug("default git branch", zap.String("name", defaultBranch))
 	var branchesToSync []string
 	if s.syncAllBranches {
-		// sync all remote branches
-		for remoteBranch := range allRemoteBranches {
-			branchesToSync = append(branchesToSync, remoteBranch)
-		}
+		// sync all branches
+		branchesToSync = stringutil.MapToSlice(allBranches)
 	} else {
-		// sync current branch, make sure it's present in the remote
+		// sync current branch, make sure it's present in all the branches
 		currentBranch := s.repo.CurrentBranch()
-		if _, isCurrentBranchPushedInRemote := allRemoteBranches[currentBranch]; !isCurrentBranchPushedInRemote {
-			return fmt.Errorf("current branch %s is not present in 'origin' remote", currentBranch)
+		if _, currentBranchPresent := allBranches[currentBranch]; !currentBranchPresent {
+			return fmt.Errorf("current branch %s is not present in all branches", currentBranch)
 		}
 		branchesToSync = append(branchesToSync, defaultBranch, currentBranch)
-		s.logger.Debug("current branch", zap.String("name", currentBranch))
+		s.logger.Debug("current git branch", zap.String("name", currentBranch))
 	}
 	var sortedBranchesForSync []string
 	for _, branch := range branchesToSync {
@@ -206,7 +205,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			s.modulesDirsToBranchesToIdentities[moduleDir][branch] = nil
 		}
 	}
-	// Populate module identities, from identity overrides or from HEAD, and its sync points if any
+	// (3) Prepare module targets for all module directories and branches.
 	allModulesIdentitiesForSync := make(map[string]bufmoduleref.ModuleIdentity) // moduleIdentityString:moduleIdentity
 	for _, branch := range branchesToSync {
 		headCommit, err := s.repo.HEADCommit(branch)
@@ -234,7 +233,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			// enqueue this branch+module for sync to the right target
 			s.modulesDirsToBranchesToIdentities[moduleDir][branch] = targetModuleIdentity
 			targetModuleIdentityString := targetModuleIdentity.IdentityString()
-			// do we have a remote git sync point for this module+branch?
+			// do we have an expected git sync point for this module+branch?
 			moduleBranchSyncPoint, err := s.resolveSyncPoint(ctx, targetModuleIdentity, branch)
 			if err != nil {
 				return fmt.Errorf("resolve expected sync point for module %s in branch %s: %w", targetModuleIdentityString, branch, err)
@@ -248,8 +247,8 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			}
 		}
 	}
-	// make sure all module identities we are about to sync in all branches have the same BSR default
-	// branch as the local git default branch.
+	// (4) Validate all module identities (from all branches) have the same BSR default branch as the
+	// local git default branch.
 	for _, moduleIdentity := range allModulesIdentitiesForSync {
 		if err := s.validateDefaultBranch(ctx, moduleIdentity); err != nil {
 			return fmt.Errorf("validate default branch for module %s: %w", moduleIdentity.IdentityString(), err)
@@ -275,7 +274,7 @@ func (s *syncer) resolveSyncPoint(ctx context.Context, moduleIdentity bufmoduler
 	// Validate that the commit pointed to by the sync point exists in the git repo.
 	if _, err := s.repo.Objects().Commit(syncPoint); err != nil {
 		isDefaultBranch := branch == s.repo.DefaultBranch()
-		return nil, s.errorHandler.InvalidRemoteSyncPoint(moduleIdentity, branch, syncPoint, isDefaultBranch, err)
+		return nil, s.errorHandler.InvalidBSRSyncPoint(moduleIdentity, branch, syncPoint, isDefaultBranch, err)
 	}
 	return syncPoint, nil
 }
@@ -298,11 +297,11 @@ func (s *syncer) validateDefaultBranch(ctx context.Context, moduleIdentity bufmo
 			)
 			return nil
 		}
-		return fmt.Errorf("getting bsr module: %w", err)
+		return fmt.Errorf("get default branch for BSR module %s: %w", moduleIdentity.IdentityString(), err)
 	}
 	if bsrDefaultBranch != expectedDefaultGitBranch {
 		return fmt.Errorf(
-			"remote module default branch %s does not match the git repository's default branch %s, aborting sync",
+			"BSR module default branch %s does not match the Git default branch %s, aborting sync",
 			bsrDefaultBranch, expectedDefaultGitBranch,
 		)
 	}
@@ -497,7 +496,7 @@ func (s *syncer) branchSyncableCommits(
 	return commitsForSync, nil
 }
 
-// isGitCommitSynced checks if a commit hash is already synced to a remote BSR module.
+// isGitCommitSynced checks if a commit hash is already synced to a BSR module.
 func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmoduleref.ModuleIdentity, commitHash string) (bool, error) {
 	if s.syncedGitCommitChecker == nil {
 		return false, nil
@@ -509,7 +508,7 @@ func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmodule
 			return true, nil
 		}
 	}
-	// not in the cache, request remote check
+	// not in the cache, request BSR check
 	syncedModuleCommits, err := s.syncedGitCommitChecker(ctx, moduleIdentity, map[string]struct{}{commitHash: {}})
 	if err != nil {
 		return false, err

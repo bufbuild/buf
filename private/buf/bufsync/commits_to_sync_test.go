@@ -35,8 +35,9 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	require.NoError(t, err)
 	moduleIdentityOverride, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "bar")
 	require.NoError(t, err)
-	repo, repoDir := scaffoldGitRepository(t)
-	prepareGitRepoSyncWithNoPreviousSyncPoints(t, repoDir, moduleIdentityInHEAD)
+	const defaultBranchName = "main"
+	repo, repoDir := scaffoldGitRepository(t, defaultBranchName)
+	prepareGitRepoSyncWithNoPreviousSyncPoints(t, repoDir, moduleIdentityInHEAD, defaultBranchName)
 	type testCase struct {
 		name            string
 		branch          string
@@ -130,7 +131,7 @@ func (*mockErrorHandler) HandleReadModuleError(readErr *ReadModuleError) Lookbac
 	return LookbackDecisionCodeSkip
 }
 
-func (*mockErrorHandler) InvalidRemoteSyncPoint(bufmoduleref.ModuleIdentity, string, git.Hash, bool, error) error {
+func (*mockErrorHandler) InvalidBSRSyncPoint(bufmoduleref.ModuleIdentity, string, git.Hash, bool, error) error {
 	return errors.New("unimplemented")
 }
 
@@ -168,9 +169,9 @@ func (c *mockSyncedGitChecker) checkFunc() SyncedGitCommitChecker {
 // | o-o----------o-----------------o (master)
 // |   └o-o (foo) └o--------o (bar)
 // |               └o (baz)
-func prepareGitRepoSyncWithNoPreviousSyncPoints(t *testing.T, repoDir string, moduleIdentity bufmoduleref.ModuleIdentity) {
+func prepareGitRepoSyncWithNoPreviousSyncPoints(t *testing.T, repoDir string, moduleIdentity bufmoduleref.ModuleIdentity, defaultBranchName string) {
 	runner := command.NewRunner()
-	var allBranches = []string{defaultBranch, "foo", "bar", "baz"}
+	var allBranches = []string{defaultBranchName, "foo", "bar", "baz"}
 
 	var commitsCounter int
 	doEmptyCommit := func(numOfCommits int) {
@@ -194,7 +195,7 @@ func prepareGitRepoSyncWithNoPreviousSyncPoints(t *testing.T, repoDir string, mo
 	doEmptyCommit(1)
 	runInDir(t, runner, repoDir, "git", "checkout", "-b", allBranches[1])
 	doEmptyCommit(2)
-	runInDir(t, runner, repoDir, "git", "checkout", defaultBranch)
+	runInDir(t, runner, repoDir, "git", "checkout", defaultBranchName)
 	doEmptyCommit(1)
 	runInDir(t, runner, repoDir, "git", "checkout", "-b", allBranches[2])
 	doEmptyCommit(1)
@@ -202,12 +203,6 @@ func prepareGitRepoSyncWithNoPreviousSyncPoints(t *testing.T, repoDir string, mo
 	doEmptyCommit(1)
 	runInDir(t, runner, repoDir, "git", "checkout", allBranches[2])
 	doEmptyCommit(1)
-	runInDir(t, runner, repoDir, "git", "checkout", defaultBranch)
+	runInDir(t, runner, repoDir, "git", "checkout", defaultBranchName)
 	doEmptyCommit(1)
-
-	// push them all
-	for _, branch := range allBranches {
-		runInDir(t, runner, repoDir, "git", "checkout", branch)
-		runInDir(t, runner, repoDir, "git", "push", "-u", "-f", remoteName, branch)
-	}
 }

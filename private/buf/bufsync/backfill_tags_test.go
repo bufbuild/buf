@@ -31,7 +31,8 @@ import (
 
 func TestBackfilltags(t *testing.T) {
 	t.Parallel()
-	repo, repoDir := scaffoldGitRepository(t)
+	const defaultBranchName = "main"
+	repo, repoDir := scaffoldGitRepository(t, defaultBranchName)
 	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
 	require.NoError(t, err)
 	prepareGitRepoBackfillTags(t, repoDir, moduleIdentityInHEAD)
@@ -80,7 +81,7 @@ func TestBackfilltags(t *testing.T) {
 		context.Background(),
 		moduleDir,
 		moduleIdentityInHEAD,
-		defaultBranch,
+		defaultBranchName,
 		startSyncHash,
 		mockClock,
 	))
@@ -139,9 +140,6 @@ func prepareGitRepoBackfillTags(t *testing.T, repoDir string, moduleIdentity buf
 	doEmptyCommitAndTag(5)
 	time.Sleep(1 * time.Second)
 	doEmptyCommitAndTag(15)
-	// push both commits and tags
-	runInDir(t, runner, repoDir, "git", "push", "-u", "-f", remoteName, defaultBranch)
-	runInDir(t, runner, repoDir, "git", "push", "--tags")
 }
 
 type mockTagsBackfiller struct {
