@@ -217,9 +217,9 @@ func SyncerWithGitCommitChecker(checker SyncedGitCommitChecker) SyncerOption {
 	}
 }
 
-// SyncerWithModuleDefaultBranchGetter configures a getter for modules' default branch, to contrast
-// a BSR repository default branch vs the local git repository branch. If left empty, the syncer
-// skips this validation step.
+// SyncerWithModuleDefaultBranchGetter configures a getter for modules' default branch, to protect
+// those branches syncs in cases like a Git history rewrite. If this option is not passed, the
+// syncer treats the BSR default branch as any other branch.
 func SyncerWithModuleDefaultBranchGetter(getter ModuleDefaultBranchGetter) SyncerOption {
 	return func(s *syncer) error {
 		s.moduleDefaultBranchGetter = getter
@@ -227,9 +227,9 @@ func SyncerWithModuleDefaultBranchGetter(getter ModuleDefaultBranchGetter) Synce
 	}
 }
 
-// SyncerWithTagsBackfiller configures a tags backfiller for older, already synced commits. If left
-// empty, the syncer won't try to sync older tags past each module's start sync points on all
-// branches.
+// SyncerWithTagsBackfiller configures a tags backfiller for older, already synced commits. If this
+// option is not passed, the syncer won't try to sync older tags past each module's start sync
+// points on all branches.
 func SyncerWithTagsBackfiller(backfiller TagsBackfiller) SyncerOption {
 	return func(s *syncer) error {
 		s.tagsBackfiller = backfiller
@@ -268,9 +268,9 @@ type SyncedGitCommitChecker func(
 	commitHashes map[string]struct{},
 ) (map[string]struct{}, error)
 
-// ModuleDefaultBranchGetter is invoked before syncing, to make sure all modules that are about to
-// be synced have a BSR default branch that matches the local git repo. If the BSR module does not
-// exist, the implementation should return `ModuleDoesNotExistErr` error.
+// ModuleDefaultBranchGetter is invoked before syncing, to gather default branch names for all the
+// modules that are about to be synced. If the BSR module does not exist, the implementation should
+// return `ModuleDoesNotExistErr` error.
 type ModuleDefaultBranchGetter func(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,
@@ -283,8 +283,8 @@ type ModuleDefaultBranchGetter func(
 //
 // A common scenario is SemVer releases: a commit is pushed to the default Git branch, the sync
 // process triggers and completes, and some minutes later that commit is tagged "v1.2.3". The next
-// time the sync command runs, this backfiller would pick such tag and backfill it to the correct BSR
-// commit.
+// time the sync command runs, this backfiller would pick such tag and backfill it to the correct
+// BSR commit.
 //
 // It's expected to return the BSR commit name to which the tags were backfilled.
 type TagsBackfiller func(
