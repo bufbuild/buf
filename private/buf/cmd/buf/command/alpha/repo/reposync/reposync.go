@@ -62,7 +62,7 @@ func NewCommand(
 		Use:   name,
 		Short: "Sync a Git repository to a registry",
 		Long: "Sync commits in a Git repository to a registry in topological order. " +
-			"Only commits in the default and current branch that are pushed to the 'origin' remote are processed. " +
+			"Only commits in the default and current branch are processed. " +
 			"Syncing all branches is possible using '--all-branches' flag. " +
 			"By default a single module at the root of the repository is assumed, " +
 			"for specific module paths use the '--module' flag. " +
@@ -124,10 +124,9 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		allBranchesFlagName,
 		false,
 		"Sync all git repository branches and not only the default and checked out one. "+
-			"Only commits pushed to the 'origin' remote are processed. "+
-			"Order of sync for git branches is as follows: First, it syncs the default branch read "+
-			"from 'refs/remotes/origin/HEAD', and then all the rest of the branches present in "+
-			"'refs/remotes/origin/*' in a lexicographical order.",
+			"Order of sync for git branches is as follows: First, it syncs the default branch (read "+
+			"from 'refs/remotes/origin/HEAD'), and then all the rest of the branches in "+
+			"lexicographical order.",
 	)
 }
 
@@ -250,10 +249,10 @@ func sync(
 		}
 		_, err = container.Stderr().Write([]byte(
 			// from local                                        -> to remote
-			// <git-branch>:<git-commit-hash>:<module-directory> -> <module-identity>:<bsr-commit-name>
+			// <module-directory>:<git-branch>:<git-commit-hash> -> <module-identity>:<bsr-commit-name>
 			fmt.Sprintf(
 				"%s:%s:%s -> %s:%s\n",
-				moduleCommit.Branch(), moduleCommit.Commit().Hash().Hex(), moduleCommit.Directory(),
+				moduleCommit.Directory(), moduleCommit.Branch(), moduleCommit.Commit().Hash().Hex(),
 				moduleCommit.Identity().IdentityString(), syncPoint.BsrCommitName,
 			)),
 		)

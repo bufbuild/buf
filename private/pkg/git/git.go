@@ -274,7 +274,7 @@ type TreeNode interface {
 
 // Repository is a git repository that is backed by a `.git` directory.
 type Repository interface {
-	// DefaultBranch is the default branch of the repository. By default this is reads the value in
+	// DefaultBranch is the default branch of the repository. By default this reads the value in
 	// `.git/refs/remotes/origin/HEAD` (assuming the default branch has been already pushed to a
 	// remote named `origin`). It can be customized via the `OpenRepositoryWithDefaultBranch` option.
 	DefaultBranch() string

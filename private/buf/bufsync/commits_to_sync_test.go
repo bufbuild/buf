@@ -105,7 +105,6 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 						tc.branch,
 						"", // no expected git sync point
 					)
-					// t.Logf("syncable commits for branch %s: %v", tc.branch, syncableCommitsHashes(syncableCommits))
 					require.NoError(t, err)
 					require.Len(t, syncableCommits, tc.expectedCommits)
 					for _, syncableCommit := range syncableCommits {
