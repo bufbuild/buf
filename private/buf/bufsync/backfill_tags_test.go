@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -41,20 +40,16 @@ func TestBackfilltags(t *testing.T) {
 	var (
 		commitCount            int
 		allCommitsHashes       []string
-		syncableCommits        []*syncableCommit
+		startSyncHash          git.Hash
 		fakeNowCommitLimitTime time.Time // to be sent as a fake clock and discard "old" commits
 	)
 	require.NoError(t, repo.ForEachCommit(func(commit git.Commit) error {
 		allCommitsHashes = append(allCommitsHashes, commit.Hash().Hex())
 		commitCount++
-		if commitCount <= 5 {
-			syncableCommits = append(syncableCommits, &syncableCommit{
-				commit: commit,
-				modules: map[string]*bufmodulebuild.BuiltModule{
-					".": nil, // no need for built modules when backfilling tags
-				},
-			})
-		} else {
+		if commitCount == 5 {
+			startSyncHash = commit.Hash()
+		}
+		if commitCount > 5 {
 			if commitCount == 15 {
 				// have the time limit at the commit 15 looking back
 				fakeNowCommitLimitTime = commit.Committer().Timestamp()
@@ -63,29 +58,32 @@ func TestBackfilltags(t *testing.T) {
 		}
 		return nil
 	}))
-	// reverse syncable commits, to leave them in time order parent -> children
-	// https://github.com/golang/go/wiki/SliceTricks#reversing
-	for i := len(syncableCommits)/2 - 1; i >= 0; i-- {
-		opp := len(syncableCommits) - 1 - i
-		syncableCommits[i], syncableCommits[opp] = syncableCommits[opp], syncableCommits[i]
-	}
 	mockTagsBackfiller := newMockTagsBackfiller()
 	mockClock := &mockClock{now: fakeNowCommitLimitTime.Add(lookbackTimeLimit)}
+	const moduleDir = "." // module is at the git root repo
 	testSyncer := syncer{
 		repo:                                  repo,
 		storageGitProvider:                    storagegit.NewProvider(repo.Objects()),
 		logger:                                zaptest.NewLogger(t),
-		sortedModulesDirsForSync:              []string{"."},
-		modulesDirsToIdentityOverrideForSync:  map[string]bufmoduleref.ModuleIdentity{".": nil},
+		sortedModulesDirsForSync:              []string{moduleDir},
+		modulesDirsToIdentityOverrideForSync:  map[string]bufmoduleref.ModuleIdentity{moduleDir: nil},
 		syncedGitCommitChecker:                mockBSRChecker.checkFunc(),
 		commitsToTags:                         make(map[string][]string),
-		branchesToModulesForSync:              make(map[string]map[string]bufmoduleref.ModuleIdentity),
-		modulesToBranchesLastSyncPoints:       make(map[string]map[string]string),
+		modulesDirsToBranchesToIdentities:     make(map[string]map[string]bufmoduleref.ModuleIdentity),
+		modulesToBranchesExpectedSyncPoints:   make(map[string]map[string]string),
 		modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
 		tagsBackfiller:                        mockTagsBackfiller.backfillFunc(),
+		errorHandler:                          &mockErrorHandler{},
 	}
 	require.NoError(t, testSyncer.prepareSync(context.Background()))
-	require.NoError(t, testSyncer.backfillTags(context.Background(), defaultBranch, syncableCommits, mockClock))
+	require.NoError(t, testSyncer.backfillTags(
+		context.Background(),
+		moduleDir,
+		moduleIdentityInHEAD,
+		defaultBranch,
+		startSyncHash,
+		mockClock,
+	))
 	// in total the repo has at least 20 commits, we expect to backfill 11 of them...
 	assert.GreaterOrEqual(t, len(allCommitsHashes), 20)
 	assert.Len(t, mockTagsBackfiller.backfilledCommitsToTags, 11)
@@ -133,7 +131,7 @@ func prepareGitRepoBackfillTags(t *testing.T, repoDir string, moduleIdentity buf
 	// write the base module in the root
 	writeFiles(t, repoDir, map[string]string{
 		"buf.yaml":         fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString()),
-		"foo/v1/foo.proto": `syntax = "proto3";\n\npackage foo.v1;\n\nmessage Foo {}\n`,
+		"foo/v1/foo.proto": "syntax = \"proto3\";\n\npackage foo.v1;\n\nmessage Foo {}\n",
 	})
 	runInDir(t, runner, repoDir, "git", "add", ".")
 	runInDir(t, runner, repoDir, "git", "commit", "-m", "commit 0")
