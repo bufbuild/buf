@@ -103,12 +103,6 @@ func modulePinCompareTo(a ModulePin, b ModulePin) int {
 	if a.Repository() > b.Repository() {
 		return 1
 	}
-	if a.Branch() < b.Branch() {
-		return -1
-	}
-	if a.Branch() > b.Branch() {
-		return 1
-	}
 	if a.Commit() < b.Commit() {
 		return -1
 	}
@@ -119,12 +113,6 @@ func modulePinCompareTo(a ModulePin, b ModulePin) int {
 		return -1
 	}
 	if a.Digest() > b.Digest() {
-		return 1
-	}
-	if a.CreateTime().Before(b.CreateTime()) {
-		return -1
-	}
-	if a.CreateTime().After(b.CreateTime()) {
 		return 1
 	}
 	return 0

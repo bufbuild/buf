@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -278,10 +277,8 @@ type ModulePin interface {
 	fmt.Stringer
 
 	// all of these will be set
-	Branch() string
 	Commit() string
 	Digest() string
-	CreateTime() time.Time
 
 	isModulePin()
 }
@@ -291,12 +288,10 @@ func NewModulePin(
 	remote string,
 	owner string,
 	repository string,
-	branch string,
 	commit string,
 	digest string,
-	createTime time.Time,
 ) (ModulePin, error) {
-	return newModulePin(remote, owner, repository, branch, commit, digest, createTime)
+	return newModulePin(remote, owner, repository, commit, digest)
 }
 
 // NewModulePinForProto returns a new ModulePin for the given proto ModulePin.
@@ -441,10 +436,8 @@ func ModulePinEqual(a ModulePin, b ModulePin) bool {
 	return a.Remote() == b.Remote() &&
 		a.Owner() == b.Owner() &&
 		a.Repository() == b.Repository() &&
-		a.Branch() == b.Branch() &&
 		a.Commit() == b.Commit() &&
-		a.Digest() == b.Digest() &&
-		a.CreateTime().Equal(b.CreateTime())
+		a.Digest() == b.Digest()
 }
 
 // DependencyModulePinsForBucket reads the module dependencies from the lock file in the bucket.
@@ -462,10 +455,8 @@ func DependencyModulePinsForBucket(
 			dep.Remote,
 			dep.Owner,
 			dep.Repository,
-			"",
 			dep.Commit,
 			dep.Digest,
-			time.Time{},
 		)
 		if err != nil {
 			return nil, err

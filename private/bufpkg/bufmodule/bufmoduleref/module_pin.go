@@ -15,45 +15,31 @@
 package bufmoduleref
 
 import (
-	"time"
-
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/prototime"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type modulePin struct {
 	remote     string
 	owner      string
 	repository string
-	branch     string
 	commit     string
 	digest     string
-	createTime time.Time
 }
 
 func newModulePin(
 	remote string,
 	owner string,
 	repository string,
-	branch string,
 	commit string,
 	digest string,
-	createTime time.Time,
 ) (*modulePin, error) {
-	protoCreateTime, err := prototime.NewTimestamp(createTime)
-	if err != nil {
-		return nil, err
-	}
 	return newModulePinForProto(
 		&modulev1alpha1.ModulePin{
 			Remote:         remote,
 			Owner:          owner,
 			Repository:     repository,
-			Branch:         branch,
 			Commit:         commit,
 			ManifestDigest: digest,
-			CreateTime:     protoCreateTime,
 		},
 	)
 }
@@ -68,10 +54,8 @@ func newModulePinForProto(
 		remote:     protoModulePin.Remote,
 		owner:      protoModulePin.Owner,
 		repository: protoModulePin.Repository,
-		branch:     protoModulePin.Branch,
 		commit:     protoModulePin.Commit,
 		digest:     protoModulePin.ManifestDigest,
-		createTime: protoModulePin.CreateTime.AsTime(),
 	}, nil
 }
 
@@ -82,11 +66,8 @@ func newProtoModulePinForModulePin(
 		Remote:         modulePin.Remote(),
 		Owner:          modulePin.Owner(),
 		Repository:     modulePin.Repository(),
-		Branch:         modulePin.Branch(),
 		Commit:         modulePin.Commit(),
 		ManifestDigest: modulePin.Digest(),
-		// no need to validate as we already know this is valid
-		CreateTime: timestamppb.New(modulePin.CreateTime()),
 	}
 }
 
@@ -102,20 +83,12 @@ func (m *modulePin) Repository() string {
 	return m.repository
 }
 
-func (m *modulePin) Branch() string {
-	return m.branch
-}
-
 func (m *modulePin) Commit() string {
 	return m.commit
 }
 
 func (m *modulePin) Digest() string {
 	return m.digest
-}
-
-func (m *modulePin) CreateTime() time.Time {
-	return m.createTime
 }
 
 func (m *modulePin) String() string {

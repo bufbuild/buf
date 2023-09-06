@@ -17,7 +17,6 @@ package bufmoduleref
 import (
 	"bytes"
 	"testing"
-	"time"
 
 	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/stretchr/testify/assert"
@@ -47,10 +46,8 @@ func testNewModulePin(
 			"remote",
 			"owner",
 			"repository",
-			"branch",
 			"commit",
 			digest,
-			time.Now(),
 		)
 		assert.NoError(t, err)
 		if expectEmptyDigest {
