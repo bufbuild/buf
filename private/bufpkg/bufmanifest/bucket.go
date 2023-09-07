@@ -24,7 +24,7 @@ import (
 
 // NewReadBucketFromManifestBlobs builds a storage bucket from a manifest blob and a
 // set of other blobs, provided in protobuf form. It makes sure that all blobs
-// (including manifest) content match with their digest, and additionally checks
+// (including manifest) content match their digest, and additionally checks
 // that the blob set matches completely with the manifest paths (no missing nor
 // extra blobs). This bucket is suitable for building or exporting.
 func NewReadBucketFromManifestBlobs(

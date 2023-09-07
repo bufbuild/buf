@@ -200,6 +200,12 @@ type PushManifestAndBlobsRequest struct {
 	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
 	// Manifest with all the module files being pushed.
+	// The content of the manifest blob is a text encoding of an ordered list of unique paths, each path encoded as:
+	//
+	//	<digest_type>:<digest>[SP][SP]<path>[LF]
+	//
+	// The only current supported digest type is 'shake256'. The shake256 digest consists of 64 bytes of lowercase hex
+	// encoded output of SHAKE256. See buf.alpha.module.v1alpha1.Digest for more details.
 	Manifest *v1alpha1.Blob `protobuf:"bytes,3,opt,name=manifest,proto3" json:"manifest,omitempty"`
 	// Referenced blobs in the manifest. Keep in mind there is not necessarily one
 	// blob per file, but one blob per digest, so for files with exactly the same
