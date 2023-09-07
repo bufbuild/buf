@@ -25,10 +25,10 @@ import (
 const (
 	// packedRefsHeader is the head for the `packed-refs` file
 	// based on https://github.com/git/git/blob/master/refs/packed-backend.c#LL1084C41-L1084C41
-	packedRefsHeader      = "# pack-refs with: peeled fully-peeled sorted "
-	tagRefPrefix          = "refs/tags/"
-	originBranchRefPrefix = "refs/remotes/origin/"
-	unpeeledRefPrefix     = '^'
+	packedRefsHeader  = "# pack-refs with: peeled fully-peeled sorted "
+	tagRefPrefix      = "refs/tags/"
+	branchRefPrefix   = "refs/heads/"
+	unpeeledRefPrefix = '^'
 )
 
 // parsePackedRefs reads a `packed-refs` file, returning the packed branches and tags
@@ -80,8 +80,8 @@ func parsePackedRefs(data []byte) (
 		if err != nil {
 			return nil, nil, err
 		}
-		if strings.HasPrefix(ref, originBranchRefPrefix) {
-			branchName := strings.TrimPrefix(ref, originBranchRefPrefix)
+		if strings.HasPrefix(ref, branchRefPrefix) {
+			branchName := strings.TrimPrefix(ref, branchRefPrefix)
 			packedBranches[branchName] = hash
 		} else if strings.HasPrefix(ref, tagRefPrefix) {
 			tagName := strings.TrimPrefix(ref, tagRefPrefix)

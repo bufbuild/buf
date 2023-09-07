@@ -168,9 +168,12 @@ func TestBranches(t *testing.T) {
 	repo := gittest.ScaffoldGitRepository(t)
 	assert.Equal(t, gittest.DefaultBranch, repo.CurrentBranch())
 
-	var branches []string
+	branches := make(map[string]struct{})
 	err := repo.ForEachBranch(func(branch string, headHash git.Hash) error {
-		branches = append(branches, branch)
+		if _, alreadySeen := branches[branch]; alreadySeen {
+			assert.Fail(t, "duplicate branch", branch)
+		}
+		branches[branch] = struct{}{}
 
 		headCommit, err := repo.HEADCommit(branch)
 		require.NoError(t, err)
@@ -181,21 +184,24 @@ func TestBranches(t *testing.T) {
 		switch branch {
 		case "master":
 			assert.Equal(t, commit.Message(), "third commit")
-		case "smian/branch1":
+		case "buftest/branch1":
 			assert.Equal(t, commit.Message(), "branch1")
-		case "smian/branch2":
+		case "buftest/branch2":
 			assert.Equal(t, commit.Message(), "branch2")
+		case "buftest/local-only":
+			assert.Equal(t, commit.Message(), "local commit")
 		default:
-			assert.Failf(t, "unknown branch", branch)
+			assert.Fail(t, "unknown branch", branch)
 		}
 
 		return nil
 	})
 
 	require.NoError(t, err)
-	require.ElementsMatch(t, branches, []string{
-		"master",
-		"smian/branch1",
-		"smian/branch2",
-	})
+	assert.Equal(t, map[string]struct{}{
+		"master":             {},
+		"buftest/branch1":    {},
+		"buftest/branch2":    {},
+		"buftest/local-only": {},
+	}, branches)
 }

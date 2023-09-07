@@ -72,7 +72,6 @@ func TestNewBlobSet(t *testing.T) {
 	blobSet, err := manifest.NewBlobSet(
 		context.Background(),
 		newBlobsArray(t),
-		manifest.BlobSetWithContentValidation(),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, blobSet)
@@ -84,7 +83,6 @@ func TestNewBlobValidDuplicates(t *testing.T) {
 	blobSet, err := manifest.NewBlobSet(
 		context.Background(),
 		append(blobs, blobs[0]), // send the first blob twice
-		manifest.BlobSetWithContentValidation(),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, blobSet)
@@ -101,16 +99,6 @@ func TestNewBlobSetWithNilBlobs(t *testing.T) {
 		)
 		require.Error(t, err)
 	})
-	t.Run("AllowNils", func(t *testing.T) {
-		t.Parallel()
-		blobSet, err := manifest.NewBlobSet(
-			context.Background(),
-			blobsWithNil,
-			manifest.BlobSetWithSkipNilBlobs(),
-		)
-		require.NoError(t, err)
-		assert.NotNil(t, blobSet)
-	})
 }
 
 func TestNewBlobInvalidDuplicates(t *testing.T) {
@@ -124,8 +112,7 @@ func TestNewBlobInvalidDuplicates(t *testing.T) {
 	require.NotNil(t, incorrectBlob)
 	_, err = manifest.NewBlobSet(
 		context.Background(),
-		append(blobs, incorrectBlob), // send first digest twice, with diff content
-		manifest.BlobSetWithContentValidation(),
+		append(blobs, incorrectBlob),
 	)
 	require.Error(t, err)
 }

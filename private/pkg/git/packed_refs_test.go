@@ -40,13 +40,13 @@ func TestReadPackedRefs(t *testing.T) {
 	for tag, hash := range tags {
 		hexTags[tag] = hash.Hex()
 	}
-	assert.Equal(t, hexBranches, map[string]string{
+	assert.Equal(t, map[string]string{
 		"main":         "45c2edc61040013349e094663e492996e0c044e3",
 		"paralleltest": "1fddd89116e24df213d43b7d837f5dd29ee9cbf0",
-	})
-	assert.Equal(t, hexTags, map[string]string{
+	}, hexBranches)
+	assert.Equal(t, map[string]string{
 		"v0.1.0":  "157c7ae554844ff7ae178536ec10787b5b74b5db",
 		"v0.2.0":  "ace9301f315979bd053b7658c017391fe1af8804",
 		"v1.10.0": "ebb191e8268db7cee389e3abb0d1edc1852337a3",
-	})
+	}, hexTags)
 }

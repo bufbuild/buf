@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Update `buf beta price` with the latest pricing information.
+- Fix issue where `buf generate --exclude-path` was not properly excluding paths
+  for remote modules.
 
 ## [v1.26.1] - 2023-08-09
 

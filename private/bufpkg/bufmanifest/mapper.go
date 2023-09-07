@@ -33,7 +33,7 @@ var (
 	}
 )
 
-// NewDigestFromProtoDigest maps a modulev1alpha1.Digest to a Digest.
+// NewDigestFromProtoDigest converts a modulev1alpha1.Digest to a manifest.Digest.
 func NewDigestFromProtoDigest(digest *modulev1alpha1.Digest) (*manifest.Digest, error) {
 	if digest == nil {
 		return nil, fmt.Errorf("nil digest")
@@ -45,7 +45,7 @@ func NewDigestFromProtoDigest(digest *modulev1alpha1.Digest) (*manifest.Digest, 
 	return manifest.NewDigestFromBytes(dType, digest.Digest)
 }
 
-// AsProtoBlob returns the passed blob as a proto module blob.
+// AsProtoBlob converts a [manifest.Blob] to a Protobuf [modulev1alpha1.Blob].
 func AsProtoBlob(ctx context.Context, b manifest.Blob) (_ *modulev1alpha1.Blob, retErr error) {
 	digestType, ok := digestTypeToProtoDigestType[b.Digest().Type()]
 	if !ok {
@@ -72,7 +72,7 @@ func AsProtoBlob(ctx context.Context, b manifest.Blob) (_ *modulev1alpha1.Blob, 
 }
 
 // NewManifestFromProto returns a Manifest from a proto module blob. It makes sure the
-// digest and content matches.
+// digest and content match.
 func NewManifestFromProto(ctx context.Context, b *modulev1alpha1.Blob) (_ *manifest.Manifest, retErr error) {
 	blob, err := NewBlobFromProto(b)
 	if err != nil {
@@ -89,7 +89,7 @@ func NewManifestFromProto(ctx context.Context, b *modulev1alpha1.Blob) (_ *manif
 }
 
 // NewBlobSetFromProto returns a BlobSet from a slice of proto module blobs.
-// It makes sure the digest and content matches for each blob.
+// It makes sure the digest and content match for each blob.
 func NewBlobSetFromProto(ctx context.Context, blobs []*modulev1alpha1.Blob) (*manifest.BlobSet, error) {
 	var memBlobs []manifest.Blob
 	for i, modBlob := range blobs {
@@ -103,7 +103,7 @@ func NewBlobSetFromProto(ctx context.Context, blobs []*modulev1alpha1.Blob) (*ma
 }
 
 // NewBlobFromProto returns a Blob from a proto module blob. It makes sure the
-// digest and content matches.
+// digest and content match.
 func NewBlobFromProto(b *modulev1alpha1.Blob) (manifest.Blob, error) {
 	if b == nil {
 		return nil, fmt.Errorf("nil blob")
