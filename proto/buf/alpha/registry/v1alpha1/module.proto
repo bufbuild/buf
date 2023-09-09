@@ -31,10 +31,7 @@ message LocalModuleReference {
 // It does not include a remote.
 message LocalModulePin {
   reserved 3, 5, 7, 8;
-  reserved "branch",
-    "create_time"
-    "digest"
-, "draft_name";
+  reserved "branch", "create_time", "digest", "draft_name";
 
   string owner = 1;
   string repository = 2;
