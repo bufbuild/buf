@@ -82,10 +82,6 @@ service RepositoryCommitService {
   rpc DeleteRepositoryDraftCommit(DeleteRepositoryDraftCommitRequest) returns (DeleteRepositoryDraftCommitResponse) {
     option idempotency_level = IDEMPOTENT;
   }
-  // ListBSRHeadHistory returns a list of commits in historical order for BSR_HEAD.
-  rpc ListBSRHeadHistory(ListBSRHeadHistoryRequest) returns (ListBSRHeadHistoryResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
 }
 
 message ListRepositoryCommitsByBranchRequest {
@@ -167,20 +163,3 @@ message DeleteRepositoryDraftCommitRequest {
 }
 
 message DeleteRepositoryDraftCommitResponse {}
-
-message ListBSRHeadHistoryRequest {
-  // The owner of the repository which the repository branch belongs to.
-  string repository_owner = 1;
-  // The name of the repository which the repository branch belongs to.
-  string repository_name = 2;
-  uint32 page_size = 3;
-  string page_token = 4;
-  // By default, draft commits are ordered by create time descending.
-  // Reverse orders them ascending.
-  bool reverse = 5;
-}
-
-message ListBSRHeadHistoryResponse {
-  repeated RepositoryCommit repository_commits = 1;
-  string next_page_token = 2;
-}
