@@ -60,13 +60,7 @@ const (
 type RepositoryBranchServiceClient interface {
 	// ListRepositoryBranchs lists the repository branches associated with a Repository.
 	ListRepositoryBranches(context.Context, *connect.Request[v1alpha1.ListRepositoryBranchesRequest]) (*connect.Response[v1alpha1.ListRepositoryBranchesResponse], error)
-	// GetCurrentDefaultBranch returns the branch name that is mapped to the main/BSR_HEAD. This might
-	// not be the same value in the repository's `default_branch` field, since that value can be
-	// changed at will by repository's owners/admins for syncing git repositories. This RPC retrieves
-	// the branch from the latest commit labeled as BSR_HEAD, even if that value differs from the one
-	// stored in the `default_branch` field.
-	//
-	// TODO: Rename this RPC to something more appropriate like "GetLatestHEADCommit".
+	// GetCurrentDefaultBranch returns the branch that is mapped to the repository's `default_branch` field.
 	GetCurrentDefaultBranch(context.Context, *connect.Request[v1alpha1.GetCurrentDefaultBranchRequest]) (*connect.Response[v1alpha1.GetCurrentDefaultBranchResponse], error)
 }
 
@@ -119,13 +113,7 @@ func (c *repositoryBranchServiceClient) GetCurrentDefaultBranch(ctx context.Cont
 type RepositoryBranchServiceHandler interface {
 	// ListRepositoryBranchs lists the repository branches associated with a Repository.
 	ListRepositoryBranches(context.Context, *connect.Request[v1alpha1.ListRepositoryBranchesRequest]) (*connect.Response[v1alpha1.ListRepositoryBranchesResponse], error)
-	// GetCurrentDefaultBranch returns the branch name that is mapped to the main/BSR_HEAD. This might
-	// not be the same value in the repository's `default_branch` field, since that value can be
-	// changed at will by repository's owners/admins for syncing git repositories. This RPC retrieves
-	// the branch from the latest commit labeled as BSR_HEAD, even if that value differs from the one
-	// stored in the `default_branch` field.
-	//
-	// TODO: Rename this RPC to something more appropriate like "GetLatestHEADCommit".
+	// GetCurrentDefaultBranch returns the branch that is mapped to the repository's `default_branch` field.
 	GetCurrentDefaultBranch(context.Context, *connect.Request[v1alpha1.GetCurrentDefaultBranchRequest]) (*connect.Response[v1alpha1.GetCurrentDefaultBranchResponse], error)
 }
 
