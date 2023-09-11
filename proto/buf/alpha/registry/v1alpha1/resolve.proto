@@ -114,6 +114,9 @@ message LocalModuleResolveResult {
   buf.alpha.registry.v1alpha1.LocalModulePin pin = 2;
   // The type the reference resolved as.
   ResolvedReferenceType resolved_reference_type = 3;
+  // Indicates whether this reference is resolvable through BSR_HEAD.
+  // False indicates a non-default branch (formerly draft) commit.
+  bool bsr_head = 4;
 }
 
 message GetLocalModulePinsResponse {
