@@ -218,6 +218,12 @@ type DownloadManifestAndBlobsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// manifest is the manifest of the module's content.
+	// The content of the manifest blob is a text encoding of an ordered list of unique paths, each path encoded as:
+	//
+	//	<digest_type>:<digest>[SP][SP]<path>[LF]
+	//
+	// The only supported digest type is 'shake256'. The shake256 digest consists of 64 bytes of lowercase hex
+	// encoded output of SHAKE256.
 	Manifest *v1alpha1.Blob `protobuf:"bytes,1,opt,name=manifest,proto3" json:"manifest,omitempty"`
 	// blobs is a set of blobs that closes on the module's manifest to form the
 	// complete module's content.

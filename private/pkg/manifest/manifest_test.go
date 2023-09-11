@@ -37,13 +37,19 @@ func Example() {
 		},
 	)
 	m, _, _ := manifest.NewFromBucket(ctx, bucket)
+	encoded, _ := m.MarshalText()
+	fmt.Println("Canonical manifest encoding:")
+	fmt.Println(string(encoded))
 	digest, _ := m.DigestFor("foo")
 	fmt.Printf("digest[:16]: %s\n", digest.Hex()[:16])
-	path, _ := m.PathsFor(digest.String())
-	fmt.Printf("path at digest: %s\n", path[0])
+	paths, _ := m.PathsFor(digest.String())
+	fmt.Printf("paths for digest: %v\n", paths)
 	// Output:
+	// Canonical manifest encoding:
+	// shake256:a15163728ed24e1c7eddc03e92cb421940a0d1fe653bee3294358adf391d4da26adc110656392ff324f01dcdc9596196f1e66a3a071bb226e71a6f53ca2bf4ad  foo
+	//
 	// digest[:16]: a15163728ed24e1c
-	// path at digest: foo
+	// paths for digest: [foo]
 }
 
 func TestRoundTripManifest(t *testing.T) {

@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -40,7 +40,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
       - uses: actions/setup-go@v4
         with:
-          go-version: "1.20.x"
+          go-version: "1.21.x"
       - name: Install Buf
         run: make installbuf
       - name: Update Buf Version
@@ -88,7 +88,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -117,7 +117,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -134,7 +134,7 @@ jobs:
           echo "VERSION=${{github.ref_name}}" >> $GITHUB_ENV
       - uses: actions/setup-go@v4
         with:
-          go-version: "1.20.x"
+          go-version: "1.21.x"
       - name: Create assets
         env:
           RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
@@ -166,7 +166,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
@@ -209,7 +209,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
         with:
           app_id: ${{secrets.BUF_MAVEN_PUBLISH_APP_ID}}
           private_key: ${{ secrets.BUF_MAVEN_PUBLISH_APP_PRIVATE_KEY }}
@@ -236,7 +236,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
         with:
           app_id: ${{secrets.BUF_NPM_PUBLISH_RELEASE_APP_ID}}
           private_key: ${{ secrets.BUF_NPM_PUBLISH_RELEASE_APP_PRIVATE_KEY }}
@@ -263,7 +263,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
         with:
           app_id: ${{secrets.HOMEBREW_RELEASE_APP_ID}}
           private_key: ${{ secrets.HOMEBREW_RELEASE_APP_PRIVATE_KEY }}
@@ -290,7 +290,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
         with:
           app_id: ${{secrets.VIM_BUF_RELEASE_APP_ID}}
           private_key: ${{ secrets.VIM_BUF_RELEASE_APP_PRIVATE_KEY }}
@@ -317,7 +317,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
         with:
           app_id: ${{secrets.BUF_BUILD_RELEASE_APP_ID}}
           private_key: ${{ secrets.BUF_BUILD_RELEASE_APP_PRIVATE_KEY }}
@@ -344,7 +344,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
+        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
         with:
           app_id: ${{secrets.BUF_SETUP_ACTION_RELEASE_APP_ID}}
           private_key: ${{ secrets.BUF_SETUP_ACTION_RELEASE_APP_PRIVATE_KEY }}

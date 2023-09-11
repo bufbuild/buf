@@ -140,7 +140,7 @@ func (x *Digest) GetDigest() []byte {
 	return nil
 }
 
-// Blob represents some module content with an associated hash.
+// Blob represents some module content with an associated digest.
 type Blob struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -148,7 +148,7 @@ type Blob struct {
 
 	// Digest of the content.
 	Digest *Digest `protobuf:"bytes,1,opt,name=digest,proto3" json:"digest,omitempty"`
-	// Content of the blob. Optional when Blob is used as a content pointer.
+	// Content of the blob.
 	Content []byte `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
 }
 
@@ -457,6 +457,9 @@ type ModulePin struct {
 	Repository string `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
 	Commit     string `protobuf:"bytes,5,opt,name=commit,proto3" json:"commit,omitempty"`
 	// Module's manifest digest. Replacement for previous b1/b3 digests.
+	// This is in the format '<digest_type>:<digest>`, where '<digest_type>' is the lowercase digest name ('shake256'),
+	// and '<digest>' is the lowercase hex-encoded digest.
+	// This value is persisted directly to the buf.lock file (https://buf.build/docs/configuration/v1/buf-lock) as the 'digest' key.
 	ManifestDigest string `protobuf:"bytes,8,opt,name=manifest_digest,json=manifestDigest,proto3" json:"manifest_digest,omitempty"`
 }
 

@@ -62,6 +62,9 @@ const (
 	// RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure is the fully-qualified name of the
 	// RepositoryCommitService's DeleteRepositoryDraftCommit RPC.
 	RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/DeleteRepositoryDraftCommit"
+	// RepositoryCommitServiceListBSRHeadHistoryProcedure is the fully-qualified name of the
+	// RepositoryCommitService's ListBSRHeadHistory RPC.
+	RepositoryCommitServiceListBSRHeadHistoryProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListBSRHeadHistory"
 )
 
 // RepositoryCommitServiceClient is a client for the
@@ -82,6 +85,8 @@ type RepositoryCommitServiceClient interface {
 	ListRepositoryDraftCommits(context.Context, *connect.Request[v1alpha1.ListRepositoryDraftCommitsRequest]) (*connect.Response[v1alpha1.ListRepositoryDraftCommitsResponse], error)
 	// DeleteRepositoryDraftCommit deletes a draft.
 	DeleteRepositoryDraftCommit(context.Context, *connect.Request[v1alpha1.DeleteRepositoryDraftCommitRequest]) (*connect.Response[v1alpha1.DeleteRepositoryDraftCommitResponse], error)
+	// ListBSRHeadHistory returns a list of commits in historical order for BSR_HEAD.
+	ListBSRHeadHistory(context.Context, *connect.Request[v1alpha1.ListBSRHeadHistoryRequest]) (*connect.Response[v1alpha1.ListBSRHeadHistoryResponse], error)
 }
 
 // NewRepositoryCommitServiceClient constructs a client for the
@@ -125,6 +130,12 @@ func NewRepositoryCommitServiceClient(httpClient connect.HTTPClient, baseURL str
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
+		listBSRHeadHistory: connect.NewClient[v1alpha1.ListBSRHeadHistoryRequest, v1alpha1.ListBSRHeadHistoryResponse](
+			httpClient,
+			baseURL+RepositoryCommitServiceListBSRHeadHistoryProcedure,
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -135,6 +146,7 @@ type repositoryCommitServiceClient struct {
 	getRepositoryCommitByReference   *connect.Client[v1alpha1.GetRepositoryCommitByReferenceRequest, v1alpha1.GetRepositoryCommitByReferenceResponse]
 	listRepositoryDraftCommits       *connect.Client[v1alpha1.ListRepositoryDraftCommitsRequest, v1alpha1.ListRepositoryDraftCommitsResponse]
 	deleteRepositoryDraftCommit      *connect.Client[v1alpha1.DeleteRepositoryDraftCommitRequest, v1alpha1.DeleteRepositoryDraftCommitResponse]
+	listBSRHeadHistory               *connect.Client[v1alpha1.ListBSRHeadHistoryRequest, v1alpha1.ListBSRHeadHistoryResponse]
 }
 
 // ListRepositoryCommitsByBranch calls
@@ -169,6 +181,11 @@ func (c *repositoryCommitServiceClient) DeleteRepositoryDraftCommit(ctx context.
 	return c.deleteRepositoryDraftCommit.CallUnary(ctx, req)
 }
 
+// ListBSRHeadHistory calls buf.alpha.registry.v1alpha1.RepositoryCommitService.ListBSRHeadHistory.
+func (c *repositoryCommitServiceClient) ListBSRHeadHistory(ctx context.Context, req *connect.Request[v1alpha1.ListBSRHeadHistoryRequest]) (*connect.Response[v1alpha1.ListBSRHeadHistoryResponse], error) {
+	return c.listBSRHeadHistory.CallUnary(ctx, req)
+}
+
 // RepositoryCommitServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryCommitService service.
 type RepositoryCommitServiceHandler interface {
@@ -187,6 +204,8 @@ type RepositoryCommitServiceHandler interface {
 	ListRepositoryDraftCommits(context.Context, *connect.Request[v1alpha1.ListRepositoryDraftCommitsRequest]) (*connect.Response[v1alpha1.ListRepositoryDraftCommitsResponse], error)
 	// DeleteRepositoryDraftCommit deletes a draft.
 	DeleteRepositoryDraftCommit(context.Context, *connect.Request[v1alpha1.DeleteRepositoryDraftCommitRequest]) (*connect.Response[v1alpha1.DeleteRepositoryDraftCommitResponse], error)
+	// ListBSRHeadHistory returns a list of commits in historical order for BSR_HEAD.
+	ListBSRHeadHistory(context.Context, *connect.Request[v1alpha1.ListBSRHeadHistoryRequest]) (*connect.Response[v1alpha1.ListBSRHeadHistoryResponse], error)
 }
 
 // NewRepositoryCommitServiceHandler builds an HTTP handler from the service implementation. It
@@ -225,6 +244,12 @@ func NewRepositoryCommitServiceHandler(svc RepositoryCommitServiceHandler, opts 
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
+	repositoryCommitServiceListBSRHeadHistoryHandler := connect.NewUnaryHandler(
+		RepositoryCommitServiceListBSRHeadHistoryProcedure,
+		svc.ListBSRHeadHistory,
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/buf.alpha.registry.v1alpha1.RepositoryCommitService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case RepositoryCommitServiceListRepositoryCommitsByBranchProcedure:
@@ -237,6 +262,8 @@ func NewRepositoryCommitServiceHandler(svc RepositoryCommitServiceHandler, opts 
 			repositoryCommitServiceListRepositoryDraftCommitsHandler.ServeHTTP(w, r)
 		case RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure:
 			repositoryCommitServiceDeleteRepositoryDraftCommitHandler.ServeHTTP(w, r)
+		case RepositoryCommitServiceListBSRHeadHistoryProcedure:
+			repositoryCommitServiceListBSRHeadHistoryHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -264,4 +291,8 @@ func (UnimplementedRepositoryCommitServiceHandler) ListRepositoryDraftCommits(co
 
 func (UnimplementedRepositoryCommitServiceHandler) DeleteRepositoryDraftCommit(context.Context, *connect.Request[v1alpha1.DeleteRepositoryDraftCommitRequest]) (*connect.Response[v1alpha1.DeleteRepositoryDraftCommitResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryCommitService.DeleteRepositoryDraftCommit is not implemented"))
+}
+
+func (UnimplementedRepositoryCommitServiceHandler) ListBSRHeadHistory(context.Context, *connect.Request[v1alpha1.ListBSRHeadHistoryRequest]) (*connect.Response[v1alpha1.ListBSRHeadHistoryResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryCommitService.ListBSRHeadHistory is not implemented"))
 }

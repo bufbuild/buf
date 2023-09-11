@@ -59,7 +59,6 @@ func TestNewReadBucket(t *testing.T) {
 	blobSet, err := manifest.NewBlobSet(
 		context.Background(),
 		blobs,
-		manifest.BlobSetWithContentValidation(),
 	)
 	require.NoError(t, err)
 
