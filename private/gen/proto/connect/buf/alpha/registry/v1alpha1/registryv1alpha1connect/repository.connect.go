@@ -104,6 +104,9 @@ const (
 	// RepositoryServiceGetRepositoryDependencyDOTStringProcedure is the fully-qualified name of the
 	// RepositoryService's GetRepositoryDependencyDOTString RPC.
 	RepositoryServiceGetRepositoryDependencyDOTStringProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryDependencyDOTString"
+	// RepositoryServiceHasGitMetadataProcedure is the fully-qualified name of the RepositoryService's
+	// HasGitMetadata RPC.
+	RepositoryServiceHasGitMetadataProcedure = "/buf.alpha.registry.v1alpha1.RepositoryService/HasGitMetadata"
 )
 
 // RepositoryServiceClient is a client for the buf.alpha.registry.v1alpha1.RepositoryService
@@ -152,6 +155,8 @@ type RepositoryServiceClient interface {
 	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
 	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
 	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
+	// HasGitMetadata returns a boolean to indicate whether the repository has any git metadata.
+	HasGitMetadata(context.Context, *connect.Request[v1alpha1.HasGitMetadataRequest]) (*connect.Response[v1alpha1.HasGitMetadataResponse], error)
 }
 
 // NewRepositoryServiceClient constructs a client for the
@@ -275,6 +280,12 @@ func NewRepositoryServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+		hasGitMetadata: connect.NewClient[v1alpha1.HasGitMetadataRequest, v1alpha1.HasGitMetadataResponse](
+			httpClient,
+			baseURL+RepositoryServiceHasGitMetadataProcedure,
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -299,6 +310,7 @@ type repositoryServiceClient struct {
 	updateRepositorySettingsByName   *connect.Client[v1alpha1.UpdateRepositorySettingsByNameRequest, v1alpha1.UpdateRepositorySettingsByNameResponse]
 	getRepositoriesMetadata          *connect.Client[v1alpha1.GetRepositoriesMetadataRequest, v1alpha1.GetRepositoriesMetadataResponse]
 	getRepositoryDependencyDOTString *connect.Client[v1alpha1.GetRepositoryDependencyDOTStringRequest, v1alpha1.GetRepositoryDependencyDOTStringResponse]
+	hasGitMetadata                   *connect.Client[v1alpha1.HasGitMetadataRequest, v1alpha1.HasGitMetadataResponse]
 }
 
 // GetRepository calls buf.alpha.registry.v1alpha1.RepositoryService.GetRepository.
@@ -410,6 +422,11 @@ func (c *repositoryServiceClient) GetRepositoryDependencyDOTString(ctx context.C
 	return c.getRepositoryDependencyDOTString.CallUnary(ctx, req)
 }
 
+// HasGitMetadata calls buf.alpha.registry.v1alpha1.RepositoryService.HasGitMetadata.
+func (c *repositoryServiceClient) HasGitMetadata(ctx context.Context, req *connect.Request[v1alpha1.HasGitMetadataRequest]) (*connect.Response[v1alpha1.HasGitMetadataResponse], error) {
+	return c.hasGitMetadata.CallUnary(ctx, req)
+}
+
 // RepositoryServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryService service.
 type RepositoryServiceHandler interface {
@@ -456,6 +473,8 @@ type RepositoryServiceHandler interface {
 	GetRepositoriesMetadata(context.Context, *connect.Request[v1alpha1.GetRepositoriesMetadataRequest]) (*connect.Response[v1alpha1.GetRepositoriesMetadataResponse], error)
 	// GetRepositoryDependencyDOTString gets the dependency graph DOT string for the repository.
 	GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error)
+	// HasGitMetadata returns a boolean to indicate whether the repository has any git metadata.
+	HasGitMetadata(context.Context, *connect.Request[v1alpha1.HasGitMetadataRequest]) (*connect.Response[v1alpha1.HasGitMetadataResponse], error)
 }
 
 // NewRepositoryServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -574,6 +593,12 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect.H
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+	repositoryServiceHasGitMetadataHandler := connect.NewUnaryHandler(
+		RepositoryServiceHasGitMetadataProcedure,
+		svc.HasGitMetadata,
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/buf.alpha.registry.v1alpha1.RepositoryService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case RepositoryServiceGetRepositoryProcedure:
@@ -614,6 +639,8 @@ func NewRepositoryServiceHandler(svc RepositoryServiceHandler, opts ...connect.H
 			repositoryServiceGetRepositoriesMetadataHandler.ServeHTTP(w, r)
 		case RepositoryServiceGetRepositoryDependencyDOTStringProcedure:
 			repositoryServiceGetRepositoryDependencyDOTStringHandler.ServeHTTP(w, r)
+		case RepositoryServiceHasGitMetadataProcedure:
+			repositoryServiceHasGitMetadataHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -697,4 +724,8 @@ func (UnimplementedRepositoryServiceHandler) GetRepositoriesMetadata(context.Con
 
 func (UnimplementedRepositoryServiceHandler) GetRepositoryDependencyDOTString(context.Context, *connect.Request[v1alpha1.GetRepositoryDependencyDOTStringRequest]) (*connect.Response[v1alpha1.GetRepositoryDependencyDOTStringResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.GetRepositoryDependencyDOTString is not implemented"))
+}
+
+func (UnimplementedRepositoryServiceHandler) HasGitMetadata(context.Context, *connect.Request[v1alpha1.HasGitMetadataRequest]) (*connect.Response[v1alpha1.HasGitMetadataResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryService.HasGitMetadata is not implemented"))
 }

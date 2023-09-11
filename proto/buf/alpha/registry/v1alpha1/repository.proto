@@ -170,6 +170,10 @@ service RepositoryService {
   rpc GetRepositoryDependencyDOTString(GetRepositoryDependencyDOTStringRequest) returns (GetRepositoryDependencyDOTStringResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // HasGitMetadata returns a boolean to indicate whether the repository has any git metadata.
+  rpc HasGitMetadata(HasGitMetadataRequest) returns (HasGitMetadataResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message GetRepositoriesByFullNameRequest {
@@ -386,4 +390,15 @@ message GetRepositoryDependencyDOTStringResponse {
   //
   // DOT language reference: https://graphviz.org/doc/info/lang.html
   string dot_string = 1;
+}
+
+message HasGitMetadataRequest {
+  // The owner of the BSR repository.
+  string owner = 1;
+  // The name of the BSR repository.
+  string repository = 2;
+}
+
+message HasGitMetadataResponse {
+  bool has_git_metadata = 1;
 }
