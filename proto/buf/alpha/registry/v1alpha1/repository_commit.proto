@@ -175,6 +175,9 @@ message ListBSRHeadHistoryRequest {
   string repository_name = 2;
   uint32 page_size = 3;
   string page_token = 4;
+  // By default, draft commits are ordered by create time descending.
+  // Reverse orders them ascending.
+  bool reverse = 5;
 }
 
 message ListBSRHeadHistoryResponse {
