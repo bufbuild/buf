@@ -341,7 +341,7 @@ func (m *mockRepositoryService) GetRepositoryDependencyDOTString(_ context.Conte
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
 }
 
-func (m *mockRepositoryService) HasGitMetaddata(_ context.Context, _ *connect.Request[v1alpha1.HasGitMetadataRequest]) (*connect.Response[v1alpha1.HasGitMetadataResponse], error) {
+func (m *mockRepositoryService) HasGitMetaddata(_ context.Context, _ *connect.Request[registryv1alpha1.HasGitMetadataRequest]) (*connect.Response[registryv1alpha1.HasGitMetadataResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("unimplemented"))
 }
 
