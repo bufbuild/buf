@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -50,10 +49,8 @@ func TestNewModuleForBucket(t *testing.T) {
 		"foo",
 		"bar",
 		"baz",
-		"",
 		"62f35d8aed1149c291d606d958a7ce32",
 		nullDigest.String(),
-		time.Time{},
 	)
 	require.NoError(t, err)
 	testNewModuleForBucket(t,

@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
@@ -124,10 +123,8 @@ func testDownload(
 			"remote",
 			"owner",
 			"repository",
-			"branch",
 			"commit",
 			"digest",
-			time.Now(),
 		)
 		require.NoError(t, err)
 		module, err := moduleReader.GetModule(ctx, pin)
