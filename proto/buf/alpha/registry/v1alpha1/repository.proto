@@ -59,9 +59,6 @@ message Repository {
   // default branches (BSR and Git) are in sync. By default, every BSR repository is created with a
   // "main" default branch.
   string default_branch = 13;
-  // has_git_metadata indicates whether there is any Git metadata associated with any of the
-  // BSR commits in this repository.
-  bool has_git_metadata = 14;
 }
 
 message RepositoryCounts {
