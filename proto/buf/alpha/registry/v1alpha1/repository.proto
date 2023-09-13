@@ -390,10 +390,3 @@ message GetRepositoryDependencyDOTStringResponse {
   // DOT language reference: https://graphviz.org/doc/info/lang.html
   string dot_string = 1;
 }
-
-message HasGitMetadataRequest {
-  // The owner of the BSR repository.
-  string owner = 1;
-  // The name of the BSR repository.
-  string repository = 2;
-}
