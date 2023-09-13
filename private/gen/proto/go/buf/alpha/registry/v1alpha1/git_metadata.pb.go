@@ -109,10 +109,10 @@ type GitCommitInformation struct {
 
 	// Hash is the SHA1 hash of the git commit.
 	Hash string `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
-	// Author is metadata associatd with the author of the git commit.
+	// Author is metadata associated with the author of the git commit.
 	// This may not always be available, so it is not always populated.
 	Author *GitIdentity `protobuf:"bytes,2,opt,name=author,proto3,oneof" json:"author,omitempty"`
-	// Committer is the metadata sscoiated with the committer of the git commit.
+	// Committer is the metadata associated with the committer of the git commit.
 	// This may not always be available, so it is not always populated.
 	Committer *GitIdentity `protobuf:"bytes,3,opt,name=committer,proto3,oneof" json:"committer,omitempty"`
 }
