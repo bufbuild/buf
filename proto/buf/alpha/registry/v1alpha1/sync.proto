@@ -76,8 +76,8 @@ message SyncGitCommitRequest {
   string hash = 6;
   // Author is the author of the Git commit.
   GitIdentity author = 7;
-  // Commiter is the commiter of the Git commit.
-  GitIdentity commiter = 8;
+  // Committer is the committer of the Git commit.
+  GitIdentity committer = 8;
   // Tags are the Git tags which point to this commit.
   repeated string tags = 9;
 }
@@ -97,8 +97,8 @@ message AttachGitTagsRequest {
   string hash = 3;
   // Author is the author of the Git commit.
   GitIdentity author = 4;
-  // Commiter is the commiter of the Git commit.
-  GitIdentity commiter = 5;
+  // Committer is the committer of the Git commit.
+  GitIdentity committer = 5;
   // Tags are the Git tags which point to this commit, and that will be synced to the BSR commit.
   repeated string tags = 6;
 }

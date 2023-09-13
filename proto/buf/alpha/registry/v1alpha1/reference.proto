@@ -102,14 +102,3 @@ message ListGitCommitsForReferenceResponse {
   // There are no more pages if this is empty.
   string next_page_token = 3;
 }
-
-message GitCommitInformation {
-  // Hash is the SHA1 hash of the git commit.
-  string hash = 1;
-  // Author is metadata associatd with the author of the git commit.
-  // This may not always be available, so it is not always populated.
-  optional GitIdentity author = 2;
-  // Commiter is the metadata sscoiated with the commiter of the git commit.
-  // This may not always be available, so it is not always populated.
-  optional GitIdentity commiter = 3;
-}
