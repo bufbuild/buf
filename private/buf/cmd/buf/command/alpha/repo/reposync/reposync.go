@@ -351,7 +351,7 @@ func tagsBackfiller(clientConfig *connectclient.Config) bufsync.TagsBackfiller {
 				Email: author.Email(),
 				Time:  timestamppb.New(author.Timestamp()),
 			},
-			Commiter: &registryv1alpha1.GitIdentity{
+			Committer: &registryv1alpha1.GitIdentity{
 				Name:  committer.Name(),
 				Email: committer.Email(),
 				Time:  timestamppb.New(committer.Timestamp()),
@@ -524,7 +524,7 @@ func push(
 			Email: commit.Author().Email(),
 			Time:  timestamppb.New(commit.Author().Timestamp()),
 		},
-		Commiter: &registryv1alpha1.GitIdentity{
+		Committer: &registryv1alpha1.GitIdentity{
 			Name:  commit.Committer().Name(),
 			Email: commit.Committer().Email(),
 			Time:  timestamppb.New(commit.Committer().Timestamp()),
