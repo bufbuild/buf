@@ -272,7 +272,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			if len(moduleDirs) > 1 {
 				duplicatedIdentitiesErr = multierr.Append(duplicatedIdentitiesErr, fmt.Errorf(
 					"module identity %s cannot be synced in branch %s: present in multiple module directories: [%s]",
-					moduleIdentity, branch, strings.Join(moduleDirs, ","),
+					moduleIdentity, branch, strings.Join(moduleDirs, ", "),
 				))
 			}
 		}
