@@ -258,11 +258,11 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	for _, branch := range s.sortedBranchesForSync {
 		identitiesInBranch := make(map[string][]string) // moduleIdentity:[]moduleDir
 		for _, moduleDir := range s.sortedModulesDirsForSync {
-			branchesToIdentities, ok := s.modulesDirsToBranchesToIdentities[moduleDir]
+			branchToIdentity, ok := s.modulesDirsToBranchesToIdentities[moduleDir]
 			if !ok {
 				continue // this module directory won't be synced by any branch
 			}
-			identity, ok := branchesToIdentities[branch]
+			identity, ok := branchToIdentity[branch]
 			if !ok || identity == nil {
 				continue // this module directory won't be synced by this branch
 			}
