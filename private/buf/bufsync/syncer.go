@@ -53,6 +53,7 @@ type syncer struct {
 	tagsBackfiller            TagsBackfiller
 
 	// flags received on creation
+	remote                               string
 	sortedModulesDirsForSync             []string
 	modulesDirsToIdentityOverrideForSync map[string]bufmoduleref.ModuleIdentity // moduleDir:moduleIdentityOverride
 	syncAllBranches                      bool
@@ -214,7 +215,11 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	// (3) Prepare module targets for all module directories and branches.
 	allModulesIdentitiesForSync := make(map[string]bufmoduleref.ModuleIdentity) // moduleIdentityString:moduleIdentity
 	for _, branch := range branchesToSync {
-		headCommit, err := s.repo.HEADCommit(branch)
+		headCommitOpts := []git.HEADCommitOption{git.HEADCommitWithBranch(branch)}
+		if s.remote != "" {
+			headCommitOpts = append(headCommitOpts, git.HEADCommitWithRemote(s.remote))
+		}
+		headCommit, err := s.repo.HEADCommit(headCommitOpts...)
 		if err != nil {
 			return fmt.Errorf("reading head commit for branch %s: %w", branch, err)
 		}
@@ -354,7 +359,11 @@ func (s *syncer) syncModuleInBranch(
 		var startSyncPoint git.Hash
 		if len(commitsForSync) == 0 {
 			// no commits to sync for this branch, backfill from HEAD
-			headCommit, err := s.repo.HEADCommit(branch)
+			headCommitOpts := []git.HEADCommitOption{git.HEADCommitWithBranch(branch)}
+			if s.remote != "" {
+				headCommitOpts = append(headCommitOpts, git.HEADCommitWithRemote(s.remote))
+			}
+			headCommit, err := s.repo.HEADCommit(headCommitOpts...)
 			if err != nil {
 				return fmt.Errorf("read HEAD commit for branch %s: %w", branch, err)
 			}

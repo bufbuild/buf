@@ -177,6 +177,17 @@ func NewSyncer(
 // SyncerOption configures the creation of a new Syncer.
 type SyncerOption func(*syncer) error
 
+// SyncerWithRemote configures a Syncer with a resumption using a SyncPointResolver.
+func SyncerWithRemote(remoteName string) SyncerOption {
+	return func(s *syncer) error {
+		if remoteName == "" {
+			return errors.New("remote name cannot be empty")
+		}
+		s.remote = remoteName
+		return nil
+	}
+}
+
 // SyncerWithModule configures a Syncer to sync a module in the specified module directory, with an
 // optional module override.
 //
