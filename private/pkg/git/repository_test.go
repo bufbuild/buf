@@ -162,7 +162,7 @@ func TestCommits(t *testing.T) {
 	})
 }
 
-func TestBranches(t *testing.T) {
+func TestForEachBranch(t *testing.T) {
 	t.Parallel()
 	type testCase struct {
 		name                        string
@@ -207,15 +207,19 @@ func TestBranches(t *testing.T) {
 					opts = append(opts, git.ForEachBranchWithRemote(tc.remote))
 				}
 				err := repo.ForEachBranch(func(branch string, headHash git.Hash) error {
+					require.NotEmpty(t, branch)
 					if _, alreadySeen := branches[branch]; alreadySeen {
 						assert.Fail(t, "duplicate branch", branch)
 					}
 					branches[branch] = struct{}{}
 
-					headCommit, err := repo.HEADCommit(
-						git.HEADCommitWithBranch(tc.remote),
+					headCommitOpts := []git.HEADCommitOption{
 						git.HEADCommitWithBranch(branch),
-					)
+					}
+					if len(tc.remote) > 0 {
+						headCommitOpts = append(headCommitOpts, git.HEADCommitWithRemote(tc.remote))
+					}
+					headCommit, err := repo.HEADCommit(headCommitOpts...)
 					require.NoError(t, err)
 					assert.Equal(t, headHash, headCommit.Hash())
 
