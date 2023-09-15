@@ -164,44 +164,78 @@ func TestCommits(t *testing.T) {
 
 func TestBranches(t *testing.T) {
 	t.Parallel()
+	type testCase struct {
+		name                        string
+		remote                      string
+		expectedBranchesToCommitMsg map[string]string
+	}
+	testCases := []testCase{
+		{
+			name:   "when_local",
+			remote: "",
+			expectedBranchesToCommitMsg: map[string]string{
+				"master":             "third commit",
+				"buftest/branch1":    "local commit on pushed branch",
+				"buftest/branch2":    "branch2",
+				"buftest/local-only": "local commit on local branch",
+			},
+		},
+		{
+			name:   "when_remote_exists",
+			remote: gittest.DefaultRemote,
+			expectedBranchesToCommitMsg: map[string]string{
+				"master":          "third commit",
+				"buftest/branch1": "branch1",
+				"buftest/branch2": "branch2",
+			},
+		},
+		{
+			name:                        "when_remote_does_not_exists",
+			remote:                      "randomremote",
+			expectedBranchesToCommitMsg: nil,
+		},
+	}
+	for _, tc := range testCases {
+		func(tc testCase) {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+				repo := gittest.ScaffoldGitRepository(t)
+				assert.Equal(t, gittest.DefaultBranch, repo.CurrentBranch())
+				branches := make(map[string]struct{})
+				var opts []git.ForEachBranchOption
+				if len(tc.remote) > 0 {
+					opts = append(opts, git.ForEachBranchWithRemote(tc.remote))
+				}
+				err := repo.ForEachBranch(func(branch string, headHash git.Hash) error {
+					if _, alreadySeen := branches[branch]; alreadySeen {
+						assert.Fail(t, "duplicate branch", branch)
+					}
+					branches[branch] = struct{}{}
 
-	repo := gittest.ScaffoldGitRepository(t)
-	assert.Equal(t, gittest.DefaultBranch, repo.CurrentBranch())
+					headCommit, err := repo.HEADCommit(
+						git.HEADCommitWithBranch(tc.remote),
+						git.HEADCommitWithBranch(branch),
+					)
+					require.NoError(t, err)
+					assert.Equal(t, headHash, headCommit.Hash())
 
-	branches := make(map[string]struct{})
-	err := repo.ForEachBranch(func(branch string, headHash git.Hash) error {
-		if _, alreadySeen := branches[branch]; alreadySeen {
-			assert.Fail(t, "duplicate branch", branch)
-		}
-		branches[branch] = struct{}{}
-
-		headCommit, err := repo.HEADCommit(branch)
-		require.NoError(t, err)
-		assert.Equal(t, headHash, headCommit.Hash())
-
-		commit, err := repo.Objects().Commit(headHash)
-		require.NoError(t, err)
-		switch branch {
-		case "master":
-			assert.Equal(t, commit.Message(), "third commit")
-		case "buftest/branch1":
-			assert.Equal(t, commit.Message(), "branch1")
-		case "buftest/branch2":
-			assert.Equal(t, commit.Message(), "branch2")
-		case "buftest/local-only":
-			assert.Equal(t, commit.Message(), "local commit")
-		default:
-			assert.Fail(t, "unknown branch", branch)
-		}
-
-		return nil
-	})
-
-	require.NoError(t, err)
-	assert.Equal(t, map[string]struct{}{
-		"master":             {},
-		"buftest/branch1":    {},
-		"buftest/branch2":    {},
-		"buftest/local-only": {},
-	}, branches)
+					commit, err := repo.Objects().Commit(headHash)
+					require.NoError(t, err)
+					expectedMsg, ok := tc.expectedBranchesToCommitMsg[branch]
+					require.True(t, ok, "unexpected branch", branch)
+					assert.Equal(t, expectedMsg, commit.Message())
+					return nil
+				}, opts...)
+				assert.NoError(t, err)
+				for expectedBranch := range tc.expectedBranchesToCommitMsg {
+					_, seen := branches[expectedBranch]
+					assert.True(t, seen, "expected branch not seen", expectedBranch)
+				}
+				for seenBranch := range branches {
+					_, expected := tc.expectedBranchesToCommitMsg[seenBranch]
+					assert.True(t, expected, "unexpected branch seen", seenBranch)
+				}
+			})
+		}(tc)
+	}
 }

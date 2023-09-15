@@ -291,8 +291,9 @@ type Repository interface {
 	//
 	// If an error is seen, the loop is stopped and the error is returned.
 	ForEachCommit(f func(commit Commit) error, options ...ForEachCommitOption) error
-	// HEADCommit returns the HEAD commit at the passed branch.
-	HEADCommit(branch string) (Commit, error)
+	// HEADCommit returns by default the HEAD commit at the default branch. You can customize this by
+	// passing options.
+	HEADCommit(options ...HEADCommitOption) (Commit, error)
 	// ForEachTag ranges over tags in the repository in an undefined order.
 	ForEachTag(func(tag string, commitHash Hash) error) error
 	// Objects exposes the underlying object reader to read objects directly from the `.git`
@@ -309,6 +310,33 @@ type ForEachBranchOption func(*forEachBranchOpts) error
 // remote at their respective HEADs.
 func ForEachBranchWithRemote(remoteName string) ForEachBranchOption {
 	return func(opts *forEachBranchOpts) error {
+		if len(remoteName) == 0 {
+			return errors.New("remote name cannot be empty")
+		}
+		opts.remote = remoteName
+		return nil
+	}
+}
+
+// HEADCommitOption are options that can be passed to HEADCommit.
+type HEADCommitOption func(*headCommitOpts) error
+
+// HEADCommitWithBranch sets the function to return the HEAD commit for a specific branch instead of
+// the default branch.
+func HEADCommitWithBranch(branchName string) HEADCommitOption {
+	return func(opts *headCommitOpts) error {
+		if len(branchName) == 0 {
+			return errors.New("branch name cannot be empty")
+		}
+		opts.branch = branchName
+		return nil
+	}
+}
+
+// HEADCommitWithRemote sets the function to return the HEAD commit for the branch that is present
+// in the passed remote.
+func HEADCommitWithRemote(remoteName string) HEADCommitOption {
+	return func(opts *headCommitOpts) error {
 		if len(remoteName) == 0 {
 			return errors.New("remote name cannot be empty")
 		}
@@ -392,6 +420,11 @@ func OpenRepositoryWithDefaultBranch(name string) OpenRepositoryOption {
 }
 
 type forEachBranchOpts struct {
+	remote string
+}
+
+type headCommitOpts struct {
+	branch string
 	remote string
 }
 
