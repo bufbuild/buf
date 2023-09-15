@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -28,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -126,7 +128,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 	for _, moduleDir := range s.sortedModulesDirsForSync {
 		branchesToIdentities, shouldSyncModuleDir := s.modulesDirsToBranchesToIdentities[moduleDir]
 		if !shouldSyncModuleDir {
-			s.logger.Warn("module directory has no branches to sync", zap.String("module directory", moduleDir))
+			s.logger.Warn("module directory has no module identity target in any branch", zap.String("module directory", moduleDir))
 			continue
 		}
 		// for each branch in the right sync order
@@ -134,7 +136,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 			moduleIdentity, branchHasIdentity := branchesToIdentities[branch]
 			if !branchHasIdentity || moduleIdentity == nil {
 				s.logger.Warn(
-					"module directory has no module identity in branch",
+					"module directory has no module identity target for branch",
 					zap.String("module directory", moduleDir),
 					zap.String("branch", branch),
 				)
@@ -175,7 +177,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	}); err != nil {
 		return fmt.Errorf("looping over repository branches: %w", err)
 	}
-	// sync default git branch, make sure it's present in all the branches
+	// sync default git branch, make sure it's present
 	defaultBranch := s.repo.DefaultBranch()
 	if _, defaultBranchPresent := allBranches[defaultBranch]; !defaultBranchPresent {
 		return fmt.Errorf("default branch %s is not present in all branches", defaultBranch)
@@ -186,7 +188,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		// sync all branches
 		branchesToSync = stringutil.MapToSlice(allBranches)
 	} else {
-		// sync current branch, make sure it's present in all the branches
+		// sync current branch, make sure it's present
 		currentBranch := s.repo.CurrentBranch()
 		if _, currentBranchPresent := allBranches[currentBranch]; !currentBranchPresent {
 			return fmt.Errorf("current branch %s is not present in all branches", currentBranch)
@@ -250,6 +252,33 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 				s.modulesToBranchesExpectedSyncPoints[targetModuleIdentityString][branch] = moduleBranchSyncPoint.Hex()
 			}
 		}
+	}
+	// make sure no duplicate identities for different directories in the same branch
+	var duplicatedIdentitiesErr error
+	for _, branch := range s.sortedBranchesForSync {
+		identitiesInBranch := make(map[string][]string) // moduleIdentity:[]moduleDir
+		for _, moduleDir := range s.sortedModulesDirsForSync {
+			branchToIdentity, ok := s.modulesDirsToBranchesToIdentities[moduleDir]
+			if !ok {
+				continue // this module directory won't be synced by any branch
+			}
+			identity, ok := branchToIdentity[branch]
+			if !ok || identity == nil {
+				continue // this module directory won't be synced by this branch
+			}
+			identitiesInBranch[identity.IdentityString()] = append(identitiesInBranch[identity.IdentityString()], moduleDir)
+		}
+		for moduleIdentity, moduleDirs := range identitiesInBranch {
+			if len(moduleDirs) > 1 {
+				duplicatedIdentitiesErr = multierr.Append(duplicatedIdentitiesErr, fmt.Errorf(
+					"module identity %s cannot be synced in branch %s: present in multiple module directories: [%s]",
+					moduleIdentity, branch, strings.Join(moduleDirs, ", "),
+				))
+			}
+		}
+	}
+	if duplicatedIdentitiesErr != nil {
+		return duplicatedIdentitiesErr
 	}
 	// (4) Populate default branches for all module identities (from all branches).
 	if s.moduleDefaultBranchGetter != nil {
