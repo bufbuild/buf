@@ -281,7 +281,7 @@ type Repository interface {
 	// CurrentBranch is the current checked out branch.
 	CurrentBranch() string
 	// ForEachBranch ranges over branches in the repository in an undefined order.
-	ForEachBranch(func(branch string, headHash Hash) error) error
+	ForEachBranch(f func(branch string, headHash Hash) error, options ...ForEachBranchOption) error
 	// ForEachCommit ranges over commits in reverse topological order, going backwards in time always
 	// choosing the first parent, until no more parents are found (presumably the first commit of the
 	// git repository).
@@ -300,6 +300,21 @@ type Repository interface {
 	Objects() ObjectReader
 	// Close closes the repository.
 	Close() error
+}
+
+// ForEachBranchOption are options that can be passed to ForEachBranch.
+type ForEachBranchOption func(*forEachBranchOpts) error
+
+// ForEachBranchWithRemote sets the function to only loop over branches present in the passed
+// remote at their respective HEADs.
+func ForEachBranchWithRemote(remoteName string) ForEachBranchOption {
+	return func(opts *forEachBranchOpts) error {
+		if len(remoteName) == 0 {
+			return errors.New("remote name cannot be empty")
+		}
+		opts.remote = remoteName
+		return nil
+	}
 }
 
 // ForEachCommitOption are options that can be passed to ForEachCommit.
@@ -374,6 +389,10 @@ func OpenRepositoryWithDefaultBranch(name string) OpenRepositoryOption {
 		r.defaultBranch = name
 		return nil
 	}
+}
+
+type forEachBranchOpts struct {
+	remote string
 }
 
 // referenceType is the type of references that can be passed as starting points when traversing a

@@ -98,18 +98,29 @@ func (r *repository) Objects() ObjectReader {
 	return r.objectReader
 }
 
-func (r *repository) ForEachBranch(f func(string, Hash) error) error {
+func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEachBranchOption) error {
+	var config forEachBranchOpts
+	for _, option := range options {
+		if err := option(&config); err != nil {
+			return err
+		}
+	}
 	unpackedBranches := make(map[string]struct{})
 	// Read unpacked branch refs.
-	dir := path.Join(r.gitDirPath, "refs", "heads")
-	if err := filepathextended.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+	var headsDir string
+	if len(config.remote) == 0 {
+		headsDir = path.Join(r.gitDirPath, "refs", "heads") // all local branches
+	} else {
+		headsDir = path.Join(r.gitDirPath, "refs", "remotes", config.remote) // only branches in this remote
+	}
+	if err := filepathextended.Walk(headsDir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.Name() == "HEAD" || info.IsDir() {
 			return nil
 		}
-		branchName, err := filepath.Rel(dir, path)
+		branchName, err := filepath.Rel(headsDir, path)
 		if err != nil {
 			return err
 		}
