@@ -452,7 +452,7 @@ type Webhook struct {
 	// we only support Connect-powered backends with application/proto as the
 	// content type. Make sure that your URL ends with
 	// "/buf.alpha.webhook.v1alpha1.EventService/Event". For more information
-	// about Connect, see https://connect.build.
+	// about Connect, see https://connectrpc.com.
 	CallbackUrl string `protobuf:"bytes,7,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
 }
 
