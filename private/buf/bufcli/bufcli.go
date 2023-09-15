@@ -890,11 +890,11 @@ func PackageVersionLongDescription(registryName, commandName, examplePlugin stri
 Examples:
 
 Get the version of the eliza module and the %s plugin for use with %s.
-    $ buf alpha package %s --module=buf.build/bufbuild/eliza --plugin=%s
+    $ buf alpha package %s --module=buf.build/connectrpc/eliza --plugin=%s
         v1.7.0-20230609151053-e682db0d9918.1
 
 Use a specific module version and plugin version.
-    $ buf alpha package %s --module=buf.build/bufbuild/eliza:e682db0d99184be88b41c4405ea8a417 --plugin=%s:v1.0.0
+    $ buf alpha package %s --module=buf.build/connectrpc/eliza:233fca715f49425581ec0a1b660be886 --plugin=%s:v1.0.0
         v1.0.0-20230609151053-e682db0d9918.1
 `, registryName, registryName, examplePlugin, registryName, commandName, examplePlugin, commandName, examplePlugin)
 }
