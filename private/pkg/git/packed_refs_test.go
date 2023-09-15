@@ -30,23 +30,44 @@ func TestReadPackedRefs(t *testing.T) {
 	require.NoError(t, err)
 
 	branches, tags, err := parsePackedRefs(allBytes)
-
 	require.NoError(t, err)
-	hexBranches := map[string]string{}
-	for branch, hash := range branches {
-		hexBranches[branch] = hash.Hex()
-	}
-	hexTags := map[string]string{}
-	for tag, hash := range tags {
-		hexTags[tag] = hash.Hex()
-	}
-	assert.Equal(t, map[string]string{
-		"main":         "45c2edc61040013349e094663e492996e0c044e3",
-		"paralleltest": "1fddd89116e24df213d43b7d837f5dd29ee9cbf0",
-	}, hexBranches)
-	assert.Equal(t, map[string]string{
-		"v0.1.0":  "157c7ae554844ff7ae178536ec10787b5b74b5db",
-		"v0.2.0":  "ace9301f315979bd053b7658c017391fe1af8804",
-		"v1.10.0": "ebb191e8268db7cee389e3abb0d1edc1852337a3",
-	}, hexTags)
+
+	t.Run("branches", func(t *testing.T) {
+		t.Parallel()
+		hexBranches := make(map[string]map[string]string)
+		for remote, branchToHash := range branches {
+			hexBranches[remote] = make(map[string]string)
+			for branch, hash := range branchToHash {
+				hexBranches[remote][branch] = hash.Hex()
+			}
+		}
+		assert.Equal(t, map[string]map[string]string{
+			"": { // local
+				"main":         "45c2edc61040013349e094663e492996e0c044e3",
+				"paralleltest": "1fddd89116e24df213d43b7d837f5dd29ee9cbf0",
+			},
+			"origin": {
+				"main":         "45c2edc61040013349e094663e492996e0c044e3",
+				"paralleltest": "1fddd89116e24df213d43b7d837f5dd29ee9cbf0",
+				"other/branch": "1fddd89116e24df213d43b7d837f5dd29ee9cbf1",
+			},
+			"otherorigin": {
+				"main":               "27523d9000238e0f7fb35d6052d10016852beee3",
+				"paralleltest":       "959e716b38b179bd5a4e7edfc549db2e30df3c8e",
+				"yet/another/branch": "959e716b38b179bd5a4e7edfc549db2e30df3c8f",
+			},
+		}, hexBranches)
+	})
+	t.Run("tags", func(t *testing.T) {
+		t.Parallel()
+		hexTags := map[string]string{}
+		for tag, hash := range tags {
+			hexTags[tag] = hash.Hex()
+		}
+		assert.Equal(t, map[string]string{
+			"v0.1.0":  "157c7ae554844ff7ae178536ec10787b5b74b5db",
+			"v0.2.0":  "ace9301f315979bd053b7658c017391fe1af8804",
+			"v1.10.0": "ebb191e8268db7cee389e3abb0d1edc1852337a3",
+		}, hexTags)
+	})
 }
