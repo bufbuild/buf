@@ -65,20 +65,20 @@ func TestCommits(t *testing.T) {
 	t.Parallel()
 
 	repo := gittest.ScaffoldGitRepository(t)
-	var commits []git.Commit
+	var commitsByDefault []git.Commit
 	err := repo.ForEachCommit(func(c git.Commit) error {
-		commits = append(commits, c)
+		commitsByDefault = append(commitsByDefault, c) // by default we loop from HEAD at the local default branch
 		return nil
 	})
 	require.NoError(t, err)
-	require.Len(t, commits, 3)
+	require.Len(t, commitsByDefault, 3)
 
-	assert.Equal(t, commits[0].Message(), "third commit")
-	assert.Contains(t, commits[0].Parents(), commits[1].Hash())
-	assert.Equal(t, commits[1].Message(), "second commit")
-	assert.Contains(t, commits[1].Parents(), commits[2].Hash())
-	assert.Equal(t, commits[2].Message(), "initial commit")
-	assert.Empty(t, commits[2].Parents())
+	assert.Equal(t, commitsByDefault[0].Message(), "third commit")
+	assert.Contains(t, commitsByDefault[0].Parents(), commitsByDefault[1].Hash())
+	assert.Equal(t, commitsByDefault[1].Message(), "second commit")
+	assert.Contains(t, commitsByDefault[1].Parents(), commitsByDefault[2].Hash())
+	assert.Equal(t, commitsByDefault[2].Message(), "initial commit")
+	assert.Empty(t, commitsByDefault[2].Parents())
 
 	t.Run("default_behavior", func(t *testing.T) {
 		var commitsFromDefaultBranch []git.Commit
@@ -90,17 +90,7 @@ func TestCommits(t *testing.T) {
 			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
 		)
 		require.NoError(t, err)
-		assert.Equal(t, commits, commitsFromDefaultBranch)
-	})
-
-	t.Run("set_same_starting_point_multiple_times", func(t *testing.T) {
-		assert.NoError(t, repo.ForEachCommit(
-			func(git.Commit) error { return nil },
-			// multiple times, same starting point should be a nop
-			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
-			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
-			git.ForEachCommitWithBranchStartPoint(repo.DefaultBranch()),
-		))
+		assert.Equal(t, commitsByDefault, commitsFromDefaultBranch)
 	})
 
 	t.Run("custom_starting_point", func(t *testing.T) {
@@ -110,7 +100,7 @@ func TestCommits(t *testing.T) {
 				commitsFromSecond = append(commitsFromSecond, c)
 				return nil
 			},
-			git.ForEachCommitWithHashStartPoint(commits[1].Hash().Hex()),
+			git.ForEachCommitWithHashStartPoint(commitsByDefault[1].Hash().Hex()),
 		)
 		require.NoError(t, err)
 		require.Len(t, commitsFromSecond, 2)
@@ -119,6 +109,47 @@ func TestCommits(t *testing.T) {
 		assert.Contains(t, commitsFromSecond[0].Parents(), commitsFromSecond[1].Hash())
 		assert.Equal(t, commitsFromSecond[1].Message(), "initial commit")
 		assert.Empty(t, commitsFromSecond[1].Parents())
+	})
+
+	t.Run("local_branch", func(t *testing.T) {
+		var commitsFromLocalBranch []git.Commit
+		err = repo.ForEachCommit(
+			func(c git.Commit) error {
+				commitsFromLocalBranch = append(commitsFromLocalBranch, c)
+				return nil
+			},
+			git.ForEachCommitWithBranchStartPoint("buftest/branch1"),
+		)
+		require.NoError(t, err)
+		require.Len(t, commitsFromLocalBranch, 3)
+
+		assert.Equal(t, commitsFromLocalBranch[0].Message(), "local commit on pushed branch")
+		assert.Contains(t, commitsFromLocalBranch[0].Parents(), commitsFromLocalBranch[1].Hash())
+		assert.Equal(t, commitsFromLocalBranch[1].Message(), "branch1")
+		assert.Contains(t, commitsFromLocalBranch[1].Parents(), commitsFromLocalBranch[2].Hash())
+		assert.Equal(t, commitsFromLocalBranch[2].Message(), "initial commit")
+		assert.Empty(t, commitsFromLocalBranch[2].Parents())
+	})
+
+	t.Run("remote_branch", func(t *testing.T) {
+		var commitsFromRemoteBranch []git.Commit
+		err = repo.ForEachCommit(
+			func(c git.Commit) error {
+				commitsFromRemoteBranch = append(commitsFromRemoteBranch, c)
+				return nil
+			},
+			git.ForEachCommitWithBranchStartPoint(
+				"buftest/branch1",
+				git.ForEachCommitWithBranchStartPointWithRemote(gittest.DefaultRemote),
+			),
+		)
+		require.NoError(t, err)
+		require.Len(t, commitsFromRemoteBranch, 2)
+
+		assert.Equal(t, commitsFromRemoteBranch[0].Message(), "branch1")
+		assert.Contains(t, commitsFromRemoteBranch[0].Parents(), commitsFromRemoteBranch[1].Hash())
+		assert.Equal(t, commitsFromRemoteBranch[1].Message(), "initial commit")
+		assert.Empty(t, commitsFromRemoteBranch[1].Parents())
 	})
 
 	t.Run("failures", func(t *testing.T) {
@@ -203,7 +234,7 @@ func TestForEachBranch(t *testing.T) {
 				assert.Equal(t, gittest.DefaultBranch, repo.CurrentBranch())
 				branches := make(map[string]struct{})
 				var opts []git.ForEachBranchOption
-				if len(tc.remote) > 0 {
+				if tc.remote != "" {
 					opts = append(opts, git.ForEachBranchWithRemote(tc.remote))
 				}
 				err := repo.ForEachBranch(func(branch string, headHash git.Hash) error {
@@ -216,7 +247,7 @@ func TestForEachBranch(t *testing.T) {
 					headCommitOpts := []git.HEADCommitOption{
 						git.HEADCommitWithBranch(branch),
 					}
-					if len(tc.remote) > 0 {
+					if tc.remote != "" {
 						headCommitOpts = append(headCommitOpts, git.HEADCommitWithRemote(tc.remote))
 					}
 					headCommit, err := repo.HEADCommit(headCommitOpts...)

@@ -108,7 +108,7 @@ func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEac
 	unpackedBranches := make(map[string]struct{})
 	// Read unpacked branch refs.
 	var headsDir string
-	if len(config.remote) == 0 {
+	if config.remote == "" {
 		headsDir = path.Join(r.gitDirPath, "refs", "heads") // all local branches
 	} else {
 		headsDir = path.Join(r.gitDirPath, "refs", "remotes", config.remote) // only branches in this remote
@@ -171,37 +171,10 @@ func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommi
 			return err
 		}
 	}
-	var startCommit Commit
-	if config.start == nil {
-		// if no custom start point is set, use HEAD from the default branch
-		var err error
-		startCommit, err = r.HEADCommit()
-		if err != nil {
-			return fmt.Errorf("get head commit for default branch %q: %w", r.DefaultBranch(), err)
-		}
-	} else {
-		switch config.start.refType {
-		case refTypeHash:
-			commitID, err := NewHashFromHex(config.start.refName)
-			if err != nil {
-				return fmt.Errorf("new hash from %s: %w", config.start.refName, err)
-			}
-			startCommit, err = r.objectReader.Commit(commitID)
-			if err != nil {
-				return fmt.Errorf("read commit %s: %w", commitID.Hex(), err)
-			}
-		case refTypeBranch:
-			branch := normalpath.Unnormalize(config.start.refName)
-			var err error
-			startCommit, err = r.HEADCommit(HEADCommitWithBranch(branch))
-			if err != nil {
-				return fmt.Errorf("read HEAD commit for branch %q: %w", branch, err)
-			}
-		default:
-			return fmt.Errorf("unsupported start point reference type %s:%s", config.start.refType, config.start.refName)
-		}
+	currentCommit, err := r.commitAt(config.start)
+	if err != nil {
+		return fmt.Errorf("find start commit: %w", err)
 	}
-	currentCommit := startCommit
 	for {
 		if err := f(currentCommit); err != nil {
 			return err
@@ -297,14 +270,14 @@ func (r *repository) HEADCommit(options ...HEADCommitOption) (Commit, error) {
 		}
 	}
 	var branch = r.DefaultBranch()
-	if len(config.branch) > 0 {
+	if config.branch != "" {
 		branch = config.branch
 	}
 	var branchRefPath string
-	if len(config.remote) > 0 {
-		branchRefPath = path.Join(r.gitDirPath, "refs", "remotes", config.remote, branch)
-	} else {
+	if config.remote == "" {
 		branchRefPath = path.Join(r.gitDirPath, "refs", "heads", branch)
+	} else {
+		branchRefPath = path.Join(r.gitDirPath, "refs", "remotes", config.remote, branch)
 	}
 	commitBytes, err := os.ReadFile(branchRefPath)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -356,6 +329,43 @@ func (r *repository) readPackedRefs() error {
 		r.packedBranches, r.packedTags, r.packedReadError = parsePackedRefs(allBytes)
 	})
 	return r.packedReadError
+}
+
+// commitAt returns the commit at the passed reference.
+func (r *repository) commitAt(ref reference) (Commit, error) {
+	if ref == nil {
+		// if no custom start point is set, use HEAD from the default branch
+		startCommit, err := r.HEADCommit()
+		if err != nil {
+			return nil, fmt.Errorf("get head commit for default branch %q: %w", r.DefaultBranch(), err)
+		}
+		return startCommit, nil
+	}
+	if hashRef, ok := ref.(*hashReference); ok {
+		commitID, err := NewHashFromHex(hashRef.name)
+		if err != nil {
+			return nil, fmt.Errorf("new hash from %s: %w", hashRef.name, err)
+		}
+		startCommit, err := r.objectReader.Commit(commitID)
+		if err != nil {
+			return nil, fmt.Errorf("read commit %s: %w", commitID.Hex(), err)
+		}
+		return startCommit, nil
+	}
+	if branchRef, ok := ref.(*branchReference); ok {
+		branchName := normalpath.Unnormalize(branchRef.name)
+		var err error
+		headCommitOpts := []HEADCommitOption{HEADCommitWithBranch(branchName)}
+		if branchRef.remote != "" {
+			headCommitOpts = append(headCommitOpts, HEADCommitWithRemote(branchRef.remote))
+		}
+		startCommit, err := r.HEADCommit(headCommitOpts...)
+		if err != nil {
+			return nil, fmt.Errorf("read HEAD commit for branch %q: %w", branchRef.refName(), err)
+		}
+		return startCommit, nil
+	}
+	return nil, fmt.Errorf("unsupported start point reference type %s:%s", ref.refType(), ref.refName())
 }
 
 // detectDefaultBranch returns the repository's default branch name. It attempts to read it from the

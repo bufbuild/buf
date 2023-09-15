@@ -47,13 +47,6 @@ const (
 	ModeSubmodule ObjectMode = 016_0000
 )
 
-const (
-	// refTypeHash is the reference type for a git SHA hash.
-	refTypeHash referenceType = "hash"
-	// refTypeBranch is the reference type for a git branch.
-	refTypeBranch referenceType = "branch"
-)
-
 var (
 	// ErrTreeNodeNotFound is an error found in the error chain when
 	// Tree#Descendant is unable to find the target tree node.
@@ -310,7 +303,7 @@ type ForEachBranchOption func(*forEachBranchOpts) error
 // remote at their respective HEADs.
 func ForEachBranchWithRemote(remoteName string) ForEachBranchOption {
 	return func(opts *forEachBranchOpts) error {
-		if len(remoteName) == 0 {
+		if remoteName == "" {
 			return errors.New("remote name cannot be empty")
 		}
 		opts.remote = remoteName
@@ -325,7 +318,7 @@ type HEADCommitOption func(*headCommitOpts) error
 // the default branch.
 func HEADCommitWithBranch(branchName string) HEADCommitOption {
 	return func(opts *headCommitOpts) error {
-		if len(branchName) == 0 {
+		if branchName == "" {
 			return errors.New("branch name cannot be empty")
 		}
 		opts.branch = branchName
@@ -337,7 +330,7 @@ func HEADCommitWithBranch(branchName string) HEADCommitOption {
 // in the passed remote.
 func HEADCommitWithRemote(remoteName string) HEADCommitOption {
 	return func(opts *headCommitOpts) error {
-		if len(remoteName) == 0 {
+		if remoteName == "" {
 			return errors.New("remote name cannot be empty")
 		}
 		opts.remote = remoteName
@@ -348,24 +341,36 @@ func HEADCommitWithRemote(remoteName string) HEADCommitOption {
 // ForEachCommitOption are options that can be passed to ForEachCommit.
 type ForEachCommitOption func(*forEachCommitOpts) error
 
-// ForEachCommitWithBranchStartPoint sets a branch name as a starting point to start the loop.
-func ForEachCommitWithBranchStartPoint(branchName string) ForEachCommitOption {
+// ForEachCommitWithBranchStartPoint sets a branch as a starting point to start the loop.
+func ForEachCommitWithBranchStartPoint(branchName string, options ...ForEachCommitWithBranchStartPointOption) ForEachCommitOption {
 	return func(opts *forEachCommitOpts) error {
-		if opts.start != nil {
-			if opts.start.refType == refTypeBranch && opts.start.refName == branchName {
-				// already set, nop
-				return nil
+		var config forEachCommitWithBranchStartPointOpts
+		for _, option := range options {
+			if err := option(&config); err != nil {
+				return err
 			}
+		}
+		if opts.start != nil {
 			return fmt.Errorf(
-				"cannot set a starting point %s:%s, another starting point %s:%s already exists",
-				refTypeBranch, branchName,
-				opts.start.refType, opts.start.refName,
+				"cannot set a starting point branch:%s, another starting point %s:%s already exists",
+				branchName, opts.start.refType(), opts.start.refName(),
 			)
 		}
-		opts.start = &reference{
-			refType: refTypeBranch,
-			refName: branchName,
+		opts.start = &branchReference{name: branchName, remote: config.remote}
+		return nil
+	}
+}
+
+type ForEachCommitWithBranchStartPointOption func(*forEachCommitWithBranchStartPointOpts) error
+
+// ForEachCommitWithBranchStartPointWithRemote uses the remote position for the branch, instead of
+// the local position.
+func ForEachCommitWithBranchStartPointWithRemote(remoteName string) ForEachCommitWithBranchStartPointOption {
+	return func(opts *forEachCommitWithBranchStartPointOpts) error {
+		if remoteName == "" {
+			return errors.New("remote name cannot be empty")
 		}
+		opts.remote = remoteName
 		return nil
 	}
 }
@@ -374,20 +379,12 @@ func ForEachCommitWithBranchStartPoint(branchName string) ForEachCommitOption {
 func ForEachCommitWithHashStartPoint(hash string) ForEachCommitOption {
 	return func(opts *forEachCommitOpts) error {
 		if opts.start != nil {
-			if opts.start.refType == refTypeHash && opts.start.refName == hash {
-				// already set, nop
-				return nil
-			}
 			return fmt.Errorf(
-				"cannot set a starting point %s:%s, another starting point %s:%s already exists",
-				refTypeHash, hash,
-				opts.start.refType, opts.start.refName,
+				"cannot set a starting point hash:%s, another starting point %s:%s already exists",
+				hash, opts.start.refType(), opts.start.refName(),
 			)
 		}
-		opts.start = &reference{
-			refType: refTypeHash,
-			refName: hash,
-		}
+		opts.start = &hashReference{name: hash}
 		return nil
 	}
 }
@@ -428,16 +425,36 @@ type headCommitOpts struct {
 	remote string
 }
 
-// referenceType is the type of references that can be passed as starting points when traversing a
-// git tree.
-type referenceType string
+type forEachCommitWithBranchStartPointOpts struct {
+	remote string
+}
 
 // reference is a single git reference used in ForEachCommit to declare an starting commit.
-type reference struct {
-	refName string
-	refType referenceType
+type reference interface {
+	refType() string
+	refName() string
+}
+
+type hashReference struct {
+	name string
+}
+
+func (r *hashReference) refType() string { return "hash" }
+func (r *hashReference) refName() string { return r.name }
+
+type branchReference struct {
+	name   string
+	remote string
+}
+
+func (r *branchReference) refType() string { return "branch" }
+func (r *branchReference) refName() string {
+	if r.remote != "" {
+		return r.remote + "/" + r.name
+	}
+	return r.name
 }
 
 type forEachCommitOpts struct {
-	start *reference
+	start reference
 }

@@ -94,10 +94,10 @@ func parsePackedRefs(data []byte) (
 			if !found {
 				return nil, nil, fmt.Errorf("invalid packed-refs file: invalid ref %s", ref)
 			}
-			if len(remoteName) == 0 {
+			if remoteName == "" {
 				return nil, nil, fmt.Errorf("invalid packed-refs file: empty remote for ref %s", ref)
 			}
-			if len(branchName) == 0 {
+			if branchName == "" {
 				return nil, nil, fmt.Errorf("invalid packed-refs file: empty branch for ref %s", ref)
 			}
 			if packedBranches[remoteName] == nil {
