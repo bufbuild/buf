@@ -34,7 +34,7 @@ jobs:
           permissions: >-
             {"contents": "write", "pull_requests": "write"}
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ steps.generate_token.outputs.token }}
       - uses: actions/setup-go@v4
@@ -67,7 +67,7 @@ jobs:
     if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'release') }}
     steps:
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -99,7 +99,7 @@ jobs:
           VERSION=${{github.head_ref}}
           echo "VERSION=${VERSION##*/}" >> $GITHUB_ENV
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ steps.generate_token.outputs.token }}
           fetch-depth: 0
@@ -124,7 +124,7 @@ jobs:
           permissions: >-
             {"contents": "write", "pull_requests": "write"}
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -173,7 +173,7 @@ jobs:
           permissions: >-
             {"contents": "write", "pull_requests": "write"}
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
