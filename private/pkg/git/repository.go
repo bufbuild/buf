@@ -285,12 +285,14 @@ func (r *repository) HEADCommit(options ...HEADCommitOption) (Commit, error) {
 		if err := r.readPackedRefs(); err != nil {
 			return nil, err
 		}
-		if commitID, ok := r.packedBranches[config.remote][branch]; ok {
-			commit, err := r.objectReader.Commit(commitID)
-			if err != nil {
-				return nil, err
+		if remotePackedRefs, ok := r.packedBranches[config.remote]; ok {
+			if commitID, ok := remotePackedRefs[branch]; ok {
+				commit, err := r.objectReader.Commit(commitID)
+				if err != nil {
+					return nil, err
+				}
+				return commit, nil
 			}
-			return commit, nil
 		}
 		return nil, fmt.Errorf("branch %q not found", branch)
 	}
