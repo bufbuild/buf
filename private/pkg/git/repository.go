@@ -336,23 +336,23 @@ func (r *repository) readPackedRefs() error {
 // commitAt returns the commit at the passed reference.
 func (r *repository) commitAt(ref reference) (Commit, error) {
 	if ref == nil {
-		// if no custom start point is set, use HEAD from the default branch
-		startCommit, err := r.HEADCommit()
+		// if ref is passed use HEAD with its default behavior
+		commit, err := r.HEADCommit()
 		if err != nil {
-			return nil, fmt.Errorf("get head commit for default branch %q: %w", r.DefaultBranch(), err)
+			return nil, fmt.Errorf("get head commit: %w", err)
 		}
-		return startCommit, nil
+		return commit, nil
 	}
 	if hashRef, ok := ref.(*hashReference); ok {
 		commitID, err := NewHashFromHex(hashRef.name)
 		if err != nil {
 			return nil, fmt.Errorf("new hash from %s: %w", hashRef.name, err)
 		}
-		startCommit, err := r.objectReader.Commit(commitID)
+		commit, err := r.objectReader.Commit(commitID)
 		if err != nil {
 			return nil, fmt.Errorf("read commit %s: %w", commitID.Hex(), err)
 		}
-		return startCommit, nil
+		return commit, nil
 	}
 	if branchRef, ok := ref.(*branchReference); ok {
 		branchName := normalpath.Unnormalize(branchRef.name)
@@ -361,13 +361,13 @@ func (r *repository) commitAt(ref reference) (Commit, error) {
 		if branchRef.remote != "" {
 			headCommitOpts = append(headCommitOpts, HEADCommitWithRemote(branchRef.remote))
 		}
-		startCommit, err := r.HEADCommit(headCommitOpts...)
+		commit, err := r.HEADCommit(headCommitOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("read HEAD commit for branch %q: %w", branchRef.refName(), err)
 		}
-		return startCommit, nil
+		return commit, nil
 	}
-	return nil, fmt.Errorf("unsupported start point reference type %s:%s", ref.refType(), ref.refName())
+	return nil, fmt.Errorf("unsupported reference %s:%s", ref.refType(), ref.refName())
 }
 
 // detectDefaultBranch returns the repository's default branch name. It attempts to read it from the
