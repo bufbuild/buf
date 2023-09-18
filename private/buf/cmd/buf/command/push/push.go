@@ -41,6 +41,7 @@ const (
 	tagFlagName              = "tag"
 	tagFlagShortName         = "t"
 	draftFlagName            = "draft"
+	branchFlagName           = "branch"
 	errorFormatFlagName      = "error-format"
 	disableSymlinksFlagName  = "disable-symlinks"
 	createFlagName           = "create"
@@ -133,6 +134,17 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"Do not use. This flag never had any effect",
 	)
 	_ = flagSet.MarkHidden(trackFlagName)
+	flagSet.SetNormalizeFunc(aliasDraftToBranchFunc)
+}
+
+// aliasDraftToBranchFunc aliases the draft flag to branch.
+// The branch flag will have all the same behaviours as the draft flag does currently,
+// including restrictions on use with tags.
+func aliasDraftToBranchFunc(f *pflag.FlagSet, name string) pflag.NormalizedName {
+	if name == draftFlagName {
+		name = branchFlagName
+	}
+	return pflag.NormalizedName(name)
 }
 
 func run(
