@@ -178,10 +178,14 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	}, git.ForEachBranchWithRemote(s.remote)); err != nil {
 		return fmt.Errorf("looping over repository branches: %w", err)
 	}
+	remoteErrMsg := "on local branches"
+	if s.remote != "" {
+		remoteErrMsg = fmt.Sprintf("on remote %s", s.remote)
+	}
 	// sync default git branch, make sure it's present
 	defaultBranch := s.repo.DefaultBranch()
 	if _, defaultBranchPresent := allBranches[defaultBranch]; !defaultBranchPresent {
-		return fmt.Errorf("default branch %s is not present on remote %s", defaultBranch, s.remote)
+		return fmt.Errorf("default branch %s is not present %s", defaultBranch, remoteErrMsg)
 	}
 	s.logger.Debug("default git branch", zap.String("name", defaultBranch))
 	var branchesToSync []string
@@ -192,7 +196,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		// sync current branch, make sure it's present
 		currentBranch := s.repo.CurrentBranch()
 		if _, currentBranchPresent := allBranches[currentBranch]; !currentBranchPresent {
-			return fmt.Errorf("current branch %s is not present on remote %s", currentBranch, s.remote)
+			return fmt.Errorf("current branch %s is not present %s", currentBranch, remoteErrMsg)
 		}
 		branchesToSync = append(branchesToSync, defaultBranch, currentBranch)
 		s.logger.Debug("current git branch", zap.String("name", currentBranch))
