@@ -110,11 +110,9 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 					for _, syncableCommit := range syncableCommits {
 						assert.NotEmpty(t, syncableCommit.commit.Hash().Hex())
 						mockBSRChecker.markSynced(syncableCommit.commit.Hash().Hex())
-						if withOverride {
-							assert.Equal(t, moduleIdentityOverride.IdentityString(), syncableCommit.module.ModuleIdentity().IdentityString())
-						} else {
-							assert.Equal(t, moduleIdentityInHEAD.IdentityString(), syncableCommit.module.ModuleIdentity().IdentityString())
-						}
+						assert.NotNil(t, syncableCommit.module)
+						// no need to assert syncableCommit.module.ModuleIdentity, it's not renamed because it's
+						// not used when syncing.
 					}
 				})
 			}(tc)

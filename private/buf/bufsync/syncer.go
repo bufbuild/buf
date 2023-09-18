@@ -374,7 +374,7 @@ func (s *syncer) syncModuleInBranch(
 			return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
 		}
 	}
-	targetModuleIdentity := moduleIdentity.IdentityString()
+	targetModuleIdentity := moduleIdentity.IdentityString() // all syncable modules in the branch have the same target
 	logger := s.logger.With(
 		zap.String("module directory", branch),
 		zap.String("module identity", targetModuleIdentity),
