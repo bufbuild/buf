@@ -46,7 +46,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " --module=<buf.build/owner/repository[:ref]> --plugin=<buf.build/owner/plugin[:version]>",
 		Short: bufcli.PackageVersionShortDescription(registryName),
-		Long:  bufcli.PackageVersionLongDescription(registryName, name, "buf.build/bufbuild/connect-kotlin"),
+		Long:  bufcli.PackageVersionLongDescription(registryName, name, "buf.build/connectrpc/kotlin"),
 		Args:  cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
