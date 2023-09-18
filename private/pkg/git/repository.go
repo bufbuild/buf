@@ -269,9 +269,9 @@ func (r *repository) HEADCommit(options ...HEADCommitOption) (Commit, error) {
 	}
 	var branchRefPath string
 	if config.remote == "" {
-		branchRefPath = path.Join(r.gitDirPath, "refs", "heads", branch)
+		branchRefPath = path.Join(r.gitDirPath, "refs", "heads", normalpath.Unnormalize(branch))
 	} else {
-		branchRefPath = path.Join(r.gitDirPath, "refs", "remotes", config.remote, branch)
+		branchRefPath = path.Join(r.gitDirPath, "refs", "remotes", config.remote, normalpath.Unnormalize(branch))
 	}
 	commitBytes, err := os.ReadFile(branchRefPath)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -288,7 +288,7 @@ func (r *repository) HEADCommit(options ...HEADCommitOption) (Commit, error) {
 				return commit, nil
 			}
 		}
-		return nil, fmt.Errorf("branch %q not found", branch)
+		return nil, fmt.Errorf("file %s not found", branchRefPath)
 	}
 	if err != nil {
 		return nil, err
