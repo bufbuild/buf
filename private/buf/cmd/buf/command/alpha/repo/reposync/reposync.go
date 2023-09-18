@@ -51,8 +51,6 @@ const (
 	createVisibilityFlagName = "create-visibility"
 	allBranchesFlagName      = "all-branches"
 	remoteFlagName           = "remote"
-
-	defaultRemote = "origin"
 )
 
 // NewCommand returns a new Command.
@@ -65,11 +63,11 @@ func NewCommand(
 		Use:   name,
 		Short: "Sync a Git repository to a registry",
 		Long: "Sync commits in a Git repository to a registry in topological order. " +
-			"Only commits pushed to a remote in the default and current branch are processed. " +
-			"The remote name is '" + defaultRemote + "' by default, it can be customized using --remote flag. " +
-			"Syncing all branches is possible using '--all-branches' flag. " +
+			"Local commits in the default and current branch are processed. " +
+			fmt.Sprintf("Syncing only commits pushed to a specific remote is possible using --%s flag. ", remoteFlagName) +
+			fmt.Sprintf("Syncing all branches is possible using --%s flag. ", allBranchesFlagName) +
 			"By default a single module at the root of the repository is assumed, " +
-			"for specific module paths use the '--module' flag. " +
+			fmt.Sprintf("for specific module paths use the --%s flag. ", moduleFlagName) +
 			"This command needs to be run at the root of the Git repository.",
 		Args: cobra.NoArgs,
 		Run: builder.NewRunFunc(
@@ -124,11 +122,17 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		false,
 		fmt.Sprintf("Create the repository if it does not exist. Must set a visibility using --%s", createVisibilityFlagName),
 	)
+	flagSet.BoolVar(
+		&f.AllBranches,
+		allBranchesFlagName,
+		false,
+		fmt.Sprintf("Sync all Git branches. You can use --%s to only consider remote branches.", remoteFlagName),
+	)
 	flagSet.StringVar(
 		&f.Remote,
 		remoteFlagName,
-		defaultRemote,
-		"The name of the Git remote to sync. By default this is '"+defaultRemote+"'.",
+		"",
+		"The name of the Git remote to sync. If this flag is passed, only commits pushed to this remote are processed.",
 	)
 }
 
@@ -151,9 +155,6 @@ func run(
 		}
 	} else if flags.Create {
 		return appcmd.NewInvalidArgumentErrorf("--%s is required if --%s is set.", createVisibilityFlagName, createFlagName)
-	}
-	if flags.Remote == "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s cannot be empty.", remoteFlagName)
 	}
 	return sync(
 		ctx,
