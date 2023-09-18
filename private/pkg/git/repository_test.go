@@ -233,24 +233,16 @@ func TestForEachBranch(t *testing.T) {
 				repo := gittest.ScaffoldGitRepository(t)
 				assert.Equal(t, gittest.DefaultBranch, repo.CurrentBranch())
 				branches := make(map[string]struct{})
-				var opts []git.ForEachBranchOption
-				if tc.remote != "" {
-					opts = append(opts, git.ForEachBranchWithRemote(tc.remote))
-				}
 				err := repo.ForEachBranch(func(branch string, headHash git.Hash) error {
 					require.NotEmpty(t, branch)
 					if _, alreadySeen := branches[branch]; alreadySeen {
 						assert.Fail(t, "duplicate branch", branch)
 					}
 					branches[branch] = struct{}{}
-
-					headCommitOpts := []git.HEADCommitOption{
+					headCommit, err := repo.HEADCommit(
 						git.HEADCommitWithBranch(branch),
-					}
-					if tc.remote != "" {
-						headCommitOpts = append(headCommitOpts, git.HEADCommitWithRemote(tc.remote))
-					}
-					headCommit, err := repo.HEADCommit(headCommitOpts...)
+						git.HEADCommitWithRemote(tc.remote),
+					)
 					require.NoError(t, err)
 					assert.Equal(t, headHash, headCommit.Hash())
 
@@ -260,7 +252,7 @@ func TestForEachBranch(t *testing.T) {
 					require.True(t, ok, "unexpected branch", branch)
 					assert.Equal(t, expectedMsg, commit.Message())
 					return nil
-				}, opts...)
+				}, git.ForEachBranchWithRemote(tc.remote))
 				assert.NoError(t, err)
 				for expectedBranch := range tc.expectedBranchesToCommitMsg {
 					_, seen := branches[expectedBranch]

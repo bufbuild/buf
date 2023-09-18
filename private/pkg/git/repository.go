@@ -350,12 +350,10 @@ func (r *repository) commitAt(ref reference) (Commit, error) {
 	}
 	if branchRef, ok := ref.(*branchReference); ok {
 		branchName := normalpath.Unnormalize(branchRef.name)
-		var err error
-		headCommitOpts := []HEADCommitOption{HEADCommitWithBranch(branchName)}
-		if branchRef.remote != "" {
-			headCommitOpts = append(headCommitOpts, HEADCommitWithRemote(branchRef.remote))
-		}
-		commit, err := r.HEADCommit(headCommitOpts...)
+		commit, err := r.HEADCommit(
+			HEADCommitWithBranch(branchName),
+			HEADCommitWithRemote(branchRef.remote),
+		)
 		if err != nil {
 			return nil, fmt.Errorf("read HEAD commit for branch %q: %w", branchRef.refName(), err)
 		}
