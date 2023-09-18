@@ -101,9 +101,7 @@ func (r *repository) Objects() ObjectReader {
 func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEachBranchOption) error {
 	var config forEachBranchOpts
 	for _, option := range options {
-		if err := option(&config); err != nil {
-			return err
-		}
+		option(&config)
 	}
 	unpackedBranches := make(map[string]struct{})
 	// Read unpacked branch refs.
@@ -167,9 +165,7 @@ func (r *repository) CurrentBranch() string {
 func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommitOption) error {
 	var config forEachCommitOpts
 	for _, option := range options {
-		if err := option(&config); err != nil {
-			return err
-		}
+		option(&config)
 	}
 	currentCommit, err := r.commitAt(config.start)
 	if err != nil {
@@ -265,9 +261,7 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 func (r *repository) HEADCommit(options ...HEADCommitOption) (Commit, error) {
 	var config headCommitOpts
 	for _, option := range options {
-		if err := option(&config); err != nil {
-			return nil, err
-		}
+		option(&config)
 	}
 	var branch = r.DefaultBranch()
 	if config.branch != "" {
@@ -336,10 +330,10 @@ func (r *repository) readPackedRefs() error {
 // commitAt returns the commit at the passed reference.
 func (r *repository) commitAt(ref reference) (Commit, error) {
 	if ref == nil {
-		// if ref is passed use HEAD with its default behavior
+		// if a ref is not passed, use HEAD with its default behavior.
 		commit, err := r.HEADCommit()
 		if err != nil {
-			return nil, fmt.Errorf("get head commit: %w", err)
+			return nil, fmt.Errorf("get HEAD commit: %w", err)
 		}
 		return commit, nil
 	}

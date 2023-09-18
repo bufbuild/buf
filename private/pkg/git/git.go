@@ -17,7 +17,6 @@ package git
 import (
 	"context"
 	"errors"
-	"fmt"
 	"regexp"
 	"time"
 
@@ -297,95 +296,63 @@ type Repository interface {
 }
 
 // ForEachBranchOption are options that can be passed to ForEachBranch.
-type ForEachBranchOption func(*forEachBranchOpts) error
+type ForEachBranchOption func(*forEachBranchOpts)
 
 // ForEachBranchWithRemote sets the function to only loop over branches present in the passed
 // remote at their respective HEADs.
 func ForEachBranchWithRemote(remoteName string) ForEachBranchOption {
-	return func(opts *forEachBranchOpts) error {
-		if remoteName == "" {
-			return errors.New("remote name cannot be empty")
-		}
+	return func(opts *forEachBranchOpts) {
 		opts.remote = remoteName
-		return nil
 	}
 }
 
 // HEADCommitOption are options that can be passed to HEADCommit.
-type HEADCommitOption func(*headCommitOpts) error
+type HEADCommitOption func(*headCommitOpts)
 
 // HEADCommitWithBranch sets the function to return the HEAD commit for a specific branch instead of
 // the default branch.
 func HEADCommitWithBranch(branchName string) HEADCommitOption {
-	return func(opts *headCommitOpts) error {
-		if branchName == "" {
-			return errors.New("branch name cannot be empty")
-		}
+	return func(opts *headCommitOpts) {
 		opts.branch = branchName
-		return nil
 	}
 }
 
 // HEADCommitWithRemote sets the function to return the HEAD commit for the branch that is present
 // in the passed remote.
 func HEADCommitWithRemote(remoteName string) HEADCommitOption {
-	return func(opts *headCommitOpts) error {
-		if remoteName == "" {
-			return errors.New("remote name cannot be empty")
-		}
+	return func(opts *headCommitOpts) {
 		opts.remote = remoteName
-		return nil
 	}
 }
 
 // ForEachCommitOption are options that can be passed to ForEachCommit.
-type ForEachCommitOption func(*forEachCommitOpts) error
+type ForEachCommitOption func(*forEachCommitOpts)
 
 // ForEachCommitWithBranchStartPoint sets a branch as a starting point to start the loop.
 func ForEachCommitWithBranchStartPoint(branchName string, options ...ForEachCommitWithBranchStartPointOption) ForEachCommitOption {
-	return func(opts *forEachCommitOpts) error {
+	return func(opts *forEachCommitOpts) {
 		var config forEachCommitWithBranchStartPointOpts
 		for _, option := range options {
-			if err := option(&config); err != nil {
-				return err
-			}
-		}
-		if opts.start != nil {
-			return fmt.Errorf(
-				"cannot set a starting point branch:%s, another starting point %s:%s already exists",
-				branchName, opts.start.refType(), opts.start.refName(),
-			)
+			option(&config)
 		}
 		opts.start = &branchReference{name: branchName, remote: config.remote}
-		return nil
 	}
 }
 
-type ForEachCommitWithBranchStartPointOption func(*forEachCommitWithBranchStartPointOpts) error
+type ForEachCommitWithBranchStartPointOption func(*forEachCommitWithBranchStartPointOpts)
 
 // ForEachCommitWithBranchStartPointWithRemote uses the remote position for the branch, instead of
 // the local position.
 func ForEachCommitWithBranchStartPointWithRemote(remoteName string) ForEachCommitWithBranchStartPointOption {
-	return func(opts *forEachCommitWithBranchStartPointOpts) error {
-		if remoteName == "" {
-			return errors.New("remote name cannot be empty")
-		}
+	return func(opts *forEachCommitWithBranchStartPointOpts) {
 		opts.remote = remoteName
-		return nil
 	}
 }
 
 // ForEachCommitWithHashStartPoint sets a git hash as a starting point to start the loop.
 func ForEachCommitWithHashStartPoint(hash string) ForEachCommitOption {
-	return func(opts *forEachCommitOpts) error {
-		if opts.start != nil {
-			return fmt.Errorf(
-				"cannot set a starting point hash:%s, another starting point %s:%s already exists",
-				hash, opts.start.refType(), opts.start.refName(),
-			)
-		}
+	return func(opts *forEachCommitOpts) {
 		opts.start = &hashReference{name: hash}
-		return nil
 	}
 }
 
