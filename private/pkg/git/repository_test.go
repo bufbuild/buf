@@ -93,7 +93,7 @@ func TestCommits(t *testing.T) {
 		assert.Equal(t, commitsByDefault, commitsFromDefaultBranch)
 	})
 
-	t.Run("custom_starting_point", func(t *testing.T) {
+	t.Run("hash_starting_point", func(t *testing.T) {
 		var commitsFromSecond []git.Commit
 		err = repo.ForEachCommit(
 			func(c git.Commit) error {
@@ -111,45 +111,48 @@ func TestCommits(t *testing.T) {
 		assert.Empty(t, commitsFromSecond[1].Parents())
 	})
 
-	t.Run("local_branch", func(t *testing.T) {
-		var commitsFromLocalBranch []git.Commit
-		err = repo.ForEachCommit(
-			func(c git.Commit) error {
-				commitsFromLocalBranch = append(commitsFromLocalBranch, c)
-				return nil
-			},
-			git.ForEachCommitWithBranchStartPoint("buftest/branch1"),
-		)
-		require.NoError(t, err)
-		require.Len(t, commitsFromLocalBranch, 3)
+	t.Run("branch_starting_point", func(t *testing.T) {
+		const branchName = "buftest/branch1" // this branch has pushed and unpushed commits
+		t.Run("when_local", func(t *testing.T) {
+			var commitsFromLocalBranch []git.Commit
+			err = repo.ForEachCommit(
+				func(c git.Commit) error {
+					commitsFromLocalBranch = append(commitsFromLocalBranch, c)
+					return nil
+				},
+				git.ForEachCommitWithBranchStartPoint(branchName),
+			)
+			require.NoError(t, err)
+			require.Len(t, commitsFromLocalBranch, 3)
 
-		assert.Equal(t, commitsFromLocalBranch[0].Message(), "local commit on pushed branch")
-		assert.Contains(t, commitsFromLocalBranch[0].Parents(), commitsFromLocalBranch[1].Hash())
-		assert.Equal(t, commitsFromLocalBranch[1].Message(), "branch1")
-		assert.Contains(t, commitsFromLocalBranch[1].Parents(), commitsFromLocalBranch[2].Hash())
-		assert.Equal(t, commitsFromLocalBranch[2].Message(), "initial commit")
-		assert.Empty(t, commitsFromLocalBranch[2].Parents())
-	})
+			assert.Equal(t, commitsFromLocalBranch[0].Message(), "local commit on pushed branch")
+			assert.Contains(t, commitsFromLocalBranch[0].Parents(), commitsFromLocalBranch[1].Hash())
+			assert.Equal(t, commitsFromLocalBranch[1].Message(), "branch1")
+			assert.Contains(t, commitsFromLocalBranch[1].Parents(), commitsFromLocalBranch[2].Hash())
+			assert.Equal(t, commitsFromLocalBranch[2].Message(), "initial commit")
+			assert.Empty(t, commitsFromLocalBranch[2].Parents())
+		})
 
-	t.Run("remote_branch", func(t *testing.T) {
-		var commitsFromRemoteBranch []git.Commit
-		err = repo.ForEachCommit(
-			func(c git.Commit) error {
-				commitsFromRemoteBranch = append(commitsFromRemoteBranch, c)
-				return nil
-			},
-			git.ForEachCommitWithBranchStartPoint(
-				"buftest/branch1",
-				git.ForEachCommitWithBranchStartPointWithRemote(gittest.DefaultRemote),
-			),
-		)
-		require.NoError(t, err)
-		require.Len(t, commitsFromRemoteBranch, 2)
+		t.Run("when_remote", func(t *testing.T) {
+			var commitsFromRemoteBranch []git.Commit
+			err = repo.ForEachCommit(
+				func(c git.Commit) error {
+					commitsFromRemoteBranch = append(commitsFromRemoteBranch, c)
+					return nil
+				},
+				git.ForEachCommitWithBranchStartPoint(
+					branchName,
+					git.ForEachCommitWithBranchStartPointWithRemote(gittest.DefaultRemote),
+				),
+			)
+			require.NoError(t, err)
+			require.Len(t, commitsFromRemoteBranch, 2)
 
-		assert.Equal(t, commitsFromRemoteBranch[0].Message(), "branch1")
-		assert.Contains(t, commitsFromRemoteBranch[0].Parents(), commitsFromRemoteBranch[1].Hash())
-		assert.Equal(t, commitsFromRemoteBranch[1].Message(), "initial commit")
-		assert.Empty(t, commitsFromRemoteBranch[1].Parents())
+			assert.Equal(t, commitsFromRemoteBranch[0].Message(), "branch1")
+			assert.Contains(t, commitsFromRemoteBranch[0].Parents(), commitsFromRemoteBranch[1].Hash())
+			assert.Equal(t, commitsFromRemoteBranch[1].Message(), "initial commit")
+			assert.Empty(t, commitsFromRemoteBranch[1].Parents())
+		})
 	})
 
 	t.Run("failures", func(t *testing.T) {
@@ -224,6 +227,7 @@ func TestForEachBranch(t *testing.T) {
 			name:                        "when_remote_does_not_exists",
 			remote:                      "randomremote",
 			expectedBranchesToCommitMsg: nil,
+			// we won't error when the remote does not exist, we just don't return any branch.
 		},
 	}
 	for _, tc := range testCases {
