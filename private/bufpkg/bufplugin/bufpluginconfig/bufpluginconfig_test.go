@@ -257,16 +257,16 @@ func TestParsePluginConfigSwiftYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "swift", "buf.plugin.yaml"))
 	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/bufbuild/connect-swift")
+	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/connectrpc/swift")
 	require.NoError(t, err)
-	pluginDep, err := bufpluginref.PluginReferenceForString("buf.build/apple/swift:v1.21.0", 0)
+	pluginDep, err := bufpluginref.PluginReferenceForString("buf.build/apple/swift:v1.23.0", 0)
 	require.NoError(t, err)
 	require.Equal(
 		t,
 		&Config{
 			Name:            pluginIdentity,
-			PluginVersion:   "v0.5.0",
-			SourceURL:       "https://github.com/bufbuild/connect-swift",
+			PluginVersion:   "v0.8.0",
+			SourceURL:       "https://github.com/connectrpc/connect-swift",
 			Description:     "Idiomatic gRPC & Connect RPCs for Swift.",
 			Dependencies:    []bufpluginref.PluginReference{pluginDep},
 			OutputLanguages: []string{"swift"},
@@ -274,23 +274,22 @@ func TestParsePluginConfigSwiftYAML(t *testing.T) {
 				Swift: &SwiftRegistryConfig{
 					Dependencies: []SwiftRegistryDependencyConfig{
 						{
-							Source:        "https://github.com/apple/swift-protobuf.git",
-							Package:       "swift-protobuf",
-							Version:       "1.21.0",
-							Products:      []string{"SwiftProtobuf"},
+							Source:        "https://github.com/connectrpc/connect-swift.git",
+							Package:       "connect-swift",
+							Version:       "0.8.0",
+							Products:      []string{"Connect"},
 							SwiftVersions: []string{".v5"},
 							Platforms: SwiftRegistryDependencyPlatformConfig{
-								MacOS:   "v10_15",
-								IOS:     "v10_15",
-								TVOS:    "v10_15",
-								WatchOS: "v10_15",
+								MacOS: "v10_15",
+								IOS:   "v12",
+								TVOS:  "v13",
 							},
 						},
 					},
 				},
 			},
 			SPDXLicenseID: "Apache-2.0",
-			LicenseURL:    "https://github.com/bufbuild/connect-swift/blob/0.5.0/LICENSE",
+			LicenseURL:    "https://github.com/connectrpc/connect-swift/blob/0.8.0/LICENSE",
 		},
 		pluginConfig,
 	)
