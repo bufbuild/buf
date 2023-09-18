@@ -180,9 +180,6 @@ type SyncerOption func(*syncer) error
 // SyncerWithRemote configures a Syncer with a resumption using a SyncPointResolver.
 func SyncerWithRemote(remoteName string) SyncerOption {
 	return func(s *syncer) error {
-		if remoteName == "" {
-			return errors.New("remote name cannot be empty")
-		}
 		s.remote = remoteName
 		return nil
 	}
