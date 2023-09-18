@@ -349,9 +349,8 @@ func (r *repository) commitAt(ref reference) (Commit, error) {
 		return commit, nil
 	}
 	if branchRef, ok := ref.(*branchReference); ok {
-		branchName := normalpath.Unnormalize(branchRef.name)
 		commit, err := r.HEADCommit(
-			HEADCommitWithBranch(branchName),
+			HEADCommitWithBranch(branchRef.name),
 			HEADCommitWithRemote(branchRef.remote),
 		)
 		if err != nil {
