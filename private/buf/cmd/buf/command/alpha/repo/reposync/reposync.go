@@ -120,13 +120,17 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Create,
 		createFlagName,
 		false,
-		fmt.Sprintf("Create the repository if it does not exist. Must set a visibility using --%s", createVisibilityFlagName),
+		fmt.Sprintf("Create the BSR repository if it does not exist. Must set a visibility using --%s", createVisibilityFlagName),
 	)
 	flagSet.BoolVar(
 		&f.AllBranches,
 		allBranchesFlagName,
 		false,
-		fmt.Sprintf("Sync all Git branches. You can use --%s to only consider remote branches.", remoteFlagName),
+		"Sync all Git branches and not only the default and checked out one. "+
+			"Order of sync for git branches is as follows: First, it syncs the default branch (read "+
+			"from 'refs/remotes/origin/HEAD'), and then all the rest of the branches in "+
+			"lexicographical order. "+
+			fmt.Sprintf("You can use --%s to only consider remote branches.", remoteFlagName),
 	)
 	flagSet.StringVar(
 		&f.Remote,
