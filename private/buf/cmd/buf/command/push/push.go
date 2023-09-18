@@ -107,7 +107,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		draftFlagName,
 		"",
 		fmt.Sprintf(
-			"Make the pushed commit a draft with the specified name. Cannot be used together with --%s (-%s)",
+			"Push a commit to a branch with the specified name. Cannot be used together with --%s (-%s)",
 			tagFlagName,
 			tagFlagShortName,
 		),
@@ -138,7 +138,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 }
 
 // aliasDraftToBranchFunc aliases the draft flag to branch.
-// The branch flag will have all the same behaviours as the draft flag does currently,
+// The branch flag will have all the same behaviors as the draft flag does currently,
 // including restrictions on use with tags.
 func aliasDraftToBranchFunc(f *pflag.FlagSet, name string) pflag.NormalizedName {
 	if name == draftFlagName {
