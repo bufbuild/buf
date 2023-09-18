@@ -22,7 +22,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"sync"
 
@@ -107,9 +106,9 @@ func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEac
 	// Read unpacked branch refs.
 	var headsDir string
 	if config.remote == "" {
-		headsDir = path.Join(r.gitDirPath, "refs", "heads") // all local branches
+		headsDir = normalpath.Join(r.gitDirPath, "refs", "heads") // all local branches
 	} else {
-		headsDir = path.Join(r.gitDirPath, "refs", "remotes", config.remote) // only branches in this remote
+		headsDir = normalpath.Join(r.gitDirPath, "refs", "remotes", config.remote) // only branches in this remote
 	}
 	if err := filepathextended.Walk(headsDir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -195,7 +194,7 @@ func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommi
 func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	seen := map[string]struct{}{}
 	// Read unpacked tag refs.
-	dir := path.Join(r.gitDirPath, "refs", "tags")
+	dir := normalpath.Join(r.gitDirPath, "refs", "tags")
 	if err := filepathextended.Walk(dir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -269,9 +268,9 @@ func (r *repository) HEADCommit(options ...HEADCommitOption) (Commit, error) {
 	}
 	var branchRefPath string
 	if config.remote == "" {
-		branchRefPath = path.Join(r.gitDirPath, "refs", "heads", normalpath.Unnormalize(branch))
+		branchRefPath = normalpath.Join(r.gitDirPath, "refs", "heads", branch)
 	} else {
-		branchRefPath = path.Join(r.gitDirPath, "refs", "remotes", config.remote, normalpath.Unnormalize(branch))
+		branchRefPath = normalpath.Join(r.gitDirPath, "refs", "remotes", config.remote, branch)
 	}
 	commitBytes, err := os.ReadFile(branchRefPath)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -288,7 +287,7 @@ func (r *repository) HEADCommit(options ...HEADCommitOption) (Commit, error) {
 				return commit, nil
 			}
 		}
-		return nil, fmt.Errorf("file %s not found", branchRefPath)
+		return nil, fmt.Errorf("branch %s not found", branch)
 	}
 	if err != nil {
 		return nil, err
@@ -307,7 +306,7 @@ func (r *repository) HEADCommit(options ...HEADCommitOption) (Commit, error) {
 
 func (r *repository) readPackedRefs() error {
 	r.packedOnce.Do(func() {
-		packedRefsPath := path.Join(r.gitDirPath, "packed-refs")
+		packedRefsPath := normalpath.Join(r.gitDirPath, "packed-refs")
 		if _, err := os.Stat(packedRefsPath); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				r.packedBranches = make(map[string]map[string]Hash)
@@ -366,7 +365,7 @@ func (r *repository) commitAt(ref reference) (Commit, error) {
 // `origin` remote.
 func detectDefaultBranch(gitDirPath string) (string, error) {
 	const defaultRemoteName = "origin"
-	path := path.Join(gitDirPath, "refs", "remotes", defaultRemoteName, "HEAD")
+	path := normalpath.Join(gitDirPath, "refs", "remotes", defaultRemoteName, "HEAD")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
