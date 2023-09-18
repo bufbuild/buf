@@ -16,9 +16,9 @@ package git
 
 import (
 	"os"
-	"path"
 	"testing"
 
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +26,7 @@ import (
 func TestReadPackedRefs(t *testing.T) {
 	t.Parallel()
 
-	allBytes, err := os.ReadFile(path.Join("testdata", "packed-refs"))
+	allBytes, err := os.ReadFile(normalpath.Join("testdata", "packed-refs"))
 	require.NoError(t, err)
 
 	branches, tags, err := parsePackedRefs(allBytes)

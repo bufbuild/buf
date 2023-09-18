@@ -202,11 +202,10 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 		if !info.Mode().IsRegular() {
 			return nil
 		}
-		tagName, err := filepath.Rel(dir, path)
+		tagName, err := normalpath.Rel(dir, path)
 		if err != nil {
 			return err
 		}
-		tagName = normalpath.Normalize(tagName)
 		hashBytes, err := os.ReadFile(path)
 		if err != nil {
 			return err
