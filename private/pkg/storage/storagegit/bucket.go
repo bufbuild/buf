@@ -92,7 +92,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 	}
 }
 
-func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
+func (b *bucket) Stat(_ context.Context, path string) (storage.ObjectInfo, error) {
 	node, err := b.root.Descendant(path, b.objectReader)
 	if err != nil {
 		if errors.Is(err, git.ErrTreeNodeNotFound) {
