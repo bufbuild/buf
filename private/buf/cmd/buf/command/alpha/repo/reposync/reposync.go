@@ -50,6 +50,9 @@ const (
 	createFlagName           = "create"
 	createVisibilityFlagName = "create-visibility"
 	allBranchesFlagName      = "all-branches"
+	remoteFlagName           = "remote"
+
+	defaultRemote = "origin"
 )
 
 // NewCommand returns a new Command.
@@ -62,7 +65,8 @@ func NewCommand(
 		Use:   name,
 		Short: "Sync a Git repository to a registry",
 		Long: "Sync commits in a Git repository to a registry in topological order. " +
-			"Only commits in the default and current branch are processed. " +
+			"Only commits pushed to a remote in the default and current branch are processed. " +
+			"The remote name is '" + defaultRemote + "' by default, it can be customized using --remote flag. " +
 			"Syncing all branches is possible using '--all-branches' flag. " +
 			"By default a single module at the root of the repository is assumed, " +
 			"for specific module paths use the '--module' flag. " +
@@ -84,6 +88,7 @@ type flags struct {
 	Create           bool
 	CreateVisibility string
 	AllBranches      bool
+	Remote           string
 }
 
 func newFlags() *flags {
@@ -119,14 +124,11 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		false,
 		fmt.Sprintf("Create the repository if it does not exist. Must set a visibility using --%s", createVisibilityFlagName),
 	)
-	flagSet.BoolVar(
-		&f.AllBranches,
-		allBranchesFlagName,
-		false,
-		"Sync all git repository branches and not only the default and checked out one. "+
-			"Order of sync for git branches is as follows: First, it syncs the default branch (read "+
-			"from 'refs/remotes/origin/HEAD'), and then all the rest of the branches in "+
-			"lexicographical order.",
+	flagSet.StringVar(
+		&f.Remote,
+		remoteFlagName,
+		defaultRemote,
+		"The name of the Git remote to sync. By default this is '"+defaultRemote+"'.",
 	)
 }
 
@@ -150,6 +152,9 @@ func run(
 	} else if flags.Create {
 		return appcmd.NewInvalidArgumentErrorf("--%s is required if --%s is set.", createVisibilityFlagName, createFlagName)
 	}
+	if flags.Remote == "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s cannot be empty.", remoteFlagName)
+	}
 	return sync(
 		ctx,
 		container,
@@ -157,6 +162,7 @@ func run(
 		// No need to pass `flags.Create`, this is not empty iff `flags.Create`
 		flags.CreateVisibility,
 		flags.AllBranches,
+		flags.Remote,
 	)
 }
 
@@ -166,6 +172,7 @@ func sync(
 	modules []string, // moduleDir(:moduleIdentityOverride)
 	createWithVisibility string,
 	allBranches bool,
+	remoteName string,
 ) error {
 	// Assume that this command is run from the repository root. If not, `OpenRepository` will return
 	// a dir not found error.
@@ -183,6 +190,7 @@ func sync(
 		return fmt.Errorf("create connect client %w", err)
 	}
 	syncerOptions := []bufsync.SyncerOption{
+		bufsync.SyncerWithRemote(remoteName),
 		bufsync.SyncerWithResumption(syncPointResolver(clientConfig)),
 		bufsync.SyncerWithGitCommitChecker(syncGitCommitChecker(clientConfig)),
 		bufsync.SyncerWithModuleDefaultBranchGetter(defaultBranchGetter(clientConfig)),
