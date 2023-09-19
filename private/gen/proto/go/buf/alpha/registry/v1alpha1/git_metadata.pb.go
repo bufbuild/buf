@@ -102,6 +102,9 @@ func (x *GitIdentity) GetTime() *timestamppb.Timestamp {
 	return nil
 }
 
+// GitCommitInformation is the information associated with a Git commit.
+// This always includes the hash.
+// The author and/or committer user identities are included when available.
 type GitCommitInformation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
