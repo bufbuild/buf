@@ -22,7 +22,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"sync"
 
@@ -105,25 +104,25 @@ func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEac
 	}
 	unpackedBranches := make(map[string]struct{})
 	// Read unpacked branch refs.
-	var headsDir string
+	var branchesDir string
 	if config.remote == "" {
-		headsDir = filepath.Join(r.gitDirPath, "refs", "heads") // all local branches
+		branchesDir = filepath.Join(r.gitDirPath, "refs", "heads") // all local branches
 	} else {
-		headsDir = filepath.Join(r.gitDirPath, "refs", "remotes", normalpath.Unnormalize(config.remote)) // only branches in this remote
+		branchesDir = filepath.Join(r.gitDirPath, "refs", "remotes", normalpath.Unnormalize(config.remote)) // only branches in this remote
 	}
-	if err := filepathextended.Walk(headsDir, func(path string, info fs.FileInfo, err error) error {
+	if err := filepathextended.Walk(branchesDir, func(branchPath string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.Name() == "HEAD" || info.IsDir() {
 			return nil
 		}
-		branchName, err := filepath.Rel(headsDir, path)
+		branchRelDir, err := filepath.Rel(branchesDir, branchPath)
 		if err != nil {
 			return err
 		}
-		branchName = normalpath.Normalize(branchName)
-		hashBytes, err := os.ReadFile(path)
+		branchName := normalpath.Normalize(branchRelDir)
+		hashBytes, err := os.ReadFile(branchPath)
 		if err != nil {
 			return err
 		}
@@ -358,7 +357,6 @@ func (r *repository) commitAt(ref reference) (Commit, error) {
 		}
 		return commit, nil
 	}
-	path.Join("a")
 	return nil, fmt.Errorf("unsupported reference %s:%s", ref.refType(), ref.refName())
 }
 
