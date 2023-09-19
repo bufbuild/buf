@@ -21,12 +21,12 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -185,7 +185,7 @@ func readBucketForName(ctx context.Context, t *testing.T, runner command.Runner,
 	err = cloner.CloneToBucket(
 		ctx,
 		envContainer,
-		"file://"+normalpath.Join(path, ".git"),
+		"file://"+filepath.Join(path, ".git"),
 		depth,
 		readWriteBucket,
 		CloneToBucketOptions{
@@ -206,59 +206,59 @@ func createGitDirs(
 ) (string, string) {
 	tmpDir := t.TempDir()
 
-	submodulePath := normalpath.Join(tmpDir, "submodule")
+	submodulePath := filepath.Join(tmpDir, "submodule")
 	require.NoError(t, os.MkdirAll(submodulePath, os.ModePerm))
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "init")
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "config", "user.email", "tests@buf.build")
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "config", "user.name", "Buf go tests")
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "checkout", "-b", "main")
-	require.NoError(t, os.WriteFile(normalpath.Join(submodulePath, "test.proto"), []byte("// submodule"), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(submodulePath, "test.proto"), []byte("// submodule"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "commit", "-m", "commit 0")
 
 	gitExecPath, err := command.RunStdout(ctx, container, runner, "git", "--exec-path")
 	require.NoError(t, err)
-	t.Log(normalpath.Join(string(gitExecPath), "git-http-backend"))
+	t.Log(filepath.Join(string(gitExecPath), "git-http-backend"))
 	// https://git-scm.com/docs/git-http-backend#_description
-	f, err := os.Create(normalpath.Join(submodulePath, ".git", "git-daemon-export-ok"))
+	f, err := os.Create(filepath.Join(submodulePath, ".git", "git-daemon-export-ok"))
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 	server := httptest.NewServer(&cgi.Handler{
-		Path: normalpath.Join(strings.TrimSpace(string(gitExecPath)), "git-http-backend"),
+		Path: filepath.Join(strings.TrimSpace(string(gitExecPath)), "git-http-backend"),
 		Dir:  submodulePath,
 		Env:  []string{"GIT_PROJECT_ROOT=" + submodulePath},
 	})
 	t.Cleanup(server.Close)
 	submodulePath = server.URL
 
-	originPath := normalpath.Join(tmpDir, "origin")
+	originPath := filepath.Join(tmpDir, "origin")
 	require.NoError(t, os.MkdirAll(originPath, 0777))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "init")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "config", "user.email", "tests@buf.build")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "config", "user.name", "Buf go tests")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "checkout", "-b", "main")
-	require.NoError(t, os.WriteFile(normalpath.Join(originPath, "test.proto"), []byte("// commit 0"), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 0"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "commit", "-m", "commit 0")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "submodule", "add", submodulePath, "submodule")
-	require.NoError(t, os.WriteFile(normalpath.Join(originPath, "test.proto"), []byte("// commit 1"), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 1"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "commit", "-m", "commit 1")
 
-	workPath := normalpath.Join(tmpDir, "workdir")
+	workPath := filepath.Join(tmpDir, "workdir")
 	runCommand(ctx, t, container, runner, "git", "clone", originPath, workPath)
 	runCommand(ctx, t, container, runner, "git", "-C", workPath, "config", "user.email", "tests@buf.build")
 	runCommand(ctx, t, container, runner, "git", "-C", workPath, "config", "user.name", "Buf go tests")
 	runCommand(ctx, t, container, runner, "git", "-C", workPath, "checkout", "-b", "local-branch")
-	require.NoError(t, os.WriteFile(normalpath.Join(workPath, "test.proto"), []byte("// commit 2"), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(workPath, "test.proto"), []byte("// commit 2"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", workPath, "commit", "-a", "-m", "commit 2")
 
-	require.NoError(t, os.WriteFile(normalpath.Join(originPath, "test.proto"), []byte("// commit 3"), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 3"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "commit", "-m", "commit 3")
 
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "checkout", "-b", "remote-branch")
-	require.NoError(t, os.WriteFile(normalpath.Join(originPath, "test.proto"), []byte("// commit 4"), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 4"), 0600))
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "commit", "-m", "commit 4")
 	runCommand(ctx, t, container, runner, "git", "-C", originPath, "tag", "remote-tag")

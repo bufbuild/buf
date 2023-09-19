@@ -22,6 +22,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"sync"
 
@@ -106,9 +107,9 @@ func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEac
 	// Read unpacked branch refs.
 	var headsDir string
 	if config.remote == "" {
-		headsDir = normalpath.Join(r.gitDirPath, "refs", "heads") // all local branches
+		headsDir = filepath.Join(r.gitDirPath, "refs", "heads") // all local branches
 	} else {
-		headsDir = normalpath.Join(r.gitDirPath, "refs", "remotes", config.remote) // only branches in this remote
+		headsDir = filepath.Join(r.gitDirPath, "refs", "remotes", normalpath.Unnormalize(config.remote)) // only branches in this remote
 	}
 	if err := filepathextended.Walk(headsDir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -194,19 +195,20 @@ func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommi
 func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	seen := map[string]struct{}{}
 	// Read unpacked tag refs.
-	dir := normalpath.Join(r.gitDirPath, "refs", "tags")
-	if err := filepathextended.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+	tagsDir := filepath.Join(r.gitDirPath, "refs", "tags")
+	if err := filepathextended.Walk(tagsDir, func(tagPath string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.Mode().IsRegular() {
 			return nil
 		}
-		tagName, err := normalpath.Rel(dir, path)
+		tagRelPath, err := filepath.Rel(tagsDir, tagPath)
 		if err != nil {
 			return err
 		}
-		hashBytes, err := os.ReadFile(path)
+		tagName := normalpath.Normalize(tagRelPath)
+		hashBytes, err := os.ReadFile(tagPath)
 		if err != nil {
 			return err
 		}
@@ -265,13 +267,13 @@ func (r *repository) HEADCommit(options ...HEADCommitOption) (Commit, error) {
 	if config.branch != "" {
 		branch = config.branch
 	}
-	var branchRefPath string
+	var branchPath string
 	if config.remote == "" {
-		branchRefPath = normalpath.Join(r.gitDirPath, "refs", "heads", branch)
+		branchPath = filepath.Join(r.gitDirPath, "refs", "heads", normalpath.Unnormalize(branch))
 	} else {
-		branchRefPath = normalpath.Join(r.gitDirPath, "refs", "remotes", config.remote, branch)
+		branchPath = filepath.Join(r.gitDirPath, "refs", "remotes", normalpath.Unnormalize(config.remote), normalpath.Unnormalize(branch))
 	}
-	commitBytes, err := os.ReadFile(branchRefPath)
+	commitBytes, err := os.ReadFile(branchPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		// it may be that the branch ref is packed; let's read the packed refs
 		if err := r.readPackedRefs(); err != nil {
@@ -305,7 +307,7 @@ func (r *repository) HEADCommit(options ...HEADCommitOption) (Commit, error) {
 
 func (r *repository) readPackedRefs() error {
 	r.packedOnce.Do(func() {
-		packedRefsPath := normalpath.Join(r.gitDirPath, "packed-refs")
+		packedRefsPath := filepath.Join(r.gitDirPath, "packed-refs")
 		if _, err := os.Stat(packedRefsPath); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				r.packedBranches = make(map[string]map[string]Hash)
@@ -356,6 +358,7 @@ func (r *repository) commitAt(ref reference) (Commit, error) {
 		}
 		return commit, nil
 	}
+	path.Join("a")
 	return nil, fmt.Errorf("unsupported reference %s:%s", ref.refType(), ref.refName())
 }
 
@@ -364,7 +367,7 @@ func (r *repository) commitAt(ref reference) (Commit, error) {
 // `origin` remote.
 func detectDefaultBranch(gitDirPath string) (string, error) {
 	const defaultRemoteName = "origin"
-	path := normalpath.Join(gitDirPath, "refs", "remotes", defaultRemoteName, "HEAD")
+	path := filepath.Join(gitDirPath, "refs", "remotes", defaultRemoteName, "HEAD")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err

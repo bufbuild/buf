@@ -19,6 +19,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -36,7 +37,7 @@ const (
 func ScaffoldGitRepository(t *testing.T) git.Repository {
 	runner := command.NewRunner()
 	dir := scaffoldGitRepository(t, runner)
-	dotGitPath := normalpath.Join(dir, git.DotGitDir)
+	dotGitPath := filepath.Join(dir, git.DotGitDir)
 	repo, err := git.OpenRepository(
 		context.Background(),
 		dotGitPath,
@@ -74,11 +75,11 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 
 	// (0) setup local and remote
 	runInDir(t, runner, dir, "mkdir", "local", "remote")
-	remoteDir := normalpath.Join(dir, "remote")
+	remoteDir := filepath.Join(dir, "remote")
 	runInDir(t, runner, remoteDir, "git", "init", "--bare")
 	runInDir(t, runner, remoteDir, "git", "config", "user.name", "Buf TestBot")
 	runInDir(t, runner, remoteDir, "git", "config", "user.email", "testbot@buf.build")
-	localDir := normalpath.Join(dir, "local")
+	localDir := filepath.Join(dir, "local")
 	runInDir(t, runner, localDir, "git", "init")
 	runInDir(t, runner, localDir, "git", "config", "user.name", "Buf TestBot")
 	runInDir(t, runner, localDir, "git", "config", "user.email", "testbot@buf.build")
@@ -172,7 +173,8 @@ func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args 
 
 func writeFiles(t *testing.T, dir string, files map[string]string) {
 	for path, contents := range files {
-		require.NoError(t, os.MkdirAll(normalpath.Join(dir, normalpath.Dir(path)), 0700))
-		require.NoError(t, os.WriteFile(normalpath.Join(dir, path), []byte(contents), 0600))
+		path := normalpath.Unnormalize(path)
+		require.NoError(t, os.MkdirAll(filepath.Join(dir, filepath.Dir(path)), 0700))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, path), []byte(contents), 0600))
 	}
 }

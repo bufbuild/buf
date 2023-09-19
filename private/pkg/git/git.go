@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -417,7 +418,7 @@ type branchReference struct {
 func (r *branchReference) refType() string { return "branch" }
 func (r *branchReference) refName() string {
 	if r.remote != "" {
-		return r.remote + "/" + r.name
+		return normalpath.Join(r.remote, r.name)
 	}
 	return r.name
 }
