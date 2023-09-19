@@ -22,7 +22,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"sync"
 
@@ -44,7 +43,7 @@ type repository struct {
 	// packedOnce controls the fields below related to reading the `packed-refs` file
 	packedOnce      sync.Once
 	packedReadError error
-	packedBranches  map[string]Hash
+	packedBranches  map[string]map[string]Hash // remote:branch:hash (empty remote means local)
 	packedTags      map[string]Hash
 }
 
@@ -98,23 +97,32 @@ func (r *repository) Objects() ObjectReader {
 	return r.objectReader
 }
 
-func (r *repository) ForEachBranch(f func(string, Hash) error) error {
+func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEachBranchOption) error {
+	var config forEachBranchOpts
+	for _, option := range options {
+		option(&config)
+	}
 	unpackedBranches := make(map[string]struct{})
 	// Read unpacked branch refs.
-	dir := path.Join(r.gitDirPath, "refs", "heads")
-	if err := filepathextended.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+	var branchesDir string
+	if config.remote == "" {
+		branchesDir = filepath.Join(r.gitDirPath, "refs", "heads") // all local branches
+	} else {
+		branchesDir = filepath.Join(r.gitDirPath, "refs", "remotes", normalpath.Unnormalize(config.remote)) // only branches in this remote
+	}
+	if err := filepathextended.Walk(branchesDir, func(branchPath string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.Name() == "HEAD" || info.IsDir() {
 			return nil
 		}
-		branchName, err := filepath.Rel(dir, path)
+		branchRelDir, err := filepath.Rel(branchesDir, branchPath)
 		if err != nil {
 			return err
 		}
-		branchName = normalpath.Normalize(branchName)
-		hashBytes, err := os.ReadFile(path)
+		branchName := normalpath.Normalize(branchRelDir)
+		hashBytes, err := os.ReadFile(branchPath)
 		if err != nil {
 			return err
 		}
@@ -125,17 +133,20 @@ func (r *repository) ForEachBranch(f func(string, Hash) error) error {
 		}
 		unpackedBranches[branchName] = struct{}{}
 		return f(branchName, hash)
-	}); err != nil {
+	}); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
 	// Read packed branch refs that haven't been seen yet.
 	if err := r.readPackedRefs(); err != nil {
 		return err
 	}
-	for branchName, hash := range r.packedBranches {
-		if _, seen := unpackedBranches[branchName]; !seen {
-			if err := f(branchName, hash); err != nil {
-				return err
+	remotePackedBranches, ok := r.packedBranches[config.remote]
+	if ok {
+		for branchName, hash := range remotePackedBranches {
+			if _, seen := unpackedBranches[branchName]; !seen {
+				if err := f(branchName, hash); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -153,41 +164,12 @@ func (r *repository) CurrentBranch() string {
 func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommitOption) error {
 	var config forEachCommitOpts
 	for _, option := range options {
-		if err := option(&config); err != nil {
-			return err
-		}
+		option(&config)
 	}
-	var startCommit Commit
-	if config.start == nil {
-		// if no custom start point is set, use HEAD from the default branch
-		var err error
-		startCommit, err = r.HEADCommit(r.DefaultBranch())
-		if err != nil {
-			return fmt.Errorf("get head commit for default branch %q: %w", r.DefaultBranch(), err)
-		}
-	} else {
-		switch config.start.refType {
-		case refTypeHash:
-			commitID, err := NewHashFromHex(config.start.refName)
-			if err != nil {
-				return fmt.Errorf("new hash from %s: %w", config.start.refName, err)
-			}
-			startCommit, err = r.objectReader.Commit(commitID)
-			if err != nil {
-				return fmt.Errorf("read commit %s: %w", commitID.Hex(), err)
-			}
-		case refTypeBranch:
-			branch := normalpath.Unnormalize(config.start.refName)
-			var err error
-			startCommit, err = r.HEADCommit(branch)
-			if err != nil {
-				return fmt.Errorf("read HEAD commit for branch %q: %w", branch, err)
-			}
-		default:
-			return fmt.Errorf("unsupported start point reference type %s:%s", config.start.refType, config.start.refName)
-		}
+	currentCommit, err := r.commitAt(config.start)
+	if err != nil {
+		return fmt.Errorf("find start commit: %w", err)
 	}
-	currentCommit := startCommit
 	for {
 		if err := f(currentCommit); err != nil {
 			return err
@@ -212,20 +194,20 @@ func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommi
 func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	seen := map[string]struct{}{}
 	// Read unpacked tag refs.
-	dir := path.Join(r.gitDirPath, "refs", "tags")
-	if err := filepathextended.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+	tagsDir := filepath.Join(r.gitDirPath, "refs", "tags")
+	if err := filepathextended.Walk(tagsDir, func(tagPath string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.Mode().IsRegular() {
 			return nil
 		}
-		tagName, err := filepath.Rel(dir, path)
+		tagRelPath, err := filepath.Rel(tagsDir, tagPath)
 		if err != nil {
 			return err
 		}
-		tagName = normalpath.Normalize(tagName)
-		hashBytes, err := os.ReadFile(path)
+		tagName := normalpath.Normalize(tagRelPath)
+		hashBytes, err := os.ReadFile(tagPath)
 		if err != nil {
 			return err
 		}
@@ -275,22 +257,37 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	return nil
 }
 
-// HEADCommit resolves the HEAD commit for a branch.
-func (r *repository) HEADCommit(branch string) (Commit, error) {
-	commitBytes, err := os.ReadFile(path.Join(r.gitDirPath, "refs", "heads", branch))
+func (r *repository) HEADCommit(options ...HEADCommitOption) (Commit, error) {
+	var config headCommitOpts
+	for _, option := range options {
+		option(&config)
+	}
+	var branch = r.DefaultBranch()
+	if config.branch != "" {
+		branch = config.branch
+	}
+	var branchPath string
+	if config.remote == "" {
+		branchPath = filepath.Join(r.gitDirPath, "refs", "heads", normalpath.Unnormalize(branch))
+	} else {
+		branchPath = filepath.Join(r.gitDirPath, "refs", "remotes", normalpath.Unnormalize(config.remote), normalpath.Unnormalize(branch))
+	}
+	commitBytes, err := os.ReadFile(branchPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		// it may be that the branch ref is packed; let's read the packed refs
 		if err := r.readPackedRefs(); err != nil {
 			return nil, err
 		}
-		if commitID, ok := r.packedBranches[branch]; ok {
-			commit, err := r.objectReader.Commit(commitID)
-			if err != nil {
-				return nil, err
+		if remotePackedRefs, ok := r.packedBranches[config.remote]; ok {
+			if commitID, ok := remotePackedRefs[branch]; ok {
+				commit, err := r.objectReader.Commit(commitID)
+				if err != nil {
+					return nil, err
+				}
+				return commit, nil
 			}
-			return commit, nil
 		}
-		return nil, fmt.Errorf("branch %q not found", branch)
+		return nil, fmt.Errorf("branch %s not found", branch)
 	}
 	if err != nil {
 		return nil, err
@@ -309,11 +306,11 @@ func (r *repository) HEADCommit(branch string) (Commit, error) {
 
 func (r *repository) readPackedRefs() error {
 	r.packedOnce.Do(func() {
-		packedRefsPath := path.Join(r.gitDirPath, "packed-refs")
+		packedRefsPath := filepath.Join(r.gitDirPath, "packed-refs")
 		if _, err := os.Stat(packedRefsPath); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
-				r.packedBranches = map[string]Hash{}
-				r.packedTags = map[string]Hash{}
+				r.packedBranches = make(map[string]map[string]Hash)
+				r.packedTags = make(map[string]Hash)
 				return
 			}
 			r.packedReadError = err
@@ -329,12 +326,46 @@ func (r *repository) readPackedRefs() error {
 	return r.packedReadError
 }
 
+// commitAt returns the commit at the passed reference.
+func (r *repository) commitAt(ref reference) (Commit, error) {
+	if ref == nil {
+		// if a ref is not passed, use HEAD with its default behavior.
+		commit, err := r.HEADCommit()
+		if err != nil {
+			return nil, fmt.Errorf("get HEAD commit: %w", err)
+		}
+		return commit, nil
+	}
+	if hashRef, ok := ref.(*hashReference); ok {
+		commitID, err := NewHashFromHex(hashRef.name)
+		if err != nil {
+			return nil, fmt.Errorf("new hash from %s: %w", hashRef.name, err)
+		}
+		commit, err := r.objectReader.Commit(commitID)
+		if err != nil {
+			return nil, fmt.Errorf("read commit %s: %w", commitID.Hex(), err)
+		}
+		return commit, nil
+	}
+	if branchRef, ok := ref.(*branchReference); ok {
+		commit, err := r.HEADCommit(
+			HEADCommitWithBranch(branchRef.name),
+			HEADCommitWithRemote(branchRef.remote),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("read HEAD commit for branch %q: %w", branchRef.refName(), err)
+		}
+		return commit, nil
+	}
+	return nil, fmt.Errorf("unsupported reference %s:%s", ref.refType(), ref.refName())
+}
+
 // detectDefaultBranch returns the repository's default branch name. It attempts to read it from the
 // `.git/refs/remotes/origin/HEAD` file, and expects it to be pointing to a branch also in the
 // `origin` remote.
 func detectDefaultBranch(gitDirPath string) (string, error) {
 	const defaultRemoteName = "origin"
-	path := path.Join(gitDirPath, "refs", "remotes", defaultRemoteName, "HEAD")
+	path := filepath.Join(gitDirPath, "refs", "remotes", defaultRemoteName, "HEAD")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err

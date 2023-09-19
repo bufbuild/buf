@@ -19,22 +19,25 @@ import (
 	"context"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/stretchr/testify/require"
 )
 
-const DefaultBranch = "master"
+const (
+	DefaultBranch = "master"
+	DefaultRemote = "origin"
+)
 
 func ScaffoldGitRepository(t *testing.T) git.Repository {
 	runner := command.NewRunner()
 	dir := scaffoldGitRepository(t, runner)
-	dotGitPath := path.Join(dir, git.DotGitDir)
+	dotGitPath := filepath.Join(dir, git.DotGitDir)
 	repo, err := git.OpenRepository(
 		context.Background(),
 		dotGitPath,
@@ -68,15 +71,22 @@ func ScaffoldGitRepository(t *testing.T) git.Repository {
 //	│   └── buf.yaml
 //	└── randomBinary (+x)
 func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
-	repoDir := t.TempDir()
+	dir := t.TempDir()
 
-	// (0) setup repo
-	runInDir(t, runner, repoDir, "git", "init")
-	runInDir(t, runner, repoDir, "git", "config", "user.name", "Buf TestBot")
-	runInDir(t, runner, repoDir, "git", "config", "user.email", "testbot@buf.build")
+	// (0) setup local and remote
+	runInDir(t, runner, dir, "mkdir", "local", "remote")
+	remoteDir := filepath.Join(dir, "remote")
+	runInDir(t, runner, remoteDir, "git", "init", "--bare")
+	runInDir(t, runner, remoteDir, "git", "config", "user.name", "Buf TestBot")
+	runInDir(t, runner, remoteDir, "git", "config", "user.email", "testbot@buf.build")
+	localDir := filepath.Join(dir, "local")
+	runInDir(t, runner, localDir, "git", "init")
+	runInDir(t, runner, localDir, "git", "config", "user.name", "Buf TestBot")
+	runInDir(t, runner, localDir, "git", "config", "user.email", "testbot@buf.build")
+	runInDir(t, runner, localDir, "git", "remote", "add", DefaultRemote, remoteDir)
 
 	// (1) commit in main branch
-	writeFiles(t, repoDir, map[string]string{
+	writeFiles(t, localDir, map[string]string{
 		"randomBinary":                       "some executable",
 		"proto/buf.yaml":                     "some buf.yaml",
 		"proto/acme/petstore/v1/a.proto":     "cats",
@@ -84,55 +94,64 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 		"proto/acme/grocerystore/v1/c.proto": "toysrus",
 		"proto/acme/grocerystore/v1/d.proto": "petsrus",
 	})
-	runInDir(t, runner, repoDir, "chmod", "+x", "randomBinary")
-	runInDir(t, runner, repoDir, "git", "add", ".")
-	runInDir(t, runner, repoDir, "git", "commit", "-m", "initial commit")
-	runInDir(t, runner, repoDir, "git", "tag", "release/v1")
+	runInDir(t, runner, localDir, "chmod", "+x", "randomBinary")
+	runInDir(t, runner, localDir, "git", "add", ".")
+	runInDir(t, runner, localDir, "git", "commit", "-m", "initial commit")
+	runInDir(t, runner, localDir, "git", "tag", "release/v1")
+	runInDir(t, runner, localDir, "git", "push", "--follow-tags", "-u", "-f", "origin", DefaultBranch)
 
 	// (2) branch off main and begin work
-	runInDir(t, runner, repoDir, "git", "checkout", "-b", "buftest/branch1")
-	writeFiles(t, repoDir, map[string]string{
+	runInDir(t, runner, localDir, "git", "checkout", "-b", "buftest/branch1")
+	writeFiles(t, localDir, map[string]string{
 		"proto/acme/petstore/v1/e.proto": "loblaws",
 		"proto/acme/petstore/v1/f.proto": "merchant of venice",
 	})
-	runInDir(t, runner, repoDir, "git", "add", ".")
-	runInDir(t, runner, repoDir, "git", "commit", "-m", "branch1")
-	runInDir(t, runner, repoDir, "git", "tag", "-m", "for testing", "branch/v1")
+	runInDir(t, runner, localDir, "git", "add", ".")
+	runInDir(t, runner, localDir, "git", "commit", "-m", "branch1")
+	runInDir(t, runner, localDir, "git", "tag", "-m", "for testing", "branch/v1")
+	runInDir(t, runner, localDir, "git", "push", "--follow-tags", "origin", "buftest/branch1")
 
 	// (3) branch off branch and begin work
-	runInDir(t, runner, repoDir, "git", "checkout", "-b", "buftest/branch2")
-	writeFiles(t, repoDir, map[string]string{
+	runInDir(t, runner, localDir, "git", "checkout", "-b", "buftest/branch2")
+	writeFiles(t, localDir, map[string]string{
 		"proto/acme/grocerystore/v1/g.proto": "hamlet",
 		"proto/acme/grocerystore/v1/h.proto": "bethoven",
 	})
-	runInDir(t, runner, repoDir, "git", "add", ".")
-	runInDir(t, runner, repoDir, "git", "commit", "-m", "branch2")
-	runInDir(t, runner, repoDir, "git", "tag", "-m", "for testing", "branch/v2")
+	runInDir(t, runner, localDir, "git", "add", ".")
+	runInDir(t, runner, localDir, "git", "commit", "-m", "branch2")
+	runInDir(t, runner, localDir, "git", "tag", "-m", "for testing", "branch/v2")
+	runInDir(t, runner, localDir, "git", "push", "--follow-tags", "origin", "buftest/branch2")
 
 	// (4) merge first branch
-	runInDir(t, runner, repoDir, "git", "checkout", DefaultBranch)
-	runInDir(t, runner, repoDir, "git", "merge", "--squash", "buftest/branch1")
-	runInDir(t, runner, repoDir, "git", "commit", "-m", "second commit")
-	runInDir(t, runner, repoDir, "git", "tag", "v2")
+	runInDir(t, runner, localDir, "git", "checkout", DefaultBranch)
+	runInDir(t, runner, localDir, "git", "merge", "--squash", "buftest/branch1")
+	runInDir(t, runner, localDir, "git", "commit", "-m", "second commit")
+	runInDir(t, runner, localDir, "git", "tag", "v2")
+	runInDir(t, runner, localDir, "git", "push", "--follow-tags")
 
 	// (5) pack some refs
-	runInDir(t, runner, repoDir, "git", "pack-refs", "--all")
-	runInDir(t, runner, repoDir, "git", "repack")
+	runInDir(t, runner, localDir, "git", "pack-refs", "--all")
+	runInDir(t, runner, localDir, "git", "repack")
 
 	// (6) merge second branch
-	runInDir(t, runner, repoDir, "git", "checkout", DefaultBranch)
-	runInDir(t, runner, repoDir, "git", "merge", "--squash", "buftest/branch2")
-	runInDir(t, runner, repoDir, "git", "commit", "-m", "third commit")
-	runInDir(t, runner, repoDir, "git", "tag", "v3.0")
+	runInDir(t, runner, localDir, "git", "checkout", DefaultBranch)
+	runInDir(t, runner, localDir, "git", "merge", "--squash", "buftest/branch2")
+	runInDir(t, runner, localDir, "git", "commit", "-m", "third commit")
+	runInDir(t, runner, localDir, "git", "tag", "v3.0")
+	runInDir(t, runner, localDir, "git", "push", "--follow-tags")
 
 	// commit a local-only branch
-	runInDir(t, runner, repoDir, "git", "checkout", "-b", "buftest/local-only")
-	runInDir(t, runner, repoDir, "git", "commit", "--allow-empty", "-m", "local commit")
+	runInDir(t, runner, localDir, "git", "checkout", "-b", "buftest/local-only")
+	runInDir(t, runner, localDir, "git", "commit", "--allow-empty", "-m", "local commit on local branch")
+
+	// make a local-only commit on top of a pushed branch
+	runInDir(t, runner, localDir, "git", "checkout", "buftest/branch1")
+	runInDir(t, runner, localDir, "git", "commit", "--allow-empty", "-m", "local commit on pushed branch")
 
 	// checkout to default branch
-	runInDir(t, runner, repoDir, "git", "checkout", DefaultBranch)
+	runInDir(t, runner, localDir, "git", "checkout", DefaultBranch)
 
-	return repoDir
+	return localDir
 }
 
 func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args ...string) {
@@ -154,6 +173,7 @@ func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args 
 
 func writeFiles(t *testing.T, dir string, files map[string]string) {
 	for path, contents := range files {
+		path := normalpath.Unnormalize(path)
 		require.NoError(t, os.MkdirAll(filepath.Join(dir, filepath.Dir(path)), 0700))
 		require.NoError(t, os.WriteFile(filepath.Join(dir, path), []byte(contents), 0600))
 	}
