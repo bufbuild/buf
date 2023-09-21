@@ -50,6 +50,7 @@ const (
 	createFlagName           = "create"
 	createVisibilityFlagName = "create-visibility"
 	allBranchesFlagName      = "all-branches"
+	remoteFlagName           = "remote"
 )
 
 // NewCommand returns a new Command.
@@ -62,10 +63,11 @@ func NewCommand(
 		Use:   name,
 		Short: "Sync a Git repository to a registry",
 		Long: "Sync commits in a Git repository to a registry in topological order. " +
-			"Only commits in the default and current branch are processed. " +
-			"Syncing all branches is possible using '--all-branches' flag. " +
+			"Local commits in the default and current branch are processed. " +
+			fmt.Sprintf("Syncing only commits pushed to a specific remote is possible using --%s flag. ", remoteFlagName) +
+			fmt.Sprintf("Syncing all branches is possible using --%s flag. ", allBranchesFlagName) +
 			"By default a single module at the root of the repository is assumed, " +
-			"for specific module paths use the '--module' flag. " +
+			fmt.Sprintf("for specific module paths use the --%s flag. ", moduleFlagName) +
 			"This command needs to be run at the root of the Git repository.",
 		Args: cobra.NoArgs,
 		Run: builder.NewRunFunc(
@@ -84,6 +86,7 @@ type flags struct {
 	Create           bool
 	CreateVisibility string
 	AllBranches      bool
+	Remote           string
 }
 
 func newFlags() *flags {
@@ -117,16 +120,23 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Create,
 		createFlagName,
 		false,
-		fmt.Sprintf("Create the repository if it does not exist. Must set a visibility using --%s", createVisibilityFlagName),
+		fmt.Sprintf("Create the BSR repository if it does not exist. Must set a visibility using --%s", createVisibilityFlagName),
 	)
 	flagSet.BoolVar(
 		&f.AllBranches,
 		allBranchesFlagName,
 		false,
-		"Sync all git repository branches and not only the default and checked out one. "+
+		"Sync all Git branches and not only the default and checked out one. "+
 			"Order of sync for git branches is as follows: First, it syncs the default branch (read "+
 			"from 'refs/remotes/origin/HEAD'), and then all the rest of the branches in "+
-			"lexicographical order.",
+			"lexicographical order. "+
+			fmt.Sprintf("You can use --%s to only consider remote branches.", remoteFlagName),
+	)
+	flagSet.StringVar(
+		&f.Remote,
+		remoteFlagName,
+		"",
+		"The name of the Git remote to sync. If this flag is passed, only commits pushed to this remote are processed.",
 	)
 }
 
@@ -157,6 +167,7 @@ func run(
 		// No need to pass `flags.Create`, this is not empty iff `flags.Create`
 		flags.CreateVisibility,
 		flags.AllBranches,
+		flags.Remote,
 	)
 }
 
@@ -166,6 +177,7 @@ func sync(
 	modules []string, // moduleDir(:moduleIdentityOverride)
 	createWithVisibility string,
 	allBranches bool,
+	remoteName string,
 ) error {
 	// Assume that this command is run from the repository root. If not, `OpenRepository` will return
 	// a dir not found error.
@@ -183,6 +195,7 @@ func sync(
 		return fmt.Errorf("create connect client %w", err)
 	}
 	syncerOptions := []bufsync.SyncerOption{
+		bufsync.SyncerWithRemote(remoteName),
 		bufsync.SyncerWithResumption(syncPointResolver(clientConfig)),
 		bufsync.SyncerWithGitCommitChecker(syncGitCommitChecker(clientConfig)),
 		bufsync.SyncerWithModuleDefaultBranchGetter(defaultBranchGetter(clientConfig)),

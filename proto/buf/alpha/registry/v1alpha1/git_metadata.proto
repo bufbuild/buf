@@ -28,13 +28,16 @@ message GitIdentity {
   google.protobuf.Timestamp time = 3;
 }
 
+// GitCommitInformation is the information associated with a Git commit.
+// This always includes the hash.
+// The author and/or committer user identities are included when available.
 message GitCommitInformation {
   // Hash is the SHA1 hash of the git commit.
   string hash = 1;
   // Author is metadata associated with the author of the git commit.
   // This may not always be available, so it is not always populated.
-  optional GitIdentity author = 2;
+  GitIdentity author = 2;
   // Committer is the metadata associated with the committer of the git commit.
   // This may not always be available, so it is not always populated.
-  optional GitIdentity committer = 3;
+  GitIdentity committer = 3;
 }
