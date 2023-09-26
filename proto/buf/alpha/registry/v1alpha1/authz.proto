@@ -75,6 +75,11 @@ service AuthzService {
   rpc UserCanManageRepositoryContributors(UserCanManageRepositoryContributorsRequest) returns (UserCanManageRepositoryContributorsResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+  // UserCanReviewCommits returns whether the user is authorized to review
+  // commits within a repository.
+  rpc UserCanReviewCommits(UserCanReviewCommitsRequest) returns (UserCanReviewCommitsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message UserCanCreateOrganizationRepositoryRequest {
@@ -185,4 +190,14 @@ message UserCanManageRepositoryContributorsResponse {
   // The list of roles that the user is authorized to manage, empty list means the user is
   // not authorized to manage any contributors.
   repeated RepositoryRole authorized_roles = 1;
+}
+
+message UserCanReviewCommitsRequest {
+  // The ID of the repository for which to check
+  // whether the user is authorized.
+  string repository_id = 1;
+}
+
+message UserCanReviewCommitsResponse {
+  bool authorized = 1;
 }
