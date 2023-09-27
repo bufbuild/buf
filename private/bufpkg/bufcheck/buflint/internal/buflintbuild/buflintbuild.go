@@ -348,6 +348,13 @@ var (
 		"all files have a syntax specified",
 		newAdapter(buflintcheck.CheckSyntaxSpecified),
 	)
+
+	// SyntaxSpecifiedRuleBuilder is a rule builder.
+	CelCompilesRuleBuilder = internal.NewNopRuleBuilder(
+		"CEL_COMPILES",
+		"cel expressions compile",
+		newAdapter(buflintcheck.CheckCelCompiles),
+	)
 )
 
 func newAdapter(

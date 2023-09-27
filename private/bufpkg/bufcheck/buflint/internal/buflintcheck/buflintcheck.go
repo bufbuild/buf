@@ -23,12 +23,18 @@ import (
 	"strconv"
 	"strings"
 
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/google/cel-go/cel"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 const (
@@ -971,4 +977,253 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 		add(file, file.SyntaxLocation(), nil, `Files must have a syntax explicitly specified. If no syntax is specified, the file defaults to "proto2".`)
 	}
 	return nil
+}
+
+// CheckSyntaxSpecified is a check function.
+var CheckCelCompiles = newFileCheckFunc(checkCelInFile)
+
+const (
+	CelFieldTagInFieldConstraints   = 23
+	CelFieldTagInMessageConstraints = 3
+)
+
+var (
+	// Use this over validate.E_Message.TypeDescriptor(), because it would panic.
+	// TODO: explain why it would panic.
+	messageExtensionType = dynamicpb.NewExtensionType(validate.E_Message.TypeDescriptor())
+	fieldExtensionType   = dynamicpb.NewExtensionType(validate.E_Field.TypeDescriptor())
+)
+
+func checkCelInFile(add addFunc, file protosource.File) error {
+	for _, message := range file.Messages() {
+		if err := checkCelInMessage(add, message); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func checkCelInMessage(add addFunc, message protosource.Message) error {
+	for _, field := range message.Fields() {
+		if err := checkCelInField(add, field); err != nil {
+			return err
+		}
+	}
+	for _, nestedMessage := range message.Messages() {
+		if err := checkCelInMessage(add, nestedMessage); err != nil {
+			return err
+		}
+	}
+	messageConstraints, found, err := getMessageConstraints(message)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return nil
+	}
+	reflectMessageDescriptor, err := getReflectMessageDescriptor(message)
+	if err != nil {
+		return err
+	}
+	celEnv, err := cel.NewEnv(
+		cel.Types(dynamicpb.NewMessage(reflectMessageDescriptor)),
+		cel.Variable("this", cel.ObjectType(string(reflectMessageDescriptor.FullName()))),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create cel env: %s", err)
+	}
+	for i, msgCel := range messageConstraints.GetCel() {
+		// TODO: lint id and message
+		_ = msgCel.GetId()
+		_ = msgCel.GetMessage()
+
+		_, issues := celEnv.Compile(msgCel.GetExpression())
+		if issues.Err() != nil {
+			messageConstraintsOptionLocation := message.OptionExtensionLocation(
+				messageExtensionType,
+				CelFieldTagInMessageConstraints,
+				int32(i),
+			)
+			for _, issue := range parseCelIssuesText(issues.Err().Error()) {
+				add(message, messageConstraintsOptionLocation, nil, issue)
+			}
+		}
+	}
+	return nil
+}
+
+func checkCelInField(add addFunc, field protosource.Field) error {
+	fieldConstraints, found, err := getFieldConstraints(field)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return nil
+	}
+	fieldDesc, err := getReflectFieldDescriptor(field)
+	if err != nil {
+		return err
+	}
+	var env *cel.Env
+	if fieldDesc.Kind() == protoreflect.MessageKind {
+		env, err = cel.NewEnv(
+			cel.TypeDescs(fieldDesc.Message().ParentFile()),
+			cel.Variable("this", cel.ObjectType(string(fieldDesc.Message().FullName()))),
+		)
+	} else {
+		env, err = cel.NewEnv(
+			cel.Variable("this", protoKindToCELType(fieldDesc.Kind())),
+		)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to create cel env: %w", err)
+	}
+	for i, cel := range fieldConstraints.GetCel() {
+		// TODO: lint id and message
+		_ = cel.GetId()
+		_ = cel.GetExpression()
+
+		_, issues := env.Compile(cel.Expression)
+		if issues.Err() != nil {
+			celLocation := field.OptionExtensionLocation(
+				fieldExtensionType,
+				CelFieldTagInFieldConstraints,
+				int32(i),
+			)
+			for _, issue := range parseCelIssuesText(issues.Err().Error()) {
+				add(field, celLocation, nil, issue)
+			}
+		}
+	}
+	return nil
+}
+
+func getReflectMessageDescriptor(message protosource.Message) (protoreflect.MessageDescriptor, error) {
+	descriptor, err := protoregistry.GlobalFiles.FindDescriptorByName(protoreflect.FullName(message.FullName()))
+	if err == protoregistry.NotFound {
+		return nil, fmt.Errorf("unable to find MessageDescriptor message from global registry: %s", message.FullName())
+	}
+	if err != nil {
+		return nil, err
+	}
+	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
+	if !ok {
+		// this should not happen
+		return nil, fmt.Errorf("%s is not a message", descriptor.FullName())
+	}
+	return messageDescriptor, nil
+}
+
+func getReflectFieldDescriptor(field protosource.Field) (protoreflect.FieldDescriptor, error) {
+	descriptor, err := protoregistry.GlobalFiles.FindDescriptorByName(protoreflect.FullName(field.FullName()))
+	if err == protoregistry.NotFound {
+		return nil, fmt.Errorf("uhhh not found: %s", field.FullName())
+	}
+	if err != nil {
+		return nil, err
+	}
+	fieldDescriptor, ok := descriptor.(protoreflect.FieldDescriptor)
+	if !ok {
+		// this should never happen
+		return nil, fmt.Errorf("%s is not a field", descriptor.FullName())
+	}
+	return fieldDescriptor, nil
+}
+
+func getMessageConstraints(message protosource.Message) (*validate.MessageConstraints, bool, error) {
+	messageConstraintsMessageUntyped, found := message.OptionExtension(messageExtensionType)
+	if !found {
+		return nil, false, nil
+	}
+	messageConstraintsMessage, ok := messageConstraintsMessageUntyped.(protoreflect.Message)
+	if !ok {
+		// this should never happen
+		return nil, false, fmt.Errorf("field extension expected to be `protoreflect.Message`, but has type %T", messageConstraintsMessageUntyped)
+	}
+	data, err := proto.Marshal(messageConstraintsMessage.Interface())
+	if err != nil {
+		return nil, false, err
+	}
+	messageConstraints := validate.MessageConstraints{}
+	err = proto.Unmarshal(data, &messageConstraints)
+	if err != nil {
+		return nil, false, err
+	}
+	return &messageConstraints, true, nil
+}
+
+func getFieldConstraints(field protosource.Field) (*validate.FieldConstraints, bool, error) {
+	fieldConstraintsMessageUntyped, found := field.OptionExtension(fieldExtensionType)
+	if !found {
+		return nil, false, nil
+	}
+	fieldConstraintsMessage, ok := fieldConstraintsMessageUntyped.(protoreflect.Message)
+	if !ok {
+		// this should never happen
+		return nil, false, fmt.Errorf("field extension expected to be `protoreflect.Message`, but has type %T", fieldConstraintsMessageUntyped)
+	}
+	data, err := proto.Marshal(fieldConstraintsMessage.Interface())
+	if err != nil {
+		return nil, false, err
+	}
+	fieldConstraints := validate.FieldConstraints{}
+	err = proto.Unmarshal(data, &fieldConstraints)
+	if err != nil {
+		return nil, false, err
+	}
+	return &fieldConstraints, true, nil
+}
+
+// this depends on the undocumented behavior of error message
+// TODO: add a test, and when this test breaks it would mean cel-go
+// has updated the error message format and we will need to update this function.
+func parseCelIssuesText(issuesText string) []string {
+	issues := strings.Split(issuesText, "ERROR: <input>:")
+	parsedIssues := make([]string, 0, len(issues)-1)
+	for _, issue := range issues {
+		issue = strings.TrimSpace(issue)
+		if len(issue) == 0 {
+			continue
+		}
+		parts := strings.SplitAfterN(issue, ":", 3)
+		parsedIssues = append(parsedIssues, parts[len(parts)-1])
+	}
+	return parsedIssues
+}
+
+// copied directly from protovalidate-go
+func protoKindToCELType(kind protoreflect.Kind) *cel.Type {
+	switch kind {
+	case
+		protoreflect.FloatKind,
+		protoreflect.DoubleKind:
+		return cel.DoubleType
+	case
+		protoreflect.Int32Kind,
+		protoreflect.Int64Kind,
+		protoreflect.Sint32Kind,
+		protoreflect.Sint64Kind,
+		protoreflect.Sfixed32Kind,
+		protoreflect.Sfixed64Kind,
+		protoreflect.EnumKind:
+		return cel.IntType
+	case
+		protoreflect.Uint32Kind,
+		protoreflect.Uint64Kind,
+		protoreflect.Fixed32Kind,
+		protoreflect.Fixed64Kind:
+		return cel.UintType
+	case protoreflect.BoolKind:
+		return cel.BoolType
+	case protoreflect.StringKind:
+		return cel.StringType
+	case protoreflect.BytesKind:
+		return cel.BytesType
+	case
+		protoreflect.MessageKind,
+		protoreflect.GroupKind:
+		return cel.DynType
+	default:
+		return cel.DynType
+	}
 }
