@@ -181,10 +181,9 @@ func wrapError(err error) error {
 			}
 			return errors.New(msg)
 		}
-		return fmt.Errorf("Failure: %s", connectErr.Message())
 	}
 
-	// Error was not a Connect error
+	// Error was not a known Connect error, so return it as-is.
 	return fmt.Errorf("Failure: %w", err)
 }
 

@@ -268,7 +268,8 @@ func getDependencies(
 		}),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeUnimplemented && remote != bufconnect.DefaultRemote {
+		code := connect.CodeOf(err)
+		if (code == connect.CodeUnimplemented || code == connect.CodePermissionDenied) && remote != bufconnect.DefaultRemote {
 			return nil, bufcli.NewUnimplementedRemoteError(err, remote, moduleConfig.ModuleIdentity.IdentityString())
 		}
 		return nil, err
