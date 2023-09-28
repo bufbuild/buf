@@ -27,11 +27,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/google/cel-go/cel"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
@@ -979,8 +981,26 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 	return nil
 }
 
-// CheckSyntaxSpecified is a check function.
-var CheckCelCompiles = newFileCheckFunc(checkCelInFile)
+func CheckCelCompiles(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
+	for _, file := range files {
+		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
+	}
+	resolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
+	if err != nil {
+		return nil, err
+	}
+	helper := internal.NewHelper(id, ignoreFunc)
+	for _, file := range files {
+		if file.IsImport() {
+			continue
+		}
+		if err := checkCelInFile(resolver, helper.AddFileAnnotationWithExtraIgnoreLocationsf, file); err != nil {
+			return nil, err
+		}
+	}
+	return helper.FileAnnotations(), nil
+}
 
 const (
 	CelFieldTagInFieldConstraints   = 23
@@ -994,23 +1014,23 @@ var (
 	fieldExtensionType   = dynamicpb.NewExtensionType(validate.E_Field.TypeDescriptor())
 )
 
-func checkCelInFile(add addFunc, file protosource.File) error {
+func checkCelInFile(resolver protodesc.Resolver, add addFunc, file protosource.File) error {
 	for _, message := range file.Messages() {
-		if err := checkCelInMessage(add, message); err != nil {
+		if err := checkCelInMessage(resolver, add, message); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkCelInMessage(add addFunc, message protosource.Message) error {
+func checkCelInMessage(resolver protodesc.Resolver, add addFunc, message protosource.Message) error {
 	for _, field := range message.Fields() {
-		if err := checkCelInField(add, field); err != nil {
+		if err := checkCelInField(resolver, add, field); err != nil {
 			return err
 		}
 	}
 	for _, nestedMessage := range message.Messages() {
-		if err := checkCelInMessage(add, nestedMessage); err != nil {
+		if err := checkCelInMessage(resolver, add, nestedMessage); err != nil {
 			return err
 		}
 	}
@@ -1021,7 +1041,7 @@ func checkCelInMessage(add addFunc, message protosource.Message) error {
 	if !found {
 		return nil
 	}
-	reflectMessageDescriptor, err := getReflectMessageDescriptor(message)
+	reflectMessageDescriptor, err := getReflectMessageDescriptor(resolver, message)
 	if err != nil {
 		return err
 	}
@@ -1036,14 +1056,17 @@ func checkCelInMessage(add addFunc, message protosource.Message) error {
 		// TODO: lint id and message
 		_ = msgCel.GetId()
 		_ = msgCel.GetMessage()
-
+		messageConstraintsOptionLocation := message.OptionExtensionLocation(
+			messageExtensionType,
+			CelFieldTagInMessageConstraints,
+			int32(i),
+		)
+		if len(strings.TrimSpace(msgCel.GetExpression())) == 0 {
+			add(message, messageConstraintsOptionLocation, nil, "cel expression is empty")
+			continue
+		}
 		_, issues := celEnv.Compile(msgCel.GetExpression())
 		if issues.Err() != nil {
-			messageConstraintsOptionLocation := message.OptionExtensionLocation(
-				messageExtensionType,
-				CelFieldTagInMessageConstraints,
-				int32(i),
-			)
 			for _, issue := range parseCelIssuesText(issues.Err().Error()) {
 				add(message, messageConstraintsOptionLocation, nil, issue)
 			}
@@ -1052,7 +1075,7 @@ func checkCelInMessage(add addFunc, message protosource.Message) error {
 	return nil
 }
 
-func checkCelInField(add addFunc, field protosource.Field) error {
+func checkCelInField(resolver protodesc.Resolver, add addFunc, field protosource.Field) error {
 	fieldConstraints, found, err := getFieldConstraints(field)
 	if err != nil {
 		return err
@@ -1060,7 +1083,7 @@ func checkCelInField(add addFunc, field protosource.Field) error {
 	if !found {
 		return nil
 	}
-	fieldDesc, err := getReflectFieldDescriptor(field)
+	fieldDesc, err := getReflectFieldDescriptor(resolver, field)
 	if err != nil {
 		return err
 	}
@@ -1083,13 +1106,17 @@ func checkCelInField(add addFunc, field protosource.Field) error {
 		_ = cel.GetId()
 		_ = cel.GetExpression()
 
+		celLocation := field.OptionExtensionLocation(
+			fieldExtensionType,
+			CelFieldTagInFieldConstraints,
+			int32(i),
+		)
+		if len(strings.TrimSpace(cel.Expression)) == 0 {
+			add(field, celLocation, nil, "cel expression is empty")
+			continue
+		}
 		_, issues := env.Compile(cel.Expression)
 		if issues.Err() != nil {
-			celLocation := field.OptionExtensionLocation(
-				fieldExtensionType,
-				CelFieldTagInFieldConstraints,
-				int32(i),
-			)
 			for _, issue := range parseCelIssuesText(issues.Err().Error()) {
 				add(field, celLocation, nil, issue)
 			}
@@ -1098,10 +1125,10 @@ func checkCelInField(add addFunc, field protosource.Field) error {
 	return nil
 }
 
-func getReflectMessageDescriptor(message protosource.Message) (protoreflect.MessageDescriptor, error) {
-	descriptor, err := protoregistry.GlobalFiles.FindDescriptorByName(protoreflect.FullName(message.FullName()))
+func getReflectMessageDescriptor(resolver protodesc.Resolver, message protosource.Message) (protoreflect.MessageDescriptor, error) {
+	descriptor, err := resolver.FindDescriptorByName(protoreflect.FullName(message.FullName()))
 	if err == protoregistry.NotFound {
-		return nil, fmt.Errorf("unable to find MessageDescriptor message from global registry: %s", message.FullName())
+		return nil, fmt.Errorf("unable to resolve MessageDescriptor: %s", message.FullName())
 	}
 	if err != nil {
 		return nil, err
@@ -1114,10 +1141,10 @@ func getReflectMessageDescriptor(message protosource.Message) (protoreflect.Mess
 	return messageDescriptor, nil
 }
 
-func getReflectFieldDescriptor(field protosource.Field) (protoreflect.FieldDescriptor, error) {
-	descriptor, err := protoregistry.GlobalFiles.FindDescriptorByName(protoreflect.FullName(field.FullName()))
+func getReflectFieldDescriptor(resolver protodesc.Resolver, field protosource.Field) (protoreflect.FieldDescriptor, error) {
+	descriptor, err := resolver.FindDescriptorByName(protoreflect.FullName(field.FullName()))
 	if err == protoregistry.NotFound {
-		return nil, fmt.Errorf("uhhh not found: %s", field.FullName())
+		return nil, fmt.Errorf("unable to resolve FieldDescriptor: %s", field.FullName())
 	}
 	if err != nil {
 		return nil, err

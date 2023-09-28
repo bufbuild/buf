@@ -219,6 +219,7 @@ type File interface {
 	ContainerDescriptor
 	OptionExtensionDescriptor
 
+	FileDescriptor() protodescriptor.FileDescriptor
 	Syntax() Syntax
 	Package() string
 	FileImports() []FileImport

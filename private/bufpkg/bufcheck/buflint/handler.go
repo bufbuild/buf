@@ -25,9 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/reflect/protodesc"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 type handler struct {
@@ -54,17 +51,6 @@ func (h *handler) Check(
 	config *buflintconfig.Config,
 	image bufimage.Image,
 ) ([]bufanalysis.FileAnnotation, error) {
-	registryFiles, err := protodesc.NewFiles(bufimage.ImageToFileDescriptorSet(image))
-	if err != nil {
-		return nil, err
-	}
-	registryFiles.RangeFiles(func(fd protoreflect.FileDescriptor) bool {
-		_, err := protoregistry.GlobalFiles.FindFileByPath(fd.Path())
-		if err == protoregistry.NotFound {
-			protoregistry.GlobalFiles.RegisterFile(fd)
-		}
-		return true
-	})
 	files, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
 	if err != nil {
 		return nil, err
