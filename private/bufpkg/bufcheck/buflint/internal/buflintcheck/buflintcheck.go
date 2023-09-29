@@ -1090,7 +1090,7 @@ func checkCelInField(resolver protodesc.Resolver, add addFunc, field protosource
 	var env *cel.Env
 	if fieldDesc.Kind() == protoreflect.MessageKind {
 		env, err = cel.NewEnv(
-			cel.TypeDescs(fieldDesc.Message().ParentFile()),
+			cel.Types(dynamicpb.NewMessage(fieldDesc.Message())),
 			cel.Variable("this", cel.ObjectType(string(fieldDesc.Message().FullName()))),
 		)
 	} else {
