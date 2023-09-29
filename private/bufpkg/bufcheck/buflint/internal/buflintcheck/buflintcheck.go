@@ -1171,12 +1171,12 @@ func getMessageConstraints(message protosource.Message) (*validate.MessageConstr
 	if err != nil {
 		return nil, false, err
 	}
-	messageConstraints := validate.MessageConstraints{}
-	err = proto.Unmarshal(data, &messageConstraints)
+	messageConstraints := &validate.MessageConstraints{}
+	err = proto.Unmarshal(data, messageConstraints)
 	if err != nil {
 		return nil, false, err
 	}
-	return &messageConstraints, true, nil
+	return messageConstraints, true, nil
 }
 
 func getFieldConstraints(field protosource.Field) (*validate.FieldConstraints, bool, error) {
@@ -1193,12 +1193,12 @@ func getFieldConstraints(field protosource.Field) (*validate.FieldConstraints, b
 	if err != nil {
 		return nil, false, err
 	}
-	fieldConstraints := validate.FieldConstraints{}
-	err = proto.Unmarshal(data, &fieldConstraints)
+	fieldConstraints := &validate.FieldConstraints{}
+	err = proto.Unmarshal(data, fieldConstraints)
 	if err != nil {
 		return nil, false, err
 	}
-	return &fieldConstraints, true, nil
+	return fieldConstraints, true, nil
 }
 
 // this depends on the undocumented behavior of error message
