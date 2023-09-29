@@ -350,10 +350,10 @@ var (
 	)
 
 	// SyntaxSpecifiedRuleBuilder is a rule builder.
-	CelCompilesRuleBuilder = internal.NewNopRuleBuilder(
-		"CEL_COMPILES",
-		"cel expressions compile",
-		newAdapter(buflintcheck.CheckCelCompiles),
+	ValidateCelExpressionsCompileRuleBuilder = internal.NewNopRuleBuilder(
+		"VALIDATE_CEL_EXPRESSIONS_COMPILE",
+		"protovalidate cel expressions compile",
+		newAdapter(buflintcheck.CheckValidateCelExpressionsCompile),
 	)
 )
 

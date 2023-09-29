@@ -981,7 +981,7 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 	return nil
 }
 
-func CheckCelCompiles(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+func CheckValidateCelExpressionsCompile(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
 	for _, file := range files {
 		fileDescriptors = append(fileDescriptors, file.FileDescriptor())

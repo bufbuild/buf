@@ -522,6 +522,7 @@ RPC_REQUEST_RESPONSE_UNIQUE       DEFAULT                  Checks that RPC reque
 RPC_REQUEST_STANDARD_NAME         DEFAULT                  Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
 RPC_RESPONSE_STANDARD_NAME        DEFAULT                  Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).
 SERVICE_SUFFIX                    DEFAULT                  Checks that services are suffixed with Service (suffix is configurable).
+VALIDATE_CEL_EXPRESSIONS_COMPILE  DEFAULT                  Checks that protovalidate cel expressions compile.
 COMMENT_ENUM                      COMMENTS                 Checks that enums have non-empty comments.
 COMMENT_ENUM_VALUE                COMMENTS                 Checks that enum values have non-empty comments.
 COMMENT_FIELD                     COMMENTS                 Checks that fields have non-empty comments.

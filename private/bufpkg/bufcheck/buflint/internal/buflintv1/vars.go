@@ -65,7 +65,7 @@ var (
 		buflintbuild.ServicePascalCaseRuleBuilder,
 		buflintbuild.ServiceSuffixRuleBuilder,
 		buflintbuild.SyntaxSpecifiedRuleBuilder,
-		buflintbuild.CelCompilesRuleBuilder,
+		buflintbuild.ValidateCelExpressionsCompileRuleBuilder,
 	}
 
 	// v1DefaultCategories are the default categories.
@@ -230,8 +230,7 @@ var (
 			"BASIC",
 			"DEFAULT",
 		},
-		"CEL_COMPILES": {
-			"BASIC",
+		"VALIDATE_CEL_EXPRESSIONS_COMPILE": {
 			"DEFAULT",
 		},
 	}
