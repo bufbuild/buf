@@ -80,6 +80,9 @@ const (
 	// AuthzServiceUserCanManageRepositoryContributorsProcedure is the fully-qualified name of the
 	// AuthzService's UserCanManageRepositoryContributors RPC.
 	AuthzServiceUserCanManageRepositoryContributorsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageRepositoryContributors"
+	// AuthzServiceUserCanReviewCommitsProcedure is the fully-qualified name of the AuthzService's
+	// UserCanReviewCommits RPC.
+	AuthzServiceUserCanReviewCommitsProcedure = "/buf.alpha.registry.v1alpha1.AuthzService/UserCanReviewCommits"
 )
 
 // AuthzServiceClient is a client for the buf.alpha.registry.v1alpha1.AuthzService service.
@@ -117,6 +120,9 @@ type AuthzServiceClient interface {
 	// UserCanManageRepositoryContributors returns whether the user is authorized to manage
 	// any contributors to the repository and the list of roles they can manage.
 	UserCanManageRepositoryContributors(context.Context, *connect.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error)
+	// UserCanReviewCommits returns whether the user is authorized to review
+	// commits within a repository.
+	UserCanReviewCommits(context.Context, *connect.Request[v1alpha1.UserCanReviewCommitsRequest]) (*connect.Response[v1alpha1.UserCanReviewCommitsResponse], error)
 }
 
 // NewAuthzServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AuthzService
@@ -195,6 +201,12 @@ func NewAuthzServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+		userCanReviewCommits: connect.NewClient[v1alpha1.UserCanReviewCommitsRequest, v1alpha1.UserCanReviewCommitsResponse](
+			httpClient,
+			baseURL+AuthzServiceUserCanReviewCommitsProcedure,
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -211,6 +223,7 @@ type authzServiceClient struct {
 	userCanDeleteUser                   *connect.Client[v1alpha1.UserCanDeleteUserRequest, v1alpha1.UserCanDeleteUserResponse]
 	userCanSeeServerAdminPanel          *connect.Client[v1alpha1.UserCanSeeServerAdminPanelRequest, v1alpha1.UserCanSeeServerAdminPanelResponse]
 	userCanManageRepositoryContributors *connect.Client[v1alpha1.UserCanManageRepositoryContributorsRequest, v1alpha1.UserCanManageRepositoryContributorsResponse]
+	userCanReviewCommits                *connect.Client[v1alpha1.UserCanReviewCommitsRequest, v1alpha1.UserCanReviewCommitsResponse]
 }
 
 // UserCanCreateOrganizationRepository calls
@@ -277,6 +290,11 @@ func (c *authzServiceClient) UserCanManageRepositoryContributors(ctx context.Con
 	return c.userCanManageRepositoryContributors.CallUnary(ctx, req)
 }
 
+// UserCanReviewCommits calls buf.alpha.registry.v1alpha1.AuthzService.UserCanReviewCommits.
+func (c *authzServiceClient) UserCanReviewCommits(ctx context.Context, req *connect.Request[v1alpha1.UserCanReviewCommitsRequest]) (*connect.Response[v1alpha1.UserCanReviewCommitsResponse], error) {
+	return c.userCanReviewCommits.CallUnary(ctx, req)
+}
+
 // AuthzServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AuthzService service.
 type AuthzServiceHandler interface {
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
@@ -312,6 +330,9 @@ type AuthzServiceHandler interface {
 	// UserCanManageRepositoryContributors returns whether the user is authorized to manage
 	// any contributors to the repository and the list of roles they can manage.
 	UserCanManageRepositoryContributors(context.Context, *connect.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error)
+	// UserCanReviewCommits returns whether the user is authorized to review
+	// commits within a repository.
+	UserCanReviewCommits(context.Context, *connect.Request[v1alpha1.UserCanReviewCommitsRequest]) (*connect.Response[v1alpha1.UserCanReviewCommitsResponse], error)
 }
 
 // NewAuthzServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -386,6 +407,12 @@ func NewAuthzServiceHandler(svc AuthzServiceHandler, opts ...connect.HandlerOpti
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+	authzServiceUserCanReviewCommitsHandler := connect.NewUnaryHandler(
+		AuthzServiceUserCanReviewCommitsProcedure,
+		svc.UserCanReviewCommits,
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/buf.alpha.registry.v1alpha1.AuthzService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AuthzServiceUserCanCreateOrganizationRepositoryProcedure:
@@ -410,6 +437,8 @@ func NewAuthzServiceHandler(svc AuthzServiceHandler, opts ...connect.HandlerOpti
 			authzServiceUserCanSeeServerAdminPanelHandler.ServeHTTP(w, r)
 		case AuthzServiceUserCanManageRepositoryContributorsProcedure:
 			authzServiceUserCanManageRepositoryContributorsHandler.ServeHTTP(w, r)
+		case AuthzServiceUserCanReviewCommitsProcedure:
+			authzServiceUserCanReviewCommitsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -461,4 +490,8 @@ func (UnimplementedAuthzServiceHandler) UserCanSeeServerAdminPanel(context.Conte
 
 func (UnimplementedAuthzServiceHandler) UserCanManageRepositoryContributors(context.Context, *connect.Request[v1alpha1.UserCanManageRepositoryContributorsRequest]) (*connect.Response[v1alpha1.UserCanManageRepositoryContributorsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanManageRepositoryContributors is not implemented"))
+}
+
+func (UnimplementedAuthzServiceHandler) UserCanReviewCommits(context.Context, *connect.Request[v1alpha1.UserCanReviewCommitsRequest]) (*connect.Response[v1alpha1.UserCanReviewCommitsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AuthzService.UserCanReviewCommits is not implemented"))
 }
