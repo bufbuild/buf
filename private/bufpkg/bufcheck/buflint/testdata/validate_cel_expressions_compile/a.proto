@@ -65,7 +65,7 @@ message Foo {
     message: "bar",
     expression: "this.bar.xyz('foo')"
   };
-  required google.protobuf.Api api = 9 [(buf.validate.field).cel = {
+  required google.protobuf.Api transitive_dependency_succeed = 9 [(buf.validate.field).cel = {
     id: "Foo.api",
     message: "api",
     expression: "this.source_context.file_name.contains('foo')"
