@@ -853,7 +853,10 @@ func TestRunValidateCelExpressionsCompile(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 37, 13, 4, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 5, 20, 6, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 5, 32, 6, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 63, 3, 67, 5, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 34, 39, 38, 4, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 59, 3, 63, 5, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 5, 79, 6, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 87, 5, 91, 6, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
 	)
 }
 

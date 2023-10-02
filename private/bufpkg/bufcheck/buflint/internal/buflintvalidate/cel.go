@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/google/cel-go/cel"
+	"github.com/google/cel-go/common/types"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -83,7 +84,14 @@ func checkCelInMessage(
 			add(message, messageConstraintsOptionLocation, nil, "cel expression is empty")
 			continue
 		}
-		_, compileIssues := celEnv.Compile(cel.GetExpression())
+		ast, compileIssues := celEnv.Compile(cel.GetExpression())
+		switch ast.OutputType() {
+		case types.BoolType, types.StringType, types.ErrorType:
+			// If type is types.ErrorType, compilation has failed and we will
+			// only add the compilation issues.
+		default:
+			add(message, messageConstraintsOptionLocation, nil, "cel expression evaluates to unsupported type: %v", ast.OutputType())
+		}
 		if compileIssues.Err() != nil {
 			for _, parsedIssue := range parseCelIssuesText(compileIssues.Err().Error()) {
 				add(message, messageConstraintsOptionLocation, nil, parsedIssue)
@@ -133,7 +141,14 @@ func checkCelInField(
 			add(field, celLocation, nil, "cel expression is empty")
 			continue
 		}
-		_, compileIssues := env.Compile(cel.Expression)
+		ast, compileIssues := env.Compile(cel.Expression)
+		switch ast.OutputType() {
+		case types.BoolType, types.StringType, types.ErrorType:
+			// If type is types.ErrorType, compilation has failed and we will
+			// only add the compilation issues.
+		default:
+			add(field, celLocation, nil, "cel expression evaluates to unsupported type: %v", ast.OutputType())
+		}
 		if compileIssues.Err() != nil {
 			for _, parsedIssue := range parseCelIssuesText(compileIssues.Err().Error()) {
 				add(field, celLocation, nil, parsedIssue)

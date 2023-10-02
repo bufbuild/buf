@@ -36,13 +36,9 @@ message Foo {
     message: "some_expressions_fail_3_message",
     expression: "this + 1"
   }];
-  required string missing_message = 4 [(buf.validate.field).cel = {
-    id: "Foo.missinge_message",
-    expression: "this.contains('foo')"
-  }];
-  optional string no_validate = 5;
-  optional string no_cel = 6 [(buf.validate.field).string.email = true];
-  required string expressions_succeed = 7 [
+  optional string no_validate = 4;
+  optional string no_cel = 5 [(buf.validate.field).string.email = true];
+  required string expressions_succeed = 6 [
     (buf.validate.field).cel = {
       id: "Foo.expressions_succeed",
       message: "expression_succeed_message",
@@ -63,13 +59,37 @@ message Foo {
   option (buf.validate.message).cel = {
     id: "Foo.bar.2",
     message: "bar",
-    expression: "this.bar.xyz('foo')"
+    expression: "size(this.bar)"
   };
   required google.protobuf.Api transitive_dependency_succeed = 9 [(buf.validate.field).cel = {
     id: "Foo.api",
     message: "api",
     expression: "this.source_context.file_name.contains('foo')"
   }];
+  required google.protobuf.Duration duration = 10 [
+    (buf.validate.field).cel = {
+      id: "Foo.duration",
+      message: "duration",
+      expression: "this <= duration('23h59m59s')"
+    },
+    (buf.validate.field).cel = {
+      id: "Foo.duration.fail",
+      message: "duration_fail",
+      expression: "this <= 1"
+    }
+  ];
+  required google.protobuf.Timestamp timestamp = 11 [
+    (buf.validate.field).cel = {
+      id: "Foo.duration",
+      message: "duration",
+      expression: "this < timestamp('1900-01-01T00:00:00+00:00')"
+    },
+    (buf.validate.field).cel = {
+      id: "Foo.duration.fail",
+      message: "duration_fail",
+      expression: "this < 1"
+    }
+  ];
 }
 
 enum CelEnum {
