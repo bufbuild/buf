@@ -15,14 +15,14 @@
 package protoencoding
 
 import (
-	"github.com/bufbuild/protovalidate-go"
 	"github.com/bufbuild/protoyaml-go"
 	"google.golang.org/protobuf/proto"
 )
 
 type yamlUnmarshaler struct {
-	resolver Resolver
-	path     string
+	resolver  Resolver
+	path      string
+	validator protoyaml.Validator
 }
 
 func newYAMLUnmarshaler(resolver Resolver, options ...YAMLUnmarshalerOption) Unmarshaler {
@@ -36,13 +36,9 @@ func newYAMLUnmarshaler(resolver Resolver, options ...YAMLUnmarshalerOption) Unm
 }
 
 func (m *yamlUnmarshaler) Unmarshal(data []byte, message proto.Message) error {
-	validator, err := protovalidate.New()
-	if err != nil {
-		return err
-	}
 	options := protoyaml.UnmarshalOptions{
 		Resolver:  m.resolver,
-		Validator: validator,
+		Validator: m.validator,
 		Path:      m.path,
 	}
 	return options.Unmarshal(data, message)

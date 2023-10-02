@@ -16,6 +16,7 @@ package protoencoding
 
 import (
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/bufbuild/protoyaml-go"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -167,6 +168,12 @@ type YAMLUnmarshalerOption func(*yamlUnmarshaler)
 func YAMLUnmarshalerWithPath(path string) YAMLUnmarshalerOption {
 	return func(yamlUnmarshaler *yamlUnmarshaler) {
 		yamlUnmarshaler.path = path
+	}
+}
+
+func YAMLUnmarshalerWithValidator(validator protoyaml.Validator) YAMLUnmarshalerOption {
+	return func(yamlUnmarshaler *yamlUnmarshaler) {
+		yamlUnmarshaler.validator = validator
 	}
 }
 

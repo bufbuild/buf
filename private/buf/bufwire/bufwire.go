@@ -210,8 +210,6 @@ func NewImageWriter(
 // ProtoEncodingReader is a reader that reads a protobuf message in different encoding.
 type ProtoEncodingReader interface {
 	// GetMessage reads the message by the messageRef.
-	//
-	// Currently, this support bin and JSON format.
 	GetMessage(
 		ctx context.Context,
 		container app.EnvStdinContainer,

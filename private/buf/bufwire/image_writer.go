@@ -129,7 +129,6 @@ func (i *imageWriter) imageMarshal(
 		}
 		return protoencoding.NewTxtpbMarshaler(resolver).Marshal(message)
 	case buffetch.ImageEncodingYAML:
-		// TODO: verify that image is complete
 		resolver, err := protoencoding.NewResolver(
 			bufimage.ImageToFileDescriptors(
 				image,
