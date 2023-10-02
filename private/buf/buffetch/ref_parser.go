@@ -53,6 +53,7 @@ func newRefParser(logger *zap.Logger) *refParser {
 			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(formatJSON),
 			internal.WithSingleFormat(formatTxtpb),
+			internal.WithSingleFormat(formatYAML),
 			internal.WithSingleFormat(
 				formatBingz,
 				internal.WithSingleDefaultCompressionType(
@@ -98,6 +99,7 @@ func newImageRefParser(logger *zap.Logger) *refParser {
 			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(formatJSON),
 			internal.WithSingleFormat(formatTxtpb),
+			internal.WithSingleFormat(formatYAML),
 			internal.WithSingleFormat(
 				formatBingz,
 				internal.WithSingleDefaultCompressionType(
@@ -376,6 +378,8 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 				format = formatTar
 			case ".txtpb":
 				format = formatTxtpb
+			case ".yaml":
+				format = formatYAML
 			case ".zip":
 				format = formatZip
 			case ".gz":
@@ -389,6 +393,8 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 					format = formatTar
 				case ".txtpb":
 					format = formatTxtpb
+				case ".yaml":
+					format = formatYAML
 				default:
 					return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
 				}
@@ -403,6 +409,8 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 					format = formatTar
 				case ".txtpb":
 					format = formatTxtpb
+				case ".yaml":
+					format = formatYAML
 				default:
 					return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
 				}
@@ -530,6 +538,8 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 			format = formatJSON
 		case ".txtpb":
 			format = formatTxtpb
+		case ".yaml":
+			format = formatYAML
 		case ".gz":
 			compressionType = internal.CompressionTypeGzip
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
@@ -539,6 +549,8 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 				format = formatJSON
 			case ".txtpb":
 				format = formatTxtpb
+			case ".yaml":
+				format = formatYAML
 			default:
 				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
 			}
@@ -551,6 +563,8 @@ func processRawRefImage(rawRef *internal.RawRef) error {
 				format = formatJSON
 			case ".txtpb":
 				format = formatTxtpb
+			case ".yaml":
+				format = formatYAML
 			default:
 				return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
 			}
@@ -576,6 +590,8 @@ func parseImageEncoding(format string) (ImageEncoding, error) {
 		return ImageEncodingJSON, nil
 	case formatTxtpb:
 		return ImageEncodingTxtpb, nil
+	case formatYAML:
+		return ImageEncodingYAML, nil
 	default:
 		return 0, fmt.Errorf("invalid format for image: %q", format)
 	}

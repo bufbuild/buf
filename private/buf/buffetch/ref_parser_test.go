@@ -591,6 +591,46 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedSingleRef(
+			formatYAML,
+			"path/to/file.yaml",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+		),
+		"path/to/file.yaml",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatYAML,
+			"path/to/file.yaml.gz",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
+		),
+		"path/to/file.yaml.gz",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatYAML,
+			"path/to/file.yaml.gz",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+		),
+		"path/to/file.yaml.gz#compression=none",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatYAML,
+			"path/to/file.yaml.gz",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
+		),
+		"path/to/file.yaml.gz#compression=gzip",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
 			formatBinpb,
 			"",
 			internal.FileSchemeStdio,
@@ -617,6 +657,16 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.CompressionTypeNone,
 		),
 		"-#format=txtpb",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatYAML,
+			"",
+			internal.FileSchemeStdio,
+			internal.CompressionTypeNone,
+		),
+		"-#format=yaml",
 	)
 	testGetParsedRefSuccess(
 		t,

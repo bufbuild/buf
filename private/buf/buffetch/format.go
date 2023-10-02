@@ -25,6 +25,8 @@ const (
 	formatGit = "git"
 	// formatJSON is the JSON format.
 	formatJSON = "json"
+	// formatYAML is the YAML format.
+	formatYAML = "yaml"
 	// formatMod is the module format.
 	formatMod = "mod"
 	// formatTar is the tar format.
@@ -53,12 +55,14 @@ var (
 		formatJSON,
 		formatJSONGZ,
 		formatTxtpb,
+		formatYAML,
 	}
 	// sorted
 	imageFormatsNotDeprecated = []string{
 		formatBinpb,
 		formatJSON,
 		formatTxtpb,
+		formatYAML,
 	}
 	// sorted
 	sourceFormats = []string{
@@ -124,6 +128,7 @@ var (
 		formatTar,
 		formatTargz,
 		formatTxtpb,
+		formatYAML,
 		formatZip,
 	}
 	// sorted
@@ -136,6 +141,7 @@ var (
 		formatProtoFile,
 		formatTar,
 		formatTxtpb,
+		formatYAML,
 		formatZip,
 	}
 

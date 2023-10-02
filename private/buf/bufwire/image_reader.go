@@ -126,6 +126,21 @@ func (i *imageReader) GetImage(
 		txtpbUnmarshalSpan.End()
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
+	case buffetch.ImageEncodingYAML:
+		resolver, err := i.bootstrapResolver(ctx, protoencoding.NewYAMLUnmarshaler(nil), data)
+		if err != nil {
+			return nil, err
+		}
+		_, yamlUnmarshalSpan := i.tracer.Start(ctx, "yaml_unmarshal")
+		if err := protoencoding.NewYAMLUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
+			yamlUnmarshalSpan.RecordError(err)
+			yamlUnmarshalSpan.SetStatus(codes.Error, err.Error())
+			yamlUnmarshalSpan.End()
+			return nil, fmt.Errorf("could not unmarshal image: %v", err)
+		}
+		yamlUnmarshalSpan.End()
+		// we've already re-parsed, by unmarshalling 2x above
+		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	default:
 		return nil, fmt.Errorf("unknown image encoding: %v", imageEncoding)
 	}

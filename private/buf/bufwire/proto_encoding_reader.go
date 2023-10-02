@@ -79,6 +79,8 @@ func (p *protoEncodingReader) GetMessage(
 		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
 	case bufconvert.MessageEncodingTxtpb:
 		unmarshaler = protoencoding.NewTxtpbUnmarshaler(resolver)
+	case bufconvert.MessageEncodingYAML:
+		unmarshaler = protoencoding.NewYAMLUnmarshaler(resolver, protoencoding.YAMLUnmarshalerWithPath(messageRef.Path()))
 	default:
 		return nil, errors.New("unknown message encoding type")
 	}

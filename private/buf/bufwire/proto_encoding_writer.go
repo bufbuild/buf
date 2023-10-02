@@ -67,6 +67,8 @@ func (p *protoEncodingWriter) PutMessage(
 		marshaler = protoencoding.NewJSONMarshaler(resolver)
 	case bufconvert.MessageEncodingTxtpb:
 		marshaler = protoencoding.NewTxtpbMarshaler(resolver)
+	case bufconvert.MessageEncodingYAML:
+		marshaler = protoencoding.NewYAMLMarshaler(resolver)
 	default:
 		return errors.New("unknown message encoding type")
 	}

@@ -234,6 +234,8 @@ func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEnc
 		return bufconvert.MessageEncodingBinpb, nil
 	case bufconvert.MessageEncodingTxtpb:
 		return bufconvert.MessageEncodingBinpb, nil
+	case bufconvert.MessageEncodingYAML:
+		return bufconvert.MessageEncodingBinpb, nil
 	default:
 		return 0, fmt.Errorf("unknown message encoding %v", encoding)
 	}

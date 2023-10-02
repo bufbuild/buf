@@ -34,12 +34,16 @@ const (
 	MessageEncodingJSON
 	// MessageEncodingTxtpb is the protobuf text image encoding.
 	MessageEncodingTxtpb
+	// MessageEncodingYAML is the YAML image encoding.
+	MessageEncodingYAML
 	// formatBinpb is the binary format.
 	formatBinpb = "binpb"
 	// formatJSON is the JSON format.
 	formatJSON = "json"
 	// formatTxtpb is the protobuf text format.
 	formatTxtpb = "txtpb"
+	// formatYAML is the YAML format.
+	formatYAML = "yaml"
 
 	// formatBin is the binary format's old form, now deprecated.
 	formatBin = "bin"
@@ -55,6 +59,7 @@ var (
 		formatBinpb,
 		formatJSON,
 		formatTxtpb,
+		formatYAML,
 	}
 )
 
@@ -119,6 +124,8 @@ func parseMessageEncodingExt(ext string, defaultEncoding MessageEncoding) Messag
 		return MessageEncodingJSON
 	case formatTxtpb:
 		return MessageEncodingTxtpb
+	case formatYAML:
+		return MessageEncodingYAML
 	default:
 		return defaultEncoding
 	}
@@ -132,6 +139,8 @@ func parseMessageEncodingFormat(format string) (MessageEncoding, error) {
 		return MessageEncodingJSON, nil
 	case formatTxtpb:
 		return MessageEncodingTxtpb, nil
+	case formatYAML:
+		return MessageEncodingYAML, nil
 	default:
 		return 0, fmt.Errorf("invalid format for message: %q", format)
 	}

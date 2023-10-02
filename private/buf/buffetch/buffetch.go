@@ -36,6 +36,8 @@ const (
 	ImageEncodingJSON
 	// ImageEncodingTxtpb is the text protobuf image encoding.
 	ImageEncodingTxtpb
+	// ImageEncodingYAML is the YAML image encoding.
+	ImageEncodingYAML
 )
 
 var (
