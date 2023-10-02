@@ -123,8 +123,8 @@ service UserService {
   rpc GetUserPluginPreferences(GetUserPluginPreferencesRequest) returns (GetUserPluginPreferencesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // UpdateUserPluginPreference updates the user plugin preferences.
-  rpc UpdateUserPluginPreference(UpdateUserPluginPreferenceRequest) returns (UpdateUserPluginPreferenceResponse);
+  // UpdateUserPluginPreferences updates the user plugin preferences.
+  rpc UpdateUserPluginPreferences(UpdateUserPluginPreferencesRequest) returns (UpdateUserPluginPreferencesResponse);
 }
 
 message CreateUserRequest {
@@ -228,10 +228,10 @@ message GetUserPluginPreferencesResponse {
   UserPluginPreference preference = 1;
 }
 
-message UpdateUserPluginPreferenceRequest {
+message UpdateUserPluginPreferencesRequest {
   UserPluginPreference preference = 1;
 }
 
-message UpdateUserPluginPreferenceResponse {
+message UpdateUserPluginPreferencesResponse {
   UserPluginPreference preference = 1;
 }
