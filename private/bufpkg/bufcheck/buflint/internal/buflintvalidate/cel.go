@@ -243,16 +243,15 @@ func getFieldConstraints(field protosource.Field) (*validate.FieldConstraints, b
 }
 
 // this depends on the undocumented behavior of cel-go's error message
-// and removes "ERROR: <input>:1:x"
 //
-// maps this string:
+// maps a string in this form:
 // "ERROR: <input>:1:6: found no matching overload for '_+_' applied to '(int, string)'
 // | this + 'xyz' > (this * 'xyz')
 // | .....^
 // ERROR: <input>:1:22: found no matching overload for '_*_' applied to '(int, string)'
 // | this + 'xyz' > (this * 'xyz')
 // | .....................^"
-// to:
+// to a string slice:
 // [ "found no matching overload for '_+_' applied to '(int, string)'
 // | this + 'xyz' > (this * 'xyz')
 // | .....^",
