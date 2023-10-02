@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/gen/proto/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/protovalidate-go/celext"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
 	"google.golang.org/protobuf/proto"
@@ -67,12 +68,16 @@ func checkCelInMessage(
 	if err != nil {
 		return err
 	}
-	celEnv, err := cel.NewEnv(
+	celEnv, err := celext.DefaultEnv(false)
+	if err != nil {
+		return err
+	}
+	celEnv, err = celEnv.Extend(
 		cel.Types(dynamicpb.NewMessage(reflectMessageDescriptor)),
 		cel.Variable("this", cel.ObjectType(string(reflectMessageDescriptor.FullName()))),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create cel env: %s", err)
+		return err
 	}
 	for i, cel := range messageConstraints.GetCel() {
 		messageConstraintsOptionLocation := message.OptionExtensionLocation(
@@ -117,19 +122,22 @@ func checkCelInField(
 	if err != nil {
 		return err
 	}
-	var env *cel.Env
+	env, err := celext.DefaultEnv(false)
+	if err != nil {
+		return err
+	}
 	if fieldDesc.Kind() == protoreflect.MessageKind {
-		env, err = cel.NewEnv(
+		env, err = env.Extend(
 			cel.Types(dynamicpb.NewMessage(fieldDesc.Message())),
 			cel.Variable("this", cel.ObjectType(string(fieldDesc.Message().FullName()))),
 		)
 	} else {
-		env, err = cel.NewEnv(
+		env, err = env.Extend(
 			cel.Variable("this", protoKindToCELType(fieldDesc.Kind())),
 		)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to create cel env: %w", err)
+		return err
 	}
 	for i, cel := range fieldConstraints.GetCel() {
 		celLocation := field.OptionExtensionLocation(

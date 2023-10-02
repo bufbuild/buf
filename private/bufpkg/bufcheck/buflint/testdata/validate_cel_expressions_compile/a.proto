@@ -9,7 +9,7 @@ message Foo {
   required double compile_fail = 1 [(buf.validate.field).cel = {
     id: "Foo.compile_fail",
     message: "compile_fail_message",
-    expression: "this > int(1)"
+    expression: "this > '1'"
   }];
   optional string some_expressions_fail = 2 [
     // this one fails
