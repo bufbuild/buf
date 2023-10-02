@@ -54,17 +54,17 @@ message OrganizationUser {
   OrganizationRoleSource organization_role_source = 4;
 }
 
-message UserSelectedPlugin {
-  // owner of the plugin
-  string owner = 1;
-  // name of the plugin
-  string name = 2;
-}
-
+// UserPluginPreference is a nested structure that contains the
+// users preferred or selected language as well as a list of plugins
+// selected for that language
 message UserPluginPreference {
+  // The id of the user
   string user_id = 1;
+  // The selected language that the user has indicidated
+  // as their preferred language for plugins
   PluginLanguage selected_language = 2;
-  repeated UserSelectedPlugin selected_plugins = 3;
+  // A list of plugin names selected by the user
+  repeated string selected_plugins = 3;
 }
 
 enum UserState {
