@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/plugin_curation.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/verification_status.proto";
 import "google/protobuf/timestamp.proto";
@@ -51,6 +52,19 @@ message OrganizationUser {
   OrganizationRole organization_role = 3;
   // The source of the user's role in the organization above.
   OrganizationRoleSource organization_role_source = 4;
+}
+
+message UserSelectedPlugin {
+  // owner of the plugin
+  string owner = 1;
+  // name of the plugin
+  string name = 2;
+}
+
+message UserPluginPreference {
+  string user_id = 1;
+  PluginLanguage selected_language = 2;
+  repeated UserSelectedPlugin selected_plugins = 3;
 }
 
 enum UserState {
@@ -105,6 +119,12 @@ service UserService {
   }
   // UpdateUserSettings update the user settings including description.
   rpc UpdateUserSettings(UpdateUserSettingsRequest) returns (UpdateUserSettingsResponse);
+  // GetUserPluginPreferences gets plugin preferences for the user.
+  rpc GetUserPluginPreferences(GetUserPluginPreferencesRequest) returns (GetUserPluginPreferencesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // UpdateUserPluginPreference updates the user plugin preferences.
+  rpc UpdateUserPluginPreference(UpdateUserPluginPreferenceRequest) returns (UpdateUserPluginPreferenceResponse);
 }
 
 message CreateUserRequest {
@@ -199,3 +219,19 @@ message UpdateUserSettingsRequest {
 }
 
 message UpdateUserSettingsResponse {}
+
+message GetUserPluginPreferencesRequest {
+  string user_id = 1;
+}
+
+message GetUserPluginPreferencesResponse {
+  UserPluginPreference preference = 1;
+}
+
+message UpdateUserPluginPreferenceRequest {
+  UserPluginPreference preference = 1;
+}
+
+message UpdateUserPluginPreferenceResponse {
+  UserPluginPreference preference = 1;
+}
