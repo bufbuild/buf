@@ -1,0 +1,78 @@
+syntax = "proto2";
+
+import "buf/validate/validate.proto";
+import "google/protobuf/api.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+message Foo {
+  required double compile_fail = 1 [(buf.validate.field).cel = {
+    id: "Foo.compile_fail",
+    message: "compile_fail_message",
+    expression: "this > int(1)"
+  }];
+  optional string some_expressions_fail = 2 [
+    // this one fails
+    (buf.validate.field).cel = {
+      id: "Foo.some_expressions_fail_1",
+      message: "some_expressions_fail_1_message",
+      expression: "this > 5"
+    },
+    // this one succeeds
+    (buf.validate.field).cel = {
+      id: "Foo.some_expressions_fail_2",
+      message: "some_expressions_fail_2_message",
+      expression: "size(this) > 5"
+    },
+    // this one fails
+    (buf.validate.field).cel = {
+      id: "Foo.some_expressions_fail_3",
+      message: "some_expressions_fail_3_message",
+      expression: "this * 2"
+    }
+  ];
+  required int32 bad_return_type = 3 [(buf.validate.field).cel = {
+    id: "Foo.bad_return_type",
+    message: "some_expressions_fail_3_message",
+    expression: "this + 1"
+  }];
+  required string missing_message = 4 [(buf.validate.field).cel = {
+    id: "Foo.missinge_message",
+    expression: "this.contains('foo')"
+  }];
+  optional string no_validate = 5;
+  optional string no_cel = 6 [(buf.validate.field).string.email = true];
+  required string expressions_succeed = 7 [
+    (buf.validate.field).cel = {
+      id: "Foo.expressions_succeed",
+      message: "expression_succeed_message",
+      expression: "this.startsWith('foo') && this.endsWith('bar')"
+    },
+    (buf.validate.field).cel = {
+      id: "Foo.expressions_succeed_2",
+      message: "expression_succeed_message_2",
+      expression: "'bar' < this && this < 'foo'"
+    }
+  ];
+  required string bar = 8;
+  option (buf.validate.message).cel = {
+    id: "Foo.bar.1",
+    message: "bar",
+    expression: "this.bar.matches('foo')"
+  };
+  option (buf.validate.message).cel = {
+    id: "Foo.bar.2",
+    message: "bar",
+    expression: "this.bar.xyz('foo')"
+  };
+  required google.protobuf.Api api = 9 [(buf.validate.field).cel = {
+    id: "Foo.api",
+    message: "api",
+    expression: "this.source_context.file_name.contains('foo')"
+  }];
+}
+
+enum CelEnum {
+  CEL_ENUM_UNSPECIFIED = 0;
+  CEL_ENUM_ONE = 1;
+}

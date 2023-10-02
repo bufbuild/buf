@@ -1,0 +1,4 @@
+version: v1
+lint:
+  use:
+    - VALIDATE_CEL_EXPRESSIONS_COMPILE

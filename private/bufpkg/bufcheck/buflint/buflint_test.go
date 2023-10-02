@@ -479,6 +479,7 @@ func TestRunPackageNoImportCycle(t *testing.T) {
 			require.NoError(t, err)
 			return newImage
 		},
+		"",
 		bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 		bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 	)
@@ -844,6 +845,18 @@ func TestRunIgnores4(t *testing.T) {
 	)
 }
 
+func TestRunValidateCelExpressionsCompile(t *testing.T) {
+	t.Parallel()
+	testLintWithValidate(
+		t,
+		"validate_cel_expressions_compile",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 37, 13, 4, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 5, 20, 6, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 5, 32, 6, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 63, 3, 67, 5, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
+	)
+}
+
 func TestCommentIgnoresOff(t *testing.T) {
 	t.Parallel()
 	testLint(
@@ -896,6 +909,7 @@ func TestCommentIgnoresOn(t *testing.T) {
 			config.Lint.AllowCommentIgnores = true
 		},
 		nil,
+		"",
 	)
 }
 
@@ -949,6 +963,7 @@ func TestCommentIgnoresCascadeOn(t *testing.T) {
 			config.Lint.AllowCommentIgnores = true
 		},
 		nil,
+		"",
 	)
 }
 
@@ -962,6 +977,24 @@ func testLint(
 		relDirPath,
 		nil,
 		nil,
+		"",
+		expectedFileAnnotations...,
+	)
+}
+
+func testLintWithValidate(
+	t *testing.T,
+	relDirPath string,
+	expectedFileAnnotations ...bufanalysis.FileAnnotation,
+) {
+	testLintWithModifiers(
+		t,
+		relDirPath,
+		func(config *bufconfig.Config) {
+			config.Lint.IgnoreRootPaths = []string{"buf"}
+		},
+		nil,
+		"deps/protovalidate",
 		expectedFileAnnotations...,
 	)
 }
@@ -971,6 +1004,7 @@ func testLintWithModifiers(
 	relDirPath string,
 	configModifier func(*bufconfig.Config),
 	imageModifier func(bufimage.Image) bufimage.Image,
+	dependencyPathPrefix string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -991,12 +1025,27 @@ func testLintWithModifiers(
 		configModifier(config)
 	}
 
-	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		context.Background(),
-		readWriteBucket,
-		config.Build,
-	)
-	require.NoError(t, err)
+	var module *bufmodulebuild.BuiltModule
+	if dependencyPathPrefix != "" {
+		dependencyReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
+			filepath.Join("testdata", dependencyPathPrefix),
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		require.NoError(t, err)
+		module, err = bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+			context.Background(),
+			storage.MultiReadBucket(dependencyReadWriteBucket, readWriteBucket),
+			config.Build,
+		)
+		require.NoError(t, err)
+	} else {
+		module, err = bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+			context.Background(),
+			readWriteBucket,
+			config.Build,
+		)
+		require.NoError(t, err)
+	}
 	image, fileAnnotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
 		bufmodule.NewNopModuleReader(),
